@@ -29,6 +29,7 @@ struct ei_pair
 {
     const char *n;
     ExtAPI::extf_t t;
+    ei_pair(const char* ID, ExtAPI::extf_t in): n(ID), t(in) {}
 };
 
 } // End anonymous namespace
@@ -908,6 +909,19 @@ void ExtAPI::init()
             std::string extapi_file(pent->d_name);
             full_path_str.append(extapi_file);
             std::cout << "Full path to extAPI.txt " << full_path_str << "\n";
+
+            std:: ifstream file;
+            file.open(full_path_str.c_str());
+            assert(file.is_open() && "File cannot be opened");
+
+            if(file.is_open()){
+                string ID;
+                string effect;
+                while(getline(file,ID,',') && getline(file,effect)){
+                    cout << "Effect " << effect << endl;
+                }
+            }
+
         }
     }
 
