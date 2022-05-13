@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <unistd.h> //for chdir
 #include <fstream>
+#include <limits.h>  // PATH_MAX
 
 
 using namespace std;
@@ -877,6 +878,8 @@ void ExtAPI::init()
     string env_str(env);
     env_str.append("/SVF/lib/extAPI.txt");
 
+    // LIST ENVIRONMENT VARIABLES
+    // ---------------------------
     // char **s = environ;
     // for (; *s; s++) {
     //     printf("%s\n", *s);
@@ -888,19 +891,26 @@ void ExtAPI::init()
     //     cerr << "Error: " << strerror(errno);
     // }
 
-    
     DIR *pdir = nullptr;
     struct dirent *pent = nullptr;
+    const char* full_path;
+    char buffer[PATH_MAX];
+
     if((pdir  = opendir("../../lib")) == NULL) {
         cout << "Error(" << errno << ") opening " << pdir << endl;
     }
     while((pent = readdir(pdir))){
         cout << pent->d_name << endl;
+        if(strcmp(pent->d_name,"extAPI.txt")==0){
+            full_path = realpath("../../lib",buffer);
+            std::string full_path_str(full_path);
+            full_path_str.append("/");
+            std::string extapi_file(pent->d_name);
+            full_path_str.append(extapi_file);
+            std::cout << "Full path to extAPI.txt " << full_path_str << "\n";
+        }
     }
-    // string env_str(env);
-    // string command = "ls ";
-    // command.append(env_str);
-    // std::system(command.c_str());
+
     
     for(const ei_pair *p= ei_pairs; p->n; ++p)
     {
