@@ -128,7 +128,6 @@ void ExtAPI::init()
             full_path_str.append("/");
             std::string extapi_file(pent->d_name);
             full_path_str.append(extapi_file);
-            std::cout << "Full path to extAPI.txt " << full_path_str << "\n";
 
             std:: ifstream file;
             file.open(full_path_str.c_str());
@@ -178,6 +177,5 @@ void ExtAPI::init()
             assert(!"duplicate name in ei_pairs");
         }
         info[p->n]= p->t;
-    }
-    
+    }    
 }
