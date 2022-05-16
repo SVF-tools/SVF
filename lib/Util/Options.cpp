@@ -485,7 +485,7 @@ const llvm::cl::opt<std::string> Options::ReadSVFG(
 
 // FSMPTA.cpp
 const llvm::cl::opt<bool> Options::UsePCG(
-    "pcg-td-edge", 
+    "pcg-td-edge",
     llvm::cl::init(false),
     llvm::cl::desc("Use PCG lock for non-sparsely adding SVFG edges")
 );
@@ -813,16 +813,6 @@ const llvm::cl::opt<std::string> Options::InputFilename(
     llvm::cl::Positional,
     llvm::cl::desc("<input bitcode>"),
     llvm::cl::init("-")
-);
-
-const llvm::cl::opt<CondManager::CondMgrKind> Options::ConditionType(
-        "cond-type",
-        llvm::cl::init(CondManager::CondMgrKind::BDDMgrK),
-        llvm::cl::desc("condition type used in path-sensitive analysis"),
-        llvm::cl::values(
-                clEnumValN(CondManager::CondMgrKind::BDDMgrK, "bdd", "BDD condition"),
-                clEnumValN(CondManager::CondMgrKind::Z3MgrK, "z3", "z3 condition")
-        )
 );
 
 const llvm::cl::opt<std::string> Options::GrammarFilename(
