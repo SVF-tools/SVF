@@ -589,7 +589,7 @@ public:
     virtual inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if (varHasNewDFInPts(srcLoc, srcVar)
-            && this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFInPtIdRef(srcLoc, srcVar)))
+                && this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFInPtIdRef(srcLoc, srcVar)))
         {
             setVarDFInSetUpdated(dstLoc, dstVar);
             return true;
@@ -601,7 +601,7 @@ public:
     virtual inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if (varHasNewDFOutPts(srcLoc, srcVar)
-            && this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFOutPtIdRef(srcLoc, srcVar)))
+                && this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFOutPtIdRef(srcLoc, srcVar)))
         {
             setVarDFInSetUpdated(dstLoc, dstVar);
             return true;

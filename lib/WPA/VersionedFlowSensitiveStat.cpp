@@ -17,19 +17,19 @@ using namespace SVFUtil;
 
 void VersionedFlowSensitiveStat::clearStat()
 {
-     _NumVersions         = 0;
-     _MaxVersions         = 0;
-     _NumNonEmptyVersions = 0;
-     _NumSingleVersion    = 0;
-     _NumUsedVersions     = 0;
-     _NumEmptyVersions    = 0;
-     _MaxPtsSize          = 0;
-     _MaxTopLvlPtsSize    = 0;
-     _MaxVersionPtsSize   = 0;
-     _TotalPtsSize        = 0;
-     _AvgPtsSize          = 0.0;
-     _AvgTopLvlPtsSize    = 0.0;
-     _AvgVersionPtsSize   = 0.0;
+    _NumVersions         = 0;
+    _MaxVersions         = 0;
+    _NumNonEmptyVersions = 0;
+    _NumSingleVersion    = 0;
+    _NumUsedVersions     = 0;
+    _NumEmptyVersions    = 0;
+    _MaxPtsSize          = 0;
+    _MaxTopLvlPtsSize    = 0;
+    _MaxVersionPtsSize   = 0;
+    _TotalPtsSize        = 0;
+    _AvgPtsSize          = 0.0;
+    _AvgTopLvlPtsSize    = 0.0;
+    _AvgVersionPtsSize   = 0.0;
 }
 
 void VersionedFlowSensitiveStat::performStat()
@@ -156,7 +156,10 @@ void VersionedFlowSensitiveStat::versionStat(void)
     _MaxVersions = 0;
 
     u32_t totalVersionPtsSize = 0;
-    for (const VersionedFlowSensitive::LocVersionMap *lvm : { &vfspta->consume, &vfspta->yield })
+    for (const VersionedFlowSensitive::LocVersionMap *lvm :
+            {
+                &vfspta->consume, &vfspta->yield
+            })
     {
         for (const VersionedFlowSensitive::ObjToVersionMap  &lov : *lvm)
         {

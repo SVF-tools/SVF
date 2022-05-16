@@ -41,47 +41,53 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-const NodeBS MRSVFGNode::getDefSVFVars() const {
+const NodeBS MRSVFGNode::getDefSVFVars() const
+{
     return getPointsTo();
 }
 
-const std::string MRSVFGNode::toString() const {
+const std::string MRSVFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "MRSVFGNode ID: " << getId();
     return rawstr.str();
 }
 
-const std::string FormalINSVFGNode::toString() const {
+const std::string FormalINSVFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FormalINSVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     rawstr << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() <<
-            " = ENCHI(MR_" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
+           " = ENCHI(MR_" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
     rawstr << getMRVer()->getMR()->dumpStr() << "\n";
     return rawstr.str();
 }
 
-const std::string FormalOUTSVFGNode::toString() const {
+const std::string FormalOUTSVFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FormalOUTSVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     rawstr << "RETMU(" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
-                rawstr  << getMRVer()->getMR()->dumpStr() << "\n";
+    rawstr  << getMRVer()->getMR()->dumpStr() << "\n";
     return rawstr.str();
 }
 
-const std::string ActualINSVFGNode::toString() const {
+const std::string ActualINSVFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ActualINSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " {fun: " << getFun()->getName() << "}";
     rawstr << "CSMU(" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
-                rawstr << getMRVer()->getMR()->dumpStr() << "\n";
-                rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]";
+    rawstr << getMRVer()->getMR()->dumpStr() << "\n";
+    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]";
     return rawstr.str();
 }
 
-const std::string ActualOUTSVFGNode::toString() const {
+const std::string ActualOUTSVFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ActualOUTSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " {fun: " << getFun()->getName() << "}";
@@ -92,7 +98,8 @@ const std::string ActualOUTSVFGNode::toString() const {
     return rawstr.str();
 }
 
-const std::string MSSAPHISVFGNode::toString() const {
+const std::string MSSAPHISVFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "MSSAPHISVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
@@ -108,7 +115,8 @@ const std::string MSSAPHISVFGNode::toString() const {
     return rawstr.str();
 }
 
-const std::string IntraMSSAPHISVFGNode::toString() const {
+const std::string IntraMSSAPHISVFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraMSSAPHISVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
@@ -116,13 +124,15 @@ const std::string IntraMSSAPHISVFGNode::toString() const {
     return rawstr.str();
 }
 
-const NodeBS DummyVersionPropSVFGNode::getDefSVFVars() const {
+const NodeBS DummyVersionPropSVFGNode::getDefSVFVars() const
+{
     NodeBS nb;
     nb.set(object);
     return nb;
 }
 
-const std::string InterMSSAPHISVFGNode::toString() const {
+const std::string InterMSSAPHISVFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     if(isFormalINPHI())
@@ -133,21 +143,24 @@ const std::string InterMSSAPHISVFGNode::toString() const {
     return rawstr.str();
 }
 
-const std::string IndirectSVFGEdge::toString() const {
+const std::string IndirectSVFGEdge::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IndirectSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
     return rawstr.str();
 }
 
-const std::string IntraIndSVFGEdge::toString() const {
+const std::string IntraIndSVFGEdge::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraIndSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
     return rawstr.str();
 }
 
-const std::string CallIndSVFGEdge::toString() const {
+const std::string CallIndSVFGEdge::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallIndSVFGEdge CallSite ID: " << getCallSiteId() << " ";
@@ -155,7 +168,8 @@ const std::string CallIndSVFGEdge::toString() const {
     return rawstr.str();
 }
 
-const std::string RetIndSVFGEdge::toString() const {
+const std::string RetIndSVFGEdge::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "RetIndSVFGEdge CallSite ID: " << getCallSiteId() << " ";
@@ -164,7 +178,8 @@ const std::string RetIndSVFGEdge::toString() const {
 }
 
 
-const std::string ThreadMHPIndSVFGEdge::toString() const {
+const std::string ThreadMHPIndSVFGEdge::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ThreadMHPIndSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
@@ -176,7 +191,7 @@ FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MRVer* mrVer, const FunExi
 {
     cpts = mrVer->getMR()->getPointsTo();
     ver = mrVer;
-    funExitNode = funExit; 
+    funExitNode = funExit;
 }
 
 /*!
@@ -665,7 +680,8 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     for(MemSSA::BBToPhiSetMap::iterator it = mssa->getBBToPhiSetMap().begin(),
             eit = mssa->getBBToPhiSetMap().end(); it!=eit; ++it)
     {
-        for(PHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
+        for(PHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
+        {
             MemSSA::PHI* phi =  *pi;
             addIntraMSSAPHISVFGNode(pag->getICFG()->getICFGNode(&(phi->getBasicBlock()->front())), phi->opVerBegin(), phi->opVerEnd(),phi->getResVer(), totalVFGNode++);
         }
@@ -674,7 +690,8 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     for(MemSSA::FunToEntryChiSetMap::iterator it = mssa->getFunToEntryChiSetMap().begin(),
             eit = mssa->getFunToEntryChiSetMap().end(); it!=eit; ++it)
     {
-        for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
+        for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
+        {
             const MemSSA::ENTRYCHI* chi = SVFUtil::cast<ENTRYCHI>(*pi);
             addFormalINSVFGNode(pag->getICFG()->getFunEntryICFGNode(chi->getFunction()), chi->getResVer(), totalVFGNode++);
         }
@@ -683,9 +700,10 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     for(MemSSA::FunToReturnMuSetMap::iterator it = mssa->getFunToRetMuSetMap().begin(),
             eit = mssa->getFunToRetMuSetMap().end(); it!=eit; ++it)
     {
-        for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
-              const MemSSA::RETMU* mu = SVFUtil::cast<RETMU>(*pi);
-              addFormalOUTSVFGNode(pag->getICFG()->getFunExitICFGNode(mu->getFunction()), mu->getMRVer(), totalVFGNode++);
+        for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
+        {
+            const MemSSA::RETMU* mu = SVFUtil::cast<RETMU>(*pi);
+            addFormalOUTSVFGNode(pag->getICFG()->getFunExitICFGNode(mu->getFunction()), mu->getMRVer(), totalVFGNode++);
         }
     }
     /// initialize memory SSA callsite mu nodes
@@ -693,7 +711,8 @@ void SVFG::addSVFGNodesForAddrTakenVars()
             eit = mssa->getCallSiteToMuSetMap().end();
             it!=eit; ++it)
     {
-        for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
+        for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
+        {
             const MemSSA::CALLMU* mu = SVFUtil::cast<CALLMU>(*pi);
             addActualINSVFGNode(mu->getCallSite(), mu->getMRVer(), totalVFGNode++);
         }
@@ -703,7 +722,8 @@ void SVFG::addSVFGNodesForAddrTakenVars()
             eit = mssa->getCallSiteToChiSetMap().end();
             it!=eit; ++it)
     {
-        for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
+        for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
+        {
             const MemSSA::CALLCHI* chi = SVFUtil::cast<CALLCHI>(*pi);
             addActualOUTSVFGNode(chi->getCallSite(), chi->getResVer(), totalVFGNode++);
         }
@@ -967,25 +987,6 @@ void SVFG::dump(const std::string& file, bool simple)
     GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
-std::set<const SVFGNode*> SVFG::fromValue(const llvm::Value* value) const
-{
-    SVFIR* pag = SVFIR::getPAG();
-    std::set<const SVFGNode*> ret;
-    // search for all PAGEdges first
-    for (const PAGEdge* pagEdge : pag->getValueEdges(value)) {
-        PAGEdgeToStmtVFGNodeMapTy::const_iterator it = PAGEdgeToStmtVFGNodeMap.find(pagEdge);
-        if (it != PAGEdgeToStmtVFGNodeMap.end()) {
-            ret.emplace(it->second);
-        }
-    }
-    // add all PAGNodes
-    PAGNode* pagNode = pag->getGNode(pag->getValueNode(value));
-    if(hasDef(pagNode)) {
-        ret.emplace(getDefSVFGNode(pagNode));
-    }
-    return ret;
-}
-
 /**
  * Get all inter value flow edges at this indirect call site, including call and return edges.
  */
@@ -1192,9 +1193,11 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph
 #if LLVM_VERSION_MAJOR >= 12
-    static bool isNodeHidden(SVFGNode *node, SVFG *){
+    static bool isNodeHidden(SVFGNode *node, SVFG *)
+    {
 #else
-    static bool isNodeHidden(SVFGNode *node) {
+    static bool isNodeHidden(SVFGNode *node)
+    {
 #endif
         if (Options::ShowHiddenNode) return false;
         else return node->getInEdges().empty() && node->getOutEdges().empty();

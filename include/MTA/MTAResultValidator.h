@@ -14,9 +14,10 @@
  * Validate the result of context-sensitive analysis, including context-sensitive
  * thread detection and thread interleaving.
  */
- namespace SVF{
- typedef unsigned NodeID;
- 
+namespace SVF
+{
+typedef unsigned NodeID;
+
 class MTAResultValidator
 {
 
@@ -36,9 +37,10 @@ public:
 
     // Analysis
     void analyze();
-	inline SVFModule* getModule() const {
-		return mod;
-	}
+    inline SVFModule* getModule() const
+    {
+        return mod;
+    }
 protected:
 
     /*
@@ -132,12 +134,12 @@ private:
     ThreadAPI* tdAPI;
     ThreadCallGraph* tcg;
     MHP* mhp;
-	vthdToCxtMap vthdToCxt;
-	vthdTorthdMap vthdTorthd;
-	rthdTovthdMap rthdTovthd;
-	csnumToInst	csnumToInstMap;
-	rthdToChildrenMap rthdToChildren;
-	SVFModule* mod;
+    vthdToCxtMap vthdToCxt;
+    vthdTorthdMap vthdTorthd;
+    rthdTovthdMap rthdTovthd;
+    csnumToInst	csnumToInstMap;
+    rthdToChildrenMap rthdToChildren;
+    SVFModule* mod;
     /// Constant INTERLEV_FLAG values
     //@{
     static const INTERLEV_FLAG INTERLEV_TRUE = 0x01;
@@ -274,13 +276,15 @@ protected:
         // Collect call sites of all RC_ACCESS function calls.
         std::vector<const CallInst*> csInsts;
         const Function *F = nullptr;
- 		for(auto it = M->llvmFunBegin(); it != M->llvmFunEnd(); it++){
- 			const std::string fName = (*it)->getName().str();
- 			if(fName.find(RC_ACCESS) != std::string::npos) {
- 				F = (*it);
- 				break;
- 			}
- 		}       
+        for(auto it = M->llvmFunBegin(); it != M->llvmFunEnd(); it++)
+        {
+            const std::string fName = (*it)->getName().str();
+            if(fName.find(RC_ACCESS) != std::string::npos)
+            {
+                F = (*it);
+                break;
+            }
+        }
         if (!F)     return;
 
         for (Value::const_use_iterator it = F->use_begin(), ie =
@@ -409,7 +413,7 @@ private:
         {
             if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
                 return I;
-                
+
             if (const SVFFunction *callee = SVFUtil::getCallee(I))
             {
                 if (ExtAPI::EFT_L_A0__A0R_A1R == ExtAPI::getExtAPI()->get_type(callee)

@@ -73,7 +73,8 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
         if(SVFUtil::isa<DummyValVar>(pagNode) || SVFUtil::isa<DummyObjVar>(pagNode))
             continue;
 
-        if(GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pagNode)) {
+        if(GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pagNode))
+        {
             if(SVFUtil::isa<DummyObjVar>(pag->getGNode(gepobj->getBaseNode())))
                 continue;
         }
@@ -200,8 +201,8 @@ bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, B
 
             // Strong update can be made if this points-to target is not heap, array or field-insensitive.
             if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton)
-                && SVFIR::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
-                && !pta->isLocalVarInRecursiveFun(singleton))
+                    && SVFIR::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
+                    && !pta->isLocalVarInRecursiveFun(singleton))
             {
                 isSU = true;
             }
@@ -227,19 +228,23 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
     {
         const SVFGNode* node = it->second;
 
-        if(const StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
+        if(const StoreSVFGNode* stmtNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            if(SVFUtil::isa<StoreSVFGNode>(stmtNode) && SVFUtil::isa<StoreInst>(stmtNode->getValue()))
+            if(SVFUtil::isa<StoreInst>(stmtNode->getValue()))
             {
                 NodeID singleton;
-                if(isStrongUpdate(node, singleton, pta)) {
+                if(isStrongUpdate(node, singleton, pta))
+                {
                     Set<SVFGEdge*> toRemove;
-                    for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2) {
-                        if ((*it2)->isIndirectVFGEdge()) {
+                    for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2)
+                    {
+                        if ((*it2)->isIndirectVFGEdge())
+                        {
                             toRemove.insert(*it2);
                         }
                     }
-                    for (SVFGEdge* edge: toRemove) {
+                    for (SVFGEdge* edge: toRemove)
+                    {
                         svfg->removeSVFGEdge(edge);
                     }
                 }
@@ -268,12 +273,14 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
                     || SaberCheckerAPI::getCheckerAPI()->isFClose(fun))
             {
                 SVFIR::SVFVarList& arglist = it->second;
-                for(SVFIR::SVFVarList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait){
-					const PAGNode *pagNode = *ait;
-					if (pagNode->isPointer()) {
-						addActualParmVFGNode(pagNode, it->first);
-						svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it->first)->getId());
-					}
+                for(SVFIR::SVFVarList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait)
+                {
+                    const PAGNode *pagNode = *ait;
+                    if (pagNode->isPointer())
+                    {
+                        addActualParmVFGNode(pagNode, it->first);
+                        svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it->first)->getId());
+                    }
                 }
             }
         }

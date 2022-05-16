@@ -30,7 +30,7 @@
 #include "Util/Options.h"
 #include "SVF-FE/DCHG.h"
 #include "Util/SVFModule.h"
-#include "Util/TypeBasedHeapCloning.h"
+#include "WPA/TypeBasedHeapCloning.h"
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"
@@ -73,9 +73,9 @@ void FlowSensitive::initialize()
     }
 
     // When evaluating ctir aliases, we want the whole SVFG.
-    
+
     svfg = Options::CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
-    
+
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 }
@@ -130,8 +130,8 @@ void FlowSensitive::analyze()
  */
 void FlowSensitive::finalize()
 {
-	if(Options::DumpVFG)
-		svfg->dump("fs_solved", true);
+    if(Options::DumpVFG)
+        svfg->dump("fs_solved", true);
 
     NodeStack& nodeStack = WPASolver<SVFG*>::SCCDetect();
     while (nodeStack.empty() == false)
@@ -485,7 +485,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
             tmpDstPts.set(getFIObjVar(o));
         }
     }
-    else 
+    else
     {
         for (NodeID o : srcPts)
         {
@@ -669,7 +669,7 @@ bool FlowSensitive::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 
         const FunctionSet &andersFunctionSet = andersFunctionSetIt->second;
         for (FunctionSet::iterator potentialFunctionIt = potentialFunctionSet.begin();
-             potentialFunctionIt != potentialFunctionSet.end(); )
+                potentialFunctionIt != potentialFunctionSet.end(); )
         {
             const SVFFunction *potentialFunction = *potentialFunctionIt;
             if (andersFunctionSet.find(potentialFunction) == andersFunctionSet.end())

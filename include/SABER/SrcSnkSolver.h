@@ -1,4 +1,4 @@
-//===- CFLSolver.h -- CFL reachability solver---------------------------------//
+//===- SrcSnkSolver.h -- CFL reachability solver---------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CFLSolver.h
+ * SrcSnkSolver.h
  *
  *  Created on: Apr 1, 2014
  *      Author: Yulei Sui
@@ -41,7 +41,7 @@ namespace SVF
  * Extend this class for sophisticated CFL-reachability resolution (e.g. field, flow, path)
  */
 template<class GraphType, class DPIm = DPItem>
-class CFLSolver
+class SrcSnkSolver
 {
 
 public:
@@ -62,11 +62,11 @@ public:
 protected:
 
     /// Constructor
-    CFLSolver(): _graph(nullptr)
+    SrcSnkSolver(): _graph(nullptr)
     {
     }
     /// Destructor
-    virtual ~CFLSolver()
+    virtual ~SrcSnkSolver()
     {
     }
     /// Get/Set graph methods

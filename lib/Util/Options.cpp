@@ -63,7 +63,7 @@ const llvm::cl::opt<unsigned> Options::AnderTimeLimit(
 
 // ContextDDA.cpp
 const llvm::cl::opt<unsigned long long> Options::CxtBudget(
-    "cxt-bg", 
+    "cxt-bg",
     llvm::cl::init(10000),
     llvm::cl::desc("Maximum step budget of context-sensitive traversing")
 );
@@ -71,98 +71,98 @@ const llvm::cl::opt<unsigned long long> Options::CxtBudget(
 
 // DDAClient.cpp
 const llvm::cl::opt<bool> Options::SingleLoad(
-    "single-load", 
+    "single-load",
     llvm::cl::init(true),
     llvm::cl::desc("Count load pointer with same source operand as one query")
 );
 
 const llvm::cl::opt<bool> Options::DumpFree(
-    "dump-free", 
+    "dump-free",
     llvm::cl::init(false),
     llvm::cl::desc("Dump use after free locations")
 );
 
 const llvm::cl::opt<bool> Options::DumpUninitVar(
-    "dump-uninit-var", 
+    "dump-uninit-var",
     llvm::cl::init(false),
     llvm::cl::desc("Dump uninitialised variables")
 );
 
 const llvm::cl::opt<bool> Options::DumpUninitPtr(
-    "dump-uninit-ptr", 
+    "dump-uninit-ptr",
     llvm::cl::init(false),
     llvm::cl::desc("Dump uninitialised pointers")
 );
 
 const llvm::cl::opt<bool> Options::DumpSUPts(
-    "dump-su-pts", 
+    "dump-su-pts",
     llvm::cl::init(false),
     llvm::cl::desc("Dump strong updates store")
 );
 
 const llvm::cl::opt<bool> Options::DumpSUStore(
-    "dump-su-store", 
+    "dump-su-store",
     llvm::cl::init(false),
     llvm::cl::desc("Dump strong updates store")
 );
 
 const llvm::cl::opt<bool> Options::MallocOnly(
-    "malloc-only", 
+    "malloc-only",
     llvm::cl::init(true),
     llvm::cl::desc("Only add tainted objects for malloc")
 );
 
 const llvm::cl::opt<bool> Options::TaintUninitHeap(
-    "uninit-heap", 
+    "uninit-heap",
     llvm::cl::init(true),
     llvm::cl::desc("detect uninitialized heap variables")
 );
 
 const llvm::cl::opt<bool> Options::TaintUninitStack(
-    "uninit-stack", 
+    "uninit-stack",
     llvm::cl::init(true),
     llvm::cl::desc("detect uninitialized stack variables")
 );
 
 // DDAPass.cpp
 const llvm::cl::opt<unsigned> Options::MaxPathLen(
-    "max-path",  
+    "max-path",
     llvm::cl::init(100000),
     llvm::cl::desc("Maximum path limit for DDA")
 );
 
 const llvm::cl::opt<unsigned> Options::MaxContextLen(
-    "max-cxt",  
+    "max-cxt",
     llvm::cl::init(3),
     llvm::cl::desc("Maximum context limit for DDA")
 );
 
 const llvm::cl::opt<unsigned> Options::MaxStepInWrapper(
-        "max-step",
-        llvm::cl::init(10),
-        llvm::cl::desc("Maximum steps when traversing on SVFG to identify a memory allocation wrapper")
+    "max-step",
+    llvm::cl::init(10),
+    llvm::cl::desc("Maximum steps when traversing on SVFG to identify a memory allocation wrapper")
 );
 
 const llvm::cl::opt<std::string> Options::UserInputQuery(
-    "query",  
+    "query",
     llvm::cl::init("all"),
     llvm::cl::desc("Please specify queries by inputing their pointer ids")
 );
 
 const llvm::cl::opt<bool> Options::InsenRecur(
-    "in-recur", 
+    "in-recur",
     llvm::cl::init(false),
     llvm::cl::desc("Mark context insensitive SVFG edges due to function recursions")
 );
 
 const llvm::cl::opt<bool> Options::InsenCycle(
-    "in-cycle", 
+    "in-cycle",
     llvm::cl::init(false),
     llvm::cl::desc("Mark context insensitive SVFG edges due to value-flow cycles")
 );
 
 const llvm::cl::opt<bool> Options::PrintCPts(
-    "cpts", 
+    "cpts",
     llvm::cl::init(false),
     llvm::cl::desc("Dump conditional points-to set ")
 );
@@ -174,7 +174,7 @@ const llvm::cl::opt<bool> Options::PrintQueryPts(
 );
 
 const llvm::cl::opt<bool> Options::WPANum(
-    "wpa-num", 
+    "wpa-num",
     llvm::cl::init(false),
     llvm::cl::desc("collect WPA FS number only ")
 );
@@ -190,7 +190,7 @@ llvm::cl::bits<PointerAnalysis::PTATY> Options::DDASelected(
 
 // FlowDDA.cpp
 const llvm::cl::opt<unsigned long long> Options::FlowBudget(
-    "flow-bg",  
+    "flow-bg",
     llvm::cl::init(10000),
     llvm::cl::desc("Maximum step budget of flow-sensitive traversing")
 );
@@ -198,7 +198,7 @@ const llvm::cl::opt<unsigned long long> Options::FlowBudget(
 
 // Offline constraint graph (OfflineConsG.cpp)
 const llvm::cl::opt<bool> Options::OCGDotGraph(
-    "dump-ocg", 
+    "dump-ocg",
     llvm::cl::init(false),
     llvm::cl::desc("Dump dot graph of Offline Constraint Graph")
 );
@@ -206,13 +206,13 @@ const llvm::cl::opt<bool> Options::OCGDotGraph(
 
 // Program Assignment Graph for pointer analysis (SVFIR.cpp)
 llvm::cl::opt<bool> Options::HandBlackHole(
-    "blk", 
+    "blk",
     llvm::cl::init(false),
     llvm::cl::desc("Hanle blackhole edge")
 );
 
 const llvm::cl::opt<bool> Options::FirstFieldEqBase(
-    "ff-eq-base", 
+    "ff-eq-base",
     llvm::cl::init(true),
     llvm::cl::desc("Treat base objects as their first fields")
 );
@@ -220,19 +220,19 @@ const llvm::cl::opt<bool> Options::FirstFieldEqBase(
 
 // SVFG optimizer (SVFGOPT.cpp)
 const llvm::cl::opt<bool> Options::ContextInsensitive(
-    "ci-svfg", 
+    "ci-svfg",
     llvm::cl::init(false),
     llvm::cl::desc("Reduce SVFG into a context-insensitive one")
 );
 
 const llvm::cl::opt<bool> Options::KeepAOFI(
-    "keep-aofi", 
+    "keep-aofi",
     llvm::cl::init(false),
     llvm::cl::desc("Keep formal-in and actual-out parameters")
 );
 
 const llvm::cl::opt<std::string> Options::SelfCycle(
-    "keep-self-cycle", 
+    "keep-self-cycle",
     llvm::cl::value_desc("keep self cycle"),
     llvm::cl::desc("How to handle self cycle edges: all, context, none")
 );
@@ -248,7 +248,7 @@ const llvm::cl::opt<bool> Options::DumpVFG(
 
 // Location set for modeling abstract memory object (LocationSet.cpp)
 const llvm::cl::opt<bool> Options::SingleStride(
-    "stride-only", 
+    "stride-only",
     llvm::cl::init(false),
     llvm::cl::desc("Only use single stride in LocMemoryModel")
 );
@@ -256,97 +256,97 @@ const llvm::cl::opt<bool> Options::SingleStride(
 
 // Base class of pointer analyses (PointerAnalysis.cpp)
 const llvm::cl::opt<bool> Options::TypePrint(
-    "print-type", 
+    "print-type",
     llvm::cl::init(false),
     llvm::cl::desc("Print type")
 );
 
 const llvm::cl::opt<bool> Options::FuncPointerPrint(
-    "print-fp", 
+    "print-fp",
     llvm::cl::init(false),
     llvm::cl::desc("Print targets of indirect call site")
 );
 
 const llvm::cl::opt<bool> Options::PTSPrint(
-    "print-pts", 
+    "print-pts",
     llvm::cl::init(false),
     llvm::cl::desc("Print points-to set of top-level pointers")
 );
 
 const llvm::cl::opt<bool> Options::PTSAllPrint(
-    "print-all-pts", 
+    "print-all-pts",
     llvm::cl::init(false),
     llvm::cl::desc("Print all points-to set of both top-level and address-taken variables")
 );
 
 const llvm::cl::opt<bool> Options::PStat(
-    "stat", 
+    "stat",
     llvm::cl::init(true),
     llvm::cl::desc("Statistic for Pointer analysis")
 );
 
 const llvm::cl::opt<unsigned> Options::StatBudget(
-    "stat-limit", 
+    "stat-limit",
     llvm::cl::init(20),
     llvm::cl::desc("Iteration budget for On-the-fly statistics")
 );
 
 const llvm::cl::opt<bool> Options::PAGDotGraph(
-    "dump-pag", 
+    "dump-pag",
     llvm::cl::init(false),
     llvm::cl::desc("Dump dot graph of SVFIR")
 );
 
 const llvm::cl::opt<bool> Options::ShowSVFIRValue(
-        "show-ir-value",
-        llvm::cl::init(true),
-        llvm::cl::desc("Show values of SVFIR (e.g., when generating dot graph)")
+    "show-ir-value",
+    llvm::cl::init(true),
+    llvm::cl::desc("Show values of SVFIR (e.g., when generating dot graph)")
 );
 
 const llvm::cl::opt<bool> Options::DumpICFG(
-    "dump-icfg", 
+    "dump-icfg",
     llvm::cl::init(false),
     llvm::cl::desc("Dump dot graph of ICFG")
 );
 
 const llvm::cl::opt<bool> Options::CallGraphDotGraph(
-    "dump-callgraph", 
+    "dump-callgraph",
     llvm::cl::init(false),
     llvm::cl::desc("Dump dot graph of Call Graph")
 );
 
 const llvm::cl::opt<bool> Options::PAGPrint(
-    "print-pag", 
+    "print-pag",
     llvm::cl::init(false),
     llvm::cl::desc("Print SVFIR to command line")
 );
 
 const llvm::cl::opt<unsigned> Options::IndirectCallLimit(
-    "ind-call-limit",  
+    "ind-call-limit",
     llvm::cl::init(50000),
     llvm::cl::desc("Indirect solved call edge limit")
 );
 
 const llvm::cl::opt<bool> Options::UsePreCompFieldSensitive(
-    "pre-field-sensitive", 
+    "pre-field-sensitive",
     llvm::cl::init(true),
     llvm::cl::desc("Use pre-computed field-sensitivity for later analysis")
 );
 
 const llvm::cl::opt<bool> Options::EnableAliasCheck(
-    "alias-check", 
+    "alias-check",
     llvm::cl::init(true),
     llvm::cl::desc("Enable alias check functions")
 );
 
 const llvm::cl::opt<bool> Options::EnableThreadCallGraph(
-    "enable-tcg", 
+    "enable-tcg",
     llvm::cl::init(true),
     llvm::cl::desc("Enable pointer analysis to use thread call graph")
 );
 
 const llvm::cl::opt<bool> Options::ConnectVCallOnCHA(
-    "v-call-cha", 
+    "v-call-cha",
     llvm::cl::init(false),
     llvm::cl::desc("connect virtual calls using cha")
 );
@@ -354,7 +354,7 @@ const llvm::cl::opt<bool> Options::ConnectVCallOnCHA(
 
 // PointerAnalysisImpl.cpp
 const llvm::cl::opt<bool> Options::INCDFPTData(
-    "inc-data", 
+    "inc-data",
     llvm::cl::init(true),
     llvm::cl::desc("Enable incremental DFPTData for flow-sensitive analysis")
 );
@@ -422,7 +422,7 @@ const llvm::cl::opt<bool> Options::PredictPtOcc(
 
 // Memory region (MemRegion.cpp)
 const llvm::cl::opt<bool> Options::IgnoreDeadFun(
-    "mssa-ignore-dead-fun", 
+    "mssa-ignore-dead-fun",
     llvm::cl::init(false),
     llvm::cl::desc("Don't construct memory SSA for deadfunction")
 );
@@ -430,19 +430,19 @@ const llvm::cl::opt<bool> Options::IgnoreDeadFun(
 
 // Base class of pointer analyses (MemSSA.cpp)
 const llvm::cl::opt<bool> Options::DumpMSSA(
-    "dump-mssa", 
+    "dump-mssa",
     llvm::cl::init(false),
     llvm::cl::desc("Dump memory SSA")
 );
 
 const llvm::cl::opt<std::string> Options::MSSAFun(
-    "mssa-fun",  
+    "mssa-fun",
     llvm::cl::init(""),
     llvm::cl::desc("Please specify which function needs to be dumped")
 );
 
 const llvm::cl::opt<MemSSA::MemPartition> Options::MemPar(
-    "mem-par", 
+    "mem-par",
     llvm::cl::init(MemSSA::MemPartition::IntraDisjoint),
     llvm::cl::desc("Memory region partiion strategies (e.g., for SVFG construction)"),
     llvm::cl::values(
@@ -454,19 +454,19 @@ const llvm::cl::opt<MemSSA::MemPartition> Options::MemPar(
 
 // SVFG builder (SVFGBuilder.cpp)
 const llvm::cl::opt<bool> Options::SVFGWithIndirectCall(
-    "svfg-with-ind-call", 
+    "svfg-with-ind-call",
     llvm::cl::init(false),
     llvm::cl::desc("Update Indirect Calls for SVFG using pre-analysis")
 );
 
 const llvm::cl::opt<bool> Options::SingleVFG(
-    "single-vfg", 
+    "single-vfg",
     llvm::cl::init(false),
     llvm::cl::desc("Create a single VFG shared by multiple analysis")
 );
 
 llvm::cl::opt<bool> Options::OPTSVFG(
-    "opt-svfg", 
+    "opt-svfg",
     llvm::cl::init(false),
     llvm::cl::desc("Optimize SVFG to eliminate formal-in and actual-out")
 );
@@ -491,41 +491,41 @@ const llvm::cl::opt<bool> Options::UsePCG(
 );
 
 const llvm::cl::opt<bool> Options::IntraLock(
-    "intra-lock-td-edge", 
-    llvm::cl::init(true), 
+    "intra-lock-td-edge",
+    llvm::cl::init(true),
     llvm::cl::desc("Use simple intra-procedual lock for adding SVFG edges")
 );
 
 const llvm::cl::opt<bool> Options::ReadPrecisionTDEdge(
-    "rp-td-edge", 
-    llvm::cl::init(false), 
+    "rp-td-edge",
+    llvm::cl::init(false),
     llvm::cl::desc("perform read precision to refine SVFG edges")
 );
 
 const llvm::cl::opt<u32_t> Options::AddModelFlag(
-    "add-td-edge", 
-    llvm::cl::init(0), 
+    "add-td-edge",
+    llvm::cl::init(0),
     llvm::cl::desc("Add thread SVFG edges with models: 0 Non Add Edge; 1 NonSparse; 2 All Optimisation; 3 No MHP; 4 No Alias; 5 No Lock; 6 No Read Precision.")
 );
 
 
 // LockAnalysis.cpp
 const llvm::cl::opt<bool> Options::PrintLockSpan(
-    "print-lock", 
-    llvm::cl::init(false), 
+    "print-lock",
+    llvm::cl::init(false),
     llvm::cl::desc("Print Thread Interleaving Results")
 );
 
 
 // MHP.cpp
 const llvm::cl::opt<bool> Options::PrintInterLev(
-    "print-interlev", 
+    "print-interlev",
     llvm::cl::init(false),
     llvm::cl::desc("Print Thread Interleaving Results")
 );
 
 const llvm::cl::opt<bool> Options::DoLockAnalysis(
-    "lock-analysis", 
+    "lock-analysis",
     llvm::cl::init(true),
     llvm::cl::desc("Run Lock Analysis")
 );
@@ -533,66 +533,66 @@ const llvm::cl::opt<bool> Options::DoLockAnalysis(
 
 // MTA.cpp
 const llvm::cl::opt<bool> Options::AndersenAnno(
-    "tsan-ander", 
-    llvm::cl::init(false), 
+    "tsan-ander",
+    llvm::cl::init(false),
     llvm::cl::desc("Add TSan annotation according to Andersen")
 );
 
 const llvm::cl::opt<bool> Options::FSAnno(
-    "tsan-fs", 
-    llvm::cl::init(false), 
+    "tsan-fs",
+    llvm::cl::init(false),
     llvm::cl::desc("Add TSan annotation according to flow-sensitive analysis")
 );
 
 
 // MTAAnnotator.cpp
 const llvm::cl::opt<u32_t> Options::AnnoFlag(
-    "anno", 
-    llvm::cl::init(0), 
+    "anno",
+    llvm::cl::init(0),
     llvm::cl::desc("prune annotated instructions: 0001 Thread Local; 0002 Alias; 0004 MHP.")
 );
 
 
 // MTAResultValidator.cpp
 const llvm::cl::opt<bool> Options::PrintValidRes(
-    "mhp-validation", 
-    llvm::cl::init(false), 
+    "mhp-validation",
+    llvm::cl::init(false),
     llvm::cl::desc("Print MHP Validation Results")
 );
 // LockResultValidator.cpp
 const llvm::cl::opt<bool> Options::LockValid(
-    "lock-validation", 
-    llvm::cl::init(false), 
+    "lock-validation",
+    llvm::cl::init(false),
     llvm::cl::desc("Print Lock Validation Results")
 );
 
 
 // MTAStat.cpp
 const llvm::cl::opt<bool> Options::AllPairMHP(
-    "all-pair-mhp", 
-    llvm::cl::init(false), 
+    "all-pair-mhp",
+    llvm::cl::init(false),
     llvm::cl::desc("All pair MHP computation")
 );
 
 
 // PCG.cpp
 //const llvm::cl::opt<bool> TDPrint(
-    // "print-td",
-    // llvm::cl::init(true), 
-    // llvm::cl::desc("Print Thread Analysis Results"));
+// "print-td",
+// llvm::cl::init(true),
+// llvm::cl::desc("Print Thread Analysis Results"));
 
 
 // TCT.cpp
 const llvm::cl::opt<bool> Options::TCTDotGraph(
-    "dump-tct", 
-    llvm::cl::init(false), 
+    "dump-tct",
+    llvm::cl::init(false),
     llvm::cl::desc("Dump dot graph of Call Graph")
 );
 
 
 // LeakChecker.cpp
 const llvm::cl::opt<bool> Options::ValidateTests(
-    "valid-tests", 
+    "valid-tests",
     llvm::cl::init(false),
     llvm::cl::desc("Validate memory leak tests")
 );
@@ -600,13 +600,13 @@ const llvm::cl::opt<bool> Options::ValidateTests(
 
 // Source-sink analyzer (SrcSnkDDA.cpp)
 const llvm::cl::opt<bool> Options::DumpSlice(
-    "dump-slice", 
+    "dump-slice",
     llvm::cl::init(false),
     llvm::cl::desc("Dump dot graph of Saber Slices")
 );
 
 const llvm::cl::opt<unsigned> Options::CxtLimit(
-    "cxt-limit",  
+    "cxt-limit",
     llvm::cl::init(3),
     llvm::cl::desc("Source-Sink Analysis Contexts Limit")
 );
@@ -614,54 +614,54 @@ const llvm::cl::opt<unsigned> Options::CxtLimit(
 
 // CHG.cpp
 const llvm::cl::opt<bool> Options::DumpCHA(
-    "dump-cha", 
-    llvm::cl::init(false), 
+    "dump-cha",
+    llvm::cl::init(false),
     llvm::cl::desc("dump the class hierarchy graph")
 );
 
 
 // DCHG.cpp
 const llvm::cl::opt<bool> Options::PrintDCHG(
-    "print-dchg", 
-    llvm::cl::init(false), 
+    "print-dchg",
+    llvm::cl::init(false),
     llvm::cl::desc("print the DCHG if debug information is available")
 );
 
 
 // LLVMModule.cpp
 const llvm::cl::opt<std::string> Options::Graphtxt(
-    "graph-txt", 
+    "graph-txt",
     llvm::cl::value_desc("filename"),
     llvm::cl::desc("graph txt file to build SVFIR")
 );
 
 const llvm::cl::opt<bool> Options::SVFMain(
-    "svf-main", 
+    "svf-main",
     llvm::cl::init(false),
     llvm::cl::desc("add svf.main()")
 );
 
 const llvm::cl::opt<bool> Options::ModelConsts(
-    "model-consts", 
+    "model-consts",
     llvm::cl::init(false),
     llvm::cl::desc("Modeling individual constant objects")
 );
 
 const llvm::cl::opt<bool> Options::ModelArrays(
-    "model-arrays", 
+    "model-arrays",
     llvm::cl::init(false),
     llvm::cl::desc("Modeling Gep offsets for array accesses")
 );
 
 const llvm::cl::opt<bool> Options::SymTabPrint(
-        "print-symbol-table", llvm::cl::init(false),
-        llvm::cl::desc("Print Symbol Table to command line")
+    "print-symbol-table", llvm::cl::init(false),
+    llvm::cl::desc("Print Symbol Table to command line")
 );
 
 
 // Conditions.cpp
 const llvm::cl::opt<unsigned> Options::MaxBddSize(
-    "max-bdd-size",  
+    "max-bdd-size",
     llvm::cl::init(100000),
     llvm::cl::desc("Maximum context limit for DDA")
 );
@@ -669,7 +669,7 @@ const llvm::cl::opt<unsigned> Options::MaxBddSize(
 
 // PathCondAllocator.cpp
 const llvm::cl::opt<bool> Options::PrintPathCond(
-    "print-pc", 
+    "print-pc",
     llvm::cl::init(false),
     llvm::cl::desc("Print out path condition")
 );
@@ -677,7 +677,7 @@ const llvm::cl::opt<bool> Options::PrintPathCond(
 
 // SVFUtil.cpp
 const llvm::cl::opt<bool> Options::DisableWarn(
-    "dwarn", 
+    "dwarn",
     llvm::cl::init(true),
     llvm::cl::desc("Disable warning")
 );
@@ -685,43 +685,43 @@ const llvm::cl::opt<bool> Options::DisableWarn(
 
 // Andersen.cpp
 const llvm::cl::opt<bool> Options::ConsCGDotGraph(
-    "dump-constraint-graph", 
+    "dump-constraint-graph",
     llvm::cl::init(false),
     llvm::cl::desc("Dump dot graph of Constraint Graph")
 );
 
 const llvm::cl::opt<bool> Options::BriefConsCGDotGraph(
-        "brief-constraint-graph",
-        llvm::cl::init(true),
-        llvm::cl::desc("Dump dot graph of Constraint Graph")
+    "brief-constraint-graph",
+    llvm::cl::init(true),
+    llvm::cl::desc("Dump dot graph of Constraint Graph")
 );
 
 const llvm::cl::opt<bool> Options::PrintCGGraph(
-    "print-constraint-graph", 
+    "print-constraint-graph",
     llvm::cl::init(false),
     llvm::cl::desc("Print Constraint Graph to Terminal")
 );
 
 const llvm::cl::opt<std::string> Options::WriteAnder(
-    "write-ander",  
+    "write-ander",
     llvm::cl::init(""),
     llvm::cl::desc("-write-ander=ir_annotator (Annotated IR with Andersen's results) or write Andersen's analysis results to a user-specified text file")
 );
 
 const llvm::cl::opt<std::string> Options::ReadAnder(
-    "read-ander",  
+    "read-ander",
     llvm::cl::init(""),
     llvm::cl::desc("-read-ander=ir_annotator (Read Andersen's analysis results from the annotated IR, e.g., *.pre.bc) or from a text file")
 );
 
 const llvm::cl::opt<bool> Options::PtsDiff(
-    "diff",  
+    "diff",
     llvm::cl::init(true),
     llvm::cl::desc("Disable diff pts propagation")
 );
 
 const llvm::cl::opt<bool> Options::MergePWC(
-    "merge-pwc",  
+    "merge-pwc",
     llvm::cl::init(true),
     llvm::cl::desc("Enable PWC in graph solving")
 );
@@ -729,8 +729,8 @@ const llvm::cl::opt<bool> Options::MergePWC(
 
 // FlowSensitive.cpp
 const llvm::cl::opt<bool> Options::CTirAliasEval(
-    "ctir-alias-eval", 
-    llvm::cl::init(false), 
+    "ctir-alias-eval",
+    llvm::cl::init(false),
     llvm::cl::desc("Prints alias evaluation of ctir instructions in FS analyses")
 );
 
@@ -738,41 +738,41 @@ const llvm::cl::opt<bool> Options::CTirAliasEval(
 // FlowSensitiveTBHC.cpp
 /// Whether we allow reuse for TBHC.
 const llvm::cl::opt<bool> Options::TBHCStoreReuse(
-    "tbhc-store-reuse", 
-    llvm::cl::init(false), 
+    "tbhc-store-reuse",
+    llvm::cl::init(false),
     llvm::cl::desc("Allow for object reuse in at stores in FSTBHC")
 );
 
 const llvm::cl::opt<bool> Options::TBHCAllReuse(
-    "tbhc-all-reuse", 
-    llvm::cl::init(false), 
+    "tbhc-all-reuse",
+    llvm::cl::init(false),
     llvm::cl::desc("Allow for object reuse everywhere in FSTBHC")
 );
 
 
 // TypeAnalysis.cpp
 const llvm::cl::opt<bool> Options::GenICFG(
-    "gen-icfg", 
-    llvm::cl::init(true), 
+    "gen-icfg",
+    llvm::cl::init(true),
     llvm::cl::desc("Generate ICFG graph")
 );
 
 
 //WPAPass.cpp
 const llvm::cl::opt<bool> Options::AnderSVFG(
-    "svfg", 
+    "svfg",
     llvm::cl::init(false),
     llvm::cl::desc("Generate SVFG after Andersen's Analysis")
 );
 
 const llvm::cl::opt<bool> Options::SABERFULLSVFG(
-        "saber-full-svfg",
-        llvm::cl::init(false),
-        llvm::cl::desc("When using SABER for bug detection pass, enable full svfg on top of the pointer-only one")
+    "saber-full-svfg",
+    llvm::cl::init(false),
+    llvm::cl::desc("When using SABER for bug detection pass, enable full svfg on top of the pointer-only one")
 );
 
 const llvm::cl::opt<bool> Options::PrintAliases(
-    "print-aliases", 
+    "print-aliases",
     llvm::cl::init(false),
     llvm::cl::desc("Print results for all pair aliases")
 );
@@ -797,14 +797,14 @@ llvm::cl::bits<PointerAnalysis::PTATY> Options::PASelected(
     ));
 
 
-    llvm::cl::bits<WPAPass::AliasCheckRule> Options::AliasRule(llvm::cl::desc("Select alias check rule"),
+llvm::cl::bits<WPAPass::AliasCheckRule> Options::AliasRule(llvm::cl::desc("Select alias check rule"),
         llvm::cl::values(
             clEnumValN(WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"),
             clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias")
         ));
 
 const llvm::cl::opt<bool> Options::ShowHiddenNode(
-    "show-hidden-nodes", 
+    "show-hidden-nodes",
     llvm::cl::init(false),
     llvm::cl::desc("Show hidden nodes on DOT Graphs (e.g., isolated node on a graph)")
 );

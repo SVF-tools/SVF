@@ -13,9 +13,6 @@
 using namespace llvm;
 using namespace SVF;
 
-static cl::opt<std::string> InputFilename(cl::Positional,
-        cl::desc("<input bitcode>"), cl::init("-"));
-
 static cl::opt<bool>
 StandardCompileOpts("std-compile-opts",
                     cl::desc("Include the standard compile time optimizations"));

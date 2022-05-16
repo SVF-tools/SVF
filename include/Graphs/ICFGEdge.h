@@ -134,16 +134,19 @@ public:
     }
     //@}
 
-    const Value* getCondition() const{
+    const Value* getCondition() const
+    {
         return conditionVar;
     }
 
-    s32_t getSuccessorCondValue() const{
+    s32_t getSuccessorCondValue() const
+    {
         assert(getCondition() && "this is not a conditional branch edge");
         return branchCondVal;
     }
 
-    void setBranchCondition(const Value* c, s32_t bVal){
+    void setBranchCondition(const Value* c, s32_t bVal)
+    {
         conditionVar = c;
         branchCondVal = bVal;
     }
@@ -166,7 +169,7 @@ class CallCFGEdge : public ICFGEdge
 {
 
 private:
-	const Instruction*  cs;
+    const Instruction*  cs;
     std::vector<const CallPE*> callPEs;
 public:
     /// Constructor
@@ -180,11 +183,13 @@ public:
         return cs;
     }
     /// Add call parameter edge to this CallCFGEdge
-    inline void addCallPE(const CallPE* callPE){
+    inline void addCallPE(const CallPE* callPE)
+    {
         callPEs.push_back(callPE);
     }
     /// Add get parameter edge to this CallCFGEdge
-    inline const std::vector<const CallPE*>& getCallPEs() const{
+    inline const std::vector<const CallPE*>& getCallPEs() const
+    {
         return callPEs;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -212,7 +217,7 @@ class RetCFGEdge : public ICFGEdge
 {
 
 private:
-	const Instruction*  cs;
+    const Instruction*  cs;
     const RetPE* retPE;
 public:
     /// Constructor
@@ -226,12 +231,14 @@ public:
         return cs;
     }
     /// Add call parameter edge to this CallCFGEdge
-    inline void addRetPE(const RetPE* ret){
+    inline void addRetPE(const RetPE* ret)
+    {
         assert(retPE==nullptr && "we can only have one retPE for each RetCFGEdge");
         retPE = ret;
     }
     /// Add get parameter edge to this CallCFGEdge
-    inline const RetPE* getRetPE() const{
+    inline const RetPE* getRetPE() const
+    {
         return retPE;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
