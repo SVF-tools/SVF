@@ -173,7 +173,7 @@ void CFGNormalizer::ebnf_bin(GrammarBase* generalGrammar, CFLGrammar *grammar)
                 std::ostringstream ss;
                 ss << grammar->num_generator();
                 tempStr.append(ss.str());
-                for (int i = 0; i < rule.size(); i++)
+                for (int i = 0; i < int(rule.size()); i++)
                 {
                     if (grammar->attributeSymbol.find(rule[i]) != grammar->attributeSymbol.end())
                     {

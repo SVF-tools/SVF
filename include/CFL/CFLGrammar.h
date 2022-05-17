@@ -151,7 +151,7 @@ public:
             assert(it!=singleRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
             for (auto tempProd : it->second)
             {   
-                for (int i = 0; i < tempProd.size(); i++)
+                for (int i = 0; i < int(tempProd.size()); i++)
                 {
                     if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
                     {
@@ -180,7 +180,7 @@ public:
             assert(it!=firstRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
             for (auto tempProd : it->second)
             {   
-                for (int i = 0; i < tempProd.size(); i++)
+                for (int i = 0; i < int(tempProd.size()); i++)
                 {
                     if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
                     {
@@ -209,7 +209,7 @@ public:
             assert(it!=secondRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
             for (auto tempProd : it->second)
             {   
-                for (int i = 0; i < tempProd.size(); i++)
+                for (int i = 0; i < int(tempProd.size()); i++)
                 {
                     if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
                     {
