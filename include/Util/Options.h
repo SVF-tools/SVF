@@ -257,9 +257,6 @@ public:
     // DOTGraphTraits
     static const llvm::cl::opt<bool> ShowHiddenNode;
 
-    // Conditions
-    static const llvm::cl::opt<CondManager::CondMgrKind> ConditionType;
-
     // CFL option
     static const llvm::cl::opt<std::string> InputFilename;
     static const llvm::cl::opt<std::string> GrammarFilename;
