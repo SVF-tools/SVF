@@ -36,9 +36,6 @@ using namespace llvm;
 using namespace std;
 using namespace SVF;
 
-static llvm::cl::opt<std::string> InputFilename(cl::Positional,
-        llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
-
 /*!
  * An example to query alias results of two LLVM values
  */
@@ -151,7 +148,7 @@ int main(int argc, char ** argv)
     SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Whole Program Points-to Analysis\n");
-    
+
     if (Options::WriteAnder == "ir_annotator")
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);

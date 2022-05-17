@@ -35,9 +35,6 @@
 using namespace llvm;
 using namespace SVF;
 
-static llvm::cl::opt<std::string> InputFilename(cl::Positional,
-        llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
-
 static llvm::cl::opt<bool> LEAKCHECKER("leak", llvm::cl::init(false),
                                        llvm::cl::desc("Memory Leak Detection"));
 

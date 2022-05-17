@@ -42,34 +42,39 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGN
 {
     fun = f;
     // if function is implemented
-    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end()) {
+    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end())
+    {
         bb = &(f->getLLVMFun()->getEntryBlock());
     }
 }
 
-FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNode(id, FunExitBlock), fun(f), formalRet(nullptr)
+FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
 {
     fun = f;
     // if function is implemented
-    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end()) {
+    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end())
+    {
         bb = SVFUtil::getFunExitBB(f->getLLVMFun());
     }
 
 }
 
 
-const std::string ICFGNode::toString() const {
+const std::string ICFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ICFGNode" << getId();
     return rawstr.str();
 }
 
-void ICFGNode::dump() const {
+void ICFGNode::dump() const
+{
     outs() << this->toString() << "\n";
 }
 
-const std::string GlobalICFGNode::toString() const {
+const std::string GlobalICFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "GlobalICFGNode" << getId();
@@ -79,7 +84,8 @@ const std::string GlobalICFGNode::toString() const {
 }
 
 
-const std::string IntraICFGNode::toString() const {
+const std::string IntraICFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraICFGNode" << getId();
@@ -92,7 +98,8 @@ const std::string IntraICFGNode::toString() const {
 }
 
 
-const std::string FunEntryICFGNode::toString() const {
+const std::string FunEntryICFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FunEntryICFGNode" << getId();
@@ -105,7 +112,8 @@ const std::string FunEntryICFGNode::toString() const {
     return rawstr.str();
 }
 
-const std::string FunExitICFGNode::toString() const {
+const std::string FunExitICFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FunExitICFGNode" << getId();
@@ -119,7 +127,8 @@ const std::string FunExitICFGNode::toString() const {
 }
 
 
-const std::string CallICFGNode::toString() const {
+const std::string CallICFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallICFGNode" << getId();
@@ -129,7 +138,8 @@ const std::string CallICFGNode::toString() const {
     return rawstr.str();
 }
 
-const std::string RetICFGNode::toString() const {
+const std::string RetICFGNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "RetICFGNode" << getId();
@@ -139,14 +149,16 @@ const std::string RetICFGNode::toString() const {
     return rawstr.str();
 }
 
-const std::string ICFGEdge::toString() const {
+const std::string ICFGEdge::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ICFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t";
     return rawstr.str();
 }
 
-const std::string IntraCFGEdge::toString() const {
+const std::string IntraCFGEdge::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     if(getCondition() == nullptr)
@@ -157,7 +169,8 @@ const std::string IntraCFGEdge::toString() const {
     return rawstr.str();
 }
 
-const std::string CallCFGEdge::toString() const {
+const std::string CallCFGEdge::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallCFGEdge " << " [ICFGNode";
@@ -165,7 +178,8 @@ const std::string CallCFGEdge::toString() const {
     return rawstr.str();
 }
 
-const std::string RetCFGEdge::toString() const {
+const std::string RetCFGEdge::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "RetCFGEdge " << " [ICFGNode";
@@ -208,8 +222,8 @@ ICFGNode* ICFG::getICFGNode(const Instruction* inst)
 
 CallICFGNode* ICFG::getCallICFGNode(const Instruction* inst)
 {
-	if(SVFUtil::isCallSite(inst) ==false)
-    outs() << SVFUtil::value2String(inst) << "\n";
+    if(SVFUtil::isCallSite(inst) ==false)
+        outs() << SVFUtil::value2String(inst) << "\n";
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     CallICFGNode* node = getCallBlock(inst);
@@ -352,7 +366,8 @@ ICFGEdge* ICFG::addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode)
 /*!
  * Add conditional intraprocedural edges between two nodes
  */
-ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Value* condition, s32_t branchCondVal){
+ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Value* condition, s32_t branchCondVal)
+{
 
     checkIntraEdgeParents(srcNode, dstNode);
     if(ICFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, ICFGEdge::IntraCF))
@@ -441,22 +456,27 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
             /// if this is an external function (no function body), connect calleeEntryNode to calleeExitNode
             if (isExtCall(callee))
                 addIntraEdge(callBlockNode, retBlockNode);
-            else {
+            else
+            {
                 FunEntryICFGNode* calleeEntryNode = getFunEntryBlock(callee);
                 FunExitICFGNode* calleeExitNode = getFunExitBlock(callee);
-                if(ICFGEdge* callEdge = addCallEdge(callBlockNode, calleeEntryNode, cs)){
+                if(ICFGEdge* callEdge = addCallEdge(callBlockNode, calleeEntryNode, cs))
+                {
                     for (const SVFStmt *stmt : callBlockNode->getSVFStmts())
                     {
-                        if(const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt)){
+                        if(const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt))
+                        {
                             if(callPE->getFunEntryICFGNode() == calleeEntryNode)
                                 SVFUtil::cast<CallCFGEdge>(callEdge)->addCallPE(callPE);
                         }
                     }
                 }
-                if(ICFGEdge* retEdge = addRetEdge(calleeExitNode, retBlockNode, cs)){
+                if(ICFGEdge* retEdge = addRetEdge(calleeExitNode, retBlockNode, cs))
+                {
                     for (const SVFStmt *stmt : retBlockNode->getSVFStmts())
                     {
-                        if(const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt)){
+                        if(const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt))
+                        {
                             if(retPE->getFunExitICFGNode() == calleeExitNode)
                                 SVFUtil::cast<RetCFGEdge>(retEdge)->addRetPE(retPE);
                         }
@@ -471,8 +491,9 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
         }
     }
     // dump ICFG
-    if (Options::DumpICFG){
-		dump("icfg_final");
+    if (Options::DumpICFG)
+    {
+        dump("icfg_final");
     }
 }
 

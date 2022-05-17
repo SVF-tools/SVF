@@ -138,7 +138,8 @@ extern "C" {
   Description [Type of reordering algorithm.]
 
 ******************************************************************************/
-typedef enum {
+typedef enum
+{
     CUDD_REORDER_SAME,
     CUDD_REORDER_NONE,
     CUDD_REORDER_RANDOM,
@@ -171,7 +172,8 @@ typedef enum {
   Description [Type of aggregation methods.]
 
 ******************************************************************************/
-typedef enum {
+typedef enum
+{
     CUDD_NO_CHECK,
     CUDD_GROUP_CHECK,
     CUDD_GROUP_CHECK2,
@@ -192,7 +194,8 @@ typedef enum {
   Description [Type of hooks.]
 
 ******************************************************************************/
-typedef enum {
+typedef enum
+{
     CUDD_PRE_GC_HOOK,
     CUDD_POST_GC_HOOK,
     CUDD_PRE_REORDERING_HOOK,
@@ -207,7 +210,8 @@ typedef enum {
   Description [Type of  error codes.]
 
 ******************************************************************************/
-typedef enum {
+typedef enum
+{
     CUDD_NO_ERROR,
     CUDD_MEMORY_OUT,
     CUDD_TOO_MANY_NODES,
@@ -225,7 +229,8 @@ typedef enum {
   Description [Group type for lazy sifting.]
 
 ******************************************************************************/
-typedef enum {
+typedef enum
+{
     CUDD_LAZY_NONE,
     CUDD_LAZY_SOFT_GROUP,
     CUDD_LAZY_HARD_GROUP,
@@ -240,7 +245,8 @@ typedef enum {
   Description [Variable type. Currently used only in lazy sifting.]
 
 ******************************************************************************/
-typedef enum {
+typedef enum
+{
     CUDD_VAR_PRIMARY_INPUT,
     CUDD_VAR_PRESENT_STATE,
     CUDD_VAR_NEXT_STATE
@@ -255,19 +261,22 @@ typedef unsigned short DdHalfWord;
 
 typedef struct DdNode DdNode;
 
-typedef struct DdChildren {
+typedef struct DdChildren
+{
     struct DdNode *T;
     struct DdNode *E;
 } DdChildren;
 
 /* The DdNode structure is the only one exported out of the package */
-struct DdNode {
+struct DdNode
+{
     DdHalfWord index;
     DdHalfWord ref;		/* reference count */
     DdNode *next;		/* next pointer for unique table */
-    union {
-	CUDD_VALUE_TYPE value;	/* for constant nodes */
-	DdChildren kids;	/* for internal nodes */
+    union
+    {
+        CUDD_VALUE_TYPE value;	/* for constant nodes */
+        DdChildren kids;	/* for internal nodes */
     } type;
 };
 

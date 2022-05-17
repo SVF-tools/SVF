@@ -155,7 +155,7 @@ const CallSite ThreadAPI::getLLVMCallSite(const Instruction *inst) const
 /*!
  *
  */
-void ThreadAPI::statInit(StringMap& tdAPIStatMap)
+void ThreadAPI::statInit(Map<std::string, u32_t>& tdAPIStatMap)
 {
 
     tdAPIStatMap["pthread_create"] = 0;
@@ -198,7 +198,7 @@ void ThreadAPI::statInit(StringMap& tdAPIStatMap)
 void ThreadAPI::performAPIStat(SVFModule* module)
 {
 
-    StringMap tdAPIStatMap;
+    Map<std::string, u32_t> tdAPIStatMap;
 
     statInit(tdAPIStatMap);
 
@@ -319,19 +319,19 @@ void ThreadAPI::performAPIStat(SVFModule* module)
     StringRef name = n.split('/').second;
     name = name.split('.').first;
     SVFUtil::outs() << "################ (program : " << name.str()
-              << ")###############\n";
+                    << ")###############\n";
     SVFUtil::outs().flags(std::ios::left);
     unsigned field_width = 20;
-    for (llvm::StringMap<u32_t>::iterator it = tdAPIStatMap.begin(), eit =
+    for (Map<std::string, u32_t>::iterator it = tdAPIStatMap.begin(), eit =
                 tdAPIStatMap.end(); it != eit; ++it)
     {
-        std::string apiName = it->first().str();
+        std::string apiName = it->first;
         // format out put with width 20 space
         SVFUtil::outs() << std::setw(field_width) << apiName << " : " << it->second
-                  << "\n";
+                        << "\n";
     }
     SVFUtil::outs() << "#######################################################"
-              << std::endl;
+                    << std::endl;
 
 }
 

@@ -406,10 +406,10 @@ bool isObject (const Value * ref);
 /// Return true if the value refers to constant data, e.g., i32 0
 inline bool isConstantData(const Value* val)
 {
-	return SVFUtil::isa<ConstantData>(val)
-			|| SVFUtil::isa<ConstantAggregate>(val)
-			|| SVFUtil::isa<MetadataAsValue>(val)
-			|| SVFUtil::isa<BlockAddress>(val);
+    return SVFUtil::isa<ConstantData>(val)
+           || SVFUtil::isa<ConstantAggregate>(val)
+           || SVFUtil::isa<MetadataAsValue>(val)
+           || SVFUtil::isa<BlockAddress>(val);
 }
 
 /// Method for dead function, which does not have any possible caller

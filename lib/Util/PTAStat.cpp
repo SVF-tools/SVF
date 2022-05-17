@@ -111,7 +111,8 @@ PTAStat::PTAStat(PointerAnalysis* p) : startTime(0), endTime(0), pta(p)
            && "PTAStat: unknown clock type!");
 }
 
-double PTAStat::getClk(bool mark) {
+double PTAStat::getClk(bool mark)
+{
     if (Options::MarkedClocksOnly && !mark) return 0.0;
 
     if (Options::ClockType == ClockType::Wall)

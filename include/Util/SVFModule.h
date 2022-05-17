@@ -73,11 +73,11 @@ public:
 
     ~SVFModule()
     {
-      for (auto * f : FunctionSet)
-        delete f;
-      NodeIDAllocator::unset();
-      ThreadAPI::destroy();
-      ExtAPI::destory();
+        for (auto * f : FunctionSet)
+            delete f;
+        NodeIDAllocator::unset();
+        ThreadAPI::destroy();
+        ExtAPI::destory();
     }
 
     static inline void setPagFromTXT(std::string txt)

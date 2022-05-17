@@ -20,6 +20,7 @@ file (GLOB SOURCES
         MTA/*.cpp
         SABER/*.cpp
         DDA/*.cpp
+        CFL/*.cpp
         FastCluster/*.cpp
 )
 
