@@ -34,18 +34,23 @@
 
 using namespace SVF;
 
+u32_t CFLEdge::offset = 1;
 //// Build graph from file
-void CFLGraph::build(std::string filename){
+void CFLGraph::build(std::string filename)
+{
 
 }
 
-void CFLGraph::addCFLNode(NodeID id, CFLNode* node){
+void CFLGraph::addCFLNode(NodeID id, CFLNode* node)
+{
     addGNode(id, node);
 }
 
-const CFLEdge* CFLGraph::addCFLEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFlag label){
+const CFLEdge* CFLGraph::addCFLEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFlag label)
+{
     CFLEdge* edge = new CFLEdge(src,dst,label);
-    if(cflEdgeSet.insert(edge).second){
+    if(cflEdgeSet.insert(edge).second)
+    {
         src->addOutgoingEdge(edge);
         dst->addIncomingEdge(edge);
         return edge;
@@ -54,7 +59,8 @@ const CFLEdge* CFLGraph::addCFLEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFl
         return nullptr;
 }
 
-const CFLEdge* CFLGraph::hasEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFlag label){
+const CFLEdge* CFLGraph::hasEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFlag label)
+{
     CFLEdge edge(src,dst,label);
     auto it = cflEdgeSet.find(&edge);
     if(it !=cflEdgeSet.end())
@@ -91,42 +97,56 @@ void CFLGraph::buildFromDot(std::string fileName)
         if (std::regex_search(lineString, matches, reg))
         {
             CFLNode *src, *dst;
-            if (hasGNode(std::stoul(matches.str(1), nullptr, 16))==false) {
-            src = new CFLNode(std::stoul(matches.str(1), nullptr, 16));
-            addCFLNode(src->getId(), src);
-            } else {
+            if (hasGNode(std::stoul(matches.str(1), nullptr, 16))==false)
+            {
+                src = new CFLNode(std::stoul(matches.str(1), nullptr, 16));
+                addCFLNode(src->getId(), src);
+            }
+            else
+            {
                 src = getGNode(std::stoul(matches.str(1), nullptr, 16));
             }
-            if (hasGNode(std::stoul(matches.str(2), nullptr, 16))==false){
-            dst = new CFLNode(std::stoul(matches.str(2), nullptr, 16));
-            addCFLNode(dst->getId(), dst);
-            }else{
+            if (hasGNode(std::stoul(matches.str(2), nullptr, 16))==false)
+            {
+                dst = new CFLNode(std::stoul(matches.str(2), nullptr, 16));
+                addCFLNode(dst->getId(), dst);
+            }
+            else
+            {
                 dst = getGNode(std::stoul(matches.str(2), nullptr, 16));
             }
-            if (externMap == false){
-                if (label2SymMap.find(matches.str(3)) != label2SymMap.end()) {
+            if (externMap == false)
+            {
+                if (label2SymMap.find(matches.str(3)) != label2SymMap.end())
+                {
                     addCFLEdge(src, dst, label2SymMap[matches.str(3)]);
                 }
-                else {
+                else
+                {
                     label2SymMap.insert({matches.str(3), current++});
                     addCFLEdge(src, dst, label2SymMap[matches.str(3)]);
                 }
             }
-            else {
-                if (label2SymMap.find(matches.str(3)) != label2SymMap.end()) {
+            else
+            {
+                if (label2SymMap.find(matches.str(3)) != label2SymMap.end())
+                {
                     addCFLEdge(src, dst, label2SymMap[matches.str(3)]);
                 }
-                else {
-                    if(Options::FlexSymMap == true){
+                else
+                {
+                    if(Options::FlexSymMap == true)
+                    {
                         label2SymMap.insert({matches.str(3), current++});
                         addCFLEdge(src, dst, label2SymMap[matches.str(3)]);
                     }
-                    else {
+                    else
+                    {
                         std::string msg = "In line " + std::to_string(lineNum) + " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
                         SVFUtil::errMsg(msg);
                         std::cout << msg;
                         abort();
-                        }
+                    }
                 }
             }
         }
@@ -134,21 +154,35 @@ void CFLGraph::buildFromDot(std::string fileName)
     inputFile.close();
 }
 
-void CFLGraph::setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symbol>* nonterminals)
+void CFLGraph::setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symbol>* nonterminals, Set<Symbol>* attibuteSyms)
 {
     externMap = true;
-    for(auto pairV : *terminals){
-        if(label2SymMap.find(pairV.first) == label2SymMap.end()){
+    for(auto pairV : *terminals)
+    {
+        if(label2SymMap.find(pairV.first) == label2SymMap.end())
+        {
             label2SymMap.insert(pairV);
-        }  
+        }
+        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
+        {
+            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
     }
 
-    for(auto pairV : *nonterminals){
-        if(label2SymMap.find(pairV.first) == label2SymMap.end()){
+    for(auto pairV : *nonterminals)
+    {
+        if(label2SymMap.find(pairV.first) == label2SymMap.end())
+        {
             label2SymMap.insert(pairV);
-        }  
+        }
+        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
+        {
+            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
     }
     current = label2SymMap.size();
+
+    this->attrSyms = attibuteSyms;
 }
 
 
@@ -203,10 +237,11 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
             }
         }
         rawstr << "label=" << '"' <<key << '"';
-        if( graph->label2SymMap[key] == graph->startSymbol){
+        if( graph->label2SymMap[key] == graph->startSymbol)
+        {
             rawstr << ',' << "color=red";
         }
-        
+
         return rawstr.str();
     }
 

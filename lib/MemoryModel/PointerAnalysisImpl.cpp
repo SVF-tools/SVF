@@ -10,7 +10,7 @@
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/DCHG.h"
 #include "Util/Options.h"
-#include "Util/IRAnnotator.h"
+#include "SVF-FE/IRAnnotator.h"
 #include <fstream>
 #include <sstream>
 
@@ -129,16 +129,21 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     }
 
     // Write analysis results to file
-    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it) {
+    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
+    {
         NodeID var = it->first;
         const PointsTo &pts = getPts(var);
 
         stringstream ss;
         F.os() << var << " -> { ";
-        if (pts.empty()) {
+        if (pts.empty())
+        {
             F.os() << " ";
-        } else {
-            for (NodeID n: pts) {
+        }
+        else
+        {
+            for (NodeID n: pts)
+            {
                 F.os() << n << " ";
             }
         }
@@ -398,32 +403,40 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
 /*!
  * Normalize points-to information for field-sensitive analysis
  */
-void BVDataPTAImpl::normalizePointsTo() {
+void BVDataPTAImpl::normalizePointsTo()
+{
     SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
     SVFIR::NodeLocationSetMap &GepObjVarMap = pag->getGepObjNodeMap();
 
     // collect each gep node whose base node has been set as field-insensitive
     NodeBS dropNodes;
-    for (auto t: memToFieldsMap){
+    for (auto t: memToFieldsMap)
+    {
         NodeID base = t.first;
         const MemObj* memObj = pag->getObject(base);
         assert(memObj && "Invalid memobj in memToFieldsMap");
-        if (memObj->isFieldInsensitive()) {
-            for (NodeID id : t.second) {
-                if (SVFUtil::isa<GepObjVar>(pag->getGNode(id))) {
+        if (memObj->isFieldInsensitive())
+        {
+            for (NodeID id : t.second)
+            {
+                if (SVFUtil::isa<GepObjVar>(pag->getGNode(id)))
+                {
                     dropNodes.set(id);
-                } else
+                }
+                else
                     assert(id == base && "Not a GepObj Node or a baseObj Node?");
             }
         }
     }
 
     // remove the collected redundant gep nodes in each pointers's pts
-    for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter) {
+    for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
+    {
         NodeID n = nIter->first;
 
         const PointsTo &tmpPts = getPts(n);
-        for (NodeID obj : tmpPts) {
+        for (NodeID obj : tmpPts)
+        {
             if (!dropNodes.test(obj))
                 continue;
             NodeID baseObj = pag->getBaseObjVar(obj);
@@ -434,7 +447,8 @@ void BVDataPTAImpl::normalizePointsTo() {
 
     // clear GepObjVarMap and memToFieldsMap for redundant gepnodes
     // and remove those nodes from pag
-    for (NodeID n: dropNodes) {
+    for (NodeID n: dropNodes)
+    {
         NodeID base = pag->getBaseObjVar(n);
         GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
         const LocationSet ls = gepNode->getLocationSet();

@@ -27,101 +27,218 @@
  *      Author: Yulei Sui
  */
 #ifndef CFLGrammar_H_
-#define CFLGrammar_H_  
+#define CFLGrammar_H_
 #include "Util/BasicTypes.h"
 
-namespace SVF{
+namespace SVF
+{
 
-class GrammarBase{
+class GrammarBase
+{
 public:
     typedef u32_t Symbol;
     typedef std::vector<Symbol> Production;
     typedef Set<Production> Productions;
     Map<std::string, Symbol> terminals;
     Map<std::string, Symbol> nonterminals;
+    Symbol startSymbol;
+    Symbol totalSymbol;
+    Map<Symbol, Productions> rawProductions;
+    Set<Symbol> attributeSymbol; 
 
     Symbol str2Sym(std::string str) const;
-    
+
     std::string sym2Str(Symbol sym) const;
 
-    Symbol getSymbol(const Production& prod, u32_t pos){
+    Symbol getSymbol(const Production& prod, u32_t pos)
+    {
         return prod.at(pos);
+    }
+
+    inline Set<Symbol>& getAttrSyms() 
+    {
+        return this->attributeSymbol;
     }
 
     Symbol insertTerminalSymbol(std::string strLit);
     Symbol insertNonTerminalSymbol(std::string strLit);
+    void insertAttribute(Symbol s);
+    
+    
 
-    Symbol startSymbol;
-    Symbol totalSymbol;
-    Map<Symbol, Productions> rawProductions;
 };
 
-class CFLGrammar : public GrammarBase{
+class CFLGrammar : public GrammarBase
+{
 
 public:
     CFLGrammar();
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CFLGrammar *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const GrammarBase *node)
+    {
+        return true;
+    }
 
     Productions& getEpsilonProds() {
         return epsilonProds;
     }
 
-    Map<Symbol, Productions>& getSingleRHS2Prods() {
+    Map<Symbol, Productions>& getSingleRHS2Prods() 
+    {
         return singleRHS2Prods;
     }
 
-    Map<Symbol, Productions>& getFirstRHS2Prods() {
+    Map<Symbol, Productions>& getFirstRHS2Prods() 
+    {
         return firstRHS2Prods;
     }
 
-    Map<Symbol, Productions>& getSecondRHS2Prods()  {
+    Map<Symbol, Productions>& getSecondRHS2Prods()  
+    {
         return secondRHS2Prods;
     }
 
-    const bool hasProdsFromFirstRHS(Symbol sym) const{
+    const bool hasProdsFromFirstRHS(Symbol sym) const
+    {
+        if (sym > 100)
+        {
+            sym = int(sym / 100);
+        }
         auto it = firstRHS2Prods.find(sym);
         return it!=firstRHS2Prods.end();
     }
 
-    const bool hasProdsFromSingleRHS(Symbol sym) const{
+    const bool hasProdsFromSingleRHS(Symbol sym) const
+    {
+        if (sym > 100)
+        {
+            sym = int(sym / 100);
+        }
         auto it = singleRHS2Prods.find(sym);
         return it!=singleRHS2Prods.end();
     }
 
-    const bool hasProdsFromSecondRHS(Symbol sym) const{
+    const bool hasProdsFromSecondRHS(Symbol sym) const
+    {
+        if (sym > 100)
+        {
+            sym = int(sym / 100);
+        }
         auto it = secondRHS2Prods.find(sym);
         return it!=secondRHS2Prods.end();
     }
 
-    const Productions& getProdsFromSingleRHS(Symbol sym) const{
-        auto it = singleRHS2Prods.find(sym);
-        assert(it!=singleRHS2Prods.end() && "production (X -> sym) not found for sym!!");
-        return it->second;
+    const Productions& getProdsFromSingleRHS(Symbol sym) const
+    {   
+        if (sym < 100)
+        {
+            auto it = singleRHS2Prods.find(sym);
+            assert(it!=singleRHS2Prods.end() && "production (X -> sym) not found for sym!! ");
+            return it->second;
+        }
+        else{
+            auto attrSym = u32_t(sym / 100);
+            Symbol offset = sym - attrSym * 100;
+            auto it = singleRHS2Prods.find(attrSym);
+            SVF::GrammarBase::Productions *tempProds  = new SVF::GrammarBase::Productions;
+            assert(it!=singleRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
+            for (auto tempProd : it->second)
+            {   
+                for (int i = 0; i < tempProd.size(); i++)
+                {
+                    if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
+                    {
+                        tempProd[i] = tempProd[i] * 100 + offset;
+                    }
+                }
+                tempProds->insert(tempProd);
+            }
+            return *tempProds;
+        }
     }
 
-    const Productions& getProdsFromFirstRHS(Symbol sym) const{
-        auto it = firstRHS2Prods.find(sym);
-        assert(it!=firstRHS2Prods.end() && "production (X -> sym Y) not found for sym!!");
-        return it->second;
+    const Productions& getProdsFromFirstRHS(Symbol sym) const
+    {
+        if(sym < 100)
+        {
+            auto it = firstRHS2Prods.find(sym);
+            assert(it!=firstRHS2Prods.end() && "production (X -> sym Y) not found for sym!!");
+            return it->second;
+        }
+        else{
+            auto attrSym = u32_t(sym / 100);
+            Symbol offset = sym - attrSym * 100;
+            auto it = firstRHS2Prods.find(attrSym);
+            SVF::GrammarBase::Productions *tempProds  = new SVF::GrammarBase::Productions;
+            assert(it!=firstRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
+            for (auto tempProd : it->second)
+            {   
+                for (int i = 0; i < tempProd.size(); i++)
+                {
+                    if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
+                    {
+                        tempProd[i] = tempProd[i] * 100 + offset;
+                    }
+                }
+                tempProds->insert(tempProd);
+            }
+            return *tempProds;
+        }
     }
 
-    const Productions& getProdsFromSecondRHS(Symbol sym) const{
-        auto it = secondRHS2Prods.find(sym);
-        assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
-        return it->second;
+    const Productions& getProdsFromSecondRHS(Symbol sym) const
+    {
+        if(sym<100)
+        {
+            auto it = secondRHS2Prods.find(sym);
+            assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
+            return it->second;
+        }
+         else{
+            auto attrSym = u32_t(sym / 100);
+            Symbol offset = sym - attrSym * 100;
+            auto it = secondRHS2Prods.find(attrSym);
+            SVF::GrammarBase::Productions *tempProds  = new SVF::GrammarBase::Productions;
+            assert(it!=secondRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
+            for (auto tempProd : it->second)
+            {   
+                for (int i = 0; i < tempProd.size(); i++)
+                {
+                    if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
+                    {
+                        tempProd[i] = tempProd[i] * 100 + offset;
+                    }
+                }
+                tempProds->insert(tempProd);
+            }
+            return *tempProds;
+        }
     }
     
 
-    Symbol getLHSSymbol(const Production& prod){
+    Symbol getLHSSymbol(const Production& prod)
+    {
         return prod.at(0);
     }
 
-    Symbol getFirstRHSSymbol(const Production& prod){
+    Symbol getFirstRHSSymbol(const Production& prod)
+    {
         return prod.at(1);
     }
 
-    Symbol getSecondRHSSymbol(const Production& prod){
+    Symbol getSecondRHSSymbol(const Production& prod)
+    {
         return prod.at(2);
     }
+
+    void dump();
 
     inline int num_generator()
     {
@@ -135,7 +252,6 @@ private:
     Map<Symbol, Productions> secondRHS2Prods;
     Symbol newTerminalSubscript;
 };
-
 
 }
 #endif /* CFLGrammar_H_ */

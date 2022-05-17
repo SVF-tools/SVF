@@ -188,7 +188,8 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     }
 
     symInfo->totalSymNum = NodeIDAllocator::get()->endSymbolAllocation();
-    if (Options::SymTabPrint) {
+    if (Options::SymTabPrint)
+    {
         SymbolTableInfo::SymbolInfo()->dump();
     }
 }
@@ -266,7 +267,7 @@ void SymbolTableBuilder::collectObj(const Value *val)
             DBOUT(DMemModel,
                   outs() << "create a new obj sym " << id << "\n");
 
-            // create a memory object  
+            // create a memory object
             MemObj* mem = new MemObj(id, createObjTypeInfo(val), val);
             assert(symInfo->objMap.find(id) == symInfo->objMap.end());
             symInfo->objMap[id] = mem;
@@ -347,27 +348,40 @@ void SymbolTableBuilder::handleCE(const Value *val)
             handleCE(ce->getOperand(2));
         }
         // if we meet a int2ptr, then it points-to black hole
-		else if (const ConstantExpr *int2Ptrce = isInt2PtrConstantExpr(ref)) {
-			collectVal(int2Ptrce);
-		} else if (const ConstantExpr *ptr2Intce = isPtr2IntConstantExpr(ref)) {
-			collectVal(ptr2Intce);
-			const Constant *opnd = ptr2Intce->getOperand(0);
-			handleCE(opnd);
-		} else if (isTruncConstantExpr(ref) || isCmpConstantExpr(ref)) {
-			collectVal(ref);
-		} else if (isBinaryConstantExpr(ref)) {
-			collectVal(ref);
-		} else if (isUnaryConstantExpr(ref)) {
-			// we don't handle unary constant expression like fneg(x) now
-			collectVal(ref);
-		} else if (SVFUtil::isa<ConstantAggregate>(ref)) {
-			// we don't handle constant agrgregate like constant vectors
-			collectVal(ref);
-		} else {
-			if (SVFUtil::isa<ConstantExpr>(val))
-				assert(false && "we don't handle all other constant expression for now!");
-			collectVal(ref);
-		}
+        else if (const ConstantExpr *int2Ptrce = isInt2PtrConstantExpr(ref))
+        {
+            collectVal(int2Ptrce);
+        }
+        else if (const ConstantExpr *ptr2Intce = isPtr2IntConstantExpr(ref))
+        {
+            collectVal(ptr2Intce);
+            const Constant *opnd = ptr2Intce->getOperand(0);
+            handleCE(opnd);
+        }
+        else if (isTruncConstantExpr(ref) || isCmpConstantExpr(ref))
+        {
+            collectVal(ref);
+        }
+        else if (isBinaryConstantExpr(ref))
+        {
+            collectVal(ref);
+        }
+        else if (isUnaryConstantExpr(ref))
+        {
+            // we don't handle unary constant expression like fneg(x) now
+            collectVal(ref);
+        }
+        else if (SVFUtil::isa<ConstantAggregate>(ref))
+        {
+            // we don't handle constant agrgregate like constant vectors
+            collectVal(ref);
+        }
+        else
+        {
+            if (SVFUtil::isa<ConstantExpr>(val))
+                assert(false && "we don't handle all other constant expression for now!");
+            collectVal(ref);
+        }
     }
 }
 
@@ -448,19 +462,24 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C)
     }
     else if(const ConstantData* data = SVFUtil::dyn_cast<ConstantData>(C))
     {
-        if(Options::ModelConsts){
-            if(const ConstantDataSequential* seq = SVFUtil::dyn_cast<ConstantDataSequential>(data)){
-                for(u32_t i = 0; i < seq->getNumElements(); i++){
+        if(Options::ModelConsts)
+        {
+            if(const ConstantDataSequential* seq = SVFUtil::dyn_cast<ConstantDataSequential>(data))
+            {
+                for(u32_t i = 0; i < seq->getNumElements(); i++)
+                {
                     const Constant* ct = seq->getElementAsConstant(i);
                     handleGlobalInitializerCE(ct);
                 }
             }
-            else{
+            else
+            {
                 assert(SVFUtil::isa<ConstantAggregateZero>(data) && "Single value type data should have been handled!");
             }
         }
     }
-    else{
+    else
+    {
         //TODO:assert(SVFUtil::isa<ConstantVector>(C),"what else do we have");
     }
 }
@@ -494,12 +513,14 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
         writeWrnMsg("try to create an object with a non-pointer type.");
         writeWrnMsg(val->getName().str());
         writeWrnMsg("(" + getSourceLoc(val) + ")");
-        if(symInfo->isConstantObjSym(val)){
+        if(symInfo->isConstantObjSym(val))
+        {
             ObjTypeInfo* typeInfo = new ObjTypeInfo(val->getType(), 0);
             initTypeInfo(typeInfo,val);
             return typeInfo;
         }
-        else{
+        else
+        {
             assert(false && "Memory object must be either (1) held by a pointer-typed ref value or (2) a constant value (e.g., 10).");
             abort();
         }
@@ -557,12 +578,14 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
  */
 void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
-    if(const Value* castUse = getUniqueUseViaCastInst(val)){
+    if(const Value* castUse = getUniqueUseViaCastInst(val))
+    {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
         typeinfo->resetTypeForHeapStaticObj(castUse->getType());
         analyzeObjType(typeinfo,castUse);
     }
-    else{
+    else
+    {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
         typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
@@ -573,12 +596,14 @@ void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* 
  */
 void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
-    if(const Value* castUse = getUniqueUseViaCastInst(val)){
+    if(const Value* castUse = getUniqueUseViaCastInst(val))
+    {
         typeinfo->setFlag(ObjTypeInfo::STATIC_OBJ);
         typeinfo->resetTypeForHeapStaticObj(castUse->getType());
         analyzeObjType(typeinfo,castUse);
     }
-    else{
+    else
+    {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
         typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
@@ -587,8 +612,9 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
 /*!
  * Initialize the type info of an object
  */
-void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
-    
+void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
+{
+
     u32_t objSize = 1;
     // Global variable
     if (SVFUtil::isa<Function>(val))
@@ -639,7 +665,8 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
         typeinfo->setFlag(ObjTypeInfo::CONST_DATA);
         objSize = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(val->getType());
     }
-    else{
+    else
+    {
         assert("what other object do we have??");
         abort();
     }

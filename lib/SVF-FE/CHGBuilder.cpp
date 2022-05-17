@@ -692,12 +692,16 @@ const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(CallSite cs)
     }
 }
 
-void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f) {
+void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f)
+{
     const auto *lf = f->getLLVMFun();
-    if (isCPPThunkFunction(lf)) {
+    if (isCPPThunkFunction(lf))
+    {
         if(const auto *tf = getThunkTarget(lf))
             v.push_back(chg->svfMod->getSVFFunction(tf));
-    } else {
+    }
+    else
+    {
         v.push_back(f);
     }
 }

@@ -29,10 +29,13 @@
 
 #include "CFL/CFLGrammar.h"
 #include <string>
+#include <iostream>
+#include <fstream>
 
 using namespace SVF;
 
-GrammarBase::Symbol GrammarBase::str2Sym(std::string str) const{
+GrammarBase::Symbol GrammarBase::str2Sym(std::string str) const
+{
 
     auto tit = terminals.find(str);
     if(tit!=terminals.end())
@@ -72,30 +75,108 @@ std::string GrammarBase::sym2Str(Symbol sym) const
     return "";
 }
 
-GrammarBase::Symbol GrammarBase::insertTerminalSymbol(std::string strLit){
+GrammarBase::Symbol GrammarBase::insertTerminalSymbol(std::string strLit)
+{
     Symbol sym;
-    if (terminals.find(strLit) == terminals.end()) {
+    if (terminals.find(strLit) == terminals.end())
+    {
         sym = totalSymbol++;
         terminals.insert({strLit, sym});
     }
-    else{
+    else
+    {
         sym = str2Sym(strLit);
     }
     return sym;
 }
-GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string strLit){
+GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string strLit)
+{
     Symbol sym;
-    if (nonterminals.find(strLit) == nonterminals.end()) {
+    if (nonterminals.find(strLit) == nonterminals.end())
+    {
         sym = totalSymbol++;
         nonterminals.insert({strLit, sym});
     }
-    else{
+    else
+    {
         sym = str2Sym(strLit);
+    }
+    if (strLit.back() == 'i')
+    {
+        insertAttribute(sym);
     }
     return sym;
 }
 
-CFLGrammar::CFLGrammar(){
-
+void GrammarBase::insertAttribute(Symbol s)
+{
+    attributeSymbol.insert(s);
 }
 
+CFLGrammar::CFLGrammar()
+{
+    newTerminalSubscript = 0;
+}
+
+void CFLGrammar::dump(){
+    std::ofstream gramFile("Normailized_Grammar.txt");
+    gramFile << "Start Symbol:\n";
+    gramFile << '\t' << sym2Str(startSymbol) << '(' << startSymbol << ')' << ' ' << "\n\n";
+
+    gramFile << "Epsilon Production:\n";
+    for (auto pro: this->epsilonProds)
+    {
+        gramFile << '\t';
+        for (auto sym : pro){
+            if (sym == pro[1])
+            {
+                gramFile << "-> ";
+            }
+            gramFile << sym2Str(sym) << '(' << sym << ')' << ' '; 
+        }
+        gramFile << '\n';
+    }
+    gramFile << '\n';
+
+    gramFile << "Single Production:\n";
+    for (auto symProPair: singleRHS2Prods) 
+    {
+        for (auto pro: symProPair.second)
+        {
+            gramFile << '\t';
+            int i = 0;
+            for (auto sym : pro){
+                i++;
+                if (i == 2)
+                {
+                    gramFile << "-> ";
+                }
+                gramFile << sym2Str(sym) << '(' << sym << ')' << ' '; 
+            }
+            gramFile << '\n';
+         }
+    }
+    gramFile << '\n';
+
+    gramFile << "Binary Production:\n";
+    for (auto symProPair: firstRHS2Prods) 
+    {
+        for (auto pro: symProPair.second)
+        {
+            gramFile << '\t';
+            int i = 0;
+            for (auto sym : pro){
+                i++;
+                if (i == 2)
+                {
+                    gramFile << "-> ";
+                }
+                gramFile << sym2Str(sym) << '(' << sym << ')' << ' '; 
+            }
+            gramFile << "\n";
+         }
+    }
+    gramFile << '\n';
+    // Close the file
+    gramFile.close();
+}

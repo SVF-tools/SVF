@@ -109,15 +109,15 @@ extern int pclose();
 # include <stdlib.h>
 #else
 # ifndef _IBMR2
-    extern VOID_OR_INT abort(), exit();
+extern VOID_OR_INT abort(), exit();
 # endif
 # if !defined(MNEMOSYNE) && !defined(_IBMR2)
-    extern VOID_OR_INT free (void *);
-    extern VOID_OR_CHAR *malloc(), *realloc();
+extern VOID_OR_INT free (void *);
+extern VOID_OR_CHAR *malloc(), *realloc();
 # endif
-  extern char *getenv();
-  extern int system();
-  extern double atof();
+extern char *getenv();
+extern int system();
+extern double atof();
 #endif
 
 

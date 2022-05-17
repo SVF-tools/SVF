@@ -161,14 +161,15 @@ void VersionedFlowSensitive::meldLabel(void)
     std::mutex footprintOwnerMutex;
 
     auto meldVersionWorker = [this, &footprintOwner, &objectQueue,
-                              &objectQueueMutex, &footprintOwnerMutex, &versionMutexes,
-                              &prelabeledNodes, &isPrelabeled, &nodesWhichNeedVersions]
-                             (const unsigned thread)
+                                    &objectQueueMutex, &footprintOwnerMutex, &versionMutexes,
+                                    &prelabeledNodes, &isPrelabeled, &nodesWhichNeedVersions]
+         (const unsigned thread)
     {
         while (true)
         {
             NodeID o;
-            { std::lock_guard<std::mutex> guard(objectQueueMutex);
+            {
+                std::lock_guard<std::mutex> guard(objectQueueMutex);
                 // No more objects? Done.
                 if (objectQueue.empty()) return;
                 o = objectQueue.front();
@@ -201,7 +202,8 @@ void VersionedFlowSensitive::meldLabel(void)
             unsigned numSCCs = SCC::detectSCCs(this, this->svfg, o, osStartingNodes, partOf, footprint);
 
             // 2. Skip any further processing of a footprint we have seen before.
-            { std::lock_guard<std::mutex> guard(footprintOwnerMutex);
+            {
+                std::lock_guard<std::mutex> guard(footprintOwnerMutex);
                 const Map<std::vector<const IndirectSVFGEdge *>, NodeID>::const_iterator canonOwner
                     = footprintOwner.find(footprint);
                 if (canonOwner == footprintOwner.end())
@@ -545,7 +547,8 @@ void VersionedFlowSensitive::propagateVersion(const NodeID o, const Version v, c
         {
             dvp = svfg->addDummyVersionPropSVFGNode(o, vp);
             versionedVarToPropNode[dstVar] = dvp;
-        } else dvp = dvpIt->second;
+        }
+        else dvp = dvpIt->second;
 
         assert(dvp != nullptr && "VFS::propagateVersion: propagation dummy node not found?");
         pushIntoWorklist(dvp->getId());
@@ -582,8 +585,8 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
         NodeID dst = dstNode->getId();
 
         if (SVFUtil::isa<PHISVFGNode>(dstNode)
-            || SVFUtil::isa<FormalParmSVFGNode>(dstNode)
-            || SVFUtil::isa<ActualRetSVFGNode>(dstNode))
+                || SVFUtil::isa<FormalParmSVFGNode>(dstNode)
+                || SVFUtil::isa<ActualRetSVFGNode>(dstNode))
         {
             pushIntoWorklist(dst);
         }
@@ -875,7 +878,10 @@ void VersionedFlowSensitive::dumpLocVersionMaps(void) const
     {
         const NodeID loc = it->first;
         bool locPrinted = false;
-        for (const LocVersionMap *lvm : { &consume, &yield })
+        for (const LocVersionMap *lvm :
+                {
+                    &consume, &yield
+                })
         {
             if (lvm->at(loc).empty()) continue;
             if (!locPrinted)
@@ -920,10 +926,10 @@ void VersionedFlowSensitive::dumpMeldVersion(MeldVersion &v)
 }
 
 unsigned VersionedFlowSensitive::SCC::detectSCCs(VersionedFlowSensitive *vfs,
-                                                 const SVFG *svfg, const NodeID object,
-                                                 const std::vector<const SVFGNode *> &startingNodes,
-                                                 std::vector<int> &partOf,
-                                                 std::vector<const IndirectSVFGEdge *> &footprint)
+        const SVFG *svfg, const NodeID object,
+        const std::vector<const SVFGNode *> &startingNodes,
+        std::vector<int> &partOf,
+        std::vector<const IndirectSVFGEdge *> &footprint)
 {
     partOf.resize(svfg->getTotalNodeNum());
     std::fill(partOf.begin(), partOf.end(), -1);
@@ -1009,7 +1015,8 @@ void VersionedFlowSensitive::SCC::visit(VersionedFlowSensitive *vfs,
             const NodeID wId = w->getId();
             nodeData[wId].onStack = false;
             partOf[wId] = currentSCC;
-        } while (w != v);
+        }
+        while (w != v);
 
         // For the next SCC.
         ++currentSCC;

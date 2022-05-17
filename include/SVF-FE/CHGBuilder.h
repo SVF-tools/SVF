@@ -29,9 +29,11 @@
 
 #include "Graphs/CHG.h"
 
-namespace SVF{
+namespace SVF
+{
 
-class CHGBuilder{
+class CHGBuilder
+{
 
 private:
     CHGraph* chg;

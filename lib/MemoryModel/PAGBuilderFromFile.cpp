@@ -186,7 +186,8 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
         assert(false && "fix phi here!");
     else if (edge == "select")
         assert(false && "fix select here!");
-    else if (edge == "branch"){
+    else if (edge == "branch")
+    {
         assert(false && "fix successors here!");
         //pag->addBranchStmt(srcID, dstID, nullptr);
     }

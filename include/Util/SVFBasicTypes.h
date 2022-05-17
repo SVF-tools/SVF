@@ -55,22 +55,26 @@ namespace SVF
 /// provide extra hash function for std::pair handling
 template <class T> struct Hash;
 
-template <class S, class T> struct Hash<std::pair<S, T>> {
+template <class S, class T> struct Hash<std::pair<S, T>>
+{
     // Pairing function from: http://szudzik.com/ElegantPairing.pdf
     static size_t szudzik(size_t a, size_t b)
     {
         return a > b ? b * b + a : a * a + a + b;
     }
 
-    size_t operator()(const std::pair<S, T> &t) const {
+    size_t operator()(const std::pair<S, T> &t) const
+    {
         Hash<decltype(t.first)> first;
         Hash<decltype(t.second)> second;
         return szudzik(first(t.first), second(t.second));
     }
 };
 
-template <class T> struct Hash {
-    size_t operator()(const T &t) const {
+template <class T> struct Hash
+{
+    size_t operator()(const T &t) const
+    {
         std::hash<T> h;
         return h(t);
     }
@@ -97,45 +101,46 @@ typedef PointsTo AliasSet;
 typedef unsigned PointsToID;
 
 template <typename Key, typename Hash = Hash<Key>, typename KeyEqual = std::equal_to<Key>,
-          typename Allocator = std::allocator<Key>> 
+          typename Allocator = std::allocator<Key>>
 using Set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 
 template<typename Key, typename Value, typename Hash = Hash<Key>,
-    typename KeyEqual = std::equal_to<Key>,
-    typename Allocator = std::allocator<std::pair<const Key, Value>>>
-using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
-
-template<typename Key, typename Compare = std::less<Key>, typename Allocator = std::allocator<Key>>
-using OrderedSet = std::set<Key, Compare, Allocator>;
-
-template<typename Key, typename Value, typename Compare = std::less<Key>,
+         typename KeyEqual = std::equal_to<Key>,
          typename Allocator = std::allocator<std::pair<const Key, Value>>>
-using OrderedMap = std::map<Key, Value, Compare, Allocator>;
+                 using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
 
-typedef llvm::SmallVector<llvm::BasicBlock*, 8> SmallBBVector;
-typedef std::pair<NodeID, NodeID> NodePair;
-typedef OrderedSet<NodeID> OrderedNodeSet;
-typedef Set<NodeID> NodeSet;
-typedef Set<NodePair> NodePairSet;
-typedef Map<NodePair,NodeID> NodePairMap;
-typedef std::vector<NodeID> NodeVector;
-typedef std::vector<EdgeID> EdgeVector;
-typedef std::stack<NodeID> NodeStack;
-typedef std::list<NodeID> NodeList;
-typedef std::deque<NodeID> NodeDeque;
-typedef NodeSet EdgeSet;
-typedef std::vector<u32_t> CallStrCxt;
-typedef llvm::StringMap<u32_t> StringMap;
+         template<typename Key, typename Compare = std::less<Key>, typename Allocator = std::allocator<Key>>
+         using OrderedSet = std::set<Key, Compare, Allocator>;
 
-typedef unsigned Version;
-typedef Set<Version> VersionSet;
-typedef std::pair<NodeID, Version> VersionedVar;
-typedef Set<VersionedVar> VersionedVarSet;
+         template<typename Key, typename Value, typename Compare = std::less<Key>,
+                  typename Allocator = std::allocator<std::pair<const Key, Value>>>
+                          using OrderedMap = std::map<Key, Value, Compare, Allocator>;
+
+                  typedef llvm::SmallVector<llvm::BasicBlock*, 8> SmallBBVector;
+                  typedef std::pair<NodeID, NodeID> NodePair;
+                  typedef OrderedSet<NodeID> OrderedNodeSet;
+                  typedef Set<NodeID> NodeSet;
+                  typedef Set<NodePair> NodePairSet;
+                  typedef Map<NodePair,NodeID> NodePairMap;
+                  typedef std::vector<NodeID> NodeVector;
+                  typedef std::vector<EdgeID> EdgeVector;
+                  typedef std::stack<NodeID> NodeStack;
+                  typedef std::list<NodeID> NodeList;
+                  typedef std::deque<NodeID> NodeDeque;
+                  typedef NodeSet EdgeSet;
+                  typedef std::vector<u32_t> CallStrCxt;
+                  typedef llvm::StringMap<u32_t> StringMap;
+
+                  typedef unsigned Version;
+                  typedef Set<Version> VersionSet;
+                  typedef std::pair<NodeID, Version> VersionedVar;
+                  typedef Set<VersionedVar> VersionedVarSet;
 
 // TODO: be explicit that this is a pair of 32-bit unsigneds?
-template <> struct Hash<NodePair>
+                  template <> struct Hash<NodePair>
 {
-    size_t operator()(const NodePair &p) const {
+    size_t operator()(const NodePair &p) const
+    {
         // Make sure our assumptions are sound: use u32_t
         // and u64_t. If NodeID is not actually u32_t or size_t
         // is not u64_t we should be fine since we get a
@@ -278,8 +283,10 @@ public:
 } // End namespace SVF
 
 
-template <> struct std::hash<SVF::NodePair> {
-    size_t operator()(const SVF::NodePair &p) const {
+template <> struct std::hash<SVF::NodePair>
+{
+    size_t operator()(const SVF::NodePair &p) const
+    {
         // Make sure our assumptions are sound: use u32_t
         // and u64_t. If NodeID is not actually u32_t or size_t
         // is not u64_t we should be fine since we get a
@@ -294,7 +301,8 @@ template <> struct std::hash<SVF::NodePair> {
 template <unsigned N>
 struct std::hash<llvm::SparseBitVector<N>>
 {
-    size_t operator()(const llvm::SparseBitVector<N> &sbv) const {
+    size_t operator()(const llvm::SparseBitVector<N> &sbv) const
+    {
         SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
         return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));
     }
@@ -303,7 +311,8 @@ struct std::hash<llvm::SparseBitVector<N>>
 template <typename T>
 struct std::hash<std::vector<T>>
 {
-    size_t operator()(const std::vector<T> &v) const {
+    size_t operator()(const std::vector<T> &v) const
+    {
         // TODO: repetition with CBV.
         size_t h = v.size();
 

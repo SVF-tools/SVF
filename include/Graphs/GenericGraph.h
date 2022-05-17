@@ -82,6 +82,10 @@ public:
     {
         return (EdgeKindMask & edgeFlag);
     }
+    inline GEdgeKind getEdgeKindWithoutMask() const
+    {
+        return edgeFlag;
+    }
     NodeType* getSrcNode() const
     {
         return src;
@@ -157,8 +161,8 @@ public:
     /// Destructor
     virtual ~GenericNode()
     {
-      for (auto * edge : OutEdges)
-        delete edge;
+        for (auto * edge : OutEdges)
+            delete edge;
     }
 
     /// Get ID
@@ -354,7 +358,7 @@ public:
     void destroy()
     {
         for (auto &entry : IDToNodeMap)
-          delete entry.second;
+            delete entry.second;
     }
     /// Iterators
     //@{
