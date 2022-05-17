@@ -5,188 +5,188 @@
 
 namespace SVF
 {
-const llvm::cl::opt<enum PTAStat::ClockType> Options::ClockType(
-    "clock-type",
-    llvm::cl::init(PTAStat::ClockType::CPU),
-    llvm::cl::desc("how time should be measured"),
-    llvm::cl::values(
-        clEnumValN(PTAStat::ClockType::Wall, "wall", "use wall time"),
-        clEnumValN(PTAStat::ClockType::CPU, "cpu", "use CPU time")
-    )
-);
+    const llvm::cl::opt<enum PTAStat::ClockType> Options::ClockType(
+        "clock-type",
+        llvm::cl::init(PTAStat::ClockType::CPU),
+        llvm::cl::desc("how time should be measured"),
+        llvm::cl::values(
+            clEnumValN(PTAStat::ClockType::Wall, "wall", "use wall time"),
+            clEnumValN(PTAStat::ClockType::CPU, "cpu", "use CPU time")
+        )
+    );
 
-const llvm::cl::opt<bool> Options::MarkedClocksOnly(
-    "marked-clocks-only",
-    llvm::cl::init(true),
-    llvm::cl::desc("Only measure times where explicitly marked"));
+    const llvm::cl::opt<bool> Options::MarkedClocksOnly(
+        "marked-clocks-only",
+        llvm::cl::init(true),
+        llvm::cl::desc("Only measure times where explicitly marked"));
 
-const llvm::cl::opt<NodeIDAllocator::Strategy> Options::NodeAllocStrat(
-    "node-alloc-strat",
-    llvm::cl::init(NodeIDAllocator::Strategy::SEQ),
-    llvm::cl::desc("Method of allocating (LLVM) values and memory objects as node IDs"),
-    llvm::cl::values(
-        clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together [0-n] and values together [m-MAX], separately"),
-        clEnumValN(NodeIDAllocator::Strategy::REVERSE_DENSE, "reverse-dense", "like dense but flipped, objects are [m-MAX], values are [0-n]"),
-        clEnumValN(NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed (default)"),
-        clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets")));
+    const llvm::cl::opt<NodeIDAllocator::Strategy> Options::NodeAllocStrat(
+        "node-alloc-strat",
+        llvm::cl::init(NodeIDAllocator::Strategy::SEQ),
+        llvm::cl::desc("Method of allocating (LLVM) values and memory objects as node IDs"),
+        llvm::cl::values(
+            clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together [0-n] and values together [m-MAX], separately"),
+            clEnumValN(NodeIDAllocator::Strategy::REVERSE_DENSE, "reverse-dense", "like dense but flipped, objects are [m-MAX], values are [0-n]"),
+            clEnumValN(NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed (default)"),
+            clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets")));
 
-const llvm::cl::opt<unsigned> Options::MaxFieldLimit(
-    "field-limit",
-    llvm::cl::init(512),
-    llvm::cl::desc("Maximum number of fields for field sensitive analysis"));
+    const llvm::cl::opt<unsigned> Options::MaxFieldLimit(
+        "field-limit",
+        llvm::cl::init(512),
+        llvm::cl::desc("Maximum number of fields for field sensitive analysis"));
 
-const llvm::cl::opt<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
-    "ptd",
-    llvm::cl::init(BVDataPTAImpl::PTBackingType::Persistent),
-    llvm::cl::desc("Overarching points-to data structure"),
-    llvm::cl::values(
-        clEnumValN(BVDataPTAImpl::PTBackingType::Mutable, "mutable", "points-to set per pointer"),
-        clEnumValN(BVDataPTAImpl::PTBackingType::Persistent, "persistent", "points-to set ID per pointer, operations hash-consed")));
+    const llvm::cl::opt<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
+        "ptd",
+        llvm::cl::init(BVDataPTAImpl::PTBackingType::Persistent),
+        llvm::cl::desc("Overarching points-to data structure"),
+        llvm::cl::values(
+            clEnumValN(BVDataPTAImpl::PTBackingType::Mutable, "mutable", "points-to set per pointer"),
+            clEnumValN(BVDataPTAImpl::PTBackingType::Persistent, "persistent", "points-to set ID per pointer, operations hash-consed")));
 
-const llvm::cl::opt<unsigned> Options::FsTimeLimit(
-    "fs-time-limit",
-    llvm::cl::init(0),
-    llvm::cl::desc("time limit for main phase of flow-sensitive analyses")
-);
+    const llvm::cl::opt<unsigned> Options::FsTimeLimit(
+        "fs-time-limit",
+        llvm::cl::init(0),
+        llvm::cl::desc("time limit for main phase of flow-sensitive analyses")
+    );
 
-const llvm::cl::opt<unsigned> Options::VersioningThreads(
-    "versioning-threads",
-    llvm::cl::init(1),
-    llvm::cl::desc("number of threads to use in the versioning phase of versioned flow-sensitive analysis")
-);
+    const llvm::cl::opt<unsigned> Options::VersioningThreads(
+        "versioning-threads",
+        llvm::cl::init(1),
+        llvm::cl::desc("number of threads to use in the versioning phase of versioned flow-sensitive analysis")
+    );
 
-const llvm::cl::opt<unsigned> Options::AnderTimeLimit(
-    "ander-time-limit",
-    llvm::cl::init(0),
-    llvm::cl::desc("time limit for Andersen's analyses (ignored when -fs-time-limit set)")
-);
+    const llvm::cl::opt<unsigned> Options::AnderTimeLimit(
+        "ander-time-limit",
+        llvm::cl::init(0),
+        llvm::cl::desc("time limit for Andersen's analyses (ignored when -fs-time-limit set)")
+    );
 
-// ContextDDA.cpp
-const llvm::cl::opt<unsigned long long> Options::CxtBudget(
-    "cxt-bg", 
-    llvm::cl::init(10000),
-    llvm::cl::desc("Maximum step budget of context-sensitive traversing")
-);
+    // ContextDDA.cpp
+    const llvm::cl::opt<unsigned long long> Options::CxtBudget(
+        "cxt-bg", 
+        llvm::cl::init(10000),
+        llvm::cl::desc("Maximum step budget of context-sensitive traversing")
+    );
 
 
-// DDAClient.cpp
-const llvm::cl::opt<bool> Options::SingleLoad(
-    "single-load", 
-    llvm::cl::init(true),
-    llvm::cl::desc("Count load pointer with same source operand as one query")
-);
+    // DDAClient.cpp
+    const llvm::cl::opt<bool> Options::SingleLoad(
+        "single-load", 
+        llvm::cl::init(true),
+        llvm::cl::desc("Count load pointer with same source operand as one query")
+    );
 
-const llvm::cl::opt<bool> Options::DumpFree(
-    "dump-free", 
-    llvm::cl::init(false),
-    llvm::cl::desc("Dump use after free locations")
-);
+    const llvm::cl::opt<bool> Options::DumpFree(
+        "dump-free", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Dump use after free locations")
+    );
 
-const llvm::cl::opt<bool> Options::DumpUninitVar(
-    "dump-uninit-var", 
-    llvm::cl::init(false),
-    llvm::cl::desc("Dump uninitialised variables")
-);
+    const llvm::cl::opt<bool> Options::DumpUninitVar(
+        "dump-uninit-var", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Dump uninitialised variables")
+    );
 
-const llvm::cl::opt<bool> Options::DumpUninitPtr(
-    "dump-uninit-ptr", 
-    llvm::cl::init(false),
-    llvm::cl::desc("Dump uninitialised pointers")
-);
+    const llvm::cl::opt<bool> Options::DumpUninitPtr(
+        "dump-uninit-ptr", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Dump uninitialised pointers")
+    );
 
-const llvm::cl::opt<bool> Options::DumpSUPts(
-    "dump-su-pts", 
-    llvm::cl::init(false),
-    llvm::cl::desc("Dump strong updates store")
-);
+    const llvm::cl::opt<bool> Options::DumpSUPts(
+        "dump-su-pts", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Dump strong updates store")
+    );
 
-const llvm::cl::opt<bool> Options::DumpSUStore(
-    "dump-su-store", 
-    llvm::cl::init(false),
-    llvm::cl::desc("Dump strong updates store")
-);
+    const llvm::cl::opt<bool> Options::DumpSUStore(
+        "dump-su-store", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Dump strong updates store")
+    );
 
-const llvm::cl::opt<bool> Options::MallocOnly(
-    "malloc-only", 
-    llvm::cl::init(true),
-    llvm::cl::desc("Only add tainted objects for malloc")
-);
+    const llvm::cl::opt<bool> Options::MallocOnly(
+        "malloc-only", 
+        llvm::cl::init(true),
+        llvm::cl::desc("Only add tainted objects for malloc")
+    );
 
-const llvm::cl::opt<bool> Options::TaintUninitHeap(
-    "uninit-heap", 
-    llvm::cl::init(true),
-    llvm::cl::desc("detect uninitialized heap variables")
-);
+    const llvm::cl::opt<bool> Options::TaintUninitHeap(
+        "uninit-heap", 
+        llvm::cl::init(true),
+        llvm::cl::desc("detect uninitialized heap variables")
+    );
 
-const llvm::cl::opt<bool> Options::TaintUninitStack(
-    "uninit-stack", 
-    llvm::cl::init(true),
-    llvm::cl::desc("detect uninitialized stack variables")
-);
+    const llvm::cl::opt<bool> Options::TaintUninitStack(
+        "uninit-stack", 
+        llvm::cl::init(true),
+        llvm::cl::desc("detect uninitialized stack variables")
+    );
 
-// DDAPass.cpp
-const llvm::cl::opt<unsigned> Options::MaxPathLen(
-    "max-path",  
-    llvm::cl::init(100000),
-    llvm::cl::desc("Maximum path limit for DDA")
-);
+    // DDAPass.cpp
+    const llvm::cl::opt<unsigned> Options::MaxPathLen(
+        "max-path",  
+        llvm::cl::init(100000),
+        llvm::cl::desc("Maximum path limit for DDA")
+    );
 
-const llvm::cl::opt<unsigned> Options::MaxContextLen(
-    "max-cxt",  
-    llvm::cl::init(3),
-    llvm::cl::desc("Maximum context limit for DDA")
-);
+    const llvm::cl::opt<unsigned> Options::MaxContextLen(
+        "max-cxt",  
+        llvm::cl::init(3),
+        llvm::cl::desc("Maximum context limit for DDA")
+    );
 
-const llvm::cl::opt<unsigned> Options::MaxStepInWrapper(
-        "max-step",
-        llvm::cl::init(10),
-        llvm::cl::desc("Maximum steps when traversing on SVFG to identify a memory allocation wrapper")
-);
+    const llvm::cl::opt<unsigned> Options::MaxStepInWrapper(
+            "max-step",
+            llvm::cl::init(10),
+            llvm::cl::desc("Maximum steps when traversing on SVFG to identify a memory allocation wrapper")
+    );
 
-const llvm::cl::opt<std::string> Options::UserInputQuery(
-    "query",  
-    llvm::cl::init("all"),
-    llvm::cl::desc("Please specify queries by inputing their pointer ids")
-);
+    const llvm::cl::opt<std::string> Options::UserInputQuery(
+        "query",  
+        llvm::cl::init("all"),
+        llvm::cl::desc("Please specify queries by inputing their pointer ids")
+    );
 
-const llvm::cl::opt<bool> Options::InsenRecur(
-    "in-recur", 
-    llvm::cl::init(false),
-    llvm::cl::desc("Mark context insensitive SVFG edges due to function recursions")
-);
+    const llvm::cl::opt<bool> Options::InsenRecur(
+        "in-recur", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Mark context insensitive SVFG edges due to function recursions")
+    );
 
-const llvm::cl::opt<bool> Options::InsenCycle(
-    "in-cycle", 
-    llvm::cl::init(false),
-    llvm::cl::desc("Mark context insensitive SVFG edges due to value-flow cycles")
-);
+    const llvm::cl::opt<bool> Options::InsenCycle(
+        "in-cycle", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Mark context insensitive SVFG edges due to value-flow cycles")
+    );
 
-const llvm::cl::opt<bool> Options::PrintCPts(
-    "cpts", 
-    llvm::cl::init(false),
-    llvm::cl::desc("Dump conditional points-to set ")
-);
+    const llvm::cl::opt<bool> Options::PrintCPts(
+        "cpts", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Dump conditional points-to set ")
+    );
 
-const llvm::cl::opt<bool> Options::PrintQueryPts(
-    "print-query-pts",
-    llvm::cl::init(false),
-    llvm::cl::desc("Dump queries' conditional points-to set ")
-);
+    const llvm::cl::opt<bool> Options::PrintQueryPts(
+        "print-query-pts",
+        llvm::cl::init(false),
+        llvm::cl::desc("Dump queries' conditional points-to set ")
+    );
 
-const llvm::cl::opt<bool> Options::WPANum(
-    "wpa-num", 
-    llvm::cl::init(false),
-    llvm::cl::desc("collect WPA FS number only ")
-);
+    const llvm::cl::opt<bool> Options::WPANum(
+        "wpa-num", 
+        llvm::cl::init(false),
+        llvm::cl::desc("collect WPA FS number only ")
+    );
 
-/// register this into alias analysis group
-//static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(DDAPA);
-llvm::cl::bits<PointerAnalysis::PTATY> Options::DDASelected(
-    llvm::cl::desc("Select pointer analysis"),
-    llvm::cl::values(
-        clEnumValN(PointerAnalysis::FlowS_DDA, "dfs", "Demand-driven flow sensitive analysis"),
-        clEnumValN(PointerAnalysis::Cxt_DDA, "cxt", "Demand-driven context- flow- sensitive analysis")
-    ));
+    /// register this into alias analysis group
+    //static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(DDAPA);
+    llvm::cl::bits<PointerAnalysis::PTATY> Options::DDASelected(
+        llvm::cl::desc("Select pointer analysis"),
+        llvm::cl::values(
+            clEnumValN(PointerAnalysis::FlowS_DDA, "dfs", "Demand-driven flow sensitive analysis"),
+            clEnumValN(PointerAnalysis::Cxt_DDA, "cxt", "Demand-driven context- flow- sensitive analysis")
+        ));
 
 // FlowDDA.cpp
 const llvm::cl::opt<unsigned long long> Options::FlowBudget(
