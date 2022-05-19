@@ -72,8 +72,9 @@ public:
             grammar = normalizer->normalize(generalGrammar);
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
             graph->label2SymMap = ConstMap;
-            graph->setMap(&grammar->terminals, &grammar->nonterminals, &grammar->getAttrSyms());
+            graph->setMap(&grammar->terminals, &grammar->nonterminals);
             graph->buildBigraph(consCG);
+            svfir->dump("Original");
             delete consCG;
             delete generalGrammar;
             grammar->dump();
@@ -82,7 +83,7 @@ public:
         {
             GrammarBase *generalGrammar = gReader->build();
             grammar = normalizer->normalize(generalGrammar);
-            graph->setMap(&grammar->terminals, &grammar->nonterminals, &grammar->getAttrSyms());
+            graph->setMap(&grammar->terminals, &grammar->nonterminals);
             graph->buildFromDot(Options::InputFilename);
         }
         graph->startSymbol = grammar->startSymbol;

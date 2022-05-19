@@ -32,7 +32,6 @@
 
 namespace SVF
 {
-
 class GrammarBase
 {
 public:
@@ -63,8 +62,25 @@ public:
     Symbol insertTerminalSymbol(std::string strLit);
     Symbol insertNonTerminalSymbol(std::string strLit);
     void insertAttribute(Symbol s);
-    
-    
+
+    inline static Symbol getNormalKind(Symbol attributedKind)
+    {
+        return (EdgeKindMask & attributedKind);
+    }
+
+    inline static Symbol getAttribute(Symbol attributedKind)
+    {
+        return (attributedKind >> EdgeKindMaskBits);
+    }
+
+    inline static Symbol getAttributedKind(Symbol attribute, Symbol flag)
+    {     
+        return ((attribute << EdgeKindMaskBits)| flag );
+    }
+
+protected:
+    static constexpr unsigned char EdgeKindMaskBits = 8;  ///< We use the lower 8 bits to denote edge kind
+    static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
 
 };
 
@@ -107,46 +123,37 @@ public:
 
     const bool hasProdsFromFirstRHS(Symbol sym) const
     {
-        if (sym > 100)
-        {
-            sym = int(sym / 100);
-        }
+        sym = getNormalKind(sym);
         auto it = firstRHS2Prods.find(sym);
         return it!=firstRHS2Prods.end();
     }
 
     const bool hasProdsFromSingleRHS(Symbol sym) const
     {
-        if (sym > 100)
-        {
-            sym = int(sym / 100);
-        }
+        sym = getNormalKind(sym);
         auto it = singleRHS2Prods.find(sym);
         return it!=singleRHS2Prods.end();
     }
 
     const bool hasProdsFromSecondRHS(Symbol sym) const
     {
-        if (sym > 100)
-        {
-            sym = int(sym / 100);
-        }
+        sym = getNormalKind(sym);
         auto it = secondRHS2Prods.find(sym);
         return it!=secondRHS2Prods.end();
     }
 
     const Productions& getProdsFromSingleRHS(Symbol sym) const
     {   
-        if (sym < 100)
+        auto NormSym = getNormalKind(sym);
+        if (isAttributedKind(NormSym) == false)
         {
-            auto it = singleRHS2Prods.find(sym);
+            auto it = singleRHS2Prods.find(NormSym);
             assert(it!=singleRHS2Prods.end() && "production (X -> sym) not found for sym!! ");
             return it->second;
         }
         else{
-            auto attrSym = u32_t(sym / 100);
-            Symbol offset = sym - attrSym * 100;
-            auto it = singleRHS2Prods.find(attrSym);
+            Symbol attribute = getAttribute(sym);
+            auto it = singleRHS2Prods.find(NormSym);
             SVF::GrammarBase::Productions *tempProds  = new SVF::GrammarBase::Productions;
             assert(it!=singleRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
             for (auto tempProd : it->second)
@@ -155,7 +162,7 @@ public:
                 {
                     if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
                     {
-                        tempProd[i] = tempProd[i] * 100 + offset;
+                        tempProd[i] =  getAttributedKind(attribute, tempProd[i]);
                     }
                 }
                 tempProds->insert(tempProd);
@@ -166,16 +173,16 @@ public:
 
     const Productions& getProdsFromFirstRHS(Symbol sym) const
     {
-        if(sym < 100)
+        auto NormSym = getNormalKind(sym);
+        if (isAttributedKind(NormSym) == false)
         {
-            auto it = firstRHS2Prods.find(sym);
+            auto it = firstRHS2Prods.find(NormSym);
             assert(it!=firstRHS2Prods.end() && "production (X -> sym Y) not found for sym!!");
             return it->second;
         }
         else{
-            auto attrSym = u32_t(sym / 100);
-            Symbol offset = sym - attrSym * 100;
-            auto it = firstRHS2Prods.find(attrSym);
+            Symbol attribute = getAttribute(sym);
+            auto it = firstRHS2Prods.find(NormSym);
             SVF::GrammarBase::Productions *tempProds  = new SVF::GrammarBase::Productions;
             assert(it!=firstRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
             for (auto tempProd : it->second)
@@ -184,7 +191,7 @@ public:
                 {
                     if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
                     {
-                        tempProd[i] = tempProd[i] * 100 + offset;
+                        tempProd[i] = getAttributedKind(attribute, tempProd[i]);
                     }
                 }
                 tempProds->insert(tempProd);
@@ -195,16 +202,16 @@ public:
 
     const Productions& getProdsFromSecondRHS(Symbol sym) const
     {
-        if(sym<100)
+        auto NormSym = getNormalKind(sym);
+        if (isAttributedKind(NormSym) == false)
         {
-            auto it = secondRHS2Prods.find(sym);
+            auto it = secondRHS2Prods.find(NormSym);
             assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
             return it->second;
         }
          else{
-            auto attrSym = u32_t(sym / 100);
-            Symbol offset = sym - attrSym * 100;
-            auto it = secondRHS2Prods.find(attrSym);
+            Symbol attribute = getAttribute(sym);
+            auto it = secondRHS2Prods.find(NormSym);
             SVF::GrammarBase::Productions *tempProds  = new SVF::GrammarBase::Productions;
             assert(it!=secondRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
             for (auto tempProd : it->second)
@@ -213,7 +220,7 @@ public:
                 {
                     if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
                     {
-                        tempProd[i] = tempProd[i] * 100 + offset;
+                        tempProd[i] = getAttributedKind(attribute, tempProd[i]);
                     }
                 }
                 tempProds->insert(tempProd);
@@ -243,6 +250,11 @@ public:
     inline int num_generator()
     {
         return newTerminalSubscript++;
+    }
+
+    bool isAttributedKind(Symbol flag) const
+    {
+        return (attributeSymbol.find(flag) != attributeSymbol.end());
     }
 
 private:

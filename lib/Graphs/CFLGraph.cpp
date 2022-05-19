@@ -34,7 +34,6 @@
 
 using namespace SVF;
 
-u32_t CFLEdge::offset = 1;
 //// Build graph from file
 void CFLGraph::build(std::string filename)
 {
@@ -89,6 +88,7 @@ void CFLGraph::buildFromDot(std::string fileName)
 
     std::cout << std::boolalpha;
     u32_t lineNum = 0 ;
+    current = label2SymMap.size();
 
     while (getline(inputFile, lineString))
     {
@@ -154,7 +154,7 @@ void CFLGraph::buildFromDot(std::string fileName)
     inputFile.close();
 }
 
-void CFLGraph::setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symbol>* nonterminals, Set<Symbol>* attibuteSyms)
+void CFLGraph::setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symbol>* nonterminals)
 {
     externMap = true;
     for(auto pairV : *terminals)
@@ -181,8 +181,6 @@ void CFLGraph::setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symb
         }
     }
     current = label2SymMap.size();
-
-    this->attrSyms = attibuteSyms;
 }
 
 
