@@ -205,7 +205,7 @@ void PCG::identifyFollowers()
                 const Instruction* inst = &*it;
                 // mark the callee of this callsite as follower
                 // if this is an call/invoke instruction but not a spawn site
-                if ((SVFUtil::isa<CallBase>(inst)) && !isSpawnsite(inst))
+                if ((SVFUtil::isCallSite(inst)) && !isSpawnsite(inst))
                 {
                     CallICFGNode* cbn = getCallICFGNode(inst);
                     if (callgraph->hasCallGraphEdge(cbn))

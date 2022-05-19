@@ -38,7 +38,6 @@
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
 #include <llvm/IR/InstIterator.h>	// for inst iteration
 #include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
-#include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/ADT/StringExtras.h>	// for utostr_32
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/CallGraph.h>	// call graph
@@ -47,7 +46,6 @@
 #include <llvm/Bitcode/BitcodeWriter.h>		// for WriteBitcodeToFile
 #include <llvm/Bitcode/BitcodeReader.h>     /// for isBitcode
 #include <llvm/IRReader/IRReader.h>	// IR reader for bit file
-#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #include <llvm/Analysis/DominanceFrontier.h>
 #include <llvm/Analysis/PostDominators.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
@@ -77,11 +75,6 @@ typedef llvm::Module Module;
 typedef llvm::User User;
 typedef llvm::Loop Loop;
 typedef llvm::LoopInfo LoopInfo;
-#if LLVM_VERSION_MAJOR >= 12
-typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
-#else
-typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
-#endif
 
 /// LLVM outputs
 typedef llvm::raw_string_ostream raw_string_ostream;
@@ -124,7 +117,6 @@ typedef llvm::FunctionCallee FunctionCallee;
 #endif
 
 /// LLVM scalar evolution
-typedef llvm::ScalarEvolutionWrapperPass ScalarEvolutionWrapperPass;
 typedef llvm::ScalarEvolution ScalarEvolution;
 typedef llvm::SCEVAddRecExpr SCEVAddRecExpr;
 typedef llvm::SCEVConstant SCEVConstant;
@@ -137,7 +129,6 @@ typedef llvm::PostDominatorTree PostDominatorTree;
 typedef llvm::DomTreeNode DomTreeNode;
 typedef llvm::DominanceFrontierBase<BasicBlock, false> DominanceFrontierBase;
 typedef llvm::PostDominatorTreeWrapperPass PostDominatorTreeWrapperPass;
-typedef llvm::LoopInfoWrapperPass LoopInfoWrapperPass;
 
 /// LLVM Iterators
 #if LLVM_VERSION_MAJOR >= 11

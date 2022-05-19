@@ -16,6 +16,9 @@
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
+#include <llvm/Analysis/ScalarEvolution.h>
+
+#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 
 #include <llvm/Support/SourceMgr.h>
 
@@ -23,6 +26,11 @@ typedef llvm::LLVMContext LLVMContext;
 typedef llvm::Use Use;
 typedef llvm::ModulePass ModulePass;
 typedef llvm::IRBuilder<> IRBuilder;
+#if LLVM_VERSION_MAJOR >= 12
+typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
+#else
+typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
+#endif
 
 
 typedef llvm::SMDiagnostic SMDiagnostic;
@@ -90,5 +98,8 @@ typedef llvm::gep_type_iterator gep_type_iterator;
 typedef llvm::bridge_gep_iterator bridge_gep_iterator;
 typedef llvm::const_inst_iterator const_inst_iterator;
 typedef llvm::const_pred_iterator const_pred_iterator;
+
+// LLVM Scalar Evolution.
+typedef llvm::ScalarEvolutionWrapperPass ScalarEvolutionWrapperPass;
 
 #endif  // SVF_FE_BASIC_TYPES_H

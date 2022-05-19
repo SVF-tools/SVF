@@ -11,6 +11,7 @@
 #include <set>
 #include <vector>
 #include "Util/BasicTypes.h"
+#include "SVF-FE/BasicTypes.h"
 
 namespace SVF
 {
