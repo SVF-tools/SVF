@@ -1,11 +1,19 @@
 #ifndef SVF_FE_BASIC_TYPES_H
 #define SVF_FE_BASIC_TYPES_H
 
+#include "SVF-FE/GEPTypeBridgeIterator.h"
+
+#include <llvm/Pass.h>
+
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IntrinsicInst.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Metadata.h>
 #include <llvm/IR/DataLayout.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/DebugInfo.h>
+#include <llvm/IR/InstIterator.h>
+#include <llvm/IR/GetElementPtrTypeIterator.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
 
@@ -13,6 +21,9 @@
 
 typedef llvm::LLVMContext LLVMContext;
 typedef llvm::Use Use;
+typedef llvm::ModulePass ModulePass;
+typedef llvm::IRBuilder<> IRBuilder;
+
 
 typedef llvm::SMDiagnostic SMDiagnostic;
 
@@ -63,5 +74,21 @@ typedef llvm::VAStartInst VAStartInst;
 typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
+
+// LLVM Debug Information
+typedef llvm::DebugInfoFinder DebugInfoFinder;
+typedef llvm::DISubroutineType DISubroutineType;
+typedef llvm::DIBasicType DIBasicType;
+typedef llvm::DISubrange DISubrange;
+typedef llvm::DINode DINode;
+typedef llvm::DINodeArray DINodeArray;
+typedef llvm::DITypeRefArray DITypeRefArray;
+
+// Iterators.
+typedef llvm::inst_iterator inst_iterator;
+typedef llvm::gep_type_iterator gep_type_iterator;
+typedef llvm::bridge_gep_iterator bridge_gep_iterator;
+typedef llvm::const_inst_iterator const_inst_iterator;
+typedef llvm::const_pred_iterator const_pred_iterator;
 
 #endif  // SVF_FE_BASIC_TYPES_H

@@ -8,6 +8,7 @@
 #include "Util/Options.h"
 #include "MTA/PCG.h"
 #include "Util/SVFUtil.h"
+#include "SVF-FE/BasicTypes.h"
 
 using namespace SVF;
 using namespace SVFUtil;

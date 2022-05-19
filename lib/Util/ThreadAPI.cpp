@@ -205,111 +205,113 @@ void ThreadAPI::performAPIStat(SVFModule* module)
     for (SVFModule::llvm_iterator it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
             ++it)
     {
-
-        for (inst_iterator II = inst_begin(*it), E = inst_end(*it); II != E;
-                ++II)
+    for (Function::iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
         {
-            const Instruction *inst = &*II;
-            if (!SVFUtil::isa<CallInst>(inst))
-                continue;
-            const SVFFunction* fun = getCallee(inst);
-            TD_TYPE type = getType(fun);
-            switch (type)
+            BasicBlock& bb = *bit;
+            for (BasicBlock::iterator ii = bb.begin(), eii = bb.end(); ii != eii; ++ii)
             {
-            case TD_FORK:
-            {
-                tdAPIStatMap["pthread_create"]++;
-                break;
-            }
-            case TD_JOIN:
-            {
-                tdAPIStatMap["pthread_join"]++;
-                break;
-            }
-            case TD_ACQUIRE:
-            {
-                tdAPIStatMap["pthread_mutex_lock"]++;
-                break;
-            }
-            case TD_TRY_ACQUIRE:
-            {
-                tdAPIStatMap["pthread_mutex_trylock"]++;
-                break;
-            }
-            case TD_RELEASE:
-            {
-                tdAPIStatMap["pthread_mutex_unlock"]++;
-                break;
-            }
-            case TD_CANCEL:
-            {
-                tdAPIStatMap["pthread_cancel"]++;
-                break;
-            }
-            case TD_EXIT:
-            {
-                tdAPIStatMap["pthread_exit"]++;
-                break;
-            }
-            case TD_DETACH:
-            {
-                tdAPIStatMap["pthread_detach"]++;
-                break;
-            }
-            case TD_COND_WAIT:
-            {
-                tdAPIStatMap["pthread_cond_wait"]++;
-                break;
-            }
-            case TD_COND_SIGNAL:
-            {
-                tdAPIStatMap["pthread_cond_signal"]++;
-                break;
-            }
-            case TD_COND_BROADCAST:
-            {
-                tdAPIStatMap["pthread_cond_broadcast"]++;
-                break;
-            }
-            case TD_CONDVAR_INI:
-            {
-                tdAPIStatMap["pthread_cond_init"]++;
-                break;
-            }
-            case TD_CONDVAR_DESTROY:
-            {
-                tdAPIStatMap["pthread_cond_destroy"]++;
-                break;
-            }
-            case TD_MUTEX_INI:
-            {
-                tdAPIStatMap["pthread_mutex_init"]++;
-                break;
-            }
-            case TD_MUTEX_DESTROY:
-            {
-                tdAPIStatMap["pthread_mutex_destroy"]++;
-                break;
-            }
-            case TD_BAR_INIT:
-            {
-                tdAPIStatMap["pthread_barrier_init"]++;
-                break;
-            }
-            case TD_BAR_WAIT:
-            {
-                tdAPIStatMap["pthread_barrier_wait"]++;
-                break;
-            }
-            case HARE_PAR_FOR:
-            {
-                tdAPIStatMap["hare_parallel_for"]++;
-                break;
-            }
-            case TD_DUMMY:
-            {
-                break;
-            }
+                const Instruction *inst = &*ii;
+                if (!SVFUtil::isa<CallInst>(inst))
+                    continue;
+                const SVFFunction* fun = getCallee(inst);
+                TD_TYPE type = getType(fun);
+                switch (type)
+                {
+                case TD_FORK:
+                {
+                    tdAPIStatMap["pthread_create"]++;
+                    break;
+                }
+                case TD_JOIN:
+                {
+                    tdAPIStatMap["pthread_join"]++;
+                    break;
+                }
+                case TD_ACQUIRE:
+                {
+                    tdAPIStatMap["pthread_mutex_lock"]++;
+                    break;
+                }
+                case TD_TRY_ACQUIRE:
+                {
+                    tdAPIStatMap["pthread_mutex_trylock"]++;
+                    break;
+                }
+                case TD_RELEASE:
+                {
+                    tdAPIStatMap["pthread_mutex_unlock"]++;
+                    break;
+                }
+                case TD_CANCEL:
+                {
+                    tdAPIStatMap["pthread_cancel"]++;
+                    break;
+                }
+                case TD_EXIT:
+                {
+                    tdAPIStatMap["pthread_exit"]++;
+                    break;
+                }
+                case TD_DETACH:
+                {
+                    tdAPIStatMap["pthread_detach"]++;
+                    break;
+                }
+                case TD_COND_WAIT:
+                {
+                    tdAPIStatMap["pthread_cond_wait"]++;
+                    break;
+                }
+                case TD_COND_SIGNAL:
+                {
+                    tdAPIStatMap["pthread_cond_signal"]++;
+                    break;
+                }
+                case TD_COND_BROADCAST:
+                {
+                    tdAPIStatMap["pthread_cond_broadcast"]++;
+                    break;
+                }
+                case TD_CONDVAR_INI:
+                {
+                    tdAPIStatMap["pthread_cond_init"]++;
+                    break;
+                }
+                case TD_CONDVAR_DESTROY:
+                {
+                    tdAPIStatMap["pthread_cond_destroy"]++;
+                    break;
+                }
+                case TD_MUTEX_INI:
+                {
+                    tdAPIStatMap["pthread_mutex_init"]++;
+                    break;
+                }
+                case TD_MUTEX_DESTROY:
+                {
+                    tdAPIStatMap["pthread_mutex_destroy"]++;
+                    break;
+                }
+                case TD_BAR_INIT:
+                {
+                    tdAPIStatMap["pthread_barrier_init"]++;
+                    break;
+                }
+                case TD_BAR_WAIT:
+                {
+                    tdAPIStatMap["pthread_barrier_wait"]++;
+                    break;
+                }
+                case HARE_PAR_FOR:
+                {
+                    tdAPIStatMap["hare_parallel_for"]++;
+                    break;
+                }
+                case TD_DUMMY:
+                {
+                    break;
+                }
+                }
             }
         }
 

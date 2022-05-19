@@ -31,7 +31,6 @@
 #define BASICTYPES_H_
 
 #include "Util/SVFBasicTypes.h"
-#include "SVF-FE/GEPTypeBridgeIterator.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
 #include <llvm/ADT/SparseBitVector.h>
@@ -53,9 +52,7 @@
 #include <llvm/Analysis/PostDominators.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 #include <llvm/ADT/GraphTraits.h>		// for Graphtraits
-#include <llvm/IR/IRBuilder.h>		// for instrument svf.main
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
-#include <llvm/IR/DebugInfo.h>
 
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/CFG.h"
@@ -85,7 +82,6 @@ typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
 #else
 typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
 #endif
-typedef llvm::ModulePass ModulePass;
 
 /// LLVM outputs
 typedef llvm::raw_string_ostream raw_string_ostream;
@@ -144,32 +140,19 @@ typedef llvm::PostDominatorTreeWrapperPass PostDominatorTreeWrapperPass;
 typedef llvm::LoopInfoWrapperPass LoopInfoWrapperPass;
 
 /// LLVM Iterators
-typedef llvm::inst_iterator inst_iterator;
 #if LLVM_VERSION_MAJOR >= 11
 typedef llvm::const_succ_iterator succ_const_iterator;
 #else
 typedef llvm::succ_const_iterator succ_const_iterator;
 #endif
-typedef llvm::const_inst_iterator const_inst_iterator;
-typedef llvm::const_pred_iterator const_pred_iterator;
-typedef llvm::gep_type_iterator gep_type_iterator;
-typedef llvm::bridge_gep_iterator bridge_gep_iterator;
 typedef llvm::GraphPrinter GraphPrinter;
-typedef llvm::IRBuilder<> IRBuilder;
 typedef llvm::IntegerType IntegerType;
 
 /// LLVM debug information
-typedef llvm::DebugInfoFinder DebugInfoFinder;
 typedef llvm::DIType DIType;
-typedef llvm::DIBasicType DIBasicType;
 typedef llvm::DICompositeType DICompositeType;
 typedef llvm::DIDerivedType DIDerivedType;
-typedef llvm::DISubroutineType DISubroutineType;
 typedef llvm::DISubprogram DISubprogram;
-typedef llvm::DISubrange DISubrange;
-typedef llvm::DINode DINode;
-typedef llvm::DINodeArray DINodeArray;
-typedef llvm::DITypeRefArray DITypeRefArray;
 namespace dwarf = llvm::dwarf;
 
 class SVFFunction : public SVFValue
