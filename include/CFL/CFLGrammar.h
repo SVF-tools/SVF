@@ -38,6 +38,8 @@ public:
     typedef u32_t Symbol;
     typedef std::vector<Symbol> Production;
     typedef Set<Production> Productions;
+    typedef u32_t Attribute;
+    typedef u32_t Kind;
     Map<std::string, Symbol> terminals;
     Map<std::string, Symbol> nonterminals;
     Symbol startSymbol;
@@ -63,19 +65,19 @@ public:
     Symbol insertNonTerminalSymbol(std::string strLit);
     void insertAttribute(Symbol s);
 
-    inline static Symbol getNormalKind(Symbol attributedKind)
+    inline static Kind getNormalKind(Symbol sym)
     {
-        return (EdgeKindMask & attributedKind);
+        return (EdgeKindMask & sym);
     }
 
-    inline static Symbol getAttribute(Symbol attributedKind)
+    inline static Attribute getAttribute(Symbol sym)
     {
-        return (attributedKind >> EdgeKindMaskBits);
+        return (sym >> EdgeKindMaskBits);
     }
 
-    inline static Symbol getAttributedKind(Symbol attribute, Symbol flag)
+    inline static Kind getAttributedKind(Attribute attribute, Kind kind)
     {     
-        return ((attribute << EdgeKindMaskBits)| flag );
+        return ((attribute << EdgeKindMaskBits)| kind );
     }
 
 protected:
@@ -142,91 +144,31 @@ public:
         return it!=secondRHS2Prods.end();
     }
 
-    const Productions& getProdsFromSingleRHS(Symbol sym) const
+    Productions getProdsFromSingleRHS(Symbol sym) const
     {   
-        auto NormSym = getNormalKind(sym);
-        if (isAttributedKind(NormSym) == false)
-        {
-            auto it = singleRHS2Prods.find(NormSym);
-            assert(it!=singleRHS2Prods.end() && "production (X -> sym) not found for sym!! ");
-            return it->second;
-        }
-        else{
-            Symbol attribute = getAttribute(sym);
-            auto it = singleRHS2Prods.find(NormSym);
-            SVF::GrammarBase::Productions *tempProds  = new SVF::GrammarBase::Productions;
-            assert(it!=singleRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
-            for (auto tempProd : it->second)
-            {   
-                for (int i = 0; i < int(tempProd.size()); i++)
-                {
-                    if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
-                    {
-                        tempProd[i] =  getAttributedKind(attribute, tempProd[i]);
-                    }
-                }
-                tempProds->insert(tempProd);
-            }
-            return *tempProds;
-        }
+        Kind NormSym = getNormalKind(sym);
+        Attribute attribute = getAttribute(sym);
+        auto it = singleRHS2Prods.find(NormSym);
+        assert(it!=singleRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
+        return fillProductionAttr(it->second, attribute);
     }
 
-    const Productions& getProdsFromFirstRHS(Symbol sym) const
+    Productions getProdsFromFirstRHS(Symbol sym) const
     {
-        auto NormSym = getNormalKind(sym);
-        if (isAttributedKind(NormSym) == false)
-        {
-            auto it = firstRHS2Prods.find(NormSym);
-            assert(it!=firstRHS2Prods.end() && "production (X -> sym Y) not found for sym!!");
-            return it->second;
-        }
-        else{
-            Symbol attribute = getAttribute(sym);
-            auto it = firstRHS2Prods.find(NormSym);
-            SVF::GrammarBase::Productions *tempProds  = new SVF::GrammarBase::Productions;
-            assert(it!=firstRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
-            for (auto tempProd : it->second)
-            {   
-                for (int i = 0; i < int(tempProd.size()); i++)
-                {
-                    if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
-                    {
-                        tempProd[i] = getAttributedKind(attribute, tempProd[i]);
-                    }
-                }
-                tempProds->insert(tempProd);
-            }
-            return *tempProds;
-        }
+        Kind NormSym = getNormalKind(sym);
+        Attribute attribute = getAttribute(sym);
+        auto it = firstRHS2Prods.find(NormSym);
+        assert(it!=firstRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
+        return fillProductionAttr(it->second, attribute);
     }
 
-    const Productions& getProdsFromSecondRHS(Symbol sym) const
+    Productions getProdsFromSecondRHS(Symbol sym) const
     {
-        auto NormSym = getNormalKind(sym);
-        if (isAttributedKind(NormSym) == false)
-        {
-            auto it = secondRHS2Prods.find(NormSym);
-            assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
-            return it->second;
-        }
-         else{
-            Symbol attribute = getAttribute(sym);
-            auto it = secondRHS2Prods.find(NormSym);
-            SVF::GrammarBase::Productions *tempProds  = new SVF::GrammarBase::Productions;
-            assert(it!=secondRHS2Prods.end() && "production (X -> sym Y) not found for sym! ");
-            for (auto tempProd : it->second)
-            {   
-                for (int i = 0; i < int(tempProd.size()); i++)
-                {
-                    if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
-                    {
-                        tempProd[i] = getAttributedKind(attribute, tempProd[i]);
-                    }
-                }
-                tempProds->insert(tempProd);
-            }
-            return *tempProds;
-        }
+        Kind NormSym = getNormalKind(sym);
+        Attribute attribute = getAttribute(sym);
+        auto it = secondRHS2Prods.find(NormSym);
+        assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
+        return fillProductionAttr(it->second, attribute);
     }
     
 
@@ -255,6 +197,23 @@ public:
     bool isAttributedKind(Symbol flag) const
     {
         return (attributeSymbol.find(flag) != attributeSymbol.end());
+    }
+
+    Productions fillProductionAttr(const Productions &prods, Attribute attribute) const
+    {
+        Productions tempProds;
+        for (auto tempProd : prods)
+        {   
+            for (int i = 0; i < int(tempProd.size()); i++)
+            {
+                if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
+                {
+                    tempProd[i] = getAttributedKind(attribute, tempProd[i]);
+                }
+            }
+            tempProds.insert(tempProd);
+        }
+        return tempProds;
     }
 
 private:

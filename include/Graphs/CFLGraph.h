@@ -59,16 +59,6 @@ public:
     {
         return this->getEdgeKindWithoutMask();
     }
-
-    inline static GEdgeKind getAttributedKind(GEdgeFlag attribute, GEdgeFlag flag)
-    {     
-        return ((attribute << CFLEdge::EdgeKindMaskBits)| flag );
-    }
-
-    inline static GEdgeKind getNormalKind(GEdgeFlag attributedKind)
-    {
-        return (CFLEdge::EdgeKindMask & attributedKind);
-    }
 };
 
 
@@ -140,12 +130,12 @@ public:
                 {
                     NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
                     u32_t offset =  nGepEdge->getConstantFieldIdx();
-                    edgeLabel = CFLEdge::getAttributedKind(offset, edgeLabel);
+                    edgeLabel = CFLGrammar::getAttributedKind(offset, edgeLabel);
                     addCFLEdge(getGNode(edge->getSrcID()), getGNode(edge->getDstID()), edgeLabel);
                     std::string key = this->sym2LabelMap[edge->getEdgeKind()];
-                    key.pop_back();
-                    key.append("bari");   
-                    addCFLEdge(getGNode(edge->getDstID()), getGNode(edge->getSrcID()), CFLEdge::getAttributedKind(offset, this->label2SymMap[key]));
+                    key.pop_back();    // i standsfor attribute variable should place at last
+                    key.append("bari");   // for example Gepi should be Gepbari, not Gepibar
+                    addCFLEdge(getGNode(edge->getDstID()), getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(offset, this->label2SymMap[key]));
                 }
                 else 
                 {
