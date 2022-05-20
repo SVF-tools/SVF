@@ -205,7 +205,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
     for (SVFModule::llvm_iterator it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
             ++it)
     {
-    for (Function::iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
+        for (Function::iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
         {
             BasicBlock& bb = *bit;
             for (BasicBlock::iterator ii = bb.begin(), eii = bb.end(); ii != eii; ++ii)
