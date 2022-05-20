@@ -48,7 +48,6 @@
 #include <llvm/IRReader/IRReader.h>	// IR reader for bit file
 #include <llvm/Analysis/DominanceFrontier.h>
 #include <llvm/Analysis/PostDominators.h>
-#include <llvm/Analysis/ScalarEvolutionExpressions.h>
 #include <llvm/ADT/GraphTraits.h>		// for Graphtraits
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
 
@@ -86,7 +85,6 @@ typedef llvm::StructType StructType;
 typedef llvm::ArrayType ArrayType;
 typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
-typedef llvm::VectorType VectorType;
 
 /// LLVM data layout
 typedef llvm::DataLayout DataLayout;
@@ -99,28 +97,15 @@ typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::ConstantArray ConstantArray;
 typedef llvm::GlobalAlias GlobalAlias;
-typedef llvm::ConstantDataArray ConstantDataArray;
 
 /// LLVM metadata
 typedef llvm::NamedMDNode NamedMDNode;
-typedef llvm::MDString MDString;
 typedef llvm::MDNode MDNode;
-
 
 /// LLVM Instructions
 typedef llvm::CallInst CallInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
-
-#if (LLVM_VERSION_MAJOR >= 9)
-typedef llvm::FunctionCallee FunctionCallee;
-#endif
-
-/// LLVM scalar evolution
-typedef llvm::ScalarEvolution ScalarEvolution;
-typedef llvm::SCEVAddRecExpr SCEVAddRecExpr;
-typedef llvm::SCEVConstant SCEVConstant;
-typedef llvm::SCEV SCEV;
 
 /// LLVM Dominators
 typedef llvm::DominanceFrontier DominanceFrontier;
@@ -128,7 +113,6 @@ typedef llvm::DominatorTree DominatorTree;
 typedef llvm::PostDominatorTree PostDominatorTree;
 typedef llvm::DomTreeNode DomTreeNode;
 typedef llvm::DominanceFrontierBase<BasicBlock, false> DominanceFrontierBase;
-typedef llvm::PostDominatorTreeWrapperPass PostDominatorTreeWrapperPass;
 
 /// LLVM Iterators
 #if LLVM_VERSION_MAJOR >= 11

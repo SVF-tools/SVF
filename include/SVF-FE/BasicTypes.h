@@ -14,9 +14,11 @@
 #include <llvm/IR/DebugInfo.h>
 #include <llvm/IR/InstIterator.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
+#include <llvm/IR/DerivedTypes.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
 #include <llvm/Analysis/ScalarEvolution.h>
+#include <llvm/Analysis/ScalarEvolutionExpressions.h>
 
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 
@@ -35,8 +37,11 @@ typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
 
 typedef llvm::SMDiagnostic SMDiagnostic;
 
-typedef llvm::MetadataAsValue MetadataAsValue;
 typedef llvm::BlockAddress BlockAddress;
+
+// LLVM Metadata
+typedef llvm::MDString MDString;
+typedef llvm::MetadataAsValue MetadataAsValue;
 
 // LLVM data layout
 typedef llvm::StructLayout StructLayout;
@@ -48,6 +53,7 @@ typedef llvm::ConstantAggregate ConstantAggregate;
 typedef llvm::ConstantAggregateZero ConstantAggregateZero;
 typedef llvm::ConstantDataSequential ConstantDataSequential;
 typedef llvm::ConstantExpr ConstantExpr;
+typedef llvm::ConstantDataArray ConstantDataArray;
 
 // LLVM Instructions
 typedef llvm::AllocaInst AllocaInst;
@@ -101,5 +107,16 @@ typedef llvm::const_pred_iterator const_pred_iterator;
 
 // LLVM Scalar Evolution.
 typedef llvm::ScalarEvolutionWrapperPass ScalarEvolutionWrapperPass;
+typedef llvm::SCEVAddRecExpr SCEVAddRecExpr;
+typedef llvm::SCEVConstant SCEVConstant;
+typedef llvm::ScalarEvolution ScalarEvolution;
+typedef llvm::SCEV SCEV;
+
+// LLVM Types.
+typedef llvm::VectorType VectorType;
+#if (LLVM_VERSION_MAJOR >= 9)
+typedef llvm::FunctionCallee FunctionCallee;
+#endif
+
 
 #endif  // SVF_FE_BASIC_TYPES_H
