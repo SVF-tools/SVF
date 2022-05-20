@@ -33,6 +33,7 @@
 #include "Util/BasicTypes.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "SVF-FE/BasicTypes.h"
 
 namespace SVF
 {

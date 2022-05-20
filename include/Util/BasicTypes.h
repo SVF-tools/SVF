@@ -31,7 +31,6 @@
 #define BASICTYPES_H_
 
 #include "Util/SVFBasicTypes.h"
-#include "SVF-FE/GEPTypeBridgeIterator.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
 #include <llvm/ADT/SparseBitVector.h>
@@ -39,7 +38,6 @@
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
 #include <llvm/IR/InstIterator.h>	// for inst iteration
 #include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
-#include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/ADT/StringExtras.h>	// for utostr_32
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/CallGraph.h>	// call graph
@@ -48,14 +46,10 @@
 #include <llvm/Bitcode/BitcodeWriter.h>		// for WriteBitcodeToFile
 #include <llvm/Bitcode/BitcodeReader.h>     /// for isBitcode
 #include <llvm/IRReader/IRReader.h>	// IR reader for bit file
-#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #include <llvm/Analysis/DominanceFrontier.h>
 #include <llvm/Analysis/PostDominators.h>
-#include <llvm/Analysis/ScalarEvolutionExpressions.h>
 #include <llvm/ADT/GraphTraits.h>		// for Graphtraits
-#include <llvm/IR/IRBuilder.h>		// for instrument svf.main
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
-#include <llvm/IR/DebugInfo.h>
 
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/CFG.h"
@@ -80,12 +74,6 @@ typedef llvm::Module Module;
 typedef llvm::User User;
 typedef llvm::Loop Loop;
 typedef llvm::LoopInfo LoopInfo;
-#if LLVM_VERSION_MAJOR >= 12
-typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
-#else
-typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
-#endif
-typedef llvm::ModulePass ModulePass;
 
 /// LLVM outputs
 typedef llvm::raw_string_ostream raw_string_ostream;
@@ -97,7 +85,6 @@ typedef llvm::StructType StructType;
 typedef llvm::ArrayType ArrayType;
 typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
-typedef llvm::VectorType VectorType;
 
 /// LLVM data layout
 typedef llvm::DataLayout DataLayout;
@@ -110,29 +97,15 @@ typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::ConstantArray ConstantArray;
 typedef llvm::GlobalAlias GlobalAlias;
-typedef llvm::ConstantDataArray ConstantDataArray;
 
 /// LLVM metadata
 typedef llvm::NamedMDNode NamedMDNode;
-typedef llvm::MDString MDString;
 typedef llvm::MDNode MDNode;
-
 
 /// LLVM Instructions
 typedef llvm::CallInst CallInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
-
-#if (LLVM_VERSION_MAJOR >= 9)
-typedef llvm::FunctionCallee FunctionCallee;
-#endif
-
-/// LLVM scalar evolution
-typedef llvm::ScalarEvolutionWrapperPass ScalarEvolutionWrapperPass;
-typedef llvm::ScalarEvolution ScalarEvolution;
-typedef llvm::SCEVAddRecExpr SCEVAddRecExpr;
-typedef llvm::SCEVConstant SCEVConstant;
-typedef llvm::SCEV SCEV;
 
 /// LLVM Dominators
 typedef llvm::DominanceFrontier DominanceFrontier;
@@ -140,36 +113,21 @@ typedef llvm::DominatorTree DominatorTree;
 typedef llvm::PostDominatorTree PostDominatorTree;
 typedef llvm::DomTreeNode DomTreeNode;
 typedef llvm::DominanceFrontierBase<BasicBlock, false> DominanceFrontierBase;
-typedef llvm::PostDominatorTreeWrapperPass PostDominatorTreeWrapperPass;
-typedef llvm::LoopInfoWrapperPass LoopInfoWrapperPass;
 
 /// LLVM Iterators
-typedef llvm::inst_iterator inst_iterator;
 #if LLVM_VERSION_MAJOR >= 11
 typedef llvm::const_succ_iterator succ_const_iterator;
 #else
 typedef llvm::succ_const_iterator succ_const_iterator;
 #endif
-typedef llvm::const_inst_iterator const_inst_iterator;
-typedef llvm::const_pred_iterator const_pred_iterator;
-typedef llvm::gep_type_iterator gep_type_iterator;
-typedef llvm::bridge_gep_iterator bridge_gep_iterator;
 typedef llvm::GraphPrinter GraphPrinter;
-typedef llvm::IRBuilder<> IRBuilder;
 typedef llvm::IntegerType IntegerType;
 
 /// LLVM debug information
-typedef llvm::DebugInfoFinder DebugInfoFinder;
 typedef llvm::DIType DIType;
-typedef llvm::DIBasicType DIBasicType;
 typedef llvm::DICompositeType DICompositeType;
 typedef llvm::DIDerivedType DIDerivedType;
-typedef llvm::DISubroutineType DISubroutineType;
 typedef llvm::DISubprogram DISubprogram;
-typedef llvm::DISubrange DISubrange;
-typedef llvm::DINode DINode;
-typedef llvm::DINodeArray DINodeArray;
-typedef llvm::DITypeRefArray DITypeRefArray;
 namespace dwarf = llvm::dwarf;
 
 class SVFFunction : public SVFValue
