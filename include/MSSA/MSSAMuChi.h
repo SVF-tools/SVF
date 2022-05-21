@@ -716,6 +716,7 @@ public:
     }
 };
 
+llvm::raw_ostream& operator<<(llvm::raw_ostream &o, const MRVer& mrver); 
 } // End namespace SVF
 
 #endif /* MSSAMUCHI_H_ */
