@@ -8,6 +8,7 @@
 #include "Util/Options.h"
 #include "MTA/PCG.h"
 #include "Util/SVFUtil.h"
+#include "SVF-FE/BasicTypes.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -69,7 +70,7 @@ void PCG::initFromThreadAPI(SVFModule* module)
 {
     for (SVFModule::const_iterator fi = module->begin(), efi = module->end(); fi != efi; ++fi)
     {
-    	const Function* fun = (*fi)->getLLVMFun();
+        const Function* fun = (*fi)->getLLVMFun();
         for (inst_iterator II = inst_begin((*fi)->getLLVMFun()), E = inst_end((*fi)->getLLVMFun()); II != E; ++II)
         {
             const Instruction *inst = &*II;
@@ -204,9 +205,9 @@ void PCG::identifyFollowers()
                 const Instruction* inst = &*it;
                 // mark the callee of this callsite as follower
                 // if this is an call/invoke instruction but not a spawn site
-                if ((SVFUtil::isa<CallBase>(inst)) && !isSpawnsite(inst))
+                if ((SVFUtil::isCallSite(inst)) && !isSpawnsite(inst))
                 {
-                	CallICFGNode* cbn = getCallICFGNode(inst);
+                    CallICFGNode* cbn = getCallICFGNode(inst);
                     if (callgraph->hasCallGraphEdge(cbn))
                     {
                         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(cbn),

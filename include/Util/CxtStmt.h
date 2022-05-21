@@ -455,36 +455,46 @@ private:
 
 } // End namespace SVF
 // Specialise has for class defined in this header file
-template <> struct std::hash<SVF::CxtThread> {
-	size_t operator()(const SVF::CxtThread& cs) const {
-		std::hash<SVF::CallStrCxt> h;
-		return h(cs.getContext());
-	}
+template <> struct std::hash<SVF::CxtThread>
+{
+    size_t operator()(const SVF::CxtThread& cs) const
+    {
+        std::hash<SVF::CallStrCxt> h;
+        return h(cs.getContext());
+    }
 };
-template <> struct std::hash<SVF::CxtThreadProc> {
-	size_t operator()(const SVF::CxtThreadProc& ctp) const {
-		std::hash<SVF::NodeID> h;
-		return h(ctp.getTid());
-	}
+template <> struct std::hash<SVF::CxtThreadProc>
+{
+    size_t operator()(const SVF::CxtThreadProc& ctp) const
+    {
+        std::hash<SVF::NodeID> h;
+        return h(ctp.getTid());
+    }
 };
-template <> struct std::hash<SVF::CxtThreadStmt> {
-	size_t operator()(const SVF::CxtThreadStmt& cts) const {
-		std::hash<SVF::NodeID> h;
-		return h(cts.getTid());
-	}
+template <> struct std::hash<SVF::CxtThreadStmt>
+{
+    size_t operator()(const SVF::CxtThreadStmt& cts) const
+    {
+        std::hash<SVF::NodeID> h;
+        return h(cts.getTid());
+    }
 };
-template <> struct std::hash<SVF::CxtStmt> {
-	size_t operator()(const SVF::CxtStmt& cs) const {
-		std::hash<SVF::Instruction*> h;
-		SVF::Instruction* inst = const_cast<SVF::Instruction*> (cs.getStmt());
-		return h(inst);
-	}
+template <> struct std::hash<SVF::CxtStmt>
+{
+    size_t operator()(const SVF::CxtStmt& cs) const
+    {
+        std::hash<SVF::Instruction*> h;
+        SVF::Instruction* inst = const_cast<SVF::Instruction*> (cs.getStmt());
+        return h(inst);
+    }
 };
-template <> struct std::hash<SVF::CxtProc> {
-	size_t operator()(const SVF::CxtProc& cs) const {
-		std::hash<SVF::SVFFunction*> h;
-		SVF::SVFFunction* fun = const_cast<SVF::SVFFunction*> (cs.getProc());
-		return h(fun);
-	}
+template <> struct std::hash<SVF::CxtProc>
+{
+    size_t operator()(const SVF::CxtProc& cs) const
+    {
+        std::hash<SVF::SVFFunction*> h;
+        SVF::SVFFunction* fun = const_cast<SVF::SVFFunction*> (cs.getProc());
+        return h(fun);
+    }
 };
 #endif /* INCLUDE_UTIL_CXTSTMT_H_ */

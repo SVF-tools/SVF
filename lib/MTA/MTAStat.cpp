@@ -13,6 +13,7 @@
 #include "MTA/FSMPTA.h"
 #include "MTA/MTAAnnotator.h"
 #include "Graphs/ThreadCallGraph.h"
+#include "SVF-FE/BasicTypes.h"
 
 using namespace SVF;
 

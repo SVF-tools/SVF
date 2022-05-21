@@ -203,7 +203,8 @@ private:
 template <>
 struct Hash<CoreBitVector>
 {
-    size_t operator()(const CoreBitVector &cbv) const {
+    size_t operator()(const CoreBitVector &cbv) const
+    {
         return cbv.hash();
     }
 };

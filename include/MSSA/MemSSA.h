@@ -75,7 +75,7 @@ public:
     typedef Map<const StoreStmt*, CHISet> StoreToChiSetMap;
     typedef Map<const CallICFGNode*, MUSet> CallSiteToMUSetMap;
     typedef Map<const CallICFGNode*, CHISet> CallSiteToCHISetMap;
-    typedef Map<const BasicBlock*, PHISet> BBToPhiSetMap;
+    typedef OrderedMap<const BasicBlock*, PHISet> BBToPhiSetMap;
     //@}
 
     /// Map from fun to its entry chi set and return mu set
@@ -343,7 +343,7 @@ public:
     inline bool hasCHI(const PAGEdge* inst) const
     {
         if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(
-                                       inst))
+                                         inst))
         {
             assert(0 != store2ChiSetMap.count(store)
                    && "not associated with mem region!");

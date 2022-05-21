@@ -16,7 +16,8 @@ Steensgaard *Steensgaard::steens = nullptr;
  * Steensgaard analysis
  */
 
-void Steensgaard::solveWorklist(){
+void Steensgaard::solveWorklist()
+{
 
     processAllAddr();
 
@@ -27,24 +28,29 @@ void Steensgaard::solveWorklist(){
         ConstraintNode* node = consCG->getConstraintNode(nodeId);
 
         /// foreach o \in pts(p)
-        for(NodeID o : getPts(nodeId)){
+        for(NodeID o : getPts(nodeId))
+        {
 
             /// *p = q : EC(o) == EC(q)
-            for (ConstraintEdge* edge : node->getStoreInEdges()){
+            for (ConstraintEdge* edge : node->getStoreInEdges())
+            {
                 ecUnion(edge->getSrcID(), o);
             }
             // r = *p : EC(r) == EC(o)
-            for (ConstraintEdge* edge : node->getLoadOutEdges()){
+            for (ConstraintEdge* edge : node->getLoadOutEdges())
+            {
                 ecUnion(o, edge->getDstID());
             }
         }
 
         /// q = p : EC(q) == EC(p)
-        for (ConstraintEdge* edge : node->getCopyOutEdges()){
+        for (ConstraintEdge* edge : node->getCopyOutEdges())
+        {
             ecUnion(edge->getSrcID(),edge->getDstID());
         }
         /// q = &p->f : EC(q) == EC(p)
-        for (ConstraintEdge* edge : node->getGepOutEdges()){
+        for (ConstraintEdge* edge : node->getGepOutEdges())
+        {
             ecUnion(edge->getSrcID(),edge->getDstID());
         }
     }
@@ -55,7 +61,8 @@ void Steensgaard::setEC(NodeID node, NodeID rep)
 {
     rep = getEC(rep);
     Set<NodeID>& subNodes = getSubNodes(node);
-    for(NodeID sub : subNodes){
+    for(NodeID sub : subNodes)
+    {
         nodeToECMap[sub] = rep;
         addSubNode(rep,sub);
     }
@@ -64,7 +71,8 @@ void Steensgaard::setEC(NodeID node, NodeID rep)
 
 
 /// merge node into equiv class and merge node's pts into ec's pts
-void Steensgaard::ecUnion(NodeID node, NodeID ec){
+void Steensgaard::ecUnion(NodeID node, NodeID ec)
+{
     if(unionPts(ec, node))
         pushIntoWorklist(ec);
     setEC(node,ec);
@@ -79,7 +87,8 @@ void Steensgaard::processAllAddr()
     {
         ConstraintNode * cgNode = nodeIt->second;
         for (ConstraintNode::const_iterator it = cgNode->incomingAddrsBegin(), eit = cgNode->incomingAddrsEnd();
-                it != eit; ++it){
+                it != eit; ++it)
+        {
             numOfProcessedAddr++;
 
             const AddrCGEdge* addr = cast<AddrCGEdge>(*it);

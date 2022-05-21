@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * IRGraph.h 
+ * IRGraph.h
  *
  *  Created on: Nov 1, 2013
  *      Author: Yulei Sui
@@ -53,7 +53,7 @@ public:
 
 protected:
     SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap;  // < SVFIR edge map containing all PAGEdges
-    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap;  // < SVFIR edge map containing only pointer-related edges, i.e, both RHS and RHS are of pointer type
+    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap;  // < SVFIR edge map containing only pointer-related edges, i.e, both LHS and RHS are of pointer type
     bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
     NodeID nodeNumAfterPAGBuild; // initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
     u32_t totalPTAPAGEdge;
@@ -81,17 +81,20 @@ protected:
     inline void mapValueToEdge(const Value *V, SVFStmt *edge)
     {
         auto inserted = valueToEdgeMap.emplace(V, SVFStmtSet{edge});
-        if (!inserted.second) {
+        if (!inserted.second)
+        {
             inserted.first->second.emplace(edge);
         }
     }
     /// get MemObj according to LLVM value
-    inline const MemObj* getMemObj(const Value* val) const{
+    inline const MemObj* getMemObj(const Value* val) const
+    {
         return symInfo->getObj(symInfo->getObjSym(val));
     }
-    
+
 public:
-    IRGraph(bool buildFromFile): fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0){
+    IRGraph(bool buildFromFile): fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
+    {
         symInfo = SymbolTableInfo::SymbolInfo();
         // insert dummy value if a correct value cannot be found
         valueToEdgeMap[nullptr] = SVFStmtSet();
@@ -108,7 +111,8 @@ public:
     inline const SVFStmtSet& getValueEdges(const Value *V)
     {
         auto it = valueToEdgeMap.find(V);
-        if (it == valueToEdgeMap.end()) {
+        if (it == valueToEdgeMap.end())
+        {
             //special empty set
             return valueToEdgeMap.at(nullptr);
         }

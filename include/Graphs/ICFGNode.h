@@ -145,7 +145,7 @@ class GlobalICFGNode : public ICFGNode
 public:
     GlobalICFGNode(NodeID id) : ICFGNode(id, GlobalBlock)
     {
-    	bb = nullptr;
+        bb = nullptr;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -309,7 +309,6 @@ class FunExitICFGNode : public InterICFGNode
 {
 
 private:
-    const SVFFunction* fun;
     const SVFVar *formalRet;
 public:
     FunExitICFGNode(NodeID id, const SVFFunction* f);
@@ -386,7 +385,7 @@ public:
     /// Return callsite
     inline const RetICFGNode* getRetICFGNode() const
     {
-    	assert(ret && "RetICFGNode not set?");
+        assert(ret && "RetICFGNode not set?");
         return ret;
     }
 

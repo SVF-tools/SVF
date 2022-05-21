@@ -33,7 +33,7 @@
 #include "Util/SVFModule.h"
 #include "SVF-FE/DataFlowUtil.h"
 #include "SVF-FE/BasicTypes.h"
-#include "Util/Conditions.h"
+#include "Util/BDDExpr.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
 
@@ -49,7 +49,7 @@ class PathCondAllocator
 
 public:
 
-    typedef CondExpr Condition;   /// z3 condition
+    typedef BDDExprManager::BDDExpr Condition;   /// z3 condition
 
     typedef Map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
     typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
@@ -133,12 +133,14 @@ public:
     {
         return condMgr->getCondInst(cond);
     }
-    inline void setCondInst(const CondExpr* cond, const Instruction* inst){
+    inline void setCondInst(const Condition* cond, const Instruction* inst)
+    {
         condMgr->setCondInst(cond, inst);
     }
     //@}
 
-    bool isNegCond(const Condition *condition) {
+    bool isNegCond(const Condition *condition)
+    {
         return condMgr->isNegCond(condition);
     }
 
@@ -189,20 +191,24 @@ public:
     void printPathCond();
 
     /// whether condition is satisfiable
-    inline bool isSatisfiable(Condition* condition){
+    inline bool isSatisfiable(Condition* condition)
+    {
         return condMgr->isSatisfiable(condition);
     }
 
     /// whether condition is satisfiable for all possible boolean guards
-    inline bool isAllPathReachable(Condition* condition){
+    inline bool isAllPathReachable(Condition* condition)
+    {
         return condMgr->isAllPathReachable(condition);
     }
 
-    bool isEquivalentBranchCond(const Condition *lhs, const Condition *rhs) const{
+    bool isEquivalentBranchCond(const Condition *lhs, const Condition *rhs) const
+    {
         return condMgr->isEquivalentBranchCond(lhs, rhs);
     }
 
-    inline ICFG* getICFG() const {
+    inline ICFG* getICFG() const
+    {
         return PAG::getPAG()->getICFG();
     }
 
@@ -276,7 +282,8 @@ private:
 
 
     /// Release memory
-    void destroy(){
+    void destroy()
+    {
 
     }
 
@@ -286,7 +293,7 @@ private:
     const SVFGNode* curEvalSVFGNode{};			///< current llvm value to evaluate branch condition when computing guards
 
 protected:
-    CondManager* condMgr;		///< z3 manager
+    BDDExprManager* condMgr;		///< z3 manager
     BBCondMap bbConds;						///< map basic block to its successors/predecessors branch conditions
 
 };

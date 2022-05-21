@@ -104,7 +104,7 @@ public:
     /// Return accumulated constant offset given OffsetValueVec
     s32_t accumulateConstantOffset() const;
 
-    /// Return element number of a type. 
+    /// Return element number of a type.
     u32_t getElementNum(const Type* type) const;
 
     bool addOffsetValue(const Value* offsetValue, const Type* type);
@@ -135,8 +135,10 @@ private:
 
 } // End namespace SVF
 
-template <> struct std::hash<SVF::LocationSet> {
-    size_t operator()(const SVF::LocationSet &ls) const {
+template <> struct std::hash<SVF::LocationSet>
+{
+    size_t operator()(const SVF::LocationSet &ls) const
+    {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
         std::hash<SVF::LocationSet::OffsetValueVec> v;
         return h(std::make_pair(ls.accumulateConstantFieldIdx(), v(ls.getOffsetValueVec())));
