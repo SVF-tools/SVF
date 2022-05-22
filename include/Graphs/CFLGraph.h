@@ -46,8 +46,6 @@ typedef GenericEdge<CFLNode> GenericCFLEdgeTy;
 
 class CFLEdge: public GenericCFLEdgeTy
 {
-    static u32_t offset;
-
 public:
     CFLEdge(CFLNode *s, CFLNode *d, GEdgeFlag k = 0):
         GenericCFLEdgeTy(s,d,k)
@@ -135,9 +133,11 @@ public:
                     edgeLabel = CFLGrammar::getAttributedKind(offset, edgeLabel);
                     addCFLEdge(getGNode(edge->getSrcID()), getGNode(edge->getDstID()), edgeLabel);
                     std::string key = this->sym2LabelMap[edge->getEdgeKind()];
-                    key.pop_back();    // i standsfor attribute variable should place at last
-                    key.append("bari");   // for example Gepi should be Gepbari, not Gepibar
+                    key.pop_back();
+                    key.pop_back();    // _i standsfor attribute variable should place at last
+                    key.append("bar_i");   // for example Gep_i should be Gepbar_i, not Gep_ibar
                     addCFLEdge(getGNode(edge->getDstID()), getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(offset, this->label2SymMap[key]));
+                    addAttribute(this->label2SymMap[key], offset);
                 }
                 else 
                 {

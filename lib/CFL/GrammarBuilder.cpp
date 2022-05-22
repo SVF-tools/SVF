@@ -1,4 +1,4 @@
-//===----- CFGNormalizer.h -- CFL Alias Analysis Client--------------//
+//===----- GrammarBuilder.cpp -- Grammar Builder--------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

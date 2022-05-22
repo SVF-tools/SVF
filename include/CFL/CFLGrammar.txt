@@ -6,6 +6,6 @@ Productions:
    Fbar -> ( Copybar ) *;
    Fbar -> ( Loadbar V Storebar ) *;
    V -> Fbar V F;
-   V -> Gepbari V Gepi;
+   V -> Gepbar_i V Gep_i;
    V -> Addrbar Addr;
    V -> epsilon;

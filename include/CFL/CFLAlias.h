@@ -65,7 +65,7 @@ public:
         if (Options::GraphIsFromDot == false)
         {
             PointerAnalysis::initialize();
-            Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gepi", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbari", 10},{"Vgepbar", 11}};
+            Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
             GrammarBase *generalGrammar = gReader->build(&ConstMap);
             graph->label2SymMap = ConstMap;
             grammar = normalizer->normalize(generalGrammar);

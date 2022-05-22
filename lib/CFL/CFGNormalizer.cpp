@@ -182,7 +182,7 @@ void CFGNormalizer::ebnf_bin(GrammarBase* generalGrammar, CFLGrammar *grammar)
                 {
                     if (grammar->attributeSymbol.find(rule[i]) != grammar->attributeSymbol.end())
                     {
-                        tempStr.append("i");
+                        tempStr.append("_i");
                         break;
                     }
                 }

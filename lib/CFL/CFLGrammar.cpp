@@ -101,9 +101,12 @@ GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string strLit)
     {
         sym = str2Sym(strLit);
     }
-    if (strLit.back() == 'i')
+    if(strLit.size() >= 3)
     {
+        if (strLit.compare(strLit.size()-2, 2, "_i")==0)
+        {
         insertAttribute(sym);
+        }
     }
     return sym;
 }
