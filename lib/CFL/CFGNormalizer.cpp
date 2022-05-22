@@ -81,16 +81,14 @@ using namespace SVF;
 // BIN Transforom
 CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
 {
-    /*
-    ebnf_sign_replace('*');
-    ebnf_sign_replace('?');
-    */
     CFLGrammar *grammar = new CFLGrammar();
     grammar->startSymbol = generalGrammar->startSymbol;
     grammar->terminals = generalGrammar->terminals;
     grammar->nonterminals = generalGrammar->nonterminals;
     grammar->totalSymbol = generalGrammar->totalSymbol;
     grammar->attributeSymbol = generalGrammar->attributeSymbol;
+    ebnf_sign_replace('*', generalGrammar, grammar);
+    ebnf_sign_replace('?', generalGrammar, grammar);
     ebnf_bin(generalGrammar, grammar);
     grammar->rawProductions = generalGrammar->rawProductions;
 
@@ -311,9 +309,13 @@ void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CF
 {
     SVF::Map<std::string, std::string> new_rule_checker;
     std::string X = "X";
-    for (auto ebnfHead : generalGrammar->rawProductions)
+    
+    /// replace Sign Group With Temp Varibale
+    /// and load the replace in new_rule_checker
+    for (auto &ebnfPair : generalGrammar->rawProductions)
     {
-        for (auto ebnfProd : ebnfHead.second)
+        Productions tempProds = ebnfPair.second;
+        for (auto ebnfProd : ebnfPair.second)
         {
             size_t i = 1;
             while (i < ebnfProd.size())
@@ -321,15 +323,13 @@ void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CF
                 int repetition_start = -1;
                 if (grammar->sym2Str(ebnfProd[i]) == std::string(1, sign))
                 {
-                    if (i == 1)
-                    {
-                        // abort("EBNF Form is not correct");
-                        std::cout << "wr";
-                    }
-                    else if (grammar->sym2Str(ebnfProd[i - 1]) != std::string(1, ')'))
+                    assert(i != 1 && "sign in grammar associate with no symble");
+                    /// If sign assoicate wihout group e.i with single symble
+                    if (grammar->sym2Str(ebnfProd[i - 1]) != std::string(1, ')'))
                     {
                         repetition_start = i - 1;
                     }
+                    /// sign associate with group of symble by brace pair
                     else
                     {
                         repetition_start = ebnf_bracket_match(ebnfProd, i, grammar);
@@ -343,9 +343,10 @@ void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CF
                     repetition.append(grammar->sym2Str(ebnfProd[i]));
                     if (new_rule_checker.find(repetition) != new_rule_checker.end())
                     {
-
+                        tempProds.erase(ebnfProd);
                         ebnfProd.erase(ebnfProd.begin() + repetition_start, ebnfProd.begin() + i + 1);
                         ebnfProd.insert(ebnfProd.begin() + repetition_start, grammar->str2Sym(new_rule_checker[repetition]));
+                        tempProds.insert(ebnfProd);
                     }
                     else
                     {
@@ -354,27 +355,42 @@ void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CF
                         ss << grammar->num_generator();
                         X.append(ss.str());
                         Symbol tempSym = grammar->insertNonTerminalSymbol(X);
+                        tempProds.erase(ebnfProd);
                         ebnfProd.erase(ebnfProd.begin() + repetition_start, ebnfProd.begin() + i + 1);
                         ebnfProd.insert(ebnfProd.begin() + repetition_start, tempSym);
                         new_rule_checker[repetition] = X;
+                        tempProds.insert(ebnfProd);
                     }
+                    
                     i = repetition_start;
                 }
                 i++;
             }
         }
+        ebnfPair.second = tempProds;
     }
     for(auto rep: new_rule_checker)
     {
-        Production temp_list = {};
+        /// For Both * and ? need to insert epsilon rule
         std::string new_nonterminal = rep.second;
+        Production temp_list = {grammar->str2Sym(new_nonterminal), grammar->str2Sym("epsilon")};
+        generalGrammar->rawProductions[grammar->str2Sym(new_nonterminal)].insert(temp_list);
+        /// insert second rule for '*' X -> X E for '+' X -> X
+        temp_list = {grammar->str2Sym(new_nonterminal)};
         if (sign == '*')
         {
-            temp_list.push_back(grammar->str2Sym(new_nonterminal));
+            /// Insert Back the Group
+            Production E = strTrans(rep.first, grammar);
+            Production withoutSign = {};
+            for (auto &word : E)
+            {
+                if (word != grammar->str2Sym("*")  && word != grammar->str2Sym("(") && word != grammar->str2Sym(")"))
+                {
+                    withoutSign.push_back(word);
+                }
+            }
+            temp_list.insert(temp_list.end(), withoutSign.begin(), withoutSign.end());
         }
-        Production temp_p = strTrans(rep.second, grammar);
-        temp_list.insert(temp_list.end(), temp_p.begin(),temp_p.end());
-        temp_list.insert(temp_list.begin(), grammar->str2Sym("epsilon"));
         generalGrammar->rawProductions[grammar->str2Sym(new_nonterminal)].insert(temp_list);
     }
 
