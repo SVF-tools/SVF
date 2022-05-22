@@ -1,0 +1,22 @@
+Start:  
+   V
+Productions:
+   V -> Gepbari V Gepi;
+   F -> N1;
+   N1 -> epsilon;
+   N1 -> N1 Copy;
+   F -> N2;
+   N2 -> epsilon;
+   N2 -> N2 Store V Load;
+   Fbar -> N4;
+   N4 -> epsilon;
+   N4 -> N4 Copybar;
+   Fbar -> N5;
+   N5 -> epsilon;
+   N5 -> N5 Loadbar V Storebar;
+   V -> Fbar V F;
+   V -> Addrbar Addr;
+
+
+
+

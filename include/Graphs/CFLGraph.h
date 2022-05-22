@@ -84,6 +84,7 @@ public:
     Map<Symbol, std::string> sym2LabelMap;
     Symbol startSymbol;
     Set<Symbol> *attrSyms;
+    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kind2AttrMap;
 
     CFLGraph()
     {
@@ -123,13 +124,14 @@ public:
             N* node = (*it).second;
             for(E* edge : node->getOutEdges())
             {
-                u32_t edgeLabel = edge->getEdgeKind();
+                CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
                 // Need to get the offset from the Const Edge
                 // The offset present edge is only from Normal Gep CG at moment
                 if(NormalGepCGEdge::classof(edge))
                 {
                     NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
-                    u32_t offset =  nGepEdge->getConstantFieldIdx();
+                    CFLGrammar::Attribute offset =  nGepEdge->getConstantFieldIdx();
+                    addAttribute(edgeLabel, offset);
                     edgeLabel = CFLGrammar::getAttributedKind(offset, edgeLabel);
                     addCFLEdge(getGNode(edge->getSrcID()), getGNode(edge->getDstID()), edgeLabel);
                     std::string key = this->sym2LabelMap[edge->getEdgeKind()];
@@ -166,6 +168,23 @@ public:
 
     /// Set label2Sym from External
     void setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symbol>* nonterminals);
+
+    /// add attribute to kind2Attribute Map 
+    void addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute)
+    {
+        if(kind2AttrMap.find(kind) == kind2AttrMap.end())
+        {
+            Set<CFLGrammar::Attribute> attrs {attribute};
+            kind2AttrMap.insert(make_pair(kind, attrs));
+        }
+        else
+        {
+            if(kind2AttrMap[kind].find(attribute) == kind2AttrMap[kind].end())
+            {
+                kind2AttrMap[kind].insert(attribute);
+            }
+        }
+    }
 
 private:
     CFLEdgeSet cflEdgeSet;

@@ -65,12 +65,12 @@ public:
     Symbol insertNonTerminalSymbol(std::string strLit);
     void insertAttribute(Symbol s);
 
-    inline static Kind getNormalKind(Symbol sym)
+    inline static Kind getSymKind(Symbol sym)
     {
         return (EdgeKindMask & sym);
     }
 
-    inline static Attribute getAttribute(Symbol sym)
+    inline static Attribute getSymAttribute(Symbol sym)
     {
         return (sym >> EdgeKindMaskBits);
     }
@@ -104,7 +104,8 @@ public:
         return true;
     }
 
-    Productions& getEpsilonProds() {
+    Productions& getEpsilonProds() 
+    {
         return epsilonProds;
     }
 
@@ -125,50 +126,41 @@ public:
 
     const bool hasProdsFromFirstRHS(Symbol sym) const
     {
-        sym = getNormalKind(sym);
         auto it = firstRHS2Prods.find(sym);
         return it!=firstRHS2Prods.end();
     }
 
     const bool hasProdsFromSingleRHS(Symbol sym) const
     {
-        sym = getNormalKind(sym);
         auto it = singleRHS2Prods.find(sym);
         return it!=singleRHS2Prods.end();
     }
 
     const bool hasProdsFromSecondRHS(Symbol sym) const
     {
-        sym = getNormalKind(sym);
         auto it = secondRHS2Prods.find(sym);
         return it!=secondRHS2Prods.end();
     }
 
     Productions getProdsFromSingleRHS(Symbol sym) const
     {   
-        Kind NormSym = getNormalKind(sym);
-        Attribute attribute = getAttribute(sym);
-        auto it = singleRHS2Prods.find(NormSym);
-        assert(it!=singleRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
-        return fillProductionAttr(it->second, attribute);
+        auto it = singleRHS2Prods.find(sym);
+        assert(it!=singleRHS2Prods.end() && "production (X -> sym) not found for sym!!");
+        return it->second;
     }
 
     Productions getProdsFromFirstRHS(Symbol sym) const
     {
-        Kind NormSym = getNormalKind(sym);
-        Attribute attribute = getAttribute(sym);
-        auto it = firstRHS2Prods.find(NormSym);
-        assert(it!=firstRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
-        return fillProductionAttr(it->second, attribute);
+        auto it = firstRHS2Prods.find(sym);
+        assert(it!=firstRHS2Prods.end() && "production (X -> sym Y ) not found for sym!!");
+        return it->second;
     }
 
     Productions getProdsFromSecondRHS(Symbol sym) const
     {
-        Kind NormSym = getNormalKind(sym);
-        Attribute attribute = getAttribute(sym);
-        auto it = secondRHS2Prods.find(NormSym);
+        auto it = secondRHS2Prods.find(sym);
         assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
-        return fillProductionAttr(it->second, attribute);
+        return it->second;
     }
     
 
@@ -192,28 +184,6 @@ public:
     inline int num_generator()
     {
         return newTerminalSubscript++;
-    }
-
-    bool isAttributedKind(Symbol flag) const
-    {
-        return (attributeSymbol.find(flag) != attributeSymbol.end());
-    }
-
-    Productions fillProductionAttr(const Productions &prods, Attribute attribute) const
-    {
-        Productions tempProds;
-        for (auto tempProd : prods)
-        {   
-            for (int i = 0; i < int(tempProd.size()); i++)
-            {
-                if (attributeSymbol.find(tempProd[i]) != attributeSymbol.end())
-                {
-                    tempProd[i] = getAttributedKind(attribute, tempProd[i]);
-                }
-            }
-            tempProds.insert(tempProd);
-        }
-        return tempProds;
     }
 
 private:

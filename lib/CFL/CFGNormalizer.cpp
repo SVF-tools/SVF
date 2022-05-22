@@ -79,7 +79,6 @@ using namespace SVF;
 */
 // BNF
 // BIN Transforom
-
 CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
 {
     /*
@@ -93,29 +92,37 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
     grammar->totalSymbol = generalGrammar->totalSymbol;
     grammar->attributeSymbol = generalGrammar->attributeSymbol;
     ebnf_bin(generalGrammar, grammar);
+    grammar->rawProductions = generalGrammar->rawProductions;
 
     for(auto symProdsPair: generalGrammar->rawProductions)
     {
         for(auto prod: symProdsPair.second)
-        {
-            GrammarBase::Production tempP = prod;
+        {   
+            /// rawProductions production does not include lhs
+            /// so append to the begin of the production
+            Production tempP = prod;
             tempP.insert(tempP.begin(), symProdsPair.first);
-            if (prod.size() == 1)
+            insertToCFLGrammar(grammar, tempP);
+        }
+    }
+
+    return grammar;
+}
+
+CFLGrammar* CFGNormalizer::fillAttribute(CFLGrammar *grammar, Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>> *kind2AttrMap)
+{
+    for(auto symProdsPair: grammar->rawProductions)
+    {
+        for(auto prod: symProdsPair.second)
+        {
+            /// rawProductions production does not include lhs
+            /// so append to the begin of the production
+            Production tempP = prod;
+            tempP.insert(tempP.begin(), symProdsPair.first);
+            Productions filledProductions =  getFilledProductions(tempP, kind2AttrMap, grammar);
+            for (auto  filledProd : filledProductions)
             {
-                if ((std::find(tempP.begin(), tempP.end(), grammar->str2Sym("epsilon")) != tempP.end()))
-                {
-                    if (std::find(grammar->getEpsilonProds().begin(), grammar->getEpsilonProds().end(), tempP) == grammar->getEpsilonProds().end())
-                        grammar->getEpsilonProds().insert(tempP);
-                }
-                else
-                {
-                    grammar->getSingleRHS2Prods()[tempP[1]].insert(tempP);
-                }
-            } 
-            if (prod.size() == 2)
-            {
-                grammar->getFirstRHS2Prods()[tempP[1]].insert(tempP);
-                grammar->getSecondRHS2Prods()[tempP[2]].insert(tempP);
+                insertToCFLGrammar(grammar, filledProd);
             }
         }
     }
@@ -247,6 +254,45 @@ void CFGNormalizer::ebnf_bin(GrammarBase* generalGrammar, CFLGrammar *grammar)
     }
 }
 
+CFGNormalizer::Production CFGNormalizer::getFilledProd(Production &prod, CFLGrammar::Attribute attribute, CFLGrammar *grammar)
+{
+    Production tempP = prod;
+    for (int i = 0; i < int(prod.size()); i++)
+    {
+        if (grammar->attributeSymbol.find(prod[i]) != grammar->attributeSymbol.end())
+        {
+            tempP[i] = CFLGrammar::getAttributedKind(attribute, prod[i]);
+        }
+    }
+    return tempP;
+}
+
+///Loop through provided production based on existence of attribute of attribute variable
+///and expand to productions set
+///e.g Xi -> Y Zi with Xi i = 0, 1, Yi i = 0,2
+///Will get {X0 -> Y Z0, X1 -> Y Z1, X2 -> Y Z2}
+CFGNormalizer::Productions CFGNormalizer::getFilledProductions(Production &prod, Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> *kind2AttriMap, CFLGrammar *grammar)
+{
+    Productions filledProductioins{};
+    filledProductioins.insert(prod);
+    for(Symbol variable : prod)
+    {
+        if (kind2AttriMap->find(variable) != kind2AttriMap->end())
+        {
+            auto nodeSet = *(kind2AttriMap->find(variable));
+            for (auto attribute : nodeSet.second)
+            {
+                Production filledProd = getFilledProd(prod, attribute, grammar);
+                if (filledProductioins.find(filledProd) == filledProductioins.end())
+                {
+                    filledProductioins.insert(filledProd);
+                }
+            }
+        }
+    }
+    return filledProductioins;
+}
+
 int CFGNormalizer::ebnf_bracket_match(Production &prod, int i, CFLGrammar *grammar)
 {
     int index = i;
@@ -368,4 +414,28 @@ int CFGNormalizer::check_head(Map<Symbol, Productions> &grammar, Production &rul
         }
     }
     return -1;
+}
+
+/// Based on prod size to add on suitable member field of grammar
+void CFGNormalizer::insertToCFLGrammar(CFLGrammar *grammar, CFGNormalizer::Production &prod)
+{
+    if (prod.size() == 2)
+    {
+        if ((std::find(prod.begin(), prod.end(), grammar->str2Sym("epsilon")) != prod.end()))
+        {
+            if (std::find(grammar->getEpsilonProds().begin(), grammar->getEpsilonProds().end(), prod) == grammar->getEpsilonProds().end())
+            {
+                grammar->getEpsilonProds().insert(prod);
+            }
+        }
+        else
+        {
+            grammar->getSingleRHS2Prods()[prod[1]].insert(prod);
+        }
+    } 
+    if (prod.size() == 3)
+    {
+        grammar->getFirstRHS2Prods()[prod[1]].insert(prod);
+        grammar->getSecondRHS2Prods()[prod[2]].insert(prod);
+    }
 }

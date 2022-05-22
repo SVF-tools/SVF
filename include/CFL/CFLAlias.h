@@ -62,19 +62,17 @@ public:
 
         graph = new CFLGraph();
         /// Assume Read From Const Graph, associate label symbol is hard coded
-        /// Gep 4 and Gepbar 10 and offset is special coded in CFLGraph
-        /// symbol = 4 * 100 + offset
         if (Options::GraphIsFromDot == false)
         {
             PointerAnalysis::initialize();
             Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gepi", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbari", 10},{"Vgepbar", 11}};
             GrammarBase *generalGrammar = gReader->build(&ConstMap);
+            graph->label2SymMap = ConstMap;
             grammar = normalizer->normalize(generalGrammar);
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph->label2SymMap = ConstMap;
             graph->setMap(&grammar->terminals, &grammar->nonterminals);
             graph->buildBigraph(consCG);
-            svfir->dump("Original");
+            grammar = normalizer->fillAttribute(grammar, &graph->kind2AttrMap);
             delete consCG;
             delete generalGrammar;
             grammar->dump();
