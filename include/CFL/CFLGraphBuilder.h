@@ -39,6 +39,21 @@ namespace SVF
 
 class CFLGraphBuilder
 {
+public:
+    /// Build graph by copying nodes and edges from any graph inherited from GenericGraph
+    template<class N, class E>
+    void build(GenericGraph<N,E>* graph, CFLGraph* cflGraph);
+
+     /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
+    template<class N, class E>
+    void buildBigraph(GenericGraph<N,E>* graph, CFLGraph* cflGraph)
+
+    /// Build graph from file
+    void build(std::string filename, CFLGraph* cflGraph);
+
+    /// Build graph from Dot
+    void buildFromDot(std::string filename, CFLGraph* cflGraph);
+
 };
 }// SVF
 

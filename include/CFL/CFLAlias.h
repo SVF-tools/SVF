@@ -31,6 +31,7 @@
 #include "CFL/CFLSolver.h"
 #include "CFL/CFGNormalizer.h"
 #include "CFL/GrammarBuilder.h"
+#include "CFL/CFLGraphBuilder.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/ConsG.h"
 #include "Util/Options.h"
@@ -59,6 +60,7 @@ public:
     {
         GrammarBuilder * gReader = new GrammarBuilder(Options::GrammarFilename);
         CFGNormalizer *normalizer = new CFGNormalizer();
+        CFLGraphBuilder *cflGraphBuilder = new CFLGraphBuilder();
 
         graph = new CFLGraph();
         /// Assume Read From Const Graph, associate label symbol is hard coded
@@ -71,7 +73,7 @@ public:
             grammar = normalizer->normalize(generalGrammar);
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
             graph->setMap(&grammar->terminals, &grammar->nonterminals);
-            graph->buildBigraph(consCG);
+            cflGraphBuilder->buildBigraph(consCG, graph);
             grammar = normalizer->fillAttribute(grammar, &graph->kind2AttrMap);
             delete consCG;
             delete generalGrammar;
@@ -82,7 +84,7 @@ public:
             GrammarBase *generalGrammar = gReader->build();
             grammar = normalizer->normalize(generalGrammar);
             graph->setMap(&grammar->terminals, &grammar->nonterminals);
-            graph->buildFromDot(Options::InputFilename);
+            cflGraphBuilder->buildFromDot(Options::InputFilename, graph);
         }
         graph->startSymbol = grammar->startSymbol;
         solver = new CFLSolver(graph, grammar);

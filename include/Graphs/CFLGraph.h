@@ -83,72 +83,13 @@ public:
     Symbol startSymbol;
     Set<Symbol> *attrSyms;
     Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kind2AttrMap;
+    bool externMap;
+    Symbol current;
 
     CFLGraph()
     {
     }
     ~CFLGraph() override = default;
-
-    /// Build graph by copying nodes and edges from any graph inherited from GenericGraph
-    template<class N, class E>
-    void build(GenericGraph<N,E>* graph)
-    {
-        for(auto it = graph->begin(); it!= graph->end(); it++)
-        {
-            CFLNode* node = new CFLNode((*it).first);
-            addCFLNode((*it).first, node);
-        }
-        for(auto it = graph->begin(); it!= graph->end(); it++)
-        {
-            N* node = (*it).second;
-            for(E* edge : node->getOutEdges())
-            {
-                addCFLEdge(getGNode(edge->getSrcID()), getGNode(edge->getDstID()), edge->getEdgeKind());
-            }
-        }
-    }
-
-    /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
-    template<class N, class E>
-    void buildBigraph(GenericGraph<N,E>* graph)
-    {
-        for(auto it = graph->begin(); it!= graph->end(); it++)
-        {
-            CFLNode* node = new CFLNode((*it).first);
-            addCFLNode((*it).first, node);
-        }
-        for(auto it = graph->begin(); it!= graph->end(); it++)
-        {
-            N* node = (*it).second;
-            for(E* edge : node->getOutEdges())
-            {
-                CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
-                // Need to get the offset from the Const Edge
-                // The offset present edge is only from Normal Gep CG at moment
-                if(NormalGepCGEdge::classof(edge))
-                {
-                    NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
-                    CFLGrammar::Attribute offset =  nGepEdge->getConstantFieldIdx();
-                    addAttribute(edgeLabel, offset);
-                    edgeLabel = CFLGrammar::getAttributedKind(offset, edgeLabel);
-                    addCFLEdge(getGNode(edge->getSrcID()), getGNode(edge->getDstID()), edgeLabel);
-                    std::string key = this->sym2LabelMap[edge->getEdgeKind()];
-                    key.pop_back();
-                    key.pop_back();    // _i standsfor attribute variable should place at last
-                    key.append("bar_i");   // for example Gep_i should be Gepbar_i, not Gep_ibar
-                    addCFLEdge(getGNode(edge->getDstID()), getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(offset, this->label2SymMap[key]));
-                    addAttribute(this->label2SymMap[key], offset);
-                }
-                else 
-                {
-                    addCFLEdge(getGNode(edge->getSrcID()), getGNode(edge->getDstID()), edgeLabel);
-                    std::string key = this->sym2LabelMap[edge->getEdgeKind()];
-                    key.append("bar");    
-                    addCFLEdge(getGNode(edge->getDstID()), getGNode(edge->getSrcID()), this->label2SymMap[key]);
-                }  
-            }   
-        }
-    }
 
     virtual void addCFLNode(NodeID id, CFLNode* node);
 
@@ -159,12 +100,6 @@ public:
     void dump(const std::string& filename);
 
     void view();
-
-    /// Build graph from file
-    void build(std::string filename);
-
-    /// Build graph from Dot
-    void buildFromDot(std::string filename);
 
     /// Set label2Sym from External
     void setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symbol>* nonterminals);
@@ -188,8 +123,7 @@ public:
 
 private:
     CFLEdgeSet cflEdgeSet;
-    Symbol current;
-    bool externMap;
+    
 };
 
 }
