@@ -51,6 +51,8 @@ public:
 
     std::string sym2Str(Symbol sym) const;
 
+    std::string sym2StrDump(Symbol sym) const;
+
     Symbol getSymbol(const Production& prod, u32_t pos)
     {
         return prod.at(pos);

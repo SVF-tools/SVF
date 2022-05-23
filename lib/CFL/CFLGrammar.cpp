@@ -31,6 +31,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 using namespace SVF;
 
@@ -68,6 +69,44 @@ std::string GrammarBase::sym2Str(Symbol sym) const
         if (ni.second == sym)
         {
             nkey = ni.first;
+            return nkey;
+        }
+    }
+
+    return "";
+}
+
+std::string GrammarBase::sym2StrDump(Symbol sym) const
+{
+    Kind kind = getSymKind(sym);
+    Attribute attribute = getSymAttribute(sym);
+
+    std::string key = "";
+    for (auto &i : terminals)
+    {
+        if (i.second == kind)
+        {
+            key = i.first;
+            if(this->attributeSymbol.find(kind) != this->attributeSymbol.end())
+            {
+                key.pop_back();
+                key.append(std::to_string(attribute));
+            }
+            return key;
+        }
+    }
+
+    std::string nkey = "";
+    for (auto &ni : nonterminals)
+    {
+        if (ni.second == kind)
+        {
+            nkey = ni.first;
+            if(this->attributeSymbol.find(kind) != this->attributeSymbol.end())
+            {
+                nkey.pop_back();
+                nkey.append(std::to_string(attribute));
+            }
             return nkey;
         }
     }
@@ -127,59 +166,84 @@ void CFLGrammar::dump(){
     gramFile << '\t' << sym2Str(startSymbol) << '(' << startSymbol << ')' << ' ' << "\n\n";
 
     gramFile << "Epsilon Production:\n";
+    std::vector<std::string> strV;
     for (auto pro: this->epsilonProds)
-    {
-        gramFile << '\t';
+    {   
+        std::stringstream ss;
         for (auto sym : pro){
             if (sym == pro[1])
             {
-                gramFile << "-> ";
+                ss << "-> ";
             }
-            gramFile << sym2Str(sym) << '(' << sym << ')' << ' '; 
+            ss << sym2StrDump(sym) << '(' << sym << ')' << ' '; 
         }
+        strV.insert(strV.begin(), ss.str());
+    }
+    std::sort(strV.begin(), strV.end());
+    for (auto pro: strV)
+    {
+        gramFile << '\t';
+        gramFile << pro;
         gramFile << '\n';
     }
     gramFile << '\n';
 
     gramFile << "Single Production:\n";
+    strV = {};
     for (auto symProPair: singleRHS2Prods) 
     {
         for (auto pro: symProPair.second)
         {
-            gramFile << '\t';
+            std::stringstream ss;
             int i = 0;
             for (auto sym : pro){
                 i++;
                 if (i == 2)
                 {
-                    gramFile << "-> ";
+                    ss << "-> ";
                 }
-                gramFile << sym2Str(sym) << '(' << sym << ')' << ' '; 
+                ss << sym2StrDump(sym) << '(' << sym << ')' << ' '; 
             }
-            gramFile << '\n';
+            strV.insert(strV.begin(), ss.str());
          }
+    }
+    std::sort(strV.begin(), strV.end());
+    for (auto pro: strV)
+    {
+        gramFile << '\t';
+        gramFile << pro;
+        gramFile << '\n';
     }
     gramFile << '\n';
 
     gramFile << "Binary Production:\n";
+    strV = {};
     for (auto symProPair: firstRHS2Prods) 
     {
         for (auto pro: symProPair.second)
         {
-            gramFile << '\t';
+            std::stringstream ss;
             int i = 0;
             for (auto sym : pro){
                 i++;
+                
                 if (i == 2)
                 {
-                    gramFile << "-> ";
+                    ss << "-> ";
                 }
-                gramFile << sym2Str(sym) << '(' << sym << ')' << ' '; 
+                ss << sym2StrDump(sym) << '(' << sym << ')' << ' '; 
             }
-            gramFile << "\n";
+            strV.insert(strV.begin(), ss.str());
          }
     }
+    std::sort(strV.begin(), strV.end());
+    for (auto pro: strV)
+    {
+        gramFile << '\t';
+        gramFile << pro;
+        gramFile << '\n';
+    }
     gramFile << '\n';
-    // Close the file
+
     gramFile.close();
 }

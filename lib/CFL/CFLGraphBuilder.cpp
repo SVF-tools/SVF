@@ -38,8 +38,10 @@ void CFLGraphBuilder::build(std::string filename, CFLGraph* cflGraph)
 {
 }
 
-void CFLGraphBuilder::buildFromDot(std::string fileName, CFLGraph* cflGraph)
+CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, Map<std::string, CFLGrammar::Symbol>* terminals, Map<std::string, CFLGrammar::Symbol>* nonterminals)
 {
+    CFLGraph *cflGraph = new CFLGraph();
+    cflGraph->setMap(terminals, nonterminals);
     std::cout << "Building CFL Graph from dot file: " << fileName << "..\n";
     std::string lineString;
     std::ifstream inputFile(fileName);
@@ -112,6 +114,7 @@ void CFLGraphBuilder::buildFromDot(std::string fileName, CFLGraph* cflGraph)
         }
     }
     inputFile.close();
+    return cflGraph;
 }
 
 }

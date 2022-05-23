@@ -58,33 +58,28 @@ public:
     /// Start Analysis here (main part of pointer analysis).
     virtual void analyze()
     {
-        GrammarBuilder * gReader = new GrammarBuilder(Options::GrammarFilename);
-        CFGNormalizer *normalizer = new CFGNormalizer();
-        CFLGraphBuilder *cflGraphBuilder = new CFLGraphBuilder();
-
-        graph = new CFLGraph();
+        GrammarBuilder gReader = GrammarBuilder(Options::GrammarFilename);
+        CFGNormalizer normalizer = CFGNormalizer();
+        CFLGraphBuilder cflGraphBuilder = CFLGraphBuilder();
         /// Assume Read From Const Graph, associate label symbol is hard coded
         if (Options::GraphIsFromDot == false)
         {
             PointerAnalysis::initialize();
             Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
-            GrammarBase *generalGrammar = gReader->build(&ConstMap);
-            graph->label2SymMap = ConstMap;
-            grammar = normalizer->normalize(generalGrammar);
+            GrammarBase *generalGrammar = gReader.build(&ConstMap);
+            grammar = normalizer.normalize(generalGrammar);
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph->setMap(&grammar->terminals, &grammar->nonterminals);
-            cflGraphBuilder->buildBigraph(consCG, graph);
-            grammar = normalizer->fillAttribute(grammar, &graph->kind2AttrMap);
+            graph = cflGraphBuilder.buildBigraph(consCG, &grammar->terminals, &grammar->nonterminals);
+            grammar = normalizer.fillAttribute(grammar, &graph->kind2AttrMap);
             delete consCG;
             delete generalGrammar;
             grammar->dump();
         }       
         else
         {
-            GrammarBase *generalGrammar = gReader->build();
-            grammar = normalizer->normalize(generalGrammar);
-            graph->setMap(&grammar->terminals, &grammar->nonterminals);
-            cflGraphBuilder->buildFromDot(Options::InputFilename, graph);
+            GrammarBase *generalGrammar = gReader.build();
+            grammar = normalizer.normalize(generalGrammar);
+            graph = cflGraphBuilder.buildFromDot(Options::InputFilename, &grammar->terminals, &grammar->nonterminals);
         }
         graph->startSymbol = grammar->startSymbol;
         solver = new CFLSolver(graph, grammar);
