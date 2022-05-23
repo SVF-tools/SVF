@@ -99,7 +99,6 @@ void CFLGraph::setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symb
             sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
         }
     }
-    current = label2SymMap.size();
 }
 
 

@@ -103,7 +103,14 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
             insertToCFLGrammar(grammar, tempP);
         }
     }
+    return grammar;
+}
 
+
+CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar, Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>> *kind2AttrMap)
+{
+    CFLGrammar* grammar = normalize(generalGrammar);
+    fillAttribute(grammar, kind2AttrMap);
     return grammar;
 }
 

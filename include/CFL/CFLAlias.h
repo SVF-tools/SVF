@@ -67,10 +67,10 @@ public:
             PointerAnalysis::initialize();
             Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
             GrammarBase *generalGrammar = gReader.build(&ConstMap);
-            grammar = normalizer.normalize(generalGrammar);
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph = cflGraphBuilder.buildBigraph(consCG, &grammar->terminals, &grammar->nonterminals);
-            grammar = normalizer.fillAttribute(grammar, &graph->kind2AttrMap);
+            graph = cflGraphBuilder.buildBigraph(consCG, &generalGrammar->terminals, &generalGrammar->nonterminals);
+            grammar = normalizer.normalize(generalGrammar, &graph->kind2AttrMap);
+            graph->setMap(&grammar->terminals, &grammar->nonterminals);  // In normalization might generate more intermediate variable
             delete consCG;
             delete generalGrammar;
             grammar->dump();
@@ -80,6 +80,7 @@ public:
             GrammarBase *generalGrammar = gReader.build();
             grammar = normalizer.normalize(generalGrammar);
             graph = cflGraphBuilder.buildFromDot(Options::InputFilename, &grammar->terminals, &grammar->nonterminals);
+            delete generalGrammar;
         }
         graph->startSymbol = grammar->startSymbol;
         solver = new CFLSolver(graph, grammar);

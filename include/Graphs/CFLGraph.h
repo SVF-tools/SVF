@@ -76,12 +76,11 @@ typedef GenericGraph<CFLNode,CFLEdge> GenericCFLGraphTy;
 class CFLGraph: public GenericCFLGraphTy
 {
 public:
-    typedef u32_t Symbol;
+    typedef CFLGrammar::Symbol Symbol;
     typedef GenericNode<CFLNode,CFLEdge>::GEdgeSetTy CFLEdgeSet;
     Map<std::string, Symbol> label2SymMap;
     Map<Symbol, std::string> sym2LabelMap;
     Symbol startSymbol;
-    Set<Symbol> *attrSyms;
     Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kind2AttrMap;
     bool externMap;
     Symbol current;
