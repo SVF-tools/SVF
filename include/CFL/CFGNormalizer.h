@@ -56,8 +56,6 @@ public:
 
     /// Normalization without attribute expanded
     CFLGrammar* normalize(GrammarBase *generalGrammar);
-    
-    CFLGrammar* normalize(GrammarBase *generalGrammar, Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>> *kind2AttrMap);
 
     /// Fill Every attribute in CFL grammar
     CFLGrammar* fillAttribute(CFLGrammar *grammar, Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>> *kind2AttrMap);

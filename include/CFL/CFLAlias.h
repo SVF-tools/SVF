@@ -32,6 +32,7 @@
 #include "CFL/CFGNormalizer.h"
 #include "CFL/GrammarBuilder.h"
 #include "CFL/CFLGraphBuilder.h"
+#include "CFL/CFLChecker.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/ConsG.h"
 #include "Util/Options.h"
@@ -61,6 +62,7 @@ public:
         GrammarBuilder gReader = GrammarBuilder(Options::GrammarFilename);
         CFGNormalizer normalizer = CFGNormalizer();
         CFLGraphBuilder cflGraphBuilder = CFLGraphBuilder();
+        CFLChecker cflChecker = CFLChecker();
         /// Assume Read From Const Graph, associate label symbol is hard coded
         if (Options::GraphIsFromDot == false)
         {
@@ -68,9 +70,9 @@ public:
             Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
             GrammarBase *generalGrammar = gReader.build(&ConstMap);
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph = cflGraphBuilder.buildBigraph(consCG, &generalGrammar->terminals, &generalGrammar->nonterminals);
-            grammar = normalizer.normalize(generalGrammar, &graph->kind2AttrMap);
-            graph->setMap(&grammar->terminals, &grammar->nonterminals);  // In normalization might generate more intermediate variable
+            graph = cflGraphBuilder.buildBigraph(consCG, generalGrammar);
+            cflChecker.check(generalGrammar, graph);
+            grammar = normalizer.normalize(generalGrammar);
             delete consCG;
             delete generalGrammar;
             grammar->dump();

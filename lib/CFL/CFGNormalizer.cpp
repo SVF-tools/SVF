@@ -103,16 +103,10 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
             insertToCFLGrammar(grammar, tempP);
         }
     }
+    fillAttribute(grammar, &grammar->kind2AttrMap);
     return grammar;
 }
 
-
-CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar, Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>> *kind2AttrMap)
-{
-    CFLGrammar* grammar = normalize(generalGrammar);
-    fillAttribute(grammar, kind2AttrMap);
-    return grammar;
-}
 
 CFLGrammar* CFGNormalizer::fillAttribute(CFLGrammar *grammar, Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>> *kind2AttrMap)
 {

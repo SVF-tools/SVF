@@ -46,6 +46,7 @@ public:
     Symbol totalSymbol;
     Map<Symbol, Productions> rawProductions;
     Set<Symbol> attributeSymbol; 
+    Map<Kind,  Set<Attribute>> kind2AttrMap;
 
     Symbol str2Sym(std::string str) const;
 
