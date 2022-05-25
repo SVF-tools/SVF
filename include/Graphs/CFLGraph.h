@@ -100,8 +100,9 @@ public:
 
     void view();
 
+    void setMap(Map<std::string, Symbol> &labelMap);
     /// Set label2Sym from External
-    void setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symbol>* nonterminals);
+    void setMap(GrammarBase *grammar);
 
     /// add attribute to kind2Attribute Map 
     void addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute)

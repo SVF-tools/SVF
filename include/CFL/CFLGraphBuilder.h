@@ -61,12 +61,11 @@ public:
 
      /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
     template<class N, class E>
-    CFLGraph* buildBigraph(GenericGraph<N,E>* graph, GrammarBase* grammar )
+    CFLGraph* buildBigraph(GenericGraph<N,E>* graph)
     {
         CFLGraph *cflGraph = new CFLGraph();
         Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
-        cflGraph->label2SymMap = ConstMap;
-        cflGraph->setMap(&grammar->terminals, &grammar->nonterminals);
+        cflGraph->setMap(ConstMap);
         for(auto it = graph->begin(); it!= graph->end(); it++)
         {
             CFLNode* node = new CFLNode((*it).first);
@@ -109,7 +108,7 @@ public:
     void build(std::string filename, CFLGraph* cflGraph);
 
     /// Build graph from Dot
-    CFLGraph *buildFromDot(std::string filename, Map<std::string, CFLGrammar::Symbol>* terminals, Map<std::string, CFLGrammar::Symbol>* nonterminals);
+    CFLGraph *buildFromDot(std::string filename, GrammarBase *grammar);
 };
 }// SVF
 

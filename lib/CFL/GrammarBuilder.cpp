@@ -150,10 +150,10 @@ GrammarBase* GrammarBuilder::build()
     return grammar;
 };
 
-GrammarBase* GrammarBuilder::build(Map<std::string, SVF::CFLGraph::Symbol> *preMap)
+GrammarBase* GrammarBuilder::build(Map<std::string, SVF::CFLGraph::Symbol> &preMap)
 {
-    grammar->nonterminals = *preMap;
-    grammar->totalSymbol = preMap->size();
+    grammar->nonterminals = preMap;
+    grammar->totalSymbol = preMap.size();
     return build();
 };
 }

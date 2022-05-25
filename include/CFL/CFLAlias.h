@@ -68,9 +68,9 @@ public:
         {
             PointerAnalysis::initialize();
             Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
-            GrammarBase *generalGrammar = gReader.build(&ConstMap);
+            GrammarBase *generalGrammar = gReader.build(ConstMap);
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph = cflGraphBuilder.buildBigraph(consCG, generalGrammar);
+            graph = cflGraphBuilder.buildBigraph(consCG);
             cflChecker.check(generalGrammar, graph);
             grammar = normalizer.normalize(generalGrammar);
             delete consCG;
@@ -80,14 +80,13 @@ public:
         else
         {
             GrammarBase *generalGrammar = gReader.build();
+            graph = cflGraphBuilder.buildFromDot(Options::InputFilename, generalGrammar);
+            cflChecker.check(generalGrammar, graph);
             grammar = normalizer.normalize(generalGrammar);
-            graph = cflGraphBuilder.buildFromDot(Options::InputFilename, &grammar->terminals, &grammar->nonterminals);
             delete generalGrammar;
         }
-        graph->startSymbol = grammar->startSymbol;
         solver = new CFLSolver(graph, grammar);
         solver->solve();
-        graph->dump("map");
         if (Options::GraphIsFromDot == false){
             PointerAnalysis::finalize();
         }
@@ -104,7 +103,6 @@ public:
     /// Interface exposed to users of our pointer analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2)
     {
-        /// TODO:: Fix the edge label for a reachable alias relation if it is not 1;
         if(graph->hasEdge(graph->getGNode(node1), graph->getGNode(node2), graph->startSymbol))
             return AliasResult::MayAlias;
         else

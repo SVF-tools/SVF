@@ -73,10 +73,10 @@ void CFLGraph::view()
     llvm::ViewGraph(this, "CFL Graph");
 }
 
-void CFLGraph::setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symbol>* nonterminals)
+void CFLGraph::setMap(GrammarBase *grammar)
 {
     externMap = true;
-    for(auto pairV : *terminals)
+    for(auto pairV : grammar->terminals)
     {
         if(label2SymMap.find(pairV.first) == label2SymMap.end())
         {
@@ -88,7 +88,7 @@ void CFLGraph::setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symb
         }
     }
 
-    for(auto pairV : *nonterminals)
+    for(auto pairV : grammar->nonterminals)
     {
         if(label2SymMap.find(pairV.first) == label2SymMap.end())
         {
@@ -101,7 +101,21 @@ void CFLGraph::setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symb
     }
 }
 
-
+void CFLGraph::setMap(Map<std::string, Symbol> &labelMap)
+{
+    externMap = true;
+    for(auto pairV : labelMap)
+    {
+        if(label2SymMap.find(pairV.first) == label2SymMap.end())
+        {
+            label2SymMap.insert(pairV);
+        }
+        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
+        {
+            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
+    }
+}
 
 namespace llvm
 {

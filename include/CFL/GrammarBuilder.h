@@ -74,7 +74,7 @@ public:
 
     GrammarBase* build();
 
-    GrammarBase* build(Map<std::string, SVF::CFLGraph::Symbol> *preMap);
+    GrammarBase* build(Map<std::string, SVF::CFLGraph::Symbol> &preMap);
 };
 
 } // SVF

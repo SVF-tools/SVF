@@ -56,6 +56,7 @@ public:
 
         /// Get Kind2Attr Map from Graph to Grammar
         grammar->kind2AttrMap = graph->kind2AttrMap;
+        graph->startSymbol = grammar->startSymbol;
     }
 };
 
