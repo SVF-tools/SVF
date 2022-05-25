@@ -276,7 +276,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             // If it's a non-constant offset access
             // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
             // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
-            if(!op && gepTy->isPointerTy() && gepTy->getPointerElementType()->isSingleValueType())
+            if(!op && gepTy->isPointerTy() && getPtrElementType(SVFUtil::dyn_cast<PointerType>(gepTy))->isSingleValueType())
                 return false;
 
             // The actual index
@@ -1013,7 +1013,7 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
     const Value* value = getBaseValueForExtArg(V);
     const Type *T = value->getType();
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
-        T = ptype->getElementType();
+        T = getPtrElementType(ptype);
 
     u32_t numOfElems = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(T);
     /// use user-specified size for this copy operation if the size is a constaint int
@@ -1327,7 +1327,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     Value *arg = cs.getArgument(i);
                     if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(arg->getType()))
                     {
-                        if(pty->getElementType()->isPointerTy())
+                        if(getPtrElementType(pty)->isPointerTy())
                         {
                             NodeID dummy = pag->addDummyValNode();
                             addLoadEdge(pag->getValueNode(arg),dummy);

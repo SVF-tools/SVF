@@ -104,6 +104,15 @@ inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun)
     return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
 }
 
+static inline Type *getPtrElementType(const PointerType* pty) {
+#if (LLVM_VERSION_MAJOR < 14)
+    return pty->getElementType();
+#else
+    assert(!pty->isOpaque() && "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointer'");
+    return pty->getNonOpaquePointerElementType();
+#endif
+}
+
 /// interfaces to be used externally
 inline bool isHeapAllocExtCallViaRet(const CallSite cs)
 {
@@ -248,7 +257,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
         int argPos = getHeapAllocHoldingArgPosition(cs);
         const Value *arg = cs.getArgument(argPos);
         if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
-            refType = SVFUtil::dyn_cast<PointerType>(argType->getElementType());
+            refType = SVFUtil::dyn_cast<PointerType>(getPtrElementType(argType));
     }
     // Case 2: heap/static object held by return value.
     else
