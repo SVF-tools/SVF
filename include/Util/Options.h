@@ -10,7 +10,6 @@
 #include "Util/NodeIDAllocator.h"
 #include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
-#include "Util/Conditions.h"
 
 namespace SVF
 {
@@ -121,7 +120,7 @@ public:
     // Sparse value-flow graph (VFG.cpp)
     static const llvm::cl::opt<bool> DumpVFG;
 
-     // Location set for modeling abstract memory object (LocationSet.cpp)
+    // Location set for modeling abstract memory object (LocationSet.cpp)
     static const llvm::cl::opt<bool> SingleStride;
 
     // Base class of pointer analyses (PointerAnalysis.cpp)
@@ -181,8 +180,8 @@ public:
 
     // MTAResultValidator.cpp
     static const llvm::cl::opt<bool> PrintValidRes;
-	
-	static const llvm::cl::opt<bool> LockValid;
+
+    static const llvm::cl::opt<bool> LockValid;
     //MTAStat.cpp
     static const llvm::cl::opt<bool> AllPairMHP;
 
@@ -254,9 +253,6 @@ public:
 
     // DOTGraphTraits
     static const llvm::cl::opt<bool> ShowHiddenNode;
-
-    // Conditions
-    static const llvm::cl::opt<CondManager::CondMgrKind> ConditionType;
 
     // CFL option
     static const llvm::cl::opt<std::string> InputFilename;

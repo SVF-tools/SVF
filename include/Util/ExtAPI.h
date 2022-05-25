@@ -122,7 +122,7 @@ public:
     }
 
     static void destory()
-    {   
+    {
         if (extAPI != nullptr)
         {
             delete extAPI;

@@ -32,37 +32,51 @@
 
 #include "CFLGrammar.h"
 
-namespace SVF{
+namespace SVF
+{
 
 /*!
  *  Normalize Grammar from a grammarbase
  */
 
-class CFGNormalizer {
+class CFGNormalizer
+{
 
 public:
     typedef u32_t Symbol;
     typedef std::vector<Symbol> Production;
     typedef Set<Production> Productions;
 
-    CFGNormalizer(){
+    CFGNormalizer()
+    {
     }
 
     /// Start Normalize (BIN Only)
     // TODO: Add different Combination Transformation Option
-    CFLGrammar* normalize(GrammarBase *generalGrammar);
-private:
 
+    /// Normalization without attribute expanded
+    CFLGrammar* normalize(GrammarBase *generalGrammar);
+
+    /// Fill Every attribute in CFL grammar
+    CFLGrammar* fillAttribute(CFLGrammar *grammar, Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>> *kind2AttrMap);
+
+private:
+    /// Add nonterminal to tranfer long rules to binary rules
     void ebnf_bin(GrammarBase *generalGrammar, CFLGrammar *grammar);
 
     void ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CFLGrammar *grammar);
 
-    int ebnf_bracket_match(Production& prod, int i, CFLGrammar *grammar) ;
+    void insertToCFLGrammar(CFLGrammar *grammar, Production &prod);
 
-    Production strTrans(std::string strPro, CFLGrammar *grammar);
+    int ebnf_bracket_match(Production& prod, int i, CFLGrammar *grammar) ;
 
     int check_head(Map<Symbol, Productions>& grammar, Production& rule);
 
+    Production strTrans(std::string strPro, CFLGrammar *grammar);
+
+    Production getFilledProd(Production &prod, CFLGrammar::Attribute attribute, CFLGrammar *grammar);
+
+    Productions getFilledProductions(Production &prod, Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> *kind2AttriMap, CFLGrammar *grammar);
 };
 
 } // End namespace SVF

@@ -60,11 +60,12 @@ public:
     {
         return tct;
     }
-	
-	// Get CallICFGNode
-	inline CallICFGNode* getCBN(const Instruction* inst) {
-		return tct->getCallICFGNode(inst);
-	}
+
+    // Get CallICFGNode
+    inline CallICFGNode* getCBN(const Instruction* inst)
+    {
+        return tct->getCallICFGNode(inst);
+    }
 
     /// Whether the function is connected from main function in thread call graph
     bool isConnectedfromMain(const Function* fun);
@@ -115,11 +116,12 @@ public:
     void printInterleaving();
 
 private:
-	
-	inline const PTACallGraph::FunctionSet& getCallee(const Instruction* inst, PTACallGraph::FunctionSet& callees) {
+
+    inline const PTACallGraph::FunctionSet& getCallee(const Instruction* inst, PTACallGraph::FunctionSet& callees)
+    {
         tcg->getCallees(getCBN(inst), callees);
         return callees;
-	}
+    }
     /// Update non-candidate functions' interleaving.
     /// Copy interleaving threads of the entry inst to other insts.
     void updateNonCandidateFunInterleaving();
@@ -380,9 +382,10 @@ private:
         return tct->getPTA()->alias(getForkedThread(forkSite), getJoinedThread(joinSite)) && isSameSCEV(forkSite,joinSite);
     }
     // Get CallICFGNode
-	inline CallICFGNode* getCBN(const Instruction* inst) {
-		return tct->getCallICFGNode(inst);
-	}
+    inline CallICFGNode* getCBN(const Instruction* inst)
+    {
+        return tct->getCallICFGNode(inst);
+    }
     /// Mark thread flags for cxtStmt
     //@{
     /// Get the flag for a cxtStmt
@@ -485,10 +488,11 @@ private:
     {
         return getTCG()->getThreadAPI()->getJoinedThread(call);
     }
-    inline const PTACallGraph::FunctionSet& getCallee(const Instruction* inst, PTACallGraph::FunctionSet& callees) {
+    inline const PTACallGraph::FunctionSet& getCallee(const Instruction* inst, PTACallGraph::FunctionSet& callees)
+    {
         getTCG()->getCallees(getCBN(inst), callees);
         return callees;
-	}
+    }
     /// ThreadCallGraph
     inline ThreadCallGraph* getTCG() const
     {

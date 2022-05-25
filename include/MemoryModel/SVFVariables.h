@@ -45,9 +45,9 @@ class SVFVar;
 typedef GenericNode<SVFVar,SVFStmt> GenericPAGNodeTy;
 class SVFVar : public GenericPAGNodeTy
 {
-friend class IRGraph;
-friend class SVFIR;
-friend class VFG;
+    friend class IRGraph;
+    friend class SVFIR;
+    friend class VFG;
 
 public:
     /// Nine kinds of SVFIR variables
@@ -177,7 +177,7 @@ public:
         else
             return false;
     }
-    
+
     /// Get incoming SVFStmt iterator
     inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
@@ -233,7 +233,8 @@ private:
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::Gep);
         if (it != InEdgeKindToSetMap.end())
         {
-            for(auto gep : it->second){
+            for(auto gep : it->second)
+            {
                 if(SVFUtil::cast<GepStmt>(gep)->isVariantFieldGep())
                     return true;
             }

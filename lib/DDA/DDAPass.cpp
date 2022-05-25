@@ -91,8 +91,8 @@ void DDAPass::selectClient(SVFModule* module)
 void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
 {
 
-	SVFIRBuilder builder;
-	SVFIR* pag = builder.build(module);
+    SVFIRBuilder builder;
+    SVFIR* pag = builder.build(module);
 
     ContextCond::setMaxPathLen(Options::MaxPathLen);
     ContextCond::setMaxCxtLen(Options::MaxContextLen);
@@ -163,8 +163,8 @@ bool DDAPass::edgeInSVFGSCC(const SVFGSCC* svfgSCC,const SVFGEdge* edge)
  */
 bool DDAPass::edgeInCallGraphSCC(PointerAnalysis* pta,const SVFGEdge* edge)
 {
-	const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-	const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+    const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+    const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
     if(srcFun && dstFun)
     {
@@ -220,8 +220,8 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
                 if(this->edgeInSVFGSCC(svfgSCC,edge))
                 {
 
-                	const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-                	const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+                    const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+                    const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
                     if(srcFun && dstFun)
                     {

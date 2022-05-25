@@ -251,7 +251,8 @@ public:
     }
 
     /// Return total SVFG node number
-    inline u32_t getSVFGNodeNum() const {
+    inline u32_t getSVFGNodeNum() const
+    {
         return nodeNum;
     }
 
@@ -428,8 +429,8 @@ protected:
     }
 
     /// Add memory SSA PHI SVFG node
-    inline void addIntraMSSAPHISVFGNode(ICFGNode* BlockICFGNode, const Map<u32_t,const MRVer*>::const_iterator opVerBegin, 
-    const  Map<u32_t,const MRVer*>::const_iterator opVerEnd, const MRVer* resVer, const NodeID nodeId)
+    inline void addIntraMSSAPHISVFGNode(ICFGNode* BlockICFGNode, const Map<u32_t,const MRVer*>::const_iterator opVerBegin,
+                                        const  Map<u32_t,const MRVer*>::const_iterator opVerEnd, const MRVer* resVer, const NodeID nodeId)
     {
         IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(nodeId, resVer);
         addSVFGNode(sNode, BlockICFGNode);

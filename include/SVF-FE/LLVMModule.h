@@ -83,10 +83,11 @@ public:
     SVFModule* buildSVFModule(Module &mod);
     SVFModule* buildSVFModule(const std::vector<std::string> &moduleNameVec);
 
-	inline SVFModule* getSVFModule() {
-		assert(svfModule && "svfModule has not been built yet!");
-		return svfModule;
-	}
+    inline SVFModule* getSVFModule()
+    {
+        assert(svfModule && "svfModule has not been built yet!");
+        return svfModule;
+    }
 
     void preProcessBCs(std::vector<std::string> &moduleNameVec);
 
@@ -148,15 +149,15 @@ public:
 
     bool hasDeclaration(const SVFFunction *fun) const
     {
-    	if(fun->isDeclaration() && !hasDefinition(fun))
-    		return false;
+        if(fun->isDeclaration() && !hasDefinition(fun))
+            return false;
 
-    	const SVFFunction* funDef = fun;
+        const SVFFunction* funDef = fun;
         if(fun->isDeclaration() && hasDefinition(fun))
-        	funDef = getDefinition(fun);
+            funDef = getDefinition(fun);
 
-    	FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(funDef);
-    	return it != FunDefToDeclsMap.end();
+        FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(funDef);
+        return it != FunDefToDeclsMap.end();
     }
 
     const FunctionSetType& getDeclaration(const Function *fun) const
@@ -166,9 +167,9 @@ public:
 
     const FunctionSetType& getDeclaration(const SVFFunction *fun) const
     {
-    	const SVFFunction* funDef = fun;
+        const SVFFunction* funDef = fun;
         if(fun->isDeclaration() && hasDefinition(fun))
-        	funDef = getDefinition(fun);
+            funDef = getDefinition(fun);
 
         FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(funDef);
         assert(it != FunDefToDeclsMap.end() && "does not have a function definition (body)?");

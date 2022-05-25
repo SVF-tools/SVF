@@ -109,13 +109,13 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                     srcNode = retICFGNode;
                 }
 
-                
+
                 if (const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(inst))
                 {
                     assert(branchID <= 2 && "if/else has more than two branches?");
                     if(br->isConditional())
                         icfg->addConditionalIntraEdge(srcNode, dstNode, br->getCondition(), 1 - branchID);
-                    else 
+                    else
                         icfg->addIntraEdge(srcNode, dstNode);
                 }
                 else if (const SwitchInst* si = SVFUtil::dyn_cast<SwitchInst>(inst))
@@ -128,7 +128,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                 }
                 else
                     icfg->addIntraEdge(srcNode, dstNode);
-                
+
                 worklist.push(succ);
                 branchID++;
             }
@@ -148,7 +148,8 @@ void ICFGBuilder::processFunExit(const SVFFunction*  fun)
     for (inst_iterator II = inst_begin(fun->getLLVMFun()), EE = inst_end(fun->getLLVMFun()); II != EE; ++II)
     {
         const Instruction *inst = &*II;
-        if(SVFUtil::isa<ReturnInst>(inst)) {
+        if(SVFUtil::isa<ReturnInst>(inst))
+        {
             ICFGNode* instNode = getOrAddBlockICFGNode(inst);
             icfg->addIntraEdge(instNode, FunExitICFGNode);
         }
@@ -179,14 +180,15 @@ void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction* ca
     CallICFGNode* callICFGNode = getCallICFGNode(cs);
     RetICFGNode* retBlockNode = getRetICFGNode(cs);
 
-    /// direct call  
-    if(callee){
+    /// direct call
+    if(callee)
+    {
         /// if this is an external function (no function body)
         if (isExtCall(callee))
         {
-           icfg->addIntraEdge(callICFGNode, retBlockNode); 
+            icfg->addIntraEdge(callICFGNode, retBlockNode);
         }
-        /// otherwise connect interprocedural edges 
+        /// otherwise connect interprocedural edges
         else
         {
             FunEntryICFGNode* calleeEntryNode = icfg->getFunEntryICFGNode(callee);
@@ -196,8 +198,9 @@ void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction* ca
         }
     }
     /// indirect call (don't know callee)
-    else{
-        icfg->addIntraEdge(callICFGNode, retBlockNode); 
+    else
+    {
+        icfg->addIntraEdge(callICFGNode, retBlockNode);
     }
 }
 /*

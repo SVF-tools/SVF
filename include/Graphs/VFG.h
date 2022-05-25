@@ -281,28 +281,33 @@ public:
         return false;
     }
 
-	/// Return all the VFGNodes of a function
-	///@{
-	inline VFGNodeSet& getVFGNodes(const SVFFunction *fun) {
-		return funToVFGNodesMap[fun];
-	}
-	inline bool hasVFGNodes(const SVFFunction *fun) const {
-		return funToVFGNodesMap.find(fun) != funToVFGNodesMap.end();
-	}
-	inline bool VFGNodes(const SVFFunction *fun) const {
-		return funToVFGNodesMap.find(fun) != funToVFGNodesMap.end();
-	}
-	inline VFGNodeSet::const_iterator getVFGNodeBegin(const SVFFunction *fun) const {
-		FunToVFGNodesMapTy::const_iterator it = funToVFGNodesMap.find(fun);
-		assert(it != funToVFGNodesMap.end() && "this function does not have any VFGNode");
-		return it->second.begin();
-	}
-	inline VFGNodeSet::const_iterator getVFGNodeEnd(const SVFFunction *fun) const {
-		FunToVFGNodesMapTy::const_iterator it = funToVFGNodesMap.find(fun);
-		assert(it != funToVFGNodesMap.end() && "this function does not have any VFGNode");
-		return it->second.end();
-	}
-	///@}
+    /// Return all the VFGNodes of a function
+    ///@{
+    inline VFGNodeSet& getVFGNodes(const SVFFunction *fun)
+    {
+        return funToVFGNodesMap[fun];
+    }
+    inline bool hasVFGNodes(const SVFFunction *fun) const
+    {
+        return funToVFGNodesMap.find(fun) != funToVFGNodesMap.end();
+    }
+    inline bool VFGNodes(const SVFFunction *fun) const
+    {
+        return funToVFGNodesMap.find(fun) != funToVFGNodesMap.end();
+    }
+    inline VFGNodeSet::const_iterator getVFGNodeBegin(const SVFFunction *fun) const
+    {
+        FunToVFGNodesMapTy::const_iterator it = funToVFGNodesMap.find(fun);
+        assert(it != funToVFGNodesMap.end() && "this function does not have any VFGNode");
+        return it->second.begin();
+    }
+    inline VFGNodeSet::const_iterator getVFGNodeEnd(const SVFFunction *fun) const
+    {
+        FunToVFGNodesMapTy::const_iterator it = funToVFGNodesMap.find(fun);
+        assert(it != funToVFGNodesMap.end() && "this function does not have any VFGNode");
+        return it->second.end();
+    }
+    ///@}
     /// Add control-flow edges for top level pointers
     //@{
     VFGEdge* addIntraDirectVFEdge(NodeID srcId, NodeID dstId);
@@ -462,9 +467,9 @@ protected:
         icfgNode->addVFGNode(vfgNode);
 
         if(const SVFFunction* fun = icfgNode->getFun())
-        	funToVFGNodesMap[fun].insert(vfgNode);
+            funToVFGNodesMap[fun].insert(vfgNode);
         else
-        	globalVFGNodes.insert(vfgNode);
+            globalVFGNodes.insert(vfgNode);
     }
 
     /// Add a VFG node for program statement
@@ -545,20 +550,21 @@ protected:
     /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetVFG node same as handling actual parameters
     inline void addFormalRetVFGNode(const PAGNode* uniqueFunRet, const SVFFunction* fun, RetPESet& retPEs)
     {
-		FormalRetVFGNode *sNode = new FormalRetVFGNode(totalVFGNode++, uniqueFunRet, fun);
-		addVFGNode(sNode, pag->getICFG()->getFunExitICFGNode(fun));
-		for (RetPESet::const_iterator it = retPEs.begin(), eit = retPEs.end(); it != eit; ++it)
-			sNode->addRetPE(*it);
+        FormalRetVFGNode *sNode = new FormalRetVFGNode(totalVFGNode++, uniqueFunRet, fun);
+        addVFGNode(sNode, pag->getICFG()->getFunExitICFGNode(fun));
+        for (RetPESet::const_iterator it = retPEs.begin(), eit = retPEs.end(); it != eit; ++it)
+            sNode->addRetPE(*it);
 
-		PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
-		/// if this uniqueFunRet is a phi node, which means it will receive values from multiple return instructions of fun
-		/// we will set this phi node's def later
-		/// Ideally, every function uniqueFunRet should be a PhiNode (SVFIRBuilder.cpp), unless it does not have ret instruction
-		if (!pag->isPhiNode(uniqueFunRet)){
-			std::string warn = fun->getName();
-			SVFUtil::writeWrnMsg(warn + " does not have any ret instruction!");
-			setDef(uniqueFunRet, sNode);
-		}
+        PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
+        /// if this uniqueFunRet is a phi node, which means it will receive values from multiple return instructions of fun
+        /// we will set this phi node's def later
+        /// Ideally, every function uniqueFunRet should be a PhiNode (SVFIRBuilder.cpp), unless it does not have ret instruction
+        if (!pag->isPhiNode(uniqueFunRet))
+        {
+            std::string warn = fun->getName();
+            SVFUtil::writeWrnMsg(warn + " does not have any ret instruction!");
+            setDef(uniqueFunRet, sNode);
+        }
     }
     /// Add a callsite Receive VFG node
     inline void addActualRetVFGNode(const PAGNode* ret,const CallICFGNode* cs)
@@ -619,7 +625,7 @@ protected:
         setDef(edge->getRes(),sNode);
         PAGNodeToUnaryOPVFGNodeMap[edge->getRes()] = sNode;
     }
-    /// Add a BranchVFGNode 
+    /// Add a BranchVFGNode
     inline void addBranchVFGNode(const BranchStmt* edge)
     {
         BranchVFGNode* sNode = new BranchVFGNode(totalVFGNode++, edge);

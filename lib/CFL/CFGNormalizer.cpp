@@ -34,12 +34,13 @@
 #include <iostream>
 #include "Util/BasicTypes.h"
 #include "CFL/CFGNormalizer.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 
-/* 
+/*
     Input: extended Backus–Naur form (EBNF)
-    
+
     Usage	Notation
     definition	=
     concatenation	,
@@ -78,34 +79,49 @@ using namespace SVF;
 */
 // BNF
 // BIN Transforom
-
-CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar){
-    /*
-    ebnf_sign_replace('*');
-    ebnf_sign_replace('?');
-    */
+CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
+{
     CFLGrammar *grammar = new CFLGrammar();
     grammar->startSymbol = generalGrammar->startSymbol;
     grammar->terminals = generalGrammar->terminals;
     grammar->nonterminals = generalGrammar->nonterminals;
     grammar->totalSymbol = generalGrammar->totalSymbol;
+    grammar->attributeSymbol = generalGrammar->attributeSymbol;
+    ebnf_sign_replace('*', generalGrammar, grammar);
+    ebnf_sign_replace('?', generalGrammar, grammar);
     ebnf_bin(generalGrammar, grammar);
+    grammar->rawProductions = generalGrammar->rawProductions;
 
-    for(auto symProdsPair: generalGrammar->rawProductions){
-        for(auto prod: symProdsPair.second){
+    for(auto symProdsPair: generalGrammar->rawProductions)
+    {
+        for(auto prod: symProdsPair.second)
+        {   
+            /// rawProductions production does not include lhs
+            /// so append to the begin of the production
             Production tempP = prod;
             tempP.insert(tempP.begin(), symProdsPair.first);
-            if (prod.size() == 1){
-                if ((std::find(tempP.begin(), tempP.end(), grammar->str2Sym("epsilon")) != tempP.end()))
-                {
-                    if (std::find(grammar->epsilonProds.begin(), grammar->epsilonProds.end(), tempP) == grammar->epsilonProds.end())
-                        grammar->epsilonProds.insert(tempP);
-                }
-                grammar->singleRHS2Prods[tempP[1]].insert(tempP);
-            } 
-            if (prod.size() == 2){
-                grammar->firstRHS2Prods[tempP[1]].insert(tempP);
-                grammar->secondRHS2Prods[tempP[2]].insert(tempP);
+            insertToCFLGrammar(grammar, tempP);
+        }
+    }
+    fillAttribute(grammar, &grammar->kind2AttrMap);
+    return grammar;
+}
+
+
+CFLGrammar* CFGNormalizer::fillAttribute(CFLGrammar *grammar, Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>> *kind2AttrMap)
+{
+    for(auto symProdsPair: grammar->rawProductions)
+    {
+        for(auto prod: symProdsPair.second)
+        {
+            /// rawProductions production does not include lhs
+            /// so append to the begin of the production
+            Production tempP = prod;
+            tempP.insert(tempP.begin(), symProdsPair.first);
+            Productions filledProductions =  getFilledProductions(tempP, kind2AttrMap, grammar);
+            for (auto  filledProd : filledProductions)
+            {
+                insertToCFLGrammar(grammar, filledProd);
             }
         }
     }
@@ -113,12 +129,15 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar){
     return grammar;
 }
 
-void CFGNormalizer::ebnf_bin(GrammarBase* generalGrammar, CFLGrammar *grammar){
+void CFGNormalizer::ebnf_bin(GrammarBase* generalGrammar, CFLGrammar *grammar)
+{
     Map<Symbol, Productions> new_grammar = {};
     std::string tempStr = "";
 
-    for(auto head : generalGrammar->rawProductions){
-        for(auto rule: head.second){ 
+    for(auto head : generalGrammar->rawProductions)
+    {
+        for(auto rule: head.second)
+        {
 
             Production long_run = rule;
             long_run.erase(long_run.begin());
@@ -128,10 +147,12 @@ void CFGNormalizer::ebnf_bin(GrammarBase* generalGrammar, CFLGrammar *grammar){
         }
     }
 
-    for(auto head : generalGrammar->rawProductions){
-        for(auto rule: head.second){ 
+    for(auto head : generalGrammar->rawProductions)
+    {
+        for(auto rule: head.second)
+        {
             if (rule.size() < 3) continue;
-            
+
             Production long_run = rule;
             Symbol first = long_run[0];
             long_run.erase(long_run.begin());
@@ -141,36 +162,50 @@ void CFGNormalizer::ebnf_bin(GrammarBase* generalGrammar, CFLGrammar *grammar){
             generalGrammar->rawProductions[head.first].insert(rule);
 
             Symbol X = check_head(new_grammar, long_run);
-            if (int(X) == -1){
+            if (int(X) == -1)
+            {
                 X = check_head(generalGrammar->rawProductions, long_run);
             }
-            if (int(X) != -1){
+            if (int(X) != -1)
+            {
                 it = generalGrammar->rawProductions[head.first].find(rule);
                 generalGrammar->rawProductions[head.first].erase(it);
                 rule.push_back(X);
                 generalGrammar->rawProductions[head.first].insert(rule);
-            } else{
+            }
+            else
+            {
                 tempStr = "X";
                 std::ostringstream ss;
                 ss << grammar->num_generator();
                 tempStr.append(ss.str());
+                for (int i = 0; i < int(rule.size()); i++)
+                {
+                    if (grammar->attributeSymbol.find(rule[i]) != grammar->attributeSymbol.end())
+                    {
+                        tempStr.append("_i");
+                        break;
+                    }
+                }
                 Symbol tempSym = grammar->insertNonTerminalSymbol(tempStr);
                 it = generalGrammar->rawProductions[head.first].find(rule);
                 generalGrammar->rawProductions[head.first].erase(it);
-                rule.push_back(tempSym); 
+                rule.push_back(tempSym);
                 generalGrammar->rawProductions[head.first].insert(rule);
                 X = tempSym;
             }
             new_grammar[X] = {};
             Production temp_p = long_run;
             Symbol RHX;
-            if (long_run.size() ==2){
+            if (long_run.size() ==2)
+            {
                 new_grammar[X].insert(temp_p);
                 long_run.clear();
-            } 
-            else{
+            }
+            else
+            {
                 new_grammar[X].insert(long_run);
-                RHX = X; 
+                RHX = X;
             }
             while (long_run.size() > 2)
             {
@@ -182,10 +217,12 @@ void CFGNormalizer::ebnf_bin(GrammarBase* generalGrammar, CFLGrammar *grammar){
                 temp_p = long_run;
 
                 RHX = check_head(new_grammar, long_run);
-                if (int(RHX) == -1){
+                if (int(RHX) == -1)
+                {
                     RHX = check_head(generalGrammar->rawProductions, long_run);
                 }
-                if(int(RHX) == -1){
+                if(int(RHX) == -1)
+                {
                     tempStr = "X";
                     std::ostringstream ss;
                     ss << grammar->num_generator();
@@ -194,16 +231,19 @@ void CFGNormalizer::ebnf_bin(GrammarBase* generalGrammar, CFLGrammar *grammar){
                     auto it = new_grammar[X].find(prev_rule);
                     new_grammar[X].erase(it);
                     new_grammar[X].insert({first, tempSym});
-                    new_grammar[tempSym].insert(long_run); 
+                    new_grammar[tempSym].insert(long_run);
                     RHX = tempSym;
                 }
             }
 
 
-            for (auto new_head : new_grammar){
-                for (auto prod : new_head.second){
+            for (auto new_head : new_grammar)
+            {
+                for (auto prod : new_head.second)
+                {
                     auto it = generalGrammar->rawProductions[new_head.first].find(prod);
-                    if (it == generalGrammar->rawProductions[new_head.first].end()) {
+                    if (it == generalGrammar->rawProductions[new_head.first].end())
+                    {
                         generalGrammar->rawProductions[new_head.first].insert(prod);
                     }
                 }
@@ -211,6 +251,45 @@ void CFGNormalizer::ebnf_bin(GrammarBase* generalGrammar, CFLGrammar *grammar){
 
         }
     }
+}
+
+CFGNormalizer::Production CFGNormalizer::getFilledProd(Production &prod, CFLGrammar::Attribute attribute, CFLGrammar *grammar)
+{
+    Production tempP = prod;
+    for (int i = 0; i < int(prod.size()); i++)
+    {
+        if (grammar->attributeSymbol.find(prod[i]) != grammar->attributeSymbol.end())
+        {
+            tempP[i] = CFLGrammar::getAttributedKind(attribute, prod[i]);
+        }
+    }
+    return tempP;
+}
+
+///Loop through provided production based on existence of attribute of attribute variable
+///and expand to productions set
+///e.g Xi -> Y Zi with Xi i = 0, 1, Yi i = 0,2
+///Will get {X0 -> Y Z0, X1 -> Y Z1, X2 -> Y Z2}
+CFGNormalizer::Productions CFGNormalizer::getFilledProductions(Production &prod, Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> *kind2AttriMap, CFLGrammar *grammar)
+{
+    Productions filledProductioins{};
+    filledProductioins.insert(prod);
+    for(Symbol variable : prod)
+    {
+        if (kind2AttriMap->find(variable) != kind2AttriMap->end())
+        {
+            auto nodeSet = *(kind2AttriMap->find(variable));
+            for (auto attribute : nodeSet.second)
+            {
+                Production filledProd = getFilledProd(prod, attribute, grammar);
+                if (filledProductioins.find(filledProd) == filledProductioins.end())
+                {
+                    filledProductioins.insert(filledProd);
+                }
+            }
+        }
+    }
+    return filledProductioins;
 }
 
 int CFGNormalizer::ebnf_bracket_match(Production &prod, int i, CFLGrammar *grammar)
@@ -227,12 +306,17 @@ int CFGNormalizer::ebnf_bracket_match(Production &prod, int i, CFLGrammar *gramm
     return 0;
 }
 
-void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CFLGrammar *grammar){
+void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CFLGrammar *grammar)
+{
     SVF::Map<std::string, std::string> new_rule_checker;
     std::string X = "X";
-    for (auto ebnfHead : generalGrammar->rawProductions)
+    
+    /// replace Sign Group With Temp Varibale
+    /// and load the replace in new_rule_checker
+    for (auto &ebnfPair : generalGrammar->rawProductions)
     {
-        for (auto ebnfProd : ebnfHead.second)
+        Productions tempProds = ebnfPair.second;
+        for (auto ebnfProd : ebnfPair.second)
         {
             size_t i = 1;
             while (i < ebnfProd.size())
@@ -240,15 +324,13 @@ void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CF
                 int repetition_start = -1;
                 if (grammar->sym2Str(ebnfProd[i]) == std::string(1, sign))
                 {
-                    if (i == 1)
-                    {
-                        // abort("EBNF Form is not correct");
-                        std::cout << "wr";
-                    }
-                    else if (grammar->sym2Str(ebnfProd[i - 1]) != std::string(1, ')'))
+                    assert(i != 1 && "sign in grammar associate with no symble");
+                    /// If sign assoicate wihout group e.i with single symble
+                    if (grammar->sym2Str(ebnfProd[i - 1]) != std::string(1, ')'))
                     {
                         repetition_start = i - 1;
                     }
+                    /// sign associate with group of symble by brace pair
                     else
                     {
                         repetition_start = ebnf_bracket_match(ebnfProd, i, grammar);
@@ -262,9 +344,10 @@ void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CF
                     repetition.append(grammar->sym2Str(ebnfProd[i]));
                     if (new_rule_checker.find(repetition) != new_rule_checker.end())
                     {
-
+                        tempProds.erase(ebnfProd);
                         ebnfProd.erase(ebnfProd.begin() + repetition_start, ebnfProd.begin() + i + 1);
                         ebnfProd.insert(ebnfProd.begin() + repetition_start, grammar->str2Sym(new_rule_checker[repetition]));
+                        tempProds.insert(ebnfProd);
                     }
                     else
                     {
@@ -273,31 +356,49 @@ void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CF
                         ss << grammar->num_generator();
                         X.append(ss.str());
                         Symbol tempSym = grammar->insertNonTerminalSymbol(X);
+                        tempProds.erase(ebnfProd);
                         ebnfProd.erase(ebnfProd.begin() + repetition_start, ebnfProd.begin() + i + 1);
                         ebnfProd.insert(ebnfProd.begin() + repetition_start, tempSym);
                         new_rule_checker[repetition] = X;
+                        tempProds.insert(ebnfProd);
                     }
+                    
                     i = repetition_start;
                 }
                 i++;
             }
         }
+        ebnfPair.second = tempProds;
     }
-    for(auto rep: new_rule_checker){
-        Production temp_list = {};
+    for(auto rep: new_rule_checker)
+    {
+        /// For Both * and ? need to insert epsilon rule
         std::string new_nonterminal = rep.second;
-        if (sign == '*'){
-            temp_list.push_back(grammar->str2Sym(new_nonterminal)); 
-        } 
-        Production temp_p = strTrans(rep.second, grammar);
-        temp_list.insert(temp_list.end(), temp_p.begin(),temp_p.end());
-        temp_list.insert(temp_list.begin(), grammar->str2Sym("epsilon"));
+        Production temp_list = {grammar->str2Sym(new_nonterminal), grammar->str2Sym("epsilon")};
+        generalGrammar->rawProductions[grammar->str2Sym(new_nonterminal)].insert(temp_list);
+        /// insert second rule for '*' X -> X E for '+' X -> X
+        temp_list = {grammar->str2Sym(new_nonterminal)};
+        if (sign == '*')
+        {
+            /// Insert Back the Group
+            Production E = strTrans(rep.first, grammar);
+            Production withoutSign = {};
+            for (auto &word : E)
+            {
+                if (word != grammar->str2Sym("*")  && word != grammar->str2Sym("(") && word != grammar->str2Sym(")"))
+                {
+                    withoutSign.push_back(word);
+                }
+            }
+            temp_list.insert(temp_list.end(), withoutSign.begin(), withoutSign.end());
+        }
         generalGrammar->rawProductions[grammar->str2Sym(new_nonterminal)].insert(temp_list);
     }
 
 }
 
-CFGNormalizer::Production CFGNormalizer::strTrans(std::string LHS, CFLGrammar *grammar){
+CFGNormalizer::Production CFGNormalizer::strTrans(std::string LHS, CFLGrammar *grammar)
+{
     Production  prod = {};
     std::smatch matches;
     std::regex LHSReg("\\s*(.*)");
@@ -317,13 +418,41 @@ CFGNormalizer::Production CFGNormalizer::strTrans(std::string LHS, CFLGrammar *g
     return prod;
 }
 
-int CFGNormalizer::check_head(Map<Symbol, Productions> &grammar, Production &rule){
-    for(auto symProdPair: grammar){
-        for(auto prod: symProdPair.second){
-                if (rule == prod){
-                    return symProdPair.first;
-                }
+int CFGNormalizer::check_head(Map<Symbol, Productions> &grammar, Production &rule)
+{
+    for(auto symProdPair: grammar)
+    {
+        for(auto prod: symProdPair.second)
+        {
+            if (rule == prod)
+            {
+                return symProdPair.first;
+            }
         }
     }
     return -1;
+}
+
+/// Based on prod size to add on suitable member field of grammar
+void CFGNormalizer::insertToCFLGrammar(CFLGrammar *grammar, CFGNormalizer::Production &prod)
+{
+    if (prod.size() == 2)
+    {
+        if ((std::find(prod.begin(), prod.end(), grammar->str2Sym("epsilon")) != prod.end()))
+        {
+            if (std::find(grammar->getEpsilonProds().begin(), grammar->getEpsilonProds().end(), prod) == grammar->getEpsilonProds().end())
+            {
+                grammar->getEpsilonProds().insert(prod);
+            }
+        }
+        else
+        {
+            grammar->getSingleRHS2Prods()[prod[1]].insert(prod);
+        }
+    } 
+    if (prod.size() == 3)
+    {
+        grammar->getFirstRHS2Prods()[prod[1]].insert(prod);
+        grammar->getSecondRHS2Prods()[prod[2]].insert(prod);
+    }
 }

@@ -43,10 +43,10 @@ namespace SVF
 class SVFIR : public IRGraph
 {
 
-friend class SVFIRBuilder;
-friend class ExternalPAG;
-friend class PAGBuilderFromFile;
-friend class TypeBasedHeapCloning;  
+    friend class SVFIRBuilder;
+    friend class ExternalPAG;
+    friend class PAGBuilderFromFile;
+    friend class TypeBasedHeapCloning;
 
 public:
     typedef Set<const CallICFGNode*> CallSiteSet;
@@ -447,7 +447,8 @@ public:
 private:
 
     /// Map a SVFStatement type to a set of corresponding SVF statements
-    inline void addToStmt2TypeMap(SVFStmt* edge) {
+    inline void addToStmt2TypeMap(SVFStmt* edge)
+    {
         bool added = KindToSVFStmtSetMap[edge->getEdgeKind()].insert(edge).second;
         assert(added && "duplicated edge, not added!!!");
         if (edge->isPTAEdge())

@@ -45,7 +45,7 @@ void ConstraintGraph::buildCG()
     // initialize nodes
     for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
-		addConstraintNode(new ConstraintNode(it->first), it->first);
+        addConstraintNode(new ConstraintNode(it->first), it->first);
     }
 
     // initialize edges
@@ -121,7 +121,7 @@ void ConstraintGraph::buildCG()
     {
         GepStmt* edge = SVFUtil::cast<GepStmt>(*iter);
         if(edge->isVariantFieldGep())
-                addVariantGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+            addVariantGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
         else
             addNormalGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID(),edge->getLocationSet());
     }
@@ -536,7 +536,7 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
  */
 void ConstraintGraph::dump(std::string name)
 {
-     GraphPrinter::WriteGraphToFile(outs(), name, this);
+    GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
 /*!
@@ -602,7 +602,8 @@ void ConstraintGraph::print()
 /*!
  * View dot graph of Constraint graph from debugger.
  */
-void ConstraintGraph::view() {
+void ConstraintGraph::view()
+{
     llvm::ViewGraph(this, "Constraint Graph");
 }
 
@@ -628,9 +629,11 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
     }
 
 #if LLVM_VERSION_MAJOR >= 12
-    static bool isNodeHidden(NodeType *n, ConstraintGraph *){
+    static bool isNodeHidden(NodeType *n, ConstraintGraph *)
+    {
 #else
-    static bool isNodeHidden(NodeType *n) {
+    static bool isNodeHidden(NodeType *n)
+    {
 #endif
         if (Options::ShowHiddenNode) return false;
         else return (n->getInEdges().empty() && n->getOutEdges().empty());
@@ -686,7 +689,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         else if (SVFUtil::isa<ObjVar>(node))
         {
             if(SVFUtil::isa<GepObjVar>(node))
-               return "shape=doubleoctagon";
+                return "shape=doubleoctagon";
             else if(SVFUtil::isa<FIObjVar>(node))
                 return "shape=box3d";
             else if (SVFUtil::isa<DummyObjVar>(node))

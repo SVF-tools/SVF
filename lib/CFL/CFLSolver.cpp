@@ -31,25 +31,33 @@
 
 using namespace SVF;
 
-void CFLSolver::solve(){
+void CFLSolver::solve()
+{
     /// initial worklist
-    for(auto it = graph->begin(); it!= graph->end(); it++){
-        for(const CFLEdge* edge : (*it).second->getOutEdges()){
+    for(auto it = graph->begin(); it!= graph->end(); it++)
+    {
+        for(const CFLEdge* edge : (*it).second->getOutEdges())
+        {
             pushIntoWorklist(edge);
         }
     }
-    /// Foreach production X -> epsilon 
+    /// Foreach production X -> epsilon
     ///     add X(i,i) if not exist to E and to worklist
-    for(const Production& prod : grammar->getEpsilonProds()){
-        for(auto it = graph->begin(); it!= graph->end(); it++){
+    for(const Production& prod : grammar->getEpsilonProds())
+    {
+        for(auto it = graph->begin(); it!= graph->end(); it++)
+        {
             Symbol X = grammar->getLHSSymbol(prod);
             CFLNode* i = (*it).second;
             if(const CFLEdge* edge = graph->addCFLEdge(i, i, X))
+            {
                 pushIntoWorklist(edge);
+            }
         }
     }
 
-    while(!isWorklistEmpty()){
+    while(!isWorklistEmpty())
+    {
         /// Select and remove an edge Y(i,j) from worklist
         const CFLEdge* Y_edge = popFromWorklist();
         CFLNode* i = Y_edge->getSrcNode();
@@ -59,7 +67,8 @@ void CFLSolver::solve(){
         ///     add X(i,j) if not exist to E and to worklist
         Symbol Y = Y_edge->getEdgeKind();
         if (grammar->hasProdsFromSingleRHS(Y))
-            for(const Production& prod : grammar->getProdsFromSingleRHS(Y)){
+            for(const Production& prod : grammar->getProdsFromSingleRHS(Y))
+            {
                 Symbol X = grammar->getLHSSymbol(prod);
                 if(const CFLEdge* newEdge = graph->addCFLEdge(i, j, X))
                 {
@@ -71,9 +80,11 @@ void CFLSolver::solve(){
         /// Foreach outgoing edge Z(j,k) from node j do
         ///     add X(i,k) if not exist to E and to worklist
         if (grammar->hasProdsFromFirstRHS(Y))
-            for(const Production& prod : grammar->getProdsFromFirstRHS(Y)){
+            for(const Production& prod : grammar->getProdsFromFirstRHS(Y))
+            {
                 Symbol X = grammar->getLHSSymbol(prod);
-                for(const CFLEdge* Z_edge : j->getOutEdges()){
+                for(const CFLEdge* Z_edge : j->getOutEdges())
+                {
                     if (Z_edge->getEdgeKind() == grammar->getSecondRHSSymbol(prod))
                     {
                         CFLNode* k = Z_edge->getDstNode();
@@ -89,9 +100,11 @@ void CFLSolver::solve(){
         /// Foreach incoming edge Z(k,i) to node i do
         ///     add X(k,j) if not exist to E and to worklist
         if(grammar->hasProdsFromSecondRHS(Y))
-            for(const Production& prod : grammar->getProdsFromSecondRHS(Y)){
+            for(const Production& prod : grammar->getProdsFromSecondRHS(Y))
+            {
                 Symbol X = grammar->getLHSSymbol(prod);
-                for(const CFLEdge* Z_edge : i->getInEdges()){
+                for(const CFLEdge* Z_edge : i->getInEdges())
+                {
                     if(Z_edge->getEdgeKind() == grammar->getFirstRHSSymbol(prod))
                     {
                         CFLNode* k = Z_edge->getSrcNode();

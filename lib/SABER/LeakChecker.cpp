@@ -118,27 +118,31 @@ void LeakChecker::initSnks()
         for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
             const SVFFunction* fun = *cit;
-			if (isSinkLikeFun(fun)) {
-				SVFIR::SVFVarList &arglist = it->second;
-				assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
-				/// we only choose pointer parameters among all the actual parameters
-				for (SVFIR::SVFVarList::const_iterator ait = arglist.begin(),
-						aeit = arglist.end(); ait != aeit; ++ait) {
-					const PAGNode *pagNode = *ait;
-					if (pagNode->isPointer()) {
-						const SVFGNode *snk = getSVFG()->getActualParmVFGNode(pagNode, it->first);
-						addToSinks(snk);
+            if (isSinkLikeFun(fun))
+            {
+                SVFIR::SVFVarList &arglist = it->second;
+                assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
+                /// we only choose pointer parameters among all the actual parameters
+                for (SVFIR::SVFVarList::const_iterator ait = arglist.begin(),
+                        aeit = arglist.end(); ait != aeit; ++ait)
+                {
+                    const PAGNode *pagNode = *ait;
+                    if (pagNode->isPointer())
+                    {
+                        const SVFGNode *snk = getSVFG()->getActualParmVFGNode(pagNode, it->first);
+                        addToSinks(snk);
 
                         // For any multi-level pointer e.g., XFree(void** pagNode) that passed into a ExtAPI::EFT_FREE_MULTILEVEL function (e.g., XFree),
                         // we will add the DstNode of a load edge, i.e., dummy = *pagNode
                         SVFStmt::SVFStmtSetTy& loads = const_cast<PAGNode*>(pagNode)->getOutgoingEdges(SVFStmt::Load);
-                        for(const SVFStmt* ld : loads){
+                        for(const SVFStmt* ld : loads)
+                        {
                             if(SVFUtil::isa<DummyValVar>(ld->getDstNode()))
                                 addToSinks(getSVFG()->getStmtVFGNode(ld));
                         }
                     }
-				}
-			}
+                }
+            }
         }
     }
 }

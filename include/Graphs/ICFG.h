@@ -46,7 +46,7 @@ typedef GenericGraph<ICFGNode,ICFGEdge> GenericICFGTy;
 class ICFG : public GenericICFGTy
 {
 
-friend class ICFGBuilder;
+    friend class ICFGBuilder;
 
 public:
 
@@ -182,7 +182,7 @@ public:
     //@}
 
 private:
-	
+
     /// Get/Add IntraBlock ICFGNode
     inline IntraICFGNode* getIntraBlock(const Instruction* inst)
     {

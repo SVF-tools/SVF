@@ -50,14 +50,16 @@ extern "C" {
 /*---------------------------------------------------------------------------*/
 
 typedef struct st_table_entry st_table_entry;
-struct st_table_entry {
+struct st_table_entry
+{
     char *key;
     char *record;
     st_table_entry *next;
 };
 
 typedef struct st_table st_table;
-struct st_table {
+struct st_table
+{
     int (*compare)(const char *, const char *);
     int (*hash)(char *, int);
     int num_bins;
@@ -69,7 +71,8 @@ struct st_table {
 };
 
 typedef struct st_generator st_generator;
-struct st_generator {
+struct st_generator
+{
     st_table *table;
     st_table_entry *entry;
     int index;
@@ -201,7 +204,7 @@ typedef int (*ST_PFICPI)(char *, int);     /* type for hash function */
 /*---------------------------------------------------------------------------*/
 
 extern st_table *st_init_table_with_params (ST_PFICPCP, ST_PFICPI, int, int, double, int);
-extern st_table *st_init_table (ST_PFICPCP, ST_PFICPI); 
+extern st_table *st_init_table (ST_PFICPCP, ST_PFICPI);
 extern void st_free_table (st_table *);
 extern int st_lookup (st_table *, void *, void *);
 extern int st_lookup_int (st_table *, void *, int *);

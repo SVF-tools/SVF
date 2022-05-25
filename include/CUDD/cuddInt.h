@@ -101,7 +101,7 @@ extern "C" {
 #define DD_MAXREF		((DdHalfWord) ~0)
 
 #define DD_DEFAULT_RESIZE	10	/* how many extra variables */
-					/* should be added when resizing */
+/* should be added when resizing */
 #define DD_MEM_CHUNK		1022
 
 /* These definitions work for CUDD_VALUE_TYPE == double */
@@ -188,7 +188,7 @@ extern "C" {
 #define DD_ADD_OUT_SUM_TAG			0x6e
 #define DD_BDD_LEQ_UNLESS_TAG			0x82
 #define DD_ADD_TRIANGLE_TAG			0x86
-#define DD_BDD_MAX_EXP_TAG			0x8a 
+#define DD_BDD_MAX_EXP_TAG			0x8a
 
 /* Generator constants. */
 #define CUDD_GEN_CUBES 0
@@ -203,26 +203,32 @@ extern "C" {
 /* Stucture declarations                                                     */
 /*---------------------------------------------------------------------------*/
 
-struct DdGen {
+struct DdGen
+{
     DdManager	*manager;
     int		type;
     int		status;
-    union {
-	struct {
-	    int			*cube;
-	    CUDD_VALUE_TYPE	value;
-	} cubes;
-	struct {
-	    int			*cube;
-	    DdNode		*ub;
-	} primes;
-	struct {
-	    int                 size;
-	} nodes;
+    union
+    {
+        struct
+        {
+            int			*cube;
+            CUDD_VALUE_TYPE	value;
+        } cubes;
+        struct
+        {
+            int			*cube;
+            DdNode		*ub;
+        } primes;
+        struct
+        {
+            int                 size;
+        } nodes;
     } gen;
-    struct {
-	int	sp;
-	DdNode	**stack;
+    struct
+    {
+        int	sp;
+        DdNode	**stack;
     } stack;
     DdNode	*node;
 };
@@ -237,7 +243,8 @@ struct DdGen {
 ** are passed the manager as argument; they should return 1 if
 ** successful and 0 otherwise.
 */
-typedef struct DdHook {		/* hook list element */
+typedef struct DdHook  		/* hook list element */
+{
     DD_HFP f; /* function to be called */
     struct DdHook *next;	/* next element in the list */
 } DdHook;
@@ -253,7 +260,8 @@ typedef unsigned int ptruint;
 typedef DdNode *DdNodePtr;
 
 /* Generic local cache item. */
-typedef struct DdLocalCacheItem {
+typedef struct DdLocalCacheItem
+{
     DdNode *value;
 #ifdef DD_CACHE_PROFILE
     ptrint count;
@@ -262,7 +270,8 @@ typedef struct DdLocalCacheItem {
 } DdLocalCacheItem;
 
 /* Local cache. */
-typedef struct DdLocalCache {
+typedef struct DdLocalCache
+{
     DdLocalCacheItem *item;
     unsigned int itemsize;
     unsigned int keysize;
@@ -277,7 +286,8 @@ typedef struct DdLocalCache {
 } DdLocalCache;
 
 /* Generic hash item. */
-typedef struct DdHashItem {
+typedef struct DdHashItem
+{
     struct DdHashItem *next;
     ptrint count;
     DdNode *value;
@@ -285,7 +295,8 @@ typedef struct DdHashItem {
 } DdHashItem;
 
 /* Local hash table */
-typedef struct DdHashTable {
+typedef struct DdHashTable
+{
     unsigned int keysize;
     unsigned int itemsize;
     DdHashItem **bucket;
@@ -298,7 +309,8 @@ typedef struct DdHashTable {
     DdManager *manager;
 } DdHashTable;
 
-typedef struct DdCache {
+typedef struct DdCache
+{
     DdNode *f,*g;		/* DDs */
     ptruint h;			/* either operator or DD */
     DdNode *data;		/* already constructed DD */
@@ -307,7 +319,8 @@ typedef struct DdCache {
 #endif
 } DdCache;
 
-typedef struct DdSubtable {	/* subtable for one index */
+typedef struct DdSubtable  	/* subtable for one index */
+{
     DdNode **nodelist;		/* hash table */
     int shift;			/* shift for hash function */
     unsigned int slots;		/* size of the hash table */
@@ -323,7 +336,8 @@ typedef struct DdSubtable {	/* subtable for one index */
     Cudd_LazyGroupType varToBeGrouped; /* tells what grouping to apply */
 } DdSubtable;
 
-struct DdManager {	/* specialized DD symbol table */
+struct DdManager  	/* specialized DD symbol table */
+{
     /* Constants */
     DdNode sentinel;		/* for collision lists */
     DdNode *one;		/* constant 1 */
@@ -359,11 +373,11 @@ struct DdManager {	/* specialized DD symbol table */
     double gcFrac;		/* gc when this fraction is dead */
     int gcEnabled;		/* gc is enabled */
     unsigned int looseUpTo;	/* slow growth beyond this limit */
-				/* (measured w.r.t. slots, not keys) */
+    /* (measured w.r.t. slots, not keys) */
     unsigned int initSlots;	/* initial size of a subtable */
     DdNode **stack;		/* stack for iterative procedures */
     double allocated;		/* number of nodes allocated */
-				/* (not during reordering) */
+    /* (not during reordering) */
     double reclaimed;		/* number of nodes brought back from the dead */
     int isolated;		/* isolated projection functions */
     int *perm;			/* current variable perm. (index to level) */
@@ -466,7 +480,8 @@ struct DdManager {	/* specialized DD symbol table */
 #endif
 };
 
-typedef struct Move {
+typedef struct Move
+{
     DdHalfWord x;
     DdHalfWord y;
     unsigned int flags;
@@ -475,14 +490,16 @@ typedef struct Move {
 } Move;
 
 /* Generic level queue item. */
-typedef struct DdQueueItem {
+typedef struct DdQueueItem
+{
     struct DdQueueItem *next;
     struct DdQueueItem *cnext;
     void *key;
 } DdQueueItem;
 
 /* Level queue. */
-typedef struct DdLevelQueue {
+typedef struct DdLevelQueue
+{
     void *first;
     DdQueueItem **last;
     DdQueueItem *freelist;

@@ -1,0 +1,11 @@
+Start:  
+   V
+Productions:
+   F -> ( Copy ) *;
+   F -> ( Store V Load ) *;
+   Fbar -> ( Copybar ) *;
+   Fbar -> ( Loadbar V Storebar ) *;
+   V -> Fbar V F;
+   V -> Gepbar_i V Gep_i;
+   V -> Addrbar Addr;
+   V -> epsilon;
