@@ -50,7 +50,9 @@ void CFLSolver::solve()
             Symbol X = grammar->getLHSSymbol(prod);
             CFLNode* i = (*it).second;
             if(const CFLEdge* edge = graph->addCFLEdge(i, i, X))
+            {
                 pushIntoWorklist(edge);
+            }
         }
     }
 

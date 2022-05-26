@@ -34,11 +34,6 @@
 
 using namespace SVF;
 
-//// Build graph from file
-void CFLGraph::build(std::string filename)
-{
-
-}
 
 void CFLGraph::addCFLNode(NodeID id, CFLNode* node)
 {
@@ -78,103 +73,49 @@ void CFLGraph::view()
     llvm::ViewGraph(this, "CFL Graph");
 }
 
-void CFLGraph::buildFromDot(std::string fileName)
-{
-    std::cout << "Building CFL Graph from dot file: " << fileName << "..\n";
-    std::string lineString;
-    std::ifstream inputFile(fileName);
-
-    std::regex reg("Node(\\w+)\\s*->\\s*Node(\\w+)\\s*\\[.*label=(.*)\\]");
-
-    std::cout << std::boolalpha;
-    u32_t lineNum = 0 ;
-
-    while (getline(inputFile, lineString))
-    {
-        lineNum += 1;
-        std::smatch matches;
-        if (std::regex_search(lineString, matches, reg))
-        {
-            CFLNode *src, *dst;
-            if (hasGNode(std::stoul(matches.str(1), nullptr, 16))==false)
-            {
-                src = new CFLNode(std::stoul(matches.str(1), nullptr, 16));
-                addCFLNode(src->getId(), src);
-            }
-            else
-            {
-                src = getGNode(std::stoul(matches.str(1), nullptr, 16));
-            }
-            if (hasGNode(std::stoul(matches.str(2), nullptr, 16))==false)
-            {
-                dst = new CFLNode(std::stoul(matches.str(2), nullptr, 16));
-                addCFLNode(dst->getId(), dst);
-            }
-            else
-            {
-                dst = getGNode(std::stoul(matches.str(2), nullptr, 16));
-            }
-            if (externMap == false)
-            {
-                if (label2SymMap.find(matches.str(3)) != label2SymMap.end())
-                {
-                    addCFLEdge(src, dst, label2SymMap[matches.str(3)]);
-                }
-                else
-                {
-                    label2SymMap.insert({matches.str(3), current++});
-                    addCFLEdge(src, dst, label2SymMap[matches.str(3)]);
-                }
-            }
-            else
-            {
-                if (label2SymMap.find(matches.str(3)) != label2SymMap.end())
-                {
-                    addCFLEdge(src, dst, label2SymMap[matches.str(3)]);
-                }
-                else
-                {
-                    if(Options::FlexSymMap == true)
-                    {
-                        label2SymMap.insert({matches.str(3), current++});
-                        addCFLEdge(src, dst, label2SymMap[matches.str(3)]);
-                    }
-                    else
-                    {
-                        std::string msg = "In line " + std::to_string(lineNum) + " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
-                        SVFUtil::errMsg(msg);
-                        std::cout << msg;
-                        abort();
-                    }
-                }
-            }
-        }
-    }
-    inputFile.close();
-}
-
-void CFLGraph::setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symbol>* nonterminals)
+void CFLGraph::setMap(GrammarBase *grammar)
 {
     externMap = true;
-    for(auto pairV : *terminals)
+    for(auto pairV : grammar->terminals)
     {
         if(label2SymMap.find(pairV.first) == label2SymMap.end())
         {
             label2SymMap.insert(pairV);
+        }
+        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
+        {
+            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
         }
     }
 
-    for(auto pairV : *nonterminals)
+    for(auto pairV : grammar->nonterminals)
     {
         if(label2SymMap.find(pairV.first) == label2SymMap.end())
         {
             label2SymMap.insert(pairV);
         }
+        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
+        {
+            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
     }
-    current = label2SymMap.size();
 }
 
-
+void CFLGraph::setMap(Map<std::string, Symbol> &labelMap)
+{
+    externMap = true;
+    for(auto pairV : labelMap)
+    {
+        if(label2SymMap.find(pairV.first) == label2SymMap.end())
+        {
+            label2SymMap.insert(pairV);
+        }
+        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
+        {
+            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
+    }
+}
 
 namespace llvm
 {

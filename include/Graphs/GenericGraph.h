@@ -82,6 +82,10 @@ public:
     {
         return (EdgeKindMask & edgeFlag);
     }
+    inline GEdgeKind getEdgeKindWithoutMask() const
+    {
+        return edgeFlag;
+    }
     NodeType* getSrcNode() const
     {
         return src;
