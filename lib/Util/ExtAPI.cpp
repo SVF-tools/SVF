@@ -828,6 +828,10 @@ static const ei_pair ei_pairs[]=
     {"_ZNSsaSERKSs", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
     {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
 
+    /// string constructor: string (string&& str) noexcept;
+    /// move constructor (only for c++11)
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEOS4_", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+
     /// std::operator<<: operator<< (const string &str)
     {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E", ExtAPI::CPP_EFT_A1R}, // c++98
     {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic_stringIS4_S5_T1_EE", ExtAPI::CPP_EFT_A1R}, // c++11
