@@ -146,7 +146,7 @@ GrammarBase* GrammarBuilder::build()
             prod = {};
         }
     }
-    
+
     return grammar;
 };
 

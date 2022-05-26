@@ -76,7 +76,7 @@ public:
             delete consCG;
             delete generalGrammar;
             grammar->dump();
-        }       
+        }
         else
         {
             GrammarBase *generalGrammar = gReader.build();
@@ -87,7 +87,8 @@ public:
         }
         solver = new CFLSolver(graph, grammar);
         solver->solve();
-        if (Options::GraphIsFromDot == false){
+        if (Options::GraphIsFromDot == false)
+        {
             PointerAnalysis::finalize();
         }
     }

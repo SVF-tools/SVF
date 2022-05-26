@@ -32,7 +32,7 @@
 #include "Util/BasicTypes.h"
 
 namespace SVF
-{  
+{
 //// Build graph from file
 void CFLGraphBuilder::build(std::string filename, CFLGraph* cflGraph)
 {

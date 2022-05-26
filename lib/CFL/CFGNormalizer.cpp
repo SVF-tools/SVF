@@ -95,7 +95,7 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
     for(auto symProdsPair: generalGrammar->rawProductions)
     {
         for(auto prod: symProdsPair.second)
-        {   
+        {
             /// rawProductions production does not include lhs
             /// so append to the begin of the production
             Production tempP = prod;
@@ -310,7 +310,7 @@ void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CF
 {
     SVF::Map<std::string, std::string> new_rule_checker;
     std::string X = "X";
-    
+
     /// replace Sign Group With Temp Varibale
     /// and load the replace in new_rule_checker
     for (auto &ebnfPair : generalGrammar->rawProductions)
@@ -362,7 +362,7 @@ void CFGNormalizer::ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CF
                         new_rule_checker[repetition] = X;
                         tempProds.insert(ebnfProd);
                     }
-                    
+
                     i = repetition_start;
                 }
                 i++;
@@ -449,7 +449,7 @@ void CFGNormalizer::insertToCFLGrammar(CFLGrammar *grammar, CFGNormalizer::Produ
         {
             grammar->getSingleRHS2Prods()[prod[1]].insert(prod);
         }
-    } 
+    }
     if (prod.size() == 3)
     {
         grammar->getFirstRHS2Prods()[prod[1]].insert(prod);

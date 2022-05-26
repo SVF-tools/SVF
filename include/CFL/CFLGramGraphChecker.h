@@ -37,7 +37,7 @@ class CFLGramGraphChecker
 public:
     void check(GrammarBase *grammar, CFLGraph *graph)
     {
-        /// Check all the symbol in grammar in graph With the same label 
+        /// Check all the symbol in grammar in graph With the same label
         for(auto pairV : grammar->terminals)
         {
             if (graph->label2SymMap.find(pairV.first) != graph->label2SymMap.end())
