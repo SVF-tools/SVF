@@ -1,4 +1,4 @@
-//===----- CFLChecker.h -- CFL Checker for Grammar and Graph alignment --------------//
+//===----- CFLGramGraphChecker.h -- CFL Checker for Grammar and Graph alignment --------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CFLChecker.h
+ * CFLGramGraphChecker.h
  *
  *  Created on: May 23, 2022
  *      Author: Pei Xu
@@ -32,7 +32,7 @@
 namespace SVF
 {
 
-class CFLChecker
+class CFLGramGraphChecker
 {
 public:
     void check(GrammarBase *grammar, CFLGraph *graph)

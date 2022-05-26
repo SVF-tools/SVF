@@ -145,21 +145,21 @@ public:
         return it!=secondRHS2Prods.end();
     }
 
-    Productions getProdsFromSingleRHS(Symbol sym) const
+    const Productions getProdsFromSingleRHS(Symbol sym) const
     {   
         auto it = singleRHS2Prods.find(sym);
         assert(it!=singleRHS2Prods.end() && "production (X -> sym) not found for sym!!");
         return it->second;
     }
 
-    Productions getProdsFromFirstRHS(Symbol sym) const
+    const Productions getProdsFromFirstRHS(Symbol sym) const
     {
         auto it = firstRHS2Prods.find(sym);
         assert(it!=firstRHS2Prods.end() && "production (X -> sym Y ) not found for sym!!");
         return it->second;
     }
 
-    Productions getProdsFromSecondRHS(Symbol sym) const
+    const Productions getProdsFromSecondRHS(Symbol sym) const
     {
         auto it = secondRHS2Prods.find(sym);
         assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
@@ -167,24 +167,24 @@ public:
     }
     
 
-    Symbol getLHSSymbol(const Production& prod)
+    const Symbol getLHSSymbol(const Production& prod)
     {
         return prod.at(0);
     }
 
-    Symbol getFirstRHSSymbol(const Production& prod)
+    const Symbol getFirstRHSSymbol(const Production& prod)
     {
         return prod.at(1);
     }
 
-    Symbol getSecondRHSSymbol(const Production& prod)
+    const Symbol getSecondRHSSymbol(const Production& prod)
     {
         return prod.at(2);
     }
 
     void dump();
 
-    inline int num_generator()
+    const inline int num_generator()
     {
         return newTerminalSubscript++;
     }

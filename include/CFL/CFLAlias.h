@@ -32,7 +32,7 @@
 #include "CFL/CFGNormalizer.h"
 #include "CFL/GrammarBuilder.h"
 #include "CFL/CFLGraphBuilder.h"
-#include "CFL/CFLChecker.h"
+#include "CFL/CFLGramGraphChecker.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/ConsG.h"
 #include "Util/Options.h"
@@ -62,7 +62,7 @@ public:
         GrammarBuilder gReader = GrammarBuilder(Options::GrammarFilename);
         CFGNormalizer normalizer = CFGNormalizer();
         CFLGraphBuilder cflGraphBuilder = CFLGraphBuilder();
-        CFLChecker cflChecker = CFLChecker();
+        CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
         /// Assume Read From Const Graph, associate label symbol is hard coded
         if (Options::GraphIsFromDot == false)
         {
