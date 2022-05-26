@@ -1,4 +1,4 @@
-//===----- CFGNormalizer.h -- CFL Alias Analysis Client--------------//
+//===----- GrammarBuilder.h -- CFL Grammar Builder--------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -30,7 +30,6 @@
 
 #include "CFL/CFLGrammar.h"
 #include "Graphs/CFLGraph.h"
-
 namespace SVF
 {
 
@@ -51,6 +50,19 @@ namespace SVF
 
 class GrammarBuilder
 {
+private:
+    /// Load whole file content to string
+    inline std::string loadFileString() const;
+
+    /// Parse start symbol and production from file string
+    inline std::string parseProduction() const;
+
+    /// Parse whole production string to production vector
+    inline std::vector<std::string> loadWordProductions();
+
+    /// Strip frond and tail space
+    inline std::string stripSpace(std::string s) const;
+
 public:
     std::string fileName;
     GrammarBase *grammar;
@@ -62,7 +74,7 @@ public:
 
     GrammarBase* build();
 
-    GrammarBase* build(Map<std::string, SVF::CFLGraph::Symbol> *preMap);
+    GrammarBase* build(Map<std::string, SVF::CFLGraph::Symbol> &preMap);
 };
 
 } // SVF
