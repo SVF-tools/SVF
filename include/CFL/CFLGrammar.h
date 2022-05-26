@@ -45,7 +45,7 @@ public:
     Symbol startSymbol;
     Symbol totalSymbol;
     Map<Symbol, Productions> rawProductions;
-    Set<Symbol> attributeSymbol; 
+    Set<Symbol> attributeSymbol;
     Map<Kind,  Set<Attribute>> kind2AttrMap;
 
     Symbol str2Sym(std::string str) const;
@@ -59,7 +59,7 @@ public:
         return prod.at(pos);
     }
 
-    inline Set<Symbol>& getAttrSyms() 
+    inline Set<Symbol>& getAttrSyms()
     {
         return this->attributeSymbol;
     }
@@ -79,7 +79,7 @@ public:
     }
 
     inline static Kind getAttributedKind(Attribute attribute, Kind kind)
-    {     
+    {
         return ((attribute << EdgeKindMaskBits)| kind );
     }
 
@@ -107,22 +107,22 @@ public:
         return true;
     }
 
-    Productions& getEpsilonProds() 
+    Productions& getEpsilonProds()
     {
         return epsilonProds;
     }
 
-    Map<Symbol, Productions>& getSingleRHS2Prods() 
+    Map<Symbol, Productions>& getSingleRHS2Prods()
     {
         return singleRHS2Prods;
     }
 
-    Map<Symbol, Productions>& getFirstRHS2Prods() 
+    Map<Symbol, Productions>& getFirstRHS2Prods()
     {
         return firstRHS2Prods;
     }
 
-    Map<Symbol, Productions>& getSecondRHS2Prods()  
+    Map<Symbol, Productions>& getSecondRHS2Prods()
     {
         return secondRHS2Prods;
     }
@@ -165,7 +165,7 @@ public:
         assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
         return it->second;
     }
-    
+
 
     const Symbol& getLHSSymbol(const Production& prod)
     {

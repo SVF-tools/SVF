@@ -104,7 +104,7 @@ public:
     /// Set label2Sym from External
     void setMap(GrammarBase *grammar);
 
-    /// add attribute to kind2Attribute Map 
+    /// add attribute to kind2Attribute Map
     void addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute)
     {
         if(kind2AttrMap.find(kind) == kind2AttrMap.end())
@@ -123,7 +123,7 @@ public:
 
 private:
     CFLEdgeSet cflEdgeSet;
-    
+
 };
 
 }

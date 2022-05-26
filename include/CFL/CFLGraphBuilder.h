@@ -59,7 +59,7 @@ public:
         }
     }
 
-     /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
+    /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
     template<class N, class E>
     CFLGraph* buildBigraph(GenericGraph<N,E>* graph)
     {
@@ -93,14 +93,14 @@ public:
                     cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(offset, cflGraph->label2SymMap[key]));
                     cflGraph->addAttribute(cflGraph->label2SymMap[key], offset);
                 }
-                else 
+                else
                 {
                     cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
                     std::string key = cflGraph->sym2LabelMap[edge->getEdgeKind()];
-                    key.append("bar");    
+                    key.append("bar");
                     cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), cflGraph->label2SymMap[key]);
-                }  
-            }   
+                }
+            }
         }
         return cflGraph;
     }

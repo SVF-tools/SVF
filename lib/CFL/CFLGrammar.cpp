@@ -144,7 +144,7 @@ GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string strLit)
     {
         if (strLit.compare(strLit.size()-2, 2, "_i")==0)
         {
-        insertAttribute(sym);
+            insertAttribute(sym);
         }
     }
     return sym;
@@ -160,7 +160,8 @@ CFLGrammar::CFLGrammar()
     newTerminalSubscript = 0;
 }
 
-void CFLGrammar::dump(){
+void CFLGrammar::dump()
+{
     std::ofstream gramFile("Normailized_Grammar.txt");
     gramFile << "Start Symbol:\n";
     gramFile << '\t' << sym2Str(startSymbol) << '(' << startSymbol << ')' << ' ' << "\n\n";
@@ -168,14 +169,15 @@ void CFLGrammar::dump(){
     gramFile << "Epsilon Production:\n";
     std::vector<std::string> strV;
     for (auto pro: this->epsilonProds)
-    {   
+    {
         std::stringstream ss;
-        for (auto sym : pro){
+        for (auto sym : pro)
+        {
             if (sym == pro[1])
             {
                 ss << "-> ";
             }
-            ss << sym2StrDump(sym) << '(' << sym << ')' << ' '; 
+            ss << sym2StrDump(sym) << '(' << sym << ')' << ' ';
         }
         strV.insert(strV.begin(), ss.str());
     }
@@ -190,22 +192,23 @@ void CFLGrammar::dump(){
 
     gramFile << "Single Production:\n";
     strV = {};
-    for (auto symProPair: singleRHS2Prods) 
+    for (auto symProPair: singleRHS2Prods)
     {
         for (auto pro: symProPair.second)
         {
             std::stringstream ss;
             int i = 0;
-            for (auto sym : pro){
+            for (auto sym : pro)
+            {
                 i++;
                 if (i == 2)
                 {
                     ss << "-> ";
                 }
-                ss << sym2StrDump(sym) << '(' << sym << ')' << ' '; 
+                ss << sym2StrDump(sym) << '(' << sym << ')' << ' ';
             }
             strV.insert(strV.begin(), ss.str());
-         }
+        }
     }
     std::sort(strV.begin(), strV.end());
     for (auto pro: strV)
@@ -218,23 +221,24 @@ void CFLGrammar::dump(){
 
     gramFile << "Binary Production:\n";
     strV = {};
-    for (auto symProPair: firstRHS2Prods) 
+    for (auto symProPair: firstRHS2Prods)
     {
         for (auto pro: symProPair.second)
         {
             std::stringstream ss;
             int i = 0;
-            for (auto sym : pro){
+            for (auto sym : pro)
+            {
                 i++;
-                
+
                 if (i == 2)
                 {
                     ss << "-> ";
                 }
-                ss << sym2StrDump(sym) << '(' << sym << ')' << ' '; 
+                ss << sym2StrDump(sym) << '(' << sym << ')' << ' ';
             }
             strV.insert(strV.begin(), ss.str());
-         }
+        }
     }
     std::sort(strV.begin(), strV.end());
     for (auto pro: strV)
