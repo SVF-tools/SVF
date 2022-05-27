@@ -36,7 +36,7 @@
 
 namespace SVF
 {
-inline std::string GrammarBuilder::loadFileString() const
+const inline std::string GrammarBuilder::loadFileString() const
 {
     std::ifstream textFile(fileName);
     std::string lineString;
@@ -49,7 +49,7 @@ inline std::string GrammarBuilder::loadFileString() const
     return lines;
 }
 
-inline std::string GrammarBuilder::parseProduction() const
+const inline std::string GrammarBuilder::parseProduction() const
 {
     std::regex reg("Start:([\\s\\S]*)Productions:([\\s\\S]*)");
     std::smatch matches;
@@ -68,7 +68,7 @@ inline std::string GrammarBuilder::parseProduction() const
     return lines;
 }
 
-inline std::vector<std::string> GrammarBuilder::loadWordProductions()
+const inline std::vector<std::string> GrammarBuilder::loadWordProductions() const 
 {
     size_t pos = 0;
     std::string lines = parseProduction();
@@ -84,7 +84,7 @@ inline std::vector<std::string> GrammarBuilder::loadWordProductions()
     return wordProd;
 }
 
-inline std::string GrammarBuilder::stripSpace(std::string s) const
+const inline std::string GrammarBuilder::stripSpace(std::string s) const
 {
     std::smatch matches;
     std::regex stripReg("\\s*(\\S*)\\s*");
@@ -94,7 +94,7 @@ inline std::string GrammarBuilder::stripSpace(std::string s) const
 
 
 /// build grammarbase from textfile
-GrammarBase* GrammarBuilder::build()
+GrammarBase* GrammarBuilder::build() const
 {
     std::smatch matches;
     std::string delimiter = ";";
@@ -150,7 +150,7 @@ GrammarBase* GrammarBuilder::build()
     return grammar;
 };
 
-GrammarBase* GrammarBuilder::build(Map<std::string, SVF::CFLGraph::Symbol> &preMap)
+GrammarBase* GrammarBuilder::build(Map<std::string, SVF::CFLGraph::Symbol> &preMap) const
 {
     grammar->nonterminals = preMap;
     grammar->totalSymbol = preMap.size();

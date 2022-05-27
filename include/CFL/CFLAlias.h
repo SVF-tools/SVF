@@ -73,6 +73,7 @@ public:
             graph = cflGraphBuilder.buildBigraph(consCG);
             cflChecker.check(generalGrammar, graph);
             grammar = normalizer.normalize(generalGrammar);
+            cflChecker.check(grammar, graph);
             delete consCG;
             delete generalGrammar;
             grammar->dump();
@@ -83,6 +84,7 @@ public:
             graph = cflGraphBuilder.buildFromDot(Options::InputFilename, generalGrammar);
             cflChecker.check(generalGrammar, graph);
             grammar = normalizer.normalize(generalGrammar);
+            cflChecker.check(grammar, graph);
             delete generalGrammar;
         }
         solver = new CFLSolver(graph, grammar);

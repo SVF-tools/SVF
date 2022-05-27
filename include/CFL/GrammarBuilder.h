@@ -52,16 +52,16 @@ class GrammarBuilder
 {
 private:
     /// Load whole file content to string
-    inline std::string loadFileString() const;
+    const inline std::string loadFileString() const;
 
     /// Parse start symbol and production from file string
-    inline std::string parseProduction() const;
+    const inline std::string parseProduction() const;
 
     /// Parse whole production string to production vector
-    inline std::vector<std::string> loadWordProductions();
+    const inline std::vector<std::string> loadWordProductions() const;
 
     /// Strip frond and tail space
-    inline std::string stripSpace(std::string s) const;
+    const inline std::string stripSpace(std::string s) const;
 
 public:
     std::string fileName;
@@ -72,9 +72,9 @@ public:
         grammar = new GrammarBase();
     };
 
-    GrammarBase* build();
+    GrammarBase* build() const;
 
-    GrammarBase* build(Map<std::string, SVF::CFLGraph::Symbol> &preMap);
+    GrammarBase* build(Map<std::string, SVF::CFLGraph::Symbol> &preMap) const;
 };
 
 } // SVF
