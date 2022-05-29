@@ -1339,6 +1339,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE:
             {
+                assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
+
                 Value *vArg1 = cs.getArgument(1);
                 Value *vArg3 = cs.getArgument(3);
 
@@ -1350,7 +1352,6 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // We get all flattened fields of base
                 vector<LocationSet> fields;
                 const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields, nullptr);
-                assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                 // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
                 // Note that arg0 is aligned with "offset".
@@ -1368,8 +1369,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_STD_RB_TREE_INCREMENT:
             {
+                assert(cs.arg_size() == 1 && "_Rb_tree_decrement should have one argument.\n");
                 NodeID vnD = pag->getValueNode(inst);
-
                 Value *vArg = cs.getArgument(0);
                 NodeID vnArg = pag->getValueNode(vArg);
                 s32_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
@@ -1377,7 +1378,6 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // We get all fields
                 vector<LocationSet> fields;
                 const Type *type = getBaseTypeAndFlattenedFields(vArg,fields,nullptr);
-                assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                 // We summarize the side effects: ret = arg->parent, ret = arg->left, ret = arg->right
                 // Note that arg0 is aligned with "offset".
