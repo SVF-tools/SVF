@@ -103,7 +103,7 @@ public:
     virtual bool runOnModule(Module& module);
 
     /// PTA name
-    virtual inline StringRef getPassName() const
+    virtual inline std::string getPassName() const
     {
         return "WPAPass";
     }
