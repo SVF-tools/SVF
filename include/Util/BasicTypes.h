@@ -78,7 +78,6 @@ typedef llvm::LoopInfo LoopInfo;
 /// LLVM outputs
 typedef llvm::raw_string_ostream raw_string_ostream;
 typedef llvm::raw_fd_ostream raw_fd_ostream;
-typedef llvm::StringRef StringRef;
 
 /// LLVM types
 typedef llvm::StructType StructType;
