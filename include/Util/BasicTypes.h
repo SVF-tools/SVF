@@ -53,6 +53,7 @@
 
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/CFG.h"
+#include "llvm/BinaryFormat/Dwarf.h"
 
 namespace SVF
 {
