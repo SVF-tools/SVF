@@ -37,7 +37,7 @@ private:
 public:
     static char ID;
     BreakConstantGEPs() : ModulePass(ID) {}
-    StringRef getPassName() const
+    llvm::StringRef getPassName() const
     {
         return "Remove Constant GEP Expressions";
     }
@@ -61,7 +61,7 @@ private:
 public:
     static char ID;
     MergeFunctionRets() : ModulePass(ID) {}
-    StringRef getPassName() const
+    llvm::StringRef getPassName() const
     {
         return "unify function exit into one dummy exit basic block";
     }

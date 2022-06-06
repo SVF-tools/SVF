@@ -71,7 +71,7 @@ public:
     inline bool isMemset(const Instruction *I)
     {
         const Function* F =SVFUtil::getCallee(I)->getLLVMFun();
-        return F && F->getName().find("llvm.memset") != StringRef::npos;
+        return F && F->getName().find("llvm.memset") != std::string::npos;
     }
 
     /// Check if Function "F" is memcpy

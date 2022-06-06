@@ -112,8 +112,8 @@ typedef llvm::SCEVConstant SCEVConstant;
 typedef llvm::ScalarEvolution ScalarEvolution;
 typedef llvm::SCEV SCEV;
 
-//LLVM outputs
-typedef llvm::StringRef StringRef;
+// //LLVM outputs
+// typedef llvm::StringRef StringRef;
 
 /// LLVM Aliases and constants
 typedef llvm::ConstantData ConstantData;

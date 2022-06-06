@@ -291,9 +291,9 @@ void PTAStat::callgraphStat()
 void PTAStat::printStat(string statname)
 {
 
-    StringRef fullName(SymbolTableInfo::SymbolInfo()->getModule()->getModuleIdentifier());
-    StringRef name = fullName.split('/').second;
-    moduleName = name.split('.').first.str();
+    std::string fullName(SymbolTableInfo::SymbolInfo()->getModule()->getModuleIdentifier());
+    std::string name = SVFUtil::split(fullName,'/')[1];
+    moduleName = SVFUtil::split(name,'.')[0];
 
     SVFUtil::outs() << "\n*********" << statname << "***************\n";
     SVFUtil::outs() << "################ (program : " << moduleName << ")###############\n";

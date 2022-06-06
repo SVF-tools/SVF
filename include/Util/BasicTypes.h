@@ -140,7 +140,7 @@ public:
     {
     }
 
-    SVFFunction(Function* f): SVFValue(f->getName(),SVFValue::SVFFunc),
+    SVFFunction(Function* f): SVFValue(std::string(f->getName()),SVFValue::SVFFunc),
         isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f)
     {
     }

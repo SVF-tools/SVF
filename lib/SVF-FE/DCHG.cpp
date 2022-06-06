@@ -628,7 +628,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                  */
                 if (funName.size() == 0)
                 {
-                    virtualFunctions.insert(SVFUtil::getFunction(callee->getName()));
+                    virtualFunctions.insert(SVFUtil::getFunction(callee->getName().str()));
                 }
                 else if (funName[0] == '~')
                 {
@@ -644,7 +644,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                      */
                     if (calleeName[0] == '~')
                     {
-                        virtualFunctions.insert(SVFUtil::getFunction(callee->getName()));
+                        virtualFunctions.insert(SVFUtil::getFunction(callee->getName().str()));
                     }
                 }
                 else
@@ -655,7 +655,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                      */
                     if (funName.compare(calleeName) == 0)
                     {
-                        virtualFunctions.insert(SVFUtil::getFunction(callee->getName()));
+                        virtualFunctions.insert(SVFUtil::getFunction(callee->getName().str()));
                     }
                 }
             }
