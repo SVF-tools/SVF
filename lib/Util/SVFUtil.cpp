@@ -293,7 +293,7 @@ std::string SVFUtil::getSourceLoc(const Value* val)
             llvm::DILocation* Loc = SVFUtil::cast<llvm::DILocation>(N);                   // DILocation is in DebugInfo.h
             unsigned Line = Loc->getLine();
             unsigned Column = Loc->getColumn();
-            std::string File = std::string(Loc->getFilename());
+            std::string File = Loc->getFilename().str();
             //StringRef Dir = Loc.getDirectory();
             if(File.empty() || Line == 0)
             {

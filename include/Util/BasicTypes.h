@@ -91,6 +91,7 @@ typedef llvm::DataLayout DataLayout;
 
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
+typedef llvm::ConstantData ConstantData;
 typedef llvm::Constant Constant;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
@@ -141,7 +142,7 @@ public:
     {
     }
 
-    SVFFunction(Function* f): SVFValue(std::string(f->getName()),SVFValue::SVFFunc),
+    SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
         isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f)
     {
     }
