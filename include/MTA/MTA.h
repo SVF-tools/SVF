@@ -62,7 +62,7 @@ public:
     virtual void detect(SVFModule* module);
 
     /// Pass name
-    virtual StringRef getPassName() const
+    virtual llvm::StringRef getPassName() const
     {
         return "Multi threaded program analysis pass";
     }
