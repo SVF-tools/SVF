@@ -291,15 +291,13 @@ void PTAStat::callgraphStat()
 void PTAStat::printStat(string statname)
 {
 
-    std::string fullName(SymbolTableInfo::SymbolInfo()->getModule()->getModuleIdentifier());
-    std::vector<std::string> names = SVFUtil::split(fullName,'/');
-    std::string name = fullName;
-    moduleName = fullName;
+    std::string moduleName(SymbolTableInfo::SymbolInfo()->getModule()->getModuleIdentifier());
+    std::vector<std::string> names = SVFUtil::split(moduleName,'/');
     if (names.size() > 1){
-        name = names[1];
-         std::vector<std::string> moduleNames = SVFUtil::split(name,'.');
-        if (moduleNames.size() > 0){
-            moduleName = moduleNames[0];
+        moduleName = names[1];
+         names = SVFUtil::split(moduleName,'.');
+        if (names.size() > 0){
+            moduleName = names[0];
         } 
     } 
 
