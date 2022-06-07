@@ -292,8 +292,16 @@ void PTAStat::printStat(string statname)
 {
 
     std::string fullName(SymbolTableInfo::SymbolInfo()->getModule()->getModuleIdentifier());
-    std::string name = SVFUtil::split(fullName,'/')[1];
-    moduleName = SVFUtil::split(name,'.')[0];
+    std::vector<std::string> names = SVFUtil::split(fullName,'/');
+    std::string name = fullName;
+    moduleName = fullName;
+    if (names.size() > 1){
+        name = names[1];
+         std::vector<std::string> moduleNames = SVFUtil::split(name,'.');
+        if (moduleNames.size() > 0){
+            moduleName = moduleNames[0];
+        } 
+    } 
 
     SVFUtil::outs() << "\n*********" << statname << "***************\n";
     SVFUtil::outs() << "################ (program : " << moduleName << ")###############\n";
