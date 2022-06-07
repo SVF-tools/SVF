@@ -317,14 +317,13 @@ void ThreadAPI::performAPIStat(SVFModule* module)
 
     }
 
-    std::string n(module->getModuleIdentifier());
-    std::vector<std::string> FullNames = SVFUtil::split(n,'/');
-    std::string name = n;
+    std::string name(module->getModuleIdentifier());
+    std::vector<std::string> FullNames = SVFUtil::split(name,'/');
     if (FullNames.size() > 1){
         name = FullNames[1];
-        std::vector<std::string> names = SVFUtil::split(name,'.');
-        if (names.size() > 0 ){
-            name = names[0];
+        FullNames = SVFUtil::split(name,'.');
+        if (FullNames.size() > 0 ){
+            name = FullNames[0];
        }
     } 
     SVFUtil::outs() << "################ (program : " << name
