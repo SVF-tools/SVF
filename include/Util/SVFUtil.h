@@ -242,7 +242,7 @@ inline const SVFFunction* getFunction(std::string name)
 /// Split into two substrings around the first occurrence of a separator string.
 inline std::vector<std::string> split(const std::string& s, char seperator)
 {
-   std::vector<std::string> output;
+    std::vector<std::string> output;
     std::string::size_type prev_pos = 0, pos = 0;
     while((pos = s.find(seperator, pos)) != std::string::npos)
     {
@@ -250,7 +250,7 @@ inline std::vector<std::string> split(const std::string& s, char seperator)
         output.push_back(substring);
         prev_pos = ++pos;
     }
-    output.push_back(s.substr(prev_pos, pos-prev_pos)); 
+    output.push_back(s.substr(prev_pos, pos-prev_pos));
     return output;
 }
 
