@@ -28,6 +28,7 @@
 #include "Util/ExeState.h"
 #include "MemoryModel/SVFIR.h"
 #include <iomanip>
+#include "SVF-FE/LLVMUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
