@@ -91,7 +91,6 @@ typedef llvm::DataLayout DataLayout;
 
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
-typedef llvm::ConstantData ConstantData;
 typedef llvm::Constant Constant;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;

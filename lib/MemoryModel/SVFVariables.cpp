@@ -29,6 +29,7 @@
 
 #include "MemoryModel/SVFVariables.h"
 #include "Util/Options.h"
+#include "SVF-FE/LLVMUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -225,5 +226,13 @@ const std::string CloneFIObjVar::toString() const
     return rawstr.str();
 }
 
-
+/// Whether it is constant data, i.e., "0", "1.001", "str"
+/// or llvm's metadata, i.e., metadata !4087
+bool SVFVar::isConstantData() const
+{
+    if (hasValue())
+       return SVFUtil::isConstantData(value);
+    else
+        return false;
+}
 
