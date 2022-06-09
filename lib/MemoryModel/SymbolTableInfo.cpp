@@ -785,28 +785,28 @@ const std::string MemObj::toString() const
     return rawstr.str();
 }
 
-    /// Get different kinds of syms
-    //@{
-    SymID SymbolTableInfo::getValSym(const Value *val)
-    {
+/// Get different kinds of syms
+//@{
+SymID SymbolTableInfo::getValSym(const Value *val)
+{
 
-        if(SymbolTableInfo::isNullPtrSym(val))
-            return nullPtrSymID();
-        else if (SVFUtil::isBlackholeSym(val))
-            return blkPtrSymID();
-        else
-        {
-            ValueToIDMapTy::const_iterator iter =  valSymMap.find(val);
-            assert(iter!=valSymMap.end() &&"value sym not found");
-            return iter->second;
-        }
-    }
-
-     bool SymbolTableInfo::hasValSym(const Value* val)
+    if(SymbolTableInfo::isNullPtrSym(val))
+        return nullPtrSymID();
+    else if (SVFUtil::isBlackholeSym(val))
+        return blkPtrSymID();
+    else
     {
-        if (SymbolTableInfo::isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
-            return true;
-        else
-            return (valSymMap.find(val) != valSymMap.end());
+        ValueToIDMapTy::const_iterator iter =  valSymMap.find(val);
+        assert(iter!=valSymMap.end() &&"value sym not found");
+        return iter->second;
     }
+}
+
+bool SymbolTableInfo::hasValSym(const Value* val)
+{
+    if (SymbolTableInfo::isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
+        return true;
+    else
+        return (valSymMap.find(val) != valSymMap.end());
+}
 

@@ -231,7 +231,7 @@ const std::string CloneFIObjVar::toString() const
 bool SVFVar::isConstantData() const
 {
     if (hasValue())
-       return SVFUtil::isConstantData(value);
+        return SVFUtil::isConstantData(value);
     else
         return false;
 }
