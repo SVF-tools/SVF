@@ -40,24 +40,29 @@ BDDExprManager::BDDExpr *BDDExprManager::falseCond = nullptr;
 BDDExprManager *BDDExprManager::bddExprMgr = nullptr;
 u32_t BDDExprManager::totalCondNum = 0;
 
-BDDExprManager::BDDExprManager() {
+BDDExprManager::BDDExprManager()
+{
     m_bdd_mgr = Cudd_Init(0, 0, CUDD_UNIQUE_SLOTS, CUDD_CACHE_SLOTS, 0);
     trueCond = BddOne();
     falseCond = BddZero();
 }
 
-BDDExprManager::~BDDExprManager() {
+BDDExprManager::~BDDExprManager()
+{
     Cudd_Quit(m_bdd_mgr);
 }
 
-BDDExprManager *BDDExprManager::getBDDExprMgr() {
-    if (bddExprMgr == nullptr) {
+BDDExprManager *BDDExprManager::getBDDExprMgr()
+{
+    if (bddExprMgr == nullptr)
+    {
         bddExprMgr = new BDDExprManager();
     }
     return bddExprMgr;
 }
 
-BDDExprManager::BDDExpr *BDDExprManager::createFreshBranchCond(const Instruction *inst) {
+BDDExprManager::BDDExpr *BDDExprManager::createFreshBranchCond(const Instruction *inst)
+{
     u32_t condCountIdx = totalCondNum++;
     BDDExpr *bddCond = createCond(condCountIdx);
     setCondInst(bddCond, inst);
@@ -69,20 +74,25 @@ BDDExprManager::BDDExpr *BDDExprManager::createFreshBranchCond(const Instruction
 /// Operations on conditions.
 //@{
 /// use Cudd_bddAndLimit interface to avoid bdds blow up
-BDDExprManager::BDDExpr *BDDExprManager::AND(BDDExpr *lhs, BDDExpr *rhs) {
+BDDExprManager::BDDExpr *BDDExprManager::AND(BDDExpr *lhs, BDDExpr *rhs)
+{
     if (lhs == getFalseCond() || rhs == getFalseCond())
         return getFalseCond();
     else if (lhs == getTrueCond())
         return rhs;
     else if (rhs == getTrueCond())
         return lhs;
-    else {
+    else
+    {
         BDDExpr *tmp = Cudd_bddAndLimit(m_bdd_mgr, lhs, rhs, Options::MaxBddSize);
-        if (tmp == nullptr) {
+        if (tmp == nullptr)
+        {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
             ///drop the rhs condition
             return lhs;
-        } else {
+        }
+        else
+        {
             Cudd_Ref(tmp);
             return tmp;
         }
@@ -92,27 +102,33 @@ BDDExprManager::BDDExpr *BDDExprManager::AND(BDDExpr *lhs, BDDExpr *rhs) {
 /*!
  * Use Cudd_bddOrLimit interface to avoid bdds blow up
  */
-BDDExprManager::BDDExpr *BDDExprManager::OR(BDDExpr *lhs, BDDExpr *rhs) {
+BDDExprManager::BDDExpr *BDDExprManager::OR(BDDExpr *lhs, BDDExpr *rhs)
+{
     if (lhs == getTrueCond() || rhs == getTrueCond())
         return getTrueCond();
     else if (lhs == getFalseCond())
         return rhs;
     else if (rhs == getFalseCond())
         return lhs;
-    else {
+    else
+    {
         BDDExpr *tmp = Cudd_bddOrLimit(m_bdd_mgr, lhs, rhs, Options::MaxBddSize);
-        if (tmp == nullptr) {
+        if (tmp == nullptr)
+        {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
             /// drop the two conditions here
             return getTrueCond();
-        } else {
+        }
+        else
+        {
             Cudd_Ref(tmp);
             return tmp;
         }
     }
 }
 
-BDDExprManager::BDDExpr *BDDExprManager::NEG(BDDExpr *lhs) {
+BDDExprManager::BDDExpr *BDDExprManager::NEG(BDDExpr *lhs)
+{
 
     if (lhs == getTrueCond())
         return getFalseCond();
@@ -126,7 +142,8 @@ BDDExprManager::BDDExpr *BDDExprManager::NEG(BDDExpr *lhs) {
 /*!
  * Whether **All Paths** are reachable
  */
-bool BDDExprManager::isAllPathReachable(const BDDExpr *e) {
+bool BDDExprManager::isAllPathReachable(const BDDExpr *e)
+{
     return isEquivalentBranchCond(e, getTrueCond());
 }
 
@@ -134,7 +151,8 @@ bool BDDExprManager::isAllPathReachable(const BDDExpr *e) {
  * Utilities for dumping conditions. These methods use global functions from CUDD
  * package and they can be removed outside this class scope to be used by others.
  */
-void BDDExprManager::ddClearFlag(BDDExpr *f) const {
+void BDDExprManager::ddClearFlag(BDDExpr *f) const
+{
     if (!Cudd_IsComplement(f->next))
         return;
     /* Clear visited flag. */
@@ -146,7 +164,8 @@ void BDDExprManager::ddClearFlag(BDDExpr *f) const {
     return;
 }
 
-void BDDExprManager::BddSupportStep(BDDExpr *f, NodeBS &support) const {
+void BDDExprManager::BddSupportStep(BDDExpr *f, NodeBS &support) const
+{
     if (cuddIsConstant(f) || Cudd_IsComplement(f->next))
         return;
 
@@ -158,7 +177,8 @@ void BDDExprManager::BddSupportStep(BDDExpr *f, NodeBS &support) const {
     f->next = Cudd_Complement(f->next);
 }
 
-void BDDExprManager::extractSubConds(const BDDExpr *f, NodeBS &support) const {
+void BDDExprManager::extractSubConds(const BDDExpr *f, NodeBS &support) const
+{
     BddSupportStep(Cudd_Regular(f), support);
     ddClearFlag(Cudd_Regular(f));
 }
@@ -166,14 +186,17 @@ void BDDExprManager::extractSubConds(const BDDExpr *f, NodeBS &support) const {
 /*!
  * Dump BDD
  */
-void BDDExprManager::dump(const BDDExpr *lhs, OutStream &O) {
+void BDDExprManager::dump(const BDDExpr *lhs, OutStream &O)
+{
     if (lhs == getTrueCond())
         O << "T";
-    else {
+    else
+    {
         NodeBS support;
         extractSubConds(lhs, support);
         for (NodeBS::iterator iter = support.begin(); iter != support.end();
-             ++iter) {
+                ++iter)
+        {
             unsigned rid = *iter;
             O << rid << " ";
         }
@@ -184,15 +207,18 @@ void BDDExprManager::dump(const BDDExpr *lhs, OutStream &O) {
 /*!
  * Dump BDD
  */
-std::string BDDExprManager::dumpStr(const BDDExpr *e) const {
+std::string BDDExprManager::dumpStr(const BDDExpr *e) const
+{
     std::string str;
     if (e == getTrueCond())
         str += "T";
-    else {
+    else
+    {
         NodeBS support;
         extractSubConds(e, support);
         for (NodeBS::iterator iter = support.begin(); iter != support.end();
-             ++iter) {
+                ++iter)
+        {
             unsigned rid = *iter;
             char int2str[16];
             sprintf(int2str, "%d", rid);

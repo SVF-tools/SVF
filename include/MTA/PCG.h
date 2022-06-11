@@ -122,13 +122,15 @@ public:
     virtual ~PCG()
     {
     }
-	
-	CallICFGNode* getCallICFGNode(const Instruction* inst) {
-		return pta->getICFG()->getCallICFGNode(inst);
-	}
-	const SVFFunction* getSVFFun(const Function* fun) const {
-		return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-	}
+
+    CallICFGNode* getCallICFGNode(const Instruction* inst)
+    {
+        return pta->getICFG()->getCallICFGNode(inst);
+    }
+    const SVFFunction* getSVFFun(const Function* fun) const
+    {
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+    }
     /// Interface to query whether two function may happen-in-parallel
     virtual bool mayHappenInParallel(const Instruction* i1, const Instruction* i2) const;
     bool mayHappenInParallelBetweenFunctions(const Function* fun1, const Function* fun2) const;

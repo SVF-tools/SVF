@@ -15,7 +15,8 @@ using namespace SVF;
 
 ExtAPI* ExtAPI::extAPI = nullptr;
 
-namespace {
+namespace
+{
 
 struct ei_pair
 {
@@ -691,7 +692,7 @@ static const ei_pair ei_pairs[]=
     {"XFreeGC", ExtAPI::EFT_FREE},
     {"XFreePixmap", ExtAPI::EFT_FREE},
     {"XFree", ExtAPI::EFT_FREE},
-    {"VOS_MemFree", ExtAPI::EFT_FREE}, 
+    {"VOS_MemFree", ExtAPI::EFT_FREE},
     //C++ functions
     {"_ZdaPv", ExtAPI::EFT_FREE},	// delete
     {"_ZdlPv", ExtAPI::EFT_FREE},	// delete []
@@ -826,6 +827,10 @@ static const ei_pair ei_pairs[]=
     /// string operator=: operator= (const string &str)
     {"_ZNSsaSERKSs", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
     {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+
+    /// string constructor: string (string&& str) noexcept;
+    /// move constructor (only for c++11)
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEOS4_", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
 
     /// std::operator<<: operator<< (const string &str)
     {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E", ExtAPI::CPP_EFT_A1R}, // c++98

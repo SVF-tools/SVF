@@ -94,7 +94,7 @@ class FormalINSVFGNode : public MRSVFGNode
 {
 private:
     const MRVer* ver;
-    const FunEntryICFGNode* funEntryNode; 
+    const FunEntryICFGNode* funEntryNode;
 
 public:
     /// Constructor
@@ -102,7 +102,7 @@ public:
     {
         cpts = resVer->getMR()->getPointsTo();
         ver = resVer;
-        funEntryNode = funEntry; 
+        funEntryNode = funEntry;
     }
     inline const MRVer* getMRVer() const
     {
@@ -139,7 +139,7 @@ class FormalOUTSVFGNode : public MRSVFGNode
 {
 private:
     const MRVer* ver;
-    const FunExitICFGNode* funExitNode; 
+    const FunExitICFGNode* funExitNode;
 
 public:
     /// Constructor
@@ -279,7 +279,7 @@ public:
     typedef Map<u32_t,const MRVer*> OPVers;
 
 protected:
-    const MRVer* ver; 
+    const MRVer* ver;
     OPVers opVers;
 
 public:
@@ -287,9 +287,9 @@ public:
     MSSAPHISVFGNode(NodeID id, const MRVer* resVer,VFGNodeK k = MPhi): MRSVFGNode(id, k)
     {
         cpts = resVer->getMR()->getPointsTo();
-        ver = resVer; 
+        ver = resVer;
     }
-      /// Ver
+    /// Ver
     inline const MRVer* getResVer() const
     {
         return ver;
@@ -473,8 +473,14 @@ public:
         : VFGNode(id, DummyVProp), object(object), version(version)
     { }
 
-    NodeID getObject(void) const { return object; }
-    Version getVersion(void) const { return version; }
+    NodeID getObject(void) const
+    {
+        return object;
+    }
+    Version getVersion(void) const
+    {
+        return version;
+    }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     //@{

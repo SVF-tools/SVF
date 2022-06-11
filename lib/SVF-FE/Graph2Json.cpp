@@ -6,6 +6,8 @@
 #include <string>	// for ICFGBuilderFromFile
 #include <sstream>	// for ICFGBuilderFromFile
 
+#include <llvm/Support/ToolOutputFile.h>
+
 using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
@@ -15,7 +17,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
 {
     outs() << "write symbols to '" << filename << "'...";
     std::error_code err;
-    ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::OF_None);
+    llvm::ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::OF_None);
     if (err)
     {
         outs() << "  error opening file for writing!\n";

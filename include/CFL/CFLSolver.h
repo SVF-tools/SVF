@@ -32,9 +32,11 @@
 #include "Util/WorkList.h"
 
 
-namespace SVF{
+namespace SVF
+{
 
-class CFLSolver{
+class CFLSolver
+{
 
 public:
     /// Define worklist
@@ -54,12 +56,14 @@ public:
     void solve();
 
     /// Return CFL Graph
-    inline const CFLGraph* getGraph() const {
+    inline const CFLGraph* getGraph() const
+    {
         return graph;
     }
 
     /// Return CFL Grammar
-    inline const CFLGrammar* getGrammar() const {
+    inline const CFLGrammar* getGrammar() const
+    {
         return grammar;
     }
 
@@ -84,7 +88,7 @@ protected:
     }
     //@}
 
-private: 
+private:
     CFLGraph* graph;
     CFLGrammar* grammar;
     /// Worklist for resolution

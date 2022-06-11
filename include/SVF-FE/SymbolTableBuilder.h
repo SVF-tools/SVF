@@ -39,7 +39,7 @@
 namespace SVF
 {
 
-class SymbolTableBuilder 
+class SymbolTableBuilder
 {
 
 private:
@@ -47,7 +47,8 @@ private:
 
 public:
     /// Constructor
-    SymbolTableBuilder(SymbolTableInfo* si): symInfo(si){
+    SymbolTableBuilder(SymbolTableInfo* si): symInfo(si)
+    {
     }
 
     /// Start building memory model

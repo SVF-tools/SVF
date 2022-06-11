@@ -53,7 +53,8 @@ int main(int argc, char ** argv)
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
-    if (Options::GraphIsFromDot == false){
+    if (Options::GraphIsFromDot == false)
+    {
         SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
         svfModule->buildSymbolTableInfo();
 
@@ -64,7 +65,8 @@ int main(int argc, char ** argv)
         cflaa->analyze();
         delete cflaa;
     }
-    else {
+    else
+    {
         SVFIR* svfir = nullptr;
         CFLAlias* cflaa = new CFLAlias(svfir);
         cflaa->analyze();

@@ -155,7 +155,7 @@ const CallSite ThreadAPI::getLLVMCallSite(const Instruction *inst) const
 /*!
  *
  */
-void ThreadAPI::statInit(StringMap& tdAPIStatMap)
+void ThreadAPI::statInit(Map<std::string, u32_t>& tdAPIStatMap)
 {
 
     tdAPIStatMap["pthread_create"] = 0;
@@ -198,140 +198,150 @@ void ThreadAPI::statInit(StringMap& tdAPIStatMap)
 void ThreadAPI::performAPIStat(SVFModule* module)
 {
 
-    StringMap tdAPIStatMap;
+    Map<std::string, u32_t> tdAPIStatMap;
 
     statInit(tdAPIStatMap);
 
     for (SVFModule::llvm_iterator it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
             ++it)
     {
-
-        for (inst_iterator II = inst_begin(*it), E = inst_end(*it); II != E;
-                ++II)
+        for (Function::iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
         {
-            const Instruction *inst = &*II;
-            if (!SVFUtil::isa<CallInst>(inst))
-                continue;
-            const SVFFunction* fun = getCallee(inst);
-            TD_TYPE type = getType(fun);
-            switch (type)
+            BasicBlock& bb = *bit;
+            for (BasicBlock::iterator ii = bb.begin(), eii = bb.end(); ii != eii; ++ii)
             {
-            case TD_FORK:
-            {
-                tdAPIStatMap["pthread_create"]++;
-                break;
-            }
-            case TD_JOIN:
-            {
-                tdAPIStatMap["pthread_join"]++;
-                break;
-            }
-            case TD_ACQUIRE:
-            {
-                tdAPIStatMap["pthread_mutex_lock"]++;
-                break;
-            }
-            case TD_TRY_ACQUIRE:
-            {
-                tdAPIStatMap["pthread_mutex_trylock"]++;
-                break;
-            }
-            case TD_RELEASE:
-            {
-                tdAPIStatMap["pthread_mutex_unlock"]++;
-                break;
-            }
-            case TD_CANCEL:
-            {
-                tdAPIStatMap["pthread_cancel"]++;
-                break;
-            }
-            case TD_EXIT:
-            {
-                tdAPIStatMap["pthread_exit"]++;
-                break;
-            }
-            case TD_DETACH:
-            {
-                tdAPIStatMap["pthread_detach"]++;
-                break;
-            }
-            case TD_COND_WAIT:
-            {
-                tdAPIStatMap["pthread_cond_wait"]++;
-                break;
-            }
-            case TD_COND_SIGNAL:
-            {
-                tdAPIStatMap["pthread_cond_signal"]++;
-                break;
-            }
-            case TD_COND_BROADCAST:
-            {
-                tdAPIStatMap["pthread_cond_broadcast"]++;
-                break;
-            }
-            case TD_CONDVAR_INI:
-            {
-                tdAPIStatMap["pthread_cond_init"]++;
-                break;
-            }
-            case TD_CONDVAR_DESTROY:
-            {
-                tdAPIStatMap["pthread_cond_destroy"]++;
-                break;
-            }
-            case TD_MUTEX_INI:
-            {
-                tdAPIStatMap["pthread_mutex_init"]++;
-                break;
-            }
-            case TD_MUTEX_DESTROY:
-            {
-                tdAPIStatMap["pthread_mutex_destroy"]++;
-                break;
-            }
-            case TD_BAR_INIT:
-            {
-                tdAPIStatMap["pthread_barrier_init"]++;
-                break;
-            }
-            case TD_BAR_WAIT:
-            {
-                tdAPIStatMap["pthread_barrier_wait"]++;
-                break;
-            }
-            case HARE_PAR_FOR:
-            {
-                tdAPIStatMap["hare_parallel_for"]++;
-                break;
-            }
-            case TD_DUMMY:
-            {
-                break;
-            }
+                const Instruction *inst = &*ii;
+                if (!SVFUtil::isa<CallInst>(inst))
+                    continue;
+                const SVFFunction* fun = getCallee(inst);
+                TD_TYPE type = getType(fun);
+                switch (type)
+                {
+                case TD_FORK:
+                {
+                    tdAPIStatMap["pthread_create"]++;
+                    break;
+                }
+                case TD_JOIN:
+                {
+                    tdAPIStatMap["pthread_join"]++;
+                    break;
+                }
+                case TD_ACQUIRE:
+                {
+                    tdAPIStatMap["pthread_mutex_lock"]++;
+                    break;
+                }
+                case TD_TRY_ACQUIRE:
+                {
+                    tdAPIStatMap["pthread_mutex_trylock"]++;
+                    break;
+                }
+                case TD_RELEASE:
+                {
+                    tdAPIStatMap["pthread_mutex_unlock"]++;
+                    break;
+                }
+                case TD_CANCEL:
+                {
+                    tdAPIStatMap["pthread_cancel"]++;
+                    break;
+                }
+                case TD_EXIT:
+                {
+                    tdAPIStatMap["pthread_exit"]++;
+                    break;
+                }
+                case TD_DETACH:
+                {
+                    tdAPIStatMap["pthread_detach"]++;
+                    break;
+                }
+                case TD_COND_WAIT:
+                {
+                    tdAPIStatMap["pthread_cond_wait"]++;
+                    break;
+                }
+                case TD_COND_SIGNAL:
+                {
+                    tdAPIStatMap["pthread_cond_signal"]++;
+                    break;
+                }
+                case TD_COND_BROADCAST:
+                {
+                    tdAPIStatMap["pthread_cond_broadcast"]++;
+                    break;
+                }
+                case TD_CONDVAR_INI:
+                {
+                    tdAPIStatMap["pthread_cond_init"]++;
+                    break;
+                }
+                case TD_CONDVAR_DESTROY:
+                {
+                    tdAPIStatMap["pthread_cond_destroy"]++;
+                    break;
+                }
+                case TD_MUTEX_INI:
+                {
+                    tdAPIStatMap["pthread_mutex_init"]++;
+                    break;
+                }
+                case TD_MUTEX_DESTROY:
+                {
+                    tdAPIStatMap["pthread_mutex_destroy"]++;
+                    break;
+                }
+                case TD_BAR_INIT:
+                {
+                    tdAPIStatMap["pthread_barrier_init"]++;
+                    break;
+                }
+                case TD_BAR_WAIT:
+                {
+                    tdAPIStatMap["pthread_barrier_wait"]++;
+                    break;
+                }
+                case HARE_PAR_FOR:
+                {
+                    tdAPIStatMap["hare_parallel_for"]++;
+                    break;
+                }
+                case TD_DUMMY:
+                {
+                    break;
+                }
+                }
             }
         }
 
     }
 
-    StringRef n(module->getModuleIdentifier());
-    StringRef name = n.split('/').second;
-    name = name.split('.').first;
-    SVFUtil::outs() << "################ (program : " << name.str()
-              << ")###############\n";
+    std::string name(module->getModuleIdentifier());
+    std::vector<std::string> fullNames = SVFUtil::split(name,'/');
+    if (fullNames.size() > 1)
+    {
+        name = fullNames[1];
+        fullNames = SVFUtil::split(name,'.');
+        if (fullNames.size() > 0 )
+        {
+            name = fullNames[0];
+        }
+    }
+    SVFUtil::outs() << "################ (program : " << name
+                    << ")###############\n";
     SVFUtil::outs().flags(std::ios::left);
     unsigned field_width = 20;
-    for (llvm::StringMap<u32_t>::iterator it = tdAPIStatMap.begin(), eit =
+    for (Map<std::string, u32_t>::iterator it = tdAPIStatMap.begin(), eit =
                 tdAPIStatMap.end(); it != eit; ++it)
     {
-        std::string apiName = it->first().str();
+        std::string apiName = it->first;
         // format out put with width 20 space
         SVFUtil::outs() << std::setw(field_width) << apiName << " : " << it->second
-                  << "\n";
+                        << "\n";
     }
     SVFUtil::outs() << "#######################################################"
-              << std::endl;
+                    << std::endl;
 
 }
 

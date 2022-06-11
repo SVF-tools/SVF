@@ -93,8 +93,7 @@ public:
 private:
 
     //Each Function name is mapped to its extf_t
-    //  (hash_map and map are much slower).
-    llvm::StringMap<extf_t> info;
+    Map<std::string, extf_t> info;
     //A cache of is_ext results for all SVFFunction*'s (hash_map is fastest).
     Map<const SVFFunction*, bool> isext_cache;
 
@@ -122,7 +121,7 @@ public:
     }
 
     static void destory()
-    {   
+    {
         if (extAPI != nullptr)
         {
             delete extAPI;
@@ -141,7 +140,7 @@ public:
             unsigned end = funName.substr(start + 1).find('.');
             funName = "llvm." + funName.substr(start + 1, end);
         }
-        llvm::StringMap<extf_t>::const_iterator it= info.find(funName);
+        Map<std::string, extf_t>::const_iterator it= info.find(funName);
         if(it == info.end())
             return EFT_OTHER;
         else

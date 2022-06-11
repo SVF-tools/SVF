@@ -133,12 +133,14 @@ public:
     {
         return condMgr->getCondInst(cond);
     }
-    inline void setCondInst(const Condition* cond, const Instruction* inst){
+    inline void setCondInst(const Condition* cond, const Instruction* inst)
+    {
         condMgr->setCondInst(cond, inst);
     }
     //@}
 
-    bool isNegCond(const Condition *condition) {
+    bool isNegCond(const Condition *condition)
+    {
         return condMgr->isNegCond(condition);
     }
 
@@ -189,20 +191,24 @@ public:
     void printPathCond();
 
     /// whether condition is satisfiable
-    inline bool isSatisfiable(Condition* condition){
+    inline bool isSatisfiable(Condition* condition)
+    {
         return condMgr->isSatisfiable(condition);
     }
 
     /// whether condition is satisfiable for all possible boolean guards
-    inline bool isAllPathReachable(Condition* condition){
+    inline bool isAllPathReachable(Condition* condition)
+    {
         return condMgr->isAllPathReachable(condition);
     }
 
-    bool isEquivalentBranchCond(const Condition *lhs, const Condition *rhs) const{
+    bool isEquivalentBranchCond(const Condition *lhs, const Condition *rhs) const
+    {
         return condMgr->isEquivalentBranchCond(lhs, rhs);
     }
 
-    inline ICFG* getICFG() const {
+    inline ICFG* getICFG() const
+    {
         return PAG::getPAG()->getICFG();
     }
 
@@ -276,7 +282,8 @@ private:
 
 
     /// Release memory
-    void destroy(){
+    void destroy()
+    {
 
     }
 

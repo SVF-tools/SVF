@@ -11,6 +11,7 @@
 #include <set>
 #include <vector>
 #include "Util/BasicTypes.h"
+#include "SVF-FE/BasicTypes.h"
 
 namespace SVF
 {
@@ -61,7 +62,7 @@ public:
     virtual void detect(SVFModule* module);
 
     /// Pass name
-    virtual StringRef getPassName() const
+    virtual llvm::StringRef getPassName() const
     {
         return "Multi threaded program analysis pass";
     }

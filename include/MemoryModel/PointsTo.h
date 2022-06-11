@@ -124,8 +124,14 @@ public:
     /// If not, remaps.
     void checkAndRemap(void);
 
-    const_iterator begin(void) const { return PointsToIterator(this); }
-    const_iterator end(void) const { return PointsToIterator(this, true); }
+    const_iterator begin(void) const
+    {
+        return PointsToIterator(this);
+    }
+    const_iterator end(void) const
+    {
+        return PointsToIterator(this, true);
+    }
 
     MappingPtr getNodeMapping(void) const;
 

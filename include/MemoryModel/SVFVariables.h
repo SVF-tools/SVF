@@ -32,7 +32,6 @@
 
 #include "Graphs/GenericGraph.h"
 #include "MemoryModel/SymbolTableInfo.h"
-#include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/SVFStatements.h"
 
 namespace SVF
@@ -45,9 +44,9 @@ class SVFVar;
 typedef GenericNode<SVFVar,SVFStmt> GenericPAGNodeTy;
 class SVFVar : public GenericPAGNodeTy
 {
-friend class IRGraph;
-friend class SVFIR;
-friend class VFG;
+    friend class IRGraph;
+    friend class SVFIR;
+    friend class VFG;
 
 public:
     /// Nine kinds of SVFIR variables
@@ -120,13 +119,7 @@ public:
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087
-    inline bool isConstantData() const
-    {
-        if (hasValue())
-            return SVFUtil::isConstantData(value);
-        else
-            return false;
-    }
+    bool isConstantData() const;
 
     /// Whether this is an isoloated node on the SVFIR graph
     bool isIsolatedNode() const;
@@ -177,7 +170,7 @@ public:
         else
             return false;
     }
-    
+
     /// Get incoming SVFStmt iterator
     inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
@@ -233,7 +226,8 @@ private:
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::Gep);
         if (it != InEdgeKindToSetMap.end())
         {
-            for(auto gep : it->second){
+            for(auto gep : it->second)
+            {
                 if(SVFUtil::cast<GepStmt>(gep)->isVariantFieldGep())
                     return true;
             }

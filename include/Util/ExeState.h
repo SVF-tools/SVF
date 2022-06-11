@@ -31,12 +31,14 @@
 #include "Util/Z3Expr.h"
 #include "MemoryModel/SVFVariables.h"
 
-namespace SVF {
+namespace SVF
+{
 
 #define AddressMask 0x7f000000
 #define FlippedAddressMask (AddressMask^0xffffffff)
 
-class ExeState {
+class ExeState
+{
 public:
     typedef Map<u32_t, Z3Expr> VarToValMap;
     typedef VarToValMap LocToValMap;
@@ -50,11 +52,12 @@ public:
     ExeState() : pathConstraint(getContext().bool_val(true)) {}
 
     ExeState(const Z3Expr &_pc, VarToValMap &_varToValMap, LocToValMap &_locToValMap) : varToVal(_varToValMap),
-                                                                                        locToVal(_locToValMap),
-                                                                                        pathConstraint(_pc) {}
+        locToVal(_locToValMap),
+        pathConstraint(_pc) {}
 
     ExeState(const ExeState &rhs) : varToVal(rhs.getVarToVal()), locToVal(rhs.getLocToVal()),
-                                    pathConstraint(rhs.getPathConstraint()) {
+        pathConstraint(rhs.getPathConstraint())
+    {
 
     }
 
@@ -66,7 +69,8 @@ public:
     bool operator==(const ExeState &rhs) const;
 
     /// Overloading Operator!=
-    inline bool operator!=(const ExeState &rhs) const {
+    inline bool operator!=(const ExeState &rhs) const
+    {
         return !(*this == rhs);
     }
 
@@ -75,27 +79,33 @@ public:
 
 
 
-    z3::context &getContext() {
+    z3::context &getContext()
+    {
         return Z3Expr::getContext();
     }
 
-    const VarToValMap &getVarToVal() const {
+    const VarToValMap &getVarToVal() const
+    {
         return varToVal;
     }
 
-    const LocToValMap &getLocToVal() const {
+    const LocToValMap &getLocToVal() const
+    {
         return locToVal;
     }
 
-    const Z3Expr &getPathConstraint() const {
+    const Z3Expr &getPathConstraint() const
+    {
         return pathConstraint;
     }
 
-    void setPathConstraint(const Z3Expr &pc) {
+    void setPathConstraint(const Z3Expr &pc)
+    {
         pathConstraint = pc.simplify();
     }
 
-    inline Z3Expr &operator[](u32_t varId) {
+    inline Z3Expr &operator[](u32_t varId)
+    {
         return getZ3Expr(varId);
     }
 
@@ -115,22 +125,26 @@ public:
     Z3Expr &load(const Z3Expr &loc);
 
     /// The physical address starts with 0x7f...... + idx
-    inline u32_t getVirtualMemAddress(u32_t idx) const {
+    inline u32_t getVirtualMemAddress(u32_t idx) const
+    {
         return AddressMask + idx;
     }
 
     /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
-    inline bool isVirtualMemAddress(u32_t val) {
+    inline bool isVirtualMemAddress(u32_t val)
+    {
         return (val & 0xff000000) == AddressMask;
     }
 
     /// Return the internal index if idx is an address otherwise return the value of idx
-    inline u32_t getInternalID(u32_t idx) const {
+    inline u32_t getInternalID(u32_t idx) const
+    {
         return (idx & FlippedAddressMask);
     }
 
     /// Return int value from an expression if it is a numeral, otherwise return an approximate value
-    inline s32_t z3Expr2NumValue(const Z3Expr &e) {
+    inline s32_t z3Expr2NumValue(const Z3Expr &e)
+    {
         assert(e.is_numeral() && "not numeral?");
         return e.get_numeral_int64();
     }
@@ -142,30 +156,36 @@ private:
     bool eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const;
     bool lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const;
 protected:
-    inline void store(u32_t objId, const Z3Expr &z3Expr) {
+    inline void store(u32_t objId, const Z3Expr &z3Expr)
+    {
         locToVal[objId] = z3Expr.simplify();
     }
 
-    inline Z3Expr &load(u32_t objId) {
+    inline Z3Expr &load(u32_t objId)
+    {
         return locToVal[objId];
     }
 };
 }
 
 template<>
-struct std::hash<SVF::ExeState> {
-    size_t operator()(const SVF::ExeState &exeState) const {
+struct std::hash<SVF::ExeState>
+{
+    size_t operator()(const SVF::ExeState &exeState) const
+    {
 
         size_t h = exeState.getVarToVal().size() * 2;
         SVF::Hash<SVF::u32_t> hf;
-        for (const auto &t: exeState.getVarToVal()) {
+        for (const auto &t: exeState.getVarToVal())
+        {
             h ^= hf(t.first) + 0x9e3779b9 + (h << 6) + (h >> 2);
             h ^= hf(t.second.id()) + 0x9e3779b9 + (h << 6) + (h >> 2);
         }
 
         size_t h2 = exeState.getVarToVal().size() * 2;
 
-        for (const auto &t: exeState.getLocToVal()) {
+        for (const auto &t: exeState.getLocToVal())
+        {
             h2 ^= hf(t.first) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
             h2 ^= hf(t.second.id()) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
         }

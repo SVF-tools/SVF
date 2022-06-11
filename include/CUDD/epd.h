@@ -77,18 +77,20 @@ extern "C" {
 
 ******************************************************************************/
 #ifdef	EPD_BIG_ENDIAN
-struct IeeeDoubleStruct {	/* BIG_ENDIAN */
-  unsigned int sign: 1;
-  unsigned int exponent: 11;
-  unsigned int mantissa0: 20;
-  unsigned int mantissa1: 32;
+struct IeeeDoubleStruct  	/* BIG_ENDIAN */
+{
+    unsigned int sign: 1;
+    unsigned int exponent: 11;
+    unsigned int mantissa0: 20;
+    unsigned int mantissa1: 32;
 };
 #else
-struct IeeeDoubleStruct {	/* LITTLE_ENDIAN */
-  unsigned int mantissa1: 32;
-  unsigned int mantissa0: 20;
-  unsigned int exponent: 11;
-  unsigned int sign: 1;
+struct IeeeDoubleStruct  	/* LITTLE_ENDIAN */
+{
+    unsigned int mantissa1: 32;
+    unsigned int mantissa0: 20;
+    unsigned int exponent: 11;
+    unsigned int sign: 1;
 };
 #endif
 
@@ -102,20 +104,22 @@ struct IeeeDoubleStruct {	/* LITTLE_ENDIAN */
 
 ******************************************************************************/
 #ifdef	EPD_BIG_ENDIAN
-struct IeeeNanStruct {	/* BIG_ENDIAN */
-  unsigned int sign: 1;
-  unsigned int exponent: 11;
-  unsigned int quiet_bit: 1;
-  unsigned int mantissa0: 19;
-  unsigned int mantissa1: 32;
+struct IeeeNanStruct  	/* BIG_ENDIAN */
+{
+    unsigned int sign: 1;
+    unsigned int exponent: 11;
+    unsigned int quiet_bit: 1;
+    unsigned int mantissa0: 19;
+    unsigned int mantissa1: 32;
 };
 #else
-struct IeeeNanStruct {	/* LITTLE_ENDIAN */
-  unsigned int mantissa1: 32;
-  unsigned int mantissa0: 19;
-  unsigned int quiet_bit: 1;
-  unsigned int exponent: 11;
-  unsigned int sign: 1;
+struct IeeeNanStruct  	/* LITTLE_ENDIAN */
+{
+    unsigned int mantissa1: 32;
+    unsigned int mantissa0: 19;
+    unsigned int quiet_bit: 1;
+    unsigned int exponent: 11;
+    unsigned int sign: 1;
 };
 #endif
 
@@ -128,15 +132,17 @@ struct IeeeNanStruct {	/* LITTLE_ENDIAN */
   SeeAlso     []
 
 ******************************************************************************/
-union EpTypeUnion {
-  double			value;
-  struct IeeeDoubleStruct	bits;
-  struct IeeeNanStruct		nan;
+union EpTypeUnion
+{
+    double			value;
+    struct IeeeDoubleStruct	bits;
+    struct IeeeNanStruct		nan;
 };
 
-struct EpDoubleStruct {
-  union EpTypeUnion		type;
-  int				exponent;
+struct EpDoubleStruct
+{
+    union EpTypeUnion		type;
+    int				exponent;
 };
 
 /*---------------------------------------------------------------------------*/

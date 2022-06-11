@@ -123,7 +123,8 @@ typedef unsigned int   MtrHalfWord;
 typedef unsigned short MtrHalfWord;
 #endif
 
-typedef struct MtrNode {
+typedef struct MtrNode
+{
     MtrHalfWord flags;
     MtrHalfWord low;
     MtrHalfWord size;
@@ -166,9 +167,9 @@ extern MtrNode * Mtr_InitGroupTree (int lower, int size);
 extern MtrNode * Mtr_MakeGroup (MtrNode *root, unsigned int low, unsigned int high, unsigned int flags);
 extern MtrNode * Mtr_FindGroup (MtrNode *root, unsigned int low, unsigned int high);
 extern void Mtr_ReorderGroups(MtrNode *treenode, int *permutation);
-  
+
 extern void Mtr_PrintGroups (MtrNode *root, int silent);
-  extern int Mtr_PrintGroupedOrder(MtrNode * root, int *invperm, FILE *fp);
+extern int Mtr_PrintGroupedOrder(MtrNode * root, int *invperm, FILE *fp);
 
 /**AutomaticEnd***************************************************************/
 

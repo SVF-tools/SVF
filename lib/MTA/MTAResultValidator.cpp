@@ -78,8 +78,8 @@ std::vector<std::string> MTAResultValidator::getStringArg(const Instruction* ins
         std::vector<std::string> strvec;
         return strvec;
     }
-    const StringRef vthdcxtstring = cxtarray->getAsCString();
-    return split(vthdcxtstring.str(), ',');
+    const std::string vthdcxtstring = cxtarray->getAsCString().str();
+    return split(vthdcxtstring, ',');
 }
 
 CallStrCxt MTAResultValidator::getCxtArg(const Instruction* inst, unsigned int arg_num)
@@ -215,12 +215,14 @@ bool MTAResultValidator::collectCallsiteTargets()
 bool MTAResultValidator::collectCxtThreadTargets()
 {
     const Function *F = nullptr;
-    for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++) {
-    	const std::string fName = (*it)->getName().str();
-    	if(fName.find(CXT_THREAD) != std::string::npos) {
-    		F = (*it);
-    		break;
-    	}
+    for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++)
+    {
+        const std::string fName = (*it)->getName().str();
+        if(fName.find(CXT_THREAD) != std::string::npos)
+        {
+            F = (*it);
+            break;
+        }
     }
     if (!F)
         return false;
@@ -250,12 +252,14 @@ bool MTAResultValidator::collectTCTTargets()
 
     // Collect call sites of all TCT_ACCESS function calls.
     const Function *F = nullptr;
-    for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++) {
-    	const std::string fName = (*it)->getName().str();
-    	if(fName.find(TCT_ACCESS) != std::string::npos) {
-    		F = (*it);
-    		break;
-    	}
+    for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++)
+    {
+        const std::string fName = (*it)->getName().str();
+        if(fName.find(TCT_ACCESS) != std::string::npos)
+        {
+            F = (*it);
+            break;
+        }
     }
     if (!F)
         return false;
@@ -283,12 +287,14 @@ bool MTAResultValidator::collectInterleavingTargets()
 
     // Collect call sites of all INTERLEV_ACCESS function calls.
     const Function *F = nullptr;
-    for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++) {
-    	const std::string fName = (*it)->getName().str();
-    	if(fName.find(INTERLEV_ACCESS) != std::string::npos) {
-    		F = (*it);
-    		break;
-    	}
+    for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++)
+    {
+        const std::string fName = (*it)->getName().str();
+        if(fName.find(INTERLEV_ACCESS) != std::string::npos)
+        {
+            F = (*it);
+            break;
+        }
     }
     if (!F)
         return false;

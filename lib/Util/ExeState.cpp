@@ -28,6 +28,7 @@
 #include "Util/ExeState.h"
 #include "MemoryModel/SVFIR.h"
 #include <iomanip>
+#include "SVF-FE/LLVMUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -39,21 +40,26 @@ z3::context *Z3Expr::ctx = nullptr;
  * @param valVar
  * @param e
  */
-void ExeState::initValVar(const ValVar *valVar, Z3Expr &e) {
+void ExeState::initValVar(const ValVar *valVar, Z3Expr &e)
+{
     std::string str;
     raw_string_ostream rawstr(str);
     SVFIR *svfir = PAG::getPAG();
 
     rawstr << "ValVar" << valVar->getId();
-    if (const Type *type = valVar->getType()) {
+    if (const Type *type = valVar->getType())
+    {
         if (type->isIntegerTy() || type->isFloatingPointTy() || type->isPointerTy() || type->isFunctionTy()
-            || type->isStructTy() || type->isArrayTy() || type->isVoidTy() || type->isLabelTy() || type->isMetadataTy())
+                || type->isStructTy() || type->isArrayTy() || type->isVoidTy() || type->isLabelTy() || type->isMetadataTy())
             e = getContext().int_const(rawstr.str().c_str());
-        else {
+        else
+        {
             SVFUtil::errs() << value2String(valVar->getValue()) << "\n" << " type: " << type2String(type) << "\n";
             assert(false && "what other types we have");
         }
-    } else {
+    }
+    else
+    {
         if (svfir->getNullPtr() == valVar->getId())
             e = getContext().int_val(0);
         else
@@ -67,41 +73,53 @@ void ExeState::initValVar(const ValVar *valVar, Z3Expr &e) {
  * @param objVar
  * @param e
  */
-void ExeState::initObjVar(const ObjVar *objVar, Z3Expr &e) {
+void ExeState::initObjVar(const ObjVar *objVar, Z3Expr &e)
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ObjVar" << objVar->getId();
 
-    if (objVar->hasValue()) {
+    if (objVar->hasValue())
+    {
         const MemObj *obj = objVar->getMemObj();
         /// constant data
-        if (obj->isConstantData() || obj->isConstantArray() || obj->isConstantStruct()) {
-            if (const ConstantInt *consInt = SVFUtil::dyn_cast<ConstantInt>(obj->getValue())) {
-                if (consInt == llvm::ConstantInt::getTrue(LLVMModuleSet::getLLVMModuleSet()->getContext())) {
+        if (obj->isConstantData() || obj->isConstantArray() || obj->isConstantStruct())
+        {
+            if (const ConstantInt *consInt = SVFUtil::dyn_cast<ConstantInt>(obj->getValue()))
+            {
+                if (consInt == llvm::ConstantInt::getTrue(LLVMModuleSet::getLLVMModuleSet()->getContext()))
+                {
                     e = getContext().int_val(1);
-                } else if (consInt == llvm::ConstantInt::getFalse(LLVMModuleSet::getLLVMModuleSet()->getContext()))
+                }
+                else if (consInt == llvm::ConstantInt::getFalse(LLVMModuleSet::getLLVMModuleSet()->getContext()))
                     e = getContext().int_val(0);
-                else {
+                else
+                {
                     e = getContext().int_val(consInt->getSExtValue());
                 }
-            } else if (const llvm::ConstantFP *consFP = SVFUtil::dyn_cast<llvm::ConstantFP>(obj->getValue()))
-                e = getContext().int_val(static_cast<u32_t>(consFP->getValue().convertToFloat()));
+            }
+            else if (const llvm::ConstantFP *consFP = SVFUtil::dyn_cast<llvm::ConstantFP>(obj->getValue()))
+                e = getContext().int_val(static_cast<u32_t>(consFP->getValueAPF().convertToFloat()));
             else if (SVFUtil::isa<ConstantPointerNull>(obj->getValue()))
                 e = getContext().int_val(0);
             else if (SVFUtil::isa<GlobalVariable>(obj->getValue()))
                 e = getContext().int_val(getVirtualMemAddress(objVar->getId()));
             else if (SVFUtil::isa<ConstantAggregate>(obj->getValue()))
                 assert(false && "implement this part");
-            else {
+            else
+            {
                 std::cerr << value2String(obj->getValue()) << "\n";
                 assert(false && "what other types of values we have?");
             }
         }
-            /// locations (address-taken variables)
-        else {
+        /// locations (address-taken variables)
+        else
+        {
             e = getContext().int_val(getVirtualMemAddress(objVar->getId()));
         }
-    } else {
+    }
+    else
+    {
         assert(SVFUtil::isa<DummyObjVar>(objVar) &&
                "it should either be a blackhole or constant dummy if this obj has no value?");
         e = getContext().int_val(getVirtualMemAddress(objVar->getId()));
@@ -113,27 +131,36 @@ void ExeState::initObjVar(const ObjVar *objVar, Z3Expr &e) {
  * @param varId SVFVar ID
  * @return
  */
-Z3Expr &ExeState::getZ3Expr(u32_t varId) {
+Z3Expr &ExeState::getZ3Expr(u32_t varId)
+{
     assert(getInternalID(varId) == varId && "SVFVar idx overflow > 0x7f000000?");
     Z3Expr &e = varToVal[varId];
-    if (eq(e, Z3Expr::nullExpr())) {
+    if (eq(e, Z3Expr::nullExpr()))
+    {
         std::string str;
         raw_string_ostream rawstr(str);
         SVFIR *svfir = PAG::getPAG();
         SVFVar *svfVar = svfir->getGNode(varId);
-        if (const ValVar *valVar = dyn_cast<ValVar>(svfVar)) {
+        if (const ValVar *valVar = dyn_cast<ValVar>(svfVar))
+        {
             initValVar(valVar, e);
-        } else if (const ObjVar *objVar = dyn_cast<ObjVar>(svfVar)) {
+        }
+        else if (const ObjVar *objVar = dyn_cast<ObjVar>(svfVar))
+        {
             initObjVar(objVar, e);
-        } else {
+        }
+        else
+        {
             assert(false && "var type not supported");
         }
     }
     return e;
 }
 
-ExeState &ExeState::operator=(const ExeState &rhs) {
-    if (*this != rhs) {
+ExeState &ExeState::operator=(const ExeState &rhs)
+{
+    if (*this != rhs)
+    {
         varToVal = rhs.getVarToVal();
         locToVal = rhs.getLocToVal();
         pathConstraint = rhs.getPathConstraint();
@@ -146,7 +173,8 @@ ExeState &ExeState::operator=(const ExeState &rhs) {
  * @param rhs
  * @return
  */
-bool ExeState::operator==(const ExeState &rhs) const {
+bool ExeState::operator==(const ExeState &rhs) const
+{
     return eq(pathConstraint, rhs.getPathConstraint()) && eqVarToValMap(varToVal, rhs.getVarToVal()) &&
            eqVarToValMap(locToVal, rhs.getLocToVal());
 }
@@ -156,7 +184,8 @@ bool ExeState::operator==(const ExeState &rhs) const {
  * @param rhs
  * @return
  */
-bool ExeState::operator<(const ExeState &rhs) const {
+bool ExeState::operator<(const ExeState &rhs) const
+{
     // judge from path constraint
     if (!eq(pathConstraint, rhs.getPathConstraint()))
         return pathConstraint.id() < rhs.getPathConstraint().id();
@@ -165,9 +194,11 @@ bool ExeState::operator<(const ExeState &rhs) const {
     return false;
 }
 
-bool ExeState::eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const {
+bool ExeState::eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const
+{
     if(lhs.size() != rhs.size()) return false;
-    for (const auto &item: lhs) {
+    for (const auto &item: lhs)
+    {
         auto it = rhs.find(item.first);
         // return false if SVFVar not exists in rhs or z3Expr not equal
         if (it == rhs.end() || !eq(item.second, it->second))
@@ -176,9 +207,11 @@ bool ExeState::eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) con
     return true;
 }
 
-bool ExeState::lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const {
+bool ExeState::lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const
+{
     if(lhs.size() != rhs.size()) return lhs.size() < rhs.size();
-    for (const auto &item: lhs) {
+    for (const auto &item: lhs)
+    {
         auto it = rhs.find(item.first);
         // lhs > rhs if SVFVar not exists in rhs
         if (it == rhs.end())
@@ -194,7 +227,8 @@ bool ExeState::lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rh
  * @param loc location, e.g., int_val(0x7f..01)
  * @param value
  */
-void ExeState::store(const Z3Expr &loc, const Z3Expr &value) {
+void ExeState::store(const Z3Expr &loc, const Z3Expr &value)
+{
     assert(loc.is_numeral() && "location must be numeral");
     s32_t virAddr = z3Expr2NumValue(loc);
     assert(isVirtualMemAddress(virAddr) && "Pointer operand is not a physical address?");
@@ -206,7 +240,8 @@ void ExeState::store(const Z3Expr &loc, const Z3Expr &value) {
  * @param loc location, e.g., int_val(0x7f..01)
  * @return
  */
-Z3Expr &ExeState::load(const Z3Expr &loc) {
+Z3Expr &ExeState::load(const Z3Expr &loc)
+{
     assert(loc.is_numeral() && "location must be numeral");
     s32_t virAddr = z3Expr2NumValue(loc);
     assert(isVirtualMemAddress(virAddr) && "Pointer operand is not a physical address?");
@@ -218,17 +253,22 @@ Z3Expr &ExeState::load(const Z3Expr &loc) {
 /*!
  * Print values of all expressions
  */
-void ExeState::printExprValues() {
+void ExeState::printExprValues()
+{
     std::cout.flags(std::ios::left);
     std::cout << "-----------Var and Value-----------\n";
-    for (const auto &item: getVarToVal()) {
+    for (const auto &item: getVarToVal())
+    {
         std::stringstream exprName;
         exprName << "Var" << item.first;
         std::cout << std::setw(25) << exprName.str();
         const Z3Expr &sim = item.second.simplify();
-        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim))) {
+        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim)))
+        {
             std::cout << "\t Value: " << std::hex << "0x" << z3Expr2NumValue(sim) << "\n";
-        } else {
+        }
+        else
+        {
             std::cout << "\t Value: " << std::dec << sim << "\n";
         }
     }

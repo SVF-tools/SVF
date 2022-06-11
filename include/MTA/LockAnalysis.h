@@ -224,10 +224,11 @@ public:
         }
         return find;
     }
-	
-	CxtStmtToCxtLockSet getCSTCLS() {
-		return cxtStmtToCxtLockSet;
-	}
+
+    CxtStmtToCxtLockSet getCSTCLS()
+    {
+        return cxtStmtToCxtLockSet;
+    }
     /// Touch this context statement
     inline void touchCxtStmt(CxtStmt& cts)
     {
@@ -297,11 +298,12 @@ public:
     }
     /// Print locks and spans
     void printLocks(const CxtStmt& cts);
-    
-	/// Get tct 
-	TCT* getTCT() {
-		return tct;
-	}
+
+    /// Get tct
+    TCT* getTCT()
+    {
+        return tct;
+    }
 private:
     /// Handle fork
     void handleFork(const CxtStmt& cts);

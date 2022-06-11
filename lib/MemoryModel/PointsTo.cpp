@@ -96,7 +96,8 @@ bool PointsTo::empty(void) const
     if (type == CBV) return cbv.empty();
     else if (type == SBV) return sbv.empty();
     else if (type == BV) return bv.empty();
-    else {
+    else
+    {
         assert(false && "PointsTo::empty: unknown type");
         abort();
     }
@@ -108,7 +109,8 @@ u32_t PointsTo::count(void) const
     if (type == CBV) return cbv.count();
     else if (type == SBV) return sbv.count();
     else if (type == BV) return bv.count();
-    else {
+    else
+    {
         assert(false && "PointsTo::count: unknown type");
         abort();
     }
@@ -128,7 +130,8 @@ bool PointsTo::test(u32_t n) const
     if (type == CBV) return cbv.test(n);
     else if (type == SBV) return sbv.test(n);
     else if (type == BV) return bv.test(n);
-    else {
+    else
+    {
         assert(false && "PointsTo::test: unknown type");
         abort();
     }
@@ -140,7 +143,8 @@ bool PointsTo::test_and_set(u32_t n)
     if (type == CBV) return cbv.test_and_set(n);
     else if (type == SBV) return sbv.test_and_set(n);
     else if (type == BV) return bv.test_and_set(n);
-    else {
+    else
+    {
         assert(false && "PointsTo::test_and_set: unknown type");
         abort();
     }
@@ -171,7 +175,8 @@ bool PointsTo::contains(const PointsTo &rhs) const
     if (type == CBV) return cbv.contains(rhs.cbv);
     else if (type == SBV) return sbv.contains(rhs.sbv);
     else if (type == BV) return bv.contains(rhs.bv);
-    else {
+    else
+    {
         assert(false && "PointsTo::contains: unknown type");
         abort();
     }
@@ -184,7 +189,8 @@ bool PointsTo::intersects(const PointsTo &rhs) const
     if (type == CBV) return cbv.intersects(rhs.cbv);
     else if (type == SBV) return sbv.intersects(rhs.sbv);
     else if (type == BV) return bv.intersects(rhs.bv);
-    else {
+    else
+    {
         assert(false && "PointsTo::intersects: unknown type");
         abort();
     }
@@ -203,7 +209,8 @@ bool PointsTo::operator==(const PointsTo &rhs) const
     if (type == CBV) return cbv == rhs.cbv;
     else if (type == SBV) return sbv == rhs.sbv;
     else if (type == BV) return bv == rhs.bv;
-    else {
+    else
+    {
         assert(false && "PointsTo::==: unknown type");
         abort();
     }
@@ -224,7 +231,8 @@ bool PointsTo::operator|=(const PointsTo &rhs)
     if (type == CBV) return cbv |= rhs.cbv;
     else if (type == SBV) return sbv |= rhs.sbv;
     else if (type == BV) return bv |= rhs.bv;
-    else{
+    else
+    {
         assert(false && "PointsTo::|=: unknown type");
         abort();
     }
@@ -250,7 +258,8 @@ bool PointsTo::operator&=(const PointsTo &rhs)
     if (type == CBV) return cbv &= rhs.cbv;
     else if (type == SBV) return sbv &= rhs.sbv;
     else if (type == BV) return bv &= rhs.bv;
-    else{
+    else
+    {
         assert(false && "PointsTo::&=: unknown type");
         abort();
     }
@@ -263,7 +272,8 @@ bool PointsTo::operator-=(const PointsTo &rhs)
     if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
     else if (type == SBV) return sbv.intersectWithComplement(rhs.sbv);
     else if (type == BV) return bv.intersectWithComplement(rhs.bv);
-    else{
+    else
+    {
         assert(false && "PointsTo::-=: unknown type");
         abort();
     }
@@ -289,7 +299,8 @@ void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)
     if (type == CBV) cbv.intersectWithComplement(lhs.cbv, rhs.cbv);
     else if (type == SBV) sbv.intersectWithComplement(lhs.sbv, rhs.sbv);
     else if (type == BV) bv.intersectWithComplement(lhs.bv, rhs.bv);
-    else {
+    else
+    {
         assert(false && "PointsTo::intersectWithComplement(PT, PT): unknown type");
         abort();
     }
@@ -312,7 +323,8 @@ size_t PointsTo::hash(void) const
     }
     else if (type == BV) return bv.hash();
 
-    else{
+    else
+    {
         assert(false && "PointsTo::hash: unknown type");
         abort();
     }
@@ -353,7 +365,7 @@ PointsTo::MappingPtr PointsTo::getCurrentBestReverseNodeMapping(void)
 }
 
 void PointsTo::setCurrentBestNodeMapping(MappingPtr newCurrentBestNodeMapping,
-                                         MappingPtr newCurrentBestReverseNodeMapping)
+        MappingPtr newCurrentBestReverseNodeMapping)
 {
     currentBestNodeMapping = newCurrentBestNodeMapping;
     currentBestReverseNodeMapping = newCurrentBestReverseNodeMapping;
@@ -407,7 +419,8 @@ PointsTo::PointsToIterator::PointsToIterator(const PointsToIterator &pt)
     {
         new (&bvIt) BitVector::iterator(pt.bvIt);
     }
-    else {
+    else
+    {
         assert(false && "PointsToIterator::PointsToIterator&: unknown type");
         abort();
     }
@@ -428,7 +441,8 @@ PointsTo::PointsToIterator::PointsToIterator(PointsToIterator &&pt)
     {
         new (&bvIt) BitVector::iterator(std::move(pt.bvIt));
     }
-    else {
+    else
+    {
         assert(false && "PointsToIterator::PointsToIterator&&: unknown type");
         abort();
     }
@@ -501,7 +515,8 @@ NodeID PointsTo::PointsToIterator::operator*(void) const
     if (pt->type == Type::CBV) return pt->getExternalNode(*cbvIt);
     else if (pt->type == Type::SBV) return pt->getExternalNode(*sbvIt);
     else if (pt->type == Type::BV) return pt->getExternalNode(*bvIt);
-    else {
+    else
+    {
         assert(false && "PointsToIterator::*: unknown type");
         abort();
     }
@@ -516,7 +531,8 @@ bool PointsTo::PointsToIterator::operator==(const PointsToIterator &rhs) const
     if (pt->type == Type::CBV) return cbvIt == rhs.cbvIt;
     else if (pt->type == Type::SBV) return sbvIt == rhs.sbvIt;
     else if (pt->type == Type::BV) return bvIt == rhs.bvIt;
-    else {
+    else
+    {
         assert(false && "PointsToIterator::==: unknown type");
         abort();
     }
@@ -535,7 +551,8 @@ bool PointsTo::PointsToIterator::atEnd(void) const
     if (pt->type == Type::CBV) return cbvIt == pt->cbv.end();
     else if (pt->type == Type::SBV) return sbvIt == pt->sbv.end();
     else if (pt->type == Type::BV) return bvIt == pt->bv.end();
-    else {
+    else
+    {
         assert(false && "PointsToIterator::atEnd: unknown type");
         abort();
     }

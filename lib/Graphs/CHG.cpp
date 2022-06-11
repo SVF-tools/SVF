@@ -49,15 +49,19 @@ static bool hasEdge(const CHNode *src, const CHNode *dst,
     return false;
 }
 
-static bool checkArgTypes(CallSite cs, const Function *fn) {
+static bool checkArgTypes(CallSite cs, const Function *fn)
+{
 
     // here we skip the first argument (i.e., this pointer)
     u32_t arg_size = (fn->arg_size() > cs.arg_size()) ? cs.arg_size(): fn->arg_size();
-    if(arg_size > 1){
-        for (unsigned i = 1; i < arg_size; i++) {
+    if(arg_size > 1)
+    {
+        for (unsigned i = 1; i < arg_size; i++)
+        {
             auto cs_arg = cs.getArgOperand(i);
             auto fn_arg = fn->getArg(i);
-            if (cs_arg->getType() != fn_arg->getType()) {
+            if (cs_arg->getType() != fn_arg->getType())
+            {
                 return false;
             }
         }

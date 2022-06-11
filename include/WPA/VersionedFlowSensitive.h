@@ -99,7 +99,10 @@ protected:
     virtual void updateConnectedNodes(const SVFGEdgeSetTy& newEdges) override;
 
     /// Override to do nothing. Instead, we will use propagateVersion when necessary.
-    virtual bool propAlongIndirectEdge(const IndirectSVFGEdge*) override { return false; }
+    virtual bool propAlongIndirectEdge(const IndirectSVFGEdge*) override
+    {
+        return false;
+    }
 
     /// Override since we want to assign different weights based on versioning.
     virtual void cluster(void) override;

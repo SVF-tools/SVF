@@ -253,7 +253,8 @@ protected:
     }
     //@}
 
-    inline bool isEquivalentBranchCond(const Condition *lhs, const Condition *rhs) const {
+    inline bool isEquivalentBranchCond(const Condition *lhs, const Condition *rhs) const
+    {
         return pathAllocator->isEquivalentBranchCond(lhs, rhs);
     };
 

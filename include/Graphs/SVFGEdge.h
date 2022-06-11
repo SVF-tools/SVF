@@ -45,7 +45,6 @@ class IndirectSVFGEdge : public VFGEdge
 public:
     typedef Set<const MRVer*> MRVerSet;
 private:
-    MRVerSet mrs;
     NodeBS cpts;
 public:
     /// Constructor
@@ -61,17 +60,6 @@ public:
     inline const NodeBS& getPointsTo() const
     {
         return cpts;
-    }
-
-    inline MRVerSet& getMRVer()
-    {
-        return mrs;
-    }
-    inline bool addMrVer(const MRVer* mr)
-    {
-        // collect memory regions' pts to edge;
-        cpts |= mr->getMR()->getPointsTo();
-        return mrs.insert(mr).second;
     }
     //@}
 

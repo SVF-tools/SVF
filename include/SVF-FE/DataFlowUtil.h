@@ -33,6 +33,7 @@
 #include "Util/BasicTypes.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "SVF-FE/BasicTypes.h"
 
 namespace SVF
 {
@@ -119,25 +120,26 @@ public:
 };
 
 
-class PTACFInfoBuilder{
+class PTACFInfoBuilder
+{
 public:
     typedef Map<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
     typedef Map<const Function*, PostDominatorTree*> FunToPostDTMap;  ///< map a function to its post dominator tree
     typedef Map<const Function*, LoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
 
     /// Constructor
-     PTACFInfoBuilder();
+    PTACFInfoBuilder();
 
-     ~PTACFInfoBuilder();
+    ~PTACFInfoBuilder();
 
-     /// Get loop info of a function
-     LoopInfo* getLoopInfo(const Function* f);
+    /// Get loop info of a function
+    LoopInfo* getLoopInfo(const Function* f);
 
-     /// Get post dominator tree of a function
-     PostDominatorTree* getPostDT(const Function* f);
+    /// Get post dominator tree of a function
+    PostDominatorTree* getPostDT(const Function* f);
 
-     /// Get dominator tree of a function
-     DominatorTree* getDT(const Function* f);
+    /// Get dominator tree of a function
+    DominatorTree* getDT(const Function* f);
 
 private:
     FunToLoopInfoMap funToLoopInfoMap;      ///< map a function to its loop info

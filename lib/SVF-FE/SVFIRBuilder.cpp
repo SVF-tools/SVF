@@ -57,7 +57,7 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
 
     // If the SVFIR has been built before, then we return the unique SVFIR of the program
     if(pag->getNodeNumAfterPAGBuild() > 1)
-    	return pag;
+        return pag;
 
     svfMod = svfModule;
 
@@ -88,7 +88,8 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
             /// To be noted, we do not record arguments which are in declared function without body
             /// TODO: what about external functions with SVFIR imported by commandline?
             for (Function::arg_iterator I = fun.getLLVMFun()->arg_begin(), E = fun.getLLVMFun()->arg_end();
-                    I != E; ++I) {
+                    I != E; ++I)
+            {
                 setCurrentLocation(&*I,&fun.getLLVMFun()->getEntryBlock());
                 NodeID argValNodeId = pag->getValueNode(&*I);
                 // if this is the function does not have caller (e.g. main)
@@ -131,7 +132,7 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
 
     // dump ICFG
     if (Options::DumpICFG)
-    	pag->getICFG()->dump("icfg_initial");
+        pag->getICFG()->dump("icfg_initial");
 
     return pag;
 }
@@ -212,14 +213,15 @@ void SVFIRBuilder::initialiseNodes()
 
 /*
     https://github.com/SVF-tools/SVF/issues/524
-    Handling single value types, for constant index, including pointer, integer, etc 
+    Handling single value types, for constant index, including pointer, integer, etc
     e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
     We can obtain the field index by inferring the byteoffset if %p is casted from a pointer to a struct
     For another example, the following can be an array access.
     e.g. field_idx = getelementptr i8, %struct_type %p, i64 1
 
 */
-u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s32_t idx){
+u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s32_t idx)
+{
     return 0;
 }
 
@@ -251,14 +253,15 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         //The int value of the current index operand
         const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
 
-        // if Options::ModelConsts is disabled. We will treat whole array as one, 
+        // if Options::ModelConsts is disabled. We will treat whole array as one,
         // but we can distinguish different field of an array of struct, e.g. s[1].f1 is differet from s[0].f2
-        if(SVFUtil::isa<ArrayType>(gepTy)){
-            if(!op) 
+        if(SVFUtil::isa<ArrayType>(gepTy))
+        {
+            if(!op)
                 continue;
             s32_t idx = op->getSExtValue();
             u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(gepTy, idx);
-            ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);  
+            ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);
         }
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
         {
@@ -274,8 +277,8 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
             // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
             if(!op && gepTy->isPointerTy() && gepTy->getPointerElementType()->isSingleValueType())
-                return false;              
-            
+                return false;
+
             // The actual index
             //s32_t idx = op->getSExtValue();
 
@@ -392,14 +395,14 @@ void SVFIRBuilder::processCE(const Value *val)
         }
         else if (SVFUtil::isa<BlockAddress>(ref))
         {
-			// blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
-			// is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
-			const Value *cval = getCurrentValue();
-			const BasicBlock *cbb = getCurrentBB();
-			setCurrentLocation(ref, nullptr);
-			NodeID dst = pag->getValueNode(ref);
-			addAddrEdge(pag->getConstantNode(), dst);
-			setCurrentLocation(cval, cbb);
+            // blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
+            // is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
+            const Value *cval = getCurrentValue();
+            const BasicBlock *cbb = getCurrentBB();
+            setCurrentLocation(ref, nullptr);
+            NodeID dst = pag->getValueNode(ref);
+            addAddrEdge(pag->getConstantNode(), dst);
+            setCurrentLocation(cval, cbb);
         }
         else
         {
@@ -441,9 +444,9 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset,
  * struct Z n = {10,&z.s}; // store z.s n ,  &z.s constant expression (constant expression)
  */
 void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
-                               u32_t offset)
+                                 u32_t offset)
 {
-    DBOUT(DPAGBuild, outs() << "global " << SVFUtil::value2String(gvar) << " constant initializer: " << SVFUtil::value2String(C) << "\n"); 
+    DBOUT(DPAGBuild, outs() << "global " << SVFUtil::value2String(gvar) << " constant initializer: " << SVFUtil::value2String(C) << "\n");
     if (C->getType()->isSingleValueType())
     {
         NodeID src = getValueNode(C);
@@ -465,11 +468,11 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         }
         else if (SVFUtil::isa<BlockAddress>(C))
         {
-			// blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
-			// is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
-			processCE(C);
-			setCurrentLocation(C, nullptr);
-			addAddrEdge(pag->getConstantNode(), src);
+            // blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
+            // is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
+            processCE(C);
+            setCurrentLocation(C, nullptr);
+            addAddrEdge(pag->getConstantNode(), src);
         }
         else
         {
@@ -482,27 +485,33 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     }
     else if (SVFUtil::isa<ConstantArray>(C) || SVFUtil::isa<ConstantStruct>(C))
     {
-        for (u32_t i = 0, e = C->getNumOperands(); i != e; i++){
+        for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
+        {
             u32_t off = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(C->getType(), i);
             InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset + off);
         }
     }
     else if(ConstantData* data = SVFUtil::dyn_cast<ConstantData>(C))
     {
-        if(Options::ModelConsts){
-            if(ConstantDataSequential* seq = SVFUtil::dyn_cast<ConstantDataSequential>(data)){
-                for(u32_t i = 0; i < seq->getNumElements(); i++){
+        if(Options::ModelConsts)
+        {
+            if(ConstantDataSequential* seq = SVFUtil::dyn_cast<ConstantDataSequential>(data))
+            {
+                for(u32_t i = 0; i < seq->getNumElements(); i++)
+                {
                     u32_t off = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(C->getType(), i);
                     Constant* ct = seq->getElementAsConstant(i);
                     InitialGlobal(gvar, ct, offset + off);
                 }
             }
-            else{
+            else
+            {
                 assert(SVFUtil::isa<ConstantAggregateZero>(data) && "Single value type data should have been handled!");
             }
         }
     }
-    else{
+    else
+    {
         //TODO:assert(SVFUtil::isa<ConstantVector>(C),"what else do we have");
     }
 }
@@ -841,13 +850,14 @@ void SVFIRBuilder::visitExtractElementInst(ExtractElementInst &inst)
  * Branch and switch instructions are treated as UnaryOP
  * br %cmp label %if.then, label %if.else
  */
-void SVFIRBuilder::visitBranchInst(BranchInst &inst){
+void SVFIRBuilder::visitBranchInst(BranchInst &inst)
+{
     NodeID brinst = getValueNode(&inst);
     NodeID cond;
-	if (inst.isConditional())
-		cond = getValueNode(inst.getCondition());
-	else
-		cond = pag->getNullPtr();
+    if (inst.isConditional())
+        cond = getValueNode(inst.getCondition());
+    else
+        cond = pag->getNullPtr();
 
     assert(inst.getNumSuccessors() <= 2 && "if/else has more than two branches?");
 
@@ -861,7 +871,8 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst){
     addBranchStmt(brinst, cond,successors);
 }
 
-void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
+void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
+{
     NodeID brinst = getValueNode(&inst);
     NodeID cond = getValueNode(inst.getCondition());
 
@@ -883,7 +894,8 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
 /// ; Read a single integer argument from %ap2
 /// %tmp = va_arg i8* %ap2, i32 (VAArgInst)
 /// TODO: for now, create a copy edge from %ap2 to %tmp, we assume here %tmp should point to the n-th argument of the var_args
-void SVFIRBuilder::visitVAArgInst(VAArgInst &inst){
+void SVFIRBuilder::visitVAArgInst(VAArgInst &inst)
+{
     NodeID dst = getValueNode(&inst);
     Value* opnd = inst.getPointerOperand();
     NodeID src = getValueNode(opnd);
@@ -894,7 +906,8 @@ void SVFIRBuilder::visitVAArgInst(VAArgInst &inst){
 /// If <val> is undef or poison, ‘freeze’ returns an arbitrary, but fixed value of type `ty`
 /// Otherwise, this instruction is a no-op and returns the input <val>
 /// For now, we assume <val> is never a posion or undef.
-void SVFIRBuilder::visitFreezeInst(FreezeInst &inst){
+void SVFIRBuilder::visitFreezeInst(FreezeInst &inst)
+{
     NodeID dst = getValueNode(&inst);
     for (u32_t i = 0; i < inst.getNumOperands(); i++)
     {
@@ -914,7 +927,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     assert(F);
 
     DBOUT(DPAGBuild,
-           outs() << "handle direct call " << SVFUtil::value2String(cs.getInstruction()) << " callee " << *F << "\n");
+          outs() << "handle direct call " << SVFUtil::value2String(cs.getInstruction()) << " callee " << *F << "\n");
 
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs.getInstruction());
@@ -973,12 +986,15 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     }
 }
 
-const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V){
+const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
+{
     const Value * value = stripAllCasts(V);
     assert(value && "null ptr?");
-    if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value)){
+    if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
+    {
         s32_t totalidx = 0;
-        for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi){
+        for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi)
+        {
             if(const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
                 totalidx += op->getSExtValue();
         }
@@ -1001,14 +1017,16 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
 
     u32_t numOfElems = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(T);
     /// use user-specified size for this copy operation if the size is a constaint int
-    if(szValue && SVFUtil::isa<ConstantInt>(szValue)){
+    if(szValue && SVFUtil::isa<ConstantInt>(szValue))
+    {
         numOfElems = (numOfElems > SVFUtil::cast<ConstantInt>(szValue)->getSExtValue()) ? SVFUtil::cast<ConstantInt>(szValue)->getSExtValue() : numOfElems;
     }
 
     LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
-    for(u32_t ei = 0; ei < numOfElems; ei++){
-        LocationSet ls(ei); 
-        // make a ConstantInt and create char for the content type due to byte-wise copy 
+    for(u32_t ei = 0; ei < numOfElems; ei++)
+    {
+        LocationSet ls(ei);
+        // make a ConstantInt and create char for the content type due to byte-wise copy
         const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, ei));
         ls.addOffsetValue(offset, nullptr);
         fields.push_back(ls);
@@ -1042,7 +1060,8 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     /// If sz is 0, we will add edges for all fields.
     u32_t sz = fields.size();
 
-    if (fields.size() == 1 && (isConstantData(D) || isConstantData(S))) {
+    if (fields.size() == 1 && (isConstantData(D) || isConstantData(S)))
+    {
         NodeID dummy = pag->addDummyValNode();
         addLoadEdge(vnD,dummy);
         addStoreEdge(dummy,vnS);
@@ -1124,7 +1143,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 }
                 break;
             }
-            case ExtAPI::EFT_L_A0: {
+            case ExtAPI::EFT_L_A0:
+            {
                 NodeID dstNode = getValueNode(inst);
                 Value *src= cs.getArgument(0);
                 NodeID srcNode = getValueNode(src);
@@ -1167,8 +1187,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_L_A0__A0R_A1:
             {
-		// this is for memset(void *str, int c, size_t n)
-		// which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
+                // this is for memset(void *str, int c, size_t n)
+                // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
                 std::vector<LocationSet> dstFields;
                 const Type *dtype = getBaseTypeAndFlattenedFields(cs.getArgument(0), dstFields, cs.getArgument(2));
                 u32_t sz = dstFields.size();
@@ -1195,13 +1215,16 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 break;
             case ExtAPI::EFT_L_A1__FunPtr:
             {
-                /// handling external function e.g., void *dlsym(void *handle, const char *funname); 
+                /// handling external function e.g., void *dlsym(void *handle, const char *funname);
                 const Value *src = cs.getArgument(1);
                 if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
                     src = stripConstantCasts(gep->getPointerOperand());
-                if(const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(src)){
-                    if(const ConstantDataArray* constarray = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer())){
-                        if(const SVFFunction* fun = getProgFunction(svfMod,constarray->getAsCString().str())){
+                if(const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(src))
+                {
+                    if(const ConstantDataArray* constarray = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer()))
+                    {
+                        if(const SVFFunction* fun = getProgFunction(svfMod,constarray->getAsCString().str()))
+                        {
                             NodeID srcNode = getValueNode(fun->getLLVMFun());
                             addCopyEdge(srcNode,  getValueNode(inst));
                         }
@@ -1237,8 +1260,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     addStoreEdge(vnS,vnD);
                 break;
             }
-			case ExtAPI::EFT_L_A0__A1_A0:
-			{
+            case ExtAPI::EFT_L_A0__A1_A0:
+            {
                 /// handle strcpy
                 if(cs.arg_size()>=3)
                     addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), cs.getArgument(2));
@@ -1246,8 +1269,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), nullptr);
                 //strcpy returns the dest.
                 addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
-				break;
-			}
+                break;
+            }
             case ExtAPI::EFT_L_A0__A2R_A0:
             {
                 if(SVFUtil::isa<PointerType>(inst->getType()))
@@ -1297,7 +1320,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 break;
             case ExtAPI::EFT_FREE_MULTILEVEL:
             {
-                // For any argument with 2-level pointer passing too a free function e.g., XFree(void** p), 
+                // For any argument with 2-level pointer passing too a free function e.g., XFree(void** p),
                 // we will need to add a load edge (dummy = *p) and a store edge (*dummy = nullptr).
                 for(u32_t i = 0; i < cs.arg_size(); i++)
                 {
@@ -1313,9 +1336,11 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     }
                 }
                 break;
-            }  
+            }
             case ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE:
             {
+                assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
+
                 Value *vArg1 = cs.getArgument(1);
                 Value *vArg3 = cs.getArgument(3);
 
@@ -1327,7 +1352,6 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // We get all flattened fields of base
                 vector<LocationSet> fields;
                 const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields, nullptr);
-                assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                 // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
                 // Note that arg0 is aligned with "offset".
@@ -1345,8 +1369,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_STD_RB_TREE_INCREMENT:
             {
+                assert(cs.arg_size() == 1 && "_Rb_tree_decrement should have one argument.\n");
                 NodeID vnD = pag->getValueNode(inst);
-
                 Value *vArg = cs.getArgument(0);
                 NodeID vnArg = pag->getValueNode(vArg);
                 s32_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
@@ -1354,7 +1378,6 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // We get all fields
                 vector<LocationSet> fields;
                 const Type *type = getBaseTypeAndFlattenedFields(vArg,fields,nullptr);
-                assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                 // We summarize the side effects: ret = arg->parent, ret = arg->left, ret = arg->right
                 // Note that arg0 is aligned with "offset".
@@ -1607,10 +1630,12 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     {
         const Function* srcFun = edge->getSrcNode()->getFunction();
         const Function* dstFun = edge->getDstNode()->getFunction();
-        if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<Function>(edge->getSrcNode()->getValue())) {
+        if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<Function>(edge->getSrcNode()->getValue()))
+        {
             assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
         }
-        if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<Function>(edge->getDstNode()->getValue())) {
+        if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<Function>(edge->getDstNode()->getValue()))
+        {
             assert(dstFun==curInst->getFunction() && "DstNode of the PAGEdge not in the same function?");
         }
 
@@ -1619,11 +1644,13 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
             assert(curBB && "instruction does not have a basic block??");
 
         /// We will have one unique function exit ICFGNode for all returns
-        if(const ReturnInst* retInst = SVFUtil::dyn_cast<ReturnInst>(curInst)){
+        if(const ReturnInst* retInst = SVFUtil::dyn_cast<ReturnInst>(curInst))
+        {
             const SVFFunction *fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(retInst->getParent()->getParent());
             icfgNode = pag->getICFG()->getFunExitICFGNode(fun);
         }
-        else{
+        else
+        {
             if(SVFUtil::isa<RetPE>(edge))
                 icfgNode = pag->getICFG()->getRetICFGNode(curInst);
             else
@@ -1641,17 +1668,19 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         if (!curBB)
             pag->addGlobalPAGEdge(edge);
         else
-    		icfgNode = pag->getICFG()->getICFGNode(&curBB->front());
+            icfgNode = pag->getICFG()->getICFGNode(&curBB->front());
     }
     else if (SVFUtil::isa<GlobalVariable>(curVal) ||
              SVFUtil::isa<Constant>(curVal) ||
-			 SVFUtil::isa<MetadataAsValue>(curVal))
+             SVFUtil::isa<MetadataAsValue>(curVal))
     {
         pag->addGlobalPAGEdge(edge);
     }
-    else if(const Function* fun = SVFUtil::dyn_cast<Function>(curVal)){
+    else if(const Function* fun = SVFUtil::dyn_cast<Function>(curVal))
+    {
         const SVFFunction* f = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-        if((&fun->getEntryBlock() == curBB) && isExtCall(f)){
+        if((&fun->getEntryBlock() == curBB) && isExtCall(f))
+        {
             /// all external function connected to a indirect call, we will put SVFStmts in the FunctionEntryICFGNode
             icfgNode = pag->getICFG()->getFunEntryICFGNode(f);
         }
@@ -1665,13 +1694,15 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 
     pag->addToSVFStmtList(icfgNode,edge);
     icfgNode->addSVFStmt(edge);
-    if(const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(edge)){
+    if(const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(edge))
+    {
         CallICFGNode* callNode = const_cast<CallICFGNode*>(callPE->getCallSite());
         FunEntryICFGNode* entryNode = const_cast<FunEntryICFGNode*>(callPE->getFunEntryICFGNode());
         if(ICFGEdge* edge = pag->getICFG()->hasInterICFGEdge(callNode,entryNode, ICFGEdge::CallCF))
             SVFUtil::cast<CallCFGEdge>(edge)->addCallPE(callPE);
     }
-    else if(const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(edge)){
+    else if(const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(edge))
+    {
         RetICFGNode* retNode = const_cast<RetICFGNode*>(retPE->getCallSite()->getRetICFGNode());
         FunExitICFGNode* exitNode = const_cast<FunExitICFGNode*>(retPE->getFunExitICFGNode());
         if(ICFGEdge* edge = pag->getICFG()->hasInterICFGEdge(exitNode, retNode, ICFGEdge::RetCF))
@@ -1679,7 +1710,8 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     }
 }
 
-void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph){
+void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
+{
     PTACallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
     PTACallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
     for (; iter != eiter; iter++)
@@ -1691,11 +1723,13 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph){
         for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const SVFFunction*  callee = *func_iter;
-            if (isExtCall(callee)){
+            if (isExtCall(callee))
+            {
                 setCurrentLocation(callee->getLLVMFun(), &callee->getLLVMFun()->getEntryBlock());
                 handleExtCall(cs, callee);
             }
-            else{
+            else
+            {
                 setCurrentLocation(callBlock->getCallSite(), callBlock->getCallSite()->getParent());
                 handleDirectCall(cs, callee);
             }
