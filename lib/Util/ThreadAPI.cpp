@@ -317,10 +317,18 @@ void ThreadAPI::performAPIStat(SVFModule* module)
 
     }
 
-    StringRef n(module->getModuleIdentifier());
-    StringRef name = n.split('/').second;
-    name = name.split('.').first;
-    SVFUtil::outs() << "################ (program : " << name.str()
+    std::string name(module->getModuleIdentifier());
+    std::vector<std::string> fullNames = SVFUtil::split(name,'/');
+    if (fullNames.size() > 1)
+    {
+        name = fullNames[1];
+        fullNames = SVFUtil::split(name,'.');
+        if (fullNames.size() > 0 )
+        {
+            name = fullNames[0];
+        }
+    }
+    SVFUtil::outs() << "################ (program : " << name
                     << ")###############\n";
     SVFUtil::outs().flags(std::ios::left);
     unsigned field_width = 20;

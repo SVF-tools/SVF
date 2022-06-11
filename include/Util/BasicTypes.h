@@ -53,6 +53,7 @@
 
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/CFG.h"
+#include "llvm/BinaryFormat/Dwarf.h"
 
 namespace SVF
 {
@@ -77,7 +78,6 @@ typedef llvm::LoopInfo LoopInfo;
 /// LLVM outputs
 typedef llvm::raw_string_ostream raw_string_ostream;
 typedef llvm::raw_fd_ostream raw_fd_ostream;
-typedef llvm::StringRef StringRef;
 
 /// LLVM types
 typedef llvm::StructType StructType;
@@ -88,7 +88,6 @@ typedef llvm::FunctionType FunctionType;
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
 typedef llvm::Constant Constant;
-typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::ConstantArray ConstantArray;
@@ -134,7 +133,7 @@ public:
     {
     }
 
-    SVFFunction(Function* f): SVFValue(f->getName(),SVFValue::SVFFunc),
+    SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
         isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f)
     {
     }

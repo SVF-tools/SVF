@@ -10,6 +10,7 @@
 
 #include "MTA/TCT.h"
 #include "Util/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
 namespace SVF
 {
 

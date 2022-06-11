@@ -1347,7 +1347,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                 // Now we calculate the offset from base to vArg3
                 NodeID vnArg3 = pag->getValueNode(vArg3);
-                s32_t offset = pag->getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
+                s32_t offset = getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
 
                 // We get all flattened fields of base
                 vector<LocationSet> fields;
@@ -1373,7 +1373,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 NodeID vnD = pag->getValueNode(inst);
                 Value *vArg = cs.getArgument(0);
                 NodeID vnArg = pag->getValueNode(vArg);
-                s32_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
+                s32_t offset = getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
 
                 // We get all fields
                 vector<LocationSet> fields;
@@ -1739,4 +1739,27 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
     // dump SVFIR
     if (Options::PAGDotGraph)
         pag->dump("svfir_final");
+}
+
+/*!
+ * Get a base SVFVar given a pointer
+ * Return the source node of its connected normal gep edge
+ * Otherwise return the node id itself
+ * s32_t offset : gep offset
+ */
+LocationSet SVFIRBuilder::getLocationSetFromBaseNode(NodeID nodeId)
+{
+    SVFVar* node  = pag->getGNode(nodeId);
+    SVFStmt::SVFStmtSetTy& geps = node->getIncomingEdges(SVFStmt::Gep);
+    /// if this node is already a base node
+    if(geps.empty())
+        return LocationSet(0);
+
+    assert(geps.size()==1 && "one node can only be connected by at most one gep edge!");
+    SVFVar::iterator it = geps.begin();
+    const GepStmt* gepEdge = SVFUtil::cast<GepStmt>(*it);
+    if(gepEdge->isVariantFieldGep())
+        return LocationSet(0);
+    else
+        return gepEdge->getLocationSet();
 }

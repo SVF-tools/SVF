@@ -26,8 +26,8 @@ Set<std::string> LockResultValidator::getStringArg(const Instruction* inst, unsi
         Set<std::string> strvec;
         return strvec;
     }
-    const StringRef vthdcxtstring = cxtarray->getAsCString();
-    return split(vthdcxtstring.str(), ',');
+    const std::string vthdcxtstring = cxtarray->getAsCString().str();
+    return split(vthdcxtstring, ',');
 }
 
 Set<std::string> &LockResultValidator::split(const std::string &s, char delim, Set<std::string> &elems)

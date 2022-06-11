@@ -409,6 +409,7 @@ protected:
     }
     //@}
 
+    LocationSet getLocationSetFromBaseNode(NodeID nodeId);
 };
 
 } // End namespace SVF

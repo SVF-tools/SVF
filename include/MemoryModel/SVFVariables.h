@@ -32,7 +32,6 @@
 
 #include "Graphs/GenericGraph.h"
 #include "MemoryModel/SymbolTableInfo.h"
-#include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/SVFStatements.h"
 
 namespace SVF
@@ -120,13 +119,7 @@ public:
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087
-    inline bool isConstantData() const
-    {
-        if (hasValue())
-            return SVFUtil::isConstantData(value);
-        else
-            return false;
-    }
+    bool isConstantData() const;
 
     /// Whether this is an isoloated node on the SVFIR graph
     bool isIsolatedNode() const;

@@ -628,7 +628,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                  */
                 if (funName.size() == 0)
                 {
-                    virtualFunctions.insert(SVFUtil::getFunction(callee->getName()));
+                    virtualFunctions.insert(SVFUtil::getFunction(callee->getName().str()));
                 }
                 else if (funName[0] == '~')
                 {
@@ -644,7 +644,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                      */
                     if (calleeName[0] == '~')
                     {
-                        virtualFunctions.insert(SVFUtil::getFunction(callee->getName()));
+                        virtualFunctions.insert(SVFUtil::getFunction(callee->getName().str()));
                     }
                 }
                 else
@@ -655,7 +655,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                      */
                     if (funName.compare(calleeName) == 0)
                     {
-                        virtualFunctions.insert(SVFUtil::getFunction(callee->getName()));
+                        virtualFunctions.insert(SVFUtil::getFunction(callee->getName().str()));
                     }
                 }
             }
@@ -966,7 +966,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
 
     if (const DIBasicType *bt = SVFUtil::dyn_cast<DIBasicType>(t))
     {
-        ss << std::string(bt->getName());
+        ss << bt->getName().str();
     }
     else if (const DIDerivedType *dt = SVFUtil::dyn_cast<DIDerivedType>(t))
     {
@@ -1009,7 +1009,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
         }
         else if (dt->getTag() == dwarf::DW_TAG_typedef)
         {
-            ss << std::string(dt->getName()) << "->" << diTypeToStr(dt->getBaseType());
+            ss << dt->getName().str() << "->" << diTypeToStr(dt->getBaseType());
         }
     }
     else if (const DICompositeType *ct = SVFUtil::dyn_cast<DICompositeType>(t))
@@ -1036,7 +1036,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
 
             if (ct->getName() != "")
             {
-                ss << std::string(ct->getName());
+                ss << ct->getName().str();
             }
             else
             {
@@ -1050,7 +1050,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
                     // It can also give a Subprogram type if the class just had non-virtual functions.
                     if (const DISubprogram *sp = SVFUtil::dyn_cast<DISubprogram>(fields[i]))
                     {
-                        ss << std::string(sp->getName());
+                        ss << sp->getName().str();
                     }
                     else if (const DIDerivedType *mt = SVFUtil::dyn_cast<DIDerivedType>(fields[i]))
                     {
@@ -1117,7 +1117,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
             ss << ")";
         }
 
-        ss << std::string(st->getName());
+        ss << st->getName().str();
     }
 
     return ss.str();

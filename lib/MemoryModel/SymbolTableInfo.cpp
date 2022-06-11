@@ -34,6 +34,7 @@
 #include "Util/Options.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
 
 using namespace std;
 using namespace SVF;
@@ -782,5 +783,30 @@ const std::string MemObj::toString() const
     raw_string_ostream rawstr(str);
     rawstr << "MemObj : " << getId() << SVFUtil::value2String(getValue())<< "\n";
     return rawstr.str();
+}
+
+/// Get different kinds of syms
+//@{
+SymID SymbolTableInfo::getValSym(const Value *val)
+{
+
+    if(SymbolTableInfo::isNullPtrSym(val))
+        return nullPtrSymID();
+    else if (SVFUtil::isBlackholeSym(val))
+        return blkPtrSymID();
+    else
+    {
+        ValueToIDMapTy::const_iterator iter =  valSymMap.find(val);
+        assert(iter!=valSymMap.end() &&"value sym not found");
+        return iter->second;
+    }
+}
+
+bool SymbolTableInfo::hasValSym(const Value* val)
+{
+    if (SymbolTableInfo::isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
+        return true;
+    else
+        return (valSymMap.find(val) != valSymMap.end());
 }
 
