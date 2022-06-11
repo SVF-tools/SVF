@@ -8,6 +8,7 @@
  */
 
 #include "Util/Options.h"
+#include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/DCHG.h"
 #include "SVF-FE/CPPUtil.h"
 #include "WPA/FlowSensitiveTBHC.h"

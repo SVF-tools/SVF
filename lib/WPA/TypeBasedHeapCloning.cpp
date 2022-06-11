@@ -8,6 +8,7 @@
  */
 
 #include "SVF-FE/CPPUtil.h"
+#include "SVF-FE/BasicTypes.h"
 #include "WPA/TypeBasedHeapCloning.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 
