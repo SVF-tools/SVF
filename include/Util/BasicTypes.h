@@ -68,7 +68,6 @@ typedef llvm::BasicBlock BasicBlock;
 typedef llvm::Value Value;
 typedef llvm::Instruction Instruction;
 typedef llvm::CallBase CallBase;
-typedef llvm::GlobalObject GlobalObject;
 typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
 typedef llvm::Module Module;
@@ -85,9 +84,6 @@ typedef llvm::StructType StructType;
 typedef llvm::ArrayType ArrayType;
 typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
-
-/// LLVM data layout
-typedef llvm::DataLayout DataLayout;
 
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
@@ -122,12 +118,8 @@ typedef llvm::succ_const_iterator succ_const_iterator;
 typedef llvm::GraphPrinter GraphPrinter;
 typedef llvm::IntegerType IntegerType;
 
-/// LLVM debug information
-typedef llvm::DIType DIType;
-typedef llvm::DICompositeType DICompositeType;
-typedef llvm::DIDerivedType DIDerivedType;
+// LLVM Debug Information
 typedef llvm::DISubprogram DISubprogram;
-namespace dwarf = llvm::dwarf;
 
 class SVFFunction : public SVFValue
 {

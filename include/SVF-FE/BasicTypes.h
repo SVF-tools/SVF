@@ -25,6 +25,7 @@
 #include <llvm/Support/SourceMgr.h>
 
 typedef llvm::LLVMContext LLVMContext;
+typedef llvm::GlobalObject GlobalObject;
 typedef llvm::Use Use;
 typedef llvm::ModulePass ModulePass;
 typedef llvm::IRBuilder<> IRBuilder;
@@ -47,6 +48,7 @@ typedef llvm::MetadataAsValue MetadataAsValue;
 typedef llvm::StructLayout StructLayout;
 typedef llvm::ConstantStruct ConstantStruct;
 typedef llvm::MemoryLocation MemoryLocation;
+typedef llvm::DataLayout DataLayout;
 
 // LLVM Aliases and constants
 typedef llvm::ConstantAggregate ConstantAggregate;
@@ -91,6 +93,9 @@ typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
 
 // LLVM Debug Information
+typedef llvm::DIType DIType;
+typedef llvm::DICompositeType DICompositeType;
+typedef llvm::DIDerivedType DIDerivedType;
 typedef llvm::DebugInfoFinder DebugInfoFinder;
 typedef llvm::DISubroutineType DISubroutineType;
 typedef llvm::DIBasicType DIBasicType;
@@ -98,6 +103,7 @@ typedef llvm::DISubrange DISubrange;
 typedef llvm::DINode DINode;
 typedef llvm::DINodeArray DINodeArray;
 typedef llvm::DITypeRefArray DITypeRefArray;
+namespace dwarf = llvm::dwarf;
 
 // Iterators.
 typedef llvm::inst_iterator inst_iterator;
@@ -118,6 +124,5 @@ typedef llvm::VectorType VectorType;
 #if (LLVM_VERSION_MAJOR >= 9)
 typedef llvm::FunctionCallee FunctionCallee;
 #endif
-
 
 #endif  // SVF_FE_BASIC_TYPES_H
