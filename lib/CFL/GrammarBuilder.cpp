@@ -68,7 +68,7 @@ const inline std::string GrammarBuilder::parseProduction() const
     return lines;
 }
 
-const inline std::vector<std::string> GrammarBuilder::loadWordProductions() const 
+const inline std::vector<std::string> GrammarBuilder::loadWordProductions() const
 {
     size_t pos = 0;
     std::string lines = parseProduction();

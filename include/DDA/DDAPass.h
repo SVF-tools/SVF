@@ -50,7 +50,7 @@ public:
     virtual void selectClient(SVFModule* module);
 
     /// Pass name
-    virtual inline StringRef getPassName() const
+    virtual inline std::string getPassName() const
     {
         return "DDAPass";
     }

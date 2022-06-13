@@ -10,6 +10,7 @@
 #include "MTA/MTA.h"
 #include "SVF-FE/DataFlowUtil.h"
 #include "SVF-FE/BasicTypes.h"
+#include "SVF-FE/LLVMUtil.h"
 
 #include <string>
 

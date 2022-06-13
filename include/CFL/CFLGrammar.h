@@ -146,7 +146,7 @@ public:
     }
 
     const Productions& getProdsFromSingleRHS(Symbol sym) const
-    {   
+    {
         auto it = singleRHS2Prods.find(sym);
         assert(it!=singleRHS2Prods.end() && "production (X -> sym) not found for sym!!");
         return it->second;

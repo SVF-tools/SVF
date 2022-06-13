@@ -1339,18 +1339,19 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE:
             {
+                assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
+
                 Value *vArg1 = cs.getArgument(1);
                 Value *vArg3 = cs.getArgument(3);
 
                 // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                 // Now we calculate the offset from base to vArg3
                 NodeID vnArg3 = pag->getValueNode(vArg3);
-                s32_t offset = pag->getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
+                s32_t offset = getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
 
                 // We get all flattened fields of base
                 vector<LocationSet> fields;
                 const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields, nullptr);
-                assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                 // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
                 // Note that arg0 is aligned with "offset".
@@ -1368,16 +1369,15 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_STD_RB_TREE_INCREMENT:
             {
+                assert(cs.arg_size() == 1 && "_Rb_tree_decrement should have one argument.\n");
                 NodeID vnD = pag->getValueNode(inst);
-
                 Value *vArg = cs.getArgument(0);
                 NodeID vnArg = pag->getValueNode(vArg);
-                s32_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
+                s32_t offset = getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
 
                 // We get all fields
                 vector<LocationSet> fields;
                 const Type *type = getBaseTypeAndFlattenedFields(vArg,fields,nullptr);
-                assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                 // We summarize the side effects: ret = arg->parent, ret = arg->left, ret = arg->right
                 // Note that arg0 is aligned with "offset".
@@ -1739,4 +1739,27 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
     // dump SVFIR
     if (Options::PAGDotGraph)
         pag->dump("svfir_final");
+}
+
+/*!
+ * Get a base SVFVar given a pointer
+ * Return the source node of its connected normal gep edge
+ * Otherwise return the node id itself
+ * s32_t offset : gep offset
+ */
+LocationSet SVFIRBuilder::getLocationSetFromBaseNode(NodeID nodeId)
+{
+    SVFVar* node  = pag->getGNode(nodeId);
+    SVFStmt::SVFStmtSetTy& geps = node->getIncomingEdges(SVFStmt::Gep);
+    /// if this node is already a base node
+    if(geps.empty())
+        return LocationSet(0);
+
+    assert(geps.size()==1 && "one node can only be connected by at most one gep edge!");
+    SVFVar::iterator it = geps.begin();
+    const GepStmt* gepEdge = SVFUtil::cast<GepStmt>(*it);
+    if(gepEdge->isVariantFieldGep())
+        return LocationSet(0);
+    else
+        return gepEdge->getLocationSet();
 }

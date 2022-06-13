@@ -53,6 +53,7 @@
 
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/CFG.h"
+#include "llvm/BinaryFormat/Dwarf.h"
 
 namespace SVF
 {
@@ -67,7 +68,6 @@ typedef llvm::BasicBlock BasicBlock;
 typedef llvm::Value Value;
 typedef llvm::Instruction Instruction;
 typedef llvm::CallBase CallBase;
-typedef llvm::GlobalObject GlobalObject;
 typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
 typedef llvm::Module Module;
@@ -78,7 +78,6 @@ typedef llvm::LoopInfo LoopInfo;
 /// LLVM outputs
 typedef llvm::raw_string_ostream raw_string_ostream;
 typedef llvm::raw_fd_ostream raw_fd_ostream;
-typedef llvm::StringRef StringRef;
 
 /// LLVM types
 typedef llvm::StructType StructType;
@@ -86,13 +85,9 @@ typedef llvm::ArrayType ArrayType;
 typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
 
-/// LLVM data layout
-typedef llvm::DataLayout DataLayout;
-
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
 typedef llvm::Constant Constant;
-typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::ConstantArray ConstantArray;
@@ -123,12 +118,8 @@ typedef llvm::succ_const_iterator succ_const_iterator;
 typedef llvm::GraphPrinter GraphPrinter;
 typedef llvm::IntegerType IntegerType;
 
-/// LLVM debug information
-typedef llvm::DIType DIType;
-typedef llvm::DICompositeType DICompositeType;
-typedef llvm::DIDerivedType DIDerivedType;
+// LLVM Debug Information
 typedef llvm::DISubprogram DISubprogram;
-namespace dwarf = llvm::dwarf;
 
 class SVFFunction : public SVFValue
 {
@@ -142,7 +133,7 @@ public:
     {
     }
 
-    SVFFunction(Function* f): SVFValue(f->getName(),SVFValue::SVFFunc),
+    SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
         isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f)
     {
     }
