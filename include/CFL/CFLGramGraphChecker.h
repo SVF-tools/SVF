@@ -51,6 +51,10 @@ public:
             if (graph->label2SymMap.find(pairV.first) != graph->label2SymMap.end())
             {
                 assert(graph->label2SymMap[pairV.first] == pairV.second);
+            } else
+            {
+                graph->label2SymMap.insert(std::make_pair (pairV.first,pairV.second));
+                graph->sym2LabelMap.insert(std::make_pair (pairV.second, pairV.first));
             }
         }
 

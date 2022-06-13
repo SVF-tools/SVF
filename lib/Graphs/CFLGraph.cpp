@@ -171,6 +171,10 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         {
             rawstr << ',' << "color=red";
         }
+        else
+        {
+            rawstr << ",style=invis";
+        }
 
         return rawstr.str();
     }

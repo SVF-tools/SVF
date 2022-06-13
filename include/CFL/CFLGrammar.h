@@ -66,7 +66,7 @@ public:
 
     Symbol insertTerminalSymbol(std::string strLit);
     Symbol insertNonTerminalSymbol(std::string strLit);
-    void insertAttribute(Symbol s);
+    void insertAttribute(Symbol s, Attribute a);
 
     inline static Kind getSymKind(Symbol sym)
     {

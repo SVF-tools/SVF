@@ -87,6 +87,7 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
     grammar->nonterminals = generalGrammar->nonterminals;
     grammar->totalSymbol = generalGrammar->totalSymbol;
     grammar->attributeSymbol = generalGrammar->attributeSymbol;
+    grammar->kind2AttrMap = generalGrammar->kind2AttrMap;
     ebnf_sign_replace('*', generalGrammar, grammar);
     ebnf_sign_replace('?', generalGrammar, grammar);
     ebnf_bin(generalGrammar, grammar);

@@ -144,15 +144,31 @@ GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string strLit)
     {
         if (strLit.compare(strLit.size()-2, 2, "_i")==0)
         {
-            insertAttribute(sym);
+            size_t last_index = strLit.find_last_not_of("0123456789");
+            std::string result = strLit.substr(last_index + 1);
+            Attribute a;
+            if(result == "")
+                a = 0;
+            else
+                a = stoi(result);
+            insertAttribute(sym, a);
         }
     }
     return sym;
 }
 
-void GrammarBase::insertAttribute(Symbol s)
+void GrammarBase::insertAttribute(Symbol s, Attribute a)
 {
     attributeSymbol.insert(s);
+    if (kind2AttrMap.find(s)!= kind2AttrMap.end())
+    {
+        kind2AttrMap[s].insert(a);
+    }
+    else
+    {
+        Set<CFLGrammar::Attribute> attrs {a};
+        kind2AttrMap.insert(make_pair(s, attrs));
+    }
 }
 
 CFLGrammar::CFLGrammar()
