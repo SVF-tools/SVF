@@ -37,30 +37,33 @@ class CFLGramGraphChecker
 public:
     void check(GrammarBase *grammar, CFLGraph *graph)
     {
-        /// Check all the symbol in grammar in graph With the same label
+        /// Check all kinds in grammar in graph with the same label
         for(auto pairV : grammar->terminals)
         {
-            if (graph->label2SymMap.find(pairV.first) != graph->label2SymMap.end())
+            if (graph->label2KindMap.find(pairV.first) != graph->label2KindMap.end())
             {
-                assert(graph->label2SymMap[pairV.first] == pairV.second);
+                assert(graph->label2KindMap[pairV.first] == pairV.second);
+                assert(graph->kind2LabelMap[pairV.second] == pairV.first);
             }
         }
 
         for(auto pairV : grammar->nonterminals)
         {
-            if (graph->label2SymMap.find(pairV.first) != graph->label2SymMap.end())
+            if (graph->label2KindMap.find(pairV.first) != graph->label2KindMap.end())
             {
-                assert(graph->label2SymMap[pairV.first] == pairV.second);
-            } else
+                assert(graph->label2KindMap[pairV.first] == pairV.second);
+                assert(graph->kind2LabelMap[pairV.second] == pairV.first);
+            } 
+            else
             {
-                graph->label2SymMap.insert(std::make_pair (pairV.first,pairV.second));
-                graph->sym2LabelMap.insert(std::make_pair (pairV.second, pairV.first));
+                graph->label2KindMap.insert(std::make_pair (pairV.first,pairV.second));
+                graph->kind2LabelMap.insert(std::make_pair (pairV.second, pairV.first));
             }
         }
 
-        /// Get Kind2Attr Map from Graph to Grammar
-        grammar->kind2AttrMap = graph->kind2AttrMap;
-        graph->startSymbol = grammar->startSymbol;
+        /// Get Kind2Attrs Map from Graph to Grammar
+        grammar->kind2AttrsMap = graph->kind2AttrsMap;
+        graph->startKind = grammar->startKind;
     }
 };
 

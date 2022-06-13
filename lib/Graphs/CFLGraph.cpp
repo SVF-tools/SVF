@@ -78,25 +78,25 @@ void CFLGraph::setMap(GrammarBase *grammar)
     externMap = true;
     for(auto pairV : grammar->terminals)
     {
-        if(label2SymMap.find(pairV.first) == label2SymMap.end())
+        if(label2KindMap.find(pairV.first) == label2KindMap.end())
         {
-            label2SymMap.insert(pairV);
+            label2KindMap.insert(pairV);
         }
-        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
+        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
         {
-            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
+            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
         }
     }
 
     for(auto pairV : grammar->nonterminals)
     {
-        if(label2SymMap.find(pairV.first) == label2SymMap.end())
+        if(label2KindMap.find(pairV.first) == label2KindMap.end())
         {
-            label2SymMap.insert(pairV);
+            label2KindMap.insert(pairV);
         }
-        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
+        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
         {
-            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
+            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
         }
     }
 }
@@ -106,13 +106,13 @@ void CFLGraph::setMap(Map<std::string, Symbol> &labelMap)
     externMap = true;
     for(auto pairV : labelMap)
     {
-        if(label2SymMap.find(pairV.first) == label2SymMap.end())
+        if(label2KindMap.find(pairV.first) == label2KindMap.end())
         {
-            label2SymMap.insert(pairV);
+            label2KindMap.insert(pairV);
         }
-        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
+        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
         {
-            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
+            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
         }
     }
 }
@@ -159,7 +159,7 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         std::string str;
         raw_string_ostream rawstr(str);
         std::string key = "";
-        for (auto &i : graph->label2SymMap)
+        for (auto &i : graph->label2KindMap)
         {
             if (i.second == edge->getEdgeKind())
             {
@@ -167,7 +167,7 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
             }
         }
         rawstr << "label=" << '"' <<key << '"';
-        if( graph->label2SymMap[key] == graph->startSymbol)
+        if( graph->label2KindMap[key] == graph->startKind)
         {
             rawstr << ',' << "color=red";
         }

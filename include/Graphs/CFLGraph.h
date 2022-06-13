@@ -78,10 +78,10 @@ class CFLGraph: public GenericCFLGraphTy
 public:
     typedef CFLGrammar::Symbol Symbol;
     typedef GenericNode<CFLNode,CFLEdge>::GEdgeSetTy CFLEdgeSet;
-    Map<std::string, Symbol> label2SymMap;
-    Map<Symbol, std::string> sym2LabelMap;
-    Symbol startSymbol;
-    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kind2AttrMap;
+    Map<std::string, Symbol> label2KindMap;
+    Map<Symbol, std::string> kind2LabelMap;
+    Symbol startKind;
+    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kind2AttrsMap;
     bool externMap;
     Symbol current;
 
@@ -107,16 +107,16 @@ public:
     /// add attribute to kind2Attribute Map
     void addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute)
     {
-        if(kind2AttrMap.find(kind) == kind2AttrMap.end())
+        if(kind2AttrsMap.find(kind) == kind2AttrsMap.end())
         {
             Set<CFLGrammar::Attribute> attrs {attribute};
-            kind2AttrMap.insert(make_pair(kind, attrs));
+            kind2AttrsMap.insert(make_pair(kind, attrs));
         }
         else
         {
-            if(kind2AttrMap[kind].find(attribute) == kind2AttrMap[kind].end())
+            if(kind2AttrsMap[kind].find(attribute) == kind2AttrsMap[kind].end())
             {
-                kind2AttrMap[kind].insert(attribute);
+                kind2AttrsMap[kind].insert(attribute);
             }
         }
     }

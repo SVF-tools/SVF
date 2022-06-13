@@ -106,7 +106,7 @@ public:
     /// Interface exposed to users of our pointer analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2)
     {
-        if(graph->hasEdge(graph->getGNode(node1), graph->getGNode(node2), graph->startSymbol))
+        if(graph->hasEdge(graph->getGNode(node1), graph->getGNode(node2), graph->startKind))
             return AliasResult::MayAlias;
         else
             return AliasResult::NoAlias;

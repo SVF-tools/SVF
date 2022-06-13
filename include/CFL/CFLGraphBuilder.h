@@ -86,19 +86,19 @@ public:
                     cflGraph->addAttribute(edgeLabel, offset);
                     edgeLabel = CFLGrammar::getAttributedKind(offset, edgeLabel);
                     cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                    std::string key = cflGraph->sym2LabelMap[edge->getEdgeKind()];
+                    std::string key = cflGraph->kind2LabelMap[edge->getEdgeKind()];
                     key.pop_back();
                     key.pop_back();    // _i standsfor attribute variable should place at last
                     key.append("bar_i");   // for example Gep_i should be Gepbar_i, not Gep_ibar
-                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(offset, cflGraph->label2SymMap[key]));
-                    cflGraph->addAttribute(cflGraph->label2SymMap[key], offset);
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(offset, cflGraph->label2KindMap[key]));
+                    cflGraph->addAttribute(cflGraph->label2KindMap[key], offset);
                 }
                 else
                 {
                     cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                    std::string key = cflGraph->sym2LabelMap[edge->getEdgeKind()];
+                    std::string key = cflGraph->kind2LabelMap[edge->getEdgeKind()];
                     key.append("bar");
-                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), cflGraph->label2SymMap[key]);
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), cflGraph->label2KindMap[key]);
                 }
             }
         }

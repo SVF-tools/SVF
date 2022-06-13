@@ -35,7 +35,7 @@
 
 using namespace SVF;
 
-GrammarBase::Symbol GrammarBase::str2Sym(std::string str) const
+GrammarBase::Kind GrammarBase::str2Kind(std::string str) const
 {
 
     auto tit = terminals.find(str);
@@ -46,17 +46,17 @@ GrammarBase::Symbol GrammarBase::str2Sym(std::string str) const
     if(nit!=nonterminals.end())
         return nit->second;
 
-    assert(false && "symbol not found!");
+    assert(false && "kind not found!");
     abort();
 }
 
-std::string GrammarBase::sym2Str(Symbol sym) const
+std::string GrammarBase::kind2Str(Kind kind) const
 {
 
     std::string key = "";
     for (auto &i : terminals)
     {
-        if (i.second == sym)
+        if (i.second == kind)
         {
             key = i.first;
             return key;
@@ -66,7 +66,7 @@ std::string GrammarBase::sym2Str(Symbol sym) const
     std::string nkey = "";
     for (auto &ni : nonterminals)
     {
-        if (ni.second == sym)
+        if (ni.second == kind)
         {
             nkey = ni.first;
             return nkey;
@@ -87,7 +87,7 @@ std::string GrammarBase::sym2StrDump(Symbol sym) const
         if (i.second == kind)
         {
             key = i.first;
-            if(this->attributeSymbol.find(kind) != this->attributeSymbol.end())
+            if(this->attributeKinds.find(kind) != this->attributeKinds.end())
             {
                 key.pop_back();
                 key.append(std::to_string(attribute));
@@ -102,7 +102,7 @@ std::string GrammarBase::sym2StrDump(Symbol sym) const
         if (ni.second == kind)
         {
             nkey = ni.first;
-            if(this->attributeSymbol.find(kind) != this->attributeSymbol.end())
+            if(this->attributeKinds.find(kind) != this->attributeKinds.end())
             {
                 nkey.pop_back();
                 nkey.append(std::to_string(attribute));
@@ -114,60 +114,53 @@ std::string GrammarBase::sym2StrDump(Symbol sym) const
     return "";
 }
 
-GrammarBase::Symbol GrammarBase::insertTerminalSymbol(std::string strLit)
+GrammarBase::Kind GrammarBase::insertTerminalKind(std::string kindStr)
 {
-    Symbol sym;
-    if (terminals.find(strLit) == terminals.end())
+    Kind kind;
+    if (terminals.find(kindStr) == terminals.end())
     {
-        sym = totalSymbol++;
-        terminals.insert({strLit, sym});
+        kind = totalKind++;
+        terminals.insert({kindStr, kind});
     }
     else
     {
-        sym = str2Sym(strLit);
+        kind = str2Kind(kindStr);
     }
-    return sym;
+    return kind;
 }
-GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string strLit)
+GrammarBase::Kind GrammarBase::insertNonTerminalKind(std::string kindStr)
 {
-    Symbol sym;
-    if (nonterminals.find(strLit) == nonterminals.end())
+    Kind kind;
+    if (nonterminals.find(kindStr) == nonterminals.end())
     {
-        sym = totalSymbol++;
-        nonterminals.insert({strLit, sym});
+        kind = totalKind++;
+        nonterminals.insert({kindStr, kind});
     }
     else
     {
-        sym = str2Sym(strLit);
+        kind = str2Kind(kindStr);
     }
-    if(strLit.size() >= 3)
+    if(kindStr.size() >= 3)
     {
-        if (strLit.compare(strLit.size()-2, 2, "_i")==0)
+        if (kindStr.compare(kindStr.size()-2, 2, "_i")==0)
         {
-            size_t last_index = strLit.find_last_not_of("0123456789");
-            std::string result = strLit.substr(last_index + 1);
-            Attribute a;
-            if(result == "")
-                a = 0;
-            else
-                a = stoi(result);
-            insertAttribute(sym, a);
+            insertAttribute(kind, 0);
         }
     }
-    return sym;
+    return kind;
 }
 
-void GrammarBase::insertAttribute(Symbol s, Attribute a)
+void GrammarBase::insertAttribute(Kind kind, Attribute attribute)
 {
-    attributeSymbol.insert(s);
-    if (kind2AttrMap.find(s)!= kind2AttrMap.end())
+    attributeKinds.insert(kind);
+    if (kind2AttrsMap.find(kind)!= kind2AttrsMap.end())
     {
-        kind2AttrMap[s].insert(a);
+        kind2AttrsMap[kind].insert(attribute);
     }
     else
     {
-        Set<CFLGrammar::Attribute> attrs {a};
-        kind2AttrMap.insert(make_pair(s, attrs));
+        Set<CFLGrammar::Attribute> attrs {attribute};
+        kind2AttrsMap.insert(make_pair(kind, attrs));
     }
 }
 
@@ -176,11 +169,11 @@ CFLGrammar::CFLGrammar()
     newTerminalSubscript = 0;
 }
 
-void CFLGrammar::dump()
+void CFLGrammar::dump() const
 {
     std::ofstream gramFile("Normailized_Grammar.txt");
-    gramFile << "Start Symbol:\n";
-    gramFile << '\t' << sym2Str(startSymbol) << '(' << startSymbol << ')' << ' ' << "\n\n";
+    gramFile << "Start Kind:\n";
+    gramFile << '\t' << kind2Str(startKind) << '(' << startKind << ')' << ' ' << "\n\n";
 
     gramFile << "Epsilon Production:\n";
     std::vector<std::string> strV;

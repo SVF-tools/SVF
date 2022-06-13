@@ -50,7 +50,7 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
 
     std::cout << std::boolalpha;
     u32_t lineNum = 0 ;
-    cflGraph->current = cflGraph->label2SymMap.size();
+    cflGraph->current = cflGraph->label2KindMap.size();
 
     while (getline(inputFile, lineString))
     {
@@ -79,28 +79,28 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
             }
             if (cflGraph->externMap == false)
             {
-                if (cflGraph->label2SymMap.find(matches.str(3)) != cflGraph->label2SymMap.end())
+                if (cflGraph->label2KindMap.find(matches.str(3)) != cflGraph->label2KindMap.end())
                 {
-                    cflGraph->addCFLEdge(src, dst, cflGraph->label2SymMap[matches.str(3)]);
+                    cflGraph->addCFLEdge(src, dst, cflGraph->label2KindMap[matches.str(3)]);
                 }
                 else
                 {
-                    cflGraph->label2SymMap.insert({matches.str(3), cflGraph->current++});
-                    cflGraph->addCFLEdge(src, dst, cflGraph->label2SymMap[matches.str(3)]);
+                    cflGraph->label2KindMap.insert({matches.str(3), cflGraph->current++});
+                    cflGraph->addCFLEdge(src, dst, cflGraph->label2KindMap[matches.str(3)]);
                 }
             }
             else
             {
-                if (cflGraph->label2SymMap.find(matches.str(3)) != cflGraph->label2SymMap.end())
+                if (cflGraph->label2KindMap.find(matches.str(3)) != cflGraph->label2KindMap.end())
                 {
-                    cflGraph->addCFLEdge(src, dst, cflGraph->label2SymMap[matches.str(3)]);
+                    cflGraph->addCFLEdge(src, dst, cflGraph->label2KindMap[matches.str(3)]);
                 }
                 else
                 {
                     if(Options::FlexSymMap == true)
                     {
-                        cflGraph->label2SymMap.insert({matches.str(3), cflGraph->current++});
-                        cflGraph->addCFLEdge(src, dst, cflGraph->label2SymMap[matches.str(3)]);
+                        cflGraph->label2KindMap.insert({matches.str(3), cflGraph->current++});
+                        cflGraph->addCFLEdge(src, dst, cflGraph->label2KindMap[matches.str(3)]);
                     }
                     else
                     {

@@ -3,15 +3,12 @@ Start:
 Productions:
    F -> ( Copy ) *;
    F -> ( Store V Load ) *;
-   F -> F Vgep;
-   F -> Vgepbar Fbar Gepbar_i Gep_i;
    Fbar -> ( Copybar ) *;
    Fbar -> ( Loadbar V Storebar ) *;
-   Fbar -> Vgepbar Fbar;
-   Fbar -> Gepbar_i Gep_i F Vgep;
+
    V -> Fbar V F;
    V -> Gepbar_i V Gep_i;
    V -> Addrbar Addr;
    V -> epsilon;
-   V -> Loadbar V Load;
+
    
