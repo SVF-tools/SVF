@@ -241,9 +241,6 @@ public:
     static const llvm::cl::opt<bool> TBHCStoreReuse;
     static const llvm::cl::opt<bool> TBHCAllReuse;
 
-    // TypeAnalysis.cpp
-    static const llvm::cl::opt<bool> GenICFG;
-
     // WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
     static const llvm::cl::opt<bool> SABERFULLSVFG;

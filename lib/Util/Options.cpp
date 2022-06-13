@@ -739,14 +739,6 @@ const llvm::cl::opt<bool> Options::TBHCAllReuse(
 );
 
 
-// TypeAnalysis.cpp
-const llvm::cl::opt<bool> Options::GenICFG(
-    "gen-icfg",
-    llvm::cl::init(true),
-    llvm::cl::desc("Generate ICFG graph")
-);
-
-
 //WPAPass.cpp
 const llvm::cl::opt<bool> Options::AnderSVFG(
     "svfg",
