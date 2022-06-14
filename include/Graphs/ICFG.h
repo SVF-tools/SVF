@@ -33,11 +33,13 @@
 #include "Graphs/ICFGNode.h"
 #include "Graphs/ICFGEdge.h"
 #include "Util/WorkList.h"
+#include "MemoryModel/SVFLoop.h"
 
 namespace SVF
 {
 
 class PTACallGraph;
+class LLVMLoopAnalysis;
 
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
@@ -47,6 +49,7 @@ class ICFG : public GenericICFGTy
 {
 
     friend class ICFGBuilder;
+    friend class LLVMLoopAnalysis;
 
 public:
 
@@ -60,6 +63,7 @@ public:
     typedef Map<const Instruction*, CallICFGNode *> CSToCallNodeMapTy;
     typedef Map<const Instruction*, RetICFGNode *> CSToRetNodeMapTy;
     typedef Map<const Instruction*, IntraICFGNode *> InstToBlockNodeMapTy;
+    typedef Map<const ICFGNode *, const SVFLoop *> ICFGNodeToSVFLoop;
 
     NodeID totalICFGNode;
 
@@ -70,15 +74,15 @@ private:
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetICFGNode
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
     GlobalICFGNode* globalBlockNode; ///< unique basic block for all globals
+    ICFGNodeToSVFLoop icfgNodeToSVFLoop; ///< map ICFG node to the SVF loop where it resides
+
 
 public:
     /// Constructor
     ICFG();
 
     /// Destructor
-    virtual ~ICFG()
-    {
-    }
+    virtual ~ICFG();
 
     /// Get a ICFG node
     inline ICFGNode* getICFGNode(NodeID id) const
@@ -110,6 +114,25 @@ public:
 
     /// update ICFG for indirect calls
     void updateCallGraph(PTACallGraph* callgraph);
+
+    /// Whether node is in a loop
+    inline bool isInLoop(const ICFGNode *node) const {
+        return getSVFLoop(node) != nullptr;
+    }
+
+    /// Whether node is in a loop
+    inline bool isInLoop(const Instruction *inst) {
+        return getSVFLoop(getICFGNode(inst)) != nullptr;
+    }
+
+    /// Get loop of a node
+    inline const SVFLoop *getSVFLoop(const ICFGNode *node) const {
+        auto it = icfgNodeToSVFLoop.find(node);
+        if (it != icfgNodeToSVFLoop.end())
+            return it->second;
+        else
+            return nullptr;
+    }
 
 protected:
     /// Remove a SVFG edge

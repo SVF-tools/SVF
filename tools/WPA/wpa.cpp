@@ -29,8 +29,6 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "WPA/WPAPass.h"
 #include "Util/Options.h"
-#include "SVF-FE/LLVMLoopAnalysis.h"
-#include "SVF-FE/SVFIRBuilder.h"
 
 using namespace llvm;
 using namespace std;
@@ -51,16 +49,8 @@ int main(int argc, char ** argv)
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
 
-
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     svfModule->buildSymbolTableInfo();
-
-    if (Options::LoopAnalysis) {
-        SVFIRBuilder builder;
-        SVFIR *svfir = builder.build(svfModule);
-        LLVMLoopAnalysis* loop_ana = new LLVMLoopAnalysis();
-        loop_ana->build(svfir);
-    }
 
     WPAPass *wpa = new WPAPass();
     wpa->runOnModule(svfModule);

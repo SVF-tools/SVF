@@ -833,7 +833,7 @@ const llvm::cl::opt<bool> Options::FlexSymMap(
 
 const llvm::cl::opt<bool> Options::LoopAnalysis(
         "loop-analysis",
-        llvm::cl::init(false),
+        llvm::cl::init(true),
         llvm::cl::desc("analyze every func and get loop info and loop bounds.")
 );
 
