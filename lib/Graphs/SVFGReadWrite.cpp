@@ -38,12 +38,12 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-// Format of file 
+// Format of file
 // __Nodes__
 // SVFGNodeID: <id> >= <node type> >= MVER: {MRVERID: <id> MemRegion: pts{<pts> } MRVERSION: <version> MSSADef: <version>, pts{<pts> }} >= ICFGNodeID: <id>
 // __Edges__
 // srcSVFGNodeID: <id> => dstSVFGNodeID: <id> >= <edge type> | MVER: {MRVERID: <id> MemRegion: pts{<pts> } MRVERSION: <version> MSSADef: <version>, pts{<pts> }}
-void SVFG::writeToFile(const string& filename) 
+void SVFG::writeToFile(const string& filename)
 {
     outs() << "Writing SVFG analysis to '" << filename << "'...";
     error_code err;
@@ -96,13 +96,13 @@ void SVFG::writeToFile(const string& filename)
                     it != eit; it++)
             {
                 opvers.insert(make_pair(it->first, it->second));
-            }              
-                // opvers
+            }
+            // opvers
             F.os() << " >= MVER: {";
             F.os() << *phiNode->getResVer();
             F.os() << "} >= ICFGNodeID: " << pag->getICFG()->getICFGNode(&(phiNode->getICFGNode()->getBB()->front()))->getId();
             F.os() << " >= OPVers: {";
-            for (auto x: opvers) 
+            for (auto x: opvers)
             {
                 const MRVer* op = x.second;
                 F.os() << "{" << *op << "}" << ",";
@@ -200,11 +200,12 @@ void SVFG::writeToFile(const string& filename)
     {
         outs() << "\n";
         F.keep();
-        return;       
+        return;
     }
 }
 
-void SVFG::readFile(const string& filename){
+void SVFG::readFile(const string& filename)
+{
     outs() << "Loading SVFG analysis results from '" << filename << "'...";
     ifstream F(filename.c_str());
     if (!F.is_open())
@@ -234,42 +235,55 @@ void SVFG::readFile(const string& filename){
         if (line.find("__Edges__") != std::string::npos)
             break;
 
-        std::string s = line; 
+        std::string s = line;
         std::string delimiter = " >= ";
-        string temp; 
+        string temp;
         int index = 0;
         //implement delimiter to split string using ">="
-        size_t next = 0; size_t last = 0; size_t outer_last = 0; 
+        size_t next = 0;
+        size_t last = 0;
+        size_t outer_last = 0;
         size_t nextTemp; //size_t lastTemp;
-        NodeID id = 0; 
+        NodeID id = 0;
         string type;
         string MR;
-        string basicBlock; 
+        string basicBlock;
         string opVer;
         //inner loop through to get each element in the line
-        while ((next = s.find(delimiter, last)) != string::npos) 
-        {   
-            temp = s.substr(last, next-last); 
-            last = next + 4; 
-            outer_last = next + 4; 
-            if(index == 0) 
+        while ((next = s.find(delimiter, last)) != string::npos)
+        {
+            temp = s.substr(last, next-last);
+            last = next + 4;
+            outer_last = next + 4;
+            if(index == 0)
             {
                 nextTemp = temp.find("SVFGNodeID: ") + 12;
                 id = atoi(temp.substr(nextTemp).c_str());
             }
-            if(index == 1) {type = temp;}
+            if(index == 1)
+            {
+                type = temp;
+            }
             if(index > 1)
             {
-                if(index == 2) {MR = temp;}
-                if(index == 3) {basicBlock = temp;}
+                if(index == 2)
+                {
+                    MR = temp;
+                }
+                if(index == 3)
+                {
+                    basicBlock = temp;
+                }
             }
-            index++; 
+            index++;
         }
-        MRVer* tempMRVer; 
+        MRVer* tempMRVer;
         if(!MR.empty())
         {
             tempMRVer = getMRVERFromString(MR);
-        } else {
+        }
+        else
+        {
             tempMRVer = getMRVERFromString("");
         }
         //add nodes using the variables we extracted
@@ -278,30 +292,35 @@ void SVFG::readFile(const string& filename){
             outer_last = s.find("ICFGNodeID: ") + 12;
             NodeID FunID = atoi(s.substr(outer_last).c_str());
             addFormalINSVFGNode(SVFUtil::dyn_cast<FunEntryICFGNode>(pag->getICFG()->getICFGNode(FunID)), tempMRVer, id);
-        } else if(type == "FormalOUTSVFGNode")
+        }
+        else if(type == "FormalOUTSVFGNode")
         {
             outer_last = s.find("ICFGNodeID: ") + 12;
             NodeID FunID =  atoi(s.substr(outer_last).c_str());
             addFormalOUTSVFGNode(SVFUtil::dyn_cast<FunExitICFGNode>(pag->getICFG()->getICFGNode(FunID)), tempMRVer, id);
-        } else if(type == "ActualINSVFGNode")
+        }
+        else if(type == "ActualINSVFGNode")
         {
             outer_last = s.find("ICFGNodeID: ") + 12;
             NodeID CallSiteID = atoi(s.substr(outer_last).c_str());
             addActualINSVFGNode(SVFUtil::dyn_cast<CallICFGNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer, id);
-        } else if(type == "ActualOUTSVFGNode")
+        }
+        else if(type == "ActualOUTSVFGNode")
         {
             outer_last = s.find("ICFGNodeID: ") + 12;
             NodeID CallSiteID = atoi(s.substr(outer_last).c_str());
             addActualOUTSVFGNode(SVFUtil::dyn_cast<CallICFGNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer, id);
-        } else if (type == "PHISVFGNode") 
+        }
+        else if (type == "PHISVFGNode")
         {
-            opVer =  s.substr(outer_last); 
+            opVer =  s.substr(outer_last);
             next = opVer.find("{") + 1;
             last = opVer.find(",}");
             temp = opVer.substr(next, last);
             Map<u32_t,const MRVer*> OPVers;
-            int index = 0; 
-            while ((next = temp.find("{") + 1) != string::npos) {
+            int index = 0;
+            while ((next = temp.find("{") + 1) != string::npos)
+            {
                 if (temp == ",}")
                     break;
                 last = temp.find("},");
@@ -315,7 +334,8 @@ void SVFG::readFile(const string& filename){
             next = basicBlock.find("ICFGNodeID: ") + 12;
             temp = basicBlock.substr(next);
             addIntraMSSAPHISVFGNode(pag->getICFG()->getICFGNode(atoi(temp.c_str())), OPVers.begin(), OPVers.end(), tempMRVer, id);
-        } else 
+        }
+        else
         {
         }
 
@@ -325,38 +345,41 @@ void SVFG::readFile(const string& filename){
     stat->ATVFNodeEnd();
 
     stat->indVFEdgeStart();
-    // Edges 
+    // Edges
     while (F.good())
-    {   
+    {
         getline(F, line);
         if (line.empty())
             continue;
 
-        std::string s = line; 
+        std::string s = line;
         std::string delimiter = " >= ";
-        string temp; 
+        string temp;
         // int index = 0;
-        size_t last = 0; size_t next = 0; // size_t outer_last = 0;
+        size_t last = 0;
+        size_t next = 0; // size_t outer_last = 0;
         string edge;
         string attributes;
-        
+
         next = s.find(delimiter);
 
         edge = s.substr(0, next);
         attributes = s.substr(next + 4);
 
         // extract nodeIDs for src and dst nodes
-        NodeID src; NodeID dst;
+        NodeID src;
+        NodeID dst;
         next = edge.find("srcSVFGNodeID: ") + 15;
         last = edge.find(" => ");
         src = atoi(edge.substr(next, last-next).c_str());
         next = edge.find("dstSVFGNodeID: ") + 15;
         dst = atoi(edge.substr(next).c_str());
 
-        string type; string attribute;
+        string type;
+        string attribute;
         if (attributes.find(" | ") == string::npos)
             type = attributes;
-        else 
+        else
         {
             next = attributes.find(" | ");
             type = attributes.substr(0, next);
@@ -368,45 +391,53 @@ void SVFG::readFile(const string& filename){
             const FormalINSVFGNode* formalIn = SVFUtil::cast<FormalINSVFGNode>(getSVFGNode(src));
             const ActualINSVFGNode* actualIn = SVFUtil::cast<ActualINSVFGNode>(getSVFGNode(dst));
             addInterIndirectVFCallEdge(actualIn,formalIn, getCallSiteID(actualIn->getCallSite(), formalIn->getFun()));
-        } else if(type == "FormalOUTSVFGNode")
+        }
+        else if(type == "FormalOUTSVFGNode")
         {
             const FormalOUTSVFGNode* formalOut = SVFUtil::cast<FormalOUTSVFGNode>(getSVFGNode(src));
-            if (attribute.find("intra") != string::npos) 
+            if (attribute.find("intra") != string::npos)
             {
                 addIntraIndirectVFEdge(dst, src, formalOut->getMRVer()->getMR()->getPointsTo());
-            } 
+            }
             else
             {
                 const ActualOUTSVFGNode* actualOut = SVFUtil::cast<ActualOUTSVFGNode>(getSVFGNode(dst));
                 addInterIndirectVFRetEdge(formalOut,actualOut,getCallSiteID(actualOut->getCallSite(), formalOut->getFun()));
             }
-        } else if(type == "ActualINSVFGNode")
+        }
+        else if(type == "ActualINSVFGNode")
         {
             const ActualINSVFGNode* actualIn = SVFUtil::cast<ActualINSVFGNode>(getSVFGNode(src));
             addIntraIndirectVFEdge(dst,src, actualIn->getMRVer()->getMR()->getPointsTo());
-        } else if(type == "ActualOUTSVFGNode")
+        }
+        else if(type == "ActualOUTSVFGNode")
         {
             // There's no need to connect actual out node to its definition site in the same function.
-        } else if (type == "StoreNode" || type == "LoadNode" || type == "PHISVFGNode")
+        }
+        else if (type == "StoreNode" || type == "LoadNode" || type == "PHISVFGNode")
         {
-            MRVer* tempMRVer; 
+            MRVer* tempMRVer;
             tempMRVer = getMRVERFromString(attribute);
             addIntraIndirectVFEdge(dst,src, tempMRVer->getMR()->getPointsTo());
-        } else {
+        }
+        else
+        {
         }
     }
     stat->indVFEdgeEnd();
     connectFromGlobalToProgEntry();
 }
 
-MRVer* SVFG::getMRVERFromString(const string& s) 
+MRVer* SVFG::getMRVERFromString(const string& s)
 {
-    if(s == "") {
+    if(s == "")
+    {
         return NULL;
     }
     string temp;
-    size_t last = 0; size_t next = 0; 
-    MRVer* tempMRVer; 
+    size_t last = 0;
+    size_t next = 0;
+    MRVer* tempMRVer;
     MemRegion* tempMemRegion;
     MSSADEF* tempDef;
     //{create Memory Region object
@@ -417,7 +448,7 @@ MRVer* SVFG::getMRVERFromString(const string& s)
     NodeBS dstPts;
     string point;
     stringstream ss(temp);
-    while (getline(ss, point, ' ')) 
+    while (getline(ss, point, ' '))
     {
         istringstream sss(point);
         NodeID obj;

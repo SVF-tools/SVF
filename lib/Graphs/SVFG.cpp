@@ -227,15 +227,15 @@ void SVFG::buildSVFG()
 
     stat->startClk();
     if (!Options::ReadSVFG.empty())
-    {       
-        readFile(Options::ReadSVFG);
-    } 
-    else 
     {
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
-    stat->ATVFNodeStart();
-    addSVFGNodesForAddrTakenVars();
-    stat->ATVFNodeEnd();
+        readFile(Options::ReadSVFG);
+    }
+    else
+    {
+        DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
+        stat->ATVFNodeStart();
+        addSVFGNodesForAddrTakenVars();
+        stat->ATVFNodeEnd();
         DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Indirect Edge\n"));
         stat->indVFEdgeStart();
         connectIndirectSVFGEdges();
@@ -324,7 +324,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
  */
 void SVFG::connectIndirectSVFGEdges()
 {
-    
+
     for(iterator it = begin(), eit = end(); it!=eit; ++it)
     {
         NodeID nodeId = it->first;

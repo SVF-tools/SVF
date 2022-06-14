@@ -472,13 +472,13 @@ llvm::cl::opt<bool> Options::OPTSVFG(
 );
 
 const llvm::cl::opt<std::string> Options::WriteSVFG(
-    "write-svfg",  
+    "write-svfg",
     llvm::cl::init(""),
     llvm::cl::desc("Write SVFG's analysis results to a file")
 );
 
 const llvm::cl::opt<std::string> Options::ReadSVFG(
-    "read-svfg",  
+    "read-svfg",
     llvm::cl::init(""),
     llvm::cl::desc("Read SVFG's analysis results from a file")
 );
