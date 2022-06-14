@@ -104,7 +104,8 @@ inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun)
     return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
 }
 
-static inline Type *getPtrElementType(const PointerType* pty) {
+static inline Type *getPtrElementType(const PointerType* pty)
+{
 #if (LLVM_VERSION_MAJOR < 14)
     return pty->getElementType();
 #else
