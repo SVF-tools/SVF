@@ -471,6 +471,17 @@ llvm::cl::opt<bool> Options::OPTSVFG(
     llvm::cl::desc("Optimize SVFG to eliminate formal-in and actual-out")
 );
 
+const llvm::cl::opt<std::string> Options::WriteSVFG(
+    "write-svfg",  
+    llvm::cl::init(""),
+    llvm::cl::desc("Write SVFG's analysis results to a file")
+);
+
+const llvm::cl::opt<std::string> Options::ReadSVFG(
+    "read-svfg",  
+    llvm::cl::init(""),
+    llvm::cl::desc("Read SVFG's analysis results from a file")
+);
 
 // FSMPTA.cpp
 const llvm::cl::opt<bool> Options::UsePCG(
