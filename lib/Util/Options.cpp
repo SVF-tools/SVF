@@ -837,4 +837,9 @@ const llvm::cl::opt<bool> Options::LoopAnalysis(
         llvm::cl::desc("analyze every func and get loop info and loop bounds.")
 );
 
+const llvm::cl::opt<unsigned> Options::LoopBound(
+        "loop-bound",
+        llvm::cl::init(2),
+        llvm::cl::desc("Maximum number of loop"));
+
 } // namespace SVF.

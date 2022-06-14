@@ -39,7 +39,6 @@ namespace SVF
 {
 
 class PTACallGraph;
-class LLVMLoopAnalysis;
 
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
@@ -49,7 +48,6 @@ class ICFG : public GenericICFGTy
 {
 
     friend class ICFGBuilder;
-    friend class LLVMLoopAnalysis;
 
 public:
 
@@ -123,6 +121,11 @@ public:
     /// Whether node is in a loop
     inline bool isInLoop(const Instruction *inst) {
         return getSVFLoop(getICFGNode(inst)) != nullptr;
+    }
+
+    /// Insert (node, loop) to icfgNodeToSVFLoop
+    inline std::pair<ICFGNodeToSVFLoop::iterator, bool> emplaceSVFLoop(const ICFGNode *node, const SVFLoop* loop) {
+        return icfgNodeToSVFLoop.emplace(node, loop);
     }
 
     /// Get loop of a node

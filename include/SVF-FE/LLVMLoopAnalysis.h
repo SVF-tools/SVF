@@ -34,22 +34,22 @@
 #include "MemoryModel/SVFLoop.h"
 
 namespace SVF {
-    class LLVMLoopAnalysis {
-    public:
+class LLVMLoopAnalysis {
+public:
 
-        /// Constructor
-        LLVMLoopAnalysis() {};
+    /// Constructor
+    LLVMLoopAnalysis() {};
 
-        /// Destructor
-        virtual ~LLVMLoopAnalysis() {}
+    /// Destructor
+    virtual ~LLVMLoopAnalysis() {}
 
-        /// We start the pass here
-        virtual bool buildLLVMLoops(SVFModule *mod, std::vector<const Loop *>& llvmLoops);
+    /// We start the pass here
+    virtual bool buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> &llvmLoops);
 
-        virtual void build(ICFG *icfg);
+    virtual void build(ICFG *icfg);
 
-        void buildSVFLoops(ICFG *icfg, std::vector<const Loop *>& llvmLoops);
-    };
+    void buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvmLoops);
+};
 } // end fo SVF
 
 #endif //SVF_LLVMLOOPANALYSIS_H

@@ -33,101 +33,103 @@
 #include "Util/SVFBasicTypes.h"
 
 namespace SVF {
-    class SVFLoop {
-        typedef Set<const ICFGEdge *> ICFGEdgeSet;
-        typedef Set<const ICFGNode *> ICFGNodeSet;
-    private:
-        ICFGEdgeSet entryICFGEdges, backICFGEdges, inICFGEdges, outICFGEdges;
-        ICFGNodeSet icfgNodes;
-        u32_t loopBound;
+class SVFLoop {
+    typedef Set<const ICFGEdge *> ICFGEdgeSet;
+    typedef Set<const ICFGNode *> ICFGNodeSet;
+private:
+    ICFGEdgeSet entryICFGEdges, backICFGEdges, inICFGEdges, outICFGEdges;
+    ICFGNodeSet icfgNodes;
+    u32_t loopBound;
 
-    public:
-        SVFLoop(const ICFGNodeSet &_nodes, u32_t _bound) :
-                icfgNodes(_nodes), loopBound(_bound) {
+public:
+    SVFLoop(const ICFGNodeSet &_nodes, u32_t _bound) :
+            icfgNodes(_nodes), loopBound(_bound) {
 
-        }
+    }
 
-        inline ICFGNodeSet::iterator ICFGNodesBegin() {
-            return icfgNodes.begin();
-        }
+    virtual ~SVFLoop() = default;
 
-        inline ICFGNodeSet::iterator ICFGNodesEnd() {
-            return icfgNodes.end();
-        }
+    inline ICFGNodeSet::iterator ICFGNodesBegin() {
+        return icfgNodes.begin();
+    }
 
-        inline bool isInLoop(const ICFGNode *icfgNode) const {
-            return icfgNodes.find(icfgNode) != icfgNodes.end();
-        }
+    inline ICFGNodeSet::iterator ICFGNodesEnd() {
+        return icfgNodes.end();
+    }
 
-        inline bool isEntryICFGEdge(const ICFGEdge *edge) const {
-            return entryICFGEdges.find(edge) != entryICFGEdges.end();
-        }
+    inline bool isInLoop(const ICFGNode *icfgNode) const {
+        return icfgNodes.find(icfgNode) != icfgNodes.end();
+    }
 
-        inline bool isBackICFGEdge(const ICFGEdge *edge) const {
-            return backICFGEdges.find(edge) != entryICFGEdges.end();
-        }
+    inline bool isEntryICFGEdge(const ICFGEdge *edge) const {
+        return entryICFGEdges.find(edge) != entryICFGEdges.end();
+    }
 
-        inline bool isInICFGEdge(const ICFGEdge *edge) const {
-            return inICFGEdges.find(edge) != entryICFGEdges.end();
-        }
+    inline bool isBackICFGEdge(const ICFGEdge *edge) const {
+        return backICFGEdges.find(edge) != entryICFGEdges.end();
+    }
 
-        inline bool isOutICFGEdge(const ICFGEdge *edge) const {
-            return outICFGEdges.find(edge) != entryICFGEdges.end();
-        }
+    inline bool isInICFGEdge(const ICFGEdge *edge) const {
+        return inICFGEdges.find(edge) != entryICFGEdges.end();
+    }
 
-        inline void addEntryICFGEdge(const ICFGEdge *edge) {
-            entryICFGEdges.insert(edge);
-        }
+    inline bool isOutICFGEdge(const ICFGEdge *edge) const {
+        return outICFGEdges.find(edge) != entryICFGEdges.end();
+    }
 
-        inline ICFGEdgeSet::iterator entryICFGEdgesBegin() {
-            return entryICFGEdges.begin();
-        }
+    inline void addEntryICFGEdge(const ICFGEdge *edge) {
+        entryICFGEdges.insert(edge);
+    }
 
-        inline ICFGEdgeSet::iterator entryICFGEdgesEnd() {
-            return entryICFGEdges.end();
-        }
+    inline ICFGEdgeSet::iterator entryICFGEdgesBegin() {
+        return entryICFGEdges.begin();
+    }
 
-        inline void addOutICFGEdge(const ICFGEdge *edge) {
-            outICFGEdges.insert(edge);
-        }
+    inline ICFGEdgeSet::iterator entryICFGEdgesEnd() {
+        return entryICFGEdges.end();
+    }
 
-        inline ICFGEdgeSet::iterator outICFGEdgesBegin() {
-            return outICFGEdges.begin();
-        }
+    inline void addOutICFGEdge(const ICFGEdge *edge) {
+        outICFGEdges.insert(edge);
+    }
 
-        inline ICFGEdgeSet::iterator outICFGEdgesEnd() {
-            return outICFGEdges.end();
-        }
+    inline ICFGEdgeSet::iterator outICFGEdgesBegin() {
+        return outICFGEdges.begin();
+    }
 
-        inline void addBackICFGEdge(const ICFGEdge *edge) {
-            backICFGEdges.insert(edge);
-        }
+    inline ICFGEdgeSet::iterator outICFGEdgesEnd() {
+        return outICFGEdges.end();
+    }
 
-        inline ICFGEdgeSet::iterator backICFGEdgesBegin() {
-            return backICFGEdges.begin();
-        }
+    inline void addBackICFGEdge(const ICFGEdge *edge) {
+        backICFGEdges.insert(edge);
+    }
 
-        inline ICFGEdgeSet::iterator backICFGEdgesEnd() {
-            return backICFGEdges.end();
-        }
+    inline ICFGEdgeSet::iterator backICFGEdgesBegin() {
+        return backICFGEdges.begin();
+    }
 
-        inline void addInICFGEdge(const ICFGEdge *edge) {
-            inICFGEdges.insert(edge);
-        }
+    inline ICFGEdgeSet::iterator backICFGEdgesEnd() {
+        return backICFGEdges.end();
+    }
 
-        inline ICFGEdgeSet::iterator inEdgesBegin() {
-            return inICFGEdges.begin();
-        }
+    inline void addInICFGEdge(const ICFGEdge *edge) {
+        inICFGEdges.insert(edge);
+    }
 
-        inline ICFGEdgeSet::iterator inEdgesEnd() {
-            return inICFGEdges.end();
-        }
+    inline ICFGEdgeSet::iterator inEdgesBegin() {
+        return inICFGEdges.begin();
+    }
 
-        inline void setLoopBound(u32_t _bound) { loopBound = _bound; }
+    inline ICFGEdgeSet::iterator inEdgesEnd() {
+        return inICFGEdges.end();
+    }
 
-        inline u32_t getLoopBound() const { return loopBound; }
-    };
+    inline void setLoopBound(u32_t _bound) { loopBound = _bound; }
 
+    inline u32_t getLoopBound() const { return loopBound; }
 };
+
+}
 
 #endif //SVF_SVFLOOP_H

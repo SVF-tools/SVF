@@ -77,14 +77,14 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
         Set<ICFGNode *> loop_ids;
         Set<const ICFGNode *> nodes;
         for (auto BB = llvmLoop->block_begin(); BB != llvmLoop->block_end(); ++BB) {
-            for (auto ins = (*BB)->begin(); ins != (*BB)->end(); ++ins) {
-                loop_ids.insert(icfg->getICFGNode(&*ins));
-                nodes.insert(icfg->getICFGNode(&*ins));
+            for (const auto & ins : **BB) {
+                loop_ids.insert(icfg->getICFGNode(&ins));
+                nodes.insert(icfg->getICFGNode(&ins));
             }
         }
-        auto *svf_loop = new SVFLoop(nodes, 1);
+        SVFLoop *svf_loop = new SVFLoop(nodes, Options::LoopBound);
         for (const auto &node: nodes) {
-            icfg->icfgNodeToSVFLoop.emplace(node, svf_loop);
+            icfg->emplaceSVFLoop(node, svf_loop);
         }
         // TODO: temp set bound 1
         // mark loop header's first inst

@@ -204,8 +204,14 @@ ICFG::ICFG(): totalICFGNode(0)
 
 ICFG::~ICFG()
 {
-    for (const auto &it: icfgNodeToSVFLoop)
-        delete it.second;
+    Set<const SVFLoop*> loops;
+    for (const auto &it: icfgNodeToSVFLoop) {
+        loops.insert(it.second);
+    }
+
+    for (const auto &it: loops) {
+        delete it;
+    }
     icfgNodeToSVFLoop.clear();
 }
 
