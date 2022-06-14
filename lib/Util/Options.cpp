@@ -831,4 +831,10 @@ const llvm::cl::opt<bool> Options::FlexSymMap(
     llvm::cl::desc("extend exist sym map while read graph from dot if sym not in map.")
 );
 
+const llvm::cl::opt<bool> Options::LoopAnalysis(
+        "loop-analysis",
+        llvm::cl::init(false),
+        llvm::cl::desc("analyze every func and get loop info and loop bounds.")
+);
+
 } // namespace SVF.

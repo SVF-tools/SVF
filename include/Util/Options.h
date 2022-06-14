@@ -260,6 +260,9 @@ public:
     static const llvm::cl::opt<bool> GraphIsFromDot;
     static const llvm::cl::opt<bool> GrammarIsEBNF;
     static const llvm::cl::opt<bool> FlexSymMap;
+
+    // Loop Analysis
+    static const llvm::cl::opt<bool> LoopAnalysis;
 };
 }  // namespace SVF
 
