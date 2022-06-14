@@ -808,7 +808,7 @@ ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs1, const CallICFGNod
         return ModRefInfo::NoModRef;
 }
 
-llvm::raw_ostream& SVF::operator<<(llvm::raw_ostream &o, const MRVer& mrver)
+std::ostream& SVF::operator<<(std::ostream &o, const MRVer& mrver)
 {
     o << "MRVERID: " << mrver.getID() <<" MemRegion: " << mrver.getMR()->dumpStr() << " MRVERSION: " << mrver.getSSAVersion() << " MSSADef: " << mrver.getDef()->getType() << ", "
       << mrver.getDef()->getMR()->dumpStr() ;
