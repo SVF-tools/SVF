@@ -503,7 +503,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
 
     if (refTy)
     {
-        Type *objTy = refTy->getElementType();
+        Type *objTy = getPtrElementType(refTy);
         ObjTypeInfo* typeInfo = new ObjTypeInfo(objTy, Options::MaxFieldLimit);
         initTypeInfo(typeInfo,val);
         return typeInfo;
@@ -535,7 +535,7 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 
     const PointerType * refty = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(refty && "this value should be a pointer type!");
-    Type* elemTy = refty->getElementType();
+    Type* elemTy = getPtrElementType(refty);
     bool isPtrObj = false;
     // Find the inter nested array element
     while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(elemTy))

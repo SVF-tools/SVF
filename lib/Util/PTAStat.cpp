@@ -221,6 +221,7 @@ void PTAStat::performStat()
     generalNumMap[NumOfObjsHasConstStruct] = numOfHasConstStruct;
     generalNumMap[NumOfObjsHasConstArray] = numOfHasConstArray;
     generalNumMap[NumOfNonPtrObjs] = numOfScalar;
+    generalNumMap[NumOfConstantObjs] = numOfConstant;
 
     generalNumMap[NumOfIndirectCallSites] = pag->getIndirectCallsites().size();
     generalNumMap["TotalCallSite"] = pag->getCallSiteSet().size();

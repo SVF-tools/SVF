@@ -277,7 +277,7 @@ void PointerAnalysis::dumpAllTypes()
         Type* type = node->getValue()->getType();
         SymbolTableInfo::SymbolInfo()->printFlattenFields(type);
         if (PointerType* ptType = SVFUtil::dyn_cast<PointerType>(type))
-            SymbolTableInfo::SymbolInfo()->printFlattenFields(ptType->getElementType());
+            SymbolTableInfo::SymbolInfo()->printFlattenFields(getPtrElementType(ptType));
     }
 }
 

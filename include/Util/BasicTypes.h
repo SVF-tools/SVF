@@ -51,6 +51,10 @@
 #include <llvm/ADT/GraphTraits.h>		// for Graphtraits
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
 
+#if (LLVM_VERSION_MAJOR >= 14)
+#include <llvm/BinaryFormat/Dwarf.h>
+#endif
+
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/BinaryFormat/Dwarf.h"

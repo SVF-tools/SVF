@@ -275,7 +275,7 @@ const Value* SVFUtil::getUniqueUseViaCastInst(const Value* val)
     const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(type && "this value should be a pointer type!");
     /// If type is void* (i8*) and val is only used at a bitcast instruction
-    if (IntegerType *IT = SVFUtil::dyn_cast<IntegerType>(type->getPointerElementType()))
+    if (IntegerType *IT = SVFUtil::dyn_cast<IntegerType>(getPtrElementType(type)))
     {
         if (IT->getBitWidth() == 8 && val->getNumUses()==1)
         {
@@ -314,7 +314,7 @@ const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst)
     }
 
     assert(type && "not a pointer type?");
-    return type->getElementType();
+    return getPtrElementType(type);
 }
 
 /*!
