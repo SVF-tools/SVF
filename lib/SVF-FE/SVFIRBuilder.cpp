@@ -135,7 +135,8 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
     if (Options::DumpICFG)
         pag->getICFG()->dump("icfg_initial");
 
-    if (Options::LoopAnalysis) {
+    if (Options::LoopAnalysis)
+    {
         LLVMLoopAnalysis loopAnalysis;
         loopAnalysis.build(pag->getICFG());
     }

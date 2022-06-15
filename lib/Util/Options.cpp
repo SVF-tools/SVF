@@ -832,14 +832,14 @@ const llvm::cl::opt<bool> Options::FlexSymMap(
 );
 
 const llvm::cl::opt<bool> Options::LoopAnalysis(
-        "loop-analysis",
-        llvm::cl::init(true),
-        llvm::cl::desc("analyze every func and get loop info and loop bounds.")
+    "loop-analysis",
+    llvm::cl::init(true),
+    llvm::cl::desc("analyze every func and get loop info and loop bounds.")
 );
 
 const llvm::cl::opt<unsigned> Options::LoopBound(
-        "loop-bound",
-        llvm::cl::init(1),
-        llvm::cl::desc("Maximum number of loop"));
+    "loop-bound",
+    llvm::cl::init(1),
+    llvm::cl::desc("Maximum number of loop"));
 
 } // namespace SVF.

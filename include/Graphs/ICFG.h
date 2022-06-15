@@ -115,23 +115,27 @@ public:
     void updateCallGraph(PTACallGraph* callgraph);
 
     /// Whether node is in a loop
-    inline bool isInLoop(const ICFGNode *node) {
+    inline bool isInLoop(const ICFGNode *node)
+    {
         auto it = icfgNodeToSVFLoopVec.find(node);
         return it != icfgNodeToSVFLoopVec.end();
     }
 
     /// Whether node is in a loop
-    inline bool isInLoop(const Instruction *inst) {
+    inline bool isInLoop(const Instruction *inst)
+    {
         return isInLoop(getICFGNode(inst));
     }
 
     /// Insert (node, loop) to icfgNodeToSVFLoopVec
-    inline void addNodeToSVFLoop(const ICFGNode *node, const SVFLoop* loop) {
+    inline void addNodeToSVFLoop(const ICFGNode *node, const SVFLoop* loop)
+    {
         icfgNodeToSVFLoopVec[node].push_back(loop);
     }
 
     /// Get loops where a node resides
-    inline SVFLoopVec& getSVFLoops(const ICFGNode *node) {
+    inline SVFLoopVec& getSVFLoops(const ICFGNode *node)
+    {
         auto it = icfgNodeToSVFLoopVec.find(node);
         assert(it != icfgNodeToSVFLoopVec.end() && "node not in loop");
         return it->second;

@@ -33,8 +33,10 @@
 #include "MemoryModel/SVFIR.h"
 #include "MemoryModel/SVFLoop.h"
 
-namespace SVF {
-class LLVMLoopAnalysis {
+namespace SVF
+{
+class LLVMLoopAnalysis
+{
 public:
 
     /// Constructor
