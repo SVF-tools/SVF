@@ -61,7 +61,8 @@ public:
     typedef Map<const Instruction*, CallICFGNode *> CSToCallNodeMapTy;
     typedef Map<const Instruction*, RetICFGNode *> CSToRetNodeMapTy;
     typedef Map<const Instruction*, IntraICFGNode *> InstToBlockNodeMapTy;
-    typedef Map<const ICFGNode *, const SVFLoop *> ICFGNodeToSVFLoop;
+    typedef std::vector<const SVFLoop *> SVFLoopVec;
+    typedef Map<const ICFGNode *, SVFLoopVec> ICFGNodeToSVFLoopVec;
 
     NodeID totalICFGNode;
 
@@ -72,7 +73,7 @@ private:
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetICFGNode
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
     GlobalICFGNode* globalBlockNode; ///< unique basic block for all globals
-    ICFGNodeToSVFLoop icfgNodeToSVFLoop; ///< map ICFG node to the SVF loop where it resides
+    ICFGNodeToSVFLoopVec icfgNodeToSVFLoopVec; ///< map ICFG node to the SVF loops where it resides
 
 
 public:
@@ -114,27 +115,26 @@ public:
     void updateCallGraph(PTACallGraph* callgraph);
 
     /// Whether node is in a loop
-    inline bool isInLoop(const ICFGNode *node) const {
-        return getSVFLoop(node) != nullptr;
+    inline bool isInLoop(const ICFGNode *node) {
+        auto it = icfgNodeToSVFLoopVec.find(node);
+        return it != icfgNodeToSVFLoopVec.end();
     }
 
     /// Whether node is in a loop
     inline bool isInLoop(const Instruction *inst) {
-        return getSVFLoop(getICFGNode(inst)) != nullptr;
+        return isInLoop(getICFGNode(inst));
     }
 
-    /// Insert (node, loop) to icfgNodeToSVFLoop
-    inline std::pair<ICFGNodeToSVFLoop::iterator, bool> emplaceSVFLoop(const ICFGNode *node, const SVFLoop* loop) {
-        return icfgNodeToSVFLoop.emplace(node, loop);
+    /// Insert (node, loop) to icfgNodeToSVFLoopVec
+    inline void addNodeToSVFLoop(const ICFGNode *node, const SVFLoop* loop) {
+        icfgNodeToSVFLoopVec[node].push_back(loop);
     }
 
-    /// Get loop of a node
-    inline const SVFLoop *getSVFLoop(const ICFGNode *node) const {
-        auto it = icfgNodeToSVFLoop.find(node);
-        if (it != icfgNodeToSVFLoop.end())
-            return it->second;
-        else
-            return nullptr;
+    /// Get loops where a node resides
+    inline SVFLoopVec& getSVFLoops(const ICFGNode *node) {
+        auto it = icfgNodeToSVFLoopVec.find(node);
+        assert(it != icfgNodeToSVFLoopVec.end() && "node not in loop");
+        return it->second;
     }
 
 protected:

@@ -38,17 +38,19 @@ class LLVMLoopAnalysis {
 public:
 
     /// Constructor
-    LLVMLoopAnalysis() {};
+    LLVMLoopAnalysis() = default;;
 
     /// Destructor
-    virtual ~LLVMLoopAnalysis() {}
+    virtual ~LLVMLoopAnalysis() = default;
 
-    /// We start the pass here
-    virtual bool buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> &llvmLoops);
+    /// Build llvm loops based on LoopInfo analysis
+    virtual void buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> &llvmLoops);
 
+    /// Start from here
     virtual void build(ICFG *icfg);
 
-    void buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvmLoops);
+    /// Build SVF loops based on llvm loops
+    virtual void buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvmLoops);
 };
 } // end fo SVF
 

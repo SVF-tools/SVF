@@ -839,7 +839,7 @@ const llvm::cl::opt<bool> Options::LoopAnalysis(
 
 const llvm::cl::opt<unsigned> Options::LoopBound(
         "loop-bound",
-        llvm::cl::init(2),
+        llvm::cl::init(1),
         llvm::cl::desc("Maximum number of loop"));
 
 } // namespace SVF.
