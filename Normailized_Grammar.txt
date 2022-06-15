@@ -1,0 +1,39 @@
+Start Kind:
+	V(13) 
+
+Epsilon Production:
+	V(13) -> epsilon(12) 
+	X0(19) -> epsilon(12) 
+	X1(20) -> epsilon(12) 
+	X2(21) -> epsilon(12) 
+	X3(22) -> epsilon(12) 
+
+Single Production:
+	F(14) -> Addr(0) 
+	F(14) -> X0(19) 
+	F(14) -> X1(20) 
+	Fbar(18) -> Addrbar(6) 
+	Fbar(18) -> X2(21) 
+	Fbar(18) -> X3(22) 
+	X0(19) -> Copy(1) 
+	X2(21) -> Copybar(7) 
+
+Binary Production:
+	F(14) -> Addr(0) X0(19) 
+	F(14) -> Addr(0) X1(20) 
+	Fbar(18) -> Addrbar(6) X2(21) 
+	Fbar(18) -> Addrbar(6) X3(22) 
+	V(13) -> Addrbar(6) Addr(0) 
+	V(13) -> Fbar(18) X7(26) 
+	V(13) -> Gepbar_0(10) X6_0(25) 
+	V(13) -> Gepbar_1(266) X6_1(281) 
+	V(13) -> Gepbar_2(522) X6_2(537) 
+	X1(20) -> Store(2) X4(23) 
+	X3(22) -> Loadbar(9) X5(24) 
+	X4(23) -> V(13) Load(3) 
+	X5(24) -> V(13) Storebar(8) 
+	X6_0(25) -> V(13) Gep_0(4) 
+	X6_1(281) -> V(13) Gep_1(260) 
+	X6_2(537) -> V(13) Gep_2(516) 
+	X7(26) -> V(13) F(14) 
+

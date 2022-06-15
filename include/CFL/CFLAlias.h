@@ -70,21 +70,22 @@ public:
             Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
             GrammarBase *generalGrammar = gReader.build(ConstMap);
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph = cflGraphBuilder.buildBigraph(consCG);
-            cflChecker.check(generalGrammar, graph);
+            graph = cflGraphBuilder.buildBigraph(consCG, generalGrammar->startKind);
+            cflChecker.check(generalGrammar, &cflGraphBuilder, graph);
             grammar = normalizer.normalize(generalGrammar);
-            cflChecker.check(grammar, graph);
+            cflChecker.check(grammar, &cflGraphBuilder, graph);
+            svfir->dump("SVFIR");
+            grammar->dump();
             delete consCG;
             delete generalGrammar;
-            grammar->dump();
         }
         else
         {
             GrammarBase *generalGrammar = gReader.build();
             graph = cflGraphBuilder.buildFromDot(Options::InputFilename, generalGrammar);
-            cflChecker.check(generalGrammar, graph);
+            cflChecker.check(generalGrammar, &cflGraphBuilder, graph);
             grammar = normalizer.normalize(generalGrammar);
-            cflChecker.check(grammar, graph);
+            cflChecker.check(grammar, &cflGraphBuilder, graph);
             delete generalGrammar;
         }
         solver = new CFLSolver(graph, grammar);

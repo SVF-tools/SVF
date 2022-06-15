@@ -33,6 +33,68 @@
 
 namespace SVF
 {
+void CFLGraphBuilder::setMap(GrammarBase *grammar)
+{
+    externMap = true;
+    for(auto pairV : grammar->terminals)
+    {
+        if(label2KindMap.find(pairV.first) == label2KindMap.end())
+        {
+            label2KindMap.insert(pairV);
+        }
+        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+        {
+            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
+    }
+
+    for(auto pairV : grammar->nonterminals)
+    {
+        if(label2KindMap.find(pairV.first) == label2KindMap.end())
+        {
+            label2KindMap.insert(pairV);
+        }
+        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+        {
+            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
+    }
+}
+
+void CFLGraphBuilder::setMap(Map<std::string, Symbol> &labelMap)
+{
+    externMap = true;
+    for(auto pairV : labelMap)
+    {
+        if(label2KindMap.find(pairV.first) == label2KindMap.end())
+        {
+            label2KindMap.insert(pairV);
+        }
+        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+        {
+            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
+    }
+}
+
+/// add attribute to kind2Attribute Map
+void CFLGraphBuilder::addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute)
+{
+    if(kind2AttrsMap.find(kind) == kind2AttrsMap.end())
+    {
+        Set<CFLGrammar::Attribute> attrs {attribute};
+        kind2AttrsMap.insert(make_pair(kind, attrs));
+    }
+    else
+    {
+        if(kind2AttrsMap[kind].find(attribute) == kind2AttrsMap[kind].end())
+        {
+            kind2AttrsMap[kind].insert(attribute);
+        }
+    }
+}
+
+
 //// Build graph from file
 void CFLGraphBuilder::build(std::string filename, CFLGraph* cflGraph)
 {
@@ -40,8 +102,8 @@ void CFLGraphBuilder::build(std::string filename, CFLGraph* cflGraph)
 
 CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *grammar)
 {
-    CFLGraph *cflGraph = new CFLGraph();
-    cflGraph->setMap(grammar);
+    CFLGraph *cflGraph = new CFLGraph(grammar->startKind);
+    setMap(grammar);
     std::cout << "Building CFL Graph from dot file: " << fileName << "..\n";
     std::string lineString;
     std::ifstream inputFile(fileName);
@@ -50,7 +112,7 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
 
     std::cout << std::boolalpha;
     u32_t lineNum = 0 ;
-    cflGraph->current = cflGraph->label2KindMap.size();
+    current = label2KindMap.size();
 
     while (getline(inputFile, lineString))
     {
@@ -77,30 +139,30 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
             {
                 dst = cflGraph->getGNode(std::stoul(matches.str(2), nullptr, 16));
             }
-            if (cflGraph->externMap == false)
+            if (externMap == false)
             {
-                if (cflGraph->label2KindMap.find(matches.str(3)) != cflGraph->label2KindMap.end())
+                if (label2KindMap.find(matches.str(3)) != label2KindMap.end())
                 {
-                    cflGraph->addCFLEdge(src, dst, cflGraph->label2KindMap[matches.str(3)]);
+                    cflGraph->addCFLEdge(src, dst, label2KindMap[matches.str(3)]);
                 }
                 else
                 {
-                    cflGraph->label2KindMap.insert({matches.str(3), cflGraph->current++});
-                    cflGraph->addCFLEdge(src, dst, cflGraph->label2KindMap[matches.str(3)]);
+                    label2KindMap.insert({matches.str(3), current++});
+                    cflGraph->addCFLEdge(src, dst, label2KindMap[matches.str(3)]);
                 }
             }
             else
             {
-                if (cflGraph->label2KindMap.find(matches.str(3)) != cflGraph->label2KindMap.end())
+                if (label2KindMap.find(matches.str(3)) != label2KindMap.end())
                 {
-                    cflGraph->addCFLEdge(src, dst, cflGraph->label2KindMap[matches.str(3)]);
+                    cflGraph->addCFLEdge(src, dst, label2KindMap[matches.str(3)]);
                 }
                 else
                 {
                     if(Options::FlexSymMap == true)
                     {
-                        cflGraph->label2KindMap.insert({matches.str(3), cflGraph->current++});
-                        cflGraph->addCFLEdge(src, dst, cflGraph->label2KindMap[matches.str(3)]);
+                        label2KindMap.insert({matches.str(3), current++});
+                        cflGraph->addCFLEdge(src, dst, label2KindMap[matches.str(3)]);
                     }
                     else
                     {

@@ -77,16 +77,13 @@ class CFLGraph: public GenericCFLGraphTy
 {
 public:
     typedef CFLGrammar::Symbol Symbol;
+    typedef CFLGrammar::Kind Kind;
     typedef GenericNode<CFLNode,CFLEdge>::GEdgeSetTy CFLEdgeSet;
-    Map<std::string, Symbol> label2KindMap;
-    Map<Symbol, std::string> kind2LabelMap;
-    Symbol startKind;
-    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kind2AttrsMap;
-    bool externMap;
-    Symbol current;
+    Kind startKind;
 
-    CFLGraph()
+    CFLGraph(Kind kind)
     {
+        startKind = kind;
     }
     ~CFLGraph() override = default;
 
@@ -99,27 +96,6 @@ public:
     void dump(const std::string& filename);
 
     void view();
-
-    void setMap(Map<std::string, Symbol> &labelMap);
-    /// Set label2Sym from External
-    void setMap(GrammarBase *grammar);
-
-    /// add attribute to kind2Attribute Map
-    void addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute)
-    {
-        if(kind2AttrsMap.find(kind) == kind2AttrsMap.end())
-        {
-            Set<CFLGrammar::Attribute> attrs {attribute};
-            kind2AttrsMap.insert(make_pair(kind, attrs));
-        }
-        else
-        {
-            if(kind2AttrsMap[kind].find(attribute) == kind2AttrsMap[kind].end())
-            {
-                kind2AttrsMap[kind].insert(attribute);
-            }
-        }
-    }
 
 private:
     CFLEdgeSet cflEdgeSet;

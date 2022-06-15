@@ -1,0 +1,368 @@
+--------------------------------------------------------------
+1:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/CI-funptr.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:282, id:284> at ()
+--------------------------------------------------------------
+2:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/CI-global.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:292, id:294> at ()
+--------------------------------------------------------------
+3:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/CI-local.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:282, id:284> at ()
+--------------------------------------------------------------
+4:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/array-constIdx.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:301, id:305> at ()
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:292, id:296> at ()
+--------------------------------------------------------------
+5:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/array-varIdx.c.bc 
+
+
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:294, id:300> at ()
+--------------------------------------------------------------
+6:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/array-varIdx2.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:307, id:313> at ()
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:294, id:300> at ()
+--------------------------------------------------------------
+7:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/arraycopy1.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:26, id:28> at ()
+--------------------------------------------------------------
+8:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/branch-call.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:286, id:288> at ()
+--------------------------------------------------------------
+9:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/branch-intra.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:298, id:300> at ()
+--------------------------------------------------------------
+10:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/byteoffset1.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+11:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/constraint-cycle-copy.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:330, id:332> at ()
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:325, id:327> at ()
+--------------------------------------------------------------
+12:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/constraint-cycle-field.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+13:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/constraint-cycle-pwc.c.bc 
+
+
+--------------------------------------------------------------
+14:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/field-ptr-arith-constIdx.c.bc 
+
+
+[Pointer Analysis] Checking EXPECTEDFAIL_MAYALIAS
+[1;32m	 EXPECTED-FAILURE :[1;0mEXPECTEDFAIL_MAYALIAS check <id:298, id:299> at ()
+--------------------------------------------------------------
+15:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/field-ptr-arith-varIdx.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+16:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/funptr-global.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+17:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/funptr-nested-call.c.bc 
+
+
+--------------------------------------------------------------
+18:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/funptr-simple.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:285, id:287> at ()
+--------------------------------------------------------------
+19:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/funptr-struct.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+20:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/global-array.c.bc 
+
+
+--------------------------------------------------------------
+21:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/global-call-noparam.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:282, id:284> at ()
+--------------------------------------------------------------
+22:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/global-call-struct.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:334, id:337> at ()
+--------------------------------------------------------------
+23:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/global-call-twoparms.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+24:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/global-const-struct.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+25:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/global-funptr.c.bc 
+
+
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:301, id:303> at ()
+--------------------------------------------------------------
+26:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/global-initializer.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:300, id:303> at ()
+--------------------------------------------------------------
+27:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/global-nested-calls.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:303, id:306> at ()
+--------------------------------------------------------------
+28:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/global-simple.c.bc 
+
+
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:303, id:305> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:298, id:300> at ()
+--------------------------------------------------------------
+29:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/heap-indirect.c.bc 
+
+
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:318, id:321> at ()
+--------------------------------------------------------------
+30:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/heap-linkedlist.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:329, id:331> at ()
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:363, id:369> at ()
+--------------------------------------------------------------
+31:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/heap-wrapper.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:298, id:300> at ()
+--------------------------------------------------------------
+32:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/int2pointer.c.bc 
+
+
+[Pointer Analysis] Checking EXPECTEDFAIL_MAYALIAS
+[1;32m	 EXPECTED-FAILURE :[1;0mEXPECTEDFAIL_MAYALIAS check <id:296, id:298> at ()
+--------------------------------------------------------------
+33:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/mesa.c.bc 
+
+
+--------------------------------------------------------------
+34:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/ptr-dereference1.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:294, id:296> at ()
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:298, id:300> at ()
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:288, id:290> at ()
+--------------------------------------------------------------
+35:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/ptr-dereference2.c.bc 
+
+
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:302, id:304> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:298, id:299> at ()
+--------------------------------------------------------------
+36:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/ptr-dereference3.c.bc 
+
+
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:320, id:322> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:313, id:314> at ()
+--------------------------------------------------------------
+37:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/spec-equake.c.bc 
+
+
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:1002, id:1008> at ()
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:987, id:993> at ()
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:976, id:982> at ()
+--------------------------------------------------------------
+38:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/spec-gap.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+39:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/spec-mesa.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+40:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/spec-parser.c.bc 
+
+
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:319, id:321> at ()
+--------------------------------------------------------------
+41:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/spec-vortex.c.bc 
+
+
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:430, id:432> at ()
+--------------------------------------------------------------
+42:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-array.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:305, id:308> at ()
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:297, id:301> at ()
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:290, id:292> at ()
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:313, id:315> at ()
+--------------------------------------------------------------
+43:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-assignment-direct.c.bc 
+
+
+[Pointer Analysis] Checking MUSTALIAS
+--------------------------------------------------------------
+44:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-assignment-indirect.c.bc 
+
+
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:310, id:313> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:302, id:305> at ()
+--------------------------------------------------------------
+45:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-assignment-nested.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+46:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-field-multi-dereference.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+47:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-incompab-typecast-nested.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+48:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-incompab-typecast.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+49:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-instance-return.c.bc 
+
+
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:317, id:319> at ()
+[Pointer Analysis] Checking EXPECTEDFAIL_MAYALIAS
+[1;32m	 EXPECTED-FAILURE :[1;0mEXPECTEDFAIL_MAYALIAS check <id:312, id:314> at ()
+--------------------------------------------------------------
+50:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-nested-1-layer.c.bc 
+
+
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:303, id:308> at ()
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:313, id:318> at ()
+--------------------------------------------------------------
+51:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-nested-2-layers.c.bc 
+
+
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:342, id:344> at ()
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:336, id:338> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:330, id:333> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:324, id:326> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:311, id:314> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:303, id:307> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:296, id:298> at ()
+--------------------------------------------------------------
+52:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-nested-array1.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:300, id:305> at ()
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:292, id:294> at ()
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:311, id:313> at ()
+--------------------------------------------------------------
+53:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-nested-array2.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+--------------------------------------------------------------
+54:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-nested-array3.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
+[1;32m	 SUCCESS :[1;0mMAYALIAS check <id:304, id:309> at ()
+--------------------------------------------------------------
+55:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-onefld.c.bc 
+
+
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:312, id:313> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:307, id:309> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:300, id:302> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:293, id:296> at ()
+--------------------------------------------------------------
+56:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-simple.c.bc 
+
+
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:293, id:294> at ()
+--------------------------------------------------------------
+57:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/struct-twoflds.c.bc 
+
+
+[Pointer Analysis] Checking NOALIAS
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:324, id:327> at ()
+[1;32m	 SUCCESS :[1;0mNOALIAS check <id:305, id:307> at ()
+[Pointer Analysis] Checking MUSTALIAS
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:318, id:321> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:312, id:314> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:299, id:301> at ()
+[1;32m	 SUCCESS :[1;0mMUSTALIAS check <id:293, id:296> at ()
+--------------------------------------------------------------
+58:  /Users/mac/SVF-1/Test-Suite/test_cases_bc/basic_c_tests/structcopy1.c.bc 
+
+
+[Pointer Analysis] Checking MAYALIAS
