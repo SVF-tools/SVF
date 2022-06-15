@@ -1,4 +1,4 @@
-//===----- CFLGramGraphChecker.h -- CFL Checker for Grammar and Graph alignment --------------//
+//===----- CFLGramGraphChecker.h -- CFL Checker for Grammar and graphBuilder alignment --------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -35,34 +35,34 @@ namespace SVF
 class CFLGramGraphChecker
 {
 public:
-    void check(GrammarBase *grammar, CFLGraph *graph)
+    void check(GrammarBase *grammar, CFLGraphBuilder *graphBuilder, CFLGraph *graph)
     {
-        /// Check all kinds in grammar in graph with the same label
+        /// Check all kinds in grammar in graphBuilder with the same label
         for(auto pairV : grammar->terminals)
         {
-            if (graph->label2KindMap.find(pairV.first) != graph->label2KindMap.end())
+            if (graphBuilder->label2KindMap.find(pairV.first) != graphBuilder->label2KindMap.end())
             {
-                assert(graph->label2KindMap[pairV.first] == pairV.second);
-                assert(graph->kind2LabelMap[pairV.second] == pairV.first);
+                assert(graphBuilder->label2KindMap[pairV.first] == pairV.second);
+                assert(graphBuilder->kind2LabelMap[pairV.second] == pairV.first);
             }
         }
 
         for(auto pairV : grammar->nonterminals)
         {
-            if (graph->label2KindMap.find(pairV.first) != graph->label2KindMap.end())
+            if (graphBuilder->label2KindMap.find(pairV.first) != graphBuilder->label2KindMap.end())
             {
-                assert(graph->label2KindMap[pairV.first] == pairV.second);
-                assert(graph->kind2LabelMap[pairV.second] == pairV.first);
+                assert(graphBuilder->label2KindMap[pairV.first] == pairV.second);
+                assert(graphBuilder->kind2LabelMap[pairV.second] == pairV.first);
             } 
             else
             {
-                graph->label2KindMap.insert(std::make_pair (pairV.first,pairV.second));
-                graph->kind2LabelMap.insert(std::make_pair (pairV.second, pairV.first));
+                graphBuilder->label2KindMap.insert(std::make_pair (pairV.first,pairV.second));
+                graphBuilder->kind2LabelMap.insert(std::make_pair (pairV.second, pairV.first));
             }
         }
 
         /// Get Kind2Attrs Map from Graph to Grammar
-        grammar->kind2AttrsMap = graph->kind2AttrsMap;
+        grammar->kind2AttrsMap = graphBuilder->kind2AttrsMap;
         graph->startKind = grammar->startKind;
     }
 };

@@ -73,50 +73,6 @@ void CFLGraph::view()
     llvm::ViewGraph(this, "CFL Graph");
 }
 
-void CFLGraph::setMap(GrammarBase *grammar)
-{
-    externMap = true;
-    for(auto pairV : grammar->terminals)
-    {
-        if(label2KindMap.find(pairV.first) == label2KindMap.end())
-        {
-            label2KindMap.insert(pairV);
-        }
-        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
-        {
-            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-
-    for(auto pairV : grammar->nonterminals)
-    {
-        if(label2KindMap.find(pairV.first) == label2KindMap.end())
-        {
-            label2KindMap.insert(pairV);
-        }
-        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
-        {
-            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-}
-
-void CFLGraph::setMap(Map<std::string, Symbol> &labelMap)
-{
-    externMap = true;
-    for(auto pairV : labelMap)
-    {
-        if(label2KindMap.find(pairV.first) == label2KindMap.end())
-        {
-            label2KindMap.insert(pairV);
-        }
-        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
-        {
-            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-}
-
 namespace llvm
 {
 /*!
@@ -158,23 +114,23 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
         std::string str;
         raw_string_ostream rawstr(str);
-        std::string key = "";
-        for (auto &i : graph->label2KindMap)
-        {
-            if (i.second == edge->getEdgeKind())
-            {
-                key = i.first;
-            }
-        }
-        rawstr << "label=" << '"' <<key << '"';
-        if( graph->label2KindMap[key] == graph->startKind)
-        {
-            rawstr << ',' << "color=red";
-        }
-        else
-        {
-            rawstr << ",style=invis";
-        }
+        // std::string key = "";
+        // for (auto &i : graph->label2KindMap)
+        // {
+        //     if (i.second == edge->getEdgeKind())
+        //     {
+        //         key = i.first;
+        //     }
+        // }
+        // rawstr << "label=" << '"' <<key << '"';
+        // if( graph->label2KindMap[key] == graph->startKind)
+        // {
+        //     rawstr << ',' << "color=red";
+        // }
+        // else
+        // {
+        //     rawstr << ",style=invis";
+        // }
 
         return rawstr.str();
     }
