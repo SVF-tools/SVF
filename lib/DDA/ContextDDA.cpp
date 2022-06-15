@@ -336,7 +336,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
                 return true;
             if(var.get_cond().isConcreteCxt() == false)
                 return true;
-            if(loopInfoBuilder.getLoopInfo(fun)->getLoopFor(mallocSite->getParent()))
+            if(_pag->getICFG()->isInLoop(mallocSite))
                 return true;
         }
     }
