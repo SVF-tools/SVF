@@ -35,6 +35,7 @@
 #include "SVF-FE/CPPUtil.h"
 #include "Util/BasicTypes.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
+#include "SVF-FE/LLVMLoopAnalysis.h"
 #include "Util/Options.h"
 
 using namespace std;
@@ -134,6 +135,10 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
     if (Options::DumpICFG)
         pag->getICFG()->dump("icfg_initial");
 
+    if (Options::LoopAnalysis) {
+        LLVMLoopAnalysis loopAnalysis;
+        loopAnalysis.build(pag->getICFG());
+    }
     return pag;
 }
 

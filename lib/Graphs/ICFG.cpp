@@ -202,6 +202,20 @@ ICFG::ICFG(): totalICFGNode(0)
     addICFGNode(globalBlockNode);
 }
 
+ICFG::~ICFG()
+{
+    Set<const SVFLoop*> loops;
+    for (const auto &it: icfgNodeToSVFLoopVec) {
+        for (const auto &loop: it.second) {
+            loops.insert(loop);
+        }
+    }
+
+    for (const auto &it: loops) {
+        delete it;
+    }
+    icfgNodeToSVFLoopVec.clear();
+}
 
 /// Get a basic block ICFGNode
 ICFGNode* ICFG::getICFGNode(const Instruction* inst)
