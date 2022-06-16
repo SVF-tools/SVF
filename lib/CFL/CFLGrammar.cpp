@@ -35,6 +35,21 @@
 
 using namespace SVF;
 
+void GrammarBase::setRawProductions(Map<Symbol, Productions>& rawProductions)
+{
+    this->rawProductions = rawProductions;
+}
+
+void GrammarBase::setKind2AttrsMap(const Map<Kind,  Set<Attribute>>& kind2AttrsMap)
+{
+    this->kind2AttrsMap = kind2AttrsMap;
+}
+
+void GrammarBase::setAttributeKinds(const Set<Kind>& attributeKinds)
+{
+    this->attributeKinds = attributeKinds;
+}
+
 GrammarBase::Kind GrammarBase::str2Kind(std::string str) const
 {
 

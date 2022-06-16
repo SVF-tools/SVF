@@ -48,10 +48,10 @@ public:
     }
 
     /// Normalization with attribute expanded
-    CFLGrammar* normalize(const GrammarBase *generalGrammar);
+    CFLGrammar* normalize(GrammarBase *generalGrammar);
 
     /// Fill Every attribute in CFL grammar
-    CFLGrammar* fillAttribute(CFLGrammar *grammar, Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>> *kind2AttrsMap);
+    CFLGrammar* fillAttribute(CFLGrammar *grammar, const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttrsMap);
 
 private:
     /// Add nonterminal to tranfer long rules to binary rules
@@ -69,7 +69,7 @@ private:
 
     GrammarBase::Production getFilledProd(GrammarBase::Production &prod, CFLGrammar::Attribute attribute, CFLGrammar *grammar);
 
-    GrammarBase::Productions getFilledProductions(GrammarBase::Production &prod, Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> *kind2AttriMap, CFLGrammar *grammar);
+    GrammarBase::Productions getFilledProductions(GrammarBase::Production &prod,const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttriMap, CFLGrammar *grammar);
 };
 
 } // End namespace SVF

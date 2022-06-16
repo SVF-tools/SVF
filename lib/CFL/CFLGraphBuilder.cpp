@@ -33,50 +33,6 @@
 
 namespace SVF
 {
-void CFLGraphBuilder::setMap(GrammarBase *grammar)
-{
-    externMap = true;
-    for(auto pairV : grammar->terminals)
-    {
-        if(label2KindMap.find(pairV.first) == label2KindMap.end())
-        {
-            label2KindMap.insert(pairV);
-        }
-        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
-        {
-            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-
-    for(auto pairV : grammar->nonterminals)
-    {
-        if(label2KindMap.find(pairV.first) == label2KindMap.end())
-        {
-            label2KindMap.insert(pairV);
-        }
-        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
-        {
-            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-}
-
-void CFLGraphBuilder::setMap(Map<std::string, Symbol> &labelMap)
-{
-    externMap = true;
-    for(auto pairV : labelMap)
-    {
-        if(label2KindMap.find(pairV.first) == label2KindMap.end())
-        {
-            label2KindMap.insert(pairV);
-        }
-        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
-        {
-            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-}
-
 /// add attribute to kind2Attribute Map
 void CFLGraphBuilder::addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute)
 {
@@ -102,8 +58,32 @@ void CFLGraphBuilder::build(std::string filename, CFLGraph* cflGraph)
 
 CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *grammar)
 {
-    CFLGraph *cflGraph = new CFLGraph(grammar->startKind);
-    setMap(grammar);
+    CFLGraph *cflGraph = new CFLGraph(grammar->getStartKind());
+    externMap = true;
+    for(auto pairV : grammar->getTerminals())
+    {
+        if(label2KindMap.find(pairV.first) == label2KindMap.end())
+        {
+            label2KindMap.insert(pairV);
+        }
+        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+        {
+            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
+    }
+
+    for(auto pairV : grammar->getNonterminals())
+    {
+        if(label2KindMap.find(pairV.first) == label2KindMap.end())
+        {
+            label2KindMap.insert(pairV);
+        }
+        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+        {
+            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
+    }
+    
     std::cout << "Building CFL Graph from dot file: " << fileName << "..\n";
     std::string lineString;
     std::ifstream inputFile(fileName);

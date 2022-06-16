@@ -38,32 +38,32 @@ public:
     void check(GrammarBase *grammar, CFLGraphBuilder *graphBuilder, CFLGraph *graph)
     {
         /// Check all kinds in grammar in graphBuilder with the same label
-        for(auto pairV : grammar->terminals)
+        for(auto pairV : grammar->getTerminals())
         {
-            if (graphBuilder->label2KindMap.find(pairV.first) != graphBuilder->label2KindMap.end())
+            if (graphBuilder->getLabel2KindMap().find(pairV.first) != graphBuilder->getLabel2KindMap().end())
             {
-                assert(graphBuilder->label2KindMap[pairV.first] == pairV.second);
-                assert(graphBuilder->kind2LabelMap[pairV.second] == pairV.first);
+                assert(graphBuilder->getLabel2KindMap()[pairV.first] == pairV.second);
+                assert(graphBuilder->getKind2LabelMap()[pairV.second] == pairV.first);
             }
         }
 
-        for(auto pairV : grammar->nonterminals)
+        for(auto pairV : grammar->getNonterminals())
         {
-            if (graphBuilder->label2KindMap.find(pairV.first) != graphBuilder->label2KindMap.end())
+            if (graphBuilder->getLabel2KindMap().find(pairV.first) != graphBuilder->getLabel2KindMap().end())
             {
-                assert(graphBuilder->label2KindMap[pairV.first] == pairV.second);
-                assert(graphBuilder->kind2LabelMap[pairV.second] == pairV.first);
+                assert(graphBuilder->getLabel2KindMap()[pairV.first] == pairV.second);
+                assert(graphBuilder->getKind2LabelMap()[pairV.second] == pairV.first);
             } 
             else
             {
-                graphBuilder->label2KindMap.insert(std::make_pair (pairV.first,pairV.second));
-                graphBuilder->kind2LabelMap.insert(std::make_pair (pairV.second, pairV.first));
+                graphBuilder->getLabel2KindMap().insert(std::make_pair (pairV.first,pairV.second));
+                graphBuilder->getKind2LabelMap().insert(std::make_pair (pairV.second, pairV.first));
             }
         }
 
         /// Get Kind2Attrs Map from Graph to Grammar
-        grammar->kind2AttrsMap = graphBuilder->kind2AttrsMap;
-        graph->startKind = grammar->startKind;
+        grammar->setKind2AttrsMap(graphBuilder->getKind2AttrsMap());
+        graph->startKind = grammar->getStartKind();
     }
 };
 

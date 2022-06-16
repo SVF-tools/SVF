@@ -70,7 +70,7 @@ public:
             Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
             GrammarBase *generalGrammar = gReader.build(ConstMap);
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph = cflGraphBuilder.buildBigraph(consCG, generalGrammar->startKind);
+            graph = cflGraphBuilder.buildBigraph(consCG, generalGrammar->getStartKind());
             cflChecker.check(generalGrammar, &cflGraphBuilder, graph);
             grammar = normalizer.normalize(generalGrammar);
             cflChecker.check(grammar, &cflGraphBuilder, graph);

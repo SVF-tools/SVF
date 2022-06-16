@@ -40,13 +40,62 @@ public:
     typedef Set<Production> Productions;
     typedef u32_t Attribute;
     typedef u32_t Kind;
-    Map<std::string, Symbol> terminals;
-    Map<std::string, Symbol> nonterminals;
-    Symbol startKind;
-    Symbol totalKind;
-    Map<Symbol, Productions> rawProductions;
-    Set<Symbol> attributeKinds;    
-    Map<Kind,  Set<Attribute>> kind2AttrsMap;
+
+    inline Map<std::string, Kind>& getNonterminals()
+    {
+        return this->nonterminals;
+    }
+
+    inline void setNonterminals(Map<std::string, Kind>& nonterminals)
+    {
+        this->nonterminals = nonterminals;
+    }
+
+    inline Map<std::string, Kind>& getTerminals()
+    {
+        return this->terminals;
+    }
+
+    inline void setTerminals(Map<std::string, Kind>& terminals)
+    {
+        this->terminals = terminals;
+    }
+
+    inline Map<Symbol, Productions>& getRawProductions()
+    {
+        return this->rawProductions;
+    }
+
+    inline const Map<Kind,  Set<Attribute>>& getKind2AttrsMap() const
+    {
+        return this->kind2AttrsMap;
+    }
+
+    inline Kind getTotalKind()
+    {
+        return this->totalKind;
+    }
+
+    inline Kind getStartKind()
+    {
+        return this->startKind;
+    }
+
+    inline void setStartKind(Kind startKind)
+    {
+        this->startKind = startKind;
+    }
+
+    inline void setTotalKind(Kind totalKind)
+    {
+        this->totalKind = totalKind;
+    }
+
+    void setRawProductions(Map<Symbol, Productions>& rawProductions);
+
+    void setKind2AttrsMap(const Map<Kind,  Set<Attribute>>& kind2AttrsMap);
+
+    void setAttributeKinds(const Set<Kind>& attributeKind);   
 
     Kind str2Kind(std::string str) const;
 
@@ -59,7 +108,7 @@ public:
         return prod.at(pos);
     }
 
-    inline Set<Symbol>& getAttrSyms()
+    inline const Set<Symbol>& getAttrSyms() const
     {
         return this->attributeKinds;
     }
@@ -86,7 +135,14 @@ public:
 protected:
     static constexpr unsigned char EdgeKindMaskBits = 8;  ///< We use the lower 8 bits to denote edge kind
     static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
-
+    Kind startKind;
+private:
+    Set<Kind> attributeKinds;  
+    Map<Kind,  Set<Attribute>> kind2AttrsMap;
+    Map<Symbol, Productions> rawProductions;
+    Kind totalKind;
+    Map<std::string, Kind> nonterminals;
+    Map<std::string, Kind> terminals;
 };
 
 class CFLGrammar : public GrammarBase
@@ -194,7 +250,7 @@ private:
     Map<Symbol, Productions> singleRHS2Prods;
     Map<Symbol, Productions> firstRHS2Prods;
     Map<Symbol, Productions> secondRHS2Prods;
-    Symbol newTerminalSubscript;
+    Symbol newTerminalSubscript;  
 };
 
 }

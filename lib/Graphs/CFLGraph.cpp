@@ -114,24 +114,6 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
         std::string str;
         raw_string_ostream rawstr(str);
-        // std::string key = "";
-        // for (auto &i : graph->label2KindMap)
-        // {
-        //     if (i.second == edge->getEdgeKind())
-        //     {
-        //         key = i.first;
-        //     }
-        // }
-        // rawstr << "label=" << '"' <<key << '"';
-        // if( graph->label2KindMap[key] == graph->startKind)
-        // {
-        //     rawstr << ',' << "color=red";
-        // }
-        // else
-        // {
-        //     rawstr << ",style=invis";
-        // }
-
         return rawstr.str();
     }
 
