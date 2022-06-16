@@ -29,7 +29,7 @@
 
 #include "MemoryModel/SVFVariables.h"
 #include "Util/Options.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;

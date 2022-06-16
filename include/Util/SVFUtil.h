@@ -352,6 +352,130 @@ bool startAnalysisLimitTimer(unsigned timeLimit);
 /// timer or not (return value of startLimitTimer).
 void stopAnalysisLimitTimer(bool limitTimerSet);
 
+/// Return true if the call is an external call (external library in function summary table)
+/// If the libary function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
+//@{
+inline bool isExtCall(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_ext(fun);
+}
+
+/// Return true if the call is a heap allocator/reallocator
+//@{
+/// note that these two functions are not suppose to be used externally
+inline bool isHeapAllocExtFunViaRet(const SVFFunction* fun)
+{
+    return fun && (ExtAPI::getExtAPI()->is_alloc(fun)
+                   || ExtAPI::getExtAPI()->is_realloc(fun));
+}
+
+inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
+}
+
+/// Get the position of argument that holds an allocated heap object.
+//@{
+inline int getHeapAllocHoldingArgPosition(const SVFFunction* fun)
+{
+    return ExtAPI::getExtAPI()->get_alloc_arg_pos(fun);
+}
+
+/// Return true if the call is a heap reallocator
+//@{
+/// note that this function is not suppose to be used externally
+inline bool isReallocExtFun(const SVFFunction* fun)
+{
+    return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
+}
+
+/// Return true if the call is a heap dealloc or not
+//@{
+/// note that this function is not suppose to be used externally
+inline bool isDeallocExtFun(const SVFFunction* fun)
+{
+    return fun && (ExtAPI::getExtAPI()->is_dealloc(fun));
+}
+
+/// Return true if the call is a static global call
+//@{
+/// note that this function is not suppose to be used externally
+inline bool isStaticExtFun(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->has_static(fun);
+}
+
+/// Return external call type
+inline ExtAPI::extf_t extCallTy(const SVFFunction* fun)
+{
+    return ExtAPI::getExtAPI()->get_type(fun);
+}
+
+/// Program entry function e.g. main
+//@{
+/// Return true if this is a program entry function (e.g. main)
+inline bool isProgEntryFunction (const SVFFunction * fun)
+{
+    return fun && fun->getName() == "main";
+}
+
+
+/// Get program entry function from module.
+inline const SVFFunction* getProgFunction(SVFModule* svfModule, const std::string& funName)
+{
+    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
+    {
+        const SVFFunction *fun = *it;
+        if (fun->getName()==funName)
+            return fun;
+    }
+    return nullptr;
+}
+
+/// Get program entry function from module.
+inline const SVFFunction* getProgEntryFunction(SVFModule* svfModule)
+{
+    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
+    {
+        const SVFFunction *fun = *it;
+        if (isProgEntryFunction(fun))
+            return (fun);
+    }
+    return nullptr;
+}
+
+/// Return true if this is a program exit function call
+//@{
+inline bool isProgExitFunction (const SVFFunction * fun)
+{
+    return fun && (fun->getName() == "exit" ||
+                   fun->getName() == "__assert_rtn" ||
+                   fun->getName() == "__assert_fail" );
+}
+
+/// Return true if the value refers to constant data, e.g., i32 0
+inline bool isConstantData(const Value* val)
+{
+    return SVFUtil::isa<ConstantData>(val)
+           || SVFUtil::isa<ConstantAggregate>(val)
+           || SVFUtil::isa<MetadataAsValue>(val)
+           || SVFUtil::isa<BlockAddress>(val);
+}
+
+/// Return thread fork function
+//@{
+inline const Value* getForkedFun(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->getForkedFun(cs);
+}
+inline const Value* getForkedFun(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->getForkedFun(inst);
+}
+//@}
+
+const std::string type2String(const Type* type);
+
 } // End namespace SVFUtil
 
 } // End namespace SVF

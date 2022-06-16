@@ -29,7 +29,7 @@
 
 #include "SVF-FE/CPPUtil.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 
 
 #include <cxxabi.h>   // for demangling
