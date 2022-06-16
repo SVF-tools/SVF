@@ -95,7 +95,7 @@ public:
 
     void setKind2AttrsMap(const Map<Kind,  Set<Attribute>>& kind2AttrsMap);
 
-    void setAttributeKinds(const Set<Kind>& attributeKind);   
+    void setAttributeKinds(const Set<Kind>& attributeKind);
 
     Kind str2Kind(std::string str) const;
 
@@ -137,7 +137,7 @@ protected:
     static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
     Kind startKind;
 private:
-    Set<Kind> attributeKinds;  
+    Set<Kind> attributeKinds;
     Map<Kind,  Set<Attribute>> kind2AttrsMap;
     Map<Symbol, Productions> rawProductions;
     Kind totalKind;
@@ -250,7 +250,7 @@ private:
     Map<Symbol, Productions> singleRHS2Prods;
     Map<Symbol, Productions> firstRHS2Prods;
     Map<Symbol, Productions> secondRHS2Prods;
-    Symbol newTerminalSubscript;  
+    Symbol newTerminalSubscript;
 };
 
 }

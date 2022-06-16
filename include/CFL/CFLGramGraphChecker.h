@@ -53,7 +53,7 @@ public:
             {
                 assert(graphBuilder->getLabel2KindMap()[pairV.first] == pairV.second);
                 assert(graphBuilder->getKind2LabelMap()[pairV.second] == pairV.first);
-            } 
+            }
             else
             {
                 graphBuilder->getLabel2KindMap().insert(std::make_pair (pairV.first,pairV.second));
