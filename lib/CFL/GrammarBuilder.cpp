@@ -62,9 +62,9 @@ const inline std::string GrammarBuilder::parseProduction() const
         startS = matches.str(1);
         startS = stripSpace(startS);
     }
-    grammar->insertTerminalSymbol("epsilon");
-    grammar->insertNonTerminalSymbol(startS);
-    grammar->startSymbol = grammar->str2Sym(startS);
+    grammar->insertTerminalKind("epsilon");
+    grammar->insertNonTerminalKind(startS);
+    grammar->setStartKind(grammar->str2Kind(startS));
     return lines;
 }
 
@@ -111,10 +111,10 @@ GrammarBase* GrammarBuilder::build() const
             std::string head = it.substr(0, pos);
             std::string LHS = it.substr(pos + delimiter1.size(), it.size() - 1);
             head = stripSpace(head);
-            prod.push_back(grammar->insertNonTerminalSymbol(head));
-            if (grammar->rawProductions.find(grammar->str2Sym(head)) == grammar->rawProductions.end())
+            prod.push_back(grammar->insertNonTerminalKind(head));
+            if (grammar->getRawProductions().find(grammar->str2Kind(head)) == grammar->getRawProductions().end())
             {
-                grammar->rawProductions.insert({grammar->str2Sym(head), {}});
+                grammar->getRawProductions().insert({grammar->str2Kind(head), {}});
             }
 
             std::regex LHSReg("\\s*(.*)");
@@ -127,22 +127,22 @@ GrammarBase* GrammarBuilder::build() const
                 LHS.erase(0, pos + delimiter.length()); //Capital is Nonterminal, Otherwise is terminal
                 if (isupper(word[0]))
                 {
-                    prod.push_back(grammar->insertNonTerminalSymbol(word));
+                    prod.push_back(grammar->insertNonTerminalKind(word));
                 }
                 else
                 {
-                    prod.push_back(grammar->insertTerminalSymbol(word));
+                    prod.push_back(grammar->insertTerminalKind(word));
                 }
             }
             if (isupper(LHS[0]))
             {
-                prod.push_back(grammar->insertNonTerminalSymbol(LHS));
+                prod.push_back(grammar->insertNonTerminalKind(LHS));
             }
             else
             {
-                prod.push_back(grammar->insertTerminalSymbol(LHS));
+                prod.push_back(grammar->insertTerminalKind(LHS));
             }
-            grammar->rawProductions[grammar->str2Sym(head)].insert(prod);
+            grammar->getRawProductions().at(grammar->str2Kind(head)).insert(prod);
             prod = {};
         }
     }
@@ -152,8 +152,8 @@ GrammarBase* GrammarBuilder::build() const
 
 GrammarBase* GrammarBuilder::build(Map<std::string, SVF::CFLGraph::Symbol> &preMap) const
 {
-    grammar->nonterminals = preMap;
-    grammar->totalSymbol = preMap.size();
+    grammar->setNonterminals(preMap);
+    grammar->setTotalKind(preMap.size());
     return build();
 };
 }

@@ -1,4 +1,4 @@
-//===----- CFLGramGraphChecker.h -- CFL Checker for Grammar and Graph alignment --------------//
+//===----- CFLGramGraphChecker.h -- CFL Checker for Grammar and graphBuilder alignment --------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -35,28 +35,35 @@ namespace SVF
 class CFLGramGraphChecker
 {
 public:
-    void check(GrammarBase *grammar, CFLGraph *graph)
+    void check(GrammarBase *grammar, CFLGraphBuilder *graphBuilder, CFLGraph *graph)
     {
-        /// Check all the symbol in grammar in graph With the same label
-        for(auto pairV : grammar->terminals)
+        /// Check all kinds in grammar in graphBuilder with the same label
+        for(auto pairV : grammar->getTerminals())
         {
-            if (graph->label2SymMap.find(pairV.first) != graph->label2SymMap.end())
+            if (graphBuilder->getLabel2KindMap().find(pairV.first) != graphBuilder->getLabel2KindMap().end())
             {
-                assert(graph->label2SymMap[pairV.first] == pairV.second);
+                assert(graphBuilder->getLabel2KindMap()[pairV.first] == pairV.second);
+                assert(graphBuilder->getKind2LabelMap()[pairV.second] == pairV.first);
             }
         }
 
-        for(auto pairV : grammar->nonterminals)
+        for(auto pairV : grammar->getNonterminals())
         {
-            if (graph->label2SymMap.find(pairV.first) != graph->label2SymMap.end())
+            if (graphBuilder->getLabel2KindMap().find(pairV.first) != graphBuilder->getLabel2KindMap().end())
             {
-                assert(graph->label2SymMap[pairV.first] == pairV.second);
+                assert(graphBuilder->getLabel2KindMap()[pairV.first] == pairV.second);
+                assert(graphBuilder->getKind2LabelMap()[pairV.second] == pairV.first);
+            } 
+            else
+            {
+                graphBuilder->getLabel2KindMap().insert(std::make_pair (pairV.first,pairV.second));
+                graphBuilder->getKind2LabelMap().insert(std::make_pair (pairV.second, pairV.first));
             }
         }
 
-        /// Get Kind2Attr Map from Graph to Grammar
-        grammar->kind2AttrMap = graph->kind2AttrMap;
-        graph->startSymbol = grammar->startSymbol;
+        /// Get Kind2Attrs Map from Graph to Grammar
+        grammar->setKind2AttrsMap(graphBuilder->getKind2AttrsMap());
+        graph->startKind = grammar->getStartKind();
     }
 };
 

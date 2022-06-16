@@ -50,6 +50,8 @@ public:
 
     ~CFLSolver()
     {
+        delete graph;
+        delete grammar;
     }
 
     /// Start solving

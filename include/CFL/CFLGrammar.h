@@ -40,17 +40,66 @@ public:
     typedef Set<Production> Productions;
     typedef u32_t Attribute;
     typedef u32_t Kind;
-    Map<std::string, Symbol> terminals;
-    Map<std::string, Symbol> nonterminals;
-    Symbol startSymbol;
-    Symbol totalSymbol;
-    Map<Symbol, Productions> rawProductions;
-    Set<Symbol> attributeSymbol;
-    Map<Kind,  Set<Attribute>> kind2AttrMap;
 
-    Symbol str2Sym(std::string str) const;
+    inline Map<std::string, Kind>& getNonterminals()
+    {
+        return this->nonterminals;
+    }
 
-    std::string sym2Str(Symbol sym) const;
+    inline void setNonterminals(Map<std::string, Kind>& nonterminals)
+    {
+        this->nonterminals = nonterminals;
+    }
+
+    inline Map<std::string, Kind>& getTerminals()
+    {
+        return this->terminals;
+    }
+
+    inline void setTerminals(Map<std::string, Kind>& terminals)
+    {
+        this->terminals = terminals;
+    }
+
+    inline Map<Symbol, Productions>& getRawProductions()
+    {
+        return this->rawProductions;
+    }
+
+    inline const Map<Kind,  Set<Attribute>>& getKind2AttrsMap() const
+    {
+        return this->kind2AttrsMap;
+    }
+
+    inline Kind getTotalKind()
+    {
+        return this->totalKind;
+    }
+
+    inline Kind getStartKind()
+    {
+        return this->startKind;
+    }
+
+    inline void setStartKind(Kind startKind)
+    {
+        this->startKind = startKind;
+    }
+
+    inline void setTotalKind(Kind totalKind)
+    {
+        this->totalKind = totalKind;
+    }
+
+    void setRawProductions(Map<Symbol, Productions>& rawProductions);
+
+    void setKind2AttrsMap(const Map<Kind,  Set<Attribute>>& kind2AttrsMap);
+
+    void setAttributeKinds(const Set<Kind>& attributeKind);   
+
+    Kind str2Kind(std::string str) const;
+
+    std::string kind2Str(Kind kind) const;
 
     std::string sym2StrDump(Symbol sym) const;
 
@@ -59,14 +108,14 @@ public:
         return prod.at(pos);
     }
 
-    inline Set<Symbol>& getAttrSyms()
+    inline const Set<Symbol>& getAttrSyms() const
     {
-        return this->attributeSymbol;
+        return this->attributeKinds;
     }
 
-    Symbol insertTerminalSymbol(std::string strLit);
-    Symbol insertNonTerminalSymbol(std::string strLit);
-    void insertAttribute(Symbol s);
+    Kind insertTerminalKind(std::string strLit);
+    Kind insertNonTerminalKind(std::string strLit);
+    void insertAttribute(Kind kind, Attribute a);
 
     inline static Kind getSymKind(Symbol sym)
     {
@@ -86,7 +135,14 @@ public:
 protected:
     static constexpr unsigned char EdgeKindMaskBits = 8;  ///< We use the lower 8 bits to denote edge kind
     static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
-
+    Kind startKind;
+private:
+    Set<Kind> attributeKinds;  
+    Map<Kind,  Set<Attribute>> kind2AttrsMap;
+    Map<Symbol, Productions> rawProductions;
+    Kind totalKind;
+    Map<std::string, Kind> nonterminals;
+    Map<std::string, Kind> terminals;
 };
 
 class CFLGrammar : public GrammarBase
@@ -127,39 +183,39 @@ public:
         return secondRHS2Prods;
     }
 
-    const bool hasProdsFromFirstRHS(Symbol sym) const
+    const bool hasProdsFromFirstRHS(const Symbol sym) const
     {
         auto it = firstRHS2Prods.find(sym);
         return it!=firstRHS2Prods.end();
     }
 
-    const bool hasProdsFromSingleRHS(Symbol sym) const
+    const bool hasProdsFromSingleRHS(const Symbol sym) const
     {
         auto it = singleRHS2Prods.find(sym);
         return it!=singleRHS2Prods.end();
     }
 
-    const bool hasProdsFromSecondRHS(Symbol sym) const
+    const bool hasProdsFromSecondRHS(const Symbol sym) const
     {
         auto it = secondRHS2Prods.find(sym);
         return it!=secondRHS2Prods.end();
     }
 
-    const Productions& getProdsFromSingleRHS(Symbol sym) const
+    const Productions& getProdsFromSingleRHS(const Symbol sym) const
     {
         auto it = singleRHS2Prods.find(sym);
         assert(it!=singleRHS2Prods.end() && "production (X -> sym) not found for sym!!");
         return it->second;
     }
 
-    const Productions& getProdsFromFirstRHS(Symbol sym) const
+    const Productions& getProdsFromFirstRHS(const Symbol sym) const
     {
         auto it = firstRHS2Prods.find(sym);
         assert(it!=firstRHS2Prods.end() && "production (X -> sym Y ) not found for sym!!");
         return it->second;
     }
 
-    const Productions& getProdsFromSecondRHS(Symbol sym) const
+    const Productions& getProdsFromSecondRHS(const Symbol sym) const
     {
         auto it = secondRHS2Prods.find(sym);
         assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
@@ -167,22 +223,22 @@ public:
     }
 
 
-    const Symbol& getLHSSymbol(const Production& prod)
+    const Symbol& getLHSSymbol(const Production& prod) const
     {
         return prod.at(0);
     }
 
-    const Symbol& getFirstRHSSymbol(const Production& prod)
+    const Symbol& getFirstRHSSymbol(const Production& prod) const
     {
         return prod.at(1);
     }
 
-    const Symbol& getSecondRHSSymbol(const Production& prod)
+    const Symbol& getSecondRHSSymbol(const Production& prod) const
     {
         return prod.at(2);
     }
 
-    void dump();
+    void dump() const;
 
     const inline int num_generator()
     {
@@ -194,7 +250,7 @@ private:
     Map<Symbol, Productions> singleRHS2Prods;
     Map<Symbol, Productions> firstRHS2Prods;
     Map<Symbol, Productions> secondRHS2Prods;
-    Symbol newTerminalSubscript;
+    Symbol newTerminalSubscript;  
 };
 
 }

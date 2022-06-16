@@ -1,11 +1,19 @@
 Start:  
    V
 Productions:
+   F -> Addr;
+   F -> Addr ( Copy ) *;
+   F -> Addr ( Store V Load ) *;
    F -> ( Copy ) *;
    F -> ( Store V Load ) *;
+   Fbar -> Addrbar;
+   Fbar -> Addrbar ( Copybar ) *;
+   Fbar -> Addrbar ( Loadbar V Storebar ) *;
    Fbar -> ( Copybar ) *;
    Fbar -> ( Loadbar V Storebar ) *;
    V -> Fbar V F;
    V -> Gepbar_i V Gep_i;
    V -> Addrbar Addr;
    V -> epsilon;
+
+   
