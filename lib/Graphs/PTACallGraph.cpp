@@ -29,7 +29,7 @@
  */
 
 #include "Util/SVFModule.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 #include "Graphs/PTACallGraph.h"
 
 using namespace SVF;

@@ -439,11 +439,3 @@ u32_t SVFUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
         return stTySL->getElementOffset(field_idx);
 }
 
-const std::string SVFUtil::type2String(const Type* type)
-{
-    std::string str;
-    llvm::raw_string_ostream rawstr(str);
-    assert(type != nullptr && "Given null type!");
-    rawstr << *type;
-    return rawstr.str();
-}

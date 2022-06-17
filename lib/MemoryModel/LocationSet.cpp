@@ -32,7 +32,6 @@
 #include "Util/Options.h"
 #include "MemoryModel/LocationSet.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/LLVMUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;

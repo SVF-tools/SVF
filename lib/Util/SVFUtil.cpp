@@ -29,7 +29,6 @@
 
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/LLVMUtil.h"
 
 #include "Util/BDDExpr.h"
 #include "MemoryModel/PointsTo.h"
@@ -453,4 +452,13 @@ bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
 void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 {
     if (limitTimerSet) alarm(0);
+}
+
+const std::string SVFUtil::type2String(const Type* type)
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    assert(type != nullptr && "Given null type!");
+    rawstr << *type;
+    return rawstr.str();
 }

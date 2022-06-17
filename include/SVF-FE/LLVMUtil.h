@@ -66,14 +66,6 @@ inline bool isBlackholeSym(const Value *val)
 }
 
 
-/// Return true if the call is an external call (external library in function summary table)
-/// If the libary function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
-//@{
-inline bool isExtCall(const SVFFunction* fun)
-{
-    return fun && ExtAPI::getExtAPI()->is_ext(fun);
-}
-
 inline bool isExtCall(const CallSite cs)
 {
     return isExtCall(getCallee(cs));
@@ -91,19 +83,6 @@ inline bool isReturn(const Instruction* inst)
     return SVFUtil::isa<ReturnInst>(inst);
 }
 
-/// Return true if the call is a heap allocator/reallocator
-//@{
-/// note that these two functions are not suppose to be used externally
-inline bool isHeapAllocExtFunViaRet(const SVFFunction* fun)
-{
-    return fun && (ExtAPI::getExtAPI()->is_alloc(fun)
-                   || ExtAPI::getExtAPI()->is_realloc(fun));
-}
-inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun)
-{
-    return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
-}
-
 static inline Type *getPtrElementType(const PointerType* pty)
 {
 #if (LLVM_VERSION_MAJOR < 14)
@@ -113,7 +92,7 @@ static inline Type *getPtrElementType(const PointerType* pty)
     return pty->getNonOpaquePointerElementType();
 #endif
 }
-
+  
 /// interfaces to be used externally
 inline bool isHeapAllocExtCallViaRet(const CallSite cs)
 {
@@ -148,13 +127,6 @@ inline bool isHeapAllocExtCall(const Instruction *inst)
 }
 //@}
 
-/// Get the position of argument that holds an allocated heap object.
-//@{
-inline int getHeapAllocHoldingArgPosition(const SVFFunction* fun)
-{
-    return ExtAPI::getExtAPI()->get_alloc_arg_pos(fun);
-}
-
 inline int getHeapAllocHoldingArgPosition(const CallSite cs)
 {
     return getHeapAllocHoldingArgPosition(getCallee(cs));
@@ -165,14 +137,6 @@ inline int getHeapAllocHoldingArgPosition(const Instruction *inst)
     return getHeapAllocHoldingArgPosition(getCallee(inst));
 }
 //@}
-
-/// Return true if the call is a heap reallocator
-//@{
-/// note that this function is not suppose to be used externally
-inline bool isReallocExtFun(const SVFFunction* fun)
-{
-    return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
-}
 
 inline bool isReallocExtCall(const CallSite cs)
 {
@@ -187,14 +151,6 @@ inline bool isReallocExtCall(const Instruction *inst)
 }
 //@}
 
-/// Return true if the call is a heap dealloc or not
-//@{
-/// note that this function is not suppose to be used externally
-inline bool isDeallocExtFun(const SVFFunction* fun)
-{
-    return fun && (ExtAPI::getExtAPI()->is_dealloc(fun));
-}
-
 inline bool isDeallocExtCall(const CallSite cs)
 {
     return isDeallocExtFun(getCallee(cs));
@@ -205,15 +161,6 @@ inline bool isDeallocExtCall(const Instruction *inst)
     return isDeallocExtFun(getCallee(inst));
 }
 //@}
-
-
-/// Return true if the call is a static global call
-//@{
-/// note that this function is not suppose to be used externally
-inline bool isStaticExtFun(const SVFFunction* fun)
-{
-    return fun && ExtAPI::getExtAPI()->has_static(fun);
-}
 
 inline bool isStaticExtCall(const CallSite cs)
 {
@@ -240,12 +187,6 @@ inline bool isHeapAllocOrStaticExtCall(const Instruction *inst)
     return isStaticExtCall(inst) || isHeapAllocExtCall(inst);
 }
 //@}
-
-/// Return external call type
-inline ExtAPI::extf_t extCallTy(const SVFFunction* fun)
-{
-    return ExtAPI::getExtAPI()->get_type(fun);
-}
 
 /// Get the reference type of heap/static object from an allocation site.
 //@{
@@ -362,18 +303,6 @@ inline bool isBarrierWaitCall(const Instruction *inst)
 }
 //@}
 
-/// Return thread fork function
-//@{
-inline const Value* getForkedFun(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->getForkedFun(cs);
-}
-inline const Value* getForkedFun(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->getForkedFun(inst);
-}
-//@}
-
 /// Return sole argument of the thread routine
 //@{
 inline const Value* getActualParmAtForkSite(const CallSite cs)
@@ -413,15 +342,6 @@ inline const Value* getTaskDataAtHareParForSite(const Instruction *inst)
 /// Return true if this value refers to a object
 bool isObject (const Value * ref);
 
-/// Return true if the value refers to constant data, e.g., i32 0
-inline bool isConstantData(const Value* val)
-{
-    return SVFUtil::isa<ConstantData>(val)
-           || SVFUtil::isa<ConstantAggregate>(val)
-           || SVFUtil::isa<MetadataAsValue>(val)
-           || SVFUtil::isa<BlockAddress>(val);
-}
-
 /// Method for dead function, which does not have any possible caller
 /// function address is not taken and never be used in call or invoke instruction
 //@{
@@ -436,41 +356,9 @@ inline bool ArgInDeadFunction (const Value * val)
 }
 //@}
 
-/// Program entry function e.g. main
-//@{
-/// Return true if this is a program entry function (e.g. main)
-inline bool isProgEntryFunction (const SVFFunction * fun)
-{
-    return fun && fun->getName() == "main";
-}
-
 inline bool isProgEntryFunction (const Function * fun)
 {
     return fun && fun->getName() == "main";
-}
-
-/// Get program entry function from module.
-inline const SVFFunction* getProgFunction(SVFModule* svfModule, const std::string& funName)
-{
-    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
-    {
-        const SVFFunction *fun = *it;
-        if (fun->getName()==funName)
-            return fun;
-    }
-    return nullptr;
-}
-
-/// Get program entry function from module.
-inline const SVFFunction* getProgEntryFunction(SVFModule* svfModule)
-{
-    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
-    {
-        const SVFFunction *fun = *it;
-        if (isProgEntryFunction(fun))
-            return (fun);
-    }
-    return nullptr;
 }
 
 /// Return true if this is an argument of a program entry function (e.g. main)
@@ -482,15 +370,6 @@ inline bool ArgInProgEntryFunction (const Value * val)
 /// Return true if this is value in a dead function (function without any caller)
 bool isPtrInDeadFunction (const Value * value);
 //@}
-
-/// Return true if this is a program exit function call
-//@{
-inline bool isProgExitFunction (const SVFFunction * fun)
-{
-    return fun && (fun->getName() == "exit" ||
-                   fun->getName() == "__assert_rtn" ||
-                   fun->getName() == "__assert_fail" );
-}
 
 inline bool isProgExitCall(const CallSite cs)
 {
@@ -677,7 +556,6 @@ u32_t getTypeSizeInBytes(const Type* type);
 u32_t getTypeSizeInBytes(const StructType *sty, u32_t field_index);
 //@}
 
-const std::string type2String(const Type* type);
 
 } // End namespace SVFUtil
 

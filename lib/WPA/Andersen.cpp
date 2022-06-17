@@ -29,7 +29,7 @@
 
 #include "Util/Options.h"
 #include "Graphs/CHG.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 #include "MemoryModel/PointsTo.h"
 #include "WPA/Andersen.h"
 #include "WPA/Steensgaard.h"
