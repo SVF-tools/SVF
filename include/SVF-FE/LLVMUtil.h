@@ -92,7 +92,7 @@ static inline Type *getPtrElementType(const PointerType* pty)
     return pty->getNonOpaquePointerElementType();
 #endif
 }
-  
+
 /// interfaces to be used externally
 inline bool isHeapAllocExtCallViaRet(const CallSite cs)
 {
