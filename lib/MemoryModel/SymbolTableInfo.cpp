@@ -322,46 +322,17 @@ void SymbolTableInfo::destroy()
  */
 bool SymbolTableInfo::isNullPtrSym(const Value *val)
 {
-    if (const Constant* v = SVFUtil::dyn_cast<Constant>(val))
-    {
-        return v->isNullValue() && v->getType()->isPointerTy();
-    }
-    return false;
+    return symInfo->nullPtrSyms.find(val)!=symInfo->nullPtrSyms.end();
 }
 
 /*!
- * Check whether this value points-to a constant object
+ * Check whether this value is blackhole object
  */
-bool SymbolTableInfo::isConstantObjSym(const Value *val)
+bool SymbolTableInfo::isBlackholeSym(const Value *val)
 {
-    if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
-    {
-        if (cppUtil::isValVtbl(v))
-            return false;
-        else if (!v->hasInitializer())
-        {
-            if(v->isExternalLinkage(v->getLinkage()))
-                return false;
-            else
-                return true;
-        }
-        else
-        {
-            StInfo *stInfo = getStructInfo(v->getInitializer()->getType());
-            const std::vector<const Type*> &fields = stInfo->getFlattenFieldTypes();
-            for (std::vector<const Type*>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
-            {
-                const Type *elemTy = *it;
-                assert(!SVFUtil::isa<FunctionType>(elemTy) && "Initializer of a global is a function?");
-                if (SVFUtil::isa<PointerType>(elemTy))
-                    return false;
-            }
-
-            return v->isConstant();
-        }
-    }
-    return SVFUtil::isConstantData(val);
+    return symInfo->blackholeSyms.find(val)!=symInfo->blackholeSyms.end();
 }
+
 
 
 MemObj* SymbolTableInfo::createBlkObj(SymID symId)
@@ -791,7 +762,7 @@ SymID SymbolTableInfo::getValSym(const Value *val)
 
     if(SymbolTableInfo::isNullPtrSym(val))
         return nullPtrSymID();
-    else if (SVFUtil::isBlackholeSym(val))
+    else if (SymbolTableInfo::isBlackholeSym(val))
         return blkPtrSymID();
     else
     {
@@ -803,7 +774,7 @@ SymID SymbolTableInfo::getValSym(const Value *val)
 
 bool SymbolTableInfo::hasValSym(const Value* val)
 {
-    if (SymbolTableInfo::isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
+    if (SymbolTableInfo::isNullPtrSym(val) || SymbolTableInfo::isBlackholeSym(val))
         return true;
     else
         return (valSymMap.find(val) != valSymMap.end());

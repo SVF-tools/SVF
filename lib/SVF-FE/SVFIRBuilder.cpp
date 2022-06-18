@@ -201,7 +201,7 @@ void SVFIRBuilder::initialiseNodes()
     {
         DBOUT(DPAGBuild, outs() << "add address edges for constant node " << iter->second << "\n");
         const Value* val = iter->first;
-        if (symTable->isConstantObjSym(val))
+        if (SVFUtil::isConstantObjSym(val))
         {
             NodeID ptr = pag->getValueNode(val);
             if(ptr!= pag->getBlkPtr() && ptr!= pag->getNullPtr())

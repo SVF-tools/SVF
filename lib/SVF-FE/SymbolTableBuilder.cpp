@@ -205,8 +205,14 @@ void SymbolTableBuilder::collectSym(const Value *val)
     DBOUT(DMemModel, outs() << "collect sym from ##" << SVFUtil::value2String(val) << " \n");
 
     // special sym here
-    if (symInfo->isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
+    if (SVFUtil::isNullPtrSym(val)){
+        symInfo->nullPtrSyms.insert(val);
         return;
+    }
+    if (SVFUtil::isBlackholeSym(val)){
+        symInfo->blackholeSyms.insert(val);
+        return;
+    }
 
     //TODO handle constant expression value here??
     handleCE(val);
@@ -239,7 +245,7 @@ void SymbolTableBuilder::collectVal(const Value *val)
             handleGlobalCE(globalVar);
     }
 
-    if (symInfo->isConstantObjSym(val))
+    if (SVFUtil::isConstantObjSym(val))
         collectObj(val);
 }
 
@@ -254,7 +260,7 @@ void SymbolTableBuilder::collectObj(const Value *val)
     {
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if((symInfo->isConstantObjSym(val) && !symInfo->getModelConstants()))
+        if((SVFUtil::isConstantObjSym(val) && !symInfo->getModelConstants()))
         {
             symInfo->objSymMap.insert(std::make_pair(val, symInfo->constantSymID()));
         }
@@ -513,7 +519,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
         writeWrnMsg("try to create an object with a non-pointer type.");
         writeWrnMsg(val->getName().str());
         writeWrnMsg("(" + getSourceLoc(val) + ")");
-        if(symInfo->isConstantObjSym(val))
+        if(SVFUtil::isConstantObjSym(val))
         {
             ObjTypeInfo* typeInfo = new ObjTypeInfo(val->getType(), 0);
             initTypeInfo(typeInfo,val);
@@ -637,7 +643,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
     else if(SVFUtil::isa<GlobalVariable>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::GLOBVAR_OBJ);
-        if(SymbolTableInfo::SymbolInfo()->isConstantObjSym(val))
+        if(SVFUtil::isConstantObjSym(val))
             typeinfo->setFlag(ObjTypeInfo::CONST_GLOBAL_OBJ);
         analyzeObjType(typeinfo,val);
         objSize = getObjSize(typeinfo->getType());

@@ -44,15 +44,25 @@ namespace SVFUtil
 {
 
 
-
-
 /// Check whether this value is a black hole
 inline bool isBlackholeSym(const Value *val)
 {
     return (SVFUtil::isa<UndefValue>(val));
 }
 
-//@}
+/// Check whether this value is a black hole
+inline bool isNullPtrSym(const Value *val)
+{
+    if (const Constant* v = SVFUtil::dyn_cast<Constant>(val))
+    {
+        return v->isNullValue() && v->getType()->isPointerTy();
+    }
+    return false;
+}
+
+/// Check whether this value points-to a constant object
+bool isConstantObjSym(const Value *val);
+
 
 /// Whether an instruction is a return instruction
 inline bool isReturn(const Instruction* inst)
