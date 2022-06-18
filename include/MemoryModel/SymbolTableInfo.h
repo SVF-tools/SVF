@@ -90,7 +90,7 @@ private:
     CallSiteSet callSiteSet;
     Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
-    
+
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
     static SymbolTableInfo* symInfo;
 
@@ -165,7 +165,7 @@ public:
     // @{
     static bool isNullPtrSym(const Value *val);
     static bool isBlackholeSym(const Value *val);
-    
+
     static inline bool isBlkPtr(NodeID id)
     {
         return (id == BlkPtr);

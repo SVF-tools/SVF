@@ -214,12 +214,6 @@ void SymbolTableBuilder::collectSym(const Value *val)
 
     DBOUT(DMemModel, outs() << "collect sym from ##" << SVFUtil::value2String(val) << " \n");
 
-    // collect and record special sym here
-    if (SVFUtil::isNullPtrSym(val) || SVFUtil::isBlackholeSym(val)){
-        collectNullPtrBlackholeSyms(val);
-        return;
-    }
-
     //TODO handle constant expression value here??
     handleCE(val);
 
@@ -238,7 +232,11 @@ void SymbolTableBuilder::collectSym(const Value *val)
  */
 void SymbolTableBuilder::collectVal(const Value *val)
 {
-    collectNullPtrBlackholeSyms(val);
+    // collect and record special sym here
+    if (SVFUtil::isNullPtrSym(val) || SVFUtil::isBlackholeSym(val)){
+        collectNullPtrBlackholeSyms(val);
+        return;
+    }
     SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->valSymMap.find(val);
     if (iter == symInfo->valSymMap.end())
     {
