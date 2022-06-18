@@ -28,7 +28,7 @@
  */
 
 #include "Util/SVFModule.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"

@@ -45,19 +45,6 @@ namespace SVFUtil
 
 
 
-/// This function servers a allocation wrapper detector
-inline bool isAnAllocationWraper(const Instruction*)
-{
-    return false;
-}
-
-/// Return LLVM function if this value is
-inline const Function* getLLVMFunction(const Value* val)
-{
-    const Function *fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
-    return fun;
-}
-
 
 /// Check whether this value is a black hole
 inline bool isBlackholeSym(const Value *val)
@@ -65,16 +52,6 @@ inline bool isBlackholeSym(const Value *val)
     return (SVFUtil::isa<UndefValue>(val));
 }
 
-
-inline bool isExtCall(const CallSite cs)
-{
-    return isExtCall(getCallee(cs));
-}
-
-inline bool isExtCall(const Instruction *inst)
-{
-    return isExtCall(getCallee(inst));
-}
 //@}
 
 /// Whether an instruction is a return instruction
@@ -92,101 +69,6 @@ static inline Type *getPtrElementType(const PointerType* pty)
     return pty->getNonOpaquePointerElementType();
 #endif
 }
-
-/// interfaces to be used externally
-inline bool isHeapAllocExtCallViaRet(const CallSite cs)
-{
-    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
-    return isPtrTy && isHeapAllocExtFunViaRet(getCallee(cs));
-}
-
-inline bool isHeapAllocExtCallViaRet(const Instruction *inst)
-{
-    bool isPtrTy = inst->getType()->isPointerTy();
-    return isPtrTy && isHeapAllocExtFunViaRet(getCallee(inst));
-}
-
-inline bool isHeapAllocExtCallViaArg(const CallSite cs)
-{
-    return isHeapAllocExtFunViaArg(getCallee(cs));
-}
-
-inline bool isHeapAllocExtCallViaArg(const Instruction *inst)
-{
-    return isHeapAllocExtFunViaArg(getCallee(inst));
-}
-
-inline bool isHeapAllocExtCall(const CallSite cs)
-{
-    return isHeapAllocExtCallViaRet(cs) || isHeapAllocExtCallViaArg(cs);
-}
-
-inline bool isHeapAllocExtCall(const Instruction *inst)
-{
-    return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
-}
-//@}
-
-inline int getHeapAllocHoldingArgPosition(const CallSite cs)
-{
-    return getHeapAllocHoldingArgPosition(getCallee(cs));
-}
-
-inline int getHeapAllocHoldingArgPosition(const Instruction *inst)
-{
-    return getHeapAllocHoldingArgPosition(getCallee(inst));
-}
-//@}
-
-inline bool isReallocExtCall(const CallSite cs)
-{
-    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
-    return isPtrTy && isReallocExtFun(getCallee(cs));
-}
-
-inline bool isReallocExtCall(const Instruction *inst)
-{
-    bool isPtrTy = inst->getType()->isPointerTy();
-    return isPtrTy && isReallocExtFun(getCallee(inst));
-}
-//@}
-
-inline bool isDeallocExtCall(const CallSite cs)
-{
-    return isDeallocExtFun(getCallee(cs));
-}
-
-inline bool isDeallocExtCall(const Instruction *inst)
-{
-    return isDeallocExtFun(getCallee(inst));
-}
-//@}
-
-inline bool isStaticExtCall(const CallSite cs)
-{
-    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
-    return isPtrTy && isStaticExtFun(getCallee(cs));
-}
-
-inline bool isStaticExtCall(const Instruction *inst)
-{
-    bool isPtrTy = inst->getType()->isPointerTy();
-    return isPtrTy && isStaticExtFun(getCallee(inst));
-}
-//@}
-
-/// Return true if the call is a static global call
-//@{
-inline bool isHeapAllocOrStaticExtCall(const CallSite cs)
-{
-    return isStaticExtCall(cs) || isHeapAllocExtCall(cs);
-}
-
-inline bool isHeapAllocOrStaticExtCall(const Instruction *inst)
-{
-    return isStaticExtCall(inst) || isHeapAllocExtCall(inst);
-}
-//@}
 
 /// Get the reference type of heap/static object from an allocation site.
 //@{
@@ -219,126 +101,6 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const Instruction *inst)
 }
 //@}
 
-/// Return true if this is a thread creation call
-///@{
-inline bool isThreadForkCall(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->isTDFork(cs);
-}
-inline bool isThreadForkCall(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDFork(inst);
-}
-//@}
-
-/// Return true if this is a hare_parallel_for call
-///@{
-inline bool isHareParForCall(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->isHareParFor(cs);
-}
-inline bool isHareParForCall(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isHareParFor(inst);
-}
-//@}
-
-/// Return true if this is a thread join call
-///@{
-inline bool isThreadJoinCall(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->isTDJoin(cs);
-}
-inline bool isThreadJoinCall(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDJoin(inst);
-}
-//@}
-
-/// Return true if this is a thread exit call
-///@{
-inline bool isThreadExitCall(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->isTDExit(cs);
-}
-inline bool isThreadExitCall(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDExit(inst);
-}
-//@}
-
-/// Return true if this is a lock acquire call
-///@{
-inline bool isLockAquireCall(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->isTDAcquire(cs);
-}
-inline bool isLockAquireCall(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDAcquire(inst);
-}
-//@}
-
-/// Return true if this is a lock acquire call
-///@{
-inline bool isLockReleaseCall(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->isTDRelease(cs);
-}
-inline bool isLockReleaseCall(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDRelease(inst);
-}
-//@}
-
-/// Return true if this is a barrier wait call
-//@{
-inline bool isBarrierWaitCall(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->isTDBarWait(cs);
-}
-inline bool isBarrierWaitCall(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDBarWait(inst);
-}
-//@}
-
-/// Return sole argument of the thread routine
-//@{
-inline const Value* getActualParmAtForkSite(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
-}
-inline const Value* getActualParmAtForkSite(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(inst);
-}
-//@}
-
-/// Return the task function of the parallel_for routine
-//@{
-inline const Value* getTaskFuncAtHareParForSite(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(cs);
-}
-inline const Value* getTaskFuncAtHareParForSite(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(inst);
-}
-//@}
-
-/// Return the task data argument of the parallel_for rountine
-//@{
-inline const Value* getTaskDataAtHareParForSite(const CallSite cs)
-{
-    return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(cs);
-}
-inline const Value* getTaskDataAtHareParForSite(const Instruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(inst);
-}
-//@}
-
 /// Return true if this value refers to a object
 bool isObject (const Value * ref);
 
@@ -356,11 +118,6 @@ inline bool ArgInDeadFunction (const Value * val)
 }
 //@}
 
-inline bool isProgEntryFunction (const Function * fun)
-{
-    return fun && fun->getName() == "main";
-}
-
 /// Return true if this is an argument of a program entry function (e.g. main)
 inline bool ArgInProgEntryFunction (const Value * val)
 {
@@ -371,15 +128,6 @@ inline bool ArgInProgEntryFunction (const Value * val)
 bool isPtrInDeadFunction (const Value * value);
 //@}
 
-inline bool isProgExitCall(const CallSite cs)
-{
-    return isProgExitFunction(getCallee(cs));
-}
-
-inline bool isProgExitCall(const Instruction *inst)
-{
-    return isProgExitFunction(getCallee(inst));
-}
 //@}
 
 /// Function does not have any possible caller in the call graph
