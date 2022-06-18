@@ -33,7 +33,6 @@
 #include "MemoryModel/SymbolTableInfo.h"
 #include "Util/Options.h"
 #include "Util/SVFModule.h"
-#include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 
 using namespace std;

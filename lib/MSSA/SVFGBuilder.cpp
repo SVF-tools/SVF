@@ -28,7 +28,7 @@
  */
 #include "Util/Options.h"
 #include "Util/SVFModule.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 #include "MSSA/MemSSA.h"
 #include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
