@@ -205,11 +205,13 @@ void SymbolTableBuilder::collectSym(const Value *val)
     DBOUT(DMemModel, outs() << "collect sym from ##" << SVFUtil::value2String(val) << " \n");
 
     // special sym here
-    if (SVFUtil::isNullPtrSym(val)){
+    if (SVFUtil::isNullPtrSym(val))
+    {
         symInfo->nullPtrSyms.insert(val);
         return;
     }
-    if (SVFUtil::isBlackholeSym(val)){
+    if (SVFUtil::isBlackholeSym(val))
+    {
         symInfo->blackholeSyms.insert(val);
         return;
     }
