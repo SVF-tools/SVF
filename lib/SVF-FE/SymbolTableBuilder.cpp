@@ -195,6 +195,16 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 }
 
 /*!
+* Collect special sym here
+*/
+void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val){
+    if (SVFUtil::isNullPtrSym(val))
+        symInfo->nullPtrSyms.insert(val);
+    if (SVFUtil::isBlackholeSym(val))
+        symInfo->blackholeSyms.insert(val);
+}
+
+/*!
  * Collect symbols, including value and object syms
  */
 void SymbolTableBuilder::collectSym(const Value *val)
@@ -204,13 +214,9 @@ void SymbolTableBuilder::collectSym(const Value *val)
 
     DBOUT(DMemModel, outs() << "collect sym from ##" << SVFUtil::value2String(val) << " \n");
 
-    // special sym here
-    if (SVFUtil::isNullPtrSym(val)){
-        symInfo->nullPtrSyms.insert(val);
-        return;
-    }
-    if (SVFUtil::isBlackholeSym(val)){
-        symInfo->blackholeSyms.insert(val);
+    // collect and record special sym here
+    if (SVFUtil::isNullPtrSym(val) || SVFUtil::isBlackholeSym(val)){
+        collectNullPtrBlackholeSyms(val);
         return;
     }
 
@@ -232,6 +238,7 @@ void SymbolTableBuilder::collectSym(const Value *val)
  */
 void SymbolTableBuilder::collectVal(const Value *val)
 {
+    collectNullPtrBlackholeSyms(val);
     SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->valSymMap.find(val);
     if (iter == symInfo->valSymMap.end())
     {
