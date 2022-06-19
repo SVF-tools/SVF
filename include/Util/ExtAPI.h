@@ -107,6 +107,7 @@ private:
 
     // Singleton pattern here to enable instance of PAG can only be created once.
     static ExtAPI* extAPI;
+    std::unordered_set<std::string> definedFuncNames;
 
 public:
 
@@ -130,7 +131,7 @@ public:
             funName = "llvm." + F->getName().split('.').second.split('.').first.str();
         }
         llvm::StringMap<extf_t>::const_iterator it= info.find(funName);
-        if(it == info.end() || !F->isDeclaration())
+        if(it == info.end() || !(F->isDeclaration() or definedFuncNames.count(funName)))
             return EFT_OTHER;
         else
             return it->second;
@@ -227,6 +228,10 @@ public:
         isext_cache[F]= res;
         return res;
     }
+    // update 'info' private member variable
+    void registerFunc(std::unordered_set<std::string> &funcNames, extf_t type);
+    // update 'info' private member variable and annotate these function as non-declaration functions
+    void registerDefinedFunc(std::unordered_set<std::string> &funcNames, extf_t type);
 };
 
 } // End namespace SVF

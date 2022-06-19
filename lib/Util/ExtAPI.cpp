@@ -876,3 +876,16 @@ void ExtAPI::init()
     }
 }
 
+void ExtAPI::registerFunc(std::unordered_set<std::string> &funcNames, extf_t type)
+{
+    for (std::string funcName : funcNames)
+    {
+        info[funcName] = type;
+    }
+}
+
+void ExtAPI::registerDefinedFunc(std::unordered_set<std::string> &funcNames, extf_t type)
+{
+    registerFunc(funcNames, type);
+    definedFuncNames.insert(funcNames.begin(), funcNames.end());
+}
