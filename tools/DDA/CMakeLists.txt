@@ -5,7 +5,7 @@ if(DEFINED IN_SOURCE_BUILD)
 else()
     add_executable( dvf dda.cpp )
 
-    target_link_libraries( dvf Svf Cudd ${llvm_libs} )
+    target_link_libraries( dvf Svf Cudd ${llvm_libs} pthread)
 
     set_target_properties( dvf PROPERTIES
                            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
