@@ -52,6 +52,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
+using namespace LLVMUtil;
 
 
 SVFIR* PointerAnalysis::pag = nullptr;

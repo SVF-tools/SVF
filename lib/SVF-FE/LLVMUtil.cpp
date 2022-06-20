@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SVFUtil.cpp
+ * LLVMUtil.cpp
  *
  *  Created on: Apr 11, 2013
  *      Author: Yulei Sui
@@ -39,7 +39,7 @@ using namespace SVF;
  * 3) stack
  * 4) heap
  */
-bool SVFUtil::isObject(const Value * ref)
+bool LLVMUtil::isObject(const Value * ref)
 {
     bool createobj = false;
     if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(SVFUtil::cast<Instruction>(ref)) )
@@ -57,7 +57,7 @@ bool SVFUtil::isObject(const Value * ref)
 /*!
  * Check whether this value points-to a constant object
  */
-bool SVFUtil::isConstantObjSym(const Value *val)
+bool LLVMUtil::isConstantObjSym(const Value *val)
 {
     if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
     {
@@ -91,7 +91,7 @@ bool SVFUtil::isConstantObjSym(const Value *val)
 /*!
  * Return reachable bbs from function entry
  */
-void SVFUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::vector<const BasicBlock*> &reachableBBs)
+void LLVMUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::vector<const BasicBlock*> &reachableBBs)
 {
     Set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;
@@ -120,7 +120,7 @@ void SVFUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::
 /*!
  * Return true if the function has a return instruction reachable from function entry
  */
-bool SVFUtil::functionDoesNotRet (const Function * fun)
+bool LLVMUtil::functionDoesNotRet (const Function * fun)
 {
 
     std::vector<const BasicBlock*> bbVec;
@@ -157,11 +157,11 @@ bool SVFUtil::functionDoesNotRet (const Function * fun)
 /*!
  * Return true if this is a function without any possible caller
  */
-bool SVFUtil::isDeadFunction (const Function * fun)
+bool LLVMUtil::isDeadFunction (const Function * fun)
 {
     if(fun->hasAddressTaken())
         return false;
-    if(isProgEntryFunction(fun))
+    if(SVFUtil::isProgEntryFunction(fun))
         return false;
     for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i)
     {
@@ -190,7 +190,7 @@ bool SVFUtil::isDeadFunction (const Function * fun)
 /*!
  * Return true if this is a value in a dead function (function without any caller)
  */
-bool SVFUtil::isPtrInDeadFunction (const Value * value)
+bool LLVMUtil::isPtrInDeadFunction (const Value * value)
 {
     if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
     {
@@ -208,7 +208,7 @@ bool SVFUtil::isPtrInDeadFunction (const Value * value)
 /*!
  * Strip constant casts
  */
-const Value * SVFUtil::stripConstantCasts(const Value *val)
+const Value * LLVMUtil::stripConstantCasts(const Value *val)
 {
     if (SVFUtil::isa<GlobalValue>(val) || isInt2PtrConstantExpr(val))
         return val;
@@ -223,7 +223,7 @@ const Value * SVFUtil::stripConstantCasts(const Value *val)
 /*!
  * Strip all casts
  */
-const Value * SVFUtil::stripAllCasts(const Value *val)
+const Value * LLVMUtil::stripAllCasts(const Value *val)
 {
     while (true)
     {
@@ -247,12 +247,12 @@ const Value * SVFUtil::stripAllCasts(const Value *val)
 }
 
 /// Get the next instructions following control flow
-void SVFUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
+void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
 {
     if (!curInst->isTerminator())
     {
         const Instruction* nextInst = curInst->getNextNode();
-        if (isIntrinsicInst(nextInst))
+        if (SVFUtil::isIntrinsicInst(nextInst))
             getNextInsts(nextInst, instList);
         else
             instList.push_back(nextInst);
@@ -264,7 +264,7 @@ void SVFUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruc
         for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it)
         {
             const Instruction* nextInst = &((*it)->front());
-            if (isIntrinsicInst(nextInst))
+            if (SVFUtil::isIntrinsicInst(nextInst))
                 getNextInsts(nextInst, instList);
             else
                 instList.push_back(nextInst);
@@ -274,12 +274,12 @@ void SVFUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruc
 
 
 /// Get the previous instructions following control flow
-void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
+void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
 {
     if (curInst != &(curInst->getParent()->front()))
     {
         const Instruction* prevInst = curInst->getPrevNode();
-        if (isIntrinsicInst(prevInst))
+        if (SVFUtil::isIntrinsicInst(prevInst))
             getPrevInsts(prevInst, instList);
         else
             instList.push_back(prevInst);
@@ -291,7 +291,7 @@ void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruc
         for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
         {
             const Instruction* prevInst = &((*it)->back());
-            if (isIntrinsicInst(prevInst))
+            if (SVFUtil::isIntrinsicInst(prevInst))
                 getPrevInsts(prevInst, instList);
             else
                 instList.push_back(prevInst);
@@ -304,7 +304,7 @@ void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruc
  * for example, %4 = call align 16 i8* @malloc(i64 10); %5 = bitcast i8* %4 to i32*
  * return %5 whose type is i32* but not %4 whose type is i8*
  */
-const Value* SVFUtil::getUniqueUseViaCastInst(const Value* val)
+const Value* LLVMUtil::getUniqueUseViaCastInst(const Value* val)
 {
     const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(type && "this value should be a pointer type!");
@@ -323,11 +323,11 @@ const Value* SVFUtil::getUniqueUseViaCastInst(const Value* val)
 /*!
  * Return the type of the object from a heap allocation
  */
-const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst)
+const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
 {
     const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
 
-    if(isHeapAllocExtCallViaRet(inst))
+    if(SVFUtil::isHeapAllocExtCallViaRet(inst))
     {
         if(const Value* v = getUniqueUseViaCastInst(inst))
         {
@@ -335,10 +335,10 @@ const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst)
                 type = newTy;
         }
     }
-    else if(isHeapAllocExtCallViaArg(inst))
+    else if(SVFUtil::isHeapAllocExtCallViaArg(inst))
     {
-        CallSite cs = getLLVMCallSite(inst);
-        int arg_pos = getHeapAllocHoldingArgPosition(getCallee(cs));
+        CallSite cs = SVFUtil::getLLVMCallSite(inst);
+        int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getCallee(cs));
         const Value *arg = cs.getArgument(arg_pos);
         type = SVFUtil::dyn_cast<PointerType>(arg->getType());
     }
@@ -354,7 +354,7 @@ const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst)
 /*!
  * Get position of a successor basic block
  */
-u32_t SVFUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ)
+u32_t LLVMUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ)
 {
     u32_t i = 0;
     for (const BasicBlock *SuccBB: successors(BB))
@@ -371,7 +371,7 @@ u32_t SVFUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ)
 /*!
  * Return a position index from current bb to it successor bb
  */
-u32_t SVFUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succbb)
+u32_t LLVMUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succbb)
 {
     u32_t pos = 0;
     for (const_pred_iterator it = pred_begin(succbb), et = pred_end(succbb); it != et; ++it, ++pos)
@@ -386,7 +386,7 @@ u32_t SVFUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succb
 /*!
  *  Get the num of BB's successors
  */
-u32_t SVFUtil::getBBSuccessorNum(const BasicBlock *BB)
+u32_t LLVMUtil::getBBSuccessorNum(const BasicBlock *BB)
 {
     return BB->getTerminator()->getNumSuccessors();
 }
@@ -394,7 +394,7 @@ u32_t SVFUtil::getBBSuccessorNum(const BasicBlock *BB)
 /*!
  * Get the num of BB's predecessors
  */
-u32_t SVFUtil::getBBPredecessorNum(const BasicBlock *BB)
+u32_t LLVMUtil::getBBPredecessorNum(const BasicBlock *BB)
 {
     u32_t num = 0;
     for (const_pred_iterator it = pred_begin(BB), et = pred_end(BB); it != et; ++it)
@@ -407,7 +407,7 @@ u32_t SVFUtil::getBBPredecessorNum(const BasicBlock *BB)
  * llvm::parseIRFile (lib/IRReader/IRReader.cpp)
  * llvm::parseIR (lib/IRReader/IRReader.cpp)
  */
-bool SVFUtil::isIRFile(const std::string &filename)
+bool LLVMUtil::isIRFile(const std::string &filename)
 {
     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(filename);
     if (FileOrErr.getError())
@@ -424,14 +424,14 @@ bool SVFUtil::isIRFile(const std::string &filename)
 
 /// Get the names of all modules into a vector
 /// And process arguments
-void SVFUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_value,
+void LLVMUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_value,
                                std::vector<std::string> &moduleNameVec)
 {
     bool first_ir_file = true;
     for (int i = 0; i < argc; ++i)
     {
         std::string argument(argv[i]);
-        if (SVFUtil::isIRFile(argument))
+        if (LLVMUtil::isIRFile(argument))
         {
             if (find(moduleNameVec.begin(), moduleNameVec.end(), argument)
                     == moduleNameVec.end())
@@ -452,7 +452,7 @@ void SVFUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_v
 }
 
 
-u32_t SVFUtil::getTypeSizeInBytes(const Type* type)
+u32_t LLVMUtil::getTypeSizeInBytes(const Type* type)
 {
 
     // if the type has size then simply return it, otherwise just return 0
@@ -462,7 +462,7 @@ u32_t SVFUtil::getTypeSizeInBytes(const Type* type)
         return 0;
 }
 
-u32_t SVFUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
+u32_t LLVMUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
 {
 
     const StructLayout *stTySL = getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );

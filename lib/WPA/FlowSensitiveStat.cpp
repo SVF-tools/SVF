@@ -35,6 +35,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 /*!
  * Clear statistics

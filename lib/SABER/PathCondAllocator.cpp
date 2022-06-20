@@ -37,6 +37,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 u64_t DPItem::maximumBudget = ULONG_MAX - 1;
 u32_t ContextCond::maximumCxtLen = 0;
