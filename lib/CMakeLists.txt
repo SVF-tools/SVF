@@ -14,6 +14,7 @@ file (GLOB SOURCES
         SVF-FE/*.cpp
         Graphs/*.cpp
         Util/*.cpp
+        Util/*.c
         MemoryModel/*.cpp
         MSSA/*.cpp
         WPA/*.cpp

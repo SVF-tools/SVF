@@ -34,6 +34,7 @@
 #include "SVF-FE/LLVMModule.h"
 #include "Util/BasicTypes.h"
 #include "MemoryModel/PointsTo.h"
+#include "Util/cJSON.h"
 #include <time.h>
 
 namespace SVF
@@ -405,12 +406,6 @@ inline bool isStaticExtFun(const SVFFunction* fun)
     return fun && ExtAPI::getExtAPI()->has_static(fun);
 }
 
-/// Return external call type
-inline ExtAPI::extf_t extCallTy(const SVFFunction* fun)
-{
-    return ExtAPI::getExtAPI()->get_type(fun);
-}
-
 /// Program entry function e.g. main
 //@{
 /// Return true if this is a program entry function (e.g. main)
@@ -593,6 +588,31 @@ inline bool isHeapAllocOrStaticExtCall(const Instruction *inst)
     return isStaticExtCall(inst) || isHeapAllocExtCall(inst);
 }
 //@}
+
+// Get extern function operation name, e.g. "copy", "addr"
+inline ExtAPI::extf_t getExtCallOpName(const std::string op)
+{
+    return ExtAPI::getExtAPI()->get_opName(op);
+}
+
+/// Return extern function name, e.g. "isdigit"
+inline std::string extCallFunctionName(const SVFFunction* fun)
+{
+    
+    return ExtAPI::getExtAPI()->get_name(fun);
+}
+
+// Get external call function option arguments, e.g. "A0", "A1R"
+inline std::vector<std::string> getExtCallOpArgs(const cJSON *value)
+{
+    return ExtAPI::getExtAPI()->get_opArgs(value);
+}
+
+// Get CJSON object of corresponding function name
+inline cJSON *getExtCallJson(const std::string funName)
+{
+    return ExtAPI::getExtAPI()->get_FunJson(funName);
+}
 
 /// Return true if this is a thread creation call
 ///@{

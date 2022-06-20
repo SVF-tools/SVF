@@ -1,0 +1,2585 @@
+{
+	"\01creat64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"\01fseeko64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"\01fstat64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"\01fstatvfs64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"\01ftello64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"\01getrlimit64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"\01lstat64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"\01open64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"\01stat64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"\01statvfs64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"Gpm_GetEvent":	{
+		"prop":	"EFT_NOOP"
+	},
+	"Gpm_Open":	{
+		"prop":	"EFT_NOOP"
+	},
+	"RAND_seed":	{
+		"prop":	"EFT_NOOP"
+	},
+	"SSL_CTX_set_default_verify_paths":	{
+		"prop":	"EFT_NOOP"
+	},
+	"SSL_get_error":	{
+		"prop":	"EFT_NOOP"
+	},
+	"SSL_get_fd":	{
+		"prop":	"EFT_NOOP"
+	},
+	"SSL_pending":	{
+		"prop":	"EFT_NOOP"
+	},
+	"SSL_read":	{
+		"prop":	"EFT_NOOP"
+	},
+	"SSL_set_bio":	{
+		"prop":	"EFT_NOOP"
+	},
+	"SSL_set_connect_state":	{
+		"prop":	"EFT_NOOP"
+	},
+	"SSL_shutdown":	{
+		"prop":	"EFT_NOOP"
+	},
+	"SSL_state":	{
+		"prop":	"EFT_NOOP"
+	},
+	"SSL_write":	{
+		"prop":	"EFT_NOOP"
+	},
+	"Void_FreeCore":	{
+		"prop":	"EFT_NOOP"
+	},
+	"X509_STORE_CTX_get_error":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XAllocColor":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XCloseDisplay":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XCopyArea":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XCreateColormap":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XCreatePixmap":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XCreateWindow":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XDrawPoint":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XDrawString":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XDrawText":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XFillRectangle":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XFillRectangles":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XGetGCValues":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XGetGeometry":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XInternAtom":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XMapWindow":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XNextEvent":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XPutImage":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XQueryColor":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XResizeWindow":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSelectInput":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSendEvent":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetBackground":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetClipMask":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetClipOrigin":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetFillStyle":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetFont":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetForeground":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetFunction":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetGraphicsExposures":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetLineAttributes":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetTile":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetWMHints":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetWMNormalHints":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSetWindowBackgroundPixmap":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XStoreName":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XSync":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XVisualIDFromVisual":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XWMGeometry":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XtAppSetFallbackResources":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XtCloseDisplay":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XtDestroyApplicationContext":	{
+		"prop":	"EFT_NOOP"
+	},
+	"XtDestroyWidget":	{
+		"prop":	"EFT_NOOP"
+	},
+	"_IO_getc":	{
+		"prop":	"EFT_NOOP"
+	},
+	"_IO_putc":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__assert_fail":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__dn_expand":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__dn_skipname":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__res_nclose":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__res_ninit":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__res_nmkquery":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__res_nsend":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__res_query":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__res_querydomain":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__res_search":	{
+		"prop":	"EFT_NOOP"
+	},
+	"__sigsetjmp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"_obstack_begin":	{
+		"prop":	"EFT_NOOP"
+	},
+	"_obstack_memory_used":	{
+		"prop":	"EFT_NOOP"
+	},
+	"_obstack_newchunk":	{
+		"prop":	"EFT_NOOP"
+	},
+	"_setjmp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"accept":	{
+		"prop":	"EFT_NOOP"
+	},
+	"access":	{
+		"prop":	"EFT_NOOP"
+	},
+	"asprintf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"atexit":	{
+		"prop":	"EFT_NOOP"
+	},
+	"atof":	{
+		"prop":	"EFT_NOOP"
+	},
+	"atoi":	{
+		"prop":	"EFT_NOOP"
+	},
+	"atol":	{
+		"prop":	"EFT_NOOP"
+	},
+	"bind":	{
+		"prop":	"EFT_NOOP"
+	},
+	"cfgetospeed":	{
+		"prop":	"EFT_NOOP"
+	},
+	"cfsetispeed":	{
+		"prop":	"EFT_NOOP"
+	},
+	"cfsetospeed":	{
+		"prop":	"EFT_NOOP"
+	},
+	"chdir":	{
+		"prop":	"EFT_NOOP"
+	},
+	"chmod":	{
+		"prop":	"EFT_NOOP"
+	},
+	"chown":	{
+		"prop":	"EFT_NOOP"
+	},
+	"chroot":	{
+		"prop":	"EFT_NOOP"
+	},
+	"clearerr":	{
+		"prop":	"EFT_NOOP"
+	},
+	"clearok":	{
+		"prop":	"EFT_NOOP"
+	},
+	"closedir":	{
+		"prop":	"EFT_NOOP"
+	},
+	"compress2":	{
+		"prop":	"EFT_NOOP"
+	},
+	"confstr":	{
+		"prop":	"EFT_NOOP"
+	},
+	"connect":	{
+		"prop":	"EFT_NOOP"
+	},
+	"crc32":	{
+		"prop":	"EFT_NOOP"
+	},
+	"creat":	{
+		"prop":	"EFT_NOOP"
+	},
+	"creat64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"deflate":	{
+		"prop":	"EFT_NOOP"
+	},
+	"deflateEnd":	{
+		"prop":	"EFT_NOOP"
+	},
+	"deflateInit2_":	{
+		"prop":	"EFT_NOOP"
+	},
+	"deflateReset":	{
+		"prop":	"EFT_NOOP"
+	},
+	"delwin":	{
+		"prop":	"EFT_NOOP"
+	},
+	"dladdr":	{
+		"prop":	"EFT_NOOP"
+	},
+	"dlclose":	{
+		"prop":	"EFT_NOOP"
+	},
+	"execl":	{
+		"prop":	"EFT_NOOP"
+	},
+	"execle":	{
+		"prop":	"EFT_NOOP"
+	},
+	"execlp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"execv":	{
+		"prop":	"EFT_NOOP"
+	},
+	"execve":	{
+		"prop":	"EFT_NOOP"
+	},
+	"execvp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"feof":	{
+		"prop":	"EFT_NOOP"
+	},
+	"ferror":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fflush":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fgetc":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fgetpos":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fileno":	{
+		"prop":	"EFT_NOOP"
+	},
+	"flockfile":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fnmatch":	{
+		"prop":	"EFT_NOOP"
+	},
+	"forkpty":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fprintf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fputc":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fputs":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fread":	{
+		"prop":	"EFT_NOOP"
+	},
+	"frexp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fscanf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fseek":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fseeko":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fseeko64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fsetpos":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fstat":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fstat64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fstatfs":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fstatvfs64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"ftell":	{
+		"prop":	"EFT_NOOP"
+	},
+	"ftello":	{
+		"prop":	"EFT_NOOP"
+	},
+	"ftello64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"ftok":	{
+		"prop":	"EFT_NOOP"
+	},
+	"funlockfile":	{
+		"prop":	"EFT_NOOP"
+	},
+	"fwrite":	{
+		"prop":	"EFT_NOOP"
+	},
+	"g_scanner_destroy":	{
+		"prop":	"EFT_NOOP"
+	},
+	"g_scanner_eof":	{
+		"prop":	"EFT_NOOP"
+	},
+	"g_scanner_get_next_token":	{
+		"prop":	"EFT_NOOP"
+	},
+	"g_scanner_input_file":	{
+		"prop":	"EFT_NOOP"
+	},
+	"g_scanner_scope_add_symbol":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_cipher_close":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_cipher_ctl":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_cipher_decrypt":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_cipher_map_name":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_cipher_open":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_md_close":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_md_ctl":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_md_get_algo":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_md_hash_buffer":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_md_map_name":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_md_open":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_md_setkey":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_md_write":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_mpi_add":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_mpi_add_ui":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_mpi_clear_highbit":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gcry_mpi_print":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getaddrinfo":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getc_unlocked":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getgroups":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gethostname":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getloadavg":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getopt":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getopt_long":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getopt_long_only":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getpeername":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getresgid":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getresuid":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getrlimit":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getrlimit64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getrusage":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getsockname":	{
+		"prop":	"EFT_NOOP"
+	},
+	"getsockopt":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gettimeofday":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gnutls_pkcs12_bag_decrypt":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gnutls_pkcs12_bag_deinit":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gnutls_pkcs12_bag_get_count":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gnutls_pkcs12_bag_get_type":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gnutls_x509_crt_deinit":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gnutls_x509_crt_get_dn_by_oid":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gnutls_x509_crt_get_key_id":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gnutls_x509_privkey_deinit":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gnutls_x509_privkey_get_key_id":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gzclose":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gzeof":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gzgetc":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gzread":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gzseek":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gztell":	{
+		"prop":	"EFT_NOOP"
+	},
+	"gzwrite":	{
+		"prop":	"EFT_NOOP"
+	},
+	"hstrerror":	{
+		"prop":	"EFT_NOOP"
+	},
+	"iconv_close":	{
+		"prop":	"EFT_NOOP"
+	},
+	"inet_addr":	{
+		"prop":	"EFT_NOOP"
+	},
+	"inet_aton":	{
+		"prop":	"EFT_NOOP"
+	},
+	"inet_pton":	{
+		"prop":	"EFT_NOOP"
+	},
+	"inflate":	{
+		"prop":	"EFT_NOOP"
+	},
+	"inflateEnd":	{
+		"prop":	"EFT_NOOP"
+	},
+	"inflateInit2_":	{
+		"prop":	"EFT_NOOP"
+	},
+	"inflateInit_":	{
+		"prop":	"EFT_NOOP"
+	},
+	"inflateReset":	{
+		"prop":	"EFT_NOOP"
+	},
+	"initgroups":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_CreateCompress":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_CreateDecompress":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_destroy":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_finish_compress":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_finish_decompress":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_read_header":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_read_scanlines":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_resync_to_restart":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_set_colorspace":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_set_defaults":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_set_linear_quality":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_set_quality":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_start_compress":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_start_decompress":	{
+		"prop":	"EFT_NOOP"
+	},
+	"jpeg_write_scanlines":	{
+		"prop":	"EFT_NOOP"
+	},
+	"keypad":	{
+		"prop":	"EFT_NOOP"
+	},
+	"lchown":	{
+		"prop":	"EFT_NOOP"
+	},
+	"link":	{
+		"prop":	"EFT_NOOP"
+	},
+	"llvm.dbg":	{
+		"prop":	"EFT_NOOP"
+	},
+	"llvm.stackrestore":	{
+		"prop":	"EFT_NOOP"
+	},
+	"llvm.va_copy":	{
+		"prop":	"EFT_NOOP"
+	},
+	"llvm.va_end":	{
+		"prop":	"EFT_NOOP"
+	},
+	"llvm.va_start":	{
+		"prop":	"EFT_NOOP"
+	},
+	"longjmp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"lstat":	{
+		"prop":	"EFT_NOOP"
+	},
+	"lstat64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mblen":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mbrlen":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mbrtowc":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mbtowc":	{
+		"prop":	"EFT_NOOP"
+	},
+	"memcmp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mkdir":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mknod":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mkfifo":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mkstemp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mkstemp64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mktime":	{
+		"prop":	"EFT_NOOP"
+	},
+	"modf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"mprotect":	{
+		"prop":	"EFT_NOOP"
+	},
+	"munmap":	{
+		"prop":	"EFT_NOOP"
+	},
+	"nanosleep":	{
+		"prop":	"EFT_NOOP"
+	},
+	"nodelay":	{
+		"prop":	"EFT_NOOP"
+	},
+	"open":	{
+		"prop":	"EFT_NOOP"
+	},
+	"open64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"openlog":	{
+		"prop":	"EFT_NOOP"
+	},
+	"openpty":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pathconf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pclose":	{
+		"prop":	"EFT_NOOP"
+	},
+	"perror":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pipe":	{
+		"prop":	"EFT_NOOP"
+	},
+	"png_destroy_write_struct":	{
+		"prop":	"EFT_NOOP"
+	},
+	"png_init_io":	{
+		"prop":	"EFT_NOOP"
+	},
+	"png_set_bKGD":	{
+		"prop":	"EFT_NOOP"
+	},
+	"png_set_invert_alpha":	{
+		"prop":	"EFT_NOOP"
+	},
+	"png_set_invert_mono":	{
+		"prop":	"EFT_NOOP"
+	},
+	"png_write_end":	{
+		"prop":	"EFT_NOOP"
+	},
+	"png_write_info":	{
+		"prop":	"EFT_NOOP"
+	},
+	"png_write_rows":	{
+		"prop":	"EFT_NOOP"
+	},
+	"poll":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pread64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"printf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_attr_destroy":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_attr_init":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_attr_setscope":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_attr_setstacksize":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_create":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_mutex_destroy":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_mutex_init":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_mutex_lock":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_mutex_unlock":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_mutexattr_destroy":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_mutexattr_init":	{
+		"prop":	"EFT_NOOP"
+	},
+	"pthread_mutexattr_settype":	{
+		"prop":	"EFT_NOOP"
+	},
+	"ptsname":	{
+		"prop":	"EFT_NOOP"
+	},
+	"putenv":	{
+		"prop":	"EFT_NOOP"
+	},
+	"puts":	{
+		"prop":	"EFT_NOOP"
+	},
+	"qsort":	{
+		"prop":	"EFT_NOOP"
+	},
+	"re_compile_fastmap":	{
+		"prop":	"EFT_NOOP"
+	},
+	"re_exec":	{
+		"prop":	"EFT_NOOP"
+	},
+	"re_search":	{
+		"prop":	"EFT_NOOP"
+	},
+	"read":	{
+		"prop":	"EFT_NOOP"
+	},
+	"readlink":	{
+		"prop":	"EFT_NOOP"
+	},
+	"recv":	{
+		"prop":	"EFT_NOOP"
+	},
+	"recvfrom":	{
+		"prop":	"EFT_NOOP"
+	},
+	"regcomp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"regerror":	{
+		"prop":	"EFT_NOOP"
+	},
+	"remove":	{
+		"prop":	"EFT_NOOP"
+	},
+	"rename":	{
+		"prop":	"EFT_NOOP"
+	},
+	"rewind":	{
+		"prop":	"EFT_NOOP"
+	},
+	"rewinddir":	{
+		"prop":	"EFT_NOOP"
+	},
+	"rmdir":	{
+		"prop":	"EFT_NOOP"
+	},
+	"rresvport":	{
+		"prop":	"EFT_NOOP"
+	},
+	"scrollok":	{
+		"prop":	"EFT_NOOP"
+	},
+	"select":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sem_destroy":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sem_init":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sem_post":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sem_trywait":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sem_wait":	{
+		"prop":	"EFT_NOOP"
+	},
+	"send":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sendto":	{
+		"prop":	"EFT_NOOP"
+	},
+	"setbuf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"setenv":	{
+		"prop":	"EFT_NOOP"
+	},
+	"setgroups":	{
+		"prop":	"EFT_NOOP"
+	},
+	"setitimer":	{
+		"prop":	"EFT_NOOP"
+	},
+	"setrlimit":	{
+		"prop":	"EFT_NOOP"
+	},
+	"setsockopt":	{
+		"prop":	"EFT_NOOP"
+	},
+	"setvbuf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sigaction":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sigaddset":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sigaltstack":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sigdelset":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sigemptyset":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sigfillset":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sigisemptyset":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sigismember":	{
+		"prop":	"EFT_NOOP"
+	},
+	"siglongjmp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sigprocmask":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sigsuspend":	{
+		"prop":	"EFT_NOOP"
+	},
+	"snprintf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"socketpair":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sprintf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sscanf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"stat":	{
+		"prop":	"EFT_NOOP"
+	},
+	"stat64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"statfs":	{
+		"prop":	"EFT_NOOP"
+	},
+	"statvfs":	{
+		"prop":	"EFT_NOOP"
+	},
+	"statvfs64":	{
+		"prop":	"EFT_NOOP"
+	},
+	"strcasecmp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"strcmp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"strcoll":	{
+		"prop":	"EFT_NOOP"
+	},
+	"strcspn":	{
+		"prop":	"EFT_NOOP"
+	},
+	"strfmon":	{
+		"prop":	"EFT_NOOP"
+	},
+	"strftime":	{
+		"prop":	"EFT_NOOP"
+	},
+	"strlen":	{
+		"prop":	"EFT_NOOP"
+	},
+	"strncasecmp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"strncmp":	{
+		"prop":	"EFT_NOOP"
+	},
+	"strspn":	{
+		"prop":	"EFT_NOOP"
+	},
+	"symlink":	{
+		"prop":	"EFT_NOOP"
+	},
+	"sysinfo":	{
+		"prop":	"EFT_NOOP"
+	},
+	"syslog":	{
+		"prop":	"EFT_NOOP"
+	},
+	"system":	{
+		"prop":	"EFT_NOOP"
+	},
+	"tcgetattr":	{
+		"prop":	"EFT_NOOP"
+	},
+	"tcsetattr":	{
+		"prop":	"EFT_NOOP"
+	},
+	"tgetent":	{
+		"prop":	"EFT_NOOP"
+	},
+	"tgetflag":	{
+		"prop":	"EFT_NOOP"
+	},
+	"tgetnum":	{
+		"prop":	"EFT_NOOP"
+	},
+	"time":	{
+		"prop":	"EFT_NOOP"
+	},
+	"timegm":	{
+		"prop":	"EFT_NOOP"
+	},
+	"times":	{
+		"prop":	"EFT_NOOP"
+	},
+	"tputs":	{
+		"prop":	"EFT_NOOP"
+	},
+	"truncate":	{
+		"prop":	"EFT_NOOP"
+	},
+	"uname":	{
+		"prop":	"EFT_NOOP"
+	},
+	"uncompress":	{
+		"prop":	"EFT_NOOP"
+	},
+	"ungetc":	{
+		"prop":	"EFT_NOOP"
+	},
+	"unlink":	{
+		"prop":	"EFT_NOOP"
+	},
+	"unsetenv":	{
+		"prop":	"EFT_NOOP"
+	},
+	"utime":	{
+		"prop":	"EFT_NOOP"
+	},
+	"utimes":	{
+		"prop":	"EFT_NOOP"
+	},
+	"vasprintf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"vfprintf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"vprintf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"vsnprintf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"vsprintf":	{
+		"prop":	"EFT_NOOP"
+	},
+	"waddch":	{
+		"prop":	"EFT_NOOP"
+	},
+	"waddnstr":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wait":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wait3":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wait4":	{
+		"prop":	"EFT_NOOP"
+	},
+	"waitpid":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wattr_off":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wattr_on":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wborder":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wclrtobot":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wclrtoeol":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wcrtomb":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wctomb":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wctype":	{
+		"prop":	"EFT_NOOP"
+	},
+	"werase":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wgetch":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wmove":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wrefresh":	{
+		"prop":	"EFT_NOOP"
+	},
+	"write":	{
+		"prop":	"EFT_NOOP"
+	},
+	"wtouchln":	{
+		"prop":	"EFT_NOOP"
+	},
+	"\01_fopen":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"\01fopen64":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"\01readdir64":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"\01tmpfile64":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"BIO_new_socket":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FT_Get_Sfnt_Table":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcFontList":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcFontMatch":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcFontRenderPrepare":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcFontSetCreate":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcFontSort":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcInitLoadConfig":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcObjectSetBuild":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcObjectSetCreate":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcPatternBuild":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcPatternCreate":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"FcPatternDuplicate":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"SSL_CTX_new":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"SSL_get_peer_certificate":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"SSL_new":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"SSLv23_client_method":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"SyGetmem":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"TLSv1_client_method":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XAddExtension":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XAllocClassHint":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XAllocSizeHints":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XAllocStandardColormap":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XCreateFontSet":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XCreateImage":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XCreateGC":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XESetCloseDisplay":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XGetImage":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XGetModifierMapping":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XGetMotionEvents":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XGetVisualInfo":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XLoadQueryFont":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XListPixmapFormats":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XRenderFindFormat":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XRenderFindStandardFormat":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XRenderFindVisualFormat":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XOpenDisplay":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XSetErrorHandler":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XSetIOErrorHandler":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XShapeGetRectangles":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XShmCreateImage":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XSynchronize":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XcursorImageCreate":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XcursorLibraryLoadImages":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XcursorShapeLoadImages":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XineramaQueryScreens":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XkbGetMap":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XtAppCreateShell":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XtCreateApplicationContext":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XtOpenDisplay":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"alloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"alloc_check":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"alloc_clear":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"art_svp_from_vpath":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"art_svp_vpath_stroke":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"art_svp_writer_rewind_new":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"art_svp_writer_rewind_reap":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"art_vpath_dash":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"cairo_create":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"cairo_image_surface_create_for_data":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"cairo_pattern_create_for_surface":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"cairo_surface_create_similar":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"calloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"zmalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"fopen":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"fopen64":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"fopencookie":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"g_scanner_new":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"gcry_sexp_nth_mpi":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"gzdopen":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"iconv_open":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"jpeg_alloc_huff_table":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"jpeg_alloc_quant_table":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"lalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"lalloc_clear":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"malloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"nhalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"oballoc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"pango_cairo_font_map_create_context":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"pcre_compile":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"pcre_study":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"permalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"png_create_info_struct":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"png_create_write_struct":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"popen":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"pthread_getspecific":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"readdir":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"readdir64":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"safe_calloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"safe_malloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"safecalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"safemalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"safexcalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"safexmalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"savealloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"setmntent":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"shmat":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"__sysv_signal":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"signal":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"sigset":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"tempnam":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"tmpfile":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"tmpfile64":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"xalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"xcalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"xmalloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"_Znwm":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"_Znam":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"_Znaj":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"_Znwj":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"__cxa_allocate_exception":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"aligned_alloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"memalign":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"valloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"SRE_LockCreate":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"VOS_MemAlloc":	{
+		"prop":	"EFT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"\01mmap64":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"X509_NAME_oneline":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"X509_verify_cert_error_string":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XBaseFontNameListOfFontSet":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XGetAtomName":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XGetDefault":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XGetKeyboardMapping":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XListDepths":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XListFonts":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XSetLocaleModifiers":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"XcursorGetTheme":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"__strdup":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"crypt":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"ctime":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"dlerror":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"dlopen":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"gai_strerror":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"gcry_cipher_algo_name":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"gcry_md_algo_name":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"gcry_md_read":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"getenv":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"getlogin":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"getpass":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"gnutls_strerror":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"gpg_strerror":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"gzerror":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"inet_ntoa":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"initscr":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"llvm.stacksave":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"mmap":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"mmap64":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"newwin":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"nl_langinfo":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"opendir":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"sbrk":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"strdup":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"strerror":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"strsignal":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"textdomain":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"tgetstr":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"tigetstr":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"tmpnam":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"ttyname":	{
+		"prop":	"EFT_NOSTRUCT_ALLOC",
+		"addr":	["L", "L"]
+	},
+	"__ctype_b_loc":	{
+		"prop":	"EFT_STAT2",
+		"addr":	["L", "L"]
+	},
+	"__ctype_tolower_loc":	{
+		"prop":	"EFT_STAT2",
+		"addr":	["L", "L"]
+	},
+	"__ctype_toupper_loc":	{
+		"prop":	"EFT_STAT2",
+		"addr":	["L", "L"]
+	},
+	"XKeysymToString":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"__errno_location":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"__h_errno_location":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"__res_state":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"asctime":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"bindtextdomain":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"bind_textdomain_codeset":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"ctermid":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"dcgettext":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"dgettext":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"dngettext":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"fdopen":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"gcry_strerror":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"gcry_strsource":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getgrgid":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getgrnam":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"gethostbyaddr":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"gethostbyname":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"gethostbyname2":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getmntent":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getprotobyname":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getprotobynumber":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getpwent":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getpwnam":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getpwuid":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getservbyname":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getservbyport":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getspnam":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"gettext":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"gmtime":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"gnu_get_libc_version":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"gnutls_check_version":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"localeconv":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"localtime":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"ngettext":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"pango_cairo_font_map_get_default":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"re_comp":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"setlocale":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"tgoto":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"tparm":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"zError":	{
+		"prop":	"EFT_STAT",
+		"addr":	["L", "L"]
+	},
+	"getcwd":	{
+		"prop": "EFT_REALLOC",
+		"addr": ["L", "L"]
+	},
+	"mem_realloc":	{
+		"prop": "EFT_REALLOC",
+		"addr": ["L", "L"]
+	},
+	"realloc":	{
+		"prop": "EFT_REALLOC",
+		"addr": ["L", "L"]
+	},
+	"realloc_obj":	{
+		"prop": "EFT_REALLOC",
+		"addr": ["L", "L"]
+	},
+	"safe_realloc":	{
+		"prop": "EFT_REALLOC",
+		"addr": ["L", "L"]
+	},
+	"saferealloc":	{
+		"prop": "EFT_REALLOC",
+		"addr": ["L", "L"]
+	},
+	"safexrealloc":	{
+		"prop": "EFT_REALLOC",
+		"addr": ["L", "L"]
+	},
+	"strtok":	{
+		"prop": "EFT_REALLOC",
+		"addr": ["L", "L"]
+	},
+	"strtok_r":	{
+		"prop": "EFT_REALLOC",
+		"addr": ["L", "L"]
+	},
+	"xrealloc":	{
+		"prop": "EFT_REALLOC",
+		"addr": ["L", "L"]
+	},
+	"SSL_CTX_free":	{
+		"prop":	"EFT_FREE"
+	},
+	"SSL_free":	{
+		"prop":	"EFT_FREE"
+	},
+	"cfree":	{
+		"prop":	"EFT_FREE"
+	},
+	"free":	{
+		"prop":	"EFT_FREE"
+	},
+	"free_all_mem":	{
+		"prop":	"EFT_FREE"
+	},
+	"freeaddrinfo":	{
+		"prop":	"EFT_FREE"
+	},
+	"gcry_mpi_release":	{
+		"prop":	"EFT_FREE"
+	},
+	"gcry_sexp_release":	{
+		"prop":	"EFT_FREE"
+	},
+	"globfree":	{
+		"prop":	"EFT_FREE"
+	},
+	"nhfree":	{
+		"prop":	"EFT_FREE"
+	},
+	"obstack_free":	{
+		"prop":	"EFT_FREE"
+	},
+	"safe_cfree":	{
+		"prop":	"EFT_FREE"
+	},
+	"safe_free":	{
+		"prop":	"EFT_FREE"
+	},
+	"safefree":	{
+		"prop":	"EFT_FREE"
+	},
+	"safexfree":	{
+		"prop":	"EFT_FREE"
+	},
+	"sm_free":	{
+		"prop":	"EFT_FREE"
+	},
+	"vim_free":	{
+		"prop":	"EFT_FREE"
+	},
+	"xfree":	{
+		"prop":	"EFT_FREE"
+	},
+	"fclose":	{
+		"prop":	"EFT_FREE"
+	},
+	"XFreeColormap":	{
+		"prop":	"EFT_FREE"
+	},
+	"XFreeColors":	{
+		"prop":	"EFT_FREE"
+	},
+	"XFreeFont":	{
+		"prop":	"EFT_FREE"
+	},
+	"XFreeFontNames":	{
+		"prop":	"EFT_FREE"
+	},
+	"XFreeGC":	{
+		"prop":	"EFT_FREE"
+	},
+	"XFreePixmap":	{
+		"prop":	"EFT_FREE"
+	},
+	"XFree":	{
+		"prop":	"EFT_FREE"
+	},
+	"VOS_MemFree":	{
+		"prop":	"EFT_FREE"
+	},
+	"_ZdaPv":	{
+		"prop":	"EFT_FREE"
+	},
+	"_ZdlPv":	{
+		"prop":	"EFT_FREE"
+	},
+	"__rawmemchr":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"cairo_surface_reference":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"fgets":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"jpeg_std_error":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"memchr":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"mremap":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"strchr":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"strerror_r":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"strpbrk":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"strptime":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"strrchr":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"strstr":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"tmpnam_r":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"isalnum":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"isalpha":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"isblank":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"iscntrl":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"isdigit":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"isgraph":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"islower":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"isprint":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"ispunct":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"isspace":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"isupper":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"isxdigit":	{
+		"prop": "EFT_L_A0",
+		"copy": ["A0", "L"]
+	},
+	"asctime_r":	{
+		"prop": "EFT_L_A1",
+		"copy": ["A1", "L"]
+	},
+	"bsearch":	{
+		"prop": "EFT_L_A1",
+		"copy": ["A1", "L"]
+	},
+	"getmntent_r":	{
+		"prop": "EFT_L_A1",
+		"copy": ["A1", "L"]
+	},
+	"gmtime_r":	{
+		"prop": "EFT_L_A1",
+		"copy": ["A1", "L"]
+	},
+	"gzgets":	{
+		"prop": "EFT_L_A1",
+		"copy": ["A1", "L"]
+	},
+	"localtime_r":	{
+		"prop": "EFT_L_A1",
+		"copy": ["A1", "L"]
+	},
+	"realpath":	{
+		"prop": "EFT_L_A1",
+		"copy": ["A1", "L"]
+	},
+	"\01freopen64":	{
+		"prop": "EFT_L_A2",
+		"copy": ["A2", "L"]
+	},
+	"_XGetAsyncReply":	{
+		"prop": "EFT_L_A2",
+		"copy": ["A2", "L"]
+	},
+	"freopen":	{
+		"prop": "EFT_L_A2",
+		"copy": ["A2", "L"]
+	},
+	"freopen64":	{
+		"prop": "EFT_L_A2",
+		"copy": ["A2", "L"]
+	},
+	"inet_ntop":	{
+		"prop": "EFT_L_A2",
+		"copy": ["A2", "L"]
+	},
+	"XGetSubImage":	{
+		"prop": "EFT_L_A8",
+		"copy": ["A8", "L"]
+	},
+	"memset":	{
+		"prop": "EFT_L_A0__A0R_A1",
+		"copy_n": ["A0", "A1", "A2"]
+	},
+	"llvm.memset":	{
+		"prop": "EFT_L_A0__A0R_A1",
+		"copy_n": ["A0", "A1", "A2"]
+	},
+	"llvm.memset.p0i8.i32":	{
+		"prop": "EFT_L_A0__A0R_A1",
+		"copy_n": ["A0", "A1", "A2"]
+	},
+	"llvm.memset.p0i8.i64":	{
+		"prop": "EFT_L_A0__A0R_A1",
+		"copy_n": ["A0", "A1", "A2"]
+	},
+	"__memset_chk":	{
+		"prop": "EFT_L_A0__A0R_A1",
+		"copy_n": ["A0", "A1", "A2"]
+	},
+	"llvm.memcpy":	{
+		"prop": "EFT_L_A0__A0R_A1R",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"llvm.memcpy.p0i8.p0i8.i32":	{
+		"prop": "EFT_L_A0__A0R_A1R",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"llvm.memcpy.p0i8.p0i8.i64":	{
+		"prop": "EFT_L_A0__A0R_A1R",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"llvm.memmove":	{
+		"prop": "EFT_L_A0__A0R_A1R",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"llvm.memmove.p0i8.p0i8.i32":	{
+		"prop": "EFT_L_A0__A0R_A1R",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"llvm.memmove.p0i8.p0i8.i64":	{
+		"prop": "EFT_L_A0__A0R_A1R",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"memccpy":	{
+		"prop": "EFT_L_A0__A0R_A1R",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"memcpy":	{
+		"prop": "EFT_L_A0__A0R_A1R",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"memmove":	{
+		"prop": "EFT_L_A0__A0R_A1R",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"dlsym":	{
+		"prop": "EFT_L_A1__FunPtr",
+		"funptr":	["A1R"]
+	},
+	"bcopy":	{
+		"prop": "EFT_A1R_A0R",
+		"copy_mn":	["A1R", "A0", "A2"]
+	},
+	"iconv":	{
+		"prop": "EFT_A3R_A1R_NS",
+		"copy_mn":	["A3R", "A1R"]
+	},
+	"strtod":	{
+		"prop": "EFT_A1R_A0",
+		"store": ["A0", "A1R"]
+	},
+	"strtof":	{
+		"prop": "EFT_A1R_A0",
+		"store": ["A0", "A1R"]
+	},
+	"strtol":	{
+		"prop": "EFT_A1R_A0",
+		"store": ["A0", "A1R"]
+	},
+	"strtold":	{
+		"prop": "EFT_A1R_A0",
+		"store": ["A0", "A1R"]
+	},
+	"strtoll":	{
+		"prop": "EFT_A1R_A0",
+		"store": ["A0", "A1R"]
+	},
+	"strtoul":	{
+		"prop": "EFT_A1R_A0",
+		"store": ["A0", "A1R"]
+	},
+	"readdir_r":{
+		"prop": "EFT_A2R_A1",
+		"store": ["A1", "A2R"]
+	},
+	"__strcpy_chk":	{
+		"prop": "EFT_L_A0__A1_A0",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"__strcat_chk":	{
+		"prop": "EFT_L_A0__A1_A0",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"stpcpy":	{
+		"prop": "EFT_L_A0__A1_A0",
+		"copy_mn":	["A0", "A1"],
+		"copy":	["A0", "L"]
+	},
+	"strcat":	{
+		"prop": "EFT_L_A0__A1_A0",
+		"copy_mn":	["A0", "A1"],
+		"copy":	["A0", "L"]
+	},
+	"strcpy":	{
+		"prop": "EFT_L_A0__A1_A0",
+		"copy_mn":	["A0", "A1"],
+		"copy":	["A0", "L"]
+	},
+	"strncat":	{
+		"prop": "EFT_L_A0__A1_A0",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"strncpy":	{
+		"prop": "EFT_L_A0__A1_A0",
+		"copy_mn":	["A0", "A1", "A2"],
+		"copy":	["A0", "L"]
+	},
+	"getpwnam_r":{
+		"prop": "EFT_A4R_A1",
+		"store": ["A1", "A4R"]
+	},
+	"getpwuid_r":{
+		"prop": "EFT_A4R_A1",
+		"store": ["A1", "A4R"]
+	},
+	"db_create":	{
+		"prop":	"EFT_A0R_NEW",
+		"load_store":	["A0", "V", "V"]
+	},
+	"gcry_mpi_scan":	{
+		"prop":	"EFT_A0R_NEW",
+		"load_store":	["A0", "V", "V"]
+	},
+	"gcry_pk_decrypt":	{
+		"prop":	"EFT_A0R_NEW",
+		"load_store":	["A0", "V", "V"]
+	},
+	"gcry_sexp_build":	{
+		"prop":	"EFT_A0R_NEW",
+		"load_store":	["A0", "V", "V"]
+	},
+	"gnutls_pkcs12_bag_init":	{
+		"prop":	"EFT_A0R_NEW",
+		"load_store":	["A0", "V", "V"]
+	},
+	"gnutls_pkcs12_init":	{
+		"prop":	"EFT_A0R_NEW",
+		"load_store":	["A0", "V", "V"]
+	},
+	"gnutls_x509_crt_init":	{
+		"prop":	"EFT_A0R_NEW",
+		"load_store":	["A0", "V", "V"]
+	},
+	"gnutls_x509_privkey_init":	{
+		"prop":	"EFT_A0R_NEW",
+		"load_store":	["A0", "V", "V"]
+	},
+	"posix_memalign":	{
+		"prop":	"EFT_A0R_NEW",
+		"load_store":	["A0", "V", "V"]
+	},
+	"scandir":	{
+		"prop":	"EFT_A1R_NEW",
+		"load_store":	["A1", "V", "V"]
+	},
+	"XGetRGBColormaps":	{
+		"prop":	"EFT_A2R_NEW",
+		"load_store":	["A2", "V", "V"]
+	},
+	"XmbTextPropertyToTextList":	{
+		"prop":	"EFT_A2R_NEW",
+		"load_store":	["A2", "V", "V"]
+	},
+	"SRE_SplSpecCreate":	{
+		"prop":	"EFT_A2R_NEW",
+		"load_store":	["A2", "V", "V"]
+	},
+	"XQueryTree":	{
+		"prop":	"EFT_A4R_NEW",
+		"load_store":	["A4", "V", "V"]
+	},
+	"XGetWindowProperty":	{
+		"prop":	"EFT_A11R_NEW",
+		"load_store":	["A11", "V", "V"]
+	},
+	"_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_":{
+		"prop": "EFT_STD_RB_TREE_INSERT_AND_REBALANCE",
+		"complex": ["A0", "A1"]
+	},
+	"_ZNSt8__detail15_List_node_base7_M_hookEPS0_":{
+		"prop": "EFT_STD_LIST_HOOK",
+		"store": ["A0", "A1"]
+	},
+	"_ZNSsC1EPKcRKSaIcE":{
+		"prop": "CPP_EFT_A0R_A1",
+		"store": ["A0", "A1"]
+	},
+	"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_":{
+		"prop": "CPP_EFT_A0R_A1",
+		"store": ["A0", "A1"]
+	},
+	"_ZNSsC1EPKcmRKSaIcE":{
+		"prop": "CPP_EFT_A0R_A1",
+		"store": ["A0", "A1"]
+	},
+	"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcmRKS3_":{
+		"prop": "CPP_EFT_A0R_A1",
+		"store": ["A0", "A1"]
+	},
+	"_ZNSsaSEPKc":{
+		"prop": "CPP_EFT_A0R_A1",
+		"store": ["A0", "A1"]
+	},
+	"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEPKc":{
+		"prop": "CPP_EFT_A0R_A1",
+		"store": ["A0", "A1"]
+	},
+	"_ZNSsC1ERKSs":{
+		"prop": "CPP_EFT_A0R_A1R",
+		"load_store": ["A1", "V","A0"]
+	},
+	"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_":{
+		"prop": "CPP_EFT_A0R_A1R",
+		"load_store": ["A1", "V","A0"]
+	},
+	"_ZNSsC1ERKSsmm":{
+		"prop": "CPP_EFT_A0R_A1R",
+		"load_store": ["A1", "V","A0"]
+	},
+	"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_mm":{
+		"prop": "CPP_EFT_A0R_A1R",
+		"load_store": ["A1", "V","A0"]
+	},
+	"_ZNSsaSERKSs":{
+		"prop": "CPP_EFT_A0R_A1R",
+		"load_store": ["A1", "V","A0"]
+	},
+	"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_":{
+		"prop": "CPP_EFT_A0R_A1R",
+		"load_store": ["A1", "V","A0"]
+	},
+	"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E":{
+		"prop": "CPP_EFT_A1R",
+		"load": ["A1", "V"]
+	},
+	"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic_stringIS4_S5_T1_EE":{
+		"prop": "CPP_EFT_A1R",
+		"load": ["A1", "V"]
+	},
+	"__dynamic_cast":{
+		"prop": "CPP_EFT_DYNAMIC_CAST",
+		"copy": ["A0", "L"]
+	}
+}
