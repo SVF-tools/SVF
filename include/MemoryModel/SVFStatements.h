@@ -763,7 +763,7 @@ public:
     //@}
 
     /// constructor
-    SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond) : MultiOpndStmt(s,opnds,SVFStmt::Select), condition(cond)
+    SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond) : MultiOpndStmt(s,opnds,makeEdgeFlagWithAddionalOpnd(SVFStmt::Select,opnds.at(1))), condition(cond)
     {
         assert(opnds.size()==2 && "SelectStmt can only have two operands!");
     }
@@ -816,8 +816,9 @@ public:
     //@}
 
     /// constructor
-    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre) : MultiOpndStmt(s,opnds,SVFStmt::Cmp), predicate(pre)
+    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre) : MultiOpndStmt(s,opnds,makeEdgeFlagWithAddionalOpnd(SVFStmt::Cmp,opnds.at(1))), predicate(pre)
     {
+        assert(opnds.size()==2 && "CmpStmt can only have two operands!");
     }
 
     u32_t getPredicate() const
@@ -862,8 +863,9 @@ public:
     //@}
 
     /// constructor
-    BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,SVFStmt::BinaryOp), opcode(oc)
+    BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,makeEdgeFlagWithAddionalOpnd(SVFStmt::BinaryOp,opnds.at(1))), opcode(oc)
     {
+        assert(opnds.size()==2 && "BinaryOPStmt can only have two operands!");
     }
 
     u32_t getOpcode() const
