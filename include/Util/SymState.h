@@ -32,34 +32,43 @@
 
 #include "ExeState.h"
 
-namespace SVF {
-class SymState {
+namespace SVF
+{
+class SymState
+{
 public:
     typedef std::string AbstractState;
 
-    SymState(const ExeState &_es, const AbstractState &_as) : exeState(_es), absState(_as) {
+    SymState(const ExeState &_es, const AbstractState &_as) : exeState(_es), absState(_as)
+    {
 
     }
 
-    virtual ~SymState() {
+    virtual ~SymState()
+    {
 
     }
 
     SymState(const SymState &symState) : absState(symState.getAbstractState()),
-                                         exeState(symState.getExecutionState()) {
+        exeState(symState.getExecutionState())
+    {
     }
 
 
-    const AbstractState& getAbstractState() const {
+    const AbstractState& getAbstractState() const
+    {
         return absState;
     }
 
-    const ExeState& getExecutionState() const {
+    const ExeState& getExecutionState() const
+    {
         return exeState;
     }
 
-    SymState &operator=(const SymState &rhs) {
-        if (*this != rhs) {
+    SymState &operator=(const SymState &rhs)
+    {
+        if (*this != rhs)
+        {
             exeState = rhs.getExecutionState();
             absState = rhs.getAbstractState();
         }
@@ -67,17 +76,20 @@ public:
     }
 
     /// Overloading Operator==
-    inline bool operator==(const SymState &rhs) const {
+    inline bool operator==(const SymState &rhs) const
+    {
         return absState == rhs.getAbstractState() && exeState = rhs.getExecutionState();
     }
 
     /// Overloading Operator!=
-    inline bool operator!=(const SymState &rhs) const {
+    inline bool operator!=(const SymState &rhs) const
+    {
         return !(*this == rhs);
     }
 
     /// Overloading Operator==
-    inline bool operator<(const SymState &rhs) const {
+    inline bool operator<(const SymState &rhs) const
+    {
         if (absState != rhs.getAbstractState())
             return absState < rhs.getAbstractState();
         if (exeState != rhs.getExecutionState())
@@ -92,8 +104,10 @@ private:
 }
 
 template<>
-struct std::hash<SVF::SymState> {
-    size_t operator()(const SVF::SymState &symState) const {
+struct std::hash<SVF::SymState>
+{
+    size_t operator()(const SVF::SymState &symState) const
+    {
 
         SVF::Hash<std::pair<SVF::AbstractState, SVF::ExeState>> pairH;
 
