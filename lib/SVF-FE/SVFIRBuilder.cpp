@@ -41,6 +41,7 @@
 using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 
 /*!
@@ -201,7 +202,7 @@ void SVFIRBuilder::initialiseNodes()
     {
         DBOUT(DPAGBuild, outs() << "add address edges for constant node " << iter->second << "\n");
         const Value* val = iter->first;
-        if (SVFUtil::isConstantObjSym(val))
+        if (LLVMUtil::isConstantObjSym(val))
         {
             NodeID ptr = pag->getValueNode(val);
             if(ptr!= pag->getBlkPtr() && ptr!= pag->getNullPtr())

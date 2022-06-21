@@ -38,6 +38,7 @@
 using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 

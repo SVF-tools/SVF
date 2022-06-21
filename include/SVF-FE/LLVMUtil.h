@@ -40,7 +40,7 @@
 namespace SVF
 {
 
-namespace SVFUtil
+namespace LLVMUtil
 {
 
 
@@ -86,9 +86,9 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
 {
     const PointerType *refType = nullptr;
     // Case 1: heap object held by *argument, we should get its element type.
-    if (isHeapAllocExtCallViaArg(cs))
+    if (SVFUtil::isHeapAllocExtCallViaArg(cs))
     {
-        int argPos = getHeapAllocHoldingArgPosition(cs);
+        int argPos = SVFUtil::getHeapAllocHoldingArgPosition(cs);
         const Value *arg = cs.getArgument(argPos);
         if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
             refType = SVFUtil::dyn_cast<PointerType>(getPtrElementType(argType));
@@ -96,7 +96,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
     // Case 2: heap/static object held by return value.
     else
     {
-        assert((isStaticExtCall(cs) || isHeapAllocExtCallViaRet(cs))
+        assert((SVFUtil::isStaticExtCall(cs) || SVFUtil::isHeapAllocExtCallViaRet(cs))
                && "Must be heap alloc via ret, or static allocation site");
         refType = SVFUtil::dyn_cast<PointerType>(cs.getType());
     }
@@ -132,7 +132,7 @@ inline bool ArgInDeadFunction (const Value * val)
 inline bool ArgInProgEntryFunction (const Value * val)
 {
     return SVFUtil::isa<Argument>(val)
-           && isProgEntryFunction(SVFUtil::cast<Argument>(val)->getParent());
+           && SVFUtil::isProgEntryFunction(SVFUtil::cast<Argument>(val)->getParent());
 }
 /// Return true if this is value in a dead function (function without any caller)
 bool isPtrInDeadFunction (const Value * value);
@@ -145,7 +145,7 @@ bool isPtrInDeadFunction (const Value * value);
 /// Return true if the function does not have a caller (either it is a main function or a dead function)
 inline bool isNoCallerFunction (const Function * fun)
 {
-    return isDeadFunction(fun) || isProgEntryFunction(fun);
+    return isDeadFunction(fun) || SVFUtil::isProgEntryFunction(fun);
 }
 
 /// Return true if the argument in a function does not have a caller
@@ -315,7 +315,7 @@ u32_t getTypeSizeInBytes(const StructType *sty, u32_t field_index);
 //@}
 
 
-} // End namespace SVFUtil
+} // End namespace LLVMUtil
 
 } // End namespace SVF
 

@@ -34,6 +34,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 /*!
  * Create ICFG nodes and edges

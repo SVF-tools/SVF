@@ -35,6 +35,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 u32_t MemRegion::totalMRNum = 0;
 u32_t MRVer::totalVERNum = 0;

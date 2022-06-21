@@ -36,6 +36,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 /*!
  * Add offset value to vector offsetValues

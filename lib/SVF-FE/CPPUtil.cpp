@@ -234,7 +234,7 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
     for (u32_t i = 0; i < 3; ++i)
     {
         if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
-            elemTy = SVFUtil::getPtrElementType(ptrTy);
+            elemTy = LLVMUtil::getPtrElementType(ptrTy);
         else
             return false;
     }
@@ -420,7 +420,7 @@ string cppUtil::getClassNameFromType(const Type *ty)
     string className = "";
     if (const PointerType *ptrType = SVFUtil::dyn_cast<PointerType>(ty))
     {
-        const Type *elemType = SVFUtil::getPtrElementType(ptrType);
+        const Type *elemType = LLVMUtil::getPtrElementType(ptrType);
         if (SVFUtil::isa<StructType>(elemType) &&
                 !((SVFUtil::cast<StructType>(elemType))->isLiteral()))
         {

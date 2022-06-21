@@ -709,7 +709,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
     {
         if (isValidPointer(node->getId()) && node->hasValue())
         {
-            if (SVFUtil::ArgInNoCallerFunction(node->getValue()))
+            if (LLVMUtil::ArgInNoCallerFunction(node->getValue()))
                 return false;
             return true;
         }

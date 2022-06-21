@@ -41,6 +41,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 /*!
  *  This method identify which is value sym and which is object sym
@@ -199,9 +200,9 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 */
 void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
 {
-    if (SVFUtil::isNullPtrSym(val))
+    if (LLVMUtil::isNullPtrSym(val))
         symInfo->nullPtrSyms.insert(val);
-    if (SVFUtil::isBlackholeSym(val))
+    if (LLVMUtil::isBlackholeSym(val))
         symInfo->blackholeSyms.insert(val);
 }
 
@@ -234,7 +235,7 @@ void SymbolTableBuilder::collectSym(const Value *val)
 void SymbolTableBuilder::collectVal(const Value *val)
 {
     // collect and record special sym here
-    if (SVFUtil::isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
+    if (LLVMUtil::isNullPtrSym(val) || LLVMUtil::isBlackholeSym(val))
     {
         collectNullPtrBlackholeSyms(val);
         return;
@@ -252,7 +253,7 @@ void SymbolTableBuilder::collectVal(const Value *val)
             handleGlobalCE(globalVar);
     }
 
-    if (SVFUtil::isConstantObjSym(val))
+    if (LLVMUtil::isConstantObjSym(val))
         collectObj(val);
 }
 
@@ -267,7 +268,7 @@ void SymbolTableBuilder::collectObj(const Value *val)
     {
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if((SVFUtil::isConstantObjSym(val) && !symInfo->getModelConstants()))
+        if((LLVMUtil::isConstantObjSym(val) && !symInfo->getModelConstants()))
         {
             symInfo->objSymMap.insert(std::make_pair(val, symInfo->constantSymID()));
         }
@@ -526,7 +527,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
         writeWrnMsg("try to create an object with a non-pointer type.");
         writeWrnMsg(val->getName().str());
         writeWrnMsg("(" + getSourceLoc(val) + ")");
-        if(SVFUtil::isConstantObjSym(val))
+        if(LLVMUtil::isConstantObjSym(val))
         {
             ObjTypeInfo* typeInfo = new ObjTypeInfo(val->getType(), 0);
             initTypeInfo(typeInfo,val);
@@ -650,7 +651,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
     else if(SVFUtil::isa<GlobalVariable>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::GLOBVAR_OBJ);
-        if(SVFUtil::isConstantObjSym(val))
+        if(LLVMUtil::isConstantObjSym(val))
             typeinfo->setFlag(ObjTypeInfo::CONST_GLOBAL_OBJ);
         analyzeObjType(typeinfo,val);
         objSize = getObjSize(typeinfo->getType());
