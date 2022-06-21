@@ -78,8 +78,7 @@ public:
     inline bool isMemcpy(const Instruction *I)
     {
         const SVFFunction* F =SVFUtil::getCallee(I);
-        std::string funName = ExtAPI::getExtAPI()->get_name(F);
-        return F && "EFT_L_A0__A0R_A1R" == ExtAPI::getExtAPI()->get_type(funName);
+        return F && "EFT_L_A0__A0R_A1R" == ExtAPI::getExtAPI()->get_type(F);
     }
 
 private:

@@ -95,7 +95,7 @@ namespace SVF
         cJSON *get_FunJson(const std::string funName);
 
         // Get property of the operation, e.g. "EFT_A1R_A0R"
-        std::string get_type(std::string funName);
+        std::string get_type(const SVF::SVFFunction *callee);
 
         //Does (F) have a static var X (unavailable to us) that its return points to?
         bool has_static(const SVFFunction* F);

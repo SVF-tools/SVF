@@ -108,8 +108,6 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
         root = cJSON_Parse(jsonStr);
         if (!root)
         {
-            const char *err = cJSON_GetErrorPtr();
-            free((void *)err);
             free(jsonStr);
             return NULL;
         }
@@ -132,8 +130,9 @@ std::vector<std::string> ExtAPI::get_opArgs(const cJSON *value)
 }
 
 // Get property of the operation, e.g. "EFT_A1R_A0R"
-std::string ExtAPI::get_type(std::string funName)
+std::string ExtAPI::get_type(const SVF::SVFFunction *F)
 {
+    std::string funName = get_name(F);
     cJSON *item = get_FunJson(funName);
     if (item != NULL)
     {
@@ -148,8 +147,7 @@ std::string ExtAPI::get_type(std::string funName)
 // Does (F) have a static var X (unavailable to us) that its return points to?
 bool ExtAPI::has_static(const SVFFunction *F)
 {
-    std::string funName = get_name(F);
-    std::string t = get_type(funName);
+    std::string t = get_type(F);
     return t == "EFT_STAT" || t == "EFT_STAT2";
 }
 
@@ -157,29 +155,27 @@ bool ExtAPI::has_static(const SVFFunction *F)
 bool ExtAPI::has_static2(const SVFFunction *F)
 {
     std::string funName = get_name(F);
-    return get_type(funName) == "EFT_STAT2";
+    std::string t = get_type(F);
+    return t == "EFT_STAT2";
 }
 
 bool ExtAPI::is_alloc(const SVFFunction *F)
 {
-    std::string funName = get_name(F);
-    std::string t = get_type(funName);
+    std::string t = get_type(F);
     return t == "EFT_ALLOC" || t == "EFT_NOSTRUCT_ALLOC";
 }
 
 // Does (F) allocate a new object and assign it to one of its arguments?
 bool ExtAPI::is_arg_alloc(const SVFFunction *F)
 {
-    std::string funName = get_name(F);
-    std::string t = get_type(funName);
+    std::string t = get_type(F);
     return t == "EFT_A0R_NEW" || t == "EFT_A1R_NEW" || t == "EFT_A2R_NEW" || t == "EFT_A4R_NEW" || t == "EFT_A11R_NEW";
 }
 
 // Get the position of argument which holds the new object
 int ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
 {
-    std::string funName = get_name(F);
-    std::string t = get_type(funName);
+    std::string t = get_type(F);
     if (t == "EFT_A0R_NEW")
         return 0;
     else if (t == "EFT_A1R_NEW")
@@ -200,32 +196,28 @@ int ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
 // Does (F) allocate only non-struct objects?
 bool ExtAPI::no_struct_alloc(const SVFFunction *F)
 {
-    std::string funName = get_name(F);
-    std::string t = get_type(funName);
+    std::string t = get_type(F);
     return t == "EFT_NOSTRUCT_ALLOC";
 }
 
 // Does (F) not free/release any memory?
 bool ExtAPI::is_dealloc(const SVFFunction *F)
 {
-    std::string funName = get_name(F);
-    std::string t = get_type(funName);
+    std::string t = get_type(F);
     return t == "EFT_FREE";
 }
 
 // Does (F) not do anything with the known pointers?
 bool ExtAPI::is_noop(const SVFFunction *F)
 {
-    std::string funName = get_name(F);
-    std::string t = get_type(funName);
+    std::string t = get_type(F);
     return t == "EFT_NOOP" || t == "EFT_FREE";
 }
 
 // Does (F) reallocate a new object?
 bool ExtAPI::is_realloc(const SVFFunction *F)
 {
-    std::string funName = get_name(F);
-    std::string t = get_type(funName);
+    std::string t = get_type(F);
     return t == "EFT_REALLOC";
 }
 
@@ -241,8 +233,7 @@ bool ExtAPI::is_ext(const SVFFunction *F)
     }
     else
     {
-        std::string funName = get_name(F);
-        std::string t = get_type(funName);
+        std::string t = get_type(F);
         res = t == "EFT_ALLOC" || t == "EFT_REALLOC" || t == "EFT_NOSTRUCT_ALLOC" || t == "EFT_NOOP" || t == "EFT_FREE";
     }
     return res;

@@ -1,32 +1,32 @@
 {
-	"\01creat64":	{
+	"creat64":	{
 		"prop":	"EFT_NOOP"
 	},
-	"\01fseeko64":	{
+	"fseeko64":	{
 		"prop":	"EFT_NOOP"
 	},
-	"\01fstat64":	{
+	"fstat64":	{
 		"prop":	"EFT_NOOP"
 	},
-	"\01fstatvfs64":	{
+	"fstatvfs64":	{
 		"prop":	"EFT_NOOP"
 	},
-	"\01ftello64":	{
+	"ftello64":	{
 		"prop":	"EFT_NOOP"
 	},
-	"\01getrlimit64":	{
+	"getrlimit64":	{
 		"prop":	"EFT_NOOP"
 	},
-	"\01lstat64":	{
+	"lstat64":	{
 		"prop":	"EFT_NOOP"
 	},
-	"\01open64":	{
+	"open64":	{
 		"prop":	"EFT_NOOP"
 	},
-	"\01stat64":	{
+	"stat64":	{
 		"prop":	"EFT_NOOP"
 	},
-	"\01statvfs64":	{
+	"statvfs64":	{
 		"prop":	"EFT_NOOP"
 	},
 	"Gpm_GetEvent":	{
@@ -1199,19 +1199,19 @@
 	"wtouchln":	{
 		"prop":	"EFT_NOOP"
 	},
-	"\01_fopen":	{
+	"_fopen":	{
 		"prop":	"EFT_ALLOC",
 		"addr":	["L", "L"]
 	},
-	"\01fopen64":	{
+	"fopen64":	{
 		"prop":	"EFT_ALLOC",
 		"addr":	["L", "L"]
 	},
-	"\01readdir64":	{
+	"readdir64":	{
 		"prop":	"EFT_ALLOC",
 		"addr":	["L", "L"]
 	},
-	"\01tmpfile64":	{
+	"tmpfile64":	{
 		"prop":	"EFT_ALLOC",
 		"addr":	["L", "L"]
 	},
@@ -1679,7 +1679,7 @@
 		"prop":	"EFT_ALLOC",
 		"addr":	["L", "L"]
 	},
-	"\01mmap64":	{
+	"mmap64":	{
 		"prop":	"EFT_NOSTRUCT_ALLOC",
 		"addr":	["L", "L"]
 	},
@@ -2282,7 +2282,7 @@
 		"prop": "EFT_L_A1",
 		"copy": ["A1", "L"]
 	},
-	"\01freopen64":	{
+	"freopen64":	{
 		"prop": "EFT_L_A2",
 		"copy": ["A2", "L"]
 	},
