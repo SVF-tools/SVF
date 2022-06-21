@@ -425,7 +425,7 @@ bool LLVMUtil::isIRFile(const std::string &filename)
 /// Get the names of all modules into a vector
 /// And process arguments
 void LLVMUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_value,
-                               std::vector<std::string> &moduleNameVec)
+                                std::vector<std::string> &moduleNameVec)
 {
     bool first_ir_file = true;
     for (int i = 0; i < argc; ++i)
