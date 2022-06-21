@@ -58,6 +58,7 @@ typedef llvm::ConstantExpr ConstantExpr;
 typedef llvm::ConstantDataArray ConstantDataArray;
 typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantArray ConstantArray;
+typedef llvm::Constant Constant;
 
 // LLVM Instructions
 typedef llvm::AllocaInst AllocaInst;

@@ -91,7 +91,6 @@ typedef llvm::FunctionType FunctionType;
 
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
-typedef llvm::Constant Constant;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::GlobalAlias GlobalAlias;
