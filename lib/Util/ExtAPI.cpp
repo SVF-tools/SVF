@@ -68,19 +68,19 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
     
     if(!root)
     {
-
-        char *jsonFilePath;
+        std::string jsonFilePath = "/home/runner/work/SVF/SVF/ExtAPI.json";
+        // char *jsonFilePath = "/home/runner/work/SVF/SVF/ExtAPI.json";
         // Get SVF path 
-        jsonFilePath = getenv("SVF_DIR");
-        if(!jsonFilePath)
-        {
-            SVFUtil::errs() << SVFUtil::errMsg("\t Warning :") << " Can't find SVF project path, you need to config $SVF_DIR = your SVF absolute path!!!\n";
-        }
+        // jsonFilePath = getenv("SVF_DIR");
+        // if(!jsonFilePath)
+        // {
+        //     SVFUtil::errs() << SVFUtil::errMsg("\t Warning :") << " Can't find SVF project path, you need to config $SVF_DIR = your SVF absolute path!!!\n";
+        // }
         // Get ExtAPI.json path
-        strcat(jsonFilePath, "/ExtAPI.json");
+        // strcat(jsonFilePath, "/ExtAPI.json");
         // open file
         FILE *file = NULL;
-        file = fopen(jsonFilePath, "r");
+        file = fopen(jsonFilePath.c_str(), "r");
         if (file == NULL)
         {
             assert("Open Json file fail!");
@@ -88,7 +88,7 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
         }
         // get file size
         struct stat statbuf;
-        stat(jsonFilePath, &statbuf);
+        stat(jsonFilePath.c_str(), &statbuf);
         int fileSize = statbuf.st_size;
 
         // allocate memory size matched with file size
