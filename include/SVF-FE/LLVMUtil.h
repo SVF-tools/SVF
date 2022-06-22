@@ -36,7 +36,6 @@
 #include "Util/BasicTypes.h"
 #include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
-#include "Util/cJSON.h"
 
 namespace SVF
 {

@@ -1195,8 +1195,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
     {
         if (isExtCall(callee))
         {
-            std::string funName = extCallFunctionName(callee);
-            cJSON *item = getExtCallJson(funName);
+            std::string funName = ExtAPI::getExtAPI()->get_name(callee);
+            cJSON *item = ExtAPI::getExtAPI()->get_FunJson(funName);
             if (item != NULL)
             {
                 //  Get the first operation of the function
@@ -1210,11 +1210,11 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     {
                         // Get the first argument of the operation
                         cJSON *value = obj->child;
-                        args = getExtCallOpArgs(value);
+                        args = ExtAPI::getExtAPI()->get_opArgs(value);
                         obj = obj->next;
                     }
 
-                    ExtAPI::extf_t opName = getExtCallOpName(op);
+                    ExtAPI::extf_t opName = ExtAPI::getExtAPI()->get_opName(op);
 
                     switch (opName)
                     {

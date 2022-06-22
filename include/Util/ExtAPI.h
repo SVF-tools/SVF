@@ -35,9 +35,11 @@
 
 #include "Util/BasicTypes.h"
 #include "Util/cJSON.h"
-#include "SVF-FE/config.h"
+#include "Util/config.h"
 #include <string>
 #include <map>
+
+#define EXTAPI_JSON_PATH "/include/Util/ExtAPI.json"
 
 namespace SVF
 {
@@ -177,9 +179,6 @@ namespace SVF
 
         // Get specifications of external functions in ExtAPI.json file
         cJSON *get_FunJson(const std::string funName);
-
-        // // Get property of the operation, e.g. "EFT_A1R_A0R"
-        // std::string get_type(const SVF::SVFFunction *callee);
 
         // Get property of the operation, e.g. "EFT_A1R_A0R"
         extType get_type(const SVF::SVFFunction *callee);

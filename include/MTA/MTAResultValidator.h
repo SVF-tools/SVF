@@ -416,8 +416,7 @@ private:
 
             if (const SVFFunction *callee = SVFUtil::getCallee(I))
             {
-                if (ExtAPI::EFT_L_A0__A0R_A1R == ExtAPI::getExtAPI()->get_type(callee)
-                        || callee->getName().find("llvm.memset") != std::string::npos)
+                if (callee->getName().find("llvm.memset") != std::string::npos)
                     return I;
 
             }

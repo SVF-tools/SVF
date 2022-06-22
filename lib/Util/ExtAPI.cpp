@@ -69,7 +69,7 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
     if(!root)
     {
         std::string jsonFilePath = PROJECT_PATH;
-        jsonFilePath.append("/ExtAPI.json");
+        jsonFilePath.append(EXTAPI_JSON_PATH);
         // open file
         FILE *file = NULL;
         file = fopen(jsonFilePath.c_str(), "r");
