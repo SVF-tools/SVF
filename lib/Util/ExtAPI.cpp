@@ -68,16 +68,8 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
     
     if(!root)
     {
-        std::string jsonFilePath = "/home/runner/work/SVF/SVF/ExtAPI.json";
-        // char *jsonFilePath = "/home/runner/work/SVF/SVF/ExtAPI.json";
-        // Get SVF path 
-        // jsonFilePath = getenv("SVF_DIR");
-        // if(!jsonFilePath)
-        // {
-        //     SVFUtil::errs() << SVFUtil::errMsg("\t Warning :") << " Can't find SVF project path, you need to config $SVF_DIR = your SVF absolute path!!!\n";
-        // }
-        // Get ExtAPI.json path
-        // strcat(jsonFilePath, "/ExtAPI.json");
+        std::string jsonFilePath = PROJECT_PATH;
+        jsonFilePath.append("/ExtAPI.json");
         // open file
         FILE *file = NULL;
         file = fopen(jsonFilePath.c_str(), "r");
@@ -130,111 +122,118 @@ std::vector<std::string> ExtAPI::get_opArgs(const cJSON *value)
 }
 
 // Get property of the operation, e.g. "EFT_A1R_A0R"
-std::string ExtAPI::get_type(const SVF::SVFFunction *F)
+ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
 {
     std::string funName = get_name(F);
     cJSON *item = get_FunJson(funName);
+    std::string type = "";
     if (item != NULL)
     {
         //  Get the first operation of the function
         cJSON *obj = item->child;
         if (obj)
-            return obj -> valuestring;
+            type = obj->valuestring;
     }
-    return "";
+    std::map<std::string, extType>::const_iterator it = type_pair.find(type);
+    if (it == type_pair.end())
+        return EFT_NULL;
+    else
+        return it->second;
 }
 
 // Does (F) have a static var X (unavailable to us) that its return points to?
 bool ExtAPI::has_static(const SVFFunction *F)
 {
-    std::string t = get_type(F);
-    return t == "EFT_STAT" || t == "EFT_STAT2";
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_STAT || t == EFT_STAT2;
 }
 
 // Assuming hasStatic(F), does (F) have a second static Y where X -> Y?
 bool ExtAPI::has_static2(const SVFFunction *F)
 {
-    std::string funName = get_name(F);
-    std::string t = get_type(F);
-    return t == "EFT_STAT2";
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_STAT2;
 }
 
 bool ExtAPI::is_alloc(const SVFFunction *F)
 {
-    std::string t = get_type(F);
-    return t == "EFT_ALLOC" || t == "EFT_NOSTRUCT_ALLOC";
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_ALLOC || t == EFT_NOSTRUCT_ALLOC;
 }
 
 // Does (F) allocate a new object and assign it to one of its arguments?
 bool ExtAPI::is_arg_alloc(const SVFFunction *F)
 {
-    std::string t = get_type(F);
-    return t == "EFT_A0R_NEW" || t == "EFT_A1R_NEW" || t == "EFT_A2R_NEW" || t == "EFT_A4R_NEW" || t == "EFT_A11R_NEW";
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_A0R_NEW || t == EFT_A1R_NEW || t == EFT_A2R_NEW || t == EFT_A4R_NEW || t == EFT_A11R_NEW;
 }
 
 // Get the position of argument which holds the new object
 int ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
 {
-    std::string t = get_type(F);
-    if (t == "EFT_A0R_NEW")
-        return 0;
-    else if (t == "EFT_A1R_NEW")
-        return 1;
-    else if (t == "EFT_A2R_NEW")
-        return 2;
-    else if (t == "EFT_A4R_NEW")
-        return 4;
-    else if (t == "EFT_A11R_NEW")
-        return 11;
-    else
+    ExtAPI::extType t = get_type(F);
+    switch (t)
     {
+    case EFT_A0R_NEW:
+        return 0;
+    case EFT_A1R_NEW:
+        return 1;
+    case EFT_A2R_NEW:
+        return 2;
+    case EFT_A4R_NEW:
+        return 4;
+    case EFT_A11R_NEW:
+        return 11;
+    default:
         assert(false && "Not an alloc call via argument.");
         return -1;
     }
-}
-
-// Does (F) allocate only non-struct objects?
-bool ExtAPI::no_struct_alloc(const SVFFunction *F)
-{
-    std::string t = get_type(F);
-    return t == "EFT_NOSTRUCT_ALLOC";
-}
-
-// Does (F) not free/release any memory?
-bool ExtAPI::is_dealloc(const SVFFunction *F)
-{
-    std::string t = get_type(F);
-    return t == "EFT_FREE";
-}
-
-// Does (F) not do anything with the known pointers?
-bool ExtAPI::is_noop(const SVFFunction *F)
-{
-    std::string t = get_type(F);
-    return t == "EFT_NOOP" || t == "EFT_FREE";
-}
-
-// Does (F) reallocate a new object?
-bool ExtAPI::is_realloc(const SVFFunction *F)
-{
-    std::string t = get_type(F);
-    return t == "EFT_REALLOC";
-}
-
-// Should (F) be considered "external" (either not defined in the program
-//   or a user-defined version of a known alloc or no-op)?
-bool ExtAPI::is_ext(const SVFFunction *F)
-{
-    assert(F);
-    bool res;
-    if (F->isDeclaration() || F->isIntrinsic())
-    {
-        res = 1;
     }
-    else
+
+    // Does (F) allocate only non-struct objects?
+    bool ExtAPI::no_struct_alloc(const SVFFunction *F)
     {
-        std::string t = get_type(F);
-        res = t == "EFT_ALLOC" || t == "EFT_REALLOC" || t == "EFT_NOSTRUCT_ALLOC" || t == "EFT_NOOP" || t == "EFT_FREE";
+        ExtAPI::extType t = get_type(F);
+        return t == EFT_NOSTRUCT_ALLOC;
     }
-    return res;
-}
+
+    // Does (F) not free/release any memory?
+    bool ExtAPI::is_dealloc(const SVFFunction *F)
+    {
+        ExtAPI::extType t = get_type(F);
+        return t == EFT_FREE;
+    }
+
+    // Does (F) not do anything with the known pointers?
+    bool ExtAPI::is_noop(const SVFFunction *F)
+    {
+        ExtAPI::extType t = get_type(F);
+        return t == EFT_NOOP || t == EFT_FREE;
+    }
+
+    // Does (F) reallocate a new object?
+    bool ExtAPI::is_realloc(const SVFFunction *F)
+    {
+        ExtAPI::extType t = get_type(F);
+        return t == EFT_REALLOC;
+    }
+
+    // Should (F) be considered "external" (either not defined in the program
+    //   or a user-defined version of a known alloc or no-op)?
+    bool ExtAPI::is_ext(const SVFFunction *F)
+    {
+        assert(F);
+        bool res;
+        if (F->isDeclaration() || F->isIntrinsic())
+        {
+            res = 1;
+        }
+        else
+        {
+            ExtAPI::extType t = get_type(F);
+            res = t == EFT_ALLOC || t == EFT_REALLOC || t == EFT_NOSTRUCT_ALLOC || t == EFT_NOOP || t == EFT_FREE;
+        }
+        return res;
+    }
+
+
