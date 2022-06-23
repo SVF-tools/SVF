@@ -104,10 +104,6 @@ public:
                 // The offset present edge is only from Normal Gep CG at moment
                 if(NormalGepCGEdge::classof(edge))
                 {
-                    if ( edge->getSrcID() == 275 && edge->getDstID() == 286)
-                    {
-                        std::cout << "Please stop here.";
-                    }
                     NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
                     CFLGrammar::Attribute attr =  nGepEdge->getConstantFieldIdx();
                     addAttribute(edgeLabel, attr);

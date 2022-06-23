@@ -152,14 +152,6 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
                     tempStr += "_";
                     tempStr += char(*variableAttributeSet.begin());
                 }
-                // for (int i = 0; i < int(rule.size()); i++)
-                // {
-                //     if (grammar->getAttrSyms().find(rule[i]) != grammar->getAttrSyms().end())
-                //     {
-                //         tempStr.append("_i");
-                //         break;
-                //     }
-                // }
                 GrammarBase::Symbol tempSym = grammar->insertNonTerminalSymbol(tempStr);
                 it = grammar->getRawProductions()[head.first].find(rule);
                 grammar->getRawProductions()[head.first].erase(it);
