@@ -169,7 +169,7 @@ bool ExtAPI::is_arg_alloc(const SVFFunction *F)
 }
 
 // Get the position of argument which holds the new object
-u32_t ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
+s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
 {
     ExtAPI::extType t = get_type(F);
     switch (t)

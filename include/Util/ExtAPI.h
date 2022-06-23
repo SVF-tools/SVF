@@ -196,7 +196,7 @@ namespace SVF
         bool is_arg_alloc(const SVFFunction *F);
 
         // Get the position of argument which holds the new object
-        u32_t get_alloc_arg_pos(const SVFFunction *F);
+        s32_t get_alloc_arg_pos(const SVFFunction *F);
 
         // Does (F) allocate only non-struct objects?
         bool no_struct_alloc(const SVFFunction *F);

@@ -1094,7 +1094,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 u32_t SVFIRBuilder::getArgIndex(std::string s)
 {
     if(s[0] != 'A')
-        return -1;
+        assert(false && "the argument of extern function in ExtAPI.json should start with 'A' !");
     u32_t i = 1;
     u32_t start = i;
     while(i < s.size() && isdigit(s[i]))
