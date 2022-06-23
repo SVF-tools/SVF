@@ -28,6 +28,7 @@
  */
 
 #include "CFL/CFLGrammar.h"
+#include "Util/SVFUtil.h"
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -93,7 +94,7 @@ std::string GrammarBase::kind2Str(Kind kind) const
 
 std::string GrammarBase::sym2StrDump(Symbol sym) const
 {
-    Kind kind = getSymKind(sym);
+    Kind kind = getSymbolKind(sym);
     Attribute attribute = getSymAttribute(sym);
 
     std::string key = "";
@@ -102,9 +103,9 @@ std::string GrammarBase::sym2StrDump(Symbol sym) const
         if (i.second == kind)
         {
             key = i.first;
-            if(this->attributeKinds.find(kind) != this->attributeKinds.end())
+            if(attribute != 0)
             {
-                key.pop_back();
+                key.append("_");
                 key.append(std::to_string(attribute));
             }
             return key;
@@ -117,9 +118,9 @@ std::string GrammarBase::sym2StrDump(Symbol sym) const
         if (ni.second == kind)
         {
             nkey = ni.first;
-            if(this->attributeKinds.find(kind) != this->attributeKinds.end())
+            if(attribute != 0)
             {
-                nkey.pop_back();
+                nkey.append("_");
                 nkey.append(std::to_string(attribute));
             }
             return nkey;
@@ -143,7 +144,8 @@ GrammarBase::Kind GrammarBase::insertTerminalKind(std::string kindStr)
     }
     return kind;
 }
-GrammarBase::Kind GrammarBase::insertNonTerminalKind(std::string kindStr)
+
+inline GrammarBase::Kind GrammarBase::insertNonterminalKind(std::string const kindStr)
 {
     Kind kind;
     if (nonterminals.find(kindStr) == nonterminals.end())
@@ -155,14 +157,70 @@ GrammarBase::Kind GrammarBase::insertNonTerminalKind(std::string kindStr)
     {
         kind = str2Kind(kindStr);
     }
-    if(kindStr.size() >= 3)
-    {
-        if (kindStr.compare(kindStr.size()-2, 2, "_i")==0)
-        {
-            insertAttribute(kind, 0);
-        }
-    }
     return kind;
+}
+
+std::string GrammarBase::extractKindStrFromSymbolStr(const std::string symbolStr) 
+{
+    std::string kindStr;
+    // symbolStr end with '_', the whole symbolStr treat as kind, not with attribute.
+    auto underscorePosition = symbolStr.find_last_of("_", symbolStr.size()-1); 
+    if (underscorePosition == std::string::npos) 
+    {
+        return symbolStr;
+    }
+    return symbolStr.substr(0, underscorePosition);
+}
+
+std::string GrammarBase::extractAttributeStrFromSymbolStr(const std::string symbolStr) 
+{
+    std::string attributeStr;
+    // symbolStr end with '_', the whole symbolStr treat as kind, not with attribute.
+    auto underscorePosition = symbolStr.find_last_of("_", symbolStr.size()-1); 
+    if (underscorePosition == std::string::npos) 
+    {
+        return "";
+    }
+    return symbolStr.substr(underscorePosition+1);
+}
+
+GrammarBase::Symbol GrammarBase::insertSymbol(std::string symbolStr)
+{
+    return (isupper(symbolStr[0]) ? insertNonTerminalSymbol(symbolStr) : insertTerminalKind(symbolStr));
+}
+
+GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string symbolStr)
+{
+    std::string kindStr = extractKindStrFromSymbolStr(symbolStr);
+    std::string attributeStr = extractAttributeStrFromSymbolStr(symbolStr);
+    Kind kind = insertNonterminalKind(kindStr);
+
+    if ( attributeStr == "")
+    {
+        return kind;
+    }
+    else if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
+    {
+        return getVariabledKind((u32_t)attributeStr[attributeStr.size()-1], kind);
+    }
+    else 
+    {
+        for( char &c : attributeStr)
+        {
+            if ( std::isdigit(c) == false ) 
+            {
+                SVFUtil::errs() << SVFUtil::errMsg("\t Symbol Attribute Parse Failure :") << symbolStr
+                << " Attribute:" << attributeStr << " (only number or single alphabet.)";
+                assert(false && "grammar loading failed!");
+            }
+        }
+        return getAttributedKind(std::stoi(attributeStr), kind);
+    }
+}
+
+const GrammarBase::VariableAttribute GrammarBase::getVariableAttributeFromSymbol(const Symbol symbol) const
+{
+    return (symbol >> AttributedKindMaskBits);
 }
 
 void GrammarBase::insertAttribute(Kind kind, Attribute attribute)
@@ -186,7 +244,12 @@ CFLGrammar::CFLGrammar()
 
 void CFLGrammar::dump() const
 {
-    std::ofstream gramFile("Normailized_Grammar.txt");
+    dump("Normailized_Grammar.txt");
+}
+
+void CFLGrammar::dump(std::string fileName) const
+{
+    std::ofstream gramFile(fileName);
     gramFile << "Start Kind:\n";
     gramFile << '\t' << kind2Str(startKind) << '(' << startKind << ')' << ' ' << "\n\n";
 

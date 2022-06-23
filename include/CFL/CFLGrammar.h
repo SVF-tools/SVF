@@ -40,6 +40,7 @@ public:
     typedef Set<Production> Productions;
     typedef u32_t Attribute;
     typedef u32_t Kind;
+    typedef u32_t VariableAttribute;
 
     inline Map<std::string, Kind>& getNonterminals()
     {
@@ -91,6 +92,12 @@ public:
         this->totalKind = totalKind;
     }
 
+    const VariableAttribute getVariableAttributeFromSymbol(const Symbol symbol) const;
+
+    std::string extractKindStrFromSymbolStr(const std::string symbolStr) ;
+
+    std::string extractAttributeStrFromSymbolStr(const std::string symbolStr) ;
+
     void setRawProductions(Map<Symbol, Productions>& rawProductions);
 
     void setKind2AttrsMap(const Map<Kind,  Set<Attribute>>& kind2AttrsMap);
@@ -113,11 +120,20 @@ public:
         return this->attributeKinds;
     }
 
+    /// Insert kind to nonterminal and return kind.
+    Kind insertNonterminalKind(std::string const kindStr);
+
+    /// From SymbolStr extract kind to inserted in nonterminal
+    /// symbolStr = <kindStr> [_] [ attributeStr | variableattributeStr ]
     Kind insertTerminalKind(std::string strLit);
-    Kind insertNonTerminalKind(std::string strLit);
+
+    Symbol insertSymbol(std::string strLit);
+
+    Symbol insertNonTerminalSymbol(std::string strLit);
+
     void insertAttribute(Kind kind, Attribute a);
 
-    inline static Kind getSymKind(Symbol sym)
+    inline static Kind getSymbolKind(Symbol sym)
     {
         return (EdgeKindMask & sym);
     }
@@ -132,8 +148,14 @@ public:
         return ((attribute << EdgeKindMaskBits)| kind );
     }
 
+    inline static Kind getVariabledKind(VariableAttribute variableAttribute, Kind kind)
+    {
+        return ((variableAttribute << AttributedKindMaskBits) | kind);
+    }
+
 protected:
     static constexpr unsigned char EdgeKindMaskBits = 8;  ///< We use the lower 8 bits to denote edge kind
+    static constexpr unsigned char AttributedKindMaskBits = 24; ///< We use the lower 24 bits to denote attributed kind              
     static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
     Kind startKind;
 private:
@@ -239,6 +261,9 @@ public:
     }
 
     void dump() const;
+
+    void dump(std::string fileName) const;
+
 
     const inline int num_generator()
     {

@@ -34,6 +34,10 @@
 
 using namespace SVF;
 
+CFLGraph::Kind CFLGraph::getStartKind() const
+{
+    return this->startKind; 
+}
 
 void CFLGraph::addCFLNode(NodeID id, CFLNode* node)
 {
@@ -76,7 +80,7 @@ void CFLGraph::view()
 namespace llvm
 {
 /*!
- * Write value flow graph into dot file for debugging
+ * Write CFL graph into dot file for debugging
  */
 template<>
 struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
@@ -114,6 +118,42 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
         std::string str;
         raw_string_ostream rawstr(str);
+        if (edge->getEdgeKind() == ConstraintEdge::Addr)
+        {
+            rawstr << "color=green";
+        }
+        else if (edge->getEdgeKind() == ConstraintEdge::Copy)
+        {
+            rawstr << "color=black";
+        }
+        else if (edge->getEdgeKindWithMask() == ConstraintEdge::NormalGep)
+        {
+            rawstr << "color=purple,label=" << '"' << "Gep_" << edge->getEdgeAttri() << '"';
+        }
+        else if (edge->getEdgeKindWithMask() == ConstraintEdge::VariantGep)
+        {
+            rawstr << "color=purple,label=" << '"' << "VGep" << '"';
+        }
+        else if (edge->getEdgeKind() == ConstraintEdge::Store)
+        {
+            rawstr << "color=blue";
+        }
+        else if (edge->getEdgeKind() == ConstraintEdge::Load)
+        {
+            rawstr << "color=red";
+        }
+        else if (edge->getEdgeKind() == graph->getStartKind())
+        {
+            rawstr << "color=Turquoise";
+        }
+        else if (edge->getEdgeKind() == 14)
+        {
+            rawstr << "color=Sienna";
+        }
+        else 
+        {
+            rawstr  << "style=invis";
+        }
         return rawstr.str();
     }
 

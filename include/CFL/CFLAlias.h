@@ -51,15 +51,13 @@ public:
     /// Destructor
     virtual ~CFLAlias()
     {
-        delete graph;
-        delete grammar;
         delete solver;
     }
 
     /// Start Analysis here (main part of pointer analysis).
     virtual void analyze()
     {
-        GrammarBuilder gReader = GrammarBuilder(Options::GrammarFilename);
+        GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
         CFGNormalizer normalizer = CFGNormalizer();
         CFLGraphBuilder cflGraphBuilder = CFLGraphBuilder();
         CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
@@ -67,29 +65,33 @@ public:
         if (Options::GraphIsFromDot == false)
         {
             PointerAnalysis::initialize();
-            Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
-            GrammarBase *generalGrammar = gReader.build(ConstMap);
+            Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr", 0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar", 10},{"Vgepbar", 11}};
+            GrammarBase *grammarBase = grammarBuilder.build(ConstMap);
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph = cflGraphBuilder.buildBigraph(consCG, generalGrammar->getStartKind());
-            cflChecker.check(generalGrammar, &cflGraphBuilder, graph);
-            grammar = normalizer.normalize(generalGrammar);
+            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind());
+            cflChecker.check(grammarBase, &cflGraphBuilder, graph);
+            grammar = normalizer.normalize(grammarBase);
             cflChecker.check(grammar, &cflGraphBuilder, graph);
-            svfir->dump("SVFIR");
-            grammar->dump();
+            std::string svfirName = Options::InputFilename.c_str();
+            svfir->dump(svfirName.append("_IR"));
+            std::string grammarName = Options::InputFilename.c_str();
+            grammar->dump(grammarName.append("_Grammar"));
             delete consCG;
-            delete generalGrammar;
+            delete grammarBase;
         }
         else
         {
-            GrammarBase *generalGrammar = gReader.build();
-            graph = cflGraphBuilder.buildFromDot(Options::InputFilename, generalGrammar);
-            cflChecker.check(generalGrammar, &cflGraphBuilder, graph);
-            grammar = normalizer.normalize(generalGrammar);
+            GrammarBase *grammarBase = grammarBuilder.build();
+            graph = cflGraphBuilder.buildFromDot(Options::InputFilename, grammarBase);
+            cflChecker.check(grammarBase, &cflGraphBuilder, graph);
+            grammar = normalizer.normalize(grammarBase);
             cflChecker.check(grammar, &cflGraphBuilder, graph);
-            delete generalGrammar;
+            delete grammarBase;
         }
         solver = new CFLSolver(graph, grammar);
         solver->solve();
+        std::string CFLGraphFileName = Options::InputFilename.c_str();
+        graph->dump(CFLGraphFileName.append("_CFL"));
         if (Options::GraphIsFromDot == false)
         {
             PointerAnalysis::finalize();

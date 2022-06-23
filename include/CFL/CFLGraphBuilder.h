@@ -76,7 +76,7 @@ public:
     CFLGraph* buildBigraph(GenericGraph<N,E>* graph, Kind startKind)
     {
         CFLGraph *cflGraph = new CFLGraph(startKind);
-        Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
+        Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar", 10},{"Vgepbar", 11}};
         externMap = true;
         for(auto pairV : ConstMap)
         {
@@ -104,15 +104,17 @@ public:
                 // The offset present edge is only from Normal Gep CG at moment
                 if(NormalGepCGEdge::classof(edge))
                 {
+                    if ( edge->getSrcID() == 275 && edge->getDstID() == 286)
+                    {
+                        std::cout << "Please stop here.";
+                    }
                     NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
                     CFLGrammar::Attribute attr =  nGepEdge->getConstantFieldIdx();
                     addAttribute(edgeLabel, attr);
                     edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
                     cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
                     std::string key = kind2LabelMap[edge->getEdgeKind()];
-                    key.pop_back();
-                    key.pop_back();    // _i standsfor attribute variable should place at last
-                    key.append("bar_i");   // for example Gep_i should be Gepbar_i, not Gep_ibar
+                    key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
                     cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
                     addAttribute(label2KindMap[key], attr);
                 }

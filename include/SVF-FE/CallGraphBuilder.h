@@ -28,8 +28,8 @@
  *      Author: Yulei Sui
  */
 
-#ifndef INCLUDE_UTIL_CALLGRAPHBUILDER_H_
-#define INCLUDE_UTIL_CALLGRAPHBUILDER_H_
+#ifndef INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
+#define INCLUDE_SVF_FE_CALLGRAPHBUILDER_H_
 
 #include "Graphs/PTACallGraph.h"
 #include "Graphs/ThreadCallGraph.h"
