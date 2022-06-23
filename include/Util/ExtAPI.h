@@ -39,7 +39,7 @@
 #include <string>
 #include <map>
 
-#define EXTAPI_JSON_PATH "/include/Util/ExtAPI.json"
+#define EXTAPI_JSON_PATH "/lib/Util/ExtAPI.json"
 
 namespace SVF
 {
