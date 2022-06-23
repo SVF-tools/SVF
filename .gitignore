@@ -1,7 +1,6 @@
 Release*/
 Debug*/
 build/
-include/Util/config.h
 html/
 Test-Suite/
 Release+Asserts/

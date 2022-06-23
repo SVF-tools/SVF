@@ -71,28 +71,28 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
         std::string jsonFilePath = PROJECT_PATH;
         jsonFilePath.append(EXTAPI_JSON_PATH);
         // open file
-        FILE *file = NULL;
+        FILE *file = nullptr;
         file = fopen(jsonFilePath.c_str(), "r");
-        if (file == NULL)
+        if (file == nullptr)
         {
-            assert("Open Json file fail!");
-            return NULL;
+            assert("Open Json file fails!");
+            return nullptr;
         }
         // get file size
         struct stat statbuf;
         stat(jsonFilePath.c_str(), &statbuf);
-        int fileSize = statbuf.st_size;
+        u32_t fileSize = statbuf.st_size;
 
         // allocate memory size matched with file size
         char *jsonStr = (char *)malloc(sizeof(char) * fileSize + 1);
         memset(jsonStr, 0, fileSize + 1);
 
         // read json string from file
-        int size = fread(jsonStr, sizeof(char), fileSize, file);
+        u32_t size = fread(jsonStr, sizeof(char), fileSize, file);
         if (size == 0)
         {
             assert("read Json file fails!");
-            return NULL;
+            return nullptr;
         }
         fclose(file);
 
@@ -101,7 +101,7 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
         if (!root)
         {
             free(jsonStr);
-            return NULL;
+            return nullptr;
         }
         free(jsonStr);
     }
@@ -127,7 +127,7 @@ ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
     std::string funName = get_name(F);
     cJSON *item = get_FunJson(funName);
     std::string type = "";
-    if (item != NULL)
+    if (item != nullptr)
     {
         //  Get the first operation of the function
         cJSON *obj = item->child;
@@ -169,7 +169,7 @@ bool ExtAPI::is_arg_alloc(const SVFFunction *F)
 }
 
 // Get the position of argument which holds the new object
-int ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
+u32_t ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
 {
     ExtAPI::extType t = get_type(F);
     switch (t)

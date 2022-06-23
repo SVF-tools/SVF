@@ -1172,7 +1172,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         else
         {
             assert(isHeapAllocExtCallViaArg(cs) && "Must be heap alloc call via arg.");
-            int arg_pos = getHeapAllocHoldingArgPosition(callee);
+            u32_t arg_pos = getHeapAllocHoldingArgPosition(callee);
             const Value *arg = cs.getArgument(arg_pos);
             if (arg->getType()->isPointerTy())
             {
@@ -1197,7 +1197,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         {
             std::string funName = ExtAPI::getExtAPI()->get_name(callee);
             cJSON *item = ExtAPI::getExtAPI()->get_FunJson(funName);
-            if (item != NULL)
+            if (item != nullptr)
             {
                 //  Get the first operation of the function
                 cJSON *obj = item->child;
@@ -1359,18 +1359,22 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         }
                         break;
                     }
-                    case ExtAPI::EXT_OTHER:
+                    // default
+                    // other operations not in extf_t
+                    case ExtAPI::EXT_OTHER: 
                     {
-                        if (SVFUtil::isa<PointerType>(inst->getType()))
-                        {
-                            std::string str;
-                            raw_string_ostream rawstr(str);
-                            rawstr << "function " << callee->getName() << " not in the external function summary list";
-                            writeWrnMsg(rawstr.str());
-                        }
+                        assert(false && "new type of SVFStmt for external calls?");
                     }
                     }
                 }
+            }
+            // external function not in ExtAPI.json file
+            else
+            {
+                std::string str;
+                raw_string_ostream rawstr(str);
+                rawstr << "function " << callee->getName() << " not in the external function summary ExtAPI.json file";
+                writeWrnMsg(rawstr.str());
             }
         }
 
