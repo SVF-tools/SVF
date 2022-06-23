@@ -9,6 +9,7 @@
 
 #include "Util/ExtAPI.h"
 #include "Util/SVFUtil.h"
+#include <string.h>
 #include <sys/stat.h>
 #include <stdlib.h>
 
@@ -131,8 +132,10 @@ ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
     {
         //  Get the first operation of the function
         cJSON *obj = item->child;
-        if (obj)
+        if (strcmp(obj->string, "type") == 0)
             type = obj->valuestring;
+        else
+            assert(false && "The function operation format is illegal!");
     }
     std::map<std::string, extType>::const_iterator it = type_pair.find(type);
     if (it == type_pair.end())

@@ -1113,8 +1113,11 @@ NodeID SVFIRBuilder::parseNode(std::string s, CallSite cs, const Instruction *in
     Value* V = nullptr;
     NodeID res = -1;
     size_t argNumPre = -1;
+    bool flag = true;
     for (size_t i = 0; i < s.size();)
     {
+        if(!flag)
+            assert(false && "The operand format of function operation is illegal!");
         // 'A' represents an argument
         if (s[i] == 'A')
         {
@@ -1139,16 +1142,19 @@ NodeID SVFIRBuilder::parseNode(std::string s, CallSite cs, const Instruction *in
         else if(s[i] == 'L')
         {
             res = getValueNode(inst);
-            i++;
+            if(i++ != 0)
+                flag = false;
         }
         // 'V' represents a dummy node
         else if(s[i] == 'V')
         {
             res = pag->addDummyValNode();
-            i++;
+            if(i++ != 0)
+                flag = false;
         }
         else
-            i++;
+            flag = false;
+        
     }
     return res;
 }
@@ -1197,6 +1203,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         {
             std::string funName = ExtAPI::getExtAPI()->get_name(callee);
             cJSON *item = ExtAPI::getExtAPI()->get_FunJson(funName);
+            // The external function exists in ExtAPI.json
             if (item != nullptr)
             {
                 //  Get the first operation of the function
@@ -1212,6 +1219,10 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         cJSON *value = obj->child;
                         args = ExtAPI::getExtAPI()->get_opArgs(value);
                         obj = obj->next;
+                    }
+                    else
+                    {
+                        assert(false && "The function operation format is illegal!");
                     }
 
                     ExtAPI::extf_t opName = ExtAPI::getExtAPI()->get_opName(op);
@@ -1360,15 +1371,16 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         break;
                     }
                     // default
-                    // other operations not in extf_t
+                    // illegal function operation of external function
                     case ExtAPI::EXT_OTHER: 
+                    default:
                     {
                         assert(false && "new type of SVFStmt for external calls?");
                     }
                     }
                 }
             }
-            // external function not in ExtAPI.json file
+            // // The external function doesn't exist in ExtAPI.json
             else
             {
                 std::string str;
