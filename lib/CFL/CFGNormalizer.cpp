@@ -139,7 +139,7 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
                 /// X add no variable attribute
                 /// if target only contain one variable attribute X share the same variable attribute
                 Set<GrammarBase::VariableAttribute> variableAttributeSet = {};
-                for (auto i = 0; i < long_run.size(); i++)
+                for (unsigned i = 0; i < long_run.size(); i++)
                 {
                     GrammarBase::VariableAttribute variableAttribute = grammar->getVariableAttributeFromSymbol(long_run[i]);
                     if ( variableAttribute != 0)
@@ -193,7 +193,7 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
                     ss << grammar->num_generator();
                     tempStr.append(ss.str());
                     Set<GrammarBase::VariableAttribute> variableAttributeSet = {};
-                    for (auto i = 0; i < long_run.size(); i++)
+                    for (unsigned i = 0; i < long_run.size(); i++)
                     {
                         GrammarBase::VariableAttribute variableAttribute = grammar->getVariableAttributeFromSymbol(long_run[i]);
                         if ( variableAttribute != 0)
@@ -259,13 +259,13 @@ GrammarBase::Productions CFGNormalizer::getFilledProductions(GrammarBase::Produc
         GrammarBase::Production currentProduction = worklist.pop();
         /// Get the first encounter variable attribute to expand
         GrammarBase::VariableAttribute currentVariableAttribute = 0;
-        GrammarBase::Kind baseKind;
+        // GrammarBase::Kind baseKind;
         for ( GrammarBase::Symbol &symbol : currentProduction )
         {   
             if ( currentVariableAttribute == 0 )
             {
                 currentVariableAttribute = grammar->getVariableAttributeFromSymbol(symbol);
-                baseKind = grammar->getSymbolKind(symbol);
+                // baseKind = grammar->getSymbolKind(symbol);
             }
         }
         if ( currentVariableAttribute == 0) 
