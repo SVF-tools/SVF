@@ -37,6 +37,7 @@ void ExtAPI::destory()
     if (root != nullptr)
     {
         cJSON_Delete(root);
+        root = nullptr;
     }
 }
 
