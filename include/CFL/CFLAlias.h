@@ -61,14 +61,12 @@ public:
         CFGNormalizer normalizer = CFGNormalizer();
         CFLGraphBuilder cflGraphBuilder = CFLGraphBuilder();
         CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
-        /// Assume Read From Const Graph, associate label symbol is hard coded
         if (Options::GraphIsFromDot == false)
         {
             PointerAnalysis::initialize();
-            Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr", 0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar", 10},{"Vgepbar", 11}};
-            GrammarBase *grammarBase = grammarBuilder.build(ConstMap);
+            GrammarBase *grammarBase = grammarBuilder.build();
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind());
+            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
             cflChecker.check(grammarBase, &cflGraphBuilder, graph);
             grammar = normalizer.normalize(grammarBase);
             cflChecker.check(grammar, &cflGraphBuilder, graph);

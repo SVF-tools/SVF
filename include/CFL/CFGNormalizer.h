@@ -27,8 +27,8 @@
  *      Author: Pei Xu
  */
 
-#ifndef CFGNormalizer_H_
-#define CFGNormalizer_H_
+#ifndef INCLUDE_CFL_CFGNormalizer_H_
+#define INCLUDE_CFL_CFGNormalizer_H_
 
 #include "CFLGrammar.h"
 
@@ -36,7 +36,12 @@ namespace SVF
 {
 
 /*!
- *  Normalize Grammar from a grammarbase
+ *  Generate Normalized Grammar from a grammarbase
+ * 
+ *  To Do:
+ *      Error Notice for ill formed production, 
+ *      e.g. not end with ';' and '*' not preceding with '()' and extra space before ';'
+ *      '|' sign support   
  */
 
 class CFGNormalizer
@@ -47,21 +52,21 @@ public:
     {
     }
 
-    /// Normalization with attribute expanded
+    /// Binary Normal Form(BNF) normalization with variable attribute expanded
     CFLGrammar* normalize(GrammarBase *generalGrammar);
 
-    /// Fill Every attribute in CFL grammar
+    /// Expand every variable attribute in rawProductions of grammarbase
     CFLGrammar* fillAttribute(CFLGrammar *grammar, const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttrsMap);
 
 private:
     /// Add nonterminal to tranfer long rules to binary rules
     void ebnf_bin(CFLGrammar *grammar);
 
-    void ebnf_sign_replace(char sign, CFLGrammar *grammar);
+    void ebnfSignReplace(char sign, CFLGrammar *grammar);
 
     void insertToCFLGrammar(CFLGrammar *grammar, GrammarBase::Production &prod);
 
-    int ebnf_bracket_match(GrammarBase::Production& prod, int i, CFLGrammar *grammar) ;
+    int ebnfBracketMatch(GrammarBase::Production& prod, int i, CFLGrammar *grammar) ;
 
     int check_head(Map<GrammarBase::Symbol, GrammarBase::Productions>& grammar, GrammarBase::Production& rule);
 
@@ -74,4 +79,4 @@ private:
 
 } // End namespace SVF
 
-#endif /* CFGNormalizer_H_*/
+#endif /* INCLUDE_CFL_CFGNormalizer_H_*/

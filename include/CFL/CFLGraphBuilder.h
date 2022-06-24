@@ -73,12 +73,22 @@ public:
 
     /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
     template<class N, class E>
-    CFLGraph* buildBigraph(GenericGraph<N,E>* graph, Kind startKind)
+    CFLGraph* buildBigraph(GenericGraph<N,E>* graph, Kind startKind, GrammarBase *grammar)
     {
         CFLGraph *cflGraph = new CFLGraph(startKind);
-        Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar", 10},{"Vgepbar", 11}};
         externMap = true;
-        for(auto pairV : ConstMap)
+        for(auto pairV : grammar->getTerminals())
+        {
+            if(label2KindMap.find(pairV.first) == label2KindMap.end())
+            {
+                label2KindMap.insert(pairV);
+            }
+            if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+            {
+                kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+            }
+        }
+        for(auto pairV : grammar->getNonterminals())
         {
             if(label2KindMap.find(pairV.first) == label2KindMap.end())
             {
@@ -100,12 +110,9 @@ public:
             for(E* edge : node->getOutEdges())
             {
                 CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
-                // Need to get the offset from the Const Edge
-                // The offset present edge is only from Normal Gep CG at moment
-                if(NormalGepCGEdge::classof(edge))
+                if(grammar->getAttrSyms().find(edgeLabel) != grammar->getAttrSyms().end())
                 {
-                    NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
-                    CFLGrammar::Attribute attr =  nGepEdge->getConstantFieldIdx();
+                    CFLGrammar::Attribute attr =  edge->getEdgeOffset();
                     addAttribute(edgeLabel, attr);
                     edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
                     cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);

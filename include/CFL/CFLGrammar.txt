@@ -1,5 +1,7 @@
 Start:  
-   V
+   V 
+Terminal:
+   Addr Copy Store Load Gep Vgep 
 Productions:
    F -> epsilon;
    F -> F Copy;

@@ -94,6 +94,10 @@ public:
     {
         return dst;
     }
+    virtual s32_t getEdgeOffset() const
+    {
+        return 0;
+    }
     //@}
 
     /// Add the hash function for std::set (we also can overload operator< to implement this)

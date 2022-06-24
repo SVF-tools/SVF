@@ -36,38 +36,41 @@
 
 namespace SVF
 {
-const inline std::string GrammarBuilder::loadFileString() const
+const inline std::string GrammarBuilder::parseProductionsString() const
 {
     std::ifstream textFile(fileName);
     std::string lineString;
     std::string lines = "";
+    std::string startString;
     int lineNum = 0;
     while (getline(textFile, lineString))
     {
         if(lineNum == 1)
         {
-            std::string startS = stripSpace(lineString);
-            grammar->insertNonTerminalSymbol(startS);
-            grammar->setStartKind(grammar->str2Kind(startS));
+            startString = stripSpace(lineString);
         }
         lines.append(lineString);
         lineNum++;
     }
-    textFile.close();
-    return lines;
-}
-
-const inline std::string GrammarBuilder::parseProduction() const
-{
-    grammar->insertTerminalKind("epsilon");
-    std::regex reg("Start:[\\s]*([\\S])[\\s]*Productions:([\\s\\S]*)");
+    
+    std::regex reg("Start:([\\s\\S]*)Terminal:[\\s]*([\\s\\S]*)Productions:([\\s\\S]*)");
     std::smatch matches;
-    std::string lines = loadFileString();
-
     if (std::regex_search(lines, matches, reg))
     {
-        lines = matches.str(2);
+        lines = matches.str(3);
     }
+    std::string terminalString = matches.str(2);
+    std::string symbolString;
+    size_t pos;
+    while ((pos = terminalString.find(" ")) != std::string::npos)
+    {
+        symbolString = stripSpace(terminalString.substr(0, pos));
+        terminalString.erase(0, pos + 1); //Capital is Nonterminal, Otherwise is terminal
+        grammar->insertSymbol(symbolString);
+    }
+    grammar->insertSymbol(symbolString);
+    grammar->setStartKind(grammar->insertSymbol(startString));
+    grammar->insertTerminalKind("epsilon");
 
     return lines;
 }
@@ -75,17 +78,17 @@ const inline std::string GrammarBuilder::parseProduction() const
 const inline std::vector<std::string> GrammarBuilder::loadWordProductions() const
 {
     size_t pos = 0;
-    std::string lines = parseProduction();
+    std::string lines = parseProductionsString();
     std::string word = "";
-    std::vector<std::string> wordProd;
+    std::vector<std::string> wordProds;
     std::string delimiter = ";";
     while ((pos = lines.find(";")) != std::string::npos)
     {
         word = lines.substr(0, pos);
-        wordProd.push_back(word);
+        wordProds.push_back(word);
         lines.erase(0, pos + delimiter.length());
     }
-    return wordProd;
+    return wordProds;
 }
 
 const inline std::string GrammarBuilder::stripSpace(std::string s) const
@@ -135,10 +138,4 @@ GrammarBase* GrammarBuilder::build() const
     return grammar;
 };
 
-GrammarBase* GrammarBuilder::build(Map<std::string, SVF::GrammarBase::Symbol> &preMap) const
-{
-    grammar->setNonterminals(preMap);
-    grammar->setTotalKind(preMap.size());
-    return build();
-};
 }

@@ -27,15 +27,15 @@
  *      Author: Pei Xu
  */
 
+#include "CFL/CFGNormalizer.h"
+#include "Util/SVFUtil.h"
+#include "Util/WorkList.h"
+#include "Util/BasicTypes.h"
 #include <string>
 #include <regex>
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include "Util/BasicTypes.h"
-#include "CFL/CFGNormalizer.h"
-#include "Util/SVFUtil.h"
-#include "Util/WorkList.h"
 
 using namespace SVF;
 
@@ -49,12 +49,8 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
     grammar->setAttributeKinds(generalGrammar->getAttrSyms());
     grammar->setKind2AttrsMap(generalGrammar->getKind2AttrsMap());
     grammar->setRawProductions(generalGrammar->getRawProductions());
-    /// Need to give proper error message when input grammar is not well formed
-    //  current sign replace will add ')' '(' to production if miss ';' at end of each production
-    //  or '*' is not preceding to a '()' 
-    //  or space before semi colon
-    ebnf_sign_replace('*', grammar);
-    ebnf_sign_replace('?', grammar);
+    ebnfSignReplace('*', grammar);
+    ebnfSignReplace('?', grammar);
     ebnf_bin(grammar);
     fillAttribute(grammar, grammar->getKind2AttrsMap());
     return grammar;
@@ -306,7 +302,7 @@ GrammarBase::Productions CFGNormalizer::getFilledProductions(GrammarBase::Produc
     return filledProductioins;
 }
 
-int CFGNormalizer::ebnf_bracket_match(GrammarBase::Production &prod, int i, CFLGrammar *grammar)
+int CFGNormalizer::ebnfBracketMatch(GrammarBase::Production &prod, int i, CFLGrammar *grammar)
 {
     int index = i;
     while (index >= 0)
@@ -320,71 +316,71 @@ int CFGNormalizer::ebnf_bracket_match(GrammarBase::Production &prod, int i, CFLG
     return 0;
 }
 
-void CFGNormalizer::ebnf_sign_replace(char sign, CFLGrammar *grammar)
+void CFGNormalizer::ebnfSignReplace(char sign, CFLGrammar *grammar)
 {
-    SVF::Map<std::string, std::string> new_rule_checker;
-    std::string X = "X";
+    /// Replace Sign Group With tempNonterminal 'X' 
+    /// And load the replace in newProductions
+    SVF::Map<std::string, std::string> newProductions;
+    std::string tempNonterminal = "X";
 
-    /// replace Sign Group With Temp Varibale
-    /// and load the replace in new_rule_checker
-    for (auto &ebnfPair : grammar->getRawProductions())
+    for (auto &symbolToProductionsPair : grammar->getRawProductions())
     {
-        GrammarBase::Productions tempProds = ebnfPair.second;
-        for (auto ebnfProd : ebnfPair.second)
+        GrammarBase::Productions productions = symbolToProductionsPair.second;
+        for (auto ebnfProduction : symbolToProductionsPair.second)
         {
             size_t i = 1;
-            while (i < ebnfProd.size())
+            while (i < ebnfProduction.size())
             {
-                int repetition_start = -1;
-                if (grammar->kind2Str(ebnfProd[i]) == std::string(1, sign))
+                s32_t signGroupStart = -1;
+                if (grammar->kind2Str(ebnfProduction[i]) == std::string(1, sign))
                 {
-                    assert(i != 1 && "sign in grammar associate with no symble");
                     /// If sign assoicate wihout group e.i with single symble
-                    if (grammar->kind2Str(ebnfProd[i - 1]) != std::string(1, ')'))
+                    assert(i != 1 && "sign in grammar associate with no symbol");
+                    if (grammar->kind2Str(ebnfProduction[i - 1]) != std::string(1, ')'))
                     {
-                        repetition_start = i - 1;
+                        signGroupStart = i - 1;
                     }
                     /// sign associate with group of symble by brace pair
                     else
                     {
-                        repetition_start = ebnf_bracket_match(ebnfProd, i, grammar);
+                        signGroupStart = ebnfBracketMatch(ebnfProduction, i, grammar);
                     }
-                    std::string repetition = "";
-                    for (size_t j = repetition_start; j < i; j++)
+                    std::string groupString = "";
+                    for (size_t j = signGroupStart; j < i; j++)
                     {
-                        repetition.append(grammar->kind2Str(ebnfProd[j]));
-                        repetition.append(" ");
+                        groupString.append(grammar->kind2Str(ebnfProduction[j]));
+                        groupString.append(" ");
                     }
-                    repetition.append(grammar->kind2Str(ebnfProd[i]));
-                    if (new_rule_checker.find(repetition) != new_rule_checker.end())
+                    groupString.append(grammar->kind2Str(ebnfProduction[i]));
+                    if (newProductions.find(groupString) != newProductions.end())
                     {
-                        tempProds.erase(ebnfProd);
-                        ebnfProd.erase(ebnfProd.begin() + repetition_start, ebnfProd.begin() + i + 1);
-                        ebnfProd.insert(ebnfProd.begin() + repetition_start, grammar->str2Kind(new_rule_checker[repetition]));
-                        tempProds.insert(ebnfProd);
+                        productions.erase(ebnfProduction);
+                        ebnfProduction.erase(ebnfProduction.begin() + signGroupStart, ebnfProduction.begin() + i + 1);
+                        ebnfProduction.insert(ebnfProduction.begin() + signGroupStart, grammar->str2Symbol(newProductions[groupString]));
+                        productions.insert(ebnfProduction);
                     }
                     else
                     {
-                        X = "X";
+                        tempNonterminal = "X";
                         std::ostringstream ss;
                         ss << grammar->num_generator();
-                        X.append(ss.str());
-                        GrammarBase::Symbol tempSym = grammar->insertNonTerminalSymbol(X);
-                        tempProds.erase(ebnfProd);
-                        ebnfProd.erase(ebnfProd.begin() + repetition_start, ebnfProd.begin() + i + 1);
-                        ebnfProd.insert(ebnfProd.begin() + repetition_start, tempSym);
-                        new_rule_checker[repetition] = X;
-                        tempProds.insert(ebnfProd);
+                        tempNonterminal.append(ss.str());
+                        GrammarBase::Symbol tempSym = grammar->insertNonTerminalSymbol(tempNonterminal);
+                        productions.erase(ebnfProduction);
+                        ebnfProduction.erase(ebnfProduction.begin() + signGroupStart, ebnfProduction.begin() + i + 1);
+                        ebnfProduction.insert(ebnfProduction.begin() + signGroupStart, tempSym);
+                        newProductions[groupString] = tempNonterminal;
+                        productions.insert(ebnfProduction);
                     }
 
-                    i = repetition_start;
+                    i = signGroupStart;
                 }
                 i++;
             }
         }
-        ebnfPair.second = tempProds;
+        symbolToProductionsPair.second = productions;
     }
-    for(auto rep: new_rule_checker)
+    for(auto rep: newProductions)
     {
         /// For Both * and ? need to insert epsilon rule
         std::string new_nonterminal = rep.second;

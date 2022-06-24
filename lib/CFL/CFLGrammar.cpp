@@ -66,6 +66,35 @@ GrammarBase::Kind GrammarBase::str2Kind(std::string str) const
     abort();
 }
 
+GrammarBase::Symbol GrammarBase::str2Symbol(const std::string str) const
+{
+    std::string attributeStr = extractAttributeStrFromSymbolStr(str);
+    std::string kindStr = extractKindStrFromSymbolStr(str);
+    Kind kind = str2Kind(str);
+
+    if ( attributeStr == "")
+    {
+        return kind;
+    }
+    else if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
+    {
+        return getVariabledKind((u32_t)attributeStr[attributeStr.size()-1], kind);
+    }
+    else 
+    {
+        for( char &c : attributeStr)
+        {
+            if ( std::isdigit(c) == false ) 
+            {
+                SVFUtil::errs() << SVFUtil::errMsg("\t Symbol Attribute Parse Failure :") << str
+                << " Attribute:" << attributeStr << " (only number or single alphabet.)";
+                assert(false && "grammar loading failed!");
+            }
+        }
+        return getAttributedKind(std::stoi(attributeStr), kind);
+    }
+}
+
 std::string GrammarBase::kind2Str(Kind kind) const
 {
 
@@ -160,7 +189,7 @@ inline GrammarBase::Kind GrammarBase::insertNonterminalKind(std::string const ki
     return kind;
 }
 
-std::string GrammarBase::extractKindStrFromSymbolStr(const std::string symbolStr) 
+std::string GrammarBase::extractKindStrFromSymbolStr(const std::string symbolStr) const
 {
     std::string kindStr;
     // symbolStr end with '_', the whole symbolStr treat as kind, not with attribute.
@@ -172,7 +201,7 @@ std::string GrammarBase::extractKindStrFromSymbolStr(const std::string symbolStr
     return symbolStr.substr(0, underscorePosition);
 }
 
-std::string GrammarBase::extractAttributeStrFromSymbolStr(const std::string symbolStr) 
+std::string GrammarBase::extractAttributeStrFromSymbolStr(const std::string symbolStr) const
 {
     std::string attributeStr;
     // symbolStr end with '_', the whole symbolStr treat as kind, not with attribute.
@@ -201,6 +230,7 @@ GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string symbolStr)
     }
     else if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
     {
+        attributeKinds.insert(kind);
         return getVariabledKind((u32_t)attributeStr[attributeStr.size()-1], kind);
     }
     else 
@@ -214,6 +244,7 @@ GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string symbolStr)
                 assert(false && "grammar loading failed!");
             }
         }
+        attributeKinds.insert(kind);
         return getAttributedKind(std::stoi(attributeStr), kind);
     }
 }

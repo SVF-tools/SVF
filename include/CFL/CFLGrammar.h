@@ -94,9 +94,9 @@ public:
 
     const VariableAttribute getVariableAttributeFromSymbol(const Symbol symbol) const;
 
-    std::string extractKindStrFromSymbolStr(const std::string symbolStr) ;
+    std::string extractKindStrFromSymbolStr(const std::string symbolStr) const;
 
-    std::string extractAttributeStrFromSymbolStr(const std::string symbolStr) ;
+    std::string extractAttributeStrFromSymbolStr(const std::string symbolStr) const;
 
     void setRawProductions(Map<Symbol, Productions>& rawProductions);
 
@@ -105,6 +105,8 @@ public:
     void setAttributeKinds(const Set<Kind>& attributeKind);   
 
     Kind str2Kind(std::string str) const;
+
+    Symbol str2Symbol(const std::string str) const;
 
     std::string kind2Str(Kind kind) const;
 
