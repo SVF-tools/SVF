@@ -78,7 +78,7 @@ public:
     inline bool isMemcpy(const Instruction *I)
     {
         const SVFFunction* F =SVFUtil::getCallee(I);
-        return F && ExtAPI::EFT_L_A0__A0R_A1R == ExtAPI::getExtAPI()->get_type(F);
+        return F && F->getName().find("llvm.memcpy") != std::string::npos;
     }
 
 private:

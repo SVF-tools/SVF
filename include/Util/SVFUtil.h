@@ -405,12 +405,6 @@ inline bool isStaticExtFun(const SVFFunction* fun)
     return fun && ExtAPI::getExtAPI()->has_static(fun);
 }
 
-/// Return external call type
-inline ExtAPI::extf_t extCallTy(const SVFFunction* fun)
-{
-    return ExtAPI::getExtAPI()->get_type(fun);
-}
-
 /// Program entry function e.g. main
 //@{
 /// Return true if this is a program entry function (e.g. main)
