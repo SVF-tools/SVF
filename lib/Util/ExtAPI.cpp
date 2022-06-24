@@ -72,7 +72,7 @@ std::string ExtAPI::get_name(const SVFFunction *F)
 // Get specifications of external functions in ExtAPI.json file
 cJSON *ExtAPI::get_FunJson(const std::string funName)
 {
-    
+
     if(!root)
     {
         std::string jsonFilePath = PROJECT_PATH;
@@ -197,52 +197,52 @@ s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
         assert(false && "Not an alloc call via argument.");
         return -1;
     }
-    }
+}
 
-    // Does (F) allocate only non-struct objects?
-    bool ExtAPI::no_struct_alloc(const SVFFunction *F)
+// Does (F) allocate only non-struct objects?
+bool ExtAPI::no_struct_alloc(const SVFFunction *F)
+{
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_NOSTRUCT_ALLOC;
+}
+
+// Does (F) not free/release any memory?
+bool ExtAPI::is_dealloc(const SVFFunction *F)
+{
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_FREE;
+}
+
+// Does (F) not do anything with the known pointers?
+bool ExtAPI::is_noop(const SVFFunction *F)
+{
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_NOOP || t == EFT_FREE;
+}
+
+// Does (F) reallocate a new object?
+bool ExtAPI::is_realloc(const SVFFunction *F)
+{
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_REALLOC;
+}
+
+// Should (F) be considered "external" (either not defined in the program
+//   or a user-defined version of a known alloc or no-op)?
+bool ExtAPI::is_ext(const SVFFunction *F)
+{
+    assert(F);
+    bool res;
+    if (F->isDeclaration() || F->isIntrinsic())
+    {
+        res = 1;
+    }
+    else
     {
         ExtAPI::extType t = get_type(F);
-        return t == EFT_NOSTRUCT_ALLOC;
+        res = t == EFT_ALLOC || t == EFT_REALLOC || t == EFT_NOSTRUCT_ALLOC || t == EFT_NOOP || t == EFT_FREE;
     }
-
-    // Does (F) not free/release any memory?
-    bool ExtAPI::is_dealloc(const SVFFunction *F)
-    {
-        ExtAPI::extType t = get_type(F);
-        return t == EFT_FREE;
-    }
-
-    // Does (F) not do anything with the known pointers?
-    bool ExtAPI::is_noop(const SVFFunction *F)
-    {
-        ExtAPI::extType t = get_type(F);
-        return t == EFT_NOOP || t == EFT_FREE;
-    }
-
-    // Does (F) reallocate a new object?
-    bool ExtAPI::is_realloc(const SVFFunction *F)
-    {
-        ExtAPI::extType t = get_type(F);
-        return t == EFT_REALLOC;
-    }
-
-    // Should (F) be considered "external" (either not defined in the program
-    //   or a user-defined version of a known alloc or no-op)?
-    bool ExtAPI::is_ext(const SVFFunction *F)
-    {
-        assert(F);
-        bool res;
-        if (F->isDeclaration() || F->isIntrinsic())
-        {
-            res = 1;
-        }
-        else
-        {
-            ExtAPI::extType t = get_type(F);
-            res = t == EFT_ALLOC || t == EFT_REALLOC || t == EFT_NOSTRUCT_ALLOC || t == EFT_NOOP || t == EFT_FREE;
-        }
-        return res;
-    }
+    return res;
+}
 
 

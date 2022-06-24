@@ -1130,7 +1130,7 @@ NodeID SVFIRBuilder::parseNode(std::string s, CallSite cs, const Instruction *in
             argNumPre = atoi(digitStr.c_str());
             V = cs.getArgument(argNumPre);
             if(i >= s.size())
-                res = getValueNode(V);         
+                res = getValueNode(V);
         }
         // 'R' represents a reference
         else if(s[i] == 'R')
@@ -1155,7 +1155,7 @@ NodeID SVFIRBuilder::parseNode(std::string s, CallSite cs, const Instruction *in
         }
         else
             flag = false;
-        
+
     }
     return res;
 }
@@ -1373,7 +1373,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     }
                     // default
                     // illegal function operation of external function
-                    case ExtAPI::EXT_OTHER: 
+                    case ExtAPI::EXT_OTHER:
                     default:
                     {
                         assert(false && "new type of SVFStmt for external calls?");
