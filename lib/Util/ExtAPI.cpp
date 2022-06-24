@@ -16,6 +16,7 @@
 using namespace SVF;
 
 ExtAPI *ExtAPI::extOp = nullptr;
+cJSON *ExtAPI::root = nullptr;
 
 ExtAPI *ExtAPI::getExtAPI()
 {
@@ -32,6 +33,10 @@ void ExtAPI::destory()
     {
         delete extOp;
         extOp = nullptr;
+    }
+    if (root != nullptr)
+    {
+        cJSON_Delete(root);
     }
 }
 

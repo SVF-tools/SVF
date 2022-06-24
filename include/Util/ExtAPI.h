@@ -208,7 +208,7 @@ namespace SVF
         static ExtAPI *extOp;
 
         // Store specifications of external functions in ExtAPI.json file
-        cJSON *root;
+        static cJSON *root;
 
     public:
         static ExtAPI *getExtAPI();
