@@ -50,39 +50,47 @@ namespace SVF
 
     Specification language: The specification language of external function includes:
     1. the name of the function,
-    2. the type of the function,
-    3. the operations of the function.
+    2. the priority to user-defined functions and external functions
+    3. the type of the function,
+    4. the operations of the function.
 
-    Funtion type: Funtion type represents some property of the function.
-    For example,
-    ”EFT_ALLOC“, represents if this external function allocates a new object and assigns it to one of its arguments,
-    For the selection of Function type and a more detailed explanation, please refer to enum extf_t in ExtAPI.h.
+    2. the priority to user-defined functions and external functions:
+        If there is a function, the function has a function body in the application code, and this function name also belongs to ExtAPI.json,
+        Then we specify the following execution rule
+        priority = 0: Execute user-defined functions.
+        priority = 1: Execute function specification in ExtAPI.json.
 
-    Function operations: Function operations indicates the relationship between input and output,
-    mainly the relationship between function parameters, or between parameters and return values after function is executed.
-    For example,
-    "copy": ["A2", "L"], indicates that after this external function is executed, the value of the 2th parameter is copied into the return value.
-    For the selection of Function type and a more detailed explanation, please refer to enum extType in ExtAPI.h.
+    3. Funtion type: Funtion type represents some property of the function.
+        For example, 
+        ”EFT_ALLOC“, represents if this external function allocates a new object and assigns it to one of its arguments, 
+        For the selection of Function type and a more detailed explanation, please refer to enum extf_t in ExtAPI.h.
 
-    For operands of function operation, e.g., "A2", "L", there are the following options:
-    "A": represents an parameter;
-    "N": represents a number;
-    "R": represents a reference;
-    "L": represents a return value;
-    "V": represents a dummy node;
+    4. Function operations: Function operations indicates the relationship between input and output,
+        mainly the relationship between function parameters, or between parameters and return values after function is executed.
+        For example,
+        "copy": ["A2", "L"], indicates that after this external function is executed, the value of the 2th parameter is copied into the return value.
+        For the selection of Function type and a more detailed explanation, please refer to enum extType in ExtAPI.h.
 
-    Among them, parameter may have multiple forms, because there may be multiple parameters, and parameter may be a reference or complex structure,
+        For operands of function operation, e.g., "A2", "L", there are the following options:
+        "A": represents an parameter;
+        "N": represents a number;
+        "R": represents a reference;
+        "L": represents a return value;
+        "V": represents a dummy node;
 
-    Here we use regular expressions "(AN)(R|RN)^*" to represent parameter, for example,
-    "A0":    represents the 1th parameter;
-    "A2R":   represents that the 3th parameter is a reference;
-    "A1R2":  represents the 3th substructure of 2th parameter "A1R", where "A1R" is a complex structure;
-    "A2R3R": represents the 4th substructure of 3th parameter "A2R" is a reference, where "A2R" is a complex structure;
+        Among them, parameter may have multiple forms, because there may be multiple parameters, and parameter may be a reference or complex structure,
+
+        Here we use regular expressions "(AN)(R|RN)^*" to represent parameter, for example,
+        "A0":    represents the 1th parameter;
+        "A2R":   represents that the 3th parameter is a reference;
+        "A1R2":  represents the 3th substructure of 2th parameter "A1R", where "A1R" is a complex structure;
+        "A2R3R": represents the 4th substructure of 3th parameter "A2R" is a reference, where "A2R" is a complex structure;
 
 
     Specification format:
     "functionName": {
         "type": "functional type",
+        "priority:" 0/1,
         "function operation_1": [ operand_1, operand_2, ... , operand_n],
         "function operation_2": [ operand_1, operand_2, ... , operand_n],
         ...
@@ -233,7 +241,7 @@ public:
     // Get property of the operation, e.g. "EFT_A1R_A0R"
     extType get_type(const SVF::SVFFunction *callee);
 
-    // Get priority of he function, return value
+     // Get priority of he function, return value
     // 0: Execute user-defined functions
     // 1: Execute function specification in ExtAPI.json
     u32_t get_priority(const SVF::SVFFunction *callee);
