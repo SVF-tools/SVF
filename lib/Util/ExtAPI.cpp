@@ -150,6 +150,25 @@ ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
         return it->second;
 }
 
+// Get priority of he function, return value
+// 0: Execute user-defined functions
+// 1: Execute function specification in ExtAPI.json
+u32_t ExtAPI::get_priority(const SVF::SVFFunction *callee)
+{
+    std::string funName = get_name(callee);
+    cJSON *item = get_FunJson(funName);
+    if (item != nullptr)
+    {
+        cJSON *obj = item->child;
+        obj = obj->next;
+        if (strcmp(obj->string, "priority") == 0)
+            return obj->valueint;
+        else
+            assert(false && "The function operation format is illegal!");
+    }
+    return 0;
+}
+
 // Does (F) have a static var X (unavailable to us) that its return points to?
 bool ExtAPI::has_static(const SVFFunction *F)
 {
@@ -240,7 +259,20 @@ bool ExtAPI::is_ext(const SVFFunction *F)
     else
     {
         ExtAPI::extType t = get_type(F);
-        res = t == EFT_ALLOC || t == EFT_REALLOC || t == EFT_NOSTRUCT_ALLOC || t == EFT_NOOP || t == EFT_FREE;
+        if (t != EFT_NULL)
+        {
+            u32_t priority = get_priority(F);
+            // priority = 1: Execute function specification in ExtAPI.json
+            // F is considered as external function
+            if (priority == 1)
+                res = 1;
+            // priority = 0: Execute user-defined functions
+            // F is not considered as external function
+            else
+                res = 0;
+        }
+        else
+            res = 0;
     }
     return res;
 }
