@@ -1206,9 +1206,9 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             // The external function exists in ExtAPI.json
             if (item != nullptr)
             {
-                //  Get the first operation of the function
                 cJSON *obj = item->child;
-                obj = obj -> next;
+                //  Get the first operation of the function
+                obj = obj -> next -> next;
                 while (obj)
                 {
                     std::string op = obj->string;

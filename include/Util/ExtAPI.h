@@ -231,6 +231,11 @@ namespace SVF
         // Get property of the operation, e.g. "EFT_A1R_A0R"
         extType get_type(const SVF::SVFFunction *callee);
 
+        // Get priority of he function, return value
+        // 0: Execute user-defined functions
+        // 1: Execute function specification in ExtAPI.json
+        u32_t get_priority(const SVF::SVFFunction *callee);
+
         // Does (F) have a static var X (unavailable to us) that its return points to?
         bool has_static(const SVFFunction *F);
 

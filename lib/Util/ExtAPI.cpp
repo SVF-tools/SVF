@@ -5,7 +5,7 @@
 
 /*
  * Modified by Yulei Sui 2013
-*/
+ */
 
 #include "Util/ExtAPI.h"
 #include "Util/SVFUtil.h"
@@ -72,8 +72,8 @@ std::string ExtAPI::get_name(const SVFFunction *F)
 // Get specifications of external functions in ExtAPI.json file
 cJSON *ExtAPI::get_FunJson(const std::string funName)
 {
-    
-    if(!root)
+
+    if (!root)
     {
         std::string jsonFilePath = PROJECT_PATH;
         jsonFilePath.append(EXTAPI_JSON_PATH);
@@ -150,6 +150,25 @@ ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
         return it->second;
 }
 
+// Get priority of he function, return value
+// 0: Execute user-defined functions
+// 1: Execute function specification in ExtAPI.json
+u32_t ExtAPI::get_priority(const SVF::SVFFunction *callee)
+{
+    std::string funName = get_name(callee);
+    cJSON *item = get_FunJson(funName);
+    if (item != nullptr)
+    {
+        cJSON *obj = item->child;
+        obj = obj->next;
+        if (strcmp(obj->string, "priority") == 0)
+            return obj->valueint;
+        else
+            assert(false && "The function operation format is illegal!");
+    }
+    return 0;
+}
+
 // Does (F) have a static var X (unavailable to us) that its return points to?
 bool ExtAPI::has_static(const SVFFunction *F)
 {
@@ -197,52 +216,63 @@ s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
         assert(false && "Not an alloc call via argument.");
         return -1;
     }
-    }
+}
 
-    // Does (F) allocate only non-struct objects?
-    bool ExtAPI::no_struct_alloc(const SVFFunction *F)
+// Does (F) allocate only non-struct objects?
+bool ExtAPI::no_struct_alloc(const SVFFunction *F)
+{
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_NOSTRUCT_ALLOC;
+}
+
+// Does (F) not free/release any memory?
+bool ExtAPI::is_dealloc(const SVFFunction *F)
+{
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_FREE;
+}
+
+// Does (F) not do anything with the known pointers?
+bool ExtAPI::is_noop(const SVFFunction *F)
+{
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_NOOP || t == EFT_FREE;
+}
+
+// Does (F) reallocate a new object?
+bool ExtAPI::is_realloc(const SVFFunction *F)
+{
+    ExtAPI::extType t = get_type(F);
+    return t == EFT_REALLOC;
+}
+
+// Should (F) be considered "external" (either not defined in the program
+//   or a user-defined version of a known alloc or no-op)?
+bool ExtAPI::is_ext(const SVFFunction *F)
+{
+    assert(F);
+    bool res;
+    if (F->isDeclaration() || F->isIntrinsic())
+    {
+        res = 1;
+    }
+    else
     {
         ExtAPI::extType t = get_type(F);
-        return t == EFT_NOSTRUCT_ALLOC;
-    }
-
-    // Does (F) not free/release any memory?
-    bool ExtAPI::is_dealloc(const SVFFunction *F)
-    {
-        ExtAPI::extType t = get_type(F);
-        return t == EFT_FREE;
-    }
-
-    // Does (F) not do anything with the known pointers?
-    bool ExtAPI::is_noop(const SVFFunction *F)
-    {
-        ExtAPI::extType t = get_type(F);
-        return t == EFT_NOOP || t == EFT_FREE;
-    }
-
-    // Does (F) reallocate a new object?
-    bool ExtAPI::is_realloc(const SVFFunction *F)
-    {
-        ExtAPI::extType t = get_type(F);
-        return t == EFT_REALLOC;
-    }
-
-    // Should (F) be considered "external" (either not defined in the program
-    //   or a user-defined version of a known alloc or no-op)?
-    bool ExtAPI::is_ext(const SVFFunction *F)
-    {
-        assert(F);
-        bool res;
-        if (F->isDeclaration() || F->isIntrinsic())
+        if (t != EFT_NULL)
         {
-            res = 1;
+            u32_t priority = get_priority(F);
+            // priority = 1: Execute function specification in ExtAPI.json
+            // F is considered as external function
+            if (priority == 1)
+                res = 1;
+            // priority = 0: Execute user-defined functions
+            // F is not considered as external function
+            else
+                res = 0;
         }
         else
-        {
-            ExtAPI::extType t = get_type(F);
-            res = t == EFT_ALLOC || t == EFT_REALLOC || t == EFT_NOSTRUCT_ALLOC || t == EFT_NOOP || t == EFT_FREE;
-        }
-        return res;
+            res = 0;
     }
-
-
+    return res;
+}
