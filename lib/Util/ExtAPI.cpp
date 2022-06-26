@@ -5,7 +5,7 @@
 
 /*
  * Modified by Yulei Sui 2013
- */
+*/
 
 #include "Util/ExtAPI.h"
 #include "Util/SVFUtil.h"
@@ -73,7 +73,7 @@ std::string ExtAPI::get_name(const SVFFunction *F)
 cJSON *ExtAPI::get_FunJson(const std::string funName)
 {
 
-    if (!root)
+    if(!root)
     {
         std::string jsonFilePath = PROJECT_PATH;
         jsonFilePath.append(EXTAPI_JSON_PATH);
