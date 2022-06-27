@@ -54,7 +54,7 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNod
     // if function is implemented
     if (f->getLLVMFun()->begin() != f->getLLVMFun()->end())
     {
-        bb = SVFUtil::getFunExitBB(f->getLLVMFun());
+        bb = LLVMUtil::getFunExitBB(f->getLLVMFun());
     }
 
 }
@@ -119,7 +119,7 @@ const std::string FunExitICFGNode::toString() const
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
-        rawstr << getSourceLoc(getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI());
+        rawstr << getSourceLoc(LLVMUtil::getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI());
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -202,6 +202,23 @@ ICFG::ICFG(): totalICFGNode(0)
     addICFGNode(globalBlockNode);
 }
 
+ICFG::~ICFG()
+{
+    Set<const SVFLoop*> loops;
+    for (const auto &it: icfgNodeToSVFLoopVec)
+    {
+        for (const auto &loop: it.second)
+        {
+            loops.insert(loop);
+        }
+    }
+
+    for (const auto &it: loops)
+    {
+        delete it;
+    }
+    icfgNodeToSVFLoopVec.clear();
+}
 
 /// Get a basic block ICFGNode
 ICFGNode* ICFG::getICFGNode(const Instruction* inst)

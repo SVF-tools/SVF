@@ -11,7 +11,6 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "DDA/DDAVFSolver.h"
 #include "Util/DPItem.h"
-#include "SVF-FE/DataFlowUtil.h"
 
 namespace SVF
 {
@@ -195,7 +194,6 @@ private:
     ConstSVFGEdgeSet insensitveEdges;///< insensitive call-return edges
     FlowDDA* flowDDA;			///< downgrade to flowDDA if out-of-budget
     DDAClient* _client;			///< DDA client
-    PTACFInfoBuilder loopInfoBuilder; ///< LoopInfo
 };
 
 } // End namespace SVF

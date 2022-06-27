@@ -35,11 +35,13 @@
 #include "SVF-FE/CPPUtil.h"
 #include "Util/BasicTypes.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
+#include "SVF-FE/LLVMLoopAnalysis.h"
 #include "Util/Options.h"
 
 using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 
 /*!
@@ -134,6 +136,11 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
     if (Options::DumpICFG)
         pag->getICFG()->dump("icfg_initial");
 
+    if (Options::LoopAnalysis)
+    {
+        LLVMLoopAnalysis loopAnalysis;
+        loopAnalysis.build(pag->getICFG());
+    }
     return pag;
 }
 
@@ -195,7 +202,7 @@ void SVFIRBuilder::initialiseNodes()
     {
         DBOUT(DPAGBuild, outs() << "add address edges for constant node " << iter->second << "\n");
         const Value* val = iter->first;
-        if (symTable->isConstantObjSym(val))
+        if (LLVMUtil::isConstantObjSym(val))
         {
             NodeID ptr = pag->getValueNode(val);
             if(ptr!= pag->getBlkPtr() && ptr!= pag->getNullPtr())
@@ -276,7 +283,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             // If it's a non-constant offset access
             // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
             // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
-            if(!op && gepTy->isPointerTy() && gepTy->getPointerElementType()->isSingleValueType())
+            if(!op && gepTy->isPointerTy() && getPtrElementType(SVFUtil::dyn_cast<PointerType>(gepTy))->isSingleValueType())
                 return false;
 
             // The actual index
@@ -1013,7 +1020,7 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
     const Value* value = getBaseValueForExtArg(V);
     const Type *T = value->getType();
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
-        T = ptype->getElementType();
+        T = getPtrElementType(ptype);
 
     u32_t numOfElems = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(T);
     /// use user-specified size for this copy operation if the size is a constaint int
@@ -1083,11 +1090,82 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 
 
 /*!
+ * Get numeric index of the argument in external function
+ */
+u32_t SVFIRBuilder::getArgIndex(std::string s)
+{
+    if(s[0] != 'A')
+        assert(false && "the argument of extern function in ExtAPI.json should start with 'A' !");
+    u32_t i = 1;
+    u32_t start = i;
+    while(i < s.size() && isdigit(s[i]))
+        i++;
+    std::string digitStr = s.substr(start, i-start);
+    u32_t argNum = atoi(digitStr.c_str());
+    return argNum;
+}
+
+
+/*!
+ * Get NodeId of s
+ */
+NodeID SVFIRBuilder::parseNode(std::string s, CallSite cs, const Instruction *inst)
+{
+    Value* V = nullptr;
+    NodeID res = -1;
+    size_t argNumPre = -1;
+    bool flag = true;
+    for (size_t i = 0; i < s.size();)
+    {
+        if(!flag)
+            assert(false && "The operand format of function operation is illegal!");
+        // 'A' represents an argument
+        if (s[i] == 'A')
+        {
+            i = i + 1;
+            size_t start = i;
+            while(i < s.size() && isdigit(s[i]))
+                i++;
+            std::string digitStr = s.substr(start, i-start);
+            argNumPre = atoi(digitStr.c_str());
+            V = cs.getArgument(argNumPre);
+            if(i >= s.size())
+                res = getValueNode(V);
+        }
+        // 'R' represents a reference
+        else if(s[i] == 'R')
+        {
+            i = i + 1;
+            if(i >= s.size())
+                res = getValueNode(V);
+        }
+        // 'L' represents a return value
+        else if(s[i] == 'L')
+        {
+            res = getValueNode(inst);
+            if(i++ != 0)
+                flag = false;
+        }
+        // 'V' represents a dummy node
+        else if(s[i] == 'V')
+        {
+            res = pag->addDummyValNode();
+            if(i++ != 0)
+                flag = false;
+        }
+        else
+            flag = false;
+
+    }
+    return res;
+}
+
+/*!
  * Handle external calls
  */
 void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 {
-    const Instruction* inst = cs.getInstruction();
+    const Instruction *inst = cs.getInstruction();
     if (isHeapAllocOrStaticExtCall(cs))
     {
         // case 1: ret = new obj
@@ -1101,7 +1179,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         else
         {
             assert(isHeapAllocExtCallViaArg(cs) && "Must be heap alloc call via arg.");
-            int arg_pos = getHeapAllocHoldingArgPosition(callee);
+            u32_t arg_pos = getHeapAllocHoldingArgPosition(callee);
             const Value *arg = cs.getArgument(arg_pos);
             if (arg->getType()->isPointerTy())
             {
@@ -1122,379 +1200,224 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
     }
     else
     {
-        if(isExtCall(callee))
+        if (isExtCall(callee))
         {
-            ExtAPI::extf_t tF= extCallTy(callee);
-            switch(tF)
+            std::string funName = ExtAPI::getExtAPI()->get_name(callee);
+            cJSON *item = ExtAPI::getExtAPI()->get_FunJson(funName);
+            // The external function exists in ExtAPI.json
+            if (item != nullptr)
             {
-            case ExtAPI::EFT_REALLOC:
-            {
-                if(!SVFUtil::isa<PointerType>(inst->getType()))
-                    break;
-                // e.g. void *realloc(void *ptr, size_t size)
-                // if ptr is null then we will treat it as a malloc
-                // if ptr is not null, then we assume a new data memory will be attached to
-                // the tail of old allocated memory block.
-                if(SVFUtil::isa<ConstantPointerNull>(cs.getArgument(0)))
+                //  Get the first operation of the function
+                cJSON *obj = item->child;
+                obj = obj -> next;
+                while (obj)
                 {
-                    NodeID val = getValueNode(inst);
-                    NodeID obj = getObjectNode(inst);
-                    addAddrEdge(obj, val);
-                }
-                break;
-            }
-            case ExtAPI::EFT_L_A0:
-            {
-                NodeID dstNode = getValueNode(inst);
-                Value *src= cs.getArgument(0);
-                NodeID srcNode = getValueNode(src);
-                addCopyEdge(srcNode, dstNode);
-                break;
-            }
-
-            case ExtAPI::EFT_L_A1:
-            case ExtAPI::EFT_L_A2:
-            case ExtAPI::EFT_L_A8:
-            {
-                if(!SVFUtil::isa<PointerType>(inst->getType()))
-                    break;
-                NodeID dstNode = getValueNode(inst);
-                u32_t arg_pos;
-                switch(tF)
-                {
-                case ExtAPI::EFT_L_A1:
-                    arg_pos= 1;
-                    break;
-                case ExtAPI::EFT_L_A2:
-                    arg_pos= 2;
-                    break;
-                case ExtAPI::EFT_L_A8:
-                    arg_pos= 8;
-                    break;
-                default:
-                    arg_pos= 0;
-                }
-                Value *src= cs.getArgument(arg_pos);
-                if(SVFUtil::isa<PointerType>(src->getType()))
-                {
-                    NodeID srcNode = getValueNode(src);
-                    addCopyEdge(srcNode, dstNode);
-                }
-                else
-                    addBlackHoleAddrEdge(dstNode);
-                break;
-                break;
-            }
-            case ExtAPI::EFT_L_A0__A0R_A1:
-            {
-                // this is for memset(void *str, int c, size_t n)
-                // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
-                std::vector<LocationSet> dstFields;
-                const Type *dtype = getBaseTypeAndFlattenedFields(cs.getArgument(0), dstFields, cs.getArgument(2));
-                u32_t sz = dstFields.size();
-                //For each field (i), add store edge *(arg0 + i) = arg1
-                for (u32_t index = 0; index < sz; index++)
-                {
-                    const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, dstFields[index].accumulateConstantFieldIdx());
-                    NodeID dField = getGepValVar(cs.getArgument(0), dstFields[index], dElementType);
-                    addStoreEdge(pag->getValueNode(cs.getArgument(1)),dField);
-                }
-                if(SVFUtil::isa<PointerType>(inst->getType()))
-                    addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
-                break;
-            }
-            case ExtAPI::EFT_L_A0__A0R_A1R:
-            {
-                addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), cs.getArgument(2));
-                //memcpy returns the dest.
-                addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
-                break;
-            }
-            case ExtAPI::EFT_A1R_A0R:
-                addComplexConsForExt(cs.getArgument(1), cs.getArgument(0), cs.getArgument(2));
-                break;
-            case ExtAPI::EFT_L_A1__FunPtr:
-            {
-                /// handling external function e.g., void *dlsym(void *handle, const char *funname);
-                const Value *src = cs.getArgument(1);
-                if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
-                    src = stripConstantCasts(gep->getPointerOperand());
-                if(const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(src))
-                {
-                    if(const ConstantDataArray* constarray = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer()))
+                    std::string op = obj->string;
+                    std::vector<std::string> args;
+                    if (obj->type == cJSON_Array)
                     {
-                        if(const SVFFunction* fun = getProgFunction(svfMod,constarray->getAsCString().str()))
-                        {
-                            NodeID srcNode = getValueNode(fun->getLLVMFun());
-                            addCopyEdge(srcNode,  getValueNode(inst));
-                        }
-                    }
-                }
-                break;
-            }
-            case ExtAPI::EFT_A3R_A1R_NS:
-                //These func. are never used to copy structs, so the size is 1.
-                addComplexConsForExt(cs.getArgument(3), cs.getArgument(1), nullptr);
-                break;
-            case ExtAPI::EFT_A1R_A0:
-            {
-                NodeID vnD= getValueNode(cs.getArgument(1));
-                NodeID vnS= getValueNode(cs.getArgument(0));
-                if(vnD && vnS)
-                    addStoreEdge(vnS,vnD);
-                break;
-            }
-            case ExtAPI::EFT_A2R_A1:
-            {
-                NodeID vnD= getValueNode(cs.getArgument(2));
-                NodeID vnS= getValueNode(cs.getArgument(1));
-                if(vnD && vnS)
-                    addStoreEdge(vnS,vnD);
-                break;
-            }
-            case ExtAPI::EFT_A4R_A1:
-            {
-                NodeID vnD= getValueNode(cs.getArgument(4));
-                NodeID vnS= getValueNode(cs.getArgument(1));
-                if(vnD && vnS)
-                    addStoreEdge(vnS,vnD);
-                break;
-            }
-            case ExtAPI::EFT_L_A0__A1_A0:
-            {
-                /// handle strcpy
-                if(cs.arg_size()>=3)
-                    addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), cs.getArgument(2));
-                else
-                    addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), nullptr);
-                //strcpy returns the dest.
-                addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
-                break;
-            }
-            case ExtAPI::EFT_L_A0__A2R_A0:
-            {
-                if(SVFUtil::isa<PointerType>(inst->getType()))
-                {
-                    //Do the L_A0 part if the retval is used.
-                    NodeID vnD= getValueNode(inst);
-                    Value *src= cs.getArgument(0);
-                    if(SVFUtil::isa<PointerType>(src->getType()))
-                    {
-                        NodeID vnS= getValueNode(src);
-                        if(vnS)
-                            addCopyEdge(vnS,vnD);
+                        // Get the first argument of the operation
+                        cJSON *value = obj->child;
+                        args = ExtAPI::getExtAPI()->get_opArgs(value);
+                        obj = obj->next;
                     }
                     else
-                        addBlackHoleAddrEdge(vnD);
-                }
-                //Do the A2R_A0 part.
-                NodeID vnD= getValueNode(cs.getArgument(2));
-                NodeID vnS= getValueNode(cs.getArgument(0));
-                if(vnD && vnS)
-                    addStoreEdge(vnS,vnD);
-                break;
-            }
-            case ExtAPI::EFT_A0R_NEW:
-            case ExtAPI::EFT_A1R_NEW:
-            case ExtAPI::EFT_A2R_NEW:
-            case ExtAPI::EFT_A4R_NEW:
-            case ExtAPI::EFT_A11R_NEW:
-            {
-                assert(!"Alloc via arg cases are not handled here.");
-                break;
-            }
-            case ExtAPI::EFT_ALLOC:
-            case ExtAPI::EFT_NOSTRUCT_ALLOC:
-            case ExtAPI::EFT_STAT:
-            case ExtAPI::EFT_STAT2:
-                if(SVFUtil::isa<PointerType>(inst->getType()))
-                    assert(!"alloc type func. are not handled here");
-                else
-                {
-                    // fdopen will return an integer in LLVM IR.
-                    writeWrnMsg("alloc type func do not return pointer type");
-                }
-                break;
-            case ExtAPI::EFT_NOOP:
-            case ExtAPI::EFT_FREE:
-                break;
-            case ExtAPI::EFT_FREE_MULTILEVEL:
-            {
-                // For any argument with 2-level pointer passing too a free function e.g., XFree(void** p),
-                // we will need to add a load edge (dummy = *p) and a store edge (*dummy = nullptr).
-                for(u32_t i = 0; i < cs.arg_size(); i++)
-                {
-                    Value *arg = cs.getArgument(i);
-                    if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(arg->getType()))
                     {
-                        if(pty->getElementType()->isPointerTy())
+                        assert(false && "The function operation format is illegal!");
+                    }
+
+                    ExtAPI::extf_t opName = ExtAPI::getExtAPI()->get_opName(op);
+
+                    switch (opName)
+                    {
+                    case ExtAPI::EXT_ADDR:
+                    {
+                        if (args.size() == 1)
                         {
-                            NodeID dummy = pag->addDummyValNode();
-                            addLoadEdge(pag->getValueNode(arg),dummy);
-                            addStoreEdge(pag->getNullPtr(),dummy);
+                            if (!SVFUtil::isa<PointerType>(inst->getType()))
+                                break;
+                            // e.g. void *realloc(void *ptr, size_t size)
+                            // if ptr is null then we will treat it as a malloc
+                            // if ptr is not null, then we assume a new data memory will be attached to
+                            // the tail of old allocated memory block.
+                            if (SVFUtil::isa<ConstantPointerNull>(cs.getArgument(0)))
+                            {
+                                NodeID val = parseNode(args[0], cs, inst);
+                                NodeID obj = getObjectNode(inst);
+                                addAddrEdge(obj, val);
+                            }
                         }
+                        break;
+                    }
+                    case ExtAPI::EXT_COPY:
+                    {
+                        NodeID srcNode = parseNode(args[0], cs, inst);
+                        NodeID dstNode = parseNode(args[1], cs, inst);
+                        if (srcNode && dstNode)
+                            addCopyEdge(srcNode, dstNode);
+                        break;
+                    }
+                    case ExtAPI::EXT_LOAD:
+                    {
+                        NodeID vnD = parseNode(args[0], cs, inst);
+                        NodeID vnS = parseNode(args[1], cs, inst);
+                        if (vnD && vnS)
+                            addLoadEdge(vnS, vnD);
+                        break;
+                    }
+                    case ExtAPI::EXT_STORE:
+                    {
+                        NodeID vnS = parseNode(args[0], cs, inst);
+                        NodeID vnD = parseNode(args[1], cs, inst);
+                        if (vnS && vnD)
+                            addStoreEdge(vnS, vnD);
+                        break;
+                    }
+                    case ExtAPI::EXT_LOADSTORE:
+                    {
+                        NodeID vnD = parseNode(args[0], cs, inst);
+                        NodeID vnV = parseNode(args[1], cs, inst);
+                        NodeID vnS = parseNode(args[2], cs, inst);
+                        if (vnD && vnV && vnS)
+                        {
+                            addLoadEdge(vnS, vnV);
+                            addStoreEdge(vnV, vnD);
+                        }
+                        break;
+                    }
+                    case ExtAPI::EXT_COPY_N:
+                    {
+                        // void *memset(void *str, int c, size_t n)
+                        // this is for memset(void *str, int c, size_t n)
+                        // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
+                        u32_t arg0 = getArgIndex(args[0]);
+                        u32_t arg1 = getArgIndex(args[1]);
+                        u32_t arg2 = getArgIndex(args[2]);
+                        std::vector<LocationSet> dstFields;
+                        const Type *dtype = getBaseTypeAndFlattenedFields(cs.getArgument(arg0), dstFields, cs.getArgument(arg2));
+                        u32_t sz = dstFields.size();
+                        // For each field (i), add store edge *(arg0 + i) = arg1
+                        for (u32_t index = 0; index < sz; index++)
+                        {
+                            const Type *dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, dstFields[index].accumulateConstantFieldIdx());
+                            NodeID dField = getGepValVar(cs.getArgument(arg0), dstFields[index], dElementType);
+                            addStoreEdge(pag->getValueNode(cs.getArgument(arg1)), dField);
+                        }
+                        if (SVFUtil::isa<PointerType>(inst->getType()))
+                            addCopyEdge(getValueNode(cs.getArgument(arg0)), getValueNode(inst));
+                        break;
+                    }
+                    case ExtAPI::EXT_COPY_MN:
+                    {
+                        u32_t arg0 = getArgIndex(args[0]);
+                        u32_t arg1 = getArgIndex(args[1]);
+                        if (args.size() >= 3)
+                        {
+                            u32_t arg2 = getArgIndex(args[2]);
+                            addComplexConsForExt(cs.getArgument(arg0), cs.getArgument(arg1), cs.getArgument(arg2));
+                        }
+                        else
+                            addComplexConsForExt(cs.getArgument(arg0), cs.getArgument(arg1), nullptr);
+                        break;
+                    }
+                    case ExtAPI::EXT_FUNPTR:
+                    {
+                        /// handling external function e.g., void *dlsym(void *handle, const char *funname);
+                        u32_t arg0 = getArgIndex(args[0]);
+                        const Value *src = cs.getArgument(arg0);
+                        if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
+                            src = stripConstantCasts(gep->getPointerOperand());
+                        if (const GlobalVariable *glob = SVFUtil::dyn_cast<GlobalVariable>(src))
+                        {
+                            if (const ConstantDataArray *constarray = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer()))
+                            {
+                                if (const SVFFunction *fun = getProgFunction(svfMod, constarray->getAsCString().str()))
+                                {
+                                    NodeID srcNode = getValueNode(fun->getLLVMFun());
+                                    addCopyEdge(srcNode, getValueNode(inst));
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    case ExtAPI::EXT_COMPLEX:
+                    {
+                        u32_t arg0 = getArgIndex(args[0]);
+                        u32_t arg1 = getArgIndex(args[1]);
+                        Value *vArg1 = cs.getArgument(arg0);
+                        Value *vArg3 = cs.getArgument(arg1);
+
+                        // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
+                        // Now we calculate the offset from base to vArg3
+                        NodeID vnArg3 = pag->getValueNode(vArg3);
+                        s32_t offset = getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
+
+                        // We get all flattened fields of base
+                        vector<LocationSet> fields;
+                        const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields, nullptr);
+                        assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
+
+                        // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
+                        // Note that arg0 is aligned with "offset".
+                        for (s32_t i = offset + 1; i <= offset + 3; ++i)
+                        {
+                            if ((u32_t)i >= fields.size())
+                                break;
+                            const Type *elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
+                            NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
+                            NodeID vnS = getValueNode(vArg1);
+                            if (vnD && vnS)
+                                addStoreEdge(vnS, vnD);
+                        }
+                        break;
+                    }
+                    // default
+                    // illegal function operation of external function
+                    case ExtAPI::EXT_OTHER:
+                    default:
+                    {
+                        assert(false && "new type of SVFStmt for external calls?");
+                    }
                     }
                 }
-                break;
             }
-            case ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE:
+            // // The external function doesn't exist in ExtAPI.json
+            else
             {
-                assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
-
-                Value *vArg1 = cs.getArgument(1);
-                Value *vArg3 = cs.getArgument(3);
-
-                // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
-                // Now we calculate the offset from base to vArg3
-                NodeID vnArg3 = pag->getValueNode(vArg3);
-                s32_t offset = getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
-
-                // We get all flattened fields of base
-                vector<LocationSet> fields;
-                const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields, nullptr);
-
-                // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
-                // Note that arg0 is aligned with "offset".
-                for (s32_t i = offset + 1; i <= offset + 3; ++i)
-                {
-                    if((u32_t)i >= fields.size())
-                        break;
-                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
-                    NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
-                    NodeID vnS = getValueNode(vArg1);
-                    if(vnD && vnS)
-                        addStoreEdge(vnS,vnD);
-                }
-                break;
-            }
-            case ExtAPI::EFT_STD_RB_TREE_INCREMENT:
-            {
-                assert(cs.arg_size() == 1 && "_Rb_tree_decrement should have one argument.\n");
-                NodeID vnD = pag->getValueNode(inst);
-                Value *vArg = cs.getArgument(0);
-                NodeID vnArg = pag->getValueNode(vArg);
-                s32_t offset = getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
-
-                // We get all fields
-                vector<LocationSet> fields;
-                const Type *type = getBaseTypeAndFlattenedFields(vArg,fields,nullptr);
-
-                // We summarize the side effects: ret = arg->parent, ret = arg->left, ret = arg->right
-                // Note that arg0 is aligned with "offset".
-                for (s32_t i = offset + 1; i <= offset + 3; ++i)
-                {
-                    if((u32_t)i >= fields.size())
-                        break;
-                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
-                    NodeID vnS = getGepValVar(vArg, fields[i], elementType);
-                    if(vnD && vnS)
-                        addStoreEdge(vnS,vnD);
-                }
-                break;
-            }
-            case ExtAPI::EFT_STD_LIST_HOOK:
-            {
-                Value *vSrc = cs.getArgument(0);
-                Value *vDst = cs.getArgument(1);
-                NodeID src = pag->getValueNode(vSrc);
-                NodeID dst = pag->getValueNode(vDst);
-                addStoreEdge(src, dst);
-                break;
-            }
-            case ExtAPI::CPP_EFT_A0R_A1:
-            {
-                SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
-                if (symTable->getModelConstants())
-                {
-                    NodeID vnD = pag->getValueNode(cs.getArgument(0));
-                    NodeID vnS = pag->getValueNode(cs.getArgument(1));
-                    addStoreEdge(vnS, vnD);
-                }
-                break;
-            }
-            case ExtAPI::CPP_EFT_A0R_A1R:
-            {
-                SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
-                if (symTable->getModelConstants())
-                {
-                    NodeID vnD = getValueNode(cs.getArgument(0));
-                    NodeID vnS = getValueNode(cs.getArgument(1));
-                    assert(vnD && vnS && "dst or src not exist?");
-                    NodeID dummy = pag->addDummyValNode();
-                    addLoadEdge(vnS,dummy);
-                    addStoreEdge(dummy,vnD);
-                }
-                break;
-            }
-            case ExtAPI::CPP_EFT_A1R:
-            {
-                SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
-                if (symTable->getModelConstants())
-                {
-                    NodeID vnS = getValueNode(cs.getArgument(1));
-                    assert(vnS && "src not exist?");
-                    NodeID dummy = pag->addDummyValNode();
-                    addLoadEdge(vnS,dummy);
-                }
-                break;
-            }
-            case ExtAPI::CPP_EFT_DYNAMIC_CAST:
-            {
-                Value *vArg0 = cs.getArgument(0);
-                Value *retVal = cs.getInstruction();
-                NodeID src = getValueNode(vArg0);
-                assert(src && "src not exist?");
-                NodeID dst = getValueNode(retVal);
-                assert(dst && "dst not exist?");
-                addCopyEdge(src, dst);
-                break;
-            }
-            case ExtAPI::EFT_CXA_BEGIN_CATCH:
-            {
-                break;
-            }
-            //default:
-            case ExtAPI::EFT_OTHER:
-            {
-                if(SVFUtil::isa<PointerType>(inst->getType()))
-                {
-                    std::string str;
-                    raw_string_ostream rawstr(str);
-                    rawstr << "function " << callee->getName() << " not in the external function summary list";
-                    writeWrnMsg(rawstr.str());
-                    //assert("unknown ext.func type");
-                }
-            }
+                std::string str;
+                raw_string_ostream rawstr(str);
+                rawstr << "function " << callee->getName() << " not in the external function summary ExtAPI.json file";
+                writeWrnMsg(rawstr.str());
             }
         }
 
         /// create inter-procedural SVFIR edges for thread forks
-        if(isThreadForkCall(inst))
+        if (isThreadForkCall(inst))
         {
-            if(const Function* forkedFun = getLLVMFunction(getForkedFun(inst)) )
+            if (const Function *forkedFun = getLLVMFunction(getForkedFun(inst)))
             {
                 forkedFun = getDefFunForMultipleModule(forkedFun)->getLLVMFun();
-                const Value* actualParm = getActualParmAtForkSite(inst);
+                const Value *actualParm = getActualParmAtForkSite(inst);
                 /// pthread_create has 1 arg.
                 /// apr_thread_create has 2 arg.
                 assert((forkedFun->arg_size() <= 2) && "Size of formal parameter of start routine should be one");
-                if(forkedFun->arg_size() <= 2 && forkedFun->arg_size() >= 1)
+                if (forkedFun->arg_size() <= 2 && forkedFun->arg_size() >= 1)
                 {
-                    const Argument* formalParm = &(*forkedFun->arg_begin());
+                    const Argument *formalParm = &(*forkedFun->arg_begin());
                     /// Connect actual parameter to formal parameter of the start routine
-                    if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) )
+                    if (SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()))
                     {
-                        CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(inst);
-                        FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(forkedFun));
-                        addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode, entry);
+                        CallICFGNode *icfgNode = pag->getICFG()->getCallICFGNode(inst);
+                        FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(forkedFun));
+                        addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm), icfgNode, entry);
                     }
                 }
             }
             else
             {
                 /// handle indirect calls at pthread create APIs e.g., pthread_create(&t1, nullptr, fp, ...);
-                ///const Value* fun = ThreadAPI::getThreadAPI()->getForkedFun(inst);
-                ///if(!SVFUtil::isa<Function>(fun))
+                /// const Value* fun = ThreadAPI::getThreadAPI()->getForkedFun(inst);
+                /// if(!SVFUtil::isa<Function>(fun))
                 ///    pag->addIndirectCallsites(cs,pag->getValueNode(fun));
             }
             /// If forkedFun does not pass to spawnee as function type but as void pointer
@@ -1503,27 +1426,27 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         }
 
         /// create inter-procedural SVFIR edges for hare_parallel_for calls
-        else if(isHareParForCall(inst))
+        else if (isHareParForCall(inst))
         {
-            if(const Function* taskFunc = getLLVMFunction(getTaskFuncAtHareParForSite(inst)) )
+            if (const Function *taskFunc = getLLVMFunction(getTaskFuncAtHareParForSite(inst)))
             {
                 /// The task function of hare_parallel_for has 3 args.
                 assert((taskFunc->arg_size() == 3) && "Size of formal parameter of hare_parallel_for's task routine should be 3");
-                const Value* actualParm = getTaskDataAtHareParForSite(inst);
-                const Argument* formalParm = &(*taskFunc->arg_begin());
+                const Value *actualParm = getTaskDataAtHareParForSite(inst);
+                const Argument *formalParm = &(*taskFunc->arg_begin());
                 /// Connect actual parameter to formal parameter of the start routine
-                if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) )
+                if (SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()))
                 {
-                    CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(inst);
-                    FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(taskFunc));
-                    addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode, entry);
+                    CallICFGNode *icfgNode = pag->getICFG()->getCallICFGNode(inst);
+                    FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(taskFunc));
+                    addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm), icfgNode, entry);
                 }
             }
             else
             {
                 /// handle indirect calls at hare_parallel_for (e.g., hare_parallel_for(..., fp, ...);
-                ///const Value* fun = ThreadAPI::getThreadAPI()->getForkedFun(inst);
-                ///if(!SVFUtil::isa<Function>(fun))
+                /// const Value* fun = ThreadAPI::getThreadAPI()->getForkedFun(inst);
+                /// if(!SVFUtil::isa<Function>(fun))
                 ///    pag->addIndirectCallsites(cs,pag->getValueNode(fun));
             }
         }

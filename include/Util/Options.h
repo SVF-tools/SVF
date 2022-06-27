@@ -158,6 +158,9 @@ public:
     static const llvm::cl::opt<bool> SingleVFG;
     static llvm::cl::opt<bool> OPTSVFG;
 
+    static const llvm::cl::opt<std :: string> WriteSVFG;
+    static const llvm::cl::opt<std :: string> ReadSVFG;
+
     // FSMPTA.cpp
     static const llvm::cl::opt<bool> UsePCG;
     static const llvm::cl::opt<bool> IntraLock;
@@ -241,9 +244,6 @@ public:
     static const llvm::cl::opt<bool> TBHCStoreReuse;
     static const llvm::cl::opt<bool> TBHCAllReuse;
 
-    // TypeAnalysis.cpp
-    static const llvm::cl::opt<bool> GenICFG;
-
     // WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
     static const llvm::cl::opt<bool> SABERFULLSVFG;
@@ -260,6 +260,10 @@ public:
     static const llvm::cl::opt<bool> GraphIsFromDot;
     static const llvm::cl::opt<bool> GrammarIsEBNF;
     static const llvm::cl::opt<bool> FlexSymMap;
+
+    // Loop Analysis
+    static const llvm::cl::opt<bool> LoopAnalysis;
+    static const llvm::cl::opt<unsigned> LoopBound;
 };
 }  // namespace SVF
 

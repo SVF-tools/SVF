@@ -28,218 +28,242 @@
 
 /*
  * Modified by Yulei Sui 2013
-*/
+ */
 
 #ifndef __ExtAPI_H
 #define __ExtAPI_H
 
 #include "Util/BasicTypes.h"
-#include <map>
-#include <set>
+#include "Util/cJSON.h"
+#include "Util/config.h"
 #include <string>
+#include <map>
+
+#define EXTAPI_JSON_PATH "/lib/Util/ExtAPI.json"
 
 namespace SVF
 {
 
-//------------------------------------------------------------------------------
+/*
+
+    Specifications in ExtAPI.json
+
+    Specification language: The specification language of external function includes:
+    1. the name of the function,
+    2. the type of the function,
+    3. the operations of the function.
+
+    Funtion type: Funtion type represents some property of the function.
+    For example,
+    ”EFT_ALLOC“, represents if this external function allocates a new object and assigns it to one of its arguments,
+    For the selection of Function type and a more detailed explanation, please refer to enum extf_t in ExtAPI.h.
+
+    Function operations: Function operations indicates the relationship between input and output,
+    mainly the relationship between function parameters, or between parameters and return values after function is executed.
+    For example,
+    "copy": ["A2", "L"], indicates that after this external function is executed, the value of the 2th parameter is copied into the return value.
+    For the selection of Function type and a more detailed explanation, please refer to enum extType in ExtAPI.h.
+
+    For operands of function operation, e.g., "A2", "L", there are the following options:
+    "A": represents an parameter;
+    "N": represents a number;
+    "R": represents a reference;
+    "L": represents a return value;
+    "V": represents a dummy node;
+
+    Among them, parameter may have multiple forms, because there may be multiple parameters, and parameter may be a reference or complex structure,
+
+    Here we use regular expressions "(AN)(R|RN)^*" to represent parameter, for example,
+    "A0":    represents the 1th parameter;
+    "A2R":   represents that the 3th parameter is a reference;
+    "A1R2":  represents the 3th substructure of 2th parameter "A1R", where "A1R" is a complex structure;
+    "A2R3R": represents the 4th substructure of 3th parameter "A2R" is a reference, where "A2R" is a complex structure;
+
+
+    Specification format:
+    "functionName": {
+        "type": "functional type",
+        "function operation_1": [ operand_1, operand_2, ... , operand_n],
+        "function operation_2": [ operand_1, operand_2, ... , operand_n],
+        ...
+        "function operation_n": [ operand_1, operand_2, ... , operand_n]
+    }
+*/
+
+
 class ExtAPI
 {
 public:
-    //External Function types
-    //Assume a call in the form LHS= F(arg0, arg1, arg2, arg3).
     enum extf_t
     {
-        EFT_NOOP= 0,      //no effect on pointers
-        EFT_ALLOC,        //returns a ptr to a newly allocated object
-        EFT_REALLOC,      //like L_A0 if arg0 is a non-null ptr, else ALLOC
-        EFT_FREE,      	//free memory arg0 and all pointers passing into free function
-        EFT_FREE_MULTILEVEL,  //any argument with 2-level pointer passing too a free wrapper function e.g., XFree(void**) which frees memory for void* and void**
-        EFT_NOSTRUCT_ALLOC, //like ALLOC but only allocates non-struct data
-        EFT_STAT,         //retval points to an unknown static var X
-        EFT_STAT2,        //ret -> X -> Y (X, Y - external static vars)
-        EFT_L_A0,         //copies arg0, arg1, or arg2 into LHS
+        EXT_ADDR = 0,  // Handle addr edge
+        EXT_COPY,      // Handle copy edge
+        EXT_LOAD,      // Handle load edge
+        EXT_STORE,     // Handle store edge
+        EXT_LOADSTORE, // Handle load and store edges, and add a dummy node
+        EXT_COPY_N,    // Copy the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
+        EXT_COPY_MN,   // Copies n characters from memory area src to memory area dest.
+        EXT_FUNPTR,    // Handle function void *dlsym(void *handle, const char *symbol)
+        EXT_COMPLEX,   // Handle function _ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_
+        EXT_OTHER
+    };
+
+    // External Function types
+    // Assume a call in the form LHS= F(arg0, arg1, arg2, arg3).
+    enum extType
+    {
+        EFT_NOOP = 0,        // no effect on pointers
+        EFT_ALLOC,           // returns a ptr to a newly allocated object
+        EFT_REALLOC,         // like L_A0 if arg0 is a non-null ptr, else ALLOC
+        EFT_FREE,            // free memory arg0 and all pointers passing into free function
+        EFT_FREE_MULTILEVEL, // any argument with 2-level pointer passing too a free wrapper function e.g., XFree(void**) which frees memory for void* and void**
+        EFT_NOSTRUCT_ALLOC,  // like ALLOC but only allocates non-struct data
+        EFT_STAT,            // retval points to an unknown static var X
+        EFT_STAT2,           // ret -> X -> Y (X, Y - external static vars)
+        EFT_L_A0,            // copies arg0, arg1, or arg2 into LHS
         EFT_L_A1,
         EFT_L_A2,
         EFT_L_A8,
-        EFT_L_A0__A0R_A1,   //stores arg1 into *arg0 and returns arg0 (currently only for memset)
-        EFT_L_A0__A0R_A1R,  //copies the data that arg1 points to into the location
-        EFT_L_A1__FunPtr,  //obtain the address of a symbol based on the arg1 (char*) and parse a function to LHS (e.g., void *dlsym(void *handle, char *funname);)
+        EFT_L_A0__A0R_A1,  // stores arg1 into *arg0 and returns arg0 (currently only for memset)
+        EFT_L_A0__A0R_A1R, // copies the data that arg1 points to into the location
+        EFT_L_A1__FunPtr,  // obtain the address of a symbol based on the arg1 (char*) and parse a function to LHS (e.g., void *dlsym(void *handle, char *funname);)
         //  arg0 points to; note that several fields may be
         //  copied at once if both point to structs.
         //  Returns arg0.
-        EFT_A1R_A0R,      //copies *arg0 into *arg1, with non-ptr return
-        EFT_A3R_A1R_NS,   //copies *arg1 into *arg3 (non-struct copy only)
-        EFT_A1R_A0,       //stores arg0 into *arg1
-        EFT_A2R_A1,       //stores arg1 into *arg2
-        EFT_A4R_A1,       //stores arg1 into *arg4
-        EFT_L_A0__A2R_A0, //stores arg0 into *arg2 and returns it
-        EFT_L_A0__A1_A0,  //store arg1 into arg0's base and returns arg0
-        EFT_A0R_NEW,      //stores a pointer to an allocated object in *arg0
-        EFT_A1R_NEW,      //as above, into *arg1, etc.
+        EFT_A1R_A0R,      // copies *arg0 into *arg1, with non-ptr return
+        EFT_A3R_A1R_NS,   // copies *arg1 into *arg3 (non-struct copy only)
+        EFT_A1R_A0,       // stores arg0 into *arg1
+        EFT_A2R_A1,       // stores arg1 into *arg2
+        EFT_A4R_A1,       // stores arg1 into *arg4
+        EFT_L_A0__A2R_A0, // stores arg0 into *arg2 and returns it
+        EFT_L_A0__A1_A0,  // store arg1 into arg0's base and returns arg0
+        EFT_A0R_NEW,      // stores a pointer to an allocated object in *arg0
+        EFT_A1R_NEW,      // as above, into *arg1, etc.
         EFT_A2R_NEW,
         EFT_A4R_NEW,
         EFT_A11R_NEW,
-        EFT_STD_RB_TREE_INSERT_AND_REBALANCE,  // Some complex effects
-        EFT_STD_RB_TREE_INCREMENT,  // Some complex effects
-        EFT_STD_LIST_HOOK,  // Some complex effects
+        EFT_STD_RB_TREE_INSERT_AND_REBALANCE, // Some complex effects
+        EFT_STD_RB_TREE_INCREMENT,            // Some complex effects
+        EFT_STD_LIST_HOOK,                    // Some complex effects
 
-        CPP_EFT_A0R_A1,   //stores arg1 into *arg0
-        CPP_EFT_A0R_A1R,  //copies *arg1 into *arg0
-        CPP_EFT_A1R,      //load arg1
+        CPP_EFT_A0R_A1,       // stores arg1 into *arg0
+        CPP_EFT_A0R_A1R,      // copies *arg1 into *arg0
+        CPP_EFT_A1R,          // load arg1
         EFT_CXA_BEGIN_CATCH,  //__cxa_begin_catch
         CPP_EFT_DYNAMIC_CAST, // dynamic_cast
-        EFT_OTHER         //not found in the list
+        EFT_NULL              // not found in the list
     };
+
 private:
-
-    //Each Function name is mapped to its extf_t
-    Map<std::string, extf_t> info;
-    //A cache of is_ext results for all SVFFunction*'s (hash_map is fastest).
-    Map<const SVFFunction*, bool> isext_cache;
-
-    void init();                          //fill in the map (see ExtAPI.cpp)
-
-    ExtAPI()
+    std::map<std::string, extf_t> op_pair =
     {
-        init();
-        isext_cache.clear();
-    }
+        {"addr", EXT_ADDR},
+        {"copy", EXT_COPY},
+        {"load", EXT_LOAD},
+        {"store", EXT_STORE},
+        {"load_store", EXT_LOADSTORE},
+        {"copy_n", EXT_COPY_N},
+        {"copy_mn", EXT_COPY_MN},
+        {"complex", EXT_COMPLEX},
+        {"funptr", EXT_FUNPTR}
+    };
 
-    // Singleton pattern here to enable instance of SVFIR can only be created once.
-    static ExtAPI* extAPI;
+    std::map<std::string, extType> type_pair =
+    {
+        {"EFT_NOOP", EFT_NOOP},
+        {"EFT_ALLOC", EFT_ALLOC},
+        {"EFT_REALLOC", EFT_REALLOC},
+        {"EFT_FREE", EFT_FREE},
+        {"EFT_FREE_MULTILEVEL", EFT_FREE_MULTILEVEL},
+        {"EFT_NOSTRUCT_ALLOC", EFT_NOSTRUCT_ALLOC},
+        {"EFT_STAT", EFT_STAT},
+        {"EFT_STAT2", EFT_STAT2},
+        {"EFT_L_A0", EFT_L_A0},
+        {"EFT_L_A1", EFT_L_A1},
+        {"EFT_L_A2", EFT_L_A2},
+        {"EFT_L_A8", EFT_L_A8},
+        {"EFT_L_A0__A0R_A1", EFT_L_A0__A0R_A1},
+        {"EFT_L_A0__A0R_A1R", EFT_L_A0__A0R_A1R},
+        {"EFT_L_A1__FunPtr", EFT_L_A1__FunPtr},
+        {"EFT_A1R_A0R", EFT_A1R_A0R},
+        {"EFT_A3R_A1R_NS", EFT_A3R_A1R_NS},
+        {"EFT_A1R_A0", EFT_A1R_A0},
+        {"EFT_A2R_A1", EFT_A2R_A1},
+        {"EFT_A4R_A1", EFT_A4R_A1},
+        {"EFT_L_A0__A2R_A0", EFT_L_A0__A2R_A0},
+        {"EFT_L_A0__A1_A0", EFT_L_A0__A1_A0},
+        {"EFT_A0R_NEW", EFT_A0R_NEW},
+        {"EFT_A1R_NEW", EFT_A1R_NEW},
+        {"EFT_A2R_NEW", EFT_A2R_NEW},
+        {"EFT_A4R_NEW", EFT_A4R_NEW},
+        {"EFT_A11R_NEW", EFT_A11R_NEW},
+        {"EFT_STD_RB_TREE_INSERT_AND_REBALANCE", EFT_STD_RB_TREE_INSERT_AND_REBALANCE},
+        {"EFT_STD_RB_TREE_INCREMENT", EFT_STD_RB_TREE_INCREMENT},
+        {"EFT_STD_LIST_HOOK", EFT_STD_LIST_HOOK},
+        {"CPP_EFT_A0R_A1R", CPP_EFT_A0R_A1R},
+        {"CPP_EFT_A1R", CPP_EFT_A1R},
+        {"EFT_CXA_BEGIN_CATCH", EFT_CXA_BEGIN_CATCH},
+        {"CPP_EFT_DYNAMIC_CAST", CPP_EFT_DYNAMIC_CAST},
+        {"", EFT_NULL}
+    };
+
+    static ExtAPI *extOp;
+
+    // Store specifications of external functions in ExtAPI.json file
+    static cJSON *root;
 
 public:
+    static ExtAPI *getExtAPI();
 
-    /// Singleton design here to make sure we only have one instance during whole analysis
-    static ExtAPI* getExtAPI()
-    {
-        if (extAPI == nullptr)
-        {
-            extAPI = new ExtAPI();
-        }
-        return extAPI;
-    }
+    static void destory();
 
-    static void destory()
-    {
-        if (extAPI != nullptr)
-        {
-            delete extAPI;
-            extAPI = nullptr;
-        }
-    }
+    // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
+    extf_t get_opName(std::string s);
 
-    //Return the extf_t of (F).
-    extf_t get_type(const SVFFunction* F) const
-    {
-        assert(F);
-        std::string funName = F->getName();
-        if(F->isIntrinsic())
-        {
-            unsigned start = funName.find('.');
-            unsigned end = funName.substr(start + 1).find('.');
-            funName = "llvm." + funName.substr(start + 1, end);
-        }
-        Map<std::string, extf_t>::const_iterator it= info.find(funName);
-        if(it == info.end())
-            return EFT_OTHER;
-        else
-            return it->second;
-    }
+    // Return the extf_t of (F).
+    // Get external function name, e.g "memcpy"
+    std::string get_name(const SVFFunction *F);
 
-    //Does (F) have a static var X (unavailable to us) that its return points to?
-    bool has_static(const SVFFunction* F) const
-    {
-        extf_t t= get_type(F);
-        return t==EFT_STAT || t==EFT_STAT2;
-    }
-    //Assuming hasStatic(F), does (F) have a second static Y where X -> Y?
-    bool has_static2(const SVFFunction* F) const
-    {
-        return get_type(F) == EFT_STAT2;
-    }
-    //Does (F) allocate a new object and return it?
-    bool is_alloc(const SVFFunction* F) const
-    {
-        extf_t t= get_type(F);
-        return t==EFT_ALLOC || t==EFT_NOSTRUCT_ALLOC;
-    }
-    //Does (F) allocate a new object and assign it to one of its arguments?
-    bool is_arg_alloc(const SVFFunction* F) const
-    {
-        extf_t t= get_type(F);
-        return t>=EFT_A0R_NEW && t<=EFT_A11R_NEW;
-    }
-    //Get the position of argument which holds the new object
-    int get_alloc_arg_pos(const SVFFunction* F) const
-    {
-        extf_t t= get_type(F);
-        switch(t)
-        {
-        case EFT_A0R_NEW:
-            return 0;
-        case EFT_A1R_NEW:
-            return 1;
-        case EFT_A2R_NEW:
-            return 2;
-        case EFT_A4R_NEW:
-            return 4;
-        case EFT_A11R_NEW:
-            return 11;
-        default:
-            assert(false && "Not an alloc call via argument.");
-            return -1;
-        }
-    }
-    //Does (F) allocate only non-struct objects?
-    bool no_struct_alloc(const SVFFunction* F) const
-    {
-        return get_type(F) == EFT_NOSTRUCT_ALLOC;
-    }
-    //Does (F) not free/release any memory?
-    bool is_dealloc(const SVFFunction* F) const
-    {
-        extf_t t= get_type(F);
-        return t == EFT_FREE;
-    }
-    //Does (F) not do anything with the known pointers?
-    bool is_noop(const SVFFunction* F) const
-    {
-        extf_t t= get_type(F);
-        return t == EFT_NOOP || t == EFT_FREE;
-    }
-    //Does (F) reallocate a new object?
-    bool is_realloc(const SVFFunction* F) const
-    {
-        extf_t t= get_type(F);
-        return t==EFT_REALLOC;
-    }
-    //Should (F) be considered "external" (either not defined in the program
-    //  or a user-defined version of a known alloc or no-op)?
-    bool is_ext(const SVFFunction* F)
-    {
-        assert(F);
-        //Check the cache first; everything below is slower.
-        Map<const SVFFunction*, bool>::iterator i_iec= isext_cache.find(F);
-        if(i_iec != isext_cache.end())
-            return i_iec->second;
+    // Get arguments of the operation, e.g. ["A1R", "A0", "A2"]
+    std::vector<std::string> get_opArgs(const cJSON *value);
 
-        bool res;
-        if(F->isDeclaration() || F->isIntrinsic())
-        {
-            res= 1;
-        }
-        else
-        {
-            extf_t t= get_type(F);
-            res= t==EFT_ALLOC || t==EFT_REALLOC || t==EFT_NOSTRUCT_ALLOC
-                 || t==EFT_NOOP || t==EFT_FREE;
-        }
-        isext_cache[F]= res;
-        return res;
-    }
+    // Get specifications of external functions in ExtAPI.json file
+    cJSON *get_FunJson(const std::string funName);
+
+    // Get property of the operation, e.g. "EFT_A1R_A0R"
+    extType get_type(const SVF::SVFFunction *callee);
+
+    // Does (F) have a static var X (unavailable to us) that its return points to?
+    bool has_static(const SVFFunction *F);
+
+    // Assuming hasStatic(F), does (F) have a second static Y where X -> Y?
+    bool has_static2(const SVFFunction *F);
+
+    // Does (F) allocate a new object and return it?
+    bool is_alloc(const SVFFunction *F);
+
+    // Does (F) allocate a new object and assign it to one of its arguments?
+    bool is_arg_alloc(const SVFFunction *F);
+
+    // Get the position of argument which holds the new object
+    s32_t get_alloc_arg_pos(const SVFFunction *F);
+
+    // Does (F) allocate only non-struct objects?
+    bool no_struct_alloc(const SVFFunction *F);
+
+    // Does (F) not free/release any memory?
+    bool is_dealloc(const SVFFunction *F);
+
+    // Does (F) not do anything with the known pointers?
+    bool is_noop(const SVFFunction *F);
+
+    // Does (F) reallocate a new object?
+    bool is_realloc(const SVFFunction *F);
+
+    // Should (F) be considered "external" (either not defined in the program
+    //   or a user-defined version of a known alloc or no-op)?
+    bool is_ext(const SVFFunction *F);
 };
-
 } // End namespace SVF
 
 #endif

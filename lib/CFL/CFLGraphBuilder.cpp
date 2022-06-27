@@ -83,7 +83,7 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
             kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
         }
     }
-    
+
     std::cout << "Building CFL Graph from dot file: " << fileName << "..\n";
     std::string lineString;
     std::ifstream inputFile(fileName);

@@ -33,6 +33,7 @@
 #include "Graphs/ICFGNode.h"
 #include "Graphs/ICFGEdge.h"
 #include "Util/WorkList.h"
+#include "MemoryModel/SVFLoop.h"
 
 namespace SVF
 {
@@ -60,6 +61,8 @@ public:
     typedef Map<const Instruction*, CallICFGNode *> CSToCallNodeMapTy;
     typedef Map<const Instruction*, RetICFGNode *> CSToRetNodeMapTy;
     typedef Map<const Instruction*, IntraICFGNode *> InstToBlockNodeMapTy;
+    typedef std::vector<const SVFLoop *> SVFLoopVec;
+    typedef Map<const ICFGNode *, SVFLoopVec> ICFGNodeToSVFLoopVec;
 
     NodeID totalICFGNode;
 
@@ -70,15 +73,15 @@ private:
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetICFGNode
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
     GlobalICFGNode* globalBlockNode; ///< unique basic block for all globals
+    ICFGNodeToSVFLoopVec icfgNodeToSVFLoopVec; ///< map ICFG node to the SVF loops where it resides
+
 
 public:
     /// Constructor
     ICFG();
 
     /// Destructor
-    virtual ~ICFG()
-    {
-    }
+    virtual ~ICFG();
 
     /// Get a ICFG node
     inline ICFGNode* getICFGNode(NodeID id) const
@@ -110,6 +113,33 @@ public:
 
     /// update ICFG for indirect calls
     void updateCallGraph(PTACallGraph* callgraph);
+
+    /// Whether node is in a loop
+    inline bool isInLoop(const ICFGNode *node)
+    {
+        auto it = icfgNodeToSVFLoopVec.find(node);
+        return it != icfgNodeToSVFLoopVec.end();
+    }
+
+    /// Whether node is in a loop
+    inline bool isInLoop(const Instruction *inst)
+    {
+        return isInLoop(getICFGNode(inst));
+    }
+
+    /// Insert (node, loop) to icfgNodeToSVFLoopVec
+    inline void addNodeToSVFLoop(const ICFGNode *node, const SVFLoop* loop)
+    {
+        icfgNodeToSVFLoopVec[node].push_back(loop);
+    }
+
+    /// Get loops where a node resides
+    inline SVFLoopVec& getSVFLoops(const ICFGNode *node)
+    {
+        auto it = icfgNodeToSVFLoopVec.find(node);
+        assert(it != icfgNodeToSVFLoopVec.end() && "node not in loop");
+        return it->second;
+    }
 
 protected:
     /// Remove a SVFG edge

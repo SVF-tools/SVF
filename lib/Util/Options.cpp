@@ -471,6 +471,17 @@ llvm::cl::opt<bool> Options::OPTSVFG(
     llvm::cl::desc("Optimize SVFG to eliminate formal-in and actual-out")
 );
 
+const llvm::cl::opt<std::string> Options::WriteSVFG(
+    "write-svfg",
+    llvm::cl::init(""),
+    llvm::cl::desc("Write SVFG's analysis results to a file")
+);
+
+const llvm::cl::opt<std::string> Options::ReadSVFG(
+    "read-svfg",
+    llvm::cl::init(""),
+    llvm::cl::desc("Read SVFG's analysis results from a file")
+);
 
 // FSMPTA.cpp
 const llvm::cl::opt<bool> Options::UsePCG(
@@ -739,14 +750,6 @@ const llvm::cl::opt<bool> Options::TBHCAllReuse(
 );
 
 
-// TypeAnalysis.cpp
-const llvm::cl::opt<bool> Options::GenICFG(
-    "gen-icfg",
-    llvm::cl::init(true),
-    llvm::cl::desc("Generate ICFG graph")
-);
-
-
 //WPAPass.cpp
 const llvm::cl::opt<bool> Options::AnderSVFG(
     "svfg",
@@ -827,5 +830,16 @@ const llvm::cl::opt<bool> Options::FlexSymMap(
     llvm::cl::init(false),
     llvm::cl::desc("extend exist sym map while read graph from dot if sym not in map.")
 );
+
+const llvm::cl::opt<bool> Options::LoopAnalysis(
+    "loop-analysis",
+    llvm::cl::init(true),
+    llvm::cl::desc("analyze every func and get loop info and loop bounds.")
+);
+
+const llvm::cl::opt<unsigned> Options::LoopBound(
+    "loop-bound",
+    llvm::cl::init(1),
+    llvm::cl::desc("Maximum number of loop"));
 
 } // namespace SVF.

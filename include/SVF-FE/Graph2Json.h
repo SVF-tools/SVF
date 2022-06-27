@@ -5,7 +5,7 @@
 #include "Graphs/ICFG.h"
 #include "Graphs/ICFGNode.h"
 #include "Graphs/ICFGEdge.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 
 namespace SVF
 {

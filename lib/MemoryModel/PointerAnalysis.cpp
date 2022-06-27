@@ -31,6 +31,7 @@
 #include "SVF-FE/CallGraphBuilder.h"
 #include "SVF-FE/CHGBuilder.h"
 #include "SVF-FE/DCHG.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
@@ -51,6 +52,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
+using namespace LLVMUtil;
 
 
 SVFIR* PointerAnalysis::pag = nullptr;
@@ -277,7 +279,7 @@ void PointerAnalysis::dumpAllTypes()
         Type* type = node->getValue()->getType();
         SymbolTableInfo::SymbolInfo()->printFlattenFields(type);
         if (PointerType* ptType = SVFUtil::dyn_cast<PointerType>(type))
-            SymbolTableInfo::SymbolInfo()->printFlattenFields(ptType->getElementType());
+            SymbolTableInfo::SymbolInfo()->printFlattenFields(getPtrElementType(ptType));
     }
 }
 

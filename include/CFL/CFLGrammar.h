@@ -234,7 +234,7 @@ public:
 
     void setKind2AttrsMap(const Map<Kind,  Set<Attribute>>& kind2AttrsMap);
 
-    void setAttributeKinds(const Set<Kind>& attributeKind);   
+    void setAttributeKinds(const Set<Kind>& attributeKind);
 
     Kind str2Kind(std::string str) const;
 

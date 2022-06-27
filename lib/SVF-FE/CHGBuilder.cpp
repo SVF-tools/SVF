@@ -48,6 +48,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
+using namespace LLVMUtil;
 
 const string pureVirtualFunName = "__cxa_pure_virtual";
 
