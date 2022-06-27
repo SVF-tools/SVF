@@ -65,6 +65,9 @@ private:
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
+    Set<const Value*> argInNoCallerFunction;
+    Set<const Function*> isDeadFunction;
+
 public:
     /// Constructors
     SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName)
@@ -207,6 +210,16 @@ public:
         {
             return pagReadFromTxt;
         }
+    }
+
+    inline Set<const Value*> getArgInNoCallerFunction()
+    {
+        return argInNoCallerFunction;
+    }
+
+    inline Set<const Function*> getIsDeadFunction()
+    {
+        return isDeadFunction;
     }
 
 };

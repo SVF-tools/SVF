@@ -326,6 +326,16 @@ bool SymbolTableInfo::isNullPtrSym(const Value *val)
     return symInfo->nullPtrSyms.find(val)!=symInfo->nullPtrSyms.end();
 }
 
+bool SymbolTableInfo::argInNoCallerFunction(const Value *val)
+{
+    return symInfo->getModule()->getArgInNoCallerFunction().find(val) != symInfo->getModule()->getArgInNoCallerFunction().end();
+}
+
+bool SymbolTableInfo::isDeadFunction(const Function * fun)
+{
+    return symInfo->getModule()->getIsDeadFunction().find(fun) != symInfo->getModule()->getIsDeadFunction().end();
+}
+
 /*!
  * Check whether this value is blackhole object
  */

@@ -85,6 +85,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
     {
         Function *fun = *F;
+        collectDeadFunction(fun);
         collectSym(fun);
         collectRet(fun);
         if (fun->getFunctionType()->isVarArg())
@@ -95,6 +96,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                 I != E; ++I)
         {
             collectSym(&*I);
+            collectArgInNoCallerFunction(&*I);
         }
 
         // collect and create symbols inside the function body
@@ -204,6 +206,18 @@ void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
         symInfo->nullPtrSyms.insert(val);
     if (LLVMUtil::isBlackholeSym(val))
         symInfo->blackholeSyms.insert(val);
+}
+
+void SymbolTableBuilder::collectArgInNoCallerFunction(const Value *val)
+{
+    if (LLVMUtil::ArgInNoCallerFunction(val))
+        symInfo->getModule()->getArgInNoCallerFunction().insert(val);
+}
+
+void SymbolTableBuilder::collectDeadFunction(const Function * fun)
+{
+    if (LLVMUtil::isDeadFunction(fun))
+        symInfo->getModule()->getIsDeadFunction().insert(fun);
 }
 
 /*!

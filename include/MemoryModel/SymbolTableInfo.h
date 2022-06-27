@@ -165,6 +165,8 @@ public:
     // @{
     static bool isNullPtrSym(const Value *val);
     static bool isBlackholeSym(const Value *val);
+    static bool argInNoCallerFunction(const Value *val);
+    static bool isDeadFunction(const Function * fun);
 
     static inline bool isBlkPtr(NodeID id)
     {
