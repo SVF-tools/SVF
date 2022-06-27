@@ -59,7 +59,7 @@ public:
     {
         GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
         CFGNormalizer normalizer = CFGNormalizer();
-        CFLGraphBuilder cflGraphBuilder = CFLGraphBuilder();
+        AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
         CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
         if (Options::GraphIsFromDot == false)
         {

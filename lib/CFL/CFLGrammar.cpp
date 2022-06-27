@@ -36,7 +36,7 @@
 
 using namespace SVF;
 
-void GrammarBase::setRawProductions(Map<Symbol, Productions>& rawProductions)
+void GrammarBase::setRawProductions(SymbolMap<Symbol, Productions>& rawProductions)
 {
     this->rawProductions = rawProductions;
 }
@@ -68,17 +68,16 @@ GrammarBase::Kind GrammarBase::str2Kind(std::string str) const
 
 GrammarBase::Symbol GrammarBase::str2Symbol(const std::string str) const
 {
+    Symbol symbol;
     std::string attributeStr = extractAttributeStrFromSymbolStr(str);
     std::string kindStr = extractKindStrFromSymbolStr(str);
-    Kind kind = str2Kind(str);
+    symbol.kind = str2Kind(kindStr);
 
-    if ( attributeStr == "")
+    if ( attributeStr == "") return symbol;
+
+    if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
     {
-        return kind;
-    }
-    else if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
-    {
-        return getVariabledKind((u32_t)attributeStr[attributeStr.size()-1], kind);
+        symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size()-1];
     }
     else 
     {
@@ -91,8 +90,9 @@ GrammarBase::Symbol GrammarBase::str2Symbol(const std::string str) const
                 assert(false && "grammar loading failed!");
             }
         }
-        return getAttributedKind(std::stoi(attributeStr), kind);
+        symbol.attribute = std::stoi(attributeStr);
     }
+    return symbol;
 }
 
 std::string GrammarBase::kind2Str(Kind kind) const
@@ -123,8 +123,8 @@ std::string GrammarBase::kind2Str(Kind kind) const
 
 std::string GrammarBase::sym2StrDump(Symbol sym) const
 {
-    Kind kind = getSymbolKind(sym);
-    Attribute attribute = getSymAttribute(sym);
+    Kind kind = sym.kind;
+    Attribute attribute = sym.attribute;
 
     std::string key = "";
     for (auto &i : terminals)
@@ -215,23 +215,31 @@ std::string GrammarBase::extractAttributeStrFromSymbolStr(const std::string symb
 
 GrammarBase::Symbol GrammarBase::insertSymbol(std::string symbolStr)
 {
-    return (isupper(symbolStr[0]) ? insertNonTerminalSymbol(symbolStr) : insertTerminalKind(symbolStr));
+    Symbol symbol;
+    if (isupper(symbolStr[0]))
+    {
+        symbol = insertNonTerminalSymbol(symbolStr);
+    }
+    else
+    {
+        symbol.kind = insertTerminalKind(symbolStr);
+    }
+    return symbol;
 }
 
 GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string symbolStr)
 {
+    Symbol symbol;
     std::string kindStr = extractKindStrFromSymbolStr(symbolStr);
     std::string attributeStr = extractAttributeStrFromSymbolStr(symbolStr);
-    Kind kind = insertNonterminalKind(kindStr);
+    symbol.kind = insertNonterminalKind(kindStr);
 
-    if ( attributeStr == "")
+    if ( attributeStr == "") return symbol;
+
+    if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
     {
-        return kind;
-    }
-    else if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
-    {
-        attributeKinds.insert(kind);
-        return getVariabledKind((u32_t)attributeStr[attributeStr.size()-1], kind);
+        attributeKinds.insert(symbol.kind);
+        symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size()-1];
     }
     else 
     {
@@ -244,14 +252,10 @@ GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string symbolStr)
                 assert(false && "grammar loading failed!");
             }
         }
-        attributeKinds.insert(kind);
-        return getAttributedKind(std::stoi(attributeStr), kind);
+        attributeKinds.insert(symbol.kind);
+        symbol.attribute = std::stoi(attributeStr);
     }
-}
-
-const GrammarBase::VariableAttribute GrammarBase::getVariableAttributeFromSymbol(const Symbol symbol) const
-{
-    return (symbol >> AttributedKindMaskBits);
+    return symbol;
 }
 
 void GrammarBase::insertAttribute(Kind kind, Attribute attribute)
@@ -295,7 +299,7 @@ void CFLGrammar::dump(std::string fileName) const
             {
                 ss << "-> ";
             }
-            ss << sym2StrDump(sym) << '(' << sym << ')' << ' ';
+            ss << sym2StrDump(sym) << '(' << sym.kind << ')' << ' ';
         }
         strV.insert(strV.begin(), ss.str());
     }
@@ -323,7 +327,7 @@ void CFLGrammar::dump(std::string fileName) const
                 {
                     ss << "-> ";
                 }
-                ss << sym2StrDump(sym) << '(' << sym << ')' << ' ';
+                ss << sym2StrDump(sym) << '(' << sym.kind << ')' << ' ';
             }
             strV.insert(strV.begin(), ss.str());
         }
@@ -353,7 +357,7 @@ void CFLGrammar::dump(std::string fileName) const
                 {
                     ss << "-> ";
                 }
-                ss << sym2StrDump(sym) << '(' << sym << ')' << ' ';
+                ss << sym2StrDump(sym) << '(' << sym.kind << ')' << ' ';
             }
             strV.insert(strV.begin(), ss.str());
         }

@@ -309,10 +309,6 @@ public:
         return ls.accumulateConstantFieldIdx();
     }
 
-    inline s32_t getEdgeOffset() const
-    {
-        return getConstantFieldIdx();
-    }
 };
 
 /*!

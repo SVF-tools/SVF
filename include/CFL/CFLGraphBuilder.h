@@ -39,14 +39,14 @@ namespace SVF
 
 class CFLGraphBuilder
 {
-private:
+protected:
     typedef CFLGrammar::Kind Kind;
     typedef CFLGrammar::Symbol Symbol;
     Map<std::string, Kind> label2KindMap;
     Map<Kind, std::string> kind2LabelMap;
     Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kind2AttrsMap;
     bool externMap;
-    Symbol current;
+    Kind current;
 
 public:
     /// add attribute to kind2Attribute Map
@@ -110,24 +110,10 @@ public:
             for(E* edge : node->getOutEdges())
             {
                 CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
-                if(grammar->getAttrSyms().find(edgeLabel) != grammar->getAttrSyms().end())
-                {
-                    CFLGrammar::Attribute attr =  edge->getEdgeOffset();
-                    addAttribute(edgeLabel, attr);
-                    edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
-                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                    std::string key = kind2LabelMap[edge->getEdgeKind()];
-                    key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
-                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
-                    addAttribute(label2KindMap[key], attr);
-                }
-                else
-                {
-                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                    std::string key = kind2LabelMap[edge->getEdgeKind()];
-                    key.append("bar");
-                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
-                }
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                key.append("bar");
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
             }
         }
         return cflGraph;
@@ -152,8 +138,76 @@ public:
     {
         return this->kind2AttrsMap;
     }
-
-
 };
+
+class AliasCFLGraphBuilder : public CFLGraphBuilder
+{
+public:
+     /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
+    template<class N, class E>
+    CFLGraph* buildBigraph(GenericGraph<N,E>* graph, Kind startKind, GrammarBase *grammar)
+    {
+        CFLGraph *cflGraph = new CFLGraph(startKind);
+        externMap = true;
+        for(auto pairV : grammar->getTerminals())
+        {
+            if(label2KindMap.find(pairV.first) == label2KindMap.end())
+            {
+                label2KindMap.insert(pairV);
+            }
+            if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+            {
+                kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+            }
+        }
+        for(auto pairV : grammar->getNonterminals())
+        {
+            if(label2KindMap.find(pairV.first) == label2KindMap.end())
+            {
+                label2KindMap.insert(pairV);
+            }
+            if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+            {
+                kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+            }
+        }
+        for(auto it = graph->begin(); it!= graph->end(); it++)
+        {
+            CFLNode* node = new CFLNode((*it).first);
+            cflGraph->addCFLNode((*it).first, node);
+        }
+        for(auto it = graph->begin(); it!= graph->end(); it++)
+        {
+            N* node = (*it).second;
+            for(E* edge : node->getOutEdges())
+            {
+                CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
+                // Need to get the offset from the Const Edge
+                // The offset present edge is only from Normal Gep CG at moment
+                if(NormalGepCGEdge::classof(edge))
+                {
+                    NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
+                    CFLGrammar::Attribute attr =  nGepEdge->getConstantFieldIdx();
+                    addAttribute(edgeLabel, attr);
+                    edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                    std::string key = kind2LabelMap[edge->getEdgeKind()];
+                    key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
+                    addAttribute(label2KindMap[key], attr);
+                }
+                else
+                {
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                    std::string key = kind2LabelMap[edge->getEdgeKind()];
+                    key.append("bar");
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
+                }
+            }
+        }
+        return cflGraph;
+    }
+};
+
 }// SVF
 

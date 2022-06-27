@@ -68,7 +68,7 @@ private:
 
     int ebnfBracketMatch(GrammarBase::Production& prod, int i, CFLGrammar *grammar) ;
 
-    int check_head(Map<GrammarBase::Symbol, GrammarBase::Productions>& grammar, GrammarBase::Production& rule);
+    GrammarBase::Symbol check_head(GrammarBase::SymbolMap<GrammarBase::Symbol, GrammarBase::Productions>& grammar, GrammarBase::Production& rule);
 
     GrammarBase::Production strTrans(std::string strPro, CFLGrammar *grammar);
 
