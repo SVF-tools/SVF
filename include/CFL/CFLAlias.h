@@ -51,50 +51,11 @@ public:
     /// Destructor
     virtual ~CFLAlias()
     {
-        delete graph;
-        delete grammar;
         delete solver;
     }
 
     /// Start Analysis here (main part of pointer analysis).
-    virtual void analyze()
-    {
-        GrammarBuilder gReader = GrammarBuilder(Options::GrammarFilename);
-        CFGNormalizer normalizer = CFGNormalizer();
-        CFLGraphBuilder cflGraphBuilder = CFLGraphBuilder();
-        CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
-        /// Assume Read From Const Graph, associate label symbol is hard coded
-        if (Options::GraphIsFromDot == false)
-        {
-            PointerAnalysis::initialize();
-            Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep_i", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar_i", 10},{"Vgepbar", 11}};
-            GrammarBase *generalGrammar = gReader.build(ConstMap);
-            ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph = cflGraphBuilder.buildBigraph(consCG, generalGrammar->getStartKind());
-            cflChecker.check(generalGrammar, &cflGraphBuilder, graph);
-            grammar = normalizer.normalize(generalGrammar);
-            cflChecker.check(grammar, &cflGraphBuilder, graph);
-            svfir->dump("SVFIR");
-            grammar->dump();
-            delete consCG;
-            delete generalGrammar;
-        }
-        else
-        {
-            GrammarBase *generalGrammar = gReader.build();
-            graph = cflGraphBuilder.buildFromDot(Options::InputFilename, generalGrammar);
-            cflChecker.check(generalGrammar, &cflGraphBuilder, graph);
-            grammar = normalizer.normalize(generalGrammar);
-            cflChecker.check(grammar, &cflGraphBuilder, graph);
-            delete generalGrammar;
-        }
-        solver = new CFLSolver(graph, grammar);
-        solver->solve();
-        if (Options::GraphIsFromDot == false)
-        {
-            PointerAnalysis::finalize();
-        }
-    }
+    virtual void analyze();
 
     /// Interface exposed to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const Value* v1, const Value* v2)

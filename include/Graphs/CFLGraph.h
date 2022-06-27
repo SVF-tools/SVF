@@ -57,6 +57,16 @@ public:
     {
         return this->getEdgeKindWithoutMask();
     }
+
+    inline GEdgeKind getEdgeKindWithMask() const
+    {
+        return (EdgeKindMask & this->getEdgeKindWithoutMask());
+    }
+
+    inline GEdgeKind getEdgeAttri() const
+    {
+        return (getEdgeKind() >> this->EdgeKindMaskBits);
+    }
 };
 
 
@@ -86,6 +96,8 @@ public:
         startKind = kind;
     }
     ~CFLGraph() override = default;
+
+    Kind getStartKind() const;
 
     virtual void addCFLNode(NodeID id, CFLNode* node);
 

@@ -28,18 +28,153 @@
  */
 #ifndef CFLGrammar_H_
 #define CFLGrammar_H_
-#include "Util/BasicTypes.h"
+#include "Util/SVFBasicTypes.h"
 
 namespace SVF
 {
+
 class GrammarBase
 {
 public:
-    typedef u32_t Symbol;
-    typedef std::vector<Symbol> Production;
-    typedef Set<Production> Productions;
-    typedef u32_t Attribute;
     typedef u32_t Kind;
+    typedef u32_t Attribute;
+    typedef u32_t VariableAttribute;
+    typedef struct Symbol  
+    {
+        Kind kind: 8;
+        Attribute attribute: 16;
+        VariableAttribute variableAttribute: 8;
+
+        /// Default Value for Symbol is 0.
+        Symbol() : kind(0), attribute(0), variableAttribute(0) {} 
+
+        /// Contruct from u32_t move the bit to right field 
+        Symbol(const u32_t& num) : kind(num & 0xFF), attribute((num >> 8 ) & 0xFFFF), variableAttribute((num >> 24)) {}
+
+        /// Conversion of u32_t
+        operator u32_t()
+        {
+            u32_t num = 0;
+            num += this->variableAttribute << 24;
+            num += this->attribute << 8;
+            num += this->kind;
+            return num;
+        }
+
+        /// Conversion of u64_t
+        operator u64_t()
+        {
+            u64_t num = 0;
+            num += this->variableAttribute << 24;
+            num += this->attribute << 8;
+            num += this->kind;
+            return num;
+        }
+
+        operator s64_t() const
+        {
+            s64_t num = 0;
+            num += this->variableAttribute << 24;
+            num += this->attribute << 8;
+            num += this->kind;
+            return num;
+        }
+
+        bool operator<(const Symbol& rhs)
+        {
+            return this->kind < rhs.kind;
+        }
+
+        void operator=(const int& i)
+        {
+            this->kind = EdgeKindMask & i;
+            this->attribute = i >> EdgeKindMaskBits;
+            this->variableAttribute = i >> AttributedKindMaskBits;
+        }
+
+        void operator=(unsigned long long num)
+        {
+            this->kind = num & 0xFF;
+            this->attribute = (num >> 8 ) & 0xFFFF;
+            this->variableAttribute = num >> 24;
+        }
+
+        void operator=(const Kind& kind) 
+        {
+            this->kind = kind;
+        }
+
+        bool operator==(const Symbol& s)
+        {
+            return ((this->kind == s.kind) && (this->attribute == s.attribute) && (this->variableAttribute == s.variableAttribute));
+        }
+
+        bool operator==(const Symbol& s) const
+        {
+            return ((kind == s.kind) && (attribute == s.attribute) && (variableAttribute == s.variableAttribute));
+        }
+
+        bool operator!=(const Symbol& s) const
+        {
+            return ! (*this == s) ;
+        }
+
+
+        bool operator==(const int& i)
+        {
+            return ((this->kind == (EdgeKindMask & i)) && (this->attribute == (i >> EdgeKindMaskBits)) && (this->variableAttribute == (i >> AttributedKindMaskBits)));
+        }
+
+        bool operator==(const Kind& k) const
+        {
+            return (this->kind == k);
+        }
+
+        bool operator==(const Kind& k) 
+        {
+            return (this->kind == k);
+        }
+    } Symbol;
+
+    class SymbolHash
+    {
+    public:
+        size_t operator()(const Symbol &s) const
+        {
+            std::hash<u32_t> h;
+            return h(u32_t(s));
+        }
+    };
+
+    
+    struct SymbolVectorHash
+    {
+        size_t operator()(const std::vector<Symbol> &v) const
+        {
+            size_t h = v.size();
+
+            SymbolHash hf;
+            for (const Symbol &t : v)
+            {
+                h ^= hf(t) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            }
+
+            return h;
+        }
+    };
+
+    template<typename Key, typename Value, typename Hash = SymbolHash,
+         typename KeyEqual = std::equal_to<Key>,
+         typename Allocator = std::allocator<std::pair<const Key, Value>>>
+                 using SymbolMap = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
+
+    template <typename Key, typename Hash = SymbolVectorHash, typename KeyEqual = std::equal_to<Key>,
+            typename Allocator = std::allocator<Key>>
+    using SymbolSet = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
+
+    typedef std::vector<Symbol> Production;
+    typedef SymbolSet<Production> Productions;
+
 
     inline Map<std::string, Kind>& getNonterminals()
     {
@@ -61,7 +196,7 @@ public:
         this->terminals = terminals;
     }
 
-    inline Map<Symbol, Productions>& getRawProductions()
+    inline SymbolMap<Symbol, Productions>& getRawProductions()
     {
         return this->rawProductions;
     }
@@ -91,13 +226,19 @@ public:
         this->totalKind = totalKind;
     }
 
-    void setRawProductions(Map<Symbol, Productions>& rawProductions);
+    std::string extractKindStrFromSymbolStr(const std::string symbolStr) const;
+
+    std::string extractAttributeStrFromSymbolStr(const std::string symbolStr) const;
+
+    void setRawProductions(SymbolMap<Symbol, Productions>& rawProductions);
 
     void setKind2AttrsMap(const Map<Kind,  Set<Attribute>>& kind2AttrsMap);
 
     void setAttributeKinds(const Set<Kind>& attributeKind);
 
     Kind str2Kind(std::string str) const;
+
+    Symbol str2Symbol(const std::string str) const;
 
     std::string kind2Str(Kind kind) const;
 
@@ -108,41 +249,46 @@ public:
         return prod.at(pos);
     }
 
-    inline const Set<Symbol>& getAttrSyms() const
+    inline const Set<Kind>& getAttrSyms() const
     {
         return this->attributeKinds;
     }
 
+    /// Insert kind to nonterminal and return kind.
+    Kind insertNonterminalKind(std::string const kindStr);
+
+    /// From SymbolStr extract kind to inserted in nonterminal
+    /// symbolStr = <kindStr> [_] [ attributeStr | variableattributeStr ]
     Kind insertTerminalKind(std::string strLit);
-    Kind insertNonTerminalKind(std::string strLit);
+
+    Symbol insertSymbol(std::string strLit);
+
+    Symbol insertNonTerminalSymbol(std::string strLit);
+
     void insertAttribute(Kind kind, Attribute a);
-
-    inline static Kind getSymKind(Symbol sym)
-    {
-        return (EdgeKindMask & sym);
-    }
-
-    inline static Attribute getSymAttribute(Symbol sym)
-    {
-        return (sym >> EdgeKindMaskBits);
-    }
 
     inline static Kind getAttributedKind(Attribute attribute, Kind kind)
     {
         return ((attribute << EdgeKindMaskBits)| kind );
     }
 
+    inline static Kind getVariabledKind(VariableAttribute variableAttribute, Kind kind)
+    {
+        return ((variableAttribute << AttributedKindMaskBits) | kind);
+    }
+
 protected:
     static constexpr unsigned char EdgeKindMaskBits = 8;  ///< We use the lower 8 bits to denote edge kind
+    static constexpr unsigned char AttributedKindMaskBits = 24; ///< We use the lower 24 bits to denote attributed kind              
     static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
     Kind startKind;
 private:
-    Set<Kind> attributeKinds;
-    Map<Kind,  Set<Attribute>> kind2AttrsMap;
-    Map<Symbol, Productions> rawProductions;
-    Kind totalKind;
     Map<std::string, Kind> nonterminals;
     Map<std::string, Kind> terminals;
+    Set<Kind> attributeKinds;  
+    Map<Kind,  Set<Attribute>> kind2AttrsMap;
+    SymbolMap<Symbol, Productions> rawProductions;
+    u32_t totalKind;
 };
 
 class CFLGrammar : public GrammarBase
@@ -168,17 +314,17 @@ public:
         return epsilonProds;
     }
 
-    Map<Symbol, Productions>& getSingleRHS2Prods()
+    SymbolMap<Symbol, Productions>& getSingleRHS2Prods()
     {
         return singleRHS2Prods;
     }
 
-    Map<Symbol, Productions>& getFirstRHS2Prods()
+    SymbolMap<Symbol, Productions>& getFirstRHS2Prods()
     {
         return firstRHS2Prods;
     }
 
-    Map<Symbol, Productions>& getSecondRHS2Prods()
+    SymbolMap<Symbol, Productions>& getSecondRHS2Prods()
     {
         return secondRHS2Prods;
     }
@@ -240,17 +386,86 @@ public:
 
     void dump() const;
 
+    void dump(std::string fileName) const;
+
+
     const inline int num_generator()
     {
         return newTerminalSubscript++;
     }
 
 private:
-    Set<Production> epsilonProds;
-    Map<Symbol, Productions> singleRHS2Prods;
-    Map<Symbol, Productions> firstRHS2Prods;
-    Map<Symbol, Productions> secondRHS2Prods;
-    Symbol newTerminalSubscript;
+    SymbolSet<Production> epsilonProds;
+    SymbolMap<Symbol, Productions> singleRHS2Prods;
+    SymbolMap<Symbol, Productions> firstRHS2Prods;
+    SymbolMap<Symbol, Productions> secondRHS2Prods;
+    u32_t newTerminalSubscript;  
+};
+
+/**
+ * Worklist with "first in first out" order.
+ * New nodes will be pushed at back and popped from front.
+ * Elements in the list are unique as they're recorded by Set.
+ */
+template<class Data>
+class CFLFIFOWorkList
+{
+    typedef GrammarBase::SymbolSet<Data> DataSet;
+    typedef std::deque<Data> DataDeque;
+public:
+    CFLFIFOWorkList() {}
+
+    ~CFLFIFOWorkList() {}
+
+    inline bool empty() const
+    {
+        return data_list.empty();
+    }
+
+    inline bool find(Data data) const
+    {
+        return (data_set.find(data) == data_set.end() ? false : true);
+    }
+
+    /**
+     * Push a data into the work list.
+     */
+    inline bool push(Data data)
+    {
+        if (data_set.find(data) == data_set.end())
+        {
+            data_list.push_back(data);
+            data_set.insert(data);
+            return true;
+        }
+        else
+            return false;
+    }
+
+    /**
+     * Pop a data from the END of work list.
+     */
+    inline Data pop()
+    {
+        assert(!empty() && "work list is empty");
+        Data data = data_list.front();
+        data_list.pop_front();
+        data_set.erase(data);
+        return data;
+    }
+
+    /*!
+     * Clear all the data
+     */
+    inline void clear()
+    {
+        data_list.clear();
+        data_set.clear();
+    }
+
+private:
+    DataSet data_set;	///< store all data in the work list.
+    DataDeque data_list;	///< work list using std::vector.
 };
 
 }
