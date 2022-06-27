@@ -40,54 +40,66 @@
 #include <map>
 
 #define EXTAPI_JSON_PATH "/lib/Util/ExtAPI.json"
+#define JSON_OPT_OVERWRITE "overwrite_app_function"
+#define JSON_OPT_FUNCTIONTYPE "type"
 
 namespace SVF
 {
 
 /*
 
-    Specifications in ExtAPI.json
-
-    Specification language: The specification language of external function includes:
-    1. the name of the function,
-    2. the type of the function,
-    3. the operations of the function.
-
-    Funtion type: Funtion type represents some property of the function.
-    For example,
-    ”EFT_ALLOC“, represents if this external function allocates a new object and assigns it to one of its arguments,
-    For the selection of Function type and a more detailed explanation, please refer to enum extf_t in ExtAPI.h.
-
-    Function operations: Function operations indicates the relationship between input and output,
-    mainly the relationship between function parameters, or between parameters and return values after function is executed.
-    For example,
-    "copy": ["A2", "L"], indicates that after this external function is executed, the value of the 2th parameter is copied into the return value.
-    For the selection of Function type and a more detailed explanation, please refer to enum extType in ExtAPI.h.
-
-    For operands of function operation, e.g., "A2", "L", there are the following options:
-    "A": represents an parameter;
-    "N": represents a number;
-    "R": represents a reference;
-    "L": represents a return value;
-    "V": represents a dummy node;
-
-    Among them, parameter may have multiple forms, because there may be multiple parameters, and parameter may be a reference or complex structure,
-
-    Here we use regular expressions "(AN)(R|RN)^*" to represent parameter, for example,
-    "A0":    represents the 1th parameter;
-    "A2R":   represents that the 3th parameter is a reference;
-    "A1R2":  represents the 3th substructure of 2th parameter "A1R", where "A1R" is a complex structure;
-    "A2R3R": represents the 4th substructure of 3th parameter "A2R" is a reference, where "A2R" is a complex structure;
-
-
-    Specification format:
-    "functionName": {
-        "type": "functional type",
-        "function operation_1": [ operand_1, operand_2, ... , operand_n],
-        "function operation_2": [ operand_1, operand_2, ... , operand_n],
-        ...
-        "function operation_n": [ operand_1, operand_2, ... , operand_n]
-    }
+** Specifications in ExtAPI.json
+ 
+*** [1] Overview of the Specification Language
+The specification language of external functions is based on the JSON format. And every function defined by the Specification Language is an object that represents the specification rules. These Specification Language objects for functions contain four parts:
+1. the name of the function,
+2. the switch that controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code,
+3. the type of the function,
+4. the operations conducted by the function.
+ 
+*** [2] Overwriting the user-defined functions
+The switch *overwrite_app_function* controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code (e.g., CPP files). When the switch *overwrite_app_function* is set to a value of 1, SVF will use the specification rules in ExtAPI.json to conduct the analysis and ignore the user-defined functions in the input CPP/bc files. 
+overwrite_app_function = 0: Analyze the user-defined functions.
+overwrite_app_function = 1: Use specifications in ExtAPI.json to overwrite the user-defined functions.
+ 
+*** [3] Function types
+Function type represents the properties of the function.
+For example,
+"EFT_ALLOC" represents if this external function allocates a new object and assigns it to one of its arguments,
+For the selection of function type and a more detailed explanation, please refer to the definition of enum *extf_t* in ExtAPI.h.
+ 
+*** [4] Function operations
+Function operations indicate the relationships between input and output,
+mainly between function parameters or between parameters and return values after the execution.
+For example,
+"copy": ["A2", "L"] indicates that after this external function is executed, the value of the 2nd parameter is copied into the return value.
+For the selection of function type and a more detailed explanation, please refer to the definition of enum *extType* in ExtAPI.h.
+ 
+For operands of function operation, e.g., "A2", "L", there are the following options:
+"A": represents a parameter;
+"N": represents a number;
+"R": represents a reference;
+"L": represents a return value;
+"V": represents a dummy node;
+ 
+Among them, a parameter may have multiple forms because there may be various parameters, and the parameter may be a reference or complex structure,
+ 
+Here we use regular expressions "(AN)(R|RN)^*" to represent parameters, for example,
+"A0": represents the 1st parameter;
+"A2R": represents that the 3rd parameter is a reference;
+"A1R2": represents the 3rd substructure of the 2nd parameter "A1R", where "A1R" is a complex structure;
+"A2R3R": represents the 4th substructure of the 3rd parameter "A2R" is a reference, where "A2R" is a complex structure;
+ 
+ 
+** Specification format:
+"functionName": {
+"type": "functional type",
+"overwrite_app_function:" 0/1,
+"function operation_1": [ operand_1, operand_2, ... , operand_n],
+"function operation_2": [ operand_1, operand_2, ... , operand_n],
+...
+"function operation_n": [ operand_1, operand_2, ... , operand_n]
+}
 */
 
 
@@ -232,6 +244,11 @@ public:
 
     // Get property of the operation, e.g. "EFT_A1R_A0R"
     extType get_type(const SVF::SVFFunction *callee);
+
+    // Get priority of he function, return value
+    // 0: Apply user-defined functions
+    // 1: Apply function specification in ExtAPI.json
+    u32_t isOverwrittenAppFunction(const SVF::SVFFunction *callee);
 
     // Does (F) have a static var X (unavailable to us) that its return points to?
     bool has_static(const SVFFunction *F);
