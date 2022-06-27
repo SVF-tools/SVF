@@ -336,6 +336,11 @@ bool SymbolTableInfo::isDeadFunction(const Function * fun)
     return symInfo->getModule()->getIsDeadFunction().find(fun) != symInfo->getModule()->getIsDeadFunction().end();
 }
 
+bool SymbolTableInfo::isReturn(const Instruction *inst)
+{
+    return symInfo->getModule()->getIsReturn().find(inst) != symInfo->getModule()->getIsReturn().end();
+}
+
 /*!
  * Check whether this value is blackhole object
  */

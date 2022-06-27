@@ -67,6 +67,7 @@ private:
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
     Set<const Value*> argInNoCallerFunction;
     Set<const Function*> isDeadFunction;
+    Set<const Instruction*> isReturns;
 
 public:
     /// Constructors
@@ -220,6 +221,10 @@ public:
     inline Set<const Function*> getIsDeadFunction()
     {
         return isDeadFunction;
+    }
+
+    inline Set<const Instruction*> getIsReturn(){
+        return isReturns;
     }
 
 };

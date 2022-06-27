@@ -60,6 +60,8 @@ public:
 
     void collectArgInNoCallerFunction(const Value *val);
 
+    void collectReturnInst(const Instruction *inst);
+
     void collectDeadFunction(const Function * fun);
 
     void collectSym(const Value *val);

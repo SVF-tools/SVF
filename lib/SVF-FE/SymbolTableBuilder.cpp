@@ -104,6 +104,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
         {
             const Instruction *inst = &*II;
             collectSym(inst);
+            collectReturnInst(inst);
 
             // initialization for some special instructions
             //{@
@@ -218,6 +219,12 @@ void SymbolTableBuilder::collectDeadFunction(const Function * fun)
 {
     if (LLVMUtil::isDeadFunction(fun))
         symInfo->getModule()->getIsDeadFunction().insert(fun);
+}
+
+void SymbolTableBuilder::collectReturnInst(const Instruction *inst)
+{
+    if (LLVMUtil::isReturn(inst))
+        symInfo->getModule()->getIsReturn().insert(inst);
 }
 
 /*!

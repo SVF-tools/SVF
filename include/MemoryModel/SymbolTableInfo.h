@@ -167,6 +167,7 @@ public:
     static bool isBlackholeSym(const Value *val);
     static bool argInNoCallerFunction(const Value *val);
     static bool isDeadFunction(const Function * fun);
+    static bool isReturn(const Instruction *inst);
 
     static inline bool isBlkPtr(NodeID id)
     {
