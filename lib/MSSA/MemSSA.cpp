@@ -326,7 +326,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
             if(mrGen->hasModMRSet(cs))
                 RenameChiSet(getCHISet(cs),memRegs);
         }
-        else if(SymbolTableInfo::isReturn(inst))
+        else if(isReturn(inst))
         {
             const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
             RenameMuSet(getReturnMuSet(fun));
