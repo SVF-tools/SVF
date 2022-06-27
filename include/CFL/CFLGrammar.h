@@ -39,16 +39,16 @@ public:
     typedef u32_t Kind;
     typedef u32_t Attribute;
     typedef u32_t VariableAttribute;
-    typedef struct Symbol  
+    typedef struct Symbol
     {
         Kind kind: 8;
         Attribute attribute: 16;
         VariableAttribute variableAttribute: 8;
 
         /// Default Value for Symbol is 0.
-        Symbol() : kind(0), attribute(0), variableAttribute(0) {} 
+        Symbol() : kind(0), attribute(0), variableAttribute(0) {}
 
-        /// Contruct from u32_t move the bit to right field 
+        /// Contruct from u32_t move the bit to right field
         Symbol(const u32_t& num) : kind(num & 0xFF), attribute((num >> 8 ) & 0xFFFF), variableAttribute((num >> 24)) {}
 
         /// Conversion of u32_t
@@ -99,7 +99,7 @@ public:
             this->variableAttribute = num >> 24;
         }
 
-        void operator=(const Kind& kind) 
+        void operator=(const Kind& kind)
         {
             this->kind = kind;
         }
@@ -130,7 +130,7 @@ public:
             return (this->kind == k);
         }
 
-        bool operator==(const Kind& k) 
+        bool operator==(const Kind& k)
         {
             return (this->kind == k);
         }
@@ -146,7 +146,7 @@ public:
         }
     };
 
-    
+
     struct SymbolVectorHash
     {
         size_t operator()(const std::vector<Symbol> &v) const
@@ -164,19 +164,19 @@ public:
     };
 
     template<typename Key, typename Value, typename Hash = SymbolHash,
-         typename KeyEqual = std::equal_to<Key>,
-         typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                 using SymbolMap = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
+             typename KeyEqual = std::equal_to<Key>,
+             typename Allocator = std::allocator<std::pair<const Key, Value>>>
+                     using SymbolMap = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
 
-    template <typename Key, typename Hash = SymbolVectorHash, typename KeyEqual = std::equal_to<Key>,
-            typename Allocator = std::allocator<Key>>
-    using SymbolSet = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
+             template <typename Key, typename Hash = SymbolVectorHash, typename KeyEqual = std::equal_to<Key>,
+                       typename Allocator = std::allocator<Key>>
+             using SymbolSet = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 
-    typedef std::vector<Symbol> Production;
-    typedef SymbolSet<Production> Productions;
+             typedef std::vector<Symbol> Production;
+             typedef SymbolSet<Production> Productions;
 
 
-    inline Map<std::string, Kind>& getNonterminals()
+             inline Map<std::string, Kind>& getNonterminals()
     {
         return this->nonterminals;
     }
@@ -279,13 +279,13 @@ public:
 
 protected:
     static constexpr unsigned char EdgeKindMaskBits = 8;  ///< We use the lower 8 bits to denote edge kind
-    static constexpr unsigned char AttributedKindMaskBits = 24; ///< We use the lower 24 bits to denote attributed kind              
+    static constexpr unsigned char AttributedKindMaskBits = 24; ///< We use the lower 24 bits to denote attributed kind
     static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
     Kind startKind;
 private:
     Map<std::string, Kind> nonterminals;
     Map<std::string, Kind> terminals;
-    Set<Kind> attributeKinds;  
+    Set<Kind> attributeKinds;
     Map<Kind,  Set<Attribute>> kind2AttrsMap;
     SymbolMap<Symbol, Productions> rawProductions;
     u32_t totalKind;
@@ -399,7 +399,7 @@ private:
     SymbolMap<Symbol, Productions> singleRHS2Prods;
     SymbolMap<Symbol, Productions> firstRHS2Prods;
     SymbolMap<Symbol, Productions> secondRHS2Prods;
-    u32_t newTerminalSubscript;  
+    u32_t newTerminalSubscript;
 };
 
 /**

@@ -52,7 +52,7 @@ const inline std::string GrammarBuilder::parseProductionsString() const
         lines.append(lineString);
         lineNum++;
     }
-    
+
     std::regex reg("Start:([\\s\\S]*)Terminal:[\\s]*([\\s\\S]*)Productions:([\\s\\S]*)");
     std::smatch matches;
     if (std::regex_search(lines, matches, reg))
@@ -110,7 +110,7 @@ GrammarBase* GrammarBuilder::build() const
     size_t pos;
     GrammarBase::Production prod;
     std::vector<std::string> wordProdVec = loadWordProductions();
-    
+
     for (auto wordProd : wordProdVec)
     {
         if ((pos = wordProd.find(delimiter1)) != std::string::npos)

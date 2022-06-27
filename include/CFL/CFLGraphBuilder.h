@@ -143,7 +143,7 @@ public:
 class AliasCFLGraphBuilder : public CFLGraphBuilder
 {
 public:
-     /// Build Bidirectional graph by copying nodes and edges from const graph inherited from GenericGraph
+    /// Build Bidirectional graph by copying nodes and edges from const graph inherited from GenericGraph
     CFLGraph* buildBigraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar);
 };
 

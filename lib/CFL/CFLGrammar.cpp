@@ -80,14 +80,14 @@ GrammarBase::Symbol GrammarBase::str2Symbol(const std::string str) const
     {
         symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size()-1];
     }
-    else 
+    else
     {
         for( char &c : attributeStr)
         {
-            if ( std::isdigit(c) == false ) 
+            if ( std::isdigit(c) == false )
             {
                 SVFUtil::errs() << SVFUtil::errMsg("\t Symbol Attribute Parse Failure :") << str
-                << " Attribute:" << attributeStr << " (only number or single alphabet.)";
+                                << " Attribute:" << attributeStr << " (only number or single alphabet.)";
                 assert(false && "grammar loading failed!");
             }
         }
@@ -194,8 +194,8 @@ std::string GrammarBase::extractKindStrFromSymbolStr(const std::string symbolStr
 {
     std::string kindStr;
     // symbolStr end with '_', the whole symbolStr treat as kind, not with attribute.
-    auto underscorePosition = symbolStr.find_last_of("_", symbolStr.size()-1); 
-    if (underscorePosition == std::string::npos) 
+    auto underscorePosition = symbolStr.find_last_of("_", symbolStr.size()-1);
+    if (underscorePosition == std::string::npos)
     {
         return symbolStr;
     }
@@ -206,8 +206,8 @@ std::string GrammarBase::extractAttributeStrFromSymbolStr(const std::string symb
 {
     std::string attributeStr;
     // symbolStr end with '_', the whole symbolStr treat as kind, not with attribute.
-    auto underscorePosition = symbolStr.find_last_of("_", symbolStr.size()-1); 
-    if (underscorePosition == std::string::npos) 
+    auto underscorePosition = symbolStr.find_last_of("_", symbolStr.size()-1);
+    if (underscorePosition == std::string::npos)
     {
         return "";
     }
@@ -242,14 +242,14 @@ GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string symbolStr)
         attributeKinds.insert(symbol.kind);
         symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size()-1];
     }
-    else 
+    else
     {
         for( char &c : attributeStr)
         {
-            if ( std::isdigit(c) == false ) 
+            if ( std::isdigit(c) == false )
             {
                 SVFUtil::errs() << SVFUtil::errMsg("\t Symbol Attribute Parse Failure :") << symbolStr
-                << " Attribute:" << attributeStr << " (only number or single alphabet.)";
+                                << " Attribute:" << attributeStr << " (only number or single alphabet.)";
                 assert(false && "grammar loading failed!");
             }
         }

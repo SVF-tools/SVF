@@ -36,7 +36,7 @@ using namespace SVF;
 
 CFLGraph::Kind CFLGraph::getStartKind() const
 {
-    return this->startKind; 
+    return this->startKind;
 }
 
 void CFLGraph::addCFLNode(NodeID id, CFLNode* node)
@@ -150,7 +150,7 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         {
             rawstr << "color=Sienna";
         }
-        else 
+        else
         {
             rawstr  << "style=invis";
         }

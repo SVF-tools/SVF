@@ -37,11 +37,11 @@ namespace SVF
 
 /*!
  *  Generate Normalized Grammar from a grammarbase
- * 
+ *
  *  To Do:
- *      Error Notice for ill formed production, 
+ *      Error Notice for ill formed production,
  *      e.g. not end with ';' and '*' not preceding with '()' and extra space before ';'
- *      '|' sign support   
+ *      '|' sign support
  */
 
 class CFGNormalizer

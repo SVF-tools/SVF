@@ -54,7 +54,7 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
     ebnf_bin(grammar);
     fillAttribute(grammar, grammar->getKind2AttrsMap());
     return grammar;
-} 
+}
 
 
 CFLGrammar* CFGNormalizer::fillAttribute(CFLGrammar *grammar, const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttrsMap)
@@ -130,8 +130,8 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
                 std::ostringstream ss;
                 ss << grammar->num_generator();
                 tempStr.append(ss.str());
-                /// Assign _attribute 
-                /// if target portion of the production contain more than 1 variable then 
+                /// Assign _attribute
+                /// if target portion of the production contain more than 1 variable then
                 /// X add no variable attribute
                 /// if target only contain one variable attribute X share the same variable attribute
                 Set<GrammarBase::VariableAttribute> variableAttributeSet = {};
@@ -257,17 +257,17 @@ GrammarBase::Productions CFGNormalizer::getFilledProductions(GrammarBase::Produc
         GrammarBase::VariableAttribute currentVariableAttribute = 0;
         // GrammarBase::Kind baseKind;
         for ( GrammarBase::Symbol &symbol : currentProduction )
-        {   
+        {
             if ( currentVariableAttribute == 0 )
             {
                 currentVariableAttribute = symbol.variableAttribute;
                 // baseKind = symbol.kind;
             }
         }
-        if ( currentVariableAttribute == 0) 
+        if ( currentVariableAttribute == 0)
         {
             filledProductioins.insert(currentProduction);
-            continue; 
+            continue;
         }
         auto nodeSet = {0, 1, 2, 7};                 //*(kind2AttriMap.find(baseKind));
         //for (auto attribute : nodeSet.second)
@@ -294,7 +294,8 @@ GrammarBase::Productions CFGNormalizer::getFilledProductions(GrammarBase::Produc
             {
                 filledProductioins.insert(fillingProduction);
             }
-            else{
+            else
+            {
                 worklist.push(fillingProduction);
             }
         }
@@ -318,7 +319,7 @@ int CFGNormalizer::ebnfBracketMatch(GrammarBase::Production &prod, int i, CFLGra
 
 void CFGNormalizer::ebnfSignReplace(char sign, CFLGrammar *grammar)
 {
-    /// Replace Sign Group With tempNonterminal 'X' 
+    /// Replace Sign Group With tempNonterminal 'X'
     /// And load the replace in newProductions
     SVF::Map<std::string, std::string> newProductions;
     std::string tempNonterminal = "X";
