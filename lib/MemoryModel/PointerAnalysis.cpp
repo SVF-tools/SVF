@@ -31,18 +31,15 @@
 #include "SVF-FE/CallGraphBuilder.h"
 #include "SVF-FE/CHGBuilder.h"
 #include "SVF-FE/DCHG.h"
-#include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/LLVMUtil.h"
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
 #include "MemoryModel/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
-#include "WPA/FlowSensitiveTBHC.h"
 
 #include <iomanip>
 #include <iostream>
@@ -52,7 +49,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
-using namespace LLVMUtil;
 
 
 SVFIR* PointerAnalysis::pag = nullptr;
@@ -117,20 +113,10 @@ void PointerAnalysis::initialize()
     assert(pag && "SVFIR has not been built!");
     if (chgraph == nullptr)
     {
-        if (LLVMModuleSet::getLLVMModuleSet()->allCTir())
-        {
-            DCHGraph *dchg = new DCHGraph(pag->getModule());
-            // TODO: we might want to have an option for extending.
-            dchg->buildCHG(true);
-            chgraph = dchg;
-        }
-        else
-        {
-            CHGraph *chg = new CHGraph(pag->getModule());
-            CHGBuilder builder(chg);
-            builder.buildCHG();
-            chgraph = chg;
-        }
+        CHGraph *chg = new CHGraph(pag->getModule());
+        CHGBuilder builder(chg);
+        builder.buildCHG();
+        chgraph = chg;
     }
 
     svfMod = pag->getModule();
@@ -209,8 +195,6 @@ void PointerAnalysis::finalize()
     /// Print statistics
     dumpStat();
 
-    SVFIR* pag = SVFIR::getPAG();
-
     /// Dump results
     if (Options::PTSPrint)
     {
@@ -233,9 +217,7 @@ void PointerAnalysis::finalize()
     if (Options::CallGraphDotGraph)
         getPTACallGraph()->dump("callgraph_final");
 
-    // FSTBHC has its own TBHC-specific test validation.
-    if(!pag->isBuiltFromFile() && alias_validation
-            && !SVFUtil::isa<FlowSensitiveTBHC>(this))
+    if(!pag->isBuiltFromFile() && alias_validation)
         validateTests();
 
     if (!Options::UsePreCompFieldSensitive)
@@ -279,7 +261,7 @@ void PointerAnalysis::dumpAllTypes()
         Type* type = node->getValue()->getType();
         SymbolTableInfo::SymbolInfo()->printFlattenFields(type);
         if (PointerType* ptType = SVFUtil::dyn_cast<PointerType>(type))
-            SymbolTableInfo::SymbolInfo()->printFlattenFields(getPtrElementType(ptType));
+            SymbolTableInfo::SymbolInfo()->printFlattenFields(SymbolTableInfo::getPtrElementType(ptType));
     }
 }
 

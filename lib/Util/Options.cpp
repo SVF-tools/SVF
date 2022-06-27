@@ -727,29 +727,6 @@ const llvm::cl::opt<bool> Options::MergePWC(
 );
 
 
-// FlowSensitive.cpp
-const llvm::cl::opt<bool> Options::CTirAliasEval(
-    "ctir-alias-eval",
-    llvm::cl::init(false),
-    llvm::cl::desc("Prints alias evaluation of ctir instructions in FS analyses")
-);
-
-
-// FlowSensitiveTBHC.cpp
-/// Whether we allow reuse for TBHC.
-const llvm::cl::opt<bool> Options::TBHCStoreReuse(
-    "tbhc-store-reuse",
-    llvm::cl::init(false),
-    llvm::cl::desc("Allow for object reuse in at stores in FSTBHC")
-);
-
-const llvm::cl::opt<bool> Options::TBHCAllReuse(
-    "tbhc-all-reuse",
-    llvm::cl::init(false),
-    llvm::cl::desc("Allow for object reuse everywhere in FSTBHC")
-);
-
-
 //WPAPass.cpp
 const llvm::cl::opt<bool> Options::AnderSVFG(
     "svfg",
@@ -783,7 +760,6 @@ llvm::cl::bits<PointerAnalysis::PTATY> Options::PASelected(
         // Disabled till further work is done.
         // clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
         clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
-        clEnumValN(PointerAnalysis::FSTBHC_WPA, "fstbhc", "Sparse flow-sensitive type-based heap cloning pointer analysis"),
         clEnumValN(PointerAnalysis::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"),
         clEnumValN(PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, SVFIR and CHA")
     ));
@@ -801,15 +777,15 @@ const llvm::cl::opt<bool> Options::ShowHiddenNode(
     llvm::cl::desc("Show hidden nodes on DOT Graphs (e.g., isolated node on a graph)")
 );
 
-const llvm::cl::opt<std::string> Options::InputFilename(
-    llvm::cl::Positional,
-    llvm::cl::desc("<input bitcode>"),
+const llvm::cl::opt<std::string> Options::GrammarFilename(
+    "grammar",
+    llvm::cl::desc("<Grammar textfile>"),
     llvm::cl::init("-")
 );
 
-const llvm::cl::opt<std::string> Options::GrammarFilename(
+const llvm::cl::opt<std::string> Options::InputFilename(
     llvm::cl::Positional,
-    llvm::cl::desc("<Grammar textfile>"),
+    llvm::cl::desc("<input bitcode>"),
     llvm::cl::init("-")
 );
 
@@ -819,10 +795,10 @@ const llvm::cl::opt<bool> Options::GraphIsFromDot(
     llvm::cl::desc("Dot text as graph input")
 );
 
-const llvm::cl::opt<bool> Options::GrammarIsEBNF(
-    "ebnf-grammar",
+const llvm::cl::opt<bool> Options::PrintCFL(
+    "print-cfl",
     llvm::cl::init(false),
-    llvm::cl::desc("EBNF grammar as grammar input")
+    llvm::cl::desc("print ir, grammar and cflgraph for debug.")
 );
 
 const llvm::cl::opt<bool> Options::FlexSymMap(

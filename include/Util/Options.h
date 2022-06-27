@@ -237,13 +237,6 @@ public:
     static const llvm::cl::opt<bool> PtsDiff;
     static const llvm::cl::opt<bool> MergePWC;
 
-    // FlowSensitive.cpp
-    static const llvm::cl::opt<bool> CTirAliasEval;
-
-    //FlowSensitiveTBHC.cpp
-    static const llvm::cl::opt<bool> TBHCStoreReuse;
-    static const llvm::cl::opt<bool> TBHCAllReuse;
-
     // WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
     static const llvm::cl::opt<bool> SABERFULLSVFG;
@@ -255,10 +248,10 @@ public:
     static const llvm::cl::opt<bool> ShowHiddenNode;
 
     // CFL option
-    static const llvm::cl::opt<std::string> InputFilename;
     static const llvm::cl::opt<std::string> GrammarFilename;
+    static const llvm::cl::opt<std::string> InputFilename;
     static const llvm::cl::opt<bool> GraphIsFromDot;
-    static const llvm::cl::opt<bool> GrammarIsEBNF;
+    static const llvm::cl::opt<bool> PrintCFL;
     static const llvm::cl::opt<bool> FlexSymMap;
 
     // Loop Analysis

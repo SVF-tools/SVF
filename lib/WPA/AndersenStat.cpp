@@ -240,7 +240,7 @@ void AndersenStat::statNullPtr()
                 if (!SVFUtil::isa<DummyValVar>(pagNode) && !SVFUtil::isa<DummyObjVar>(pagNode) )
                 {
                     // if a pointer is in dead function, we do not care
-                    if(isPtrInDeadFunction(pagNode->getValue()) == false)
+                    if(SymbolTableInfo::isPtrInDeadFunction(pagNode->getValue()) == false)
                     {
                         _NumOfNullPtr++;
                         rawstr << "##Null Pointer : (NodeID " << pagNode->getId()

@@ -54,6 +54,7 @@ public:
         /// Conversion of u32_t
         operator u32_t()
         {
+            static_assert(sizeof(struct Symbol)==sizeof(u32_t), "sizeof(struct Symbol)!=sizeof(u32_t)");
             u32_t num = 0;
             num += this->variableAttribute << 24;
             num += this->attribute << 8;
@@ -61,19 +62,10 @@ public:
             return num;
         }
 
-        /// Conversion of u64_t
-        operator u64_t()
+        operator u32_t() const
         {
-            u64_t num = 0;
-            num += this->variableAttribute << 24;
-            num += this->attribute << 8;
-            num += this->kind;
-            return num;
-        }
-
-        operator s64_t() const
-        {
-            s64_t num = 0;
+            static_assert(sizeof(struct Symbol)==sizeof(u32_t), "sizeof(struct Symbol)!=sizeof(u32_t)");
+            u32_t num = 0;
             num += this->variableAttribute << 24;
             num += this->attribute << 8;
             num += this->kind;
@@ -82,10 +74,10 @@ public:
 
         bool operator<(const Symbol& rhs)
         {
-            return this->kind < rhs.kind;
+            return u32_t(*this) < u32_t(rhs);
         }
 
-        void operator=(const int& i)
+        void operator=(const u32_t& i)
         {
             this->kind = EdgeKindMask & i;
             this->attribute = i >> EdgeKindMaskBits;
@@ -97,11 +89,6 @@ public:
             this->kind = num & 0xFF;
             this->attribute = (num >> 8 ) & 0xFFFF;
             this->variableAttribute = num >> 24;
-        }
-
-        void operator=(const Kind& kind)
-        {
-            this->kind = kind;
         }
 
         bool operator==(const Symbol& s)
@@ -119,18 +106,12 @@ public:
             return ! (*this == s) ;
         }
 
-
-        bool operator==(const int& i)
+        bool operator==(const u32_t& i)
         {
-            return ((this->kind == (EdgeKindMask & i)) && (this->attribute == (i >> EdgeKindMaskBits)) && (this->variableAttribute == (i >> AttributedKindMaskBits)));
+            return  u32_t(*this) == u32_t(i);
         }
 
         bool operator==(const Kind& k) const
-        {
-            return (this->kind == k);
-        }
-
-        bool operator==(const Kind& k)
         {
             return (this->kind == k);
         }
@@ -389,7 +370,7 @@ public:
     void dump(std::string fileName) const;
 
 
-    const inline int num_generator()
+    const inline u32_t num_generator()
     {
         return newTerminalSubscript++;
     }

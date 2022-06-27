@@ -28,7 +28,6 @@
  */
 
 #include <Util/Options.h>
-#include "SVF-FE/LLVMUtil.h"
 #include "Util/SVFModule.h"
 #include "Graphs/ICFG.h"
 #include "MemoryModel/SVFIR.h"
@@ -54,7 +53,7 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNod
     // if function is implemented
     if (f->getLLVMFun()->begin() != f->getLLVMFun()->end())
     {
-        bb = LLVMUtil::getFunExitBB(f->getLLVMFun());
+        bb = SymbolTableInfo::getFunExitBB(f->getLLVMFun());
     }
 
 }
@@ -119,7 +118,9 @@ const std::string FunExitICFGNode::toString() const
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
-        rawstr << getSourceLoc(LLVMUtil::getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI());
+        if (SymbolTableInfo::getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI() != NULL){
+            rawstr << getSourceLoc(SymbolTableInfo::getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI());
+        }
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();

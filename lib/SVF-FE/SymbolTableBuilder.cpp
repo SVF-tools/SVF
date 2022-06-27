@@ -85,7 +85,6 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
     {
         Function *fun = *F;
-        collectDeadFunction(fun);
         collectSym(fun);
         collectRet(fun);
         if (fun->getFunctionType()->isVarArg())
@@ -96,7 +95,6 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                 I != E; ++I)
         {
             collectSym(&*I);
-            collectArgInNoCallerFunction(&*I);
         }
 
         // collect and create symbols inside the function body
@@ -115,6 +113,10 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
             else if (const LoadInst *ld = SVFUtil::dyn_cast<LoadInst>(inst))
             {
                 collectSym(ld->getPointerOperand());
+            }
+            else if (const AllocaInst *alloc = SVFUtil::dyn_cast<AllocaInst>(inst))
+            {
+                collectSym(alloc->getArraySize());
             }
             else if (const PHINode *phi = SVFUtil::dyn_cast<PHINode>(inst))
             {
@@ -203,21 +205,80 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
 {
     if (LLVMUtil::isNullPtrSym(val))
-        symInfo->nullPtrSyms.insert(val);
+        symInfo->getModule()->addNullPtrSyms(val);
     if (LLVMUtil::isBlackholeSym(val))
-        symInfo->blackholeSyms.insert(val);
+        symInfo->getModule()->addBlackholeSyms(val);
 }
 
-void SymbolTableBuilder::collectArgInNoCallerFunction(const Value *val)
-{
-    if (LLVMUtil::ArgInNoCallerFunction(val))
-        symInfo->getModule()->getArgInNoCallerFunction().insert(val);
-}
 
-void SymbolTableBuilder::collectDeadFunction(const Function * fun)
-{
-    if (LLVMUtil::isDeadFunction(fun))
-        symInfo->getModule()->getIsDeadFunction().insert(fun);
+void SymbolTableBuilder::collectSpecialSym(const Value* val){
+    if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
+    {
+        const SVFFunction *svffun = symInfo->getModule()->getSVFFunction(fun);
+        if (LLVMUtil::isDeadFunction(fun))
+        {
+            symInfo->getModule()->addDeadFunction(fun);
+        } 
+        else if (LLVMUtil::functionDoesNotRet(fun))
+        {
+            symInfo->getModule()->addFunctionDoesNotRet(fun);
+        }
+        if (!isExtCall(svffun))
+        {
+            const BasicBlock* exitBB = LLVMUtil::getFunExitBB(fun);
+            symInfo->getModule()->addFunExitBB(fun,exitBB);
+
+            for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
+            {
+                const BasicBlock *bb = &*bit;
+                const u32_t num = LLVMUtil::getBBSuccessorNum(bb);
+                symInfo->getModule()->addBBSuccessorNum(bb,num);
+                if (num >1)
+                {
+                    for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
+                    {
+                        const BasicBlock* succ = *succ_it;
+                        const u32_t successorPos = LLVMUtil::getBBSuccessorPos(bb,succ);
+                        if (successorPos != 0)
+                        {
+                            symInfo->getModule()->addBBSuccessorPos(bb,succ,successorPos);
+                        }
+                    }
+                }
+                for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
+                {
+                    const BasicBlock* succ = *succ_it;
+                    const u32_t predecessorPos = LLVMUtil::getBBPredecessorPos(bb,succ);
+                    if (predecessorPos != 0)
+                    {
+                        symInfo->getModule()->addBBPredecessorPos(bb,succ,predecessorPos);
+                    }
+                }
+            }
+        }
+    } 
+    else if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
+    {
+        if (LLVMUtil::isReturn(inst))
+            symInfo->getModule()->addReturn(inst);
+    }
+    else if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
+    {
+        const Type* type = LLVMUtil::getPtrElementType(ptrType);
+        symInfo->getModule()->addptrElementType(ptrType, type);
+    }
+    else if (SVFUtil::isa<Value>(val))
+    {
+       if (LLVMUtil::ArgInNoCallerFunction(val))
+       {
+            symInfo->getModule()->addArgInNoCallerFunction(val);
+       } 
+       else if (LLVMUtil::isPtrInDeadFunction(val))
+       {
+           symInfo->getModule()->addPtrInDeadFunction(val);
+       }
+        
+    }
 }
 
 /*!
@@ -232,9 +293,11 @@ void SymbolTableBuilder::collectSym(const Value *val)
 
     //TODO handle constant expression value here??
     handleCE(val);
-
+    
     // create a value sym
     collectVal(val);
+
+    collectSpecialSym(val);
 
     // create an object If it is a heap, stack, global, function.
     if (isObject(val))

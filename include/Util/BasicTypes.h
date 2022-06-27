@@ -129,6 +129,7 @@ private:
     bool isDecl;
     bool isIntri;
     Function* fun;
+    std::vector<const BasicBlock*> reachableBBs;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
         isDecl(false), isIntri(false), fun(nullptr)
@@ -139,6 +140,12 @@ public:
         isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f)
     {
     }
+
+    SVFFunction(Function* f, std::vector<const BasicBlock*> reachableBBs): SVFValue(f->getName().str(),SVFValue::SVFFunc),
+        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), reachableBBs(reachableBBs)
+    {
+    }
+
     inline Function* getLLVMFun() const
     {
         assert(fun && "no LLVM Function found!");
@@ -168,6 +175,11 @@ public:
     inline bool isVarArg() const
     {
         return getLLVMFun()->isVarArg();
+    }
+
+    inline const std::vector<const BasicBlock*> getReachableBBs() const 
+    {
+        return reachableBBs;
     }
 
     // Dump Control Flow Graph of llvm function, with instructions
