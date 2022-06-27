@@ -55,46 +55,7 @@ public:
     }
 
     /// Start Analysis here (main part of pointer analysis).
-    virtual void analyze()
-    {
-        GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
-        CFGNormalizer normalizer = CFGNormalizer();
-        AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
-        CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
-        if (Options::GraphIsFromDot == false)
-        {
-            PointerAnalysis::initialize();
-            GrammarBase *grammarBase = grammarBuilder.build();
-            ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
-            cflChecker.check(grammarBase, &cflGraphBuilder, graph);
-            grammar = normalizer.normalize(grammarBase);
-            cflChecker.check(grammar, &cflGraphBuilder, graph);
-            std::string svfirName = Options::InputFilename.c_str();
-            svfir->dump(svfirName.append("_IR"));
-            std::string grammarName = Options::InputFilename.c_str();
-            grammar->dump(grammarName.append("_Grammar"));
-            delete consCG;
-            delete grammarBase;
-        }
-        else
-        {
-            GrammarBase *grammarBase = grammarBuilder.build();
-            graph = cflGraphBuilder.buildFromDot(Options::InputFilename, grammarBase);
-            cflChecker.check(grammarBase, &cflGraphBuilder, graph);
-            grammar = normalizer.normalize(grammarBase);
-            cflChecker.check(grammar, &cflGraphBuilder, graph);
-            delete grammarBase;
-        }
-        solver = new CFLSolver(graph, grammar);
-        solver->solve();
-        std::string CFLGraphFileName = Options::InputFilename.c_str();
-        graph->dump(CFLGraphFileName.append("_CFL"));
-        if (Options::GraphIsFromDot == false)
-        {
-            PointerAnalysis::finalize();
-        }
-    }
+    virtual void analyze();
 
     /// Interface exposed to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const Value* v1, const Value* v2)

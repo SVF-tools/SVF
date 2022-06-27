@@ -36,6 +36,7 @@
 
 using namespace SVF;
 
+
 void GrammarBase::setRawProductions(SymbolMap<Symbol, Productions>& rawProductions)
 {
     this->rawProductions = rawProductions;
