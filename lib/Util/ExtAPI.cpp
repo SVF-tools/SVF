@@ -153,7 +153,7 @@ ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
 // Get priority of he function, return value
 // 0: Apply user-defined functions
 // 1: Apply function specification in ExtAPI.json
-u32_t ExtAPI::isOverWriteUserFunction(const SVF::SVFFunction *callee)
+u32_t ExtAPI::isOverwrittenAppFunction(const SVF::SVFFunction *callee)
 {
     std::string funName = get_name(callee);
     cJSON *item = get_FunJson(funName);
@@ -261,12 +261,12 @@ bool ExtAPI::is_ext(const SVFFunction *F)
         ExtAPI::extType t = get_type(F);
         if (t != EFT_NULL)
         {
-            u32_t weakSideEffect = isOverWriteUserFunction(F);
-            // weakSideEffect = 1: Execute function specification in ExtAPI.json
+            u32_t overwrittenAppFunction = isOverwrittenAppFunction(F);
+            // overwrittenAppFunction = 1: Execute function specification in ExtAPI.json
             // F is considered as external function
-            if (weakSideEffect == 1)
+            if (overwrittenAppFunction == 1)
                 res = 1;
-            // weakSideEffect = 0: Execute user-defined functions
+            // overwrittenAppFunction = 0: Execute user-defined functions
             // F is not considered as external function
             else
                 res = 0;

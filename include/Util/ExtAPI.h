@@ -40,7 +40,7 @@
 #include <map>
 
 #define EXTAPI_JSON_PATH "/lib/Util/ExtAPI.json"
-#define JSON_OPT_OVERWRITE "overwrite_user_function"
+#define JSON_OPT_OVERWRITE "overwrite_app_function"
 #define JSON_OPT_FUNCTIONTYPE "type"
 
 namespace SVF
@@ -58,9 +58,9 @@ The specification language of external functions is based on the JSON format. An
 4. the operations conducted by the function.
  
 *** [2] Overwriting the user-defined functions
-The switch *overwrite_user_function* controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code (e.g., CPP files). When the switch *overwrite_user_function* is set to a value of 1, SVF will use the specification rules in ExtAPI.json to conduct the analysis and ignore the user-defined functions in the input CPP/bc files. 
-overwrite_user_function = 0: Analyze the user-defined functions.
-overwrite_user_function = 1: Use specifications in ExtAPI.json to overwrite the user-defined functions.
+The switch *overwrite_app_function* controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code (e.g., CPP files). When the switch *overwrite_app_function* is set to a value of 1, SVF will use the specification rules in ExtAPI.json to conduct the analysis and ignore the user-defined functions in the input CPP/bc files. 
+overwrite_app_function = 0: Analyze the user-defined functions.
+overwrite_app_function = 1: Use specifications in ExtAPI.json to overwrite the user-defined functions.
  
 *** [3] Function types
 Function type represents the properties of the function.
@@ -94,7 +94,7 @@ Here we use regular expressions "(AN)(R|RN)^*" to represent parameters, for exam
 ** Specification format:
 "functionName": {
 "type": "functional type",
-"overwrite_user_function:" 0/1,
+"overwrite_app_function:" 0/1,
 "function operation_1": [ operand_1, operand_2, ... , operand_n],
 "function operation_2": [ operand_1, operand_2, ... , operand_n],
 ...
@@ -248,7 +248,7 @@ public:
     // Get priority of he function, return value
     // 0: Apply user-defined functions
     // 1: Apply function specification in ExtAPI.json
-    u32_t isOverWriteUserFunction(const SVF::SVFFunction *callee);
+    u32_t isOverwrittenAppFunction(const SVF::SVFFunction *callee);
 
     // Does (F) have a static var X (unavailable to us) that its return points to?
     bool has_static(const SVFFunction *F);
