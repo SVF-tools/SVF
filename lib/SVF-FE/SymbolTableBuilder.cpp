@@ -114,7 +114,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
             {
                 collectSym(ld->getPointerOperand());
             }
-            else if (const AllocInst *alloc = SVFUtil::dyn_cast<AllocInst>(inst))
+            else if (const AllocaInst *alloc = SVFUtil::dyn_cast<AllocaInst>(inst))
             {
                 collectSym(alloc->getArraySize());
             }
