@@ -2,6 +2,7 @@
 # type './build.sh'       for release build
 # type './build.sh debug' for debug build
 # set the SVF_CTIR environment variable to build and run FSTBHC tests, e.g., `. build.sh SVF_CTIR=1 `.
+# set the WITH_FSTBHC environment variable to build with FSTBHC (default: not built) , e.g., `. build.sh WITH_FSTBHC=1 `.
 # if the CTIR_DIR variable is not set, ctir Clang will be downloaded (only if SVF_CTIR is set).
 # if the LLVM_DIR variable is not set, LLVM will be downloaded.
 #
@@ -237,6 +238,14 @@ export PATH=$LLVM_DIR/bin:$PATH
 echo "LLVM_DIR=$LLVM_DIR"
 echo "Z3_DIR=$Z3_DIR"
 
+# Build with or without FSTBHC? Enable when SVF_CTIR is set too.
+if [ -n "$WITH_FSTBHC" ] || [ -n "$SVF_CTIR" ]
+then
+    FSTBHC_OPTION="-DWITH_FSTBHC=ON"
+else
+    FSTBHC_OPTION="-DWITH_FSTBHC=OFF"
+fi
+
 ########
 # Build SVF
 ########
@@ -245,12 +254,12 @@ then
     rm -rf ./'Debug-build'
     mkdir ./'Debug-build'
     cd ./'Debug-build'
-    cmake -D CMAKE_BUILD_TYPE:STRING=Debug ../
+    cmake "$FSTBHC_OPTION" -D CMAKE_BUILD_TYPE:STRING=Debug ../
 else
     rm -rf ./'Release-build'
     mkdir ./'Release-build'
     cd ./'Release-build'
-    cmake ../
+    cmake "$FSTBHC_OPTION" ../
     fi
 make -j ${jobs}
 

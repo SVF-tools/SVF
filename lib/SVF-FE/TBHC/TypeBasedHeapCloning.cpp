@@ -7,9 +7,11 @@
  *      Author: Mohamad Barbar
  */
 
+#ifdef WITH_FSTBHC
+
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/BasicTypes.h"
-#include "WPA/TypeBasedHeapCloning.h"
+#include "SVF-FE/TBHC/TypeBasedHeapCloning.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 
 using namespace SVF;
@@ -793,3 +795,5 @@ void TypeBasedHeapCloning::dumpStats(void)
 
     SVFUtil::outs() << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n";
 }
+
+#endif /* WITH_FSTBHC */

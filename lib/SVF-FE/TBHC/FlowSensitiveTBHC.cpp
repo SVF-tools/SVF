@@ -7,11 +7,13 @@
  *      Author: Mohamad Barbar
  */
 
+#ifdef WITH_FSTBHC
+
 #include "Util/Options.h"
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/DCHG.h"
 #include "SVF-FE/CPPUtil.h"
-#include "WPA/FlowSensitiveTBHC.h"
+#include "SVF-FE/TBHC/FlowSensitiveTBHC.h"
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
 #include "MemoryModel/PointsTo.h"
@@ -693,3 +695,4 @@ void FlowSensitiveTBHC::countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigne
     }
 
 }
+#endif /* WITH_FSTBHC */

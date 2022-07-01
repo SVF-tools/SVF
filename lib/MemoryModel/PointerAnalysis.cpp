@@ -42,7 +42,10 @@
 #include "MemoryModel/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
-#include "WPA/FlowSensitiveTBHC.h"
+
+#ifdef WITH_FSTBHC
+#include "SVF-FE/TBHC/FlowSensitiveTBHC.h"
+#endif
 
 #include <iomanip>
 #include <iostream>
@@ -209,8 +212,6 @@ void PointerAnalysis::finalize()
     /// Print statistics
     dumpStat();
 
-    SVFIR* pag = SVFIR::getPAG();
-
     /// Dump results
     if (Options::PTSPrint)
     {
@@ -233,10 +234,13 @@ void PointerAnalysis::finalize()
     if (Options::CallGraphDotGraph)
         getPTACallGraph()->dump("callgraph_final");
 
+#ifdef WITH_FSTBHC
     // FSTBHC has its own TBHC-specific test validation.
+    SVFIR* pag = SVFIR::getPAG();
     if(!pag->isBuiltFromFile() && alias_validation
             && !SVFUtil::isa<FlowSensitiveTBHC>(this))
         validateTests();
+#endif
 
     if (!Options::UsePreCompFieldSensitive)
         resetObjFieldSensitive();

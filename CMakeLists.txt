@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.13.4)
 
 project("SVF")
 
-
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.in ${CMAKE_CURRENT_SOURCE_DIR}/include/Util/config.h @ONLY)
 
 # To support both in- and out-of-source builds,
@@ -78,6 +77,11 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite")
     enable_testing()
     add_subdirectory(Test-Suite)
     include(CTest)
+endif()
+
+option(WITH_FSTBHC "Build SVF with FSTBHC enabled" OFF)
+if(WITH_FSTBHC)
+    add_definitions(-DWITH_FSTBHC)
 endif()
 
 add_subdirectory(lib)

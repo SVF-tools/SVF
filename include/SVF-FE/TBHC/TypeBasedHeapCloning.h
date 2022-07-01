@@ -10,6 +10,11 @@
  *      Author: Mohamad Barbar
  */
 
+#ifdef WITH_FSTBHC
+
+#ifndef TYPEBASEDHEAPCLONING_H_
+#define TYPEBASEDHEAPCLONING_H_
+
 #include "SVF-FE/DCHG.h"
 #include "MemoryModel/SVFIR.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
@@ -186,3 +191,6 @@ private:
 };
 
 } // End namespace SVF
+
+#endif /* TYPEBASEDHEAPCLONING_H_ */
+#endif /* WITH_FSTBHC */

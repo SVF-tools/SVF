@@ -30,12 +30,14 @@
 #include "Util/Options.h"
 #include "SVF-FE/DCHG.h"
 #include "Util/SVFModule.h"
-#include "WPA/TypeBasedHeapCloning.h"
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"
 #include "MemoryModel/PointsTo.h"
 
+#ifdef WITH_FSTBHC
+#include "SVF-FE/TBHC/TypeBasedHeapCloning.h"
+#endif
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -817,6 +819,9 @@ void FlowSensitive::plainMap(void) const
 
 void FlowSensitive::printCTirAliasStats(void)
 {
+#ifndef WITH_FSTBHC
+    assert(false && "SVF not built with FSTBHC! Try WITH_FSTBHC=1 ./build.sh");
+#else
     DCHGraph *dchg = SVFUtil::dyn_cast<DCHGraph>(chgraph);
     assert(dchg && "eval-ctir-aliases needs DCHG.");
 
@@ -878,6 +883,7 @@ void FlowSensitive::printCTirAliasStats(void)
                     << "  " << "MAY % : " << 100 * ((double)mayAliases/(double)(total)) << "\n"
                     << "  " << "NO    : " << noAliases << "\n"
                     << "  " << "NO  % : " << 100 * ((double)noAliases/(double)(total)) << "\n";
+#endif  // WITH_FSTBHC
 }
 
 void FlowSensitive::countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases)

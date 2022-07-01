@@ -12,6 +12,7 @@ endif()
 
 file (GLOB SOURCES
         SVF-FE/*.cpp
+        SVF-FE/TBHC/*.cpp
         Graphs/*.cpp
         Util/*.cpp
         MemoryModel/*.cpp

@@ -40,11 +40,14 @@
 #include "WPA/Andersen.h"
 #include "WPA/AndersenSFR.h"
 #include "WPA/FlowSensitive.h"
-#include "WPA/FlowSensitiveTBHC.h"
 #include "WPA/VersionedFlowSensitive.h"
 #include "WPA/TypeAnalysis.h"
 #include "WPA/Steensgaard.h"
 #include "SVF-FE/SVFIRBuilder.h"
+
+#ifdef WITH_FSTBHC
+#include "SVF-FE/TBHC/FlowSensitiveTBHC.h"
+#endif
 
 using namespace SVF;
 
@@ -127,7 +130,11 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
         _pta = new FlowSensitive(pag);
         break;
     case PointerAnalysis::FSTBHC_WPA:
+#ifndef WITH_FSTBHC
+        assert(false && "SVF not built with FSTBHC! Try WITH_FSTBHC=1 ./build.sh");
+#else
         _pta = new FlowSensitiveTBHC(pag);
+#endif
         break;
     case PointerAnalysis::VFS_WPA:
         _pta = new VersionedFlowSensitive(pag);

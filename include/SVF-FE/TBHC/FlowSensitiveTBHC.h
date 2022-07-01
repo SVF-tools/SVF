@@ -7,13 +7,15 @@
  *      Author: Mohamad Barbar
  */
 
+#ifdef WITH_FSTBHC
+
 #ifndef FLOWSENSITIVETYPEFILTER_H_
 #define FLOWSENSITIVETYPEFILTER_H_
 
 #include "SVF-FE/DCHG.h"
 #include "Graphs/SVFGOPT.h"
 #include "MSSA/SVFGBuilder.h"
-#include "TypeBasedHeapCloning.h"
+#include "SVF-FE/TBHC/TypeBasedHeapCloning.h"
 #include "WPA/FlowSensitive.h"
 #include "MemoryModel/PointsTo.h"
 
@@ -120,3 +122,4 @@ private:
 } // End namespace SVF
 
 #endif /* FLOWSENSITIVETYPEFILTER_H_ */
+#endif /* WITH_FSTBHC */
