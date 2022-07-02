@@ -82,7 +82,7 @@ public:
 
         bool operator<(const Symbol& rhs)
         {
-            return this->kind < rhs.kind;
+            return u32_t(*this) < u32_t(rhs);
         }
 
         void operator=(const int& i)
@@ -122,7 +122,7 @@ public:
 
         bool operator==(const int& i)
         {
-            return ((this->kind == (EdgeKindMask & i)) && (this->attribute == (i >> EdgeKindMaskBits)) && (this->variableAttribute == (i >> AttributedKindMaskBits)));
+            return  u32_t(*this) == -1;
         }
 
         bool operator==(const Kind& k) const

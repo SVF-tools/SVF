@@ -279,6 +279,7 @@ GrammarBase::Productions CFGNormalizer::getFilledProductions(GrammarBase::Produc
                 if ( symbol.variableAttribute == currentVariableAttribute)
                 {
                     symbol.attribute = attribute;
+                    symbol.variableAttribute = 0;
                 }
             }
             /// Check whether all symbol expanded

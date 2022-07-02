@@ -74,12 +74,43 @@ public:
             return AliasResult::NoAlias;
     }
 
-    /// Get points-to targets of a pointer.
+    /// Get points-to targets of a pointer.  V In this context
     virtual const PointsTo& getPts(NodeID ptr)
     {
-        /// Check Outgoing edge Dst of ptr
-        //PointsTo * ps;
-        abort(); // to be implemented
+        /// Check V Dst of ptr.
+        PointsTo *ps = new PointsTo();
+        CFLNode *funNode = graph->getGNode(ptr);
+        for(auto outedge = funNode->getOutEdges().begin(); outedge!=funNode->getOutEdges().end(); outedge++)
+        {
+            if((*outedge)->getEdgeKind() == graph->getStartKind())
+            {
+                // Need to Find dst addr src
+                CFLNode *vNode = graph->getGNode((*outedge)->getDstID());
+                
+                for(auto inEdge = vNode->getInEdges().begin(); inEdge!=vNode->getInEdges().end(); inEdge++)
+                {
+                    if((*inEdge)->getEdgeKind() == 0)
+                    {
+                        ps->set((*inEdge)->getSrcID());
+                    }
+                }
+            }
+        }
+        return *ps;
+    }
+
+    /// Add copy edge on constraint graph
+    virtual inline bool addCopyEdge(NodeID src, NodeID dst)
+    {
+        const CFLEdge *edge = graph->hasEdge(graph->getGNode(src),graph->getGNode(dst), 1);
+        if (edge != nullptr )
+        {
+            return false;
+
+        }
+        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(src),graph->getGNode(dst), 1));
+        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(dst),graph->getGNode(src), 12));
+        return true;
     }
 
     /// Given an object, get all the nodes having whose pointsto contains the object
@@ -89,6 +120,14 @@ public:
         abort(); // to be implemented
     }
 
+    /// Update call graph for the input indirect callsites
+    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
+
+    /// On the fly call graph construction
+    virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
+
+    /// Connect formal and actual parameters for indirect callsites
+    void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F);
 private:
     SVFIR* svfir;
     CFLGraph* graph;

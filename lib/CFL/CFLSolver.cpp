@@ -34,24 +34,28 @@ using namespace SVF;
 void CFLSolver::solve()
 {
     /// initial worklist
-    for(auto it = graph->begin(); it!= graph->end(); it++)
-    {
-        for(const CFLEdge* edge : (*it).second->getOutEdges())
-        {
-            pushIntoWorklist(edge);
-        }
-    }
-    /// Foreach production X -> epsilon
-    ///     add X(i,i) if not exist to E and to worklist
-    for(const Production& prod : grammar->getEpsilonProds())
+    if(reanalyze == false)
     {
         for(auto it = graph->begin(); it!= graph->end(); it++)
         {
-            Symbol X = grammar->getLHSSymbol(prod);
-            CFLNode* i = (*it).second;
-            if(const CFLEdge* edge = graph->addCFLEdge(i, i, X))
+            for(const CFLEdge* edge : (*it).second->getOutEdges())
             {
                 pushIntoWorklist(edge);
+            }
+        }
+
+        /// Foreach production X -> epsilon
+        ///     add X(i,i) if not exist to E and to worklist
+        for(const Production& prod : grammar->getEpsilonProds())
+        {
+            for(auto it = graph->begin(); it!= graph->end(); it++)
+            {
+                Symbol X = grammar->getLHSSymbol(prod);
+                CFLNode* i = (*it).second;
+                if(const CFLEdge* edge = graph->addCFLEdge(i, i, X))
+                {
+                    pushIntoWorklist(edge);
+                }
             }
         }
     }

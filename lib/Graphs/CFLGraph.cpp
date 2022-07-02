@@ -146,7 +146,7 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         {
             rawstr << "color=Turquoise";
         }
-        else if (edge->getEdgeKind() == 14)
+        else if (edge->getEdgeKind() == 8)
         {
             rawstr << "color=Sienna";
         }
