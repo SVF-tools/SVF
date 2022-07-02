@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # type './build.sh'       for release build
 # type './build.sh debug' for debug build
-# set the WITH_FSTBHC environment variable to build with FSTBHC (default: not built) , e.g., `. build.sh WITH_FSTBHC=1 `.
-#   FSTBHC tests will also be run, downloading ctir-patched Clang if necessary.
-# if the CTIR_DIR variable is not set, ctir Clang will be downloaded (only if SVF_CTIR is set).
 # if the LLVM_DIR variable is not set, LLVM will be downloaded.
 #
 # Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
@@ -23,15 +20,12 @@ SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-13.0.
 MacZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-osx-10.14.6.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
 SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
-MacCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c3/ctir-clang-v10.c3-macos10.15.zip"
-UbuntuCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c3/ctir-clang-v10.c3-ubuntu18.04.zip"
 Z3Git="--branch z3-4.8.14 https://github.com/Z3Prover/z3.git"
 
 # Keep LLVM version suffix for version checking and better debugging
 # keep the version consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile
 LLVMHome="llvm-13.0.0.obj"
 Z3Home="z3.obj"
-CTIRHome="ctir.obj"
 
 
 function build_z3_from_source {
@@ -85,7 +79,7 @@ function generic_download_file {
     fi
 }
 
-# check if unzip is missing (ctir, Z3)
+# check if unzip is missing (Z3)
 function check_unzip {
     if ! type unzip &> /dev/null; then
         echo "Cannot find unzip. Please install unzip."
@@ -146,7 +140,6 @@ function build_llvm_from_source {
 # OS-specific values.
 urlLLVM=""
 urlZ3=""
-urlCTIR=""
 OSDisplayName=""
 
 ########
@@ -156,13 +149,11 @@ if [[ $sysOS == "Darwin" ]]
 then
     urlLLVM="$MacLLVM"
     urlZ3="$MacZ3"
-    urlCTIR="$MacCTIR"
     OSDisplayName="macOS"
 elif [[ $sysOS == "Linux" ]]
 then
     [[ "$arch" == "aarch64" ]] && urlLLVM="$UbuntuArmLLVM" || urlLLVM="$UbuntuLLVM"
     urlZ3="$UbuntuZ3"
-    urlCTIR="$UbuntuCTIR"
     OSDisplayName="Ubuntu"
 else
     echo "Builds outside Ubuntu and macOS are not supported."
@@ -215,30 +206,6 @@ then
     export Z3_DIR="$SVFHOME/$Z3Home"
 fi
 
-########
-# Download ctir Clang if need be.
-# This is required to compile fstbhc tests in Test-Suite.
-# We will only download if $WITH_FSTBHC is set (and if $CTIR_DIR doesn't exist).
-#######
-if [ -n "$WITH_FSTBHC" ]
-then
-    export FSTBHC_OPTION="-DWITH_FSTBHC=ON"
-    if [ ! -d "$CTIR_DIR" ]
-    then
-        if [ ! -d "$CTIRHome" ]
-        then
-            echo "Downloading ctir Clang binary for $OSDisplayName"
-            generic_download_file "$urlCTIR" ctir.zip
-            check_unzip
-            mkdir -p "$CTIRHome" && unzip -q "ctir.zip" -d "$CTIRHome"
-            rm ctir.zip
-        fi
-        export CTIR_DIR="$SVFHOME/$CTIRHome/bin"
-    fi
-else
-    export FSTBHC_OPTION="-DWITH_FSTBHC=OFF"
-fi
-
 export PATH=$LLVM_DIR/bin:$PATH
 echo "LLVM_DIR=$LLVM_DIR"
 echo "Z3_DIR=$Z3_DIR"
@@ -251,12 +218,12 @@ then
     rm -rf ./'Debug-build'
     mkdir ./'Debug-build'
     cd ./'Debug-build'
-    cmake "$FSTBHC_OPTION" -D CMAKE_BUILD_TYPE:STRING=Debug ../
+    cmake -D CMAKE_BUILD_TYPE:STRING=Debug ../
 else
     rm -rf ./'Release-build'
     mkdir ./'Release-build'
     cd ./'Release-build'
-    cmake "$FSTBHC_OPTION" ../
+    cmake ../
     fi
 make -j ${jobs}
 

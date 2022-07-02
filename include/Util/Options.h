@@ -237,13 +237,6 @@ public:
     static const llvm::cl::opt<bool> PtsDiff;
     static const llvm::cl::opt<bool> MergePWC;
 
-    // FlowSensitive.cpp
-    static const llvm::cl::opt<bool> CTirAliasEval;
-
-    //FlowSensitiveTBHC.cpp
-    static const llvm::cl::opt<bool> TBHCStoreReuse;
-    static const llvm::cl::opt<bool> TBHCAllReuse;
-
     // WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
     static const llvm::cl::opt<bool> SABERFULLSVFG;

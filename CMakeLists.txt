@@ -79,11 +79,6 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite")
     include(CTest)
 endif()
 
-option(WITH_FSTBHC "Build SVF with FSTBHC enabled" OFF)
-if(WITH_FSTBHC)
-    add_definitions(-DWITH_FSTBHC)
-endif()
-
 add_subdirectory(lib)
 add_subdirectory(tools)
 

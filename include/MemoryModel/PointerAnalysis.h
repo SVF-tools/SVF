@@ -76,7 +76,6 @@ public:
         CSSummary_WPA,		///< Summary based context sensitive WPA
         FSDATAFLOW_WPA,	///< Traditional Dataflow-based flow sensitive WPA
         FSSPARSE_WPA,		///< Sparse flow sensitive WPA
-        FSTBHC_WPA,		///< Sparse flow-sensitive type-based heap cloning WPA
         VFS_WPA,		///< Versioned sparse flow-sensitive WPA
         FSCS_WPA,			///< Flow-, context- sensitive WPA
         CFLFICI_WPA,		///< Flow-, context-, insensitive CFL-reachability-based analysis

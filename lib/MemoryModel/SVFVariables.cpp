@@ -41,7 +41,7 @@ using namespace SVFUtil;
 SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
     GenericPAGNodeTy(i,k), value(val)
 {
-    assert( ValNode <= k && k <= CloneDummyObjNode && "new SVFIR node kind?");
+    assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
     switch (k)
     {
     case ValNode:
@@ -67,9 +67,6 @@ SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
     case GepObjNode:
     case FIObjNode:
     case DummyObjNode:
-    case CloneGepObjNode:
-    case CloneFIObjNode:
-    case CloneDummyObjNode:
     {
         isPtr = true;
         if(val)
@@ -199,30 +196,6 @@ const std::string DummyObjVar::toString() const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "DummyObjVar ID: " << getId();
-    return rawstr.str();
-}
-
-const std::string CloneDummyObjVar::toString() const
-{
-    std::string str;
-    raw_string_ostream rawstr(str);
-    rawstr << "CloneDummyObjVar ID: " << getId();
-    return rawstr.str();
-}
-
-const std::string CloneGepObjVar::toString() const
-{
-    std::string str;
-    raw_string_ostream rawstr(str);
-    rawstr << "CloneGepObjVar ID: " << getId();
-    return rawstr.str();
-}
-
-const std::string CloneFIObjVar::toString() const
-{
-    std::string str;
-    raw_string_ostream rawstr(str);
-    rawstr << "CloneFIObjVar ID: " << getId();
     return rawstr.str();
 }
 

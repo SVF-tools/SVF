@@ -727,29 +727,6 @@ const llvm::cl::opt<bool> Options::MergePWC(
 );
 
 
-// FlowSensitive.cpp
-const llvm::cl::opt<bool> Options::CTirAliasEval(
-    "ctir-alias-eval",
-    llvm::cl::init(false),
-    llvm::cl::desc("Prints alias evaluation of ctir instructions in FS analyses")
-);
-
-
-// FlowSensitiveTBHC.cpp
-/// Whether we allow reuse for TBHC.
-const llvm::cl::opt<bool> Options::TBHCStoreReuse(
-    "tbhc-store-reuse",
-    llvm::cl::init(false),
-    llvm::cl::desc("Allow for object reuse in at stores in FSTBHC")
-);
-
-const llvm::cl::opt<bool> Options::TBHCAllReuse(
-    "tbhc-all-reuse",
-    llvm::cl::init(false),
-    llvm::cl::desc("Allow for object reuse everywhere in FSTBHC")
-);
-
-
 //WPAPass.cpp
 const llvm::cl::opt<bool> Options::AnderSVFG(
     "svfg",
@@ -783,7 +760,6 @@ llvm::cl::bits<PointerAnalysis::PTATY> Options::PASelected(
         // Disabled till further work is done.
         // clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
         clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
-        clEnumValN(PointerAnalysis::FSTBHC_WPA, "fstbhc", "Sparse flow-sensitive type-based heap cloning pointer analysis"),
         clEnumValN(PointerAnalysis::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"),
         clEnumValN(PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, SVFIR and CHA")
     ));

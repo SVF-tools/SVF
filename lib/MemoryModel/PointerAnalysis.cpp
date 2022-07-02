@@ -43,10 +43,6 @@
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
 
-#ifdef WITH_FSTBHC
-#include "SVF-FE/TBHC/FlowSensitiveTBHC.h"
-#endif
-
 #include <iomanip>
 #include <iostream>
 #include <fstream>
@@ -120,20 +116,10 @@ void PointerAnalysis::initialize()
     assert(pag && "SVFIR has not been built!");
     if (chgraph == nullptr)
     {
-        if (LLVMModuleSet::getLLVMModuleSet()->allCTir())
-        {
-            DCHGraph *dchg = new DCHGraph(pag->getModule());
-            // TODO: we might want to have an option for extending.
-            dchg->buildCHG(true);
-            chgraph = dchg;
-        }
-        else
-        {
-            CHGraph *chg = new CHGraph(pag->getModule());
-            CHGBuilder builder(chg);
-            builder.buildCHG();
-            chgraph = chg;
-        }
+        CHGraph *chg = new CHGraph(pag->getModule());
+        CHGBuilder builder(chg);
+        builder.buildCHG();
+        chgraph = chg;
     }
 
     svfMod = pag->getModule();
@@ -233,14 +219,6 @@ void PointerAnalysis::finalize()
 
     if (Options::CallGraphDotGraph)
         getPTACallGraph()->dump("callgraph_final");
-
-#ifdef WITH_FSTBHC
-    // FSTBHC has its own TBHC-specific test validation.
-    SVFIR* pag = SVFIR::getPAG();
-    if(!pag->isBuiltFromFile() && alias_validation
-            && !SVFUtil::isa<FlowSensitiveTBHC>(this))
-        validateTests();
-#endif
 
     if (!Options::UsePreCompFieldSensitive)
         resetObjFieldSensitive();
