@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # type './build.sh'       for release build
 # type './build.sh debug' for debug build
-# set the SVF_CTIR environment variable to build and run FSTBHC tests, e.g., `. build.sh SVF_CTIR=1 `.
 # set the WITH_FSTBHC environment variable to build with FSTBHC (default: not built) , e.g., `. build.sh WITH_FSTBHC=1 `.
+#   FSTBHC tests will also be run, downloading ctir-patched Clang if necessary.
 # if the CTIR_DIR variable is not set, ctir Clang will be downloaded (only if SVF_CTIR is set).
 # if the LLVM_DIR variable is not set, LLVM will be downloaded.
 #
@@ -218,33 +218,30 @@ fi
 ########
 # Download ctir Clang if need be.
 # This is required to compile fstbhc tests in Test-Suite.
-# We will only download if $CTIR is set (and if $CTIR_DIR doesn't exist).
+# We will only download if $WITH_FSTBHC is set (and if $CTIR_DIR doesn't exist).
 #######
-if [ -n "$SVF_CTIR" ] && [ ! -d "$CTIR_DIR" ]
+if [ -n "$WITH_FSTBHC" ]
 then
-    if [ ! -d "$CTIRHome" ]
+    export FSTBHC_OPTION="-DWITH_FSTBHC=ON"
+    if [ ! -d "$CTIR_DIR" ]
     then
-        echo "Downloading ctir Clang binary for $OSDisplayName"
-        generic_download_file "$urlCTIR" ctir.zip
-        check_unzip
-        mkdir -p "$CTIRHome" && unzip -q "ctir.zip" -d "$CTIRHome"
-        rm ctir.zip
+        if [ ! -d "$CTIRHome" ]
+        then
+            echo "Downloading ctir Clang binary for $OSDisplayName"
+            generic_download_file "$urlCTIR" ctir.zip
+            check_unzip
+            mkdir -p "$CTIRHome" && unzip -q "ctir.zip" -d "$CTIRHome"
+            rm ctir.zip
+        fi
+        export CTIR_DIR="$SVFHOME/$CTIRHome/bin"
     fi
-
-    export CTIR_DIR="$SVFHOME/$CTIRHome/bin"
+else
+    export FSTBHC_OPTION="-DWITH_FSTBHC=OFF"
 fi
 
 export PATH=$LLVM_DIR/bin:$PATH
 echo "LLVM_DIR=$LLVM_DIR"
 echo "Z3_DIR=$Z3_DIR"
-
-# Build with or without FSTBHC? Enable when SVF_CTIR is set too.
-if [ -n "$WITH_FSTBHC" ] || [ -n "$SVF_CTIR" ]
-then
-    FSTBHC_OPTION="-DWITH_FSTBHC=ON"
-else
-    FSTBHC_OPTION="-DWITH_FSTBHC=OFF"
-fi
 
 ########
 # Build SVF
