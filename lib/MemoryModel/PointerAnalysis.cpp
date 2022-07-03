@@ -220,6 +220,9 @@ void PointerAnalysis::finalize()
     if (Options::CallGraphDotGraph)
         getPTACallGraph()->dump("callgraph_final");
 
+    if(!pag->isBuiltFromFile() && alias_validation)
+        validateTests();
+
     if (!Options::UsePreCompFieldSensitive)
         resetObjFieldSensitive();
 }
