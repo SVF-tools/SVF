@@ -122,7 +122,7 @@ public:
 
         bool operator==(const int& i)
         {
-            return  u32_t(*this) == -1;
+            return  u32_t(*this) == u32_t(-1);
         }
 
         bool operator==(const Kind& k) const
