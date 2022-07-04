@@ -205,9 +205,11 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
 {
     if (LLVMUtil::isNullPtrSym(val))
-        symInfo->nullPtrSyms.insert(val);
+        // symInfo->nullPtrSyms.insert(val);
+        symInfo->getModule()->addNullPtrSyms(val);
     if (LLVMUtil::isBlackholeSym(val))
-        symInfo->blackholeSyms.insert(val);
+        // symInfo->blackholeSyms.insert(val);
+        symInfo->getModule()->addBlackholeSyms(val);
 }
 
 

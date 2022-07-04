@@ -323,7 +323,7 @@ void SymbolTableInfo::destroy()
  */
 bool SymbolTableInfo::isNullPtrSym(const Value *val)
 {
-    return symInfo->nullPtrSyms.find(val)!=symInfo->nullPtrSyms.end();
+    return symInfo->getModule()->getNullPtrSyms().find(val) != symInfo->getModule()->getNullPtrSyms().end();
 }
 
 bool SymbolTableInfo::argInNoCallerFunction(const Value *val)
@@ -346,7 +346,7 @@ bool SymbolTableInfo::isReturn(const Instruction *inst)
  */
 bool SymbolTableInfo::isBlackholeSym(const Value *val)
 {
-    return symInfo->blackholeSyms.find(val)!=symInfo->blackholeSyms.end();
+    return symInfo->getModule()->getBlackholeSyms().find(val)!= symInfo->getModule()->getBlackholeSyms().end();
 }
 
 

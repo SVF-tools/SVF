@@ -68,6 +68,8 @@ private:
     Set<const Value*> argInNoCallerFunction;
     Set<const Function*> isDeadFunction;
     Set<const Instruction*> isReturns;
+    Set<const Value*> nullPtrSyms;
+    Set<const Value*> blackholeSyms;
 
 public:
     /// Constructors
@@ -213,6 +215,16 @@ public:
         }
     }
 
+    inline const Set<const Value*> getNullPtrSyms() const 
+    {
+        return nullPtrSyms;
+    }
+    
+    inline const Set<const Value*> getBlackholeSyms() const
+    {
+        return blackholeSyms;
+    }
+
     inline const Set<const Value*> getArgInNoCallerFunction() const
     {
         return argInNoCallerFunction;
@@ -228,7 +240,17 @@ public:
         return isReturns;
     }
 
-    inline void addArgInNoCallerFunction(const Value *val){
+    inline void addNullPtrSyms(const Value *val)
+    {
+        nullPtrSyms.insert(val);
+    }
+
+    inline void addBlackholeSyms(const Value *val){
+        blackholeSyms.insert(val);
+    }
+
+    inline void addArgInNoCallerFunction(const Value *val)
+    {
         argInNoCallerFunction.insert(val);
     }
 

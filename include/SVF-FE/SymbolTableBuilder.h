@@ -58,12 +58,6 @@ public:
     //@{
     void collectNullPtrBlackholeSyms(const Value *val);
 
-    // void collectArgInNoCallerFunction(const Value *val);
-
-    // void collectReturnInst(const Instruction *inst);
-
-    // void collectDeadFunction(const Function * fun);
-
     void collectSpecialSym(const Value* val);
 
     void collectSym(const Value *val);

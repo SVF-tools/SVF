@@ -88,8 +88,6 @@ private:
     IDToMemMapTy		objMap;		///< map a memory sym id to its obj
 
     CallSiteSet callSiteSet;
-    Set<const Value*> nullPtrSyms;
-    Set<const Value*> blackholeSyms;
 
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
     static SymbolTableInfo* symInfo;
