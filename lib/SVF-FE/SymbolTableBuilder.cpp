@@ -214,22 +214,35 @@ void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
 
 
 void SymbolTableBuilder::collectSpecialSym(const Value* val){
-    if (SVFUtil::isa<Function>(val))
+    if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
     {
-        const Function* fun = SVFUtil::dyn_cast<Function>(val);
         if (LLVMUtil::isDeadFunction(fun))
+        {
             symInfo->getModule()->addDeadFunction(fun);
+        } 
     } 
-    else if (SVFUtil::isa<Instruction>(val))
+    else if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
     {
-        const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val);
         if (LLVMUtil::isReturn(inst))
             symInfo->getModule()->addReturn(inst);
+    }
+    else if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
+    {
+        if (LLVMUtil::functionDoesNotRet(fun)){
+            symInfo->getModule()->addFunctionDoesNotRet(fun);
+        }
     }
     else if (SVFUtil::isa<Value>(val))
     {
        if (LLVMUtil::ArgInNoCallerFunction(val))
+       {
             symInfo->getModule()->addArgInNoCallerFunction(val);
+       } 
+       else if (LLVMUtil::isPtrInDeadFunction(val))
+       {
+           symInfo->getModule()->addPtrInDeadFunction(val);
+       }
+        
     }
 }
 

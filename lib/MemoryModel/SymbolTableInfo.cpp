@@ -341,6 +341,16 @@ bool SymbolTableInfo::isReturn(const Instruction *inst)
     return symInfo->getModule()->getIsReturn().find(inst) != symInfo->getModule()->getIsReturn().end();
 }
 
+bool SymbolTableInfo::functionDoesNotRet(const Function *fun)
+{
+    return symInfo->getModule()->getFunctionDoesNotRet().find(fun) != symInfo->getModule()->getFunctionDoesNotRet().end();
+}
+
+bool SymbolTableInfo::isPtrInDeadFunction (const Value * value)
+{
+    return symInfo->getModule()->getPtrInDeadFunction().find(value) != symInfo->getModule()->getPtrInDeadFunction().end();
+}
+
 /*!
  * Check whether this value is blackhole object
  */

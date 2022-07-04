@@ -166,6 +166,8 @@ public:
     static bool argInNoCallerFunction(const Value *val);
     static bool isDeadFunction(const Function * fun);
     static bool isReturn(const Instruction *inst);
+    static bool functionDoesNotRet(const Function *fun);
+    static bool isPtrInDeadFunction (const Value * value);
 
     static inline bool isBlkPtr(NodeID id)
     {

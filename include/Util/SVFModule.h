@@ -70,6 +70,8 @@ private:
     Set<const Instruction*> isReturns;
     Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
+    Set<const Function*> functionDoesNotRet;
+    Set<const Value*> isPtrInDeadFunction;
 
 public:
     /// Constructors
@@ -235,9 +237,28 @@ public:
         return isDeadFunction;
     }
 
-    inline const Set<const Instruction*> getIsReturn()const 
+    inline const Set<const Instruction*> getIsReturn() const 
     {
         return isReturns;
+    }
+
+    inline const Set<const Function*> getFunctionDoesNotRet() const
+    {
+        return functionDoesNotRet;
+    }
+
+    inline const Set<const Value*> getPtrInDeadFunction() const 
+    {
+        return isPtrInDeadFunction;
+    }
+
+    inline void addPtrInDeadFunction (const Value * value){
+        isPtrInDeadFunction.insert(value);
+    }
+
+    inline void addFunctionDoesNotRet(const Function *fun)
+    {
+        functionDoesNotRet.insert(fun);
     }
 
     inline void addNullPtrSyms(const Value *val)
