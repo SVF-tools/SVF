@@ -203,7 +203,8 @@ void CFLAlias::analyze()
     }
     solver = new CFLSolver(graph, grammar);
     bool reanalyze = false;
-    
+    //solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(278),graph->getGNode(280), 1));
+    //solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(280),graph->getGNode(278), 12));
     do
     {
         solver->solve();
