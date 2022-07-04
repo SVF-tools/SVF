@@ -117,6 +117,10 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
             {
                 collectSym(ld->getPointerOperand());
             }
+            else if (const AllocaInst *alloc = SVFUtil::dyn_cast<AllocaInst>(inst))
+            {
+                collectSym(alloc->getArraySize());
+            }
             else if (const PHINode *phi = SVFUtil::dyn_cast<PHINode>(inst))
             {
                 for (u32_t i = 0; i < phi->getNumIncomingValues(); ++i)
