@@ -85,7 +85,6 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
     {
         Function *fun = *F;
-        collectDeadFunction(fun);
         collectSym(fun);
         collectRet(fun);
         if (fun->getFunctionType()->isVarArg())
@@ -96,7 +95,6 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                 I != E; ++I)
         {
             collectSym(&*I);
-            collectArgInNoCallerFunction(&*I);
         }
 
         // collect and create symbols inside the function body
@@ -104,7 +102,6 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
         {
             const Instruction *inst = &*II;
             collectSym(inst);
-            collectReturnInst(inst);
 
             // initialization for some special instructions
             //{@
@@ -213,22 +210,25 @@ void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
         symInfo->blackholeSyms.insert(val);
 }
 
-void SymbolTableBuilder::collectArgInNoCallerFunction(const Value *val)
-{
-    if (LLVMUtil::ArgInNoCallerFunction(val))
-        symInfo->getModule()->getArgInNoCallerFunction().insert(val);
-}
 
-void SymbolTableBuilder::collectDeadFunction(const Function * fun)
-{
-    if (LLVMUtil::isDeadFunction(fun))
-        symInfo->getModule()->getIsDeadFunction().insert(fun);
-}
-
-void SymbolTableBuilder::collectReturnInst(const Instruction *inst)
-{
-    if (LLVMUtil::isReturn(inst))
-        symInfo->getModule()->getIsReturn().insert(inst);
+void SymbolTableBuilder::collectSpecialSym(const Value* val){
+    if (SVFUtil::isa<Function>(val))
+    {
+        const Function* fun = SVFUtil::dyn_cast<Function>(val);
+        if (LLVMUtil::isDeadFunction(fun))
+            symInfo->getModule()->addDeadFunction(fun);
+    } 
+    else if (SVFUtil::isa<Instruction>(val))
+    {
+        const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val);
+        if (LLVMUtil::isReturn(inst))
+            symInfo->getModule()->addReturn(inst);
+    }
+    else if (SVFUtil::isa<Value>(val))
+    {
+       if (LLVMUtil::ArgInNoCallerFunction(val))
+            symInfo->getModule()->addArgInNoCallerFunction(val);
+    }
 }
 
 /*!
@@ -243,9 +243,11 @@ void SymbolTableBuilder::collectSym(const Value *val)
 
     //TODO handle constant expression value here??
     handleCE(val);
-
+    
     // create a value sym
     collectVal(val);
+
+    collectSpecialSym(val);
 
     // create an object If it is a heap, stack, global, function.
     if (isObject(val))

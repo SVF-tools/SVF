@@ -213,18 +213,32 @@ public:
         }
     }
 
-    inline Set<const Value*> getArgInNoCallerFunction()
+    inline const Set<const Value*> getArgInNoCallerFunction() const
     {
         return argInNoCallerFunction;
     }
 
-    inline Set<const Function*> getIsDeadFunction()
+    inline const Set<const Function*> getIsDeadFunction() const
     {
         return isDeadFunction;
     }
 
-    inline Set<const Instruction*> getIsReturn(){
+    inline const Set<const Instruction*> getIsReturn()const 
+    {
         return isReturns;
+    }
+
+    inline void addArgInNoCallerFunction(const Value *val){
+        argInNoCallerFunction.insert(val);
+    }
+
+    inline void addDeadFunction(const Function *fun)
+    {
+        isDeadFunction.insert(fun);
+    }
+
+    inline void addReturn(const Instruction* inst){
+        isReturns.insert(inst);
     }
 
 };
