@@ -70,10 +70,10 @@ void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
     CallICFGNode* callBlockNode = svfir->getICFG()->getCallICFGNode(cs.getInstruction());
     RetICFGNode* retBlockNode = svfir->getICFG()->getRetICFGNode(cs.getInstruction());
 
-    // if(SVFUtil::isHeapAllocExtFunViaRet(F) && svfir->callsiteHasRet(retBlockNode))
-    // {
-    //     heapAllocatorViaIndCall(cs,cpySrcNodes);
-    // }
+    if(SVFUtil::isHeapAllocExtFunViaRet(F) && svfir->callsiteHasRet(retBlockNode))
+    {
+        heapAllocatorViaIndCall(cs);
+    }
 
     if (svfir->funHasRet(F) && svfir->callsiteHasRet(retBlockNode))
     {
@@ -144,6 +144,31 @@ void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
     }
 }
 
+void CFLAlias::heapAllocatorViaIndCall(CallSite cs)
+{
+    assert(SVFUtil::getCallee(cs) == nullptr && "not an indirect callsite?");
+    RetICFGNode* retBlockNode = svfir->getICFG()->getRetICFGNode(cs.getInstruction());
+    const PAGNode* cs_return = svfir->getCallSiteRet(retBlockNode);
+    NodeID srcret;
+    CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
+    if(it != callsite2DummyValPN.end())
+    {
+        srcret = it->second;
+    }
+    else
+    {
+        NodeID valNode = svfir->addDummyValNode();
+        NodeID objNode = svfir->addDummyObjNode(cs.getType());
+        callsite2DummyValPN.insert(std::make_pair(cs,valNode));
+        graph->addCFLNode(valNode, new CFLNode(valNode));
+        graph->addCFLNode(objNode, new CFLNode(objNode));
+        srcret = valNode;
+    }
+
+    NodeID dstrec = cs_return->getId();
+    addCopyEdge(srcret, dstrec);
+}
+
 /*!
  * Update call graph for the input indirect callsites
  */
@@ -202,23 +227,9 @@ void CFLAlias::analyze()
         delete grammarBase;
     }
     solver = new CFLSolver(graph, grammar);
-    bool reanalyze = false;
-    //solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(278),graph->getGNode(280), 1));
-    //solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(280),graph->getGNode(278), 12));
-    do
-    {
+    solver->solve();
+    while (updateCallGraph(svfir->getIndirectCallsites()))
         solver->solve();
-        if ( updateCallGraph(svfir->getIndirectCallsites()))
-        {
-            reanalyze = true;
-        }
-        else{
-            reanalyze = false;
-        }
-        solver->reanalyze = reanalyze;
-    }
-    while (reanalyze);
-    
     std::string CFLGraphFileName = Options::InputFilename.c_str();
     graph->dump(CFLGraphFileName.append("_CFL"));
     if (Options::GraphIsFromDot == false)

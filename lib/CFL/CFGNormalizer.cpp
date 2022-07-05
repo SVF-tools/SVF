@@ -110,11 +110,11 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
             auto it = grammar->getRawProductions()[head.first].find(rule);
             grammar->getRawProductions()[head.first].erase(it);
             GrammarBase::Symbol X = check_head(new_grammar, long_run);
-            if (X == -1)
+            if (X == u32_t(-1))
             {
                 X = check_head(grammar->getRawProductions(), long_run);
             }
-            if ((X == -1) == false)
+            if ((X == u32_t(-1)) == false)
             {
                 rule = {first, X};
                 grammar->getRawProductions()[head.first].insert(rule);
@@ -171,11 +171,11 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
                 temp_p = long_run;
 
                 RHX = check_head(new_grammar, long_run);
-                if (RHX == -1)
+                if (RHX == u32_t(-1))
                 {
                     RHX = check_head(grammar->getRawProductions(), long_run);
                 }
-                if(RHX == -1)
+                if(RHX == u32_t(-1))
                 {
                     tempStr = "X";
                     std::ostringstream ss;

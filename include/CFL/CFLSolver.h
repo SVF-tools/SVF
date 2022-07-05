@@ -39,7 +39,6 @@ class CFLSolver
 {
 
 public:
-    bool reanalyze;
     /// Define worklist
     typedef FIFOWorkList<const CFLEdge*> WorkList;
     typedef CFLGrammar::Production Production;

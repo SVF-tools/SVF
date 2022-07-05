@@ -44,6 +44,8 @@ class CFLAlias : public PointerAnalysis
 {
 
 public:
+    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
+    
     CFLAlias(SVFIR* ir) : PointerAnalysis(ir, PointerAnalysis::CFLFICI_WPA), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
     {
     }
@@ -108,8 +110,10 @@ public:
             return false;
 
         }
-        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(src),graph->getGNode(dst), 1));
-        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(dst),graph->getGNode(src), 12));
+        CFLGrammar::Kind copyKind = grammar->str2Kind("Copy");
+        CFLGrammar::Kind copybarKind = grammar->str2Kind("Copybar");
+        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(src),graph->getGNode(dst), copyKind));
+        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(dst),graph->getGNode(src), copybarKind));
         return true;
     }
 
@@ -128,7 +132,10 @@ public:
 
     /// Connect formal and actual parameters for indirect callsites
     void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F);
+
+    void heapAllocatorViaIndCall(CallSite cs);
 private:
+    CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
     SVFIR* svfir;
     CFLGraph* graph;
     CFLGrammar* grammar;
