@@ -63,3 +63,8 @@ jobs:
         working-directory: ${{github.workspace}}/Release-build
         run:
           ctest -R mem_leak -VV      
+
+      - name: ctest cfl_test
+        working-directory: ${{github.workspace}}/Release-build
+        run: 
+          ctest -R cfl_test -VV
