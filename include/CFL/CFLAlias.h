@@ -45,7 +45,7 @@ class CFLAlias : public PointerAnalysis
 
 public:
     typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
-    
+
     CFLAlias(SVFIR* ir) : PointerAnalysis(ir, PointerAnalysis::CFLFICI_WPA), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
     {
     }
@@ -88,7 +88,7 @@ public:
             {
                 // Need to Find dst addr src
                 CFLNode *vNode = graph->getGNode((*outedge)->getDstID());
-                
+
                 for(auto inEdge = vNode->getInEdges().begin(); inEdge!=vNode->getInEdges().end(); inEdge++)
                 {
                     if((*inEdge)->getEdgeKind() == 0)
