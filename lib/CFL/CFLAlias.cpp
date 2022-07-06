@@ -210,10 +210,6 @@ void CFLAlias::analyze()
         cflChecker.check(grammarBase, &cflGraphBuilder, graph);
         grammar = normalizer.normalize(grammarBase);
         cflChecker.check(grammar, &cflGraphBuilder, graph);
-        std::string svfirName = Options::InputFilename.c_str();
-        svfir->dump(svfirName.append("_IR"));
-        std::string grammarName = Options::InputFilename.c_str();
-        grammar->dump(grammarName.append("_Grammar"));
         delete consCG;
         delete grammarBase;
     }
@@ -230,8 +226,15 @@ void CFLAlias::analyze()
     solver->solve();
     while (updateCallGraph(svfir->getIndirectCallsites()))
         solver->solve();
-    std::string CFLGraphFileName = Options::InputFilename.c_str();
-    graph->dump(CFLGraphFileName.append("_CFL"));
+    if(Options::PrintCFL == true)
+    {
+        std::string svfirName = Options::InputFilename.c_str();
+        svfir->dump(svfirName.append("_IR"));
+        std::string grammarName = Options::InputFilename.c_str();
+        grammar->dump(grammarName.append("_Grammar"));
+        std::string CFLGraphFileName = Options::InputFilename.c_str();
+        graph->dump(CFLGraphFileName.append("_CFL"));
+    }
     if (Options::GraphIsFromDot == false)
     {
         PointerAnalysis::finalize();
