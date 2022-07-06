@@ -248,8 +248,8 @@ public:
     static const llvm::cl::opt<bool> ShowHiddenNode;
 
     // CFL option
-    static const llvm::cl::opt<std::string> InputFilename;
     static const llvm::cl::opt<std::string> GrammarFilename;
+    static const llvm::cl::opt<std::string> InputFilename;
     static const llvm::cl::opt<bool> GraphIsFromDot;
     static const llvm::cl::opt<bool> PrintCFL;
     static const llvm::cl::opt<bool> FlexSymMap;
