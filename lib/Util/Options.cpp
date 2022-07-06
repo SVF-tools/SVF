@@ -778,7 +778,7 @@ const llvm::cl::opt<bool> Options::ShowHiddenNode(
 );
 
 const llvm::cl::opt<std::string> Options::GrammarFilename(
-    llvm::cl::Positional,
+    "grammar",
     llvm::cl::desc("<Grammar textfile>"),
     llvm::cl::init("-")
 );
