@@ -72,15 +72,25 @@ std::string ExtAPI::get_name(const SVFFunction *F)
 // Get environment variables $SVF_DIR and "npm root" through popen() method
 std::string GetStdoutFromCommand(std::string command)
 {
-    char buffer[80];
-    FILE *fp = popen(command.c_str(), "r");
-    fgets(buffer, sizeof(buffer), fp);
-    std::string path = "";
-    path += buffer;
+    char buffer[128];
+    std::string result = "";
+    // Open pipe to file
+    FILE *pipe = popen(command.c_str(), "r");
+    if (!pipe)
+    {
+        return "popen failed!";
+    }
+    // read till end of process:
+    while (!feof(pipe))
+    {
+        // use buffer to read and add to result
+        if (fgets(buffer, 128, pipe) != NULL)
+            result += buffer;
+    }
+    pclose(pipe);
     // remove "\n"
-    path.erase(remove(path.begin(), path.end(), '\n'), path.end());
-    pclose(fp);
-    return path;
+    result.erase(remove(result.begin(), result.end(), '\n'), result.end());
+    return result;
 }
 
 // Get ExtAPI.json file
@@ -148,7 +158,7 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
         u32_t size = fread(jsonStr, sizeof(char), fileSize, file);
         if (size == 0)
         {
-            assert("read Json file fails!");
+            assert(false && "Read ExtAPI.json file fails!");
             return nullptr;
         }
         fclose(file);
