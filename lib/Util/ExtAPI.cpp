@@ -69,11 +69,69 @@ std::string ExtAPI::get_name(const SVFFunction *F)
     return funName;
 }
 
+std::string GetStdoutFromCommand(std::string command)
+{
+    char buffer[128];
+    std::string result = "";
+
+    // Open pipe to file
+    FILE *pipe = popen(command.c_str(), "r");
+    if (!pipe)
+    {
+        return "popen failed!";
+    }
+
+    // read till end of process:
+    while (!feof(pipe))
+    {
+
+        // use buffer to read and add to result
+        if (fgets(buffer, 128, pipe) != NULL)
+            result += buffer;
+    }
+
+    pclose(pipe);
+    // remove "\n"
+    result.erase(remove(result.begin(), result.end(), '\n'), result.end());
+    return result;
+}
+
+// Get ExtAPI.json
+FILE *getJsonFile(std::string path)
+{
+    std::string jsonFilePath = GetStdoutFromCommand(path);
+    if (path.compare("npm root") == 0)
+    {
+        std::string json_path = "";
+        int os_flag = 1;
+#ifdef linux
+        os_flag = 0;
+        json_path = "/svf-lib/SVF-linux";
+#endif
+        if (os_flag == 1)
+        {
+            json_path = "/svf-lib/SVF-osx";
+        }
+        jsonFilePath.append(json_path);
+    }
+    jsonFilePath.append(EXTAPI_JSON_PATH);
+    FILE *file = nullptr;
+    file = fopen(jsonFilePath.c_str(), "r");
+    if (file != nullptr)
+    {
+        return file;
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
 // Get specifications of external functions in ExtAPI.json file
 cJSON *ExtAPI::get_FunJson(const std::string funName)
 {
 
-    if(!root)
+    if (!root)
     {
         std::string jsonFilePath = PROJECT_PATH;
         jsonFilePath.append(EXTAPI_JSON_PATH);
@@ -82,8 +140,16 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
         file = fopen(jsonFilePath.c_str(), "r");
         if (file == nullptr)
         {
-            assert("Open Json file fails!");
-            return nullptr;
+            file = getJsonFile("$SVF_DIR");
+            if (file == nullptr)
+            {
+                file = getJsonFile("npm root");
+                if (file == nullptr)
+                {
+                    assert(false && "Open Json file fails!");
+                    return nullptr;
+                }
+            }
         }
         // get file size
         struct stat statbuf;
@@ -276,5 +342,3 @@ bool ExtAPI::is_ext(const SVFFunction *F)
     }
     return res;
 }
-
-
