@@ -68,14 +68,6 @@ public:
     {
         return grammar;
     }
-
-protected:
-    /// Worklist operations
-    //@{
-    inline const CFLEdge* popFromWorklist()
-    {
-        return worklist.pop();
-    }
     inline bool pushIntoWorklist(const CFLEdge* item)
     {
         return worklist.push(item);
@@ -84,6 +76,15 @@ protected:
     {
         return worklist.empty();
     }
+
+protected:
+    /// Worklist operations
+    //@{
+    inline const CFLEdge* popFromWorklist()
+    {
+        return worklist.pop();
+    }
+
     inline bool isInWorklist(const CFLEdge* item)
     {
         return worklist.find(item);
@@ -95,6 +96,7 @@ private:
     CFLGrammar* grammar;
     /// Worklist for resolution
     WorkList worklist;
+
 };
 
 }

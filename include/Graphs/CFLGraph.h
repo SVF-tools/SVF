@@ -111,7 +111,6 @@ public:
 
 private:
     CFLEdgeSet cflEdgeSet;
-
 };
 
 }

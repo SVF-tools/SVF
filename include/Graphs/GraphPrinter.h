@@ -28,8 +28,8 @@
  *      Author: Yulei
  */
 
-#ifndef INCLUDE_UTIL_GRAPHPRINTER_H_
-#define INCLUDE_UTIL_GRAPHPRINTER_H_
+#ifndef INCLUDE_GRAPHS_GRAPHPRINTER_H_
+#define INCLUDE_GRAPHS_GRAPHPRINTER_H_
 
 #include <system_error>
 #include <llvm/Support/ToolOutputFile.h>
@@ -116,4 +116,4 @@ public:
 
 
 
-#endif /* INCLUDE_UTIL_GRAPHPRINTER_H_ */
+#endif /* INCLUDE_GRAPHS_GRAPHPRINTER_H_ */

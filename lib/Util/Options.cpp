@@ -777,15 +777,15 @@ const llvm::cl::opt<bool> Options::ShowHiddenNode(
     llvm::cl::desc("Show hidden nodes on DOT Graphs (e.g., isolated node on a graph)")
 );
 
-const llvm::cl::opt<std::string> Options::InputFilename(
-    llvm::cl::Positional,
-    llvm::cl::desc("<input bitcode>"),
+const llvm::cl::opt<std::string> Options::GrammarFilename(
+    "grammar",
+    llvm::cl::desc("<Grammar textfile>"),
     llvm::cl::init("-")
 );
 
-const llvm::cl::opt<std::string> Options::GrammarFilename(
+const llvm::cl::opt<std::string> Options::InputFilename(
     llvm::cl::Positional,
-    llvm::cl::desc("<Grammar textfile>"),
+    llvm::cl::desc("<input bitcode>"),
     llvm::cl::init("-")
 );
 
@@ -795,10 +795,10 @@ const llvm::cl::opt<bool> Options::GraphIsFromDot(
     llvm::cl::desc("Dot text as graph input")
 );
 
-const llvm::cl::opt<bool> Options::GrammarIsEBNF(
-    "ebnf-grammar",
+const llvm::cl::opt<bool> Options::PrintCFL(
+    "print-cfl",
     llvm::cl::init(false),
-    llvm::cl::desc("EBNF grammar as grammar input")
+    llvm::cl::desc("print ir, grammar and cflgraph for debug.")
 );
 
 const llvm::cl::opt<bool> Options::FlexSymMap(
