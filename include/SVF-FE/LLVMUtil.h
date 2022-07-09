@@ -157,7 +157,7 @@ inline bool ArgInNoCallerFunction (const Value * val)
 //@}
 
 /// Return true if the function has a return instruction reachable from function entry
-bool functionDoesNotRet (const Function * fun, const SVFFunction * svffun);
+bool functionDoesNotRet (const Function * fun);
 
 /// Get reachable basic block from function entry
 void getFunReachableBBs (const Function * fun, DominatorTree* dt,std::vector<const BasicBlock*>& bbs);
@@ -166,6 +166,8 @@ void getFunReachableBBs (const Function * fun, DominatorTree* dt,std::vector<con
 /// FIXME: this back() here is only valid when UnifyFunctionExitNodes pass is invoked
 inline const BasicBlock* getFunExitBB(const Function* fun)
 {
+    const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+    assert(SVFUtil::isExtCall(svffun) == false);
     return &fun->back();
 }
 /// Strip off the constant casts

@@ -205,10 +205,8 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
 {
     if (LLVMUtil::isNullPtrSym(val))
-        // symInfo->nullPtrSyms.insert(val);
         symInfo->getModule()->addNullPtrSyms(val);
     if (LLVMUtil::isBlackholeSym(val))
-        // symInfo->blackholeSyms.insert(val);
         symInfo->getModule()->addBlackholeSyms(val);
 }
 
@@ -221,11 +219,12 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
         {
             symInfo->getModule()->addDeadFunction(fun);
         } 
-        else if (LLVMUtil::functionDoesNotRet(fun, svffun))
+        else if (LLVMUtil::functionDoesNotRet(fun))
         {
             symInfo->getModule()->addFunctionDoesNotRet(fun);
         }
-        if (!isExtCall(svffun)){
+        if (!isExtCall(svffun))
+        {
             const BasicBlock* bb = LLVMUtil::getFunExitBB(fun);
             symInfo->getModule()->addFunExitBB(fun,bb);
         }

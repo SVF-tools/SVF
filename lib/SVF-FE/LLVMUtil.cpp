@@ -120,8 +120,9 @@ void LLVMUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std:
 /*!
  * Return true if the function has a return instruction reachable from function entry
  */
-bool LLVMUtil::functionDoesNotRet (const Function * fun, const SVFFunction * svffun)
+bool LLVMUtil::functionDoesNotRet (const Function * fun)
 {
+    const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
     if (SVFUtil::isExtCall(svffun)){
         return fun->getReturnType()->isVoidTy();
     }

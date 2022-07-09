@@ -260,6 +260,8 @@ public:
 
     inline void addFunExitBB(const Function *fun, const BasicBlock* bb)
     {
+        const SVFFunction* svffun = getSVFFunction(fun);
+        assert((fun && ExtAPI::getExtAPI()->is_ext(svffun)) == false);
         funExitBBMap.insert({fun,bb});
     }
 
