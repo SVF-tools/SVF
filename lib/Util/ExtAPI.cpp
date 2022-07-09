@@ -69,70 +69,54 @@ std::string ExtAPI::get_name(const SVFFunction *F)
     return funName;
 }
 
+// Get environment variables $SVF_DIR and "npm root" through popen() method
 std::string GetStdoutFromCommand(std::string command)
 {
-    char buffer[128];
-    std::string result = "";
-
-    // Open pipe to file
-    FILE *pipe = popen(command.c_str(), "r");
-    if (!pipe)
-    {
-        return "popen failed!";
-    }
-
-    // read till end of process:
-    while (!feof(pipe))
-    {
-
-        // use buffer to read and add to result
-        if (fgets(buffer, 128, pipe) != NULL)
-            result += buffer;
-    }
-
-    pclose(pipe);
+    char buffer[80];
+    FILE *fp = popen(command.c_str(), "r");
+    fgets(buffer, sizeof(buffer), fp);
+    std::string path = "";
+    path += buffer;
     // remove "\n"
-    result.erase(remove(result.begin(), result.end(), '\n'), result.end());
-    return result;
+    path.erase(remove(path.begin(), path.end(), '\n'), path.end());
+    pclose(fp);
+    return path;
 }
 
-// Get ExtAPI.json
+// Get ExtAPI.json file
 FILE *getJsonFile(std::string path)
 {
     std::string jsonFilePath = GetStdoutFromCommand(path);
     if (path.compare("npm root") == 0)
     {
-        std::string json_path = "";
         int os_flag = 1;
+        // SVF installed via npm needs to determine the type of operating system, otherwise the ExtAPI.json path may not be found
+        // Linux os
 #ifdef linux
         os_flag = 0;
-        json_path = "/svf-lib/SVF-linux";
+        jsonFilePath.append("/svf-lib/SVF-linux");
 #endif
+        // Mac os
         if (os_flag == 1)
         {
-            json_path = "/svf-lib/SVF-osx";
+            jsonFilePath.append("/svf-lib/SVF-osx");
         }
-        jsonFilePath.append(json_path);
     }
     jsonFilePath.append(EXTAPI_JSON_PATH);
     FILE *file = nullptr;
     file = fopen(jsonFilePath.c_str(), "r");
-    if (file != nullptr)
-    {
-        return file;
-    }
-    else
-    {
-        return nullptr;
-    }
+    return file;
 }
 
 // Get specifications of external functions in ExtAPI.json file
 cJSON *ExtAPI::get_FunJson(const std::string funName)
 {
-
     if (!root)
     {
+        // Three ways to get ExtAPI.json path
+        // 1. default path(get ExtAPI.json path from Util/config.h)
+        // 2. from $SVF_DIR
+        // 3. from "npm root"(If SVF is installed via npm)
         std::string jsonFilePath = PROJECT_PATH;
         jsonFilePath.append(EXTAPI_JSON_PATH);
         // open file
@@ -146,7 +130,7 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
                 file = getJsonFile("npm root");
                 if (file == nullptr)
                 {
-                    assert(false && "Open Json file fails!");
+                    assert(false && "Open ExtAPI.json file fails!");
                     return nullptr;
                 }
             }
