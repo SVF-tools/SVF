@@ -109,19 +109,14 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
             long_run.erase(long_run.begin());
             auto it = grammar->getRawProductions()[head.first].find(rule);
             grammar->getRawProductions()[head.first].erase(it);
-            rule = {first};
-            grammar->getRawProductions()[head.first].insert(rule);
-
             GrammarBase::Symbol X = check_head(new_grammar, long_run);
-            if (X == -1)
+            if (X == u32_t(-1))
             {
                 X = check_head(grammar->getRawProductions(), long_run);
             }
-            if ((X == -1) == false)
+            if ((X == u32_t(-1)) == false)
             {
-                it = grammar->getRawProductions()[head.first].find(rule);
-                grammar->getRawProductions()[head.first].erase(it);
-                rule.push_back(X);
+                rule = {first, X};
                 grammar->getRawProductions()[head.first].insert(rule);
             }
             else
@@ -149,9 +144,7 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
                     tempStr += char(*variableAttributeSet.begin());
                 }
                 GrammarBase::Symbol tempSym = grammar->insertNonTerminalSymbol(tempStr);
-                it = grammar->getRawProductions()[head.first].find(rule);
-                grammar->getRawProductions()[head.first].erase(it);
-                rule.push_back(tempSym);
+                rule = {first, tempSym};
                 grammar->getRawProductions()[head.first].insert(rule);
                 X = tempSym;
             }
@@ -178,11 +171,11 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
                 temp_p = long_run;
 
                 RHX = check_head(new_grammar, long_run);
-                if (RHX == -1)
+                if (RHX == u32_t(-1))
                 {
                     RHX = check_head(grammar->getRawProductions(), long_run);
                 }
-                if(RHX == -1)
+                if(RHX == u32_t(-1))
                 {
                     tempStr = "X";
                     std::ostringstream ss;
@@ -269,7 +262,7 @@ GrammarBase::Productions CFGNormalizer::getFilledProductions(GrammarBase::Produc
             filledProductioins.insert(currentProduction);
             continue;
         }
-        auto nodeSet = {0, 1, 2, 7};                 //*(kind2AttriMap.find(baseKind));
+        auto nodeSet = {0, 1, 2, 3, 4, 5, 6, 7, 20};                 //*(kind2AttriMap.find(baseKind));
         //for (auto attribute : nodeSet.second)
         for (auto attribute : nodeSet)
         {
@@ -279,6 +272,7 @@ GrammarBase::Productions CFGNormalizer::getFilledProductions(GrammarBase::Produc
                 if ( symbol.variableAttribute == currentVariableAttribute)
                 {
                     symbol.attribute = attribute;
+                    symbol.variableAttribute = 0;
                 }
             }
             /// Check whether all symbol expanded
