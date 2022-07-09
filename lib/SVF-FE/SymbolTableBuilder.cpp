@@ -216,21 +216,24 @@ void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
 void SymbolTableBuilder::collectSpecialSym(const Value* val){
     if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
     {
+        const SVFFunction *svffun = symInfo->getModule()->getSVFFunction(fun);
         if (LLVMUtil::isDeadFunction(fun))
         {
             symInfo->getModule()->addDeadFunction(fun);
         } 
+        else if (LLVMUtil::functionDoesNotRet(fun, svffun))
+        {
+            symInfo->getModule()->addFunctionDoesNotRet(fun);
+        }
+        if (!isExtCall(svffun)){
+            const BasicBlock* bb = LLVMUtil::getFunExitBB(fun);
+            symInfo->getModule()->addFunExitBB(fun,bb);
+        }
     } 
     else if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
     {
         if (LLVMUtil::isReturn(inst))
             symInfo->getModule()->addReturn(inst);
-    }
-    else if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
-    {
-        if (LLVMUtil::functionDoesNotRet(fun)){
-            symInfo->getModule()->addFunctionDoesNotRet(fun);
-        }
     }
     else if (SVFUtil::isa<Value>(val))
     {

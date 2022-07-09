@@ -120,9 +120,11 @@ void LLVMUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std:
 /*!
  * Return true if the function has a return instruction reachable from function entry
  */
-bool LLVMUtil::functionDoesNotRet (const Function * fun)
+bool LLVMUtil::functionDoesNotRet (const Function * fun, const SVFFunction * svffun)
 {
-
+    if (SVFUtil::isExtCall(svffun)){
+        return fun->getReturnType()->isVoidTy();
+    }
     std::vector<const BasicBlock*> bbVec;
     Set<const BasicBlock*> visited;
     bbVec.push_back(&fun->getEntryBlock());

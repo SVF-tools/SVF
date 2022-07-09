@@ -351,6 +351,14 @@ bool SymbolTableInfo::isPtrInDeadFunction (const Value * value)
     return symInfo->getModule()->getPtrInDeadFunction().find(value) != symInfo->getModule()->getPtrInDeadFunction().end();
 }
 
+const BasicBlock* SymbolTableInfo::getFunExitBB(const Function* fun)
+{
+    if (symInfo->getModule()->getFunExitBBMap().find(fun) != symInfo->getModule()->getFunExitBBMap().end()){
+        return symInfo->getModule()->getFunExitBBMap().find(fun)->second;
+    }
+    return NULL;
+}
+
 /*!
  * Check whether this value is blackhole object
  */

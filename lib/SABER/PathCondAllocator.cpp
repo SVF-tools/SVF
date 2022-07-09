@@ -485,7 +485,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeInterCallVFGGuard(const 
  */
 PathCondAllocator::Condition* PathCondAllocator::ComputeInterRetVFGGuard(const BasicBlock*  srcBB, const BasicBlock*  dstBB, const BasicBlock* retBB)
 {
-    const BasicBlock* funExitBB = getFunExitBB(srcBB->getParent());
+    const BasicBlock* funExitBB = SymbolTableInfo::getFunExitBB(srcBB->getParent());
 
     Condition* c1 = ComputeIntraVFGGuard(srcBB,funExitBB);
     setCFCond(retBB,condOr(getCFCond(retBB),getCFCond(funExitBB)));

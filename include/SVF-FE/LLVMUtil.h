@@ -157,7 +157,7 @@ inline bool ArgInNoCallerFunction (const Value * val)
 //@}
 
 /// Return true if the function has a return instruction reachable from function entry
-bool functionDoesNotRet (const Function * fun);
+bool functionDoesNotRet (const Function * fun, const SVFFunction * svffun);
 
 /// Get reachable basic block from function entry
 void getFunReachableBBs (const Function * fun, DominatorTree* dt,std::vector<const BasicBlock*>& bbs);

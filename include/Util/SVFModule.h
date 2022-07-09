@@ -72,6 +72,7 @@ private:
     Set<const Value*> blackholeSyms;
     Set<const Function*> functionDoesNotRet;
     Set<const Value*> isPtrInDeadFunction;
+    Map<const Function*, const BasicBlock*> funExitBBMap;
 
 public:
     /// Constructors
@@ -250,6 +251,16 @@ public:
     inline const Set<const Value*> getPtrInDeadFunction() const 
     {
         return isPtrInDeadFunction;
+    }
+
+    inline const Map<const Function*, const BasicBlock*> getFunExitBBMap()
+    {
+        return funExitBBMap;
+    }
+
+    inline void addFunExitBB(const Function *fun, const BasicBlock* bb)
+    {
+        funExitBBMap.insert({fun,bb});
     }
 
     inline void addPtrInDeadFunction (const Value * value){
