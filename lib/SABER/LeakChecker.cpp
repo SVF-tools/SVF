@@ -28,12 +28,10 @@
  */
 
 #include "Util/Options.h"
-#include "SVF-FE/LLVMUtil.h"
 #include "SABER/LeakChecker.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
 
 
 /*!
@@ -89,7 +87,7 @@ void LeakChecker::initSrcs()
                     else
                     {
                         // exclude sources in dead functions
-                        if (isPtrInDeadFunction(cs->getCallSite()) == false)
+                        if (SymbolTableInfo::isPtrInDeadFunction(cs->getCallSite()) == false)
                         {
                             addToSources(node);
                             addSrcToCSID(node, cs);

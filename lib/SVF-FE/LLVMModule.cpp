@@ -206,7 +206,14 @@ void LLVMModuleSet::initialize()
                 it != eit; ++it)
         {
             Function *func = &*it;
-            svfModule->addFunctionSet(func);
+            SVFFunction* svfFunc = new SVFFunction(func);
+            if (SVFUtil::isExtCall(svfFunc) == false)
+            {
+                std::vector<const BasicBlock*> reachableBBs;
+                LLVMUtil::getFunReachableBBs(svfFunc, reachableBBs);
+                svfFunc = new SVFFunction(func,reachableBBs);
+            }
+            svfModule->addFunctionSet(func, svfFunc);
         }
 
         /// GlobalVariable

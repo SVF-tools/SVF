@@ -29,7 +29,6 @@
  */
 
 #include "Util/Options.h"
-#include "SVF-FE/LLVMUtil.h"
 #include "SABER/PathCondAllocator.h"
 #include "Util/DPItem.h"
 #include "Graphs/SVFG.h"
@@ -37,7 +36,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
 
 u64_t DPItem::maximumBudget = ULONG_MAX - 1;
 u32_t ContextCond::maximumCxtLen = 0;
@@ -83,7 +81,7 @@ void PathCondAllocator::allocate(const SVFModule* M)
 void PathCondAllocator::allocateForBB(const BasicBlock & bb)
 {
 
-    u32_t succ_number = getBBSuccessorNum(&bb);
+    u32_t succ_number = SymbolTableInfo::getBBSuccessorNum(&bb);
 
     // if successor number greater than 1, allocate new decision variable for successors
     if(succ_number > 1)
@@ -138,8 +136,8 @@ void PathCondAllocator::allocateForBB(const BasicBlock & bb)
  */
 PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const
 {
-    u32_t pos = getBBSuccessorPos(bb,succ);
-    if(getBBSuccessorNum(bb) == 1)
+    u32_t pos = SymbolTableInfo::getBBSuccessorPos(bb,succ);
+    if(SymbolTableInfo::getBBSuccessorNum(bb) == 1)
         return getTrueCond();
     else
     {
@@ -165,8 +163,8 @@ PathCondAllocator::Condition* PathCondAllocator::getEvalBrCond(const BasicBlock 
 void PathCondAllocator::setBranchCond(const BasicBlock *bb, const BasicBlock *succ, Condition* cond)
 {
     /// we only care about basic blocks have more than one successor
-    assert(getBBSuccessorNum(bb) > 1 && "not more than one successor??");
-    u32_t pos = getBBSuccessorPos(bb,succ);
+    assert(SymbolTableInfo::getBBSuccessorNum(bb) > 1 && "not more than one successor??");
+    u32_t pos = SymbolTableInfo::getBBSuccessorPos(bb,succ);
     CondPosMap& condPosMap = bbConds[bb];
 
     /// FIXME: llvm getNumSuccessors allows duplicated block in the successors, it makes this assertion fail
@@ -295,7 +293,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
  */
 PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ)
 {
-    if(getBBSuccessorNum(bb) == 1)
+    if(SymbolTableInfo::getBBSuccessorNum(bb) == 1)
     {
         assert(bb->getTerminator()->getSuccessor(0) == succ && "not the unique successor?");
         return getTrueCond();

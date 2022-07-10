@@ -73,6 +73,10 @@ private:
     Set<const Function*> functionDoesNotRet;
     Set<const Value*> isPtrInDeadFunction;
     Map<const Function*, const BasicBlock*> funExitBBMap;
+    Map<const BasicBlock*, const u32_t> BBSuccessorNumMap;
+    Map<const PointerType*, const Type*> ptrElementTypeMap;
+    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> BBSuccessorPosMap;
+    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> BBPredecessorPosMap;
 
 public:
     /// Constructors
@@ -110,9 +114,8 @@ public:
     void buildSymbolTableInfo();
 
     ///@{
-    inline void addFunctionSet(Function* fun)
+    inline void addFunctionSet(Function* fun, SVFFunction* svfFunc)
     {
-        SVFFunction* svfFunc = new SVFFunction(fun);
         FunctionSet.push_back(svfFunc);
         LLVMFunctionSet.push_back(fun);
         LLVMFunc2SVFFunc[fun] = svfFunc;
@@ -258,11 +261,68 @@ public:
         return funExitBBMap;
     }
 
+    inline const Map<const BasicBlock*, const u32_t> getBBSuccessorNumMap()
+    {
+        return BBSuccessorNumMap;
+    }
+
+    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> getBBSuccessorPosMap()
+    {
+        return BBSuccessorPosMap;
+    }
+
+    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> getBBPredecessorPosMap(){
+        return BBPredecessorPosMap;
+    }
+
+    inline const Map<const PointerType*, const Type*> getPtrElementTypeMap()
+    {
+        return ptrElementTypeMap;
+    }
+
     inline void addFunExitBB(const Function *fun, const BasicBlock* bb)
     {
         const SVFFunction* svffun = getSVFFunction(fun);
         assert((fun && ExtAPI::getExtAPI()->is_ext(svffun)) == false);
         funExitBBMap.insert({fun,bb});
+    }
+
+    inline void addBBSuccessorNum(const BasicBlock *bb, const u32_t num)
+    {
+        BBSuccessorNumMap.insert({bb,num});
+    }
+
+    inline void addBBSuccessorPos(const BasicBlock *bb, const BasicBlock* succ,const u32_t pos)
+    {
+        if(BBSuccessorPosMap.find(bb) != BBSuccessorPosMap.end()){
+            Map<const BasicBlock*, const u32_t> foundValue = BBSuccessorPosMap.find(bb)->second;
+            foundValue.insert({succ,pos});
+             BBSuccessorPosMap.insert({bb,foundValue});
+        } 
+        else {
+            Map<const BasicBlock*, const u32_t> valueMap;
+            valueMap.insert({succ,pos});
+            BBSuccessorPosMap.insert({bb,valueMap});
+        }
+    }
+
+    inline void addBBPredecessorPos(const BasicBlock *bb, const BasicBlock* Pred,const u32_t pos)
+    {
+        if(BBPredecessorPosMap.find(bb) != BBPredecessorPosMap.end()){
+            Map<const BasicBlock*, const u32_t> foundValue = BBPredecessorPosMap.find(bb)->second;
+            foundValue.insert({Pred,pos});
+            BBPredecessorPosMap.insert({bb,foundValue});
+        } 
+        else {
+            Map<const BasicBlock*, const u32_t> valueMap;
+            valueMap.insert({Pred,pos});
+            BBPredecessorPosMap.insert({bb,valueMap});
+        }
+    }
+
+    inline void addptrElementType(const PointerType* ptrType, const Type* type)
+    {
+        ptrElementTypeMap.insert({ptrType, type});
     }
 
     inline void addPtrInDeadFunction (const Value * value){

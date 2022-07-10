@@ -225,14 +225,47 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
         }
         if (!isExtCall(svffun))
         {
-            const BasicBlock* bb = LLVMUtil::getFunExitBB(fun);
-            symInfo->getModule()->addFunExitBB(fun,bb);
+            const BasicBlock* exitBB = LLVMUtil::getFunExitBB(fun);
+            symInfo->getModule()->addFunExitBB(fun,exitBB);
+
+            for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
+            {
+                const BasicBlock *bb = &*bit;
+                const u32_t num = LLVMUtil::getBBSuccessorNum(bb);
+                symInfo->getModule()->addBBSuccessorNum(bb,num);
+                if (num >1)
+                {
+                    for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
+                    {
+                        const BasicBlock* succ = *succ_it;
+                        const u32_t successorPos = LLVMUtil::getBBSuccessorPos(bb,succ);
+                        if (successorPos != 0)
+                        {
+                            symInfo->getModule()->addBBSuccessorPos(bb,succ,successorPos);
+                        }
+                    }
+                }
+                for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
+                {
+                    const BasicBlock* succ = *succ_it;
+                    const u32_t predecessorPos = LLVMUtil::getBBPredecessorPos(bb,succ);
+                    if (predecessorPos != 0)
+                    {
+                        symInfo->getModule()->addBBPredecessorPos(bb,succ,predecessorPos);
+                    }
+                }
+            }
         }
     } 
     else if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
     {
         if (LLVMUtil::isReturn(inst))
             symInfo->getModule()->addReturn(inst);
+    }
+    else if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
+    {
+        const Type* type = LLVMUtil::getPtrElementType(ptrType);
+        symInfo->getModule()->addptrElementType(ptrType, type);
     }
     else if (SVFUtil::isa<Value>(val))
     {

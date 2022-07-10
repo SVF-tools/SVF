@@ -91,17 +91,22 @@ bool LLVMUtil::isConstantObjSym(const Value *val)
 /*!
  * Return reachable bbs from function entry
  */
-void LLVMUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::vector<const BasicBlock*> &reachableBBs)
+void LLVMUtil::getFunReachableBBs (const SVFFunction* svffun, std::vector<const BasicBlock*> &reachableBBs)
 {
+    assert(SVFUtil::isExtCall(svffun) == false);
+    //initial DominatorTree
+    DominatorTree dt;
+    dt.recalculate(*svffun->getLLVMFun());
+
     Set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;
-    bbVec.push_back(&fun->getEntryBlock());
+    bbVec.push_back(&svffun->getLLVMFun()->getEntryBlock());
     while(!bbVec.empty())
     {
         const BasicBlock* bb = bbVec.back();
         bbVec.pop_back();
         reachableBBs.push_back(bb);
-        if(DomTreeNode *dtNode = dt->getNode(const_cast<BasicBlock*>(bb)))
+        if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb)))
         {
             for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end();
                     DI != DE; ++DI)

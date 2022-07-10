@@ -28,15 +28,12 @@
  */
 
 #include "Util/Options.h"
-#include "SVF-FE/LLVMUtil.h"
 #include "MSSA/MemPartition.h"
 #include "MSSA/MemSSA.h"
 #include "Graphs/SVFGStat.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
-
 
 double MemSSA::timeOfGeneratingMemRegions = 0;	///< Time for allocating regions
 double MemSSA::timeOfCreateMUCHI  = 0;	///< Time for generating mu/chi for load/store/calls
@@ -148,8 +145,7 @@ void MemSSA::createMUCHI(const SVFFunction& fun)
 
     /// get all reachable basic blocks from function entry
     /// ignore dead basic blocks
-    BBList reachableBBs;
-    getFunReachableBBs(fun.getLLVMFun(),getDT(fun),reachableBBs);
+    BBList reachableBBs = fun.getReachableBBs();
 
     for (BBList::const_iterator iter = reachableBBs.begin(), eiter = reachableBBs.end();
             iter != eiter; ++iter)
@@ -339,7 +335,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
             sit != esit; ++sit)
     {
         const BasicBlock* succ = *sit;
-        u32_t pos = getBBPredecessorPos(&bb, succ);
+        u32_t pos = SymbolTableInfo::getBBPredecessorPos(&bb, succ);
         if (hasPHISet(succ))
             RenamePhiOps(getPHISet(succ),pos,memRegs);
     }

@@ -172,7 +172,7 @@ cJSON *ExtAPI::get_FunJson(const std::string funName)
         }
         free(jsonStr);
     }
-    return cJSON_GetObjectItem(root, funName.c_str());
+    return cJSON_GetObjectItemCaseSensitive(root, funName.c_str());
 }
 
 // Get arguments of the operation, e.g. ["A1R", "A0", "A2"]

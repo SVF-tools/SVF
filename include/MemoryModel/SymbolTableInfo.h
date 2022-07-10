@@ -169,6 +169,10 @@ public:
     static bool functionDoesNotRet(const Function *fun);
     static bool isPtrInDeadFunction (const Value * value);
     static const BasicBlock* getFunExitBB(const Function* fun);
+    static const u32_t getBBSuccessorNum(const BasicBlock *bb);
+    static const Type* getPtrElementType(const PointerType* pty);
+    static const u32_t getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ);
+    static const u32_t getBBPredecessorPos(const BasicBlock *BB, const BasicBlock *Pred);
 
     static inline bool isBlkPtr(NodeID id)
     {
