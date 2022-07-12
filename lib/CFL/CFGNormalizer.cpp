@@ -96,10 +96,11 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
         }
     }
 
-    auto &rawProductions = grammar->getRawProductions();
+    auto rawProductions = grammar->getRawProductions();
 
-    for(auto head : rawProductions)
+    for(auto itr : rawProductions)
     {
+        auto head = *(grammar->getRawProductions().find(itr.first));
         for(auto rule: head.second)
         {
             if (rule.size() < 3) continue;
@@ -203,20 +204,17 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
                     RHX = tempSym;
                 }
             }
-
-
-            for (auto new_head : new_grammar)
+        }
+    }
+    for (auto new_head : new_grammar)
+    {
+        for (auto prod : new_head.second)
+        {
+            auto it = grammar->getRawProductions()[new_head.first].find(prod);
+            if (it == grammar->getRawProductions()[new_head.first].end())
             {
-                for (auto prod : new_head.second)
-                {
-                    auto it = grammar->getRawProductions()[new_head.first].find(prod);
-                    if (it == grammar->getRawProductions()[new_head.first].end())
-                    {
-                        grammar->getRawProductions()[new_head.first].insert(prod);
-                    }
-                }
+                grammar->getRawProductions()[new_head.first].insert(prod);
             }
-
         }
     }
 }
