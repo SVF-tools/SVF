@@ -3251,6 +3251,11 @@
         "overwrite_app_function": 0,
         "load_store": ["A1", "V","A0"]
     },
+    "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEOS4_":{
+        "type": "CPP_EFT_A0R_A1R",
+        "overwrite_app_function": 0,
+        "load_store": ["A1", "V","A0"]
+    },
     "_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E":{
         "type": "CPP_EFT_A1R",
         "overwrite_app_function": 0,
