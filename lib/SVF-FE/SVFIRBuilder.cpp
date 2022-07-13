@@ -1275,9 +1275,9 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     }
                     case ExtAPI::EXT_LOADSTORE:
                     {
-                        NodeID vnD = parseNode(args[0], cs, inst);
+                        NodeID vnS = parseNode(args[0], cs, inst);
                         NodeID vnV = parseNode(args[1], cs, inst);
-                        NodeID vnS = parseNode(args[2], cs, inst);
+                        NodeID vnD = parseNode(args[2], cs, inst);
                         if (vnD && vnV && vnS)
                         {
                             addLoadEdge(vnS, vnV);
