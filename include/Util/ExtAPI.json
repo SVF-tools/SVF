@@ -3194,32 +3194,32 @@
     "_ZNSsC1EPKcRKSaIcE":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": ["A0", "A1"]
+        "store": ["A1", "A0"]
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": ["A0", "A1"]
+        "store": ["A1", "A0"]
     },
     "_ZNSsC1EPKcmRKSaIcE":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": ["A0", "A1"]
+        "store": ["A1", "A0"]
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcmRKS3_":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": ["A0", "A1"]
+        "store": ["A1", "A0"]
     },
     "_ZNSsaSEPKc":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": ["A0", "A1"]
+        "store": ["A1", "A0"]
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEPKc":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": ["A0", "A1"]
+        "store": ["A1", "A0"]
     },
     "_ZNSsC1ERKSs":{
         "type": "CPP_EFT_A0R_A1R",
