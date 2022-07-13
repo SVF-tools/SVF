@@ -408,13 +408,13 @@ const Type* SymbolTableInfo::getFlatternedElemType(const Type* baseType, u32_t f
     if(Options::ModelArrays)
     {
         const std::vector<const Type*>& so = getStructInfoIter(baseType)->second->getFlattenElementTypes();
-        assert (flatten_idx <= so.size() && !so.empty() && "element index out of bounds, can't get element type!");
+        assert (flatten_idx <= so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
         return so[flatten_idx];
     }
     else
     {
         const std::vector<const Type*>& so = getStructInfoIter(baseType)->second->getFlattenFieldTypes();
-        assert (flatten_idx <= so.size() && !so.empty() && "element index out of bounds, can't get element type!");
+        assert (flatten_idx <= so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
         return so[flatten_idx];
     }
 }
@@ -590,7 +590,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         ety = AT->getElementType();
     }
 
-    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
+    if ((SVFUtil::isa<StructType>(ety) && !SVFUtil::cast<StructType>(ety)->isOpaque()) || SVFUtil::isa<ArrayType>(ety))
     {
         const Type* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.accumulateConstantFieldIdx());
         if(elemTy->isPointerTy())
