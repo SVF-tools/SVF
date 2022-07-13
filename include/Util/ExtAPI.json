@@ -3184,7 +3184,7 @@
     "_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_":{
         "type": "EFT_STD_RB_TREE_INSERT_AND_REBALANCE",
         "overwrite_app_function": 0,
-        "complex": ["A0", "A1"]
+        "complex": ["A1", "A3"]
     },
     "_ZNSt8__detail15_List_node_base7_M_hookEPS0_":{
         "type": "EFT_STD_LIST_HOOK",
