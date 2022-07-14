@@ -377,7 +377,7 @@ u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, u32_t origId)
     if(Options::ModelArrays)
     {
         std::vector<u32_t>& so = getStructInfoIter(T)->second->getFlattenedElemIdxVec();
-        assert ((unsigned)origId <= so.size() && !so.empty() && "element index out of bounds, can't get flattened index!");
+        assert ((unsigned)origId < so.size() && !so.empty() && "element index out of bounds, can't get flattened index!");
         return so[origId];
     }
     else
@@ -385,7 +385,7 @@ u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, u32_t origId)
         if(SVFUtil::isa<StructType>(T))
         {
             std::vector<u32_t>& so = getStructInfoIter(T)->second->getFlattenedFieldIdxVec();
-            assert ((unsigned)origId <= so.size() && !so.empty() && "Struct index out of bounds, can't get flattened index!");
+            assert ((unsigned)origId < so.size() && !so.empty() && "Struct index out of bounds, can't get flattened index!");
             return so[origId];
         }
         else
@@ -408,13 +408,13 @@ const Type* SymbolTableInfo::getFlatternedElemType(const Type* baseType, u32_t f
     if(Options::ModelArrays)
     {
         const std::vector<const Type*>& so = getStructInfoIter(baseType)->second->getFlattenElementTypes();
-        assert (flatten_idx <= so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
+        assert (flatten_idx < so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
         return so[flatten_idx];
     }
     else
     {
         const std::vector<const Type*>& so = getStructInfoIter(baseType)->second->getFlattenFieldTypes();
-        assert (flatten_idx <= so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
+        assert (flatten_idx < so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
         return so[flatten_idx];
     }
 }
