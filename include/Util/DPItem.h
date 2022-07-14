@@ -58,12 +58,15 @@ public:
     {
     }
     /// Move constructor
-    DPItem(DPItem&& dps) noexcept : cur(dps.cur) {
+    DPItem(DPItem&& dps) noexcept : cur(dps.cur)
+    {
 
     }
     /// Move operator=
-    DPItem &operator=(DPItem &&rhs) noexcept {
-        if (this != &rhs) {
+    DPItem &operator=(DPItem &&rhs) noexcept
+    {
+        if (this != &rhs)
+        {
             cur = rhs.cur;
         }
         return *this;
@@ -216,8 +219,10 @@ public:
     /// Move Constructor
     ContextCond(ContextCond &&cond) noexcept: context(std::move(cond.context)), concreteCxt(cond.concreteCxt) {}
     /// Move operator=
-    ContextCond& operator=(ContextCond&&cond) noexcept{
-        if(this!=&cond){
+    ContextCond& operator=(ContextCond&&cond) noexcept
+    {
+        if(this!=&cond)
+        {
             context = std::move(cond.context);
             concreteCxt = cond.concreteCxt;
         }
@@ -489,11 +494,14 @@ public:
     {
     }
     /// Move constructor
-    CxtDPItem(CxtDPItem &&dps) noexcept: DPItem(dps), context(std::move(dps.context)) {
+    CxtDPItem(CxtDPItem &&dps) noexcept: DPItem(dps), context(std::move(dps.context))
+    {
     }
     /// Move operator=
-    CxtDPItem &operator=(CxtDPItem &&dps) noexcept {
-        if (this != &dps) {
+    CxtDPItem &operator=(CxtDPItem &&dps) noexcept
+    {
+        if (this != &dps)
+        {
             DPItem::operator=(dps);
             context = std::move(dps.context);
         }
