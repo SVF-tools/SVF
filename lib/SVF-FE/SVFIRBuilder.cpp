@@ -1092,7 +1092,7 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
 /*!
  * Get numeric index of the argument in external function
  */
-u32_t SVFIRBuilder::getArgIndex(std::string s)
+u32_t SVFIRBuilder::getArgPos(std::string s)
 {
     if(s[0] != 'A')
         assert(false && "the argument of extern function in ExtAPI.json should start with 'A' !");
@@ -1251,17 +1251,17 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     }
                     case ExtAPI::EXT_COPY:
                     {
-                        NodeID srcNode = parseNode(args[0], cs, inst);
-                        NodeID dstNode = parseNode(args[1], cs, inst);
-                        if (srcNode && dstNode)
-                            addCopyEdge(srcNode, dstNode);
+                        NodeID vnS = parseNode(args[0], cs, inst);
+                        NodeID vnD = parseNode(args[1], cs, inst);
+                        if (vnS && vnD)
+                            addCopyEdge(vnS, vnD);
                         break;
                     }
                     case ExtAPI::EXT_LOAD:
                     {
-                        NodeID vnD = parseNode(args[0], cs, inst);
-                        NodeID vnS = parseNode(args[1], cs, inst);
-                        if (vnD && vnS)
+                        NodeID vnS = parseNode(args[0], cs, inst);
+                        NodeID vnD = parseNode(args[1], cs, inst);
+                        if (vnS && vnD)
                             addLoadEdge(vnS, vnD);
                         break;
                     }
@@ -1290,41 +1290,41 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         // void *memset(void *str, int c, size_t n)
                         // this is for memset(void *str, int c, size_t n)
                         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
-                        u32_t arg0 = getArgIndex(args[0]);
-                        u32_t arg1 = getArgIndex(args[1]);
-                        u32_t arg2 = getArgIndex(args[2]);
+                        u32_t arg_posA = getArgPos(args[0]);
+                        u32_t arg_posB = getArgPos(args[1]);
+                        u32_t arg_posC = getArgPos(args[2]);
                         std::vector<LocationSet> dstFields;
-                        const Type *dtype = getBaseTypeAndFlattenedFields(cs.getArgument(arg0), dstFields, cs.getArgument(arg2));
+                        const Type *dtype = getBaseTypeAndFlattenedFields(cs.getArgument(arg_posA), dstFields, cs.getArgument(arg_posC));
                         u32_t sz = dstFields.size();
                         // For each field (i), add store edge *(arg0 + i) = arg1
                         for (u32_t index = 0; index < sz; index++)
                         {
                             const Type *dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, dstFields[index].accumulateConstantFieldIdx());
-                            NodeID dField = getGepValVar(cs.getArgument(arg0), dstFields[index], dElementType);
-                            addStoreEdge(pag->getValueNode(cs.getArgument(arg1)), dField);
+                            NodeID dField = getGepValVar(cs.getArgument(arg_posA), dstFields[index], dElementType);
+                            addStoreEdge(pag->getValueNode(cs.getArgument(arg_posB)), dField);
                         }
                         if (SVFUtil::isa<PointerType>(inst->getType()))
-                            addCopyEdge(getValueNode(cs.getArgument(arg0)), getValueNode(inst));
+                            addCopyEdge(getValueNode(cs.getArgument(arg_posA)), getValueNode(inst));
                         break;
                     }
                     case ExtAPI::EXT_COPY_MN:
                     {
-                        u32_t arg0 = getArgIndex(args[0]);
-                        u32_t arg1 = getArgIndex(args[1]);
+                        u32_t arg_posA = getArgPos(args[0]);
+                        u32_t arg_posB = getArgPos(args[1]);
                         if (args.size() >= 3)
                         {
-                            u32_t arg2 = getArgIndex(args[2]);
-                            addComplexConsForExt(cs.getArgument(arg0), cs.getArgument(arg1), cs.getArgument(arg2));
+                            u32_t arg_posC = getArgPos(args[2]);
+                            addComplexConsForExt(cs.getArgument(arg_posA), cs.getArgument(arg_posB), cs.getArgument(arg_posC));
                         }
                         else
-                            addComplexConsForExt(cs.getArgument(arg0), cs.getArgument(arg1), nullptr);
+                            addComplexConsForExt(cs.getArgument(arg_posA), cs.getArgument(arg_posB), nullptr);
                         break;
                     }
                     case ExtAPI::EXT_FUNPTR:
                     {
                         /// handling external function e.g., void *dlsym(void *handle, const char *funname);
-                        u32_t arg0 = getArgIndex(args[0]);
-                        const Value *src = cs.getArgument(arg0);
+                        u32_t arg_posA = getArgPos(args[0]);
+                        const Value *src = cs.getArgument(arg_posA);
                         if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
                             src = stripConstantCasts(gep->getPointerOperand());
                         if (const GlobalVariable *glob = SVFUtil::dyn_cast<GlobalVariable>(src))
@@ -1342,19 +1342,17 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     }
                     case ExtAPI::EXT_COMPLEX:
                     {
-                        u32_t arg0 = getArgIndex(args[0]);
-                        u32_t arg1 = getArgIndex(args[1]);
-                        Value *vArg1 = cs.getArgument(arg0);
-                        Value *vArg3 = cs.getArgument(arg1);
+                        Value *argA = cs.getArgument(getArgPos(args[0]));
+                        Value *argB = cs.getArgument(getArgPos(args[1]));
 
                         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                         // Now we calculate the offset from base to vArg3
-                        NodeID vnArg3 = pag->getValueNode(vArg3);
-                        s32_t offset = getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
+                        NodeID vnB = pag->getValueNode(argB);
+                        s32_t offset = getLocationSetFromBaseNode(vnB).accumulateConstantFieldIdx();
 
                         // We get all flattened fields of base
                         vector<LocationSet> fields;
-                        const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields, nullptr);
+                        const Type *type = getBaseTypeAndFlattenedFields(argB, fields, nullptr);
                         assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                         // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
@@ -1364,8 +1362,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                             if ((u32_t)i >= fields.size())
                                 break;
                             const Type *elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
-                            NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
-                            NodeID vnS = getValueNode(vArg1);
+                            NodeID vnD = getGepValVar(argB, fields[i], elementType);
+                            NodeID vnS = getValueNode(argA);
                             if (vnD && vnS)
                                 addStoreEdge(vnS, vnD);
                         }
