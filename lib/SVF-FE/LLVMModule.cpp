@@ -253,7 +253,7 @@ std::vector<llvm::Function *> LLVMModuleSet::getLLVMGlobalFunctions(
     llvm::ConstantArray *globalFuncArray =
             llvm::dyn_cast<llvm::ConstantArray>(global->getInitializer());
     if (globalFuncArray) {
-        for (int i = 0; i < globalFuncArray->getNumOperands(); ++i) {
+        for (unsigned int i = 0; i < globalFuncArray->getNumOperands(); ++i) {
             llvm::ConstantStruct *globalFuncItem =
                     llvm::dyn_cast<llvm::ConstantStruct>(
                             globalFuncArray->getOperand(i));
