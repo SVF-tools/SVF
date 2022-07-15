@@ -209,6 +209,9 @@ public:
     }
 
 private:
+    std::vector<llvm::Function *> getLLVMGlobalFunctions(
+            llvm::GlobalVariable *global);
+
     void loadModules(const std::vector<std::string> &moduleNameVec);
     void addSVFMain();
     void initialize();
