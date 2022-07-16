@@ -10,8 +10,8 @@
  */
 
 #include <limits.h>
-#include <llvm/Support/MathExtras.h>
 
+#include "Util/SparseBitVector.h"  // For LLVM's countPopulation.
 #include "Util/CoreBitVector.h"
 #include "Util/SVFBasicTypes.h"
 #include "Util/SVFUtil.h"
@@ -56,7 +56,7 @@ bool CoreBitVector::empty(void) const
 u32_t CoreBitVector::count(void) const
 {
     u32_t n = 0;
-    for (const Word &w : words) n += llvm::countPopulation(w);
+    for (const Word &w : words) n += countPopulation(w);
     return n;
 }
 
