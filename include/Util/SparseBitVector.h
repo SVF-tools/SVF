@@ -10,8 +10,9 @@
 
 #include <ostream>
 #include <cassert>
-#include <climits>
 #include <cstring>
+#include <climits>
+#include <limits>
 #include <iterator>
 #include <list>
 
