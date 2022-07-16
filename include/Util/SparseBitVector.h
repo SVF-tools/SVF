@@ -16,6 +16,15 @@
 #include <iterator>
 #include <list>
 
+// Appease GCC?
+#ifdef __has_builtin
+#  define HAS_CLZ __has_builtin(__builtin_clz)
+#  define HAS_CLZLL __has_builtin(__builtin_clzll)
+#else
+#  define HAS_CLZ 0
+#  define HAS_CLZLL 0
+#endif
+
 namespace SVF
 {
 
@@ -106,7 +115,7 @@ template <typename T> struct LeadingZerosCounter<T, 4> {
     if (ZB != ZB_Undefined && Val == 0)
       return 32;
 
-#if defined(__GNUC__) || __has_builtin(__builtin_clz)
+#if defined(__GNUC__) || HAS_CLZ
     return __builtin_clz(Val);
 #elif defined(_MSC_VER)
     unsigned long Index;
@@ -122,7 +131,7 @@ template <typename T> struct LeadingZerosCounter<T, 8> {
     if (ZB != ZB_Undefined && Val == 0)
       return 64;
 
-#if defined(__GNUC__) || __has_builtin(__builtin_clzll)
+#if defined(__GNUC__) || HAS_CLZLL
     return __builtin_clzll(Val);
 #elif defined(_MSC_VER)
     unsigned long Index;
