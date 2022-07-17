@@ -46,8 +46,8 @@ Z3Expr *Z3ExprManager::createFreshBranchCond(const Instruction *inst) {
     } else {
         return it->second;
     }
-
 }
+
 Z3Expr *Z3ExprManager::NEG(Z3Expr *lhs) {
     if (lhs == getTrueCond())
         return getFalseCond();
@@ -161,15 +161,14 @@ void Z3ExprManager::extractSubConds(const Z3Expr *z3Expr, NodeBS &support) const
         if (!z3Expr->getExpr().is_true() && !z3Expr->getExpr().is_false())
             support.set(z3Expr->getExpr().id());
     for (u32_t i = 0; i < z3Expr->getExpr().num_args(); ++i) {
-        const z3::expr &expr = z3Expr->getExpr().arg(i);
+        const Z3Expr &expr = Z3Expr(z3Expr->getExpr().arg(i));
         extractSubConds(getCond(expr.id()), support);
     }
 }
 
 std::string Z3ExprManager::dumpStr(const Z3Expr *z3Expr) const {
     std::ostringstream out;
-//    const Z3Expr *z3CondExpr = dyn_cast<Z3Expr>(e);
-    assert(z3Expr && "not z3 condition?");
+    assert(z3Expr && "expression cannot be null.");
     out << z3Expr->getExpr();
     return out.str();
 }

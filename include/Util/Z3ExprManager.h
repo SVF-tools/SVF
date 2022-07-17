@@ -78,9 +78,8 @@ namespace SVF {
 
         inline void setNegCondInst(const Z3Expr *z3Expr, const Instruction *inst) {
             setCondInst(z3Expr, inst);
-            const Z3Expr *z3CondExpr = SVFUtil::dyn_cast<Z3Expr>(z3Expr);
-            assert(z3CondExpr && "not z3 condition.");
-            negConds.set(z3CondExpr->id());
+            assert(z3Expr && "expression cannot be null.");
+            negConds.set(z3Expr->id());
         }
 
 
@@ -102,17 +101,17 @@ namespace SVF {
 
         virtual bool isNegCond(const Z3Expr *z3Expr) const
         {
-            assert(z3Expr && "not z3 condition.");
+            assert(z3Expr && "expression cannot be null.");
             return negConds.test(z3Expr->id());
         }
 
         /// Whether the condition is satisfiable
-        virtual bool isSatisfiable(const Z3Expr *cond);
+        virtual bool isSatisfiable(const Z3Expr *z3Expr);
         /// Whether lhs and rhs are equivalent branch conditions
         virtual bool isEquivalentBranchCond(const Z3Expr *lhs, const Z3Expr *rhs);
 
         /// Whether **All Paths** are reachable
-        bool isAllPathReachable(const Z3Expr *e);
+        bool isAllPathReachable(const Z3Expr *z3Expr);
 
         Z3Expr *getOrAddZ3Cond(const Z3Expr &z3Expr);
         inline std::string getMemUsage() {
