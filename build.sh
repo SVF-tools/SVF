@@ -4,6 +4,7 @@
 # if the LLVM_DIR variable is not set, LLVM will be downloaded.
 #
 # Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
+set -e # exit on first error
 
 jobs=4
 
@@ -18,30 +19,15 @@ UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.0/clang+llvm-13.0.0-aarch64-linux-gnu.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-13.0.0.zip"
 MacZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-osx-10.14.6.zip"
+MacArmZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.9.1/z3-4.9.1-arm64-osx-11.0.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
 SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
-Z3Git="--branch z3-4.8.14 https://github.com/Z3Prover/z3.git"
 
 # Keep LLVM version suffix for version checking and better debugging
 # keep the version consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile
 LLVMHome="llvm-13.0.0.obj"
 Z3Home="z3.obj"
 
-
-function build_z3_from_source {
-    readonly GIT_SRC="${1}"
-    readonly INSTALL_DIR="${2}"
-
-    mkdir -p z3-src
-    pushd z3-src
-    git clone ${GIT_SRC} .
-    mkdir -p build && cd build
-    # We need a static library, so set the build option
-    cmake -DZ3_BUILD_LIBZ3_SHARED=FALSE ..
-    make -j ${jobs} && cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -P cmake_install.cmake
-    echo "Z3 installed to ${INSTALL_DIR}.  Temporary build dir `pwd` can be removed."
-    popd
-}
 
 # Downloads $1 (URL) to $2 (target destination) using wget or curl,
 # depending on OS.
@@ -144,17 +130,32 @@ OSDisplayName=""
 
 ########
 # Set OS-specific values, mainly URLs to download binaries from.
+# M1 Macs give back arm64, some Linuxes can give aarch64 for arm architecture
 #######
 if [[ $sysOS == "Darwin" ]]
 then
-    urlLLVM="$MacLLVM"
-    urlZ3="$MacZ3"
-    OSDisplayName="macOS"
+    if [[ "$arch" == "arm64" ]] 
+    then
+        urlZ3="$MacArmZ3" 
+        urlLLVM="llvm does not have osx arm pre-built libs"
+        OSDisplayName="macOS arm64"
+    else 
+        urlZ3="$MacZ3"
+        urlLLVM="$MacLLVM"
+        OSDisplayName="macOS x86"
+    fi
 elif [[ $sysOS == "Linux" ]]
 then
-    [[ "$arch" == "aarch64" ]] && urlLLVM="$UbuntuArmLLVM" || urlLLVM="$UbuntuLLVM"
-    urlZ3="$UbuntuZ3"
-    OSDisplayName="Ubuntu"
+    if [[ "$arch" == "aarch64" ]] 
+    then
+        urlLLVM="$UbuntuArmLLVM" 
+        urlZ3="z3 does not have x86 arm pre-built libs"
+        OSDisplayName="Ubuntu arm64"
+    else 
+        urlLLVM="$UbuntuLLVM"
+        urlZ3="$UbuntuZ3"
+        OSDisplayName="Ubuntu x86"
+    fi
 else
     echo "Builds outside Ubuntu and macOS are not supported."
 fi
@@ -166,10 +167,10 @@ if [ ! -d "$LLVM_DIR" ]
 then
     if [ ! -d "$LLVMHome" ]
     then
-        if [ "$sysOS" = "Darwin" ] && [ "$arch" = "arm64" ]
+        if [ "$sysOS" = "Darwin" ] && [ "$arch" = "arm64" ] # only mac arm build from source
         then
             build_llvm_from_source
-        else
+        else                                                # everything else downloads pre-built lib includ osx "arm64"
             echo "Downloading LLVM binary for $OSDisplayName"
             generic_download_file "$urlLLVM" llvm.tar.xz
             check_xz
@@ -190,10 +191,10 @@ then
     if [ ! -d "$Z3Home" ]
     then
         # M1 Macs give back arm64, some Linuxes can give aarch64.
-        if [ "$arch" = "aarch64" ] || [ "$arch" = "arm64" ]
+        if [ "$sysOS" = "Linux" ] && [ "$arch" = "aarch64" ] # only linux arm build from source
         then
             build_z3_from_source
-        else
+        else                                                 # everything else downloads pre-built lib includ osx "arm64"
             echo "Downloading Z3 binary for $OSDisplayName"
             generic_download_file "$urlZ3" z3.zip
             check_unzip
