@@ -66,7 +66,8 @@ Z3Expr *Z3ExprManager::getOrAddZ3Cond(const Z3Expr &z3Expr) {
     } else {
         Z3Expr *newz3Expr = new Z3Expr(z3Expr);
         return idToExprMap.emplace(newz3Expr->id(), newz3Expr).first->second;
-    }}
+    }
+}
 
 Z3Expr *Z3ExprManager::AND(Z3Expr *lhs, Z3Expr *rhs) {
     assert(lhs && rhs && "not z3 condition?");
@@ -78,15 +79,15 @@ Z3Expr *Z3ExprManager::AND(Z3Expr *lhs, Z3Expr *rhs) {
         return lhs;
     else {
         const Z3Expr &expr = Z3Expr(lhs->getExpr() && rhs->getExpr());
-        if(expr.getExpr().num_args() > Options::MaxZ3Size){
+        if (expr.getExpr().num_args() > Options::MaxZ3Size) {
             z3::solver sol(Z3Expr::getContext());
             sol.push();
             sol.add(expr.getExpr());
             z3::check_result res = sol.check();
             sol.pop();
-            if(res != z3::unsat){
+            if (res != z3::unsat) {
                 return trueCond;
-            } else{
+            } else {
                 return falseCond;
             }
         }
@@ -94,7 +95,7 @@ Z3Expr *Z3ExprManager::AND(Z3Expr *lhs, Z3Expr *rhs) {
     }
 }
 
-Z3Expr *Z3ExprManager::OR(Z3Expr *lhs, Z3Expr *rhs) {\
+Z3Expr *Z3ExprManager::OR(Z3Expr *lhs, Z3Expr *rhs) {
     assert(lhs && rhs && "not z3 condition?");
     if (lhs == getTrueCond() || rhs == getTrueCond())
         return getTrueCond();
@@ -104,16 +105,15 @@ Z3Expr *Z3ExprManager::OR(Z3Expr *lhs, Z3Expr *rhs) {\
         return lhs;
     else {
         const Z3Expr &expr = Z3Expr(lhs->getExpr() || rhs->getExpr());
-//        const z3::expr &expr = z3lhs->getExpr() && z3rhs->getExpr();
-        if(expr.getExpr().num_args() > Options::MaxZ3Size){
+        if (expr.getExpr().num_args() > Options::MaxZ3Size) {
             z3::solver sol(Z3Expr::getContext());
             sol.push();
             sol.add(expr.getExpr());
             z3::check_result res = sol.check();
             sol.pop();
-            if(res != z3::unsat){
+            if (res != z3::unsat) {
                 return trueCond;
-            } else{
+            } else {
                 return falseCond;
             }
         }
@@ -124,14 +124,11 @@ Z3Expr *Z3ExprManager::OR(Z3Expr *lhs, Z3Expr *rhs) {\
 bool Z3ExprManager::isEquivalentBranchCond(const Z3Expr *lhs, const Z3Expr *rhs) {
     z3::solver sol(Z3Expr::getContext());
     sol.push();
-//    std::string res = z3rhs->getExpr().to_string();
     assert(lhs && rhs && "not z3 condition?");
     sol.add(lhs->getExpr() != rhs->getExpr());
     z3::check_result res = sol.check();
     sol.pop();
     return res == z3::unsat;
-//    return z3lhs->getId() == z3rhs->getId();
-
 }
 
 bool Z3ExprManager::isAllPathReachable(const Z3Expr *e) {
