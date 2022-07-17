@@ -36,6 +36,7 @@
 #include "Util/BDDExpr.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
+#include "Util/Z3ExprManager.h"
 
 
 namespace SVF
@@ -49,7 +50,8 @@ class PathCondAllocator
 
 public:
 
-    typedef BDDExprManager::BDDExpr Condition;   /// z3 condition
+//    typedef BDDExprManager::BDDExpr Condition;   /// z3 condition
+    typedef Z3ExprManager::Z3Expr Condition;   /// z3 condition
 
     typedef Map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
     typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
@@ -293,7 +295,8 @@ private:
     const SVFGNode* curEvalSVFGNode{};			///< current llvm value to evaluate branch condition when computing guards
 
 protected:
-    BDDExprManager* condMgr;		///< z3 manager
+//    BDDExprManager* condMgr;		///< z3 manager
+    Z3ExprManager* condMgr;
     BBCondMap bbConds;						///< map basic block to its successors/predecessors branch conditions
 
 };

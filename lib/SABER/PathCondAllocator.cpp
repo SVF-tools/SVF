@@ -46,7 +46,12 @@ u32_t ContextCond::maximumPathLen = 0;
 u32_t ContextCond::maximumPath = 0;
 
 
-PathCondAllocator::PathCondAllocator() : condMgr(BDDExprManager::getBDDExprMgr())
+//PathCondAllocator::PathCondAllocator() : condMgr(BDDExprManager::getBDDExprMgr())
+//{
+//
+//}
+
+PathCondAllocator::PathCondAllocator() : condMgr(Z3ExprManager::getZ3ExprMgr())
 {
 
 }

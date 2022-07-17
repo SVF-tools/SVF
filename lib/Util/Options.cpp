@@ -666,6 +666,13 @@ const llvm::cl::opt<unsigned> Options::MaxBddSize(
     llvm::cl::desc("Maximum context limit for DDA")
 );
 
+// Conditions.cpp
+    const llvm::cl::opt<unsigned> Options::MaxZ3Size(
+            "max-z3-size",
+            llvm::cl::init(30),
+            llvm::cl::desc("Maximum expression limit for Z3")
+    );
+
 
 // PathCondAllocator.cpp
 const llvm::cl::opt<bool> Options::PrintPathCond(
