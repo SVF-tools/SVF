@@ -224,8 +224,10 @@ private:
     // Store specifications of external functions in ExtAPI.json file
     static cJSON *root;
 
+    ExtAPI() = default;
+
 public:
-    static ExtAPI *getExtAPI();
+    static ExtAPI *getExtAPI(const std::string & = "");
 
     static void destory();
 
@@ -240,7 +242,7 @@ public:
     std::vector<std::string> get_opArgs(const cJSON *value);
 
     // Get specifications of external functions in ExtAPI.json file
-    cJSON *get_FunJson(const std::string funName);
+    cJSON *get_FunJson(const std::string &funName);
 
     // Get property of the operation, e.g. "EFT_A1R_A0R"
     extType get_type(const SVF::SVFFunction *callee);
