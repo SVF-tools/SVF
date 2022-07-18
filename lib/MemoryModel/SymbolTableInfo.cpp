@@ -585,10 +585,6 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         return true;
 
     const Type* ety = getType();
-    while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(ety))
-    {
-        ety = AT->getElementType();
-    }
 
     if ((SVFUtil::isa<StructType>(ety) && !SVFUtil::cast<StructType>(ety)->isOpaque()) || SVFUtil::isa<ArrayType>(ety))
     {
