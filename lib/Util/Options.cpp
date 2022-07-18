@@ -779,20 +779,14 @@ const llvm::cl::opt<bool> Options::ShowHiddenNode(
 
 const llvm::cl::opt<std::string> Options::GrammarFilename(
     "grammar",
-    llvm::cl::desc("<Grammar textfile>"),
-    llvm::cl::init("-")
+    llvm::cl::init(""),
+    llvm::cl::desc("<Grammar textfile>")
 );
 
-const llvm::cl::opt<std::string> Options::InputFilename(
-    llvm::cl::Positional,
-    llvm::cl::desc("<input bitcode>"),
-    llvm::cl::init("-")
-);
-
-const llvm::cl::opt<bool> Options::GraphIsFromDot(
-    "dot-graph",
-    llvm::cl::init(false),
-    llvm::cl::desc("Dot text as graph input")
+const llvm::cl::opt<std::string> Options::CFLGraph(
+    "cflgraph",
+    llvm::cl::init(""),
+    llvm::cl::desc("<dot file as the CFLGraph input>")
 );
 
 const llvm::cl::opt<bool> Options::PrintCFL(
