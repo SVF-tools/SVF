@@ -18,11 +18,125 @@ using namespace SVF;
 ExtAPI *ExtAPI::extOp = nullptr;
 cJSON *ExtAPI::root = nullptr;
 
-ExtAPI *ExtAPI::getExtAPI()
+// Get environment variables $SVF_DIR and "npm root" through popen() method
+static std::string GetStdoutFromCommand(const std::string &command)
+{
+    char buffer[128];
+    std::string result = "";
+    // Open pipe to file
+    FILE *pipe = popen(command.c_str(), "r");
+    if (!pipe)
+    {
+        return "popen failed!";
+    }
+    // read till end of process:
+    while (!feof(pipe))
+    {
+        // use buffer to read and add to result
+        if (fgets(buffer, 128, pipe) != NULL)
+            result += buffer;
+    }
+    pclose(pipe);
+    // remove "\n"
+    result.erase(remove(result.begin(), result.end(), '\n'), result.end());
+    return result;
+}
+
+// Get ExtAPI.json file
+static std::string getJsonFile(const std::string &path)
+{
+    std::string jsonFilePath = GetStdoutFromCommand(path);
+    if (path.compare("npm root") == 0)
+    {
+        int os_flag = 1;
+        // SVF installed via npm needs to determine the type of operating system,
+        // otherwise the ExtAPI.json path may not be found
+        // Linux os
+#ifdef linux
+        os_flag = 0;
+        jsonFilePath.append("/svf-lib/SVF-linux");
+#endif
+        // Mac os
+        if (os_flag == 1)
+        {
+            jsonFilePath.append("/svf-lib/SVF-osx");
+        }
+    }
+    jsonFilePath.append(EXTAPI_JSON_PATH);
+    return jsonFilePath;
+}
+
+static cJSON *parseJson(const std::string &path, off_t fileSize)
+{
+    FILE *file = fopen(path.c_str(), "r");
+    if (!file) {
+        return nullptr;
+    }
+
+    // allocate memory size matched with file size
+    char *jsonStr = (char *)calloc(fileSize + 1, sizeof(char));
+
+    // read json string from file
+    u32_t size = fread(jsonStr, sizeof(char), fileSize, file);
+    if (size == 0)
+    {
+        SVFUtil::errs() << SVFUtil::errMsg("\t Wrong ExtAPI.json path :") << "The current ExtAPI.json path is: " << path << "\n";
+        assert(false && "Read ExtAPI.json file fails!");
+        return nullptr;
+    }
+    fclose(file);
+
+    // convert json string to json pointer variable
+    cJSON *root = cJSON_Parse(jsonStr);
+    if (!root)
+    {
+        free(jsonStr);
+        return nullptr;
+    }
+    free(jsonStr);
+    return root;
+}
+
+ExtAPI *ExtAPI::getExtAPI(const std::string &path)
 {
     if (extOp == nullptr)
     {
-        extOp = new ExtAPI();
+        extOp = new ExtAPI;
+    }
+    if (root == nullptr) {
+        struct stat statbuf;
+
+        // Four ways to get ExtAPI.json path
+        // 1. Explicit path provided
+        // 2. default path (get ExtAPI.json path from Util/config.h)
+        // 3. from $SVF_DIR
+        // 4. from "npm root"(If SVF is installed via npm)
+
+        std::string jsonFilePath = path;
+        if (!jsonFilePath.empty() && !stat(jsonFilePath.c_str(), &statbuf)) {
+            root = parseJson(jsonFilePath, statbuf.st_size);
+            return extOp;
+        }
+
+        jsonFilePath = PROJECT_PATH + std::string(EXTAPI_JSON_PATH);
+        if (!stat(jsonFilePath.c_str(), &statbuf)) {
+            root = parseJson(jsonFilePath, statbuf.st_size);
+            return extOp;
+        }
+
+        jsonFilePath = getJsonFile("$SVF_DIR");
+        if (!stat(jsonFilePath.c_str(), &statbuf)) {
+            root = parseJson(jsonFilePath, statbuf.st_size);
+            return extOp;
+        }
+
+        jsonFilePath = getJsonFile("npm root");
+        if (!stat(jsonFilePath.c_str(), &statbuf)) {
+            root = parseJson(jsonFilePath, statbuf.st_size);
+            return extOp;
+        }
+
+        assert(false && "Open ExtAPI.json file fails!");
     }
     return extOp;
 }
@@ -69,109 +183,10 @@ std::string ExtAPI::get_name(const SVFFunction *F)
     return funName;
 }
 
-// Get environment variables $SVF_DIR and "npm root" through popen() method
-std::string GetStdoutFromCommand(std::string command)
-{
-    char buffer[128];
-    std::string result = "";
-    // Open pipe to file
-    FILE *pipe = popen(command.c_str(), "r");
-    if (!pipe)
-    {
-        return "popen failed!";
-    }
-    // read till end of process:
-    while (!feof(pipe))
-    {
-        // use buffer to read and add to result
-        if (fgets(buffer, 128, pipe) != NULL)
-            result += buffer;
-    }
-    pclose(pipe);
-    // remove "\n"
-    result.erase(remove(result.begin(), result.end(), '\n'), result.end());
-    return result;
-}
-
-// Get ExtAPI.json file
-FILE *getJsonFile(std::string path)
-{
-    std::string jsonFilePath = GetStdoutFromCommand(path);
-    if (path.compare("npm root") == 0)
-    {
-        int os_flag = 1;
-        // SVF installed via npm needs to determine the type of operating system, otherwise the ExtAPI.json path may not be found
-        // Linux os
-#ifdef linux
-        os_flag = 0;
-        jsonFilePath.append("/svf-lib/SVF-linux");
-#endif
-        // Mac os
-        if (os_flag == 1)
-        {
-            jsonFilePath.append("/svf-lib/SVF-osx");
-        }
-    }
-    jsonFilePath.append(EXTAPI_JSON_PATH);
-    FILE *file = nullptr;
-    file = fopen(jsonFilePath.c_str(), "r");
-    return file;
-}
-
 // Get specifications of external functions in ExtAPI.json file
-cJSON *ExtAPI::get_FunJson(const std::string funName)
+cJSON *ExtAPI::get_FunJson(const std::string &funName)
 {
-    if (!root)
-    {
-        // Three ways to get ExtAPI.json path
-        // 1. default path(get ExtAPI.json path from Util/config.h)
-        // 2. from $SVF_DIR
-        // 3. from "npm root"(If SVF is installed via npm)
-        std::string jsonFilePath = PROJECT_PATH;
-        jsonFilePath.append(EXTAPI_JSON_PATH);
-        // open file
-        FILE *file = nullptr;
-        file = fopen(jsonFilePath.c_str(), "r");
-        if (file == nullptr)
-        {
-            file = getJsonFile("$SVF_DIR");
-            if (file == nullptr)
-            {
-                file = getJsonFile("npm root");
-                if (file == nullptr)
-                {
-                    assert(false && "Open ExtAPI.json file fails!");
-                    return nullptr;
-                }
-            }
-        }
-        // get file size
-        struct stat statbuf;
-        stat(jsonFilePath.c_str(), &statbuf);
-        u32_t fileSize = statbuf.st_size;
-
-        // allocate memory size matched with file size
-        char *jsonStr = (char *)malloc(sizeof(char) * fileSize + 1);
-        memset(jsonStr, 0, fileSize + 1);
-
-        // read json string from file
-        u32_t size = fread(jsonStr, sizeof(char), fileSize, file);
-        if (size == 0)
-        {
-            assert(false && "Read ExtAPI.json file fails!");
-            return nullptr;
-        }
-        fclose(file);
-
-        // convert json string to json pointer variable
-        root = cJSON_Parse(jsonStr);
-        if (!root)
-        {
-            free(jsonStr);
-            return nullptr;
-        }
-        free(jsonStr);
-    }
+    assert(root && "JSON not loaded");
     return cJSON_GetObjectItemCaseSensitive(root, funName.c_str());
 }
 
