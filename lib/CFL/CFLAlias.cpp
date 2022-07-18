@@ -201,7 +201,7 @@ void CFLAlias::analyze()
     CFGNormalizer normalizer = CFGNormalizer();
     AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
     CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
-    if (Options::GraphIsFromDot == false)
+    if (Options::CFLGraph.empty())
     {
         PointerAnalysis::initialize();
         GrammarBase *grammarBase = grammarBuilder.build();
@@ -216,7 +216,7 @@ void CFLAlias::analyze()
     else
     {
         GrammarBase *grammarBase = grammarBuilder.build();
-        graph = cflGraphBuilder.buildFromDot(Options::InputFilename, grammarBase);
+        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph, grammarBase);
         cflChecker.check(grammarBase, &cflGraphBuilder, graph);
         grammar = normalizer.normalize(grammarBase);
         cflChecker.check(grammar, &cflGraphBuilder, graph);
@@ -228,14 +228,14 @@ void CFLAlias::analyze()
         solver->solve();
     if(Options::PrintCFL == true)
     {
-        std::string svfirName = Options::InputFilename.c_str();
+        std::string svfirName = Options::CFLGraph.c_str();
         svfir->dump(svfirName.append("_IR"));
-        std::string grammarName = Options::InputFilename.c_str();
+        std::string grammarName = Options::CFLGraph.c_str();
         grammar->dump(grammarName.append("_Grammar"));
-        std::string CFLGraphFileName = Options::InputFilename.c_str();
+        std::string CFLGraphFileName = Options::CFLGraph.c_str();
         graph->dump(CFLGraphFileName.append("_CFL"));
     }
-    if (Options::GraphIsFromDot == false)
+    if (Options::CFLGraph.empty())
     {
         PointerAnalysis::finalize();
     }
