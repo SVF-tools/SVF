@@ -69,7 +69,8 @@ static std::string getJsonFile(const std::string &path)
 static cJSON *parseJson(const std::string &path, off_t fileSize)
 {
     FILE *file = fopen(path.c_str(), "r");
-    if (!file) {
+    if (!file)
+    {
         return nullptr;
     }
 
@@ -102,7 +103,8 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
     {
         extOp = new ExtAPI;
     }
-    if (root == nullptr) {
+    if (root == nullptr)
+    {
         struct stat statbuf;
 
         // Four ways to get ExtAPI.json path
@@ -112,25 +114,29 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
         // 4. from "npm root"(If SVF is installed via npm)
 
         std::string jsonFilePath = path;
-        if (!jsonFilePath.empty() && !stat(jsonFilePath.c_str(), &statbuf)) {
+        if (!jsonFilePath.empty() && !stat(jsonFilePath.c_str(), &statbuf))
+        {
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
 
         jsonFilePath = PROJECT_PATH + std::string(EXTAPI_JSON_PATH);
-        if (!stat(jsonFilePath.c_str(), &statbuf)) {
+        if (!stat(jsonFilePath.c_str(), &statbuf))
+        {
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
 
         jsonFilePath = getJsonFile("$SVF_DIR");
-        if (!stat(jsonFilePath.c_str(), &statbuf)) {
+        if (!stat(jsonFilePath.c_str(), &statbuf))
+        {
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
 
         jsonFilePath = getJsonFile("npm root");
-        if (!stat(jsonFilePath.c_str(), &statbuf)) {
+        if (!stat(jsonFilePath.c_str(), &statbuf))
+        {
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
