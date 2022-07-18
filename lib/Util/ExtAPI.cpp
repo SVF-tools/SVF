@@ -80,7 +80,6 @@ static cJSON *parseJson(const std::string &path, off_t fileSize)
     u32_t size = fread(jsonStr, sizeof(char), fileSize, file);
     if (size == 0)
     {
-        SVFUtil::errs() << SVFUtil::errMsg("\t Wrong ExtAPI.json path :") << "The current ExtAPI.json path is: " << path << "\n";
         assert(false && "Read ExtAPI.json file fails!");
         return nullptr;
     }
