@@ -109,6 +109,12 @@ public:
         return e.id();
     }
 
+    /// get hash id
+    inline u32_t hash() const
+    {
+        return e.hash();
+    }
+
     inline const std::string to_string() const
     {
         return e.to_string();

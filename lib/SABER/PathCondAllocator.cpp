@@ -98,7 +98,7 @@ void PathCondAllocator::allocateForBB(const BasicBlock & bb)
         double num = log(succ_number)/log(2);
         u32_t bit_num = (u32_t)ceil(num);
         u32_t succ_index = 0;
-        std::vector<Condition*> condVec;
+        std::vector<Condition> condVec;
         for(u32_t i = 0 ; i < bit_num; i++)
         {
             condVec.push_back(newCond(bb.getTerminator()));
@@ -112,7 +112,7 @@ void PathCondAllocator::allocateForBB(const BasicBlock & bb)
 
             const BasicBlock* succ = *succ_it;
 
-            Condition* path_cond = getTrueCond();
+            Condition path_cond = getTrueCond();
 
             ///TODO: handle BranchInst and SwitchInst individually here!!
 
@@ -141,7 +141,7 @@ void PathCondAllocator::allocateForBB(const BasicBlock & bb)
 /*!
  * Get a branch condition
  */
-PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const
+PathCondAllocator::Condition PathCondAllocator::getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const
 {
     u32_t pos = getBBSuccessorPos(bb,succ);
     if(getBBSuccessorNum(bb) == 1)
@@ -156,7 +156,7 @@ PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const BasicBlock 
     }
 }
 
-PathCondAllocator::Condition* PathCondAllocator::getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ)
+PathCondAllocator::Condition PathCondAllocator::getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ)
 {
     if(getCurEvalSVFGNode() && getCurEvalSVFGNode()->getValue())
         return evaluateBranchCond(bb, succ);
@@ -167,7 +167,7 @@ PathCondAllocator::Condition* PathCondAllocator::getEvalBrCond(const BasicBlock 
 /*!
  * Set a branch condition
  */
-void PathCondAllocator::setBranchCond(const BasicBlock *bb, const BasicBlock *succ, Condition* cond)
+void PathCondAllocator::setBranchCond(const BasicBlock *bb, const BasicBlock *succ, Condition& cond)
 {
     /// we only care about basic blocks have more than one successor
     assert(getBBSuccessorNum(bb) > 1 && "not more than one successor??");
@@ -184,7 +184,7 @@ void PathCondAllocator::setBranchCond(const BasicBlock *bb, const BasicBlock *su
 /*!
  * Evaluate null like expression for source-sink related bug detection in SABER
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const BranchStmt* branchStmt, const BasicBlock *succ)
+PathCondAllocator::Condition PathCondAllocator::evaluateTestNullLikeExpr(const BranchStmt* branchStmt, const BasicBlock *succ)
 {
 
     const BasicBlock* succ1 = branchStmt->getSuccessor(0)->getBB();
@@ -207,14 +207,13 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
         else
             return getFalseCond();
     }
-
-    return nullptr;
+    return Z3Expr::nullExpr();
 }
 
 /*!
  * Evaluate condition for program exit (e.g., exit(0))
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchStmt* branchStmt, const BasicBlock *succ)
+PathCondAllocator::Condition PathCondAllocator::evaluateProgExit(const BranchStmt* branchStmt, const BasicBlock *succ)
 {
     const BasicBlock *succ1 = branchStmt->getSuccessor(0)->getBB();
     const BasicBlock* succ2 = branchStmt->getSuccessor(1)->getBB();
@@ -249,7 +248,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchSt
     }
     /// no branch call program exit
     else
-        return nullptr;
+        return Z3Expr::nullExpr();
 
 }
 
@@ -258,7 +257,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchSt
  * bb is loop header and succ is the only exit basic block outside the loop (excluding exit bbs which call program exit)
  * for all other case, we conservatively evaluate false for now
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *dst)
+PathCondAllocator::Condition PathCondAllocator::evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *dst)
 {
     const Function* fun = bb->getParent();
     assert(fun==dst->getParent() && "two basic blocks should be in the same function");
@@ -290,7 +289,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
         if(allPDT)
             return getTrueCond();
     }
-    return nullptr;
+    return Z3Expr::nullExpr();
 }
 
 /*!
@@ -298,7 +297,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
  *  (2) Evaluate a branch when it is loop exit branch
  *  (3) Evaluate a branch when it is a test null like condition
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ)
+PathCondAllocator::Condition PathCondAllocator::evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ)
 {
     if(getBBSuccessorNum(bb) == 1)
     {
@@ -318,16 +317,16 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicB
                     const BasicBlock* succ2 = branchStmt->getSuccessor(1)->getBB();
                     assert((succ1 == succ || succ2 == succ) && "not a successor??");
 
-                    Condition* evalLoopExit = evaluateLoopExitBranch(bb,succ);
-                    if(evalLoopExit)
+                    Condition evalLoopExit = evaluateLoopExitBranch(bb,succ);
+                    if(!eq(evalLoopExit, Z3Expr::nullExpr()))
                         return evalLoopExit;
 
-                    Condition* evalProgExit = evaluateProgExit(branchStmt,succ);
-                    if(evalProgExit)
+                    Condition evalProgExit = evaluateProgExit(branchStmt,succ);
+                    if(!eq(evalProgExit, Z3Expr::nullExpr()))
                         return evalProgExit;
 
-                    Condition* evalTestNullLike = evaluateTestNullLikeExpr(branchStmt,succ);
-                    if(evalTestNullLike)
+                    Condition evalTestNullLike = evaluateTestNullLikeExpr(branchStmt,succ);
+                    if(!eq(evalTestNullLike, Z3Expr::nullExpr()))
                         return evalTestNullLike;
                     break;
                 }
@@ -453,7 +452,7 @@ bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb)
  * Assume B0 (phi node) is the successor of both B1 and B2.
  * If B1 dominates B2, and B0 not dominate B2 then condition from B1-->B0 = neg(B1-->B2)^(B1-->B0)
  */
-PathCondAllocator::Condition* PathCondAllocator::getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0)
+PathCondAllocator::Condition PathCondAllocator::getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0)
 {
     assert(BB1 && BB2 && "expect nullptr BB here!");
 
@@ -461,7 +460,7 @@ PathCondAllocator::Condition* PathCondAllocator::getPHIComplementCond(const Basi
     /// avoid both BB0 and BB1 dominate BB2 (e.g., while loop), then BB2 is not necessaryly a complement BB
     if(dt->dominates(BB1,BB2) && !dt->dominates(BB0,BB2))
     {
-        Condition* cond =  ComputeIntraVFGGuard(BB1,BB2);
+        Condition cond =  ComputeIntraVFGGuard(BB1,BB2);
         return condNeg(cond);
     }
 
@@ -473,13 +472,13 @@ PathCondAllocator::Condition* PathCondAllocator::getPHIComplementCond(const Basi
  * src --c1--> callBB --true--> funEntryBB --c2--> dst
  * the InterCallVFGGuard is c1 ^ c2
  */
-PathCondAllocator::Condition* PathCondAllocator::ComputeInterCallVFGGuard(const BasicBlock* srcBB, const BasicBlock* dstBB, const BasicBlock* callBB)
+PathCondAllocator::Condition PathCondAllocator::ComputeInterCallVFGGuard(const BasicBlock* srcBB, const BasicBlock* dstBB, const BasicBlock* callBB)
 {
     const BasicBlock* funEntryBB = &dstBB->getParent()->getEntryBlock();
 
-    Condition* c1 = ComputeIntraVFGGuard(srcBB,callBB);
+    Condition c1 = ComputeIntraVFGGuard(srcBB,callBB);
     setCFCond(funEntryBB,condOr(getCFCond(funEntryBB),getCFCond(callBB)));
-    Condition* c2 = ComputeIntraVFGGuard(funEntryBB,dstBB);
+    Condition c2 = ComputeIntraVFGGuard(funEntryBB,dstBB);
     return condAnd(c1,c2);
 }
 
@@ -488,20 +487,20 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeInterCallVFGGuard(const 
  * src --c1--> funExitBB --true--> retBB --c2--> dst
  * the InterRetVFGGuard is c1 ^ c2
  */
-PathCondAllocator::Condition* PathCondAllocator::ComputeInterRetVFGGuard(const BasicBlock*  srcBB, const BasicBlock*  dstBB, const BasicBlock* retBB)
+PathCondAllocator::Condition PathCondAllocator::ComputeInterRetVFGGuard(const BasicBlock*  srcBB, const BasicBlock*  dstBB, const BasicBlock* retBB)
 {
     const BasicBlock* funExitBB = getFunExitBB(srcBB->getParent());
 
-    Condition* c1 = ComputeIntraVFGGuard(srcBB,funExitBB);
+    Condition c1 = ComputeIntraVFGGuard(srcBB,funExitBB);
     setCFCond(retBB,condOr(getCFCond(retBB),getCFCond(funExitBB)));
-    Condition* c2 = ComputeIntraVFGGuard(retBB,dstBB);
+    Condition c2 = ComputeIntraVFGGuard(retBB,dstBB);
     return condAnd(c1,c2);
 }
 
 /*!
  * Compute intra-procedural guards between two SVFGNodes (inside same function)
  */
-PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const BasicBlock* srcBB, const BasicBlock* dstBB)
+PathCondAllocator::Condition PathCondAllocator::ComputeIntraVFGGuard(const BasicBlock* srcBB, const BasicBlock* dstBB)
 {
 
     assert(srcBB->getParent() == dstBB->getParent() && "two basic blocks are not in the same function??");
@@ -517,11 +516,12 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
     while(!worklist.empty())
     {
         const BasicBlock* bb = worklist.pop();
-        Condition* cond = getCFCond(bb);
+        Condition cond = getCFCond(bb);
 
         /// if the dstBB is the eligible loop exit of the current basic block
         /// we can early terminate the computation
-        if(Condition* loopExitCond = evaluateLoopExitBranch(bb,dstBB))
+        Condition loopExitCond = evaluateLoopExitBranch(bb,dstBB);
+        if(!eq(loopExitCond, Z3Expr::nullExpr()))
             return condAnd(cond, loopExitCond);
 
 
@@ -533,7 +533,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
             /// if succ post dominate bb, then we get brCond quicker by using postDT
             /// note that we assume loop exit always post dominate loop bodys
             /// which means loops are approximated only once.
-            Condition* brCond;
+            Condition brCond;
             if(postDT->dominates(succ,bb))
                 brCond = getTrueCond();
             else
@@ -541,7 +541,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
 
             DBOUT(DSaber, outs() << " bb (" << bb->getName().str() <<
                   ") --> " << "succ_bb (" << succ->getName().str() << ") condition: " << brCond << "\n");
-            Condition* succPathCond = condAnd(cond, brCond);
+            Condition succPathCond = condAnd(cond, brCond);
             if(setCFCond(succ, condOr(getCFCond(succ), succPathCond)))
                 worklist.push(succ);
         }
@@ -572,7 +572,7 @@ void PathCondAllocator::printPathCond()
             {
                 if (i == cit.first)
                 {
-                    Condition* cond = cit.second;
+                    Condition cond = cit.second;
                     outs() << bb->getName().str() << "-->" << succ->getName().str() << ":";
                     outs() << dumpCond(cond) << "\n";
                     break;

@@ -53,11 +53,11 @@ public:
 //    typedef BDDExprManager::BDDExpr Condition;   /// z3 condition
     typedef Z3ExprManager::Z3Expr Condition;   /// z3 condition
 
-    typedef Map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
+    typedef Map<u32_t,Condition> CondPosMap;		///< map a branch to its Condition
     typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
     typedef Set<const BasicBlock*> BasicBlockSet;
     typedef Map<const Function*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
-    typedef Map<const BasicBlock*, Condition*> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
+    typedef Map<const BasicBlock*, Condition> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
     typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
 
 
@@ -82,45 +82,45 @@ public:
 
     /// Condition operations
     //@{
-    inline Condition* condAnd(Condition* lhs, Condition* rhs)
+    inline Condition condAnd(const Condition& lhs, const Condition& rhs)
     {
         return condMgr->AND(lhs,rhs);
     }
-    inline Condition* condOr(Condition* lhs, Condition* rhs)
+    inline Condition condOr(const Condition& lhs, const Condition& rhs)
     {
         return condMgr->OR(lhs,rhs);
     }
-    inline Condition* condNeg(Condition* cond)
+    inline Condition condNeg(const Condition& cond)
     {
         return condMgr->NEG(cond);
     }
-    inline Condition* getTrueCond() const
+    inline Condition getTrueCond() const
     {
         return condMgr->getTrueCond();
     }
-    inline Condition* getFalseCond() const
+    inline Condition getFalseCond() const
     {
         return condMgr->getFalseCond();
     }
     /// Iterator every element of the condition
-    inline NodeBS exactCondElem(Condition* cond)
+    inline NodeBS exactCondElem(const Condition& cond)
     {
         NodeBS elems;
-        condMgr->extractSubConds(cond,elems);
+        condMgr->extractSubConds(cond, elems);
         return elems;
     }
 
-    inline std::string dumpCond(Condition* cond) const
+    inline std::string dumpCond(const Condition& cond) const
     {
         return condMgr->dumpStr(cond);
     }
-    /// Given an z3 expr id, get its condition
-    inline Condition* getCond(u32_t i) const
-    {
-        return condMgr->getCond(i);
-    }
+//    /// Given an z3 expr id, get its condition
+//    inline Condition* getCond(u32_t i) const
+//    {
+//        return condMgr->getCond(i);
+//    }
     /// Allocate a new condition
-    inline Condition* newCond(const Instruction* inst)
+    inline Condition newCond(const Instruction* inst)
     {
         return condMgr->createFreshBranchCond(inst);
     }
@@ -131,19 +131,19 @@ public:
 
     /// Get/Set llvm conditional expression
     //{@
-    inline const Instruction* getCondInst(const Condition* cond) const
+    inline const Instruction* getCondInst(u32_t id) const
     {
-        return condMgr->getCondInst(cond);
+        return condMgr->getCondInst(id);
     }
-    inline void setCondInst(const Condition* cond, const Instruction* inst)
+    inline void setCondInst(const Condition& cond, const Instruction* inst)
     {
         condMgr->setCondInst(cond, inst);
     }
     //@}
 
-    bool isNegCond(const Condition *condition)
+    bool isNegCond(u32_t id)
     {
-        return condMgr->isNegCond(condition);
+        return condMgr->isNegCond(id);
     }
 
     /// Get dominators
@@ -165,13 +165,13 @@ public:
 
     /// Guard Computation for a value-flow (between two basic blocks)
     //@{
-    virtual Condition* ComputeIntraVFGGuard(const BasicBlock* src, const BasicBlock* dst);
-    virtual Condition* ComputeInterCallVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* callBB);
-    virtual Condition* ComputeInterRetVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* retBB);
+    virtual Condition ComputeIntraVFGGuard(const BasicBlock* src, const BasicBlock* dst);
+    virtual Condition ComputeInterCallVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* callBB);
+    virtual Condition ComputeInterRetVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* retBB);
 
     /// Get complement condition (from B1 to B0) according to a complementBB (BB2) at a phi
     /// e.g., B0: dstBB; B1:incomingBB; B2:complementBB
-    virtual Condition* getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0);
+    virtual Condition getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0);
 
     inline void clearCFCond()
     {
@@ -193,18 +193,18 @@ public:
     void printPathCond();
 
     /// whether condition is satisfiable
-    inline bool isSatisfiable(Condition* condition)
+    inline bool isSatisfiable(Condition& condition)
     {
         return condMgr->isSatisfiable(condition);
     }
 
     /// whether condition is satisfiable for all possible boolean guards
-    inline bool isAllPathReachable(Condition* condition)
+    inline bool isAllPathReachable(Condition& condition)
     {
         return condMgr->isAllPathReachable(condition);
     }
 
-    bool isEquivalentBranchCond(const Condition *lhs, const Condition *rhs) const
+    bool isEquivalentBranchCond(const Condition &lhs, const Condition &rhs) const
     {
         return condMgr->isEquivalentBranchCond(lhs, rhs);
     }
@@ -222,22 +222,22 @@ private:
     /// Get/Set a branch condition, and its terminator instruction
     //@{
     /// Set branch condition
-    void setBranchCond(const BasicBlock *bb, const BasicBlock *succ, Condition* cond);
+    void setBranchCond(const BasicBlock *bb, const BasicBlock *succ, Condition& cond);
     /// Get branch condition
-    Condition* getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const;
+    Condition getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const;
     ///Get a condition, evaluate the value for conditions if necessary (e.g., testNull like express)
-    Condition* getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ);
+    Condition getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ);
     //@}
     /// Evaluate branch conditions
     //@{
     /// Evaluate the branch condtion
-    Condition* evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ) ;
+    Condition evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ) ;
     /// Evaluate loop exit branch
-    Condition* evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *succ);
+    Condition evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *succ);
     /// Return branch condition after evaluating test null like expression
-    Condition* evaluateTestNullLikeExpr(const BranchStmt* branchStmt, const BasicBlock *succ);
+    Condition evaluateTestNullLikeExpr(const BranchStmt* branchStmt, const BasicBlock *succ);
     /// Return condition when there is a branch calls program exit
-    Condition* evaluateProgExit(const BranchStmt* branchStmt, const BasicBlock *succ);
+    Condition evaluateProgExit(const BranchStmt* branchStmt, const BasicBlock *succ);
     /// Collect basic block contains program exit function call
     void collectBBCallingProgExit(const BasicBlock& bb);
     bool isBBCallsProgExit(const BasicBlock* bb);
@@ -260,7 +260,7 @@ private:
 
     /// Get/Set control-flow conditions
     //@{
-    inline bool setCFCond(const BasicBlock* bb, Condition* cond)
+    inline bool setCFCond(const BasicBlock* bb, const Condition& cond)
     {
         BBToCondMap::iterator it = bbToCondMap.find(bb);
         // until a fixed-point is reached (condition is not changed)
@@ -270,7 +270,7 @@ private:
         bbToCondMap[bb] = cond;
         return true;
     }
-    inline Condition* getCFCond(const BasicBlock* bb) const
+    inline Condition getCFCond(const BasicBlock* bb) const
     {
         BBToCondMap::const_iterator it = bbToCondMap.find(bb);
         if(it==bbToCondMap.end())
