@@ -14,7 +14,7 @@ namespace SVF {
     public:
         typedef Map<u32_t, const Instruction *> IndexToTermInstMap;
 //        typedef Map<u32_t, Z3Expr *> IndexToExprMap;
-        typedef Z3Expr Z3Expr;
+//        typedef Z3Expr Z3Expr;
 
 
     private:
