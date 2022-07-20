@@ -262,12 +262,12 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
 
         // if Options::ModelConsts is disabled. We will treat whole array as one,
         // but we can distinguish different field of an array of struct, e.g. s[1].f1 is differet from s[0].f2
-        if(SVFUtil::isa<ArrayType>(gepTy))
+        if(const ArrayType* arrTy = SVFUtil::dyn_cast<ArrayType>(gepTy))
         {
-            if(!op)
+            if(!op || (arrTy->getArrayNumElements() <= op->getSExtValue()))
                 continue;
             s32_t idx = op->getSExtValue();
-            u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(gepTy, idx);
+            u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(arrTy, idx);
             ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);
         }
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
@@ -513,7 +513,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             }
             else
             {
-                assert(SVFUtil::isa<ConstantAggregateZero>(data) && "Single value type data should have been handled!");
+                assert((SVFUtil::isa<ConstantAggregateZero>(data) || SVFUtil::isa<UndefValue>(data)) && "Single value type data should have been handled!");
             }
         }
     }
