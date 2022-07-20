@@ -309,8 +309,8 @@ void LLVMModuleSet::addSVFMain()
             }
         }
     }
-    if(orgMain && getModuleNum() > 0 && init_funcs.size() > 0)
-    {
+    if (orgMain && getModuleNum() > 0 && init_funcs.size() > 0 ||
+        destroy_funcs.size() > 0) {
         assert(mainMod && "Module with main function not found.");
         Module & M = *mainMod;
         // char **
