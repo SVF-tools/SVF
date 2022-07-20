@@ -22,6 +22,11 @@ namespace SVF {
         IndexToTermInstMap idToTermInstMap;
 //        IndexToExprMap idToExprMap;
         NodeBS negConds;
+        z3::solver sol;
+
+        z3::solver getSolver(){
+            return sol;
+        }
 
         static z3::context &getContext() {
             return Z3Expr::getContext();
@@ -60,6 +65,8 @@ namespace SVF {
         inline Z3Expr getTrueCond() const {
             return Z3Expr::getContext().bool_val(true);
         }
+
+        u32_t getExprSize(const Z3Expr& z3Expr);
 
         /// Return the unique false condition
         inline Z3Expr getFalseCond() const {
