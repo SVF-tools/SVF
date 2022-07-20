@@ -284,7 +284,7 @@ protected:
     }
     //@}
     /// Set final condition after all path reachability analysis
-    inline void setFinalCond(Condition &cond)
+    inline void setFinalCond(Condition cond)
     {
         finalCond = cond;
     }

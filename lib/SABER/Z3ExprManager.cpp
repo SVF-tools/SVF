@@ -26,8 +26,8 @@ Z3ExprManager *Z3ExprManager::getZ3ExprMgr() {
 
 Z3Expr Z3ExprManager::createFreshBranchCond(const Instruction *inst) {
     u32_t condCountIdx = totalCondNum++;
-    const Z3Expr &expr = getContext().bool_const(("c" + std::to_string(condCountIdx)).c_str());
-    const Z3Expr &negCond = NEG(expr);
+    Z3Expr expr = getContext().bool_const(("c" + std::to_string(condCountIdx)).c_str());
+    Z3Expr negCond = NEG(expr);
     setCondInst(expr, inst);
     setNegCondInst(negCond, inst);
     return expr;
@@ -115,7 +115,7 @@ void Z3ExprManager::extractSubConds(const Z3Expr &z3Expr, NodeBS &support) const
         if (!z3Expr.getExpr().is_true() && !z3Expr.getExpr().is_false())
             support.set(z3Expr.getExpr().hash());
     for (u32_t i = 0; i < z3Expr.getExpr().num_args(); ++i) {
-        const Z3Expr &expr = Z3Expr(z3Expr.getExpr().arg(i));
+        Z3Expr expr = Z3Expr(z3Expr.getExpr().arg(i));
         extractSubConds(expr, support);
     }
 }
