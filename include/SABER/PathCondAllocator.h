@@ -51,7 +51,7 @@ class PathCondAllocator
 public:
 
 //    typedef BDDExprManager::BDDExpr Condition;   /// z3 condition
-    typedef Z3ExprManager::Z3Expr Condition;   /// z3 condition
+    typedef Z3ExprManager::Condition Condition;   /// z3 condition
 
     typedef Map<u32_t,Condition> CondPosMap;		///< map a branch to its Condition
     typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
