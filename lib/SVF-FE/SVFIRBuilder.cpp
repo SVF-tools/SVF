@@ -264,7 +264,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         // but we can distinguish different field of an array of struct, e.g. s[1].f1 is differet from s[0].f2
         if(const ArrayType* arrTy = SVFUtil::dyn_cast<ArrayType>(gepTy))
         {
-            if(!op || (arrTy->getArrayNumElements() <= op->getSExtValue()))
+            if(!op || (arrTy->getArrayNumElements() <= (u32_t)op->getSExtValue()))
                 continue;
             s32_t idx = op->getSExtValue();
             u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(arrTy, idx);
