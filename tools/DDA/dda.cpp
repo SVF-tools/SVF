@@ -17,6 +17,9 @@ static cl::opt<bool>
 StandardCompileOpts("std-compile-opts",
                     cl::desc("Include the standard compile time optimizations"));
 
+static llvm::cl::opt<std::string> InputFilename(llvm::cl::Positional,
+        llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
+
 //static cl::list<const PassInfo*, bool, PassNameParser>
 //PassList(cl::desc("Optimizations available:"));
 

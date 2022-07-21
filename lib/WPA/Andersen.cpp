@@ -425,7 +425,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
         // base object is always returned.
         for (NodeID o : pts)
         {
-            if (consCG->isBlkObjOrConstantObj(o))
+            if (consCG->isBlkObjOrConstantObj(o) || isFieldInsensitive(o))
             {
                 tmpDstPts.set(o);
                 continue;

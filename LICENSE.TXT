@@ -32,9 +32,11 @@ which apply to that code.
 The following pieces of software have additional or alternate copyrights,
 licenses, and/or restrictions:
 
-Program                        Directory
--------                        ---------
+Program                        Directory/File
+-------                        --------------
 CUDD-2.5.0                     include/CUDD/
                                lib/CUDD/
 fastcluster/hclust-cpp         include/FastCluster/
                                lib/FastCluster/
+LLVM's SparseBitVector         include/Util/SparseBitVector.h
+                               (no LICENSE.TXT; see comment)

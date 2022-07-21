@@ -36,6 +36,9 @@ using namespace llvm;
 using namespace std;
 using namespace SVF;
 
+static llvm::cl::opt<std::string> InputFilename(llvm::cl::Positional,
+        llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
+
 /*!
  * An example to query alias results of two LLVM values
  */
