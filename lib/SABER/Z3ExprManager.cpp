@@ -31,6 +31,8 @@ Z3Expr Z3ExprManager::createFreshBranchCond(const Instruction *inst) {
     Z3Expr negCond = NEG(expr);
     setCondInst(expr, inst);
     setNegCondInst(negCond, inst);
+    z3ExprVec.push_back(expr);
+    z3ExprVec.push_back(negCond);
     return expr;
 }
 
@@ -39,7 +41,7 @@ Z3Expr Z3ExprManager::NEG(const Z3Expr &lhs) {
 }
 
 //Z3Expr *Z3ExprManager::getOrAddZ3Cond(const Z3Expr &z3Expr) {
-//    auto it = idToExprMap.find(z3Expr.hash());
+//    auto it = idToExprMap.find(z3Expr.id());
 //    if (it != idToExprMap.end()) {
 //        return it->second;
 //    } else {
@@ -64,7 +66,7 @@ Z3Expr Z3ExprManager::AND(const Z3Expr &lhs, const Z3Expr &rhs) {
             z3::check_result res = sol.check();
             sol.pop();
             if (res != z3::unsat) {
-                return getTrueCond();
+                return lhs;
             } else {
                 return getFalseCond();
             }
@@ -127,13 +129,13 @@ bool Z3ExprManager::isSatisfiable(const Z3Expr &z3Expr) {
 }
 
 void Z3ExprManager::extractSubConds(const Z3Expr &z3Expr, NodeBS &support) const {
-    if (z3Expr.getExpr().num_args() == 1 && isNegCond(z3Expr.hash())) {
-        support.set(z3Expr.getExpr().hash());
+    if (z3Expr.getExpr().num_args() == 1 && isNegCond(z3Expr.id())) {
+        support.set(z3Expr.getExpr().id());
         return;
     }
     if (z3Expr.getExpr().num_args() == 0)
         if (!z3Expr.getExpr().is_true() && !z3Expr.getExpr().is_false())
-            support.set(z3Expr.getExpr().hash());
+            support.set(z3Expr.getExpr().id());
     for (u32_t i = 0; i < z3Expr.getExpr().num_args(); ++i) {
         Z3Expr expr = z3Expr.getExpr().arg(i);
         extractSubConds(expr, support);

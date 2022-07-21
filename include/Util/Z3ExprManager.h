@@ -23,6 +23,7 @@ namespace SVF {
 //        IndexToExprMap idToExprMap;
         NodeBS negConds;
         z3::solver sol;
+        std::vector<Z3Expr> z3ExprVec;
 
         z3::solver getSolver(){
             return sol;
@@ -82,14 +83,14 @@ namespace SVF {
         }
 
         inline void setCondInst(const Z3Expr &z3Expr, const Instruction *inst) {
-            assert(idToTermInstMap.find(z3Expr.hash()) == idToTermInstMap.end() && "this should be a fresh condition");
-            idToTermInstMap[z3Expr.hash()] = inst;
+            assert(idToTermInstMap.find(z3Expr.id()) == idToTermInstMap.end() && "this should be a fresh condition");
+            idToTermInstMap[z3Expr.id()] = inst;
         }
         //@}
 
         inline void setNegCondInst(const Z3Expr &z3Expr, const Instruction *inst) {
             setCondInst(z3Expr, inst);
-            negConds.set(z3Expr.hash());
+            negConds.set(z3Expr.id());
         }
 
 
