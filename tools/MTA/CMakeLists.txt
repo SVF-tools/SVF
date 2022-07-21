@@ -5,7 +5,7 @@ if(DEFINED IN_SOURCE_BUILD)
 else()
     add_executable( mta mta.cpp )
 
-    target_link_libraries( mta Svf Cudd ${llvm_libs} )
+    target_link_libraries( mta Svf ${llvm_libs} )
 
     set_target_properties( mta PROPERTIES
                            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )

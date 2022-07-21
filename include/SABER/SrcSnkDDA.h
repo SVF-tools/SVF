@@ -307,7 +307,7 @@ protected:
     //@{
     void dumpSlices();
     void annotateSlice(ProgSlice* slice);
-    void printBDDStat();
+    void printZ3Stat();
     //@}
 
 };

@@ -301,9 +301,9 @@ void SrcSnkDDA::dumpSlices()
         const_cast<SVFG*>(getSVFG())->dump("Slice",true);
 }
 
-void SrcSnkDDA::printBDDStat()
+void SrcSnkDDA::printZ3Stat()
 {
 
-    outs() << "BDD Mem usage: " << getPathAllocator()->getMemUsage() << "\n";
-    outs() << "BDD Number: " << getPathAllocator()->getCondNum() << "\n";
+    outs() << "Z3 Mem usage: " << getPathAllocator()->getMemUsage() << "\n";
+    outs() << "Z3 Number: " << getPathAllocator()->getCondNum() << "\n";
 }

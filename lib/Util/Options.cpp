@@ -659,12 +659,6 @@ const llvm::cl::opt<bool> Options::SymTabPrint(
 );
 
 
-// Conditions.cpp
-const llvm::cl::opt<unsigned> Options::MaxBddSize(
-    "max-bdd-size",
-    llvm::cl::init(100000),
-    llvm::cl::desc("Maximum context limit for DDA")
-);
 
 // Conditions.cpp
     const llvm::cl::opt<unsigned> Options::MaxZ3Size(

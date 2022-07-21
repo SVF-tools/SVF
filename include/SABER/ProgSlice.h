@@ -210,7 +210,7 @@ protected:
     /// Clear Control flow conditions before each VF computation
     inline void clearCFCond()
     {
-        /// TODO: how to clean bdd memory
+        /// TODO: how to clean z3 memory
         pathAllocator->clearCFCond();
     }
 

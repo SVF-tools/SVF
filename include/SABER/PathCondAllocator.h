@@ -33,7 +33,6 @@
 #include "Util/SVFModule.h"
 #include "SVF-FE/DataFlowUtil.h"
 #include "SVF-FE/BasicTypes.h"
-#include "Util/BDDExpr.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
 #include "Util/Z3ExprManager.h"
@@ -50,7 +49,6 @@ class PathCondAllocator
 
 public:
 
-//    typedef BDDExprManager::BDDExpr Condition;   /// z3 condition
     typedef Z3ExprManager::Condition Condition;   /// z3 condition
 
     typedef Map<u32_t,Condition> CondPosMap;		///< map a branch to its Condition
@@ -114,11 +112,7 @@ public:
     {
         return condMgr->dumpStr(cond);
     }
-//    /// Given an z3 expr id, get its condition
-//    inline Condition* getCond(u32_t i) const
-//    {
-//        return condMgr->getCond(i);
-//    }
+
     /// Allocate a new condition
     inline Condition newCond(const Instruction* inst)
     {
@@ -295,8 +289,7 @@ private:
     const SVFGNode* curEvalSVFGNode{};			///< current llvm value to evaluate branch condition when computing guards
 
 protected:
-//    BDDExprManager* condMgr;		///< z3 manager
-    Z3ExprManager* condMgr;
+    Z3ExprManager* condMgr;          ///< z3 manager
     BBCondMap bbConds;						///< map basic block to its successors/predecessors branch conditions
 
 };
