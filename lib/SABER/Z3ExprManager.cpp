@@ -12,7 +12,6 @@ Z3ExprManager *Z3ExprManager::z3ExprMgr = nullptr;
 u32_t Z3ExprManager::totalCondNum = 0;
 
 Z3ExprManager::Z3ExprManager() : sol(getContext()) {
-
 }
 
 Z3ExprManager::~Z3ExprManager() {
@@ -25,6 +24,7 @@ Z3ExprManager *Z3ExprManager::getZ3ExprMgr() {
     return z3ExprMgr;
 }
 
+/// Create a fresh condition to encode each program branch
 Z3Expr Z3ExprManager::createFreshBranchCond(const Instruction *inst) {
     u32_t condCountIdx = totalCondNum++;
     Z3Expr expr = getContext().bool_const(("c" + std::to_string(condCountIdx)).c_str());
@@ -36,20 +36,12 @@ Z3Expr Z3ExprManager::createFreshBranchCond(const Instruction *inst) {
     return expr;
 }
 
-Z3Expr Z3ExprManager::NEG(const Z3Expr &lhs) {
-    return !lhs;
+// compute NEG
+Z3Expr Z3ExprManager::NEG(const Z3Expr &z3Expr) {
+    return !z3Expr;
 }
 
-//Z3Expr *Z3ExprManager::getOrAddZ3Cond(const Z3Expr &z3Expr) {
-//    auto it = idToExprMap.find(z3Expr.id());
-//    if (it != idToExprMap.end()) {
-//        return it->second;
-//    } else {
-//        Z3Expr *newz3Expr = new Z3Expr(z3Expr);
-//        return idToExprMap.emplace(newz3Expr->id(), newz3Expr).first->second;
-//    }
-//}
-
+// compute AND
 Z3Expr Z3ExprManager::AND(const Z3Expr &lhs, const Z3Expr &rhs) {
     if (eq(lhs, getFalseCond()) || eq(rhs, getFalseCond())) {
         return getFalseCond();
@@ -59,8 +51,8 @@ Z3Expr Z3ExprManager::AND(const Z3Expr &lhs, const Z3Expr &rhs) {
         return lhs;
     } else {
         Z3Expr expr = lhs.getExpr() && rhs.getExpr();
+        // check subexpression size and option limit
         if (getExprSize(expr) > Options::MaxZ3Size) {
-//        z3::solver sol(Z3Expr::getContext());
             sol.push();
             sol.add(expr.getExpr());
             z3::check_result res = sol.check();
@@ -72,10 +64,10 @@ Z3Expr Z3ExprManager::AND(const Z3Expr &lhs, const Z3Expr &rhs) {
             }
         }
         return expr;
-
     }
 }
 
+// compute OR
 Z3Expr Z3ExprManager::OR(const Z3Expr &lhs, const Z3Expr &rhs) {
     if (eq(lhs, getTrueCond()) || eq(rhs, getTrueCond())) {
         return getTrueCond();
@@ -85,8 +77,8 @@ Z3Expr Z3ExprManager::OR(const Z3Expr &lhs, const Z3Expr &rhs) {
         return lhs;
     } else {
         Z3Expr expr = lhs.getExpr() || rhs.getExpr();
+        // check subexpression size and option limit
         if (getExprSize(expr) > Options::MaxZ3Size) {
-//        z3::solver sol(Z3Expr::getContext());
             sol.push();
             sol.add(expr.getExpr());
             z3::check_result res = sol.check();
@@ -99,25 +91,24 @@ Z3Expr Z3ExprManager::OR(const Z3Expr &lhs, const Z3Expr &rhs) {
         }
         return expr;
     }
-
 }
 
+/// Whether lhs and rhs are equivalent branch conditions
 bool Z3ExprManager::isEquivalentBranchCond(const Z3Expr &lhs, const Z3Expr &rhs) {
-//    z3::solver sol(Z3Expr::getContext());
     sol.push();
-    sol.add(lhs.getExpr() != rhs.getExpr());
+    sol.add(lhs.getExpr() != rhs.getExpr()); // check equal using z3 solver
     z3::check_result res = sol.check();
     sol.pop();
     return res == z3::unsat;
-//    return eq(lhs, rhs);
 }
 
-bool Z3ExprManager::isAllPathReachable(const Z3Expr &e) {
-    return isEquivalentBranchCond(e, getTrueCond());
+/// Whether **All Paths** are reachable
+bool Z3ExprManager::isAllPathReachable(const Z3Expr &z3Expr) {
+    return isEquivalentBranchCond(z3Expr, getTrueCond());
 }
 
+/// Whether the condition is satisfiable
 bool Z3ExprManager::isSatisfiable(const Z3Expr &z3Expr) {
-//    z3::solver sol(Z3Expr::getContext());
     sol.push();
     sol.add(z3Expr.getExpr());
     z3::check_result result = sol.check();
@@ -128,6 +119,7 @@ bool Z3ExprManager::isSatisfiable(const Z3Expr &z3Expr) {
         return false;
 }
 
+// extract subexpression from a Z3 expression
 void Z3ExprManager::extractSubConds(const Z3Expr &z3Expr, NodeBS &support) const {
     if (z3Expr.getExpr().num_args() == 1 && isNegCond(z3Expr.id())) {
         support.set(z3Expr.getExpr().id());
@@ -142,12 +134,14 @@ void Z3ExprManager::extractSubConds(const Z3Expr &z3Expr, NodeBS &support) const
     }
 }
 
+// output Z3 expression as a string
 std::string Z3ExprManager::dumpStr(const Z3Expr &z3Expr) const {
     std::ostringstream out;
     out << z3Expr.getExpr();
     return out.str();
 }
 
+// get the number of subexpression of a Z3 expression
 u32_t Z3ExprManager::getExprSize(const Z3Expr &z3Expr) {
     u32_t res = 1;
     if (z3Expr.getExpr().num_args() == 0) {
@@ -159,6 +153,3 @@ u32_t Z3ExprManager::getExprSize(const Z3Expr &z3Expr) {
     }
     return res;
 }
-
-
-

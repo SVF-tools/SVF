@@ -109,7 +109,6 @@ void SrcSnkDDA::analyze(SVFModule* module)
     }
 
     finalize();
-    outs() << "num_no_free: " << num_no_free << "\n" << "num_par_free: " << num_par_free << "\n";
 
 }
 

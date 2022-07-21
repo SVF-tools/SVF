@@ -57,8 +57,6 @@ public:
     typedef Set<const CallICFGNode*> CallSiteSet;
     typedef NodeBS SVFGNodeBS;
     typedef ProgSlice::VFWorkList WorkList;
-    int num_no_free;
-    int num_par_free;
 
 private:
     ProgSlice* _curSlice;		/// current program slice
@@ -79,8 +77,6 @@ public:
     SrcSnkDDA() : _curSlice(nullptr), svfg(nullptr), ptaCallGraph(nullptr)
     {
         pathCondAllocator = new PathCondAllocator();
-        num_no_free = 0;
-        num_par_free = 0;
     }
     /// Destructor
     virtual ~SrcSnkDDA()

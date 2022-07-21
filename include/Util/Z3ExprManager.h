@@ -13,22 +13,21 @@ namespace SVF {
     class Z3ExprManager {
     public:
         typedef Map<u32_t, const Instruction *> IndexToTermInstMap;
-//        typedef Map<u32_t, Z3Expr *> IndexToExprMap;
         typedef Z3Expr Condition;
-
 
     private:
         static Z3ExprManager *z3ExprMgr;
-        IndexToTermInstMap idToTermInstMap;
-//        IndexToExprMap idToExprMap;
+        IndexToTermInstMap idToTermInstMap; //key: z3 expression id, value: instruction
         NodeBS negConds;
         z3::solver sol;
         std::vector<Z3Expr> z3ExprVec;
 
-        z3::solver getSolver(){
+        // get Z3 sovler
+        z3::solver getSolver() {
             return sol;
         }
 
+        // get Z3 context
         static z3::context &getContext() {
             return Z3Expr::getContext();
         }
@@ -38,7 +37,7 @@ namespace SVF {
 
     public:
         static u32_t totalCondNum; // a counter for fresh condition
-        static Z3ExprManager *getZ3ExprMgr();
+        static Z3ExprManager *getZ3ExprMgr(); // get menager
 
         /// Destructor
         virtual ~Z3ExprManager();
@@ -67,14 +66,15 @@ namespace SVF {
             return Z3Expr::getContext().bool_val(true);
         }
 
-        u32_t getExprSize(const Z3Expr& z3Expr);
+        // get the number of subexpression of a Z3 expression
+        u32_t getExprSize(const Z3Expr &z3Expr);
 
         /// Return the unique false condition
         inline Z3Expr getFalseCond() const {
             return Z3Expr::getContext().bool_val(false);
         }
 
-        /// Get/Set llvm conditional expression
+        /// Get/Set instruction based on Z3 expression id
         //{@
         inline const Instruction *getCondInst(u32_t id) const {
             IndexToTermInstMap::const_iterator it = idToTermInstMap.find(id);
@@ -88,11 +88,11 @@ namespace SVF {
         }
         //@}
 
+        // mark neg Z3 expression
         inline void setNegCondInst(const Z3Expr &z3Expr, const Instruction *inst) {
             setCondInst(z3Expr, inst);
             negConds.set(z3Expr.id());
         }
-
 
         /// Operations on conditions.
 
@@ -101,15 +101,8 @@ namespace SVF {
 
         virtual Z3Expr OR(const Z3Expr &lhs, const Z3Expr &rhs);
 
-        virtual Z3Expr NEG(const Z3Expr &lhs);
+        virtual Z3Expr NEG(const Z3Expr &z3Expr);
         //@}
-
-//        /// Given an id, get its condition
-//        Z3Expr *getCond(u32_t i) const {
-//            auto it = idToExprMap.find(i);
-//            assert(it != idToExprMap.end() && "condition not found!");
-//            return it->second;
-//        }
 
         virtual bool isNegCond(u32_t id) const {
             return negConds.test(id);
@@ -124,14 +117,15 @@ namespace SVF {
         /// Whether **All Paths** are reachable
         bool isAllPathReachable(const Z3Expr &z3Expr);
 
-//        Z3Expr *getOrAddZ3Cond(const Z3Expr &z3Expr);
 
         inline std::string getMemUsage() {
             return "";
         }
 
+        // extract subexpression from a Z3 expression
         void extractSubConds(const Z3Expr &z3Expr, NodeBS &support) const;
 
+        // output Z3 expression as a string
         std::string dumpStr(const Z3Expr &z3Expr) const;
 
 
