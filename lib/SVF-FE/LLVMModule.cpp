@@ -228,43 +228,48 @@ void LLVMModuleSet::initialize()
     }
 }
 
-std::vector<llvm::Function *> LLVMModuleSet::getLLVMGlobalFunctions(
-        llvm::GlobalVariable *global)
+std::vector<const Function *> LLVMModuleSet::getLLVMGlobalFunctions(
+    const GlobalVariable *global)
 {
+
     class LLVMGlobalFunction {
     // llvm.global_ctors and llvm.global_dtors
     public:
-        unsigned priority;
-        llvm::Function *func;
+        u32_t priority;
+        const Function *func;
         LLVMGlobalFunction(){};
-        LLVMGlobalFunction(unsigned _priority, llvm::Function *_func)
+        LLVMGlobalFunction(u32_t _priority, const Function *_func)
               : priority(_priority), func(_func){};
         bool operator>(const LLVMGlobalFunction &other) const
         {
-            return priority > other.priority;
+            if (priority != other.priority) {
+                return priority > other.priority;
+            } else {
+                return func > other.func;
+            }
         }
     };
 
     std::priority_queue<LLVMGlobalFunction, std::vector<LLVMGlobalFunction>,
                         greater<LLVMGlobalFunction>>
             queue;
-    std::vector<llvm::Function *> result;
+    std::vector<const Function *> result;
 
-    llvm::ConstantArray *globalFuncArray =
-            llvm::dyn_cast<llvm::ConstantArray>(global->getInitializer());
-    if (globalFuncArray) {
+    if(const ConstantArray *globalFuncArray =
+            SVFUtil::dyn_cast<ConstantArray>(global->getInitializer())){
         for (unsigned int i = 0; i < globalFuncArray->getNumOperands(); ++i) {
-            llvm::ConstantStruct *globalFuncItem =
-                    llvm::dyn_cast<llvm::ConstantStruct>(
-                            globalFuncArray->getOperand(i));
-            if (globalFuncItem) {
-                ConstantInt *priority = llvm::dyn_cast<llvm::ConstantInt>(
+            if (
+            const ConstantStruct *globalFuncItem =
+                    SVFUtil::dyn_cast<ConstantStruct>(
+                            globalFuncArray->getOperand(i))){
+
+                const ConstantInt *priority = SVFUtil::dyn_cast<ConstantInt>(
                         globalFuncItem->getOperand(0));
-                Function *func = llvm::dyn_cast<llvm::Function>(
+                const Function *func = SVFUtil::dyn_cast<Function>(
                         globalFuncItem->getOperand(1));
 
                 if (priority && func) {
-                    queue.push(LLVMGlobalFunction((unsigned)priority
+                    queue.push(LLVMGlobalFunction(priority
                                                           ->getZExtValue(),
                                                   func));
                 }
@@ -281,8 +286,8 @@ std::vector<llvm::Function *> LLVMModuleSet::getLLVMGlobalFunctions(
 
 void LLVMModuleSet::addSVFMain()
 {
-    std::vector<Function *> init_funcs;
-    std::vector<Function *> destroy_funcs;
+    std::vector<const Function *> init_funcs;
+    std::vector<const Function *> destroy_funcs;
     Function * orgMain = 0;
     Module* mainMod = nullptr;
     for (Module &mod : modules) {
@@ -290,7 +295,7 @@ void LLVMModuleSet::addSVFMain()
         for (Module::global_iterator it = mod.global_begin(),
                                      eit = mod.global_end();
              it != eit; ++it) {
-            GlobalVariable *global = &*it;
+            const GlobalVariable *global = &*it;
             if (global->getName().equals(SVF_GLOBAL_CTORS) &&
                 global->hasInitializer()) {
                 init_funcs = getLLVMGlobalFunctions(global);
