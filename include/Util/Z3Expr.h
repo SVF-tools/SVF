@@ -327,7 +327,7 @@ public:
         return !z3Expr;
     }
 
-// compute AND
+    // compute AND
     static Z3Expr AND(const Z3Expr &lhs, const Z3Expr &rhs) {
         if (eq(lhs, Z3Expr::getFalseCond()) || eq(rhs, Z3Expr::getFalseCond())) {
             return Z3Expr::getFalseCond();
@@ -336,7 +336,7 @@ public:
         } else if (eq(rhs, Z3Expr::getTrueCond())) {
             return lhs;
         } else {
-            Z3Expr expr = lhs.getExpr() && rhs.getExpr();
+            Z3Expr expr = lhs && rhs;
             // check subexpression size and option limit
             if (Z3Expr::getExprSize(expr) > Options::MaxZ3Size) {
                 getSolver().push();
@@ -353,7 +353,7 @@ public:
         }
     }
 
-// compute OR
+    // compute OR
     static Z3Expr OR(const Z3Expr &lhs, const Z3Expr &rhs) {
         if (eq(lhs, Z3Expr::getTrueCond()) || eq(rhs, Z3Expr::getTrueCond())) {
             return Z3Expr::getTrueCond();
@@ -362,7 +362,7 @@ public:
         } else if (eq(rhs, Z3Expr::getFalseCond())) {
             return lhs;
         } else {
-            Z3Expr expr = lhs.getExpr() || rhs.getExpr();
+            Z3Expr expr = lhs || rhs;
             // check subexpression size and option limit
             if (Z3Expr::getExprSize(expr) > Options::MaxZ3Size) {
                 getSolver().push();
