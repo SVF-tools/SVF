@@ -45,6 +45,8 @@ u32_t ContextCond::maximumCxt = 0;
 u32_t ContextCond::maximumPathLen = 0;
 u32_t ContextCond::maximumPath = 0;
 u32_t PathCondAllocator::totalCondNum = 0;
+z3::solver* PathCondAllocator::Condition::solver = nullptr;
+z3::context* PathCondAllocator::Condition::ctx = nullptr;
 
 
 PathCondAllocator::PathCondAllocator() {
@@ -536,20 +538,18 @@ PathCondAllocator::Condition PathCondAllocator::newCond(const Instruction *inst)
 /// Whether lhs and rhs are equivalent branch conditions
 bool PathCondAllocator::isEquivalentBranchCond(const Condition &lhs,
                                                const Condition &rhs) const {
-    z3::solver sol(Condition::getContext());
-    sol.push();
-    sol.add(lhs.getExpr() != rhs.getExpr()); // check equal using z3 solver
-    z3::check_result res = sol.check();
-    sol.pop();
+    Condition::getSolver().push();
+    Condition::getSolver().add(lhs.getExpr() != rhs.getExpr()); // check equal using z3 solver
+    z3::check_result res = Condition::getSolver().check();
+    Condition::getSolver().pop();
     return res == z3::unsat;
 }
 
 /// whether condition is satisfiable
 bool PathCondAllocator::isSatisfiable(const Condition &condition) {
-    z3::solver sol(Condition::getContext());
-    sol.add(condition.getExpr());
-    z3::check_result result = sol.check();
-    sol.pop();
+    Condition::getSolver().add(condition.getExpr());
+    z3::check_result result = Condition::getSolver().check();
+    Condition::getSolver().pop();
     if (result == z3::sat || result == z3::unknown)
         return true;
     else

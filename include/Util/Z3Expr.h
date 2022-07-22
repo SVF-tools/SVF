@@ -40,7 +40,7 @@ class Z3Expr
 {
 public:
     static z3::context *ctx;
-//    static z3::solver *solver;
+    static z3::solver *solver;
 
 private:
     z3::expr e;
@@ -82,14 +82,14 @@ public:
         return e;
     }
     /// Get z3 solver, singleton design here to make sure we only have one context
-//    static z3::solver &getSolver()
-//    {
-//        if (solver == nullptr)
-//        {
-//            solver = new z3::solver(getContext());
-//        }
-//        return *solver;
-//    }
+    static z3::solver &getSolver()
+    {
+        if (solver == nullptr)
+        {
+            solver = new z3::solver(getContext());
+        }
+        return *solver;
+    }
 
     /// Get z3 context, singleton design here to make sure we only have one context
     static z3::context &getContext()
@@ -109,11 +109,11 @@ public:
     }
 
     /// release z3 solver
-//    static void releaseSolver()
-//    {
-//        delete solver;
-//        solver = nullptr;
-//    }
+    static void releaseSolver()
+    {
+        delete solver;
+        solver = nullptr;
+    }
 
     /// null expression
     static z3::expr nullExpr()
@@ -339,12 +339,10 @@ public:
             Z3Expr expr = lhs.getExpr() && rhs.getExpr();
             // check subexpression size and option limit
             if (Z3Expr::getExprSize(expr) > Options::MaxZ3Size) {
-//                z3::solver &sol = getSolver();
-                z3::solver sol(getContext());
-                sol.push();
-                sol.add(expr.getExpr());
-                z3::check_result res = sol.check();
-                sol.pop();
+                getSolver().push();
+                getSolver().add(expr.getExpr());
+                z3::check_result res = getSolver().check();
+                getSolver().pop();
                 if (res != z3::unsat) {
                     return lhs;
                 } else {
@@ -367,12 +365,10 @@ public:
             Z3Expr expr = lhs.getExpr() || rhs.getExpr();
             // check subexpression size and option limit
             if (Z3Expr::getExprSize(expr) > Options::MaxZ3Size) {
-//                z3::solver & sol = getSolver();
-                z3::solver sol(getContext());
-                sol.push();
-                sol.add(expr.getExpr());
-                z3::check_result res = sol.check();
-                sol.pop();
+                getSolver().push();
+                getSolver().add(expr.getExpr());
+                z3::check_result res = getSolver().check();
+                getSolver().pop();
                 if (res != z3::unsat) {
                     return Z3Expr::getTrueCond();
                 } else {
