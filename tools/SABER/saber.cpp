@@ -31,6 +31,8 @@
 #include "SABER/FileChecker.h"
 #include "SABER/DoubleFreeChecker.h"
 #include "Util/Options.h"
+#include "Util/Z3Expr.h"
+
 
 using namespace llvm;
 using namespace SVF;

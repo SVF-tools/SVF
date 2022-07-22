@@ -53,7 +53,7 @@ void SrcSnkDDA::initialize(SVFModule* module)
     ptaCallGraph = ander->getPTACallGraph();
     //AndersenWaveDiff::releaseAndersenWaveDiff();
     /// allocate control-flow graph branch conditions
-    getPathAllocator()->allocate(getPAG()->getModule());
+    getSaberCondAllocator()->allocate(getPAG()->getModule());
 
     initSrcs();
     initSnks();
@@ -109,6 +109,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
     }
 
     finalize();
+
 }
 
 
@@ -279,7 +280,7 @@ void SrcSnkDDA::setCurSlice(const SVFGNode* src)
         clearVisitedMap();
     }
 
-    _curSlice = new ProgSlice(src,getPathAllocator(), getSVFG());
+    _curSlice = new ProgSlice(src,getSaberCondAllocator(), getSVFG());
 }
 
 void SrcSnkDDA::annotateSlice(ProgSlice* slice)
@@ -300,9 +301,9 @@ void SrcSnkDDA::dumpSlices()
         const_cast<SVFG*>(getSVFG())->dump("Slice",true);
 }
 
-void SrcSnkDDA::printBDDStat()
+void SrcSnkDDA::printZ3Stat()
 {
 
-    outs() << "BDD Mem usage: " << getPathAllocator()->getMemUsage() << "\n";
-    outs() << "BDD Number: " << getPathAllocator()->getCondNum() << "\n";
+    outs() << "Z3 Mem usage: " << getSaberCondAllocator()->getMemUsage() << "\n";
+    outs() << "Z3 Number: " << getSaberCondAllocator()->getCondNum() << "\n";
 }
