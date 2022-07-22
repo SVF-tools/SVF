@@ -35,7 +35,7 @@
 #include "SVF-FE/BasicTypes.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
-#include "Util/Z3ExprManager.h"
+#include "Util/Z3Expr.h"
 
 
 namespace SVF
@@ -49,8 +49,8 @@ class PathCondAllocator
 
 public:
 
-    typedef Z3ExprManager::Condition Condition;   /// z3 condition
-
+    typedef Z3Expr Condition;   /// z3 condition
+    typedef Map<u32_t, const Instruction *> IndexToTermInstMap; // id to instruction map for z3
     typedef Map<u32_t,Condition> CondPosMap;		///< map a branch to its Condition
     typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
     typedef Set<const BasicBlock*> BasicBlockSet;
@@ -70,11 +70,11 @@ public:
     //@{
     inline std::string getMemUsage()
     {
-        return condMgr->getMemUsage();
+        return "";
     }
     inline u32_t getCondNum()
     {
-        return condMgr->getCondNumber();
+        return totalCondNum;
     }
     //@}
 
@@ -82,62 +82,60 @@ public:
     //@{
     inline Condition condAnd(const Condition& lhs, const Condition& rhs)
     {
-        return condMgr->AND(lhs,rhs);
+        return Condition::AND(lhs,rhs);
     }
     inline Condition condOr(const Condition& lhs, const Condition& rhs)
     {
-        return condMgr->OR(lhs,rhs);
+        return Condition::OR(lhs,rhs);
     }
     inline Condition condNeg(const Condition& cond)
     {
-        return condMgr->NEG(cond);
+        return Condition::NEG(cond);
     }
     inline Condition getTrueCond() const
     {
-        return condMgr->getTrueCond();
+        return Condition::getTrueCond();
     }
     inline Condition getFalseCond() const
     {
-        return condMgr->getFalseCond();
+        return Condition::getFalseCond();
     }
     /// Iterator every element of the condition
     inline NodeBS exactCondElem(const Condition& cond)
     {
         NodeBS elems;
-        condMgr->extractSubConds(cond, elems);
+        extractSubConds(cond, elems);
         return elems;
     }
 
     inline std::string dumpCond(const Condition& cond) const
     {
-        return condMgr->dumpStr(cond);
+        return Condition::dumpStr(cond);
     }
 
     /// Allocate a new condition
-    inline Condition newCond(const Instruction* inst)
-    {
-        return condMgr->createFreshBranchCond(inst);
-    }
-    //@}
+    Condition newCond(const Instruction* inst);
 
     /// Perform path allocation
     void allocate(const SVFModule* module);
 
-    /// Get/Set llvm conditional expression
+    /// Get/Set instruction based on Z3 expression id
     //{@
-    inline const Instruction* getCondInst(u32_t id) const
-    {
-        return condMgr->getCondInst(id);
+    inline const Instruction *getCondInst(u32_t id) const {
+        IndexToTermInstMap::const_iterator it = idToTermInstMap.find(id);
+        assert(it != idToTermInstMap.end() && "this should be a fresh condition");
+        return it->second;
     }
-    inline void setCondInst(const Condition& cond, const Instruction* inst)
-    {
-        condMgr->setCondInst(cond, inst);
+
+    inline void setCondInst(const Condition &condition, const Instruction *inst) {
+        assert(idToTermInstMap.find(condition.id()) == idToTermInstMap.end() && "this should be a fresh condition");
+        idToTermInstMap[condition.id()] = inst;
     }
     //@}
 
-    bool isNegCond(u32_t id)
+    bool isNegCond(u32_t id) const
     {
-        return condMgr->isNegCond(id);
+        return negConds.test(id);
     }
 
     /// Get dominators
@@ -187,27 +185,51 @@ public:
     void printPathCond();
 
     /// whether condition is satisfiable
-    inline bool isSatisfiable(Condition& condition)
-    {
-        return condMgr->isSatisfiable(condition);
-    }
+    bool isSatisfiable(const Condition& condition);
 
     /// whether condition is satisfiable for all possible boolean guards
     inline bool isAllPathReachable(Condition& condition)
     {
-        return condMgr->isAllPathReachable(condition);
+        return isEquivalentBranchCond(condition, Condition::getTrueCond());
     }
 
-    bool isEquivalentBranchCond(const Condition &lhs, const Condition &rhs) const
-    {
-        return condMgr->isEquivalentBranchCond(lhs, rhs);
-    }
+    /// Whether lhs and rhs are equivalent branch conditions
+    bool isEquivalentBranchCond(const Condition &lhs, const Condition &rhs) const;
 
     inline ICFG* getICFG() const
     {
         return PAG::getPAG()->getICFG();
     }
 
+    /// Get/Set control-flow conditions
+    //@{
+    inline bool setCFCond(const BasicBlock* bb, const Condition& cond)
+    {
+        BBToCondMap::iterator it = bbToCondMap.find(bb);
+        // until a fixed-point is reached (condition is not changed)
+        if(it!=bbToCondMap.end() && isEquivalentBranchCond(it->second, cond))
+            return false;
+
+        bbToCondMap[bb] = cond;
+        return true;
+    }
+    inline Condition getCFCond(const BasicBlock* bb) const
+    {
+        BBToCondMap::const_iterator it = bbToCondMap.find(bb);
+        if(it==bbToCondMap.end())
+        {
+            return getFalseCond();
+        }
+        return it->second;
+    }
+    //@}
+
+
+    // mark neg Z3 expression
+    inline void setNegCondInst(const Condition &condition, const Instruction *inst) {
+        setCondInst(condition, inst);
+        negConds.set(condition.id());
+    }
 private:
 
     /// Allocate path condition for every basic block
@@ -251,46 +273,29 @@ private:
     bool isTestContainsNullAndTheValue(const CmpInst* cmp) const;
     //@}
 
-
-    /// Get/Set control-flow conditions
-    //@{
-    inline bool setCFCond(const BasicBlock* bb, const Condition& cond)
-    {
-        BBToCondMap::iterator it = bbToCondMap.find(bb);
-        // until a fixed-point is reached (condition is not changed)
-        if(it!=bbToCondMap.end() && isEquivalentBranchCond(it->second, cond))
-            return false;
-
-        bbToCondMap[bb] = cond;
-        return true;
-    }
-    inline Condition getCFCond(const BasicBlock* bb) const
-    {
-        BBToCondMap::const_iterator it = bbToCondMap.find(bb);
-        if(it==bbToCondMap.end())
-        {
-            return getFalseCond();
-        }
-        return it->second;
-    }
-    //@}
-
-
-
     /// Release memory
     void destroy()
     {
 
     }
 
+    // extract subexpression from a Z3 expression
+    void extractSubConds(const Condition &condition, NodeBS &support) const;
+
+
     PTACFInfoBuilder cfInfoBuilder;		    ///< map a function to its loop info
     FunToExitBBsMap funToExitBBsMap;		///< map a function to all its basic blocks calling program exit
     BBToCondMap bbToCondMap;				///< map a basic block to its path condition starting from root
     const SVFGNode* curEvalSVFGNode{};			///< current llvm value to evaluate branch condition when computing guards
+    IndexToTermInstMap idToTermInstMap;     //key: z3 expression id, value: instruction
+    NodeBS negConds;                        //bit vector for distinguish neg
+    std::vector<Condition> conditionVec;          // vector storing z3expression
+    static u32_t totalCondNum; // a counter for fresh condition
 
 protected:
-    Z3ExprManager* condMgr;          ///< z3 manager
-    BBCondMap bbConds;						///< map basic block to its successors/predecessors branch conditions
+    BBCondMap bbConds;						///< map basic block to its successo
+///<
+///< rs/predecessors branch conditions
 
 };
 

@@ -30,7 +30,6 @@
 #ifndef DPITEM_H_
 #define DPITEM_H_
 
-#include "Util/Z3ExprManager.h"
 #include "MemoryModel/ConditionalPT.h"
 #include <algorithm>    // std::sort
 

@@ -31,6 +31,7 @@
 
 #include "z3++.h"
 #include "Util/SVFBasicTypes.h"
+#include "Util/Options.h"
 
 namespace SVF
 {
@@ -39,6 +40,7 @@ class Z3Expr
 {
 public:
     static z3::context *ctx;
+//    static z3::solver *solver;
 
 private:
     z3::expr e;
@@ -79,6 +81,15 @@ public:
     {
         return e;
     }
+    /// Get z3 solver, singleton design here to make sure we only have one context
+//    static z3::solver &getSolver()
+//    {
+//        if (solver == nullptr)
+//        {
+//            solver = new z3::solver(getContext());
+//        }
+//        return *solver;
+//    }
 
     /// Get z3 context, singleton design here to make sure we only have one context
     static z3::context &getContext()
@@ -96,6 +107,13 @@ public:
         delete ctx;
         ctx = nullptr;
     }
+
+    /// release z3 solver
+//    static void releaseSolver()
+//    {
+//        delete solver;
+//        solver = nullptr;
+//    }
 
     /// null expression
     static z3::expr nullExpr()
@@ -272,6 +290,98 @@ public:
         return getExpr().get_sort();
     }
     //%}
+
+    // output Z3 expression as a string
+    static std::string dumpStr(const Z3Expr &z3Expr) {
+        std::ostringstream out;
+        out << z3Expr.getExpr();
+        return out.str();
+    }
+
+    // get the number of subexpression of a Z3 expression
+    static u32_t getExprSize(const Z3Expr &z3Expr) {
+        u32_t res = 1;
+        if (z3Expr.getExpr().num_args() == 0) {
+            return 1;
+        }
+        for (u32_t i = 0; i < z3Expr.getExpr().num_args(); ++i) {
+            Z3Expr expr = z3Expr.getExpr().arg(i);
+            res += getExprSize(expr);
+        }
+        return res;
+    }
+
+    /// Return the unique true condition
+    static inline Z3Expr getTrueCond() {
+        return getContext().bool_val(true);
+    }
+
+
+    /// Return the unique false condition
+    static inline Z3Expr getFalseCond() {
+        return getContext().bool_val(false);
+    }
+
+    // compute NEG
+    static Z3Expr NEG(const Z3Expr &z3Expr) {
+        return !z3Expr;
+    }
+
+// compute AND
+    static Z3Expr AND(const Z3Expr &lhs, const Z3Expr &rhs) {
+        if (eq(lhs, Z3Expr::getFalseCond()) || eq(rhs, Z3Expr::getFalseCond())) {
+            return Z3Expr::getFalseCond();
+        } else if (eq(lhs, Z3Expr::getTrueCond())) {
+            return rhs;
+        } else if (eq(rhs, Z3Expr::getTrueCond())) {
+            return lhs;
+        } else {
+            Z3Expr expr = lhs.getExpr() && rhs.getExpr();
+            // check subexpression size and option limit
+            if (Z3Expr::getExprSize(expr) > Options::MaxZ3Size) {
+//                z3::solver &sol = getSolver();
+                z3::solver sol(getContext());
+                sol.push();
+                sol.add(expr.getExpr());
+                z3::check_result res = sol.check();
+                sol.pop();
+                if (res != z3::unsat) {
+                    return lhs;
+                } else {
+                    return Z3Expr::getFalseCond();
+                }
+            }
+            return expr;
+        }
+    }
+
+// compute OR
+    static Z3Expr OR(const Z3Expr &lhs, const Z3Expr &rhs) {
+        if (eq(lhs, Z3Expr::getTrueCond()) || eq(rhs, Z3Expr::getTrueCond())) {
+            return Z3Expr::getTrueCond();
+        } else if (eq(lhs, Z3Expr::getFalseCond())) {
+            return rhs;
+        } else if (eq(rhs, Z3Expr::getFalseCond())) {
+            return lhs;
+        } else {
+            Z3Expr expr = lhs.getExpr() || rhs.getExpr();
+            // check subexpression size and option limit
+            if (Z3Expr::getExprSize(expr) > Options::MaxZ3Size) {
+//                z3::solver & sol = getSolver();
+                z3::solver sol(getContext());
+                sol.push();
+                sol.add(expr.getExpr());
+                z3::check_result res = sol.check();
+                sol.pop();
+                if (res != z3::unsat) {
+                    return Z3Expr::getTrueCond();
+                } else {
+                    return Z3Expr::getFalseCond();
+                }
+            }
+            return expr;
+        }
+    }
 };
 }
 
