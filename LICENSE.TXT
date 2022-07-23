@@ -34,8 +34,6 @@ licenses, and/or restrictions:
 
 Program                        Directory/File
 -------                        --------------
-CUDD-2.5.0                     include/CUDD/
-                               lib/CUDD/
 fastcluster/hclust-cpp         include/FastCluster/
                                lib/FastCluster/
 LLVM's SparseBitVector         include/Util/SparseBitVector.h
