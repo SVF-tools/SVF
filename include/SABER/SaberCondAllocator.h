@@ -70,7 +70,11 @@ public:
     //@{
     inline std::string getMemUsage()
     {
-        return "";
+        u32_t vmrss, vmsize;
+        if (SVFUtil::getMemoryUsageKB(&vmrss, &vmsize))
+            return std::to_string(vmsize) + "KB";
+        else
+            return "cannot read memory usage";
     }
     inline u32_t getCondNum()
     {
