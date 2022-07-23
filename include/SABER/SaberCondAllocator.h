@@ -121,13 +121,15 @@ public:
 
     /// Get/Set instruction based on Z3 expression id
     //{@
-    inline const Instruction *getCondInst(u32_t id) const {
+    inline const Instruction *getCondInst(u32_t id) const
+    {
         IndexToTermInstMap::const_iterator it = idToTermInstMap.find(id);
         assert(it != idToTermInstMap.end() && "this should be a fresh condition");
         return it->second;
     }
 
-    inline void setCondInst(const Condition &condition, const Instruction *inst) {
+    inline void setCondInst(const Condition &condition, const Instruction *inst)
+    {
         assert(idToTermInstMap.find(condition.id()) == idToTermInstMap.end() && "this should be a fresh condition");
         idToTermInstMap[condition.id()] = inst;
     }
@@ -226,7 +228,8 @@ public:
 
 
     /// mark neg Z3 expression
-    inline void setNegCondInst(const Condition &condition, const Instruction *inst) {
+    inline void setNegCondInst(const Condition &condition, const Instruction *inst)
+    {
         setCondInst(condition, inst);
         negConds.set(condition.id());
     }

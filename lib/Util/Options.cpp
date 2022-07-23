@@ -661,11 +661,11 @@ const llvm::cl::opt<bool> Options::SymTabPrint(
 
 
 // Conditions.cpp
-    const llvm::cl::opt<unsigned> Options::MaxZ3Size(
-            "max-z3-size",
-            llvm::cl::init(30),
-            llvm::cl::desc("Maximum size limit for Z3 expression")
-    );
+const llvm::cl::opt<unsigned> Options::MaxZ3Size(
+    "max-z3-size",
+    llvm::cl::init(30),
+    llvm::cl::desc("Maximum size limit for Z3 expression")
+);
 
 
 // SaberCondAllocator.cpp
