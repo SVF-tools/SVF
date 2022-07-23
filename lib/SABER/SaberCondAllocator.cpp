@@ -45,8 +45,6 @@ u32_t ContextCond::maximumCxt = 0;
 u32_t ContextCond::maximumPathLen = 0;
 u32_t ContextCond::maximumPath = 0;
 u32_t SaberCondAllocator::totalCondNum = 0;
-unique_ptr<z3::solver> SaberCondAllocator::Condition::solver = nullptr;
-z3::context* SaberCondAllocator::Condition::ctx = nullptr;
 
 
 SaberCondAllocator::SaberCondAllocator()
