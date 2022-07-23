@@ -39,7 +39,7 @@ class Z3Expr
 {
 public:
     static z3::context *ctx;
-    static std::unique_ptr<z3::solver> solver;
+    static z3::solver* solver;
 
 private:
     z3::expr e;
@@ -89,6 +89,9 @@ public:
 
     /// release z3 context
     static void releaseContext();
+
+    /// release z3 solver
+    static void releaseSolver();
 
 
     /// null expression

@@ -31,11 +31,25 @@
 
 namespace SVF
 {
+
+z3::context *Z3Expr::ctx = nullptr;
+z3::solver* Z3Expr::solver = nullptr;
+
+
 /// release z3 context
 void Z3Expr::releaseContext()
 {
+    if(solver)
+        releaseSolver();
     delete ctx;
     ctx = nullptr;
+}
+
+/// release z3 solver
+void Z3Expr::releaseSolver()
+{
+    delete solver;
+    solver = nullptr;
 }
 
 /// Get z3 solver, singleton design here to make sure we only have one context
@@ -43,7 +57,7 @@ z3::solver &Z3Expr::getSolver()
 {
     if (solver == nullptr)
     {
-        solver = std::make_unique<z3::solver>(getContext());
+        solver = new z3::solver(getContext());
     }
     return *solver;
 }
