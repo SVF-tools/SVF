@@ -39,6 +39,7 @@ class Z3Expr
 {
 public:
     static z3::context *ctx;
+    static z3::solver* solver;
 
 private:
     z3::expr e;
@@ -80,22 +81,18 @@ public:
         return e;
     }
 
+    /// Get z3 solver, singleton design here to make sure we only have one context
+    static z3::solver &getSolver();
+
     /// Get z3 context, singleton design here to make sure we only have one context
-    static z3::context &getContext()
-    {
-        if (ctx == nullptr)
-        {
-            ctx = new z3::context();
-        }
-        return *ctx;
-    }
+    static z3::context &getContext();
 
     /// release z3 context
-    static void releaseContext()
-    {
-        delete ctx;
-        ctx = nullptr;
-    }
+    static void releaseContext();
+
+    /// release z3 solver
+    static void releaseSolver();
+
 
     /// null expression
     static z3::expr nullExpr()
@@ -107,6 +104,12 @@ public:
     inline u32_t id() const
     {
         return e.id();
+    }
+
+    /// get hash id
+    inline u32_t hash() const
+    {
+        return e.hash();
     }
 
     inline const std::string to_string() const
@@ -245,7 +248,7 @@ public:
         return !lhs.getExpr();
     }
 
-    friend Z3Expr ite(const Z3Expr& cond, const Z3Expr& lhs, const Z3Expr& rhs)
+    friend Z3Expr ite(const Z3Expr &cond, const Z3Expr &lhs, const Z3Expr &rhs)
     {
         return ite(cond.getExpr(), lhs.getExpr(), rhs.getExpr());
     }
@@ -266,6 +269,38 @@ public:
         return getExpr().get_sort();
     }
     //%}
+
+    /// output Z3 expression as a string
+    static std::string dumpStr(const Z3Expr &z3Expr);
+
+
+    /// get the number of subexpression of a Z3 expression
+    static u32_t getExprSize(const Z3Expr &z3Expr);
+
+    /// Return the unique true condition
+    static inline Z3Expr getTrueCond()
+    {
+        return getContext().bool_val(true);
+    }
+
+
+    /// Return the unique false condition
+    static inline Z3Expr getFalseCond()
+    {
+        return getContext().bool_val(false);
+    }
+
+    /// compute NEG
+    static inline Z3Expr NEG(const Z3Expr &z3Expr)
+    {
+        return !z3Expr;
+    }
+
+    /// compute AND, used for branch condition
+    static Z3Expr AND(const Z3Expr &lhs, const Z3Expr &rhs);
+
+    /// compute OR, used for branch condition
+    static Z3Expr OR(const Z3Expr &lhs, const Z3Expr &rhs);
 };
 }
 

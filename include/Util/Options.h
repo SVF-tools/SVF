@@ -218,9 +218,9 @@ public:
     static const llvm::cl::opt<bool> SymTabPrint;
 
     // Conditions.cpp
-    static const llvm::cl::opt<unsigned> MaxBddSize;
+    static const llvm::cl::opt<unsigned> MaxZ3Size;
 
-    // PathCondAllocator.cpp
+    // SaberCondAllocator.cpp
     static const llvm::cl::opt<bool> PrintPathCond;
 
     // SVFUtil.cpp

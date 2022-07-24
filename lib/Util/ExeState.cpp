@@ -33,7 +33,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-z3::context *Z3Expr::ctx = nullptr;
 
 /*!
  * Init Z3Expr for ValVar
