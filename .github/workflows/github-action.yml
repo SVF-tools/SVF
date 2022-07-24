@@ -33,7 +33,7 @@ jobs:
           sudo apt-get update
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz
+          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov
       - name: env-setup
         if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
         run: |
@@ -68,3 +68,16 @@ jobs:
         working-directory: ${{github.workspace}}/Release-build
         run: 
           ctest -R cfl_test -VV
+          
+      - name: create-coverage-report-and-remove-system-files
+        working-directory: ${{github.workspace}}/Release-build
+        if: runner.os == 'Linux'
+        run: | 
+          lcov --capture --directory ./ --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' --output-file coverage.info
+      
+      - name: upload-coverage
+        if: runner.os == 'Linux'
+        uses: codecov/codecov-action@v2
+        with:
+          files: coverage.info
