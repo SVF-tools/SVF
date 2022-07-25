@@ -1008,6 +1008,21 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
         if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
             value = gep->getPointerOperand();
     }
+
+    LLVMContext &cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
+    if (value->getType() == PointerType::getInt8PtrTy(cxt)) {
+        if (const CallBase* cb = SVFUtil::dyn_cast<CallBase>(value)) {
+            for (const User* user: cb->users()) {
+                if (const BitCastInst* bitCast = SVFUtil::dyn_cast<BitCastInst>(user))
+                    return bitCast;
+            }
+        }
+        else if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(value)) {
+            if (const BitCastInst* bitCast = SVFUtil::dyn_cast<BitCastInst>(load->getPointerOperand()))
+                return bitCast->getOperand(0);
+        }
+    }
+
     return value;
 }
 
