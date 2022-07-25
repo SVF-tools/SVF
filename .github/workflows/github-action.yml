@@ -75,6 +75,8 @@ jobs:
         run: | 
           lcov --capture --directory ./ --output-file coverage.info
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/z3.obj/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/llvm-13.0.0.obj/*' --output-file coverage.info
       
       - name: upload-coverage
         if: runner.os == 'Linux'
