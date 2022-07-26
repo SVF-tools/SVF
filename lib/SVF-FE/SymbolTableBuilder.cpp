@@ -212,6 +212,10 @@ void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
 
 
 void SymbolTableBuilder::collectSpecialSym(const Value* val){
+    if (LLVMUtil::isPtrInDeadFunction(val))
+    {
+        symInfo->getModule()->addPtrInDeadFunction(val);
+    }
     if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
     {
         const SVFFunction *svffun = symInfo->getModule()->getSVFFunction(fun);
@@ -273,11 +277,6 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
        {
             symInfo->getModule()->addArgInNoCallerFunction(val);
        } 
-       else if (LLVMUtil::isPtrInDeadFunction(val))
-       {
-           symInfo->getModule()->addPtrInDeadFunction(val);
-       }
-        
     }
 }
 
