@@ -218,7 +218,7 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
     }
     if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
     {
-        const SVFFunction *svffun = symInfo->getModule()->getSVFFunction(fun);
+        const SVFFunction *svfFun = symInfo->getModule()->getSVFFunction(fun);
         if (LLVMUtil::isDeadFunction(fun))
         {
             symInfo->getModule()->addDeadFunction(fun);
@@ -227,7 +227,7 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
         {
             symInfo->getModule()->addFunctionDoesNotRet(fun);
         }
-        if (!isExtCall(svffun))
+        if (!isExtCall(svfFun))
         {
             const BasicBlock* exitBB = LLVMUtil::getFunExitBB(fun);
             symInfo->getModule()->addFunExitBB(fun,exitBB);
@@ -239,9 +239,9 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
                 symInfo->getModule()->addBBSuccessorNum(bb,num);
                 if (num >1)
                 {
-                    for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
+                    for (succ_const_iterator succIt = succ_begin(bb); succIt != succ_end(bb); succIt++)
                     {
-                        const BasicBlock* succ = *succ_it;
+                        const BasicBlock* succ = *succIt;
                         const u32_t successorPos = LLVMUtil::getBBSuccessorPos(bb,succ);
                         if (successorPos != 0)
                         {
@@ -249,9 +249,9 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
                         }
                     }
                 }
-                for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
+                for (succ_const_iterator succIt = succ_begin(bb); succIt != succ_end(bb); succIt++)
                 {
-                    const BasicBlock* succ = *succ_it;
+                    const BasicBlock* succ = *succIt;
                     const u32_t predecessorPos = LLVMUtil::getBBPredecessorPos(bb,succ);
                     if (predecessorPos != 0)
                     {
@@ -271,13 +271,10 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
         const Type* type = LLVMUtil::getPtrElementType(ptrType);
         symInfo->getModule()->addptrElementType(ptrType, type);
     }
-    else if (SVFUtil::isa<Value>(val))
+    else if (LLVMUtil::ArgInNoCallerFunction(val))
     {
-       if (LLVMUtil::ArgInNoCallerFunction(val))
-       {
-            symInfo->getModule()->addArgInNoCallerFunction(val);
-       } 
-    }
+        symInfo->getModule()->addArgInNoCallerFunction(val);
+   } 
 }
 
 /*!

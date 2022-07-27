@@ -226,7 +226,7 @@ void LLVMModuleSet::initialize()
                 LLVMUtil::getFunReachableBBs(svfFunc, reachableBBs);
                 svfFunc = new SVFFunction(func,reachableBBs);
             }
-            svfModule->addFunctionSet(func, svfFunc);
+            svfModule->addFunctionSet(svfFunc);
         }
 
         /// GlobalVariable

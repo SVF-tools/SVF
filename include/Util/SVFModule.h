@@ -73,10 +73,10 @@ private:
     Set<const Function*> functionDoesNotRet;
     Set<const Value*> isPtrInDeadFunction;
     Map<const Function*, const BasicBlock*> funExitBBMap;
-    Map<const BasicBlock*, const u32_t> BBSuccessorNumMap;
+    Map<const BasicBlock*, const u32_t> bbSuccessorNumMap;
     Map<const PointerType*, const Type*> ptrElementTypeMap;
-    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> BBSuccessorPosMap;
-    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> BBPredecessorPosMap;
+    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbSuccessorPosMap;
+    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbPredecessorPosMap;
 
 public:
     /// Constructors
@@ -114,11 +114,11 @@ public:
     void buildSymbolTableInfo();
 
     ///@{
-    inline void addFunctionSet(Function* fun, SVFFunction* svfFunc)
+    inline void addFunctionSet(SVFFunction* svfFunc)
     {
         FunctionSet.push_back(svfFunc);
-        LLVMFunctionSet.push_back(fun);
-        LLVMFunc2SVFFunc[fun] = svfFunc;
+        LLVMFunctionSet.push_back(svfFunc->getLLVMFun());
+        LLVMFunc2SVFFunc[svfFunc->getLLVMFun()] = svfFunc;
     }
     inline void addGlobalSet(GlobalVariable* glob)
     {
@@ -263,16 +263,16 @@ public:
 
     inline const Map<const BasicBlock*, const u32_t> getBBSuccessorNumMap()
     {
-        return BBSuccessorNumMap;
+        return bbSuccessorNumMap;
     }
 
     inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> getBBSuccessorPosMap()
     {
-        return BBSuccessorPosMap;
+        return bbSuccessorPosMap;
     }
 
     inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> getBBPredecessorPosMap(){
-        return BBPredecessorPosMap;
+        return bbPredecessorPosMap;
     }
 
     inline const Map<const PointerType*, const Type*> getPtrElementTypeMap()
@@ -283,40 +283,40 @@ public:
     inline void addFunExitBB(const Function *fun, const BasicBlock* bb)
     {
         const SVFFunction* svffun = getSVFFunction(fun);
-        assert((fun && ExtAPI::getExtAPI()->is_ext(svffun)) == false);
+        assert(!(fun && ExtAPI::getExtAPI()->is_ext(svffun)) && "The function cannot be an external call.");
         funExitBBMap.insert({fun,bb});
     }
 
     inline void addBBSuccessorNum(const BasicBlock *bb, const u32_t num)
     {
-        BBSuccessorNumMap.insert({bb,num});
+        bbSuccessorNumMap.insert({bb,num});
     }
 
     inline void addBBSuccessorPos(const BasicBlock *bb, const BasicBlock* succ,const u32_t pos)
     {
-        if(BBSuccessorPosMap.find(bb) != BBSuccessorPosMap.end()){
-            Map<const BasicBlock*, const u32_t> foundValue = BBSuccessorPosMap.find(bb)->second;
+        if(bbSuccessorPosMap.find(bb) != bbSuccessorPosMap.end()){
+            Map<const BasicBlock*, const u32_t> foundValue = bbSuccessorPosMap.find(bb)->second;
             foundValue.insert({succ,pos});
-             BBSuccessorPosMap.insert({bb,foundValue});
+             bbSuccessorPosMap.insert({bb,foundValue});
         } 
         else {
             Map<const BasicBlock*, const u32_t> valueMap;
             valueMap.insert({succ,pos});
-            BBSuccessorPosMap.insert({bb,valueMap});
+            bbSuccessorPosMap.insert({bb,valueMap});
         }
     }
 
     inline void addBBPredecessorPos(const BasicBlock *bb, const BasicBlock* Pred,const u32_t pos)
     {
-        if(BBPredecessorPosMap.find(bb) != BBPredecessorPosMap.end()){
-            Map<const BasicBlock*, const u32_t> foundValue = BBPredecessorPosMap.find(bb)->second;
+        if(bbPredecessorPosMap.find(bb) != bbPredecessorPosMap.end()){
+            Map<const BasicBlock*, const u32_t> foundValue = bbPredecessorPosMap.find(bb)->second;
             foundValue.insert({Pred,pos});
-            BBPredecessorPosMap.insert({bb,foundValue});
+            bbPredecessorPosMap.insert({bb,foundValue});
         } 
         else {
             Map<const BasicBlock*, const u32_t> valueMap;
             valueMap.insert({Pred,pos});
-            BBPredecessorPosMap.insert({bb,valueMap});
+            bbPredecessorPosMap.insert({bb,valueMap});
         }
     }
 
