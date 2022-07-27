@@ -27,7 +27,6 @@
  *      Author: yesen
  */
 
-#include "SVF-FE/LLVMUtil.h"
 #include "WPA/Andersen.h"
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
@@ -35,7 +34,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
 
 /*!
  * Clear statistics

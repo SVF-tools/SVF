@@ -93,7 +93,7 @@ bool LLVMUtil::isConstantObjSym(const Value *val)
  */
 void LLVMUtil::getFunReachableBBs (const SVFFunction* svffun, std::vector<const BasicBlock*> &reachableBBs)
 {
-    assert(SVFUtil::isExtCall(svffun) == false);
+    assert(!SVFUtil::isExtCall(svffun) && "The calling function cannot be an external function.");
     //initial DominatorTree
     DominatorTree dt;
     dt.recalculate(*svffun->getLLVMFun());

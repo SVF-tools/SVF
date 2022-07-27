@@ -27,14 +27,12 @@
  *      Author: Yulei Sui
  */
 
-#include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
 
 u32_t AndersenStat::_MaxPtsSize = 0;
 u32_t AndersenStat::_NumOfCycles = 0;
