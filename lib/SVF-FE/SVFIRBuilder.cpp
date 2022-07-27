@@ -1027,8 +1027,8 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
     if (value->getType() == PointerType::getInt8PtrTy(cxt)) {
         // (1)
         if (const CallBase* cb = SVFUtil::dyn_cast<CallBase>(value)) {
-            for (const User* user: cb->users()) {
-                if (const BitCastInst* bitCast = SVFUtil::dyn_cast<BitCastInst>(user))
+            if (SVFUtil::isHeapAllocExtCallViaRet(cb)) {
+                if (const Value* bitCast = getUniqueUseViaCastInst(cb))
                     return bitCast;
             }
         }
