@@ -21,3 +21,4 @@ doxygen/
 *.status
 *.obj
 *.svf
+cmake-build-debug/
