@@ -131,25 +131,6 @@ void AndersenWaveDiff::postProcessNode(NodeID nodeId)
 }
 
 /*!
- * Handle copy gep
- */
-void AndersenWaveDiff::handleCopyGep(ConstraintNode* node)
-{
-    NodeID nodeId = node->getId();
-    computeDiffPts(nodeId);
-
-    if (!getDiffPts(nodeId).empty())
-    {
-        for (ConstraintEdge* edge : node->getCopyOutEdges())
-            if (CopyCGEdge* copyEdge = SVFUtil::dyn_cast<CopyCGEdge>(edge))
-                processCopy(nodeId, copyEdge);
-        for (ConstraintEdge* edge : node->getGepOutEdges())
-            if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
-                processGep(nodeId, gepEdge);
-    }
-}
-
-/*!
  * Handle load
  */
 bool AndersenWaveDiff::handleLoad(NodeID nodeId, const ConstraintEdge* edge)
@@ -180,27 +161,6 @@ bool AndersenWaveDiff::handleStore(NodeID nodeId, const ConstraintEdge* edge)
             changed = true;
         }
     }
-    return changed;
-}
-
-/*!
- * Propagate diff points-to set from src to dst
- */
-bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge)
-{
-    numOfProcessedCopy++;
-
-    bool changed = false;
-    assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
-    NodeID dst = edge->getDstID();
-    const PointsTo& srcDiffPts = getDiffPts(node);
-    processCast(edge);
-    if(unionPts(dst,srcDiffPts))
-    {
-        changed = true;
-        pushIntoWorklist(dst);
-    }
-
     return changed;
 }
 

@@ -62,7 +62,7 @@ private:
     ProgSlice* _curSlice;		/// current program slice
     SVFGNodeSet sources;		/// source nodes
     SVFGNodeSet sinks;		/// source nodes
-    PathCondAllocator* pathCondAllocator;
+    SaberCondAllocator* saberCondAllocator;
     SVFGNodeToDPItemsMap nodeToDPItemsMap;	///<  record forward visited dpitems
     SVFGNodeSet visitedSet;	///<  record backward visited nodes
 
@@ -76,7 +76,7 @@ public:
     /// Constructor
     SrcSnkDDA() : _curSlice(nullptr), svfg(nullptr), ptaCallGraph(nullptr)
     {
-        pathCondAllocator = new PathCondAllocator();
+        saberCondAllocator = new SaberCondAllocator();
     }
     /// Destructor
     virtual ~SrcSnkDDA()
@@ -232,10 +232,10 @@ public:
     }
     //@}
 
-    /// Get path condition allocator
-    PathCondAllocator* getPathAllocator() const
+    /// Get saber condition allocator
+    SaberCondAllocator* getSaberCondAllocator() const
     {
-        return pathCondAllocator;
+        return saberCondAllocator;
     }
 
 protected:
@@ -307,7 +307,7 @@ protected:
     //@{
     void dumpSlices();
     void annotateSlice(ProgSlice* slice);
-    void printBDDStat();
+    void printZ3Stat();
     //@}
 
 };

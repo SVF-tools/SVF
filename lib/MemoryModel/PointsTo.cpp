@@ -25,7 +25,7 @@ PointsTo::PointsTo(void)
     : type(Options::PtType), nodeMapping(currentBestNodeMapping),
       reverseNodeMapping(currentBestReverseNodeMapping)
 {
-    if (type == SBV) new (&sbv) SparseBitVector();
+    if (type == SBV) new (&sbv) SparseBitVector<>();
     else if (type == CBV) new (&cbv) CoreBitVector();
     else if (type == BV) new (&bv) BitVector();
     else assert(false && "PointsTo::PointsTo: unknown type");
@@ -35,7 +35,7 @@ PointsTo::PointsTo(const PointsTo &pt)
     : type(pt.type), nodeMapping(pt.nodeMapping),
       reverseNodeMapping(pt.reverseNodeMapping)
 {
-    if (type == SBV) new (&sbv) SparseBitVector(pt.sbv);
+    if (type == SBV) new (&sbv) SparseBitVector<>(pt.sbv);
     else if (type == CBV) new (&cbv) CoreBitVector(pt.cbv);
     else if (type == BV) new (&bv) BitVector(pt.bv);
     else assert(false && "PointsTo::PointsTo&: unknown type");
@@ -45,7 +45,7 @@ PointsTo::PointsTo(PointsTo &&pt)
     : type(pt.type), nodeMapping(pt.nodeMapping),
       reverseNodeMapping(pt.reverseNodeMapping)
 {
-    if (type == SBV) new (&sbv) SparseBitVector(std::move(pt.sbv));
+    if (type == SBV) new (&sbv) SparseBitVector<>(std::move(pt.sbv));
     else if (type == CBV) new (&cbv) CoreBitVector(std::move(pt.cbv));
     else if (type == BV) new (&bv) BitVector(std::move(pt.bv));
     else assert(false && "PointsTo::PointsTo&&: unknown type");
@@ -53,7 +53,7 @@ PointsTo::PointsTo(PointsTo &&pt)
 
 PointsTo::~PointsTo(void)
 {
-    if (type == SBV) sbv.~SparseBitVector();
+    if (type == SBV) sbv.~SparseBitVector<>();
     else if (type == CBV) cbv.~CoreBitVector();
     else if (type == BV) bv.~BitVector();
     else assert(false && "PointsTo::~PointsTo: unknown type");
@@ -69,7 +69,7 @@ PointsTo &PointsTo::operator=(const PointsTo &rhs)
     this->reverseNodeMapping = rhs.reverseNodeMapping;
     // Placement new because if type has changed, we have
     // not constructed the new type yet.
-    if (type == SBV) new (&sbv) SparseBitVector(rhs.sbv);
+    if (type == SBV) new (&sbv) SparseBitVector<>(rhs.sbv);
     else if (type == CBV) new (&cbv) CoreBitVector(rhs.cbv);
     else if (type == BV) new (&bv) BitVector(rhs.bv);
     else assert(false && "PointsTo::PointsTo=&: unknown type");
@@ -83,7 +83,7 @@ PointsTo &PointsTo::operator=(PointsTo &&rhs)
     this->nodeMapping = rhs.nodeMapping;
     this->reverseNodeMapping = rhs.reverseNodeMapping;
     // See comment in copy assignment.
-    if (type == SBV) new (&sbv) SparseBitVector(std::move(rhs.sbv));
+    if (type == SBV) new (&sbv) SparseBitVector<>(std::move(rhs.sbv));
     else if (type == CBV) new (&cbv) CoreBitVector(std::move(rhs.cbv));
     else if (type == BV) new (&bv) BitVector(std::move(rhs.bv));
     else assert(false && "PointsTo::PointsTo=&&: unknown type");
@@ -318,7 +318,7 @@ size_t PointsTo::hash(void) const
     if (type == CBV) return cbv.hash();
     else if (type == SBV)
     {
-        std::hash<SparseBitVector> h;
+        std::hash<SparseBitVector<>> h;
         return h(sbv);
     }
     else if (type == BV) return bv.hash();
@@ -391,7 +391,7 @@ PointsTo::PointsToIterator::PointsToIterator(const PointsTo *pt, bool end)
     }
     else if (pt->type == Type::SBV)
     {
-        new (&sbvIt) SparseBitVector::iterator(end ? pt->sbv.end() : pt->sbv.begin());
+        new (&sbvIt) SparseBitVector<>::iterator(end ? pt->sbv.end() : pt->sbv.begin());
     }
     else if (pt->type == Type::BV)
     {
@@ -409,7 +409,7 @@ PointsTo::PointsToIterator::PointsToIterator(const PointsToIterator &pt)
 {
     if (this->pt->type == PointsTo::Type::SBV)
     {
-        new (&sbvIt) SparseBitVector::iterator(pt.sbvIt);
+        new (&sbvIt) SparseBitVector<>::iterator(pt.sbvIt);
     }
     else if (this->pt->type == PointsTo::Type::CBV)
     {
@@ -431,7 +431,7 @@ PointsTo::PointsToIterator::PointsToIterator(PointsToIterator &&pt)
 {
     if (this->pt->type == PointsTo::Type::SBV)
     {
-        new (&sbvIt) SparseBitVector::iterator(std::move(pt.sbvIt));
+        new (&sbvIt) SparseBitVector<>::iterator(std::move(pt.sbvIt));
     }
     else if (this->pt->type == PointsTo::Type::CBV)
     {
@@ -454,7 +454,7 @@ PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(const PointsTo
 
     if (this->pt->type == PointsTo::Type::SBV)
     {
-        new (&sbvIt) SparseBitVector::iterator(rhs.sbvIt);
+        new (&sbvIt) SparseBitVector<>::iterator(rhs.sbvIt);
     }
     else if (this->pt->type == PointsTo::Type::CBV)
     {
@@ -475,7 +475,7 @@ PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(PointsToIterat
 
     if (this->pt->type == PointsTo::Type::SBV)
     {
-        new (&sbvIt) SparseBitVector::iterator(std::move(rhs.sbvIt));
+        new (&sbvIt) SparseBitVector<>::iterator(std::move(rhs.sbvIt));
     }
     else if (this->pt->type == PointsTo::Type::CBV)
     {

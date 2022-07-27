@@ -156,6 +156,7 @@ void LeakChecker::reportNeverFree(const SVFGNode* src)
 
 void LeakChecker::reportPartialLeak(const SVFGNode* src)
 {
+
     const CallICFGNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";

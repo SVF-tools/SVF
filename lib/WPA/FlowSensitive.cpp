@@ -480,7 +480,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
     {
         for (NodeID o : srcPts)
         {
-            if (isBlkObjOrConstantObj(o))
+            if (isBlkObjOrConstantObj(o) || isFieldInsensitive(o))
             {
                 tmpDstPts.set(o);
                 continue;

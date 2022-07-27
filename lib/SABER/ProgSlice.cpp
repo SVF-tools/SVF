@@ -53,14 +53,14 @@ bool ProgSlice::AllPathReachableSolve()
     {
         const SVFGNode* node = worklist.pop();
         setCurSVFGNode(node);
-        Condition* cond = getVFCond(node);
+        Condition cond = getVFCond(node);
         for(SVFGNode::const_iterator it = node->OutEdgeBegin(), eit = node->OutEdgeEnd(); it!=eit; ++it)
         {
             const SVFGEdge* edge = (*it);
             const SVFGNode* succ = edge->getDstNode();
             if(inBackwardSlice(succ))
             {
-                Condition* vfCond = nullptr;
+                Condition vfCond;
                 const BasicBlock* nodeBB = getSVFGNodeBB(node);
                 const BasicBlock* succBB = getSVFGNodeBB(succ);
                 /// clean up the control flow conditions for next round guard computation
@@ -77,7 +77,7 @@ bool ProgSlice::AllPathReachableSolve()
                 else
                     vfCond = ComputeIntraVFGGuard(nodeBB,succBB);
 
-                Condition* succPathCond = condAnd(cond, vfCond);
+                Condition succPathCond = condAnd(cond, vfCond);
                 if(setVFCond(succ,  condOr(getVFCond(succ), succPathCond) ))
                     worklist.push(succ);
             }
@@ -96,7 +96,7 @@ bool ProgSlice::AllPathReachableSolve()
 bool ProgSlice::isSatisfiableForAll()
 {
 
-    Condition* guard = getFalseCond();
+    Condition guard = getFalseCond();
     for(SVFGNodeSetIter it = sinksBegin(), eit = sinksEnd(); it!=eit; ++it)
     {
         guard = condOr(guard,getVFCond(*it));
@@ -118,8 +118,8 @@ bool ProgSlice::isSatisfiableForPairs()
         {
             if(*it == *sit)
                 continue;
-            Condition* guard = condAnd(getVFCond(*sit),getVFCond(*it));
-            if(guard != getFalseCond())
+            Condition guard = condAnd(getVFCond(*sit),getVFCond(*it));
+            if(!isEquivalentBranchCond(guard, getFalseCond()))
             {
                 setFinalCond(guard);
                 return false;
@@ -165,9 +165,8 @@ std::string ProgSlice::evalFinalCond() const
     Set<std::string> locations;
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
-        Condition* atom = pathAllocator->getCond(*it);
-        const Instruction* tinst = pathAllocator->getCondInst(atom);
-        if(pathAllocator->isNegCond(atom))
+        const Instruction* tinst = pathAllocator->getCondInst(*it);
+        if(pathAllocator->isNegCond(*it))
             locations.insert(getSourceLoc(tinst)+"|False");
         else
             locations.insert(getSourceLoc(tinst)+"|True");
@@ -195,8 +194,7 @@ void ProgSlice::annotatePaths()
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
-        Condition* atom = pathAllocator->getCond(*it);
-        const Instruction* tinst = pathAllocator->getCondInst(atom);
+        const Instruction* tinst = pathAllocator->getCondInst(*it);
         if (ICFGNode *icfgNode = pathAllocator->getICFG()->getICFGNode(tinst))
         {
             for (const auto &svfStmt: icfgNode->getSVFStmts())
@@ -214,11 +212,4 @@ void ProgSlice::annotatePaths()
 
 void ProgSlice::destroy()
 {
-    /// TODO: how to clean bdd memory
-//	for(SVFGNodeToCondMap::const_iterator it = svfgNodeToCondMap.begin(), eit = svfgNodeToCondMap.end(); it!=eit; ++it){
-//		pathAllocator->markForRelease(it->second);
-//	}
-//	for(BBToCondMap::const_iterator it = bbToCondMap.begin(), eit = bbToCondMap.end(); it!=eit; ++it){
-//		pathAllocator->markForRelease(it->second);
-//	}
 }

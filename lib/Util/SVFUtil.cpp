@@ -30,7 +30,6 @@
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 
-#include "Util/BDDExpr.h"
 #include "MemoryModel/PointsTo.h"
 
 #include <sys/resource.h>		/// increase stack size
