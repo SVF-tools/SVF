@@ -40,12 +40,15 @@ static cl::opt<bool>
 StandardCompileOpts("std-compile-opts",
                     cl::desc("Include the standard compile time optimizations"));
 
+static llvm::cl::opt<std::string> InputFilename(llvm::cl::Positional,
+        llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
+
 int main(int argc, char ** argv)
 {
     int arg_num = 0;
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
-    SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
+    LLVMUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "CFL Reachability Analysis\n");
 
@@ -53,7 +56,7 @@ int main(int argc, char ** argv)
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
-    if (Options::GraphIsFromDot == false)
+    if (Options::CFLGraph.empty())
     {
         SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
         svfModule->buildSymbolTableInfo();

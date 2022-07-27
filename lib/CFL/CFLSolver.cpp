@@ -41,6 +41,7 @@ void CFLSolver::solve()
             pushIntoWorklist(edge);
         }
     }
+
     /// Foreach production X -> epsilon
     ///     add X(i,i) if not exist to E and to worklist
     for(const Production& prod : grammar->getEpsilonProds())
@@ -50,7 +51,9 @@ void CFLSolver::solve()
             Symbol X = grammar->getLHSSymbol(prod);
             CFLNode* i = (*it).second;
             if(const CFLEdge* edge = graph->addCFLEdge(i, i, X))
+            {
                 pushIntoWorklist(edge);
+            }
         }
     }
 

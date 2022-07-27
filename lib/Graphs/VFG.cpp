@@ -32,7 +32,7 @@
 #include "Util/Options.h"
 #include "Graphs/VFG.h"
 #include "Util/SVFModule.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -1076,7 +1076,7 @@ const Value* PHIVFGNode::getValue() const
 
 const Value* ArgumentVFGNode::getValue() const
 {
-    return param->getValue();
+    return param->hasValue() ? param->getValue() : nullptr;
 }
 
 /*!

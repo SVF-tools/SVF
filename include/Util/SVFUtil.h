@@ -222,7 +222,7 @@ inline CallSite getLLVMCallSite(const Instruction* inst)
 }
 
 /// Get the corresponding Function based on its name
-inline const SVFFunction* getFunction(StringRef name)
+inline const SVFFunction* getFunction(std::string name)
 {
     Function* fun = nullptr;
     LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
@@ -237,6 +237,21 @@ inline const SVFFunction* getFunction(StringRef name)
         }
     }
     return nullptr;
+}
+
+/// Split into two substrings around the first occurrence of a separator string.
+inline std::vector<std::string> split(const std::string& s, char seperator)
+{
+    std::vector<std::string> output;
+    std::string::size_type prev_pos = 0, pos = 0;
+    while((pos = s.find(seperator, pos)) != std::string::npos)
+    {
+        std::string substring( s.substr(prev_pos, pos-prev_pos) );
+        output.push_back(substring);
+        prev_pos = ++pos;
+    }
+    output.push_back(s.substr(prev_pos, pos-prev_pos));
+    return output;
 }
 
 /// find the unique defined global across multiple modules
@@ -336,6 +351,385 @@ bool startAnalysisLimitTimer(unsigned timeLimit);
 /// Stops an analysis timer. limitTimerSet indicates whether the caller set the
 /// timer or not (return value of startLimitTimer).
 void stopAnalysisLimitTimer(bool limitTimerSet);
+
+/// Return true if the call is an external call (external library in function summary table)
+/// If the libary function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
+//@{
+inline bool isExtCall(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_ext(fun);
+}
+
+/// Return true if the call is a heap allocator/reallocator
+//@{
+/// note that these two functions are not suppose to be used externally
+inline bool isHeapAllocExtFunViaRet(const SVFFunction* fun)
+{
+    return fun && (ExtAPI::getExtAPI()->is_alloc(fun)
+                   || ExtAPI::getExtAPI()->is_realloc(fun));
+}
+
+inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
+}
+
+/// Get the position of argument that holds an allocated heap object.
+//@{
+inline int getHeapAllocHoldingArgPosition(const SVFFunction* fun)
+{
+    return ExtAPI::getExtAPI()->get_alloc_arg_pos(fun);
+}
+
+/// Return true if the call is a heap reallocator
+//@{
+/// note that this function is not suppose to be used externally
+inline bool isReallocExtFun(const SVFFunction* fun)
+{
+    return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
+}
+
+/// Return true if the call is a heap dealloc or not
+//@{
+/// note that this function is not suppose to be used externally
+inline bool isDeallocExtFun(const SVFFunction* fun)
+{
+    return fun && (ExtAPI::getExtAPI()->is_dealloc(fun));
+}
+
+/// Return true if the call is a static global call
+//@{
+/// note that this function is not suppose to be used externally
+inline bool isStaticExtFun(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->has_static(fun);
+}
+
+/// Program entry function e.g. main
+//@{
+/// Return true if this is a program entry function (e.g. main)
+inline bool isProgEntryFunction (const SVFFunction * fun)
+{
+    return fun && fun->getName() == "main";
+}
+
+
+/// Get program entry function from module.
+inline const SVFFunction* getProgFunction(SVFModule* svfModule, const std::string& funName)
+{
+    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
+    {
+        const SVFFunction *fun = *it;
+        if (fun->getName()==funName)
+            return fun;
+    }
+    return nullptr;
+}
+
+/// Get program entry function from module.
+inline const SVFFunction* getProgEntryFunction(SVFModule* svfModule)
+{
+    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
+    {
+        const SVFFunction *fun = *it;
+        if (isProgEntryFunction(fun))
+            return (fun);
+    }
+    return nullptr;
+}
+
+/// Return true if this is a program exit function call
+//@{
+inline bool isProgExitFunction (const SVFFunction * fun)
+{
+    return fun && (fun->getName() == "exit" ||
+                   fun->getName() == "__assert_rtn" ||
+                   fun->getName() == "__assert_fail" );
+}
+
+/// Return true if the value refers to constant data, e.g., i32 0
+inline bool isConstantData(const Value* val)
+{
+    return SVFUtil::isa<ConstantData>(val)
+           || SVFUtil::isa<ConstantAggregate>(val)
+           || SVFUtil::isa<MetadataAsValue>(val)
+           || SVFUtil::isa<BlockAddress>(val);
+}
+
+/// Return thread fork function
+//@{
+inline const Value* getForkedFun(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->getForkedFun(cs);
+}
+inline const Value* getForkedFun(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->getForkedFun(inst);
+}
+//@}
+
+const std::string type2String(const Type* type);
+
+/// This function servers a allocation wrapper detector
+inline bool isAnAllocationWraper(const Instruction*)
+{
+    return false;
+}
+
+/// Return LLVM function if this value is
+inline const Function* getLLVMFunction(const Value* val)
+{
+    const Function *fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
+    return fun;
+}
+
+inline bool isExtCall(const CallSite cs)
+{
+    return isExtCall(getCallee(cs));
+}
+
+inline bool isExtCall(const Instruction *inst)
+{
+    return isExtCall(getCallee(inst));
+}
+
+inline bool isHeapAllocExtCallViaArg(const CallSite cs)
+{
+    return isHeapAllocExtFunViaArg(getCallee(cs));
+}
+
+inline bool isHeapAllocExtCallViaArg(const Instruction *inst)
+{
+    return isHeapAllocExtFunViaArg(getCallee(inst));
+}
+
+/// interfaces to be used externally
+inline bool isHeapAllocExtCallViaRet(const CallSite cs)
+{
+    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
+    return isPtrTy && isHeapAllocExtFunViaRet(getCallee(cs));
+}
+
+inline bool isHeapAllocExtCallViaRet(const Instruction *inst)
+{
+    bool isPtrTy = inst->getType()->isPointerTy();
+    return isPtrTy && isHeapAllocExtFunViaRet(getCallee(inst));
+}
+
+inline bool isHeapAllocExtCall(const CallSite cs)
+{
+    return isHeapAllocExtCallViaRet(cs) || isHeapAllocExtCallViaArg(cs);
+}
+
+inline bool isHeapAllocExtCall(const Instruction *inst)
+{
+    return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
+}
+//@}
+
+inline int getHeapAllocHoldingArgPosition(const CallSite cs)
+{
+    return getHeapAllocHoldingArgPosition(getCallee(cs));
+}
+
+inline int getHeapAllocHoldingArgPosition(const Instruction *inst)
+{
+    return getHeapAllocHoldingArgPosition(getCallee(inst));
+}
+//@}
+
+inline bool isReallocExtCall(const CallSite cs)
+{
+    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
+    return isPtrTy && isReallocExtFun(getCallee(cs));
+}
+
+inline bool isReallocExtCall(const Instruction *inst)
+{
+    bool isPtrTy = inst->getType()->isPointerTy();
+    return isPtrTy && isReallocExtFun(getCallee(inst));
+}
+//@}
+
+inline bool isDeallocExtCall(const CallSite cs)
+{
+    return isDeallocExtFun(getCallee(cs));
+}
+
+inline bool isDeallocExtCall(const Instruction *inst)
+{
+    return isDeallocExtFun(getCallee(inst));
+}
+//@}
+
+inline bool isStaticExtCall(const CallSite cs)
+{
+    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
+    return isPtrTy && isStaticExtFun(getCallee(cs));
+}
+
+inline bool isStaticExtCall(const Instruction *inst)
+{
+    bool isPtrTy = inst->getType()->isPointerTy();
+    return isPtrTy && isStaticExtFun(getCallee(inst));
+}
+//@}
+
+/// Return true if the call is a static global call
+//@{
+inline bool isHeapAllocOrStaticExtCall(const CallSite cs)
+{
+    return isStaticExtCall(cs) || isHeapAllocExtCall(cs);
+}
+
+inline bool isHeapAllocOrStaticExtCall(const Instruction *inst)
+{
+    return isStaticExtCall(inst) || isHeapAllocExtCall(inst);
+}
+//@}
+
+/// Return true if this is a thread creation call
+///@{
+inline bool isThreadForkCall(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->isTDFork(cs);
+}
+inline bool isThreadForkCall(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->isTDFork(inst);
+}
+//@}
+
+/// Return true if this is a hare_parallel_for call
+///@{
+inline bool isHareParForCall(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->isHareParFor(cs);
+}
+inline bool isHareParForCall(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->isHareParFor(inst);
+}
+//@}
+
+/// Return true if this is a thread join call
+///@{
+inline bool isThreadJoinCall(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->isTDJoin(cs);
+}
+inline bool isThreadJoinCall(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->isTDJoin(inst);
+}
+//@}
+
+/// Return true if this is a thread exit call
+///@{
+inline bool isThreadExitCall(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->isTDExit(cs);
+}
+inline bool isThreadExitCall(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->isTDExit(inst);
+}
+//@}
+
+/// Return true if this is a lock acquire call
+///@{
+inline bool isLockAquireCall(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->isTDAcquire(cs);
+}
+inline bool isLockAquireCall(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->isTDAcquire(inst);
+}
+//@}
+
+/// Return true if this is a lock acquire call
+///@{
+inline bool isLockReleaseCall(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->isTDRelease(cs);
+}
+inline bool isLockReleaseCall(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->isTDRelease(inst);
+}
+//@}
+
+/// Return true if this is a barrier wait call
+//@{
+inline bool isBarrierWaitCall(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->isTDBarWait(cs);
+}
+inline bool isBarrierWaitCall(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->isTDBarWait(inst);
+}
+//@}
+
+/// Return sole argument of the thread routine
+//@{
+inline const Value* getActualParmAtForkSite(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
+}
+inline const Value* getActualParmAtForkSite(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(inst);
+}
+//@}
+
+/// Return the task function of the parallel_for routine
+//@{
+inline const Value* getTaskFuncAtHareParForSite(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(cs);
+}
+inline const Value* getTaskFuncAtHareParForSite(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(inst);
+}
+//@}
+
+/// Return the task data argument of the parallel_for rountine
+//@{
+inline const Value* getTaskDataAtHareParForSite(const CallSite cs)
+{
+    return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(cs);
+}
+inline const Value* getTaskDataAtHareParForSite(const Instruction *inst)
+{
+    return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(inst);
+}
+//@}
+
+inline bool isProgEntryFunction (const Function * fun)
+{
+    return fun && fun->getName() == "main";
+}
+
+
+inline bool isProgExitCall(const CallSite cs)
+{
+    return isProgExitFunction(getCallee(cs));
+}
+
+inline bool isProgExitCall(const Instruction *inst)
+{
+    return isProgExitFunction(getCallee(inst));
+}
+
+template<typename T>
+constexpr typename std::remove_reference<T>::type &&
+move(T &&t) noexcept
+{
+    return std::move(t);
+}
 
 } // End namespace SVFUtil
 

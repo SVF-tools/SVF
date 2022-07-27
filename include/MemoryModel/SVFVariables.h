@@ -32,7 +32,6 @@
 
 #include "Graphs/GenericGraph.h"
 #include "MemoryModel/SymbolTableInfo.h"
-#include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/SVFStatements.h"
 
 namespace SVF
@@ -59,7 +58,6 @@ public:
     /// GepValNode: tempory gep obj node for field sensitivity
     /// FIObjNode: for field insensitive analysis
     /// DummyValNode and DummyObjNode: for non-llvm-value node
-    /// Clone*Node: objects created by TBHC.
     enum PNODEK
     {
         ValNode,
@@ -71,9 +69,6 @@ public:
         FIObjNode,
         DummyValNode,
         DummyObjNode,
-        CloneGepObjNode,   // NOTE: only used for TBHC.
-        CloneFIObjNode,    // NOTE: only used for TBHC.
-        CloneDummyObjNode  // NOTE: only used for TBHC.
     };
 
 
@@ -120,13 +115,7 @@ public:
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087
-    inline bool isConstantData() const
-    {
-        if (hasValue())
-            return SVFUtil::isConstantData(value);
-        else
-            return false;
-    }
+    bool isConstantData() const;
 
     /// Whether this is an isoloated node on the SVFIR graph
     bool isIsolatedNode() const;
@@ -334,20 +323,14 @@ public:
         return node->getNodeKind() == SVFVar::ObjNode ||
                node->getNodeKind() == SVFVar::GepObjNode ||
                node->getNodeKind() == SVFVar::FIObjNode ||
-               node->getNodeKind() == SVFVar::DummyObjNode ||
-               node->getNodeKind() == SVFVar::CloneGepObjNode ||
-               node->getNodeKind() == SVFVar::CloneFIObjNode ||
-               node->getNodeKind() == SVFVar::CloneDummyObjNode;
+               node->getNodeKind() == SVFVar::DummyObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
         return node->getNodeKind() == SVFVar::ObjNode ||
                node->getNodeKind() == SVFVar::GepObjNode ||
                node->getNodeKind() == SVFVar::FIObjNode ||
-               node->getNodeKind() == SVFVar::DummyObjNode ||
-               node->getNodeKind() == SVFVar::CloneGepObjNode ||
-               node->getNodeKind() == SVFVar::CloneFIObjNode ||
-               node->getNodeKind() == SVFVar::CloneDummyObjNode;
+               node->getNodeKind() == SVFVar::DummyObjNode;
     }
     //@}
 
@@ -455,18 +438,15 @@ public:
     }
     static inline bool classof(const ObjVar * node)
     {
-        return node->getNodeKind() == SVFVar::GepObjNode
-               || node->getNodeKind() == SVFVar::CloneGepObjNode;
+        return node->getNodeKind() == SVFVar::GepObjNode;
     }
     static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == SVFVar::GepObjNode
-               || node->getNodeKind() == SVFVar::CloneGepObjNode;
+        return node->getNodeKind() == SVFVar::GepObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == SVFVar::GepObjNode
-               || node->getNodeKind() == SVFVar::CloneGepObjNode;
+        return node->getNodeKind() == SVFVar::GepObjNode;
     }
     //@}
 
@@ -534,18 +514,15 @@ public:
     }
     static inline bool classof(const ObjVar * node)
     {
-        return node->getNodeKind() == SVFVar::FIObjNode
-               || node->getNodeKind() == SVFVar::CloneFIObjNode;
+        return node->getNodeKind() == SVFVar::FIObjNode;
     }
     static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == SVFVar::FIObjNode
-               || node->getNodeKind() == SVFVar::CloneFIObjNode;
+        return node->getNodeKind() == SVFVar::FIObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == SVFVar::FIObjNode
-               || node->getNodeKind() == SVFVar::CloneFIObjNode;
+        return node->getNodeKind() == SVFVar::FIObjNode;
     }
     //@}
 
@@ -712,18 +689,15 @@ public:
     }
     static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == SVFVar::DummyObjNode
-               || node->getNodeKind() == SVFVar::CloneDummyObjNode;
+        return node->getNodeKind() == SVFVar::DummyObjNode;
     }
     static inline bool classof(const ObjVar *node)
     {
-        return node->getNodeKind() == SVFVar::DummyObjNode
-               || node->getNodeKind() == SVFVar::CloneDummyObjNode;
+        return node->getNodeKind() == SVFVar::DummyObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == SVFVar::DummyObjNode
-               || node->getNodeKind() == SVFVar::CloneDummyObjNode;
+        return node->getNodeKind() == SVFVar::DummyObjNode;
     }
     //@}
 
@@ -742,116 +716,6 @@ public:
     virtual const std::string toString() const;
 };
 
-/*
- * Clone object node for dummy objects.
- */
-class CloneDummyObjVar: public DummyObjVar
-{
-public:
-    //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const CloneDummyObjVar *)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFVar *node)
-    {
-        return node->getNodeKind() == SVFVar::CloneDummyObjNode;
-    }
-    static inline bool classof(const GenericPAGNodeTy *node)
-    {
-        return node->getNodeKind() == SVFVar::CloneDummyObjNode;
-    }
-    //@}
-
-    /// Constructor
-    CloneDummyObjVar(NodeID i, const MemObj* m, PNODEK ty = CloneDummyObjNode)
-        : DummyObjVar(i, m, ty)
-    {
-    }
-
-    /// Return name of this node
-    inline const std::string getValueName() const
-    {
-        return "clone of " + ObjVar::getValueName();
-    }
-
-    virtual const std::string toString() const;
-};
-
-/*
- * Clone object for GEP objects.
- */
-class CloneGepObjVar : public GepObjVar
-{
-public:
-    //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const CloneGepObjVar *)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFVar *node)
-    {
-        return node->getNodeKind() == SVFVar::CloneGepObjNode;
-    }
-    static inline bool classof(const GenericPAGNodeTy *node)
-    {
-        return node->getNodeKind() == SVFVar::CloneGepObjNode;
-    }
-    //@}
-
-    /// Constructor
-    CloneGepObjVar(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = CloneGepObjNode) :
-        GepObjVar(mem, i, l, ty)
-    {
-    }
-
-    /// Return name of this node
-    inline const std::string getValueName() const
-    {
-        return "clone (gep) of " + GepObjVar::getValueName();
-    }
-
-    virtual const std::string toString() const;
-};
-
-/*
- * Clone object for FI objects.
- */
-class CloneFIObjVar : public FIObjVar
-{
-public:
-    //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const CloneFIObjVar *)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFVar *node)
-    {
-        return node->getNodeKind() == SVFVar::CloneFIObjNode;
-    }
-    static inline bool classof(const GenericPAGNodeTy *node)
-    {
-        return node->getNodeKind() == SVFVar::CloneFIObjNode;
-    }
-    //@}
-
-    /// Constructor
-    CloneFIObjVar(const Value* val, NodeID i, const MemObj* mem, PNODEK ty = CloneFIObjNode) :
-        FIObjVar(val, i, mem, ty)
-    {
-    }
-
-    /// Return name of this node
-    inline const std::string getValueName() const
-    {
-        return "clone (FI) of " + FIObjVar::getValueName();
-    }
-
-    virtual const std::string toString() const;
-};
-
 } // End namespace SVF
-
-
 
 #endif /* OBJECTANDSYMBOL_H_ */

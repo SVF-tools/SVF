@@ -350,14 +350,13 @@ GepStmt* SVFIR::addGepStmt(NodeID src, NodeID dst, const LocationSet& ls, bool c
  */
 GepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
 {
-    const LocationSet& baseLS = getLocationSetFromBaseNode(src);
-    SVFVar* baseNode = getGNode(getBaseValVar(src));
+    SVFVar* baseNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
     if(hasNonlabeledEdge(baseNode, dstNode, SVFStmt::Gep))
         return nullptr;
     else
     {
-        GepStmt* gepPE = new GepStmt(baseNode, dstNode, baseLS+ls);
+        GepStmt* gepPE = new GepStmt(baseNode, dstNode, ls);
         addToStmt2TypeMap(gepPE);
         addEdge(baseNode, dstNode, gepPE);
         return gepPE;
@@ -370,14 +369,13 @@ GepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
  */
 GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
 {
-    const LocationSet& baseLS = getLocationSetFromBaseNode(src);
-    SVFVar* baseNode = getGNode(getBaseValVar(src));
+    SVFVar* baseNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
     if(hasNonlabeledEdge(baseNode, dstNode, SVFStmt::Gep))
         return nullptr;
     else
     {
-        GepStmt* gepPE = new GepStmt(baseNode, dstNode,baseLS+ls, true);
+        GepStmt* gepPE = new GepStmt(baseNode, dstNode,ls, true);
         addToStmt2TypeMap(gepPE);
         addEdge(baseNode, dstNode, gepPE);
         return gepPE;
@@ -559,28 +557,6 @@ NodeID SVFIR::getGepValVar(const Value* curInst, NodeID base, const LocationSet&
     }
 }
 
-/*!
- * Get a base SVFVar given a pointer
- * Return the source node of its connected normal gep edge
- * Otherwise return the node id itself
- * s32_t offset : gep offset
- */
-LocationSet SVFIR::getLocationSetFromBaseNode(NodeID nodeId)
-{
-    SVFVar* node  = getGNode(nodeId);
-    SVFStmt::SVFStmtSetTy& geps = node->getIncomingEdges(SVFStmt::Gep);
-    /// if this node is already a base node
-    if(geps.empty())
-        return LocationSet(0);
-
-    assert(geps.size()==1 && "one node can only be connected by at most one gep edge!");
-    SVFVar::iterator it = geps.begin();
-    const GepStmt* gepEdge = SVFUtil::cast<GepStmt>(*it);
-    if(gepEdge->isVariantFieldGep())
-        return LocationSet(0);
-    else
-        return gepEdge->getLocationSet();
-}
 
 /*!
  * Clean up memory
@@ -733,7 +709,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
     {
         if (isValidPointer(node->getId()) && node->hasValue())
         {
-            if (SVFUtil::ArgInNoCallerFunction(node->getValue()))
+            if (LLVMUtil::ArgInNoCallerFunction(node->getValue()))
                 return false;
             return true;
         }

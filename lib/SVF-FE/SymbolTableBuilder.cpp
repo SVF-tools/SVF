@@ -41,6 +41,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 /*!
  *  This method identify which is value sym and which is object sym
@@ -112,6 +113,10 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
             else if (const LoadInst *ld = SVFUtil::dyn_cast<LoadInst>(inst))
             {
                 collectSym(ld->getPointerOperand());
+            }
+            else if (const AllocaInst *alloc = SVFUtil::dyn_cast<AllocaInst>(inst))
+            {
+                collectSym(alloc->getArraySize());
             }
             else if (const PHINode *phi = SVFUtil::dyn_cast<PHINode>(inst))
             {
@@ -195,6 +200,17 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 }
 
 /*!
+* Collect special sym here
+*/
+void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
+{
+    if (LLVMUtil::isNullPtrSym(val))
+        symInfo->nullPtrSyms.insert(val);
+    if (LLVMUtil::isBlackholeSym(val))
+        symInfo->blackholeSyms.insert(val);
+}
+
+/*!
  * Collect symbols, including value and object syms
  */
 void SymbolTableBuilder::collectSym(const Value *val)
@@ -203,10 +219,6 @@ void SymbolTableBuilder::collectSym(const Value *val)
     //TODO: filter the non-pointer type // if (!SVFUtil::isa<PointerType>(val->getType()))  return;
 
     DBOUT(DMemModel, outs() << "collect sym from ##" << SVFUtil::value2String(val) << " \n");
-
-    // special sym here
-    if (symInfo->isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
-        return;
 
     //TODO handle constant expression value here??
     handleCE(val);
@@ -226,6 +238,12 @@ void SymbolTableBuilder::collectSym(const Value *val)
  */
 void SymbolTableBuilder::collectVal(const Value *val)
 {
+    // collect and record special sym here
+    if (LLVMUtil::isNullPtrSym(val) || LLVMUtil::isBlackholeSym(val))
+    {
+        collectNullPtrBlackholeSyms(val);
+        return;
+    }
     SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->valSymMap.find(val);
     if (iter == symInfo->valSymMap.end())
     {
@@ -239,7 +257,7 @@ void SymbolTableBuilder::collectVal(const Value *val)
             handleGlobalCE(globalVar);
     }
 
-    if (symInfo->isConstantObjSym(val))
+    if (LLVMUtil::isConstantObjSym(val))
         collectObj(val);
 }
 
@@ -254,7 +272,7 @@ void SymbolTableBuilder::collectObj(const Value *val)
     {
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if((symInfo->isConstantObjSym(val) && !symInfo->getModelConstants()))
+        if((LLVMUtil::isConstantObjSym(val) && !symInfo->getModelConstants()))
         {
             symInfo->objSymMap.insert(std::make_pair(val, symInfo->constantSymID()));
         }
@@ -474,7 +492,7 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C)
             }
             else
             {
-                assert(SVFUtil::isa<ConstantAggregateZero>(data) && "Single value type data should have been handled!");
+                assert((SVFUtil::isa<ConstantAggregateZero>(data) || SVFUtil::isa<UndefValue>(data)) && "Single value type data should have been handled!");
             }
         }
     }
@@ -503,7 +521,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
 
     if (refTy)
     {
-        Type *objTy = refTy->getElementType();
+        Type *objTy = getPtrElementType(refTy);
         ObjTypeInfo* typeInfo = new ObjTypeInfo(objTy, Options::MaxFieldLimit);
         initTypeInfo(typeInfo,val);
         return typeInfo;
@@ -513,7 +531,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
         writeWrnMsg("try to create an object with a non-pointer type.");
         writeWrnMsg(val->getName().str());
         writeWrnMsg("(" + getSourceLoc(val) + ")");
-        if(symInfo->isConstantObjSym(val))
+        if(LLVMUtil::isConstantObjSym(val))
         {
             ObjTypeInfo* typeInfo = new ObjTypeInfo(val->getType(), 0);
             initTypeInfo(typeInfo,val);
@@ -535,7 +553,7 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 
     const PointerType * refty = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(refty && "this value should be a pointer type!");
-    Type* elemTy = refty->getElementType();
+    Type* elemTy = getPtrElementType(refty);
     bool isPtrObj = false;
     // Find the inter nested array element
     while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(elemTy))
@@ -637,7 +655,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
     else if(SVFUtil::isa<GlobalVariable>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::GLOBVAR_OBJ);
-        if(SymbolTableInfo::SymbolInfo()->isConstantObjSym(val))
+        if(LLVMUtil::isConstantObjSym(val))
             typeinfo->setFlag(ObjTypeInfo::CONST_GLOBAL_OBJ);
         analyzeObjType(typeinfo,val);
         objSize = getObjSize(typeinfo->getType());

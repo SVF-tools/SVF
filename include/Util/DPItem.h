@@ -30,7 +30,6 @@
 #ifndef DPITEM_H_
 #define DPITEM_H_
 
-#include "Util/BDDExpr.h"
 #include "MemoryModel/ConditionalPT.h"
 #include <algorithm>    // std::sort
 
@@ -56,6 +55,20 @@ public:
     /// Copy constructor
     DPItem(const DPItem& dps) : cur(dps.cur)
     {
+    }
+    /// Move constructor
+    DPItem(DPItem&& dps) noexcept : cur(dps.cur)
+    {
+
+    }
+    /// Move operator=
+    DPItem &operator=(DPItem &&rhs) noexcept
+    {
+        if (this != &rhs)
+        {
+            cur = rhs.cur;
+        }
+        return *this;
     }
     /// Destructor
     virtual ~DPItem()
@@ -201,6 +214,18 @@ public:
     /// Copy Constructor
     ContextCond(const ContextCond& cond): context(cond.getContexts()), concreteCxt(cond.isConcreteCxt())
     {
+    }
+    /// Move Constructor
+    ContextCond(ContextCond &&cond) noexcept: context(std::move(cond.context)), concreteCxt(cond.concreteCxt) {}
+    /// Move operator=
+    ContextCond& operator=(ContextCond&&cond) noexcept
+    {
+        if(this!=&cond)
+        {
+            context = std::move(cond.context);
+            concreteCxt = cond.concreteCxt;
+        }
+        return *this;
     }
     /// Destructor
     virtual ~ContextCond()
@@ -466,6 +491,20 @@ public:
     CxtDPItem(const CxtDPItem& dps) :
         DPItem(dps.getCurNodeID()), context(dps.context)
     {
+    }
+    /// Move constructor
+    CxtDPItem(CxtDPItem &&dps) noexcept: DPItem(dps), context(std::move(dps.context))
+    {
+    }
+    /// Move operator=
+    CxtDPItem &operator=(CxtDPItem &&dps) noexcept
+    {
+        if (this != &dps)
+        {
+            DPItem::operator=(dps);
+            context = std::move(dps.context);
+        }
+        return *this;
     }
     /// Destructor
     virtual ~CxtDPItem()

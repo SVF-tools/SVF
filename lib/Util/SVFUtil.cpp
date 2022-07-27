@@ -29,9 +29,7 @@
 
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/LLVMUtil.h"
 
-#include "Util/BDDExpr.h"
 #include "MemoryModel/PointsTo.h"
 
 #include <sys/resource.h>		/// increase stack size
@@ -293,16 +291,16 @@ std::string SVFUtil::getSourceLoc(const Value* val)
             llvm::DILocation* Loc = SVFUtil::cast<llvm::DILocation>(N);                   // DILocation is in DebugInfo.h
             unsigned Line = Loc->getLine();
             unsigned Column = Loc->getColumn();
-            StringRef File = Loc->getFilename();
+            std::string File = Loc->getFilename().str();
             //StringRef Dir = Loc.getDirectory();
-            if(File.str().empty() || Line == 0)
+            if(File.empty() || Line == 0)
             {
                 auto inlineLoc = Loc->getInlinedAt();
                 if(inlineLoc)
                 {
                     Line = inlineLoc->getLine();
                     Column = inlineLoc->getColumn();
-                    File = inlineLoc->getFilename();
+                    File = inlineLoc->getFilename().str();
                 }
             }
             rawstr << "ln: " << Line << "  cl: " << Column << "  fl: " << File;
@@ -453,4 +451,13 @@ bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
 void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 {
     if (limitTimerSet) alarm(0);
+}
+
+const std::string SVFUtil::type2String(const Type* type)
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    assert(type != nullptr && "Given null type!");
+    rawstr << *type;
+    return rawstr.str();
 }

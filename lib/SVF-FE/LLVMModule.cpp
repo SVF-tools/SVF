@@ -39,21 +39,34 @@ using namespace std;
 using namespace SVF;
 
 /*
-  svf.main() is used to model the real entry point of a C++ program,
-  which initializes all global C++ objects and then call main().
+  svf.main() is used to model the real entry point of a C++ program, which
+  initializes all global C++ objects and then call main().
+
+  LLVM may generate two global arrays @llvm.global_ctors and @llvm.global_dtors
+  that contain constructor and destructor functions for global variables. They
+  are not called explicitly, so we have to add them in the svf.main function.
+  The order to call these constructor and desctructor functions are also
+  specified in the global arrays.
+
+  Related part in LLVM language reference:
+  https://llvm.org/docs/LangRef.html#the-llvm-global-ctors-global-variable
+
   For example, given a "int main(int argc, char * argv[])", the corresponding
   svf.main will be generated as follows:
     define void @svf.main(i32, i8**, i8**) {
       entry:
-        call void @_GLOBAL__sub_I_cast.cpp()
-        call void @_GLOBAL__sub_I_1.cpp()
-        call void @_GLOBAL__sub_I_2.cpp()
+        call void @ctor1()
+        call void @ctor2()
         %3 = call i32 @main(i32 %0, i8** %1)
+        call void @dtor1()
+        call void @dtor2()
         ret void
     }
- */
+*/
+
 #define SVF_MAIN_FUNC_NAME           "svf.main"
-#define SVF_GLOBAL_SUB_I_XXX          "_GLOBAL__sub_I_"
+#define SVF_GLOBAL_CTORS             "llvm.global_ctors"
+#define SVF_GLOBAL_DTORS             "llvm.global_dtors"
 
 LLVMModuleSet *LLVMModuleSet::llvmModuleSet = nullptr;
 std::string SVFModule::pagReadFromTxt = "";
@@ -227,18 +240,128 @@ void LLVMModuleSet::initialize()
     }
 }
 
+std::vector<const Function *> LLVMModuleSet::getLLVMGlobalFunctions(
+    const GlobalVariable *global)
+{
+    // This function is used to extract constructor and destructor functions
+    // sorted by their priority from @llvm.global_ctors or @llvm.global_dtors.
+    // For example, given following @llvm.global_ctors, the returning sorted
+    // function list should be [ctor3, ctor1, ctor2].
+    // ------------------------------------------------------------------
+    //    ; Each struct in the array is {priority, function, associated data}
+    //
+    //    @llvm.global_ctors = appending global [2 x { i32, void ()*, i8* }]
+    //    [{ i32, void ()*, i8* } { i32 1234, void ()* @ctor1.cpp, i8* null },
+    //    { i32, void ()*, i8* } { i32 2345, void ()* @ctor2.cpp, i8* null },
+    //    { i32, void ()*, i8* } { i32 345, void ()* @ctor3.cpp, i8* null }]
+    // ------------------------------------------------------------------
+    // TODO: According to LLVM language reference, if the third field is
+    // non-null, and points to a global variable or function, the initializer
+    // function will only run if the associated data from the current module is
+    // not discarded. However the associated data is currently ignored.
+
+
+    // This class is used for the priority queue that sorts the functions by
+    // their priority. Each object of this class stands for an item in the
+    // function array.
+    class LLVMGlobalFunction
+    {
+    public:
+        u32_t priority;
+        const Function *func;
+        LLVMGlobalFunction() {};
+        LLVMGlobalFunction(u32_t _priority, const Function *_func)
+            : priority(_priority), func(_func) {};
+        bool operator>(const LLVMGlobalFunction &other) const
+        {
+            if (priority != other.priority)
+            {
+                return priority > other.priority;
+            }
+            else
+            {
+                return func > other.func;
+            }
+        }
+    };
+
+    std::priority_queue<LLVMGlobalFunction, std::vector<LLVMGlobalFunction>,
+        greater<LLVMGlobalFunction>>
+        queue;
+    std::vector<const Function *> result;
+
+    // The @llvm.global_ctors/dtors global variable is an array of struct. Each
+    // struct has three fields: {i32 priority, void ()* @ctor/dtor, i8* @data}.
+    // First get the array here.
+    if(const ConstantArray *globalFuncArray =
+                SVFUtil::dyn_cast<ConstantArray>(global->getInitializer()))
+    {
+        // Get each struct in the array.
+        for (unsigned int i = 0; i < globalFuncArray->getNumOperands(); ++i)
+        {
+            if (
+                const ConstantStruct *globalFuncItem =
+                    SVFUtil::dyn_cast<ConstantStruct>(
+                        globalFuncArray->getOperand(i)))
+            {
+
+                // Extract priority and function from the struct
+                const ConstantInt *priority = SVFUtil::dyn_cast<ConstantInt>(
+                                                  globalFuncItem->getOperand(0));
+                const Function *func = SVFUtil::dyn_cast<Function>(
+                                           globalFuncItem->getOperand(1));
+
+                if (priority && func)
+                {
+                    queue.push(LLVMGlobalFunction(priority
+                                                  ->getZExtValue(),
+                                                  func));
+                }
+            }
+        }
+    }
+
+    // Generate a sorted vector of functions from the priority queue.
+    while (!queue.empty())
+    {
+        result.push_back(queue.top().func);
+        queue.pop();
+    }
+    return result;
+}
+
 void LLVMModuleSet::addSVFMain()
 {
-    std::vector<Function *> init_funcs;
+    std::vector<const Function *> ctor_funcs;
+    std::vector<const Function *> dtor_funcs;
     Function * orgMain = 0;
     Module* mainMod = nullptr;
-    for (Module& mod : modules)
+
+    for (Module &mod : modules)
     {
-        for (auto &func: mod)
+        // Collect ctor and dtor functions
+        for (Module::global_iterator it = mod.global_begin(),
+                eit = mod.global_end();
+                it != eit; ++it)
         {
-            if(func.getName().startswith(SVF_GLOBAL_SUB_I_XXX))
-                init_funcs.push_back(&func);
-            if(func.getName().equals(SVF_MAIN_FUNC_NAME))
+            const GlobalVariable *global = &*it;
+
+            if (global->getName().equals(SVF_GLOBAL_CTORS) &&
+                    global->hasInitializer())
+            {
+                ctor_funcs = getLLVMGlobalFunctions(global);
+            }
+            else if (global->getName().equals(SVF_GLOBAL_DTORS) &&
+                     global->hasInitializer())
+            {
+                dtor_funcs = getLLVMGlobalFunctions(global);
+            }
+        }
+
+        // Find main function
+        for (auto &func : mod)
+        {
+            if (func.getName().equals(SVF_MAIN_FUNC_NAME))
                 assert(false && SVF_MAIN_FUNC_NAME " already defined");
             if(func.getName().equals("main"))
             {
@@ -247,7 +370,11 @@ void LLVMModuleSet::addSVFMain()
             }
         }
     }
-    if(orgMain && getModuleNum() > 0 && init_funcs.size() > 0)
+
+    // Only create svf.main when the original main function is found, and also
+    // there are global contructor or destructor functions.
+    if (orgMain && getModuleNum() > 0 &&
+            (ctor_funcs.size() > 0 || dtor_funcs.size() > 0))
     {
         assert(mainMod && "Module with main function not found.");
         Module & M = *mainMod;
@@ -272,21 +399,33 @@ void LLVMModuleSet::addSVFMain()
         svfmain->setCallingConv(llvm::CallingConv::C);
         BasicBlock* block = BasicBlock::Create(M.getContext(), "entry", svfmain);
         IRBuilder Builder(block);
-        // emit "call void @_GLOBAL__sub_I_XXX()"
-        for(auto & init: init_funcs)
+        // emit "call void @ctor()". ctor_funcs is sorted so the functions are
+        // emitted in the order of priority
+        for(auto & ctor: ctor_funcs)
         {
             auto target = M.getOrInsertFunction(
-                              init->getName(),
+                              ctor->getName(),
                               Type::getVoidTy(M.getContext())
                           );
             Builder.CreateCall(target);
         }
-        // main() should be called after all _GLOBAL__sub_I_XXX functions.
+        // main() should be called after all ctor functions and before dtor
+        // functions.
         Function::arg_iterator arg_it = svfmain->arg_begin();
         Value * args[] = {arg_it, arg_it + 1, arg_it + 2 };
         size_t cnt = orgMain->arg_size();
         assert(cnt <= 3 && "Too many arguments for main()");
         Builder.CreateCall(orgMain, llvm::ArrayRef<Value*>(args,args + cnt));
+        // emit "call void @dtor()". dtor_funcs is sorted so the functions are
+        // emitted in the order of priority
+        for (auto &dtor : dtor_funcs)
+        {
+            auto target = M.getOrInsertFunction(
+                              dtor->getName(),
+                              Type::getVoidTy(M.getContext())
+                          );
+            Builder.CreateCall(target);
+        }
         // return;
         Builder.CreateRetVoid();
     }

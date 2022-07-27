@@ -173,11 +173,6 @@ public:
         return getSVFGNode(getDef(pagNode));
     }
 
-    /// Return the corresponding SVFGNodes to a given llvm::Value.
-    /// return an empty list, if the no mapping is possible
-    std::set<const SVFGNode*> fromValue(const llvm::Value* value) const;
-
-
     /// Perform statistics
     void performStat();
 
@@ -266,6 +261,10 @@ public:
         addGNode(dvpNode->getId(), dvpNode);
         return dvpNode;
     }
+
+    virtual void writeToFile(const std::string& filename);
+    virtual void readFile(const std::string& filename);
+    virtual MRVer* getMRVERFromString(const std::string& input);
 
 protected:
     /// Add indirect def-use edges of a memory region between two statements,

@@ -29,6 +29,7 @@
 
 #include "MemoryModel/SVFVariables.h"
 #include "Util/Options.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -40,7 +41,7 @@ using namespace SVFUtil;
 SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
     GenericPAGNodeTy(i,k), value(val)
 {
-    assert( ValNode <= k && k <= CloneDummyObjNode && "new SVFIR node kind?");
+    assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
     switch (k)
     {
     case ValNode:
@@ -66,9 +67,6 @@ SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
     case GepObjNode:
     case FIObjNode:
     case DummyObjNode:
-    case CloneGepObjNode:
-    case CloneFIObjNode:
-    case CloneDummyObjNode:
     {
         isPtr = true;
         if(val)
@@ -201,29 +199,13 @@ const std::string DummyObjVar::toString() const
     return rawstr.str();
 }
 
-const std::string CloneDummyObjVar::toString() const
+/// Whether it is constant data, i.e., "0", "1.001", "str"
+/// or llvm's metadata, i.e., metadata !4087
+bool SVFVar::isConstantData() const
 {
-    std::string str;
-    raw_string_ostream rawstr(str);
-    rawstr << "CloneDummyObjVar ID: " << getId();
-    return rawstr.str();
+    if (hasValue())
+        return SVFUtil::isConstantData(value);
+    else
+        return false;
 }
-
-const std::string CloneGepObjVar::toString() const
-{
-    std::string str;
-    raw_string_ostream rawstr(str);
-    rawstr << "CloneGepObjVar ID: " << getId();
-    return rawstr.str();
-}
-
-const std::string CloneFIObjVar::toString() const
-{
-    std::string str;
-    raw_string_ostream rawstr(str);
-    rawstr << "CloneFIObjVar ID: " << getId();
-    return rawstr.str();
-}
-
-
 

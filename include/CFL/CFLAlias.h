@@ -31,6 +31,8 @@
 #include "CFL/CFLSolver.h"
 #include "CFL/CFGNormalizer.h"
 #include "CFL/GrammarBuilder.h"
+#include "CFL/CFLGraphBuilder.h"
+#include "CFL/CFLGramGraphChecker.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/ConsG.h"
 #include "Util/Options.h"
@@ -42,6 +44,8 @@ class CFLAlias : public PointerAnalysis
 {
 
 public:
+    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
+
     CFLAlias(SVFIR* ir) : PointerAnalysis(ir, PointerAnalysis::CFLFICI_WPA), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
     {
     }
@@ -49,48 +53,11 @@ public:
     /// Destructor
     virtual ~CFLAlias()
     {
-        delete graph;
-        delete grammar;
         delete solver;
     }
 
     /// Start Analysis here (main part of pointer analysis).
-    virtual void analyze()
-    {
-        PointerAnalysis::initialize();
-        GrammarBuilder * gReader = new GrammarBuilder(Options::GrammarFilename);
-        CFGNormalizer *normalizer = new CFGNormalizer();
-
-        graph = new CFLGraph();
-        if (Options::GraphIsFromDot == false)
-        {
-            // Maybe could put in SVFIR Class
-            // In memory Graph does not have string type label
-            Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar", 10},{"Vgepbar", 11}};
-            ConstraintGraph *consCG = new ConstraintGraph(svfir);
-            svfir->dump("SVFIR");
-            // Can be put in build, copy from general graph
-            graph->label2SymMap = ConstMap;
-            graph->buildBigraph(consCG);
-            graph->dump("PAG");
-            delete consCG;
-            GrammarBase *generalGrammar = gReader->build(&ConstMap);
-            grammar = normalizer->normalize(generalGrammar);
-            graph->setMap(&grammar->terminals, &grammar->nonterminals);
-        }
-        else
-        {
-            GrammarBase *generalGrammar = gReader->build();
-            grammar = normalizer->normalize(generalGrammar);
-            graph->setMap(&grammar->terminals, &grammar->nonterminals);
-            graph->buildFromDot(Options::InputFilename);
-        }
-        graph->startSymbol = grammar->startSymbol;
-        solver = new CFLSolver(graph, grammar);
-        solver->solve();
-        graph->dump("map");
-        PointerAnalysis::finalize();
-    }
+    virtual void analyze();
 
     /// Interface exposed to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const Value* v1, const Value* v2)
@@ -103,19 +70,51 @@ public:
     /// Interface exposed to users of our pointer analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2)
     {
-        /// TODO:: Fix the edge label for a reachable alias relation if it is not 1;
-        if(graph->hasEdge(graph->getGNode(node1), graph->getGNode(node2), graph->startSymbol))
+        if(graph->hasEdge(graph->getGNode(node1), graph->getGNode(node2), graph->startKind))
             return AliasResult::MayAlias;
         else
             return AliasResult::NoAlias;
     }
 
-    /// Get points-to targets of a pointer.
+    /// Get points-to targets of a pointer.  V In this context
     virtual const PointsTo& getPts(NodeID ptr)
     {
-        /// Check Outgoing edge Dst of ptr
-        //PointsTo * ps;
-        abort(); // to be implemented
+        /// Check V Dst of ptr.
+        PointsTo *ps = new PointsTo();
+        CFLNode *funNode = graph->getGNode(ptr);
+        for(auto outedge = funNode->getOutEdges().begin(); outedge!=funNode->getOutEdges().end(); outedge++)
+        {
+            if((*outedge)->getEdgeKind() == graph->getStartKind())
+            {
+                // Need to Find dst addr src
+                CFLNode *vNode = graph->getGNode((*outedge)->getDstID());
+
+                for(auto inEdge = vNode->getInEdges().begin(); inEdge!=vNode->getInEdges().end(); inEdge++)
+                {
+                    if((*inEdge)->getEdgeKind() == 0)
+                    {
+                        ps->set((*inEdge)->getSrcID());
+                    }
+                }
+            }
+        }
+        return *ps;
+    }
+
+    /// Add copy edge on constraint graph
+    virtual inline bool addCopyEdge(NodeID src, NodeID dst)
+    {
+        const CFLEdge *edge = graph->hasEdge(graph->getGNode(src),graph->getGNode(dst), 1);
+        if (edge != nullptr )
+        {
+            return false;
+
+        }
+        CFLGrammar::Kind copyKind = grammar->str2Kind("Copy");
+        CFLGrammar::Kind copybarKind = grammar->str2Kind("Copybar");
+        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(src),graph->getGNode(dst), copyKind));
+        solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(dst),graph->getGNode(src), copybarKind));
+        return true;
     }
 
     /// Given an object, get all the nodes having whose pointsto contains the object
@@ -125,7 +124,18 @@ public:
         abort(); // to be implemented
     }
 
+    /// Update call graph for the input indirect callsites
+    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
+
+    /// On the fly call graph construction
+    virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
+
+    /// Connect formal and actual parameters for indirect callsites
+    void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F);
+
+    void heapAllocatorViaIndCall(CallSite cs);
 private:
+    CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
     SVFIR* svfir;
     CFLGraph* graph;
     CFLGrammar* grammar;

@@ -35,6 +35,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 
 double MemSSA::timeOfGeneratingMemRegions = 0;	///< Time for allocating regions

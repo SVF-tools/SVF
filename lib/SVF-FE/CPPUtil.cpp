@@ -29,6 +29,7 @@
 
 #include "SVF-FE/CPPUtil.h"
 #include "Util/SVFUtil.h"
+#include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 
 
@@ -233,7 +234,7 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
     for (u32_t i = 0; i < 3; ++i)
     {
         if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
-            elemTy = ptrTy->getElementType();
+            elemTy = LLVMUtil::getPtrElementType(ptrTy);
         else
             return false;
     }
@@ -261,13 +262,6 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
     // the callsite must be an indirect one with at least one argument (this ptr)
     if (cs.getCalledFunction() != nullptr || cs.arg_empty())
         return false;
-
-    // When compiled with ctir, we'd be using the DCHG which has its own
-    // virtual annotations.
-    if (LLVMModuleSet::getLLVMModuleSet()->allCTir())
-    {
-        return cs.getInstruction()->getMetadata(cppUtil::ctir::derefMDName) != nullptr;
-    }
 
     const Value *vfunc = cs.getCalledValue();
     if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
@@ -419,7 +413,7 @@ string cppUtil::getClassNameFromType(const Type *ty)
     string className = "";
     if (const PointerType *ptrType = SVFUtil::dyn_cast<PointerType>(ty))
     {
-        const Type *elemType = ptrType->getElementType();
+        const Type *elemType = LLVMUtil::getPtrElementType(ptrType);
         if (SVFUtil::isa<StructType>(elemType) &&
                 !((SVFUtil::cast<StructType>(elemType))->isLiteral()))
         {

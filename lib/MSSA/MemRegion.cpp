@@ -35,6 +35,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 u32_t MemRegion::totalMRNum = 0;
 u32_t MRVer::totalVERNum = 0;
@@ -806,4 +807,11 @@ ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs1, const CallICFGNod
         return ModRefInfo::Mod;
     else
         return ModRefInfo::NoModRef;
+}
+
+std::ostream& SVF::operator<<(std::ostream &o, const MRVer& mrver)
+{
+    o << "MRVERID: " << mrver.getID() <<" MemRegion: " << mrver.getMR()->dumpStr() << " MRVERSION: " << mrver.getSSAVersion() << " MSSADef: " << mrver.getDef()->getType() << ", "
+      << mrver.getDef()->getMR()->dumpStr() ;
+    return o;
 }

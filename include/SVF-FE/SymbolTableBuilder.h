@@ -56,6 +56,8 @@ public:
 
     /// collect the syms
     //@{
+    void collectNullPtrBlackholeSyms(const Value *val);
+
     void collectSym(const Value *val);
 
     void collectVal(const Value *val);

@@ -158,6 +158,9 @@ public:
     static const llvm::cl::opt<bool> SingleVFG;
     static llvm::cl::opt<bool> OPTSVFG;
 
+    static const llvm::cl::opt<std :: string> WriteSVFG;
+    static const llvm::cl::opt<std :: string> ReadSVFG;
+
     // FSMPTA.cpp
     static const llvm::cl::opt<bool> UsePCG;
     static const llvm::cl::opt<bool> IntraLock;
@@ -215,9 +218,9 @@ public:
     static const llvm::cl::opt<bool> SymTabPrint;
 
     // Conditions.cpp
-    static const llvm::cl::opt<unsigned> MaxBddSize;
+    static const llvm::cl::opt<unsigned> MaxZ3Size;
 
-    // PathCondAllocator.cpp
+    // SaberCondAllocator.cpp
     static const llvm::cl::opt<bool> PrintPathCond;
 
     // SVFUtil.cpp
@@ -234,16 +237,6 @@ public:
     static const llvm::cl::opt<bool> PtsDiff;
     static const llvm::cl::opt<bool> MergePWC;
 
-    // FlowSensitive.cpp
-    static const llvm::cl::opt<bool> CTirAliasEval;
-
-    //FlowSensitiveTBHC.cpp
-    static const llvm::cl::opt<bool> TBHCStoreReuse;
-    static const llvm::cl::opt<bool> TBHCAllReuse;
-
-    // TypeAnalysis.cpp
-    static const llvm::cl::opt<bool> GenICFG;
-
     // WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
     static const llvm::cl::opt<bool> SABERFULLSVFG;
@@ -255,11 +248,14 @@ public:
     static const llvm::cl::opt<bool> ShowHiddenNode;
 
     // CFL option
-    static const llvm::cl::opt<std::string> InputFilename;
     static const llvm::cl::opt<std::string> GrammarFilename;
-    static const llvm::cl::opt<bool> GraphIsFromDot;
-    static const llvm::cl::opt<bool> GrammarIsEBNF;
+    static const llvm::cl::opt<std::string> CFLGraph;
+    static const llvm::cl::opt<bool> PrintCFL;
     static const llvm::cl::opt<bool> FlexSymMap;
+
+    // Loop Analysis
+    static const llvm::cl::opt<bool> LoopAnalysis;
+    static const llvm::cl::opt<unsigned> LoopBound;
 };
 }  // namespace SVF
 

@@ -7,7 +7,7 @@
  *      Author: mbarbar
  */
 
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 #include "WPA/WPAStat.h"
 #include "WPA/VersionedFlowSensitive.h"
 #include "MemoryModel/PointsTo.h"

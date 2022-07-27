@@ -1,4 +1,4 @@
-//===----- CFGNormalizer.h -- CFL Alias Analysis Client--------------//
+//===----- CFGNormalizer.h -- Context Free Grammar Normalizer--------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -27,8 +27,8 @@
  *      Author: Pei Xu
  */
 
-#ifndef CFGNormalizer_H_
-#define CFGNormalizer_H_
+#ifndef INCLUDE_CFL_CFGNormalizer_H_
+#define INCLUDE_CFL_CFGNormalizer_H_
 
 #include "CFLGrammar.h"
 
@@ -36,38 +36,47 @@ namespace SVF
 {
 
 /*!
- *  Normalize Grammar from a grammarbase
+ *  Generate Normalized Grammar from a grammarbase
+ *
+ *  To Do:
+ *      Error Notice for ill formed production,
+ *      e.g. not end with ';' and '*' not preceding with '()' and extra space before ';'
+ *      '|' sign support
  */
 
 class CFGNormalizer
 {
 
 public:
-    typedef u32_t Symbol;
-    typedef std::vector<Symbol> Production;
-    typedef Set<Production> Productions;
-
     CFGNormalizer()
     {
     }
 
-    /// Start Normalize (BIN Only)
-    // TODO: Add different Combination Transformation Option
+    /// Binary Normal Form(BNF) normalization with variable attribute expanded
     CFLGrammar* normalize(GrammarBase *generalGrammar);
+
+    /// Expand every variable attribute in rawProductions of grammarbase
+    CFLGrammar* fillAttribute(CFLGrammar *grammar, const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttrsMap);
+
 private:
+    /// Add nonterminal to tranfer long rules to binary rules
+    void ebnf_bin(CFLGrammar *grammar);
 
-    void ebnf_bin(GrammarBase *generalGrammar, CFLGrammar *grammar);
+    void ebnfSignReplace(char sign, CFLGrammar *grammar);
 
-    void ebnf_sign_replace(char sign, GrammarBase* generalGrammar, CFLGrammar *grammar);
+    void insertToCFLGrammar(CFLGrammar *grammar, GrammarBase::Production &prod);
 
-    int ebnf_bracket_match(Production& prod, int i, CFLGrammar *grammar) ;
+    int ebnfBracketMatch(GrammarBase::Production& prod, int i, CFLGrammar *grammar) ;
 
-    Production strTrans(std::string strPro, CFLGrammar *grammar);
+    GrammarBase::Symbol check_head(GrammarBase::SymbolMap<GrammarBase::Symbol, GrammarBase::Productions>& grammar, GrammarBase::Production& rule);
 
-    int check_head(Map<Symbol, Productions>& grammar, Production& rule);
+    GrammarBase::Production strTrans(std::string strPro, CFLGrammar *grammar);
 
+    GrammarBase::Production getFilledProd(GrammarBase::Production &prod, CFLGrammar::Attribute attribute, CFLGrammar *grammar);
+
+    GrammarBase::Productions getFilledProductions(GrammarBase::Production &prod,const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttriMap, CFLGrammar *grammar);
 };
 
 } // End namespace SVF
 
-#endif /* CFGNormalizer_H_*/
+#endif /* INCLUDE_CFL_CFGNormalizer_H_*/

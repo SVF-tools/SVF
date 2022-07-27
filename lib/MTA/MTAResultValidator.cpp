@@ -78,8 +78,8 @@ std::vector<std::string> MTAResultValidator::getStringArg(const Instruction* ins
         std::vector<std::string> strvec;
         return strvec;
     }
-    const StringRef vthdcxtstring = cxtarray->getAsCString();
-    return split(vthdcxtstring.str(), ',');
+    const std::string vthdcxtstring = cxtarray->getAsCString().str();
+    return split(vthdcxtstring, ',');
 }
 
 CallStrCxt MTAResultValidator::getCxtArg(const Instruction* inst, unsigned int arg_num)

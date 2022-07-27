@@ -1,0 +1,3274 @@
+{
+    "creat64":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fseeko64": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fstat64":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fstatvfs64":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "ftello64": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getrlimit64":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "lstat64":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "open64":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "stat64":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "statvfs64":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "Gpm_GetEvent": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "Gpm_Open": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "RAND_seed":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "SSL_CTX_set_default_verify_paths": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "SSL_get_error":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "SSL_get_fd":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "SSL_pending":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "SSL_read": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "SSL_set_bio":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "SSL_set_connect_state":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "SSL_shutdown": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "SSL_state":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "SSL_write":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "Void_FreeCore":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "X509_STORE_CTX_get_error": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XAllocColor":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XCloseDisplay":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XCopyArea":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XCreateColormap":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XCreatePixmap":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XCreateWindow":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XDrawPoint":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XDrawString":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XDrawText":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XFillRectangle":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XFillRectangles":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XGetGCValues": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XGetGeometry": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XInternAtom":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XMapWindow":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XNextEvent":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XPutImage":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XQueryColor":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XResizeWindow":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSelectInput": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSendEvent":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetBackground":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetClipMask": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetClipOrigin":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetFillStyle":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetFont": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetForeground":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetFunction": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetGraphicsExposures":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetLineAttributes":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetTile": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetWMHints":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetWMNormalHints":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSetWindowBackgroundPixmap":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XStoreName":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XSync":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XVisualIDFromVisual":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XWMGeometry":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XtAppSetFallbackResources":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XtCloseDisplay":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XtDestroyApplicationContext":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "XtDestroyWidget":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "_IO_getc": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "_IO_putc": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__assert_fail":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__dn_expand":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__dn_skipname":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__res_nclose": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__res_ninit":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__res_nmkquery":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__res_nsend":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__res_query":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__res_querydomain":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__res_search": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "__sigsetjmp":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "_obstack_begin":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "_obstack_memory_used": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "_obstack_newchunk":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "_setjmp":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "accept":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "access":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "asprintf": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "atexit":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "atof": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "atoi": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "atol": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "bind": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "cfgetospeed":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "cfsetispeed":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "cfsetospeed":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "chdir":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "chmod":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "chown":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "chroot":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "clearerr": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "clearok":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "closedir": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "compress2":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "confstr":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "connect":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "crc32":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "creat":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "deflate":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "deflateEnd":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "deflateInit2_":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "deflateReset": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "delwin":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "dladdr":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "dlclose":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "execl":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "execle":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "execlp":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "execv":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "execve":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "execvp":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "feof": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "ferror":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fflush":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fgetc":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fgetpos":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fileno":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "flockfile":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fnmatch":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "forkpty":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fprintf":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fputc":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fputs":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fread":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "frexp":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fscanf":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fseek":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fseeko":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fsetpos":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fstat":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fstatfs":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "ftell":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "ftello":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "ftok": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "funlockfile":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "fwrite":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "g_scanner_destroy":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "g_scanner_eof":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "g_scanner_get_next_token": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "g_scanner_input_file": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "g_scanner_scope_add_symbol":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_cipher_close":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_cipher_ctl":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_cipher_decrypt":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_cipher_map_name": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_cipher_open": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_md_close":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_md_ctl":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_md_get_algo": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_md_hash_buffer":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_md_map_name": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_md_open": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_md_setkey":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_md_write":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_mpi_add": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_mpi_add_ui":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_mpi_clear_highbit":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gcry_mpi_print":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getaddrinfo":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getc_unlocked":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getgroups":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gethostname":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getloadavg":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getopt":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getopt_long":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getopt_long_only": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getpeername":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getresgid":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getresuid":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getrlimit":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getrusage":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getsockname":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "getsockopt":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gettimeofday": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gnutls_pkcs12_bag_decrypt":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gnutls_pkcs12_bag_deinit": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gnutls_pkcs12_bag_get_count":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gnutls_pkcs12_bag_get_type":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gnutls_x509_crt_deinit":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gnutls_x509_crt_get_dn_by_oid":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gnutls_x509_crt_get_key_id":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gnutls_x509_privkey_deinit":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gnutls_x509_privkey_get_key_id":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gzclose":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gzeof":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gzgetc":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gzread":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gzseek":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gztell":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "gzwrite":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "hstrerror":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "iconv_close":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "inet_addr":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "inet_aton":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "inet_pton":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "inflate":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "inflateEnd":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "inflateInit2_":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "inflateInit_": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "inflateReset": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "initgroups":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_CreateCompress":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_CreateDecompress":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_destroy": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_finish_compress": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_finish_decompress":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_read_header": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_read_scanlines":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_resync_to_restart":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_set_colorspace":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_set_defaults":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_set_linear_quality":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_set_quality": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_start_compress":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_start_decompress":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "jpeg_write_scanlines": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "keypad":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "lchown":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "link": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "llvm.dbg": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "llvm.stackrestore":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "llvm.va_copy": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "llvm.va_end":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "llvm.va_start":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "longjmp":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "lstat":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mblen":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mbrlen":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mbrtowc":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mbtowc":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "memcmp":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mkdir":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mknod":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mkfifo":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mkstemp":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mkstemp64":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mktime":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "modf": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "mprotect": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "munmap":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "nanosleep":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "nodelay":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "open": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "openlog":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "openpty":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pathconf": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pclose":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "perror":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pipe": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "png_destroy_write_struct": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "png_init_io":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "png_set_bKGD": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "png_set_invert_alpha": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "png_set_invert_mono":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "png_write_end":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "png_write_info":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "png_write_rows":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "poll": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pread64":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "printf":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_attr_destroy": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_attr_init":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_attr_setscope":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_attr_setstacksize":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_create":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_mutex_destroy":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_mutex_init":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_mutex_lock":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_mutex_unlock": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_mutexattr_destroy":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_mutexattr_init":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "pthread_mutexattr_settype":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "ptsname":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "putenv":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "puts": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "qsort":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "re_compile_fastmap":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "re_exec":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "re_search":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "read": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "readlink": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "recv": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "recvfrom": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "regcomp":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "regerror": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "remove":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "rename":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "rewind":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "rewinddir":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "rmdir":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "rresvport":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "scrollok": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "select":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sem_destroy":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sem_init": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sem_post": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sem_trywait":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sem_wait": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "send": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sendto":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "setbuf":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "setenv":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "setgroups":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "setitimer":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "setrlimit":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "setsockopt":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "setvbuf":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sigaction":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sigaddset":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sigaltstack":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sigdelset":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sigemptyset":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sigfillset":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sigisemptyset":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sigismember":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "siglongjmp":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sigprocmask":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sigsuspend":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "snprintf": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "socketpair":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sprintf":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sscanf":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "stat": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "statfs":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "statvfs":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "strcasecmp":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "strcmp":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "strcoll":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "strcspn":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "strfmon":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "strftime": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "strlen":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "strncasecmp":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "strncmp":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "strspn":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "symlink":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "sysinfo":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "syslog":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "system":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "tcgetattr":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "tcsetattr":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "tgetent":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "tgetflag": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "tgetnum":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "time": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "timegm":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "times":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "tputs":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "truncate": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "uname":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "uncompress":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "ungetc":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "unlink":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "unsetenv": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "utime":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "utimes":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "vasprintf":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "vfprintf": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "vprintf":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "vsnprintf":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "vsprintf": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "waddch":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "waddnstr": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wait": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wait3":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wait4":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "waitpid":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wattr_off":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wattr_on": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wborder":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wclrtobot":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wclrtoeol":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wcrtomb":  {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wctomb":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wctype":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "werase":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wgetch":   {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wmove":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wrefresh": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "write":    {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "wtouchln": {
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+    },
+    "_fopen":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "fopen64":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "readdir64":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "tmpfile64":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "BIO_new_socket":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FT_Get_Sfnt_Table":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcFontList":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcFontMatch":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcFontRenderPrepare":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcFontSetCreate":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcFontSort":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcInitLoadConfig": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcObjectSetBuild": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcObjectSetCreate":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcPatternBuild":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcPatternCreate":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "FcPatternDuplicate":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "SSL_CTX_new":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "SSL_get_peer_certificate": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "SSL_new":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "SSLv23_client_method": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "SyGetmem": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "TLSv1_client_method":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XAddExtension":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XAllocClassHint":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XAllocSizeHints":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XAllocStandardColormap":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XCreateFontSet":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XCreateImage": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XCreateGC":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XESetCloseDisplay":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XGetImage":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XGetModifierMapping":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XGetMotionEvents": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XGetVisualInfo":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XLoadQueryFont":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XListPixmapFormats":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XRenderFindFormat":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XRenderFindStandardFormat":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XRenderFindVisualFormat":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XOpenDisplay": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XSetErrorHandler": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XSetIOErrorHandler":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XShapeGetRectangles":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XShmCreateImage":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XSynchronize": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XcursorImageCreate":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XcursorLibraryLoadImages": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XcursorShapeLoadImages":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XineramaQueryScreens": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XkbGetMap":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XtAppCreateShell": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XtCreateApplicationContext":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XtOpenDisplay":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "alloc":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "alloc_check":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "alloc_clear":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "art_svp_from_vpath":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "art_svp_vpath_stroke": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "art_svp_writer_rewind_new":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "art_svp_writer_rewind_reap":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "art_vpath_dash":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "cairo_create": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "cairo_image_surface_create_for_data":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "cairo_pattern_create_for_surface": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "cairo_surface_create_similar": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "calloc":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "zmalloc":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "fopen":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "fopencookie":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "g_scanner_new":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "gcry_sexp_nth_mpi":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "gzdopen":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "iconv_open":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "jpeg_alloc_huff_table":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "jpeg_alloc_quant_table":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "lalloc":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "lalloc_clear": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "malloc":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "nhalloc":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "oballoc":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "pango_cairo_font_map_create_context":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "pcre_compile": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "pcre_study":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "permalloc":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "png_create_info_struct":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "png_create_write_struct":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "popen":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "pthread_getspecific":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "readdir":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "safe_calloc":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "safe_malloc":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "safecalloc":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "safemalloc":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "safexcalloc":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "safexmalloc":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "savealloc":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "setmntent":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "shmat":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "__sysv_signal":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "signal":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "sigset":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "tempnam":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "tmpfile":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "xalloc":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "xcalloc":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "xmalloc":  {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "_Znwm":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "_Znam":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "_Znaj":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "_Znwj":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "__cxa_allocate_exception": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "aligned_alloc":    {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "memalign": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "valloc":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "SRE_LockCreate":   {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "VOS_MemAlloc": {
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "mmap64":   {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "X509_NAME_oneline":    {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "X509_verify_cert_error_string":    {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XBaseFontNameListOfFontSet":   {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XGetAtomName": {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XGetDefault":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XGetKeyboardMapping":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XListDepths":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XListFonts":   {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XSetLocaleModifiers":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "XcursorGetTheme":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "__strdup": {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "crypt":    {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "ctime":    {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "dlerror":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "dlopen":   {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "gai_strerror": {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "gcry_cipher_algo_name":    {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "gcry_md_algo_name":    {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "gcry_md_read": {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "getenv":   {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "getlogin": {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "getpass":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "gnutls_strerror":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "gpg_strerror": {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "gzerror":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "inet_ntoa":    {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "initscr":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "llvm.stacksave":   {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "mmap": {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "newwin":   {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "nl_langinfo":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "opendir":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "sbrk": {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "strdup":   {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "strerror": {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "strsignal":    {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "textdomain":   {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "tgetstr":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "tigetstr": {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "tmpnam":   {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "ttyname":  {
+        "type": "EFT_NOSTRUCT_ALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "__ctype_b_loc":    {
+        "type": "EFT_STAT2",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "__ctype_tolower_loc":  {
+        "type": "EFT_STAT2",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "__ctype_toupper_loc":  {
+        "type": "EFT_STAT2",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "XKeysymToString":  {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "__errno_location": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "__h_errno_location":   {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "__res_state":  {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "asctime":  {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "bindtextdomain":   {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "bind_textdomain_codeset":  {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "ctermid":  {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "dcgettext":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "dgettext": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "dngettext":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "fdopen":   {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "gcry_strerror":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "gcry_strsource":   {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getgrgid": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getgrnam": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "gethostbyaddr":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "gethostbyname":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "gethostbyname2":   {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getmntent":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getprotobyname":   {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getprotobynumber": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getpwent": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getpwnam": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getpwuid": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getservbyname":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getservbyport":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getspnam": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "gettext":  {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "gmtime":   {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "gnu_get_libc_version": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "gnutls_check_version": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "localeconv":   {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "localtime":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "ngettext": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "pango_cairo_font_map_get_default": {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "re_comp":  {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "setlocale":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "tgoto":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "tparm":    {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "zError":   {
+        "type": "EFT_STAT",
+        "overwrite_app_function": 0,
+        "addr": ["L", "L"]
+    },
+    "getcwd":   {
+        "type": "EFT_REALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "mem_realloc":  {
+        "type": "EFT_REALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "realloc":  {
+        "type": "EFT_REALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "realloc_obj":  {
+        "type": "EFT_REALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "safe_realloc": {
+        "type": "EFT_REALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "saferealloc":  {
+        "type": "EFT_REALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "safexrealloc": {
+        "type": "EFT_REALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "strtok":   {
+        "type": "EFT_REALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "strtok_r": {
+        "type": "EFT_REALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "xrealloc": {
+        "type": "EFT_REALLOC",
+        "overwrite_app_function": 1,
+        "addr": ["L", "L"]
+    },
+    "SSL_CTX_free": {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "SSL_free": {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "cfree":    {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "free": {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "free_all_mem": {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "freeaddrinfo": {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "gcry_mpi_release": {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "gcry_sexp_release":    {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "globfree": {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "nhfree":   {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "obstack_free": {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "safe_cfree":   {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "safe_free":    {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "safefree": {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "safexfree":    {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "sm_free":  {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "vim_free": {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "xfree":    {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "fclose":   {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "XFreeColormap":    {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "XFreeColors":  {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "XFreeFont":    {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "XFreeFontNames":   {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "XFreeGC":  {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "XFreePixmap":  {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "XFree":    {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "VOS_MemFree":  {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "_ZdaPv":   {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "_ZdlPv":   {
+        "type": "EFT_FREE",
+        "overwrite_app_function": 1
+    },
+    "__rawmemchr":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "cairo_surface_reference":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "fgets":    {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "jpeg_std_error":   {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "memchr":   {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "mremap":   {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "strchr":   {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "strerror_r":   {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "strpbrk":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "strptime": {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "strrchr":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "strstr":   {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "tmpnam_r": {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "isalnum":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "isalpha":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "isblank":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "iscntrl":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "isdigit":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "isgraph":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "islower":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "isprint":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "ispunct":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "isspace":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "isupper":  {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "isxdigit": {
+        "type": "EFT_L_A0",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    },
+    "asctime_r":    {
+        "type": "EFT_L_A1",
+        "overwrite_app_function": 0,
+        "copy": ["A1", "L"]
+    },
+    "bsearch":  {
+        "type": "EFT_L_A1",
+        "overwrite_app_function": 0,
+        "copy": ["A1", "L"]
+    },
+    "getmntent_r":  {
+        "type": "EFT_L_A1",
+        "overwrite_app_function": 0,
+        "copy": ["A1", "L"]
+    },
+    "gmtime_r": {
+        "type": "EFT_L_A1",
+        "overwrite_app_function": 0,
+        "copy": ["A1", "L"]
+    },
+    "gzgets":   {
+        "type": "EFT_L_A1",
+        "overwrite_app_function": 0,
+        "copy": ["A1", "L"]
+    },
+    "localtime_r":  {
+        "type": "EFT_L_A1",
+        "overwrite_app_function": 0,
+        "copy": ["A1", "L"]
+    },
+    "realpath": {
+        "type": "EFT_L_A1",
+        "overwrite_app_function": 0,
+        "copy": ["A1", "L"]
+    },
+    "freopen64":    {
+        "type": "EFT_L_A2",
+        "overwrite_app_function": 0,
+        "copy": ["A2", "L"]
+    },
+    "_XGetAsyncReply":  {
+        "type": "EFT_L_A2",
+        "overwrite_app_function": 0,
+        "copy": ["A2", "L"]
+    },
+    "freopen":  {
+        "type": "EFT_L_A2",
+        "overwrite_app_function": 0,
+        "copy": ["A2", "L"]
+    },
+    "inet_ntop":    {
+        "type": "EFT_L_A2",
+        "overwrite_app_function": 0,
+        "copy": ["A2", "L"]
+    },
+    "XGetSubImage": {
+        "type": "EFT_L_A8",
+        "overwrite_app_function": 0,
+        "copy": ["A8", "L"]
+    },
+    "memset":   {
+        "type": "EFT_L_A0__A0R_A1",
+        "overwrite_app_function": 0,
+        "copy_n": ["A0R", "A1", "A2"]
+    },
+    "llvm.memset":  {
+        "type": "EFT_L_A0__A0R_A1",
+        "overwrite_app_function": 0,
+        "copy_n": ["A0R", "A1", "A2"]
+    },
+    "llvm.memset.p0i8.i32": {
+        "type": "EFT_L_A0__A0R_A1",
+        "overwrite_app_function": 0,
+        "copy_n": ["A0R", "A1", "A2"]
+    },
+    "llvm.memset.p0i8.i64": {
+        "type": "EFT_L_A0__A0R_A1",
+        "overwrite_app_function": 0,
+        "copy_n": ["A0R", "A1", "A2"]
+    },
+    "__memset_chk": {
+        "type": "EFT_L_A0__A0R_A1",
+        "overwrite_app_function": 0,
+        "copy_n": ["A0R", "A1", "A2"]
+    },
+    "llvm.memcpy":  {
+        "type": "EFT_L_A0__A0R_A1R",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0R", "A1R", "A2"],
+        "copy": ["A0R", "L"]
+    },
+    "llvm.memcpy.p0i8.p0i8.i32":    {
+        "type": "EFT_L_A0__A0R_A1R",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0R", "A1R", "A2"],
+        "copy": ["A0R", "L"]
+    },
+    "llvm.memcpy.p0i8.p0i8.i64":    {
+        "type": "EFT_L_A0__A0R_A1R",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0R", "A1R", "A2"],
+        "copy": ["A0R", "L"]
+    },
+    "llvm.memmove": {
+        "type": "EFT_L_A0__A0R_A1R",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0R", "A1R", "A2"],
+        "copy": ["A0R", "L"]
+    },
+    "llvm.memmove.p0i8.p0i8.i32":   {
+        "type": "EFT_L_A0__A0R_A1R",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0R", "A1R", "A2"],
+        "copy": ["A0R", "L"]
+    },
+    "llvm.memmove.p0i8.p0i8.i64":   {
+        "type": "EFT_L_A0__A0R_A1R",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0R", "A1R", "A2"],
+        "copy": ["A0R", "L"]
+    },
+    "memccpy":  {
+        "type": "EFT_L_A0__A0R_A1R",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0R", "A1R", "A2"],
+        "copy": ["A0R", "L"]
+    },
+    "memcpy":   {
+        "type": "EFT_L_A0__A0R_A1R",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0R", "A1R", "A2"],
+        "copy": ["A0R", "L"]
+    },
+    "memmove":  {
+        "type": "EFT_L_A0__A0R_A1R",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0R", "A1R", "A2"],
+        "copy": ["A0R", "L"]
+    },
+    "dlsym":    {
+        "type": "EFT_L_A1__FunPtr",
+        "overwrite_app_function": 0,
+        "funptr":   ["A1R"]
+    },
+    "bcopy":    {
+        "type": "EFT_A1R_A0R",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A1R", "A0R", "A2"]
+    },
+    "iconv":    {
+        "type": "EFT_A3R_A1R_NS",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A3R", "A1R"]
+    },
+    "strtod":   {
+        "type": "EFT_A1R_A0",
+        "overwrite_app_function": 0,
+        "store": ["A0", "A1R"]
+    },
+    "strtof":   {
+        "type": "EFT_A1R_A0",
+        "overwrite_app_function": 0,
+        "store": ["A0", "A1R"]
+    },
+    "strtol":   {
+        "type": "EFT_A1R_A0",
+        "overwrite_app_function": 0,
+        "store": ["A0", "A1R"]
+    },
+    "strtold":  {
+        "type": "EFT_A1R_A0",
+        "overwrite_app_function": 0,
+        "store": ["A0", "A1R"]
+    },
+    "strtoll":  {
+        "type": "EFT_A1R_A0",
+        "overwrite_app_function": 0,
+        "store": ["A0", "A1R"]
+    },
+    "strtoul":  {
+        "type": "EFT_A1R_A0",
+        "overwrite_app_function": 0,
+        "store": ["A0", "A1R"]
+    },
+    "readdir_r":{
+        "type": "EFT_A2R_A1",
+        "overwrite_app_function": 0,
+        "store": ["A1", "A2R"]
+    },
+    "__strcpy_chk": {
+        "type": "EFT_L_A0__A1_A0",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
+    },
+    "__strcat_chk": {
+        "type": "EFT_L_A0__A1_A0",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
+    },
+    "stpcpy":   {
+        "type": "EFT_L_A0__A1_A0",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0", "A1"],
+        "copy": ["A0", "L"]
+    },
+    "strcat":   {
+        "type": "EFT_L_A0__A1_A0",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0", "A1"],
+        "copy": ["A0", "L"]
+    },
+    "strcpy":   {
+        "type": "EFT_L_A0__A1_A0",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0", "A1"],
+        "copy": ["A0", "L"]
+    },
+    "strncat":  {
+        "type": "EFT_L_A0__A1_A0",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
+    },
+    "strncpy":  {
+        "type": "EFT_L_A0__A1_A0",
+        "overwrite_app_function": 0,
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
+    },
+    "getpwnam_r":{
+        "type": "EFT_A4R_A1",
+        "overwrite_app_function": 0,
+        "store": ["A1", "A4R"]
+    },
+    "getpwuid_r":{
+        "type": "EFT_A4R_A1",
+        "overwrite_app_function": 0,
+        "store": ["A1", "A4R"]
+    },
+    "db_create":    {
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A0", "V", "V"]
+    },
+    "gcry_mpi_scan":    {
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A0", "V", "V"]
+    },
+    "gcry_pk_decrypt":  {
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A0", "V", "V"]
+    },
+    "gcry_sexp_build":  {
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A0", "V", "V"]
+    },
+    "gnutls_pkcs12_bag_init":   {
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A0", "V", "V"]
+    },
+    "gnutls_pkcs12_init":   {
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A0", "V", "V"]
+    },
+    "gnutls_x509_crt_init": {
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A0", "V", "V"]
+    },
+    "gnutls_x509_privkey_init": {
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A0", "V", "V"]
+    },
+    "posix_memalign":   {
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A0", "V", "V"]
+    },
+    "scandir":  {
+        "type": "EFT_A1R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A1", "V", "V"]
+    },
+    "XGetRGBColormaps": {
+        "type": "EFT_A2R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A2", "V", "V"]
+    },
+    "XmbTextPropertyToTextList":    {
+        "type": "EFT_A2R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A2", "V", "V"]
+    },
+    "SRE_SplSpecCreate":    {
+        "type": "EFT_A2R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A2", "V", "V"]
+    },
+    "XQueryTree":   {
+        "type": "EFT_A4R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A4", "V", "V"]
+    },
+    "XGetWindowProperty":   {
+        "type": "EFT_A11R_NEW",
+        "overwrite_app_function": 0,
+        "load_store":   ["A11", "V", "V"]
+    },
+    "_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_":{
+        "type": "EFT_STD_RB_TREE_INSERT_AND_REBALANCE",
+        "overwrite_app_function": 0,
+        "complex": ["A1", "A3"]
+    },
+    "_ZNSt8__detail15_List_node_base7_M_hookEPS0_":{
+        "type": "EFT_STD_LIST_HOOK",
+        "overwrite_app_function": 0,
+        "store": ["A0", "A1"]
+    },
+    "_ZNSsC1EPKcRKSaIcE":{
+        "type": "CPP_EFT_A0R_A1",
+        "overwrite_app_function": 0,
+        "store": ["A1", "A0R"]
+    },
+    "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_":{
+        "type": "CPP_EFT_A0R_A1",
+        "overwrite_app_function": 0,
+        "store": ["A1", "A0R"]
+    },
+    "_ZNSsC1EPKcmRKSaIcE":{
+        "type": "CPP_EFT_A0R_A1",
+        "overwrite_app_function": 0,
+        "store": ["A1", "A0R"]
+    },
+    "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcmRKS3_":{
+        "type": "CPP_EFT_A0R_A1",
+        "overwrite_app_function": 0,
+        "store": ["A1", "A0R"]
+    },
+    "_ZNSsaSEPKc":{
+        "type": "CPP_EFT_A0R_A1",
+        "overwrite_app_function": 0,
+        "store": ["A1", "A0R"]
+    },
+    "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEPKc":{
+        "type": "CPP_EFT_A0R_A1",
+        "overwrite_app_function": 0,
+        "store": ["A1", "A0R"]
+    },
+    "_ZNSsC1ERKSs":{
+        "type": "CPP_EFT_A0R_A1R",
+        "overwrite_app_function": 0,
+        "load_store": ["A1R", "V","A0R"]
+    },
+    "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_":{
+        "type": "CPP_EFT_A0R_A1R",
+        "overwrite_app_function": 0,
+        "load_store": ["A1R", "V","A0R"]
+    },
+    "_ZNSsC1ERKSsmm":{
+        "type": "CPP_EFT_A0R_A1R",
+        "overwrite_app_function": 0,
+        "load_store": ["A1R", "V","A0R"]
+    },
+    "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_mm":{
+        "type": "CPP_EFT_A0R_A1R",
+        "overwrite_app_function": 0,
+        "load_store": ["A1R", "V","A0R"]
+    },
+    "_ZNSsaSERKSs":{
+        "type": "CPP_EFT_A0R_A1R",
+        "overwrite_app_function": 0,
+        "load_store": ["A1R", "V","A0R"]
+    },
+    "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_":{
+        "type": "CPP_EFT_A0R_A1R",
+        "overwrite_app_function": 0,
+        "load_store": ["A1R", "V","A0R"]
+    },
+    "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEOS4_":{
+        "type": "CPP_EFT_A0R_A1R",
+        "overwrite_app_function": 0,
+        "load_store": ["A1R", "V","A0R"]
+    },
+    "_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E":{
+        "type": "CPP_EFT_A1R",
+        "overwrite_app_function": 0,
+        "load": ["A1R", "V"]
+    },
+    "_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic_stringIS4_S5_T1_EE":{
+        "type": "CPP_EFT_A1R",
+        "overwrite_app_function": 0,
+        "load": ["A1R", "V"]
+    },
+    "__dynamic_cast":{
+        "type": "CPP_EFT_DYNAMIC_CAST",
+        "overwrite_app_function": 0,
+        "copy": ["A0", "L"]
+    }
+}

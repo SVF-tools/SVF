@@ -1,0 +1,38 @@
+Start:  
+   V 
+Terminal:
+   Addr Copy Store Load Gep Vgep 
+Productions:
+   F -> epsilon;
+   F -> F Copy;
+   F -> Addr Memflow;
+   F -> F Store V Load;
+   F -> Store Memflow Load;
+   Fbar -> epsilon;
+   Fbar -> Copybar Fbar;
+   Fbar -> Memflowbar Addrbar;
+   Fbar -> Loadbar V Storebar Fbar;
+   Fbar -> Loadbar Memflowbar Storebar;
+   V -> Fbar V F;
+   V -> Addrbar Addr;
+   V -> Gepbar_i V Gep_i;
+   V -> Gepbarpath V Gep_0;
+   V -> Gepbar_i F Gep_i;
+   V -> Gepbar_i Fbar Gep_i;
+   Gep_j -> Gep_i F Vgep;
+   Gepbar_j -> Vgepbar Fbar Gepbar_i;
+   Memflow -> Load Store;
+   Memflow -> Fbar Memflow;
+   Memflow -> F Memflow Fbar;
+   Memflow -> Gep_i Memflow Gepbar_i;
+   Memflow -> Gepbar_i Memflow Gep_i;
+   Memflowbar -> Storebar Loadbar;
+   Memflowbar -> Memflowbar F;
+   Memflowbar -> F Memflowbar Fbar;
+   Memflowbar -> Gep_i Memflowbar Gepbar_i;
+   Memflowbar -> Gepbar_i Memflowbar Gep_i;
+   Gepbarpath -> Gepbar_i Gepbar_j;
+   Gepbarpath -> Gepbarpath Gepbar_i;
+   
+   
+   

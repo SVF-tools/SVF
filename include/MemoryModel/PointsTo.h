@@ -17,6 +17,7 @@
 #include "Util/SVFBasicTypes.h"
 #include "Util/BitVector.h"
 #include "Util/CoreBitVector.h"
+#include "Util/SparseBitVector.h"
 
 namespace SVF
 {
@@ -162,7 +163,7 @@ private:
     union
     {
         /// Sparse bit vector backing.
-        SparseBitVector sbv;
+        SparseBitVector<> sbv;
         /// Core bit vector backing.
         CoreBitVector cbv;
         /// Bit vector backing.
@@ -223,7 +224,7 @@ public:
         /// TODO: std::variant when we move to C++17.
         union
         {
-            SparseBitVector::iterator sbvIt;
+            SparseBitVector<>::iterator sbvIt;
             CoreBitVector::iterator cbvIt;
             BitVector::iterator bvIt;
         };

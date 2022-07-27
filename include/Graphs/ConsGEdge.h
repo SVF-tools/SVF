@@ -308,6 +308,7 @@ public:
     {
         return ls.accumulateConstantFieldIdx();
     }
+
 };
 
 /*!

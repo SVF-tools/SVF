@@ -30,6 +30,7 @@
 #ifndef INCLUDE_SVF_FE_LLVMMODULE_H_
 #define INCLUDE_SVF_FE_LLVMMODULE_H_
 
+#include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/CPPUtil.h"
 #include "Util/BasicTypes.h"
 #include "Util/SVFModule.h"
@@ -207,31 +208,10 @@ public:
         return getModuleNum() == 0;
     }
 
-    /// Returns true if all LLVM modules are compiled with ctir.
-    bool allCTir(void) const
-    {
-        // Iterate over all modules. If a single module does not have the correct ctir module flag,
-        // short-circuit and return false.
-        for (u32_t i = 0; i < getModuleNum(); ++i)
-        {
-            llvm::Metadata *ctirModuleFlag = llvmModuleSet->getModule(i)->getModuleFlag(cppUtil::ctir::derefMDName);
-            if (ctirModuleFlag == nullptr)
-            {
-                return false;
-            }
-
-            llvm::ConstantAsMetadata *flagConstMetadata = SVFUtil::dyn_cast<llvm::ConstantAsMetadata>(ctirModuleFlag);
-            ConstantInt *flagConstInt = SVFUtil::dyn_cast<ConstantInt>(flagConstMetadata->getValue());
-            if (flagConstInt->getZExtValue() != cppUtil::ctir::moduleFlagValue)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
 private:
+    std::vector<const Function *> getLLVMGlobalFunctions(
+        const GlobalVariable *global);
+
     void loadModules(const std::vector<std::string> &moduleNameVec);
     void addSVFMain();
     void initialize();

@@ -43,7 +43,7 @@ BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_c
         else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersDiffPTDataTy(getPtCache(), false);
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
-    else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
+    else if (type == FSSPARSE_WPA)
     {
         if (Options::INCDFPTData)
         {
@@ -120,11 +120,10 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     outs() << "Storing pointer analysis results to '" << filename << "'...";
 
     error_code err;
-    ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::OF_None);
-    if (err)
+    std::fstream f(filename.c_str(), std::ios_base::out);
+    if (!f.good())
     {
         outs() << "  error opening file for writing!\n";
-        F.os().clear_error();
         return;
     }
 
@@ -135,19 +134,19 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         const PointsTo &pts = getPts(var);
 
         stringstream ss;
-        F.os() << var << " -> { ";
+        f << var << " -> { ";
         if (pts.empty())
         {
-            F.os() << " ";
+            f << " ";
         }
         else
         {
             for (NodeID n: pts)
             {
-                F.os() << n << " ";
+                f << n << " ";
             }
         }
-        F.os() << "}\n";
+        f << "}\n";
     }
 
 
@@ -157,13 +156,13 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         PAGNode* pagNode = it->second;
         if (GepObjVar *gepObjPN = SVFUtil::dyn_cast<GepObjVar>(pagNode))
         {
-            F.os() << it->first << " ";
-            F.os() << pag->getBaseObjVar(it->first) << " ";
-            F.os() << gepObjPN->getConstantFieldIdx() << "\n";
+            f << it->first << " ";
+            f << pag->getBaseObjVar(it->first) << " ";
+            f << gepObjPN->getConstantFieldIdx() << "\n";
         }
     }
 
-    F.os() << "------\n";
+    f << "------\n";
     // Write BaseNodes insensitivity to file
     NodeBS NodeIDs;
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
@@ -172,17 +171,16 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         if (!isa<ObjVar>(pagNode)) continue;
         NodeID n = pag->getBaseObjVar(it->first);
         if (NodeIDs.test(n)) continue;
-        F.os() << n << " ";
-        F.os() << isFieldInsensitive(n) << "\n";
+        f << n << " ";
+        f << isFieldInsensitive(n) << "\n";
         NodeIDs.set(n);
     }
 
     // Job finish and close file
-    F.os().close();
-    if (!F.os().has_error())
+    f.close();
+    if (f.good())
     {
         outs() << "\n";
-        F.keep();
         return;
     }
 }

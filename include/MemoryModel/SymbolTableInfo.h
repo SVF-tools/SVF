@@ -32,7 +32,6 @@
 
 
 #include "Util/SVFUtil.h"
-#include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/LocationSet.h"
 #include "Util/SVFModule.h"
 namespace SVF
@@ -89,6 +88,8 @@ private:
     IDToMemMapTy		objMap;		///< map a memory sym id to its obj
 
     CallSiteSet callSiteSet;
+    Set<const Value*> nullPtrSyms;
+    Set<const Value*> blackholeSyms;
 
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
     static SymbolTableInfo* symInfo;
@@ -163,8 +164,7 @@ public:
     /// special value
     // @{
     static bool isNullPtrSym(const Value *val);
-
-    bool isConstantObjSym(const Value *val);
+    static bool isBlackholeSym(const Value *val);
 
     static inline bool isBlkPtr(NodeID id)
     {
@@ -226,28 +226,9 @@ public:
 
     /// Get different kinds of syms
     //@{
-    SymID getValSym(const Value *val)
-    {
+    SymID getValSym(const Value *val);
 
-        if(isNullPtrSym(val))
-            return nullPtrSymID();
-        else if (SVFUtil::isBlackholeSym(val))
-            return blkPtrSymID();
-        else
-        {
-            ValueToIDMapTy::const_iterator iter =  valSymMap.find(val);
-            assert(iter!=valSymMap.end() &&"value sym not found");
-            return iter->second;
-        }
-    }
-
-    inline bool hasValSym(const Value* val)
-    {
-        if (isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
-            return true;
-        else
-            return (valSymMap.find(val) != valSymMap.end());
-    }
+    bool hasValSym(const Value* val);
 
     inline SymID getObjSym(const Value *val) const
     {

@@ -20,7 +20,6 @@ namespace SVF
 {
 
 class TCTNode;
-class PTALoopInfoBuilder;
 
 
 /*

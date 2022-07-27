@@ -71,14 +71,14 @@ public:
     inline bool isMemset(const Instruction *I)
     {
         const Function* F =SVFUtil::getCallee(I)->getLLVMFun();
-        return F && F->getName().find("llvm.memset") != StringRef::npos;
+        return F && F->getName().find("llvm.memset") != std::string::npos;
     }
 
     /// Check if Function "F" is memcpy
     inline bool isMemcpy(const Instruction *I)
     {
         const SVFFunction* F =SVFUtil::getCallee(I);
-        return F && ExtAPI::EFT_L_A0__A0R_A1R == ExtAPI::getExtAPI()->get_type(F);
+        return F && F->getName().find("llvm.memcpy") != std::string::npos;
     }
 
 private:

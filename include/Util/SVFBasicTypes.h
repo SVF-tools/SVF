@@ -35,9 +35,9 @@
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/ADT/SmallVector.h>
 
-#include <llvm/ADT/SparseBitVector.h>	// for points-to
 #include <llvm/Support/CommandLine.h>	// for command line options
-#include <llvm/ADT/StringMap.h>	// for StringMap
+
+#include <Util/SparseBitVector.h>
 
 #include <iostream>
 #include <vector>
@@ -93,8 +93,8 @@ typedef unsigned SymID;
 typedef unsigned CallSiteID;
 typedef unsigned ThreadID;
 
-typedef llvm::SparseBitVector<> NodeBS;
-typedef llvm::SparseBitVector<> SparseBitVector;
+typedef SparseBitVector<> NodeBS;
+//typedef SparseBitVector<> SparseBitVector;
 //typedef NodeBS PointsTo;
 class PointsTo;
 typedef PointsTo AliasSet;
@@ -129,7 +129,6 @@ template<typename Key, typename Value, typename Hash = Hash<Key>,
                   typedef std::deque<NodeID> NodeDeque;
                   typedef NodeSet EdgeSet;
                   typedef std::vector<u32_t> CallStrCxt;
-                  typedef llvm::StringMap<u32_t> StringMap;
 
                   typedef unsigned Version;
                   typedef Set<Version> VersionSet;
@@ -222,7 +221,7 @@ private:
     GNodeK kind;	///< Type of this SVFValue
 public:
     /// Constructor
-    SVFValue(const llvm::StringRef& val, SVFValKind k): value(val), kind(k)
+    SVFValue(const std::string& val, SVFValKind k): value(val), kind(k)
     {
     }
 
@@ -299,9 +298,9 @@ template <> struct std::hash<SVF::NodePair>
 
 /// Specialise hash for SparseBitVectors.
 template <unsigned N>
-struct std::hash<llvm::SparseBitVector<N>>
+struct std::hash<SVF::SparseBitVector<N>>
 {
-    size_t operator()(const llvm::SparseBitVector<N> &sbv) const
+    size_t operator()(const SVF::SparseBitVector<N> &sbv) const
     {
         SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
         return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));

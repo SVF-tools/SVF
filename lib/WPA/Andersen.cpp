@@ -29,7 +29,7 @@
 
 #include "Util/Options.h"
 #include "Graphs/CHG.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 #include "MemoryModel/PointsTo.h"
 #include "WPA/Andersen.h"
 #include "WPA/Steensgaard.h"
@@ -425,7 +425,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
         // base object is always returned.
         for (NodeID o : pts)
         {
-            if (consCG->isBlkObjOrConstantObj(o))
+            if (consCG->isBlkObjOrConstantObj(o) || isFieldInsensitive(o))
             {
                 tmpDstPts.set(o);
                 continue;

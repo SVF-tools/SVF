@@ -1,4 +1,4 @@
-//===----- CFGNormalizer.h -- CFL Alias Analysis Client--------------//
+//===----- GrammarBuilder.h -- CFL Grammar Builder--------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -27,42 +27,74 @@
  *      Author: Pei Xu
  */
 
+#ifndef INCLUDE_CFL_GRAMMARBUILDER_H_
+#define INCLUDE_CFL_GRAMMARBUILDER_H_
 
 #include "CFL/CFLGrammar.h"
-#include "Graphs/CFLGraph.h"
 
 namespace SVF
 {
 
-/*!
+/**
  * Build Grammar from a user specified grammar text
+ *
+ * Symbol Format:
+ *      <kind> [bar] [ _alpha | _number ]
+ *      kind: any nonspace string start with alphabet, epsilon stand for empty string
+ *      bar: stand for reverse edge
+ *      alpha: any single alpha
+ *      number: any number
+ *      start with capital: nonterminal
+ *      start with noncapital: terminal
+ *
+ * Production Format:
+ *      <symbol> -> <symbol> *;
+ *      LHS and RHS, Seperate by '->', symbol seperate by ' ', end by ';'
+ *      support '*', '?', '(', ')'
+ *
  * Input Format:
- *      Start:              // Special string 'epsilon' for empty RHS
+ *      Start:
  *      M                   // Specify Start Symbol in Second Line
+ *      Terminal:
+ *      Addr Copy Store Load Gep Vgep // Specify the order of terminal Addr->0, Copy->1 ..
  *      Productions:        // Each Symbol seperate by 'Space', production end with ';'
  *      M -> V d;           // Terminal in NonCapital
  *      M -> dbar V d;      // NonTerminal in Capital
  *      V -> M abar M a M;  // LHS and RHS, Seperate by '->'
  *      V -> ( M ? abar ) * M ? ( a M ? ) *;    // Support '(' ')' '?' '*' four regular expression sign
- * Note:
- *      When provide EBNF form text (i.e Last production above),
- *      Please specify -ebnf flag, otherwise regular experssion sign will treat as NonTerminal.
+ *      Gep_j -> Gep_i F vgep; // Support variable attribute with variable attribute
+ *      Gep_1 -> Gep_2;      // Support fix number attribute
+ *
  */
 
 class GrammarBuilder
 {
-public:
+private:
     std::string fileName;
     GrammarBase *grammar;
 
+    /// Parse start symbol and production from file string
+    const inline std::string parseProductionsString() const;
+
+    /// Parse whole production string to production vector
+    const inline std::vector<std::string> loadWordProductions() const;
+
+    /// Strip front and tail space
+    const inline std::string stripSpace(std::string s) const;
+
+public:
     GrammarBuilder(std::string fileName): fileName(fileName), grammar(nullptr)
     {
         grammar = new GrammarBase();
     };
 
-    GrammarBase* build();
+    /// Build grammarBase from fileName
+    GrammarBase* build() const;
 
-    GrammarBase* build(Map<std::string, SVF::CFLGraph::Symbol> *preMap);
+    /// Build grammarBase from fileName with preset str2KindMap
+    GrammarBase* build(Map<std::string, SVF::GrammarBase::Symbol> &preMap) const;
 };
 
 } // SVF
+
+#endif /* INCLUDE_CFL_GRAMMARBUILDER_H_ */
