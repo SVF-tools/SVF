@@ -1017,23 +1017,27 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
     // %0      = bitcast i8* %call to %struct.A*
     // %1      = bitcast %struct.B* %param to i8*
     // call void memcpy(%call, %1, 80)
-    // 
+    //
     // (2)
     // %0 = bitcast %struct.A* %param to i8*
     // %2 = bitcast %struct.B** %arrayidx to i8**
     // %3 = load i8*, i8** %2
     // call void @memcpy(%0, %3, 80)
     LLVMContext &cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
-    if (value->getType() == PointerType::getInt8PtrTy(cxt)) {
+    if (value->getType() == PointerType::getInt8PtrTy(cxt))
+    {
         // (1)
-        if (const CallBase* cb = SVFUtil::dyn_cast<CallBase>(value)) {
-            if (SVFUtil::isHeapAllocExtCallViaRet(cb)) {
+        if (const CallBase* cb = SVFUtil::dyn_cast<CallBase>(value))
+        {
+            if (SVFUtil::isHeapAllocExtCallViaRet(cb))
+            {
                 if (const Value* bitCast = getUniqueUseViaCastInst(cb))
                     return bitCast;
             }
         }
         // (2)
-        else if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(value)) {
+        else if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(value))
+        {
             if (const BitCastInst* bitCast = SVFUtil::dyn_cast<BitCastInst>(load->getPointerOperand()))
                 return bitCast->getOperand(0);
         }
