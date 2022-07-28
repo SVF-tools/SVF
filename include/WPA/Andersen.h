@@ -447,19 +447,11 @@ public:
     virtual void solveWorklist();
     virtual void processNode(NodeID nodeId);
     virtual void postProcessNode(NodeID nodeId);
-    virtual void handleCopyGep(ConstraintNode* node);
     virtual bool handleLoad(NodeID id, const ConstraintEdge* load);
     virtual bool handleStore(NodeID id, const ConstraintEdge* store);
-    virtual bool processCopy(NodeID node, const ConstraintEdge* edge);
 
 protected:
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
-
-    /// process "bitcast" CopyCGEdge
-    virtual void processCast(const ConstraintEdge*)
-    {
-        return;
-    }
 };
 
 
