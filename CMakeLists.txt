@@ -23,10 +23,10 @@ if(NOT COMMAND add_llvm_library)
         set(COMMON_FLAGS "-fPIC -Werror -Wall")
 
         if(CMAKE_BUILD_TYPE MATCHES "Debug")
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O0 -fno-rtti -fprofile-arcs -ftest-coverage")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O0 -fno-rtti")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS} -O0")
         else()
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O3 -fno-rtti -fprofile-arcs -ftest-coverage")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O3 -fno-rtti")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS} -O3")
         endif()
 
