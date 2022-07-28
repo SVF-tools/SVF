@@ -118,9 +118,7 @@ const std::string FunExitICFGNode::toString() const
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
-        if (SymbolTableInfo::getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI() != NULL){
-            rawstr << getSourceLoc(SymbolTableInfo::getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI());
-        }
+        rawstr << getSourceLoc(SymbolTableInfo::getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI());
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
