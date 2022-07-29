@@ -586,7 +586,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
 
     const Type* ety = getType();
 
-    if ((SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
+    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
         u32_t sz = 0;
         if(Options::ModelArrays)
