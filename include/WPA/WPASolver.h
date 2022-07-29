@@ -114,7 +114,7 @@ protected:
         while (!isWorklistEmpty())
         {
             NodeID nodeId = popFromWorklist();
-            collapsePWCNode(nodeId);
+//            collapsePWCNode(nodeId);
             // Keep solving until workList is empty.
             processNode(nodeId);
             collapseFields();
@@ -126,7 +126,7 @@ protected:
     /// Process each node on the graph, to be implemented in the child class
     virtual inline void processNode(NodeID) {}
     /// collapse positive weight cycles of a graph
-    virtual void collapsePWCNode(NodeID) {}
+//    virtual void collapsePWCNode(NodeID) {}
     virtual void collapseFields() {};
     /// dump statistics
     /// Propagation for the solving, to be implemented in the child class

@@ -353,7 +353,7 @@ protected:
     //@}
     /// Collapse a field object into its base for field insensitive anlaysis
     //@{
-    void collapsePWCNode(NodeID nodeId);
+    virtual void collapsePWCNode(NodeID nodeId);
     void collapseFields();
     bool collapseNodePts(NodeID nodeId);
     bool collapseField(NodeID nodeId);
