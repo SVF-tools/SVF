@@ -594,7 +594,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         else
             sz = SymbolTableInfo::SymbolInfo()->getStructInfoIter(ety)->second->getFlattenFieldTypes().size();
 
-        if(sz <= ls.accumulateConstantFieldIdx()){
+        if(sz <= (u32_t)ls.accumulateConstantFieldIdx()){
             writeWrnMsg("out of bound error when accessing the struct/array");
             return false;
         }
