@@ -662,13 +662,22 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
 
     const Type* ety = getType();
 
-    if ((SVFUtil::isa<StructType>(ety) && !SVFUtil::cast<StructType>(ety)->isOpaque()) || SVFUtil::isa<ArrayType>(ety))
+    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
-        const Type* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.accumulateConstantFieldIdx());
-        if(elemTy->isPointerTy())
-            return false;
+        u32_t sz = 0;
+        if(Options::ModelArrays)
+            sz = SymbolTableInfo::SymbolInfo()->getStructInfoIter(ety)->second->getFlattenElementTypes().size();
         else
-            return true;
+            sz = SymbolTableInfo::SymbolInfo()->getStructInfoIter(ety)->second->getFlattenFieldTypes().size();
+
+        if(sz <= (u32_t)ls.accumulateConstantFieldIdx())
+        {
+            writeWrnMsg("out of bound error when accessing the struct/array");
+            return false;
+        }
+
+        const Type* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.accumulateConstantFieldIdx());
+        return (elemTy->isPointerTy() == false);
     }
     else
     {
