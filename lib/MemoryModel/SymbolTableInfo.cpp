@@ -355,7 +355,7 @@ const BasicBlock* SymbolTableInfo::getFunExitBB(const Function* fun)
     {
         return symInfo->getModule()->getFunExitBBMap().find(fun)->second;
     }
-    return NULL;
+    return nullptr;
 }
 
 const u32_t SymbolTableInfo::getBBSuccessorNum(const BasicBlock *bb)
@@ -399,7 +399,7 @@ const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
     {
         return symInfo->getModule()->getPtrElementTypeMap().find(pty)->second;
     }
-    return NULL;
+    return nullptr;
 }
 
 /*!
