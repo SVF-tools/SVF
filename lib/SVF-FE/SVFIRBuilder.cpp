@@ -1404,6 +1404,20 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         }
                         break;
                     }
+                    case ExtAPI::EXT_GEP:
+                    {
+                        NodeID vnS = parseNode(args[0], cs, inst);
+                        LocationSet l1;
+                        NodeID vnV = parseNode(args[1], cs, inst);
+                        LocationSet l2;
+                        NodeID vnD = parseNode(args[2], cs, inst);
+                        if (vnD && vnV && vnS)
+                        {
+                            addNormalGepEdge(vnS, vnV, l1);
+                            addNormalGepEdge(vnV, vnD, l2);
+                        }
+                        break;
+                    }
                     // default
                     // illegal function operation of external function
                     case ExtAPI::EXT_OTHER:

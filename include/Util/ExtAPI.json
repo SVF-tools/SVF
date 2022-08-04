@@ -3270,5 +3270,10 @@
         "type": "CPP_EFT_DYNAMIC_CAST",
         "overwrite_app_function": 0,
         "copy": ["A0", "L"]
+    },
+    "_ZNSt5arrayIPK1ALm2EE4backEv":{
+        "type": "CPP_EFT_DYNAMIC_CAST",
+        "overwrite_app_function": 1,
+        "gep": ["A0","V","L"]
     }
 }
