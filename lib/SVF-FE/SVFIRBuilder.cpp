@@ -1377,6 +1377,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     }
                     case ExtAPI::EXT_COMPLEX:
                     {
+                        assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
                         Value *argA = cs.getArgument(getArgPos(args[0]));
                         Value *argB = cs.getArgument(getArgPos(args[1]));
 
@@ -1388,7 +1389,6 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         // We get all flattened fields of base
                         vector<LocationSet> fields;
                         const Type *type = getBaseTypeAndFlattenedFields(argB, fields, nullptr);
-                        assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                         // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
                         // Note that arg0 is aligned with "offset".
