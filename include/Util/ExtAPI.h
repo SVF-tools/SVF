@@ -114,7 +114,8 @@ public:
         EXT_COPY_MN,   // Copies n characters from memory area src to memory area dest.
         EXT_FUNPTR,    // Handle function void *dlsym(void *handle, const char *symbol)
         EXT_COMPLEX,   // Handle function _ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_
-        EXT_OTHER
+        EXT_OTHER,     
+        EXT_GEP        // Handle Gep edge
     };
 
     // External Function types
@@ -174,7 +175,8 @@ private:
         {"copy_n", EXT_COPY_N},
         {"copy_mn", EXT_COPY_MN},
         {"complex", EXT_COMPLEX},
-        {"funptr", EXT_FUNPTR}
+        {"funptr", EXT_FUNPTR},
+        {"gep", EXT_GEP}
     };
 
     std::map<std::string, extType> type_pair =
