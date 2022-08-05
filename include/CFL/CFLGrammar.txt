@@ -1,5 +1,5 @@
 Start:  
-   V 
+   V
 Terminal:
    Addr Copy Store Load Gep Vgep 
 Productions:
@@ -37,4 +37,3 @@ Productions:
    Memflowbar -> F Memflowbar Fbar;
    Memflowbar -> Gep_i Memflowbar Gepbar_i;
    Memflowbar -> Gepbar_i Memflowbar Gep_i;
-   
