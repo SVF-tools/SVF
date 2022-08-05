@@ -88,7 +88,7 @@ public:
             {
                 // Need to Find dst addr src
                 CFLNode *vNode = graph->getGNode((*outedge)->getDstID());
-
+                ps->set(svfir->getBaseValVar((*outedge)->getDstID()));
                 for(auto inEdge = vNode->getInEdges().begin(); inEdge!=vNode->getInEdges().end(); inEdge++)
                 {
                     if((*inEdge)->getEdgeKind() == 0)
@@ -100,6 +100,9 @@ public:
         }
         return *ps;
     }
+
+    /// Need Original one for virtual table
+
 
     /// Add copy edge on constraint graph
     virtual inline bool addCopyEdge(NodeID src, NodeID dst)
