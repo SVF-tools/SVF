@@ -1008,6 +1008,41 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
         if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
             value = gep->getPointerOperand();
     }
+
+    // if the argument of memcpy is the result of an allocation (1) or a casted load instruction (2),
+    // further steps are necessary to find the correct base value
+    //
+    // (1)
+    // %call   = malloc 80
+    // %0      = bitcast i8* %call to %struct.A*
+    // %1      = bitcast %struct.B* %param to i8*
+    // call void memcpy(%call, %1, 80)
+    //
+    // (2)
+    // %0 = bitcast %struct.A* %param to i8*
+    // %2 = bitcast %struct.B** %arrayidx to i8**
+    // %3 = load i8*, i8** %2
+    // call void @memcpy(%0, %3, 80)
+    LLVMContext &cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
+    if (value->getType() == PointerType::getInt8PtrTy(cxt))
+    {
+        // (1)
+        if (const CallBase* cb = SVFUtil::dyn_cast<CallBase>(value))
+        {
+            if (SVFUtil::isHeapAllocExtCallViaRet(cb))
+            {
+                if (const Value* bitCast = getUniqueUseViaCastInst(cb))
+                    return bitCast;
+            }
+        }
+        // (2)
+        else if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(value))
+        {
+            if (const BitCastInst* bitCast = SVFUtil::dyn_cast<BitCastInst>(load->getPointerOperand()))
+                return bitCast->getOperand(0);
+        }
+    }
+
     return value;
 }
 
@@ -1342,6 +1377,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     }
                     case ExtAPI::EXT_COMPLEX:
                     {
+                        assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
                         Value *argA = cs.getArgument(getArgPos(args[0]));
                         Value *argB = cs.getArgument(getArgPos(args[1]));
 
@@ -1353,7 +1389,6 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         // We get all flattened fields of base
                         vector<LocationSet> fields;
                         const Type *type = getBaseTypeAndFlattenedFields(argB, fields, nullptr);
-                        assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                         // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
                         // Note that arg0 is aligned with "offset".
