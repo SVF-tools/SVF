@@ -109,13 +109,13 @@ public:
         EXT_COPY,      // Handle copy edge
         EXT_LOAD,      // Handle load edge
         EXT_STORE,     // Handle store edge
+        EXT_GEP,       // Handle Gep edge
         EXT_LOADSTORE, // Handle load and store edges, and add a dummy node
         EXT_COPY_N,    // Copy the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
         EXT_COPY_MN,   // Copies n characters from memory area src to memory area dest.
         EXT_FUNPTR,    // Handle function void *dlsym(void *handle, const char *symbol)
         EXT_COMPLEX,   // Handle function _ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_
-        EXT_OTHER,     
-        EXT_GEP        // Handle Gep edge
+        EXT_OTHER
     };
 
     // External Function types
@@ -171,12 +171,12 @@ private:
         {"copy", EXT_COPY},
         {"load", EXT_LOAD},
         {"store", EXT_STORE},
+        {"gep", EXT_GEP},
         {"load_store", EXT_LOADSTORE},
         {"copy_n", EXT_COPY_N},
         {"copy_mn", EXT_COPY_MN},
         {"complex", EXT_COMPLEX},
-        {"funptr", EXT_FUNPTR},
-        {"gep", EXT_GEP}
+        {"funptr", EXT_FUNPTR}
     };
 
     std::map<std::string, extType> type_pair =
