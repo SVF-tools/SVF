@@ -46,8 +46,8 @@ void VersionedFlowSensitiveStat::performStat()
     versionStat();
     ptsSizeStat();
 
-    u32_t fiObjNumber = 0;
-    u32_t fsObjNumber = 0;
+    [[maybe_unused]] u32_t fiObjNumber = 0;
+    [[maybe_unused]] u32_t fsObjNumber = 0;
     Set<SymID> nodeSet;
     for (SVFIR::const_iterator it = pag->begin(); it != pag->end(); ++it)
     {
@@ -67,7 +67,7 @@ void VersionedFlowSensitiveStat::performStat()
 
     unsigned numOfCopy = 0;
     unsigned numOfStore = 0;
-    unsigned numOfNode = 0;
+    [[maybe_unused]] unsigned numOfNode = 0;
     for (SVFG::iterator it = vfspta->svfg->begin(); it != vfspta->svfg->end(); ++it)
     {
         numOfNode++;

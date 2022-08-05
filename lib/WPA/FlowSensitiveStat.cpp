@@ -101,8 +101,8 @@ void FlowSensitiveStat::performStat()
     // stat address-taken variables' points-to
     statAddrVarPtsSize();
 
-    u32_t fiObjNumber = 0;
-    u32_t fsObjNumber = 0;
+    [[maybe_unused]] u32_t fiObjNumber = 0;
+    [[maybe_unused]] u32_t fsObjNumber = 0;
     Set<SymID> nodeSet;
     for (SVFIR::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
     {
@@ -124,7 +124,7 @@ void FlowSensitiveStat::performStat()
 
     unsigned numOfCopy = 0;
     unsigned numOfStore = 0;
-    unsigned numOfNode = 0;
+    [[maybe_unused]] unsigned numOfNode = 0;
     SVFG::iterator svfgNodeIt = fspta->svfg->begin();
     SVFG::iterator svfgNodeEit = fspta->svfg->end();
     for (; svfgNodeIt != svfgNodeEit; ++svfgNodeIt)

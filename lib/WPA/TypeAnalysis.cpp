@@ -127,7 +127,7 @@ void TypeAnalysis::dumpCHAStats()
      * vtbl max vfunction
      * pure abstract class
      */
-    u32_t vtblnum = 0,
+    [[maybe_unused]] u32_t vtblnum = 0,
           vfunc_total = 0,
           vtbl_max = 0,
           pure_abstract = 0;
