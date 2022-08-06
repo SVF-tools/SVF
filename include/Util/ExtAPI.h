@@ -109,6 +109,7 @@ public:
         EXT_COPY,      // Handle copy edge
         EXT_LOAD,      // Handle load edge
         EXT_STORE,     // Handle store edge
+        EXT_GEPGEP,    // Handle Gep and Gep edges, and add a dummy node
         EXT_LOADSTORE, // Handle load and store edges, and add a dummy node
         EXT_COPY_N,    // Copy the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
         EXT_COPY_MN,   // Copies n characters from memory area src to memory area dest.
@@ -170,6 +171,7 @@ private:
         {"copy", EXT_COPY},
         {"load", EXT_LOAD},
         {"store", EXT_STORE},
+        {"gep_gep", EXT_GEPGEP},
         {"load_store", EXT_LOADSTORE},
         {"copy_n", EXT_COPY_N},
         {"copy_mn", EXT_COPY_MN},

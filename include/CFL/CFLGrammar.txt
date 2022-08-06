@@ -1,5 +1,5 @@
 Start:  
-   V 
+   V
 Terminal:
    Addr Copy Store Load Gep Vgep 
 Productions:
@@ -19,8 +19,14 @@ Productions:
    V -> Gepbarpath V Gep_0;
    V -> Gepbar_i F Gep_i;
    V -> Gepbar_i Fbar Gep_i;
-   Gep_j -> Gep_i F Vgep;
-   Gepbar_j -> Vgepbar Fbar Gepbar_i;
+   Copy -> Vgep;
+   Copybar -> Vgepbar;
+   Gep_1 -> Gep_0 F Gep_1;
+   Gepbar_1 -> Gepbar_1 Fbar Gepbar_0;
+   Gep_1 -> Gep_0 F Vgep;
+   Gepbar_1 -> Vgepbar Fbar Gepbar_0;
+   Gepbarpath -> Gepbar_0 Gepbar_0;
+   Gepbarpath -> Gepbarpath Gepbar_0;
    Memflow -> Load Store;
    Memflow -> Fbar Memflow;
    Memflow -> F Memflow Fbar;
@@ -31,8 +37,3 @@ Productions:
    Memflowbar -> F Memflowbar Fbar;
    Memflowbar -> Gep_i Memflowbar Gepbar_i;
    Memflowbar -> Gepbar_i Memflowbar Gep_i;
-   Gepbarpath -> Gepbar_i Gepbar_j;
-   Gepbarpath -> Gepbarpath Gepbar_i;
-   
-   
-   

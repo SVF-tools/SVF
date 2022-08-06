@@ -50,10 +50,10 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
             const Value *vtbl = getVCallVtblPtr(SVFUtil::getLLVMCallSite(cs->getCallSite()));
             assert(pag->hasValueNode(vtbl));
             NodeID vtblId = pag->getValueNode(vtbl);
-            resolveCPPIndCalls(cs, getPts(vtblId), newEdges);
+            resolveCPPIndCalls(cs, getCFLPts(vtblId), newEdges);
         }
         else
-            resolveIndCalls(iter->first,getPts(iter->second),newEdges);
+            resolveIndCalls(iter->first,getCFLPts(iter->second),newEdges);
     }
 }
 
