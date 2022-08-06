@@ -3274,6 +3274,6 @@
     "_ZNSt5arrayIPK1ALm2EE4backEv":{
         "type": "CPP_EFT_DYNAMIC_CAST",
         "overwrite_app_function": 1,
-        "gep": ["A0","V","L"]
+        "gep_gep": ["A0", "0", "V", "0", "L"]
     }
 }
