@@ -42,6 +42,7 @@ const inline std::string GrammarBuilder::parseProductionsString() const
     std::string lineString;
     std::string lines = "";
     std::string startString;
+    const std::string WHITESPACE = " \n\r\t\f\v";
     int lineNum = 0;
     while (getline(textFile, lineString))
     {
@@ -49,11 +50,12 @@ const inline std::string GrammarBuilder::parseProductionsString() const
         {
             startString = stripSpace(lineString);
         }
-        lines.append(lineString);
+
+        lines.append(lineString.substr(lineString.find_first_not_of(WHITESPACE), lineString.find_last_not_of(WHITESPACE)+1));
         lineNum++;
     }
 
-    std::regex reg("Start:([\\s\\S]*)Terminal:[\\s]*([\\s\\S]*)Productions:([\\s\\S]*)");
+    std::regex reg("Start:([\\s\\S]*)Terminal:([\\s\\S]*)Productions:([\\s\\S]*)");
     std::smatch matches;
     if (std::regex_search(lines, matches, reg))
     {
