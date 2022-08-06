@@ -64,13 +64,9 @@ public:
         // Whole program analysis
         Andersen_BASE,		///< Base Andersen PTA
         Andersen_WPA,		///< Andersen PTA
-        AndersenLCD_WPA,	///< Lazy cycle detection andersen-style WPA
-        AndersenHCD_WPA,    ///< Hybird cycle detection andersen-style WPA
-        AndersenHLCD_WPA,   ///< Hybird lazy cycle detection andersen-style WPA
         AndersenSCD_WPA,    ///< Selective cycle detection andersen-style WPA
         AndersenSFR_WPA,    ///< Stride-based field representation
         AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
-        AndersenWaveDiffWithType_WPA,	///< Diff wave propagation with type info andersen-style WPA
         Steensgaard_WPA,      ///< Steensgaard PTA
         CSCallString_WPA,	///< Call string based context sensitive WPA
         CSSummary_WPA,		///< Summary based context sensitive WPA
