@@ -643,13 +643,13 @@ const llvm::cl::opt<bool> Options::SVFMain(
 
 const llvm::cl::opt<bool> Options::ModelConsts(
     "model-consts",
-    llvm::cl::init(true),
+    llvm::cl::init(false),
     llvm::cl::desc("Modeling individual constant objects")
 );
 
 const llvm::cl::opt<bool> Options::ModelArrays(
     "model-arrays",
-    llvm::cl::init(true),
+    llvm::cl::init(false),
     llvm::cl::desc("Modeling Gep offsets for array accesses")
 );
 
