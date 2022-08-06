@@ -213,7 +213,7 @@ llvm::cl::opt<bool> Options::HandBlackHole(
 
 const llvm::cl::opt<bool> Options::FirstFieldEqBase(
     "ff-eq-base",
-    llvm::cl::init(true),
+    llvm::cl::init(false),
     llvm::cl::desc("Treat base objects as their first fields")
 );
 
