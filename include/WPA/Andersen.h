@@ -35,7 +35,6 @@
 #include "WPA/WPASolver.h"
 #include "MemoryModel/SVFIR.h"
 #include "Graphs/ConsG.h"
-#include "Graphs/OfflineConsG.h"
 
 namespace SVF
 {
