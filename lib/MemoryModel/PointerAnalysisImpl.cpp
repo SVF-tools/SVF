@@ -73,7 +73,7 @@ void BVDataPTAImpl::finalize()
 {
     normalizePointsTo();
     PointerAnalysis::finalize();
-    if (Options::ptDataBacking == PTBackingType::Persistent && Options::PStat) ptCache.printStats("bv-finalize");
+    if (Options::ptDataBacking == PTBackingType::Persistent && print_stat) ptCache.printStats("bv-finalize");
 }
 
 /*!
