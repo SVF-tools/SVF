@@ -182,7 +182,7 @@ void ExtAPI::destory()
     }
 }
 
-void ExtAPI::add_entry(const char* funName, extType type, bool overwrite_app_function) 
+void ExtAPI::add_entry(const char* funName, extType type, bool overwrite_app_function)
 {
     assert(root);
     assert(get_type(funName) == EFT_NULL);
@@ -214,8 +214,10 @@ ExtAPI::extf_t ExtAPI::get_opName(const std::string& s)
     }
 }
 
-const std::string& ExtAPI::extType_toString(extType type) {
-    auto it = llvm::find_if(type_pair, [&](const auto& pair) {
+const std::string& ExtAPI::extType_toString(extType type)
+{
+    auto it = llvm::find_if(type_pair, [&](const auto& pair)
+    {
         return pair.second == type;
     });
     assert(it != type_pair.end());
@@ -256,7 +258,7 @@ std::vector<std::string> ExtAPI::get_opArgs(const cJSON *value)
     return args;
 }
 
-ExtAPI::extType ExtAPI::get_type(const std::string& funName) 
+ExtAPI::extType ExtAPI::get_type(const std::string& funName)
 {
     cJSON *item = get_FunJson(funName);
     std::string type = "";
