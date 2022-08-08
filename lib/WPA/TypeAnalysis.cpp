@@ -166,6 +166,7 @@ void TypeAnalysis::dumpCHAStats()
     outs() << "vtblnum:\t" << vtblnum << '\n';
     outs() << "vtbl_average:\t" << (double)(vfunc_total)/vtblnum << '\n';
     outs() << "vtbl_max:\t" << vtbl_max << '\n';
+    outs() << "pure_abstract:\t" << pure_abstract << '\n';
 }
 
 
