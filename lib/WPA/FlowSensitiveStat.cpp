@@ -101,8 +101,8 @@ void FlowSensitiveStat::performStat()
     // stat address-taken variables' points-to
     statAddrVarPtsSize();
 
-    [[maybe_unused]] u32_t fiObjNumber = 0;
-    [[maybe_unused]] u32_t fsObjNumber = 0;
+    u32_t fiObjNumber = 0;
+    u32_t fsObjNumber = 0;
     Set<SymID> nodeSet;
     for (SVFIR::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
     {
@@ -121,6 +121,9 @@ void FlowSensitiveStat::performStat()
             }
         }
     }
+
+    PTNumStatMap[NumberOfFieldInsensitiveObj] = fiObjNumber;
+    PTNumStatMap[NumberOfFieldSensitiveObj] = fsObjNumber;
 
     unsigned numOfCopy = 0;
     unsigned numOfStore = 0;

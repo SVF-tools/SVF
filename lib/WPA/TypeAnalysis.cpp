@@ -127,7 +127,7 @@ void TypeAnalysis::dumpCHAStats()
      * vtbl max vfunction
      * pure abstract class
      */
-    [[maybe_unused]] u32_t vtblnum = 0,
+    u32_t vtblnum = 0,
           vfunc_total = 0,
           vtbl_max = 0,
           pure_abstract = 0;
@@ -166,6 +166,7 @@ void TypeAnalysis::dumpCHAStats()
     outs() << "vtblnum:\t" << vtblnum << '\n';
     outs() << "vtbl_average:\t" << (double)(vfunc_total)/vtblnum << '\n';
     outs() << "vtbl_max:\t" << vtbl_max << '\n';
+    outs() << "pure_abstract:\t" << pure_abstract << '\n';
 }
 
 

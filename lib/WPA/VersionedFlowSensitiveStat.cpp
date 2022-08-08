@@ -46,8 +46,8 @@ void VersionedFlowSensitiveStat::performStat()
     versionStat();
     ptsSizeStat();
 
-    [[maybe_unused]] u32_t fiObjNumber = 0;
-    [[maybe_unused]] u32_t fsObjNumber = 0;
+    u32_t fiObjNumber = 0;
+    u32_t fsObjNumber = 0;
     Set<SymID> nodeSet;
     for (SVFIR::const_iterator it = pag->begin(); it != pag->end(); ++it)
     {
@@ -64,6 +64,9 @@ void VersionedFlowSensitiveStat::performStat()
             }
         }
     }
+
+    PTNumStatMap[NumberOfFieldInsensitiveObj] = fiObjNumber;
+    PTNumStatMap[NumberOfFieldSensitiveObj] = fsObjNumber;
 
     unsigned numOfCopy = 0;
     unsigned numOfStore = 0;
