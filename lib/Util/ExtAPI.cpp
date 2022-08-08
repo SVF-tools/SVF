@@ -167,10 +167,16 @@ void ExtAPI::add_entry(const char* funName, extType type, bool overwrite_app_fun
     assert(root);
     assert(get_type(funName) == EFT_NULL);
     auto entry = cJSON_CreateObject();
-    auto typeString = cJSON_CreateString(extType_toString(type).data());
-    cJSON_AddItemToObject(entry, "type", typeString);
+
+    // add the type field
+    auto typeString = cJSON_CreateString(extType_toString(type).c_str());
+    cJSON_AddItemToObject(entry, JSON_OPT_FUNCTIONTYPE, typeString);
+
+    // add the 'overwrite_app_function' field
     auto overwriteBool = cJSON_CreateNumber(overwrite_app_function ? 1 : 0);
-    cJSON_AddItemToObject(entry, "overwrite_app_function", overwriteBool);
+    cJSON_AddItemToObject(entry, JSON_OPT_OVERWRITE, overwriteBool);
+
+    // we don't know where the `funName` comes from, so copy it just in case
     cJSON_AddItemToObject(root, strdup(funName), entry);
 }
 

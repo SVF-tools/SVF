@@ -231,6 +231,7 @@ public:
 
     static void destory();
 
+    // Add an entry with the specified fields to the ExtAPI, which will be reflected immediately by further ExtAPI queries
     void add_entry(const char* funName, extType type, bool overwrite_app_function);
 
     // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
@@ -238,7 +239,6 @@ public:
     // opposite for extType
     const std::string& extType_toString(extType type);
 
-    // Return the extf_t of (F).
     // Get external function name, e.g "memcpy"
     std::string get_name(const SVFFunction *F);
 
