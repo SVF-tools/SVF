@@ -321,59 +321,69 @@ void SymbolTableInfo::destroy()
  */
 bool SymbolTableInfo::isNullPtrSym(const Value *val)
 {
-    return symInfo->getModule()->getNullPtrSyms().find(val) != symInfo->getModule()->getNullPtrSyms().end();
+    const Set<const Value*>& nullPtrSyms = symInfo->getModule()->getNullPtrSyms();
+    return nullPtrSyms.find(val) != nullPtrSyms.end();
 }
 
-bool SymbolTableInfo::argInNoCallerFunction(const Value *val)
+bool SymbolTableInfo::argOfUncalledFunction(const Value *val)
 {
-    return symInfo->getModule()->getArgInNoCallerFunction().find(val) != symInfo->getModule()->getArgInNoCallerFunction().end();
+    const Set<const Value*>& argOfUncalledFunctionSet = symInfo->getModule()->getArgOfUncalledFunction();
+    return argOfUncalledFunctionSet.find(val) != argOfUncalledFunctionSet.end();
 }
 
-bool SymbolTableInfo::isDeadFunction(const Function * fun)
+bool SymbolTableInfo::isUncalledFunction(const Function * fun)
 {
-    return symInfo->getModule()->getIsDeadFunction().find(fun) != symInfo->getModule()->getIsDeadFunction().end();
+    const Set<const Function*>& uncalledFunction = symInfo->getModule()->getIsUncalledFunction();
+    return uncalledFunction.find(fun) != uncalledFunction.end();
 }
 
 bool SymbolTableInfo::isReturn(const Instruction *inst)
 {
-    return symInfo->getModule()->getIsReturn().find(inst) != symInfo->getModule()->getIsReturn().end();
+    const Set<const Instruction*>& isReturnSet = symInfo->getModule()->getIsReturn();
+    return isReturnSet.find(inst) != isReturnSet.end();
 }
 
 bool SymbolTableInfo::functionDoesNotRet(const Function *fun)
 {
-    return symInfo->getModule()->getFunctionDoesNotRet().find(fun) != symInfo->getModule()->getFunctionDoesNotRet().end();
+    const Set<const Function*>& functionDoesNotRetSet = symInfo->getModule()->getFunctionDoesNotRet();
+    return functionDoesNotRetSet.find(fun) != functionDoesNotRetSet.end();
 }
 
 bool SymbolTableInfo::isPtrInDeadFunction (const Value * value)
 {
-    return symInfo->getModule()->getPtrInDeadFunction().find(value) != symInfo->getModule()->getPtrInDeadFunction().end();
+    const Set<const Value*>& ptrInDeadFunctionSet = symInfo->getModule()->getPtrInDeadFunction();
+    return ptrInDeadFunctionSet.find(value) != ptrInDeadFunctionSet.end();
 }
 
 const BasicBlock* SymbolTableInfo::getFunExitBB(const Function* fun)
 {
-    if (symInfo->getModule()->getFunExitBBMap().find(fun) != symInfo->getModule()->getFunExitBBMap().end())
+    const Map<const Function*, const BasicBlock*>::const_iterator funExitBBMapIter = symInfo->getModule()->getFunExitBBMap().find(fun);
+    if (funExitBBMapIter != symInfo->getModule()->getFunExitBBMap().end())
     {
-        return symInfo->getModule()->getFunExitBBMap().find(fun)->second;
+        return funExitBBMapIter->second;
     }
     return nullptr;
 }
 
 const u32_t SymbolTableInfo::getBBSuccessorNum(const BasicBlock *bb)
 {
-    if (symInfo->getModule()->getBBSuccessorNumMap().find(bb) != symInfo->getModule()->getBBSuccessorNumMap().end())
+    Map<const BasicBlock*, const u32_t>::const_iterator bbSuccessorNumMapIter = symInfo->getModule()->getBBSuccessorNumMap().find(bb);
+    if (bbSuccessorNumMapIter != symInfo->getModule()->getBBSuccessorNumMap().end())
     {
-        return symInfo->getModule()->getBBSuccessorNumMap().find(bb)->second;
+        return bbSuccessorNumMapIter->second;
     }
     return 0;
 }
 
 const u32_t SymbolTableInfo::getBBSuccessorPos(const BasicBlock *bb, const BasicBlock *succ)
 {
-    if(symInfo->getModule()->getBBSuccessorPosMap().find(bb) != symInfo->getModule()->getBBSuccessorPosMap().end()){
-        const Map <const BasicBlock *, const u32_t> value = symInfo->getModule()->getBBSuccessorPosMap().find(bb)->second;
-        if(value.find(succ) != value.end())
+    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::const_iterator bbSuccessorPosMapIter = symInfo->getModule()->getBBSuccessorPosMap().find(bb);
+    if(bbSuccessorPosMapIter != symInfo->getModule()->getBBSuccessorPosMap().end()){
+        const Map <const BasicBlock *, const u32_t> value = bbSuccessorPosMapIter->second;
+        Map <const BasicBlock *, const u32_t>::const_iterator valueIter = value.find(succ);
+        if(valueIter != value.end())
         {
-            u32_t pos = value.find(succ)->second;
+            u32_t pos = valueIter->second;
             return pos;
         }
     }
@@ -395,9 +405,10 @@ const u32_t SymbolTableInfo::getBBPredecessorPos(const BasicBlock *bb, const Bas
 
 const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
 {
-    if (symInfo->getModule()->getPtrElementTypeMap().find(pty) != symInfo->getModule()->getPtrElementTypeMap().end())
+    Map<const PointerType*, const Type*>::const_iterator ptrElementTypeMapIter = symInfo->getModule()->getPtrElementTypeMap().find(pty);
+    if (ptrElementTypeMapIter != symInfo->getModule()->getPtrElementTypeMap().end())
     {
-        return symInfo->getModule()->getPtrElementTypeMap().find(pty)->second;
+        return ptrElementTypeMapIter->second;
     }
     return nullptr;
 }
@@ -407,7 +418,8 @@ const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
  */
 bool SymbolTableInfo::isBlackholeSym(const Value *val)
 {
-    return symInfo->getModule()->getBlackholeSyms().find(val)!= symInfo->getModule()->getBlackholeSyms().end();
+    const Set<const Value*>  blackholeSyms = symInfo->getModule()->getBlackholeSyms();
+    return blackholeSyms.find(val)!= blackholeSyms.end();
 }
 
 

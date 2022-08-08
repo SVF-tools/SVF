@@ -65,8 +65,8 @@ private:
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
-    Set<const Value*> argInNoCallerFunction;
-    Set<const Function*> isDeadFunction;
+    Set<const Value*> argOfUncalledFunction;
+    Set<const Function*> isUncalledFunction;
     Set<const Instruction*> isReturns;
     Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
@@ -221,61 +221,61 @@ public:
         }
     }
 
-    inline const Set<const Value*> getNullPtrSyms() const 
+    inline const Set<const Value*>& getNullPtrSyms() const 
     {
         return nullPtrSyms;
     }
     
-    inline const Set<const Value*> getBlackholeSyms() const
+    inline const Set<const Value*>& getBlackholeSyms() const
     {
         return blackholeSyms;
     }
 
-    inline const Set<const Value*> getArgInNoCallerFunction() const
+    inline const Set<const Value*>& getArgOfUncalledFunction() const
     {
-        return argInNoCallerFunction;
+        return argOfUncalledFunction;
     }
 
-    inline const Set<const Function*> getIsDeadFunction() const
+    inline const Set<const Function*>& getIsUncalledFunction() const
     {
-        return isDeadFunction;
+        return isUncalledFunction;
     }
 
-    inline const Set<const Instruction*> getIsReturn() const 
+    inline const Set<const Instruction*>& getIsReturn() const 
     {
         return isReturns;
     }
 
-    inline const Set<const Function*> getFunctionDoesNotRet() const
+    inline const Set<const Function*>& getFunctionDoesNotRet() const
     {
         return functionDoesNotRet;
     }
 
-    inline const Set<const Value*> getPtrInDeadFunction() const 
+    inline const Set<const Value*>& getPtrInDeadFunction() const 
     {
         return isPtrInDeadFunction;
     }
 
-    inline const Map<const Function*, const BasicBlock*> getFunExitBBMap()
+    inline const Map<const Function*, const BasicBlock*>& getFunExitBBMap()
     {
         return funExitBBMap;
     }
 
-    inline const Map<const BasicBlock*, const u32_t> getBBSuccessorNumMap()
+    inline const Map<const BasicBlock*, const u32_t>& getBBSuccessorNumMap()
     {
         return bbSuccessorNumMap;
     }
 
-    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> getBBSuccessorPosMap()
+    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>& getBBSuccessorPosMap()
     {
         return bbSuccessorPosMap;
     }
 
-    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> getBBPredecessorPosMap(){
+    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>& getBBPredecessorPosMap(){
         return bbPredecessorPosMap;
     }
 
-    inline const Map<const PointerType*, const Type*> getPtrElementTypeMap()
+    inline const Map<const PointerType*, const Type*>& getPtrElementTypeMap()
     {
         return ptrElementTypeMap;
     }
@@ -294,8 +294,9 @@ public:
 
     inline void addBBSuccessorPos(const BasicBlock *bb, const BasicBlock* succ,const u32_t pos)
     {
-        if(bbSuccessorPosMap.find(bb) != bbSuccessorPosMap.end()){
-            Map<const BasicBlock*, const u32_t> foundValue = bbSuccessorPosMap.find(bb)->second;
+        Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::iterator bbSuccessorPosMapIter = bbSuccessorPosMap.find(bb);
+        if(bbSuccessorPosMapIter != bbSuccessorPosMap.end()){
+            Map<const BasicBlock*, const u32_t> foundValue = bbSuccessorPosMapIter->second;
             foundValue.insert({succ,pos});
              bbSuccessorPosMap.insert({bb,foundValue});
         } 
@@ -308,8 +309,9 @@ public:
 
     inline void addBBPredecessorPos(const BasicBlock *bb, const BasicBlock* Pred,const u32_t pos)
     {
-        if(bbPredecessorPosMap.find(bb) != bbPredecessorPosMap.end()){
-            Map<const BasicBlock*, const u32_t> foundValue = bbPredecessorPosMap.find(bb)->second;
+        Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::iterator bbPredecessorPosMapIter = bbPredecessorPosMap.find(bb);
+        if(bbPredecessorPosMapIter != bbPredecessorPosMap.end()){
+            Map<const BasicBlock*, const u32_t> foundValue = bbPredecessorPosMapIter->second;
             foundValue.insert({Pred,pos});
             bbPredecessorPosMap.insert({bb,foundValue});
         } 
@@ -343,14 +345,14 @@ public:
         blackholeSyms.insert(val);
     }
 
-    inline void addArgInNoCallerFunction(const Value *val)
+    inline void addArgOfUncalledFunction(const Value *val)
     {
-        argInNoCallerFunction.insert(val);
+        argOfUncalledFunction.insert(val);
     }
 
-    inline void addDeadFunction(const Function *fun)
+    inline void addUncalledFunction(const Function *fun)
     {
-        isDeadFunction.insert(fun);
+        isUncalledFunction.insert(fun);
     }
 
     inline void addReturn(const Instruction* inst){

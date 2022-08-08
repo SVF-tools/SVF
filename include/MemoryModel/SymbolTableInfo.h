@@ -163,8 +163,8 @@ public:
     // @{
     static bool isNullPtrSym(const Value *val);
     static bool isBlackholeSym(const Value *val);
-    static bool argInNoCallerFunction(const Value *val);
-    static bool isDeadFunction(const Function * fun);
+    static bool argOfUncalledFunction(const Value *val);
+    static bool isUncalledFunction(const Function * fun);
     static bool isReturn(const Instruction *inst);
     static bool functionDoesNotRet(const Function *fun);
     static bool isPtrInDeadFunction (const Value * value);

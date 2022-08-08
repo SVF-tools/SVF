@@ -216,17 +216,20 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
     {
         symInfo->getModule()->addPtrInDeadFunction(val);
     }
+    
     if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
     {
         const SVFFunction *svfFun = symInfo->getModule()->getSVFFunction(fun);
-        if (LLVMUtil::isDeadFunction(fun))
+        if (LLVMUtil::isUncalledFunction(fun))
         {
-            symInfo->getModule()->addDeadFunction(fun);
+            symInfo->getModule()->addUncalledFunction(fun);
         } 
-        else if (LLVMUtil::functionDoesNotRet(fun))
+         
+        if (LLVMUtil::functionDoesNotRet(fun))
         {
             symInfo->getModule()->addFunctionDoesNotRet(fun);
         }
+        
         if (!isExtCall(svfFun))
         {
             const BasicBlock* exitBB = LLVMUtil::getFunExitBB(fun);
@@ -261,19 +264,22 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
             }
         }
     } 
-    else if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
+    
+    if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
     {
         if (LLVMUtil::isReturn(inst))
             symInfo->getModule()->addReturn(inst);
     }
-    else if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
+    
+    if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
     {
         const Type* type = LLVMUtil::getPtrElementType(ptrType);
         symInfo->getModule()->addptrElementType(ptrType, type);
     }
-    else if (LLVMUtil::ArgInNoCallerFunction(val))
+    
+    if (LLVMUtil::argOfUncalledFunction(val))
     {
-        symInfo->getModule()->addArgInNoCallerFunction(val);
+        symInfo->getModule()->addArgOfUncalledFunction(val);
    } 
 }
 

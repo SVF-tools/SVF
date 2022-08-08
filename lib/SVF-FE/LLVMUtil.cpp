@@ -91,16 +91,16 @@ bool LLVMUtil::isConstantObjSym(const Value *val)
 /*!
  * Return reachable bbs from function entry
  */
-void LLVMUtil::getFunReachableBBs (const SVFFunction* svffun, std::vector<const BasicBlock*> &reachableBBs)
+void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const BasicBlock*> &reachableBBs)
 {
-    assert(!SVFUtil::isExtCall(svffun) && "The calling function cannot be an external function.");
+    assert(!SVFUtil::isExtCall(svfFun) && "The calling function cannot be an external function.");
     //initial DominatorTree
     DominatorTree dt;
-    dt.recalculate(*svffun->getLLVMFun());
+    dt.recalculate(*svfFun->getLLVMFun());
 
     Set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;
-    bbVec.push_back(&svffun->getLLVMFun()->getEntryBlock());
+    bbVec.push_back(&svfFun->getLLVMFun()->getEntryBlock());
     while(!bbVec.empty())
     {
         const BasicBlock* bb = bbVec.back();
@@ -165,7 +165,7 @@ bool LLVMUtil::functionDoesNotRet (const Function * fun)
 /*!
  * Return true if this is a function without any possible caller
  */
-bool LLVMUtil::isDeadFunction (const Function * fun)
+bool LLVMUtil::isUncalledFunction (const Function * fun)
 {
     if(fun->hasAddressTaken())
         return false;
@@ -202,12 +202,12 @@ bool LLVMUtil::isPtrInDeadFunction (const Value * value)
 {
     if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
     {
-        if(isDeadFunction(inst->getParent()->getParent()))
+        if(isUncalledFunction(inst->getParent()->getParent()))
             return true;
     }
     else if(const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
     {
-        if(isDeadFunction(arg->getParent()))
+        if(isUncalledFunction(arg->getParent()))
             return true;
     }
     return false;

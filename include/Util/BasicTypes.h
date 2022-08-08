@@ -177,7 +177,7 @@ public:
         return getLLVMFun()->isVarArg();
     }
 
-    inline const std::vector<const BasicBlock*> getReachableBBs() const 
+    inline const std::vector<const BasicBlock*>& getReachableBBs() const 
     {
         return reachableBBs;
     }

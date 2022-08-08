@@ -118,13 +118,13 @@ bool isObject (const Value * ref);
 /// function address is not taken and never be used in call or invoke instruction
 //@{
 /// whether this is a function without any possible caller?
-bool isDeadFunction (const Function * fun);
+bool isUncalledFunction (const Function * fun);
 
 /// whether this is an argument in dead function
 inline bool ArgInDeadFunction (const Value * val)
 {
     return SVFUtil::isa<Argument>(val)
-           && isDeadFunction(SVFUtil::cast<Argument>(val)->getParent());
+           && isUncalledFunction(SVFUtil::cast<Argument>(val)->getParent());
 }
 //@}
 
@@ -145,11 +145,11 @@ bool isPtrInDeadFunction (const Value * value);
 /// Return true if the function does not have a caller (either it is a main function or a dead function)
 inline bool isNoCallerFunction (const Function * fun)
 {
-    return isDeadFunction(fun) || SVFUtil::isProgEntryFunction(fun);
+    return isUncalledFunction(fun) || SVFUtil::isProgEntryFunction(fun);
 }
 
 /// Return true if the argument in a function does not have a caller
-inline bool ArgInNoCallerFunction (const Value * val)
+inline bool argOfUncalledFunction (const Value * val)
 {
     return SVFUtil::isa<Argument>(val)
            && isNoCallerFunction(SVFUtil::cast<Argument>(val)->getParent());
