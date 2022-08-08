@@ -29,6 +29,7 @@
 
 #include "Util/ExtAPI.h"
 #include "Util/SVFUtil.h"
+#include "Util/cJSON.h"
 #include <string.h>
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -181,8 +182,26 @@ void ExtAPI::destory()
     }
 }
 
+void ExtAPI::add_entry(const char* funName, extType type, bool overwrite_app_function) 
+{
+    assert(root);
+    assert(get_type(funName) == EFT_NULL);
+    auto entry = cJSON_CreateObject();
+
+    // add the type field
+    auto typeString = cJSON_CreateString(extType_toString(type).c_str());
+    cJSON_AddItemToObject(entry, JSON_OPT_FUNCTIONTYPE, typeString);
+
+    // add the 'overwrite_app_function' field
+    auto overwriteBool = cJSON_CreateNumber(overwrite_app_function ? 1 : 0);
+    cJSON_AddItemToObject(entry, JSON_OPT_OVERWRITE, overwriteBool);
+
+    // we don't know where the `funName` comes from, so copy it just in case
+    cJSON_AddItemToObject(root, strdup(funName), entry);
+}
+
 // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
-ExtAPI::extf_t ExtAPI::get_opName(std::string s)
+ExtAPI::extf_t ExtAPI::get_opName(const std::string& s)
 {
     std::map<std::string, extf_t>::iterator pos = op_pair.find(s);
     if (pos != op_pair.end())
@@ -193,6 +212,14 @@ ExtAPI::extf_t ExtAPI::get_opName(std::string s)
     {
         return EXT_OTHER;
     }
+}
+
+const std::string& ExtAPI::extType_toString(extType type) {
+    auto it = llvm::find_if(type_pair, [&](const auto& pair) {
+        return pair.second == type;
+    });
+    assert(it != type_pair.end());
+    return it->first;
 }
 
 // Get external function name, e.g "memcpy"
@@ -229,10 +256,8 @@ std::vector<std::string> ExtAPI::get_opArgs(const cJSON *value)
     return args;
 }
 
-// Get property of the operation, e.g. "EFT_A1R_A0R"
-ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
+ExtAPI::extType ExtAPI::get_type(const std::string& funName) 
 {
-    std::string funName = get_name(F);
     cJSON *item = get_FunJson(funName);
     std::string type = "";
     if (item != nullptr)
@@ -249,6 +274,12 @@ ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
         return EFT_NULL;
     else
         return it->second;
+}
+
+// Get property of the operation, e.g. "EFT_A1R_A0R"
+ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
+{
+    return get_type(get_name(F));
 }
 
 // Get priority of he function, return value

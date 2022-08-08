@@ -230,10 +230,14 @@ public:
 
     static void destory();
 
-    // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
-    extf_t get_opName(std::string s);
+    // Add an entry with the specified fields to the ExtAPI, which will be reflected immediately by further ExtAPI queries
+    void add_entry(const char* funName, extType type, bool overwrite_app_function);
 
-    // Return the extf_t of (F).
+    // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
+    extf_t get_opName(const std::string& s);
+    // opposite for extType
+    const std::string& extType_toString(extType type);
+
     // Get external function name, e.g "memcpy"
     std::string get_name(const SVFFunction *F);
 
@@ -245,6 +249,7 @@ public:
 
     // Get property of the operation, e.g. "EFT_A1R_A0R"
     extType get_type(const SVF::SVFFunction *callee);
+    extType get_type(const std::string& funName);
 
     // Get priority of he function, return value
     // 0: Apply user-defined functions
