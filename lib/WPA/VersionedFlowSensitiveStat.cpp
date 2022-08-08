@@ -70,10 +70,8 @@ void VersionedFlowSensitiveStat::performStat()
 
     unsigned numOfCopy = 0;
     unsigned numOfStore = 0;
-    [[maybe_unused]] unsigned numOfNode = 0;
     for (SVFG::iterator it = vfspta->svfg->begin(); it != vfspta->svfg->end(); ++it)
     {
-        numOfNode++;
         SVFGNode* svfgNode = it->second;
         if (SVFUtil::isa<CopySVFGNode>(svfgNode)) numOfCopy++;
         else if (SVFUtil::isa<StoreSVFGNode>(svfgNode)) numOfStore++;
