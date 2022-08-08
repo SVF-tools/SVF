@@ -120,14 +120,15 @@ void FlowSensitiveStat::performStat()
         }
     }
 
+    PTNumStatMap[NumberOfFieldInsensitiveObj] = fiObjNumber;
+    PTNumStatMap[NumberOfFieldSensitiveObj] = fsObjNumber;
+
     unsigned numOfCopy = 0;
     unsigned numOfStore = 0;
-    unsigned numOfNode = 0;
     SVFG::iterator svfgNodeIt = fspta->svfg->begin();
     SVFG::iterator svfgNodeEit = fspta->svfg->end();
     for (; svfgNodeIt != svfgNodeEit; ++svfgNodeIt)
     {
-        numOfNode++;
         SVFGNode* svfgNode = svfgNodeIt->second;
         if (SVFUtil::isa<CopySVFGNode>(svfgNode))
             numOfCopy++;

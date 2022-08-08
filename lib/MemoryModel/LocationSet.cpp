@@ -75,6 +75,10 @@ u32_t LocationSet::getElementNum(const Type* type) const
         else
             return 1;
     }
+    else if (SVFUtil::isa<FunctionType>(type))
+    {
+        return 1;
+    }
     else
     {
         SVFUtil::outs() << "GepIter Type" << type2String(type) << "\n";
