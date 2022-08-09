@@ -53,7 +53,7 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNod
     // if function is implemented
     if (f->getLLVMFun()->begin() != f->getLLVMFun()->end())
     {
-        bb = SymbolTableInfo::getFunExitBB(f->getLLVMFun());
+        bb = f->getExitBB();
     }
 
 }
@@ -118,7 +118,7 @@ const std::string FunExitICFGNode::toString() const
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
-        rawstr << getSourceLoc(SymbolTableInfo::getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI());
+        rawstr << getSourceLoc(getFun()->getExitBB()->getFirstNonPHI());
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();

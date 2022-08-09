@@ -66,13 +66,10 @@ private:
     AliasSetType AliasSet;        ///< The Aliases in the module
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
     Set<const Value*> argOfUncalledFunction;
-    Set<const Function*> isUncalledFunction;
     Set<const Instruction*> isReturns;
     Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
-    Set<const Function*> functionDoesNotRet;
     Set<const Value*> isPtrInDeadFunction;
-    Map<const Function*, const BasicBlock*> funExitBBMap;
     Map<const BasicBlock*, const u32_t> bbSuccessorNumMap;
     Map<const PointerType*, const Type*> ptrElementTypeMap;
     Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbSuccessorPosMap;
@@ -236,29 +233,14 @@ public:
         return argOfUncalledFunction;
     }
 
-    inline const Set<const Function*>& getIsUncalledFunction() const
-    {
-        return isUncalledFunction;
-    }
-
     inline const Set<const Instruction*>& getIsReturn() const 
     {
         return isReturns;
     }
 
-    inline const Set<const Function*>& getFunctionDoesNotRet() const
-    {
-        return functionDoesNotRet;
-    }
-
     inline const Set<const Value*>& getPtrInDeadFunction() const 
     {
         return isPtrInDeadFunction;
-    }
-
-    inline const Map<const Function*, const BasicBlock*>& getFunExitBBMap()
-    {
-        return funExitBBMap;
     }
 
     inline const Map<const BasicBlock*, const u32_t>& getBBSuccessorNumMap()
@@ -278,13 +260,6 @@ public:
     inline const Map<const PointerType*, const Type*>& getPtrElementTypeMap()
     {
         return ptrElementTypeMap;
-    }
-
-    inline void addFunExitBB(const Function *fun, const BasicBlock* bb)
-    {
-        const SVFFunction* svffun = getSVFFunction(fun);
-        assert(!(fun && ExtAPI::getExtAPI()->is_ext(svffun)) && "The function cannot be an external call.");
-        funExitBBMap.insert({fun,bb});
     }
 
     inline void addBBSuccessorNum(const BasicBlock *bb, const u32_t num)
@@ -331,11 +306,6 @@ public:
         isPtrInDeadFunction.insert(value);
     }
 
-    inline void addFunctionDoesNotRet(const Function *fun)
-    {
-        functionDoesNotRet.insert(fun);
-    }
-
     inline void addNullPtrSyms(const Value *val)
     {
         nullPtrSyms.insert(val);
@@ -348,11 +318,6 @@ public:
     inline void addArgOfUncalledFunction(const Value *val)
     {
         argOfUncalledFunction.insert(val);
-    }
-
-    inline void addUncalledFunction(const Function *fun)
-    {
-        isUncalledFunction.insert(fun);
     }
 
     inline void addReturn(const Instruction* inst){

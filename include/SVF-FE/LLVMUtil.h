@@ -170,6 +170,15 @@ inline const BasicBlock* getFunExitBB(const Function* fun)
     assert(!SVFUtil::isExtCall(svfFun) && "The function cannot be an external call");
     return &fun->back();
 }
+
+/// Get function exit basic block
+/// FIXME: this back() here is only valid when UnifyFunctionExitNodes pass is invoked
+inline const BasicBlock* getFunExitBB(const SVFFunction* svfFun)
+{
+    const Function* fun = svfFun->getLLVMFun();
+    assert(!SVFUtil::isExtCall(svfFun) && "The function cannot be an external call");
+    return &fun->back();
+}
 /// Strip off the constant casts
 const Value * stripConstantCasts(const Value *val);
 

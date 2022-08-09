@@ -220,21 +220,20 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
     if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
     {
         const SVFFunction *svfFun = symInfo->getModule()->getSVFFunction(fun);
-        if (LLVMUtil::isUncalledFunction(fun))
+        const bool isUncalled = LLVMUtil::isUncalledFunction(fun);
+        if (isUncalled)
         {
-            symInfo->getModule()->addUncalledFunction(fun);
+            svfFun->setIsUncalledFunction(isUncalled);
         } 
-         
-        if (LLVMUtil::functionDoesNotRet(fun))
+
+        const bool isNotRetFunction = LLVMUtil::functionDoesNotRet(fun);
+        if (isNotRetFunction)
         {
-            symInfo->getModule()->addFunctionDoesNotRet(fun);
+            svfFun->setIsNotRet(isNotRetFunction);
         }
         
         if (!isExtCall(svfFun))
         {
-            const BasicBlock* exitBB = LLVMUtil::getFunExitBB(fun);
-            symInfo->getModule()->addFunExitBB(fun,exitBB);
-
             for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
             {
                 const BasicBlock *bb = &*bit;

@@ -224,7 +224,8 @@ void LLVMModuleSet::initialize()
             {
                 std::vector<const BasicBlock*> reachableBBs;
                 LLVMUtil::getFunReachableBBs(svfFunc, reachableBBs);
-                svfFunc = new SVFFunction(func,reachableBBs);
+                BasicBlock *exitBB =  const_cast<BasicBlock*>(LLVMUtil::getFunExitBB(svfFunc));
+                svfFunc = new SVFFunction(func, exitBB, reachableBBs);
             }
             svfModule->addFunctionSet(svfFunc);
         }

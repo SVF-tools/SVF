@@ -490,7 +490,8 @@ SaberCondAllocator::ComputeInterCallVFGGuard(const BasicBlock *srcBB, const Basi
 SaberCondAllocator::Condition
 SaberCondAllocator::ComputeInterRetVFGGuard(const BasicBlock *srcBB, const BasicBlock *dstBB, const BasicBlock *retBB)
 {
-    const BasicBlock* funExitBB = SymbolTableInfo::getFunExitBB(srcBB->getParent());
+    const SVFFunction* parent = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(srcBB->getParent());
+    const BasicBlock* funExitBB = parent->getExitBB();
 
     Condition c1 = ComputeIntraVFGGuard(srcBB, funExitBB);
     setCFCond(retBB, condOr(getCFCond(retBB), getCFCond(funExitBB)));

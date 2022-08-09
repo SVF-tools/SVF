@@ -197,7 +197,7 @@ void MemSSA::createMUCHI(const SVFFunction& fun)
 
         /// if the function does not have a reachable return instruction from function entry
         /// then we won't create return mu for it
-        if(SymbolTableInfo::functionDoesNotRet(fun.getLLVMFun()) == false)
+        if(!fun.isNotRetFunction())
         {
             RETMU* mu = new RETMU(&fun, mr);
             funToReturnMuSetMap[&fun].insert(mu);

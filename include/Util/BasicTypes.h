@@ -129,20 +129,23 @@ private:
     bool isDecl;
     bool isIntri;
     Function* fun;
+    BasicBlock* exitBB;
     std::vector<const BasicBlock*> reachableBBs;
+    mutable bool isUncalled;
+    mutable bool isNotRet;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
-        isDecl(false), isIntri(false), fun(nullptr)
+        isDecl(false), isIntri(false), fun(nullptr), exitBB(nullptr), isUncalled(false), isNotRet(false)
     {
     }
 
     SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f)
+        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false)
     {
     }
 
-    SVFFunction(Function* f, std::vector<const BasicBlock*> reachableBBs): SVFValue(f->getName().str(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), reachableBBs(reachableBBs)
+    SVFFunction(Function* f, BasicBlock* exitBB, std::vector<const BasicBlock*> reachableBBs): SVFValue(f->getName().str(),SVFValue::SVFFunc),
+        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(exitBB), reachableBBs(reachableBBs), isUncalled(false), isNotRet(false)
     {
     }
 
@@ -180,6 +183,31 @@ public:
     inline const std::vector<const BasicBlock*>& getReachableBBs() const 
     {
         return reachableBBs;
+    }
+
+    inline const bool isUncalledFunction() const
+    {
+        return isUncalled;
+    }
+
+    inline const void setIsUncalledFunction(const bool isUncalledFunction) const
+    {
+        this->isUncalled = isUncalledFunction;
+    }
+
+    inline const void setIsNotRet(const bool doesNotRet) const 
+    {
+        this->isNotRet = doesNotRet;
+    }
+
+    inline const bool isNotRetFunction() const
+    {
+        return isNotRet;
+    }
+
+    inline const BasicBlock* getExitBB() const
+    {
+        return this->exitBB;
     }
 
     // Dump Control Flow Graph of llvm function, with instructions

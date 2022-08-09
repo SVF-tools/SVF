@@ -331,38 +331,16 @@ bool SymbolTableInfo::argOfUncalledFunction(const Value *val)
     return argOfUncalledFunctionSet.find(val) != argOfUncalledFunctionSet.end();
 }
 
-bool SymbolTableInfo::isUncalledFunction(const Function * fun)
-{
-    const Set<const Function*>& uncalledFunction = symInfo->getModule()->getIsUncalledFunction();
-    return uncalledFunction.find(fun) != uncalledFunction.end();
-}
-
 bool SymbolTableInfo::isReturn(const Instruction *inst)
 {
     const Set<const Instruction*>& isReturnSet = symInfo->getModule()->getIsReturn();
     return isReturnSet.find(inst) != isReturnSet.end();
 }
 
-bool SymbolTableInfo::functionDoesNotRet(const Function *fun)
-{
-    const Set<const Function*>& functionDoesNotRetSet = symInfo->getModule()->getFunctionDoesNotRet();
-    return functionDoesNotRetSet.find(fun) != functionDoesNotRetSet.end();
-}
-
 bool SymbolTableInfo::isPtrInDeadFunction (const Value * value)
 {
     const Set<const Value*>& ptrInDeadFunctionSet = symInfo->getModule()->getPtrInDeadFunction();
     return ptrInDeadFunctionSet.find(value) != ptrInDeadFunctionSet.end();
-}
-
-const BasicBlock* SymbolTableInfo::getFunExitBB(const Function* fun)
-{
-    const Map<const Function*, const BasicBlock*>::const_iterator funExitBBMapIter = symInfo->getModule()->getFunExitBBMap().find(fun);
-    if (funExitBBMapIter != symInfo->getModule()->getFunExitBBMap().end())
-    {
-        return funExitBBMapIter->second;
-    }
-    return nullptr;
 }
 
 const u32_t SymbolTableInfo::getBBSuccessorNum(const BasicBlock *bb)
