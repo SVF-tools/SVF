@@ -212,25 +212,14 @@ void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
 
 
 void SymbolTableBuilder::collectSpecialSym(const Value* val){
-    if (LLVMUtil::isPtrInDeadFunction(val))
+    if (LLVMUtil::isPtrInUncalledFunction(val))
     {
-        symInfo->getModule()->addPtrInDeadFunction(val);
+        symInfo->getModule()->addPtrInUncalledFunction(val);
     }
     
     if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
     {
         const SVFFunction *svfFun = symInfo->getModule()->getSVFFunction(fun);
-        const bool isUncalled = LLVMUtil::isUncalledFunction(fun);
-        if (isUncalled)
-        {
-            svfFun->setIsUncalledFunction(isUncalled);
-        } 
-
-        const bool isNotRetFunction = LLVMUtil::functionDoesNotRet(fun);
-        if (isNotRetFunction)
-        {
-            svfFun->setIsNotRet(isNotRetFunction);
-        }
         
         if (!isExtCall(svfFun))
         {
@@ -276,9 +265,9 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
         symInfo->getModule()->addptrElementType(ptrType, type);
     }
     
-    if (LLVMUtil::argOfUncalledFunction(val))
+    if (LLVMUtil::isArgOfUncalledFunction(val))
     {
-        symInfo->getModule()->addArgOfUncalledFunction(val);
+        symInfo->getModule()->addArgsOfUncalledFunction(val);
    } 
 }
 

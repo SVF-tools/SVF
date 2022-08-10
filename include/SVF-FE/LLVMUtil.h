@@ -135,7 +135,7 @@ inline bool ArgInProgEntryFunction (const Value * val)
            && SVFUtil::isProgEntryFunction(SVFUtil::cast<Argument>(val)->getParent());
 }
 /// Return true if this is value in a dead function (function without any caller)
-bool isPtrInDeadFunction (const Value * value);
+bool isPtrInUncalledFunction (const Value * value);
 //@}
 
 //@}
@@ -149,7 +149,7 @@ inline bool isNoCallerFunction (const Function * fun)
 }
 
 /// Return true if the argument in a function does not have a caller
-inline bool argOfUncalledFunction (const Value * val)
+inline bool isArgOfUncalledFunction (const Value * val)
 {
     return SVFUtil::isa<Argument>(val)
            && isNoCallerFunction(SVFUtil::cast<Argument>(val)->getParent());
@@ -161,15 +161,6 @@ bool functionDoesNotRet (const Function * fun);
 
 /// Get reachable basic block from function entry
 void getFunReachableBBs (const SVFFunction* svfFun, std::vector<const BasicBlock*>& bbs);
-
-/// Get function exit basic block
-/// FIXME: this back() here is only valid when UnifyFunctionExitNodes pass is invoked
-inline const BasicBlock* getFunExitBB(const Function* fun)
-{
-    const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-    assert(!SVFUtil::isExtCall(svfFun) && "The function cannot be an external call");
-    return &fun->back();
-}
 
 /// Get function exit basic block
 /// FIXME: this back() here is only valid when UnifyFunctionExitNodes pass is invoked

@@ -49,7 +49,7 @@ void LeakChecker::initSrcs()
         /// if this callsite return reside in a dead function then we do not care about its leaks
         /// for example instruction `int* p = malloc(size)` is in a dead function, then program won't allocate this memory
         /// for example a customized malloc `int p = malloc()` returns an integer value, then program treat it as a system malloc
-        if(SymbolTableInfo::isPtrInDeadFunction(cs->getCallSite()) || !cs->getCallSite()->getType()->isPointerTy())
+        if(SymbolTableInfo::isPtrInUncalledFunction(cs->getCallSite()) || !cs->getCallSite()->getType()->isPointerTy())
             continue;
 
         PTACallGraph::FunctionSet callees;
@@ -87,7 +87,7 @@ void LeakChecker::initSrcs()
                     else
                     {
                         // exclude sources in dead functions
-                        if (SymbolTableInfo::isPtrInDeadFunction(cs->getCallSite()) == false)
+                        if (SymbolTableInfo::isPtrInUncalledFunction(cs->getCallSite()) == false)
                         {
                             addToSources(node);
                             addSrcToCSID(node, cs);

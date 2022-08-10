@@ -124,6 +124,24 @@ void LLVMModuleSet::build()
     initialize();
     buildFunToFunMap();
     buildGlobalDefToRepMap();
+    const SVFModule::FunctionSetType& functions = svfModule->getFunctionSet();
+    for (SVFModule::FunctionSetType::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+    {
+        const SVFFunction*  func = *func_iter;
+        const bool isUncalledFunction = LLVMUtil::isUncalledFunction(func->getLLVMFun());
+        const bool isNotRetFunction = LLVMUtil::functionDoesNotRet(func->getLLVMFun());
+        SVFFunction* svffun = const_cast<SVFFunction*>(func);
+        svffun->setIsNotRet(isNotRetFunction);
+        svffun->setIsUncalledFunction(isUncalledFunction);
+        if (SVFUtil::isExtCall(func) == false)
+        {
+            std::vector<const BasicBlock*> reachableBBs;
+            LLVMUtil::getFunReachableBBs(func, reachableBBs);
+            BasicBlock *exitBB =  const_cast<BasicBlock*>(LLVMUtil::getFunExitBB(func));
+            svffun->setReachableBBs(reachableBBs);
+            svffun->setExitBB(exitBB);
+        }
+    }
     if(preProcessed==false)
         prePassSchedule();
 }
@@ -220,13 +238,6 @@ void LLVMModuleSet::initialize()
         {
             Function *func = &*it;
             SVFFunction* svfFunc = new SVFFunction(func);
-            if (SVFUtil::isExtCall(svfFunc) == false)
-            {
-                std::vector<const BasicBlock*> reachableBBs;
-                LLVMUtil::getFunReachableBBs(svfFunc, reachableBBs);
-                BasicBlock *exitBB =  const_cast<BasicBlock*>(LLVMUtil::getFunExitBB(svfFunc));
-                svfFunc = new SVFFunction(func, exitBB, reachableBBs);
-            }
             svfModule->addFunctionSet(svfFunc);
         }
 

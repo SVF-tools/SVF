@@ -708,7 +708,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
     {
         if (isValidPointer(node->getId()) && node->hasValue())
         {
-            if (SymbolTableInfo::argOfUncalledFunction(node->getValue()))
+            if (SymbolTableInfo::isArgOfUncalledFunction(node->getValue()))
                 return false;
             return true;
         }

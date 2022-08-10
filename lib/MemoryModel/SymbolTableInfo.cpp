@@ -325,22 +325,22 @@ bool SymbolTableInfo::isNullPtrSym(const Value *val)
     return nullPtrSyms.find(val) != nullPtrSyms.end();
 }
 
-bool SymbolTableInfo::argOfUncalledFunction(const Value *val)
+bool SymbolTableInfo::isArgOfUncalledFunction(const Value *val)
 {
-    const Set<const Value*>& argOfUncalledFunctionSet = symInfo->getModule()->getArgOfUncalledFunction();
+    const Set<const Value*>& argOfUncalledFunctionSet = symInfo->getModule()->getArgsOfUncalledFunction();
     return argOfUncalledFunctionSet.find(val) != argOfUncalledFunctionSet.end();
 }
 
 bool SymbolTableInfo::isReturn(const Instruction *inst)
 {
-    const Set<const Instruction*>& isReturnSet = symInfo->getModule()->getIsReturn();
-    return isReturnSet.find(inst) != isReturnSet.end();
+    const Set<const Instruction*>& returnInstsSet = symInfo->getModule()->getReturns();
+    return returnInstsSet.find(inst) != returnInstsSet.end();
 }
 
-bool SymbolTableInfo::isPtrInDeadFunction (const Value * value)
+bool SymbolTableInfo::isPtrInUncalledFunction (const Value * value)
 {
-    const Set<const Value*>& ptrInDeadFunctionSet = symInfo->getModule()->getPtrInDeadFunction();
-    return ptrInDeadFunctionSet.find(value) != ptrInDeadFunctionSet.end();
+    const Set<const Value*>& ptrInUncalledFunctionSet = symInfo->getModule()->getPtrsInUncalledFunctions();
+    return ptrInUncalledFunctionSet.find(value) != ptrInUncalledFunctionSet.end();
 }
 
 const u32_t SymbolTableInfo::getBBSuccessorNum(const BasicBlock *bb)

@@ -198,7 +198,7 @@ bool LLVMUtil::isUncalledFunction (const Function * fun)
 /*!
  * Return true if this is a value in a dead function (function without any caller)
  */
-bool LLVMUtil::isPtrInDeadFunction (const Value * value)
+bool LLVMUtil::isPtrInUncalledFunction (const Value * value)
 {
     if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
     {

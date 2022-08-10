@@ -57,7 +57,7 @@ endif()
 if (DEFINED Z3_DIR)
     set(ENV{Z3_DIR} "${Z3_DIR}")
 endif()
-find_library(Z3_LIBRARIES NAMES libz3.a
+find_library(Z3_LIBRARIES NAMES libz3.a libz3.so
                           HINTS $ENV{Z3_DIR}
                           PATH_SUFFIXES lib bin)
 find_path(Z3_INCLUDES NAMES z3++.h

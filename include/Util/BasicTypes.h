@@ -131,8 +131,8 @@ private:
     Function* fun;
     BasicBlock* exitBB;
     std::vector<const BasicBlock*> reachableBBs;
-    mutable bool isUncalled;
-    mutable bool isNotRet;
+    bool isUncalled;
+    bool isNotRet;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
         isDecl(false), isIntri(false), fun(nullptr), exitBB(nullptr), isUncalled(false), isNotRet(false)
@@ -190,14 +190,24 @@ public:
         return isUncalled;
     }
 
-    inline const void setIsUncalledFunction(const bool isUncalledFunction) const
+    inline const void setIsUncalledFunction(const bool isUncalledFunction)
     {
         this->isUncalled = isUncalledFunction;
     }
 
-    inline const void setIsNotRet(const bool doesNotRet) const 
+    inline const void setIsNotRet(const bool doesNotRet) 
     {
         this->isNotRet = doesNotRet;
+    }
+
+    inline const void setExitBB(BasicBlock* exitBB)
+    {
+        this->exitBB = exitBB;
+    }
+
+    inline const void setReachableBBs(std::vector<const BasicBlock*> reachableBBs)
+    {
+        this->reachableBBs = reachableBBs;
     }
 
     inline const bool isNotRetFunction() const

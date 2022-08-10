@@ -163,9 +163,9 @@ public:
     // @{
     static bool isNullPtrSym(const Value *val);
     static bool isBlackholeSym(const Value *val);
-    static bool argOfUncalledFunction(const Value *val);
+    static bool isArgOfUncalledFunction(const Value *val);
     static bool isReturn(const Instruction *inst);
-    static bool isPtrInDeadFunction (const Value * value);
+    static bool isPtrInUncalledFunction (const Value * value);
     static const u32_t getBBSuccessorNum(const BasicBlock *bb);
     static const Type* getPtrElementType(const PointerType* pty);
     static const u32_t getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ);

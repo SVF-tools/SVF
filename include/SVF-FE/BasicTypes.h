@@ -24,6 +24,9 @@
 
 #include <llvm/Support/SourceMgr.h>
 
+namespace SVF
+{
+
 typedef llvm::LLVMContext LLVMContext;
 typedef llvm::GlobalObject GlobalObject;
 typedef llvm::Use Use;
@@ -126,5 +129,7 @@ typedef llvm::VectorType VectorType;
 #if (LLVM_VERSION_MAJOR >= 9)
 typedef llvm::FunctionCallee FunctionCallee;
 #endif
+
+} // End namespace SVF
 
 #endif  // SVF_FE_BASIC_TYPES_H

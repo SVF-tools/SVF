@@ -65,11 +65,11 @@ private:
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
-    Set<const Value*> argOfUncalledFunction;
-    Set<const Instruction*> isReturns;
+    Set<const Value*> argsOfUncalledFunction;
+    Set<const Instruction*> returnInsts;
     Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
-    Set<const Value*> isPtrInDeadFunction;
+    Set<const Value*> ptrsInUncalledFunctions;
     Map<const BasicBlock*, const u32_t> bbSuccessorNumMap;
     Map<const PointerType*, const Type*> ptrElementTypeMap;
     Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbSuccessorPosMap;
@@ -218,6 +218,11 @@ public:
         }
     }
 
+    inline const FunctionSetType& getFunctionSet() const 
+    {
+        return FunctionSet;
+    }
+
     inline const Set<const Value*>& getNullPtrSyms() const 
     {
         return nullPtrSyms;
@@ -228,19 +233,19 @@ public:
         return blackholeSyms;
     }
 
-    inline const Set<const Value*>& getArgOfUncalledFunction() const
+    inline const Set<const Value*>& getArgsOfUncalledFunction() const
     {
-        return argOfUncalledFunction;
+        return argsOfUncalledFunction;
     }
 
-    inline const Set<const Instruction*>& getIsReturn() const 
+    inline const Set<const Instruction*>& getReturns() const 
     {
-        return isReturns;
+        return returnInsts;
     }
 
-    inline const Set<const Value*>& getPtrInDeadFunction() const 
+    inline const Set<const Value*>& getPtrsInUncalledFunctions() const 
     {
-        return isPtrInDeadFunction;
+        return ptrsInUncalledFunctions;
     }
 
     inline const Map<const BasicBlock*, const u32_t>& getBBSuccessorNumMap()
@@ -302,8 +307,8 @@ public:
         ptrElementTypeMap.insert({ptrType, type});
     }
 
-    inline void addPtrInDeadFunction (const Value * value){
-        isPtrInDeadFunction.insert(value);
+    inline void addPtrInUncalledFunction (const Value * value){
+        ptrsInUncalledFunctions.insert(value);
     }
 
     inline void addNullPtrSyms(const Value *val)
@@ -315,13 +320,13 @@ public:
         blackholeSyms.insert(val);
     }
 
-    inline void addArgOfUncalledFunction(const Value *val)
+    inline void addArgsOfUncalledFunction(const Value *val)
     {
-        argOfUncalledFunction.insert(val);
+        argsOfUncalledFunction.insert(val);
     }
 
     inline void addReturn(const Instruction* inst){
-        isReturns.insert(inst);
+        returnInsts.insert(inst);
     }
 
 };
