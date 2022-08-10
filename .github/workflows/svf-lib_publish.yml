@@ -73,9 +73,9 @@ jobs:
             git status
             if [ -n "$(git status -s)" ]; then git commit -m"SVF code formatter"; fi
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF.git   HEAD:master
-            cd $GITHUB_WORKSPACE/doc && doxygen doxygen.config
+            cd $GITHUB_WORKSPACE/docs && doxygen doxygen.config
             cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git       
-            cp -r $GITHUB_WORKSPACE/doc/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/html       
+            cp -r $GITHUB_WORKSPACE/docs/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/html       
             cd $GITHUB_WORKSPACE/SVF-doxygen       
             git add .       
             if [ -n "$(git status -s)" ]; then git commit -m"update SVF doxygen"       ; fi
