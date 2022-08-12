@@ -92,6 +92,6 @@ public:
     u32_t getObjSize(const Type* type);
 };
 
-}
+} // End namespace SVF
 
 #endif /* SymbolTableBuilder_H_ */
