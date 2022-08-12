@@ -24,7 +24,8 @@
 
 #include <llvm/Support/SourceMgr.h>
 
-namespace SVF {
+namespace SVF
+{
 
 typedef llvm::LLVMContext LLVMContext;
 typedef llvm::GlobalObject GlobalObject;
