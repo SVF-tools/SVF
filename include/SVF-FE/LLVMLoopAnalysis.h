@@ -54,6 +54,6 @@ public:
     /// Build SVF loops based on llvm loops
     virtual void buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvmLoops);
 };
-} // end fo SVF
+} // End namespace SVF
 
 #endif //SVF_LLVMLOOPANALYSIS_H

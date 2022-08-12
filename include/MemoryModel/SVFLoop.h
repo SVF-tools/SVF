@@ -34,6 +34,7 @@
 
 namespace SVF
 {
+
 class SVFLoop
 {
     typedef Set<const ICFGEdge *> ICFGEdgeSet;
@@ -158,6 +159,6 @@ public:
     }
 };
 
-}
+} // End namespace SVF
 
 #endif //SVF_SVFLOOP_H
