@@ -209,6 +209,6 @@ struct Hash<CoreBitVector>
     }
 };
 
-};
+} // End namespace SVF
 
 #endif  // COREBITVECTOR_H_
