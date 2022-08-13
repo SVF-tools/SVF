@@ -1078,7 +1078,7 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
 
 std::vector<LocationSet> SVFIRBuilder::getCommonFields(CallSite cs, Value *S, Value *D, std::vector<Operation *> &operations, const Type* &stype, const Type* &dtype)
 {
-    Value *szValue;
+    Value *szValue = nullptr;
     if (strcmp(operations.back() -> getOperation().c_str(), "num") == 0)
         szValue = cs.getArgument(getArgPos(operations.back()->getArgs()[0]));
     std::vector<LocationSet> srcFields;
