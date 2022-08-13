@@ -1076,53 +1076,6 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
     return T;
 }
 
-// /*!
-//  * Add the load/store constraints and temp. nodes for the complex constraint
-//  * *D = *S (where D/S may point to structs).
-//  */
-// void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue)
-// {
-//     assert(D && S);
-//     NodeID vnD= getValueNode(D), vnS= getValueNode(S);
-//     if(!vnD || !vnS)
-//         return;
-
-//     std::vector<LocationSet> fields;
-
-//     //Get the max possible size of the copy, unless it was provided.
-//     std::vector<LocationSet> srcFields;
-//     std::vector<LocationSet> dstFields;
-//     const Type *stype = getBaseTypeAndFlattenedFields(S, srcFields, szValue);
-//     const Type *dtype = getBaseTypeAndFlattenedFields(D, dstFields, szValue);
-//     if(srcFields.size() > dstFields.size())
-//         fields = dstFields;
-//     else
-//         fields = srcFields;
-
-//     /// If sz is 0, we will add edges for all fields.
-//     u32_t sz = fields.size();
-
-//     if (fields.size() == 1 && (isConstantData(D) || isConstantData(S)))
-//     {
-//         NodeID dummy = pag->addDummyValNode();
-//         addLoadEdge(vnD,dummy);
-//         addStoreEdge(dummy,vnS);
-//         return;
-//     }
-
-//     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
-//     for (u32_t index = 0; index < sz; index++)
-//     {
-//         const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, fields[index].accumulateConstantFieldIdx());
-//         const Type* sElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(stype, fields[index].accumulateConstantFieldIdx());
-//         NodeID dField = getGepValVar(D,fields[index],dElementType);
-//         NodeID sField = getGepValVar(S,fields[index],sElementType);
-//         NodeID dummy = pag->addDummyValNode();
-//         addLoadEdge(sField,dummy);
-//         addStoreEdge(dummy,dField);
-//     }
-// }
-
 std::vector<LocationSet> SVFIRBuilder::getCommonFields(CallSite cs, Value *S, Value *D, std::vector<Operation *> &operations, const Type* &stype, const Type* &dtype)
 {
     Value *szValue;
