@@ -1076,51 +1076,71 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
     return T;
 }
 
-/*!
- * Add the load/store constraints and temp. nodes for the complex constraint
- * *D = *S (where D/S may point to structs).
- */
-void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue)
+// /*!
+//  * Add the load/store constraints and temp. nodes for the complex constraint
+//  * *D = *S (where D/S may point to structs).
+//  */
+// void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue)
+// {
+//     assert(D && S);
+//     NodeID vnD= getValueNode(D), vnS= getValueNode(S);
+//     if(!vnD || !vnS)
+//         return;
+
+//     std::vector<LocationSet> fields;
+
+//     //Get the max possible size of the copy, unless it was provided.
+//     std::vector<LocationSet> srcFields;
+//     std::vector<LocationSet> dstFields;
+//     const Type *stype = getBaseTypeAndFlattenedFields(S, srcFields, szValue);
+//     const Type *dtype = getBaseTypeAndFlattenedFields(D, dstFields, szValue);
+//     if(srcFields.size() > dstFields.size())
+//         fields = dstFields;
+//     else
+//         fields = srcFields;
+
+//     /// If sz is 0, we will add edges for all fields.
+//     u32_t sz = fields.size();
+
+//     if (fields.size() == 1 && (isConstantData(D) || isConstantData(S)))
+//     {
+//         NodeID dummy = pag->addDummyValNode();
+//         addLoadEdge(vnD,dummy);
+//         addStoreEdge(dummy,vnS);
+//         return;
+//     }
+
+//     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
+//     for (u32_t index = 0; index < sz; index++)
+//     {
+//         const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, fields[index].accumulateConstantFieldIdx());
+//         const Type* sElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(stype, fields[index].accumulateConstantFieldIdx());
+//         NodeID dField = getGepValVar(D,fields[index],dElementType);
+//         NodeID sField = getGepValVar(S,fields[index],sElementType);
+//         NodeID dummy = pag->addDummyValNode();
+//         addLoadEdge(sField,dummy);
+//         addStoreEdge(dummy,dField);
+//     }
+// }
+
+std::vector<LocationSet> SVFIRBuilder::getCommonFields(CallSite cs, Value *S, Value *D, std::vector<Operation *> &operations, const Type* &stype, const Type* &dtype)
 {
-    assert(D && S);
-    NodeID vnD= getValueNode(D), vnS= getValueNode(S);
-    if(!vnD || !vnS)
-        return;
-
-    std::vector<LocationSet> fields;
-
-    //Get the max possible size of the copy, unless it was provided.
+    Value *szValue;
+    if (strcmp(operations.back() -> getOperation().c_str(), "num") == 0)
+        szValue = cs.getArgument(getArgPos(operations.back()->getArgs()[0]));
     std::vector<LocationSet> srcFields;
     std::vector<LocationSet> dstFields;
-    const Type *stype = getBaseTypeAndFlattenedFields(S, srcFields, szValue);
-    const Type *dtype = getBaseTypeAndFlattenedFields(D, dstFields, szValue);
-    if(srcFields.size() > dstFields.size())
-        fields = dstFields;
+    dtype = getBaseTypeAndFlattenedFields(D, dstFields, szValue);
+    if (SVFUtil::isa<PointerType>(S->getType()))
+    {
+        stype = getBaseTypeAndFlattenedFields(S, srcFields, szValue);
+        if(srcFields.size() > dstFields.size())
+            return dstFields;
+        else
+            return srcFields;
+    }
     else
-        fields = srcFields;
-
-    /// If sz is 0, we will add edges for all fields.
-    u32_t sz = fields.size();
-
-    if (fields.size() == 1 && (isConstantData(D) || isConstantData(S)))
-    {
-        NodeID dummy = pag->addDummyValNode();
-        addLoadEdge(vnD,dummy);
-        addStoreEdge(dummy,vnS);
-        return;
-    }
-
-    //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
-    for (u32_t index = 0; index < sz; index++)
-    {
-        const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, fields[index].accumulateConstantFieldIdx());
-        const Type* sElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(stype, fields[index].accumulateConstantFieldIdx());
-        NodeID dField = getGepValVar(D,fields[index],dElementType);
-        NodeID sField = getGepValVar(S,fields[index],sElementType);
-        NodeID dummy = pag->addDummyValNode();
-        addLoadEdge(sField,dummy);
-        addStoreEdge(dummy,dField);
-    }
+        return dstFields;
 }
 
 
@@ -1181,12 +1201,13 @@ NodeID SVFIRBuilder::parseNode(std::string s, CallSite cs, const Instruction *in
             if(i++ != 0)
                 flag = false;
         }
-        // 'V' represents a dummy node
-        else if(s[i] == 'V')
+        // 'D' represents a dummy node
+        else if(s[i] == 'D')
         {
             res = pag->addDummyValNode();
             if(i++ != 0)
                 flag = false;
+            break;
         }
         else
             flag = false;
@@ -1245,189 +1266,320 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 cJSON *obj = item->child;
                 //  Get the first operation of the function
                 obj = obj -> next -> next;
+                // Dummy nodes or other temporary nodes
+                std::vector<NodeID> tempNodes;
+                // Common fields of complex structures
+                std::vector<LocationSet> fields;
+                // GepNode of src node
+                std::vector<NodeID> gepNodeSetS;
+                // GepNode of dst node
+                std::vector<NodeID> gepNodeSetD;
+                std::vector<Operation *> operations;
+                // Record the previous operation
+                Operation *preOp = nullptr;
+
                 while (obj)
                 {
-                    std::string op = obj->string;
-                    std::vector<std::string> args;
-                    if (obj->type == cJSON_Array)
+                    std::string operationName;
+                    std::vector<std::string> arguments;
+                    // All operations in "compound" are related to each other. 
+                    // For example, the first parameter of the second operation
+                    // depends on the second parameter of the first operation. 
+                    // Therefore, all operations in "compound" need to be processed uniformly
+                    if (strstr(obj->string, "compound") != NULL)
                     {
-                        // Get the first argument of the operation
-                        cJSON *value = obj->child;
-                        args = ExtAPI::getExtAPI()->get_opArgs(value);
+                        if (obj->type == cJSON_Object)
+                        {
+                            cJSON *value = obj->child; 
+                            while (value)
+                            {
+                                operationName = value -> string;
+                                if (value->type == cJSON_Object)
+                                {
+                                    cJSON *edge = value->child;
+                                    while (edge)
+                                    {
+                                        if (edge->type == cJSON_String)
+                                            arguments.push_back(edge->valuestring);
+                                        else
+                                            assert(false && "The function operation format is illegal!");
+                                        edge = edge->next;
+                                    }
+                                }
+                                else
+                                {
+                                    if (value->type == cJSON_String)
+                                        arguments.push_back(value->valuestring);
+                                    else
+                                        assert(false && "The function operation format is illegal!");                             
+                                }
+                                operations.push_back(new Operation(operationName, arguments));
+                                arguments.clear();
+                                value = value->next;
+                            }
+                        }
                         obj = obj->next;
                     }
+                    // General operation(Independent operation, the operation does not need to dependent other operations' arguments)
                     else
                     {
-                        assert(false && "The function operation format is illegal!");
-                    }
-
-                    ExtAPI::extf_t opName = ExtAPI::getExtAPI()->get_opName(op);
-
-                    switch (opName)
-                    {
-                    case ExtAPI::EXT_ADDR:
-                    {
-                        if (args.size() == 1)
+                        if (obj->type == cJSON_Object)
                         {
-                            if (!SVFUtil::isa<PointerType>(inst->getType()))
-                                break;
-                            // e.g. void *realloc(void *ptr, size_t size)
-                            // if ptr is null then we will treat it as a malloc
-                            // if ptr is not null, then we assume a new data memory will be attached to
-                            // the tail of old allocated memory block.
-                            if (SVFUtil::isa<ConstantPointerNull>(cs.getArgument(0)))
+                            while (obj)
                             {
-                                NodeID val = parseNode(args[0], cs, inst);
-                                NodeID obj = getObjectNode(inst);
-                                addAddrEdge(obj, val);
-                            }
-                        }
-                        break;
-                    }
-                    case ExtAPI::EXT_COPY:
-                    {
-                        NodeID vnS = parseNode(args[0], cs, inst);
-                        NodeID vnD = parseNode(args[1], cs, inst);
-                        if (vnS && vnD)
-                            addCopyEdge(vnS, vnD);
-                        break;
-                    }
-                    case ExtAPI::EXT_LOAD:
-                    {
-                        NodeID vnS = parseNode(args[0], cs, inst);
-                        NodeID vnD = parseNode(args[1], cs, inst);
-                        if (vnS && vnD)
-                            addLoadEdge(vnS, vnD);
-                        break;
-                    }
-                    case ExtAPI::EXT_STORE:
-                    {
-                        NodeID vnS = parseNode(args[0], cs, inst);
-                        NodeID vnD = parseNode(args[1], cs, inst);
-                        if (vnS && vnD)
-                            addStoreEdge(vnS, vnD);
-                        break;
-                    }
-                    case ExtAPI::EXT_LOADSTORE:
-                    {
-                        NodeID vnS = parseNode(args[0], cs, inst);
-                        NodeID vnV = parseNode(args[1], cs, inst);
-                        NodeID vnD = parseNode(args[2], cs, inst);
-                        if (vnD && vnV && vnS)
-                        {
-                            addLoadEdge(vnS, vnV);
-                            addStoreEdge(vnV, vnD);
-                        }
-                        break;
-                    }
-                    case ExtAPI::EXT_COPY_N:
-                    {
-                        // void *memset(void *str, int c, size_t n)
-                        // this is for memset(void *str, int c, size_t n)
-                        // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
-                        u32_t arg_posA = getArgPos(args[0]);
-                        u32_t arg_posB = getArgPos(args[1]);
-                        u32_t arg_posC = getArgPos(args[2]);
-                        std::vector<LocationSet> dstFields;
-                        const Type *dtype = getBaseTypeAndFlattenedFields(cs.getArgument(arg_posA), dstFields, cs.getArgument(arg_posC));
-                        u32_t sz = dstFields.size();
-                        // For each field (i), add store edge *(arg0 + i) = arg1
-                        for (u32_t index = 0; index < sz; index++)
-                        {
-                            const Type *dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, dstFields[index].accumulateConstantFieldIdx());
-                            NodeID dField = getGepValVar(cs.getArgument(arg_posA), dstFields[index], dElementType);
-                            addStoreEdge(pag->getValueNode(cs.getArgument(arg_posB)), dField);
-                        }
-                        if (SVFUtil::isa<PointerType>(inst->getType()))
-                            addCopyEdge(getValueNode(cs.getArgument(arg_posA)), getValueNode(inst));
-                        break;
-                    }
-                    case ExtAPI::EXT_COPY_MN:
-                    {
-                        u32_t arg_posA = getArgPos(args[0]);
-                        u32_t arg_posB = getArgPos(args[1]);
-                        if (args.size() >= 3)
-                        {
-                            u32_t arg_posC = getArgPos(args[2]);
-                            addComplexConsForExt(cs.getArgument(arg_posA), cs.getArgument(arg_posB), cs.getArgument(arg_posC));
-                        }
-                        else
-                            addComplexConsForExt(cs.getArgument(arg_posA), cs.getArgument(arg_posB), nullptr);
-                        break;
-                    }
-                    case ExtAPI::EXT_FUNPTR:
-                    {
-                        /// handling external function e.g., void *dlsym(void *handle, const char *funname);
-                        u32_t arg_posA = getArgPos(args[0]);
-                        const Value *src = cs.getArgument(arg_posA);
-                        if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
-                            src = stripConstantCasts(gep->getPointerOperand());
-                        if (const GlobalVariable *glob = SVFUtil::dyn_cast<GlobalVariable>(src))
-                        {
-                            if (const ConstantDataArray *constarray = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer()))
-                            {
-                                if (const SVFFunction *fun = getProgFunction(svfMod, constarray->getAsCString().str()))
+                                operationName = obj -> string;
+                                cJSON *edge = obj->child;
+                                while (edge)
                                 {
-                                    NodeID srcNode = getValueNode(fun->getLLVMFun());
-                                    addCopyEdge(srcNode, getValueNode(inst));
+                                    if (edge->type == cJSON_String)
+                                        arguments.push_back(edge->valuestring);
+                                    else
+                                        assert(false && "The function operation format is illegal!");
+                                    edge = edge->next;
                                 }
+                                operations.push_back(new Operation(operationName, arguments));
+                                operationName = "";
+                                arguments.clear();
+
+                                obj = obj->next;
                             }
                         }
-                        break;
                     }
-                    case ExtAPI::EXT_COMPLEX:
+
+                    for (auto op : operations)
                     {
-                        assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
-                        Value *argA = cs.getArgument(getArgPos(args[0]));
-                        Value *argB = cs.getArgument(getArgPos(args[1]));
+                        // Skip "num", which is not an operation
+                        if (strcmp(op->getOperation().c_str(), "num") == 0)
+                            continue;
 
-                        // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
-                        // Now we calculate the offset from base to vArg3
-                        NodeID vnB = pag->getValueNode(argB);
-                        s32_t offset = getLocationSetFromBaseNode(vnB).accumulateConstantFieldIdx();
+                        ExtAPI::extf_t opName = ExtAPI::getExtAPI()->get_opName(op->getOperation());
+                        std::vector<std::string> args = op->getArgs();
 
-                        // We get all flattened fields of base
-                        vector<LocationSet> fields;
-                        const Type *type = getBaseTypeAndFlattenedFields(argB, fields, nullptr);
-
-                        // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
-                        // Note that arg0 is aligned with "offset".
-                        for (s32_t i = offset + 1; i <= offset + 3; ++i)
+                        switch (opName)
                         {
-                            if ((u32_t)i >= fields.size())
+                            case ExtAPI::EXT_ADDR:
+                            {
+                                if (args.size() == 1)
+                                {
+                                    if (!SVFUtil::isa<PointerType>(inst->getType()))
+                                        break;
+                                    // e.g. void *realloc(void *ptr, size_t size)
+                                    // if ptr is null then we will treat it as a malloc
+                                    // if ptr is not null, then we assume a new data memory will be attached to
+                                    // the tail of old allocated memory block.
+                                    if (SVFUtil::isa<ConstantPointerNull>(cs.getArgument(0)))
+                                    {
+                                        NodeID val = parseNode(args[0], cs, inst);
+                                        NodeID obj = getObjectNode(inst);
+                                        if (val && obj)
+                                        addAddrEdge(obj, val);
+                                    }
+                                }
                                 break;
-                            const Type *elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
-                            NodeID vnD = getGepValVar(argB, fields[i], elementType);
-                            NodeID vnS = getValueNode(argA);
-                            if (vnD && vnS)
-                                addStoreEdge(vnS, vnD);
+                            }
+                            case ExtAPI::EXT_COPY:
+                            {
+                                if(operations.size() == 1)
+                                {
+                                    NodeID vnS = parseNode(args[0], cs, inst);
+                                    NodeID vnD = parseNode(args[1], cs, inst);
+                                    if (vnS && vnD)
+                                        addCopyEdge(vnS, vnD);
+                                }
+                                break;
+                            }
+                            case ExtAPI::EXT_LOAD:
+                            {
+                                if (operations.size() == 1)
+                                {
+                                    NodeID vnS = parseNode(args[0], cs, inst);
+                                    NodeID vnD = parseNode(args[1], cs, inst);
+                                    if (vnS && vnD)
+                                        addLoadEdge(vnS, vnD);
+                                }
+                                else
+                                {
+                                    for (u32_t index = 0; index <fields.size(); index++)
+                                        // GepNodes of src node and DummyNodes
+                                        addLoadEdge(gepNodeSetS[index], tempNodes[index]);
+                                }
+                                break;
+                            }
+                            case ExtAPI::EXT_STORE:
+                            {
+                                if (operations.size() == 1)
+                                {
+                                    NodeID vnS = parseNode(args[0], cs, inst);
+                                    NodeID vnD = parseNode(args[1], cs, inst);
+                                    if (vnS && vnD)
+                                        addStoreEdge(vnS, vnD);
+                                }
+                                else
+                                {
+                                    for (u32_t index = 0; index <fields.size(); index++)
+                                    {
+                                        // e.g. void *memcpy(void *dest, const void *src, size_t n) 
+                                        if (tempNodes.size() != 0)
+                                            // DummyNodes and GepNodes of dst node
+                                            addStoreEdge(tempNodes[index], gepNodeSetD[index]);
+                                        //e.g. void *memset(void *str, int c, size_t n)
+                                        else 
+                                            addStoreEdge(parseNode(args[0], cs, inst), gepNodeSetD[index]);
+                                    }
+                                }   
+                                break;
+                            }
+                            case ExtAPI::EXT_GEP:
+                            {
+                                // "compound"
+                                if(operations.size() > 1)
+                                {
+                                    if (args.size() == 2)
+                                    {
+                                        Value *S = cs.getArgument(getArgPos(args[0]));
+                                        Value *D = cs.getArgument(getArgPos(args[1]));
+                                        const Type *stype;
+                                        const Type *dtype;
+                                        fields = getCommonFields(cs, S, D, operations, stype, dtype);
+
+                                        for (u32_t index = 0; index < fields.size(); index++)
+                                        {
+                                            NodeID baseD = pag->getBaseValVar(getValueNode(D));
+                                            NodeID baseS = pag->getBaseValVar(getValueNode(S));
+                                            const Value* cval = getCurrentValue();
+                                            const BasicBlock* cbb = getCurrentBB();
+                                            setCurrentLocation(curVal, nullptr);
+                                            NodeID gepNodeS;
+                                            const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, fields[index].accumulateConstantFieldIdx());
+                                            const Type* sElementType;
+                                            if (SVFUtil::isa<PointerType>(S->getType()))
+                                            {
+                                                sElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(stype, fields[index].accumulateConstantFieldIdx());
+                                                gepNodeS= pag->addGepValNode(curVal, S, fields[index], NodeIDAllocator::get()->allocateValueId(),sElementType->getPointerTo());
+                                                addGepEdge(baseS, gepNodeS, fields[index], true);
+                                                gepNodeSetS.push_back(gepNodeS);
+                                                tempNodes.push_back(pag->addDummyValNode());
+                                            }
+                                            NodeID gepNodeD= pag->addGepValNode(curVal, D, fields[index], NodeIDAllocator::get()->allocateValueId(),dElementType->getPointerTo());
+                                            addGepEdge(baseD, gepNodeD, fields[index], true);
+                                            setCurrentLocation(cval, cbb);   
+                                            gepNodeSetD.push_back(gepNodeD);     
+                                        }
+                                    }
+                                    // multiple GEP operations
+                                    else
+                                    {
+                                        if (!preOp)
+                                        {
+                                            NodeID vnS = parseNode(args[0], cs, inst);
+                                            NodeID vnD = parseNode(args[1], cs, inst);
+                                            u32_t offset = stoul(args[2]);
+                                            if (vnD && vnS)
+                                            {
+                                                LocationSet ls(offset);
+                                                addNormalGepEdge(vnS, vnD, ls);
+                                                tempNodes.push_back(vnD);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if(strcmp(op->getArgs()[0].c_str(), preOp->getArgs()[1].c_str()) == 0)
+                                            {
+                                                NodeID vnD = parseNode(args[1], cs, inst);
+                                                u32_t offset = stoul(args[2]);
+                                                if (vnD)
+                                                {
+                                                    LocationSet ls(offset);
+                                                    addNormalGepEdge(tempNodes[0], vnD, ls);
+                                                    tempNodes.pop_back();
+                                                    tempNodes.push_back(vnD);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (operations.back() == op)
+                                        preOp = nullptr;
+                                    preOp = op;
+                                }
+                                // General GEP operation
+                                else
+                                {
+                                    NodeID vnS = parseNode(args[0], cs, inst);
+                                    NodeID vnD = parseNode(args[1], cs, inst);
+                                    u32_t offset = stoul(args[2]);
+                                    if (vnD && vnS)
+                                    {
+                                        LocationSet ls(offset);
+                                        addNormalGepEdge(vnS, vnD, ls);
+                                    }
+                                }
+                                break;
+                            }
+                            case ExtAPI::EXT_FUNPTR:
+                            {
+                                /// handling external function e.g., void *dlsym(void *handle, const char *funname);
+                                u32_t arg_posA = getArgPos(args[0]);
+                                const Value *src = cs.getArgument(arg_posA);
+                                if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
+                                    src = stripConstantCasts(gep->getPointerOperand());
+                                if (const GlobalVariable *glob = SVFUtil::dyn_cast<GlobalVariable>(src))
+                                {
+                                    if (const ConstantDataArray *constarray = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer()))
+                                    {
+                                        if (const SVFFunction *fun = getProgFunction(svfMod, constarray->getAsCString().str()))
+                                        {
+                                            NodeID srcNode = getValueNode(fun->getLLVMFun());
+                                            addCopyEdge(srcNode, getValueNode(inst));
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            case ExtAPI::EXT_COMPLEX:
+                            {
+                                assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
+
+                                Value *argA = cs.getArgument(getArgPos(args[0]));
+                                Value *argB = cs.getArgument(getArgPos(args[1]));
+
+                                // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
+                                // Now we calculate the offset from base to vArg3
+                                NodeID vnB = pag->getValueNode(argB);
+                                s32_t offset = getLocationSetFromBaseNode(vnB).accumulateConstantFieldIdx();
+
+                                // We get all flattened fields of base
+                                vector<LocationSet> fields;
+                                const Type *type = getBaseTypeAndFlattenedFields(argB, fields, nullptr);
+
+                                // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
+                                // Note that arg0 is aligned with "offset".
+                                for (s32_t i = offset + 1; i <= offset + 3; ++i)
+                                {
+                                    if ((u32_t)i >= fields.size())
+                                        break;
+                                    const Type *elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
+                                    NodeID vnD = getGepValVar(argB, fields[i], elementType);
+                                    NodeID vnS = getValueNode(argA);
+                                    if (vnD && vnS)
+                                        addStoreEdge(vnS, vnD);
+                                }
+                                break;
+                            }
+                            // default
+                            // illegal function operation of external function
+                            case ExtAPI::EXT_OTHER:
+                            default:
+                            {
+                                assert(false && "new type of SVFStmt for external calls?");
+                            }
                         }
-                        break;
+                        
                     }
-                    case ExtAPI::EXT_GEPGEP:
-                    {
-                        NodeID vnS = parseNode(args[0], cs, inst);
-                        u32_t offset1 = stoul(args[1]);
-                        NodeID vnV = parseNode(args[2], cs, inst);
-                        u32_t offset2 = stoul(args[3]);
-                        NodeID vnD = parseNode(args[4], cs, inst);
-                        if (vnD && vnV && vnS)
-                        {
-                            LocationSet l1(offset1);
-                            LocationSet l2(offset2);
-                            addNormalGepEdge(vnS, vnV, l1);
-                            addNormalGepEdge(vnV, vnD, l2);
-                        }
-                        break;
-                    }
-                    // default
-                    // illegal function operation of external function
-                    case ExtAPI::EXT_OTHER:
-                    default:
-                    {
-                        assert(false && "new type of SVFStmt for external calls?");
-                    }
-                    }
+                    tempNodes.clear();
+                    gepNodeSetD.clear();
+                    gepNodeSetS.clear();
+                    fields.clear();
+                    operations.clear();
                 }
             }
             // // The external function doesn't exist in ExtAPI.json
