@@ -1140,13 +1140,6 @@ NodeID SVFIRBuilder::parseNode(std::string s, CallSite cs, const Instruction *in
             if(i >= s.size())
                 res = getValueNode(V);
         }
-        // 'R' represents a reference
-        else if(s[i] == 'R')
-        {
-            i = i + 1;
-            if(i >= s.size())
-                res = getValueNode(V);
-        }
         // 'L' represents a return value
         else if(s[i] == 'L')
         {
@@ -1250,14 +1243,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                                 if (value->type == cJSON_Object)
                                 {
                                     cJSON *edge = value->child;
-                                    while (edge)
-                                    {
-                                        if (edge->type == cJSON_String)
-                                            arguments.push_back(edge->valuestring);
-                                        else
-                                            assert(false && "The function operation format is illegal!");
-                                        edge = edge->next;
-                                    }
+                                    arguments = ExtAPI::getExtAPI()->get_opArgs(edge);
                                 }
                                 else
                                 {
@@ -1282,16 +1268,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                             {
                                 operationName = obj -> string;
                                 cJSON *edge = obj->child;
-                                while (edge)
-                                {
-                                    if (edge->type == cJSON_String)
-                                        arguments.push_back(edge->valuestring);
-                                    else
-                                        assert(false && "The function operation format is illegal!");
-                                    edge = edge->next;
-                                }
+                                arguments = ExtAPI::getExtAPI()->get_opArgs(edge);
                                 operations.push_back(new Operation(operationName, arguments));
-                                operationName = "";
                                 arguments.clear();
 
                                 obj = obj->next;
@@ -1532,6 +1510,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     gepNodeSetD.clear();
                     gepNodeSetS.clear();
                     fields.clear();
+                    for(u32_t it = 0; it != operations.size(); ++it)
+                        delete operations[it];
                     operations.clear();
                 }
             }

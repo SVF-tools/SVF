@@ -245,7 +245,6 @@ protected:
     virtual NodeID parseNode(std::string s, CallSite cs, const Instruction *inst);
     virtual std::vector<LocationSet> getCommonFields(CallSite cs, Value *S, Value *D, std::vector<Operation *> &operations, const Type* &stype, const Type* &dtype);
     virtual void handleExtCall(CallSite cs, const SVFFunction *F);
-    void addComplexConsForExt(Value *D, Value *S, const Value* sz);
     //@}
 
     /// Set current basic block in order to keep track of control flow information
