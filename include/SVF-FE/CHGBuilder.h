@@ -68,4 +68,5 @@ public:
     void addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f);
 };
 
-}
+} // End namespace SVF
+

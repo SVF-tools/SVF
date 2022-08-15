@@ -54,7 +54,7 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module)
+    virtual bool runOnModule(SVFModule* module) override
     {
         /// start analysis
         analyze(module);
@@ -62,7 +62,13 @@ public:
     }
 
     /// Report file/close bugs
-    void reportBug(ProgSlice* slice);
+    void reportBug(ProgSlice* slice) override;
+
+
+    /// Validate test cases for regression test purpose
+    void testsValidation(ProgSlice* slice);
+    void validateSuccessTests(ProgSlice* slice, const SVFFunction* fun);
+    void validateExpectedFailureTests(ProgSlice* slice, const SVFFunction* fun);
 };
 
 } // End namespace SVF

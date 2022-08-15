@@ -89,8 +89,13 @@ jobs:
       - name: ctest mem_leak
         working-directory: ${{github.workspace}}/Release-build
         run:
-          ctest -R mem_leak -VV      
-        
+          ctest -R mem_leak -VV
+
+      - name: ctest double_free
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R double_free -VV
+
       - name: ctest cfl_tests
         working-directory: ${{github.workspace}}/Release-build
         run: 
