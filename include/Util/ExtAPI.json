@@ -3678,304 +3678,81 @@
     "memset":   {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-			"store": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_n": ["A0", "A1", "A2"]
     },
     "llvm.memset":  {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-			"store": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_n": ["A0", "A1", "A2"]
     },
     "llvm.memset.p0i8.i32": {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-			"store": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_n": ["A0", "A1", "A2"]
     },
     "llvm.memset.p0i8.i64": {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-			"store": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_n": ["A0", "A1", "A2"]
     },
     "__memset_chk": {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-			"store": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_n": ["A0", "A1", "A2"]
     },
     "llvm.memcpy":  {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "llvm.memcpy.p0i8.p0i8.i32":    {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "llvm.memcpy.p0i8.p0i8.i64":    {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "llvm.memmove": {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-       "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "llvm.memmove.p0i8.p0i8.i32":   {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "llvm.memmove.p0i8.p0i8.i64":   {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "memccpy":  {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "memcpy":   {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "memmove":  {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			},
-        	"num": "A2"
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "dlsym":    {
         "type": "EFT_L_A1__FunPtr",
@@ -3988,39 +3765,12 @@
     "bcopy":    {
         "type": "EFT_A1R_A0R",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A0",
-				"dst": "A1"
-			},
-        	"load": {
-				"src": "A0",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A1"
-			},
-        	"num": "A2"
-		}
+        "copy_mn":  ["A1", "A0", "A2"]
     },
     "iconv":    {
         "type": "EFT_A3R_A1R_NS",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A3"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A3"
-			}
-		}
+        "copy_mn":  ["A3", "A1"]
     },
     "strtod":   {
         "type": "EFT_A1R_A0",
@@ -4081,156 +3831,44 @@
     "__strcpy_chk": {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			}
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "__strcat_chk": {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			}
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "stpcpy":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			}
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1"],
+        "copy": ["A0", "L"]
     },
     "strcat":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			}
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1"],
+        "copy": ["A0", "L"]
     },
     "strcpy":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			}
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1"],
+        "copy": ["A0", "L"]
     },
     "strncat":  {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			}
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "strncpy":  {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "compound": {
-			"gep": {
-				"src": "A1",
-				"dst": "A0"
-			},
-        	"load": {
-				"src": "A1",
-				"dst": "Dummy"
-			},
-			"store": {
-				"src": "Dummy",
-				"dst": "A0"
-			}
-		},
-        "copy": {
-			"src": "A0",
-			"dst": "L"
-		}
+        "copy_mn":  ["A0", "A1", "A2"],
+        "copy": ["A0", "L"]
     },
     "getpwnam_r":{
         "type": "EFT_A4R_A1",
