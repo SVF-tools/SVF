@@ -128,7 +128,8 @@ void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const 
 bool LLVMUtil::functionDoesNotRet (const Function * fun)
 {
     const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-    if (SVFUtil::isExtCall(svffun)){
+    if (SVFUtil::isExtCall(svffun))
+    {
         return fun->getReturnType()->isVoidTy();
     }
     std::vector<const BasicBlock*> bbVec;

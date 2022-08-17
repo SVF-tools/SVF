@@ -180,7 +180,7 @@ public:
         return getLLVMFun()->isVarArg();
     }
 
-    inline const std::vector<const BasicBlock*>& getReachableBBs() const 
+    inline const std::vector<const BasicBlock*>& getReachableBBs() const
     {
         return reachableBBs;
     }
@@ -195,7 +195,7 @@ public:
         this->isUncalled = isUncalledFunction;
     }
 
-    inline const void setIsNotRet(const bool doesNotRet) 
+    inline const void setIsNotRet(const bool doesNotRet)
     {
         this->isNotRet = doesNotRet;
     }

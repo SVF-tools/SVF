@@ -356,7 +356,8 @@ const u32_t SymbolTableInfo::getBBSuccessorNum(const BasicBlock *bb)
 const u32_t SymbolTableInfo::getBBSuccessorPos(const BasicBlock *bb, const BasicBlock *succ)
 {
     Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::const_iterator bbSuccessorPosMapIter = symInfo->getModule()->getBBSuccessorPosMap().find(bb);
-    if(bbSuccessorPosMapIter != symInfo->getModule()->getBBSuccessorPosMap().end()){
+    if(bbSuccessorPosMapIter != symInfo->getModule()->getBBSuccessorPosMap().end())
+    {
         const Map <const BasicBlock *, const u32_t> value = bbSuccessorPosMapIter->second;
         Map <const BasicBlock *, const u32_t>::const_iterator valueIter = value.find(succ);
         if(valueIter != value.end())
@@ -370,7 +371,8 @@ const u32_t SymbolTableInfo::getBBSuccessorPos(const BasicBlock *bb, const Basic
 
 const u32_t SymbolTableInfo::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *Pred)
 {
-    if(symInfo->getModule()->getBBPredecessorPosMap().find(bb) != symInfo->getModule()->getBBPredecessorPosMap().end()){
+    if(symInfo->getModule()->getBBPredecessorPosMap().find(bb) != symInfo->getModule()->getBBPredecessorPosMap().end())
+    {
         const Map <const BasicBlock *, const u32_t> value = symInfo->getModule()->getBBPredecessorPosMap().find(bb)->second;
         if(value.find(Pred) != value.end())
         {

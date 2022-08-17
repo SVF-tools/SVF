@@ -211,16 +211,17 @@ void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
 }
 
 
-void SymbolTableBuilder::collectSpecialSym(const Value* val){
+void SymbolTableBuilder::collectSpecialSym(const Value* val)
+{
     if (LLVMUtil::isPtrInUncalledFunction(val))
     {
         symInfo->getModule()->addPtrInUncalledFunction(val);
     }
-    
+
     if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
     {
         const SVFFunction *svfFun = symInfo->getModule()->getSVFFunction(fun);
-        
+
         if (!isExtCall(svfFun))
         {
             for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
@@ -251,24 +252,24 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val){
                 }
             }
         }
-    } 
-    
+    }
+
     if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
     {
         if (LLVMUtil::isReturn(inst))
             symInfo->getModule()->addReturn(inst);
     }
-    
+
     if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
     {
         const Type* type = LLVMUtil::getPtrElementType(ptrType);
         symInfo->getModule()->addptrElementType(ptrType, type);
     }
-    
+
     if (LLVMUtil::isArgOfUncalledFunction(val))
     {
         symInfo->getModule()->addArgsOfUncalledFunction(val);
-   } 
+    }
 }
 
 /*!
@@ -283,7 +284,7 @@ void SymbolTableBuilder::collectSym(const Value *val)
 
     //TODO handle constant expression value here??
     handleCE(val);
-    
+
     // create a value sym
     collectVal(val);
 

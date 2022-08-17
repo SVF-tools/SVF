@@ -218,16 +218,16 @@ public:
         }
     }
 
-    inline const FunctionSetType& getFunctionSet() const 
+    inline const FunctionSetType& getFunctionSet() const
     {
         return FunctionSet;
     }
 
-    inline const Set<const Value*>& getNullPtrSyms() const 
+    inline const Set<const Value*>& getNullPtrSyms() const
     {
         return nullPtrSyms;
     }
-    
+
     inline const Set<const Value*>& getBlackholeSyms() const
     {
         return blackholeSyms;
@@ -238,12 +238,12 @@ public:
         return argsOfUncalledFunction;
     }
 
-    inline const Set<const Instruction*>& getReturns() const 
+    inline const Set<const Instruction*>& getReturns() const
     {
         return returnInsts;
     }
 
-    inline const Set<const Value*>& getPtrsInUncalledFunctions() const 
+    inline const Set<const Value*>& getPtrsInUncalledFunctions() const
     {
         return ptrsInUncalledFunctions;
     }
@@ -258,7 +258,8 @@ public:
         return bbSuccessorPosMap;
     }
 
-    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>& getBBPredecessorPosMap(){
+    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>& getBBPredecessorPosMap()
+    {
         return bbPredecessorPosMap;
     }
 
@@ -275,12 +276,14 @@ public:
     inline void addBBSuccessorPos(const BasicBlock *bb, const BasicBlock* succ,const u32_t pos)
     {
         Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::iterator bbSuccessorPosMapIter = bbSuccessorPosMap.find(bb);
-        if(bbSuccessorPosMapIter != bbSuccessorPosMap.end()){
+        if(bbSuccessorPosMapIter != bbSuccessorPosMap.end())
+        {
             Map<const BasicBlock*, const u32_t> foundValue = bbSuccessorPosMapIter->second;
             foundValue.insert({succ,pos});
-             bbSuccessorPosMap.insert({bb,foundValue});
-        } 
-        else {
+            bbSuccessorPosMap.insert({bb,foundValue});
+        }
+        else
+        {
             Map<const BasicBlock*, const u32_t> valueMap;
             valueMap.insert({succ,pos});
             bbSuccessorPosMap.insert({bb,valueMap});
@@ -290,12 +293,14 @@ public:
     inline void addBBPredecessorPos(const BasicBlock *bb, const BasicBlock* Pred,const u32_t pos)
     {
         Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::iterator bbPredecessorPosMapIter = bbPredecessorPosMap.find(bb);
-        if(bbPredecessorPosMapIter != bbPredecessorPosMap.end()){
+        if(bbPredecessorPosMapIter != bbPredecessorPosMap.end())
+        {
             Map<const BasicBlock*, const u32_t> foundValue = bbPredecessorPosMapIter->second;
             foundValue.insert({Pred,pos});
             bbPredecessorPosMap.insert({bb,foundValue});
-        } 
-        else {
+        }
+        else
+        {
             Map<const BasicBlock*, const u32_t> valueMap;
             valueMap.insert({Pred,pos});
             bbPredecessorPosMap.insert({bb,valueMap});
@@ -307,7 +312,8 @@ public:
         ptrElementTypeMap.insert({ptrType, type});
     }
 
-    inline void addPtrInUncalledFunction (const Value * value){
+    inline void addPtrInUncalledFunction (const Value * value)
+    {
         ptrsInUncalledFunctions.insert(value);
     }
 
@@ -316,7 +322,8 @@ public:
         nullPtrSyms.insert(val);
     }
 
-    inline void addBlackholeSyms(const Value *val){
+    inline void addBlackholeSyms(const Value *val)
+    {
         blackholeSyms.insert(val);
     }
 
@@ -325,7 +332,8 @@ public:
         argsOfUncalledFunction.insert(val);
     }
 
-    inline void addReturn(const Instruction* inst){
+    inline void addReturn(const Instruction* inst)
+    {
         returnInsts.insert(inst);
     }
 
