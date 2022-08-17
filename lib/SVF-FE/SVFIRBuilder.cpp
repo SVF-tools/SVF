@@ -1123,70 +1123,20 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     }
 }
 
-
-/*!
- * Get numeric index of the argument in external function
- */
-u32_t SVFIRBuilder::getArgPos(std::string s)
-{
-    if(s[0] != 'A')
-        assert(false && "the argument of extern function in ExtAPI.json should start with 'A' !");
-    u32_t i = 1;
-    u32_t start = i;
-    while(i < s.size() && isdigit(s[i]))
-        i++;
-    std::string digitStr = s.substr(start, i-start);
-    u32_t argNum = atoi(digitStr.c_str());
-    return argNum;
-}
-
-
 /*!
  * Get NodeId of s
  */
 NodeID SVFIRBuilder::parseNode(std::string s, CallSite cs, const Instruction *inst)
 {
-    Value* V = nullptr;
-    NodeID res = -1;
-    size_t argNumPre = -1;
-    bool flag = true;
-    for (size_t i = 0; i < s.size();)
-    {
-        if(!flag)
-            assert(false && "The operand format of function operation is illegal!");
-        // 'A' represents an argument
-        if (s[i] == 'A')
-        {
-            i = i + 1;
-            size_t start = i;
-            while(i < s.size() && isdigit(s[i]))
-                i++;
-            std::string digitStr = s.substr(start, i-start);
-            argNumPre = atoi(digitStr.c_str());
-            V = cs.getArgument(argNumPre);
-            if(i >= s.size())
-                res = getValueNode(V);
-        }
-        // 'L' represents a return value
-        else if(s[i] == 'L')
-        {
-            res = getValueNode(inst);
-            if(i++ != 0)
-                flag = false;
-        }
-        // 'D' represents a dummy node
-        else if(s[i] == 'D')
-        {
-            res = pag->addDummyValNode();
-            if(i++ != 0)
-                flag = false;
-            break;
-        }
-        else
-            flag = false;
-
-    }
-    return res;
+    int nodeIDType = ExtAPI::getExtAPI()->getNodeIDType(s);
+    if (nodeIDType >=0)
+        return getValueNode(cs.getArgument(nodeIDType));
+    if (nodeIDType == -1)
+        return getValueNode(inst);
+    if (nodeIDType == -2)
+        return pag->addDummyValNode();
+    assert(false && "The operand format of function operation is illegal!");
+    return -1;
 }
 
 /*!
@@ -1232,68 +1182,21 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         if (isExtCall(callee))
         {
             std::string funName = ExtAPI::getExtAPI()->get_name(callee);
-            cJSON *item = ExtAPI::getExtAPI()->get_FunJson(funName);
-            // The external function exists in ExtAPI.json
-            if (item != nullptr)
+            std::vector<std::vector<ExtAPI::Operation *>> allOperations = ExtAPI::getExtAPI()->getAllOperations(funName);
+            if (allOperations.size() == 0)
             {
-                cJSON *obj = item->child;
-                //  Get the first operation of the function
-                obj = obj -> next -> next;
-                // Dummy nodes or other temporary nodes
-                NodeID tempNode;
-                std::vector<Operation *> operations;
-                // Record the previous operation
-                Operation *preOp = nullptr;
-
-                while (obj)
+                std::string str;
+                raw_string_ostream rawstr(str);
+                rawstr << "function " << callee->getName() << " not in the external function summary ExtAPI.json file";
+                writeWrnMsg(rawstr.str());
+            }
+            else
+            {
+                for (auto operations: allOperations)
                 {
-                    std::string operationName;
-                    std::vector<std::string> arguments;
-                    // All operations in "compound" are related to each other. 
-                    // For example, the first parameter of the second operation
-                    // depends on the second parameter of the first operation. 
-                    // Therefore, all operations in "compound" need to be processed uniformly
-                    if (strstr(obj->string, "compound") != NULL)
-                    {
-                        if (obj->type == cJSON_Object)
-                        {
-                            cJSON *value = obj->child; 
-                            while (value)
-                            {
-                                operationName = value -> string;
-                                if (value->type == cJSON_Object)
-                                {
-                                    cJSON *edge = value->child;
-                                    arguments = ExtAPI::getExtAPI()->get_opArgs(edge);
-                                }
-                                else
-                                {
-                                    if (value->type == cJSON_String)
-                                        arguments.push_back(value->valuestring);
-                                    else
-                                        assert(false && "The function operation format is illegal!");                             
-                                }
-                                operations.push_back(new Operation(operationName, arguments));
-                                arguments.clear();
-                                value = value->next;
-                            }
-                        }
-                    }
-                    // General operation(Independent operation, the operation does not need to dependent other operations' arguments)
-                    else         
-                    {
-                        if (obj->type == cJSON_Object || obj->type == cJSON_Array)
-                        {
-                            operationName = obj -> string;
-                            cJSON *edge = obj->child;
-                            arguments = ExtAPI::getExtAPI()->get_opArgs(edge);
-                            operations.push_back(new Operation(operationName, arguments));
-                            arguments.clear();
-                        }
-                    }
-
-                    obj = obj -> next;
-
+                    NodeID tempNode;
+                    // Record the previous operation
+                    ExtAPI::Operation *preOp = nullptr;
                     for (auto op : operations)
                     {
                         ExtAPI::extf_t opName = ExtAPI::getExtAPI()->get_opName(op->getOperation());
@@ -1358,7 +1261,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                                 }
                                 else
                                 {
-                                    if(preOp && strcmp(preOp->getArgs()[1].c_str(), op->getArgs()[0].c_str()))
+                                    if(preOp && preOp->getArgs()[1] == op->getArgs()[0])
                                     {
                                         NodeID vnD = parseNode(args[1], cs, inst);
                                         addStoreEdge(tempNode, vnD);
@@ -1386,7 +1289,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                                     }
                                     else
                                     {
-                                        if(strcmp(op->getArgs()[0].c_str(), preOp->getArgs()[1].c_str()) == 0)
+                                        if(op->getArgs()[0] == preOp->getArgs()[1])
                                         {
                                             NodeID vnD = parseNode(args[1], cs, inst);
                                             u32_t offset = stoul(args[2]);
@@ -1421,9 +1324,9 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                                 // void *memset(void *str, int c, size_t n)
                                 // this is for memset(void *str, int c, size_t n)
                                 // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
-                                u32_t arg_posA = getArgPos(args[0]);
-                                u32_t arg_posB = getArgPos(args[1]);
-                                u32_t arg_posC = getArgPos(args[2]);
+                                u32_t arg_posA = ExtAPI::getExtAPI()->getArgPos(args[0]);
+                                u32_t arg_posB = ExtAPI::getExtAPI()->getArgPos(args[1]);
+                                u32_t arg_posC = ExtAPI::getExtAPI()->getArgPos(args[2]);
                                 std::vector<LocationSet> dstFields;
                                 const Type *dtype = getBaseTypeAndFlattenedFields(cs.getArgument(arg_posA), dstFields, cs.getArgument(arg_posC));
                                 u32_t sz = dstFields.size();
@@ -1440,11 +1343,11 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                             }
                             case ExtAPI::EXT_COPY_MN:
                             {
-                                u32_t arg_posA = getArgPos(args[0]);
-                                u32_t arg_posB = getArgPos(args[1]);
+                                u32_t arg_posA = ExtAPI::getExtAPI()->getArgPos(args[0]);
+                                u32_t arg_posB = ExtAPI::getExtAPI()->getArgPos(args[1]);
                                 if (args.size() >= 3)
                                 {
-                                    u32_t arg_posC = getArgPos(args[2]);
+                                    u32_t arg_posC = ExtAPI::getExtAPI()->getArgPos(args[2]);
                                     addComplexConsForExt(cs.getArgument(arg_posA), cs.getArgument(arg_posB), cs.getArgument(arg_posC));
                                 }
                                 else
@@ -1454,7 +1357,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                             case ExtAPI::EXT_FUNPTR:
                             {
                                 /// handling external function e.g., void *dlsym(void *handle, const char *funname);
-                                u32_t arg_posA = getArgPos(args[0]);
+                                u32_t arg_posA = ExtAPI::getExtAPI()->getArgPos(args[0]);
                                 const Value *src = cs.getArgument(arg_posA);
                                 if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
                                     src = stripConstantCasts(gep->getPointerOperand());
@@ -1475,8 +1378,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                             {
                                 assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
 
-                                Value *argA = cs.getArgument(getArgPos(args[0]));
-                                Value *argB = cs.getArgument(getArgPos(args[1]));
+                                Value *argA = cs.getArgument(ExtAPI::getExtAPI()->getArgPos(args[0]));
+                                Value *argB = cs.getArgument(ExtAPI::getExtAPI()->getArgPos(args[1]));
 
                                 // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                                 // Now we calculate the offset from base to vArg3
@@ -1509,21 +1412,13 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                                 assert(false && "new type of SVFStmt for external calls?");
                             }
                         }
-                        
                     }
                     for(u32_t it = 0; it != operations.size(); ++it)
                         delete operations[it];
                     operations.clear();
                 }
             }
-            // // The external function doesn't exist in ExtAPI.json
-            else
-            {
-                std::string str;
-                raw_string_ostream rawstr(str);
-                rawstr << "function " << callee->getName() << " not in the external function summary ExtAPI.json file";
-                writeWrnMsg(rawstr.str());
-            }
+            allOperations.clear();
         }
 
         /// create inter-procedural SVFIR edges for thread forks

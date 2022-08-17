@@ -34,7 +34,6 @@
 #include "Util/ExtAPI.h"
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/ICFGBuilder.h"
-#include "Util/cJSON.h"
 
 namespace SVF
 {
@@ -241,7 +240,6 @@ protected:
 
     /// Handle external call
     //@{
-    virtual u32_t getArgPos(std::string s);
     virtual NodeID parseNode(std::string s, CallSite cs, const Instruction *inst);
     virtual void handleExtCall(CallSite cs, const SVFFunction *F);
     void addComplexConsForExt(Value *D, Value *S, const Value* sz);

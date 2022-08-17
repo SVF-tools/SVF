@@ -224,6 +224,48 @@ const std::string& ExtAPI::extType_toString(extType type)
     return it->first;
 }
 
+// Get numeric index of the argument in external function
+u32_t ExtAPI::getArgPos(std::string s)
+{
+    if(s[0] != 'A')
+        assert(false && "the argument of extern function in ExtAPI.json should start with 'A' !");
+    u32_t i = 1;
+    u32_t start = i;
+    while(i < s.size() && isdigit(s[i]))
+        i++;
+    std::string digitStr = s.substr(start, i-start);
+    u32_t argNum = atoi(digitStr.c_str());
+    return argNum;
+}
+
+// return value >= 0 is an argument node
+// return value = -1 is an inst node
+// return value = -2 is a Dummy node
+// return value = -2 is an illegal operand format
+int ExtAPI::getNodeIDType(std::string s)
+{
+    size_t argPos = -1;
+    // 'A' represents an argument
+    if (s.size() == 0)
+        return -3;
+    if (s[0] == 'A')
+    {
+        size_t start = 1;
+        size_t end = 1;
+        while(end < s.size() && isdigit(s[end]))
+            end++;
+        std::string digitStr = s.substr(start, end - start);
+        argPos = atoi(digitStr.c_str());
+        return argPos;
+    }
+    if(s[0] == 'L')
+        return -1;
+    if(s[0] == 'D')
+        return -2;
+    
+    return -3;
+}
+
 // Get external function name, e.g "memcpy"
 std::string ExtAPI::get_name(const SVFFunction *F)
 {
@@ -243,6 +285,73 @@ cJSON *ExtAPI::get_FunJson(const std::string &funName)
 {
     assert(root && "JSON not loaded");
     return cJSON_GetObjectItemCaseSensitive(root, funName.c_str());
+}
+
+// Get all operations of an extern function
+std::vector<std::vector<ExtAPI::Operation *>> ExtAPI::getAllOperations(std::string funName)
+{   
+    std::vector<std::vector<ExtAPI::Operation *>> allOperations;
+    cJSON *item = get_FunJson(funName);
+    if (item != nullptr)
+    {
+        cJSON *obj = item->child;
+        //  Get the first operation of the function
+        obj = obj -> next -> next;
+        std::vector<ExtAPI::Operation *> operations;
+        while (obj)
+        {
+            std::string operationName;
+            std::vector<std::string> arguments;
+            Operation operation;
+            // All operations in "compound" are related to each other. 
+            // For example, the first parameter of the second operation
+            // depends on the second parameter of the first operation. 
+            // Therefore, all operations in "compound" need to be processed uniformly
+            if (strstr(obj->string, "compound") != NULL)
+            {
+                if (obj->type == cJSON_Object)
+                {
+                    cJSON *value = obj->child; 
+                    while (value)
+                    {
+                        operationName = value -> string;
+                        if (value->type == cJSON_Object)
+                        {
+                            cJSON *edge = value->child;
+                            arguments = ExtAPI::getExtAPI()->get_opArgs(edge);
+                        }
+                        else
+                        {
+                            if (value->type == cJSON_String)
+                                arguments.push_back(value->valuestring);
+                            else
+                                assert(false && "The function operation format is illegal!");                             
+                        }
+                        operations.push_back(new ExtAPI::Operation(operationName, arguments));
+                        arguments.clear();
+                        value = value->next;
+                    }
+                }
+            }
+            // General operation(Independent operation, the operation does not need to dependent other operations' arguments)
+            else         
+            {
+                if (obj->type == cJSON_Object || obj->type == cJSON_Array)
+                {
+                    operationName = obj -> string;
+                    cJSON *edge = obj->child;
+                    arguments = ExtAPI::getExtAPI()->get_opArgs(edge);
+                    operations.push_back(new ExtAPI::Operation(operationName, arguments));
+                    arguments.clear();
+                }
+            }
+            allOperations.push_back(operations);
+            operations.clear();
+
+            obj = obj -> next;
+        }
+    }
+    return allOperations;
 }
 
 // Get arguments of the operation, e.g. ["A1R", "A0", "A2"]
