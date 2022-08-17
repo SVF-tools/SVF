@@ -27,7 +27,6 @@
  *      Author: yesen
  */
 
-#include "SVF-FE/LLVMUtil.h"
 #include "WPA/Andersen.h"
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
@@ -35,7 +34,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
 
 /*!
  * Clear statistics
@@ -299,7 +297,7 @@ void FlowSensitiveStat::statNullPtr()
                 if (!SVFUtil::isa<DummyValVar>(pagNode) && !SVFUtil::isa<DummyObjVar>(pagNode))
                 {
                     // if a pointer is in dead function, we do not care
-                    if(isPtrInDeadFunction(pagNode->getValue()) == false)
+                    if(SymbolTableInfo::isPtrInUncalledFunction(pagNode->getValue()) == false)
                     {
                         _NumOfNullPtr++;
                         rawstr << "##Null Pointer : (NodeID " << pagNode->getId()

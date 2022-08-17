@@ -29,7 +29,6 @@
 
 #include "Util/Options.h"
 #include "MemoryModel/SVFIR.h"
-#include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/ICFGBuilder.h"
 
 using namespace SVF;
@@ -709,7 +708,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
     {
         if (isValidPointer(node->getId()) && node->hasValue())
         {
-            if (LLVMUtil::ArgInNoCallerFunction(node->getValue()))
+            if (SymbolTableInfo::isArgOfUncalledFunction(node->getValue()))
                 return false;
             return true;
         }
