@@ -65,6 +65,16 @@ private:
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
+    Set<const Value*> argsOfUncalledFunction;
+    Set<const Instruction*> returnInsts;
+    Set<const Value*> nullPtrSyms;
+    Set<const Value*> blackholeSyms;
+    Set<const Value*> ptrsInUncalledFunctions;
+    Map<const BasicBlock*, const u32_t> bbSuccessorNumMap;
+    Map<const PointerType*, const Type*> ptrElementTypeMap;
+    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbSuccessorPosMap;
+    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbPredecessorPosMap;
+
 public:
     /// Constructors
     SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName)
@@ -101,12 +111,11 @@ public:
     void buildSymbolTableInfo();
 
     ///@{
-    inline void addFunctionSet(Function* fun)
+    inline void addFunctionSet(SVFFunction* svfFunc)
     {
-        SVFFunction* svfFunc = new SVFFunction(fun);
         FunctionSet.push_back(svfFunc);
-        LLVMFunctionSet.push_back(fun);
-        LLVMFunc2SVFFunc[fun] = svfFunc;
+        LLVMFunctionSet.push_back(svfFunc->getLLVMFun());
+        LLVMFunc2SVFFunc[svfFunc->getLLVMFun()] = svfFunc;
     }
     inline void addGlobalSet(GlobalVariable* glob)
     {
@@ -207,6 +216,117 @@ public:
         {
             return pagReadFromTxt;
         }
+    }
+
+    inline const FunctionSetType& getFunctionSet() const 
+    {
+        return FunctionSet;
+    }
+
+    inline const Set<const Value*>& getNullPtrSyms() const 
+    {
+        return nullPtrSyms;
+    }
+    
+    inline const Set<const Value*>& getBlackholeSyms() const
+    {
+        return blackholeSyms;
+    }
+
+    inline const Set<const Value*>& getArgsOfUncalledFunction() const
+    {
+        return argsOfUncalledFunction;
+    }
+
+    inline const Set<const Instruction*>& getReturns() const 
+    {
+        return returnInsts;
+    }
+
+    inline const Set<const Value*>& getPtrsInUncalledFunctions() const 
+    {
+        return ptrsInUncalledFunctions;
+    }
+
+    inline const Map<const BasicBlock*, const u32_t>& getBBSuccessorNumMap()
+    {
+        return bbSuccessorNumMap;
+    }
+
+    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>& getBBSuccessorPosMap()
+    {
+        return bbSuccessorPosMap;
+    }
+
+    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>& getBBPredecessorPosMap(){
+        return bbPredecessorPosMap;
+    }
+
+    inline const Map<const PointerType*, const Type*>& getPtrElementTypeMap()
+    {
+        return ptrElementTypeMap;
+    }
+
+    inline void addBBSuccessorNum(const BasicBlock *bb, const u32_t num)
+    {
+        bbSuccessorNumMap.insert({bb,num});
+    }
+
+    inline void addBBSuccessorPos(const BasicBlock *bb, const BasicBlock* succ,const u32_t pos)
+    {
+        Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::iterator bbSuccessorPosMapIter = bbSuccessorPosMap.find(bb);
+        if(bbSuccessorPosMapIter != bbSuccessorPosMap.end()){
+            Map<const BasicBlock*, const u32_t> foundValue = bbSuccessorPosMapIter->second;
+            foundValue.insert({succ,pos});
+             bbSuccessorPosMap.insert({bb,foundValue});
+        } 
+        else {
+            Map<const BasicBlock*, const u32_t> valueMap;
+            valueMap.insert({succ,pos});
+            bbSuccessorPosMap.insert({bb,valueMap});
+        }
+    }
+
+    inline void addBBPredecessorPos(const BasicBlock *bb, const BasicBlock* Pred,const u32_t pos)
+    {
+        Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::iterator bbPredecessorPosMapIter = bbPredecessorPosMap.find(bb);
+        if(bbPredecessorPosMapIter != bbPredecessorPosMap.end()){
+            Map<const BasicBlock*, const u32_t> foundValue = bbPredecessorPosMapIter->second;
+            foundValue.insert({Pred,pos});
+            bbPredecessorPosMap.insert({bb,foundValue});
+        } 
+        else {
+            Map<const BasicBlock*, const u32_t> valueMap;
+            valueMap.insert({Pred,pos});
+            bbPredecessorPosMap.insert({bb,valueMap});
+        }
+    }
+
+    inline void addptrElementType(const PointerType* ptrType, const Type* type)
+    {
+        ptrElementTypeMap.insert({ptrType, type});
+    }
+
+    inline void addPtrInUncalledFunction (const Value * value){
+        ptrsInUncalledFunctions.insert(value);
+    }
+
+    inline void addNullPtrSyms(const Value *val)
+    {
+        nullPtrSyms.insert(val);
+    }
+
+    inline void addBlackholeSyms(const Value *val){
+        blackholeSyms.insert(val);
+    }
+
+    inline void addArgsOfUncalledFunction(const Value *val)
+    {
+        argsOfUncalledFunction.insert(val);
+    }
+
+    inline void addReturn(const Instruction* inst){
+        returnInsts.insert(inst);
     }
 
 };

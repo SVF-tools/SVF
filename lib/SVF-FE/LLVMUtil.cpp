@@ -91,17 +91,22 @@ bool LLVMUtil::isConstantObjSym(const Value *val)
 /*!
  * Return reachable bbs from function entry
  */
-void LLVMUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::vector<const BasicBlock*> &reachableBBs)
+void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const BasicBlock*> &reachableBBs)
 {
+    assert(!SVFUtil::isExtCall(svfFun) && "The calling function cannot be an external function.");
+    //initial DominatorTree
+    DominatorTree dt;
+    dt.recalculate(*svfFun->getLLVMFun());
+
     Set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;
-    bbVec.push_back(&fun->getEntryBlock());
+    bbVec.push_back(&svfFun->getLLVMFun()->getEntryBlock());
     while(!bbVec.empty())
     {
         const BasicBlock* bb = bbVec.back();
         bbVec.pop_back();
         reachableBBs.push_back(bb);
-        if(DomTreeNode *dtNode = dt->getNode(const_cast<BasicBlock*>(bb)))
+        if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb)))
         {
             for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end();
                     DI != DE; ++DI)
@@ -122,7 +127,10 @@ void LLVMUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std:
  */
 bool LLVMUtil::functionDoesNotRet (const Function * fun)
 {
-
+    const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+    if (SVFUtil::isExtCall(svffun)){
+        return fun->getReturnType()->isVoidTy();
+    }
     std::vector<const BasicBlock*> bbVec;
     Set<const BasicBlock*> visited;
     bbVec.push_back(&fun->getEntryBlock());
@@ -157,7 +165,7 @@ bool LLVMUtil::functionDoesNotRet (const Function * fun)
 /*!
  * Return true if this is a function without any possible caller
  */
-bool LLVMUtil::isDeadFunction (const Function * fun)
+bool LLVMUtil::isUncalledFunction (const Function * fun)
 {
     if(fun->hasAddressTaken())
         return false;
@@ -190,16 +198,16 @@ bool LLVMUtil::isDeadFunction (const Function * fun)
 /*!
  * Return true if this is a value in a dead function (function without any caller)
  */
-bool LLVMUtil::isPtrInDeadFunction (const Value * value)
+bool LLVMUtil::isPtrInUncalledFunction (const Value * value)
 {
     if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
     {
-        if(isDeadFunction(inst->getParent()->getParent()))
+        if(isUncalledFunction(inst->getParent()->getParent()))
             return true;
     }
     else if(const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
     {
-        if(isDeadFunction(arg->getParent()))
+        if(isUncalledFunction(arg->getParent()))
             return true;
     }
     return false;

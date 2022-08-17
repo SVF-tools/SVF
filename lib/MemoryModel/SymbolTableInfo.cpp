@@ -33,12 +33,10 @@
 #include "MemoryModel/SymbolTableInfo.h"
 #include "Util/Options.h"
 #include "Util/SVFModule.h"
-#include "SVF-FE/LLVMUtil.h"
 
 using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
 
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
@@ -323,7 +321,74 @@ void SymbolTableInfo::destroy()
  */
 bool SymbolTableInfo::isNullPtrSym(const Value *val)
 {
-    return symInfo->nullPtrSyms.find(val)!=symInfo->nullPtrSyms.end();
+    const Set<const Value*>& nullPtrSyms = symInfo->getModule()->getNullPtrSyms();
+    return nullPtrSyms.find(val) != nullPtrSyms.end();
+}
+
+bool SymbolTableInfo::isArgOfUncalledFunction(const Value *val)
+{
+    const Set<const Value*>& argOfUncalledFunctionSet = symInfo->getModule()->getArgsOfUncalledFunction();
+    return argOfUncalledFunctionSet.find(val) != argOfUncalledFunctionSet.end();
+}
+
+bool SymbolTableInfo::isReturn(const Instruction *inst)
+{
+    const Set<const Instruction*>& returnInstsSet = symInfo->getModule()->getReturns();
+    return returnInstsSet.find(inst) != returnInstsSet.end();
+}
+
+bool SymbolTableInfo::isPtrInUncalledFunction (const Value * value)
+{
+    const Set<const Value*>& ptrInUncalledFunctionSet = symInfo->getModule()->getPtrsInUncalledFunctions();
+    return ptrInUncalledFunctionSet.find(value) != ptrInUncalledFunctionSet.end();
+}
+
+const u32_t SymbolTableInfo::getBBSuccessorNum(const BasicBlock *bb)
+{
+    Map<const BasicBlock*, const u32_t>::const_iterator bbSuccessorNumMapIter = symInfo->getModule()->getBBSuccessorNumMap().find(bb);
+    if (bbSuccessorNumMapIter != symInfo->getModule()->getBBSuccessorNumMap().end())
+    {
+        return bbSuccessorNumMapIter->second;
+    }
+    return 0;
+}
+
+const u32_t SymbolTableInfo::getBBSuccessorPos(const BasicBlock *bb, const BasicBlock *succ)
+{
+    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::const_iterator bbSuccessorPosMapIter = symInfo->getModule()->getBBSuccessorPosMap().find(bb);
+    if(bbSuccessorPosMapIter != symInfo->getModule()->getBBSuccessorPosMap().end()){
+        const Map <const BasicBlock *, const u32_t> value = bbSuccessorPosMapIter->second;
+        Map <const BasicBlock *, const u32_t>::const_iterator valueIter = value.find(succ);
+        if(valueIter != value.end())
+        {
+            u32_t pos = valueIter->second;
+            return pos;
+        }
+    }
+    return 0;
+}
+
+const u32_t SymbolTableInfo::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *Pred)
+{
+    if(symInfo->getModule()->getBBPredecessorPosMap().find(bb) != symInfo->getModule()->getBBPredecessorPosMap().end()){
+        const Map <const BasicBlock *, const u32_t> value = symInfo->getModule()->getBBPredecessorPosMap().find(bb)->second;
+        if(value.find(Pred) != value.end())
+        {
+            u32_t pos = value.find(Pred)->second;
+            return pos;
+        }
+    }
+    return 0;
+}
+
+const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
+{
+    Map<const PointerType*, const Type*>::const_iterator ptrElementTypeMapIter = symInfo->getModule()->getPtrElementTypeMap().find(pty);
+    if (ptrElementTypeMapIter != symInfo->getModule()->getPtrElementTypeMap().end())
+    {
+        return ptrElementTypeMapIter->second;
+    }
+    return nullptr;
 }
 
 /*!
@@ -331,7 +396,8 @@ bool SymbolTableInfo::isNullPtrSym(const Value *val)
  */
 bool SymbolTableInfo::isBlackholeSym(const Value *val)
 {
-    return symInfo->blackholeSyms.find(val)!=symInfo->blackholeSyms.end();
+    const Set<const Value*>  blackholeSyms = symInfo->getModule()->getBlackholeSyms();
+    return blackholeSyms.find(val)!= blackholeSyms.end();
 }
 
 
@@ -461,7 +527,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
 
     else if (const PointerType* pt= SVFUtil::dyn_cast<PointerType> (type))
     {
-        u32_t eSize = getNumOfFlattenElements(getPtrElementType(pt));
+        u32_t eSize = getNumOfFlattenElements(SymbolTableInfo::getPtrElementType(pt));
         outs() << "  {Type: ";
         outs() << type2String(pt);
         outs() << "}\n";

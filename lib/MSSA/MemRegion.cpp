@@ -31,11 +31,9 @@
 #include "Util/SVFModule.h"
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
-#include "SVF-FE/LLVMUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
 
 u32_t MemRegion::totalMRNum = 0;
 u32_t MRVer::totalVERNum = 0;
@@ -180,7 +178,7 @@ void MRGenerator::collectModRefForLoadStore()
         const SVFFunction& fun = **fi;
 
         /// if this function does not have any caller, then we do not care its MSSA
-        if (Options::IgnoreDeadFun && isDeadFunction(fun.getLLVMFun()))
+        if (Options::IgnoreDeadFun && fun.isUncalledFunction())
             continue;
 
         for (Function::const_iterator iter = fun.getLLVMFun()->begin(), eiter = fun.getLLVMFun()->end();
