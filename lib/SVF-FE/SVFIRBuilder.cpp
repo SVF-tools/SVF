@@ -1194,7 +1194,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             {
                 for (auto operations: allOperations)
                 {
-                    NodeID tempNode;
+                    NodeID tempNode = -1;
                     // Record the previous operation
                     ExtAPI::Operation *preOp = nullptr;
                     for (auto op : operations)
