@@ -344,7 +344,7 @@ protected:
     //@}
     /// Collapse a field object into its base for field insensitive anlaysis
     //@{
-    void collapsePWCNode(NodeID nodeId);
+    virtual void collapsePWCNode(NodeID nodeId);
     void collapseFields();
     bool collapseNodePts(NodeID nodeId);
     bool collapseField(NodeID nodeId);
@@ -440,9 +440,6 @@ public:
     virtual void postProcessNode(NodeID nodeId);
     virtual bool handleLoad(NodeID id, const ConstraintEdge* load);
     virtual bool handleStore(NodeID id, const ConstraintEdge* store);
-
-protected:
-    virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
 };
 
 } // End namespace SVF
