@@ -27,8 +27,8 @@
  *      Author: Pei Xu
  */
 
-#ifndef INCLUDE_CFL_CFGNormalizer_H_
-#define INCLUDE_CFL_CFGNormalizer_H_
+#ifndef INCLUDE_CFL_CFGNORMALIZER_H_
+#define INCLUDE_CFL_CFGNORMALIZER_H_
 
 #include "CFLGrammar.h"
 
@@ -79,4 +79,4 @@ private:
 
 } // End namespace SVF
 
-#endif /* INCLUDE_CFL_CFGNormalizer_H_*/
+#endif /* INCLUDE_CFL_CFGNORMALIZER_H_*/
