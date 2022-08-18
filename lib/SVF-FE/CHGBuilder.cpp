@@ -43,7 +43,7 @@
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/SVFModule.h"
-#include "MemoryModel/PTAStat.h"
+#include "Util/PTAStat.h"
 
 using namespace SVF;
 using namespace SVFUtil;

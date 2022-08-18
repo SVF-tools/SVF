@@ -11,7 +11,7 @@
 #include "MTA/LockAnalysis.h"
 #include "MTA/MTAResultValidator.h"
 #include "Util/SVFUtil.h"
-#include "MemoryModel/PTAStat.h"
+#include "Util/PTAStat.h"
 #include "SVF-FE/BasicTypes.h"
 
 using namespace SVF;

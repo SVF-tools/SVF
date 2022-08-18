@@ -39,7 +39,7 @@
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
-#include "MemoryModel/PTAStat.h"
+#include "Util/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
 

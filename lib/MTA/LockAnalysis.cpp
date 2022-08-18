@@ -10,7 +10,7 @@
 #include "MTA/MTA.h"
 #include "MTA/MTAResultValidator.h"
 #include "Util/SVFUtil.h"
-#include "MemoryModel/PTAStat.h"
+#include "Util/PTAStat.h"
 #include "MTA/LockResultValidator.h"
 
 

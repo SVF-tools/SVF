@@ -29,20 +29,20 @@
 
 #include <iomanip>
 #include "Graphs/PTACallGraph.h"
-#include "MemoryModel/PTAStat.h"
+#include "Util/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "MemoryModel/SVFIR.h"
 #include "Util/Options.h"
 
 using namespace SVF;
 
-const char* PTAStat:: TotalAnalysisTime = "TotalTime";	///< SVFIR value nodes
+const char* PTAStat:: TotalAnalysisTime = "TotalTime";	///< SVFIR value nodes ？？
 const char* PTAStat:: SCCDetectionTime = "SCCDetectTime"; ///< Total SCC detection time
 const char* PTAStat:: SCCMergeTime = "SCCMergeTime"; ///< Total SCC merge time
 
 const char* PTAStat:: ProcessLoadStoreTime = "LoadStoreTime";	///< process load and store time
 const char* PTAStat:: ProcessCopyGepTime = "CopyGepTime";	///< process copy and gep time
-const char* PTAStat:: UpdateCallGraphTime = "UpdateCGTime";	///< process copy and gep time
+const char* PTAStat:: UpdateCallGraphTime = "UpdateCGTime";	///< process copy and gep time ？？
 
 const char* PTAStat:: TotalNumOfPointers = "TotalPointers";	///< SVFIR value nodes
 const char* PTAStat:: TotalNumOfObjects = "TotalObjects";	///< Total SVFIR object node
@@ -113,6 +113,7 @@ PTAStat::PTAStat(PointerAnalysis* p) : startTime(0), endTime(0), pta(p)
 
 double PTAStat::getClk(bool mark)
 {
+    std::cout << Options::MarkedClocksOnly;
     if (Options::MarkedClocksOnly && !mark) return 0.0;
 
     if (Options::ClockType == ClockType::Wall)

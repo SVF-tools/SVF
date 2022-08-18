@@ -31,7 +31,7 @@
 #ifndef FLOWSENSITIVESTAT_H_
 #define FLOWSENSITIVESTAT_H_
 
-#include "MemoryModel/PTAStat.h"
+#include "Util/PTAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/VersionedFlowSensitive.h"
 

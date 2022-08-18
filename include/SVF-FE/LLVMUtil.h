@@ -1,4 +1,4 @@
-//===- SVFUtil.h -- Analysis helper functions----------------------------//
+//===- LLVMUtil.h -- Analysis helper functions----------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * SVFUtil.h
+ * LLVMUtil.h
  *
  *  Created on: Apr 11, 2013
  *      Author: Yulei Sui
