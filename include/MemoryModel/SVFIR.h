@@ -459,8 +459,10 @@ private:
     /// Get/set method for function/callsite arguments and returns
     //@{
     /// Add function arguments
-    inline void addFunArgs(const SVFFunction* fun, const SVFVar* arg)
+    inline void addFunArgs(const SVFFunction* fun, SVFVar* arg)
     {
+        // TODO
+        arg->setFormalPara();
         FunEntryICFGNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
         funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
@@ -479,8 +481,10 @@ private:
         callSiteArgsListMap[callBlockNode].push_back(arg);
     }
     /// Add callsite returns
-    inline void addCallSiteRets(RetICFGNode* retBlockNode,const SVFVar* arg)
+    inline void addCallSiteRets(RetICFGNode* retBlockNode, SVFVar* arg)
     {
+        // TODO
+        arg->setActualRet();
         retBlockNode->addActualRet(arg);
         callSiteRetMap[retBlockNode]= arg;
     }

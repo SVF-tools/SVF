@@ -77,6 +77,9 @@ protected:
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
     bool isPtr;	/// whether it is a pointer (top-level or address-taken)
+    // TODO
+    bool actualRetFlag;
+    bool formalParaFlag;
 
 public:
     /// Constructor
@@ -86,6 +89,23 @@ public:
     {
     }
 
+    // TODO
+    void setActualRet()
+    {
+        actualRetFlag = true;
+    }
+    void setFormalPara()
+    {
+        formalParaFlag = true;
+    }
+    bool isActualRet()
+    {
+        return actualRetFlag;
+    }
+    bool isFormalPara()
+    {
+        return formalParaFlag;
+    }
     ///  Get/has methods of the components
     //@{
     inline const Value* getValue() const
