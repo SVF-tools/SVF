@@ -39,7 +39,7 @@ using namespace SVFUtil;
  * SVFVar constructor
  */
 SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
-        GenericPAGNodeTy(i,k), value(val), actualRetFlag(false), formalParaFlag(false)
+    GenericPAGNodeTy(i,k), value(val)
 {
     assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
     switch (k)

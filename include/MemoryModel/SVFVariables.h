@@ -77,8 +77,6 @@ protected:
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
     bool isPtr;	/// whether it is a pointer (top-level or address-taken)
-    bool actualRetFlag;
-    bool formalParaFlag;
 
 public:
     /// Constructor
@@ -199,26 +197,6 @@ public:
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
         assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
-    }
-    //@}
-
-    /// ActualRet and formalPara checker
-    //@{
-    void setActualRet()
-    {
-        actualRetFlag = true;
-    }
-    void setFormalPara()
-    {
-        formalParaFlag = true;
-    }
-    bool isActualRet()
-    {
-        return actualRetFlag;
-    }
-    bool isFormalPara()
-    {
-        return formalParaFlag;
     }
     //@}
 
