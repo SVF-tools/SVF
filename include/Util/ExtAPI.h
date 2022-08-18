@@ -228,10 +228,10 @@ public:
     {
     public:
 
-        public:
-        Operation(){};
+    public:
+        Operation() {};
 
-        Operation(std::string op, std::vector<std::string> args) : operation(op), args(args){};
+        Operation(std::string op, std::vector<std::string> args) : operation(op), args(args) {};
 
         std::string getOperation()
         {

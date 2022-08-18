@@ -262,7 +262,7 @@ int ExtAPI::getNodeIDType(std::string s)
         return -1;
     if(s[0] == 'D')
         return -2;
-    
+
     return -3;
 }
 
@@ -289,7 +289,7 @@ cJSON *ExtAPI::get_FunJson(const std::string &funName)
 
 // Get all operations of an extern function
 std::vector<std::vector<ExtAPI::Operation *>> ExtAPI::getAllOperations(std::string funName)
-{   
+{
     std::vector<std::vector<ExtAPI::Operation *>> allOperations;
     cJSON *item = get_FunJson(funName);
     if (item != nullptr)
@@ -303,15 +303,15 @@ std::vector<std::vector<ExtAPI::Operation *>> ExtAPI::getAllOperations(std::stri
             std::string operationName;
             std::vector<std::string> arguments;
             Operation operation;
-            // All operations in "compound" are related to each other. 
+            // All operations in "compound" are related to each other.
             // For example, the first parameter of the second operation
-            // depends on the second parameter of the first operation. 
+            // depends on the second parameter of the first operation.
             // Therefore, all operations in "compound" need to be processed uniformly
             if (strstr(obj->string, "compound") != NULL)
             {
                 if (obj->type == cJSON_Object)
                 {
-                    cJSON *value = obj->child; 
+                    cJSON *value = obj->child;
                     while (value)
                     {
                         operationName = value -> string;
@@ -325,7 +325,7 @@ std::vector<std::vector<ExtAPI::Operation *>> ExtAPI::getAllOperations(std::stri
                             if (value->type == cJSON_String)
                                 arguments.push_back(value->valuestring);
                             else
-                                assert(false && "The function operation format is illegal!");                             
+                                assert(false && "The function operation format is illegal!");
                         }
                         operations.push_back(new ExtAPI::Operation(operationName, arguments));
                         arguments.clear();
@@ -334,7 +334,7 @@ std::vector<std::vector<ExtAPI::Operation *>> ExtAPI::getAllOperations(std::stri
                 }
             }
             // General operation(Independent operation, the operation does not need to dependent other operations' arguments)
-            else         
+            else
             {
                 if (obj->type == cJSON_Object || obj->type == cJSON_Array)
                 {
