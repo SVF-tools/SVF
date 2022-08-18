@@ -99,7 +99,6 @@ Here we use regular expressions "(AN)(R|RN)^*" to represent parameters, for exam
 }
 */
 
-
 class ExtAPI
 {
 public:
@@ -109,8 +108,7 @@ public:
         EXT_COPY,      // Handle copy edge
         EXT_LOAD,      // Handle load edge
         EXT_STORE,     // Handle store edge
-        EXT_GEPGEP,    // Handle Gep and Gep edges, and add a dummy node
-        EXT_LOADSTORE, // Handle load and store edges, and add a dummy node
+        EXT_GEP,      // Handle gep edge
         EXT_COPY_N,    // Copy the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
         EXT_COPY_MN,   // Copies n characters from memory area src to memory area dest.
         EXT_FUNPTR,    // Handle function void *dlsym(void *handle, const char *symbol)
@@ -171,8 +169,7 @@ private:
         {"copy", EXT_COPY},
         {"load", EXT_LOAD},
         {"store", EXT_STORE},
-        {"gep_gep", EXT_GEPGEP},
-        {"load_store", EXT_LOADSTORE},
+        {"gep", EXT_GEP},
         {"copy_n", EXT_COPY_N},
         {"copy_mn", EXT_COPY_MN},
         {"complex", EXT_COMPLEX},
@@ -226,12 +223,56 @@ private:
     ExtAPI() = default;
 
 public:
+
+    class Operation
+    {
+    public:
+
+        public:
+        Operation(){};
+
+        Operation(std::string op, std::vector<std::string> args) : operation(op), args(args){};
+
+        std::string getOperation()
+        {
+            return operation;
+        }
+
+        std::vector<std::string> getArgs()
+        {
+            return args;
+        }
+
+        void setOperation(std::string op)
+        {
+            operation = op;
+        }
+
+        void setArgs(std::vector<std::string> ags)
+        {
+            args = ags;
+        }
+
+    private:
+        std::string operation;
+        std::vector<std::string> args;
+    };
+
     static ExtAPI *getExtAPI(const std::string & = "");
 
     static void destory();
 
     // Add an entry with the specified fields to the ExtAPI, which will be reflected immediately by further ExtAPI queries
     void add_entry(const char* funName, extType type, bool overwrite_app_function);
+
+    // Get numeric index of the argument in external function
+    u32_t getArgPos(std::string s);
+
+    // return value >= 0 is an argument node
+    // return value = -1 is an inst node
+    // return value = -2 is a Dummy node
+    // return value = -2 is an illegal operand format
+    int getNodeIDType(std::string s);
 
     // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
     extf_t get_opName(const std::string& s);
@@ -246,6 +287,9 @@ public:
 
     // Get specifications of external functions in ExtAPI.json file
     cJSON *get_FunJson(const std::string &funName);
+
+    // Get all operations of an extern function
+    std::vector<std::vector<ExtAPI::Operation *>> getAllOperations(std::string funName);
 
     // Get property of the operation, e.g. "EFT_A1R_A0R"
     extType get_type(const SVF::SVFFunction *callee);
