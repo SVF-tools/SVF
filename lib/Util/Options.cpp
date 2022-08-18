@@ -787,25 +787,31 @@ const llvm::cl::opt<std::string> Options::GrammarFilename(
 const llvm::cl::opt<std::string> Options::CFLGraph(
     "cflgraph",
     llvm::cl::init(""),
-    llvm::cl::desc("<dot file as the CFLGraph input>")
+    llvm::cl::desc("<Dot file as the CFLGraph input>")
 );
 
 const llvm::cl::opt<bool> Options::PrintCFL(
     "print-cfl",
     llvm::cl::init(false),
-    llvm::cl::desc("print ir, grammar and cflgraph for debug.")
+    llvm::cl::desc("Print ir, grammar and cflgraph for debug.")
 );
 
 const llvm::cl::opt<bool> Options::FlexSymMap(
     "flex-symmap",
     llvm::cl::init(false),
-    llvm::cl::desc("extend exist sym map while read graph from dot if sym not in map.")
+    llvm::cl::desc("Extend exist sym map while read graph from dot if sym not in map.")
+);
+
+const llvm::cl::opt<bool> Options::PEGTransfer(
+    "peg-transfer",
+    llvm::cl::init(false),
+    llvm::cl::desc("When explicit to true, cfl graph builder will transfer PAG load and store edges to copy and addr.")
 );
 
 const llvm::cl::opt<bool> Options::LoopAnalysis(
     "loop-analysis",
     llvm::cl::init(true),
-    llvm::cl::desc("analyze every func and get loop info and loop bounds.")
+    llvm::cl::desc("Analyze every func and get loop info and loop bounds.")
 );
 
 const llvm::cl::opt<unsigned> Options::LoopBound(

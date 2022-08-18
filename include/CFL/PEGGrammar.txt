@@ -1,0 +1,16 @@
+Start:  
+   V
+Terminal:
+   Addr Copy  Gep Vgep 
+Productions:
+   F -> epsilon;
+   M -> Addr V Addrbar;
+   V -> Fbar V F;
+   V -> Gepbar_i V Gep_i;
+   V -> M;
+   V -> epsilon;
+   F -> F Copy;
+   F -> F Copy M;
+   Fbar -> epsilon;
+   Fbar -> Copybar Fbar;
+   Fbar -> M Copybar Fbar;
