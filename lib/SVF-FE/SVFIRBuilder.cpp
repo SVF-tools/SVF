@@ -492,6 +492,8 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     }
     else if (SVFUtil::isa<ConstantArray>(C) || SVFUtil::isa<ConstantStruct>(C))
     {
+        if(cppUtil::isValVtbl(gvar) && !Options::VtableInSVFIR)
+            return;
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
             u32_t off = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(C->getType(), i);
