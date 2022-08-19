@@ -472,8 +472,10 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
                 continue;
             }
 
-            setObjFieldInsensitive(o);
-            tmpDstPts.set(getFIObjVar(o));
+//            setObjFieldInsensitive(o);
+//            tmpDstPts.set(getFIObjVar(o));
+            NodeID baseId = getBaseObjVar(o);
+            tmpDstPts.set(baseId);
         }
     }
     else

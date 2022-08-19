@@ -407,14 +407,15 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
                 continue;
             }
 
-            if (!isFieldInsensitive(o))
-            {
-                setObjFieldInsensitive(o);
-                consCG->addNodeToBeCollapsed(consCG->getBaseObjVar(o));
-            }
+//            if (!isFieldInsensitive(o))
+//            {
+//                setObjFieldInsensitive(o);
+//                consCG->addNodeToBeCollapsed(consCG->getBaseObjVar(o));
+//            }
 
             // Add the field-insensitive node into pts.
-            NodeID baseId = consCG->getFIObjVar(o);
+//            NodeID baseId = consCG->getFIObjVar(o);
+            NodeID baseId = getBaseObjVar(o);
             tmpDstPts.set(baseId);
         }
     }
