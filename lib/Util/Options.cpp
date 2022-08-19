@@ -727,6 +727,13 @@ const llvm::cl::opt<bool> Options::MergePWC(
     llvm::cl::desc("Enable PWC in graph solving")
 );
 
+//SVFIRBuilder.cpp
+const llvm::cl::opt<bool> Options::VtableInSVFIR(
+    "vt-in-ir",
+    llvm::cl::init(false),
+    llvm::cl::desc("Handle vtable in ConstantArray/ConstantStruct in SVFIRBuilder (already handled in CHA?)")
+);
+
 
 //WPAPass.cpp
 const llvm::cl::opt<bool> Options::AnderSVFG(
