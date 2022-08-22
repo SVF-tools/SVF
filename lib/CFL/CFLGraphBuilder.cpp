@@ -222,4 +222,139 @@ CFLGraph* AliasCFLGraphBuilder::buildBigraph(ConstraintGraph *graph, Kind startK
     return cflGraph;
 }
 
+CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar, SVFIR* pag)
+{
+    CFLGraph *cflGraph = new CFLGraph(startKind);
+    externMap = true;
+    for(auto pairV : grammar->getTerminals())
+    {
+        if(label2KindMap.find(pairV.first) == label2KindMap.end())
+        {
+            label2KindMap.insert(pairV);
+        }
+        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+        {
+            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
+    }
+    for(auto pairV : grammar->getNonterminals())
+    {
+        if(label2KindMap.find(pairV.first) == label2KindMap.end())
+        {
+            label2KindMap.insert(pairV);
+        }
+        if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+        {
+            kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+        }
+    }
+    for(auto it = graph->begin(); it!= graph->end(); it++)
+    {
+        CFLNode* node = new CFLNode((*it).first);
+        cflGraph->addCFLNode((*it).first, node);
+    }
+    for(auto it = graph->begin(); it!= graph->end(); it++)
+    {
+        ConstraintNode* node = (*it).second;
+        for(ConstraintEdge* edge : node->getOutEdges())
+        {
+            /// Process Store
+            if (edge->getEdgeKind() == ConstraintEdge::Store)
+            {
+                if (pag->isNullPtr(edge->getSrcID()))
+                    continue;
+                /// Check Dst of Store Dereference Node
+                ConstraintNode* Dst = edge->getDstNode();
+                ConstraintNode* DerefNode = nullptr;
+                CFLNode* CFLDerefNode = nullptr;
+                for (ConstraintEdge* DstInEdge : Dst->getInEdges())
+                {
+                    if (DstInEdge->getEdgeKind() == ConstraintEdge::Addr)
+                    {
+                        DerefNode = DstInEdge->getSrcNode();
+                        CFLDerefNode = cflGraph->getGNode(DstInEdge->getSrcID());
+                        break;
+                    }
+                }
+                if (DerefNode == nullptr)
+                {
+
+                    NodeID refId = pag->addDummyValNode();
+                    CFLDerefNode = new CFLNode(refId);
+                    cflGraph->addCFLNode(refId, CFLDerefNode);
+                    /// Add Addr Edge
+                    cflGraph->addCFLEdge(CFLDerefNode, cflGraph->getGNode(edge->getDstID()), ConstraintEdge::Addr);
+                    std::string key = kind2LabelMap[ConstraintEdge::Addr];
+                    key.append("bar");
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), CFLDerefNode, label2KindMap[key]);
+                }
+                /// Add Copy Edge
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(CFLDerefNode->getId()), ConstraintEdge::Copy);
+                std::string key = kind2LabelMap[ConstraintEdge::Copy];
+                key.append("bar");
+                cflGraph->addCFLEdge(cflGraph->getGNode(CFLDerefNode->getId()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
+            }
+            /// Process Load
+            else if ( edge->getEdgeKind() == ConstraintEdge::Load)
+            {
+                /// Check Src of Load Dereference Node
+                ConstraintNode* Src = edge->getSrcNode();
+                ConstraintNode* DerefNode = nullptr;
+                CFLNode* CFLDerefNode = nullptr;
+                for (ConstraintEdge* SrcInEdge : Src->getInEdges())
+                {
+                    if (SrcInEdge->getEdgeKind() == ConstraintEdge::Addr)
+                    {
+                        DerefNode = SrcInEdge->getSrcNode();
+                        CFLDerefNode = cflGraph->getGNode(SrcInEdge->getSrcID());
+                    }
+                }
+                if (DerefNode == nullptr)
+                {
+                    NodeID refId = pag->addDummyValNode();
+                    CFLDerefNode = new CFLNode(refId);
+                    cflGraph->addCFLNode(refId, CFLDerefNode);
+                    /// Add Addr Edge
+                    cflGraph->addCFLEdge(CFLDerefNode, cflGraph->getGNode(edge->getSrcID()), ConstraintEdge::Addr);
+                    std::string key = kind2LabelMap[ConstraintEdge::Addr];
+                    key.append("bar");
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), CFLDerefNode, label2KindMap[key]);
+                }
+                /// Add Copy Edge
+                cflGraph->addCFLEdge(cflGraph->getGNode(CFLDerefNode->getId()), cflGraph->getGNode(edge->getDstID()),  ConstraintEdge::Copy);
+                std::string key = kind2LabelMap[ConstraintEdge::Copy];
+                key.append("bar");
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(CFLDerefNode->getId()),  label2KindMap[key]);
+            }
+            else
+            {
+                CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
+                // Need to get the offset from the Const Edge
+                // The offset present edge is only from Normal Gep CG at moment
+                if(NormalGepCGEdge::classof(edge))
+                {
+                    NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
+                    CFLGrammar::Attribute attr =  nGepEdge->getConstantFieldIdx();
+                    addAttribute(edgeLabel, attr);
+                    edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                    std::string key = kind2LabelMap[edge->getEdgeKind()];
+                    key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
+                    addAttribute(label2KindMap[key], attr);
+                }
+                else
+                {
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                    std::string key = kind2LabelMap[edge->getEdgeKind()];
+                    key.append("bar");
+                    cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
+                }
+            }
+        }
+    }
+    return cflGraph;
+}
+
+
 } // end of SVF namespace

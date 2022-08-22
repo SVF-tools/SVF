@@ -29,7 +29,7 @@
 #ifndef INCLUDE_UTIL_ICFGSTAT_H_
 #define INCLUDE_UTIL_ICFGSTAT_H_
 
-#include "MemoryModel/PTAStat.h"
+#include "Util/PTAStat.h"
 #include "Graphs/ICFG.h"
 #include <iomanip>
 
