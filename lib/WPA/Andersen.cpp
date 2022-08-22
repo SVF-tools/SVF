@@ -431,11 +431,8 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
                 continue;
             }
 
-            if (!matchType(edge->getSrcID(), o, normalGepEdge)) continue;
-
             NodeID fieldSrcPtdNode = consCG->getGepObjVar(o, normalGepEdge->getLocationSet());
             tmpDstPts.set(fieldSrcPtdNode);
-            addTypeForGepObjNode(fieldSrcPtdNode, normalGepEdge);
         }
     }
     else

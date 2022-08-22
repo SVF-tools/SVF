@@ -386,17 +386,6 @@ protected:
         return "AndersenWPA";
     }
 
-    /// match types for Gep Edges
-    virtual bool matchType(NodeID, NodeID, const NormalGepCGEdge*)
-    {
-        return true;
-    }
-    /// add type for newly created GepObjNode
-    virtual void addTypeForGepObjNode(NodeID, const NormalGepCGEdge*)
-    {
-        return;
-    }
-
     /// Runs a Steensgaard analysis and performs clustering based on those
     /// results set the global best mapping.
     virtual void cluster(void) const;
