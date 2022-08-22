@@ -1203,6 +1203,6 @@ void dump(const SparseBitVector<ElementSize> &LHS, std::ostream &out)
     out << "]\n";
 }
 
-}
+} // End namespace SVF
 
 #endif // SPARSEBITVECTOR_H

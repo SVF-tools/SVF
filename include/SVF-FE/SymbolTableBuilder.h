@@ -58,6 +58,8 @@ public:
     //@{
     void collectNullPtrBlackholeSyms(const Value *val);
 
+    void collectSpecialSym(const Value* val);
+
     void collectSym(const Value *val);
 
     void collectVal(const Value *val);
@@ -92,6 +94,6 @@ public:
     u32_t getObjSize(const Type* type);
 };
 
-}
+} // End namespace SVF
 
 #endif /* SymbolTableBuilder_H_ */

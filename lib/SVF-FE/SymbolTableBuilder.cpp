@@ -205,9 +205,71 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 void SymbolTableBuilder::collectNullPtrBlackholeSyms(const Value *val)
 {
     if (LLVMUtil::isNullPtrSym(val))
-        symInfo->nullPtrSyms.insert(val);
+        symInfo->getModule()->addNullPtrSyms(val);
     if (LLVMUtil::isBlackholeSym(val))
-        symInfo->blackholeSyms.insert(val);
+        symInfo->getModule()->addBlackholeSyms(val);
+}
+
+
+void SymbolTableBuilder::collectSpecialSym(const Value* val)
+{
+    if (LLVMUtil::isPtrInUncalledFunction(val))
+    {
+        symInfo->getModule()->addPtrInUncalledFunction(val);
+    }
+
+    if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
+    {
+        const SVFFunction *svfFun = symInfo->getModule()->getSVFFunction(fun);
+
+        if (!isExtCall(svfFun))
+        {
+            for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
+            {
+                const BasicBlock *bb = &*bit;
+                const u32_t num = LLVMUtil::getBBSuccessorNum(bb);
+                symInfo->getModule()->addBBSuccessorNum(bb,num);
+                if (num >1)
+                {
+                    for (succ_const_iterator succIt = succ_begin(bb); succIt != succ_end(bb); succIt++)
+                    {
+                        const BasicBlock* succ = *succIt;
+                        const u32_t successorPos = LLVMUtil::getBBSuccessorPos(bb,succ);
+                        if (successorPos != 0)
+                        {
+                            symInfo->getModule()->addBBSuccessorPos(bb,succ,successorPos);
+                        }
+                    }
+                }
+                for (succ_const_iterator succIt = succ_begin(bb); succIt != succ_end(bb); succIt++)
+                {
+                    const BasicBlock* succ = *succIt;
+                    const u32_t predecessorPos = LLVMUtil::getBBPredecessorPos(bb,succ);
+                    if (predecessorPos != 0)
+                    {
+                        symInfo->getModule()->addBBPredecessorPos(bb,succ,predecessorPos);
+                    }
+                }
+            }
+        }
+    }
+
+    if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
+    {
+        if (LLVMUtil::isReturn(inst))
+            symInfo->getModule()->addReturn(inst);
+    }
+
+    if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
+    {
+        const Type* type = LLVMUtil::getPtrElementType(ptrType);
+        symInfo->getModule()->addptrElementType(ptrType, type);
+    }
+
+    if (LLVMUtil::isArgOfUncalledFunction(val))
+    {
+        symInfo->getModule()->addArgsOfUncalledFunction(val);
+    }
 }
 
 /*!
@@ -225,6 +287,8 @@ void SymbolTableBuilder::collectSym(const Value *val)
 
     // create a value sym
     collectVal(val);
+
+    collectSpecialSym(val);
 
     // create an object If it is a heap, stack, global, function.
     if (isObject(val))

@@ -302,7 +302,7 @@ public:
     /// compute OR, used for branch condition
     static Z3Expr OR(const Z3Expr &lhs, const Z3Expr &rhs);
 };
-}
+} // End namespace SVF
 
 /// Specialise hash for AbsCxtDPItem.
 template<>
@@ -315,3 +315,4 @@ struct std::hash<SVF::Z3Expr>
 };
 
 #endif //Z3_EXAMPLE_Z3EXPR_H
+

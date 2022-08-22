@@ -124,7 +124,7 @@ void SVFG::writeToFile(const string& filename)
                 if(LOADMU* mu = SVFUtil::dyn_cast<LOADMU>(*it))
                 {
                     NodeID def = getDef(mu->getMRVer());
-                    f << "srcSVFGNodeID: " << nodeId << " => " << "dstSVFGNodeID: " << def << " >= LoadNode | MVER: {"<< *mu->getMRVer() << "}" << "\n";
+                    f << "srcSVFGNodeID: " << nodeId << " => " << "dstSVFGNodeID: " << def << " >= LoadNode | MVER: {" << *mu->getMRVer() << "}" << "\n";
                 }
             }
         }
@@ -136,7 +136,7 @@ void SVFG::writeToFile(const string& filename)
                 if(STORECHI* chi = SVFUtil::dyn_cast<STORECHI>(*it))
                 {
                     NodeID def = getDef(chi->getOpVer());
-                    f << "srcSVFGNodeID: " << nodeId << " => " << "dstSVFGNodeID: " << def << " >= StoreNode | MVER: {"<< *chi->getOpVer() << "}" << "\n";
+                    f << "srcSVFGNodeID: " << nodeId << " => " << "dstSVFGNodeID: " << def << " >= StoreNode | MVER: {" << *chi->getOpVer() << "}" << "\n";
                 }
             }
         }
@@ -189,7 +189,7 @@ void SVFG::writeToFile(const string& filename)
             {
                 const MRVer* op = it->second;
                 NodeID def = getDef(op);
-                f << "srcSVFGNodeID: " << nodeId << " => " << "dstSVFGNodeID: " << def << " >= PHISVFGNode | MVER: {"<< *op << "}" << "\n";
+                f << "srcSVFGNodeID: " << nodeId << " => " << "dstSVFGNodeID: " << def << " >= PHISVFGNode | MVER: {" << *op << "}" << "\n";
             }
         }
     }

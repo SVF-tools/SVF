@@ -50,25 +50,56 @@ jobs:
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
       # run ctest
-      - name: ctest points-to
+      # run ctest
+      - name: ctest wpa
         working-directory: ${{github.workspace}}/Release-build
         run: 
-          ctest -R points-to -VV
-      
-      - name: ctest differential analysis
+          ctest -R wpa_tests -VV
+ 
+      - name: ctest dvf and mta
         working-directory: ${{github.workspace}}/Release-build
         run: 
-          ctest -R diff_tests -VV
+          ctest -R dvf_tests -VV
+
+      - name: ctest andersen differential analysis
+        working-directory: ${{github.workspace}}/Release-build
+        run: 
+          ctest -R diff_tests-ander -VV
+
+      - name: ctest flow-sensitive differential analysis
+        working-directory: ${{github.workspace}}/Release-build
+        run: 
+          ctest -R diff_tests-fs -VV
+
+      - name: ctest Andersen file-write-read 
+        working-directory: ${{github.workspace}}/Release-build
+        run: 
+          ctest -R diff_tests-wr-ander -VV
+
+      - name: ctest SVFG file-write-read
+        working-directory: ${{github.workspace}}/Release-build
+        run: 
+          ctest -R diff_tests-wr-svfg
+
+      - name: ctest SVFG file-write-read using cruxbc
+        working-directory: ${{github.workspace}}/Release-build
+        run: 
+          ctest -R diff_tests-wr-svfg-cruxbc
 
       - name: ctest mem_leak
         working-directory: ${{github.workspace}}/Release-build
         run:
-          ctest -R mem_leak -VV      
-        
-      - name: ctest cfl_test
+          ctest -R mem_leak -VV
+
+      - name: ctest double_free
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R double_free -VV
+
+      - name: ctest cfl_tests
         working-directory: ${{github.workspace}}/Release-build
         run: 
-          ctest -R cfl_test -VV
+          ctest -R cfl_tests -VV
           
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
@@ -78,6 +109,8 @@ jobs:
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/z3.obj/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/llvm-13.0.0.obj/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/include/FastCluster/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/lib/FastCluster/*' --output-file coverage.info
       
       - name: upload-coverage
         if: runner.os == 'Linux'

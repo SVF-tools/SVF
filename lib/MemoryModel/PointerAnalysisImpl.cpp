@@ -25,8 +25,8 @@ using namespace std;
 BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_check) :
     PointerAnalysis(p, type, alias_check), ptCache()
 {
-    if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
-            || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
+    if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA
+            || type == TypeCPP_WPA || type == FlowS_DDA
             || type == AndersenSCD_WPA || type == AndersenSFR_WPA || type == CFLFICI_WPA )
     {
         // Only maintain reverse points-to when the analysis is field-sensitive, as objects turning
@@ -73,7 +73,7 @@ void BVDataPTAImpl::finalize()
 {
     normalizePointsTo();
     PointerAnalysis::finalize();
-    if (Options::ptDataBacking == PTBackingType::Persistent && Options::PStat) ptCache.printStats("bv-finalize");
+    if (Options::ptDataBacking == PTBackingType::Persistent && print_stat) ptCache.printStats("bv-finalize");
 }
 
 /*!

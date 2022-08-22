@@ -559,7 +559,7 @@ public:
     }
 
 };
-}
+} // End namespace SVF
 
 /// Specialise hash for CxtDPItem.
 template <>

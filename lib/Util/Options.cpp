@@ -213,7 +213,7 @@ llvm::cl::opt<bool> Options::HandBlackHole(
 
 const llvm::cl::opt<bool> Options::FirstFieldEqBase(
     "ff-eq-base",
-    llvm::cl::init(true),
+    llvm::cl::init(false),
     llvm::cl::desc("Treat base objects as their first fields")
 );
 
@@ -727,6 +727,13 @@ const llvm::cl::opt<bool> Options::MergePWC(
     llvm::cl::desc("Enable PWC in graph solving")
 );
 
+//SVFIRBuilder.cpp
+const llvm::cl::opt<bool> Options::VtableInSVFIR(
+    "vt-in-ir",
+    llvm::cl::init(false),
+    llvm::cl::desc("Handle vtable in ConstantArray/ConstantStruct in SVFIRBuilder (already handled in CHA?)")
+);
+
 
 //WPAPass.cpp
 const llvm::cl::opt<bool> Options::AnderSVFG(
@@ -751,15 +758,11 @@ llvm::cl::bits<PointerAnalysis::PTATY> Options::PASelected(
     llvm::cl::desc("Select pointer analysis"),
     llvm::cl::values(
         clEnumValN(PointerAnalysis::Andersen_WPA, "nander", "Standard inclusion-based analysis"),
-        clEnumValN(PointerAnalysis::AndersenLCD_WPA, "lander", "Lazy cycle detection inclusion-based analysis"),
-        clEnumValN(PointerAnalysis::AndersenHCD_WPA, "hander", "Hybrid cycle detection inclusion-based analysis"),
-        clEnumValN(PointerAnalysis::AndersenHLCD_WPA, "hlander", "Hybrid lazy cycle detection inclusion-based analysis"),
         clEnumValN(PointerAnalysis::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"),
         clEnumValN(PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation includion-based analysis"),
         clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
         clEnumValN(PointerAnalysis::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"),
         // Disabled till further work is done.
-        // clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
         clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
         clEnumValN(PointerAnalysis::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"),
         clEnumValN(PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, SVFIR and CHA")

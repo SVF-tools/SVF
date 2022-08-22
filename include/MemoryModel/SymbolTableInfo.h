@@ -88,8 +88,6 @@ private:
     IDToMemMapTy		objMap;		///< map a memory sym id to its obj
 
     CallSiteSet callSiteSet;
-    Set<const Value*> nullPtrSyms;
-    Set<const Value*> blackholeSyms;
 
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
     static SymbolTableInfo* symInfo;
@@ -165,6 +163,13 @@ public:
     // @{
     static bool isNullPtrSym(const Value *val);
     static bool isBlackholeSym(const Value *val);
+    static bool isArgOfUncalledFunction(const Value *val);
+    static bool isReturn(const Instruction *inst);
+    static bool isPtrInUncalledFunction (const Value * value);
+    static const u32_t getBBSuccessorNum(const BasicBlock *bb);
+    static const Type* getPtrElementType(const PointerType* pty);
+    static const u32_t getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ);
+    static const u32_t getBBPredecessorPos(const BasicBlock *BB, const BasicBlock *Pred);
 
     static inline bool isBlkPtr(NodeID id)
     {

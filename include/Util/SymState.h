@@ -101,7 +101,7 @@ private:
     ExeState exeState;
     AbstractState absState;
 };
-}
+} // End namespace SVF
 
 template<>
 struct std::hash<SVF::SymState>
