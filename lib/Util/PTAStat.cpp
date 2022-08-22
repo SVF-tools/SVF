@@ -113,7 +113,6 @@ PTAStat::PTAStat(PointerAnalysis* p) : startTime(0), endTime(0), pta(p)
 
 double PTAStat::getClk(bool mark)
 {
-    std::cout << Options::MarkedClocksOnly;
     if (Options::MarkedClocksOnly && !mark) return 0.0;
 
     if (Options::ClockType == ClockType::Wall)
