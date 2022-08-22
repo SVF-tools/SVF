@@ -253,7 +253,6 @@ public:
     static const llvm::cl::opt<bool> PrintCFL;
     static const llvm::cl::opt<bool> FlexSymMap;
     static const llvm::cl::opt<bool>  PEGTransfer;
-    static const llvm::cl::opt<bool> NullDummyNode;
 
     // Loop Analysis
     static const llvm::cl::opt<bool> LoopAnalysis;

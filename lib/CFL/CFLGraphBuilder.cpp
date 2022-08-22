@@ -261,7 +261,7 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
             /// Process Store
             if (edge->getEdgeKind() == ConstraintEdge::Store)
             {           
-                if (pag->isNullPtr(edge->getSrcID()) && (Options::NullDummyNode == false))
+                if (pag->isNullPtr(edge->getSrcID()))
                     continue;
                 /// Check Dst of Store Dereference Node
                 ConstraintNode* Dst = edge->getDstNode();
