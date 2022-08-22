@@ -808,6 +808,12 @@ const llvm::cl::opt<bool> Options::PEGTransfer(
     llvm::cl::desc("When explicit to true, cfl graph builder will transfer PAG load and store edges to copy and addr.")
 );
 
+const llvm::cl::opt<bool> Options::NullDummyNode(
+    "null-dummy",
+    llvm::cl::init(true),
+    llvm::cl::desc("When explicit to false, ir graph builder will skip null poiner assignment instead of generate new DummyValVarNode.")
+);
+
 const llvm::cl::opt<bool> Options::LoopAnalysis(
     "loop-analysis",
     llvm::cl::init(true),

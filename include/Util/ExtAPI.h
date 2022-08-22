@@ -63,14 +63,14 @@ overwrite_app_function = 1: Use specifications in ExtAPI.json to overwrite the u
 Function type represents the properties of the function.
 For example,
 "EFT_ALLOC" represents if this external function allocates a new object and assigns it to one of its arguments,
-For the selection of function type and a more detailed explanation, please refer to the definition of enum *extf_t* in ExtAPI.h.
+For the selection of function type and a more detailed explanation, please refer to the definition of enum *extType* in ExtAPI.h.
 
 *** [4] Function operations
 Function operations indicate the relationships between input and output,
 mainly between function parameters or between parameters and return values after the execution.
 For example,
 "copy": ["A2", "L"] indicates that after this external function is executed, the value of the 2nd parameter is copied into the return value.
-For the selection of function type and a more detailed explanation, please refer to the definition of enum *extType* in ExtAPI.h.
+For the selection of function type and a more detailed explanation, please refer to the definition of enum *extf_t* in ExtAPI.h.
 
 For operands of function operation, e.g., "A2", "L", there are the following options:
 "A": represents a parameter;
