@@ -260,7 +260,7 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
         {
             /// Process Store
             if (edge->getEdgeKind() == ConstraintEdge::Store)
-            {           
+            {
                 if (pag->isNullPtr(edge->getSrcID()) && (Options::NullDummyNode == false))
                     continue;
                 /// Check Dst of Store Dereference Node
@@ -326,7 +326,8 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
                 key.append("bar");
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(CFLDerefNode->getId()),  label2KindMap[key]);
             }
-            else {
+            else
+            {
                 CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
                 // Need to get the offset from the Const Edge
                 // The offset present edge is only from Normal Gep CG at moment

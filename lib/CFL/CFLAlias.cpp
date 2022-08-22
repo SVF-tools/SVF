@@ -209,11 +209,12 @@ void CFLAlias::analyze()
         if (Options::PEGTransfer)
         {
             graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
-        } 
-        else {
+        }
+        else
+        {
             graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
         }
-       
+
         cflChecker.check(grammarBase, &cflGraphBuilder, graph);
         grammar = normalizer.normalize(grammarBase);
         cflChecker.check(grammar, &cflGraphBuilder, graph);

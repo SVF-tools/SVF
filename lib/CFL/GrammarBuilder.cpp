@@ -66,7 +66,7 @@ const inline std::string GrammarBuilder::parseProductionsString() const
     {
         lines = matches.str(3);
     }
-     std::string sString;
+    std::string sString;
     size_t pos = 0;
     while ((pos = symbolString.find(" ")) != std::string::npos)
     {
