@@ -132,7 +132,7 @@ void AndersenSCD::PWCDetect()
     tmpSccCandidates.clear();
 
     // set scc edge type as direct edge
-    bool pwcFlag = Options::CollapsePWC;
+    bool pwcFlag = Options::DetectPWC;
     setDetectPWC(true);
 
     getSCCDetector()->find(sccCandidates);

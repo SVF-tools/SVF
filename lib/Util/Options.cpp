@@ -721,7 +721,7 @@ const llvm::cl::opt<bool> Options::PtsDiff(
     llvm::cl::desc("Disable diff pts propagation")
 );
 
-llvm::cl::opt<bool> Options::CollapsePWC(
+llvm::cl::opt<bool> Options::DetectPWC(
     "merge-pwc",
     llvm::cl::init(true),
     llvm::cl::desc("Enable PWC in graph solving")

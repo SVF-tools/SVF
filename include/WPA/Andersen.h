@@ -35,6 +35,7 @@
 #include "WPA/WPASolver.h"
 #include "MemoryModel/SVFIR.h"
 #include "Graphs/ConsG.h"
+#include "Util/Options.h"
 
 namespace SVF
 {
@@ -225,7 +226,7 @@ public:
 
     void setDetectPWC(bool flag)
     {
-        ConstraintNode::isGepSCCEdge = flag;
+        Options::DetectPWC = flag;
     }
 
     bool mergePWC() const
