@@ -27,8 +27,8 @@
  *      Author: Yulei Sui
  */
 
-#ifndef ANDERSENPASS_H_
-#define ANDERSENPASS_H_
+#ifndef INCLUDE_WPA_ANDERSEN_H_
+#define INCLUDE_WPA_ANDERSEN_H_
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAStat.h"
@@ -433,4 +433,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* ANDERSENPASS_H_ */
+#endif /* INCLUDE_WPA_ANDERSEN_H_ */

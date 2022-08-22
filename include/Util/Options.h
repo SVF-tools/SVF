@@ -5,7 +5,7 @@
 
 #include <sstream>
 #include "FastCluster/fastcluster.h"
-#include "MemoryModel/PTAStat.h"
+#include "Util/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/NodeIDAllocator.h"
 #include "MSSA/MemSSA.h"
@@ -253,6 +253,8 @@ public:
     static const llvm::cl::opt<std::string> CFLGraph;
     static const llvm::cl::opt<bool> PrintCFL;
     static const llvm::cl::opt<bool> FlexSymMap;
+    static const llvm::cl::opt<bool>  PEGTransfer;
+    static const llvm::cl::opt<bool> NullDummyNode;
 
     // Loop Analysis
     static const llvm::cl::opt<bool> LoopAnalysis;
