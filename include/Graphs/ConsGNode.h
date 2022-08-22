@@ -67,8 +67,6 @@ private:
     ConstraintEdge::ConstraintEdgeSetTy addressOutEdges; ///< all outgoing address edge of this node
 
 public:
-    static bool isGepSCCEdge;
-
     /// For stride-based field representation
     NodeBS strides;
     NodeBS baseIds;
@@ -154,69 +152,14 @@ public:
 
     ///  Iterators
     //@{
-    inline iterator directOutEdgeBegin()
-    {
-        if (isGepSCCEdge)
-            return directOutEdges.begin();
-        else
-            return copyOutEdges.begin();
-    }
-
-    inline iterator directOutEdgeEnd()
-    {
-        if (isGepSCCEdge)
-            return directOutEdges.begin();
-        else
-            return copyOutEdges.end();
-    }
-
-    inline iterator directInEdgeBegin()
-    {
-        if (isGepSCCEdge)
-            return directInEdges.begin();
-        else
-            return copyInEdges.begin();
-    }
-
-    inline iterator directInEdgeEnd()
-    {
-        if (isGepSCCEdge)
-            return directInEdges.end();
-        else
-            return copyInEdges.end();
-    }
-
-    inline const_iterator directOutEdgeBegin() const
-    {
-        if (isGepSCCEdge)
-            return directOutEdges.begin();
-        else
-            return copyOutEdges.begin();
-    }
-
-    inline const_iterator directOutEdgeEnd() const
-    {
-        if (isGepSCCEdge)
-            return directOutEdges.end();
-        else
-            return copyOutEdges.end();
-    }
-
-    inline const_iterator directInEdgeBegin() const
-    {
-        if (isGepSCCEdge)
-            return directInEdges.begin();
-        else
-            return copyInEdges.begin();
-    }
-
-    inline const_iterator directInEdgeEnd() const
-    {
-        if (isGepSCCEdge)
-            return directInEdges.end();
-        else
-            return copyInEdges.end();
-    }
+    iterator directOutEdgeBegin();
+    iterator directOutEdgeEnd();
+    iterator directInEdgeBegin();
+    iterator directInEdgeEnd();
+    const_iterator directOutEdgeBegin() const;
+    const_iterator directOutEdgeEnd() const;
+    const_iterator directInEdgeBegin() const;
+    const_iterator directInEdgeEnd() const;
 
     ConstraintEdge::ConstraintEdgeSetTy& incomingAddrEdges()
     {
