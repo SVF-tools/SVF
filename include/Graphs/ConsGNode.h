@@ -45,11 +45,6 @@ public:
     typedef ConstraintEdge::ConstraintEdgeSetTy::const_iterator const_iterator;
     bool _isPWCNode;
 
-    enum SCCEdgeFlag
-    {
-        Copy, Direct
-    };
-
 private:
     ConstraintEdge::ConstraintEdgeSetTy loadInEdges; ///< all incoming load edge of this node
     ConstraintEdge::ConstraintEdgeSetTy loadOutEdges; ///< all outgoing load edge of this node
@@ -72,19 +67,13 @@ private:
     ConstraintEdge::ConstraintEdgeSetTy addressOutEdges; ///< all outgoing address edge of this node
 
 public:
+    static bool isGepSCCEdge;
 
-    static SCCEdgeFlag sccEdgeFlag;
-
+    /// For stride-based field representation
     NodeBS strides;
-    bool newExpand;
     NodeBS baseIds;
 
-    static void setSCCEdgeFlag(SCCEdgeFlag f)
-    {
-        sccEdgeFlag = f;
-    }
-
-    ConstraintNode(NodeID i) : GenericConsNodeTy(i, 0), _isPWCNode(false), newExpand(false)
+    ConstraintNode(NodeID i) : GenericConsNodeTy(i, 0), _isPWCNode(false)
     {
 
     }
@@ -167,66 +156,66 @@ public:
     //@{
     inline iterator directOutEdgeBegin()
     {
-        if (sccEdgeFlag == Copy)
-            return copyOutEdges.begin();
-        else
+        if (isGepSCCEdge)
             return directOutEdges.begin();
+        else
+            return copyOutEdges.begin();
     }
 
     inline iterator directOutEdgeEnd()
     {
-        if (sccEdgeFlag == Copy)
-            return copyOutEdges.end();
+        if (isGepSCCEdge)
+            return directOutEdges.begin();
         else
-            return directOutEdges.end();
+            return copyOutEdges.end();
     }
 
     inline iterator directInEdgeBegin()
     {
-        if (sccEdgeFlag == Copy)
-            return copyInEdges.begin();
-        else
+        if (isGepSCCEdge)
             return directInEdges.begin();
+        else
+            return copyInEdges.begin();
     }
 
     inline iterator directInEdgeEnd()
     {
-        if (sccEdgeFlag == Copy)
-            return copyInEdges.end();
-        else
+        if (isGepSCCEdge)
             return directInEdges.end();
+        else
+            return copyInEdges.end();
     }
 
     inline const_iterator directOutEdgeBegin() const
     {
-        if (sccEdgeFlag == Copy)
-            return copyOutEdges.begin();
-        else
+        if (isGepSCCEdge)
             return directOutEdges.begin();
+        else
+            return copyOutEdges.begin();
     }
 
     inline const_iterator directOutEdgeEnd() const
     {
-        if (sccEdgeFlag == Copy)
-            return copyOutEdges.end();
-        else
+        if (isGepSCCEdge)
             return directOutEdges.end();
+        else
+            return copyOutEdges.end();
     }
 
     inline const_iterator directInEdgeBegin() const
     {
-        if (sccEdgeFlag == Copy)
-            return copyInEdges.begin();
-        else
+        if (isGepSCCEdge)
             return directInEdges.begin();
+        else
+            return copyInEdges.begin();
     }
 
     inline const_iterator directInEdgeEnd() const
     {
-        if (sccEdgeFlag == Copy)
-            return copyInEdges.end();
-        else
+        if (isGepSCCEdge)
             return directInEdges.end();
+        else
+            return copyInEdges.end();
     }
 
     ConstraintEdge::ConstraintEdgeSetTy& incomingAddrEdges()

@@ -34,7 +34,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-ConstraintNode::SCCEdgeFlag ConstraintNode::sccEdgeFlag = ConstraintNode::Direct;
+bool ConstraintNode::isGepSCCEdge = true;
 
 /*!
  * Start building constraint graph

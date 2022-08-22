@@ -223,13 +223,9 @@ public:
 
     void dumpTopLevelPtsTo();
 
-    void setPWCOpt(bool flag)
+    void setDetectPWC(bool flag)
     {
-        pwcOpt = flag;
-        if (pwcOpt)
-            setSCCEdgeFlag(ConstraintNode::Direct);
-        else
-            setSCCEdgeFlag(ConstraintNode::Copy);
+        ConstraintNode::isGepSCCEdge = flag;
     }
 
     bool mergePWC() const
@@ -292,11 +288,6 @@ protected:
     }
 
     virtual void initWorklist() {}
-
-    virtual void setSCCEdgeFlag(ConstraintNode::SCCEdgeFlag f)
-    {
-        ConstraintNode::sccEdgeFlag = f;
-    }
 
     /// Override WPASolver function in order to use the default solver
     virtual void processNode(NodeID nodeId);
@@ -424,6 +415,7 @@ public:
         diffWave = nullptr;
     }
 
+    virtual void initialize();
     virtual void solveWorklist();
     virtual void processNode(NodeID nodeId);
     virtual void postProcessNode(NodeID nodeId);

@@ -187,7 +187,6 @@ void Andersen::initialize()
 {
     resetData();
     setDiffOpt(Options::PtsDiff);
-    setPWCOpt(Options::MergePWC);
     AndersenBase::initialize();
 
     if (Options::ClusterAnder) cluster();

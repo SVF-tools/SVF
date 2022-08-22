@@ -27,8 +27,9 @@
  *      Author: Yuxiang Lei
  */
 
-#include "WPA/AndersenSFR.h"
+#include "WPA/AndersenPWC.h"
 #include "MemoryModel/PointsTo.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -131,13 +132,13 @@ void AndersenSCD::PWCDetect()
     tmpSccCandidates.clear();
 
     // set scc edge type as direct edge
-    ConstraintNode::SCCEdgeFlag f = ConstraintNode::sccEdgeFlag;
-    setSCCEdgeFlag(ConstraintNode::Direct);
+    bool pwcFlag = Options::CollapsePWC;
+    setDetectPWC(true);
 
     getSCCDetector()->find(sccCandidates);
 
     // reset scc edge type
-    setSCCEdgeFlag(f);
+    setDetectPWC(pwcFlag);
 }
 
 

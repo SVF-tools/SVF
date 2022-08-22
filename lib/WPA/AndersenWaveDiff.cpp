@@ -36,6 +36,15 @@ using namespace SVFUtil;
 AndersenWaveDiff* AndersenWaveDiff::diffWave = nullptr;
 
 /*!
+ * Initialize
+ */
+void AndersenWaveDiff::initialize()
+{
+    Andersen::initialize();
+    setDetectPWC(true);   // Standard wave propagation always collapses PWCs
+}
+
+/*!
  * solve worklist
  */
 void AndersenWaveDiff::solveWorklist()
@@ -53,27 +62,6 @@ void AndersenWaveDiff::solveWorklist()
         // process nodes in nodeStack
         processNode(nodeId);
         collapseFields();
-    }
-
-    // This modification is to make WAVE feasible to handle PWC analysis
-    if (!mergePWC())
-    {
-        NodeStack tmpWorklist;
-        while (!isWorklistEmpty())
-        {
-            NodeID nodeId = popFromWorklist();
-            collapsePWCNode(nodeId);
-            // process nodes in nodeStack
-            processNode(nodeId);
-            collapseFields();
-            tmpWorklist.push(nodeId);
-        }
-        while (!tmpWorklist.empty())
-        {
-            NodeID nodeId = tmpWorklist.top();
-            tmpWorklist.pop();
-            pushIntoWorklist(nodeId);
-        }
     }
 
     // New nodes will be inserted into workList during processing.
