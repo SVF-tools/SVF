@@ -152,7 +152,7 @@ public:
 
     /// Constructor
     Andersen(SVFIR* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
-        :  AndersenBase(_pag, type, alias_check), pwcOpt(false), diffOpt(true)
+        :  AndersenBase(_pag, type, alias_check)
     {
     }
 
@@ -229,63 +229,34 @@ public:
         Options::DetectPWC = flag;
     }
 
-    bool mergePWC() const
-    {
-        return pwcOpt;
-    }
-
-    void setDiffOpt(bool flag)
-    {
-        diffOpt = flag;
-    }
-
-    bool enableDiff() const
-    {
-        return diffOpt;
-    }
-
 protected:
 
     CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
     void heapAllocatorViaIndCall(CallSite cs,NodePairSet &cpySrcNodes);
 
-    bool pwcOpt;
-    bool diffOpt;
-
     /// Handle diff points-to set.
     virtual inline void computeDiffPts(NodeID id)
     {
-        if (enableDiff())
-        {
-            NodeID rep = sccRepNode(id);
-            getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
-        }
+        NodeID rep = sccRepNode(id);
+        getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
     }
     virtual inline const PointsTo& getDiffPts(NodeID id)
     {
         NodeID rep = sccRepNode(id);
-        if (enableDiff())
-            return getDiffPTDataTy()->getDiffPts(rep);
-        else
-            return getPTDataTy()->getPts(rep);
+        return getDiffPTDataTy()->getDiffPts(rep);
     }
 
     /// Handle propagated points-to set.
     inline void updatePropaPts(NodeID dstId, NodeID srcId)
     {
-        if (!enableDiff())
-            return;
         NodeID srcRep = sccRepNode(srcId);
         NodeID dstRep = sccRepNode(dstId);
         getDiffPTDataTy()->updatePropaPtsMap(srcRep, dstRep);
     }
     inline void clearPropaPts(NodeID src)
     {
-        if (enableDiff())
-        {
-            NodeID rep = sccRepNode(src);
-            getDiffPTDataTy()->clearPropaPts(rep);
-        }
+        NodeID rep = sccRepNode(src);
+        getDiffPTDataTy()->clearPropaPts(rep);
     }
 
     virtual void initWorklist() {}

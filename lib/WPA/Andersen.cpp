@@ -186,7 +186,6 @@ void AndersenBase::normalizePointsTo()
 void Andersen::initialize()
 {
     resetData();
-    setDiffOpt(Options::PtsDiff);
     AndersenBase::initialize();
 
     if (Options::ClusterAnder) cluster();
@@ -457,7 +456,7 @@ inline void Andersen::collapsePWCNode(NodeID nodeId)
     // If a node is a PWC node, collapse all its points-to tarsget.
     // collapseNodePts() may change the points-to set of the nodes which have been processed
     // before, in this case, we may need to re-do the analysis.
-    if (mergePWC() && consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
+    if (consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
         reanalyze = true;
 }
 

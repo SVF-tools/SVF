@@ -715,12 +715,6 @@ const llvm::cl::opt<std::string> Options::ReadAnder(
     llvm::cl::desc("-read-ander=ir_annotator (Read Andersen's analysis results from the annotated IR, e.g., *.pre.bc) or from a text file")
 );
 
-const llvm::cl::opt<bool> Options::PtsDiff(
-    "diff",
-    llvm::cl::init(true),
-    llvm::cl::desc("Disable diff pts propagation")
-);
-
 llvm::cl::opt<bool> Options::DetectPWC(
     "merge-pwc",
     llvm::cl::init(true),
