@@ -240,7 +240,7 @@ PointsTo operator&(const PointsTo &lhs, const PointsTo &rhs);
 /// Returns a new lhs - rhs.
 PointsTo operator-(const PointsTo &lhs, const PointsTo &rhs);
 
-};
+} // End namespace SVF
 
 template <>
 struct std::hash<SVF::PointsTo>

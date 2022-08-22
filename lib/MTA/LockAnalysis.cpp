@@ -172,6 +172,7 @@ bool LockAnalysis::intraForwardTraverse(const Instruction* lockSite, InstSet& un
 {
 
     const Function* fun = lockSite->getParent()->getParent();
+    const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
 
     InstVec worklist;
     worklist.push_back(lockSite);
@@ -180,7 +181,7 @@ bool LockAnalysis::intraForwardTraverse(const Instruction* lockSite, InstSet& un
         const Instruction *I = worklist.back();
         worklist.pop_back();
 
-        if(&(getFunExitBB(fun)->back()) == I)
+        if(&(getFunExitBB(svfFun)->back()) == I)
             return false;
 
         // Skip the visited Instructions.

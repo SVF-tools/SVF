@@ -129,16 +129,26 @@ private:
     bool isDecl;
     bool isIntri;
     Function* fun;
+    BasicBlock* exitBB;
+    std::vector<const BasicBlock*> reachableBBs;
+    bool isUncalled;
+    bool isNotRet;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
-        isDecl(false), isIntri(false), fun(nullptr)
+        isDecl(false), isIntri(false), fun(nullptr), exitBB(nullptr), isUncalled(false), isNotRet(false)
     {
     }
 
     SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f)
+        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false)
     {
     }
+
+    SVFFunction(Function* f, BasicBlock* exitBB, std::vector<const BasicBlock*> reachableBBs): SVFValue(f->getName().str(),SVFValue::SVFFunc),
+        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(exitBB), reachableBBs(reachableBBs), isUncalled(false), isNotRet(false)
+    {
+    }
+
     inline Function* getLLVMFun() const
     {
         assert(fun && "no LLVM Function found!");
@@ -168,6 +178,46 @@ public:
     inline bool isVarArg() const
     {
         return getLLVMFun()->isVarArg();
+    }
+
+    inline const std::vector<const BasicBlock*>& getReachableBBs() const
+    {
+        return reachableBBs;
+    }
+
+    inline const bool isUncalledFunction() const
+    {
+        return isUncalled;
+    }
+
+    inline const void setIsUncalledFunction(const bool isUncalledFunction)
+    {
+        this->isUncalled = isUncalledFunction;
+    }
+
+    inline const void setIsNotRet(const bool doesNotRet)
+    {
+        this->isNotRet = doesNotRet;
+    }
+
+    inline const void setExitBB(BasicBlock* exitBB)
+    {
+        this->exitBB = exitBB;
+    }
+
+    inline const void setReachableBBs(std::vector<const BasicBlock*> reachableBBs)
+    {
+        this->reachableBBs = reachableBBs;
+    }
+
+    inline const bool isNotRetFunction() const
+    {
+        return isNotRet;
+    }
+
+    inline const BasicBlock* getExitBB() const
+    {
+        return this->exitBB;
     }
 
     // Dump Control Flow Graph of llvm function, with instructions

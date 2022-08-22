@@ -163,17 +163,3 @@ bool AndersenWaveDiff::handleStore(NodeID nodeId, const ConstraintEdge* edge)
     }
     return changed;
 }
-
-/*
- * Merge a node to its rep node
- */
-void AndersenWaveDiff::mergeNodeToRep(NodeID nodeId,NodeID newRepId)
-{
-    if(nodeId==newRepId)
-        return;
-
-    /// update rep's propagated points-to set
-    updatePropaPts(newRepId, nodeId);
-
-    Andersen::mergeNodeToRep(nodeId, newRepId);
-}

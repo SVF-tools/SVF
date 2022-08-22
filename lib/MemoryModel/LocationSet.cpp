@@ -32,11 +32,9 @@
 #include "Util/Options.h"
 #include "MemoryModel/LocationSet.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/LLVMUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
 
 /*!
  * Add offset value to vector offsetValues
@@ -73,9 +71,13 @@ u32_t LocationSet::getElementNum(const Type* type) const
     {
         /// This is a pointer arithmic
         if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type))
-            return getElementNum(getPtrElementType(pty));
+            return getElementNum(SymbolTableInfo::getPtrElementType(pty));
         else
             return 1;
+    }
+    else if (SVFUtil::isa<FunctionType>(type))
+    {
+        return 1;
     }
     else
     {
@@ -135,7 +137,7 @@ s32_t LocationSet::accumulateConstantOffset() const
         }
 
         if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type))
-            totalConstOffset += op->getSExtValue() * getElementNum(getPtrElementType(pty));
+            totalConstOffset += op->getSExtValue() * getElementNum(SymbolTableInfo::getPtrElementType(pty));
         else
         {
             s32_t offset = op->getSExtValue();

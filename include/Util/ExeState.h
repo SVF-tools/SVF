@@ -166,7 +166,7 @@ protected:
         return locToVal[objId];
     }
 };
-}
+} // End namespace SVF
 
 template<>
 struct std::hash<SVF::ExeState>

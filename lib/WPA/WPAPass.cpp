@@ -101,15 +101,6 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
     case PointerAnalysis::Andersen_WPA:
         _pta = new Andersen(pag);
         break;
-    case PointerAnalysis::AndersenLCD_WPA:
-        _pta = new AndersenLCD(pag);
-        break;
-    case PointerAnalysis::AndersenHCD_WPA:
-        _pta = new AndersenHCD(pag);
-        break;
-    case PointerAnalysis::AndersenHLCD_WPA:
-        _pta = new AndersenHLCD(pag);
-        break;
     case PointerAnalysis::AndersenSCD_WPA:
         _pta = new AndersenSCD(pag);
         break;

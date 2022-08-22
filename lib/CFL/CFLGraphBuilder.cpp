@@ -326,7 +326,8 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
                 key.append("bar");
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(CFLDerefNode->getId()),  label2KindMap[key]);
             }
-            else {
+            else
+            {
                 CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
                 // Need to get the offset from the Const Edge
                 // The offset present edge is only from Normal Gep CG at moment

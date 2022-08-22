@@ -1,0 +1,28 @@
+codecov:
+  require_ci_to_pass: yes
+  
+coverage:
+  status:
+    project:
+      default:
+        target: 62% # If auto, it will compare with the last commit. This could be set to an exact number such as 70% or higher.
+        threshold: 0.01% # Allow the coverage to drop by 0.01%, and posting a success status.
+        base: auto
+    patch:
+      default:
+        target: auto # If auto, it will compare with the last commit. This could be set to an exact number such as 70% or higher.
+        threshold: 0.01% # Allow the coverage to drop by 0.01%, and posting a success status.
+        base: auto
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+  
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: no

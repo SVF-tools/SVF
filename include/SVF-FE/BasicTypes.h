@@ -24,6 +24,9 @@
 
 #include <llvm/Support/SourceMgr.h>
 
+namespace SVF
+{
+
 typedef llvm::LLVMContext LLVMContext;
 typedef llvm::GlobalObject GlobalObject;
 typedef llvm::Use Use;
@@ -93,6 +96,49 @@ typedef llvm::VAStartInst VAStartInst;
 typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
+typedef llvm::IntrinsicInst IntrinsicInst;
+typedef llvm::DbgInfoIntrinsic DbgInfoIntrinsic;
+typedef llvm::DbgVariableIntrinsic DbgVariableIntrinsic;
+typedef llvm::DbgDeclareInst DbgDeclareInst;
+typedef llvm::DbgAddrIntrinsic DbgAddrIntrinsic;
+typedef llvm::DbgValueInst DbgValueInst;
+typedef llvm::DbgLabelInst DbgLabelInst;
+typedef llvm::VPIntrinsic VPIntrinsic;
+typedef llvm::ConstrainedFPIntrinsic ConstrainedFPIntrinsic;
+typedef llvm::ConstrainedFPCmpIntrinsic ConstrainedFPCmpIntrinsic;
+typedef llvm::MinMaxIntrinsic MinMaxIntrinsic;
+typedef llvm::BinaryOpIntrinsic BinaryOpIntrinsic;
+typedef llvm::WithOverflowInst WithOverflowInst;
+typedef llvm::SaturatingInst SaturatingInst;
+typedef llvm::AtomicMemIntrinsic AtomicMemIntrinsic;
+typedef llvm::AtomicMemSetInst AtomicMemSetInst;
+typedef llvm::AtomicMemTransferInst AtomicMemTransferInst;
+typedef llvm::AtomicMemCpyInst AtomicMemCpyInst;
+typedef llvm::AtomicMemMoveInst AtomicMemMoveInst;
+typedef llvm::MemIntrinsic MemIntrinsic;
+typedef llvm::MemSetInst MemSetInst;
+typedef llvm::MemTransferInst MemTransferInst;
+typedef llvm::MemCpyInst MemCpyInst;
+typedef llvm::MemMoveInst MemMoveInst;
+typedef llvm::MemCpyInlineInst MemCpyInlineInst;
+typedef llvm::AnyMemIntrinsic AnyMemIntrinsic;
+typedef llvm::AnyMemSetInst AnyMemSetInst;
+typedef llvm::AnyMemTransferInst AnyMemTransferInst;
+typedef llvm::AnyMemCpyInst AnyMemCpyInst;
+typedef llvm::AnyMemMoveInst AnyMemMoveInst;
+typedef llvm::VAStartInst VAStartInst;
+typedef llvm::VAEndInst VAEndInst;
+typedef llvm::VACopyInst VACopyInst;
+typedef llvm::InstrProfIncrementInst InstrProfIncrementInst;
+typedef llvm::InstrProfIncrementInstStep InstrProfIncrementInstStep;
+typedef llvm::InstrProfValueProfileInst InstrProfValueProfileInst;
+typedef llvm::PseudoProbeInst PseudoProbeInst;
+typedef llvm::NoAliasScopeDeclInst NoAliasScopeDeclInst;
+typedef llvm::GCStatepointInst GCStatepointInst;
+typedef llvm::GCProjectionInst GCProjectionInst;
+typedef llvm::GCRelocateInst GCRelocateInst;
+typedef llvm::GCResultInst GCResultInst;
+typedef llvm::AssumeInst AssumeInst;
 
 // LLVM Debug Information
 typedef llvm::DIType DIType;
@@ -126,5 +172,7 @@ typedef llvm::VectorType VectorType;
 #if (LLVM_VERSION_MAJOR >= 9)
 typedef llvm::FunctionCallee FunctionCallee;
 #endif
+
+} // End namespace SVF
 
 #endif  // SVF_FE_BASIC_TYPES_H

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.13.4)
 project("SVF")
 
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.in ${CMAKE_CURRENT_SOURCE_DIR}/include/Util/config.h @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/.config.in ${CMAKE_CURRENT_SOURCE_DIR}/include/Util/config.h @ONLY)
 
 # To support both in- and out-of-source builds,
 # we check for the presence of the add_llvm_loadable_module command.
@@ -57,7 +57,7 @@ endif()
 if (DEFINED Z3_DIR)
     set(ENV{Z3_DIR} "${Z3_DIR}")
 endif()
-find_library(Z3_LIBRARIES NAMES libz3.a
+find_library(Z3_LIBRARIES NAMES libz3.a libz3.so
                           HINTS $ENV{Z3_DIR}
                           PATH_SUFFIXES lib bin)
 find_path(Z3_INCLUDES NAMES z3++.h

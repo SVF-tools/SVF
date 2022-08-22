@@ -29,6 +29,7 @@
 
 #include "Util/ExtAPI.h"
 #include "Util/SVFUtil.h"
+#include "Util/cJSON.h"
 #include <string.h>
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -181,8 +182,26 @@ void ExtAPI::destory()
     }
 }
 
+void ExtAPI::add_entry(const char* funName, extType type, bool overwrite_app_function)
+{
+    assert(root);
+    assert(get_type(funName) == EFT_NULL);
+    auto entry = cJSON_CreateObject();
+
+    // add the type field
+    auto typeString = cJSON_CreateString(extType_toString(type).c_str());
+    cJSON_AddItemToObject(entry, JSON_OPT_FUNCTIONTYPE, typeString);
+
+    // add the 'overwrite_app_function' field
+    auto overwriteBool = cJSON_CreateNumber(overwrite_app_function ? 1 : 0);
+    cJSON_AddItemToObject(entry, JSON_OPT_OVERWRITE, overwriteBool);
+
+    // we don't know where the `funName` comes from, so copy it just in case
+    cJSON_AddItemToObject(root, strdup(funName), entry);
+}
+
 // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
-ExtAPI::extf_t ExtAPI::get_opName(std::string s)
+ExtAPI::extf_t ExtAPI::get_opName(const std::string& s)
 {
     std::map<std::string, extf_t>::iterator pos = op_pair.find(s);
     if (pos != op_pair.end())
@@ -193,6 +212,58 @@ ExtAPI::extf_t ExtAPI::get_opName(std::string s)
     {
         return EXT_OTHER;
     }
+}
+
+const std::string& ExtAPI::extType_toString(extType type)
+{
+    auto it = llvm::find_if(type_pair, [&](const auto& pair)
+    {
+        return pair.second == type;
+    });
+    assert(it != type_pair.end());
+    return it->first;
+}
+
+// Get numeric index of the argument in external function
+u32_t ExtAPI::getArgPos(std::string s)
+{
+    if(s[0] != 'A')
+        assert(false && "the argument of extern function in ExtAPI.json should start with 'A' !");
+    u32_t i = 1;
+    u32_t start = i;
+    while(i < s.size() && isdigit(s[i]))
+        i++;
+    std::string digitStr = s.substr(start, i-start);
+    u32_t argNum = atoi(digitStr.c_str());
+    return argNum;
+}
+
+// return value >= 0 is an argument node
+// return value = -1 is an inst node
+// return value = -2 is a Dummy node
+// return value = -2 is an illegal operand format
+int ExtAPI::getNodeIDType(std::string s)
+{
+    size_t argPos = -1;
+    // 'A' represents an argument
+    if (s.size() == 0)
+        return -3;
+    if (s[0] == 'A')
+    {
+        size_t start = 1;
+        size_t end = 1;
+        while(end < s.size() && isdigit(s[end]))
+            end++;
+        std::string digitStr = s.substr(start, end - start);
+        argPos = atoi(digitStr.c_str());
+        return argPos;
+    }
+    if(s[0] == 'L')
+        return -1;
+    if(s[0] == 'D')
+        return -2;
+
+    return -3;
 }
 
 // Get external function name, e.g "memcpy"
@@ -216,6 +287,73 @@ cJSON *ExtAPI::get_FunJson(const std::string &funName)
     return cJSON_GetObjectItemCaseSensitive(root, funName.c_str());
 }
 
+// Get all operations of an extern function
+std::vector<std::vector<ExtAPI::Operation *>> ExtAPI::getAllOperations(std::string funName)
+{
+    std::vector<std::vector<ExtAPI::Operation *>> allOperations;
+    cJSON *item = get_FunJson(funName);
+    if (item != nullptr)
+    {
+        cJSON *obj = item->child;
+        //  Get the first operation of the function
+        obj = obj -> next -> next;
+        std::vector<ExtAPI::Operation *> operations;
+        while (obj)
+        {
+            std::string operationName;
+            std::vector<std::string> arguments;
+            Operation operation;
+            // All operations in "compound" are related to each other.
+            // For example, the first parameter of the second operation
+            // depends on the second parameter of the first operation.
+            // Therefore, all operations in "compound" need to be processed uniformly
+            if (strstr(obj->string, "compound") != NULL)
+            {
+                if (obj->type == cJSON_Object)
+                {
+                    cJSON *value = obj->child;
+                    while (value)
+                    {
+                        operationName = value -> string;
+                        if (value->type == cJSON_Object)
+                        {
+                            cJSON *edge = value->child;
+                            arguments = ExtAPI::getExtAPI()->get_opArgs(edge);
+                        }
+                        else
+                        {
+                            if (value->type == cJSON_String)
+                                arguments.push_back(value->valuestring);
+                            else
+                                assert(false && "The function operation format is illegal!");
+                        }
+                        operations.push_back(new ExtAPI::Operation(operationName, arguments));
+                        arguments.clear();
+                        value = value->next;
+                    }
+                }
+            }
+            // General operation(Independent operation, the operation does not need to dependent other operations' arguments)
+            else
+            {
+                if (obj->type == cJSON_Object || obj->type == cJSON_Array)
+                {
+                    operationName = obj -> string;
+                    cJSON *edge = obj->child;
+                    arguments = ExtAPI::getExtAPI()->get_opArgs(edge);
+                    operations.push_back(new ExtAPI::Operation(operationName, arguments));
+                    arguments.clear();
+                }
+            }
+            allOperations.push_back(operations);
+            operations.clear();
+
+            obj = obj -> next;
+        }
+    }
+    return allOperations;
+}
+
 // Get arguments of the operation, e.g. ["A1R", "A0", "A2"]
 std::vector<std::string> ExtAPI::get_opArgs(const cJSON *value)
 {
@@ -229,10 +367,8 @@ std::vector<std::string> ExtAPI::get_opArgs(const cJSON *value)
     return args;
 }
 
-// Get property of the operation, e.g. "EFT_A1R_A0R"
-ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
+ExtAPI::extType ExtAPI::get_type(const std::string& funName)
 {
-    std::string funName = get_name(F);
     cJSON *item = get_FunJson(funName);
     std::string type = "";
     if (item != nullptr)
@@ -249,6 +385,12 @@ ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
         return EFT_NULL;
     else
         return it->second;
+}
+
+// Get property of the operation, e.g. "EFT_A1R_A0R"
+ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
+{
+    return get_type(get_name(F));
 }
 
 // Get priority of he function, return value

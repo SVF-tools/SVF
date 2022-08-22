@@ -367,10 +367,7 @@ public:
     }
     inline NodeID getFIObjVar(NodeID id) const
     {
-        SVFVar* node = pag->getGNode(id);
-        assert(SVFUtil::isa<ObjVar>(node) && "need an object node");
-        ObjVar* obj = SVFUtil::cast<ObjVar>(node);
-        return getFIObjVar(obj->getMemObj());
+        return getBaseObjVar(id);
     }
     //@}
 
