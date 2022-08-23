@@ -83,12 +83,14 @@ jobs:
           
       # update performance testing to Test-Suite
       - name: upload-performance-testing-to-Test-Suite
+        working-directory: ${{github.workspace}}/Release-build
         if: |
             github.event_name == 'push' && 
             github.repository == 'SVF-tools/SVF' && 
             runner.os == 'Linux' &&
             github.ref == 'refs/heads/master'
         run: |
+            ctest -R diff-perf-cruxbc -VV
             cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-${{github.event.repository.updated_at}}.txt      
             cd $GITHUB_WORKSPACE/Test-Suite/diff_tests      
             git add perf-${{github.event.repository.updated_at}}.txt       
