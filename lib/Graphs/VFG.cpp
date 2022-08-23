@@ -792,6 +792,12 @@ void VFG::connectDirectVFGEdges()
                     addIntraDirectVFEdge(getDef(it->second), nodeId);
             }
         }
+        else if(BranchVFGNode* branchNode = SVFUtil::dyn_cast<BranchVFGNode>(node))
+        {
+            const SVFVar* cond = branchNode->getBranchStmt()->getCondition();
+            if (cond->isConstantData() == false)
+                addIntraDirectVFEdge(getDef(cond), nodeId);
+        }
         else if(ActualParmVFGNode* actualParm = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
         {
             if (actualParm->getParam()->isConstantData() == false)
