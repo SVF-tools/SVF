@@ -716,9 +716,9 @@ const llvm::cl::opt<std::string> Options::ReadAnder(
 );
 
 const llvm::cl::opt<bool> Options::DiffPts(
-        "diff",
-        llvm::cl::init(true),
-        llvm::cl::desc("Enable differential point-to set")
+    "diff",
+    llvm::cl::init(true),
+    llvm::cl::desc("Enable differential point-to set")
 );
 
 llvm::cl::opt<bool> Options::DetectPWC(
