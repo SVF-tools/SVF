@@ -76,16 +76,6 @@ jobs:
         run: 
           ctest -R diff_tests-wr-ander -VV
 
-      - name: ctest SVFG file-write-read
-        working-directory: ${{github.workspace}}/Release-build
-        run: 
-          ctest -R diff_tests-wr-svfg
-
-      - name: ctest SVFG file-write-read using cruxbc
-        working-directory: ${{github.workspace}}/Release-build
-        run: 
-          ctest -R diff_tests-wr-svfg-cruxbc
-
       - name: ctest mem_leak
         working-directory: ${{github.workspace}}/Release-build
         run:
