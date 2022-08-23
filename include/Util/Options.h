@@ -234,8 +234,8 @@ public:
     static const llvm::cl::opt<std :: string> WriteAnder;
     // static const llvm::cl::opt<string> ReadAnder;
     static const llvm::cl::opt<std :: string> ReadAnder;
-    static const llvm::cl::opt<bool> PtsDiff;
-    static const llvm::cl::opt<bool> MergePWC;
+    static const llvm::cl::opt<bool> DiffPts;
+    static llvm::cl::opt<bool> DetectPWC;
     static const llvm::cl::opt<bool> VtableInSVFIR;
 
     // WPAPass.cpp

@@ -27,7 +27,7 @@
  *      Author: Yuxiang Lei
  */
 
-#include "WPA/AndersenSFR.h"
+#include "WPA/AndersenPWC.h"
 #include "MemoryModel/PointsTo.h"
 
 using namespace SVF;
@@ -41,12 +41,12 @@ AndersenSFR *AndersenSFR::sfrAndersen = nullptr;
 void AndersenSFR::initialize()
 {
     AndersenSCD::initialize();
-    setPWCOpt(false);
+    setDetectPWC(false);   // SCC will detect only copy edges
 
     if (!csc)
         csc = new CSC(_graph, scc);
 
-    // detect and collapse cycles that only comprise copy edges
+    /// Detect and collapse cycles consisting of only copy edges
     getSCCDetector()->find();
     mergeSccCycle();
 }
@@ -73,7 +73,7 @@ bool AndersenSFR::mergeSrcToTgt(NodeID nodeId, NodeID newRepId)
         ConstraintNode* newRepNode = consCG->getConstraintNode(newRepId);
         newRepNode->strides |= node->strides;
     }
-    return AndersenSCD::mergeSrcToTgt(nodeId, newRepId);
+    return Andersen::mergeSrcToTgt(nodeId, newRepId);
 }
 
 
@@ -114,7 +114,7 @@ bool AndersenSFR::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
 
 
 /*!
- *
+ * Expand field IDs in target pts based on the initials and offsets
  */
 void AndersenSFR::fieldExpand(NodeSet& initials, s32_t offset, NodeBS& strides, PointsTo& expandPts)
 {
