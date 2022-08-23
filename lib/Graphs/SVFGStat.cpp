@@ -126,9 +126,7 @@ void MemSSAStat::performStat()
  */
 void MemSSAStat::printStat(string str)
 {
-
-    SVFUtil::outs() << "\n****Memory SSA Statistics****\n";
-    PTAStat::printStat(str);
+    PTAStat::printStat("Memory SSA Statistics");
 }
 
 /*!

@@ -321,12 +321,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
     std::vector<std::string> fullNames = SVFUtil::split(name,'/');
     if (fullNames.size() > 1)
     {
-        name = fullNames[1];
-        fullNames = SVFUtil::split(name,'.');
-        if (fullNames.size() > 0 )
-        {
-            name = fullNames[0];
-        }
+        name = fullNames[fullNames.size() - 1];
     }
     SVFUtil::outs() << "################ (program : " << name
                     << ")###############\n";

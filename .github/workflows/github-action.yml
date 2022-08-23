@@ -34,12 +34,6 @@ jobs:
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
           sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov
-      - name: env-setup
-        if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
-        run: |
-          echo $RUNNER_OS
-          git config --global user.email ${{secrets.npm_email}}
-          git config --global user.name "GitHub Actions Build"
       
       # build-svf
       - name: build-svf
@@ -76,16 +70,6 @@ jobs:
         run: 
           ctest -R diff_tests-wr-ander -VV
 
-      - name: ctest SVFG file-write-read
-        working-directory: ${{github.workspace}}/Release-build
-        run: 
-          ctest -R diff_tests-wr-svfg
-
-      - name: ctest SVFG file-write-read using cruxbc
-        working-directory: ${{github.workspace}}/Release-build
-        run: 
-          ctest -R diff_tests-wr-svfg-cruxbc
-
       - name: ctest mem_leak
         working-directory: ${{github.workspace}}/Release-build
         run:
@@ -101,6 +85,11 @@ jobs:
         run: 
           ctest -R cfl_tests -VV
           
+      - name: ctest performance tests on cruxbc
+        working-directory: ${{github.workspace}}/Release-build
+        run: 
+          ctest -R diff-perf-cruxbc -VV
+
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
         if: runner.os == 'Linux'
