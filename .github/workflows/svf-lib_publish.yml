@@ -91,10 +91,10 @@ jobs:
             github.ref == 'refs/heads/master'
         run: |
             ctest -R diff-perf-cruxbc -VV
-            cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-${{github.event.repository.updated_at}}.txt      
+            git pull
+            cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-${{github.event.repository.pushed_at}}.txt      
             cd $GITHUB_WORKSPACE/Test-Suite/diff_tests  
-            git pull    
-            git add perf-${{github.event.repository.updated_at}}.txt       
+            git add .     
             if [ -n "$(git status -s)" ]; then git commit -m"update latest SVF performance data"       ; fi
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/Test-Suite.git   HEAD:master   
 
