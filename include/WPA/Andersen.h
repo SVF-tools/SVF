@@ -237,26 +237,37 @@ protected:
     /// Handle diff points-to set.
     virtual inline void computeDiffPts(NodeID id)
     {
-        NodeID rep = sccRepNode(id);
-        getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
+        if (Options::DiffPts)
+        {
+            NodeID rep = sccRepNode(id);
+            getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
+        }
     }
     virtual inline const PointsTo& getDiffPts(NodeID id)
     {
         NodeID rep = sccRepNode(id);
-        return getDiffPTDataTy()->getDiffPts(rep);
+        if (Options::DiffPts)
+            return getDiffPTDataTy()->getDiffPts(rep);
+        else
+            return getPTDataTy()->getPts(rep);
     }
 
     /// Handle propagated points-to set.
     inline void updatePropaPts(NodeID dstId, NodeID srcId)
     {
+        if (!Options::DiffPts)
+            return;
         NodeID srcRep = sccRepNode(srcId);
         NodeID dstRep = sccRepNode(dstId);
         getDiffPTDataTy()->updatePropaPtsMap(srcRep, dstRep);
     }
     inline void clearPropaPts(NodeID src)
     {
-        NodeID rep = sccRepNode(src);
-        getDiffPTDataTy()->clearPropaPts(rep);
+        if (Options::DiffPts)
+        {
+            NodeID rep = sccRepNode(src);
+            getDiffPTDataTy()->clearPropaPts(rep);
+        }
     }
 
     virtual void initWorklist() {}
