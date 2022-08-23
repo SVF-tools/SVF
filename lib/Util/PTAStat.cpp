@@ -296,12 +296,7 @@ void PTAStat::printStat(string statname)
     std::vector<std::string> names = SVFUtil::split(moduleName,'/');
     if (names.size() > 1)
     {
-        moduleName = names[1];
-        names = SVFUtil::split(moduleName,'.');
-        if (names.size() > 0)
-        {
-            moduleName = names[0];
-        }
+        moduleName = names[names.size() - 1];
     }
 
     SVFUtil::outs() << "\n*********" << statname << "***************\n";

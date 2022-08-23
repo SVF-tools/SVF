@@ -91,6 +91,11 @@ jobs:
         run: 
           ctest -R cfl_tests -VV
           
+      - name: ctest performance tests on cruxbc
+        working-directory: ${{github.workspace}}/Release-build
+        run: 
+          ctest -R diff-perf-cruxbc -VV
+
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
         if: runner.os == 'Linux'
