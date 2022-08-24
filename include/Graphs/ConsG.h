@@ -337,9 +337,8 @@ public:
     inline NodeID getFIObjVar(NodeID id)
     {
         NodeID fi = pag->getFIObjVar(id);
-        /// Create a node when it is (1) not exist on graph and (2) not merged
-        if (sccRepNode(fi) == fi && hasConstraintNode(fi)==false)
-            addConstraintNode(new ConstraintNode(fi),fi);
+        /// The fi obj in PAG must be either an existing node or merged to another rep node in ConsG
+        assert((hasConstraintNode(fi) || sccRepNode(fi) != fi) && "non-existing fi obj??");
         return fi;
     }
     //@}
