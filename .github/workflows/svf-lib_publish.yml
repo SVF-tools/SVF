@@ -92,7 +92,7 @@ jobs:
         run: |
             ctest -R diff-perf-cruxbc -VV
             git pull
-            cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-${{github.event.repository.pushed_at}}.txt      
+            cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-${{steps.current-time.outputs.time}}.txt      
             cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-latest.txt      
             cd $GITHUB_WORKSPACE/Test-Suite/diff_tests  
             git add .     
