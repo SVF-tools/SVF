@@ -87,6 +87,7 @@ jobs:
           
       - name: ctest performance tests on cruxbc
         working-directory: ${{github.workspace}}/Release-build
+        if: runner.os == 'Linux'
         run: 
           ctest -R diff-perf-cruxbc -VV
 

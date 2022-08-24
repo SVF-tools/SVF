@@ -92,8 +92,8 @@ jobs:
         run: |
             ctest -R diff-perf-cruxbc -VV
             git pull
-            cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-${{github.event.repository.updated_at}}.txt      
-            cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-latest.txt      
+            cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf_history/perf-${{github.event.repository.updated_at}}.txt
+            cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-latest.txt
             cd $GITHUB_WORKSPACE/Test-Suite/diff_tests  
             git add .     
             if [ -n "$(git status -s)" ]; then git commit -m"update latest SVF performance data"       ; fi
