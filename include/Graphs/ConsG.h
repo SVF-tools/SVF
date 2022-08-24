@@ -337,6 +337,7 @@ public:
     inline NodeID getFIObjVar(NodeID id)
     {
         NodeID fi = pag->getFIObjVar(id);
+        /// The fi obj in PAG must be either an existing node or merged to another rep node in ConsG
         assert((hasConstraintNode(fi) || sccRepNode(fi) != fi) && "non-existing fi obj??");
         return fi;
     }
