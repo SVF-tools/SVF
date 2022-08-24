@@ -337,9 +337,7 @@ public:
     inline NodeID getFIObjVar(NodeID id)
     {
         NodeID fi = pag->getFIObjVar(id);
-        /// Create a node when it is (1) not exist on graph and (2) not merged
-        if (sccRepNode(fi) == fi && hasConstraintNode(fi)==false)
-            addConstraintNode(new ConstraintNode(fi),fi);
+        assert((hasConstraintNode(fi) || sccRepNode(fi) != fi) && "non-existing fi obj??");
         return fi;
     }
     //@}
