@@ -240,7 +240,7 @@ protected:
 
     /// Handle external call
     //@{
-    virtual NodeID parseNode(std::string s, CallSite cs, const Instruction *inst);
+    virtual void parseOperations(std::vector<ExtAPI::Operation>  &operations, CallSite cs);
     virtual void handleExtCall(CallSite cs, const SVFFunction *F);
     void addComplexConsForExt(Value *D, Value *S, const Value* sz);
     //@}
