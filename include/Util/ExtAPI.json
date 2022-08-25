@@ -3678,27 +3678,27 @@
     "llvm.memset":  {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "copy_n": ["0", "1", "2"]
+        "memset_like": ["0", "1", "2"]
     },
     "llvm.memset.p0i8.i32": {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "copy_n": ["0", "1", "2"]
+        "memset_like": ["0", "1", "2"]
     },
     "llvm.memset.p0i8.i64": {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "copy_n": ["0", "1", "2"]
+        "memset_like": ["0", "1", "2"]
     },
     "__memset_chk": {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "copy_n": ["0", "1", "2"]
+        "memset_like": ["0", "1", "2"]
     },
     "llvm.memcpy":  {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3707,7 +3707,7 @@
     "llvm.memcpy.p0i8.p0i8.i32":    {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3716,7 +3716,7 @@
     "llvm.memcpy.p0i8.p0i8.i64":    {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3725,7 +3725,7 @@
     "llvm.memmove": {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3734,7 +3734,7 @@
     "llvm.memmove.p0i8.p0i8.i32":   {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3743,7 +3743,7 @@
     "llvm.memmove.p0i8.p0i8.i64":   {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3752,7 +3752,7 @@
     "memccpy":  {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3761,7 +3761,7 @@
     "memcpy":   {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3770,7 +3770,7 @@
     "memmove":  {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3779,17 +3779,17 @@
     "dlsym":    {
         "type": "EFT_L_A1__FunPtr",
         "overwrite_app_function": 0,
-        "funptr":   ["Arg1"]
+        "funptr_ops":   ["Arg1"]
     },
     "bcopy":    {
         "type": "EFT_A1R_A0R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["1", "0", "2"]
+        "memcpy_like":  ["1", "0", "2"]
     },
     "iconv":    {
         "type": "EFT_A3R_A1R_NS",
         "overwrite_app_function": 0,
-        "copy_mn":  ["3", "1"]
+        "memcpy_like":  ["3", "1"]
     },
     "strtod":   {
         "type": "EFT_A1R_A0",
@@ -3850,7 +3850,7 @@
     "__strcpy_chk": {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3859,7 +3859,7 @@
     "__strcat_chk": {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3868,7 +3868,7 @@
     "stpcpy":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3877,7 +3877,7 @@
     "strcat":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3886,7 +3886,7 @@
     "strcpy":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3895,7 +3895,7 @@
     "strncat":  {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3904,7 +3904,7 @@
     "strncpy":  {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1", "2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -4109,7 +4109,7 @@
     "_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_":{
         "type": "EFT_STD_RB_TREE_INSERT_AND_REBALANCE",
         "overwrite_app_function": 0,
-        "complex": {
+        "Rb_tree_ops": {
             "src": "Arg1",
             "dst": "Arg3"
         }

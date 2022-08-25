@@ -1129,11 +1129,11 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
 {
     // Record all dummy nodes
     std::map<std::string, NodeID> nodeIDMap;
-    for (auto& operation : operations)
+    for (ExtAPI::Operation& operation : operations)
     {
         std::string op = operation.getOperator();
         std::vector<NodeID> operands;
-        if (op == "funptr" || op == "complex")
+        if (op == "funptr_ops" || op == "Rb_tree_ops")
             continue;
         for (auto s: operation.getOperandStr())
         {
@@ -1241,7 +1241,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         LocationSet ls(op.getOperands()[2]);
                         addNormalGepEdge(op.getOperands()[0], op.getOperands()[1], ls);
                     }
-                    else if (op.getOperator() == "copy_n")
+                    else if (op.getOperator() == "memset_like")
                     {
                         // this is for memset(void *str, int c, size_t n)
                         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
@@ -1258,7 +1258,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         if(SVFUtil::isa<PointerType>(inst->getType()))
                             addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
                     }
-                    else if (op.getOperator() == "copy_mn")
+                    else if (op.getOperator() == "memcpy_like")
                     {
                         /// handle strcpy
                         if(cs.arg_size()>=3)
@@ -1266,7 +1266,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         else
                             addComplexConsForExt(cs.getArgument(op.getOperands()[0]), cs.getArgument(op.getOperands()[1]), nullptr);
                     }
-                    else if (op.getOperator() == "funptr")
+                    else if (op.getOperator() == "funptr_ops")
                     {
                         /// handling external function e.g., void *dlsym(void *handle, const char *funname);
                         const Value *src = cs.getArgument(1);
@@ -1284,7 +1284,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                             }
                         }
                     }
-                    else if (op.getOperator() == "complex")
+                    else if (op.getOperator() == "Rb_tree_ops")
                     {
                         assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
 
