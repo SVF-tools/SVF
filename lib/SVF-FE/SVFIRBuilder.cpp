@@ -1156,7 +1156,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     operandID = atoi(s.c_str());
                 else
                     assert(false && "The operand format of function operation is illegal!");
-                nodeIDMap.insert(std::pair<std::string, NodeID>(s, operandID)); 
+                nodeIDMap.insert(std::pair<std::string, NodeID>(s, operandID));
             }
             operands.push_back(operandID);
         }

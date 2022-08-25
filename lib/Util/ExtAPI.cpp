@@ -323,7 +323,7 @@ std::vector<ExtAPI::Operation> ExtAPI::getAllOperations(std::string funName)
                 {
                     if (value->type == cJSON_String)
                     {
-                        operandsStr.push_back(value->valuestring);         
+                        operandsStr.push_back(value->valuestring);
                     }
                     value = value->next;
                 }
