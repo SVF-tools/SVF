@@ -1125,17 +1125,17 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     }
 }
 
-void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation *>  &operations, CallSite cs)
+void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, CallSite cs)
 {
     // Record all dummy nodes
     std::map<std::string, NodeID> nodeIDMap;
-    for (auto operation : operations)
+    for (auto& operation : operations)
     {
-        std::string op = operation->getOperator();
+        std::string op = operation.getOperator();
         std::vector<NodeID> operands;
         if (op == "funptr" || op == "complex")
             continue;
-        for (auto s: operation->getOperandStr())
+        for (auto s: operation.getOperandStr())
         {
             NodeID operandID;
             // There is already a NodeID in nodeIDMap
@@ -1160,7 +1160,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation *>  &operations
             }
             operands.push_back(operandID);
         }
-        operation->setOperands(operands);
+        operation.setOperands(operands);
     }
 }
 
@@ -1207,7 +1207,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         if (isExtCall(callee))
         {
             std::string funName = ExtAPI::getExtAPI()->get_name(callee);
-            std::vector<ExtAPI::Operation *>  allOperations = ExtAPI::getExtAPI()->getAllOperations(funName);
+            std::vector<ExtAPI::Operation>  allOperations = ExtAPI::getExtAPI()->getAllOperations(funName);
             if (allOperations.size() == 0)
             {
                 std::string str;
@@ -1220,28 +1220,28 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 parseOperations(allOperations, cs);
                 for (auto op : allOperations)
                 {
-                    if (op->getOperator() == "AddrStmt")
+                    if (op.getOperator() == "AddrStmt")
                     {
-                        addAddrEdge(op->getOperands()[0], op->getOperands()[1]);
+                        addAddrEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op->getOperator() == "CopyStmt")
+                    else if (op.getOperator() == "CopyStmt")
                     {
-                        addCopyEdge(op->getOperands()[0], op->getOperands()[1]);
+                        addCopyEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op->getOperator() == "LoadStmt")
+                    else if (op.getOperator() == "LoadStmt")
                     {
-                        addLoadEdge(op->getOperands()[0], op->getOperands()[1]);
+                        addLoadEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op->getOperator() == "StoreStmt")
+                    else if (op.getOperator() == "StoreStmt")
                     {
-                        addStoreEdge(op->getOperands()[0], op->getOperands()[1]);
+                        addStoreEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op->getOperator() == "GepStmt")
+                    else if (op.getOperator() == "GepStmt")
                     {
-                        LocationSet ls(op->getOperands()[2]);
-                        addNormalGepEdge(op->getOperands()[0], op->getOperands()[1], ls);
+                        LocationSet ls(op.getOperands()[2]);
+                        addNormalGepEdge(op.getOperands()[0], op.getOperands()[1], ls);
                     }
-                    else if (op->getOperator() == "copy_n")
+                    else if (op.getOperator() == "copy_n")
                     {
                         // this is for memset(void *str, int c, size_t n)
                         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
@@ -1258,15 +1258,15 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         if(SVFUtil::isa<PointerType>(inst->getType()))
                             addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
                     }
-                    else if (op->getOperator() == "copy_mn")
+                    else if (op.getOperator() == "copy_mn")
                     {
                         /// handle strcpy
                         if(cs.arg_size()>=3)
-                            addComplexConsForExt(cs.getArgument(op->getOperands()[0]), cs.getArgument(op->getOperands()[1]), cs.getArgument(op->getOperands()[2]));
+                            addComplexConsForExt(cs.getArgument(op.getOperands()[0]), cs.getArgument(op.getOperands()[1]), cs.getArgument(op.getOperands()[2]));
                         else
-                            addComplexConsForExt(cs.getArgument(op->getOperands()[0]), cs.getArgument(op->getOperands()[1]), nullptr);
+                            addComplexConsForExt(cs.getArgument(op.getOperands()[0]), cs.getArgument(op.getOperands()[1]), nullptr);
                     }
-                    else if (op->getOperator() == "funptr")
+                    else if (op.getOperator() == "funptr")
                     {
                         /// handling external function e.g., void *dlsym(void *handle, const char *funname);
                         const Value *src = cs.getArgument(1);
@@ -1284,7 +1284,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                             }
                         }
                     }
-                    else if (op->getOperator() == "complex")
+                    else if (op.getOperator() == "complex")
                     {
                         assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
 
@@ -1320,8 +1320,6 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         assert(false && "new type of SVFStmt for external calls?");
                     }
                 }
-                for(u32_t it = 0; it != allOperations.size(); ++it)
-                    delete allOperations[it];
             }
         }
 

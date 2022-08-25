@@ -299,9 +299,9 @@ cJSON *ExtAPI::get_FunJson(const std::string &funName)
 }
 
 // Get all operations of an extern function
-std::vector<ExtAPI::Operation *> ExtAPI::getAllOperations(std::string funName)
+std::vector<ExtAPI::Operation> ExtAPI::getAllOperations(std::string funName)
 {
-    std::vector<ExtAPI::Operation *> allOperations;
+    std::vector<ExtAPI::Operation> allOperations;
     cJSON *item = get_FunJson(funName);
     if (item != nullptr)
     {
@@ -328,7 +328,8 @@ std::vector<ExtAPI::Operation *> ExtAPI::getAllOperations(std::string funName)
                     value = value->next;
                 }
             }
-            allOperations.push_back(new Operation(op, operandsStr));
+            ExtAPI::Operation operation(op, operandsStr);
+            allOperations.push_back(operation);
             operations.clear();
 
             obj = obj -> next;

@@ -204,12 +204,11 @@ public:
     public:
         Operation() {};
 
-        // Operation(std::string op, std::vector<NodeID> vars) : Operator(op), operands(vars) {};
-        Operation(std::string op, std::vector<std::string> varstr) : Operator(op), operandStr(varstr) {};
+        Operation(std::string opn, std::vector<std::string> varstr) : op(opn), operandStr(varstr) {};
 
         std::string getOperator()
         {
-            return Operator;
+            return op;
         }
 
         std::vector<std::string> getOperandStr()
@@ -222,23 +221,13 @@ public:
             return operands;
         }
 
-        void setOperator(std::string op)
-        {
-            Operator = op;
-        }
-
-        void setOperandStr(std::vector<std::string> varStr)
-        {
-            operandStr = varStr;
-        }
-
         void setOperands(std::vector<NodeID> vars)
         {
             operands = vars;
         }
 
     private:
-        std::string Operator;
+        std::string op;
         std::vector<std::string> operandStr;
         std::vector<NodeID> operands;
     };
@@ -275,7 +264,7 @@ public:
     cJSON *get_FunJson(const std::string &funName);
 
     // Get all operations of an extern function
-    std::vector<Operation *> getAllOperations(std::string funName);
+    std::vector<Operation> getAllOperations(std::string funName);
 
     // Get property of the operation, e.g. "EFT_A1R_A0R"
     extType get_type(const SVF::SVFFunction *callee);
