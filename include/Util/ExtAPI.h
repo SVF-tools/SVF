@@ -102,19 +102,6 @@ Here we use regular expressions "(AN)(R|RN)^*" to represent parameters, for exam
 class ExtAPI
 {
 public:
-    enum extf_t
-    {
-        EXT_ADDR = 0,  // Handle addr edge
-        EXT_COPY,      // Handle copy edge
-        EXT_LOAD,      // Handle load edge
-        EXT_STORE,     // Handle store edge
-        EXT_GEP,      // Handle gep edge
-        EXT_COPY_N,    // Copy the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
-        EXT_COPY_MN,   // Copies n characters from memory area src to memory area dest.
-        EXT_FUNPTR,    // Handle function void *dlsym(void *handle, const char *symbol)
-        EXT_COMPLEX,   // Handle function _ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_
-        EXT_OTHER
-    };
 
     // External Function types
     // Assume a call in the form LHS= F(arg0, arg1, arg2, arg3).
@@ -163,18 +150,6 @@ public:
     };
 
 private:
-    std::map<std::string, extf_t> op_pair =
-    {
-        {"addr", EXT_ADDR},
-        {"copy", EXT_COPY},
-        {"load", EXT_LOAD},
-        {"store", EXT_STORE},
-        {"gep", EXT_GEP},
-        {"copy_n", EXT_COPY_N},
-        {"copy_mn", EXT_COPY_MN},
-        {"complex", EXT_COMPLEX},
-        {"funptr", EXT_FUNPTR}
-    };
 
     std::map<std::string, extType> type_pair =
     {
@@ -227,37 +202,46 @@ public:
     class Operation
     {
     public:
-
-    public:
         Operation() {};
 
-        Operation(std::string op, std::vector<std::string> args) : operation(op), args(args) {};
+        // Operation(std::string op, std::vector<NodeID> vars) : Operator(op), operands(vars) {};
+        Operation(std::string op, std::vector<std::string> varstr) : Operator(op), operandStr(varstr) {};
 
-        std::string getOperation()
+        std::string getOperator()
         {
-            return operation;
+            return Operator;
         }
 
-        std::vector<std::string> getArgs()
+        std::vector<std::string> getOperandStr()
         {
-            return args;
+            return operandStr;
         }
 
-        void setOperation(std::string op)
+        std::vector<NodeID> getOperands()
         {
-            operation = op;
+            return operands;
         }
 
-        void setArgs(std::vector<std::string> ags)
+        void setOperator(std::string op)
         {
-            args = ags;
+            Operator = op;
+        }
+
+        void setOperandStr(std::vector<std::string> varStr)
+        {
+            operandStr = varStr;
+        }
+
+        void setOperands(std::vector<NodeID> vars)
+        {
+            operands = vars;
         }
 
     private:
-        std::string operation;
-        std::vector<std::string> args;
+        std::string Operator;
+        std::vector<std::string> operandStr;
+        std::vector<NodeID> operands;
     };
-
     static ExtAPI *getExtAPI(const std::string & = "");
 
     static void destory();
@@ -271,11 +255,13 @@ public:
     // return value >= 0 is an argument node
     // return value = -1 is an inst node
     // return value = -2 is a Dummy node
-    // return value = -2 is an illegal operand format
+    // return value = -3 is an object node
+    // return value = -4 is an offset
+    // return value = -5 is an illegal operand format
     int getNodeIDType(std::string s);
 
     // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
-    extf_t get_opName(const std::string& s);
+    std::string get_opName(const std::string& s);
     // opposite for extType
     const std::string& extType_toString(extType type);
 
@@ -289,7 +275,7 @@ public:
     cJSON *get_FunJson(const std::string &funName);
 
     // Get all operations of an extern function
-    std::vector<std::vector<ExtAPI::Operation *>> getAllOperations(std::string funName);
+    std::vector<Operation *> getAllOperations(std::string funName);
 
     // Get property of the operation, e.g. "EFT_A1R_A0R"
     extType get_type(const SVF::SVFFunction *callee);

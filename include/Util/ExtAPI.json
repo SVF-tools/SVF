@@ -1562,1705 +1562,1705 @@
     "_fopen":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "fopen64":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "readdir64":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "tmpfile64":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "BIO_new_socket":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FT_Get_Sfnt_Table":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcFontList":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcFontMatch":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcFontRenderPrepare":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcFontSetCreate":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcFontSort":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcInitLoadConfig": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcObjectSetBuild": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcObjectSetCreate":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcPatternBuild":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcPatternCreate":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "FcPatternDuplicate":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "SSL_CTX_new":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "SSL_get_peer_certificate": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "SSL_new":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "SSLv23_client_method": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "SyGetmem": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "TLSv1_client_method":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XAddExtension":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XAllocClassHint":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XAllocSizeHints":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XAllocStandardColormap":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XCreateFontSet":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XCreateImage": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XCreateGC":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XESetCloseDisplay":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XGetImage":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XGetModifierMapping":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XGetMotionEvents": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XGetVisualInfo":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XLoadQueryFont":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XListPixmapFormats":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XRenderFindFormat":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XRenderFindStandardFormat":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XRenderFindVisualFormat":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XOpenDisplay": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XSetErrorHandler": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XSetIOErrorHandler":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XShapeGetRectangles":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XShmCreateImage":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XSynchronize": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XcursorImageCreate":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XcursorLibraryLoadImages": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XcursorShapeLoadImages":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XineramaQueryScreens": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XkbGetMap":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XtAppCreateShell": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XtCreateApplicationContext":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XtOpenDisplay":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "alloc":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "alloc_check":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "alloc_clear":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "art_svp_from_vpath":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "art_svp_vpath_stroke": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "art_svp_writer_rewind_new":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "art_svp_writer_rewind_reap":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "art_vpath_dash":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "cairo_create": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "cairo_image_surface_create_for_data":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "cairo_pattern_create_for_surface": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "cairo_surface_create_similar": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "calloc":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "zmalloc":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "fopen":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "fopencookie":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "g_scanner_new":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gcry_sexp_nth_mpi":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gzdopen":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "iconv_open":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "jpeg_alloc_huff_table":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "jpeg_alloc_quant_table":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "lalloc":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "lalloc_clear": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "malloc":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "nhalloc":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "oballoc":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "pango_cairo_font_map_create_context":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "pcre_compile": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "pcre_study":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "permalloc":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "png_create_info_struct":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "png_create_write_struct":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "popen":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "pthread_getspecific":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "readdir":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "safe_calloc":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "safe_malloc":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "safecalloc":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "safemalloc":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "safexcalloc":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "safexmalloc":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "savealloc":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "setmntent":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "shmat":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "__sysv_signal":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "signal":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "sigset":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "tempnam":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "tmpfile":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "xalloc":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "xcalloc":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "xmalloc":  {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "_Znwm":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "_Znam":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "_Znaj":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "_Znwj":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "__cxa_allocate_exception": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "aligned_alloc":    {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "memalign": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "valloc":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "SRE_LockCreate":   {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "VOS_MemAlloc": {
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "mmap64":   {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "X509_NAME_oneline":    {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "X509_verify_cert_error_string":    {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XBaseFontNameListOfFontSet":   {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XGetAtomName": {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XGetDefault":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XGetKeyboardMapping":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XListDepths":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XListFonts":   {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XSetLocaleModifiers":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XcursorGetTheme":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "__strdup": {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "crypt":    {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "ctime":    {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "dlerror":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "dlopen":   {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gai_strerror": {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gcry_cipher_algo_name":    {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gcry_md_algo_name":    {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gcry_md_read": {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getenv":   {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getlogin": {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getpass":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gnutls_strerror":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gpg_strerror": {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gzerror":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "inet_ntoa":    {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "initscr":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "llvm.stacksave":   {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "mmap": {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "newwin":   {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "nl_langinfo":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "opendir":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "sbrk": {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "strdup":   {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "strerror": {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "strsignal":    {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "textdomain":   {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "tgetstr":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "tigetstr": {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "tmpnam":   {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "ttyname":  {
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "__ctype_b_loc":    {
         "type": "EFT_STAT2",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "__ctype_tolower_loc":  {
         "type": "EFT_STAT2",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "__ctype_toupper_loc":  {
         "type": "EFT_STAT2",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "XKeysymToString":  {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "__errno_location": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "__h_errno_location":   {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "__res_state":  {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "asctime":  {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "bindtextdomain":   {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "bind_textdomain_codeset":  {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "ctermid":  {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "dcgettext":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "dgettext": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "dngettext":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "fdopen":   {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gcry_strerror":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gcry_strsource":   {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getgrgid": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getgrnam": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gethostbyaddr":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gethostbyname":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gethostbyname2":   {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getmntent":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getprotobyname":   {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getprotobynumber": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getpwent": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getpwnam": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getpwuid": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getservbyname":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getservbyport":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getspnam": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gettext":  {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gmtime":   {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gnu_get_libc_version": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "gnutls_check_version": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "localeconv":   {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "localtime":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "ngettext": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "pango_cairo_font_map_get_default": {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "re_comp":  {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "setlocale":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "tgoto":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "tparm":    {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "zError":   {
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "getcwd":   {
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "mem_realloc":  {
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "realloc":  {
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "realloc_obj":  {
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "safe_realloc": {
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "saferealloc":  {
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "safexrealloc": {
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "strtok":   {
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "strtok_r": {
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "xrealloc": {
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
-        "addr": {
-			"src": "L",
-			"dst": "L"
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
 		}
     },
     "SSL_CTX_free": {
@@ -3382,890 +3382,914 @@
     "__rawmemchr":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "cairo_surface_reference":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "fgets":    {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "jpeg_std_error":   {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "memchr":   {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "mremap":   {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "strchr":   {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "strerror_r":   {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "strpbrk":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "strptime": {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "strrchr":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "strstr":   {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "tmpnam_r": {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "isalnum":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "isalpha":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "isblank":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "iscntrl":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "isdigit":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "isgraph":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "islower":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "isprint":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "ispunct":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "isspace":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "isupper":  {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "isxdigit": {
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "asctime_r":    {
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
-        "copy": {
-                "src": "A1",
-                "dst": "L"
+        "CopyStmt": {
+                "src": "Arg1",
+                "dst": "Ret"
             }
     },
     "bsearch":  {
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
-       "copy": {
-			"src": "A1",
-			"dst": "L"
+       "CopyStmt": {
+			"src": "Arg1",
+			"dst": "Ret"
 		}
     },
     "getmntent_r":  {
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
-       "copy": {
-			"src": "A1",
-			"dst": "L"
+       "CopyStmt": {
+			"src": "Arg1",
+			"dst": "Ret"
 		}
     },
     "gmtime_r": {
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
-       "copy": {
-			"src": "A1",
-			"dst": "L"
+       "CopyStmt": {
+			"src": "Arg1",
+			"dst": "Ret"
 		}
     },
     "gzgets":   {
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
-       "copy": {
-			"src": "A1",
-			"dst": "L"
+       "CopyStmt": {
+			"src": "Arg1",
+			"dst": "Ret"
 		}
     },
     "localtime_r":  {
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
-       "copy": {
-			"src": "A1",
-			"dst": "L"
+       "CopyStmt": {
+			"src": "Arg1",
+			"dst": "Ret"
 		}
     },
     "realpath": {
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
-       "copy": {
-			"src": "A1",
-			"dst": "L"
+       "CopyStmt": {
+			"src": "Arg1",
+			"dst": "Ret"
 		}
     },
     "freopen64":    {
         "type": "EFT_L_A2",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A2",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg2",
+			"dst": "Ret"
 		}
     },
     "_XGetAsyncReply":  {
         "type": "EFT_L_A2",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A2",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg2",
+			"dst": "Ret"
 		}
     },
     "freopen":  {
         "type": "EFT_L_A2",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A2",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg2",
+			"dst": "Ret"
 		}
     },
     "inet_ntop":    {
         "type": "EFT_L_A2",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A2",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg2",
+			"dst": "Ret"
 		}
     },
     "XGetSubImage": {
         "type": "EFT_L_A8",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A8",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg8",
+			"dst": "Ret"
 		}
-    },
-    "memset":   {
-        "type": "EFT_L_A0__A0R_A1",
-        "overwrite_app_function": 0,
-        "copy_n": ["A0", "A1", "A2"]
     },
     "llvm.memset":  {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "copy_n": ["A0", "A1", "A2"]
+        "copy_n": ["0", "1", "2"]
     },
     "llvm.memset.p0i8.i32": {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "copy_n": ["A0", "A1", "A2"]
+        "copy_n": ["0", "1", "2"]
     },
     "llvm.memset.p0i8.i64": {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "copy_n": ["A0", "A1", "A2"]
+        "copy_n": ["0", "1", "2"]
     },
     "__memset_chk": {
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "copy_n": ["A0", "A1", "A2"]
+        "copy_n": ["0", "1", "2"]
     },
     "llvm.memcpy":  {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "llvm.memcpy.p0i8.p0i8.i32":    {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "llvm.memcpy.p0i8.p0i8.i64":    {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "llvm.memmove": {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "llvm.memmove.p0i8.p0i8.i32":   {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "llvm.memmove.p0i8.p0i8.i64":   {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "memccpy":  {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "memcpy":   {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "memmove":  {
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "dlsym":    {
         "type": "EFT_L_A1__FunPtr",
         "overwrite_app_function": 0,
-        "funptr": {
-			"src": "A1",
-			"dst": "A1"
-		}
+        "funptr":   ["Arg1"]
     },
     "bcopy":    {
         "type": "EFT_A1R_A0R",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A1", "A0", "A2"]
+        "copy_mn":  ["1", "0", "2"]
     },
     "iconv":    {
         "type": "EFT_A3R_A1R_NS",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A3", "A1"]
+        "copy_mn":  ["3", "1"]
     },
     "strtod":   {
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A0",
-				"dst": "A1"
+        "StoreStmt": {
+				"src": "Arg0",
+				"dst": "Arg1"
 			}
     },
     "strtof":   {
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A0",
-				"dst": "A1"
+        "StoreStmt": {
+				"src": "Arg0",
+				"dst": "Arg1"
 			}
     },
     "strtol":   {
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A0",
-				"dst": "A1"
+        "StoreStmt": {
+				"src": "Arg0",
+				"dst": "Arg1"
 			}
     },
     "strtold":  {
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A0",
-				"dst": "A1"
+        "StoreStmt": {
+				"src": "Arg0",
+				"dst": "Arg1"
 			}
     },
     "strtoll":  {
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A0",
-				"dst": "A1"
+        "StoreStmt": {
+				"src": "Arg0",
+				"dst": "Arg1"
 			}
     },
     "strtoul":  {
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A0",
-				"dst": "A1"
+        "StoreStmt": {
+				"src": "Arg0",
+				"dst": "Arg1"
 			}
     },
     "readdir_r":{
         "type": "EFT_A2R_A1",
         "overwrite_app_function": 0,
-        "store": {
-            "src": "A1",
-            "dst": "A2"
+        "StoreStmt": {
+            "src": "Arg1",
+            "dst": "Arg2"
         }
     },
     "__strcpy_chk": {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "__strcat_chk": {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "stpcpy":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "strcat":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "strcpy":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "strncat":  {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "strncpy":  {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "copy_mn":  ["A0", "A1", "A2"],
-        "copy": ["A0", "L"]
+        "copy_mn":  ["0", "1", "2"],
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
+		}
     },
     "getpwnam_r":{
         "type": "EFT_A4R_A1",
         "overwrite_app_function": 0,
-        "store": {
-			"src": "A1",
-			"dst": "A4"
+        "StoreStmt": {
+			"src": "Arg1",
+			"dst": "Arg4"
 		}
     },
     "getpwuid_r":{
         "type": "EFT_A4R_A1",
         "overwrite_app_function": 0,
-        "store": {
-			"src": "A1",
-			"dst": "A4"
+        "StoreStmt": {
+			"src": "Arg1",
+			"dst": "Arg4"
 		}
     },
     "db_create":    {
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A0"
+            "dst": "Arg0"
         }
     },
     "gcry_mpi_scan":    {
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A0"
+            "dst": "Arg0"
         }
     },
     "gcry_pk_decrypt":  {
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A0"
+            "dst": "Arg0"
         }
             },
     "gcry_sexp_build":  {
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A0"
+            "dst": "Arg0"
         }
     },
     "gnutls_pkcs12_bag_init":   {
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A0"
+            "dst": "Arg0"
         }
     },
     "gnutls_pkcs12_init":   {
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A0"
+            "dst": "Arg0"
         }
     },
     "gnutls_x509_crt_init": {
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A0"
+            "dst": "Arg0"
         }
     },
     "gnutls_x509_privkey_init": {
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A0"
+            "dst": "Arg0"
         }
     },
     "posix_memalign":   {
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A0"
+            "dst": "Arg0"
         }
     },
     "scandir":  {
         "type": "EFT_A1R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A1"
+            "dst": "Arg1"
         }
     },
     "XGetRGBColormaps": {
         "type": "EFT_A2R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A2"
+            "dst": "Arg2"
         }
     },
     "XmbTextPropertyToTextList":    {
         "type": "EFT_A2R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A2"
+            "dst": "Arg2"
         }
     },
     "SRE_SplSpecCreate":    {
         "type": "EFT_A2R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A2"
+            "dst": "Arg2"
         }
     },
     "XQueryTree":   {
         "type": "EFT_A4R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A4"
+            "dst": "Arg4"
         }
     },
     "XGetWindowProperty":   {
         "type": "EFT_A11R_NEW",
         "overwrite_app_function": 0,
-        "addr": {
-            "src": "Dummy",
+        "AddrStmt": {
+            "src": "Obj",
             "dst": "Dummy"
         },
-        "store": {
+        "StoreStmt": {
             "src": "Dummy",
-            "dst": "A11"
+            "dst": "Arg11"
         }
     },
     "_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_":{
         "type": "EFT_STD_RB_TREE_INSERT_AND_REBALANCE",
         "overwrite_app_function": 0,
         "complex": {
-            "src": "A1",
-            "dst": "A3"
+            "src": "Arg1",
+            "dst": "Arg3"
         }
     },
     "_ZNSt8__detail15_List_node_base7_M_hookEPS0_":{
         "type": "EFT_STD_LIST_HOOK",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A0",
-				"dst": "A1"
+        "StoreStmt": {
+				"src": "Arg0",
+				"dst": "Arg1"
 			}
     },
     "_ZNSsC1EPKcRKSaIcE":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A1",
-				"dst": "A0"
+        "StoreStmt": {
+				"src": "Arg1",
+				"dst": "Arg0"
 			}
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A1",
-				"dst": "A0"
+        "StoreStmt": {
+				"src": "Arg1",
+				"dst": "Arg0"
 			}
     },
     "_ZNSsC1EPKcmRKSaIcE":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A1",
-				"dst": "A0"
+        "StoreStmt": {
+				"src": "Arg1",
+				"dst": "Arg0"
 			}
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcmRKS3_":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A1",
-				"dst": "A0"
+        "StoreStmt": {
+				"src": "Arg1",
+				"dst": "Arg0"
 			}
     },
     "_ZNSsaSEPKc":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A1",
-				"dst": "A0"
+        "StoreStmt": {
+				"src": "Arg1",
+				"dst": "Arg0"
 			}
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEPKc":{
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
-        "store": {
-				"src": "A1",
-				"dst": "A0"
+        "StoreStmt": {
+				"src": "Arg1",
+				"dst": "Arg0"
 			}
     },
     "_ZNSsC1ERKSs":{
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-            "load": {
-                "src": "A1",
-                "dst": "Dummy"
-            },
-            "store": {
-                "src": "Dummy",
-                "dst": "A0"
-            }
+        "LoadStmt": {
+            "src": "Arg1",
+            "dst": "Dummy"
+        },
+        "StoreStmt": {
+            "src": "Dummy",
+            "dst": "Arg0"
         }
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_":{
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-            "load": {
-                "src": "A1",
-                "dst": "Dummy"
-            },
-            "store": {
-                "src": "Dummy",
-                "dst": "A0"
-            }
+        "LoadStmt": {
+            "src": "Arg1",
+            "dst": "Dummy"
+        },
+        "StoreStmt": {
+            "src": "Dummy",
+            "dst": "Arg0"
         }
     },
     "_ZNSsC1ERKSsmm":{
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-            "load": {
-                "src": "A1",
-                "dst": "Dummy"
-            },
-            "store": {
-                "src": "Dummy",
-                "dst": "A0"
-            }
+        "LoadStmt": {
+            "src": "Arg1",
+            "dst": "Dummy"
+        },
+        "StoreStmt": {
+            "src": "Dummy",
+            "dst": "Arg0"
         }
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_mm":{
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-            "load": {
-                "src": "A1",
-                "dst": "Dummy"
-            },
-            "store": {
-                "src": "Dummy",
-                "dst": "A0"
-            }
+        "LoadStmt": {
+            "src": "Arg1",
+            "dst": "Dummy"
+        },
+        "StoreStmt": {
+            "src": "Dummy",
+            "dst": "Arg0"
         }
     },
     "_ZNSsaSERKSs":{
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-            "load": {
-                "src": "A1",
-                "dst": "Dummy"
-            },
-            "store": {
-                "src": "Dummy",
-                "dst": "A0"
-            }
+        "LoadStmt": {
+            "src": "Arg1",
+            "dst": "Dummy"
+        },
+        "StoreStmt": {
+            "src": "Dummy",
+            "dst": "Arg0"
         }
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_":{
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-            "load": {
-                "src": "A1",
-                "dst": "Dummy"
-            },
-            "store": {
-                "src": "Dummy",
-                "dst": "A0"
-            }
+        "LoadStmt": {
+            "src": "Arg1",
+            "dst": "Dummy"
+        },
+        "StoreStmt": {
+            "src": "Dummy",
+            "dst": "Arg0"
         }
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEOS4_":{
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
-        "compound": {
-            "load": {
-                "src": "A1",
-                "dst": "Dummy"
-            },
-            "store": {
-                "src": "Dummy",
-                "dst": "A0"
-            }
+        "LoadStmt": {
+            "src": "Arg1",
+            "dst": "Dummy"
+        },
+        "StoreStmt": {
+            "src": "Dummy",
+            "dst": "Arg0"
         }
     },
     "_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E":{
         "type": "CPP_EFT_A1R",
         "overwrite_app_function": 0,
-        "load": {
-				"src": "A1",
+        "LoadStmt": {
+				"src": "Arg1",
 				"dst": "Dummy"
 			}
     },
     "_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic_stringIS4_S5_T1_EE":{
         "type": "CPP_EFT_A1R",
         "overwrite_app_function": 0,
-        "load": {
-				"src": "A1",
+        "LoadStmt": {
+				"src": "Arg1",
 				"dst": "Dummy"
 			}
     },
     "__dynamic_cast":{
         "type": "CPP_EFT_DYNAMIC_CAST",
         "overwrite_app_function": 0,
-        "copy": {
-			"src": "A0",
-			"dst": "L"
+        "CopyStmt": {
+			"src": "Arg0",
+			"dst": "Ret"
 		}
     },
     "_ZNSt5arrayIPK1ALm2EE4backEv":{
         "type": "CPP_EFT_DYNAMIC_CAST",
         "overwrite_app_function": 1,
-        "compound": {
-            "gep": {
-                "src": "A0",
-                "dst": "Dummy",
-                "offset": "0"
-            },
-            "gep": {
-                "src": "Dummy",
-                "dst": "L",
-                "offset": "0"
-            }
+        "GepStmt1": {
+            "src": "Arg0",
+            "dst": "Dummy",
+            "offset": "0"
+        },
+        "GepStmt2": {
+            "src": "Dummy",
+            "dst": "Ret",
+            "offset": "0"
         }
     }
 }
