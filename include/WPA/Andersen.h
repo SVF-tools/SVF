@@ -27,14 +27,15 @@
  *      Author: Yulei Sui
  */
 
-#ifndef ANDERSENPASS_H_
-#define ANDERSENPASS_H_
+#ifndef INCLUDE_WPA_ANDERSEN_H_
+#define INCLUDE_WPA_ANDERSEN_H_
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
 #include "MemoryModel/SVFIR.h"
 #include "Graphs/ConsG.h"
+#include "Util/Options.h"
 
 namespace SVF
 {
@@ -151,7 +152,7 @@ public:
 
     /// Constructor
     Andersen(SVFIR* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
-        :  AndersenBase(_pag, type, alias_check), pwcOpt(false), diffOpt(true)
+        :  AndersenBase(_pag, type, alias_check)
     {
     }
 
@@ -223,28 +224,9 @@ public:
 
     void dumpTopLevelPtsTo();
 
-    void setPWCOpt(bool flag)
+    void setDetectPWC(bool flag)
     {
-        pwcOpt = flag;
-        if (pwcOpt)
-            setSCCEdgeFlag(ConstraintNode::Direct);
-        else
-            setSCCEdgeFlag(ConstraintNode::Copy);
-    }
-
-    bool mergePWC() const
-    {
-        return pwcOpt;
-    }
-
-    void setDiffOpt(bool flag)
-    {
-        diffOpt = flag;
-    }
-
-    bool enableDiff() const
-    {
-        return diffOpt;
+        Options::DetectPWC = flag;
     }
 
 protected:
@@ -252,13 +234,10 @@ protected:
     CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
     void heapAllocatorViaIndCall(CallSite cs,NodePairSet &cpySrcNodes);
 
-    bool pwcOpt;
-    bool diffOpt;
-
     /// Handle diff points-to set.
     virtual inline void computeDiffPts(NodeID id)
     {
-        if (enableDiff())
+        if (Options::DiffPts)
         {
             NodeID rep = sccRepNode(id);
             getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
@@ -267,7 +246,7 @@ protected:
     virtual inline const PointsTo& getDiffPts(NodeID id)
     {
         NodeID rep = sccRepNode(id);
-        if (enableDiff())
+        if (Options::DiffPts)
             return getDiffPTDataTy()->getDiffPts(rep);
         else
             return getPTDataTy()->getPts(rep);
@@ -276,7 +255,7 @@ protected:
     /// Handle propagated points-to set.
     inline void updatePropaPts(NodeID dstId, NodeID srcId)
     {
-        if (!enableDiff())
+        if (!Options::DiffPts)
             return;
         NodeID srcRep = sccRepNode(srcId);
         NodeID dstRep = sccRepNode(dstId);
@@ -284,7 +263,7 @@ protected:
     }
     inline void clearPropaPts(NodeID src)
     {
-        if (enableDiff())
+        if (Options::DiffPts)
         {
             NodeID rep = sccRepNode(src);
             getDiffPTDataTy()->clearPropaPts(rep);
@@ -292,11 +271,6 @@ protected:
     }
 
     virtual void initWorklist() {}
-
-    virtual void setSCCEdgeFlag(ConstraintNode::SCCEdgeFlag f)
-    {
-        ConstraintNode::sccEdgeFlag = f;
-    }
 
     /// Override WPASolver function in order to use the default solver
     virtual void processNode(NodeID nodeId);
@@ -386,17 +360,6 @@ protected:
         return "AndersenWPA";
     }
 
-    /// match types for Gep Edges
-    virtual bool matchType(NodeID, NodeID, const NormalGepCGEdge*)
-    {
-        return true;
-    }
-    /// add type for newly created GepObjNode
-    virtual void addTypeForGepObjNode(NodeID, const NormalGepCGEdge*)
-    {
-        return;
-    }
-
     /// Runs a Steensgaard analysis and performs clustering based on those
     /// results set the global best mapping.
     virtual void cluster(void) const;
@@ -435,6 +398,7 @@ public:
         diffWave = nullptr;
     }
 
+    virtual void initialize();
     virtual void solveWorklist();
     virtual void processNode(NodeID nodeId);
     virtual void postProcessNode(NodeID nodeId);
@@ -444,4 +408,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* ANDERSENPASS_H_ */
+#endif /* INCLUDE_WPA_ANDERSEN_H_ */

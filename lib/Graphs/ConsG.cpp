@@ -34,8 +34,6 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-ConstraintNode::SCCEdgeFlag ConstraintNode::sccEdgeFlag = ConstraintNode::Direct;
-
 /*!
  * Start building constraint graph
  */
@@ -606,6 +604,73 @@ void ConstraintGraph::view()
 {
     llvm::ViewGraph(this, "Constraint Graph");
 }
+
+/// Iterators of direct edges for ConsGNode
+//@{
+ConstraintNode::iterator ConstraintNode::directOutEdgeBegin()
+{
+    if (Options::DetectPWC)
+        return directOutEdges.begin();
+    else
+        return copyOutEdges.begin();
+}
+
+ConstraintNode::iterator ConstraintNode::directOutEdgeEnd()
+{
+    if (Options::DetectPWC)
+        return directOutEdges.end();
+    else
+        return copyOutEdges.end();
+}
+
+ConstraintNode::iterator ConstraintNode::directInEdgeBegin()
+{
+    if (Options::DetectPWC)
+        return directInEdges.begin();
+    else
+        return copyInEdges.begin();
+}
+
+ConstraintNode::iterator ConstraintNode::directInEdgeEnd()
+{
+    if (Options::DetectPWC)
+        return directInEdges.end();
+    else
+        return copyInEdges.end();
+}
+
+ConstraintNode::const_iterator ConstraintNode::directOutEdgeBegin() const
+{
+    if (Options::DetectPWC)
+        return directOutEdges.begin();
+    else
+        return copyOutEdges.begin();
+}
+
+ConstraintNode::const_iterator ConstraintNode::directOutEdgeEnd() const
+{
+    if (Options::DetectPWC)
+        return directOutEdges.end();
+    else
+        return copyOutEdges.end();
+}
+
+ConstraintNode::const_iterator ConstraintNode::directInEdgeBegin() const
+{
+    if (Options::DetectPWC)
+        return directInEdges.begin();
+    else
+        return copyInEdges.begin();
+}
+
+ConstraintNode::const_iterator ConstraintNode::directInEdgeEnd() const
+{
+    if (Options::DetectPWC)
+        return directInEdges.end();
+    else
+        return copyInEdges.end();
+}
+//@}
 
 /*!
  * GraphTraits specialization for constraint graph

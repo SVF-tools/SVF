@@ -32,7 +32,7 @@
 #include "SVF-FE/ICFGBuilder.h"
 #include "Graphs/CHG.h"
 #include "WPA/TypeAnalysis.h"
-#include "MemoryModel/PTAStat.h"
+#include "Util/PTAStat.h"
 #include "Graphs/ICFGStat.h"
 #include "Graphs/VFG.h"
 

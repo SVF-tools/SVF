@@ -313,8 +313,6 @@ public:
         static const unsigned fieldWidth = 25;
         SVFUtil::outs().flags(std::ios::left);
 
-        SVFUtil::outs() << "****Persistent Points-To Cache Statistics: " << subtitle << "****\n";
-
         SVFUtil::outs() << std::setw(fieldWidth) << "UniquePointsToSets"      << idToPts.size()          << "\n";
 
         SVFUtil::outs() << std::setw(fieldWidth) << "TotalUnions"             << totalUnions             << "\n";

@@ -206,7 +206,15 @@ void CFLAlias::analyze()
         PointerAnalysis::initialize();
         GrammarBase *grammarBase = grammarBuilder.build();
         ConstraintGraph *consCG = new ConstraintGraph(svfir);
-        graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
+        if (Options::PEGTransfer)
+        {
+            graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
+        }
+        else
+        {
+            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
+        }
+
         cflChecker.check(grammarBase, &cflGraphBuilder, graph);
         grammar = normalizer.normalize(grammarBase);
         cflChecker.check(grammar, &cflGraphBuilder, graph);
@@ -228,12 +236,9 @@ void CFLAlias::analyze()
         solver->solve();
     if(Options::PrintCFL == true)
     {
-        std::string svfirName = Options::CFLGraph.c_str();
-        svfir->dump(svfirName.append("_IR"));
-        std::string grammarName = Options::CFLGraph.c_str();
-        grammar->dump(grammarName.append("_Grammar"));
-        std::string CFLGraphFileName = Options::CFLGraph.c_str();
-        graph->dump(CFLGraphFileName.append("_CFL"));
+        svfir->dump("IR");
+        grammar->dump("Grammar");
+        graph->dump("CFLGraph");
     }
     if (Options::CFLGraph.empty())
     {

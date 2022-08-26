@@ -27,6 +27,8 @@
  *      Author: Yulei Sui
  */
 
+#ifndef INCLUDE_CFL_CFLALIAS_H_
+#define INCLUDE_CFL_CFLALIAS_H_
 
 #include "CFL/CFLSolver.h"
 #include "CFL/CFGNormalizer.h"
@@ -144,4 +146,6 @@ private:
     CFLSolver *solver;
 };
 
-}
+} // End namespace SVF
+
+#endif /* INCLUDE_CFL_CFLALIAS_H_*/

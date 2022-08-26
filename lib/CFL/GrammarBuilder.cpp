@@ -42,6 +42,7 @@ const inline std::string GrammarBuilder::parseProductionsString() const
     std::string lineString;
     std::string lines = "";
     std::string startString;
+    std::string symbolString;
     const std::string WHITESPACE = " \n\r\t\f\v";
     int lineNum = 0;
     while (getline(textFile, lineString))
@@ -50,25 +51,28 @@ const inline std::string GrammarBuilder::parseProductionsString() const
         {
             startString = stripSpace(lineString);
         }
+        if(lineNum == 3)
+        {
+            symbolString = lineString.substr(lineString.find_first_not_of(WHITESPACE), lineString.find_last_not_of(WHITESPACE)+1);
+        }
 
         lines.append(lineString.substr(lineString.find_first_not_of(WHITESPACE), lineString.find_last_not_of(WHITESPACE)+1));
         lineNum++;
     }
 
-    std::regex reg("Start:([\\s\\S]*)Terminal:([\\s\\S]*)Productions:([\\s\\S]*)");
+    std::regex reg("Start:([\\s\\S]*)Terminal:(.*)Productions:([\\s\\S]*)");
     std::smatch matches;
     if (std::regex_search(lines, matches, reg))
     {
         lines = matches.str(3);
     }
-    std::string terminalString = matches.str(2);
-    std::string symbolString;
-    size_t pos;
-    while ((pos = terminalString.find(" ")) != std::string::npos)
+    std::string sString;
+    size_t pos = 0;
+    while ((pos = symbolString.find(" ")) != std::string::npos)
     {
-        symbolString = stripSpace(terminalString.substr(0, pos));
-        terminalString.erase(0, pos + 1); //Capital is Nonterminal, Otherwise is terminal
-        grammar->insertSymbol(symbolString);
+        sString = stripSpace(symbolString.substr(0, pos));
+        symbolString.erase(0, pos + 1); //Capital is Nonterminal, Otherwise is terminal
+        grammar->insertSymbol(sString);
     }
     grammar->insertSymbol(symbolString);
     grammar->setStartKind(grammar->insertSymbol(startString));

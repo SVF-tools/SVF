@@ -81,7 +81,24 @@ jobs:
             if [ -n "$(git status -s)" ]; then git commit -m"update SVF doxygen"       ; fi
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-doxygen.git   HEAD:master       
           
-      
+      # update performance testing to Test-Suite
+      - name: upload-performance-testing-to-Test-Suite
+        working-directory: ${{github.workspace}}/Release-build
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            runner.os == 'Linux' &&
+            github.ref == 'refs/heads/master'
+        run: |
+            ctest -R diff-perf-cruxbc -VV
+            git pull
+            cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf_history/perf-${{github.event.repository.updated_at}}.txt
+            cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-latest.txt
+            cd $GITHUB_WORKSPACE/Test-Suite/diff_tests  
+            git add .     
+            if [ -n "$(git status -s)" ]; then git commit -m"update latest SVF performance data"       ; fi
+            git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/Test-Suite.git   HEAD:master   
+
       # update-svf-lib
       - name: update-svf-lib
         if: |

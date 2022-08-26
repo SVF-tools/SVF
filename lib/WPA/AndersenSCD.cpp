@@ -27,8 +27,9 @@
  *      Author: Yuxiang Lei
  */
 
-#include "WPA/AndersenSFR.h"
+#include "WPA/AndersenPWC.h"
 #include "MemoryModel/PointsTo.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -106,11 +107,11 @@ NodeStack& AndersenSCD::SCCDetect()
     double mergeEnd = stat->getClk();
     timeOfSCCMerges +=  (mergeEnd - mergeStart)/TIMEINTERVAL;
 
-    if (!mergePWC())
+    if (Options::DetectPWC)
     {
-        double sccStart = stat->getClk();
+        sccStart = stat->getClk();
         PWCDetect();
-        double sccEnd = stat->getClk();
+        sccEnd = stat->getClk();
         timeOfSCCDetection += (sccEnd - sccStart) / TIMEINTERVAL;
     }
 
@@ -131,13 +132,13 @@ void AndersenSCD::PWCDetect()
     tmpSccCandidates.clear();
 
     // set scc edge type as direct edge
-    ConstraintNode::SCCEdgeFlag f = ConstraintNode::sccEdgeFlag;
-    setSCCEdgeFlag(ConstraintNode::Direct);
+    bool pwcFlag = Options::DetectPWC;
+    setDetectPWC(true);
 
     getSCCDetector()->find(sccCandidates);
 
     // reset scc edge type
-    setSCCEdgeFlag(f);
+    setDetectPWC(pwcFlag);
 }
 
 
@@ -148,7 +149,7 @@ void AndersenSCD::handleCopyGep(ConstraintNode* node)
 {
     NodeID nodeId = node->getId();
 
-    if (!mergePWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
+    if (!Options::DetectPWC && getSCCDetector()->subNodes(nodeId).count() > 1)
         processPWC(node);
     else if(isInWorklist(nodeId))
         Andersen::handleCopyGep(node);
