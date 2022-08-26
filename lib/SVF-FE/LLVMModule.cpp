@@ -34,6 +34,7 @@
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/BreakConstantExpr.h"
+#include "MSSA/SVFGBuilder.h"
 
 using namespace std;
 using namespace SVF;
@@ -124,6 +125,8 @@ void LLVMModuleSet::build()
     initialize();
     buildFunToFunMap();
     buildGlobalDefToRepMap();
+    if(preProcessed==false)
+        prePassSchedule();
     const SVFModule::FunctionSetType& functions = svfModule->getFunctionSet();
     for (SVFModule::FunctionSetType::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
     {
@@ -140,10 +143,32 @@ void LLVMModuleSet::build()
             BasicBlock *exitBB =  const_cast<BasicBlock*>(LLVMUtil::getFunExitBB(func));
             svffun->setReachableBBs(reachableBBs);
             svffun->setExitBB(exitBB);
+            DominatorTree dt;
+            // MemSSADF df;
+            // dt.recalculate(*func->getLLVMFun());
+            // df.runOnDT(dt);
+            for (Function::const_iterator bit = svffun->getLLVMFun()->begin(), ebit = svffun->getLLVMFun()->end(); bit != ebit; ++bit)
+            {   
+                const BasicBlock *bb = &*bit;
+                dt.recalculate(*svffun->getLLVMFun());
+                if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb)))
+                {
+                    DomTreeNode::iterator DI = dtNode->begin();
+                    if (DI != dtNode->end()){
+                        for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end(); DI != DE; ++DI)
+                        {
+                            BasicBlock* dtBB = (*DI)->getBlock();
+                            svffun->insertDtBB(bb,dtBB);
+                        }
+                    }
+                    else
+                    {
+                        svffun->insertDtBB(bb,nullptr);
+                    }
+                }
+            }
         }
     }
-    if(preProcessed==false)
-        prePassSchedule();
 }
 
 /*!

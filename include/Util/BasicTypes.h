@@ -133,6 +133,7 @@ private:
     std::vector<const BasicBlock*> reachableBBs;
     bool isUncalled;
     bool isNotRet;
+    Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
         isDecl(false), isIntri(false), fun(nullptr), exitBB(nullptr), isUncalled(false), isNotRet(false)
@@ -208,6 +209,38 @@ public:
     inline const void setReachableBBs(std::vector<const BasicBlock*> reachableBBs)
     {
         this->reachableBBs = reachableBBs;
+    }
+
+    inline const void setDtBBsMap(Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap)
+    {
+        this->dtBBsMap = dtBBsMap;
+    }
+
+    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getDtBBsMap() const
+    {
+        return dtBBsMap;
+    }
+
+    inline const void insertDtBB(const BasicBlock* entryBB, const BasicBlock* dtBB)
+    {
+        if (dtBB == nullptr){
+                Set<const BasicBlock*> bbs;
+                dtBBsMap.insert({entryBB,bbs});
+        } else {
+            Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = this->dtBBsMap.find(entryBB);
+            if (mapIter != dtBBsMap.end())
+            {
+                Set<const BasicBlock*> foundBbs = mapIter->second;
+                foundBbs.insert(dtBB);
+                dtBBsMap[entryBB] = foundBbs;
+            }
+            else 
+            {
+                Set<const BasicBlock*> bbs;
+                bbs.insert(dtBB);
+                dtBBsMap.insert({entryBB,bbs});
+            }
+        }
     }
 
     inline const bool isNotRetFunction() const

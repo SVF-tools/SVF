@@ -43,7 +43,7 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr),dt(nullptr)
+MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr)
 {
     pta = p;
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
@@ -76,10 +76,9 @@ SVFIR* MemSSA::getPAG()
 /*!
  * Set DF/DT
  */
-void MemSSA::setCurrentDFDT(DominanceFrontier* f, DominatorTree* t)
+void MemSSA::setCurrentDFDT(DominanceFrontier* f)
 {
     df = f;
-    dt = t;
     usedRegs.clear();
     reg2BBMap.clear();
 }
@@ -87,7 +86,7 @@ void MemSSA::setCurrentDFDT(DominanceFrontier* f, DominatorTree* t)
 /*!
  * Start building memory SSA
  */
-void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, DominatorTree* t)
+void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f)
 {
 
     assert(!isExtCall(&fun) && "we do not build memory ssa for external functions");
@@ -95,7 +94,7 @@ void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, Dominator
     DBOUT(DMSSA, outs() << "Building Memory SSA for function " << fun.getName()
           << " \n");
 
-    setCurrentDFDT(f,t);
+    setCurrentDFDT(f);
 
     /// Create mus/chis for loads/stores/calls for memory regions
     double muchiStart = stat->getClk(true);
@@ -342,15 +341,16 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
 
     // for succ basic block in dominator tree
     const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
-    DominatorTree* dt = getDT(*fun);
-    if(DomTreeNode *dtNode = dt->getNode(const_cast<BasicBlock*>(&bb)))
+    const Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap = fun->getDtBBsMap();
+    Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(&bb);
+    if (mapIter != dtBBsMap.end())
     {
-        for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end();
-                DI != DE; ++DI)
+        Set<const BasicBlock*> dtBBs = mapIter->second;
+        for (Set<const BasicBlock*>::const_iterator it = dtBBs.begin(), eit = dtBBs.end(); it != eit; it++)
         {
-            SSARenameBB(*((*DI)->getBlock()));
+            SSARenameBB(*(*it));
         }
-    }
+    } 
     // for each r = chi(..), and r = phi(..)
     // 		pop ver stack(r)
     while (!memRegs.empty())

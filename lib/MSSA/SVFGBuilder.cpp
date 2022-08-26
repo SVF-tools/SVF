@@ -134,7 +134,7 @@ MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
         dt.recalculate(*fun->getLLVMFun());
         df.runOnDT(dt);
 
-        mssa->buildMemSSA(*fun, &df, &dt);
+        mssa->buildMemSSA(*fun, &df);
     }
 
     mssa->performStat();
