@@ -454,9 +454,8 @@ SaberCondAllocator::getPHIComplementCond(const BasicBlock *BB1, const BasicBlock
 {
     assert(BB1 && BB2 && "expect nullptr BB here!");
 
-    DominatorTree *dt = getDT(BB1->getParent());
     /// avoid both BB0 and BB1 dominate BB2 (e.g., while loop), then BB2 is not necessaryly a complement BB
-    if (dt->dominates(BB1, BB2) && !dt->dominates(BB0, BB2))
+    if (dominates(BB1, BB2) && ! dominates(BB0, BB2))
     {
         Condition cond = ComputeIntraVFGGuard(BB1, BB2);
         return condNeg(cond);
