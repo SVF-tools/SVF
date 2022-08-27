@@ -1143,15 +1143,25 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                 operandID = nodeIDMap[s];
             else
             {
-                int nodeIDType = ExtAPI::getExtAPI()->getNodeIDType(s);
+                s32_t nodeIDType = ExtAPI::getExtAPI()->getNodeIDType(s);
                 if (nodeIDType >= 0)
-                    operandID = getValueNode(cs.getArgument(nodeIDType));
+                {
+                    if( cs.arg_size() <= nodeIDType)
+                        assert(false && "Argument out of bounds!");
+                    else
+                        operandID = getValueNode(cs.getArgument(nodeIDType));
+                }
                 else if (nodeIDType == -1)
                     operandID = getValueNode(cs.getInstruction());
                 else if (nodeIDType == -2)
                     operandID = pag->addDummyValNode();
                 else if (nodeIDType == -3)
-                    operandID = getObjectNode(cs.getInstruction());
+                {
+                    if(!SVFUtil::isa<PointerType>(cs.getInstruction()->getType()))
+                        assert(false && "The instruction type is not a pointer type! Can‘t get an object");
+                    else
+                        operandID = getObjectNode(cs.getInstruction());
+                }        
                 else if (nodeIDType == -4)
                     operandID = atoi(s.c_str());
                 else
@@ -1261,7 +1271,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     else if (op.getOperator() == "memcpy_like")
                     {
                         /// handle strcpy
-                        if(cs.arg_size()>=3)
+                        if(op.getOperands().size() >= 3)
                             addComplexConsForExt(cs.getArgument(op.getOperands()[0]), cs.getArgument(op.getOperands()[1]), cs.getArgument(op.getOperands()[2]));
                         else
                             addComplexConsForExt(cs.getArgument(op.getOperands()[0]), cs.getArgument(op.getOperands()[1]), nullptr);

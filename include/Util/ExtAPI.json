@@ -3217,11 +3217,7 @@
     },
     "safe_realloc": {
         "type": "EFT_REALLOC",
-        "overwrite_app_function": 1,
-        "AddrStmt": {
-			"src": "Obj",
-			"dst": "Ret"
-		}
+        "overwrite_app_function": 1
     },
     "saferealloc":  {
         "type": "EFT_REALLOC",
@@ -3868,7 +3864,7 @@
     "stpcpy":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3877,7 +3873,7 @@
     "strcat":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -3886,7 +3882,7 @@
     "strcpy":   {
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["0", "1"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
