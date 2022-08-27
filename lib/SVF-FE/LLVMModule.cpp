@@ -143,14 +143,30 @@ void LLVMModuleSet::build()
             BasicBlock *exitBB =  const_cast<BasicBlock*>(LLVMUtil::getFunExitBB(func));
             svffun->setReachableBBs(reachableBBs);
             svffun->setExitBB(exitBB);
+            
+            //process and stored dt & df
             DominatorTree dt;
-            // MemSSADF df;
-            // dt.recalculate(*func->getLLVMFun());
-            // df.runOnDT(dt);
+            DominanceFrontier df;
+            dt.recalculate(*svffun->getLLVMFun());
+            df.analyze(dt);
+            Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
+            for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
+            {
+                const BasicBlock* keyBB = dfIter->first;
+                const std::set<BasicBlock *> domSet = dfIter->second;
+                Set<const BasicBlock*> valueBasicBlocks;
+                for (std::set<BasicBlock*>::iterator domSetIter = domSet.begin(), eDomSet = domSet.end(); domSetIter !=eDomSet; domSetIter++)
+                {
+                    BasicBlock* bbValue = *domSetIter;
+                    valueBasicBlocks.insert(bbValue);
+                }
+                dfBBsMap.insert({keyBB,valueBasicBlocks});
+            }
+            svffun->setDfBBsMap(dfBBsMap);
+
             for (Function::const_iterator bit = svffun->getLLVMFun()->begin(), ebit = svffun->getLLVMFun()->end(); bit != ebit; ++bit)
             {   
                 const BasicBlock *bb = &*bit;
-                dt.recalculate(*svffun->getLLVMFun());
                 if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb)))
                 {
                     DomTreeNode::iterator DI = dtNode->begin();

@@ -43,7 +43,7 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr)
+MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA)
 {
     pta = p;
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
@@ -74,19 +74,9 @@ SVFIR* MemSSA::getPAG()
 }
 
 /*!
- * Set DF/DT
- */
-void MemSSA::setCurrentDFDT(DominanceFrontier* f)
-{
-    df = f;
-    usedRegs.clear();
-    reg2BBMap.clear();
-}
-
-/*!
  * Start building memory SSA
  */
-void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f)
+void MemSSA::buildMemSSA(const SVFFunction& fun)
 {
 
     assert(!isExtCall(&fun) && "we do not build memory ssa for external functions");
@@ -94,7 +84,8 @@ void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f)
     DBOUT(DMSSA, outs() << "Building Memory SSA for function " << fun.getName()
           << " \n");
 
-    setCurrentDFDT(f);
+    usedRegs.clear();
+    reg2BBMap.clear();
 
     /// Create mus/chis for loads/stores/calls for memory regions
     double muchiStart = stat->getClk(true);
@@ -215,7 +206,7 @@ void MemSSA::insertPHI(const SVFFunction& fun)
     DBOUT(DMSSA,
           outs() << "\t insert phi for function " << fun.getName() << "\n");
 
-    const DominanceFrontier* df = getDF(fun);
+    const Map<const BasicBlock*,Set<const BasicBlock*>>& df = fun.getDfBBsMap();
     // record whether a phi of mr has already been inserted into the bb.
     BBToMRSetMap bb2MRSetMap;
 
@@ -230,14 +221,14 @@ void MemSSA::insertPHI(const SVFFunction& fun)
         {
             const BasicBlock* bb = bbs.back();
             bbs.pop_back();
-            DominanceFrontierBase::const_iterator it = df->find(const_cast<BasicBlock*>(bb));
-            if(it == df->end())
+            Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator it = df.find(const_cast<BasicBlock*>(bb));
+            if(it == df.end())
             {
                 writeWrnMsg("bb not in the dominance frontier map??");
                 continue;
             }
-            const DominanceFrontierBase::DomSetType& domSet = it->second;
-            for (DominanceFrontierBase::DomSetType::const_iterator bit =
+            const Set<const BasicBlock*> domSet = it->second;
+            for (Set<const BasicBlock*>::const_iterator bit =
                         domSet.begin(); bit != domSet.end(); ++bit)
             {
                 const BasicBlock* pbb = *bit;

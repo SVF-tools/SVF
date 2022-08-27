@@ -134,6 +134,7 @@ private:
     bool isUncalled;
     bool isNotRet;
     Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
+    Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
         isDecl(false), isIntri(false), fun(nullptr), exitBB(nullptr), isUncalled(false), isNotRet(false)
@@ -211,6 +212,16 @@ public:
         this->reachableBBs = reachableBBs;
     }
 
+    inline const void setDfBBsMap(Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap)
+    {
+        this->dfBBsMap = dfBBsMap;
+    }
+
+    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getDfBBsMap() const
+    {
+        return dfBBsMap;
+    }
+    
     inline const void setDtBBsMap(Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap)
     {
         this->dtBBsMap = dtBBsMap;
