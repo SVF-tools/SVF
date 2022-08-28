@@ -1172,10 +1172,10 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                 }        
                 else if (nodeIDType == -4)
                 {
-                    u32_t i=0;
-                    while(i < s.size() && isdigit(s[i])) i++;
-                    if (i != s.size())
-                        assert(false && "Invalid offset!");
+                    for (char const &c : s) {
+                        if (std::isdigit(c) == 0) 
+                            assert(false && "Invalid offset!");
+                    }
                     operands.push_back(atoi(s.c_str()));
                     nodeIDMap[s] = atoi(s.c_str());
                 }
