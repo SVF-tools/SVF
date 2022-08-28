@@ -216,7 +216,7 @@ public:
             return operandStr;
         }
 
-        std::vector<NodeID> getOperands()
+        std::vector<NodeID> &getOperands()
         {
             return operands;
         }
@@ -247,7 +247,7 @@ public:
     // return value = -3 is an object node
     // return value = -4 is an offset
     // return value = -5 is an illegal operand format
-    int getNodeIDType(std::string s);
+    s32_t getNodeIDType(std::string s);
 
     // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
     std::string get_opName(const std::string& s);
