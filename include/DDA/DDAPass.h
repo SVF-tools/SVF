@@ -43,9 +43,6 @@ public:
     /// We start from here
     virtual void runOnModule(SVFModule* module);
 
-    /// We start from here
-    virtual bool runOnModule(Module& module);
-
     /// Select a client
     virtual void selectClient(SVFModule* module);
 

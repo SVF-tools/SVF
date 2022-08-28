@@ -116,6 +116,23 @@ public:
         return svfModule->getSVFFunction(fun);
     }
 
+    /// Get the corresponding Function based on its name
+    inline const SVFFunction *getSVFFunction(std::string name)
+    {
+        Function *fun = nullptr;
+
+        for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i)
+        {
+            Module *mod = llvmModuleSet->getModule(i);
+            fun = mod->getFunction(name);
+            if (fun)
+            {
+                return llvmModuleSet->getSVFFunction(fun);
+            }
+        }
+        return nullptr;
+    }
+
     /// Fun decl --> def
     bool hasDefinition(const Function *fun) const
     {

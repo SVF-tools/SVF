@@ -38,6 +38,7 @@ typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
 typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
 #endif
 
+typedef llvm::Module Module;
 
 typedef llvm::SMDiagnostic SMDiagnostic;
 

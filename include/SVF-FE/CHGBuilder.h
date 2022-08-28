@@ -28,6 +28,7 @@
  */
 
 #include "Graphs/CHG.h"
+#include "SVF-FE/BasicTypes.h"
 
 namespace SVF
 {
