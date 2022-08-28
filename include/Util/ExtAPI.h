@@ -216,7 +216,7 @@ public:
             return operandStr;
         }
 
-        std::vector<NodeID> getOperands()
+        std::vector<NodeID> &getOperands()
         {
             return operands;
         }
