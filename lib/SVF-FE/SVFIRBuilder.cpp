@@ -1131,11 +1131,10 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
     std::map<std::string, NodeID> nodeIDMap;
     for (ExtAPI::Operation& operation : operations)
     {
-        std::string op = operation.getOperator();
         std::vector<NodeID> operands;
-        if (op == "funptr_ops" || op == "Rb_tree_ops")
+        if (operation.getOperator() == "funptr_ops" || operation.getOperator() == "Rb_tree_ops")
             continue;
-        for (auto s: operation.getOperandStr())
+        for (std::string s: operation.getOperandStr())
         {
             NodeID operandID;
             // There is already a NodeID in nodeIDMap
@@ -1157,9 +1156,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     operandID = pag->addDummyValNode();
                 else if (nodeIDType == -3)
                 {
-                    if (!SVFUtil::isa<PointerType>(cs.getInstruction()->getType()))
-                        break;
-                    else
+                    if (SVFUtil::isa<PointerType>(cs.getInstruction()->getType()))
                         operandID = getObjectNode(cs.getInstruction());
                 }        
                 else if (nodeIDType == -4)
@@ -1170,18 +1167,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
             }
             operands.push_back(operandID);
         }
-        if (operands.size() >= 2)
-            operation.setOperands(operands);
-        else // Delete entry when NodeId of a operand is not generated successfully
-        {
-            for(vector<ExtAPI::Operation>::iterator iter=operations.begin(); iter!=operations.end(); iter++)
-            {        
-                if(iter->getOperator() == op){ 
-                    operations.erase(iter);
-                    break;
-                }
-            }
-        }
+        operation.setOperands(operands);
     }
 }
 
@@ -1241,26 +1227,33 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 parseOperations(allOperations, cs);
                 for (auto op : allOperations)
                 {
-                    if (op.getOperator() == "AddrStmt" && op.getOperands().size() >= 2)
+                    if (op.getOperator() == "AddrStmt")
                     {
-                        addAddrEdge(op.getOperands()[0], op.getOperands()[1]);
+                        if (op.getOperands().size() == 2)
+                            addAddrEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op.getOperator() == "CopyStmt" && op.getOperands().size() >= 2)
+                    else if (op.getOperator() == "CopyStmt")
                     {
-                        addCopyEdge(op.getOperands()[0], op.getOperands()[1]);
+                        if (op.getOperands().size() == 2)
+                            addCopyEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op.getOperator() == "LoadStmt" && op.getOperands().size() >= 2)
+                    else if (op.getOperator() == "LoadStmt")
                     {
-                        addLoadEdge(op.getOperands()[0], op.getOperands()[1]);
+                        if (op.getOperands().size() == 2)
+                            addLoadEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op.getOperator() == "StoreStmt" && op.getOperands().size() >= 2)
+                    else if (op.getOperator() == "StoreStmt")
                     {
-                        addStoreEdge(op.getOperands()[0], op.getOperands()[1]);
+                        if (op.getOperands().size() == 2)
+                            addStoreEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op.getOperator() == "GepStmt" && op.getOperands().size() >= 3)
+                    else if (op.getOperator() == "GepStmt")
                     {
-                        LocationSet ls(op.getOperands()[2]);
-                        addNormalGepEdge(op.getOperands()[0], op.getOperands()[1], ls);
+                        if (op.getOperands().size() == 3)
+                        {
+                            LocationSet ls(op.getOperands()[2]);
+                            addNormalGepEdge(op.getOperands()[0], op.getOperands()[1], ls);
+                        }
                     }
                     else if (op.getOperator() == "memset_like")
                     {
