@@ -1150,7 +1150,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     {
                         operands.push_back(getValueNode(cs.getArgument(nodeIDType)));
                         nodeIDMap[s] = getValueNode(cs.getArgument(nodeIDType));
-                    }            
+                    }
                 }
                 else if (nodeIDType == -1)
                 {
@@ -1168,12 +1168,13 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     {
                         operands.push_back(getObjectNode(cs.getInstruction()));
                         nodeIDMap[s] = getObjectNode(cs.getInstruction());
-                    }     
-                }        
+                    }
+                }
                 else if (nodeIDType == -4)
                 {
-                    for (char const &c : s) {
-                        if (std::isdigit(c) == 0) 
+                    for (char const &c : s)
+                    {
+                        if (std::isdigit(c) == 0)
                             assert(false && "Invalid offset!");
                     }
                     operands.push_back(atoi(s.c_str()));
