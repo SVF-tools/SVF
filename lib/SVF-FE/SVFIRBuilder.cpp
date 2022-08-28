@@ -1146,7 +1146,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                 s32_t nodeIDType = ExtAPI::getExtAPI()->getNodeIDType(s);
                 if (nodeIDType >= 0)
                 {
-                    if( cs.arg_size() <= nodeIDType)
+                    if( cs.arg_size() <= (unsigned int) nodeIDType)
                         assert(false && "Argument out of bounds!");
                     else
                         operandID = getValueNode(cs.getArgument(nodeIDType));
@@ -1157,8 +1157,8 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     operandID = pag->addDummyValNode();
                 else if (nodeIDType == -3)
                 {
-                    if(!SVFUtil::isa<PointerType>(cs.getInstruction()->getType()))
-                        assert(false && "The instruction type is not a pointer type! Can‘t get an object");
+                    if (!SVFUtil::isa<PointerType>(cs.getInstruction()->getType()))
+                        break;
                     else
                         operandID = getObjectNode(cs.getInstruction());
                 }        
@@ -1170,7 +1170,18 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
             }
             operands.push_back(operandID);
         }
-        operation.setOperands(operands);
+        if (operands.size() >= 2)
+            operation.setOperands(operands);
+        else // Delete entry when NodeId of a operand is not generated successfully
+        {
+            for(vector<ExtAPI::Operation>::iterator iter=operations.begin(); iter!=operations.end(); iter++)
+            {        
+                if(iter->getOperator() == op){ 
+                    operations.erase(iter);
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -1230,23 +1241,23 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 parseOperations(allOperations, cs);
                 for (auto op : allOperations)
                 {
-                    if (op.getOperator() == "AddrStmt")
+                    if (op.getOperator() == "AddrStmt" && op.getOperands().size() >= 2)
                     {
                         addAddrEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op.getOperator() == "CopyStmt")
+                    else if (op.getOperator() == "CopyStmt" && op.getOperands().size() >= 2)
                     {
                         addCopyEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op.getOperator() == "LoadStmt")
+                    else if (op.getOperator() == "LoadStmt" && op.getOperands().size() >= 2)
                     {
                         addLoadEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op.getOperator() == "StoreStmt")
+                    else if (op.getOperator() == "StoreStmt" && op.getOperands().size() >= 2)
                     {
                         addStoreEdge(op.getOperands()[0], op.getOperands()[1]);
                     }
-                    else if (op.getOperator() == "GepStmt")
+                    else if (op.getOperator() == "GepStmt" && op.getOperands().size() >= 3)
                     {
                         LocationSet ls(op.getOperands()[2]);
                         addNormalGepEdge(op.getOperands()[0], op.getOperands()[1], ls);

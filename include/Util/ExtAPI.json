@@ -3217,7 +3217,11 @@
     },
     "safe_realloc": {
         "type": "EFT_REALLOC",
-        "overwrite_app_function": 1
+        "overwrite_app_function": 1,
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
+		}
     },
     "saferealloc":  {
         "type": "EFT_REALLOC",
