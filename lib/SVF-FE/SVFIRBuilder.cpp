@@ -1149,25 +1149,25 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     else
                     {
                         operands.push_back(getValueNode(cs.getArgument(nodeIDType)));
-                        nodeIDMap.insert(std::pair<std::string, NodeID>(s, getValueNode(cs.getArgument(nodeIDType))));
+                        nodeIDMap[s] = getValueNode(cs.getArgument(nodeIDType));
                     }            
                 }
                 else if (nodeIDType == -1)
                 {
                     operands.push_back(getValueNode(cs.getInstruction()));
-                    nodeIDMap.insert(std::pair<std::string, NodeID>(s, getValueNode(cs.getInstruction())));
+                    nodeIDMap[s] = getValueNode(cs.getInstruction());
                 }
                 else if (nodeIDType == -2)
                 {
                     operands.push_back(pag->addDummyValNode());
-                    nodeIDMap.insert(std::pair<std::string, NodeID>(s, operands[operands.size()-1]));
+                    nodeIDMap[s] = operands[operands.size() - 1];
                 }
                 else if (nodeIDType == -3)
                 {
                     if (SVFUtil::isa<PointerType>(cs.getInstruction()->getType()))
                     {
                         operands.push_back(getObjectNode(cs.getInstruction()));
-                        nodeIDMap.insert(std::pair<std::string, NodeID>(s, getObjectNode(cs.getInstruction())));
+                        nodeIDMap[s] = getObjectNode(cs.getInstruction());
                     }     
                 }        
                 else if (nodeIDType == -4)
@@ -1177,7 +1177,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     if (i != s.size())
                         assert(false && "Invalid offset!");
                     operands.push_back(atoi(s.c_str()));
-                    nodeIDMap.insert(std::pair<std::string, NodeID>(s, atoi(s.c_str())));
+                    nodeIDMap[s] = atoi(s.c_str());
                 }
                 else
                     assert(false && "The operand format of function operation is illegal!");
@@ -1247,28 +1247,28 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         if (op.getOperands().size() == 2)
                             addAddrEdge(op.getOperands()[0], op.getOperands()[1]);
                         else
-                            writeWrnMsg("There are no two valid NodeIDs to add an Addr edge");
+                            writeWrnMsg("We need two valid NodeIDs to add an Addr edge");
                     }
                     else if (op.getOperator() == "CopyStmt")
                     {
                         if (op.getOperands().size() == 2)
                             addCopyEdge(op.getOperands()[0], op.getOperands()[1]);
                         else
-                            writeWrnMsg("There are no two valid NodeIDs to add a Copy edge");
+                            writeWrnMsg("We need two valid NodeIDs to add a Copy edge");
                     }
                     else if (op.getOperator() == "LoadStmt")
                     {
                         if (op.getOperands().size() == 2)
                             addLoadEdge(op.getOperands()[0], op.getOperands()[1]);
                         else
-                            writeWrnMsg("There are no two valid NodeIDs to add a Load edge");
+                            writeWrnMsg("We need two valid NodeIDs to add a Load edge");
                     }
                     else if (op.getOperator() == "StoreStmt")
                     {
                         if (op.getOperands().size() == 2)
                             addStoreEdge(op.getOperands()[0], op.getOperands()[1]);
                         else
-                            writeWrnMsg("There are no two valid NodeIDs to add a Store edge");
+                            writeWrnMsg("We need two valid NodeIDs to add a Store edge");
                     }
                     else if (op.getOperator() == "GepStmt")
                     {
@@ -1278,7 +1278,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                             addNormalGepEdge(op.getOperands()[0], op.getOperands()[1], ls);
                         }
                         else
-                            writeWrnMsg("There are no two valid NodeIDs to add a Gep edge");
+                            writeWrnMsg("We need two valid NodeIDs and an offset to add a Gep edge");
                     }
                     else if (op.getOperator() == "memset_like")
                     {
