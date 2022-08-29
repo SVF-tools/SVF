@@ -386,7 +386,7 @@ private:
     void handleDISubroutineType(const DISubroutineType *subroutineType);
 
     /// Finds all defined virtual functions and attaches them to nodes.
-    void buildVTables(const Module &module);
+    void buildVTables(const SVFModule &module);
 
     /// Returns a set of all children of type (CHA). Also gradually builds chaMap.
     const NodeBS &cha(const DIType *type, bool firstField);

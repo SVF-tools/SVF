@@ -44,13 +44,6 @@ void DDAPass::runOnModule(SVFModule* module)
     }
 }
 
-bool DDAPass::runOnModule(Module& module)
-{
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(module);
-    runOnModule(svfModule);
-    return false;
-}
-
 /// select a client to initialize queries
 void DDAPass::selectClient(SVFModule* module)
 {
