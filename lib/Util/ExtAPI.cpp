@@ -241,7 +241,7 @@ u32_t ExtAPI::getArgPos(std::string s)
 // return value = -3 is an object node
 // return value = -4 is an offset
 // return value = -5 is an illegal operand format
-int ExtAPI::getNodeIDType(std::string s)
+s32_t ExtAPI::getNodeIDType(std::string s)
 {
     u32_t argPos = -1;
     // 'A' represents an argument

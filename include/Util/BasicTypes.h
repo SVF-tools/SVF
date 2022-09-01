@@ -74,7 +74,6 @@ typedef llvm::Instruction Instruction;
 typedef llvm::CallBase CallBase;
 typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
-typedef llvm::Module Module;
 typedef llvm::User User;
 typedef llvm::Loop Loop;
 typedef llvm::LoopInfo LoopInfo;

@@ -99,9 +99,6 @@ public:
     /// Run pointer analysis on SVFModule
     virtual void runOnModule(SVFModule* svfModule);
 
-    /// Run pointer analysis on LLVM module
-    virtual bool runOnModule(Module& module);
-
     /// PTA name
     virtual inline std::string getPassName() const
     {
