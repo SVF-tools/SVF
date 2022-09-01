@@ -155,6 +155,15 @@ public:
     /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
     /// And transfer Load Store to copy edge and address edge to construct PEG style CFG
     CFLGraph* buildBiPEGgraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar, SVFIR* pag);
+
+private:
+    void connectVGep(CFLGraph *cflGraph,  ConstraintGraph *graph, ConstraintNode *src, ConstraintNode *dst, u32_t level);
+
+    /// Handle edge except for the GEP
+    void addBiCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFLGrammar::Kind label);
+
+    /// Add Bidirectional GEP edge with attribute
+    void addBiGepCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFLGrammar::Attribute attri);
 };
 
 }// SVF
