@@ -276,7 +276,6 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const B
 
         /// if the dst dominate all other loop exit bbs, then dst can certainly be reached
         bool allPDT = true;
-        PostDominatorTree *pdt = getPostDT(fun);
         for (const auto &filteredbb: filteredbbs)
         {
             if (!pdtDominates(dst, filteredbb))
@@ -433,7 +432,6 @@ bool SaberCondAllocator::isBBCallsProgExit(const BasicBlock *bb)
     FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(fun);
     if (it != funToExitBBsMap.end())
     {
-        PostDominatorTree *pdt = getPostDT(fun);
         for (const auto &bit: it->second)
         {
             if (pdtDominates(bit, bb))
@@ -506,7 +504,6 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const Bas
 
     assert(srcBB->getParent() == dstBB->getParent() && "two basic blocks are not in the same function??");
 
-    PostDominatorTree *postDT = getPostDT(srcBB->getParent());
     if (pdtDominates(dstBB, srcBB))
         return getTrueCond();
 
