@@ -144,27 +144,43 @@ public:
         return negConds.test(id);
     }
 
-    inline const bool dominates(const BasicBlock* bbKey, const BasicBlock* bbValue)
+    inline const bool pdtDominates(const BasicBlock* bbKey, const BasicBlock* bbValue)
     {
+        return dominates(bbKey,bbValue,SVFFunction::DtK::PostDominatorTree);
+    }
+
+    inline const bool dtDominates(const BasicBlock* bbKey, const BasicBlock* bbValue)
+    {
+        return dominates(bbKey,bbValue,SVFFunction::DtK::DominatorTree);;
+    }
+
+    inline const bool dominates(const BasicBlock* bbKey, const BasicBlock* bbValue, const SVFFunction::DtK dtType)
+    {
+        if (bbKey == bbValue)
+            return true;
         SVFModule* svfModule = PAG::getPAG()->getModule();
         if (svfModule != nullptr)
         {
-            const SVFModule::FunctionSetType& functions = svfModule->getFunctionSet();
-            for (SVFModule::FunctionSetType::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+            const SVFFunction*  func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
+            Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
+            if (dtType == SVFFunction::DtK::DominatorTree)
             {
-                const SVFFunction*  func = *func_iter;
-                const Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap = func->getDtBBsMap();
-                Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
-                if (mapIter != dtBBsMap.end())
-                {
-                    Set<const BasicBlock*> dtBBs = mapIter->second;
-                    Set<const BasicBlock*>::const_iterator setIter = dtBBs.find(bbValue);
-                    if (setIter != dtBBs.end())
-                    {
-                        return true;
-                    }
-                } 
+                dtBBsMap = func->getDtBBsMap();
+            } 
+            else if (dtType == SVFFunction::DtK::PostDominatorTree)
+            {
+                dtBBsMap = func->getPostDtBBsMap();
             }
+            Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
+            if (mapIter != dtBBsMap.end())
+            {
+                Set<const BasicBlock*> dtBBs = mapIter->second;
+                Set<const BasicBlock*>::const_iterator setIter = dtBBs.find(bbValue);
+                if (setIter != dtBBs.end())
+                {
+                    return true;
+                }
+            } 
         }
         return false;
     }

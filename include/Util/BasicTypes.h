@@ -125,6 +125,12 @@ typedef llvm::DISubprogram DISubprogram;
 
 class SVFFunction : public SVFValue
 {
+public:
+enum DtK
+{
+    PostDominatorTree,DominatorTree
+};
+
 private:
     bool isDecl;
     bool isIntri;
@@ -135,6 +141,7 @@ private:
     bool isNotRet;
     Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
     Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
+    Map<const BasicBlock*,Set<const BasicBlock*>> pdtBBsMap;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
         isDecl(false), isIntri(false), fun(nullptr), exitBB(nullptr), isUncalled(false), isNotRet(false)
@@ -221,7 +228,41 @@ public:
     {
         return dfBBsMap;
     }
+
+    inline const void setPostDtBBsMap(Map<const BasicBlock*,Set<const BasicBlock*>> postDtBBsMap)
+    {
+        this->pdtBBsMap = postDtBBsMap;
+    }
+
+    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getPostDtBBsMap() const
+    {
+        return pdtBBsMap;
+    }
     
+        inline const void insertPdtBB(const BasicBlock* entryBB, const BasicBlock* pdtBB)
+    {
+        if (pdtBB == nullptr)
+        {
+            Set<const BasicBlock*> bbs;
+            pdtBBsMap.insert({entryBB,bbs});
+        } 
+        else
+        {
+            Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = this->pdtBBsMap.find(entryBB);
+            if (mapIter != pdtBBsMap.end())
+            {
+                Set<const BasicBlock*> foundBbs = mapIter->second;
+                foundBbs.insert(pdtBB);
+                pdtBBsMap[entryBB] = foundBbs;
+            }
+            else 
+            {
+                Set<const BasicBlock*> bbs;
+                bbs.insert(pdtBB);
+                pdtBBsMap.insert({entryBB,bbs});
+            }
+        }
+    }
     inline const void setDtBBsMap(Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap)
     {
         this->dtBBsMap = dtBBsMap;
@@ -234,10 +275,13 @@ public:
 
     inline const void insertDtBB(const BasicBlock* entryBB, const BasicBlock* dtBB)
     {
-        if (dtBB == nullptr){
-                Set<const BasicBlock*> bbs;
-                dtBBsMap.insert({entryBB,bbs});
-        } else {
+        if (dtBB == nullptr)
+        {
+            Set<const BasicBlock*> bbs;
+            dtBBsMap.insert({entryBB,bbs});
+        } 
+        else 
+        {
             Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = this->dtBBsMap.find(entryBB);
             if (mapIter != dtBBsMap.end())
             {

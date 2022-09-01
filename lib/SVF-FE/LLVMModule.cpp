@@ -149,6 +149,7 @@ void LLVMModuleSet::build()
             DominanceFrontier df;
             dt.recalculate(*svffun->getLLVMFun());
             df.analyze(dt);
+            PostDominatorTree pdt = PostDominatorTree(*(func->getLLVMFun()));
             Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
             for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
             {
@@ -163,7 +164,6 @@ void LLVMModuleSet::build()
                 dfBBsMap.insert({keyBB,valueBasicBlocks});
             }
             svffun->setDfBBsMap(dfBBsMap);
-
             for (Function::const_iterator bit = svffun->getLLVMFun()->begin(), ebit = svffun->getLLVMFun()->end(); bit != ebit; ++bit)
             {   
                 const BasicBlock *bb = &*bit;
@@ -180,6 +180,22 @@ void LLVMModuleSet::build()
                     else
                     {
                         svffun->insertDtBB(bb,nullptr);
+                    }
+                }
+
+                if(DomTreeNode * pdtNode = pdt.getNode(const_cast<BasicBlock*>(bb)))
+                {
+                    DomTreeNode::iterator DI = pdtNode->begin();
+                    if (DI != pdtNode->end()){
+                        for (DomTreeNode::iterator DI = pdtNode->begin(), DE = pdtNode->end(); DI != DE; ++DI)
+                        {
+                            BasicBlock* pdtBB = (*DI)->getBlock();
+                            svffun->insertPdtBB(bb,pdtBB);
+                        }
+                    }
+                    else
+                    {
+                        svffun->insertPdtBB(bb,nullptr);
                     }
                 }
             }

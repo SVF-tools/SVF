@@ -279,7 +279,7 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const B
         PostDominatorTree *pdt = getPostDT(fun);
         for (const auto &filteredbb: filteredbbs)
         {
-            if (!pdt->dominates(dst, filteredbb))
+            if (!pdtDominates(dst, filteredbb))
                 allPDT = false;
         }
 
@@ -436,7 +436,7 @@ bool SaberCondAllocator::isBBCallsProgExit(const BasicBlock *bb)
         PostDominatorTree *pdt = getPostDT(fun);
         for (const auto &bit: it->second)
         {
-            if (pdt->dominates(bit, bb))
+            if (pdtDominates(bit, bb))
                 return true;
         }
     }
@@ -455,7 +455,7 @@ SaberCondAllocator::getPHIComplementCond(const BasicBlock *BB1, const BasicBlock
     assert(BB1 && BB2 && "expect nullptr BB here!");
 
     /// avoid both BB0 and BB1 dominate BB2 (e.g., while loop), then BB2 is not necessaryly a complement BB
-    if (dominates(BB1, BB2) && ! dominates(BB0, BB2))
+    if (dtDominates(BB1, BB2) && ! dtDominates(BB0, BB2))
     {
         Condition cond = ComputeIntraVFGGuard(BB1, BB2);
         return condNeg(cond);
@@ -507,7 +507,7 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const Bas
     assert(srcBB->getParent() == dstBB->getParent() && "two basic blocks are not in the same function??");
 
     PostDominatorTree *postDT = getPostDT(srcBB->getParent());
-    if (postDT->dominates(dstBB, srcBB))
+    if (pdtDominates(dstBB, srcBB))
         return getTrueCond();
 
     CFWorkList worklist;
@@ -535,7 +535,7 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const Bas
             /// note that we assume loop exit always post dominate loop bodys
             /// which means loops are approximated only once.
             Condition brCond;
-            if (postDT->dominates(succ, bb))
+            if (pdtDominates(succ, bb))
                 brCond = getTrueCond();
             else
                 brCond = getEvalBrCond(bb, succ);
