@@ -21,7 +21,17 @@
 
 ## Documentation
 
-<b>SVF</b> is a source code analysis tool that enables interprocedural dependence analysis for LLVM-based languages. <b>SVF</b> is able to perform pointer alias analysis, memory SSA form construction, value-flow tracking, context-free-reachability analysis, path-sensitive typestate analysis and memory error checking. <b>SVF</b>'s doxygen document is [here](https://svf-tools.github.io/SVF-doxygen/html).
+<b>SVF</b> is a static value-flow analysis tool for LLVM-based languages. <b>SVF</b> ([CC'16](https://yuleisui.github.io/publications/cc16.pdf)) is able to perform
+* [WPA](https://github.com/SVF-tools/SVF/tree/master/include/WPA): <b>whole program analysis</b>, including field-sensitive ([SAS'19](https://yuleisui.github.io/publications/sas2019a.pdf)) and flow-sensitive ([CGO'21](https://yuleisui.github.io/publications/cgo21.pdf), [OOPSLA'21](https://yuleisui.github.io/publications/oopsla21.pdf)) pointer analysis;
+* [DDA](https://github.com/SVF-tools/SVF/tree/master/include/DDA): <b>demand-driven analysis</b>, including flow-sensitive and context-sensitive points-to analysis ([FSE'16](https://yuleisui.github.io/publications/fse16.pdf), [TSE'18](https://yuleisui.github.io/publications/tse18.pdf));
+* [MSSA](https://github.com/SVF-tools/SVF/tree/master/include/MSSA): <b>memory SSA form construction</b>, including creating memory regions, construction of memory SSA form ([JSS'18](https://yuleisui.github.io/publications/jss18.pdf));
+* [SABER](https://github.com/SVF-tools/SVF/tree/master/include/SABER): <b>memory error checking</b>, including memory leak and double-free detection ([ISSTA'12](https://yuleisui.github.io/publications/issta12.pdf), [TSE'04](https://yuleisui.github.io/publications/tse14.pdf), [ICSE'18](https://yuleisui.github.io/publications/icse18a.pdf));
+* [MTA](https://github.com/SVF-tools/SVF/tree/master/include/MTA): <b>analysis of mutithreaded programs</b>, including value-flow analysis for multithreaded programs ([CGO'16](https://yuleisui.github.io/publications/cgo16.pdf));
+* [CFL](https://github.com/SVF-tools/SVF/tree/master/include/CFL): <b>context-free-reachability analysis</b>, including standard CFL-reachability solver, graph and grammar ([OOPSLA'22](https://yuleisui.github.io/publications/oopsla22.pdf));
+* [MemoryModel](https://github.com/SVF-tools/SVF/tree/master/include/MemoryModel): <b>memory abstraction and SVFIR </b>, including SVF intermediate representation and points-to data structures ([SAS'21](https://yuleisui.github.io/publications/sas21.pdf))
+* [Graphs](https://github.com/SVF-tools/SVF/tree/master/include/Graphs): <b> generations of a variety of graphs </b>, including call graph, interprocedural control-flow graph (ICFG), class hirachary graph (CHG), constraint graph (ConsG), value-flow graph (VFG) for different static analysis and code embedding ([OOPSLA'20](https://yuleisui.github.io/publications/oopsla20.pdf), [TOSEM'21](https://yuleisui.github.io/publications/tosem21.pdf))
+
+<b>SVF</b>'s doxygen document is [here](https://svf-tools.github.io/SVF-doxygen/html).
 
 <br />
 
