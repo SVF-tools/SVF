@@ -78,16 +78,6 @@ void WPAPass::runOnModule(SVFModule* svfModule)
 }
 
 /*!
- * We start from here
- */
-bool WPAPass::runOnModule(Module& module)
-{
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(module);
-    runOnModule(svfModule);
-    return false;
-}
-
-/*!
  * Create pointer analysis according to a specified kind and then analyze the module.
  */
 void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)

@@ -224,19 +224,7 @@ inline CallSite getLLVMCallSite(const Instruction* inst)
 /// Get the corresponding Function based on its name
 inline const SVFFunction* getFunction(std::string name)
 {
-    Function* fun = nullptr;
-    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
-
-    for (u32_t i = 0; i < llvmModuleset->getModuleNum(); ++i)
-    {
-        Module *mod = llvmModuleset->getModule(i);
-        fun = mod->getFunction(name);
-        if(fun)
-        {
-            return llvmModuleset->getSVFFunction(fun);
-        }
-    }
-    return nullptr;
+    return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(name);
 }
 
 /// Split into two substrings around the first occurrence of a separator string.

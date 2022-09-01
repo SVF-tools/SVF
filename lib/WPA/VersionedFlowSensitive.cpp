@@ -123,15 +123,29 @@ void VersionedFlowSensitive::meldLabel(void)
 
     assert(Options::VersioningThreads > 0 && "VFS::meldLabel: number of versioning threads must be > 0!");
 
-    // Nodes which have at least one object on them given a prelabel.
-    std::vector<const SVFGNode *> prelabeledNodes;
+    // Nodes which have at least one object on them given a prelabel + the Andersen's points-to
+    // set of interest so we don't keep calling getPts. For Store nodes, we'll fill that in, for
+    // MR nodes, we won't as its getPointsTo is cheap.
+    // TODO: preferably we cache both for ease and to avoid the dyn_cast/isa, but Andersen's points-to
+    // sets are PointsTo and MR's sets are NodeBS, which are incompatible types. Maybe when we can
+    // use std::option.
+    std::vector<std::pair<const SVFGNode *, const PointsTo *>> prelabeledNodes;
     // Fast query for the above.
     std::vector<bool> isPrelabeled(svfg->getTotalNodeNum(), false);
     while (!vWorklist.empty())
     {
         const NodeID n = vWorklist.pop();
-        prelabeledNodes.push_back(svfg->getSVFGNode(n));
         isPrelabeled[n] = true;
+
+        const SVFGNode *sn = svfg->getSVFGNode(n);
+        const PointsTo *nPts = nullptr;
+        if (const StoreSVFGNode *store = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
+        {
+            const NodeID p = store->getPAGDstNodeID();
+            nPts = &(this->ander->getPts(p));
+        }
+
+        prelabeledNodes.push_back(std::make_pair(sn, nPts));
     }
 
     // Delta, delta source, store, and load nodes, which require versions during
@@ -180,20 +194,21 @@ void VersionedFlowSensitive::meldLabel(void)
             // For starting nodes, we only need those which did prelabeling for o specifically.
             // TODO: maybe we should move this to prelabel with a map (o -> starting nodes).
             std::vector<const SVFGNode *> osStartingNodes;
-            for (const SVFGNode *sn : prelabeledNodes)
+            for (std::pair<const SVFGNode *, const PointsTo *> snPts : prelabeledNodes)
             {
-                if (const StoreSVFGNode *store = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
+                const SVFGNode *sn = snPts.first;
+                const PointsTo *pts = snPts.second;
+                if (pts != nullptr)
                 {
-                    const NodeID p = store->getPAGDstNodeID();
-                    if (this->ander->getPts(p).test(o)) osStartingNodes.push_back(sn);
+                    if (pts->test(o)) osStartingNodes.push_back(sn);
                 }
-                else if (delta(sn->getId()))
+                else if (const MRSVFGNode *mr = SVFUtil::dyn_cast<MRSVFGNode>(sn))
                 {
-                    const MRSVFGNode *mr = SVFUtil::dyn_cast<MRSVFGNode>(sn);
-                    if (mr != nullptr)
-                    {
-                        if (mr->getPointsTo().test(o)) osStartingNodes.push_back(sn);
-                    }
+                    if (mr->getPointsTo().test(o)) osStartingNodes.push_back(sn);
+                }
+                else
+                {
+                    assert(false && "VFS::meldLabel: unexpected prelabeled node!");
                 }
             }
 
@@ -234,10 +249,21 @@ void VersionedFlowSensitive::meldLabel(void)
             // SVFG nodes of interest -- those part of an SCC from the starting nodes.
             std::vector<NodeID> todoList;
             unsigned bit = 0;
-            for (NodeID n = 0; n < partOf.size(); ++n)
+            // To calculate reachable nodes, we can see what nodes n exist where
+            // partOf[n] != -1. Since the SVFG can be large this can be expensive.
+            // Instead, we can gather this from the edges in the footprint and
+            // the starting nodes (incase such nodes have no edges).
+            // TODO: should be able to do this better: too many redundant inserts.
+            Set<NodeID> reachableNodes;
+            for (const SVFGNode *sn : osStartingNodes) reachableNodes.insert(sn->getId());
+            for (const SVFGEdge *se : footprint)
             {
-                if (partOf[n] == -1) continue;
+                reachableNodes.insert(se->getSrcNode()->getId());
+                reachableNodes.insert(se->getDstNode()->getId());
+            }
 
+            for (const NodeID n : reachableNodes)
+            {
                 if (isPrelabeled[n])
                 {
                     if (this->isStore(n)) storesYieldedMeldVersion[n].set(bit);
