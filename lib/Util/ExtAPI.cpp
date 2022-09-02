@@ -504,7 +504,7 @@ bool ExtAPI::is_sameSignature(const SVFFunction *F)
         }
     }
     if (F->arg_size() != argNum) // The number of arguments is different
-            return false;
+        return false;
     // Is the return type the same?
     return F->getLLVMFun()->getReturnType()->isPointerTy() == isPointer;
 }
