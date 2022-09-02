@@ -36,6 +36,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace std;
 
 
 u32_t AndersenBase::numOfProcessedAddr = 0;

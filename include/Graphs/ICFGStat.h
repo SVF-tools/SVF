@@ -142,7 +142,7 @@ public:
         }
     }
 
-    void printStat(string statname)
+    void printStat(std::string statname)
     {
 
         SVFUtil::outs() << "\n************ " << statname << " ***************\n";

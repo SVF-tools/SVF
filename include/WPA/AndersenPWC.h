@@ -104,7 +104,7 @@ class AndersenSFR : public AndersenSCD
 public:
     typedef Map<NodeID, NodeBS> NodeStrides;
     typedef Map<NodeID, NodeSet> FieldReps;
-    typedef Map<NodeID, pair<NodeID, NodeSet>> SFRTrait;
+    typedef Map<NodeID, std::pair<NodeID, NodeSet>> SFRTrait;
 
 private:
     static AndersenSFR* sfrAndersen;

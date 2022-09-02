@@ -15,6 +15,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace std;
 
 DDAStat::DDAStat(FlowDDA* pta) : PTAStat(pta), flowDDA(pta), contextDDA(nullptr)
 {
