@@ -473,31 +473,39 @@ bool ExtAPI::is_realloc(const SVFFunction *F)
     return t == EFT_REALLOC;
 }
 
+// Does (F) have the same return type(pointer or nonpointer) and same number of arguments
 bool ExtAPI::is_sameSignature(const SVFFunction *F)
 {
     cJSON *item = get_FunJson(F->getName());
+    // If return type is pointer
     bool isPointer = false;
+    // The number of arguments
     u32_t argNum = 0;
     if (item != nullptr)
     {
+        // Get the "return" attribute
         cJSON *obj = item->child;
-        if (strlen(obj->valuestring) == 0)
+        if (strlen(obj->valuestring) == 0) // e.g. "return":  ""
             assert(false && "'return' should not be empty!");
+        // If "return": "..." includes "*", the return type of extern function is a pointer
         if (strstr(obj->valuestring, "*") != NULL)
             isPointer = true;
+        // Get the "arguments" attribute
         obj = obj -> next;
-        if (strlen(obj->valuestring) == 0)
+        if (strlen(obj->valuestring) == 0) // e.g. "arguments":  "",
             assert(false && "'arguments' should not be empty!");
+        // If "arguments":  "()", the number of arguments is 0, otherwise, number >= 1;
         if (strcmp(obj->valuestring, "()") != 0)
         {
             argNum++;
             for (u32_t i = 0; i < strlen(obj->valuestring); i++)
-                if (obj->valuestring[i] == ',')
+                if (obj->valuestring[i] == ',') // Calculate the number of arguments based on the number of ","
                     argNum++;
         }
     }
-    if (F->arg_size() != argNum)
+    if (F->arg_size() != argNum) // The number of arguments is different
             return false;
+    // Is the return type the same?
     return F->getLLVMFun()->getReturnType()->isPointerTy() == isPointer;
 }
 
