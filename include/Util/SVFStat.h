@@ -30,20 +30,23 @@
 #ifndef SVF_SVFSTAT_H
 #define SVF_SVFSTAT_H
 
-namespace SVF {
+namespace SVF
+{
 
 
 /*!
  * Pointer Analysis Statistics
  */
-class SVFStat {
+class SVFStat
+{
 public:
 
     typedef OrderedMap<const char *, u32_t> NUMStatMap;
 
     typedef OrderedMap<const char *, double> TIMEStatMap;
 
-    enum ClockType {
+    enum ClockType
+    {
         Wall,
         CPU,
     };
@@ -52,11 +55,13 @@ public:
 
     virtual ~SVFStat() {}
 
-    virtual inline void startClk() {
+    virtual inline void startClk()
+    {
         startTime = getClk(true);
     }
 
-    virtual inline void endClk() {
+    virtual inline void endClk()
+    {
         endTime = getClk(true);
     }
 
