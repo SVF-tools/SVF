@@ -369,7 +369,7 @@ void AliasCFLGraphBuilder::AliasCFLGraphBuilder::connectVGep(CFLGraph *cflGraph,
     level -= 1;
     for (auto eit = src->getAddrInEdges().begin(); eit != src->getAddrInEdges().end(); eit++){
         const MemObj* mem = pag->getBaseObj((*eit)->getSrcID());
-        for (auto maxField = 0 ; maxField < mem->getNumOfElements(); maxField++)
+        for (u32_t maxField = 0 ; maxField < mem->getNumOfElements(); maxField++)
         {
             addBiGepCFLEdge(cflGraph, (*eit)->getDstNode(), dst, maxField);
         }
