@@ -331,7 +331,7 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
                 /// Example: In Test Case: Ctest field-ptr-arith-varIdx.c.bc
                 /// BFS Search the 8 LEVEL up to find the ValueNode, and the number of level search is arbitary
                 /// the more the level search the more valueNode and the Vgep Dst will possivble connect
-                connectVGep(cflGraph, graph,  edge->getSrcNode(), edge->getDstNode(), 8);
+                connectVGep(cflGraph, graph,  edge->getSrcNode(), edge->getDstNode(), 8, pag);
             }
             else
             {
@@ -363,17 +363,19 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
     return cflGraph;
 }
 
-void AliasCFLGraphBuilder::AliasCFLGraphBuilder::connectVGep(CFLGraph *cflGraph,  ConstraintGraph *graph, ConstraintNode *src, ConstraintNode *dst, u32_t level)
+void AliasCFLGraphBuilder::AliasCFLGraphBuilder::connectVGep(CFLGraph *cflGraph,  ConstraintGraph *graph, ConstraintNode *src, ConstraintNode *dst, u32_t level, SVFIR* pag)
 {
     if (level == 0) return;
     level -= 1;
-    for (auto eit = src->getGepInEdges().begin(); eit != src->getGepInEdges().end(); eit++){
-        //NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*eit);
-        //CFLGrammar::Attribute attr =  nGepEdge->getConstantFieldIdx();
-        addBiGepCFLEdge(cflGraph, (*eit)->getSrcNode(), dst, 1);
+    for (auto eit = src->getAddrInEdges().begin(); eit != src->getAddrInEdges().end(); eit++){
+        const MemObj* mem = pag->getBaseObj((*eit)->getSrcID());
+        for (auto maxField = 0 ; maxField < mem->getNumOfElements(); maxField++)
+        {
+            addBiGepCFLEdge(cflGraph, (*eit)->getDstNode(), dst, maxField);
+        }
     }
     for (auto eit = src->getInEdges().begin(); eit != src->getInEdges().end() && level != 0; eit++){
-        connectVGep(cflGraph, graph, (*eit)->getSrcNode(), dst, level);
+        connectVGep(cflGraph, graph, (*eit)->getSrcNode(), dst, level, pag);
     }
     return;
 }
