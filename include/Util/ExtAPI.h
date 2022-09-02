@@ -302,6 +302,9 @@ public:
     // Does (F) reallocate a new object?
     bool is_realloc(const SVFFunction *F);
 
+    // Does (F) have the same return type(pointer or nonpointer) and same number of arguments
+    bool is_sameSignature(const SVFFunction *F);
+
     // Should (F) be considered "external" (either not defined in the program
     //   or a user-defined version of a known alloc or no-op)?
     bool is_ext(const SVFFunction *F);
