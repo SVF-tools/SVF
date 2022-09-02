@@ -18,6 +18,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace std;
 
 char DDAPass::ID = 0;
 

@@ -32,6 +32,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace std;
 
 AndersenSFR *AndersenSFR::sfrAndersen = nullptr;
 

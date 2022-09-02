@@ -35,6 +35,7 @@
 #include "Util/Options.h"
 
 using namespace SVF;
+using namespace std;
 
 const char* PTAStat:: TotalAnalysisTime = "TotalTime";	///< SVFIR value nodes ？？
 const char* PTAStat:: SCCDetectionTime = "SCCDetectTime"; ///< Total SCC detection time
@@ -105,29 +106,9 @@ const char* PTAStat:: MaxNumOfNodesInSCC = "MaxNodesInSCC";	///< max Number of n
 
 const char* PTAStat:: NumOfNullPointer = "NullPointer";	///< Number of pointers points-to null
 
-PTAStat::PTAStat(PointerAnalysis* p) : startTime(0), endTime(0), pta(p)
+PTAStat::PTAStat(PointerAnalysis* p) : SVFStat(), startTime(0), endTime(0), pta(p)
 {
-    assert((Options::ClockType == ClockType::Wall || Options::ClockType == ClockType::CPU)
-           && "PTAStat: unknown clock type!");
-}
 
-double PTAStat::getClk(bool mark)
-{
-    if (Options::MarkedClocksOnly && !mark) return 0.0;
-
-    if (Options::ClockType == ClockType::Wall)
-    {
-        struct timespec time;
-        clock_gettime(CLOCK_MONOTONIC, &time);
-        return (double)(time.tv_nsec + time.tv_sec * 1000000000) / 1000000.0;
-    }
-    else if (Options::ClockType == ClockType::CPU)
-    {
-        return CLOCK_IN_MS();
-    }
-
-    assert(false && "PTAStat::getClk: unknown clock type");
-    abort();
 }
 
 void PTAStat::performStat()
