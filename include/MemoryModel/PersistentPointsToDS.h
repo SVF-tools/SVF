@@ -1,6 +1,16 @@
 /// PTData (AbstractPointsToDS.h) implementations with a persistent backend.
 /// Each Key is given a cheap points-to ID which refers to some real points-to set.
 
+/*
+ * PersistentPointsToDS.h
+ *
+ * Authors: Mohamad Barbar
+ * 
+ * The implementation is based on 
+ * Mohamad Barbar and Yulei Sui. Hash Consed Points-To Sets. 
+ * 28th Static Analysis Symposium (SAS'21)
+ */
+
 #ifndef PERSISTENT_POINTSTO_H_
 #define PERSISTENT_POINTSTO_H_
 

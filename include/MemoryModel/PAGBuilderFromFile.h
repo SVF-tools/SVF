@@ -2,7 +2,7 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2018>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,7 @@
  * PAGBuilderFromFile.h
  *
  *  Created on: 20 Sep. 2018
- *      Author: 136884
+ *      Author: Yulei Sui
  */
 
 #ifndef INCLUDE_MEMORYMODEL_PAGBUILDERFROMFILE_H_
