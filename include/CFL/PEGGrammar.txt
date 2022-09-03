@@ -1,7 +1,7 @@
 Start:  
    V
 Terminal:
-   Addr Copy Store Load Gep Vgep 
+   Addr Copy Store Load Gep
 Productions:
    F -> epsilon;
    M -> Addr V Addrbar;
@@ -14,15 +14,11 @@ Productions:
    Fbar -> epsilon;
    Fbar -> Copybar Fbar;
    Fbar -> M Copybar Fbar;
-   Gep_1 -> Gep_0 F Vgep;
-   Gepbar_1 -> Vgepbar Fbar Gepbar_0;
-   Gepbarpath -> Gepbar_0 Gepbar_0;
-   Gepbarpath -> Gepbarpath Gepbar_0;
-   Gep_3 -> Gep_0;
-   Gepbar_3 -> Gepbar_0;
+   ArrayPath -> Gepbar_0 Gepbar_0;
+   ArrayPath -> ArrayPath Gepbar_0;
    Memcpy -> Addrbar V Addr;
    Memcpy -> Gep_i Memcpy Gepbar_i;
    Memcpy -> F Memcpy Fbar;
    V -> Gepbar_i Memcpy Gep_i;
    V -> Gep_i Memcpy Gepbar_i;
-   V -> Gepbarpath V Gep_0;
+   V -> ArrayPath V Gep_0;
