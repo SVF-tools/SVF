@@ -25,12 +25,12 @@
  *
  *  Created on: Apr 1, 2014
  *      Author: Yulei Sui
- * 
+ *
  * The implementation is based on
- * (1) Yulei Sui, Ding Ye, and Jingling Xue. "Static Memory Leak Detection Using Full-Sparse Value-Flow Analysis".  
+ * (1) Yulei Sui, Ding Ye, and Jingling Xue. "Static Memory Leak Detection Using Full-Sparse Value-Flow Analysis".
  * 2012 International Symposium on Software Testing and Analysis (ISSTA'12)
- * 
- * (2) Yulei Sui, Ding Ye, and Jingling Xue. "Detecting Memory Leaks Statically with Full-Sparse Value-Flow Analysis".  
+ *
+ * (2) Yulei Sui, Ding Ye, and Jingling Xue. "Detecting Memory Leaks Statically with Full-Sparse Value-Flow Analysis".
  * IEEE Transactions on Software Engineering (TSE'14)
  */
 

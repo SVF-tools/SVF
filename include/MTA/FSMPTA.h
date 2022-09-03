@@ -25,9 +25,9 @@
  *
  *  Created on: Jul 29, 2015
  *      Author: Yulei Sui, Peng Di
- * 
- * The implementation is based on 
- * Yulei Sui, Peng Di, and Jingling Xue. "Sparse Flow-Sensitive Pointer Analysis for Multithreaded Programs". 
+ *
+ * The implementation is based on
+ * Yulei Sui, Peng Di, and Jingling Xue. "Sparse Flow-Sensitive Pointer Analysis for Multithreaded Programs".
  * 2016 International Symposium on Code Generation and Optimization (CGO'16)
  */
 

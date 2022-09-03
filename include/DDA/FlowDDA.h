@@ -25,12 +25,12 @@
  *
  *  Created on: Jun 30, 2014
  *      Author: Yulei Sui, Sen Ye
- * 
- * The implementation is based on 
- * (1) Yulei Sui and Jingling Xue. "On-Demand Strong Update Analysis via Value-Flow Refinement".  
- * ACM SIGSOFT International Symposium on the Foundation of Software Engineering (FSE'16) 
- * 
- * (2) Yulei Sui and Jingling Xue. "Value-Flow-Based Demand-Driven Pointer Analysis for C and C++". 
+ *
+ * The implementation is based on
+ * (1) Yulei Sui and Jingling Xue. "On-Demand Strong Update Analysis via Value-Flow Refinement".
+ * ACM SIGSOFT International Symposium on the Foundation of Software Engineering (FSE'16)
+ *
+ * (2) Yulei Sui and Jingling Xue. "Value-Flow-Based Demand-Driven Pointer Analysis for C and C++".
  * IEEE Transactions on Software Engineering (TSE'18)
  */
 

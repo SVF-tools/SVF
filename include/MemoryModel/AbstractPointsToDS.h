@@ -44,9 +44,9 @@
  * AbstractPointsToDS.h
  *
  * Authors: Mohamad Barbar and Yulei Sui
- * 
- * The implementation is based on 
- * Mohamad Barbar and Yulei Sui. Hash Consed Points-To Sets. 
+ *
+ * The implementation is based on
+ * Mohamad Barbar and Yulei Sui. Hash Consed Points-To Sets.
  * 28th Static Analysis Symposium (SAS'21)
  */
 

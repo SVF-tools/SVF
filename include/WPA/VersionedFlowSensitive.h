@@ -5,9 +5,9 @@
  *
  *  Created on: Jun 26, 2020
  *      Author: Mohamad Barbar
- * 
- * The implementation is based on 
- * Mohamad Barbar, Yulei Sui and Shiping Chen. "Object Versioning for Flow-Sensitive Pointer Analysis". 
+ *
+ * The implementation is based on
+ * Mohamad Barbar, Yulei Sui and Shiping Chen. "Object Versioning for Flow-Sensitive Pointer Analysis".
  * International Symposium on Code Generation and Optimization (CGO'21)
  */
 
