@@ -266,6 +266,48 @@ s32_t ExtAPI::getNodeIDType(std::string s)
         return -2;
     else if(argStr == "Obj")
         return -3;
+    else if(argStr == "Add")
+        return BinaryOperator::Add;
+    else if(argStr == "Sub")
+        return BinaryOperator::Sub;
+    else if(argStr == "Mul")
+        return BinaryOperator::Mul;
+    else if(argStr == "SDiv")
+        return BinaryOperator::SDiv;
+    else if(argStr == "SRem")
+        return BinaryOperator::SRem;
+    else if(argStr == "Xor")
+        return BinaryOperator::Xor;
+    else if(argStr == "And")
+        return BinaryOperator::And;
+    else if(argStr == "Or")
+        return BinaryOperator::Or;
+    else if(argStr == "AShr")
+        return BinaryOperator::AShr;
+    else if(argStr == "Shl")
+        return BinaryOperator::Shl;
+    else if(argStr == "ICMP_EQ")
+        return CmpInst::ICMP_EQ;
+    else if(argStr == "ICMP_NE")
+        return CmpInst::ICMP_NE;
+    else if(argStr == "ICMP_UGT")
+        return CmpInst::ICMP_UGT;
+    else if(argStr == "ICMP_SGT")
+        return CmpInst::ICMP_SGT;
+    else if(argStr == "ICMP_UGE")
+        return CmpInst::ICMP_UGE;
+    else if(argStr == "ICMP_SGE")
+        return CmpInst::ICMP_SGE;
+    else if(argStr == "ICMP_ULT")
+        return CmpInst::ICMP_ULT;
+    else if(argStr == "ICMP_SLT")
+        return CmpInst::ICMP_SLT;
+    else if(argStr == "ICMP_ULE")
+        return CmpInst::ICMP_ULE;
+    else if(argStr == "ICMP_SLE")
+        return CmpInst::ICMP_SLE;
+    else if(argStr == "FNeg")
+        return UnaryOperator::FNeg;
     else // offset
     {
         u32_t i=0;
