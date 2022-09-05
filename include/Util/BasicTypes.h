@@ -103,12 +103,6 @@ typedef llvm::CallInst CallInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
 
-/// LLVM Dominators
-typedef llvm::DominanceFrontier DominanceFrontier;
-typedef llvm::DominatorTree DominatorTree;
-typedef llvm::PostDominatorTree PostDominatorTree;
-typedef llvm::DomTreeNode DomTreeNode;
-typedef llvm::DominanceFrontierBase<BasicBlock, false> DominanceFrontierBase;
 
 /// LLVM Iterators
 #if LLVM_VERSION_MAJOR >= 11
@@ -270,6 +264,11 @@ public:
     inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getDtBBsMap() const
     {
         return dtBBsMap;
+    }
+
+    inline const bool isUnreachable(const BasicBlock* bb) const 
+    {
+        return std::find(reachableBBs.begin(), reachableBBs.end(), bb)==reachableBBs.end();
     }
 
     inline const void insertDtBB(const BasicBlock* entryBB, const BasicBlock* dtBB)

@@ -37,23 +37,6 @@ namespace SVF
 {
 
 /*!
- * Dominator frontier used in MSSA
- */
-class MemSSADF : public DominanceFrontier
-{
-public:
-    MemSSADF() : DominanceFrontier()
-    {}
-
-    bool runOnDT(DominatorTree& dt)
-    {
-        releaseMemory();
-        analyze(dt);
-        return false;
-    }
-};
-
-/*!
  * SVFG Builder
  */
 class SVFGBuilder

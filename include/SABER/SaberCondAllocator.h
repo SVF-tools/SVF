@@ -158,18 +158,31 @@ public:
     {
         if (bbKey == bbValue)
             return true;
+        
+        const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
+        const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
+        // An unreachable node is dominated by anything.
+        if (valueFunc->isUnreachable(bbValue)){
+            return true;
+        }
+
+        // And dominates nothing.
+        if (keyFunc->isUnreachable(bbKey))
+        {
+            return false;
+        }
+        
         SVFModule* svfModule = PAG::getPAG()->getModule();
         if (svfModule != nullptr)
         {
-            const SVFFunction*  func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
             Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
             if (dtType == SVFFunction::DtK::DominatorTree)
             {
-                dtBBsMap = func->getDtBBsMap();
+                dtBBsMap = keyFunc->getDtBBsMap();
             } 
             else if (dtType == SVFFunction::DtK::PostDominatorTree)
             {
-                dtBBsMap = func->getPostDtBBsMap();
+                dtBBsMap = keyFunc->getPostDtBBsMap();
             }
             Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
             if (mapIter != dtBBsMap.end())
