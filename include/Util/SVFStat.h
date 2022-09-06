@@ -71,6 +71,7 @@ public:
     static double getClk(bool mark = false);
 
     NUMStatMap generalNumMap;
+    NUMStatMap PTNumStatMap;
     TIMEStatMap timeStatMap;
 
     double startTime;
@@ -78,7 +79,7 @@ public:
 
     virtual void performStat() = 0;
 
-    virtual void printStat(std::string str = "") = 0;
+    virtual void printStat(std::string str = "");
 
     virtual void performStatPerQuery(NodeID) {}
 
@@ -91,7 +92,7 @@ public:
     static double timeOfBuildingSVFIR;
 
 private:
-
+    void branchStat();
     std::string moduleName;
 }; // End class SVFStat
 
