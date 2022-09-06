@@ -1281,6 +1281,27 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         else
                             writeWrnMsg("We need two valid NodeIDs and an offset to add a Gep edge");
                     }
+                    else if (op.getOperator() == "BinaryOPStmt")
+                    {
+                        if (op.getOperands().size() == 4)
+                            addBinaryOPEdge(op.getOperands()[0], op.getOperands()[1], op.getOperands()[2], op.getOperands()[3]);
+                        else
+                            writeWrnMsg("We need four valid NodeIDs to add a BinaryOP edge");
+                    }
+                    else if (op.getOperator() == "UnaryOPStmt")
+                    {
+                        if (op.getOperands().size() == 3)
+                            addUnaryOPEdge(op.getOperands()[0], op.getOperands()[1], op.getOperands()[2]);
+                        else
+                            writeWrnMsg("We need three valid NodeIDs to add a UnaryOP edge");
+                    }
+                    else if (op.getOperator() == "CmpStmt")
+                    {
+                        if (op.getOperands().size() == 4)
+                            addCmpEdge(op.getOperands()[0], op.getOperands()[1], op.getOperands()[2], op.getOperands()[3]);
+                        else
+                            writeWrnMsg("We need four valid NodeIDs to add a CmpStmt edge");
+                    }
                     else if (op.getOperator() == "memset_like")
                     {
                         // this is for memset(void *str, int c, size_t n)

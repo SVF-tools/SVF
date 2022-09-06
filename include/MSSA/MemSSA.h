@@ -2,7 +2,7 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2017>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,13 @@
  *
  *  Created on: Jul 14, 2013
  *      Author: Yulei Sui
+ *
+ * The implementation is based on
+ * Yulei Sui, Hua Yan, Yunpeng Zhang, Jingling Xue and Zheng Zheng.
+ * "Parallel Construction of Interprocedural Memory SSA Form".
+ * Journal of Systems and Software (JSS'16), Algorithm 3 in the paper
  */
+
 
 #ifndef MEMORYSSAPASS_H_
 #define MEMORYSSAPASS_H_

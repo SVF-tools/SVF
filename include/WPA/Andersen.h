@@ -25,6 +25,11 @@
  *
  *  Created on: Nov 12, 2013
  *      Author: Yulei Sui
+ *
+ * The field-sensitive implementation is improved based on
+ *
+ * Yuxiang Lei and Yulei Sui. "Fast and Precise Handling of Positive Weight Cycles for Field-sensitive Pointer Analysis".
+ * 26th International Static Analysis Symposium (SAS'19)
  */
 
 #ifndef INCLUDE_WPA_ANDERSEN_H_

@@ -2,7 +2,7 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2017>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -25,6 +25,13 @@
  *
  *  Created on: Apr 1, 2014
  *      Author: Yulei Sui
+ *
+ *  The implementation is based on
+ * (1) Yulei Sui, Ding Ye, and Jingling Xue. "Static Memory Leak Detection Using Full-Sparse Value-Flow Analysis".
+ * 2012 International Symposium on Software Testing and Analysis (ISSTA'12)
+ *
+ * (2) Yulei Sui, Ding Ye, and Jingling Xue. "Detecting Memory Leaks Statically with Full-Sparse Value-Flow Analysis".
+ * IEEE Transactions on Software Engineering (TSE'14)
  */
 
 #ifndef PROGSLICE_H_

@@ -1,4 +1,4 @@
-//===- Andersen.h -- Field-sensitive Andersen's pointer analysis-------------//
+//===- TypeAnalysis.h -- Fast type-based analysis without pointer analysis---------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

@@ -1,5 +1,37 @@
+//===- MutablePointsToDS.h -- Mutable points-to data structure-------------//
+//
+//                     SVF: Static Value-Flow Analysis
+//
+// Copyright (C) <2013->  <Yulei Sui>
+//
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//===----------------------------------------------------------------------===//
+
 /// PTData (AbstractPointsToDS.h) implementations with a mutable backend.
 /// Each Key is given a points-to set which is itself updated till the analysis terminates.
+
+/*
+ * MutablePointsToDS.h
+ *
+ * Authors: Mohamad Barbar and Yulei Sui
+ *
+ * The implementation is based on
+ * Mohamad Barbar and Yulei Sui. Hash Consed Points-To Sets.
+ * 28th Static Analysis Symposium (SAS'21)
+ */
 
 #ifndef MUTABLE_POINTSTO_H_
 #define MUTABLE_POINTSTO_H_

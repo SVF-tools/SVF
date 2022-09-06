@@ -1,4 +1,4 @@
-//===- PointerAnalysis.h -- Base class of pointer analyses--------------------//
+//===- PointerAnalysisImpl.h -- Pointer analysis implementation--------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

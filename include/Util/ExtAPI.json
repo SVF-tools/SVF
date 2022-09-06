@@ -1,1565 +1,2347 @@
 {
     "creat64":  {
+        "return":  "int",
+        "arguments":  "(const char *, mode_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fseeko64": {
+        "return":  "int",
+        "arguments":  "(FILE, off64_t, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fstat64":  {
+        "return":  "int",
+        "arguments":  "(int, struct stat64 *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fstatvfs64":   {
+        "return":  "int",
+        "arguments":  "(int, struct statvfs64 *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "ftello64": {
+        "return":  "off64_t",
+        "arguments":  "(FILE)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getrlimit64":  {
+        "return":  "int",
+        "arguments":  "(int, struct rlimit64 *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "lstat64":  {
+        "return":  "int",
+        "arguments":  "(const char *, struct stat64 *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "open64":   {
+        "return":  "int",
+        "arguments":  "(const char *, int, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "stat64":   {
+        "return":  "int",
+        "arguments":  "(const char *, struct stat64 *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "statvfs64":    {
+        "return":  "int",
+        "arguments":  "(const char *, struct statvfs64 *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "Gpm_GetEvent": {
+        "return":  "int",
+        "arguments":  "(Gpm_Event *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "Gpm_Open": {
+        "return":  "int",
+        "arguments":  "(Gpm_Connect *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "RAND_seed":    {
+        "return":  "void",
+        "arguments":  "(const void *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "SSL_CTX_set_default_verify_paths": {
+        "return":  "int",
+        "arguments":  "(SSL_CTX *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "SSL_get_error":    {
+        "return":  "int",
+        "arguments":  "(const SSL *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "SSL_get_fd":   {
+        "return":  "int",
+        "arguments":  "(const SSL *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "SSL_pending":  {
+        "return":  "int",
+        "arguments":  "(const SSL *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "SSL_read": {
+        "return":  "int",
+        "arguments":  "(SSL *, void *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "SSL_set_bio":  {
+        "return":  "void",
+        "arguments":  "(SSL *, BIO *, BIO *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "SSL_set_connect_state":    {
+        "return":  "void",
+        "arguments":  "(SSL *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "SSL_shutdown": {
+        "return":  "int",
+        "arguments":  "(SSL *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "SSL_state":    {
+        "return":  "int",
+        "arguments":  "(const SSL *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "SSL_write":    {
+        "return":  "int",
+        "arguments":  "(SSL *, const void *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "Void_FreeCore":    {
+        "return":  "void",
+        "arguments":  "(VSCore *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "X509_STORE_CTX_get_error": {
+        "return":  "int",
+        "arguments":  "(X509_STORE_CTX *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XAllocColor":  {
+        "return":  "Status",
+        "arguments":  "(Display *, Colormap, XColor *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XCloseDisplay":    {
+        "return":  "int",
+        "arguments":  "(Display *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XCopyArea":    {
+        "return":  "int",
+        "arguments":  "(Display *, Drawable, Drawable, GC, int, int, unsigned int, unsigned, int, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XCreateColormap":  {
+        "return":  "Colormap",
+        "arguments":  "(Display *, Window, Visual *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XCreatePixmap":    {
+        "return":  "Pixmap",
+        "arguments":  "(Display *, Drawable, unsigned int, unsigned int, unsigned int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XCreateWindow":    {
+        "return":  "Window",
+        "arguments":  "(Display *, Window, int, int, unsigned int, unsigned int, unsigned int, int, unsigned int, Visual *, unsigned long, XSetWindowAttributes *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XDrawPoint":   {
+        "return":  "int",
+        "arguments":  "(Display *, Drawable, GC, int, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XDrawString":  {
+        "return":  "int",
+        "arguments":  "(Display *, Drawable, GC, int, int, char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XDrawText":    {
+        "return":  "int",
+        "arguments":  "(Display *, Drawable, GC, int, int, XTextItem *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XFillRectangle":   {
+        "return":  "int",
+        "arguments":  "(Display *, Drawable, GC, int, int, unsigned int, unsigned int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XFillRectangles":  {
+        "return":  "int",
+        "arguments":  "(Display *, Drawable, GC, XRectangle *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XGetGCValues": {
+        "return":  "Status",
+        "arguments":  "(Display *, GC, unsigned long, XGCValues *",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XGetGeometry": {
+        "return":  "Status",
+        "arguments":  "(Display *, Drawable, Window *, int *, int *, unsigned int *, unsigned int *, unsigned int *, unsigned int *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XInternAtom":  {
+        "return":  "Atom",
+        "arguments":  "(Display *, char *, Bool)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XMapWindow":   {
+        "return":  "int",
+        "arguments":  "(Display *, Window)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XNextEvent":   {
+        "return":  "int",
+        "arguments":  "(Display *, XEvent *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XPutImage":    {
+        "return":  "int",
+        "arguments":  "(Display *, Drawable, GC, XImage *, int, int, int, int, unsigned int, unsigned int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XQueryColor":  {
+        "return":  "int",
+        "arguments":  "(Display *, Colormap, XColor *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XResizeWindow":    {
+        "return":  "int",
+        "arguments":  "(Display *, Window, unsigned, unsigned)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSelectInput": {
+        "return":  "int",
+        "arguments":  "(Display *, Window, long)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSendEvent":   {
+        "return":  "Status",
+        "arguments":  "(Display *, Window, Bool, long, XEvent *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetBackground":   {
+        "return":  "int",
+        "arguments":  "(Display *, GC, unsigned long)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetClipMask": {
+        "return":  "int",
+        "arguments":  "(Display *, GC, Pixmap)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetClipOrigin":   {
+        "return":  "int",
+        "arguments":  "(Display *, GC, int, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetFillStyle":    {
+        "return":  "int",
+        "arguments":  "(Display *, GC, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetFont": {
+        "return":  "int",
+        "arguments":  "(Display *, GC, Font)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetForeground":   {
+        "return":  "int",
+        "arguments":  "(Display *, GC, unsigned long)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetFunction": {
+        "return":  "int",
+        "arguments":  "(Display *, GC, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetGraphicsExposures":    {
+        "return":  "int",
+        "arguments":  "(Display *, GC, Bool)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetLineAttributes":   {
+        "return":  "int",
+        "arguments":  "(Display *, GC, unsigned int, int, int, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetTile": {
+        "return":  "int",
+        "arguments":  "(Display *, GC, Pixmap)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetWMHints":  {
+        "return":  "int",
+        "arguments":  "(Display *, Window, XWMHints *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetWMNormalHints":    {
+        "return":  "void",
+        "arguments":  "(Display *, Window, XSizeHints *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSetWindowBackgroundPixmap":   {
+        "return":  "void",
+        "arguments":  "(Display *, Window, XSizeHints *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XStoreName":   {
+        "return":  "int",
+        "arguments":  "(Display *, Window, char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XSync":    {
+        "return":  "int",
+        "arguments":  "(Display *, Bool)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XVisualIDFromVisual":  {
+        "return":  "VisualID",
+        "arguments":  "(Visual *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XWMGeometry":  {
+        "return":  "int",
+        "arguments":  "(Display *, int, char *, char *, unsigned int, XSizeHints *, int *, int *, int *, int *, int *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XtAppSetFallbackResources":    {
+        "return":  "void",
+        "arguments":  "(XtAppContext, String* )",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XtCloseDisplay":   {
+        "return":  "void",
+        "arguments":  "(Display *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XtDestroyApplicationContext":  {
+        "return":  "void",
+        "arguments":  "(XtAppContext)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "XtDestroyWidget":  {
+        "return":  "void",
+        "arguments":  "(Widget)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "_IO_getc": {
+        "return":  "int",
+        "arguments":  "(_IO_FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "_IO_putc": {
+        "return":  "int",
+        "arguments":  "(int, _IO_FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__assert_fail":    {
+        "return":  "void",
+        "arguments":  "(const char *, const char *, unsigned int, const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__dn_expand":  {
+        "return":  "void",
+        "arguments":  "(const char *, const char *, unsigned int, const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__dn_skipname":    {
+        "return":  "int",
+        "arguments":  "(const unsigned char *, const unsigned char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__res_nclose": {
+        "return":  "void",
+        "arguments":  "(res_state)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__res_ninit":  {
+        "return":  "int",
+        "arguments":  "(res_state)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__res_nmkquery":   {
+        "return":  "int",
+        "arguments":  "(res_state, int, const char *, int, int, const uchar_t *, int, const uchar_t *, uchar_t *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__res_nsend":  {
+        "return":  "int",
+        "arguments":  "(res_state, const uchar_t *, int, uchar_t *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__res_query":  {
+        "return":  "int",
+        "arguments":  "(const char *, int, int, uchar_t *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__res_querydomain":    {
+        "return":  "int",
+        "arguments":  "(const char *, const char *, int, int, unsigned char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__res_search": {
+        "return":  "int",
+        "arguments":  "(const char *, int, int, unsigned char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "__sigsetjmp":  {
+        "return":  "int",
+        "arguments":  "(sigjmp_buf, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "_obstack_begin":   {
+        "return":  "extern int",
+        "arguments":  "(struct obstack *, int, int, void *(*) (long), void (*) (void *))",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "_obstack_memory_used": {
+        "return":  "int",
+        "arguments":  "(struct obstack *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "_obstack_newchunk":    {
+        "return":  "extern void",
+        "arguments":  "(struct obstack *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "_setjmp":  {
+        "return":  "int",
+        "arguments":  "(jmp_buf)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "accept":   {
+        "return":  "int",
+        "arguments":  "(int, struct sockaddr *restrict, socklen_t *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "access":   {
+        "return":  "int",
+        "arguments":  "(const char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "asprintf": {
+        "return":  "int",
+        "arguments":  "(char **restrict, const char *restrict, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "atexit":   {
+        "return":  "int",
+        "arguments":  "(void (*function)(void))",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "atof": {
+        "return":  "double",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "atoi": {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "atol": {
+        "return":  "long int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "bind": {
+        "return":  "int",
+        "arguments":  "(int, const struct sockaddr *, socklen_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "cfgetospeed":  {
+        "return":  "speed_t",
+        "arguments":  "(const struct termios *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "cfsetispeed":  {
+        "return":  "int",
+        "arguments":  "(struct termios *, speed_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "cfsetospeed":  {
+        "return":  "int",
+        "arguments":  "(struct termios *, speed_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "chdir":    {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "chmod":    {
+        "return":  "int",
+        "arguments":  "(const char *, mode_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "chown":    {
+        "return":  "int",
+        "arguments":  "(const char *, uid_t, gid_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "chroot":   {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "clearerr": {
+        "return":  "void",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "clearok":  {
+        "return":  "int",
+        "arguments":  "(WINDOW *, bool)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "closedir": {
+        "return":  "int",
+        "arguments":  "(DIR *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "compress2":    {
+        "return":  "int",
+        "arguments":  "(Bytef *, uLongf *, const Bytef *, uLong, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "confstr":  {
+        "return":  "size_t",
+        "arguments":  "(int, char *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "connect":  {
+        "return":  "int",
+        "arguments":  "(int, const struct sockaddr *, socklen_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "crc32":    {
+        "return":  "uLong",
+        "arguments":  "(uLong, const Bytef *, uInt)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "creat":    {
+        "return":  "int",
+        "arguments":  "(const char *, mode_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "deflate":  {
+        "return":  "int",
+        "arguments":  "(z_streamp, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "deflateEnd":   {
+        "return":  "int",
+        "arguments":  "(z_streamp)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "deflateInit2_":    {
+        "return":  "int",
+        "arguments":  "(z_streamp, int, char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "deflateReset": {
+        "return":  "int",
+        "arguments":  "(z_streamp)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "delwin":   {
+        "return":  "int",
+        "arguments":  "(WINDOW *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "dladdr":   {
+        "return":  "int",
+        "arguments":  "(const void *, Dl_info *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "dlclose":  {
+        "return":  "int",
+        "arguments":  "(void *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "execl":    {
+        "return":  "int",
+        "arguments":  "(const char *, const char *, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "execle":   {
+        "return":  "int",
+        "arguments":  "(const char *, const char *, ..., char * const [])",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "execlp":   {
+        "return":  "int",
+        "arguments":  "(const char *, const char *, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "execv":    {
+        "return":  "int",
+        "arguments":  "(const char *, char *const [])",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "execve":   {
+        "return":  "int",
+        "arguments":  "(const char *, char *const [], char *const [])",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "execvp":   {
+        "return":  "int",
+        "arguments":  "(const char *, char *const [])",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "feof": {
+        "return":  "int",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "ferror":   {
+        "return":  "int",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fflush":   {
+        "return":  "int",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fgetc":    {
+        "return":  "int",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fgetpos":  {
+        "return":  "int",
+        "arguments":  "(FILE *, fpos_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fileno":   {
+        "return":  "int",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "flockfile":    {
+        "return":  "void",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fnmatch":  {
+        "return":  "int",
+        "arguments":  "(const char *, const char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "forkpty":  {
+        "return":  "pid_t",
+        "arguments":  "(int *, char *, const struct termios *, const struct winsize *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fprintf":  {
+        "return":  "int",
+        "arguments":  "(FILE *, const char *, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fputc":    {
+        "return":  "int",
+        "arguments":  "(int, FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fputs":    {
+        "return":  "int",
+        "arguments":  "(const char *, FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fread":    {
+        "return":  "size_t",
+        "arguments":  "(void *, size_t, size_t, FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "frexp":    {
+        "return":  "double",
+        "arguments":  "(double, int *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fscanf":   {
+        "return":  "int",
+        "arguments":  "(FILE *, const char *, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fseek":    {
+        "return":  "int",
+        "arguments":  "(FILE *, long int, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fseeko":   {
+        "return":  "int",
+        "arguments":  "(FILE *, off_t, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fsetpos":  {
+        "return":  "int",
+        "arguments":  "(FILE *, const fpos_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fstat":    {
+        "return":  "int",
+        "arguments":  "(int, struct stat *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fstatfs":  {
+        "return":  "int",
+        "arguments":  "(int, struct statfs *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "ftell":    {
+        "return":  "long int",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "ftello":   {
+        "return":  "off_t",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "ftok": {
+        "return":  "key_t",
+        "arguments":  "(const char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "funlockfile":  {
+        "return":  "void",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "fwrite":   {
+        "return":  "size_t",
+        "arguments":  "(const void *, size_t, size_t, FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "g_scanner_destroy":    {
+        "return":  "void",
+        "arguments":  "(GScanner *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "g_scanner_eof":    {
+        "return":  "gboolean",
+        "arguments":  "(GScanner *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "g_scanner_get_next_token": {
+        "return":  "GTokenType",
+        "arguments":  "(GScanner *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "g_scanner_input_file": {
+        "return":  "void",
+        "arguments":  " (GScanner *, gint)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "g_scanner_scope_add_symbol":   {
+        "return":  "void",
+        "arguments":  "(GScanner *, guint, const gchar *, gpointer)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_cipher_close":    {
+        "return":  "void",
+        "arguments":  "(GCRY_CIPHER_HD)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_cipher_ctl":  {
+        "return":  "int",
+        "arguments":  "(GCRY_CIPHER_HD, int, void *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_cipher_decrypt":  {
+        "return":  "int",
+        "arguments":  "(GCRY_CIPHER_HD, unsigned char, size_t, unsigned char, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_cipher_map_name": {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_cipher_open": {
+        "return":  "void",
+        "arguments":  "(GCRY_CIPHER_HD)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_md_close":    {
+        "return":  "void",
+        "arguments":  "(GCRY_MD_HD)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_md_ctl":  {
+        "return":  "int",
+        "arguments":  "(GCRY_MD_HD, int, unsigned char *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_md_get_algo": {
+        "return":  "unsigned int",
+        "arguments":  "(int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_md_hash_buffer":  {
+        "return":  "int",
+        "arguments":  "(int, char *, const char *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_md_map_name": {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_md_open": {
+        "return":  "GCRY_MD_HD",
+        "arguments":  "(int, unsigned int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_md_setkey":   {
+        "return":  "GCRY_ERROR_T",
+        "arguments":  "(GCRY_MD_HD, const void *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_md_write":    {
+        "return":  "int",
+        "arguments":  "(GCRY_MD_HD, unsigned char *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_mpi_add": {
+        "return":  "void",
+        "arguments":  "(gcry_mpi_t, gcry_mpi_t, gcry_mpi_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_mpi_add_ui":  {
+        "return":  "void",
+        "arguments":  "(gcry_mpi_t, gcry_mpi_t, unsigned long)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_mpi_clear_highbit":   {
+        "return":  "void",
+        "arguments":  "(gcry_mpi_t, unsigned int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gcry_mpi_print":   {
+        "return":  "gcry_error_t",
+        "arguments":  "(enum gcry_mpi_format, unsigned char *, size_t, size_t *, struct gcry_mpi *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getaddrinfo":  {
+        "return":  "int",
+        "arguments":  "(const char *, const char *, const struct addrinfo *, struct addrinfo **)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getc_unlocked":    {
+        "return":  "int",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getgroups":    {
+        "return":  "int",
+        "arguments":  "(int, gid_t [])",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gethostname":  {
+        "return":  "int",
+        "arguments":  "(char *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getloadavg":   {
+        "return":  "int",
+        "arguments":  "(double [], int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getopt":   {
+        "return":  "int",
+        "arguments":  "(int, char *const [], const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getopt_long":  {
+        "return":  "int",
+        "arguments":  "(int, char * const [], const char *, const struct option *, int *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getopt_long_only": {
+        "return":  "int",
+        "arguments":  "(int, char * const [], const char *, const struct option *, int *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getpeername":  {
+        "return":  "int",
+        "arguments":  "(int, struct sockaddr *restrict, socklen_t *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getresgid":    {
+        "return":  "int",
+        "arguments":  "(gid_t *, gid_t *, gid_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getresuid":    {
+        "return":  "int",
+        "arguments":  "(uid_t *, uid_t *, uid_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getrlimit":    {
+        "return":  "int",
+        "arguments":  "(int, struct rlimit *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getrusage":    {
+        "return":  "int",
+        "arguments":  "(int, struct rusage *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getsockname":  {
+        "return":  "int",
+        "arguments":  "(int, struct sockaddr *restrict, socklen_t *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "getsockopt":   {
+        "return":  "int",
+        "arguments":  "(int, int, int, void *restrict, socklen_t *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gettimeofday": {
+        "return":  "int",
+        "arguments":  "(struct timeval *restrict, struct timezone *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gnutls_pkcs12_bag_decrypt":    {
+        "return":  "int",
+        "arguments":  "(gnutls_pkcs12_bag_t, const char*)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gnutls_pkcs12_bag_deinit": {
+        "return":  "void",
+        "arguments":  "(gnutls_pkcs12_bag_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gnutls_pkcs12_bag_get_count":  {
+        "return":  "int",
+        "arguments":  "(gnutls_pkcs12_bag_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gnutls_pkcs12_bag_get_type":   {
+        "return":  "int",
+        "arguments":  "(gnutls_pkcs12_bag_t, unsigned)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gnutls_x509_crt_deinit":   {
+        "return":  "void",
+        "arguments":  "(gnutls_x509_crt_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gnutls_x509_crt_get_dn_by_oid":    {
+        "return":  "int",
+        "arguments":  "(gnutls_x509_crt_t, const char *, unsigned, unsigned int, void *, size_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gnutls_x509_crt_get_key_id":   {
+        "return":  "int",
+        "arguments":  "(gnutls_x509_crt_t, unsigned int, unsigned char *, size_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gnutls_x509_privkey_deinit":   {
+        "return":  "void",
+        "arguments":  "(gnutls_x509_privkey_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gnutls_x509_privkey_get_key_id":   {
+        "return":  "int",
+        "arguments":  "(gnutls_x509_privkey_t, unsigned int, unsigned char *, size_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gzclose":  {
+        "return":  "int",
+        "arguments":  "(gzFile)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gzeof":    {
+        "return":  "int",
+        "arguments":  "(gzFile)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gzgetc":   {
+        "return":  "int",
+        "arguments":  "(gzFile)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gzread":   {
+        "return":  "int",
+        "arguments":  "(gzFile, voidp, unsigned int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gzseek":   {
+        "return":  "z_off_t",
+        "arguments":  "(gzFile, z_off_t, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gztell":   {
+        "return":  "z_off_t",
+        "arguments":  "(gzFile)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "gzwrite":  {
+        "return":  "int",
+        "arguments":  "(gzFile, voidpc, unsigned int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "hstrerror":    {
+        "return":  "const char *",
+        "arguments":  "(int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "iconv_close":  {
+        "return":  "int",
+        "arguments":  "(iconv_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "inet_addr":    {
+        "return":  "in_addr_t",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "inet_aton":    {
+        "return":  "int",
+        "arguments":  "(const char *, struct in_addr *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "inet_pton":    {
+        "return":  "int",
+        "arguments":  "(int, const char *restrict, void *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "inflate":  {
+        "return":  "int",
+        "arguments":  "(z_streamp, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "inflateEnd":   {
+        "return":  "int",
+        "arguments":  "(z_streamp)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "inflateInit2_":    {
+        "return":  "int",
+        "arguments":  "(z_streamp, int, char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "inflateInit_": {
+        "return":  "int",
+        "arguments":  "(z_streamp, const char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "inflateReset": {
+        "return":  "int",
+        "arguments":  "(z_streamp)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "initgroups":   {
+        "return":  "int",
+        "arguments":  "(const char *, gid_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_CreateCompress":  {
+        "return":  "void",
+        "arguments":  "(j_compress_ptr, int, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_CreateDecompress":    {
+        "return":  "void",
+        "arguments":  "(j_decompress_ptr, int, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_destroy": {
+        "return":  "void",
+        "arguments":  "(j_common_ptr)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_finish_compress": {
+        "return":  "void",
+        "arguments":  "(j_compress_ptr)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_finish_decompress":   {
+        "return":  "boolean",
+        "arguments":  "(j_decompress_ptr)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_read_header": {
+        "return":  "int",
+        "arguments":  "(j_decompress_ptr, boolean)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_read_scanlines":  {
+        "return":  "JDIMENSION",
+        "arguments":  "(j_decompress_ptr, JSAMPARRAY, JDIMENSION)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_resync_to_restart":   {
+        "return":  "boolean",
+        "arguments":  "(j_decompress_ptr, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_set_colorspace":  {
+        "return":  "void",
+        "arguments":  "(j_compress_ptr, J_COLOR_SPACE)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_set_defaults":    {
+        "return":  "void",
+        "arguments":  "(j_compress_ptr)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_set_linear_quality":  {
+        "return":  "void",
+        "arguments":  "(j_compress_ptr, int, boolean)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_set_quality": {
+        "return":  "void",
+        "arguments":  "(j_compress_ptr, int, boolean)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_start_compress":  {
+        "return":  "void",
+        "arguments":  "(j_compress_ptr, boolean)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_start_decompress":    {
+        "return":  "boolean",
+        "arguments":  "(j_decompress_ptr)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "jpeg_write_scanlines": {
+        "return":  "JDIMENSION",
+        "arguments":  "(j_compress_ptr, JSAMPARRAY, JDIMENSION)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "keypad":   {
+        "return":  "int",
+        "arguments":  "(WINDOW *, bool)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "lchown":   {
+        "return":  "int",
+        "arguments":  "(const char *, uid_t, gid_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "link": {
+        "return":  "int",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "llvm.dbg": {
+        "return":  "void",
+        "arguments":  "(metadata, metadata, metadata)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "llvm.stackrestore":    {
+        "return":  "void",
+        "arguments":  "(ptr)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "llvm.va_copy": {
+        "return":  "void",
+        "arguments":  "(ptr, ptr)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "llvm.va_end":  {
+        "return":  "void",
+        "arguments":  "(i8*)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "llvm.va_start":    {
+        "return":  "void",
+        "arguments":  "(ptr)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "longjmp":  {
+        "return":  "void",
+        "arguments":  "(jmp_buf, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "lstat":    {
+        "return":  "int",
+        "arguments":  "(const char *, struct stat *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mblen":    {
+        "return":  "int",
+        "arguments":  "(const char *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mbrlen":   {
+        "return":  "size_t",
+        "arguments":  "(const char*, size_t, mbstate_t*)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mbrtowc":  {
+        "return":  "size_t",
+        "arguments":  "(wchar_t *restrict, const char *restrict, size_t, mbstate_t *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mbtowc":   {
+        "return":  "int",
+        "arguments":  "(wchar_t*, const char *, std::size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "memcmp":   {
+        "return":  "int",
+        "arguments":  "(const void *, const void *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mkdir":    {
+        "return":  "int",
+        "arguments":  "(const char *, mode_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mknod":    {
+        "return":  "int",
+        "arguments":  "(const char *, mode_t, dev_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mkfifo":   {
+        "return":  "int",
+        "arguments":  "(const char *, mode_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mkstemp":  {
+        "return":  "int",
+        "arguments":  "(char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mkstemp64":    {
+        "return":  "int",
+        "arguments":  "(char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mktime":   {
+        "return":  "time_t",
+        "arguments":  "(struct tm *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "modf": {
+        "return":  "double",
+        "arguments":  "(double, double *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "mprotect": {
+        "return":  "int",
+        "arguments":  "(void *, size_t, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "munmap":   {
+        "return":  "int",
+        "arguments":  "(void *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "nanosleep":    {
+        "return":  "int",
+        "arguments":  "(const struct timespec *, struct timespec *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "nodelay":  {
+        "return":  "int",
+        "arguments":  "(WINDOW *, bool)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "open": {
+        "return":  "int",
+        "arguments":  "(const char *, int, mode_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "openlog":  {
+        "return":  "void",
+        "arguments":  "(const char *, int, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "openpty":  {
+        "return":  "int",
+        "arguments":  "(int *, int *, char *, const struct termios *, const struct winsize *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pathconf": {
+        "return":  "long",
+        "arguments":  "(const char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pclose":   {
+        "return":  "int",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "perror":   {
+        "return":  "void",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pipe": {
+        "return":  "int",
+        "arguments":  "(int[2])",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "png_destroy_write_struct": {
+        "return":  "void",
+        "arguments":  "(png_structpp, png_infopp)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "png_init_io":  {
+        "return":  "void",
+        "arguments":  "(png_structp, png_FILE_p)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "png_set_bKGD": {
+        "return":  "void",
+        "arguments":  "(png_structp, png_infop, png_color_16p)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "png_set_invert_alpha": {
+        "return":  "void",
+        "arguments":  "(png_structp)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "png_set_invert_mono":  {
+        "return":  "void",
+        "arguments":  "(png_structp)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "png_write_end":    {
+        "return":  "void",
+        "arguments":  "(png_structp, png_infop)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "png_write_info":   {
+        "return":  "void",
+        "arguments":  "(png_structp, png_infop)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "png_write_rows":   {
+        "return":  "void",
+        "arguments":  "(png_structp, png_bytepp, png_uint_32)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "poll": {
+        "return":  "int",
+        "arguments":  "(struct pollfd *, nfds_t, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pread64":  {
+        "return":  "ssize_t",
+        "arguments":  "(int, void *, size_t, off64_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "printf":   {
+        "return":  "int",
+        "arguments":  "(const char *, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_attr_destroy": {
+        "return":  "int",
+        "arguments":  "(pthread_attr_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_attr_init":    {
+        "return":  "int",
+        "arguments":  "(pthread_attr_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_attr_setscope":    {
+        "return":  "int",
+        "arguments":  "(pthread_attr_t *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_attr_setstacksize":    {
+        "return":  "int",
+        "arguments":  "(pthread_attr_t *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_create":   {
+        "return":  "int",
+        "arguments":  "(pthread_t *, const pthread_attr_t *, void *(*start_routine)(void*), void *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_mutex_destroy":    {
+        "return":  "int",
+        "arguments":  "(pthread_mutex_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_mutex_init":   {
+        "return":  "int",
+        "arguments":  "(pthread_mutex_t *, const pthread_mutexattr_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_mutex_lock":   {
+        "return":  "int",
+        "arguments":  "(pthread_mutex_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_mutex_unlock": {
+        "return":  "int",
+        "arguments":  "(pthread_mutex_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_mutexattr_destroy":    {
+        "return":  "int",
+        "arguments":  "(pthread_mutexattr_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_mutexattr_init":   {
+        "return":  "int",
+        "arguments":  "(pthread_mutexattr_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "pthread_mutexattr_settype":    {
+        "return":  "int",
+        "arguments":  "(pthread_mutexattr_t *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "ptsname":  {
+        "return":  "char *",
+        "arguments":  "(int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "putenv":   {
+        "return":  "int",
+        "arguments":  "(char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "puts": {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "qsort":    {
+        "return":  "void",
+        "arguments":  "(void *, size_t, size_t, int (*compar)(const void *, const void*))",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "re_compile_fastmap":   {
+        "return":  "int",
+        "arguments":  "(struct re_pattern_buffer *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "re_exec":  {
+        "return":  "int",
+        "arguments":  "(char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "re_search":    {
+        "return":  "int",
+        "arguments":  "(struct re_pattern_buffer *, const char *, const int, const int, const int, struct re_registers *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "read": {
+        "return":  "ssize_t",
+        "arguments":  "(int, void *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "readlink": {
+        "return":  "ssize_t",
+        "arguments":  "(const char *restrict, char *restrict, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "recv": {
+        "return":  "ssize_t",
+        "arguments":  "(int, void *, size_t, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "recvfrom": {
+        "return":  "ssize_t",
+        "arguments":  "(int, void *, size_t, int, struct sockaddr *, socklen_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "regcomp":  {
+        "return":  "int",
+        "arguments":  "(regex_t *restrict, const char *restrict, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "regerror": {
+        "return":  "size_t",
+        "arguments":  "(int,  const regex_t *, char *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "remove":   {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "rename":   {
+        "return":  "int",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "rewind":   {
+        "return":  "void",
+        "arguments":  "(FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "rewinddir":    {
+        "return":  "void",
+        "arguments":  "(DIR *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "rmdir":    {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "rresvport":    {
+        "return":  "int",
+        "arguments":  "(int *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "scrollok": {
+        "return":  "int",
+        "arguments":  "(WINDOW *, bool)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "select":   {
+        "return":  "int",
+        "arguments":  "(int, fd_set *restrict, fd_set *restrict, fd_set *restrict, struct timeval *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sem_destroy":  {
+        "return":  "int",
+        "arguments":  "(sem_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sem_init": {
+        "return":  "int",
+        "arguments":  "(sem_t *, int, unsigned int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sem_post": {
+        "return":  "int",
+        "arguments":  "(sem_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sem_trywait":  {
+        "return":  "int",
+        "arguments":  "(sem_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sem_wait": {
+        "return":  "int",
+        "arguments":  "(sem_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "send": {
+        "return":  "ssize_t",
+        "arguments":  "(int, const void *, size_t, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sendto":   {
+        "return":  "ssize_t",
+        "arguments":  "(int, const void *, size_t, int, const struct sockaddr *, socklen_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "setbuf":   {
+        "return":  "void",
+        "arguments":  "(FILE *, char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "setenv":   {
+        "return":  "int",
+        "arguments":  "(const char *, const char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "setgroups":    {
+        "return":  "int",
+        "arguments":  "(size_t, const gid_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "setitimer":    {
+        "return":  "int",
+        "arguments":  "(int, const struct itimerval *, struct itimerval *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "setrlimit":    {
+        "return":  "int",
+        "arguments":  "(int, const struct rlimit *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "setsockopt":   {
+        "return":  "int",
+        "arguments":  "(int, int, int, const void *, socklen_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "setvbuf":  {
+        "return":  "int",
+        "arguments":  "(FILE *, char *, int, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sigaction":    {
+        "return":  "int",
+        "arguments":  "(int, const struct sigaction *restrict, struct sigaction *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sigaddset":    {
+        "return":  "int",
+        "arguments":  "(sigset_t *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sigaltstack":  {
+        "return":  "int",
+        "arguments":  "(const stack_t *restrict, stack_t *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sigdelset":    {
+        "return":  "int",
+        "arguments":  "(sigset_t *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sigemptyset":  {
+        "return":  "int",
+        "arguments":  "(sigset_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sigfillset":   {
+        "return":  "int",
+        "arguments":  "(sigset_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sigisemptyset":    {
+        "return":  "int",
+        "arguments":  "(sigset_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sigismember":  {
+        "return":  "int",
+        "arguments":  "(const sigset_t *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "siglongjmp":   {
+        "return":  "void",
+        "arguments":  "(sigjmp_buf, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sigprocmask":  {
+        "return":  "int",
+        "arguments":  "(int, const sigset_t *restrict, sigset_t *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sigsuspend":   {
+        "return":  "int",
+        "arguments":  "(const sigset_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "snprintf": {
+        "return":  "int",
+        "arguments":  "(char *, size_t, const char *, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "socketpair":   {
+        "return":  "int",
+        "arguments":  "(int, int, int, int[2])",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sprintf":  {
+        "return":  "int",
+        "arguments":  "(char *, const char *, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sscanf":   {
+        "return":  "int",
+        "arguments":  "(const char *, const char *, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "stat": {
+        "return":  "int",
+        "arguments":  "(const char *restrict, struct stat *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "statfs":   {
+        "return":  "int",
+        "arguments":  "(const char *, struct statfs *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "statvfs":  {
+        "return":  "int",
+        "arguments":  "(const char *restrict, struct statvfs *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "strcasecmp":   {
+        "return":  "int",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "strcmp":   {
+        "return":  "int",
+        "arguments":  "(const char *, const char *s)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "strcoll":  {
+        "return":  "int",
+        "arguments":  "(const char *, const char *s)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "strcspn":  {
+        "return":  "size_t",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "strfmon":  {
+        "return":  "ssize_t",
+        "arguments":  "(char *, size_t, const char *, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "strftime": {
+        "return":  "size_t",
+        "arguments":  "(char *restrict, size_t, const char *restrict, const struct tm *restrict)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "strlen":   {
+        "return":  "size_t",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "strncasecmp":  {
+        "return":  "int",
+        "arguments":  "(const char *, const char *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "strncmp":  {
+        "return":  "int",
+        "arguments":  "(const char *, const char *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "strspn":   {
+        "return":  "size_t",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "symlink":  {
+        "return":  "int",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "sysinfo":  {
+        "return":  "int",
+        "arguments":  "(struct sysinfo *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "syslog":   {
+        "return":  "void",
+        "arguments":  "(int, const char *, ...)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "system":   {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "tcgetattr":    {
+        "return":  "int",
+        "arguments":  "(int, struct termios *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "tcsetattr":    {
+        "return":  "int",
+        "arguments":  "(int, int, const struct termios *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "tgetent":  {
+        "return":  "int",
+        "arguments":  "(char *, const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "tgetflag": {
+        "return":  "int",
+        "arguments":  "(char[2])",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "tgetnum":  {
+        "return":  "int",
+        "arguments":  "(char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "time": {
+        "return":  "time_t",
+        "arguments":  "(time_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "timegm":   {
+        "return":  "time_t",
+        "arguments":  "(struct tm *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "times":    {
+        "return":  "clock_t",
+        "arguments":  "(struct tms *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "tputs":    {
+        "return":  "int",
+        "arguments":  "(const char *, int, int (*putc)(int))",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "truncate": {
+        "return":  "int",
+        "arguments":  "(const char *, off_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "uname":    {
+        "return":  "int",
+        "arguments":  "(struct utsname *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "uncompress":   {
+        "return":  "int",
+        "arguments":  "(Bytef *, uLongf *, const Bytef *, uLong)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "ungetc":   {
+        "return":  "int",
+        "arguments":  "(int, FILE *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "unlink":   {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "unsetenv": {
+        "return":  "int",
+        "arguments":  "(const char *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "utime":    {
+        "return":  "int",
+        "arguments":  "(const char *, const struct utimbuf *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "utimes":   {
+        "return":  "int",
+        "arguments":  "(const char *, const struct timeval[2])",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "vasprintf":    {
+        "return":  "int",
+        "arguments":  "(char **, const char *, va_list)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "vfprintf": {
+        "return":  "int",
+        "arguments":  "(FILE *, const char *, va_list)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "vprintf":  {
+        "return":  "int",
+        "arguments":  "(const char *, va_list)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "vsnprintf":    {
+        "return":  "int",
+        "arguments":  "(char *, size_t, const char *, va_list)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "vsprintf": {
+        "return":  "int",
+        "arguments":  "(char *, const char *, va_list)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "waddch":   {
+        "return":  "int",
+        "arguments":  "(WINDOW *, chtype)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "waddnstr": {
+        "return":  "int",
+        "arguments":  "(WINDOW *, const char *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wait": {
+        "return":  "pid_t",
+        "arguments":  "(int *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wait3":    {
+        "return":  "pid_t",
+        "arguments":  "(int *, int, struct rusage *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wait4":    {
+        "return":  "pid_t",
+        "arguments":  "(pid_t, int *, int, struct rusage *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "waitpid":  {
+        "return":  "pid_t",
+        "arguments":  "(pid_t, int *, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wattr_off":    {
+        "return":  "int",
+        "arguments":  "(WINDOW *, attr_t, void *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wattr_on": {
+        "return":  "int",
+        "arguments":  "(WINDOW *, attr_t, void *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wborder":  {
+        "return":  "int",
+        "arguments":  "(WINDOW *, chtype, chtype, chtype, chtype, chtype, chtype, chtype, chtype)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wclrtobot":    {
+        "return":  "int",
+        "arguments":  "(WINDOW *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wclrtoeol":    {
+        "return":  "int",
+        "arguments":  "(WINDOW *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wcrtomb":  {
+        "return":  "size_t",
+        "arguments":  "(char *, wchar_t, mbstate_t *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wctomb":   {
+        "return":  "int",
+        "arguments":  "(char *, wchar_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wctype":   {
+        "return":  "wctype_t",
+        "arguments":  "(const char* )",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "werase":   {
+        "return":  "int",
+        "arguments":  "(WINDOW *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wgetch":   {
+        "return":  "int",
+        "arguments":  "(WINDOW *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wmove":    {
+        "return":  "int",
+        "arguments":  "(WINDOW *, int, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wrefresh": {
+        "return":  "int",
+        "arguments":  "(WINDOW *)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "write":    {
+        "return":  "ssize_t",
+        "arguments":  "(int, const void *, size_t)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "wtouchln": {
+        "return":  "int",
+        "arguments":  "(WINDOW *, int, int, int)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
     "_fopen":   {
+        "return":  "FILE *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1568,6 +2350,8 @@
 		}
     },
     "fopen64":  {
+        "return":  "FILE *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1576,6 +2360,8 @@
 		}
     },
     "readdir64":    {
+        "return":  "struct dirent64 *",
+        "arguments":  "(DIR *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1584,6 +2370,8 @@
 		}
     },
     "tmpfile64":    {
+        "return":  "FILE *",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1592,6 +2380,8 @@
 		}
     },
     "BIO_new_socket":   {
+        "return":  "BIO *",
+        "arguments":  "(int, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1600,6 +2390,8 @@
 		}
     },
     "FT_Get_Sfnt_Table":    {
+        "return":  "void *",
+        "arguments":  "(FT_Face, FT_Sfnt_Tag)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1608,6 +2400,8 @@
 		}
     },
     "FcFontList":   {
+        "return":  "FcFontSet *",
+        "arguments":  "(FcConfig *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1616,6 +2410,8 @@
 		}
     },
     "FcFontMatch":  {
+        "return":  "FcPattern *",
+        "arguments":  "(FcConfig *, FcPattern *, FcResult *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1624,6 +2420,8 @@
 		}
     },
     "FcFontRenderPrepare":  {
+        "return":  "FcPattern *",
+        "arguments":  "(FcConfig *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1632,6 +2430,8 @@
 		}
     },
     "FcFontSetCreate":  {
+        "return":  "FcFontSet *",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1640,6 +2440,8 @@
 		}
     },
     "FcFontSort":   {
+        "return":  "FcFontSet *",
+        "arguments":  "(FcConfig *, FcPattern *, FcBool, FcCharSet **, FcResult *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1648,6 +2450,8 @@
 		}
     },
     "FcInitLoadConfig": {
+        "return":  "FcConfig *",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1656,6 +2460,8 @@
 		}
     },
     "FcObjectSetBuild": {
+        "return":  "FcObjectSet *",
+        "arguments":  "(const char *, ...)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1664,6 +2470,8 @@
 		}
     },
     "FcObjectSetCreate":    {
+        "return":  "FcObjectSet *",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1672,6 +2480,8 @@
 		}
     },
     "FcPatternBuild":   {
+        "return":  "FcPattern *",
+        "arguments":  "(FcPattern *, ...)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1680,6 +2490,8 @@
 		}
     },
     "FcPatternCreate":  {
+        "return":  "FcPattern *",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1688,6 +2500,8 @@
 		}
     },
     "FcPatternDuplicate":   {
+        "return":  "FcPattern *",
+        "arguments":  "(const FcPattern *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1696,6 +2510,8 @@
 		}
     },
     "SSL_CTX_new":  {
+        "return":  "SSL_CTX *",
+        "arguments":  "(const SSL_METHOD *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1704,6 +2520,8 @@
 		}
     },
     "SSL_get_peer_certificate": {
+        "return":  "X509 *",
+        "arguments":  "(const SSL *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1712,6 +2530,8 @@
 		}
     },
     "SSL_new":  {
+        "return":  "SSL *",
+        "arguments":  "(SSL_CTX *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1720,6 +2540,8 @@
 		}
     },
     "SSLv23_client_method": {
+        "return":  "const SSL_METHOD *",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1728,6 +2550,8 @@
 		}
     },
     "SyGetmem": {
+        "return":  "char *",
+        "arguments":  "(long)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1736,6 +2560,8 @@
 		}
     },
     "TLSv1_client_method":  {
+        "return":  "const SSL_METHOD *",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1744,6 +2570,8 @@
 		}
     },
     "XAddExtension":    {
+        "return":  "XExtCodes *",
+        "arguments":  "(DisplayPtr)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1752,6 +2580,8 @@
 		}
     },
     "XAllocClassHint":  {
+        "return":  "XClassHint *",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1760,6 +2590,8 @@
 		}
     },
     "XAllocSizeHints":  {
+        "return":  "XSizeHints *",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1768,6 +2600,8 @@
 		}
     },
     "XAllocStandardColormap":   {
+        "return":  "XStandardColormap *",
+        "arguments":  "()",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1776,6 +2610,8 @@
 		}
     },
     "XCreateFontSet":   {
+        "return":  "XFontSet",
+        "arguments":  "(Display *, char *, char ***, int *, char **)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1784,6 +2620,8 @@
 		}
     },
     "XCreateImage": {
+        "return":  "XImage *",
+        "arguments":  "(Display *, Visual *, unsigned int, int, int, char *, unsigned int, unsigned int, int, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1792,6 +2630,8 @@
 		}
     },
     "XCreateGC":    {
+        "return":  "GC",
+        "arguments":  "(Display *, Drawable, unsigned long, XGCValues *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1800,6 +2640,8 @@
 		}
     },
     "XESetCloseDisplay":    {
+        "return":  "int *",
+        "arguments":  "(Display *, int, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1808,6 +2650,8 @@
 		}
     },
     "XGetImage":    {
+        "return":  "XImage *",
+        "arguments":  "(Display *, Drawable, int, int, unsigned int, unsigned int, unsigned long, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1816,6 +2660,8 @@
 		}
     },
     "XGetModifierMapping":  {
+        "return":  "XModifierKeymap *",
+        "arguments":  "(Display *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1824,6 +2670,8 @@
 		}
     },
     "XGetMotionEvents": {
+        "return":  "XTimeCoord *",
+        "arguments":  "(Display *, Window, Time, Time, int *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1832,6 +2680,8 @@
 		}
     },
     "XGetVisualInfo":   {
+        "return":  "XVisualInfo *",
+        "arguments":  "(Display *, long, XVisualInfo *, int *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1840,6 +2690,8 @@
 		}
     },
     "XLoadQueryFont":   {
+        "return":  "XFontStruct *",
+        "arguments":  "(Display *, char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1848,6 +2700,8 @@
 		}
     },
     "XListPixmapFormats":   {
+        "return":  "XPixmapFormatValues *",
+        "arguments":  "(Display *, int *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1856,6 +2710,8 @@
 		}
     },
     "XRenderFindFormat":    {
+        "return":  "XRenderPictFormat *",
+        "arguments":  "(Display *, unsigned long, _Xconst XRenderPictFormat *, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1864,6 +2720,8 @@
 		}
     },
     "XRenderFindStandardFormat":    {
+        "return":  "XRenderPictFormat *",
+        "arguments":  "(Display *, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1872,6 +2730,8 @@
 		}
     },
     "XRenderFindVisualFormat":  {
+        "return":  "XRenderPictFormat *",
+        "arguments":  "(Display *, _Xconst Visual *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1880,6 +2740,8 @@
 		}
     },
     "XOpenDisplay": {
+        "return":  "Display *",
+        "arguments":  "(char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1888,6 +2750,8 @@
 		}
     },
     "XSetErrorHandler": {
+        "return":  "int *",
+        "arguments":  "(Display *, XErrorEvent *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1896,6 +2760,8 @@
 		}
     },
     "XSetIOErrorHandler":   {
+        "return":  "int *",
+        "arguments":  "(Display *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1904,6 +2770,8 @@
 		}
     },
     "XShapeGetRectangles":  {
+        "return":  "XRectangle *",
+        "arguments":  "(Display *, Window, int, int *, int *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1912,6 +2780,8 @@
 		}
     },
     "XShmCreateImage":  {
+        "return":  "XImage *",
+        "arguments":  "(Display *, Visual *, unsigned int, int, char *, XShmSegmentInfo *, unsigned int, unsigned int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1920,6 +2790,8 @@
 		}
     },
     "XSynchronize": {
+        "return":  "int *",
+        "arguments":  "(Display *, Bool)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1928,6 +2800,8 @@
 		}
     },
     "XcursorImageCreate":   {
+        "return":  "XcursorImage *",
+        "arguments":  "(int, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1936,6 +2810,8 @@
 		}
     },
     "XcursorLibraryLoadImages": {
+        "return":  "XcursorImages *",
+        "arguments":  "(const char *, const char *, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1944,6 +2820,8 @@
 		}
     },
     "XcursorShapeLoadImages":   {
+        "return":  "XcursorImages *",
+        "arguments":  "(unsigned int, const char *, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1952,6 +2830,8 @@
 		}
     },
     "XineramaQueryScreens": {
+        "return":  "XineramaScreenInfo *",
+        "arguments":  "(Display *, int *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1960,6 +2840,8 @@
 		}
     },
     "XkbGetMap":    {
+        "return":  "XkbDescPtr",
+        "arguments":  "(Display *, unsigned int, unsigned int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1968,6 +2850,8 @@
 		}
     },
     "XtAppCreateShell": {
+        "return":  "Widget",
+        "arguments":  "(String, String, WidgetClass, Display *, ArgList, Cardinal)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1976,6 +2860,8 @@
 		}
     },
     "XtCreateApplicationContext":   {
+        "return":  "XtAppContext",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1984,6 +2870,8 @@
 		}
     },
     "XtOpenDisplay":    {
+        "return":  "Display *",
+        "arguments":  "(XtAppContext, String, String, String, XrmOptionDescRec *, Cardinal, int *, String *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -1992,6 +2880,8 @@
 		}
     },
     "alloc":    {
+        "return":  "int",
+        "arguments":  "(pthdb_user_t, size_t, void **)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2000,6 +2890,8 @@
 		}
     },
     "alloc_check":  {
+        "return":  "char *",
+        "arguments":  "(int, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2008,6 +2900,8 @@
 		}
     },
     "alloc_clear":  {
+        "return":  "void",
+        "arguments":  "(struct_cache *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2016,6 +2910,8 @@
 		}
     },
     "art_svp_from_vpath":   {
+        "return":  "ArtSVP*",
+        "arguments":  "((ArtVpath *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2024,6 +2920,8 @@
 		}
     },
     "art_svp_vpath_stroke": {
+        "return":  "ArtSVP*",
+        "arguments":  "(ArtVpath *,  ArtPathStrokeJoinType, ArtPathStrokeCapType, double, double, double)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2032,6 +2930,8 @@
 		}
     },
     "art_svp_writer_rewind_new":    {
+        "return":  "ArtSvpWriter *",
+        "arguments":  "(ArtWindRule)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2040,6 +2940,8 @@
 		}
     },
     "art_svp_writer_rewind_reap":   {
+        "return":  "ArtSVP *",
+        "arguments":  "(ArtSvpWriter *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2048,6 +2950,8 @@
 		}
     },
     "art_vpath_dash":   {
+        "return":  "ArtVpath *",
+        "arguments":  "(const ArtVpath *, const ArtVpathDash *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2056,6 +2960,8 @@
 		}
     },
     "cairo_create": {
+        "return":  "cairo_t *",
+        "arguments":  "(cairo_surface_t *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2064,6 +2970,8 @@
 		}
     },
     "cairo_image_surface_create_for_data":  {
+        "return":  "cairo_surface_t *",
+        "arguments":  "(unsigned char *, cairo_format_t, int,  int, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2072,6 +2980,8 @@
 		}
     },
     "cairo_pattern_create_for_surface": {
+        "return":  "cairo_pattern_t *",
+        "arguments":  "(cairo_surface_t *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2080,6 +2990,8 @@
 		}
     },
     "cairo_surface_create_similar": {
+        "return":  "cairo_surface_t *",
+        "arguments":  "(cairo_surface_t *, cairo_content_t, int, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2088,6 +3000,8 @@
 		}
     },
     "calloc":   {
+        "return":  "void *",
+        "arguments":  "(size_t, size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2096,6 +3010,8 @@
 		}
     },
     "zmalloc":  {
+        "return":  "void *",
+        "arguments":  "(size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2104,6 +3020,8 @@
 		}
     },
     "fopen":    {
+        "return":  "FILE *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2112,6 +3030,8 @@
 		}
     },
     "fopencookie":  {
+        "return":  "FILE *",
+        "arguments":  "(void *restrict, const char *restrict, cookie_io_functions_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2120,6 +3040,8 @@
 		}
     },
     "g_scanner_new":    {
+        "return":  "GScanner *",
+        "arguments":  "(const GScannerConfig *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2128,6 +3050,8 @@
 		}
     },
     "gcry_sexp_nth_mpi":    {
+        "return":  " gcry_mpi_t",
+        "arguments":  "(gcry_sexp_t, int, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2136,6 +3060,8 @@
 		}
     },
     "gzdopen":  {
+        "return":  "gcry_mpi_t",
+        "arguments":  "(gcry_sexp_t, int, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2144,6 +3070,8 @@
 		}
     },
     "iconv_open":   {
+        "return":  "iconv_t",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2152,6 +3080,8 @@
 		}
     },
     "jpeg_alloc_huff_table":    {
+        "return":  "JHUFF_TBL *",
+        "arguments":  "(j_common_ptr)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2160,6 +3090,8 @@
 		}
     },
     "jpeg_alloc_quant_table":   {
+        "return":  "JQUANT_TBL *",
+        "arguments":  "(j_common_ptr)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2168,6 +3100,8 @@
 		}
     },
     "lalloc":   {
+        "return":  "void *",
+        "arguments":  "(size_t, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2176,6 +3110,8 @@
 		}
     },
     "lalloc_clear": {
+        "return":  "void *",
+        "arguments":  "(size_t, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2184,6 +3120,8 @@
 		}
     },
     "malloc":   {
+        "return":  "void *",
+        "arguments":  "(size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2192,6 +3130,8 @@
 		}
     },
     "nhalloc":  {
+        "return":  "long *",
+        "arguments":  "(unsigned int, const char *, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2200,6 +3140,8 @@
 		}
     },
     "oballoc":  {
+        "return":  "void *",
+        "arguments":  "(size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2208,6 +3150,8 @@
 		}
     },
     "pango_cairo_font_map_create_context":  {
+        "return":  "PangoContext *",
+        "arguments":  "(PangoCairoFontMap *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2216,6 +3160,8 @@
 		}
     },
     "pcre_compile": {
+        "return":  "pcre *",
+        "arguments":  "(const char *, int, const char **, int *, const unsigned char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2224,6 +3170,8 @@
 		}
     },
     "pcre_study":   {
+        "return":  "pcre_extra *",
+        "arguments":  "(const pcre *, int, const char **)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2232,6 +3180,8 @@
 		}
     },
     "permalloc":    {
+        "return":  "Perm_t *",
+        "arguments":  "(int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2240,6 +3190,8 @@
 		}
     },
     "png_create_info_struct":   {
+        "return":  "png_infop",
+        "arguments":  "(png_structp)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2248,6 +3200,8 @@
 		}
     },
     "png_create_write_struct":  {
+        "return":  "png_structp",
+        "arguments":  "(png_const_charp, png_voidp, png_error_ptr, png_error_ptr)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2256,6 +3210,8 @@
 		}
     },
     "popen":    {
+        "return":  "FILE *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2264,6 +3220,8 @@
 		}
     },
     "pthread_getspecific":  {
+        "return":  "FILE *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2272,6 +3230,8 @@
 		}
     },
     "readdir":  {
+        "return":  "struct dirent *",
+        "arguments":  "(DIR *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2280,6 +3240,8 @@
 		}
     },
     "safe_calloc":  {
+        "return":  "void *",
+        "arguments":  "(unsigned, unsigned)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2288,6 +3250,8 @@
 		}
     },
     "safe_malloc":  {
+        "return":  "void *",
+        "arguments":  "(size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2296,6 +3260,8 @@
 		}
     },
     "safecalloc":   {
+        "return":  "char *",
+        "arguments":  "(int, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2304,6 +3270,8 @@
 		}
     },
     "safemalloc":   {
+        "return":  "char *",
+        "arguments":  "(int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2312,6 +3280,8 @@
 		}
     },
     "safexcalloc":  {
+        "return":  "char *",
+        "arguments":  "(I32, MEM_SIZE, MEM_SIZE)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2320,6 +3290,8 @@
 		}
     },
     "safexmalloc":  {
+        "return":  "char *",
+        "arguments":  "(int, MEM_SIZE)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2328,6 +3300,8 @@
 		}
     },
     "savealloc":    {
+        "return":  "char *",
+        "arguments":  "(MEM_SIZE)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2336,6 +3310,8 @@
 		}
     },
     "setmntent":    {
+        "return":  "FILE *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2344,6 +3320,8 @@
 		}
     },
     "shmat":    {
+        "return":  "void *",
+        "arguments":  "(int, const void *, int)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2352,6 +3330,8 @@
 		}
     },
     "__sysv_signal":    {
+        "return":  "__sighandler_t",
+        "arguments":  "(int, __sighandler_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2360,6 +3340,8 @@
 		}
     },
     "signal":   {
+        "return":  "sighandler_t",
+        "arguments":  "(int, sighandler_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2368,6 +3350,8 @@
 		}
     },
     "sigset":   {
+        "return":  "sighandler_t",
+        "arguments":  "(int, sighandler_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2376,6 +3360,8 @@
 		}
     },
     "tempnam":  {
+        "return":  "char *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2384,6 +3370,8 @@
 		}
     },
     "tmpfile":  {
+        "return":  "FILE *",
+        "arguments":  "(void)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2392,6 +3380,8 @@
 		}
     },
     "xalloc":   {
+        "return":  "static int",
+        "arguments":  "()",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2400,6 +3390,8 @@
 		}
     },
     "xcalloc":  {
+        "return":  "void *",
+        "arguments":  "(size_t, size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2408,6 +3400,8 @@
 		}
     },
     "xmalloc":  {
+        "return":  "void *",
+        "arguments":  "(size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2416,6 +3410,8 @@
 		}
     },
     "_Znwm":    {
+        "return":  "i8*",
+        "arguments":  "(i64)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2424,6 +3420,8 @@
 		}
     },
     "_Znam":    {
+        "return":  "i8*",
+        "arguments":  "(i64)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2432,6 +3430,8 @@
 		}
     },
     "_Znaj":    {
+        "return":  "i8*",
+        "arguments":  "(i32)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2440,6 +3440,8 @@
 		}
     },
     "_Znwj":    {
+        "return":  "i8*",
+        "arguments":  "(i64)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2448,6 +3450,8 @@
 		}
     },
     "__cxa_allocate_exception": {
+        "return":  "void *",
+        "arguments":  "(size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2456,6 +3460,8 @@
 		}
     },
     "aligned_alloc":    {
+        "return":  "void *",
+        "arguments":  "(size_t, size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2464,6 +3470,8 @@
 		}
     },
     "memalign": {
+        "return":  "void *",
+        "arguments":  "(size_t, size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2472,14 +3480,8 @@
 		}
     },
     "valloc":   {
-        "type": "EFT_ALLOC",
-        "overwrite_app_function": 1,
-        "AddrStmt": {
-			"src": "Obj",
-			"dst": "Ret"
-		}
-    },
-    "SRE_LockCreate":   {
+        "return":  "void *",
+        "arguments":  "(size_t)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2488,6 +3490,8 @@
 		}
     },
     "VOS_MemAlloc": {
+        "return":  "EXT_DECL UINT8 *",
+        "arguments":  "(UINT32)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2496,6 +3500,8 @@
 		}
     },
     "mmap64":   {
+        "return":  "void *",
+        "arguments":  "(void *, size_t, int, int, int, off64_t)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2504,6 +3510,8 @@
 		}
     },
     "X509_NAME_oneline":    {
+        "return":  "char *",
+        "arguments":  "(X509_NAME *,char *, int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2512,6 +3520,8 @@
 		}
     },
     "X509_verify_cert_error_string":    {
+        "return":  "const char *",
+        "arguments":  "(long)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2520,6 +3530,8 @@
 		}
     },
     "XBaseFontNameListOfFontSet":   {
+        "return":  "char *",
+        "arguments":  "(XFontSet)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2528,6 +3540,8 @@
 		}
     },
     "XGetAtomName": {
+        "return":  "char *",
+        "arguments":  "(Display *, Atom)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2536,6 +3550,8 @@
 		}
     },
     "XGetDefault":  {
+        "return":  "char *",
+        "arguments":  "(Display *, char *, char *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2544,6 +3560,8 @@
 		}
     },
     "XGetKeyboardMapping":  {
+        "return":  "KeySym *",
+        "arguments":  "(Display *, KeyCode, int, int *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2552,6 +3570,8 @@
 		}
     },
     "XListDepths":  {
+        "return":  "int *",
+        "arguments":  "(Display *, int, int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2560,6 +3580,8 @@
 		}
     },
     "XListFonts":   {
+        "return":  "char **",
+        "arguments":  "(Display *, char *, int, int *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2568,6 +3590,8 @@
 		}
     },
     "XSetLocaleModifiers":  {
+        "return":  "char *",
+        "arguments":  "(char *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2576,6 +3600,8 @@
 		}
     },
     "XcursorGetTheme":  {
+        "return":  "char *",
+        "arguments":  "(Display *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2584,6 +3610,8 @@
 		}
     },
     "__strdup": {
+        "return":  "char *",
+        "arguments":  "(const char)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2592,6 +3620,8 @@
 		}
     },
     "crypt":    {
+        "return":  "char *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2600,6 +3630,8 @@
 		}
     },
     "ctime":    {
+        "return":  "char *",
+        "arguments":  "(const time_t *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2608,6 +3640,8 @@
 		}
     },
     "dlerror":  {
+        "return":  "char *",
+        "arguments":  "(void)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2616,6 +3650,8 @@
 		}
     },
     "dlopen":   {
+        "return":  "void *",
+        "arguments":  "(const char *, int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2624,6 +3660,8 @@
 		}
     },
     "gai_strerror": {
+        "return":  "const char *",
+        "arguments":  "(int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2632,6 +3670,8 @@
 		}
     },
     "gcry_cipher_algo_name":    {
+        "return":  "const char *",
+        "arguments":  "(int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2640,6 +3680,8 @@
 		}
     },
     "gcry_md_algo_name":    {
+        "return":  "const char *",
+        "arguments":  "(int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2648,6 +3690,8 @@
 		}
     },
     "gcry_md_read": {
+        "return":  "unsigned char *",
+        "arguments":  "(GCRY_MD_HD, int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2656,6 +3700,8 @@
 		}
     },
     "getenv":   {
+        "return":  "char *",
+        "arguments":  "(const char *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2664,6 +3710,8 @@
 		}
     },
     "getlogin": {
+        "return":  "char *",
+        "arguments":  "(void)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2672,6 +3720,8 @@
 		}
     },
     "getpass":  {
+        "return":  "char *",
+        "arguments":  "(const char *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2680,6 +3730,8 @@
 		}
     },
     "gnutls_strerror":  {
+        "return":  "const char *",
+        "arguments":  "(int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2688,6 +3740,8 @@
 		}
     },
     "gpg_strerror": {
+        "return":  "const char *",
+        "arguments":  "(unsigned int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2696,6 +3750,8 @@
 		}
     },
     "gzerror":  {
+        "return":  "const char *",
+        "arguments":  "(gzFile, int *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2704,6 +3760,8 @@
 		}
     },
     "inet_ntoa":    {
+        "return":  "char *",
+        "arguments":  "(struct in_addr)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2712,6 +3770,8 @@
 		}
     },
     "initscr":  {
+        "return":  "WINDOW *",
+        "arguments":  "(void)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2720,6 +3780,8 @@
 		}
     },
     "llvm.stacksave":   {
+        "return":  "ptr *",
+        "arguments":  "()",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2728,6 +3790,8 @@
 		}
     },
     "mmap": {
+        "return":  "void *",
+        "arguments":  "(void *, size_t, int, int, int, off_t)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2736,6 +3800,8 @@
 		}
     },
     "newwin":   {
+        "return":  "WINDOW *",
+        "arguments":  "(int, int, int, int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2744,6 +3810,8 @@
 		}
     },
     "nl_langinfo":  {
+        "return":  "char *",
+        "arguments":  "(nl_item)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2752,6 +3820,8 @@
 		}
     },
     "opendir":  {
+        "return":  "DIR *",
+        "arguments":  "(const char *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2760,6 +3830,8 @@
 		}
     },
     "sbrk": {
+        "return":  "void *",
+        "arguments":  "(intptr_t)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2768,6 +3840,8 @@
 		}
     },
     "strdup":   {
+        "return":  "char *",
+        "arguments":  "(const char *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2776,6 +3850,8 @@
 		}
     },
     "strerror": {
+        "return":  "char *",
+        "arguments":  "(int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2784,6 +3860,8 @@
 		}
     },
     "strsignal":    {
+        "return":  "char *",
+        "arguments":  "(int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2792,6 +3870,8 @@
 		}
     },
     "textdomain":   {
+        "return":  "char *",
+        "arguments":  "(const char *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2800,6 +3880,8 @@
 		}
     },
     "tgetstr":  {
+        "return":  "char *",
+        "arguments":  "(char *, char **)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2808,6 +3890,8 @@
 		}
     },
     "tigetstr": {
+        "return":  "char *",
+        "arguments":  "(char *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2816,6 +3900,8 @@
 		}
     },
     "tmpnam":   {
+        "return":  "char *",
+        "arguments":  "(char *)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2824,6 +3910,8 @@
 		}
     },
     "ttyname":  {
+        "return":  "char *",
+        "arguments":  "(int)",
         "type": "EFT_NOSTRUCT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -2832,6 +3920,8 @@
 		}
     },
     "__ctype_b_loc":    {
+        "return":  "const unsigned short **",
+        "arguments":  "(void)",
         "type": "EFT_STAT2",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2840,6 +3930,8 @@
 		}
     },
     "__ctype_tolower_loc":  {
+        "return":  "int32_t **",
+        "arguments":  "(void)",
         "type": "EFT_STAT2",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2848,6 +3940,8 @@
 		}
     },
     "__ctype_toupper_loc":  {
+        "return":  "int32_t **",
+        "arguments":  "(void)",
         "type": "EFT_STAT2",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2856,6 +3950,8 @@
 		}
     },
     "XKeysymToString":  {
+        "return":  "char *",
+        "arguments":  "(KeySym)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2864,6 +3960,8 @@
 		}
     },
     "__errno_location": {
+        "return":  "int *",
+        "arguments":  "(void)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2872,6 +3970,8 @@
 		}
     },
     "__h_errno_location":   {
+        "return":  "int *",
+        "arguments":  "(void)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2880,6 +3980,8 @@
 		}
     },
     "__res_state":  {
+        "return":  "struct __res_state *",
+        "arguments":  "(void)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2888,6 +3990,8 @@
 		}
     },
     "asctime":  {
+        "return":  "char *",
+        "arguments":  "(const struct tm *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2896,6 +4000,8 @@
 		}
     },
     "bindtextdomain":   {
+        "return":  "char *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2904,6 +4010,8 @@
 		}
     },
     "bind_textdomain_codeset":  {
+        "return":  "char *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2912,6 +4020,8 @@
 		}
     },
     "ctermid":  {
+        "return":  "char *",
+        "arguments":  "(char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2920,6 +4030,8 @@
 		}
     },
     "dcgettext":    {
+        "return":  "char *",
+        "arguments":  "(const char * , const char *, int)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2928,6 +4040,8 @@
 		}
     },
     "dgettext": {
+        "return":  "char *",
+        "arguments":  " (const char * domainname, const char * msgid)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2936,6 +4050,8 @@
 		}
     },
     "dngettext":    {
+        "return":  "char *",
+        "arguments":  "(const char *, const char *, const char *, unsigned long int)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2944,6 +4060,8 @@
 		}
     },
     "fdopen":   {
+        "return":  "FILE *",
+        "arguments":  "(int, const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2952,6 +4070,8 @@
 		}
     },
     "gcry_strerror":    {
+        "return":  "const char *",
+        "arguments":  "(gcry_error_t)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2960,6 +4080,8 @@
 		}
     },
     "gcry_strsource":   {
+        "return":  "const char *",
+        "arguments":  "(gcry_error_t)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2968,6 +4090,8 @@
 		}
     },
     "getgrgid": {
+        "return":  "struct group *",
+        "arguments":  "(gid_t)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2976,6 +4100,8 @@
 		}
     },
     "getgrnam": {
+        "return":  "struct group *",
+        "arguments":  "(const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2984,6 +4110,8 @@
 		}
     },
     "gethostbyaddr":    {
+        "return":  "struct hostent *",
+        "arguments":  "(const void *, socklen_t, int)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -2992,6 +4120,8 @@
 		}
     },
     "gethostbyname":    {
+        "return":  "struct hostent *",
+        "arguments":  "(const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3000,6 +4130,8 @@
 		}
     },
     "gethostbyname2":   {
+        "return":  "struct hostent *",
+        "arguments":  "(const char *, int)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3008,6 +4140,8 @@
 		}
     },
     "getmntent":    {
+        "return":  "struct mntent *",
+        "arguments":  "(FILE *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3016,6 +4150,8 @@
 		}
     },
     "getprotobyname":   {
+        "return":  "struct protoent *",
+        "arguments":  "(const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3024,6 +4160,8 @@
 		}
     },
     "getprotobynumber": {
+        "return":  "struct protoent *",
+        "arguments":  "(int)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3032,6 +4170,8 @@
 		}
     },
     "getpwent": {
+        "return":  "struct passwd *",
+        "arguments":  "(void)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3040,6 +4180,8 @@
 		}
     },
     "getpwnam": {
+        "return":  "struct passwd *",
+        "arguments":  "(const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3048,6 +4190,8 @@
 		}
     },
     "getpwuid": {
+        "return":  "struct passwd *",
+        "arguments":  "(uid_t)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3056,6 +4200,8 @@
 		}
     },
     "getservbyname":    {
+        "return":  "struct servent *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3064,6 +4210,8 @@
 		}
     },
     "getservbyport":    {
+        "return":  "struct servent *",
+        "arguments":  "(int, const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3072,6 +4220,8 @@
 		}
     },
     "getspnam": {
+        "return":  "struct spwd *",
+        "arguments":  "(const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3080,6 +4230,8 @@
 		}
     },
     "gettext":  {
+        "return":  "char *",
+        "arguments":  "(const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3088,6 +4240,8 @@
 		}
     },
     "gmtime":   {
+        "return":  "struct tm *",
+        "arguments":  "(const time_t *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3096,6 +4250,8 @@
 		}
     },
     "gnu_get_libc_version": {
+        "return":  "const char *",
+        "arguments":  "(void)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3104,6 +4260,8 @@
 		}
     },
     "gnutls_check_version": {
+        "return":  "const char *",
+        "arguments":  "(const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3112,6 +4270,8 @@
 		}
     },
     "localeconv":   {
+        "return":  "struct lconv *",
+        "arguments":  "(void)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3120,6 +4280,8 @@
 		}
     },
     "localtime":    {
+        "return":  "struct tm *",
+        "arguments":  "(const time_t *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3128,6 +4290,8 @@
 		}
     },
     "ngettext": {
+        "return":  "char *",
+        "arguments":  "(const char *, const char *, unsigned long int)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3136,6 +4300,8 @@
 		}
     },
     "pango_cairo_font_map_get_default": {
+        "return":  "PangoFontMap *",
+        "arguments":  "(void)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3144,6 +4310,8 @@
 		}
     },
     "re_comp":  {
+        "return":  "char *",
+        "arguments":  "(const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3152,6 +4320,8 @@
 		}
     },
     "setlocale":    {
+        "return":  "char *",
+        "arguments":  "(int, const char *)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3160,6 +4330,8 @@
 		}
     },
     "tgoto":    {
+        "return":  "char *",
+        "arguments":  "(const char *, int col, int)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3168,6 +4340,8 @@
 		}
     },
     "tparm":    {
+        "return":  "char *",
+        "arguments":  "(char *, ...)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3176,6 +4350,8 @@
 		}
     },
     "zError":   {
+        "return":  "const char *",
+        "arguments":  "(int)",
         "type": "EFT_STAT",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3184,6 +4360,8 @@
 		}
     },
     "getcwd":   {
+        "return":  "char *",
+        "arguments":  "(char *, size_t )",
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3192,6 +4370,8 @@
 		}
     },
     "mem_realloc":  {
+        "return":  "void *",
+        "arguments":  "(void *, size_t)",
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3200,6 +4380,8 @@
 		}
     },
     "realloc":  {
+        "return":  "void *",
+        "arguments":  "(void *, size_t)",
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3208,6 +4390,8 @@
 		}
     },
     "realloc_obj":  {
+        "return":  "struct obj *",
+        "arguments":  "(struct obj *, int, genericptr_t, int, const char *)",
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3216,6 +4400,8 @@
 		}
     },
     "safe_realloc": {
+        "return":  "void *",
+        "arguments":  "(void *, size_t)",
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3224,6 +4410,8 @@
 		}
     },
     "saferealloc":  {
+        "return":  "void *",
+        "arguments":  "(void *, size_t, size_t)",
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3232,6 +4420,8 @@
 		}
     },
     "safexrealloc": {
+        "return":  "char *",
+        "arguments":  "()",
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3240,6 +4430,8 @@
 		}
     },
     "strtok":   {
+        "return":  "char *",
+        "arguments":  "(char *, const char *)",
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3248,6 +4440,8 @@
 		}
     },
     "strtok_r": {
+        "return":  "char *",
+        "arguments":  "(char *, const char *, char **)",
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3256,6 +4450,8 @@
 		}
     },
     "xrealloc": {
+        "return":  "void *",
+        "arguments":  "(void *ptr, size_t size)",
         "type": "EFT_REALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3264,122 +4460,158 @@
 		}
     },
     "SSL_CTX_free": {
+        "return":  "void",
+        "arguments":  "(SSL_CTX *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "SSL_free": {
+        "return":  "void",
+        "arguments":  "(SSL *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "cfree":    {
+        "return":  "void",
+        "arguments":  "(void *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "free": {
+        "return":  "void",
+        "arguments":  "(void *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "free_all_mem": {
+        "return":  "void",
+        "arguments":  "(EXIStream *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "freeaddrinfo": {
+        "return":  "void",
+        "arguments":  "(struct addrinfo *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "gcry_mpi_release": {
+        "return":  "void",
+        "arguments":  "(gcry_mpi_t)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "gcry_sexp_release":    {
+        "return":  "void",
+        "arguments":  "(gcry_sexp_t)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "globfree": {
+        "return":  "void",
+        "arguments":  "(glob_t *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "nhfree":   {
+        "return":  "void",
+        "arguments":  "(genericptr_t, const char *, int)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "obstack_free": {
-        "type": "EFT_FREE",
-        "overwrite_app_function": 1
-    },
-    "safe_cfree":   {
+        "return":  "void",
+        "arguments":  "(struct obstack *, void *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "safe_free":    {
-        "type": "EFT_FREE",
-        "overwrite_app_function": 1
-    },
-    "safefree": {
+        "return":  "void",
+        "arguments":  "(void *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "safexfree":    {
-        "type": "EFT_FREE",
-        "overwrite_app_function": 1
-    },
-    "sm_free":  {
+        "return":  "void",
+        "arguments":  "(char *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "vim_free": {
+        "return":  "void",
+        "arguments":  "void *",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "xfree":    {
+        "return":  "int",
+        "arguments":  "(void *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "fclose":   {
+        "return":  "int",
+        "arguments":  "(FILE *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "XFreeColormap":    {
+        "return":  "void",
+        "arguments":  "(Display *, Colormap)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "XFreeColors":  {
+        "return":  "void",
+        "arguments":  "(Display *,Colormap, unsigned long, int, unsigned long)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "XFreeFont":    {
+        "return":  "void",
+        "arguments":  "(Display *, XFontStruct *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "XFreeFontNames":   {
+        "return":  "void",
+        "arguments":  "(char *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "XFreeGC":  {
+        "return":  "void",
+        "arguments":  "(Display *, GC)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "XFreePixmap":  {
+        "return":  "void",
+        "arguments":  "(Display *, Pixmap)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "XFree":    {
-        "type": "EFT_FREE",
-        "overwrite_app_function": 1
-    },
-    "VOS_MemFree":  {
+        "return":  "int",
+        "arguments":  "(void *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "_ZdaPv":   {
+        "return":  "void",
+        "arguments":  "(void *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "_ZdlPv":   {
+        "return":  "void",
+        "arguments":  "(void *)",
         "type": "EFT_FREE",
         "overwrite_app_function": 1
     },
     "__rawmemchr":  {
+        "return":  "ptr_t",
+        "arguments":  "(const ptr_t, int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3388,6 +4620,8 @@
 		}
     },
     "cairo_surface_reference":  {
+        "return":  "cairo_surface_t *",
+        "arguments":  "(cairo_surface_t *)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3396,6 +4630,8 @@
 		}
     },
     "fgets":    {
+        "return":  "char *",
+        "arguments":  "(char *, int, FILE *)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3404,6 +4640,8 @@
 		}
     },
     "jpeg_std_error":   {
+        "return":  "struct jpeg_error_mgr *",
+        "arguments":  "(struct jpeg_error_mgr *)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3412,6 +4650,8 @@
 		}
     },
     "memchr":   {
+        "return":  "void *",
+        "arguments":  "(const void *, int, size_t)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3420,6 +4660,8 @@
 		}
     },
     "mremap":   {
+        "return":  "void *",
+        "arguments":  "(void *, size_t, size_t, int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3428,6 +4670,8 @@
 		}
     },
     "strchr":   {
+        "return":  "char *",
+        "arguments":  "(const char *, int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3436,6 +4680,8 @@
 		}
     },
     "strerror_r":   {
+        "return":  "char *",
+        "arguments":  "(int, char *, size_t)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3444,6 +4690,8 @@
 		}
     },
     "strpbrk":  {
+        "return":  "char *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3452,6 +4700,8 @@
 		}
     },
     "strptime": {
+        "return":  "char *",
+        "arguments":  "(const char *restrict, const char *restrict, struct tm *restrict)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3460,6 +4710,8 @@
 		}
     },
     "strrchr":  {
+        "return":  "char *",
+        "arguments":  "(const char *, int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3468,6 +4720,8 @@
 		}
     },
     "strstr":   {
+        "return":  "char *",
+        "arguments":  "(const char *, const char *)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3476,6 +4730,8 @@
 		}
     },
     "tmpnam_r": {
+        "return":  "char *",
+        "arguments":  "(char *)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3484,6 +4740,8 @@
 		}
     },
     "isalnum":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3492,6 +4750,8 @@
 		}
     },
     "isalpha":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3500,6 +4760,8 @@
 		}
     },
     "isblank":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3508,6 +4770,8 @@
 		}
     },
     "iscntrl":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3516,6 +4780,8 @@
 		}
     },
     "isdigit":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3524,6 +4790,8 @@
 		}
     },
     "isgraph":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3532,6 +4800,8 @@
 		}
     },
     "islower":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3540,6 +4810,8 @@
 		}
     },
     "isprint":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3548,6 +4820,8 @@
 		}
     },
     "ispunct":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3556,6 +4830,8 @@
 		}
     },
     "isspace":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3564,6 +4840,8 @@
 		}
     },
     "isupper":  {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3572,6 +4850,8 @@
 		}
     },
     "isxdigit": {
+        "return":  "int",
+        "arguments":  "(int)",
         "type": "EFT_L_A0",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3580,6 +4860,8 @@
 		}
     },
     "asctime_r":    {
+        "return":  "char *",
+        "arguments":  "(const struct tm *, char *)",
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3588,6 +4870,8 @@
             }
     },
     "bsearch":  {
+        "return":  "void *",
+        "arguments":  "(const void *, const void *, size_t, size_t, int (*compar)(const void *, const void *))",
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
        "CopyStmt": {
@@ -3596,6 +4880,8 @@
 		}
     },
     "getmntent_r":  {
+        "return":  "struct mntent *",
+        "arguments":  "(FILE *restrict, struct mntent *restrict, char *restrict, int)",
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
        "CopyStmt": {
@@ -3604,6 +4890,8 @@
 		}
     },
     "gmtime_r": {
+        "return":  "struct tm *",
+        "arguments":  "(const time_t *, struct tm *)",
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
        "CopyStmt": {
@@ -3612,6 +4900,8 @@
 		}
     },
     "gzgets":   {
+        "return":  "char *",
+        "arguments":  "(gzFile, char *, int)",
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
        "CopyStmt": {
@@ -3620,6 +4910,8 @@
 		}
     },
     "localtime_r":  {
+        "return":  "struct tm *",
+        "arguments":  "(const time_t *, struct tm *)",
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
        "CopyStmt": {
@@ -3628,6 +4920,8 @@
 		}
     },
     "realpath": {
+        "return":  "char *",
+        "arguments":  "(const char *restrict, char *restrict)",
         "type": "EFT_L_A1",
         "overwrite_app_function": 0,
        "CopyStmt": {
@@ -3636,14 +4930,8 @@
 		}
     },
     "freopen64":    {
-        "type": "EFT_L_A2",
-        "overwrite_app_function": 0,
-        "CopyStmt": {
-			"src": "Arg2",
-			"dst": "Ret"
-		}
-    },
-    "_XGetAsyncReply":  {
+        "return":  "FILE *",
+        "arguments":  "(const char*, const char*,  FILE *)",
         "type": "EFT_L_A2",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3652,6 +4940,8 @@
 		}
     },
     "freopen":  {
+        "return":  "FILE *",
+        "arguments":  "(const char *, const char *, FILE *)",
         "type": "EFT_L_A2",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3660,6 +4950,8 @@
 		}
     },
     "inet_ntop":    {
+        "return":  "const char *",
+        "arguments":  "(int, const void *restrict, char *restrict, socklen_t)",
         "type": "EFT_L_A2",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3668,6 +4960,8 @@
 		}
     },
     "XGetSubImage": {
+        "return":  "XImage *",
+        "arguments":  "(Display *, Drawable, int, int,  unsigned int,  unsigned int, unsigned long, unsigned long, int, XImage *, int)",
         "type": "EFT_L_A8",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -3676,26 +4970,36 @@
 		}
     },
     "llvm.memset":  {
+        "return":  "void",
+        "arguments":  "(i8*, i8, i32, i32, i1)",
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
         "memset_like": ["0", "1", "2"]
     },
     "llvm.memset.p0i8.i32": {
+        "return":  "void",
+        "arguments":  "(i8*, i8, i32, i32, i1)",
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
         "memset_like": ["0", "1", "2"]
     },
     "llvm.memset.p0i8.i64": {
+        "return":  "void",
+        "arguments":  "(i8*, i8, i64, i32, i1)",
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
         "memset_like": ["0", "1", "2"]
     },
     "__memset_chk": {
+        "return":  "void *",
+        "arguments":  "(void *, int, size_t, size_t)",
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
         "memset_like": ["0", "1", "2"]
     },
     "llvm.memcpy":  {
+        "return":  "void",
+        "arguments":  "(i8*, i8*, i32, i32, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3705,6 +5009,8 @@
 		}
     },
     "llvm.memcpy.p0i8.p0i8.i32":    {
+        "return":  "void",
+        "arguments":  "(i8*, i8*, i32, i32, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3714,6 +5020,8 @@
 		}
     },
     "llvm.memcpy.p0i8.p0i8.i64":    {
+        "return":  "void",
+        "arguments":  "(i8*, *i8, i64, i32, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3723,6 +5031,8 @@
 		}
     },
     "llvm.memmove": {
+        "return":  "void",
+        "arguments":  "(i8*, i8*, i32, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3732,6 +5042,8 @@
 		}
     },
     "llvm.memmove.p0i8.p0i8.i32":   {
+        "return":  "void",
+        "arguments":  "(i8*, i8*, i32, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3741,6 +5053,8 @@
 		}
     },
     "llvm.memmove.p0i8.p0i8.i64":   {
+        "return":  "void",
+        "arguments":  "(i8*, i8*, i64, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3750,6 +5064,8 @@
 		}
     },
     "memccpy":  {
+        "return":  "void *",
+        "arguments":  "(void *restrict, const void *restrict, int, size_t)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3759,6 +5075,8 @@
 		}
     },
     "memcpy":   {
+        "return":  "void *",
+        "arguments":  "(void *, const void *, size_t)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3768,6 +5086,8 @@
 		}
     },
     "memmove":  {
+        "return":  "void *",
+        "arguments":  "(void *, const void *, size_t)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3777,21 +5097,29 @@
 		}
     },
     "dlsym":    {
+        "return":  "void *",
+        "arguments":  "(void *, const char *)",
         "type": "EFT_L_A1__FunPtr",
         "overwrite_app_function": 0,
         "funptr_ops":   ["Arg1"]
     },
     "bcopy":    {
+        "return":  "void",
+        "arguments":  "(const void *, void *, size_t)",
         "type": "EFT_A1R_A0R",
         "overwrite_app_function": 0,
         "memcpy_like":  ["1", "0", "2"]
     },
     "iconv":    {
+        "return":  "size_t",
+        "arguments":  "(iconv_t, char **restrict, size_t *restrict, char **restrict, size_t *restrict)",
         "type": "EFT_A3R_A1R_NS",
         "overwrite_app_function": 0,
         "memcpy_like":  ["3", "1"]
     },
     "strtod":   {
+        "return":  "double",
+        "arguments":  "(const char *, char **)",
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -3800,6 +5128,8 @@
 			}
     },
     "strtof":   {
+        "return":  "float",
+        "arguments":  "(const char *, char **)",
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -3808,6 +5138,8 @@
 			}
     },
     "strtol":   {
+        "return":  "long int",
+        "arguments":  "(const char *, char **, int)",
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -3816,6 +5148,8 @@
 			}
     },
     "strtold":  {
+        "return":  "long double",
+        "arguments":  "(const char *, char **)",
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -3824,6 +5158,8 @@
 			}
     },
     "strtoll":  {
+        "return":  "long long int",
+        "arguments":  "(const char *, char **, int)",
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -3832,6 +5168,8 @@
 			}
     },
     "strtoul":  {
+        "return":  "unsigned long int",
+        "arguments":  "(const char *, char **, int)",     
         "type": "EFT_A1R_A0",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -3840,6 +5178,8 @@
 			}
     },
     "readdir_r":{
+        "return":  "int",
+        "arguments":  "(DIR *restrict, struct dirent *restrict, struct dirent **restrict)",
         "type": "EFT_A2R_A1",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -3848,6 +5188,8 @@
         }
     },
     "__strcpy_chk": {
+        "return":  "char *",
+        "arguments":  "(char *, const char *, size_t)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3857,6 +5199,8 @@
 		}
     },
     "__strcat_chk": {
+        "return":  "char *",
+        "arguments":  "(char *, const char *, size_t)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3866,6 +5210,8 @@
 		}
     },
     "stpcpy":   {
+        "return":  "char *",
+        "arguments":  "(char *restrict, const char *restrict)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1"],
@@ -3875,6 +5221,8 @@
 		}
     },
     "strcat":   {
+        "return":  "char *",
+        "arguments":  "(char *, char *)", 
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1"],
@@ -3884,6 +5232,8 @@
 		}
     },
     "strcpy":   {
+        "return":  "char *",
+        "arguments":  "(char *, const char *)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1"],
@@ -3893,6 +5243,8 @@
 		}
     },
     "strncat":  {
+        "return":  "char *",
+        "arguments":  "(char *, const char *, size_t)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3902,6 +5254,8 @@
 		}
     },
     "strncpy":  {
+        "return":  "char *",
+        "arguments":  "(char *, const char *, size_t)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
         "memcpy_like":  ["0", "1", "2"],
@@ -3911,6 +5265,8 @@
 		}
     },
     "getpwnam_r":{
+        "return": "int",
+        "arguments": "(const char *, struct passwd *, char *, size_t, struct passwd **)",
         "type": "EFT_A4R_A1",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -3919,6 +5275,8 @@
 		}
     },
     "getpwuid_r":{
+        "return":  "int",
+        "arguments":  "(uid_t, struct passwd *, char *, size_t, struct passwd **)",
         "type": "EFT_A4R_A1",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -3927,6 +5285,8 @@
 		}
     },
     "db_create":    {
+        "return":  "int",
+        "arguments":  "(DB **, DB_ENV *, u_int32_t)",
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3939,6 +5299,8 @@
         }
     },
     "gcry_mpi_scan":    {
+        "return":  "gcry_error_t",
+        "arguments":  "(gcry_mpi_t *, enum gcry_mpi_format, const unsigned char *, size_t, size_t *)",
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3951,6 +5313,8 @@
         }
     },
     "gcry_pk_decrypt":  {
+        "return":  "gcry_error_t",
+        "arguments":  "(gcry_sexp_t *, gcry_sexp_t, gcry_sexp_t)",
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3963,6 +5327,8 @@
         }
             },
     "gcry_sexp_build":  {
+        "return":  "gcry_error_t",
+        "arguments":  "(gcry_sexp_t *, size_t *, const char *, ...)",
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3975,6 +5341,8 @@
         }
     },
     "gnutls_pkcs12_bag_init":   {
+        "return":  "int",
+        "arguments":  "(gnutls_pkcs12_bag_t *)",
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3987,6 +5355,8 @@
         }
     },
     "gnutls_pkcs12_init":   {
+        "return":  "int",
+        "arguments":  "(gnutls_pkcs12_t *)",
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -3999,6 +5369,8 @@
         }
     },
     "gnutls_x509_crt_init": {
+        "return":  "int",
+        "arguments":  "(gnutls_x509_crt_t *)",
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -4011,6 +5383,8 @@
         }
     },
     "gnutls_x509_privkey_init": {
+        "return":  "int",
+        "arguments":  "(gnutls_x509_privkey_t *)",
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -4023,6 +5397,8 @@
         }
     },
     "posix_memalign":   {
+        "return":  "int",
+        "arguments":  "(void **, size_t, size_t)",
         "type": "EFT_A0R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -4035,6 +5411,8 @@
         }
     },
     "scandir":  {
+        "return":  "int",
+        "arguments":  "(const char *, struct dirent ***, int (*filter)(const struct dirent *), int (*compar)(const struct dirent **, const struct dirent **))",
         "type": "EFT_A1R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -4047,6 +5425,8 @@
         }
     },
     "XGetRGBColormaps": {
+        "return":  "Status",
+        "arguments":  "(Display *, Window, XStandardColormap **, int *, Atom)",
         "type": "EFT_A2R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -4059,18 +5439,8 @@
         }
     },
     "XmbTextPropertyToTextList":    {
-        "type": "EFT_A2R_NEW",
-        "overwrite_app_function": 0,
-        "AddrStmt": {
-            "src": "Obj",
-            "dst": "Dummy"
-        },
-        "StoreStmt": {
-            "src": "Dummy",
-            "dst": "Arg2"
-        }
-    },
-    "SRE_SplSpecCreate":    {
+        "return":  "int",
+        "arguments":  "(Display *, XTextProperty *, char ***, int *)",
         "type": "EFT_A2R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -4083,6 +5453,8 @@
         }
     },
     "XQueryTree":   {
+        "return":  "Status",
+        "arguments":  "(Display *, Window, Window *, Window *, Window **, unsigned int *)",
         "type": "EFT_A4R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -4095,6 +5467,8 @@
         }
     },
     "XGetWindowProperty":   {
+        "return":  "int",
+        "arguments":  "(Display *, Window, Atom, long, long, Bool, Atom, Atom *, int *, unsigned long *, unsigned long *, unsigned char **)",
         "type": "EFT_A11R_NEW",
         "overwrite_app_function": 0,
         "AddrStmt": {
@@ -4107,6 +5481,8 @@
         }
     },
     "_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_":{
+        "return":  "void",
+        "arguments":  "(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)",
         "type": "EFT_STD_RB_TREE_INSERT_AND_REBALANCE",
         "overwrite_app_function": 0,
         "Rb_tree_ops": {
@@ -4115,6 +5491,8 @@
         }
     },
     "_ZNSt8__detail15_List_node_base7_M_hookEPS0_":{
+        "return":  "void",
+        "arguments":  "(std::__detail::_List_node_base*)",
         "type": "EFT_STD_LIST_HOOK",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -4123,6 +5501,8 @@
 			}
     },
     "_ZNSsC1EPKcRKSaIcE":{
+        "return":  "void",
+        "arguments":  "(char const*, std::allocator<char> const&)",
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -4131,6 +5511,8 @@
 			}
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_":{
+        "return":  "void",
+        "arguments":  "(char const*, std::allocator<char> const&)",
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -4139,6 +5521,8 @@
 			}
     },
     "_ZNSsC1EPKcmRKSaIcE":{
+        "return":  "void",
+        "arguments":  "(char const*, unsigned long, std::allocator<char> const&)",
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -4147,6 +5531,8 @@
 			}
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcmRKS3_":{
+        "return":  "void",
+        "arguments":  "(char const*, unsigned long, std::allocator<char> const&)",
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -4155,6 +5541,8 @@
 			}
     },
     "_ZNSsaSEPKc":{
+        "return":  "void",
+        "arguments":  "(char const*)",
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -4163,6 +5551,8 @@
 			}
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEPKc":{
+        "return":  "void",
+        "arguments":  "(char const*)",
         "type": "CPP_EFT_A0R_A1",
         "overwrite_app_function": 0,
         "StoreStmt": {
@@ -4171,6 +5561,8 @@
 			}
     },
     "_ZNSsC1ERKSs":{
+        "return":  "void",
+        "arguments":  "(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)",
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
         "LoadStmt": {
@@ -4183,6 +5575,8 @@
         }
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_":{
+        "return":  "void",
+        "arguments":  "(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)",
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
         "LoadStmt": {
@@ -4195,6 +5589,8 @@
         }
     },
     "_ZNSsC1ERKSsmm":{
+        "return":  "void",
+        "arguments":  "(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long, unsigned long)",
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
         "LoadStmt": {
@@ -4207,6 +5603,8 @@
         }
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_mm":{
+        "return":  "void",
+        "arguments":  "(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long, unsigned long)",
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
         "LoadStmt": {
@@ -4219,6 +5617,8 @@
         }
     },
     "_ZNSsaSERKSs":{
+        "return":  "void",
+        "arguments":  "(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)",
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
         "LoadStmt": {
@@ -4231,6 +5631,8 @@
         }
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_":{
+        "return":  "void",
+        "arguments":  "(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)",
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
         "LoadStmt": {
@@ -4243,6 +5645,8 @@
         }
     },
     "_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEOS4_":{
+        "return":  "void",
+        "arguments":  "(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&&)",
         "type": "CPP_EFT_A0R_A1R",
         "overwrite_app_function": 0,
         "LoadStmt": {
@@ -4255,6 +5659,8 @@
         }
     },
     "_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E":{
+        "return":  "void",
+        "arguments":  "(std::basic_ostream<char, std::char_traits<char> >&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)",
         "type": "CPP_EFT_A1R",
         "overwrite_app_function": 0,
         "LoadStmt": {
@@ -4263,6 +5669,8 @@
 			}
     },
     "_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic_stringIS4_S5_T1_EE":{
+        "return":  "void",
+        "arguments":  "(std::basic_ostream<char, std::char_traits<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)",
         "type": "CPP_EFT_A1R",
         "overwrite_app_function": 0,
         "LoadStmt": {
@@ -4271,6 +5679,8 @@
 			}
     },
     "__dynamic_cast":{
+        "return":  "void *",
+        "arguments":  "(const void *, const abi::__class_type_info *, const abi::__class_type_info *, std::ptrdiff_t)",
         "type": "CPP_EFT_DYNAMIC_CAST",
         "overwrite_app_function": 0,
         "CopyStmt": {
@@ -4279,6 +5689,8 @@
 		}
     },
     "_ZNSt5arrayIPK1ALm2EE4backEv":{
+        "return":  "void",
+        "arguments":  "()",
         "type": "CPP_EFT_DYNAMIC_CAST",
         "overwrite_app_function": 1,
         "GepStmt1": {

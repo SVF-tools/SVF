@@ -266,6 +266,48 @@ s32_t ExtAPI::getNodeIDType(std::string s)
         return -2;
     else if(argStr == "Obj")
         return -3;
+    else if(argStr == "Add")
+        return BinaryOperator::Add;
+    else if(argStr == "Sub")
+        return BinaryOperator::Sub;
+    else if(argStr == "Mul")
+        return BinaryOperator::Mul;
+    else if(argStr == "SDiv")
+        return BinaryOperator::SDiv;
+    else if(argStr == "SRem")
+        return BinaryOperator::SRem;
+    else if(argStr == "Xor")
+        return BinaryOperator::Xor;
+    else if(argStr == "And")
+        return BinaryOperator::And;
+    else if(argStr == "Or")
+        return BinaryOperator::Or;
+    else if(argStr == "AShr")
+        return BinaryOperator::AShr;
+    else if(argStr == "Shl")
+        return BinaryOperator::Shl;
+    else if(argStr == "ICMP_EQ")
+        return CmpInst::ICMP_EQ;
+    else if(argStr == "ICMP_NE")
+        return CmpInst::ICMP_NE;
+    else if(argStr == "ICMP_UGT")
+        return CmpInst::ICMP_UGT;
+    else if(argStr == "ICMP_SGT")
+        return CmpInst::ICMP_SGT;
+    else if(argStr == "ICMP_UGE")
+        return CmpInst::ICMP_UGE;
+    else if(argStr == "ICMP_SGE")
+        return CmpInst::ICMP_SGE;
+    else if(argStr == "ICMP_ULT")
+        return CmpInst::ICMP_ULT;
+    else if(argStr == "ICMP_SLT")
+        return CmpInst::ICMP_SLT;
+    else if(argStr == "ICMP_ULE")
+        return CmpInst::ICMP_ULE;
+    else if(argStr == "ICMP_SLE")
+        return CmpInst::ICMP_SLE;
+    else if(argStr == "FNeg")
+        return UnaryOperator::FNeg;
     else // offset
     {
         u32_t i=0;
@@ -307,7 +349,7 @@ std::vector<ExtAPI::Operation> ExtAPI::getAllOperations(std::string funName)
     {
         cJSON *obj = item->child;
         //  Get the first operation of the function
-        obj = obj -> next -> next;
+        obj = obj -> next -> next -> next -> next;
         std::vector<ExtAPI::Operation *> operations;
         while (obj)
         {
@@ -358,7 +400,7 @@ ExtAPI::extType ExtAPI::get_type(const std::string& funName)
     if (item != nullptr)
     {
         //  Get the first operation of the function
-        cJSON *obj = item->child;
+        cJSON *obj = item->child->next->next;
         if (strcmp(obj->string, JSON_OPT_FUNCTIONTYPE) == 0)
             type = obj->valuestring;
         else
@@ -387,7 +429,7 @@ u32_t ExtAPI::isOverwrittenAppFunction(const SVF::SVFFunction *callee)
     if (item != nullptr)
     {
         cJSON *obj = item->child;
-        obj = obj->next;
+        obj = obj->next->next->next;
         if (strcmp(obj->string, JSON_OPT_OVERWRITE) == 0)
             return obj->valueint;
         else
@@ -473,6 +515,42 @@ bool ExtAPI::is_realloc(const SVFFunction *F)
     return t == EFT_REALLOC;
 }
 
+// Does (F) have the same return type(pointer or nonpointer) and same number of arguments
+bool ExtAPI::is_sameSignature(const SVFFunction *F)
+{
+    cJSON *item = get_FunJson(F->getName());
+    // If return type is pointer
+    bool isPointer = false;
+    // The number of arguments
+    u32_t argNum = 0;
+    if (item != nullptr)
+    {
+        // Get the "return" attribute
+        cJSON *obj = item->child;
+        if (strlen(obj->valuestring) == 0) // e.g. "return":  ""
+            assert(false && "'return' should not be empty!");
+        // If "return": "..." includes "*", the return type of extern function is a pointer
+        if (strstr(obj->valuestring, "*") != NULL)
+            isPointer = true;
+        // Get the "arguments" attribute
+        obj = obj -> next;
+        if (strlen(obj->valuestring) == 0) // e.g. "arguments":  "",
+            assert(false && "'arguments' should not be empty!");
+        // If "arguments":  "()", the number of arguments is 0, otherwise, number >= 1;
+        if (strcmp(obj->valuestring, "()") != 0)
+        {
+            argNum++;
+            for (u32_t i = 0; i < strlen(obj->valuestring); i++)
+                if (obj->valuestring[i] == ',') // Calculate the number of arguments based on the number of ","
+                    argNum++;
+        }
+    }
+    if (F->arg_size() != argNum) // The number of arguments is different
+        return false;
+    // Is the return type the same?
+    return F->getLLVMFun()->getReturnType()->isPointerTy() == isPointer;
+}
+
 // Should (F) be considered "external" (either not defined in the program
 //   or a user-defined version of a known alloc or no-op)?
 bool ExtAPI::is_ext(const SVFFunction *F)
@@ -489,9 +567,11 @@ bool ExtAPI::is_ext(const SVFFunction *F)
         if (t != EFT_NULL)
         {
             u32_t overwrittenAppFunction = isOverwrittenAppFunction(F);
+            if (!is_sameSignature(F))
+                res = 0;
             // overwrittenAppFunction = 1: Execute function specification in ExtAPI.json
             // F is considered as external function
-            if (overwrittenAppFunction == 1)
+            else if (overwrittenAppFunction == 1)
                 res = 1;
             // overwrittenAppFunction = 0: Execute user-defined functions
             // F is not considered as external function

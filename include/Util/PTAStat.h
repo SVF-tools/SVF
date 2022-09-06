@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * AndersenStat.h
+ * PTAStat.h
  *
  *  Created on: Oct 12, 2013
  *      Author: Yulei Sui
@@ -32,11 +32,10 @@
 
 #include "Util/BasicTypes.h"
 #include "MemoryModel/PointsTo.h"
+#include "Util/SVFStat.h"
 #include <iostream>
 #include <map>
 #include <string>
-
-using namespace std;
 
 namespace SVF
 {
@@ -46,7 +45,7 @@ class PointerAnalysis;
 /*!
  * Pointer Analysis Statistics
  */
-class PTAStat
+class PTAStat: public SVFStat
 {
 public:
     static const char* TotalAnalysisTime; ///< Total analysis time
@@ -118,49 +117,20 @@ public:
 
     static const char* NumOfNullPointer;	///< Number of pointers points-to null
 
-    typedef Map<const char*,u32_t> NUMStatMap;
-
-    typedef Map<const char*,double> TIMEStatMap;
-
-    enum ClockType
-    {
-        Wall,
-        CPU,
-    };
-
     PTAStat(PointerAnalysis* p);
     virtual ~PTAStat() {}
 
-    virtual inline void startClk()
-    {
-        startTime = getClk(true);
-    }
-    virtual inline void endClk()
-    {
-        endTime = getClk(true);
-    }
-    /// When mark is true, real clock is always returned. When mark is false, it is
-    /// only returned when Options::MarkedClocksOnly is not set.
-    /// Default call for getClk is unmarked, while MarkedClocksOnly is false by default.
-    static double getClk(bool mark=false);
-
-    NUMStatMap generalNumMap;
     NUMStatMap PTNumStatMap;
-    TIMEStatMap timeStatMap;
     NodeBS localVarInRecursion;
 
     double startTime;
     double endTime;
 
-    virtual void performStat();
+    void performStat() override;
 
-    virtual void printStat(string str = "");
+    virtual void printStat(std::string str = "") override;
 
-    virtual void performStatPerQuery(NodeID) {}
-
-    virtual void printStatPerQuery(NodeID, const PointsTo&) {}
-
-    virtual void callgraphStat();
+    void callgraphStat() override;
 private:
     void bitcastInstStat();
     void branchStat();

@@ -37,6 +37,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace std;
 
 // Format of file
 // __Nodes__

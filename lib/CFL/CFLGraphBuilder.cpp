@@ -326,6 +326,14 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
                 key.append("bar");
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(CFLDerefNode->getId()),  label2KindMap[key]);
             }
+            else if ( edge->getEdgeKind() == ConstraintEdge::VariantGep)
+            {
+                /// Handle VGep normalize to Normal Gep by connecting all geps' srcs to vgep dest
+                /// Example: In Test Case: Ctest field-ptr-arith-varIdx.c.bc
+                /// BFS Search the 8 LEVEL up to find the ValueNode, and the number of level search is arbitary
+                /// the more the level search the more valueNode and the Vgep Dst will possivble connect
+                connectVGep(cflGraph, graph,  edge->getSrcNode(), edge->getDstNode(), 8, pag);
+            }
             else
             {
                 CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
@@ -356,5 +364,41 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
     return cflGraph;
 }
 
+void AliasCFLGraphBuilder::AliasCFLGraphBuilder::connectVGep(CFLGraph *cflGraph,  ConstraintGraph *graph, ConstraintNode *src, ConstraintNode *dst, u32_t level, SVFIR* pag)
+{
+    if (level == 0) return;
+    level -= 1;
+    for (auto eit = src->getAddrInEdges().begin(); eit != src->getAddrInEdges().end(); eit++)
+    {
+        const MemObj* mem = pag->getBaseObj((*eit)->getSrcID());
+        for (u32_t maxField = 0 ; maxField < mem->getNumOfElements(); maxField++)
+        {
+            addBiGepCFLEdge(cflGraph, (*eit)->getDstNode(), dst, maxField);
+        }
+    }
+    for (auto eit = src->getInEdges().begin(); eit != src->getInEdges().end() && level != 0; eit++)
+    {
+        connectVGep(cflGraph, graph, (*eit)->getSrcNode(), dst, level, pag);
+    }
+    return;
+}
 
+void AliasCFLGraphBuilder::addBiCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFLGrammar::Kind label)
+{
+    cflGraph->addCFLEdge(cflGraph->getGNode(src->getId()), cflGraph->getGNode(dst->getId()), label);
+    std::string key = kind2LabelMap[label];
+    key.append("bar");
+    cflGraph->addCFLEdge(cflGraph->getGNode(dst->getId()), cflGraph->getGNode(src->getId()), label2KindMap[key]);
+    return;
+}
+
+void AliasCFLGraphBuilder::addBiGepCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFLGrammar::Attribute attri)
+{
+    CFLEdge::GEdgeFlag edgeLabel = CFLGrammar::getAttributedKind(attri, ConstraintEdge::NormalGep);
+    cflGraph->addCFLEdge(cflGraph->getGNode(src->getId()), cflGraph->getGNode(dst->getId()), edgeLabel);
+    std::string key = kind2LabelMap[ConstraintEdge::NormalGep];
+    key.append("bar");
+    cflGraph->addCFLEdge(cflGraph->getGNode(dst->getId()), cflGraph->getGNode(src->getId()), CFLGrammar::getAttributedKind(attri, label2KindMap[key]));
+    return;
+}
 } // end of SVF namespace
