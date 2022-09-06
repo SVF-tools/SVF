@@ -591,12 +591,12 @@ bool LockAnalysis::isProtectedByCommonLock(const Instruction *i1, const Instruct
 {
     numOfTotalQueries++;
     bool commonlock = false;
-    DOTIMESTAT(double queryStart = PTAStat::getClk());
+    DOTIMESTAT(double queryStart = PTAStat::getClk(true));
     if (isInsideIntraLock(i1) && isInsideIntraLock(i2))
         commonlock = isProtectedByCommonCILock(i1,i2) ;
     else
         commonlock = isProtectedByCommonCxtLock(i1,i2);
-    DOTIMESTAT(double queryEnd = PTAStat::getClk());
+    DOTIMESTAT(double queryEnd = PTAStat::getClk(true));
     DOTIMESTAT(lockQueriesTime += (queryEnd - queryStart) / TIMEINTERVAL);
     return commonlock;
 }
@@ -667,7 +667,7 @@ bool LockAnalysis::isProtectedByCommonCxtLock(const Instruction *i1, const Instr
  */
 bool LockAnalysis::isInSameSpan(const Instruction *i1, const Instruction *i2)
 {
-    DOTIMESTAT(double queryStart = PTAStat::getClk());
+    DOTIMESTAT(double queryStart = PTAStat::getClk(true));
 
     bool sameSpan = false;
     if (isInsideIntraLock(i1) && isInsideIntraLock(i2))
@@ -675,7 +675,7 @@ bool LockAnalysis::isInSameSpan(const Instruction *i1, const Instruction *i2)
     else
         sameSpan = isInSameCSSpan(i1, i2);
 
-    DOTIMESTAT(double queryEnd = PTAStat::getClk());
+    DOTIMESTAT(double queryEnd = PTAStat::getClk(true));
     DOTIMESTAT(lockQueriesTime += (queryEnd - queryStart) / TIMEINTERVAL);
     return sameSpan;
 }

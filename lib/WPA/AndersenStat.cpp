@@ -306,49 +306,49 @@ void AndersenStat::performStat()
 
     constraintGraphStat();
 
-    timeStatMap[TotalAnalysisTime] = (endTime - startTime)/TIMEINTERVAL;
-    timeStatMap[SCCDetectionTime] = Andersen::timeOfSCCDetection;
-    timeStatMap[SCCMergeTime] =  Andersen::timeOfSCCMerges;
+    timeStatMap["TotalTime"] = (endTime - startTime)/TIMEINTERVAL;
+    timeStatMap["SCCDetectTime"] = Andersen::timeOfSCCDetection;
+    timeStatMap["SCCMergeTime"] =  Andersen::timeOfSCCMerges;
     timeStatMap[CollapseTime] =  Andersen::timeOfCollapse;
 
-    timeStatMap[ProcessLoadStoreTime] =  Andersen::timeOfProcessLoadStore;
-    timeStatMap[ProcessCopyGepTime] =  Andersen::timeOfProcessCopyGep;
-    timeStatMap[UpdateCallGraphTime] =  Andersen::timeOfUpdateCallGraph;
+    timeStatMap["LoadStoreTime"] =  Andersen::timeOfProcessLoadStore;
+    timeStatMap["CopyGepTime"] =  Andersen::timeOfProcessCopyGep;
+    timeStatMap["UpdateCGTime"] =  Andersen::timeOfUpdateCallGraph;
 
-    PTNumStatMap[TotalNumOfPointers] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
-    PTNumStatMap[TotalNumOfObjects] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
+    PTNumStatMap["TotalPointers"] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
+    PTNumStatMap["TotalObjects"] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
 
 
-    PTNumStatMap[NumOfProcessedAddrs] = Andersen::numOfProcessedAddr;
-    PTNumStatMap[NumOfProcessedCopys] = Andersen::numOfProcessedCopy;
-    PTNumStatMap[NumOfProcessedGeps] = Andersen::numOfProcessedGep;
-    PTNumStatMap[NumOfProcessedLoads] = Andersen::numOfProcessedLoad;
-    PTNumStatMap[NumOfProcessedStores] = Andersen::numOfProcessedStore;
+    PTNumStatMap["AddrProcessed"] = Andersen::numOfProcessedAddr;
+    PTNumStatMap["CopyProcessed"] = Andersen::numOfProcessedCopy;
+    PTNumStatMap["GepProcessed"] = Andersen::numOfProcessedGep;
+    PTNumStatMap["LoadProcessed"] = Andersen::numOfProcessedLoad;
+    PTNumStatMap["StoreProcessed"] = Andersen::numOfProcessedStore;
 
-    PTNumStatMap[NumOfSfr] = Andersen::numOfSfrs;
-    PTNumStatMap[NumOfFieldExpand] = Andersen::numOfFieldExpand;
+    PTNumStatMap["NumOfSFRs"] = Andersen::numOfSfrs;
+    PTNumStatMap["NumOfFieldExpand"] = Andersen::numOfFieldExpand;
 
-    PTNumStatMap[NumOfPointers] = pag->getValueNodeNum();
-    PTNumStatMap[NumOfMemObjects] = pag->getObjectNodeNum();
-    PTNumStatMap[NumOfGepFieldPointers] = pag->getFieldValNodeNum();
-    PTNumStatMap[NumOfGepFieldObjects] = pag->getFieldObjNodeNum();
+    PTNumStatMap["Pointers"] = pag->getValueNodeNum();
+    PTNumStatMap["MemObjects"] = pag->getObjectNodeNum();
+    PTNumStatMap["DummyFieldPtrs"] = pag->getFieldValNodeNum();
+    PTNumStatMap["FieldObjs"] = pag->getFieldObjNodeNum();
 
-    timeStatMap[AveragePointsToSetSize] = (double)totalPtsSize/totalPointers;;
-    timeStatMap[AverageTopLevPointsToSetSize] = (double)totalTopLevPtsSize/totalTopLevPointers;;
+    timeStatMap["AvgPtsSetSize"] = (double)totalPtsSize/totalPointers;;
+    timeStatMap["AvgTopLvlPtsSize"] = (double)totalTopLevPtsSize/totalTopLevPointers;;
 
-    PTNumStatMap[MaxPointsToSetSize] = _MaxPtsSize;
+    PTNumStatMap["MaxPtsSetSize"] = _MaxPtsSize;
 
-    PTNumStatMap[NumOfIterations] = pta->numOfIteration;
+    PTNumStatMap["SolveIterations"] = pta->numOfIteration;
 
-    PTNumStatMap[NumOfIndirectCallSites] = consCG->getIndirectCallsites().size();
-    PTNumStatMap[NumOfIndirectEdgeSolved] = pta->getNumOfResolvedIndCallEdge();
+    PTNumStatMap["IndCallSites"] = consCG->getIndirectCallsites().size();
+    PTNumStatMap["IndEdgeSolved"] = pta->getNumOfResolvedIndCallEdge();
 
-    PTNumStatMap[NumOfSCCDetection] = Andersen::numOfSCCDetection;
-    PTNumStatMap[NumOfCycles] = _NumOfCycles;
-    PTNumStatMap[NumOfPWCCycles] = _NumOfPWCCycles;
-    PTNumStatMap[NumOfNodesInCycles] = _NumOfNodesInCycles;
-    PTNumStatMap[MaxNumOfNodesInSCC] = _MaxNumOfNodesInSCC;
-    PTNumStatMap[NumOfNullPointer] = _NumOfNullPtr;
+    PTNumStatMap["NumOfSCCDetect"] = Andersen::numOfSCCDetection;
+    PTNumStatMap["TotalCycleNum"] = _NumOfCycles;
+    PTNumStatMap["TotalPWCCycleNum"] = _NumOfPWCCycles;
+    PTNumStatMap["NodesInCycles"] = _NumOfNodesInCycles;
+    PTNumStatMap["MaxNodesInSCC"] = _MaxNumOfNodesInSCC;
+    PTNumStatMap["NullPointer"] = _NumOfNullPtr;
     PTNumStatMap["PointsToConstPtr"] = _NumOfConstantPtr;
     PTNumStatMap["PointsToBlkPtr"] = _NumOfBlackholePtr;
 

@@ -24,11 +24,13 @@
 #include "Util/SVFModule.h"
 #include "SVF-FE/SymbolTableBuilder.h"
 #include "Util/SVFUtil.h"
+#include "Util/SVFStat.h"
 
 using namespace SVF;
 
 void SVFModule::buildSymbolTableInfo()
 {
+    double startTime = SVFStat::getClk(true);
     if (!pagReadFromTXT())
     {
         /// building symbol table
@@ -37,4 +39,6 @@ void SVFModule::buildSymbolTableInfo()
         SymbolTableBuilder builder(symInfo);
         builder.buildMemModel(this);
     }
+    double endTime = SVFStat::getClk(true);
+    SVFStat::timeOfBuildingSymbolTable = (endTime - startTime)/TIMEINTERVAL;
 }

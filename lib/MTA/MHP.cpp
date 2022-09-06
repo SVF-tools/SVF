@@ -627,9 +627,9 @@ bool MHP::mayHappenInParallel(const Instruction* i1, const Instruction* i2)
 {
     numOfTotalQueries++;
 
-    DOTIMESTAT(double queryStart = PTAStat::getClk());
+    DOTIMESTAT(double queryStart = PTAStat::getClk(true));
     bool mhp=mayHappenInParallelCache(i1,i2);
-    DOTIMESTAT(double queryEnd = PTAStat::getClk());
+    DOTIMESTAT(double queryEnd = PTAStat::getClk(true));
     DOTIMESTAT(interleavingQueriesTime += (queryEnd - queryStart) / TIMEINTERVAL);
 
     return mhp;

@@ -49,6 +49,7 @@ using namespace LLVMUtil;
  */
 SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
 {
+    double startTime = SVFStat::getClk(true);
 
     // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
     if (SVFModule::pagReadFromTXT())
@@ -141,6 +142,10 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
         LLVMLoopAnalysis loopAnalysis;
         loopAnalysis.build(pag->getICFG());
     }
+
+    double endTime = SVFStat::getClk(true);
+    SVFStat::timeOfBuildingSVFIR = (endTime - startTime)/TIMEINTERVAL;
+
     return pag;
 }
 
