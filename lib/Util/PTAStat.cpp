@@ -50,7 +50,7 @@ void PTAStat::performStat()
     for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         PAGNode* node = it->second;
-        if(ObjVar* obj = SVFUtil::dyn_cast<ObjVar>(node))
+        if(SVFUtil::isa<ObjVar>(node))
         {
             if(pta->isLocalVarInRecursiveFun(node->getId()))
             {
