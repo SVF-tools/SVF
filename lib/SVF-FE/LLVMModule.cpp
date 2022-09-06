@@ -83,6 +83,8 @@ SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 
 SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec)
 {
+    double startTime = SVFStat::getClk(true);
+
     assert(llvmModuleSet && "LLVM Module set needs to be created!");
 
     loadModules(moduleNameVec);
@@ -93,6 +95,9 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
         svfModule = new SVFModule();
 
     build();
+
+    double endTime = SVFStat::getClk(true);
+    SVFStat::timeOfBuildingLLVMModule = (endTime - startTime)/TIMEINTERVAL;
 
     return svfModule;
 }

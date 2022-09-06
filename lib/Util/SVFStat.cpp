@@ -32,6 +32,11 @@
 
 using namespace SVF;
 
+double SVFStat::timeOfBuildingLLVMModule = 0;
+double SVFStat::timeOfBuildingSVFIR = 0;
+double SVFStat::timeOfBuildingSymbolTable = 0;
+
+
 SVFStat::SVFStat() : startTime(0), endTime(0)
 {
     assert((Options::ClockType == ClockType::Wall || Options::ClockType == ClockType::CPU)

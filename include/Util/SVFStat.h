@@ -86,6 +86,10 @@ public:
 
     virtual void callgraphStat() {}
 
+    static double timeOfBuildingLLVMModule;
+    static double timeOfBuildingSymbolTable;
+    static double timeOfBuildingSVFIR;
+
 private:
 
     std::string moduleName;

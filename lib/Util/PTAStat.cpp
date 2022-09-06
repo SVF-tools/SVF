@@ -207,6 +207,11 @@ void PTAStat::performStat()
     generalNumMap[NumOfIndirectCallSites] = pag->getIndirectCallsites().size();
     generalNumMap["TotalCallSite"] = pag->getCallSiteSet().size();
     generalNumMap["LocalVarInRecur"] = localVarInRecursion.count();
+
+    timeStatMap["LLVMIRTime"] = SVFStat::timeOfBuildingLLVMModule;
+    timeStatMap["SymbolTableTime"] = SVFStat::timeOfBuildingSymbolTable;
+    timeStatMap["SVFIRTime"] = SVFStat::timeOfBuildingSVFIR;
+
     // REFACTOR-TODO bitcastInstStat();
     branchStat();
 
