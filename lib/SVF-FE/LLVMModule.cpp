@@ -127,8 +127,8 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 
 void LLVMModuleSet::build()
 {
-    initialize();
     buildFunToFunMap();
+    initialize();
     buildGlobalDefToRepMap();
     if(preProcessed==false)
         prePassSchedule();
@@ -155,20 +155,17 @@ void LLVMModuleSet::build()
             dt.recalculate(*svffun->getLLVMFun());
             df.analyze(dt);
             PostDominatorTree pdt = PostDominatorTree(*(func->getLLVMFun()));
-            Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
+            Map<const BasicBlock*,Set<const BasicBlock*>> & dfBBsMap = svffun->getDomFrontierMap();
             for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
             {
                 const BasicBlock* keyBB = dfIter->first;
-                const std::set<BasicBlock *> domSet = dfIter->second;
-                Set<const BasicBlock*> valueBasicBlocks;
-                for (std::set<BasicBlock*>::iterator domSetIter = domSet.begin(), eDomSet = domSet.end(); domSetIter !=eDomSet; domSetIter++)
+                const std::set<BasicBlock *>& domSet = dfIter->second;
+                Set<const BasicBlock*>& valueBasicBlocks = dfBBsMap[keyBB];
+                for (const BasicBlock* bbValue:domSet)
                 {
-                    BasicBlock* bbValue = *domSetIter;
                     valueBasicBlocks.insert(bbValue);
                 }
-                dfBBsMap.insert({keyBB,valueBasicBlocks});
             }
-            svffun->setDfBBsMap(dfBBsMap);
             for (Function::const_iterator bit = svffun->getLLVMFun()->begin(), ebit = svffun->getLLVMFun()->end(); bit != ebit; ++bit)
             {   
                 const BasicBlock *bb = &*bit;
@@ -178,13 +175,12 @@ void LLVMModuleSet::build()
                     if (DI != dtNode->end()){
                         for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end(); DI != DE; ++DI)
                         {
-                            BasicBlock* dtBB = (*DI)->getBlock();
-                            svffun->insertDtBB(bb,dtBB);
+                            svffun->getDomTreeMap()[bb].insert((*DI)->getBlock());
                         }
                     }
                     else
                     {
-                        svffun->insertDtBB(bb,nullptr);
+                        svffun->getDomTreeMap()[bb] = Set<const BasicBlock *>();
                     }
                 }
 
@@ -194,13 +190,12 @@ void LLVMModuleSet::build()
                     if (DI != pdtNode->end()){
                         for (DomTreeNode::iterator DI = pdtNode->begin(), DE = pdtNode->end(); DI != DE; ++DI)
                         {
-                            BasicBlock* pdtBB = (*DI)->getBlock();
-                            svffun->insertPdtBB(bb,pdtBB);
+                            svffun->getPostDomTreeMap()[bb].insert((*DI)->getBlock());
                         }
                     }
                     else
                     {
-                        svffun->insertPdtBB(bb,nullptr);
+                        svffun->getPostDomTreeMap()[bb] = Set<const BasicBlock *>();
                     }
                 }
             }
@@ -602,7 +597,7 @@ void LLVMModuleSet::buildFunToFunMap()
         NameToFunDefMapTy::iterator mit = nameToFunDefMap.find(funName);
         if (mit == nameToFunDefMap.end())
             continue;
-        FunDeclToDefMap[svfModule->getSVFFunction(fdecl)] = svfModule->getSVFFunction(mit->second);
+        FunDeclToDefMap[fdecl] = mit->second;
     }
 
     /// Fun def --> decls
@@ -616,11 +611,11 @@ void LLVMModuleSet::buildFunToFunMap()
         NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
         if (mit == nameToFunDeclsMap.end())
             continue;
-        std::vector<const SVFFunction*>& decls = FunDefToDeclsMap[svfModule->getSVFFunction(fdef)];
+        std::vector<const Function*>& decls = FunDefToDeclsMap[fdef];
         for (Set<Function*>::iterator sit = mit->second.begin(),
                 seit = mit->second.end(); sit != seit; ++sit)
         {
-            decls.push_back(svfModule->getSVFFunction(*sit));
+            decls.push_back(*sit);
         }
     }
 }

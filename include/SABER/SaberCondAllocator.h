@@ -144,64 +144,24 @@ public:
         return negConds.test(id);
     }
 
-    inline const bool pdtDominates(const BasicBlock* bbKey, const BasicBlock* bbValue)
-    {
-        return dominates(bbKey,bbValue,SVFFunction::DtK::PostDominatorTree);
-    }
-
-    inline const bool dtDominates(const BasicBlock* bbKey, const BasicBlock* bbValue)
-    {
-        return dominates(bbKey,bbValue,SVFFunction::DtK::DominatorTree);;
-    }
-
-    inline const bool dominates(const BasicBlock* bbKey, const BasicBlock* bbValue, const SVFFunction::DtK dtType)
-    {
-        if (bbKey == bbValue)
-            return true;
-        
+    inline bool postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
+    {   
         const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
         const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
-        // An unreachable node is dominated by anything.
-        if (valueFunc->isUnreachable(bbValue)){
-            return true;
-        }
+        assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
 
-        // And dominates nothing.
-        if (keyFunc->isUnreachable(bbKey))
-        {
-            return false;
-        }
-        
-        SVFModule* svfModule = PAG::getPAG()->getModule();
-        if (svfModule != nullptr)
-        {
-            Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
-            if (dtType == SVFFunction::DtK::DominatorTree)
-            {
-                dtBBsMap = keyFunc->getDtBBsMap();
-            } 
-            else if (dtType == SVFFunction::DtK::PostDominatorTree)
-            {
-                dtBBsMap = keyFunc->getPostDtBBsMap();
-            }
-            Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
-            if (mapIter != dtBBsMap.end())
-            {
-                Set<const BasicBlock*> dtBBs = mapIter->second;
-                Set<const BasicBlock*>::const_iterator setIter = dtBBs.find(bbValue);
-                if (setIter != dtBBs.end())
-                {
-                    return true;
-                }
-            } 
-        }
-        return false;
+        return keyFunc->postDominate(bbKey,bbValue);
     }
-    /// Get Postdominators
-    inline PostDominatorTree* getPostDT(const Function* fun)
+
+    inline bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
     {
-        return cfInfoBuilder.getPostDT(fun);
+        const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
+        const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
+        assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
+        
+        return keyFunc->dominate(bbKey,bbValue);
     }
+
     /// Get LoopInfo
     inline LoopInfo* getLoopInfo(const Function* f)
     {

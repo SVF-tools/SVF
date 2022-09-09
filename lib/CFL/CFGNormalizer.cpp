@@ -49,6 +49,7 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
     grammar->setAttributeKinds(generalGrammar->getAttrSyms());
     grammar->setKind2AttrsMap(generalGrammar->getKind2AttrsMap());
     grammar->setRawProductions(generalGrammar->getRawProductions());
+    barReplace(grammar);
     ebnfSignReplace('*', grammar);
     ebnfSignReplace('?', grammar);
     ebnf_bin(grammar);
@@ -309,6 +310,36 @@ int CFGNormalizer::ebnfBracketMatch(GrammarBase::Production &prod, int i, CFLGra
     return 0;
 }
 
+void CFGNormalizer::barReplace(CFLGrammar *grammar)
+{
+    for (auto &symbolToProductionsPair : grammar->getRawProductions())
+    {
+        GrammarBase::Productions productions;
+        //GrammarBase::Productions Originalproductions = symbolToProductionsPair.second;
+        for (auto ebnfProduction : symbolToProductionsPair.second)
+        {
+            size_t i = 1;
+            size_t j = 1;
+            while (i < ebnfProduction.size())
+            {
+                if (grammar->kind2Str(ebnfProduction[i].kind) == "|")
+                {
+                    GrammarBase::Production tempPro(ebnfProduction.begin()+j, ebnfProduction.begin()+i);
+                    tempPro.insert(tempPro.begin(), symbolToProductionsPair.first );
+                    productions.insert(tempPro);
+                    j = i+1;
+                }
+                i++;
+            }
+            GrammarBase::Production tempPro(ebnfProduction.begin()+j, ebnfProduction.begin()+i);
+            tempPro.insert(tempPro.begin(), symbolToProductionsPair.first );
+            productions.insert(tempPro);
+        }
+        symbolToProductionsPair.second.clear();
+        symbolToProductionsPair.second = productions;
+    }
+}
+
 void CFGNormalizer::ebnfSignReplace(char sign, CFLGrammar *grammar)
 {
     /// Replace Sign Group With tempNonterminal 'X'
@@ -352,6 +383,13 @@ void CFGNormalizer::ebnfSignReplace(char sign, CFLGrammar *grammar)
                         ebnfProduction.insert(ebnfProduction.begin() + signGroupStart, grammar->str2Symbol(newProductions[groupString]));
                         productions.insert(ebnfProduction);
                     }
+                    else if ( (signGroupStart == 1) && (i == ebnfProduction.size() -1))
+                    {
+                        newProductions[groupString] = grammar->kind2Str(ebnfProduction[0].kind);
+                        productions.erase(ebnfProduction);
+                        ebnfProduction.erase(ebnfProduction.begin() + signGroupStart, ebnfProduction.begin() + i + 1);
+
+                    }
                     else
                     {
                         tempNonterminal = "X";
@@ -379,25 +417,38 @@ void CFGNormalizer::ebnfSignReplace(char sign, CFLGrammar *grammar)
         std::string new_nonterminal = rep.second;
         GrammarBase::Production temp_list = {grammar->str2Symbol(new_nonterminal), grammar->str2Symbol("epsilon")};
         grammar->getRawProductions()[grammar->str2Symbol(new_nonterminal)].insert(temp_list);
-        /// insert second rule for '*' X -> X E for '+' X -> X
+        /// insert second rule for '*' X -> X E for '+' X -> E
         temp_list = {grammar->str2Symbol(new_nonterminal)};
-        if (sign == '*')
+        if (sign == '*' || sign == '?')
         {
             /// Insert Back the Group
             GrammarBase::Production E = strTrans(rep.first, grammar);
             GrammarBase::Production withoutSign = {};
-            for (auto &word : E)
+            if (sign == '*')
             {
-                if (word != grammar->str2Symbol("*")  && word != grammar->str2Symbol("(") && word != grammar->str2Symbol(")"))
+                for (auto &word : E)
                 {
-                    withoutSign.push_back(word);
+                    if (word != grammar->str2Symbol("*")  && word != grammar->str2Symbol("(") && word != grammar->str2Symbol(")"))
+                    {
+                        withoutSign.push_back(word);
+                    }
+                }
+                withoutSign.push_back(grammar->str2Symbol(rep.second));
+            }
+            if (sign == '?')
+            {
+                for (auto &word : E)
+                {
+                    if (word != grammar->str2Symbol("?")  && word != grammar->str2Symbol("(") && word != grammar->str2Symbol(")"))
+                    {
+                        withoutSign.push_back(word);
+                    }
                 }
             }
             temp_list.insert(temp_list.end(), withoutSign.begin(), withoutSign.end());
         }
         grammar->getRawProductions()[grammar->str2Symbol(new_nonterminal)].insert(temp_list);
     }
-
 }
 
 GrammarBase::Production CFGNormalizer::strTrans(std::string LHS, CFLGrammar *grammar)

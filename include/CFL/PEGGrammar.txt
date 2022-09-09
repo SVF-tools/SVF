@@ -3,22 +3,9 @@ Start:
 Terminal:
    Addr Copy Store Load Gep
 Productions:
-   F -> epsilon;
+   F -> ( Copy M ? ) *;
+   Fbar -> ( M ? Copybar ) *;
    M -> Addr V Addrbar;
-   V -> Fbar V F;
-   V -> Gepbar_i V Gep_i;
-   V -> M;
-   V -> epsilon;
-   F -> F Copy;
-   F -> F Copy M;
-   Fbar -> epsilon;
-   Fbar -> Copybar Fbar;
-   Fbar -> M Copybar Fbar;
-   ArrayPath -> Gepbar_0 Gepbar_0;
-   ArrayPath -> ArrayPath Gepbar_0;
-   Memcpy -> Addrbar V Addr;
-   Memcpy -> Gep_i Memcpy Gepbar_i;
-   Memcpy -> F Memcpy Fbar;
-   V -> Gepbar_i Memcpy Gep_i;
-   V -> Gep_i Memcpy Gepbar_i;
-   V -> ArrayPath V Gep_0;
+   V -> Fbar V F | Gepbar_i V Gep_i | M | epsilon | Gepbar_i Memcpy Gep_i | Gep_i Memcpy Gepbar_i | ArrayPath V Gep_0;
+   ArrayPath -> Gepbar_0 Gepbar_0 | ArrayPath Gepbar_0;
+   Memcpy -> Addrbar V Addr | Gep_i Memcpy Gepbar_i | F Memcpy Fbar;

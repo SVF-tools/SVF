@@ -206,7 +206,7 @@ void MemSSA::insertPHI(const SVFFunction& fun)
     DBOUT(DMSSA,
           outs() << "\t insert phi for function " << fun.getName() << "\n");
 
-    const Map<const BasicBlock*,Set<const BasicBlock*>>& df = fun.getDfBBsMap();
+    const Map<const BasicBlock*,Set<const BasicBlock*>>& df = fun.getDomFrontierMap();
     // record whether a phi of mr has already been inserted into the bb.
     BBToMRSetMap bb2MRSetMap;
 
@@ -221,17 +221,15 @@ void MemSSA::insertPHI(const SVFFunction& fun)
         {
             const BasicBlock* bb = bbs.back();
             bbs.pop_back();
-            Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator it = df.find(const_cast<BasicBlock*>(bb));
+            Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator it = df.find(bb);
             if(it == df.end())
             {
                 writeWrnMsg("bb not in the dominance frontier map??");
                 continue;
             }
-            const Set<const BasicBlock*> domSet = it->second;
-            for (Set<const BasicBlock*>::const_iterator bit =
-                        domSet.begin(); bit != domSet.end(); ++bit)
+            const Set<const BasicBlock*>& domSet = it->second;
+            for (const BasicBlock *pbb : domSet)
             {
-                const BasicBlock* pbb = *bit;
                 // if we never insert this phi node before
                 if (0 == bb2MRSetMap[pbb].count(mr))
                 {
@@ -332,14 +330,14 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
 
     // for succ basic block in dominator tree
     const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
-    const Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap = fun->getDtBBsMap();
+    const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = fun->getDomTreeMap();
     Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(&bb);
     if (mapIter != dtBBsMap.end())
     {
-        Set<const BasicBlock*> dtBBs = mapIter->second;
-        for (Set<const BasicBlock*>::const_iterator it = dtBBs.begin(), eit = dtBBs.end(); it != eit; it++)
+        const Set<const BasicBlock*>& dtBBs = mapIter->second;
+        for (const BasicBlock *dtbb : dtBBs)
         {
-            SSARenameBB(*(*it));
+            SSARenameBB(*dtbb);
         }
     } 
     // for each r = chi(..), and r = phi(..)
