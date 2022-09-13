@@ -36,7 +36,7 @@ namespace SVF
 {
 
 /*!
- *  Generate Normalized Grammar from a grammarbase
+ *  Generate Normalized Grammar (backus naur form) from a grammarbase (Extended extended Backus–Naur form )
  *
  *  To Do:
  *      Error Notice for ill formed production,
@@ -63,6 +63,8 @@ private:
     void ebnf_bin(CFLGrammar *grammar);
 
     void ebnfSignReplace(char sign, CFLGrammar *grammar);
+
+    void barReplace(CFLGrammar *grammar);
 
     void insertToCFLGrammar(CFLGrammar *grammar, GrammarBase::Production &prod);
 
