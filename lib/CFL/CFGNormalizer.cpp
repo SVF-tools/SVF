@@ -388,7 +388,7 @@ void CFGNormalizer::ebnfSignReplace(char sign, CFLGrammar *grammar)
                         newProductions[groupString] = grammar->kind2Str(ebnfProduction[0].kind);
                         productions.erase(ebnfProduction);
                         ebnfProduction.erase(ebnfProduction.begin() + signGroupStart, ebnfProduction.begin() + i + 1);
-                        
+
                     }
                     else
                     {
@@ -424,7 +424,8 @@ void CFGNormalizer::ebnfSignReplace(char sign, CFLGrammar *grammar)
             /// Insert Back the Group
             GrammarBase::Production E = strTrans(rep.first, grammar);
             GrammarBase::Production withoutSign = {};
-            if (sign == '*'){
+            if (sign == '*')
+            {
                 for (auto &word : E)
                 {
                     if (word != grammar->str2Symbol("*")  && word != grammar->str2Symbol("(") && word != grammar->str2Symbol(")"))
@@ -434,7 +435,8 @@ void CFGNormalizer::ebnfSignReplace(char sign, CFLGrammar *grammar)
                 }
                 withoutSign.push_back(grammar->str2Symbol(rep.second));
             }
-            if (sign == '?'){
+            if (sign == '?')
+            {
                 for (auto &word : E)
                 {
                     if (word != grammar->str2Symbol("?")  && word != grammar->str2Symbol("(") && word != grammar->str2Symbol(")"))
