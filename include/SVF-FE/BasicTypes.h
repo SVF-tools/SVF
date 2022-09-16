@@ -97,6 +97,8 @@ typedef llvm::VAStartInst VAStartInst;
 typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
+
+#if LLVM_VERSION_MAJOR >= 13
 typedef llvm::IntrinsicInst IntrinsicInst;
 typedef llvm::DbgInfoIntrinsic DbgInfoIntrinsic;
 typedef llvm::DbgVariableIntrinsic DbgVariableIntrinsic;
@@ -140,6 +142,7 @@ typedef llvm::GCProjectionInst GCProjectionInst;
 typedef llvm::GCRelocateInst GCRelocateInst;
 typedef llvm::GCResultInst GCResultInst;
 typedef llvm::AssumeInst AssumeInst;
+#endif
 
 // LLVM Debug Information
 typedef llvm::DIType DIType;
