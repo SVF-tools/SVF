@@ -98,6 +98,7 @@ typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
 
+// LLVM Intrinsic Instructions
 #if LLVM_VERSION_MAJOR >= 13
 typedef llvm::IntrinsicInst IntrinsicInst;
 typedef llvm::DbgInfoIntrinsic DbgInfoIntrinsic;
