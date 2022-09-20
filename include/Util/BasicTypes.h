@@ -103,12 +103,6 @@ typedef llvm::CallInst CallInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
 
-/// LLVM Dominators
-typedef llvm::DominanceFrontier DominanceFrontier;
-typedef llvm::DominatorTree DominatorTree;
-typedef llvm::PostDominatorTree PostDominatorTree;
-typedef llvm::DomTreeNode DomTreeNode;
-typedef llvm::DominanceFrontierBase<BasicBlock, false> DominanceFrontierBase;
 
 /// LLVM Iterators
 #if LLVM_VERSION_MAJOR >= 11
@@ -132,6 +126,9 @@ private:
     std::vector<const BasicBlock*> reachableBBs;
     bool isUncalled;
     bool isNotRet;
+    Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
+    Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
+    Map<const BasicBlock*,Set<const BasicBlock*>> pdtBBsMap;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
         isDecl(false), isIntri(false), fun(nullptr), exitBB(nullptr), isUncalled(false), isNotRet(false)
@@ -209,7 +206,42 @@ public:
         this->reachableBBs = reachableBBs;
     }
 
-    inline const bool isNotRetFunction() const
+    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getDomFrontierMap() const
+    {
+        return dfBBsMap;
+    }
+
+    inline Map<const BasicBlock*,Set<const BasicBlock*>>& getDomFrontierMap()
+    {
+        return dfBBsMap;
+    }
+
+    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getPostDomTreeMap() const
+    {
+        return pdtBBsMap;
+    }
+
+    inline Map<const BasicBlock*,Set<const BasicBlock*>>& getPostDomTreeMap()
+    {
+        return pdtBBsMap;
+    }
+    
+    inline Map<const BasicBlock*,Set<const BasicBlock*>>& getDomTreeMap()
+    {
+        return dtBBsMap;
+    }
+
+    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getDomTreeMap() const
+    {
+        return dtBBsMap;
+    }
+
+    inline bool isUnreachable(const BasicBlock* bb) const 
+    {
+        return std::find(reachableBBs.begin(), reachableBBs.end(), bb)==reachableBBs.end();
+    }
+
+    inline bool isNotRetFunction() const
     {
         return isNotRet;
     }
@@ -217,6 +249,65 @@ public:
     inline const BasicBlock* getExitBB() const
     {
         return this->exitBB;
+    }
+
+    bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const 
+    {
+        if (bbKey == bbValue)
+            return true;
+        
+        // An unreachable node is dominated by anything.
+        if (isUnreachable(bbValue)){
+            return true;
+        }
+
+        // And dominates nothing.
+        if (isUnreachable(bbKey))
+        {
+            return false;
+        }
+        
+        const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = getDomTreeMap();
+        Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
+        if (mapIter != dtBBsMap.end())
+        {
+            const Set<const BasicBlock*> & dtBBs = mapIter->second;
+            if (dtBBs.find(bbValue) != dtBBs.end())
+            {
+                return true;
+            }
+        } 
+
+        return false;
+    }
+
+    bool postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
+    {
+         if (bbKey == bbValue)
+            return true;
+
+        // An unreachable node is dominated by anything.
+        if (isUnreachable(bbValue)){
+            return true;
+        }
+
+        // And dominates nothing.
+        if (isUnreachable(bbKey))
+        {
+            return false;
+        }
+        
+        const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = getPostDomTreeMap();
+        Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
+        if (mapIter != dtBBsMap.end())
+        {
+            const Set<const BasicBlock*> & dtBBs = mapIter->second;
+            if (dtBBs.find(bbValue) != dtBBs.end())
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Dump Control Flow Graph of llvm function, with instructions

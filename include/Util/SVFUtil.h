@@ -260,7 +260,7 @@ inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
     LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
     const SVFFunction* svfFun = llvmModuleset->getSVFFunction(fun);
     if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
-        svfFun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
+        svfFun = llvmModuleset->getSVFFunction(LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun));
     return svfFun;
 }
 

@@ -17,6 +17,8 @@
 #include <llvm/IR/DerivedTypes.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
+#include <llvm/Analysis/DominanceFrontier.h>
+#include <llvm/Analysis/PostDominators.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 
@@ -63,6 +65,13 @@ typedef llvm::ConstantDataArray ConstantDataArray;
 typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantArray ConstantArray;
 typedef llvm::Constant Constant;
+
+/// LLVM Dominators
+typedef llvm::DominatorTree DominatorTree;
+typedef llvm::DomTreeNode DomTreeNode;
+typedef llvm::DominanceFrontier DominanceFrontier;
+typedef llvm::PostDominatorTree PostDominatorTree;
+typedef llvm::DominanceFrontierBase<llvm::BasicBlock, false> DominanceFrontierBase;
 
 // LLVM Instructions
 typedef llvm::AllocaInst AllocaInst;

@@ -276,10 +276,9 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const B
 
         /// if the dst dominate all other loop exit bbs, then dst can certainly be reached
         bool allPDT = true;
-        PostDominatorTree *pdt = getPostDT(fun);
         for (const auto &filteredbb: filteredbbs)
         {
-            if (!pdt->dominates(dst, filteredbb))
+            if (!postDominate(dst, filteredbb))
                 allPDT = false;
         }
 
@@ -433,10 +432,9 @@ bool SaberCondAllocator::isBBCallsProgExit(const BasicBlock *bb)
     FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(fun);
     if (it != funToExitBBsMap.end())
     {
-        PostDominatorTree *pdt = getPostDT(fun);
         for (const auto &bit: it->second)
         {
-            if (pdt->dominates(bit, bb))
+            if (postDominate(bit, bb))
                 return true;
         }
     }
@@ -454,9 +452,8 @@ SaberCondAllocator::getPHIComplementCond(const BasicBlock *BB1, const BasicBlock
 {
     assert(BB1 && BB2 && "expect nullptr BB here!");
 
-    DominatorTree *dt = getDT(BB1->getParent());
     /// avoid both BB0 and BB1 dominate BB2 (e.g., while loop), then BB2 is not necessaryly a complement BB
-    if (dt->dominates(BB1, BB2) && !dt->dominates(BB0, BB2))
+    if (dominate(BB1, BB2) && ! dominate(BB0, BB2))
     {
         Condition cond = ComputeIntraVFGGuard(BB1, BB2);
         return condNeg(cond);
@@ -507,8 +504,7 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const Bas
 
     assert(srcBB->getParent() == dstBB->getParent() && "two basic blocks are not in the same function??");
 
-    PostDominatorTree *postDT = getPostDT(srcBB->getParent());
-    if (postDT->dominates(dstBB, srcBB))
+    if (postDominate(dstBB, srcBB))
         return getTrueCond();
 
     CFWorkList worklist;
@@ -536,7 +532,7 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const Bas
             /// note that we assume loop exit always post dominate loop bodys
             /// which means loops are approximated only once.
             Condition brCond;
-            if (postDT->dominates(succ, bb))
+            if (postDominate(succ, bb))
                 brCond = getTrueCond();
             else
                 brCond = getEvalBrCond(bb, succ);

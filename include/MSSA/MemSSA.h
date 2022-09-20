@@ -120,8 +120,6 @@ public:
 protected:
     BVDataPTAImpl* pta;
     MRGenerator* mrGen;
-    DominanceFrontier* df;
-    DominatorTree* dt;
     MemSSAStat* stat;
 
     /// Create mu chi for candidate regions in a function
@@ -291,19 +289,6 @@ private:
             phi->setOpVer(getTopStackVer(phi->getMR()), pos);
         }
     }
-
-    //@}
-    /// Get/set methods for dominace frontier/tree
-    //@{
-    DominanceFrontier* getDF(const SVFFunction&)
-    {
-        return df;
-    }
-    DominatorTree* getDT(const SVFFunction&)
-    {
-        return dt;
-    }
-    void setCurrentDFDT(DominanceFrontier* f, DominatorTree* t);
     //@}
 
 public:
@@ -328,7 +313,7 @@ public:
         return mrGen;
     }
     /// We start from here
-    virtual void buildMemSSA(const SVFFunction& fun,DominanceFrontier*, DominatorTree*);
+    virtual void buildMemSSA(const SVFFunction& fun);
 
     /// Perform statistics
     void performStat();
