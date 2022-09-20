@@ -339,7 +339,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
         {
             SSARenameBB(*dtbb);
         }
-    } 
+    }
     // for each r = chi(..), and r = phi(..)
     // 		pop ver stack(r)
     while (!memRegs.empty())

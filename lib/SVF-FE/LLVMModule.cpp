@@ -148,7 +148,7 @@ void LLVMModuleSet::build()
             BasicBlock *exitBB =  const_cast<BasicBlock*>(LLVMUtil::getFunExitBB(func));
             svffun->setReachableBBs(reachableBBs);
             svffun->setExitBB(exitBB);
-            
+
             //process and stored dt & df
             DominatorTree dt;
             DominanceFrontier df;
@@ -167,12 +167,13 @@ void LLVMModuleSet::build()
                 }
             }
             for (Function::const_iterator bit = svffun->getLLVMFun()->begin(), ebit = svffun->getLLVMFun()->end(); bit != ebit; ++bit)
-            {   
+            {
                 const BasicBlock *bb = &*bit;
                 if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb)))
                 {
                     DomTreeNode::iterator DI = dtNode->begin();
-                    if (DI != dtNode->end()){
+                    if (DI != dtNode->end())
+                    {
                         for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end(); DI != DE; ++DI)
                         {
                             svffun->getDomTreeMap()[bb].insert((*DI)->getBlock());
@@ -187,7 +188,8 @@ void LLVMModuleSet::build()
                 if(DomTreeNode * pdtNode = pdt.getNode(const_cast<BasicBlock*>(bb)))
                 {
                     DomTreeNode::iterator DI = pdtNode->begin();
-                    if (DI != pdtNode->end()){
+                    if (DI != pdtNode->end())
+                    {
                         for (DomTreeNode::iterator DI = pdtNode->begin(), DE = pdtNode->end(); DI != DE; ++DI)
                         {
                             svffun->getPostDomTreeMap()[bb].insert((*DI)->getBlock());

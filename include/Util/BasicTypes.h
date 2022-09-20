@@ -225,7 +225,7 @@ public:
     {
         return pdtBBsMap;
     }
-    
+
     inline Map<const BasicBlock*,Set<const BasicBlock*>>& getDomTreeMap()
     {
         return dtBBsMap;
@@ -236,7 +236,7 @@ public:
         return dtBBsMap;
     }
 
-    inline bool isUnreachable(const BasicBlock* bb) const 
+    inline bool isUnreachable(const BasicBlock* bb) const
     {
         return std::find(reachableBBs.begin(), reachableBBs.end(), bb)==reachableBBs.end();
     }
@@ -251,13 +251,14 @@ public:
         return this->exitBB;
     }
 
-    bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const 
+    bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
     {
         if (bbKey == bbValue)
             return true;
-        
+
         // An unreachable node is dominated by anything.
-        if (isUnreachable(bbValue)){
+        if (isUnreachable(bbValue))
+        {
             return true;
         }
 
@@ -266,7 +267,7 @@ public:
         {
             return false;
         }
-        
+
         const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = getDomTreeMap();
         Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
         if (mapIter != dtBBsMap.end())
@@ -276,18 +277,19 @@ public:
             {
                 return true;
             }
-        } 
+        }
 
         return false;
     }
 
     bool postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
     {
-         if (bbKey == bbValue)
+        if (bbKey == bbValue)
             return true;
 
         // An unreachable node is dominated by anything.
-        if (isUnreachable(bbValue)){
+        if (isUnreachable(bbValue))
+        {
             return true;
         }
 
@@ -296,7 +298,7 @@ public:
         {
             return false;
         }
-        
+
         const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = getPostDomTreeMap();
         Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
         if (mapIter != dtBBsMap.end())

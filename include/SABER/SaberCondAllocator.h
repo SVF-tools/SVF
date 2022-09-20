@@ -145,7 +145,7 @@ public:
     }
 
     inline bool postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
-    {   
+    {
         const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
         const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
         assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
@@ -158,7 +158,7 @@ public:
         const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
         const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
         assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
-        
+
         return keyFunc->dominate(bbKey,bbValue);
     }
 
