@@ -58,7 +58,7 @@ class List
     class ListNode
     {
     public:
-        ListNode(Data d)
+        ListNode(const Data& d)
         {
             data = d;
             next = nullptr;
@@ -87,12 +87,12 @@ public:
         return (head == nullptr);
     }
 
-    inline bool find(Data data) const
+    inline bool find(const Data& data) const
     {
         return (nodeSet.find(data) == nodeSet.end() ? false : true);
     }
 
-    void push(Data data)
+    void push(const Data& data)
     {
         if (nodeSet.find(data) == nodeSet.end())
         {
@@ -136,7 +136,6 @@ private:
 template<class Data>
 class FIFOWorkList
 {
-    typedef Set<Data> DataSet;
     typedef std::deque<Data> DataDeque;
 public:
     FIFOWorkList() {}
@@ -148,24 +147,18 @@ public:
         return data_list.empty();
     }
 
-    inline bool find(Data data) const
+    inline bool find(const Data& data) const
     {
-        return (data_set.find(data) == data_set.end() ? false : true);
+        return std::find(data_list.begin(), data_list.end(), data) != data_list.end();
     }
 
     /**
      * Push a data into the work list.
      */
-    inline bool push(Data data)
+    inline bool push(const Data& data)
     {
-        if (data_set.find(data) == data_set.end())
-        {
-            data_list.push_back(data);
-            data_set.insert(data);
-            return true;
-        }
-        else
-            return false;
+        data_list.push_back(data);
+        return true;
     }
 
     /**
@@ -173,10 +166,27 @@ public:
      */
     inline Data pop()
     {
+        Data data = front();
+        removeFront();
+        return data;
+    }
+
+    /**
+     * Remove a data from the END of work list, no return value
+     */
+    inline void removeFront()
+    {
         assert(!empty() && "work list is empty");
-        Data data = data_list.front();
         data_list.pop_front();
-        data_set.erase(data);
+    }
+
+    /**
+     * Get reference of top data from the END of work list.
+     */
+    inline Data& front()
+    {
+        assert(!empty() && "work list is empty");
+        Data& data = data_list.front();
         return data;
     }
 
@@ -186,11 +196,9 @@ public:
     inline void clear()
     {
         data_list.clear();
-        data_set.clear();
     }
 
 private:
-    DataSet data_set;	///< store all data in the work list.
     DataDeque data_list;	///< work list using std::vector.
 };
 
@@ -202,7 +210,6 @@ private:
 template<class Data>
 class FILOWorkList
 {
-    typedef Set<Data> DataSet;
     typedef std::vector<Data> DataVector;
 public:
     FILOWorkList() {}
@@ -214,24 +221,18 @@ public:
         return data_list.empty();
     }
 
-    inline bool find(Data data) const
+    inline bool find(const Data& data) const
     {
-        return (data_set.find(data) == data_set.end() ? false : true);
+        return std::find(data_list.begin(), data_list.end(), data) != data_list.end();
     }
 
     /**
      * Push a data into the work list.
      */
-    inline bool push(Data data)
+    inline bool push(const Data& data)
     {
-        if (data_set.find(data) == data_set.end())
-        {
-            data_list.push_back(data);
-            data_set.insert(data);
-            return true;
-        }
-        else
-            return false;
+        data_list.push_back(data);
+        return true;
     }
 
     /**
@@ -239,10 +240,27 @@ public:
      */
     inline Data pop()
     {
+        Data data = back();
+        removeBack();
+        return data;
+    }
+
+    /**
+     * Remove a data from the END of work list, no return value
+     */
+    inline void removeBack()
+    {
         assert(!empty() && "work list is empty");
-        Data data = data_list.back();
         data_list.pop_back();
-        data_set.erase(data);
+    }
+
+    /**
+     * Get reference of top data from the END of work list.
+     */
+    inline Data& back()
+    {
+        assert(!empty() && "work list is empty");
+        Data& data = data_list.back();
         return data;
     }
 
@@ -252,11 +270,9 @@ public:
     inline void clear()
     {
         data_list.clear();
-        data_set.clear();
     }
 
 private:
-    DataSet data_set;	///< store all data in the work list.
     DataVector data_list;	///< work list using std::vector.
 };
 
