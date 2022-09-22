@@ -120,8 +120,8 @@ void FlowSensitiveStat::performStat()
         }
     }
 
-    PTNumStatMap[NumberOfFieldInsensitiveObj] = fiObjNumber;
-    PTNumStatMap[NumberOfFieldSensitiveObj] = fsObjNumber;
+    PTNumStatMap["FIObjNum"] = fiObjNumber;
+    PTNumStatMap["FSObjNum"] = fsObjNumber;
 
     unsigned numOfCopy = 0;
     unsigned numOfStore = 0;
@@ -138,7 +138,7 @@ void FlowSensitiveStat::performStat()
 
     PTAStat::performStat();
 
-    timeStatMap[TotalAnalysisTime] = (endTime - startTime)/TIMEINTERVAL;
+    timeStatMap["TotalTime"] = (endTime - startTime)/TIMEINTERVAL;
     timeStatMap["SolveTime"] = fspta->solveTime;
     timeStatMap["SCCTime"] = fspta->sccTime;
     timeStatMap["ProcessTime"] = fspta->processTime;
@@ -154,22 +154,22 @@ void FlowSensitiveStat::performStat()
     timeStatMap["UpdateCGTime"] = fspta->updateCallGraphTime;
     timeStatMap["PhiTime"] = fspta->phiTime;
 
-    PTNumStatMap[TotalNumOfPointers] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
-    PTNumStatMap[TotalNumOfObjects] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
+    PTNumStatMap["TotalPointers"] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
+    PTNumStatMap["TotalObjects"] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
 
-    PTNumStatMap[NumOfPointers] = pag->getValueNodeNum();
-    PTNumStatMap[NumOfMemObjects] = pag->getObjectNodeNum();
-    PTNumStatMap[NumOfGepFieldPointers] = pag->getFieldValNodeNum();
-    PTNumStatMap[NumOfGepFieldObjects] = pag->getFieldObjNodeNum();
+    PTNumStatMap["Pointers"] = pag->getValueNodeNum();
+    PTNumStatMap["MemObjects"] = pag->getObjectNodeNum();
+    PTNumStatMap["DummyFieldPtrs"] = pag->getFieldValNodeNum();
+    PTNumStatMap["FieldObjs"] = pag->getFieldObjNodeNum();
 
-    PTNumStatMap[NumOfCopys] = numOfCopy;
-    PTNumStatMap[NumOfStores] = numOfStore;
+    PTNumStatMap["CopysNum"] = numOfCopy;
+    PTNumStatMap["StoresNum"] = numOfStore;
 
-    PTNumStatMap[NumOfIterations] = fspta->numOfIteration;
+    PTNumStatMap["SolveIterations"] = fspta->numOfIteration;
 
-    PTNumStatMap[NumOfIndirectEdgeSolved] = fspta->getNumOfResolvedIndCallEdge();
+    PTNumStatMap["IndEdgeSolved"] = fspta->getNumOfResolvedIndCallEdge();
 
-    PTNumStatMap[NumOfNullPointer] = _NumOfNullPtr;
+    PTNumStatMap["NullPointer"] = _NumOfNullPtr;
     PTNumStatMap["PointsToConstPtr"] = _NumOfConstantPtr;
     PTNumStatMap["PointsToBlkPtr"] = _NumOfBlackholePtr;
 

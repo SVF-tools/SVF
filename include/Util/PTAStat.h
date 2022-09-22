@@ -48,95 +48,16 @@ class PointerAnalysis;
 class PTAStat: public SVFStat
 {
 public:
-    static const char* TotalAnalysisTime; ///< Total analysis time
-    static const char* SCCDetectionTime; ///< Total SCC detection time
-    static const char* SCCMergeTime; ///< Total SCC merge time
-
-    static const char* ProcessLoadStoreTime;///< time of processing loads and stores
-    static const char* ProcessCopyGepTime;	///< time of processing copys and geps
-    static const char* UpdateCallGraphTime;	///< time of updating call graph
-
-    static const char* TotalNumOfPointers;	///< Total SVFIR value node
-    static const char* TotalNumOfObjects;	///< Total SVFIR object node
-    static const char* TotalNumOfFieldObjects;	///< Total SVFIR field object node
-    static const char* MaxStructSize;	///< Max struct size
-    static const char* TotalNumOfEdges;	///< Total SVFIR edge number
-
-    static const char* NumOfAddrs;		///< SVFIR addr edge
-    static const char* NumOfLoads;		///< SVFIR load edge
-    static const char* NumOfStores;		///< SVFIR store edge
-    static const char* NumOfCopys;		///< SVFIR copy edge
-    static const char* NumOfGeps;		///< SVFIR gep edge
-    static const char* NumOfCalls;		///< SVFIR call edge
-    static const char* NumOfReturns;	///< SVFIR return edge
-
-    static const char* NumOfProcessedAddrs;		///< SVFIR processed addr edge
-    static const char* NumOfProcessedLoads;		///< SVFIR processed load edge
-    static const char* NumOfProcessedStores;	///< SVFIR processed store edge
-    static const char* NumOfProcessedCopys;		///< SVFIR processed copy edge
-    static const char* NumOfProcessedGeps;		///< SVFIR processed gep edge
-
-    static const char* NumOfSfr;                ///< num of field representatives
-    static const char* NumOfFieldExpand;
-
-    static const char* NumOfFunctionObjs;	///< Function numbers
-    static const char* NumOfGlobalObjs;	///< SVFIR global object node
-    static const char* NumOfHeapObjs;	///< SVFIR heap object node
-    static const char* NumOfStackObjs;	///< SVFIR stack object node
-
-    static const char* NumOfObjsHasVarStruct;	///< SVFIR object node has var struct (maybe nested with array)
-    static const char* NumOfObjsHasVarArray;	///< SVFIR object node has var array (maybe nested with struct)
-    static const char* NumOfObjsHasConstStruct;	///< SVFIR object node has const struct (maybe nested with array)
-    static const char* NumOfObjsHasConstArray;	///< SVFIR object node has const array (maybe nested with struct)
-    static const char* NumOfNonPtrObjs;	///< SVFIR object node which is non pointer type object (do not have pts)
-    static const char* NumOfConstantObjs;	///< SVFIR object node which is purely constant
-
-    static const char* NumberOfFieldInsensitiveObj;
-    static const char* NumberOfFieldSensitiveObj;
-
-    static const char* NumOfPointers;	///< SVFIR value node, each of them maps to a llvm value
-    static const char* NumOfGepFieldPointers;	///< SVFIR gep value node (field value, dynamically created dummy node)
-
-    static const char* NumOfMemObjects;	///< SVFIR object node, each of them maps to a llvm value
-    static const char* NumOfGepFieldObjects;	///< SVFIR gep object node (field obj, dynamically created dummy node)
-
-    static const char* AveragePointsToSetSize;		///< Average points-to size of all variables
-    static const char* AverageTopLevPointsToSetSize; ///< Average points-to size of top-level variables
-    static const char* MaxPointsToSetSize;			///< Max points-to size
-
-    static const char* NumOfIterations;	///< Number of iterations during resolution
-
-    static const char* NumOfIndirectCallSites;	///< Number of indirect callsites
-    static const char* NumOfIndirectEdgeSolved;	///< Number of indirect calledge resolved
-
-    static const char* NumOfSCCDetection; ///< Number of scc detection performed
-    static const char* NumOfCycles;   ///< Number of scc cycles detected
-    static const char* NumOfPWCCycles;   ///< Number of scc cycles detected
-    static const char* NumOfNodesInCycles; ///< Number of nodes in cycles detected
-    static const char* MaxNumOfNodesInSCC;	///< max Number of nodes in one scc
-
-    static const char* NumOfNullPointer;	///< Number of pointers points-to null
-
     PTAStat(PointerAnalysis* p);
     virtual ~PTAStat() {}
 
-    NUMStatMap PTNumStatMap;
     NodeBS localVarInRecursion;
-
-    double startTime;
-    double endTime;
 
     void performStat() override;
 
-    virtual void printStat(std::string str = "") override;
-
     void callgraphStat() override;
 private:
-    void bitcastInstStat();
-    void branchStat();
-
     PointerAnalysis* pta;
-    std::string moduleName;
 };
 
 } // End namespace SVF

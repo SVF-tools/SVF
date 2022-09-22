@@ -65,8 +65,8 @@ void VersionedFlowSensitiveStat::performStat()
         }
     }
 
-    PTNumStatMap[NumberOfFieldInsensitiveObj] = fiObjNumber;
-    PTNumStatMap[NumberOfFieldSensitiveObj] = fsObjNumber;
+    PTNumStatMap["FIObjNum"] = fiObjNumber;
+    PTNumStatMap["FSObjNum"] = fsObjNumber;
 
     unsigned numOfCopy = 0;
     unsigned numOfStore = 0;
@@ -79,7 +79,7 @@ void VersionedFlowSensitiveStat::performStat()
 
     PTAStat::performStat();
 
-    timeStatMap[TotalAnalysisTime]    = (endTime - startTime)/TIMEINTERVAL;
+    timeStatMap["TotalTime"]    = (endTime - startTime)/TIMEINTERVAL;
     timeStatMap["SolveTime"]          = vfspta->solveTime;
     timeStatMap["SCCTime"]            = vfspta->sccTime;
     timeStatMap["ProcessTime"]        = vfspta->processTime;
@@ -98,13 +98,13 @@ void VersionedFlowSensitiveStat::performStat()
     timeStatMap["PrelabelingTime"]    = vfspta->prelabelingTime;
     timeStatMap["VersionPropTime"]    = vfspta->versionPropTime;
 
-    PTNumStatMap[TotalNumOfPointers]  = pag->getValueNodeNum() + pag->getFieldValNodeNum();
-    PTNumStatMap[TotalNumOfObjects]   = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
+    PTNumStatMap["TotalPointers"]  = pag->getValueNodeNum() + pag->getFieldValNodeNum();
+    PTNumStatMap["TotalObjects"]   = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
 
-    PTNumStatMap[NumOfPointers]         = pag->getValueNodeNum();
-    PTNumStatMap[NumOfMemObjects]       = pag->getObjectNodeNum();
-    PTNumStatMap[NumOfGepFieldPointers] = pag->getFieldValNodeNum();
-    PTNumStatMap[NumOfGepFieldObjects]  = pag->getFieldObjNodeNum();
+    PTNumStatMap["Pointers"]         = pag->getValueNodeNum();
+    PTNumStatMap["MemObjects"]       = pag->getObjectNodeNum();
+    PTNumStatMap["DummyFieldPtrs"] = pag->getFieldValNodeNum();
+    PTNumStatMap["FieldObjs"]  = pag->getFieldObjNodeNum();
 
     PTNumStatMap["TotalVersions"]     = _NumVersions;
     PTNumStatMap["MaxVersionsForObj"] = _MaxVersions;
@@ -113,12 +113,12 @@ void VersionedFlowSensitiveStat::performStat()
     PTNumStatMap["TotalExistingVPts"] = _NumUsedVersions;
     PTNumStatMap["TotalSingleVObjs"]  = _NumSingleVersion;
 
-    PTNumStatMap[NumOfCopys]  = numOfCopy;
-    PTNumStatMap[NumOfStores] = numOfStore;
+    PTNumStatMap["CopysNum"]  = numOfCopy;
+    PTNumStatMap["StoresNum"] = numOfStore;
 
-    PTNumStatMap[NumOfIterations] = vfspta->numOfIteration;
+    PTNumStatMap["SolveIterations"] = vfspta->numOfIteration;
 
-    PTNumStatMap[NumOfIndirectEdgeSolved] = vfspta->getNumOfResolvedIndCallEdge();
+    PTNumStatMap["IndEdgeSolved"] = vfspta->getNumOfResolvedIndCallEdge();
 
     PTNumStatMap["StrongUpdates"] = vfspta->svfgHasSU.count();
 

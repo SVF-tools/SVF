@@ -144,16 +144,24 @@ public:
         return negConds.test(id);
     }
 
-    /// Get dominators
-    inline DominatorTree* getDT(const Function* fun)
+    inline bool postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
     {
-        return cfInfoBuilder.getDT(fun);
+        const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
+        const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
+        assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
+
+        return keyFunc->postDominate(bbKey,bbValue);
     }
-    /// Get Postdominators
-    inline PostDominatorTree* getPostDT(const Function* fun)
+
+    inline bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
     {
-        return cfInfoBuilder.getPostDT(fun);
+        const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
+        const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
+        assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
+
+        return keyFunc->dominate(bbKey,bbValue);
     }
+
     /// Get LoopInfo
     inline LoopInfo* getLoopInfo(const Function* f)
     {

@@ -43,7 +43,7 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr),dt(nullptr)
+MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA)
 {
     pta = p;
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
@@ -74,20 +74,9 @@ SVFIR* MemSSA::getPAG()
 }
 
 /*!
- * Set DF/DT
- */
-void MemSSA::setCurrentDFDT(DominanceFrontier* f, DominatorTree* t)
-{
-    df = f;
-    dt = t;
-    usedRegs.clear();
-    reg2BBMap.clear();
-}
-
-/*!
  * Start building memory SSA
  */
-void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, DominatorTree* t)
+void MemSSA::buildMemSSA(const SVFFunction& fun)
 {
 
     assert(!isExtCall(&fun) && "we do not build memory ssa for external functions");
@@ -95,7 +84,8 @@ void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, Dominator
     DBOUT(DMSSA, outs() << "Building Memory SSA for function " << fun.getName()
           << " \n");
 
-    setCurrentDFDT(f,t);
+    usedRegs.clear();
+    reg2BBMap.clear();
 
     /// Create mus/chis for loads/stores/calls for memory regions
     double muchiStart = stat->getClk(true);
@@ -216,7 +206,7 @@ void MemSSA::insertPHI(const SVFFunction& fun)
     DBOUT(DMSSA,
           outs() << "\t insert phi for function " << fun.getName() << "\n");
 
-    const DominanceFrontier* df = getDF(fun);
+    const Map<const BasicBlock*,Set<const BasicBlock*>>& df = fun.getDomFrontierMap();
     // record whether a phi of mr has already been inserted into the bb.
     BBToMRSetMap bb2MRSetMap;
 
@@ -231,17 +221,15 @@ void MemSSA::insertPHI(const SVFFunction& fun)
         {
             const BasicBlock* bb = bbs.back();
             bbs.pop_back();
-            DominanceFrontierBase::const_iterator it = df->find(const_cast<BasicBlock*>(bb));
-            if(it == df->end())
+            Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator it = df.find(bb);
+            if(it == df.end())
             {
                 writeWrnMsg("bb not in the dominance frontier map??");
                 continue;
             }
-            const DominanceFrontierBase::DomSetType& domSet = it->second;
-            for (DominanceFrontierBase::DomSetType::const_iterator bit =
-                        domSet.begin(); bit != domSet.end(); ++bit)
+            const Set<const BasicBlock*>& domSet = it->second;
+            for (const BasicBlock *pbb : domSet)
             {
-                const BasicBlock* pbb = *bit;
                 // if we never insert this phi node before
                 if (0 == bb2MRSetMap[pbb].count(mr))
                 {
@@ -342,13 +330,14 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
 
     // for succ basic block in dominator tree
     const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
-    DominatorTree* dt = getDT(*fun);
-    if(DomTreeNode *dtNode = dt->getNode(const_cast<BasicBlock*>(&bb)))
+    const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = fun->getDomTreeMap();
+    Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(&bb);
+    if (mapIter != dtBBsMap.end())
     {
-        for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end();
-                DI != DE; ++DI)
+        const Set<const BasicBlock*>& dtBBs = mapIter->second;
+        for (const BasicBlock *dtbb : dtBBs)
         {
-            SSARenameBB(*((*DI)->getBlock()));
+            SSARenameBB(*dtbb);
         }
     }
     // for each r = chi(..), and r = phi(..)

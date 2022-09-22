@@ -17,6 +17,8 @@
 #include <llvm/IR/DerivedTypes.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
+#include <llvm/Analysis/DominanceFrontier.h>
+#include <llvm/Analysis/PostDominators.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 
@@ -64,6 +66,13 @@ typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantArray ConstantArray;
 typedef llvm::Constant Constant;
 
+/// LLVM Dominators
+typedef llvm::DominatorTree DominatorTree;
+typedef llvm::DomTreeNode DomTreeNode;
+typedef llvm::DominanceFrontier DominanceFrontier;
+typedef llvm::PostDominatorTree PostDominatorTree;
+typedef llvm::DominanceFrontierBase<llvm::BasicBlock, false> DominanceFrontierBase;
+
 // LLVM Instructions
 typedef llvm::AllocaInst AllocaInst;
 typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
@@ -97,6 +106,9 @@ typedef llvm::VAStartInst VAStartInst;
 typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
+
+// LLVM Intrinsic Instructions
+#if LLVM_VERSION_MAJOR >= 13
 typedef llvm::IntrinsicInst IntrinsicInst;
 typedef llvm::DbgInfoIntrinsic DbgInfoIntrinsic;
 typedef llvm::DbgVariableIntrinsic DbgVariableIntrinsic;
@@ -140,6 +152,7 @@ typedef llvm::GCProjectionInst GCProjectionInst;
 typedef llvm::GCRelocateInst GCRelocateInst;
 typedef llvm::GCResultInst GCResultInst;
 typedef llvm::AssumeInst AssumeInst;
+#endif
 
 // LLVM Debug Information
 typedef llvm::DIType DIType;

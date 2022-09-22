@@ -422,11 +422,11 @@ protected:
     {
         DPIm dpm(oldDpm);
         dpm.setLocVar(edge->getSrcNode(),ptr);
-        DOTIMESTAT(double start = DDAStat::getClk());
+        DOTIMESTAT(double start = DDAStat::getClk(true));
         /// handle context-/path- sensitivity
         if(handleBKCondition(dpm,edge)==false)
         {
-            DOTIMESTAT(ddaStat->_TotalTimeOfBKCondition += DDAStat::getClk() - start);
+            DOTIMESTAT(ddaStat->_TotalTimeOfBKCondition += DDAStat::getClk(true) - start);
             DBOUT(DDDA, SVFUtil::outs() << "\t!!! infeasible path svfgNode: " << edge->getDstID() << " --| " << edge->getSrcID() << "\n");
             DOSTAT(ddaStat->_NumOfInfeasiblePath++);
             return;
@@ -562,9 +562,9 @@ protected:
     {
         if (unionDDAPts(dpm, pts))
         {
-            DOSTAT(double start = DDAStat::getClk());
+            DOSTAT(double start = DDAStat::getClk(true));
             reCompute(dpm);
-            DOSTAT(ddaStat->_AnaTimeCyclePerQuery += DDAStat::getClk() - start);
+            DOSTAT(ddaStat->_AnaTimeCyclePerQuery += DDAStat::getClk(true) - start);
         }
     }
     virtual inline const CPtSet& getCachedTLPointsTo(const DPIm& dpm)
