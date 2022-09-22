@@ -26,6 +26,8 @@
  *  Created on: May 23, 2022
  *      Author: Pei Xu
  */
+#ifndef INCLUDE_CFL_CFLGRAMGRAPHCHECKER_H_
+#define INCLUDE_CFL_CFLGRAMGRAPHCHECKER_H_
 
 #include "CFL/CFLGrammar.h"
 #include "Graphs/CFLGraph.h"
@@ -69,3 +71,4 @@ public:
 
 }// SVF
 
+#endif /* INCLUDE_CFL_CFLGRAMGRAPHCHECKER_H_*/

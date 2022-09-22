@@ -38,9 +38,12 @@
 #include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/ConsG.h"
 #include "Util/Options.h"
+#include "CFL/CFLStat.h"
 
 namespace SVF
 {
+
+class CFLStat;
 
 class CFLAlias : public BVDataPTAImpl
 {
@@ -138,6 +141,34 @@ public:
     void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F);
 
     void heapAllocatorViaIndCall(CallSite cs);
+
+    /// Get CFL graph
+    CFLGraph* getCFLGraph()
+    {
+        return graph;
+    }
+
+    /// Statistics
+    //@{
+    static u32_t numOfProcessedAddr;   /// Number of processed Addr edge
+    static u32_t numOfProcessedCopy;   /// Number of processed Copy edge
+    static u32_t numOfProcessedGep;    /// Number of processed Gep edge
+    static u32_t numOfProcessedLoad;   /// Number of processed Load edge
+    static u32_t numOfProcessedStore;  /// Number of processed Store edge
+    static u32_t numOfSfrs;
+    static u32_t numOfFieldExpand;
+
+    static u32_t numOfSCCDetection;
+    static double timeOfSCCDetection;
+    static double timeOfSCCMerges;
+    static double timeOfCollapse;
+    static u32_t AveragePointsToSetSize;
+    static u32_t MaxPointsToSetSize;
+    static double timeOfProcessCopyGep;
+    static double timeOfProcessLoadStore;
+    static double timeOfUpdateCallGraph;
+    //@}
+
 private:
     CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
     SVFIR* svfir;

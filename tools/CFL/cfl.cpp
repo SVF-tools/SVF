@@ -28,8 +28,9 @@
 
 
 #include "SVF-FE/LLVMUtil.h"
-#include "CFL/CFLAlias.h"
 #include "Util/Options.h"
+#include "CFL/CFLAlias.h"
+#include "CFL/CFLVF.h"
 #include "SVF-FE/SVFIRBuilder.h"
 #include "CFL/CFGNormalizer.h"
 
@@ -64,9 +65,18 @@ int main(int argc, char ** argv)
         /// Build Program Assignment Graph (SVFIR)
         SVFIRBuilder builder;
         SVFIR* svfir = builder.build(svfModule);
-        CFLAlias* cflaa = new CFLAlias(svfir);
-        cflaa->analyze();
-        delete cflaa;
+        if (Options::CFLSVFG)
+        {
+            CFLVF* cflvf = new CFLVF(svfir);
+            //cflvf->analyze();
+            delete cflvf;
+        }
+        else
+        {
+            CFLAlias* cflaa = new CFLAlias(svfir);
+            cflaa->analyze();
+            delete cflaa;
+        }
     }
     else
     {
