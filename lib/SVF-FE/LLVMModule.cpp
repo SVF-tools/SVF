@@ -34,6 +34,7 @@
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/BreakConstantExpr.h"
+#include "MSSA/SVFGBuilder.h"
 
 using namespace std;
 using namespace SVF;
@@ -126,9 +127,11 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 
 void LLVMModuleSet::build()
 {
-    initialize();
     buildFunToFunMap();
+    initialize();
     buildGlobalDefToRepMap();
+    if(preProcessed==false)
+        prePassSchedule();
     const SVFModule::FunctionSetType& functions = svfModule->getFunctionSet();
     for (SVFModule::FunctionSetType::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
     {
@@ -145,10 +148,61 @@ void LLVMModuleSet::build()
             BasicBlock *exitBB =  const_cast<BasicBlock*>(LLVMUtil::getFunExitBB(func));
             svffun->setReachableBBs(reachableBBs);
             svffun->setExitBB(exitBB);
+
+            //process and stored dt & df
+            DominatorTree dt;
+            DominanceFrontier df;
+            dt.recalculate(*svffun->getLLVMFun());
+            df.analyze(dt);
+            PostDominatorTree pdt = PostDominatorTree(*(func->getLLVMFun()));
+            Map<const BasicBlock*,Set<const BasicBlock*>> & dfBBsMap = svffun->getDomFrontierMap();
+            for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
+            {
+                const BasicBlock* keyBB = dfIter->first;
+                const std::set<BasicBlock *>& domSet = dfIter->second;
+                Set<const BasicBlock*>& valueBasicBlocks = dfBBsMap[keyBB];
+                for (const BasicBlock* bbValue:domSet)
+                {
+                    valueBasicBlocks.insert(bbValue);
+                }
+            }
+            for (Function::const_iterator bit = svffun->getLLVMFun()->begin(), ebit = svffun->getLLVMFun()->end(); bit != ebit; ++bit)
+            {
+                const BasicBlock *bb = &*bit;
+                if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb)))
+                {
+                    DomTreeNode::iterator DI = dtNode->begin();
+                    if (DI != dtNode->end())
+                    {
+                        for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end(); DI != DE; ++DI)
+                        {
+                            svffun->getDomTreeMap()[bb].insert((*DI)->getBlock());
+                        }
+                    }
+                    else
+                    {
+                        svffun->getDomTreeMap()[bb] = Set<const BasicBlock *>();
+                    }
+                }
+
+                if(DomTreeNode * pdtNode = pdt.getNode(const_cast<BasicBlock*>(bb)))
+                {
+                    DomTreeNode::iterator DI = pdtNode->begin();
+                    if (DI != pdtNode->end())
+                    {
+                        for (DomTreeNode::iterator DI = pdtNode->begin(), DE = pdtNode->end(); DI != DE; ++DI)
+                        {
+                            svffun->getPostDomTreeMap()[bb].insert((*DI)->getBlock());
+                        }
+                    }
+                    else
+                    {
+                        svffun->getPostDomTreeMap()[bb] = Set<const BasicBlock *>();
+                    }
+                }
+            }
         }
     }
-    if(preProcessed==false)
-        prePassSchedule();
 }
 
 /*!
@@ -545,7 +599,7 @@ void LLVMModuleSet::buildFunToFunMap()
         NameToFunDefMapTy::iterator mit = nameToFunDefMap.find(funName);
         if (mit == nameToFunDefMap.end())
             continue;
-        FunDeclToDefMap[svfModule->getSVFFunction(fdecl)] = svfModule->getSVFFunction(mit->second);
+        FunDeclToDefMap[fdecl] = mit->second;
     }
 
     /// Fun def --> decls
@@ -559,11 +613,11 @@ void LLVMModuleSet::buildFunToFunMap()
         NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
         if (mit == nameToFunDeclsMap.end())
             continue;
-        std::vector<const SVFFunction*>& decls = FunDefToDeclsMap[svfModule->getSVFFunction(fdef)];
+        std::vector<const Function*>& decls = FunDefToDeclsMap[fdef];
         for (Set<Function*>::iterator sit = mit->second.begin(),
                 seit = mit->second.end(); sit != seit; ++sit)
         {
-            decls.push_back(svfModule->getSVFFunction(*sit));
+            decls.push_back(*sit);
         }
     }
 }

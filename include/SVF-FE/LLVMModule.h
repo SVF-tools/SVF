@@ -42,9 +42,9 @@ class LLVMModuleSet
 {
 public:
 
-    typedef std::vector<const SVFFunction*> FunctionSetType;
-    typedef Map<const SVFFunction*, const SVFFunction*> FunDeclToDefMapTy;
-    typedef Map<const SVFFunction*, FunctionSetType> FunDefToDeclsMapTy;
+    typedef std::vector<const Function*> FunctionSetType;
+    typedef Map<const Function*, const Function*> FunDeclToDefMapTy;
+    typedef Map<const Function*, FunctionSetType> FunDefToDeclsMapTy;
     typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
 private:
@@ -133,25 +133,14 @@ public:
         return nullptr;
     }
 
-    /// Fun decl --> def
     bool hasDefinition(const Function *fun) const
-    {
-        return hasDefinition(svfModule->getSVFFunction(fun));
-    }
-
-    bool hasDefinition(const SVFFunction *fun) const
     {
         assert(fun->isDeclaration() && "not a function declaration?");
         FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
         return it != FunDeclToDefMap.end();
     }
 
-    const SVFFunction *getDefinition(const Function *fun) const
-    {
-        return getDefinition(svfModule->getSVFFunction(fun));
-    }
-
-    const SVFFunction *getDefinition(const SVFFunction *fun) const
+    const Function *getDefinition(const Function *fun) const
     {
         assert(fun->isDeclaration() && "not a function declaration?");
         FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
@@ -159,18 +148,12 @@ public:
         return it->second;
     }
 
-    /// Fun def --> decl
     bool hasDeclaration(const Function *fun) const
-    {
-        return hasDeclaration(svfModule->getSVFFunction(fun));
-    }
-
-    bool hasDeclaration(const SVFFunction *fun) const
     {
         if(fun->isDeclaration() && !hasDefinition(fun))
             return false;
 
-        const SVFFunction* funDef = fun;
+        const Function* funDef = fun;
         if(fun->isDeclaration() && hasDefinition(fun))
             funDef = getDefinition(fun);
 
@@ -180,12 +163,7 @@ public:
 
     const FunctionSetType& getDeclaration(const Function *fun) const
     {
-        return getDeclaration(svfModule->getSVFFunction(fun));
-    }
-
-    const FunctionSetType& getDeclaration(const SVFFunction *fun) const
-    {
-        const SVFFunction* funDef = fun;
+        const Function* funDef = fun;
         if(fun->isDeclaration() && hasDefinition(fun))
             funDef = getDefinition(fun);
 

@@ -179,11 +179,11 @@ bool LLVMUtil::isUncalledFunction (const Function * fun)
     }
     if (LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun))
     {
-        const SVFModule::FunctionSetType &decls = LLVMModuleSet::getLLVMModuleSet()->getDeclaration(fun);
-        for (SVFModule::FunctionSetType::const_iterator it = decls.begin(),
+        const LLVMModuleSet::FunctionSetType &decls = LLVMModuleSet::getLLVMModuleSet()->getDeclaration(fun);
+        for (LLVMModuleSet::FunctionSetType::const_iterator it = decls.begin(),
                 eit = decls.end(); it != eit; ++it)
         {
-            const Function *decl = (*it)->getLLVMFun();
+            const Function *decl = *it;
             if(decl->hasAddressTaken())
                 return false;
             for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i)

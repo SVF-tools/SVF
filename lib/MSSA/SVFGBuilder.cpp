@@ -119,9 +119,6 @@ MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
 
     MemSSA* mssa = new MemSSA(pta, ptrOnlyMSSA);
 
-    DominatorTree dt;
-    MemSSADF df;
-
     SVFModule* svfModule = mssa->getPTA()->getModule();
     for (SVFModule::const_iterator iter = svfModule->begin(), eiter = svfModule->end();
             iter != eiter; ++iter)
@@ -131,10 +128,7 @@ MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
         if (isExtCall(fun))
             continue;
 
-        dt.recalculate(*fun->getLLVMFun());
-        df.runOnDT(dt);
-
-        mssa->buildMemSSA(*fun, &df, &dt);
+        mssa->buildMemSSA(*fun);
     }
 
     mssa->performStat();
