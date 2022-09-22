@@ -58,14 +58,11 @@ public:
     virtual inline void startClk()
     {
         startTime = getClk(true);
-         std::cout << startTime << "??" ;
     }
 
     virtual inline void endClk()
     {
         endTime = getClk(true);
-        endTime = 999;
-        std::cout << endTime << "??" ;
     }
 
     /// When mark is true, real clock is always returned. When mark is false, it is
