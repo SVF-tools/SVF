@@ -1,0 +1,6 @@
+Start:  
+   A
+Terminal:
+   a Call Ret
+Productions:
+   A -> A A | a | Call_i A Ret_i | epsilon;
