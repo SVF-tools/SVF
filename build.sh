@@ -85,7 +85,7 @@ function build_z3_from_source {
     mkdir "$Z3Home"
     echo "Downloading Z3 source..."
     generic_download_file "$SourceZ3" z3.zip
-    check_zip
+    check_unzip
     echo "Unzipping Z3 source..."
     mkdir z3-source
     unzip z3.zip -d z3-source
