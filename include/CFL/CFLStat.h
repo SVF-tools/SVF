@@ -61,7 +61,7 @@ public:
     u32_t _NumOfNullPtr;
     u32_t _NumOfConstantPtr;
     u32_t _NumOfBlackholePtr;
-    
+
     /// CFL Stat
     u32_t _NumofCFLGraphNode;
 
