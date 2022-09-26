@@ -222,7 +222,6 @@ void CFLStat::performStat()
 
     assert(SVFUtil::isa<CFLAlias>(pta) && "not an CFLAlias pass!! what else??");
     endClk();
-    std::cout << endTime << "??" ;
     // SVFIR* pag = pta->getPAG();
     CFLGraph* CFLGraph = pta->getCFLGraph();
     // collect cfl graph infor
