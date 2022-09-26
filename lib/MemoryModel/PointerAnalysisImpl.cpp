@@ -50,7 +50,7 @@ BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_c
 {
     if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA
             || type == TypeCPP_WPA || type == FlowS_DDA
-            || type == AndersenSCD_WPA || type == AndersenSFR_WPA || type == CFLFICI_WPA )
+            || type == AndersenSCD_WPA || type == AndersenSFR_WPA || type == CFLFICI_WPA || type == CFLFSCS_WPA)
     {
         // Only maintain reverse points-to when the analysis is field-sensitive, as objects turning
         // field-insensitive is all it is used for.

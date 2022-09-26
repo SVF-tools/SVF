@@ -223,7 +223,7 @@ void CFLStat::performStat()
     assert(SVFUtil::isa<CFLAlias>(pta) && "not an CFLAlias pass!! what else??");
     endClk();
     std::cout << endTime << "??" ;
-    SVFIR* pag = pta->getPAG();
+    // SVFIR* pag = pta->getPAG();
     CFLGraph* CFLGraph = pta->getCFLGraph();
     // collect cfl graph infor
     collectCFLInfo(CFLGraph);
@@ -262,49 +262,6 @@ void CFLStat::performStat()
 
     constraintGraphStat();
 
-    timeStatMap[TotalAnalysisTime] = (endTime - startTime)/TIMEINTERVAL;
-    timeStatMap[SCCDetectionTime] = CFLAlias::timeOfSCCDetection;
-    timeStatMap[SCCMergeTime] =  CFLAlias::timeOfSCCMerges;
-    timeStatMap[CollapseTime] =  CFLAlias::timeOfCollapse;
-
-    timeStatMap[ProcessLoadStoreTime] =  CFLAlias::timeOfProcessLoadStore;
-    timeStatMap[ProcessCopyGepTime] =  CFLAlias::timeOfProcessCopyGep;
-    timeStatMap[UpdateCallGraphTime] =  CFLAlias::timeOfUpdateCallGraph;
-
-    PTNumStatMap[TotalNumOfPointers] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
-    PTNumStatMap[TotalNumOfObjects] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
-
-
-    PTNumStatMap[NumOfProcessedAddrs] = CFLAlias::numOfProcessedAddr;
-    PTNumStatMap[NumOfProcessedCopys] = CFLAlias::numOfProcessedCopy;
-    PTNumStatMap[NumOfProcessedGeps] = CFLAlias::numOfProcessedGep;
-    PTNumStatMap[NumOfProcessedLoads] = CFLAlias::numOfProcessedLoad;
-    PTNumStatMap[NumOfProcessedStores] = CFLAlias::numOfProcessedStore;
-
-    PTNumStatMap[NumOfSfr] = CFLAlias::numOfSfrs;
-    PTNumStatMap[NumOfFieldExpand] = CFLAlias::numOfFieldExpand;
-
-    PTNumStatMap[NumOfPointers] = pag->getValueNodeNum();
-    PTNumStatMap[NumOfMemObjects] = pag->getObjectNodeNum();
-    PTNumStatMap[NumOfGepFieldPointers] = pag->getFieldValNodeNum();
-    PTNumStatMap[NumOfGepFieldObjects] = pag->getFieldObjNodeNum();
-
-    timeStatMap[AveragePointsToSetSize] = (double)totalPtsSize/totalPointers;;
-    timeStatMap[AverageTopLevPointsToSetSize] = (double)totalTopLevPtsSize/totalTopLevPointers;;
-
-    PTNumStatMap[MaxPointsToSetSize] = _MaxPtsSize;
-
-    //PTNumStatMap[NumOfIterations] = pta->numOfIteration;
-
-    //PTNumStatMap[NumOfIndirectCallSites] = consCG->getIndirectCallsites().size();
-    PTNumStatMap[NumOfIndirectEdgeSolved] = pta->getNumOfResolvedIndCallEdge();
-
-    PTNumStatMap[NumOfSCCDetection] = CFLAlias::numOfSCCDetection;
-    PTNumStatMap[NumOfCycles] = _NumOfCycles;
-    PTNumStatMap[NumOfPWCCycles] = _NumOfPWCCycles;
-    PTNumStatMap[NumOfNodesInCycles] = _NumOfNodesInCycles;
-    PTNumStatMap[MaxNumOfNodesInSCC] = _MaxNumOfNodesInSCC;
-    PTNumStatMap[NumOfNullPointer] = _NumOfNullPtr;
     PTNumStatMap["PointsToConstPtr"] = _NumOfConstantPtr;
     PTNumStatMap["PointsToBlkPtr"] = _NumOfBlackholePtr;
 

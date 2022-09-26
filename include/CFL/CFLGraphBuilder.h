@@ -32,6 +32,8 @@
 
 #include "CFL/CFLGrammar.h"
 #include "Graphs/CFLGraph.h"
+#include "Graphs/SVFG.h"
+
 namespace SVF
 {
 
@@ -170,7 +172,7 @@ class VFCFLGraphBuilder : public CFLGraphBuilder
 {
 public:
     /// Build Bidirectional graph by copying nodes and edges from const graph inherited from GenericGraph
-    CFLGraph* buildBigraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar);
+    CFLGraph* buildBigraph(SVFG *graph, Kind startKind, GrammarBase *grammar);
 
     /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
     /// And transfer Load Store to copy edge and address edge to construct PEG style CFG

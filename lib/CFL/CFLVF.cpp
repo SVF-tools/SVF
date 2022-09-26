@@ -29,10 +29,12 @@
 
 #include "CFL/CFLVF.h"
 #include "Util/SVFBasicTypes.h"
+#include "WPA/Andersen.h"
 
 using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
+
 
 
 void CFLVF::analyze()
@@ -45,13 +47,8 @@ void CFLVF::analyze()
     {
         PointerAnalysis::initialize();
         GrammarBase *grammarBase = grammarBuilder.build();
-        //AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
-        /*
-        if(Options::SABERFULLSVFG)
-            svfg =  memSSA.buildFullSVFG(ander);
-        else
+        AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
         svfg =  memSSA.buildPTROnlySVFG(ander);
-        */
         ConstraintGraph *consCG = new ConstraintGraph(svfir);
         if (Options::PEGTransfer)
         {
@@ -59,7 +56,7 @@ void CFLVF::analyze()
         }
         else
         {
-            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
+            graph = cflGraphBuilder.buildBigraph(svfg, grammarBase->getStartKind(), grammarBase);
         }
 
         cflChecker.check(grammarBase, &cflGraphBuilder, graph);
@@ -79,8 +76,6 @@ void CFLVF::analyze()
     }
     solver = new CFLSolver(graph, grammar);
     solver->solve();
-    while (updateCallGraph(svfir->getIndirectCallsites()))
-        solver->solve();
     if(Options::PrintCFL == true)
     {
         svfir->dump("IR");

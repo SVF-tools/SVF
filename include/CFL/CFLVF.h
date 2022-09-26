@@ -49,7 +49,7 @@ class CFLVF : public BVDataPTAImpl
 public:
     typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
-    CFLVF(SVFIR* ir) : BVDataPTAImpl(ir, PointerAnalysis::CFLFSCS_WPA), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
+    CFLVF(SVFIR* ir) : BVDataPTAImpl(ir, PointerAnalysis::CFLFSCS_WPA, false), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
     {
     }
 
@@ -69,7 +69,7 @@ private:
     CFLGrammar* grammar;
     CFLSolver *solver;
     SaberSVFGBuilder memSSA;
-    //SVFG* svfg;
+    SVFG* svfg;
 };
 
 } // End namespace SVF

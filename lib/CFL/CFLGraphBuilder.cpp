@@ -402,7 +402,7 @@ void AliasCFLGraphBuilder::addBiGepCFLEdge(CFLGraph *cflGraph,  ConstraintNode* 
     return;
 }
 
-CFLGraph* VFCFLGraphBuilder::buildBigraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar)
+CFLGraph* VFCFLGraphBuilder::buildBigraph(SVFG *graph, Kind startKind, GrammarBase *grammar)
 {
     CFLGraph *cflGraph = new CFLGraph(startKind);
     externMap = true;
@@ -433,36 +433,43 @@ CFLGraph* VFCFLGraphBuilder::buildBigraph(ConstraintGraph *graph, Kind startKind
         CFLNode* node = new CFLNode((*it).first);
         cflGraph->addCFLNode((*it).first, node);
     }
-    for(auto it = graph->begin(); it!= graph->end(); it++)
-    {
-        ConstraintNode* node = (*it).second;
-        for(ConstraintEdge* edge : node->getOutEdges())
-        {
-            CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
-            // Need to get the offset from the Const Edge
-            // The offset present edge is only from Normal Gep CG at moment
-            if(NormalGepCGEdge::classof(edge))
-            {
-                NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
-                CFLGrammar::Attribute attr =  nGepEdge->getConstantFieldIdx();
-                addAttribute(edgeLabel, attr);
-                edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
-                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                std::string key = kind2LabelMap[edge->getEdgeKind()];
-                key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
-                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
-                addAttribute(label2KindMap[key], attr);
-            }
-            else
-            {
-                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                std::string key = kind2LabelMap[edge->getEdgeKind()];
-                key.append("bar");
-                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
-            }
-        }
-    }
+    // for(auto it = graph->begin(); it!= graph->end(); it++)
+    // {
+    //     ConstraintNode* node = (*it).second;
+    //     for(ConstraintEdge* edge : node->getOutEdges())
+    //     {
+    //         CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
+    //         // Need to get the offset from the Const Edge
+    //         // The offset present edge is only from Normal Gep CG at moment
+    //         if(NormalGepCGEdge::classof(edge))
+    //         {
+    //             NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
+    //             CFLGrammar::Attribute attr =  nGepEdge->getConstantFieldIdx();
+    //             addAttribute(edgeLabel, attr);
+    //             edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
+    //             cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+    //             std::string key = kind2LabelMap[edge->getEdgeKind()];
+    //             key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
+    //             cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
+    //             addAttribute(label2KindMap[key], attr);
+    //         }
+    //         else
+    //         {
+    //             cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+    //             std::string key = kind2LabelMap[edge->getEdgeKind()];
+    //             key.append("bar");
+    //             cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
+    //         }
+    //     }
+    // }
     return cflGraph;
 }
+
+CFLGraph* VFCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar, SVFIR* pag)
+{
+    CFLGraph *cflGraph = new CFLGraph(startKind);
+    return cflGraph;
+}
+
 
 } // end of SVF namespace

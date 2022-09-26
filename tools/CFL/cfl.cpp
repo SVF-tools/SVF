@@ -68,7 +68,7 @@ int main(int argc, char ** argv)
         if (Options::CFLSVFG)
         {
             CFLVF* cflvf = new CFLVF(svfir);
-            //cflvf->analyze();
+            cflvf->analyze();
             delete cflvf;
         }
         else
