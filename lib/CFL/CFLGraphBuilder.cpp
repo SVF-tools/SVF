@@ -443,41 +443,69 @@ CFLGraph* VFCFLGraphBuilder::buildBigraph(SVFG *graph, Kind startKind, GrammarBa
             if (edge->getEdgeKind() == VFGEdge::IntraDirectVF || edge->getEdgeKind() == VFGEdge::IntraIndirectVF )
             {
                 edgeLabel = 0;
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                key.append("bar");
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
             }
             // Get 'call' edge : CallDirVF || CallIndVF
-            else if (edge->getEdgeKind() == VFGEdge::CallDirVF || edge->getEdgeKind() == VFGEdge::CallIndVF )
+            else if ( edge->getEdgeKind() == VFGEdge::CallDirVF )
             {
                 edgeLabel = 1;
+                CallDirSVFGEdge *attributedEdge = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge);
+                CFLGrammar::Attribute attr =  attributedEdge->getCallSiteId();
+                addAttribute(edgeLabel, attr);
+                edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
+                addAttribute(label2KindMap[key], attr);
             }
-            // Get 'ret' edge : RetDirVF || RetIndVF
-            else if (edge->getEdgeKind() == VFGEdge::RetDirVF || edge->getEdgeKind() == VFGEdge::RetIndVF )
+            // Get 'call' edge : CallIndVF
+            else if ( edge->getEdgeKind() == VFGEdge::CallIndVF )
+            {
+                edgeLabel = 1;
+                CallIndSVFGEdge *attributedEdge = SVFUtil::dyn_cast<CallIndSVFGEdge>(edge);
+                CFLGrammar::Attribute attr =  attributedEdge->getCallSiteId();
+                addAttribute(edgeLabel, attr);
+                edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
+                addAttribute(label2KindMap[key], attr);
+            }
+            // Get 'ret' edge : RetDirVF 
+            else if ( edge->getEdgeKind() == VFGEdge::RetDirVF )
             {
                 edgeLabel = 2;
-            } else
-            {
-                continue;
+                RetDirSVFGEdge *attributedEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge);
+                CFLGrammar::Attribute attr =  attributedEdge->getCallSiteId();
+                addAttribute(edgeLabel, attr);
+                edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
+                addAttribute(label2KindMap[key], attr);
             }
-            cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-            std::string key = kind2LabelMap[edge->getEdgeKind()];
-            key.append("bar");
-            cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
+            // Get 'ret' edge : RetIndVF
+            else if ( edge->getEdgeKind() == VFGEdge::RetIndVF )
+            {
+                edgeLabel = 2;
+                RetIndSVFGEdge *attributedEdge = SVFUtil::dyn_cast<RetIndSVFGEdge>(edge);
+                CFLGrammar::Attribute attr =  attributedEdge->getCallSiteId();
+                addAttribute(edgeLabel, attr);
+                edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
+                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
+                addAttribute(label2KindMap[key], attr);
+            } 
         }
-        // {
-        //     CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
-        //     // Need to get the offset from the Const Edge
-        //     // The offset present edge is only from Normal Gep CG at moment
-        //     if(CallIndSVFGEdge::classof(edge) || RetIndSVFGEdge::classof(edge))
-        //     {
-        //         NormalGepCGEdge *nGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge);
-        //         CFLGrammar::Attribute attr =  nGepEdge->getConstantFieldIdx();
-        //         addAttribute(edgeLabel, attr);
-        //         edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
-        //         cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-        //         std::string key = kind2LabelMap[edge->getEdgeKind()];
-        //         key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
-        //         cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
-        //         addAttribute(label2KindMap[key], attr);
-        //     }
     }
     return cflGraph;
 }
