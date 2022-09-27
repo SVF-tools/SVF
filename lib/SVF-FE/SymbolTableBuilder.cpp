@@ -174,8 +174,8 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 
                 CallSite cs = SVFUtil::getLLVMCallSite(inst);
                 symInfo->callSiteSet.insert(cs);
-                for (CallSite::arg_iterator it = cs.arg_begin();
-                        it != cs.arg_end(); ++it)
+                for (User::op_iterator it = cs.getInstruction()->arg_begin();
+                        it != cs.getInstruction()->arg_end(); ++it)
                 {
                     collectSym(*it);
                 }

@@ -26,6 +26,8 @@
 
 #include <llvm/Support/SourceMgr.h>
 
+#include "llvm/Analysis/LoopInfo.h"
+
 namespace SVF
 {
 
@@ -72,6 +74,11 @@ typedef llvm::DomTreeNode DomTreeNode;
 typedef llvm::DominanceFrontier DominanceFrontier;
 typedef llvm::PostDominatorTree PostDominatorTree;
 typedef llvm::DominanceFrontierBase<llvm::BasicBlock, false> DominanceFrontierBase;
+
+/// LLVM Loop
+typedef llvm::Loop Loop;
+typedef llvm::LoopInfo LoopInfo;
+typedef llvm::User User;
 
 // LLVM Instructions
 typedef llvm::AllocaInst AllocaInst;
