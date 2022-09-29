@@ -60,6 +60,14 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
 
 CFLGrammar* CFGNormalizer::fillAttribute(CFLGrammar *grammar, const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttrsMap)
 {
+    NodeSet nodeSet = {};
+    for (auto pair: kind2AttrsMap)
+    {
+        for (auto attri: pair.second)
+        {
+            nodeSet.insert(attri);
+        }
+    }
     for(auto symProdsPair: grammar->getRawProductions())
     {
         for(auto prod: symProdsPair.second)
@@ -68,7 +76,8 @@ CFLGrammar* CFGNormalizer::fillAttribute(CFLGrammar *grammar, const Map<CFLGramm
             /// so append to the begin of the production
             GrammarBase::Production tempP = prod;
             tempP.insert(tempP.begin(), symProdsPair.first);
-            GrammarBase::Productions filledProductions =  getFilledProductions(tempP, kind2AttrsMap, grammar);
+
+            GrammarBase::Productions filledProductions =  getFilledProductions(tempP, nodeSet, grammar);
             for (auto  filledProd : filledProductions)
             {
                 insertToCFLGrammar(grammar, filledProd);
@@ -225,7 +234,7 @@ GrammarBase::Production CFGNormalizer::getFilledProd(GrammarBase::Production &pr
 ///and expand to productions set
 ///e.g Xi -> Y Zi with Xi i = 0, 1, Yi i = 0,2
 ///Will get {X0 -> Y Z0, X1 -> Y Z1, X2 -> Y Z2}
-GrammarBase::Productions CFGNormalizer::getFilledProductions(GrammarBase::Production &prod, const Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>>& kind2AttriMap, CFLGrammar *grammar)
+GrammarBase::Productions CFGNormalizer::getFilledProductions(GrammarBase::Production &prod, const NodeSet& nodeSet, CFLGrammar *grammar)
 {
     GrammarBase::Productions filledProductioins{};
     CFLFIFOWorkList<GrammarBase::Production> worklist;
@@ -249,7 +258,7 @@ GrammarBase::Productions CFGNormalizer::getFilledProductions(GrammarBase::Produc
             filledProductioins.insert(currentProduction);
             continue;
         }
-        auto nodeSet = {0, 1, 2, 3, 4, 5, 6, 7, 20};                 //*(kind2AttriMap.find(baseKind));
+        //*(kind2AttriMap.find(baseKind));
         //for (auto attribute : nodeSet.second)
         for (auto attribute : nodeSet)
         {
