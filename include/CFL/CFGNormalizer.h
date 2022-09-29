@@ -77,6 +77,8 @@ private:
     GrammarBase::Production getFilledProd(GrammarBase::Production &prod, CFLGrammar::Attribute attribute, CFLGrammar *grammar);
 
     GrammarBase::Productions getFilledProductions(GrammarBase::Production &prod,const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttriMap, CFLGrammar *grammar);
+
+    void removeFirstSymbol(CFLGrammar *grammar);
 };
 
 } // End namespace SVF

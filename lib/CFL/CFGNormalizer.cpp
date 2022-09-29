@@ -83,19 +83,7 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
 {
     GrammarBase::SymbolMap<GrammarBase::Symbol, GrammarBase::Productions> new_grammar = {};
     std::string tempStr = "";
-
-    for(auto head : grammar->getRawProductions())
-    {
-        for(auto rule: head.second)
-        {
-
-            GrammarBase::Production long_run = rule;
-            long_run.erase(long_run.begin());
-            auto it = grammar->getRawProductions().at(head.first).find(rule);
-            grammar->getRawProductions().at(head.first).erase(it);
-            grammar->getRawProductions()[head.first].insert(long_run);
-        }
-    }
+    removeFirstSymbol(grammar);
 
     auto rawProductions = grammar->getRawProductions();
 
@@ -509,5 +497,22 @@ void CFGNormalizer::insertToCFLGrammar(CFLGrammar *grammar, GrammarBase::Product
     {
         grammar->getFirstRHS2Prods()[prod[1]].insert(prod);
         grammar->getSecondRHS2Prods()[prod[2]].insert(prod);
+    }
+}
+
+void CFGNormalizer::removeFirstSymbol(CFLGrammar *grammar)
+{
+    // Remove First Terminal
+    for(auto head : grammar->getRawProductions())
+    {
+        for(auto rule: head.second)
+        {
+
+            GrammarBase::Production long_run = rule;
+            long_run.erase(long_run.begin());
+            auto it = grammar->getRawProductions().at(head.first).find(rule);
+            grammar->getRawProductions().at(head.first).erase(it);
+            grammar->getRawProductions()[head.first].insert(long_run);
+        }
     }
 }
