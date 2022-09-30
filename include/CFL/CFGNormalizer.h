@@ -72,11 +72,11 @@ private:
 
     GrammarBase::Symbol check_head(GrammarBase::SymbolMap<GrammarBase::Symbol, GrammarBase::Productions>& grammar, GrammarBase::Production& rule);
 
-    GrammarBase::Production strTrans(std::string strPro, CFLGrammar *grammar);
+    GrammarBase::Production& strTrans(std::string strPro, CFLGrammar *grammar);
 
-    GrammarBase::Production getFilledProd(GrammarBase::Production &prod, CFLGrammar::Attribute attribute, CFLGrammar *grammar);
+    GrammarBase::Production& getFilledProd(GrammarBase::Production &prod, CFLGrammar::Attribute attribute, CFLGrammar *grammar);
 
-    GrammarBase::Productions getFilledProductions(GrammarBase::Production &prod,const NodeSet& nodeSet, CFLGrammar *grammar);
+    GrammarBase::Productions& getFilledProductions(GrammarBase::Production &prod,const NodeSet& nodeSet, CFLGrammar *grammar);
 
     void removeFirstSymbol(CFLGrammar *grammar);
 };
