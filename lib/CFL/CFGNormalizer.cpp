@@ -76,8 +76,8 @@ CFLGrammar* CFGNormalizer::fillAttribute(CFLGrammar *grammar, const Map<CFLGramm
             /// so append to the begin of the production
             GrammarBase::Production tempP = prod;
             tempP.insert(tempP.begin(), symProdsPair.first);
-
-            getFilledProductions(tempP, nodeSet, grammar);
+            GrammarBase::Productions normalProds;
+            getFilledProductions(tempP, nodeSet, grammar, normalProds);
             for (auto  filledProd : normalProds)
             {
                 insertToCFLGrammar(grammar, filledProd);
@@ -221,7 +221,7 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
 ///and expand to productions set
 ///e.g Xi -> Y Zi with Xi i = 0, 1, Yi i = 0,2
 ///Will get {X0 -> Y Z0, X1 -> Y Z1, X2 -> Y Z2}
-void CFGNormalizer::getFilledProductions(GrammarBase::Production &prod, const NodeSet& nodeSet, CFLGrammar *grammar)
+void CFGNormalizer::getFilledProductions(GrammarBase::Production &prod, const NodeSet& nodeSet, CFLGrammar *grammar,  GrammarBase::Productions& normalProds)
 {
     normalProds.clear();
     CFLFIFOWorkList<GrammarBase::Production> worklist;
@@ -405,7 +405,8 @@ void CFGNormalizer::ebnfSignReplace(char sign, CFLGrammar *grammar)
         if (sign == '*' || sign == '?')
         {
             /// Insert Back the Group
-            strTrans(rep.first, grammar);
+            GrammarBase::Production normalProd;
+            strTrans(rep.first, grammar, normalProd);
             GrammarBase::Production withoutSign = {};
             if (sign == '*')
             {
@@ -429,13 +430,12 @@ void CFGNormalizer::ebnfSignReplace(char sign, CFLGrammar *grammar)
                 }
             }
             temp_list.insert(temp_list.end(), withoutSign.begin(), withoutSign.end());
-            delete &normalProd;
         }
         grammar->getRawProductions()[grammar->str2Symbol(new_nonterminal)].insert(temp_list);
     }
 }
 
-void CFGNormalizer::strTrans(std::string LHS, CFLGrammar *grammar)
+void CFGNormalizer::strTrans(std::string LHS, CFLGrammar *grammar, GrammarBase::Production& normalProd)
 {
     std::smatch matches;
     std::regex LHSReg("\\s*(.*)");
