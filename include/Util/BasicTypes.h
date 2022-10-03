@@ -55,6 +55,7 @@
 #include <llvm/BinaryFormat/Dwarf.h>
 #endif
 
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/BinaryFormat/Dwarf.h"
 
@@ -89,6 +90,8 @@ typedef llvm::Argument Argument;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::GlobalAlias GlobalAlias;
+typedef llvm::Loop Loop;
+typedef llvm::LoopInfo LoopInfo;
 
 /// LLVM metadata
 typedef llvm::NamedMDNode NamedMDNode;
@@ -265,7 +268,7 @@ public:
                 for (succ_const_iterator succIt = succ_begin(block); succIt != succ_end(block); succIt++)
                 {
                     const BasicBlock* succ = *succIt;
-                    if (!(std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
+                    if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
                         exitbbs.insert(succ);
                 }
             }
