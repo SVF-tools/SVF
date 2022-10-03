@@ -477,7 +477,7 @@ CFLGraph* VFCFLGraphBuilder::buildBigraph(SVFG *graph, Kind startKind, GrammarBa
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
                 addAttribute(label2KindMap[key], attr);
             }
-            // Get 'ret' edge : RetDirVF 
+            // Get 'ret' edge : RetDirVF
             else if ( edge->getEdgeKind() == VFGEdge::RetDirVF )
             {
                 edgeLabel = 2;
@@ -504,7 +504,7 @@ CFLGraph* VFCFLGraphBuilder::buildBigraph(SVFG *graph, Kind startKind, GrammarBa
                 key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
                 addAttribute(label2KindMap[key], attr);
-            } 
+            }
         }
     }
     return cflGraph;
