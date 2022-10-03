@@ -59,6 +59,9 @@ public:
     CFLGrammar* fillAttribute(CFLGrammar *grammar, const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttrsMap);
 
 private:
+    GrammarBase::Production normalProd;
+    GrammarBase::Productions normalProds;
+
     /// Add nonterminal to tranfer long rules to binary rules
     void ebnf_bin(CFLGrammar *grammar);
 
@@ -72,11 +75,9 @@ private:
 
     GrammarBase::Symbol check_head(GrammarBase::SymbolMap<GrammarBase::Symbol, GrammarBase::Productions>& grammar, GrammarBase::Production& rule);
 
-    GrammarBase::Production& strTrans(std::string strPro, CFLGrammar *grammar);
+    void strTrans(std::string strPro, CFLGrammar *grammar);
 
-    GrammarBase::Production& getFilledProd(GrammarBase::Production &prod, CFLGrammar::Attribute attribute, CFLGrammar *grammar);
-
-    GrammarBase::Productions& getFilledProductions(GrammarBase::Production &prod,const NodeSet& nodeSet, CFLGrammar *grammar);
+    void getFilledProductions(GrammarBase::Production &prod,const NodeSet& nodeSet, CFLGrammar *grammar);
 
     void removeFirstSymbol(CFLGrammar *grammar);
 };
