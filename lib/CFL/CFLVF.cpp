@@ -48,7 +48,7 @@ void CFLVF::analyze()
         PointerAnalysis::initialize();
         GrammarBase *grammarBase = grammarBuilder.build();
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
-        svfg =  memSSA.buildPTROnlySVFG(ander);
+        svfg =  memSSA.buildFullSVFG(ander);
         ConstraintGraph *consCG = new ConstraintGraph(svfir);
         if (Options::PEGTransfer)
         {

@@ -72,11 +72,11 @@ private:
 
     GrammarBase::Symbol check_head(GrammarBase::SymbolMap<GrammarBase::Symbol, GrammarBase::Productions>& grammar, GrammarBase::Production& rule);
 
-    GrammarBase::Production strTrans(std::string strPro, CFLGrammar *grammar);
+    void strTrans(std::string strPro, CFLGrammar *grammar, GrammarBase::Production& normalProd);
 
-    GrammarBase::Production getFilledProd(GrammarBase::Production &prod, CFLGrammar::Attribute attribute, CFLGrammar *grammar);
+    void getFilledProductions(GrammarBase::Production &prod,const NodeSet& nodeSet, CFLGrammar *grammar, GrammarBase::Productions& normalProds);
 
-    GrammarBase::Productions getFilledProductions(GrammarBase::Production &prod,const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttriMap, CFLGrammar *grammar);
+    void removeFirstSymbol(CFLGrammar *grammar);
 };
 
 } // End namespace SVF
