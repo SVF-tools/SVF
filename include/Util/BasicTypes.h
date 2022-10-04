@@ -209,12 +209,21 @@ public:
         return dfBBsMap;
     }
 
-    inline const std::vector<const BasicBlock*>* getLoopInfo(const BasicBlock* bb) const
+    inline bool hasLoopInfo(const BasicBlock* bb) const
     {
-        Map<const BasicBlock*,std::vector<const BasicBlock*>>::const_iterator mapIter = bb2LoopMap.find(bb);
-        if (mapIter!=bb2LoopMap.end())
-            return &(mapIter->second);
-        return nullptr;
+        return bb2LoopMap.find(bb)!=bb2LoopMap.end();
+    }
+
+    inline const std::vector<const BasicBlock*>& getLoopInfo(const BasicBlock* bb) const 
+    {   
+        Map<const BasicBlock*, std::vector<const BasicBlock*>>::const_iterator mapIter = bb2LoopMap.find(bb);
+        if(mapIter != bb2LoopMap.end())
+            return mapIter->second;
+        else
+        {
+            assert(hasLoopInfo(bb) && "loopinfo does not exit(bb not in a loop)");
+            abort();
+        }
     }
 
     inline void addToBB2LoopMap(const BasicBlock* bb, const BasicBlock* loopBB)
@@ -257,18 +266,21 @@ public:
         return this->exitBB;
     }
 
-    void getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const 
+    void getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const
     {
-        const std::vector<const BasicBlock*>* blocks = getLoopInfo(bb);
-        if (blocks!=nullptr)
+        if (hasLoopInfo(bb))
         {
-            for (const BasicBlock* block : *blocks)
+            const std::vector<const BasicBlock*> blocks = getLoopInfo(bb);
+            if (!blocks.empty())
             {
-                for (succ_const_iterator succIt = succ_begin(block); succIt != succ_end(block); succIt++)
+                for (const BasicBlock* block : blocks)
                 {
-                    const BasicBlock* succ = *succIt;
-                    if ((std::find(blocks->begin(), blocks->end(), succ)==blocks->end()))
-                        exitbbs.insert(succ);
+                    for (succ_const_iterator succIt = succ_begin(block); succIt != succ_end(block); succIt++)
+                    {
+                        const BasicBlock* succ = *succIt;
+                        if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
+                            exitbbs.insert(succ);
+                    }
                 }
             }
         }
@@ -276,10 +288,12 @@ public:
 
     bool isLoopHeader(const BasicBlock* bb) const
     {
-        const std::vector<const BasicBlock*>* blocks = getLoopInfo(bb);
-        if (blocks!=nullptr)
-        {
-            return blocks->front() == bb;
+        if (hasLoopInfo(bb)){
+            const std::vector<const BasicBlock*> blocks = getLoopInfo(bb);
+            if (!blocks.empty())
+            {
+                return blocks.front() == bb;
+            }
         }
         return false;
     }
