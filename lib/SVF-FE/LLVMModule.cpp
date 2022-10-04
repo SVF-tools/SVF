@@ -201,12 +201,11 @@ void LLVMModuleSet::build()
                         svffun->getPostDomTreeMap()[bb] = Set<const BasicBlock *>();
                     }
                 }
-                const Loop *loop = loopInfo.getLoopFor(bb);
-                if (loop != nullptr)
+                if (const Loop *loop = loopInfo.getLoopFor(bb))
                 {
                     for (BasicBlock* loopBlock:loop->getBlocks())
                     {
-                        svffun->getLoopInfoMap()[bb].push_back(loopBlock);
+                        svffun->addToBB2LoopMap(bb,loopBlock);
                     }
                 }   
             }

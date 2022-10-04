@@ -55,7 +55,6 @@
 #include <llvm/BinaryFormat/Dwarf.h>
 #endif
 
-#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/BinaryFormat/Dwarf.h"
 
@@ -90,8 +89,6 @@ typedef llvm::Argument Argument;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::GlobalAlias GlobalAlias;
-typedef llvm::Loop Loop;
-typedef llvm::LoopInfo LoopInfo;
 
 /// LLVM metadata
 typedef llvm::NamedMDNode NamedMDNode;
@@ -128,7 +125,7 @@ private:
     Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
     Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
     Map<const BasicBlock*,Set<const BasicBlock*>> pdtBBsMap;
-    Map<const BasicBlock*,std::vector<const BasicBlock*>> loopInfoMap;
+    Map<const BasicBlock*,std::vector<const BasicBlock*>> bb2LoopMap;
 public:
 
     SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
@@ -212,14 +209,17 @@ public:
         return dfBBsMap;
     }
 
-    inline const Map<const BasicBlock*,std::vector<const BasicBlock*>>& getLoopInfoMap() const
+    inline const std::vector<const BasicBlock*>* getLoopInfo(const BasicBlock* bb) const
     {
-        return loopInfoMap;
+        Map<const BasicBlock*,std::vector<const BasicBlock*>>::const_iterator mapIter = bb2LoopMap.find(bb);
+        if (mapIter!=bb2LoopMap.end())
+            return &(mapIter->second);
+        return nullptr;
     }
 
-    inline Map<const BasicBlock*,std::vector<const BasicBlock*>>& getLoopInfoMap()
+    inline void addToBB2LoopMap(const BasicBlock* bb, const BasicBlock* loopBB)
     {
-        return loopInfoMap;
+        bb2LoopMap[bb].push_back(loopBB);
     }
 
     inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getPostDomTreeMap() const
@@ -257,18 +257,17 @@ public:
         return this->exitBB;
     }
 
-    inline void getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const 
+    void getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const 
     {
-        Map<const BasicBlock*,std::vector<const BasicBlock*>>::const_iterator mapIter = loopInfoMap.find(bb);
-        if (mapIter!=loopInfoMap.end())
+        const std::vector<const BasicBlock*>* blocks = getLoopInfo(bb);
+        if (blocks!=nullptr)
         {
-            std::vector<const BasicBlock*> blocks = mapIter->second;
-            for (const BasicBlock* block : blocks)
+            for (const BasicBlock* block : *blocks)
             {
                 for (succ_const_iterator succIt = succ_begin(block); succIt != succ_end(block); succIt++)
                 {
                     const BasicBlock* succ = *succIt;
-                    if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
+                    if ((std::find(blocks->begin(), blocks->end(), succ)==blocks->end()))
                         exitbbs.insert(succ);
                 }
             }
@@ -277,10 +276,10 @@ public:
 
     bool isLoopHeader(const BasicBlock* bb) const
     {
-        Map<const BasicBlock*,std::vector<const BasicBlock*>>::const_iterator mapIter = loopInfoMap.find(bb);
-        if (mapIter!=loopInfoMap.end())
+        const std::vector<const BasicBlock*>* blocks = getLoopInfo(bb);
+        if (blocks!=nullptr)
         {
-            return mapIter->second.front() == bb;
+            return blocks->front() == bb;
         }
         return false;
     }
