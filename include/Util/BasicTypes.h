@@ -270,17 +270,15 @@ public:
     {
         if (hasLoopInfo(bb))
         {
-            const std::vector<const BasicBlock*> blocks = getLoopInfo(bb);
-            if (!blocks.empty())
+            const std::vector<const BasicBlock*>& blocks = getLoopInfo(bb);
+            assert(!blocks.empty() && "no available loop info?");
+            for (const BasicBlock* block : blocks)
             {
-                for (const BasicBlock* block : blocks)
+                for (succ_const_iterator succIt = succ_begin(block); succIt != succ_end(block); succIt++)
                 {
-                    for (succ_const_iterator succIt = succ_begin(block); succIt != succ_end(block); succIt++)
-                    {
-                        const BasicBlock* succ = *succIt;
-                        if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
-                            exitbbs.insert(succ);
-                    }
+                    const BasicBlock* succ = *succIt;
+                    if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
+                        exitbbs.insert(succ);
                 }
             }
         }
@@ -289,11 +287,9 @@ public:
     bool isLoopHeader(const BasicBlock* bb) const
     {
         if (hasLoopInfo(bb)){
-            const std::vector<const BasicBlock*> blocks = getLoopInfo(bb);
-            if (!blocks.empty())
-            {
-                return blocks.front() == bb;
-            }
+            const std::vector<const BasicBlock*>& blocks = getLoopInfo(bb);
+            assert(!blocks.empty() && "no available loop info?");
+            return blocks.front() == bb;
         }
         return false;
     }
