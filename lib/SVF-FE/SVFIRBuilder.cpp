@@ -781,7 +781,7 @@ void SVFIRBuilder::visitCallSite(CallSite cs)
     pag->addCallSite(callBlockNode);
 
     /// Collect callsite arguments and returns
-    for(CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end(); itA!=ieA; ++itA)
+    for(User::op_iterator itA = cs.getInstruction()->arg_begin(), ieA = cs.getInstruction()->arg_end(); itA!=ieA; ++itA)
         pag->addCallSiteArgs(callBlockNode,pag->getGNode(getValueNode(*itA)));
 
     if(!cs.getType()->isVoidTy())
@@ -954,7 +954,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
         addRetEdge(srcret, dstrec,callICFGNode, exitICFGNode);
     }
     //Iterators for the actual and formal parameters
-    CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end();
+    User::op_iterator itA = cs.getInstruction()->arg_begin(), ieA = cs.getInstruction()->arg_end();
     Function::const_arg_iterator itF = F->getLLVMFun()->arg_begin(), ieF = F->getLLVMFun()->arg_end();
     //Go through the fixed parameters.
     DBOUT(DPAGBuild, outs() << "      args:");

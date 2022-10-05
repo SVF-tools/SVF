@@ -55,7 +55,6 @@
 #include <llvm/BinaryFormat/Dwarf.h>
 #endif
 
-#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/BinaryFormat/Dwarf.h"
 
@@ -74,9 +73,6 @@ typedef llvm::Instruction Instruction;
 typedef llvm::CallBase CallBase;
 typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
-typedef llvm::User User;
-typedef llvm::Loop Loop;
-typedef llvm::LoopInfo LoopInfo;
 
 /// LLVM outputs
 typedef llvm::raw_string_ostream raw_string_ostream;
@@ -129,11 +125,8 @@ private:
     Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
     Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
     Map<const BasicBlock*,Set<const BasicBlock*>> pdtBBsMap;
+    Map<const BasicBlock*,std::vector<const BasicBlock*>> bb2LoopMap;
 public:
-    SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
-        isDecl(false), isIntri(false), fun(nullptr), exitBB(nullptr), isUncalled(false), isNotRet(false)
-    {
-    }
 
     SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
         isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false)
@@ -216,6 +209,28 @@ public:
         return dfBBsMap;
     }
 
+    inline bool hasLoopInfo(const BasicBlock* bb) const
+    {
+        return bb2LoopMap.find(bb)!=bb2LoopMap.end();
+    }
+
+    inline const std::vector<const BasicBlock*>& getLoopInfo(const BasicBlock* bb) const 
+    {   
+        Map<const BasicBlock*, std::vector<const BasicBlock*>>::const_iterator mapIter = bb2LoopMap.find(bb);
+        if(mapIter != bb2LoopMap.end())
+            return mapIter->second;
+        else
+        {
+            assert(hasLoopInfo(bb) && "loopinfo does not exit(bb not in a loop)");
+            abort();
+        }
+    }
+
+    inline void addToBB2LoopMap(const BasicBlock* bb, const BasicBlock* loopBB)
+    {
+        bb2LoopMap[bb].push_back(loopBB);
+    }
+
     inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getPostDomTreeMap() const
     {
         return pdtBBsMap;
@@ -249,6 +264,34 @@ public:
     inline const BasicBlock* getExitBB() const
     {
         return this->exitBB;
+    }
+
+    void getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const
+    {
+        if (hasLoopInfo(bb))
+        {
+            const std::vector<const BasicBlock*>& blocks = getLoopInfo(bb);
+            assert(!blocks.empty() && "no available loop info?");
+            for (const BasicBlock* block : blocks)
+            {
+                for (succ_const_iterator succIt = succ_begin(block); succIt != succ_end(block); succIt++)
+                {
+                    const BasicBlock* succ = *succIt;
+                    if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
+                        exitbbs.insert(succ);
+                }
+            }
+        }
+    }
+
+    bool isLoopHeader(const BasicBlock* bb) const
+    {
+        if (hasLoopInfo(bb)){
+            const std::vector<const BasicBlock*>& blocks = getLoopInfo(bb);
+            assert(!blocks.empty() && "no available loop info?");
+            return blocks.front() == bb;
+        }
+        return false;
     }
 
     bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
@@ -352,7 +395,6 @@ public:
     {
         return CB;
     }
-    using arg_iterator = User::const_op_iterator;
     Value *getArgument(unsigned ArgNo) const
     {
         return CB->getArgOperand(ArgNo);
@@ -360,14 +402,6 @@ public:
     Type *getType() const
     {
         return CB->getType();
-    }
-    User::const_op_iterator arg_begin() const
-    {
-        return CB->arg_begin();
-    }
-    User::const_op_iterator arg_end() const
-    {
-        return CB->arg_end();
     }
     unsigned arg_size() const
     {

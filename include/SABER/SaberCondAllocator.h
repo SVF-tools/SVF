@@ -162,13 +162,6 @@ public:
         return keyFunc->dominate(bbKey,bbValue);
     }
 
-    /// Get LoopInfo
-    inline LoopInfo* getLoopInfo(const Function* f)
-    {
-        return cfInfoBuilder.getLoopInfo(f);
-    }
-
-
     /// Guard Computation for a value-flow (between two basic blocks)
     //@{
     virtual Condition ComputeIntraVFGGuard(const BasicBlock* src, const BasicBlock* dst);
