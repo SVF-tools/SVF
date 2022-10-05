@@ -53,10 +53,13 @@ namespace SVF
  * Elements in the list are unique as they're recorded by Set.
  */
 template<class Data>
-class List {
-    class ListNode {
+class List
+{
+    class ListNode
+    {
     public:
-        ListNode(const Data &d) {
+        ListNode(const Data &d)
+        {
             data = d;
             next = nullptr;
         }
@@ -71,23 +74,28 @@ class List {
     typedef ListNode Node;
 
 public:
-    List() {
+    List()
+    {
         head = nullptr;
         tail = nullptr;
     }
 
     ~List() {}
 
-    inline bool empty() const {
+    inline bool empty() const
+    {
         return (head == nullptr);
     }
 
-    inline bool find(const Data &data) const {
+    inline bool find(const Data &data) const
+    {
         return nodeSet.find(data) != nodeSet.end();
     }
 
-    void push(const Data &data) {
-        if (nodeSet.find(data) == nodeSet.end()) {
+    void push(const Data &data)
+    {
+        if (nodeSet.find(data) == nodeSet.end())
+        {
             Node *new_node = new Node(data);
             if (head == nullptr)
                 head = new_node;// the list is empty
@@ -97,7 +105,8 @@ public:
         }
     }
 
-    Data pop() {
+    Data pop()
+    {
         assert(head != nullptr && "list is empty");
         /// get node from list head
         Node *head_node = head;
@@ -125,7 +134,8 @@ private:
  * Elements in the list are unique as they're recorded by Set.
  */
 template<class Data>
-class FIFOWorkList {
+class FIFOWorkList
+{
     typedef Set<Data> DataSet;
     typedef std::deque<Data> DataDeque;
 public:
@@ -133,35 +143,42 @@ public:
 
     ~FIFOWorkList() {}
 
-    inline bool empty() const {
+    inline bool empty() const
+    {
         return data_list.empty();
     }
 
-    inline u32_t size() const {
+    inline u32_t size() const
+    {
         assert(data_list.size() == data_set.size() && "list and set must be the same size!");
         return data_list.size();
     }
 
-    inline bool find(const Data &data) const {
+    inline bool find(const Data &data) const
+    {
         return data_set.find(data) != data_set.end();
     }
 
     /**
      * Push a data into the work list.
      */
-    inline bool push(const Data &data) {
-        if (!find(data)) {
+    inline bool push(const Data &data)
+    {
+        if (!find(data))
+        {
             data_list.push_back(data);
             data_set.insert(data);
             return true;
-        } else
+        }
+        else
             return false;
     }
 
     /**
      * Remove a data from the END of work list, no return value
      */
-    inline void removeFront() {
+    inline void removeFront()
+    {
         assert(!empty() && "work list is empty");
         data_set.erase(front());
         data_list.pop_front();
@@ -170,7 +187,8 @@ public:
     /**
      * Get reference of top data from the END of work list.
      */
-    inline Data &front() {
+    inline Data &front()
+    {
         assert(!empty() && "work list is empty");
         Data &data = data_list.front();
         return data;
@@ -179,7 +197,8 @@ public:
     /**
      * Pop a data from the END of work list.
      */
-    inline Data pop() {
+    inline Data pop()
+    {
         assert(!empty() && "work list is empty");
         Data data = data_list.front();
         data_list.pop_front();
@@ -190,7 +209,8 @@ public:
     /*!
      * Clear all the data
      */
-    inline void clear() {
+    inline void clear()
+    {
         data_list.clear();
         data_set.clear();
     }
@@ -206,7 +226,8 @@ private:
  * Elements in the list are unique as they're recorded by Set.
  */
 template<class Data>
-class FILOWorkList {
+class FILOWorkList
+{
     typedef Set<Data> DataSet;
     typedef std::vector<Data> DataVector;
 public:
@@ -214,35 +235,42 @@ public:
 
     ~FILOWorkList() {}
 
-    inline bool empty() const {
+    inline bool empty() const
+    {
         return data_list.empty();
     }
 
-    inline u32_t size() const {
+    inline u32_t size() const
+    {
         assert(data_list.size() == data_set.size() && "list and set must be the same size!");
         return data_list.size();
     }
 
-    inline bool find(const Data &data) const {
+    inline bool find(const Data &data) const
+    {
         return data_set.find(data) != data_set.end();;
     }
 
     /**
      * Push a data into the work list.
      */
-    inline bool push(const Data &data) {
-        if (!find(data)) {
+    inline bool push(const Data &data)
+    {
+        if (!find(data))
+        {
             data_list.push_back(data);
             data_set.insert(data);
             return true;
-        } else
+        }
+        else
             return false;
     }
 
     /**
      * Pop a data from the END of work list.
      */
-    inline Data pop() {
+    inline Data pop()
+    {
         assert(!empty() && "work list is empty");
         Data data = data_list.back();
         data_list.pop_back();
@@ -253,7 +281,8 @@ public:
     /**
      * Remove a data from the END of work list, no return value
      */
-    inline void removeBack() {
+    inline void removeBack()
+    {
         assert(!empty() && "work list is empty");
         data_set.erase(back());
         data_list.pop_back();
@@ -262,7 +291,8 @@ public:
     /**
      * Get reference of top data from the END of work list.
      */
-    inline Data &back() {
+    inline Data &back()
+    {
         assert(!empty() && "work list is empty");
         Data &data = data_list.back();
         return data;
@@ -271,7 +301,8 @@ public:
     /*!
      * Clear all the data
      */
-    inline void clear() {
+    inline void clear()
+    {
         data_list.clear();
         data_set.clear();
     }
