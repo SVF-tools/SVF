@@ -163,6 +163,7 @@ public:
      */
     inline void removeFront() {
         assert(!empty() && "work list is empty");
+        data_set.erase(front());
         data_list.pop_front();
     }
 
@@ -254,6 +255,7 @@ public:
      */
     inline void removeBack() {
         assert(!empty() && "work list is empty");
+        data_set.erase(back());
         data_list.pop_back();
     }
 
