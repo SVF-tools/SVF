@@ -214,8 +214,8 @@ public:
         return bb2LoopMap.find(bb)!=bb2LoopMap.end();
     }
 
-    inline const std::vector<const BasicBlock*>& getLoopInfo(const BasicBlock* bb) const 
-    {   
+    inline const std::vector<const BasicBlock*>& getLoopInfo(const BasicBlock* bb) const
+    {
         Map<const BasicBlock*, std::vector<const BasicBlock*>>::const_iterator mapIter = bb2LoopMap.find(bb);
         if(mapIter != bb2LoopMap.end())
             return mapIter->second;
@@ -286,7 +286,8 @@ public:
 
     bool isLoopHeader(const BasicBlock* bb) const
     {
-        if (hasLoopInfo(bb)){
+        if (hasLoopInfo(bb))
+        {
             const std::vector<const BasicBlock*>& blocks = getLoopInfo(bb);
             assert(!blocks.empty() && "no available loop info?");
             return blocks.front() == bb;

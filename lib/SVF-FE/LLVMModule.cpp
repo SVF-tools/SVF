@@ -207,7 +207,7 @@ void LLVMModuleSet::build()
                     {
                         svffun->addToBB2LoopMap(bb,loopBlock);
                     }
-                }   
+                }
             }
         }
     }

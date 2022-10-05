@@ -266,7 +266,8 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const B
         Set<const BasicBlock*> exitbbs;
         svffun->getExitBlocksOfLoop(bb,exitbbs);
         /// exclude exit bb which calls program exit
-        for(const BasicBlock *eb : exitbbs){
+        for(const BasicBlock *eb : exitbbs)
+        {
             if(!isBBCallsProgExit(eb))
                 filteredbbs.insert(eb);
         }
