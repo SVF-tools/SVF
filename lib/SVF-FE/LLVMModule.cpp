@@ -154,6 +154,7 @@ void LLVMModuleSet::build()
             DominanceFrontier df;
             dt.recalculate(*svffun->getLLVMFun());
             df.analyze(dt);
+            LoopInfo loopInfo = LoopInfo(dt);
             PostDominatorTree pdt = PostDominatorTree(*(func->getLLVMFun()));
             Map<const BasicBlock*,Set<const BasicBlock*>> & dfBBsMap = svffun->getDomFrontierMap();
             for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
@@ -198,6 +199,13 @@ void LLVMModuleSet::build()
                     else
                     {
                         svffun->getPostDomTreeMap()[bb] = Set<const BasicBlock *>();
+                    }
+                }
+                if (const Loop *loop = loopInfo.getLoopFor(bb))
+                {
+                    for (BasicBlock* loopBlock:loop->getBlocks())
+                    {
+                        svffun->addToBB2LoopMap(bb,loopBlock);
                     }
                 }
             }

@@ -259,18 +259,16 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const B
     const Function *fun = bb->getParent();
     assert(fun == dst->getParent() && "two basic blocks should be in the same function");
 
-    const LoopInfo *loopInfo = getLoopInfo(fun);
-    if (loopInfo->isLoopHeader(const_cast<BasicBlock *>(bb)))
+    const SVFFunction * svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+    if (svffun->isLoopHeader(bb))
     {
-        const Loop *loop = loopInfo->getLoopFor(bb);
-        SmallBBVector exitbbs;
-        Set<BasicBlock *> filteredbbs;
-        loop->getExitBlocks(exitbbs);
+        Set<const BasicBlock *> filteredbbs;
+        Set<const BasicBlock*> exitbbs;
+        svffun->getExitBlocksOfLoop(bb,exitbbs);
         /// exclude exit bb which calls program exit
-        while (!exitbbs.empty())
+        for(const BasicBlock *eb : exitbbs)
         {
-            BasicBlock *eb = exitbbs.pop_back_val();
-            if (!isBBCallsProgExit(eb))
+            if(!isBBCallsProgExit(eb))
                 filteredbbs.insert(eb);
         }
 

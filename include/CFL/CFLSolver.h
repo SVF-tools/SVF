@@ -27,6 +27,9 @@
  *      Author: Yulei Sui
  */
 
+#ifndef INCLUDE_CFL_CFLSolver_H_
+#define INCLUDE_CFL_CFLSolver_H_
+
 #include "Graphs/CFLGraph.h"
 #include "CFL/CFLGrammar.h"
 #include "Util/WorkList.h"
@@ -100,3 +103,5 @@ private:
 };
 
 }
+
+#endif /* INCLUDE_CFL_CFLSolver_H_*/

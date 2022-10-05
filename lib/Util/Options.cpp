@@ -811,6 +811,12 @@ const llvm::cl::opt<bool> Options::PEGTransfer(
     llvm::cl::desc("When explicit to true, cfl graph builder will transfer PAG load and store edges to copy and addr.")
 );
 
+const llvm::cl::opt<bool> Options::CFLSVFG(
+    "cflsvfg",
+    llvm::cl::init(false),
+    llvm::cl::desc("When explicit to true, cfl graph builder will transfer SVFG to CFL Reachability.")
+);
+
 
 const llvm::cl::opt<bool> Options::LoopAnalysis(
     "loop-analysis",
