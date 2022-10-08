@@ -149,7 +149,7 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             return extOp;
         }
 
-        jsonFilePath = getJsonFile("$SVF_DIR");
+        jsonFilePath = getJsonFile("echo $SVF_DIR");
         if (!stat(jsonFilePath.c_str(), &statbuf))
         {
             root = parseJson(jsonFilePath, statbuf.st_size);
