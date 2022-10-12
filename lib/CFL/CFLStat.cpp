@@ -44,11 +44,8 @@ const char* CFLStat::CollapseTime = "CollapseTime";
 /*!
  * Constructor
  */
-CFLStat::CFLStat(CFLAlias* p): PTAStat(p),pta(p)
+CFLStat::CFLStat(BVDataPTAImpl* p): PTAStat(p),pta(p)
 {
-    _NumOfNullPtr = 0;
-    _NumOfConstantPtr= 0;
-    _NumOfBlackholePtr = 0;
     startClk();
 }
 
@@ -57,11 +54,10 @@ CFLStat::CFLStat(CFLAlias* p): PTAStat(p),pta(p)
  */
 void  CFLStat::collectCFLInfo(CFLGraph* CFLGraph)
 {
-    _NumOfCycles = 0;
-    _NumOfPWCCycles = 0;
-    _NumOfNodesInCycles = 0;
-    NodeSet repNodes;
-    repNodes.clear();
+    PTNumStatMap["NumOfNodes"] = CFLGraph->getTotalNodeNum();
+    PTNumStatMap["NumOfEdges"] = CFLGraph->getCFLEdges().size();
+
+    PTAStat::printStat("CFLGraph Stats");
 }
 
 
@@ -219,18 +215,21 @@ void CFLStat::statNullPtr()
  */
 void CFLStat::performStat()
 {
-
-    assert(SVFUtil::isa<CFLAlias>(pta) && "not an CFLAlias pass!! what else??");
+    assert((SVFUtil::isa<CFLAlias>(pta)||SVFUtil::isa<CFLVF>(pta)) && "not an CFLAlias pass!! what else??");
     endClk();
-    // SVFIR* pag = pta->getPAG();
-    CFLGraph* CFLGraph = pta->getCFLGraph();
-    // collect cfl graph infor
-    collectCFLInfo(CFLGraph);
-    // delete CFLGraph;
-    // collect constraint graph cycles
-    // collectCycleInfo(consCG);
+    CFLGraph* CFLGraph;
+    if(pta->getAnalysisTy()==PointerAnalysis::CFLFSCS_WPA)
+    {
+        CFLVF *vf = SVFUtil::dyn_cast<CFLVF>(pta);
+        CFLGraph = vf->getCFLGraph();
 
-    // stat null ptr number
+    }
+    else
+    {
+        CFLAlias *aa = SVFUtil::dyn_cast<CFLAlias>(pta);
+        CFLGraph = aa->getCFLGraph();
+    }
+    collectCFLInfo(CFLGraph);
     statNullPtr();
 
     u32_t totalPointers = 0;

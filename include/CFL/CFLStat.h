@@ -33,11 +33,13 @@
 
 #include "Util/PTAStat.h"
 #include "CFL/CFLAlias.h"
+#include "CFL/CFLVF.h"
 
 namespace SVF
 {
 
 class CFLAlias;
+class CFLVF;
 class SVFIR;
 class ConstraintGraph;
 
@@ -48,7 +50,7 @@ class CFLStat : public PTAStat
 {
 
 private:
-    CFLAlias* pta;
+    BVDataPTAImpl* pta;
 
 public:
     static const char* CollapseTime;
@@ -65,7 +67,7 @@ public:
     /// CFL Stat
     u32_t _NumofCFLGraphNode;
 
-    CFLStat(CFLAlias* p);
+    CFLStat(BVDataPTAImpl* p);
 
     virtual ~CFLStat()
     {
