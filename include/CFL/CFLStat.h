@@ -50,7 +50,7 @@ class CFLStat : public PTAStat
 {
 
 private:
-    BVDataPTAImpl* pta;
+    CFLBase* pta;
 
 public:
     static const char* CollapseTime;
@@ -67,7 +67,7 @@ public:
     /// CFL Stat
     u32_t _NumofCFLGraphNode;
 
-    CFLStat(BVDataPTAImpl* p);
+    CFLStat(CFLBase* p);
 
     virtual ~CFLStat()
     {

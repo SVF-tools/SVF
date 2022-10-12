@@ -30,18 +30,19 @@
 #ifndef INCLUDE_CFL_CFLVF_H_
 #define INCLUDE_CFL_CFLVF_H_
 
+
+#include "CFL/CFLBase.h"
 #include "CFL/CFLStat.h"
 #include "SABER/SaberSVFGBuilder.h"
 #include "WPA/Andersen.h"
 
 namespace SVF
 {
-
-class CFLVF : public BVDataPTAImpl
+class CFLVF : public CFLBase
 {
 
 public:
-    CFLVF(SVFIR* ir) : BVDataPTAImpl(ir, PointerAnalysis::CFLFSCS_WPA, false), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
+    CFLVF(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFSCS_WPA)
     {
     }
 
@@ -51,26 +52,12 @@ public:
     /// Print grammar and graph
     virtual void finalize();
 
-    /// Destructor
-    virtual ~CFLVF()
-    {
-        delete solver;
-    }
-
     /// Start Analysis here (main part of pointer analysis).
     virtual void analyze();
 
-    /// Get CFL graph
-    CFLGraph* getCFLGraph()
-    {
-        return graph;
-    }
+    virtual void countSumEdges();
 
 private:
-    SVFIR* svfir;
-    CFLGraph* graph;
-    CFLGrammar* grammar;
-    CFLSolver *solver;
     SaberSVFGBuilder memSSA;
     SVFG* svfg;
 };

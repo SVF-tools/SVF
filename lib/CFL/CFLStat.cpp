@@ -44,7 +44,7 @@ const char* CFLStat::CollapseTime = "CollapseTime";
 /*!
  * Constructor
  */
-CFLStat::CFLStat(BVDataPTAImpl* p): PTAStat(p),pta(p)
+CFLStat::CFLStat(CFLBase* p): PTAStat(p),pta(p)
 {
     startClk();
 }
@@ -217,21 +217,14 @@ void CFLStat::performStat()
 {
     assert((SVFUtil::isa<CFLAlias>(pta)||SVFUtil::isa<CFLVF>(pta)) && "not an CFLAlias pass!! what else??");
     endClk();
-    CFLGraph* CFLGraph;
-    if(pta->getAnalysisTy()==PointerAnalysis::CFLFSCS_WPA)
-    {
-        CFLVF *vf = SVFUtil::dyn_cast<CFLVF>(pta);
-        CFLGraph = vf->getCFLGraph();
-
-    }
-    else
-    {
-        CFLAlias *aa = SVFUtil::dyn_cast<CFLAlias>(pta);
-        CFLGraph = aa->getCFLGraph();
-    }
+    
+    CFLGraph* CFLGraph = pta->getCFLGraph();
     collectCFLInfo(CFLGraph);
-    statNullPtr();
-
+    pta->countSumEdges();
+    timeStatMap["AnalysisTime"] = pta->timeOfSolving;
+    PTNumStatMap["SumEdges"] = pta->numOfSumEdges;
+    PTAStat::printStat("CFL-reachability analysis Stats");
+    
     u32_t totalPointers = 0;
     u32_t totalTopLevPointers = 0;
     u32_t totalPtsSize = 0;

@@ -84,3 +84,13 @@ void CFLVF::analyze()
 
     finalize();
 }
+
+void CFLVF::countSumEdges()
+{
+    numOfSumEdges = 0;
+    for(auto it = getCFLGraph()->getCFLEdges().begin(); it != getCFLGraph()->getCFLEdges().end(); it++ )
+    {
+        if ((*it)->getEdgeKind() == grammar->getStartKind())
+            numOfSumEdges++;
+    }
+}

@@ -33,24 +33,13 @@ using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
 
-u32_t CFLAlias::numOfProcessedAddr = 0;
-u32_t CFLAlias::numOfProcessedCopy = 0;
-u32_t CFLAlias::numOfProcessedGep = 0;
-u32_t CFLAlias::numOfProcessedLoad = 0;
-u32_t CFLAlias::numOfProcessedStore = 0;
-u32_t CFLAlias::numOfSfrs = 0;
-u32_t CFLAlias::numOfFieldExpand = 0;
-
-u32_t CFLAlias::numOfSCCDetection = 0;
-double CFLAlias::timeOfSCCDetection = 0;
-double CFLAlias::timeOfSCCMerges = 0;
-double CFLAlias::timeOfCollapse = 0;
-
-u32_t CFLAlias::AveragePointsToSetSize = 0;
-u32_t CFLAlias::MaxPointsToSetSize = 0;
-double CFLAlias::timeOfProcessCopyGep = 0;
-double CFLAlias::timeOfProcessLoadStore = 0;
-double CFLAlias::timeOfUpdateCallGraph = 0;
+u32_t CFLBase::AveragePointsToSetSize = 0;
+u32_t CFLBase::MaxPointsToSetSize = 0;
+double CFLBase::timeOfProcessCopyGep = 0;
+double CFLBase::timeOfProcessLoadStore = 0;
+double CFLBase::timeOfUpdateCallGraph = 0;
+double CFLBase::timeOfSolving = 0;
+double CFLBase::numOfSumEdges=0;
 
 /*!
  * On the fly call graph construction
@@ -259,6 +248,9 @@ void CFLAlias::analyze()
 {
     initialize();
     
+    // Start solving
+    double start = stat->getClk(true);
+
     solver->solve();
     if (Options::CFLGraph.empty()) 
     {
@@ -266,5 +258,18 @@ void CFLAlias::analyze()
             solver->solve();
     } // Only cflgraph built from bc could reanlyze by update call graph
    
+   double end = stat->getClk(true);
+   timeOfSolving += (end - start) / TIMEINTERVAL;
+
    finalize();
+}
+
+void CFLAlias::countSumEdges()
+{
+    numOfSumEdges = 0;
+    for(auto it = getCFLGraph()->getCFLEdges().begin(); it != getCFLGraph()->getCFLEdges().end(); it++ )
+    {
+        if ((*it)->getEdgeKind() == grammar->getStartKind())
+            numOfSumEdges++;
+    }
 }
