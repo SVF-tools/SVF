@@ -35,10 +35,11 @@
 #include "CFL/GrammarBuilder.h"
 #include "CFL/CFLGraphBuilder.h"
 #include "CFL/CFLGramGraphChecker.h"
+#include "CFL/CFLStat.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/ConsG.h"
 #include "Util/Options.h"
-#include "CFL/CFLStat.h"
+#include "Util/SVFBasicTypes.h"
 
 namespace SVF
 {
@@ -60,6 +61,12 @@ public:
     {
         delete solver;
     }
+
+    /// Initialize the grammar, graph, solver
+    virtual void initialize();
+
+    /// Print grammar and graph
+    virtual void finalize();
 
     /// Start Analysis here (main part of pointer analysis).
     virtual void analyze();
@@ -106,7 +113,6 @@ public:
     }
 
     /// Need Original one for virtual table
-
 
     /// Add copy edge on constraint graph
     virtual inline bool addCopyEdge(NodeID src, NodeID dst)
