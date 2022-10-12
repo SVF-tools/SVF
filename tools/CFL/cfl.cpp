@@ -28,11 +28,9 @@
 
 
 #include "SVF-FE/LLVMUtil.h"
-#include "Util/Options.h"
+#include "SVF-FE/SVFIRBuilder.h"
 #include "CFL/CFLAlias.h"
 #include "CFL/CFLVF.h"
-#include "SVF-FE/SVFIRBuilder.h"
-#include "CFL/CFGNormalizer.h"
 
 using namespace llvm;
 using namespace SVF;
@@ -57,35 +55,23 @@ int main(int argc, char ** argv)
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
-    if (Options::CFLGraph.empty())
-    {
+
+    SVFIR* svfir = nullptr;
+    if (Options::CFLGraph.empty()) {
         SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
         svfModule->buildSymbolTableInfo();
-
-        /// Build Program Assignment Graph (SVFIR)
         SVFIRBuilder builder;
-        SVFIR* svfir = builder.build(svfModule);
-        if (Options::CFLSVFG)
-        {
-            CFLVF* cflvf = new CFLVF(svfir);
-            cflvf->analyze();
-            delete cflvf;
-        }
-        else
-        {
-            CFLAlias* cflaa = new CFLAlias(svfir);
-            cflaa->analyze();
-            delete cflaa;
-        }
-    }
+        svfir = builder.build(svfModule);
+    }  // if no dot form CFLGraph is specified, we use svfir from .bc.
+    
+    BVDataPTAImpl* cfl;
+    if (Options::CFLSVFG) 
+        cfl = new CFLVF(svfir);
     else
-    {
-        SVFIR* svfir = nullptr;
-        CFLAlias* cflaa = new CFLAlias(svfir);
-        cflaa->analyze();
-        delete cflaa;
-    }
+        cfl = new CFLAlias(svfir); // if no svfg is specified, we use CFLAlias as the default one.
+    cfl->analyze();
 
+    delete cfl;
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
