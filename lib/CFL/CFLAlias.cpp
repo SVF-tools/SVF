@@ -28,7 +28,6 @@
  */
 
 #include "CFL/CFLAlias.h"
-#include "Util/SVFBasicTypes.h"
 
 using namespace SVF;
 using namespace cppUtil;
@@ -193,9 +192,6 @@ void CFLAlias::heapAllocatorViaIndCall(CallSite cs)
  */
 bool CFLAlias::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 {
-
-    // double cgUpdateStart = stat->getClk();
-
     CallEdgeMap newEdges;
     onTheFlyCallGraphSolve(callsites,newEdges);
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
@@ -203,65 +199,72 @@ bool CFLAlias::updateCallGraph(const CallSiteToFunPtrMap& callsites)
         CallSite cs = SVFUtil::getLLVMCallSite(it->first->getCallSite());
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
-            std::cout << cs.arg_size();
             connectCaller2CalleeParams(cs,*cit);
         }
     }
 
-    // double cgUpdateEnd = stat->getClk();
-    //timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
-
     return (!solver->isWorklistEmpty());
+}
+
+void CFLAlias::initialize()
+{
+    stat = new CFLStat(this);
+
+    // Build CFL Grammar
+    GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
+    GrammarBase *grammarBase = grammarBuilder.build();
+    
+
+    // Build CFL Graph
+    AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
+    if (Options::CFLGraph.empty()) // built from svfir
+    {
+        PointerAnalysis::initialize();
+        ConstraintGraph *consCG = new ConstraintGraph(svfir);
+        if (Options::PEGTransfer) 
+            graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
+        else
+            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
+        delete consCG;
+    }
+    else
+        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph, grammarBase);
+
+    // Check CFL Graph and Grammar are accordance with grammar
+    CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
+    cflChecker.check(grammarBase, &cflGraphBuilder, graph);
+
+    // Normalize grammar
+    CFGNormalizer normalizer = CFGNormalizer();
+    grammar = normalizer.normalize(grammarBase);
+
+    solver = new CFLSolver(graph, grammar);
+    delete grammarBase;
+}
+
+void CFLAlias::finalize()
+{
+    if(Options::PrintCFL == true)
+    {
+        if (Options::CFLGraph.empty()) 
+            svfir->dump("IR");
+        grammar->dump("Grammar");
+        graph->dump("CFLGraph");
+    }
+    if (Options::CFLGraph.empty()) 
+        PointerAnalysis::finalize();
 }
 
 void CFLAlias::analyze()
 {
-    stat = new CFLStat(this);
-    GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
-    CFGNormalizer normalizer = CFGNormalizer();
-    AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
-    CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
-    if (Options::CFLGraph.empty())
-    {
-        PointerAnalysis::initialize();
-        GrammarBase *grammarBase = grammarBuilder.build();
-        ConstraintGraph *consCG = new ConstraintGraph(svfir);
-        if (Options::PEGTransfer)
-        {
-            graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
-        }
-        else
-        {
-            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
-        }
-
-        cflChecker.check(grammarBase, &cflGraphBuilder, graph);
-        grammar = normalizer.normalize(grammarBase);
-        cflChecker.check(grammar, &cflGraphBuilder, graph);
-        delete consCG;
-        delete grammarBase;
-    }
-    else
-    {
-        GrammarBase *grammarBase = grammarBuilder.build();
-        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph, grammarBase);
-        cflChecker.check(grammarBase, &cflGraphBuilder, graph);
-        grammar = normalizer.normalize(grammarBase);
-        cflChecker.check(grammar, &cflGraphBuilder, graph);
-        delete grammarBase;
-    }
-    solver = new CFLSolver(graph, grammar);
+    initialize();
+    
     solver->solve();
-    while (updateCallGraph(svfir->getIndirectCallsites()))
-        solver->solve();
-    if(Options::PrintCFL == true)
+    if (Options::CFLGraph.empty()) 
     {
-        svfir->dump("IR");
-        grammar->dump("Grammar");
-        graph->dump("CFLGraph");
-    }
-    if (Options::CFLGraph.empty())
-    {
-        PointerAnalysis::finalize();
-    }
+        while (updateCallGraph(svfir->getIndirectCallsites()))
+            solver->solve();
+    } // Only cflgraph built from bc could reanlyze by update call graph
+   
+   finalize();
 }
