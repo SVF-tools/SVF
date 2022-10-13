@@ -72,8 +72,6 @@ void CFLVF::finalize()
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
     }
-    if (Options::CFLGraph.empty()) 
-        PointerAnalysis::finalize();
 }
 
 void CFLVF::analyze()
