@@ -67,7 +67,7 @@ void CFLVF::finalize()
 {
     if(Options::PrintCFL == true)
     {
-        if (Options::CFLGraph.empty()) 
+        if (Options::CFLGraph.empty())
             svfir->dump("IR");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
@@ -75,7 +75,7 @@ void CFLVF::finalize()
 }
 
 void CFLVF::analyze()
-{   
+{
     initialize();
 
     solver->solve();

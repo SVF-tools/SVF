@@ -202,7 +202,7 @@ void CFLAlias::initialize()
     // Build CFL Grammar
     GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
     GrammarBase *grammarBase = grammarBuilder.build();
-    
+
 
     // Build CFL Graph
     AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
@@ -210,7 +210,7 @@ void CFLAlias::initialize()
     {
         PointerAnalysis::initialize();
         ConstraintGraph *consCG = new ConstraintGraph(svfir);
-        if (Options::PEGTransfer) 
+        if (Options::PEGTransfer)
             graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
         else
             graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
@@ -235,33 +235,33 @@ void CFLAlias::finalize()
 {
     if(Options::PrintCFL == true)
     {
-        if (Options::CFLGraph.empty()) 
+        if (Options::CFLGraph.empty())
             svfir->dump("IR");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
     }
-    if (Options::CFLGraph.empty()) 
+    if (Options::CFLGraph.empty())
         PointerAnalysis::finalize();
 }
 
 void CFLAlias::analyze()
 {
     initialize();
-    
+
     // Start solving
     double start = stat->getClk(true);
 
     solver->solve();
-    if (Options::CFLGraph.empty()) 
+    if (Options::CFLGraph.empty())
     {
         while (updateCallGraph(svfir->getIndirectCallsites()))
             solver->solve();
     } // Only cflgraph built from bc could reanlyze by update call graph
-   
-   double end = stat->getClk(true);
-   timeOfSolving += (end - start) / TIMEINTERVAL;
 
-   finalize();
+    double end = stat->getClk(true);
+    timeOfSolving += (end - start) / TIMEINTERVAL;
+
+    finalize();
 }
 
 void CFLAlias::countSumEdges()
