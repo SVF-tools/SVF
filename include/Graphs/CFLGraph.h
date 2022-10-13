@@ -109,6 +109,11 @@ public:
 
     void view();
 
+    inline const CFLEdgeSet& getCFLEdges() const
+    {
+        return cflEdgeSet;
+    }
+
 private:
     CFLEdgeSet cflEdgeSet;
 };

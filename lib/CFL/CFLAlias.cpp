@@ -28,30 +28,18 @@
  */
 
 #include "CFL/CFLAlias.h"
-#include "Util/SVFBasicTypes.h"
 
 using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
 
-u32_t CFLAlias::numOfProcessedAddr = 0;
-u32_t CFLAlias::numOfProcessedCopy = 0;
-u32_t CFLAlias::numOfProcessedGep = 0;
-u32_t CFLAlias::numOfProcessedLoad = 0;
-u32_t CFLAlias::numOfProcessedStore = 0;
-u32_t CFLAlias::numOfSfrs = 0;
-u32_t CFLAlias::numOfFieldExpand = 0;
-
-u32_t CFLAlias::numOfSCCDetection = 0;
-double CFLAlias::timeOfSCCDetection = 0;
-double CFLAlias::timeOfSCCMerges = 0;
-double CFLAlias::timeOfCollapse = 0;
-
-u32_t CFLAlias::AveragePointsToSetSize = 0;
-u32_t CFLAlias::MaxPointsToSetSize = 0;
-double CFLAlias::timeOfProcessCopyGep = 0;
-double CFLAlias::timeOfProcessLoadStore = 0;
-double CFLAlias::timeOfUpdateCallGraph = 0;
+u32_t CFLBase::AveragePointsToSetSize = 0;
+u32_t CFLBase::MaxPointsToSetSize = 0;
+double CFLBase::timeOfProcessCopyGep = 0;
+double CFLBase::timeOfProcessLoadStore = 0;
+double CFLBase::timeOfUpdateCallGraph = 0;
+double CFLBase::timeOfSolving = 0;
+double CFLBase::numOfSumEdges=0;
 
 /*!
  * On the fly call graph construction
@@ -193,9 +181,6 @@ void CFLAlias::heapAllocatorViaIndCall(CallSite cs)
  */
 bool CFLAlias::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 {
-
-    // double cgUpdateStart = stat->getClk();
-
     CallEdgeMap newEdges;
     onTheFlyCallGraphSolve(callsites,newEdges);
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
@@ -203,65 +188,88 @@ bool CFLAlias::updateCallGraph(const CallSiteToFunPtrMap& callsites)
         CallSite cs = SVFUtil::getLLVMCallSite(it->first->getCallSite());
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
-            std::cout << cs.arg_size();
             connectCaller2CalleeParams(cs,*cit);
         }
     }
 
-    // double cgUpdateEnd = stat->getClk();
-    //timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
-
     return (!solver->isWorklistEmpty());
+}
+
+void CFLAlias::initialize()
+{
+    stat = new CFLStat(this);
+
+    // Build CFL Grammar
+    GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
+    GrammarBase *grammarBase = grammarBuilder.build();
+    
+
+    // Build CFL Graph
+    AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
+    if (Options::CFLGraph.empty()) // built from svfir
+    {
+        PointerAnalysis::initialize();
+        ConstraintGraph *consCG = new ConstraintGraph(svfir);
+        if (Options::PEGTransfer) 
+            graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
+        else
+            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
+        delete consCG;
+    }
+    else
+        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph, grammarBase);
+
+    // Check CFL Graph and Grammar are accordance with grammar
+    CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
+    cflChecker.check(grammarBase, &cflGraphBuilder, graph);
+
+    // Normalize grammar
+    CFGNormalizer normalizer = CFGNormalizer();
+    grammar = normalizer.normalize(grammarBase);
+
+    solver = new CFLSolver(graph, grammar);
+    delete grammarBase;
+}
+
+void CFLAlias::finalize()
+{
+    if(Options::PrintCFL == true)
+    {
+        if (Options::CFLGraph.empty()) 
+            svfir->dump("IR");
+        grammar->dump("Grammar");
+        graph->dump("CFLGraph");
+    }
+    if (Options::CFLGraph.empty()) 
+        PointerAnalysis::finalize();
 }
 
 void CFLAlias::analyze()
 {
-    stat = new CFLStat(this);
-    GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
-    CFGNormalizer normalizer = CFGNormalizer();
-    AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
-    CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
-    if (Options::CFLGraph.empty())
-    {
-        PointerAnalysis::initialize();
-        GrammarBase *grammarBase = grammarBuilder.build();
-        ConstraintGraph *consCG = new ConstraintGraph(svfir);
-        if (Options::PEGTransfer)
-        {
-            graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
-        }
-        else
-        {
-            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
-        }
+    initialize();
+    
+    // Start solving
+    double start = stat->getClk(true);
 
-        cflChecker.check(grammarBase, &cflGraphBuilder, graph);
-        grammar = normalizer.normalize(grammarBase);
-        cflChecker.check(grammar, &cflGraphBuilder, graph);
-        delete consCG;
-        delete grammarBase;
-    }
-    else
-    {
-        GrammarBase *grammarBase = grammarBuilder.build();
-        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph, grammarBase);
-        cflChecker.check(grammarBase, &cflGraphBuilder, graph);
-        grammar = normalizer.normalize(grammarBase);
-        cflChecker.check(grammar, &cflGraphBuilder, graph);
-        delete grammarBase;
-    }
-    solver = new CFLSolver(graph, grammar);
     solver->solve();
-    while (updateCallGraph(svfir->getIndirectCallsites()))
-        solver->solve();
-    if(Options::PrintCFL == true)
+    if (Options::CFLGraph.empty()) 
     {
-        svfir->dump("IR");
-        grammar->dump("Grammar");
-        graph->dump("CFLGraph");
-    }
-    if (Options::CFLGraph.empty())
+        while (updateCallGraph(svfir->getIndirectCallsites()))
+            solver->solve();
+    } // Only cflgraph built from bc could reanlyze by update call graph
+   
+   double end = stat->getClk(true);
+   timeOfSolving += (end - start) / TIMEINTERVAL;
+
+   finalize();
+}
+
+void CFLAlias::countSumEdges()
+{
+    numOfSumEdges = 0;
+    for(auto it = getCFLGraph()->getCFLEdges().begin(); it != getCFLGraph()->getCFLEdges().end(); it++ )
     {
-        PointerAnalysis::finalize();
+        if ((*it)->getEdgeKind() == grammar->getStartKind())
+            numOfSumEdges++;
     }
 }

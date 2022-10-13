@@ -28,62 +28,67 @@
  */
 
 #include "CFL/CFLVF.h"
-#include "Util/SVFBasicTypes.h"
-#include "WPA/Andersen.h"
 
 using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
 
-
-
-void CFLVF::analyze()
+void CFLVF::initialize()
 {
+    // Build CFL Grammar and Normalize
     GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
-    CFGNormalizer normalizer = CFGNormalizer();
+    GrammarBase *grammarBase = grammarBuilder.build();
+
+    // Build CFL Graph
     VFCFLGraphBuilder cflGraphBuilder = VFCFLGraphBuilder();
-    CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
-    if (Options::CFLGraph.empty())
+    if (Options::CFLGraph.empty()) // built from svfir
     {
         PointerAnalysis::initialize();
-        GrammarBase *grammarBase = grammarBuilder.build();
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
         svfg =  memSSA.buildFullSVFG(ander);
-        ConstraintGraph *consCG = new ConstraintGraph(svfir);
-        if (Options::PEGTransfer)
-        {
-            graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
-        }
-        else
-        {
-            graph = cflGraphBuilder.buildBigraph(svfg, grammarBase->getStartKind(), grammarBase);
-        }
-
-        cflChecker.check(grammarBase, &cflGraphBuilder, graph);
-        grammar = normalizer.normalize(grammarBase);
-        cflChecker.check(grammar, &cflGraphBuilder, graph);
-        delete consCG;
-        delete grammarBase;
+        graph = cflGraphBuilder.buildBigraph(svfg, grammarBase->getStartKind(), grammarBase);
     }
     else
-    {
-        GrammarBase *grammarBase = grammarBuilder.build();
         graph = cflGraphBuilder.buildFromDot(Options::CFLGraph, grammarBase);
-        cflChecker.check(grammarBase, &cflGraphBuilder, graph);
-        grammar = normalizer.normalize(grammarBase);
-        cflChecker.check(grammar, &cflGraphBuilder, graph);
-        delete grammarBase;
-    }
+
+    // Check CFL Graph and Grammar are accordance with grammar
+    CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
+    cflChecker.check(grammarBase, &cflGraphBuilder, graph);
+
+    // Normalize grammar
+    CFGNormalizer normalizer = CFGNormalizer();
+    grammar = normalizer.normalize(grammarBase);
+
     solver = new CFLSolver(graph, grammar);
-    solver->solve();
+    delete grammarBase;
+}
+
+void CFLVF::finalize()
+{
     if(Options::PrintCFL == true)
     {
-        svfir->dump("IR");
+        if (Options::CFLGraph.empty()) 
+            svfir->dump("IR");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
     }
-    if (Options::CFLGraph.empty())
+}
+
+void CFLVF::analyze()
+{   
+    initialize();
+
+    solver->solve();
+
+    finalize();
+}
+
+void CFLVF::countSumEdges()
+{
+    numOfSumEdges = 0;
+    for(auto it = getCFLGraph()->getCFLEdges().begin(); it != getCFLGraph()->getCFLEdges().end(); it++ )
     {
-        PointerAnalysis::finalize();
+        if ((*it)->getEdgeKind() == grammar->getStartKind())
+            numOfSumEdges++;
     }
 }

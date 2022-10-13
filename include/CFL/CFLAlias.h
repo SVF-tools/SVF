@@ -30,14 +30,7 @@
 #ifndef INCLUDE_CFL_CFLALIAS_H_
 #define INCLUDE_CFL_CFLALIAS_H_
 
-#include "CFL/CFLSolver.h"
-#include "CFL/CFGNormalizer.h"
-#include "CFL/GrammarBuilder.h"
-#include "CFL/CFLGraphBuilder.h"
-#include "CFL/CFLGramGraphChecker.h"
-#include "MemoryModel/PointerAnalysis.h"
-#include "Graphs/ConsG.h"
-#include "Util/Options.h"
+#include "CFL/CFLBase.h"
 #include "CFL/CFLStat.h"
 
 namespace SVF
@@ -45,24 +38,26 @@ namespace SVF
 
 class CFLStat;
 
-class CFLAlias : public BVDataPTAImpl
+class CFLAlias : public CFLBase
 {
 
 public:
     typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
-    CFLAlias(SVFIR* ir) : BVDataPTAImpl(ir, PointerAnalysis::CFLFICI_WPA), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
+    CFLAlias(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFICI_WPA)
     {
     }
 
-    /// Destructor
-    virtual ~CFLAlias()
-    {
-        delete solver;
-    }
+    /// Initialize the grammar, graph, solver
+    virtual void initialize();
+
+    /// Print grammar and graph
+    virtual void finalize();
 
     /// Start Analysis here (main part of pointer analysis).
     virtual void analyze();
+
+    virtual void countSumEdges();
 
     /// Interface exposed to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const Value* v1, const Value* v2)
@@ -107,7 +102,6 @@ public:
 
     /// Need Original one for virtual table
 
-
     /// Add copy edge on constraint graph
     virtual inline bool addCopyEdge(NodeID src, NodeID dst)
     {
@@ -142,39 +136,8 @@ public:
 
     void heapAllocatorViaIndCall(CallSite cs);
 
-    /// Get CFL graph
-    CFLGraph* getCFLGraph()
-    {
-        return graph;
-    }
-
-    /// Statistics
-    //@{
-    static u32_t numOfProcessedAddr;   /// Number of processed Addr edge
-    static u32_t numOfProcessedCopy;   /// Number of processed Copy edge
-    static u32_t numOfProcessedGep;    /// Number of processed Gep edge
-    static u32_t numOfProcessedLoad;   /// Number of processed Load edge
-    static u32_t numOfProcessedStore;  /// Number of processed Store edge
-    static u32_t numOfSfrs;
-    static u32_t numOfFieldExpand;
-
-    static u32_t numOfSCCDetection;
-    static double timeOfSCCDetection;
-    static double timeOfSCCMerges;
-    static double timeOfCollapse;
-    static u32_t AveragePointsToSetSize;
-    static u32_t MaxPointsToSetSize;
-    static double timeOfProcessCopyGep;
-    static double timeOfProcessLoadStore;
-    static double timeOfUpdateCallGraph;
-    //@}
-
 private:
     CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
-    SVFIR* svfir;
-    CFLGraph* graph;
-    CFLGrammar* grammar;
-    CFLSolver *solver;
 };
 
 } // End namespace SVF

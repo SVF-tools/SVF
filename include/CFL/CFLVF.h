@@ -30,44 +30,34 @@
 #ifndef INCLUDE_CFL_CFLVF_H_
 #define INCLUDE_CFL_CFLVF_H_
 
-#include "CFL/CFLSolver.h"
-#include "CFL/CFGNormalizer.h"
-#include "CFL/GrammarBuilder.h"
-#include "CFL/CFLGraphBuilder.h"
-#include "CFL/CFLGramGraphChecker.h"
-#include "MemoryModel/PointerAnalysis.h"
-#include "Graphs/ConsG.h"
-#include "Util/Options.h"
+
+#include "CFL/CFLBase.h"
+#include "CFL/CFLStat.h"
 #include "SABER/SaberSVFGBuilder.h"
+#include "WPA/Andersen.h"
 
 namespace SVF
 {
-
-class CFLVF : public BVDataPTAImpl
+class CFLVF : public CFLBase
 {
 
 public:
-    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
-
-    CFLVF(SVFIR* ir) : BVDataPTAImpl(ir, PointerAnalysis::CFLFSCS_WPA, false), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr)
+    CFLVF(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFSCS_WPA)
     {
     }
 
-    /// Destructor
-    virtual ~CFLVF()
-    {
-        delete solver;
-    }
+    /// Initialize the grammar, graph, solver
+    virtual void initialize();
+
+    /// Print grammar and graph
+    virtual void finalize();
 
     /// Start Analysis here (main part of pointer analysis).
     virtual void analyze();
 
+    virtual void countSumEdges();
+
 private:
-    CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
-    SVFIR* svfir;
-    CFLGraph* graph;
-    CFLGrammar* grammar;
-    CFLSolver *solver;
     SaberSVFGBuilder memSSA;
     SVFG* svfg;
 };
