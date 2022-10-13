@@ -208,12 +208,12 @@ void CFLAlias::finalize()
 {
     if(Options::PrintCFL == true)
     {
-        if (Options::CFLGraph.empty()) 
+        if (Options::CFLGraph.empty())
             svfir->dump("IR");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
     }
-    if (Options::CFLGraph.empty()) 
+    if (Options::CFLGraph.empty())
         PointerAnalysis::finalize();
 }
 
@@ -223,7 +223,7 @@ void CFLAlias::solve()
     double start = stat->getClk(true);
  
     solver->solve();
-    if (Options::CFLGraph.empty()) 
+    if (Options::CFLGraph.empty())
     {
         while (updateCallGraph(svfir->getIndirectCallsites()))
             solver->solve();
