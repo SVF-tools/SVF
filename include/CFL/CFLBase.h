@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CFLAlias.h
+ * CFLBase.h
  *
  *  Created on: Oct 12, 2022
  *      Author: Pei Xu
@@ -58,21 +58,37 @@ public:
     virtual ~CFLBase()
     {
         delete solver;
+        delete grammarBase;
     }
+
+    /// Build Grammar from text file
+    virtual void buildCFLGrammar();
+
+    /// Build CFLGraph based on Option
+    virtual void buildCFLGraph();
+
+    /// Normalize grammar
+    virtual void normalizeCFLGrammar();
 
     /// Get CFL graph
-    CFLGraph* getCFLGraph()
-    {
-        return graph;
-    }
+    CFLGraph* getCFLGraph();
 
     /// Count the num of Nonterminal Edges
-    virtual void countSumEdges() = 0;
+    virtual void countSumEdges();
+
+    /// Solving CFL Reachability
+    virtual void solve();
+
+    /// Perform analyze (main part of CFLR Analysis)
+    virtual void analyze();
 
     /// Statistics
     //@{
     // Grammar
-    static double timeOfBuildGrammar;    
+    static double timeOfBuildCFLGrammar;
+    static double timeOfNormalizeGrammar;
+    // Graph
+    static double timeOfBuildCFLGraph;    
     static double timeOfSolving;
     static double numOfSumEdges;
     //@}

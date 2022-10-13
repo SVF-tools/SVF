@@ -83,6 +83,8 @@ public:
     void statNullPtr();
 
     void constraintGraphStat();
+
+    void CFLGrammarStat();
 };
 
 } // End namespace SVF

@@ -54,6 +54,7 @@ CFLStat::CFLStat(CFLBase* p): PTAStat(p),pta(p)
  */
 void  CFLStat::collectCFLInfo(CFLGraph* CFLGraph)
 {
+    timeStatMap["timeOfBuildCFLGraph"] = pta->timeOfBuildCFLGraph;
     PTNumStatMap["NumOfNodes"] = CFLGraph->getTotalNodeNum();
     PTNumStatMap["NumOfEdges"] = CFLGraph->getCFLEdges().size();
 
@@ -210,6 +211,13 @@ void CFLStat::statNullPtr()
 
 }
 
+void CFLStat::CFLGrammarStat()
+{
+    timeStatMap["timeOfBuildCFLGrammar"] = pta->timeOfBuildCFLGrammar;
+    timeStatMap["timeOfNormalizeGrammar"] = pta->timeOfNormalizeGrammar;
+    PTAStat::printStat("CFLGrammar Stats");
+}
+
 /*!
  * Start here
  */
@@ -225,6 +233,8 @@ void CFLStat::performStat()
     PTNumStatMap["SumEdges"] = pta->numOfSumEdges;
     PTAStat::printStat("CFL-reachability analysis Stats");
     
+    CFLGrammarStat();
+
     u32_t totalPointers = 0;
     u32_t totalTopLevPointers = 0;
     u32_t totalPtsSize = 0;
