@@ -62,7 +62,7 @@ void CFLVF::initialize()
 
     // Normalize grammar
     normalizeCFLGrammar();
-    
+
     // Initialize sovler
     solver = new CFLSolver(graph, grammar);
 }

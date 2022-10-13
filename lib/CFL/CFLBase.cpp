@@ -42,7 +42,7 @@ double CFLBase::timeOfSolving = 0;
 double CFLBase::numOfStartEdges = 0;
 
 void CFLBase::buildCFLGrammar()
-{ 
+{
     // Start building grammar
     double start = stat->getClk(true);
 
@@ -64,7 +64,7 @@ void CFLBase::buildCFLGraph()
     {
         PointerAnalysis::initialize();
         ConstraintGraph *consCG = new ConstraintGraph(svfir);
-        if (Options::PEGTransfer) 
+        if (Options::PEGTransfer)
             graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
         else
             graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
@@ -72,7 +72,7 @@ void CFLBase::buildCFLGraph()
     }
     else
         graph = cflGraphBuilder.buildFromDot(Options::CFLGraph, grammarBase);
-    
+
     // Check CFL Graph and Grammar are accordance with grammar
     CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
     cflChecker.check(grammarBase, &cflGraphBuilder, graph);

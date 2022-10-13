@@ -121,7 +121,7 @@ void CFLStat::performStat()
     endClk();
 
     pta->countSumEdges();
-    
+
     // CFLGraph stat
     CFLGraph* CFLGraph = pta->getCFLGraph();
     collectCFLInfo(CFLGraph);
@@ -130,7 +130,7 @@ void CFLStat::performStat()
     timeStatMap["AnalysisTime"] = pta->timeOfSolving;
     PTNumStatMap["SumEdges"] = pta->numOfStartEdges;
     PTAStat::printStat("CFL-reachability analysis Stats");
-    
+
     // Grammar stat
     CFLGrammarStat();
 

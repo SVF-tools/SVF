@@ -193,7 +193,7 @@ void CFLAlias::initialize()
 
     // Build CFL Grammar
     buildCFLGrammar();
-    
+
     // Build CFL Graph
     buildCFLGraph();
 
@@ -218,10 +218,10 @@ void CFLAlias::finalize()
 }
 
 void CFLAlias::solve()
-{     
+{
     // Start solving
     double start = stat->getClk(true);
- 
+
     solver->solve();
     if (Options::CFLGraph.empty())
     {
