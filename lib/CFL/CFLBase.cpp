@@ -39,7 +39,7 @@ double CFLBase::timeOfBuildCFLGrammar = 0;
 double CFLBase::timeOfNormalizeGrammar = 0;
 double CFLBase::timeOfBuildCFLGraph = 0;
 double CFLBase::timeOfSolving = 0;
-double CFLBase::numOfSumEdges = 0;
+double CFLBase::numOfStartEdges = 0;
 
 void CFLBase::buildCFLGrammar()
 { 
@@ -122,11 +122,11 @@ CFLGraph* CFLBase::getCFLGraph()
 
 void CFLBase::countSumEdges()
 {
-    numOfSumEdges = 0;
+    numOfStartEdges = 0;
     for(auto it = getCFLGraph()->getCFLEdges().begin(); it != getCFLGraph()->getCFLEdges().end(); it++ )
     {
         if ((*it)->getEdgeKind() == grammar->getStartKind())
-            numOfSumEdges++;
+            numOfStartEdges++;
     }
 }
 

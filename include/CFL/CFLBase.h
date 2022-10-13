@@ -85,12 +85,16 @@ public:
     /// Statistics
     //@{
     // Grammar
-    static double timeOfBuildCFLGrammar;
-    static double timeOfNormalizeGrammar;
+    static double timeOfBuildCFLGrammar;            // Time of building grammarBase from text file
+    static double timeOfNormalizeGrammar;           // Time of normalizing grammarBase to CFLGrammar
     // Graph
-    static double timeOfBuildCFLGraph;    
-    static double timeOfSolving;
-    static double numOfSumEdges;
+    static double timeOfBuildCFLGraph;              // Time of building CFLGraph
+    static double numOfTerminalEdges;               // Number of terminal labeled edges
+    static double numOfTemporaryNonterminalEdges;   // Number of temporary (ie. X0, X1..) nonterminal labeled edges
+    static double numOfNonterminalEdges;            // Number of nonterminal labeled edges
+    static double numOfStartEdges;                  // Number of start nonterminal labeled edges
+    // Solver
+    static double timeOfSolving;                    // time of solving CFL Reachability
     //@}
 
 protected:
