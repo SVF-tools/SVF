@@ -33,11 +33,13 @@ using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
 
+double CFLBase::timeOfBuildGrammar = 0;
+
 void CFLVF::initialize()
 {
-    // Build CFL Grammar and Normalize
+    // Build CFL Grammar
     GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
-    GrammarBase *grammarBase = grammarBuilder.build();
+    grammarBase = grammarBuilder.build();
 
     // Build CFL Graph
     VFCFLGraphBuilder cflGraphBuilder = VFCFLGraphBuilder();

@@ -45,6 +45,7 @@ namespace SVF
 
 class CFLStat;
 
+/// CFL Client Base Class
 class CFLBase : public BVDataPTAImpl
 {
 
@@ -59,42 +60,19 @@ public:
         delete solver;
     }
 
-    /// Initialize the grammar, graph, solver
-    virtual void initialize() = 0;
-
-    /// Print grammar and graph
-    virtual void finalize() = 0;
-
-    /// Start Analysis here (main part of pointer analysis).
-    virtual void analyze() = 0;
-
     /// Get CFL graph
     CFLGraph* getCFLGraph()
     {
         return graph;
     }
 
+    /// Count the num of Nonterminal Edges
     virtual void countSumEdges() = 0;
 
     /// Statistics
     //@{
-    static u32_t numOfProcessedAddr;   /// Number of processed Addr edge
-    static u32_t numOfProcessedCopy;   /// Number of processed Copy edge
-    static u32_t numOfProcessedGep;    /// Number of processed Gep edge
-    static u32_t numOfProcessedLoad;   /// Number of processed Load edge
-    static u32_t numOfProcessedStore;  /// Number of processed Store edge
-    static u32_t numOfSfrs;
-    static u32_t numOfFieldExpand;
-
-    static u32_t numOfSCCDetection;
-    static double timeOfSCCDetection;
-    static double timeOfSCCMerges;
-    static double timeOfCollapse;
-    static u32_t AveragePointsToSetSize;
-    static u32_t MaxPointsToSetSize;
-    static double timeOfProcessCopyGep;
-    static double timeOfProcessLoadStore;
-    static double timeOfUpdateCallGraph;
+    // Grammar
+    static double timeOfBuildGrammar;    
     static double timeOfSolving;
     static double numOfSumEdges;
     //@}
@@ -102,8 +80,9 @@ public:
 protected:
     SVFIR* svfir;
     CFLGraph* graph;
+    GrammarBase* grammarBase;
     CFLGrammar* grammar;
-    CFLSolver *solver;
+    CFLSolver* solver;
 };
 
 } // End namespace SVF

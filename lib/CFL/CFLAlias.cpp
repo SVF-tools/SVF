@@ -33,11 +33,6 @@ using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
 
-u32_t CFLBase::AveragePointsToSetSize = 0;
-u32_t CFLBase::MaxPointsToSetSize = 0;
-double CFLBase::timeOfProcessCopyGep = 0;
-double CFLBase::timeOfProcessLoadStore = 0;
-double CFLBase::timeOfUpdateCallGraph = 0;
 double CFLBase::timeOfSolving = 0;
 double CFLBase::numOfSumEdges=0;
 
@@ -201,7 +196,7 @@ void CFLAlias::initialize()
 
     // Build CFL Grammar
     GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
-    GrammarBase *grammarBase = grammarBuilder.build();
+    grammarBase = grammarBuilder.build();
     
 
     // Build CFL Graph

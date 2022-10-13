@@ -64,7 +64,7 @@ int main(int argc, char ** argv)
         svfir = builder.build(svfModule);
     }  // if no dot form CFLGraph is specified, we use svfir from .bc.
     
-    BVDataPTAImpl* cfl;
+    CFLBase* cfl;
     if (Options::CFLSVFG) 
         cfl = new CFLVF(svfir);
     else
