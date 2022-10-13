@@ -57,13 +57,14 @@ int main(int argc, char ** argv)
     }
 
     SVFIR* svfir = nullptr;
-    if (Options::CFLGraph.empty()) {
+    if (Options::CFLGraph.empty())
+    {
         SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
         svfModule->buildSymbolTableInfo();
         SVFIRBuilder builder;
         svfir = builder.build(svfModule);
     }  // if no dot form CFLGraph is specified, we use svfir from .bc.
-    
+   
     CFLBase* cfl;
     if (Options::CFLSVFG) 
         cfl = new CFLVF(svfir);
