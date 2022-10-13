@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CFLAlias.h
+ * CFLBase.h
  *
  *  Created on: Oct 12, 2022
  *      Author: Pei Xu
@@ -45,6 +45,7 @@ namespace SVF
 
 class CFLStat;
 
+/// CFL Client Base Class
 class CFLBase : public BVDataPTAImpl
 {
 
@@ -57,53 +58,51 @@ public:
     virtual ~CFLBase()
     {
         delete solver;
+        delete grammarBase;
     }
 
-    /// Initialize the grammar, graph, solver
-    virtual void initialize() = 0;
+    /// Build Grammar from text file
+    virtual void buildCFLGrammar();
 
-    /// Print grammar and graph
-    virtual void finalize() = 0;
+    /// Build CFLGraph based on Option
+    virtual void buildCFLGraph();
 
-    /// Start Analysis here (main part of pointer analysis).
-    virtual void analyze() = 0;
+    /// Normalize grammar
+    virtual void normalizeCFLGrammar();
 
     /// Get CFL graph
-    CFLGraph* getCFLGraph()
-    {
-        return graph;
-    }
+    CFLGraph* getCFLGraph();
 
-    virtual void countSumEdges() = 0;
+    /// Count the num of Nonterminal Edges
+    virtual void countSumEdges();
+
+    /// Solving CFL Reachability
+    virtual void solve();
+
+    /// Perform analyze (main part of CFLR Analysis)
+    virtual void analyze();
 
     /// Statistics
     //@{
-    static u32_t numOfProcessedAddr;   /// Number of processed Addr edge
-    static u32_t numOfProcessedCopy;   /// Number of processed Copy edge
-    static u32_t numOfProcessedGep;    /// Number of processed Gep edge
-    static u32_t numOfProcessedLoad;   /// Number of processed Load edge
-    static u32_t numOfProcessedStore;  /// Number of processed Store edge
-    static u32_t numOfSfrs;
-    static u32_t numOfFieldExpand;
-
-    static u32_t numOfSCCDetection;
-    static double timeOfSCCDetection;
-    static double timeOfSCCMerges;
-    static double timeOfCollapse;
-    static u32_t AveragePointsToSetSize;
-    static u32_t MaxPointsToSetSize;
-    static double timeOfProcessCopyGep;
-    static double timeOfProcessLoadStore;
-    static double timeOfUpdateCallGraph;
-    static double timeOfSolving;
-    static double numOfSumEdges;
+    // Grammar
+    static double timeOfBuildCFLGrammar;            // Time of building grammarBase from text file
+    static double timeOfNormalizeGrammar;           // Time of normalizing grammarBase to CFLGrammar
+    // Graph
+    static double timeOfBuildCFLGraph;              // Time of building CFLGraph
+    static double numOfTerminalEdges;               // Number of terminal labeled edges
+    static double numOfTemporaryNonterminalEdges;   // Number of temporary (ie. X0, X1..) nonterminal labeled edges
+    static double numOfNonterminalEdges;            // Number of nonterminal labeled edges
+    static double numOfStartEdges;                  // Number of start nonterminal labeled edges
+    // Solver
+    static double timeOfSolving;                    // time of solving CFL Reachability
     //@}
 
 protected:
     SVFIR* svfir;
     CFLGraph* graph;
+    GrammarBase* grammarBase;
     CFLGrammar* grammar;
-    CFLSolver *solver;
+    CFLSolver* solver;
 };
 
 } // End namespace SVF

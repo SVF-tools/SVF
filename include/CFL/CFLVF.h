@@ -52,10 +52,8 @@ public:
     /// Print grammar and graph
     virtual void finalize();
 
-    /// Start Analysis here (main part of pointer analysis).
-    virtual void analyze();
-
-    virtual void countSumEdges();
+    /// Build CFLGraph via VFG
+    void buildCFLGraph();
 
 private:
     SaberSVFGBuilder memSSA;

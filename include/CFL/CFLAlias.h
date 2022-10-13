@@ -54,12 +54,10 @@ public:
     /// Print grammar and graph
     virtual void finalize();
 
-    /// Start Analysis here (main part of pointer analysis).
-    virtual void analyze();
+    /// Solving CFL Reachability
+    virtual void solve();
 
-    virtual void countSumEdges();
-
-    /// Interface exposed to users of our pointer analysis, given Value infos
+    /// Interface exposed to users of our Alias analysis, given Value infos
     virtual AliasResult alias(const Value* v1, const Value* v2)
     {
         NodeID n1 = svfir->getValueNode(v1);
@@ -67,7 +65,7 @@ public:
         return alias(n1,n2);
     }
 
-    /// Interface exposed to users of our pointer analysis, given PAGNodeID
+    /// Interface exposed to users of our Alias analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2)
     {
         if(graph->hasEdge(graph->getGNode(node1), graph->getGNode(node2), graph->startKind))

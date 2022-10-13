@@ -53,17 +53,6 @@ private:
     CFLBase* pta;
 
 public:
-    static const char* CollapseTime;
-
-    static u32_t _MaxPtsSize;
-    static u32_t _NumOfCycles;
-    static u32_t _NumOfPWCCycles;
-    static u32_t _NumOfNodesInCycles;
-    static u32_t _MaxNumOfNodesInSCC;
-    u32_t _NumOfNullPtr;
-    u32_t _NumOfConstantPtr;
-    u32_t _NumOfBlackholePtr;
-
     /// CFL Stat
     u32_t _NumofCFLGraphNode;
 
@@ -76,15 +65,13 @@ public:
 
     virtual void performStat();
 
-    void collectCycleInfo(ConstraintGraph* consCG);
-
     void collectCFLInfo(CFLGraph* CFLGraph);
 
-    void statNullPtr();
-
     void constraintGraphStat();
+
+    void CFLGrammarStat();
 };
 
 } // End namespace SVF
 
-#endif /* FLOWSENSITIVESTAT_H_ */
+#endif /* CFL_CFLSTAT_H_ */

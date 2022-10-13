@@ -33,12 +33,8 @@ using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
 
-void CFLVF::initialize()
+void CFLVF::buildCFLGraph()
 {
-    // Build CFL Grammar and Normalize
-    GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
-    GrammarBase *grammarBase = grammarBuilder.build();
-
     // Build CFL Graph
     VFCFLGraphBuilder cflGraphBuilder = VFCFLGraphBuilder();
     if (Options::CFLGraph.empty()) // built from svfir
@@ -54,13 +50,21 @@ void CFLVF::initialize()
     // Check CFL Graph and Grammar are accordance with grammar
     CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
     cflChecker.check(grammarBase, &cflGraphBuilder, graph);
+}
+
+void CFLVF::initialize()
+{
+    // Build CFL Grammar
+    buildCFLGrammar();
+
+    // Build CFL Graph
+    buildCFLGraph();
 
     // Normalize grammar
-    CFGNormalizer normalizer = CFGNormalizer();
-    grammar = normalizer.normalize(grammarBase);
-
+    normalizeCFLGrammar();
+    
+    // Initialize sovler
     solver = new CFLSolver(graph, grammar);
-    delete grammarBase;
 }
 
 void CFLVF::finalize()
@@ -71,24 +75,5 @@ void CFLVF::finalize()
             svfir->dump("IR");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");
-    }
-}
-
-void CFLVF::analyze()
-{
-    initialize();
-
-    solver->solve();
-
-    finalize();
-}
-
-void CFLVF::countSumEdges()
-{
-    numOfSumEdges = 0;
-    for(auto it = getCFLGraph()->getCFLEdges().begin(); it != getCFLGraph()->getCFLEdges().end(); it++ )
-    {
-        if ((*it)->getEdgeKind() == grammar->getStartKind())
-            numOfSumEdges++;
     }
 }

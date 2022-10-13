@@ -33,14 +33,6 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace std;
 
-u32_t CFLStat::_MaxPtsSize = 0;
-u32_t CFLStat::_NumOfCycles = 0;
-u32_t CFLStat::_NumOfPWCCycles = 0;
-u32_t CFLStat::_NumOfNodesInCycles = 0;
-u32_t CFLStat::_MaxNumOfNodesInSCC = 0;
-
-const char* CFLStat::CollapseTime = "CollapseTime";
-
 /*!
  * Constructor
  */
@@ -54,55 +46,11 @@ CFLStat::CFLStat(CFLBase* p): PTAStat(p),pta(p)
  */
 void  CFLStat::collectCFLInfo(CFLGraph* CFLGraph)
 {
+    timeStatMap["timeOfBuildCFLGraph"] = pta->timeOfBuildCFLGraph;
     PTNumStatMap["NumOfNodes"] = CFLGraph->getTotalNodeNum();
     PTNumStatMap["NumOfEdges"] = CFLGraph->getCFLEdges().size();
 
     PTAStat::printStat("CFLGraph Stats");
-}
-
-
-
-/*!
- * Collect cycle information
- */
-void  CFLStat::collectCycleInfo(ConstraintGraph* consCG)
-{
-    _NumOfCycles = 0;
-    _NumOfPWCCycles = 0;
-    _NumOfNodesInCycles = 0;
-    NodeSet repNodes;
-    repNodes.clear();
-    for(ConstraintGraph::iterator it = consCG->begin(), eit = consCG->end(); it!=eit; ++it)
-    {
-        // sub nodes have been removed from the constraint graph, only rep nodes are left.
-        NodeID repNode = consCG->sccRepNode(it->first);
-        NodeBS& subNodes = consCG->sccSubNodes(repNode);
-        NodeBS clone = subNodes;
-        for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
-        {
-            NodeID nodeId = *it;
-            PAGNode* pagNode = pta->getPAG()->getGNode(nodeId);
-            if (SVFUtil::isa<ObjVar>(pagNode) && pta->isFieldInsensitive(nodeId))
-            {
-                NodeID baseId = consCG->getBaseObjVar(nodeId);
-                clone.reset(nodeId);
-                clone.set(baseId);
-            }
-        }
-        u32_t num = clone.count();
-        if (num > 1)
-        {
-            if(repNodes.insert(repNode).second)
-            {
-                _NumOfNodesInCycles += num;
-                if(consCG->isPWCNode(repNode))
-                    _NumOfPWCCycles ++;
-            }
-            if( num > _MaxNumOfNodesInSCC)
-                _MaxNumOfNodesInSCC = num;
-        }
-    }
-    _NumOfCycles += repNodes.size();
 }
 
 void CFLStat::constraintGraphStat()
@@ -156,58 +104,12 @@ void CFLStat::constraintGraphStat()
 
     PTAStat::printStat("CFL Graph Stats");
 }
-/*!
- * Stat null pointers
- */
-void CFLStat::statNullPtr()
+
+void CFLStat::CFLGrammarStat()
 {
-
-    _NumOfNullPtr = 0;
-    for (SVFIR::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
-            iter != eiter; ++iter)
-    {
-        NodeID pagNodeId = iter->first;
-        PAGNode* pagNode = iter->second;
-        if (SVFUtil::isa<ValVar>(pagNode) == false)
-            continue;
-        SVFStmt::SVFStmtSetTy& inComingStore = pagNode->getIncomingEdges(SVFStmt::Store);
-        SVFStmt::SVFStmtSetTy& outGoingLoad = pagNode->getOutgoingEdges(SVFStmt::Load);
-        if (inComingStore.empty()==false || outGoingLoad.empty()==false)
-        {
-            ///TODO: change the condition here to fetch the points-to set
-            const PointsTo& pts = pta->getPts(pagNodeId);
-            if (pta->containBlackHoleNode(pts))
-                _NumOfBlackholePtr++;
-
-            if (pta->containConstantNode(pts))
-                _NumOfConstantPtr++;
-
-            if(pts.empty())
-            {
-                std::string str;
-                raw_string_ostream rawstr(str);
-                if (!SVFUtil::isa<DummyValVar>(pagNode) && !SVFUtil::isa<DummyObjVar>(pagNode) )
-                {
-                    // if a pointer is in dead function, we do not care
-                    if(SymbolTableInfo::isPtrInUncalledFunction(pagNode->getValue()) == false)
-                    {
-                        _NumOfNullPtr++;
-                        rawstr << "##Null Pointer : (NodeID " << pagNode->getId()
-                               << ") PtrName:" << pagNode->getValue()->getName();
-                        writeWrnMsg(rawstr.str());
-                        //pagNode->getValue()->dump();
-                    }
-                }
-                else
-                {
-                    _NumOfNullPtr++;
-                    rawstr << "##Null Pointer : (NodeID " << pagNode->getId() << ")";
-                    writeWrnMsg(rawstr.str());
-                }
-            }
-        }
-    }
-
+    timeStatMap["timeOfBuildCFLGrammar"] = pta->timeOfBuildCFLGrammar;
+    timeStatMap["timeOfNormalizeGrammar"] = pta->timeOfNormalizeGrammar;
+    PTAStat::printStat("CFLGrammar Stats");
 }
 
 /*!
@@ -218,44 +120,23 @@ void CFLStat::performStat()
     assert((SVFUtil::isa<CFLAlias>(pta)||SVFUtil::isa<CFLVF>(pta)) && "not an CFLAlias pass!! what else??");
     endClk();
 
+    pta->countSumEdges();
+    
+    // CFLGraph stat
     CFLGraph* CFLGraph = pta->getCFLGraph();
     collectCFLInfo(CFLGraph);
-    pta->countSumEdges();
+
+    // Solver stat
     timeStatMap["AnalysisTime"] = pta->timeOfSolving;
-    PTNumStatMap["SumEdges"] = pta->numOfSumEdges;
+    PTNumStatMap["SumEdges"] = pta->numOfStartEdges;
     PTAStat::printStat("CFL-reachability analysis Stats");
-
-    u32_t totalPointers = 0;
-    u32_t totalTopLevPointers = 0;
-    u32_t totalPtsSize = 0;
-    u32_t totalTopLevPtsSize = 0;
-    for (SVFIR::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
-            iter != eiter; ++iter)
-    {
-        NodeID node = iter->first;
-        const PointsTo& pts = pta->getPts(node);
-        u32_t size = pts.count();
-        totalPointers++;
-        totalPtsSize+=size;
-
-        if(pta->getPAG()->isValidTopLevelPtr(pta->getPAG()->getGNode(node)))
-        {
-            totalTopLevPointers++;
-            totalTopLevPtsSize+=size;
-        }
-
-        if(size > _MaxPtsSize )
-            _MaxPtsSize = size;
-    }
-
+    
+    // Grammar stat
+    CFLGrammarStat();
 
     PTAStat::performStat();
 
+    // ConstraintGraph stat
     constraintGraphStat();
-
-    PTNumStatMap["PointsToConstPtr"] = _NumOfConstantPtr;
-    PTNumStatMap["PointsToBlkPtr"] = _NumOfBlackholePtr;
-
-    PTAStat::printStat("CFL Alias Analysis Stats");
 }
 

@@ -33,14 +33,6 @@ using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
 
-u32_t CFLBase::AveragePointsToSetSize = 0;
-u32_t CFLBase::MaxPointsToSetSize = 0;
-double CFLBase::timeOfProcessCopyGep = 0;
-double CFLBase::timeOfProcessLoadStore = 0;
-double CFLBase::timeOfUpdateCallGraph = 0;
-double CFLBase::timeOfSolving = 0;
-double CFLBase::numOfSumEdges=0;
-
 /*!
  * On the fly call graph construction
  * callsites is candidate indirect callsites need to be analyzed based on points-to results
@@ -200,35 +192,16 @@ void CFLAlias::initialize()
     stat = new CFLStat(this);
 
     // Build CFL Grammar
-    GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
-    GrammarBase *grammarBase = grammarBuilder.build();
-
-
+    buildCFLGrammar();
+    
     // Build CFL Graph
-    AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
-    if (Options::CFLGraph.empty()) // built from svfir
-    {
-        PointerAnalysis::initialize();
-        ConstraintGraph *consCG = new ConstraintGraph(svfir);
-        if (Options::PEGTransfer)
-            graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
-        else
-            graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
-        delete consCG;
-    }
-    else
-        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph, grammarBase);
+    buildCFLGraph();
 
-    // Check CFL Graph and Grammar are accordance with grammar
-    CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
-    cflChecker.check(grammarBase, &cflGraphBuilder, graph);
+    // Normalize CFL Grammar
+    normalizeCFLGrammar();
 
-    // Normalize grammar
-    CFGNormalizer normalizer = CFGNormalizer();
-    grammar = normalizer.normalize(grammarBase);
-
+    // Initialize sovler
     solver = new CFLSolver(graph, grammar);
-    delete grammarBase;
 }
 
 void CFLAlias::finalize()
@@ -244,13 +217,11 @@ void CFLAlias::finalize()
         PointerAnalysis::finalize();
 }
 
-void CFLAlias::analyze()
-{
-    initialize();
-
+void CFLAlias::solve()
+{     
     // Start solving
     double start = stat->getClk(true);
-
+ 
     solver->solve();
     if (Options::CFLGraph.empty())
     {
@@ -260,16 +231,4 @@ void CFLAlias::analyze()
 
     double end = stat->getClk(true);
     timeOfSolving += (end - start) / TIMEINTERVAL;
-
-    finalize();
-}
-
-void CFLAlias::countSumEdges()
-{
-    numOfSumEdges = 0;
-    for(auto it = getCFLGraph()->getCFLEdges().begin(); it != getCFLGraph()->getCFLEdges().end(); it++ )
-    {
-        if ((*it)->getEdgeKind() == grammar->getStartKind())
-            numOfSumEdges++;
-    }
 }
