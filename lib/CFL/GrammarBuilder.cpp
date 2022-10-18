@@ -123,7 +123,7 @@ GrammarBase* GrammarBuilder::build() const
         {
             std::string RHS = stripSpace(wordProd.substr(0, pos));
             std::string LHS = wordProd.substr(pos + delimiter1.size(), wordProd.size() - 1);
-            GrammarBase::Symbol RHSSymbol = grammar->insertNonTerminalSymbol(RHS);
+            GrammarBase::Symbol RHSSymbol = grammar->insertSymbol(RHS);
             prod.push_back(RHSSymbol);
             if (grammar->getRawProductions().find(RHSSymbol) == grammar->getRawProductions().end())  grammar->getRawProductions().insert({RHSSymbol, {}});
             std::regex LHSRegEx("\\s*(.*)");

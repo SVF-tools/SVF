@@ -107,10 +107,9 @@ public:
         if (edge != nullptr )
         {
             return false;
-
         }
-        CFLGrammar::Kind copyKind = grammar->str2Kind("Copy");
-        CFLGrammar::Kind copybarKind = grammar->str2Kind("Copybar");
+        CFLGrammar::Kind copyKind = grammar->str2Kind("copy");
+        CFLGrammar::Kind copybarKind = grammar->str2Kind("copybar");
         solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(src),graph->getGNode(dst), copyKind));
         solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(dst),graph->getGNode(src), copybarKind));
         return true;

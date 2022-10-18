@@ -1,7 +1,7 @@
 Start:  
    A
 Terminal:
-   a Call Ret
+   a call ret
 Productions:
-   A -> A A | a | Call_i A Ret_i | epsilon;
-   Abar -> Abar Abar | abar | Retbar_i Abar Callbar_i | epsilon; 
+   A -> A A | a | call_i A ret_i | epsilon;
+   Abar -> Abar Abar | abar | retbar_i Abar callbar_i | epsilon; 
