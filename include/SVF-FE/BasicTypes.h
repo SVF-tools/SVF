@@ -188,6 +188,9 @@ typedef llvm::SCEVConstant SCEVConstant;
 typedef llvm::ScalarEvolution ScalarEvolution;
 typedef llvm::SCEV SCEV;
 
+/// LLVM outputs
+typedef llvm::raw_fd_ostream raw_fd_ostream;
+
 // LLVM Types.
 typedef llvm::VectorType VectorType;
 #if (LLVM_VERSION_MAJOR >= 9)

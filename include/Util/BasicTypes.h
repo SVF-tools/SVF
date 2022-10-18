@@ -76,7 +76,6 @@ typedef llvm::GlobalVariable GlobalVariable;
 
 /// LLVM outputs
 typedef llvm::raw_string_ostream raw_string_ostream;
-typedef llvm::raw_fd_ostream raw_fd_ostream;
 
 /// LLVM types
 typedef llvm::StructType StructType;
@@ -214,17 +213,7 @@ public:
         return bb2LoopMap.find(bb)!=bb2LoopMap.end();
     }
 
-    inline const std::vector<const BasicBlock*>& getLoopInfo(const BasicBlock* bb) const
-    {
-        Map<const BasicBlock*, std::vector<const BasicBlock*>>::const_iterator mapIter = bb2LoopMap.find(bb);
-        if(mapIter != bb2LoopMap.end())
-            return mapIter->second;
-        else
-        {
-            assert(hasLoopInfo(bb) && "loopinfo does not exit(bb not in a loop)");
-            abort();
-        }
-    }
+    const std::vector<const BasicBlock*>& getLoopInfo(const BasicBlock* bb) const;
 
     inline void addToBB2LoopMap(const BasicBlock* bb, const BasicBlock* loopBB)
     {
@@ -266,95 +255,13 @@ public:
         return this->exitBB;
     }
 
-    void getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const
-    {
-        if (hasLoopInfo(bb))
-        {
-            const std::vector<const BasicBlock*>& blocks = getLoopInfo(bb);
-            assert(!blocks.empty() && "no available loop info?");
-            for (const BasicBlock* block : blocks)
-            {
-                for (succ_const_iterator succIt = succ_begin(block); succIt != succ_end(block); succIt++)
-                {
-                    const BasicBlock* succ = *succIt;
-                    if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
-                        exitbbs.insert(succ);
-                }
-            }
-        }
-    }
+    void getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const;
 
-    bool isLoopHeader(const BasicBlock* bb) const
-    {
-        if (hasLoopInfo(bb))
-        {
-            const std::vector<const BasicBlock*>& blocks = getLoopInfo(bb);
-            assert(!blocks.empty() && "no available loop info?");
-            return blocks.front() == bb;
-        }
-        return false;
-    }
+    bool isLoopHeader(const BasicBlock* bb) const;
 
-    bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
-    {
-        if (bbKey == bbValue)
-            return true;
+    bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const;
 
-        // An unreachable node is dominated by anything.
-        if (isUnreachable(bbValue))
-        {
-            return true;
-        }
-
-        // And dominates nothing.
-        if (isUnreachable(bbKey))
-        {
-            return false;
-        }
-
-        const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = getDomTreeMap();
-        Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
-        if (mapIter != dtBBsMap.end())
-        {
-            const Set<const BasicBlock*> & dtBBs = mapIter->second;
-            if (dtBBs.find(bbValue) != dtBBs.end())
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
-    {
-        if (bbKey == bbValue)
-            return true;
-
-        // An unreachable node is dominated by anything.
-        if (isUnreachable(bbValue))
-        {
-            return true;
-        }
-
-        // And dominates nothing.
-        if (isUnreachable(bbKey))
-        {
-            return false;
-        }
-
-        const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = getPostDomTreeMap();
-        Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
-        if (mapIter != dtBBsMap.end())
-        {
-            const Set<const BasicBlock*> & dtBBs = mapIter->second;
-            if (dtBBs.find(bbValue) != dtBBs.end())
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+    bool postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const;
 
     // Dump Control Flow Graph of llvm function, with instructions
     void viewCFG();
