@@ -223,7 +223,7 @@ GrammarBase::Symbol GrammarBase::insertSymbol(std::string symbolStr)
     }
     else
     {
-        symbol.kind = insertTerminalKind(symbolStr);
+        symbol = insertTerminalSymbol(symbolStr);
     }
     return symbol;
 }
@@ -258,6 +258,38 @@ GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string symbolStr)
     }
     return symbol;
 }
+
+GrammarBase::Symbol GrammarBase::insertTerminalSymbol(std::string symbolStr)
+{
+    Symbol symbol;
+    std::string kindStr = extractKindStrFromSymbolStr(symbolStr);
+    std::string attributeStr = extractAttributeStrFromSymbolStr(symbolStr);
+    symbol.kind = insertTerminalKind(kindStr);
+
+    if ( attributeStr == "") return symbol;
+
+    if ( (attributeStr.size() == 1) && (std::isalpha(attributeStr[attributeStr.size()-1])) )
+    {
+        attributeKinds.insert(symbol.kind);
+        symbol.variableAttribute = (u32_t)attributeStr[attributeStr.size()-1];
+    }
+    else
+    {
+        for( char &c : attributeStr)
+        {
+            if ( std::isdigit(c) == false )
+            {
+                SVFUtil::errs() << SVFUtil::errMsg("\t Symbol Attribute Parse Failure :") << symbolStr
+                                << " Attribute:" << attributeStr << " (only number or single alphabet.)";
+                assert(false && "grammar loading failed!");
+            }
+        }
+        attributeKinds.insert(symbol.kind);
+        symbol.attribute = std::stoi(attributeStr);
+    }
+    return symbol;
+}
+
 
 void GrammarBase::insertAttribute(Kind kind, Attribute attribute)
 {
