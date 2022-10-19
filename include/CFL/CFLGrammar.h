@@ -246,6 +246,8 @@ public:
 
     Symbol insertNonTerminalSymbol(std::string strLit);
 
+    Symbol insertTerminalSymbol(std::string strLit);
+
     void insertAttribute(Kind kind, Attribute a);
 
     inline static Kind getAttributedKind(Attribute attribute, Kind kind)
