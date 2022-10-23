@@ -29,6 +29,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "SABER/LeakChecker.h"
 #include "SABER/FileChecker.h"
+#include "SABER/DpdChecker.h"
 #include "SABER/DoubleFreeChecker.h"
 #include "Util/Options.h"
 #include "Util/Z3Expr.h"
@@ -49,6 +50,9 @@ static llvm::cl::opt<bool> FILECHECKER("fileck", llvm::cl::init(false),
 static llvm::cl::opt<bool> DFREECHECKER("dfree", llvm::cl::init(false),
                                         llvm::cl::desc("Double Free Detection"));
 
+static llvm::cl::opt<bool> DPDCHECKER("dangling", llvm::cl::init(false),
+                                        llvm::cl::desc("Dangling pointer detecter"));
+
 int main(int argc, char ** argv)
 {
 
@@ -67,18 +71,26 @@ int main(int argc, char ** argv)
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     svfModule->buildSymbolTableInfo();
 
-    LeakChecker *saber;
-
-    if(LEAKCHECKER)
-        saber = new LeakChecker();
-    else if(FILECHECKER)
-        saber = new FileChecker();
-    else if(DFREECHECKER)
-        saber = new DoubleFreeChecker();
-    else
-        saber = new LeakChecker();  // if no checker is specified, we use leak checker as the default one.
-
-    saber->runOnModule(svfModule);
+    if(LEAKCHECKER){
+        LeakChecker *saber = new LeakChecker();
+        saber->runOnModule(svfModule);
+      }
+    else if(FILECHECKER){
+        LeakChecker *saber = new FileChecker();
+        saber->runOnModule(svfModule);
+      }
+    else if(DFREECHECKER){
+        LeakChecker *saber = new DoubleFreeChecker();
+        saber->runOnModule(svfModule);
+      }
+    else if(DPDCHECKER) {
+        DpdChecker *saber = new DpdChecker();
+        saber->runOnModule(svfModule);
+      }
+    else{
+        LeakChecker *saber = new LeakChecker();  // if no checker is specified, we use leak checker as the default one.
+        saber->runOnModule(svfModule);
+      }
 
     return 0;
 
