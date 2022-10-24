@@ -130,8 +130,8 @@ public:
         {
             if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
                 return inst->getParent()->getParent();
-            else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
-                return arg->getParent();
+            else if (const SVFArgument* arg = SVFUtil::getArgument(value))
+                return arg->getParent()->getLLVMFun();
             else if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
                 return fun;
         }

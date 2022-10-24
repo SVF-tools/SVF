@@ -306,7 +306,7 @@ std::string SVFUtil::getSourceLoc(const Value* val)
             rawstr << "ln: " << Line << "  cl: " << Column << "  fl: " << File;
         }
     }
-    else if (const Argument* argument = SVFUtil::dyn_cast<Argument>(val))
+    else if (const SVFArgument* argument = getArgument(val))
     {
         if (argument->getArgNo()%10 == 1)
             rawstr << argument->getArgNo() << "st";
@@ -317,7 +317,7 @@ std::string SVFUtil::getSourceLoc(const Value* val)
         else
             rawstr << argument->getArgNo() << "th";
         rawstr << " arg " << argument->getParent()->getName() << " "
-               << getSourceLocOfFunction(argument->getParent());
+               << getSourceLocOfFunction(argument->getParent()->getLLVMFun());
     }
     else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
     {

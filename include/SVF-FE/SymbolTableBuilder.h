@@ -64,6 +64,8 @@ public:
 
     void collectVal(const Value *val);
 
+    void colletArgument(const Value *arg);
+
     void collectObj(const Value *val);
 
     void collectRet(const Function *val);

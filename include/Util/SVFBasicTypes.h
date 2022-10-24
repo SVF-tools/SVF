@@ -214,6 +214,7 @@ public:
         SVFGlob,
         SVFBB,
         SVFInst,
+        SVFArg,
     };
 
 private:

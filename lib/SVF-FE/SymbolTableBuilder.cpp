@@ -302,6 +302,10 @@ void SymbolTableBuilder::collectSym(const Value *val)
  */
 void SymbolTableBuilder::collectVal(const Value *val)
 {
+    if (SVFUtil::isa<Argument>(val))
+    {
+        colletArgument(val);
+    }
     // collect and record special sym here
     if (LLVMUtil::isNullPtrSym(val) || LLVMUtil::isBlackholeSym(val))
     {
@@ -325,6 +329,10 @@ void SymbolTableBuilder::collectVal(const Value *val)
         collectObj(val);
 }
 
+void SymbolTableBuilder::colletArgument(const Value* val)
+{
+    symInfo->getModule()->addArgumentSet(val); 
+}
 /*!
  * Get memory object sym, if not available create a new one
  */

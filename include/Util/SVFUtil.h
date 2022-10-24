@@ -35,6 +35,7 @@
 #include "Util/BasicTypes.h"
 #include "MemoryModel/PointsTo.h"
 #include <time.h>
+#include "Util/SVFArgument.h"
 
 namespace SVF
 {
@@ -225,6 +226,11 @@ inline CallSite getLLVMCallSite(const Instruction* inst)
 inline const SVFFunction* getFunction(std::string name)
 {
     return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(name);
+}
+
+inline const SVFArgument* getArgument(const Value * value)
+{
+    return LLVMModuleSet::getLLVMModuleSet()->getSVFModule()->getSVFArgument(value);
 }
 
 /// Split into two substrings around the first occurrence of a separator string.
