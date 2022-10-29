@@ -45,6 +45,7 @@ class DpdChecker : public SrcSnkDDA
 public:
     typedef Map<const SVFGNode*,const CallICFGNode*> SVFGNodeToCSIDMap;
     typedef FIFOWorkList<const CallICFGNode*> CSWorkList;
+    typedef FIFOWorkList<const SVFGNode*> NodeWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
     enum LEAK_TYPE
