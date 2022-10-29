@@ -188,7 +188,9 @@ void ProgSlice::annotatePaths()
 {
 
     SaberAnnotator annotator(this);
+    outs() << "POTATOA";
     annotator.annotateSource();
+    outs() << "POTATOB";
     annotator.annotateSinks();
 
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
@@ -201,7 +203,9 @@ void ProgSlice::annotatePaths()
             {
                 if (const BranchStmt *branchStmt = SVFUtil::dyn_cast<BranchStmt>(svfStmt))
                 {
+                    outs() << "POTATO1";
                     annotator.annotateFeasibleBranch(branchStmt,0);
+                    outs() << "POTATO2";
                     annotator.annotateFeasibleBranch(branchStmt,1);
                 }
             }

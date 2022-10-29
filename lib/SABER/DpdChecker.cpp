@@ -57,19 +57,58 @@ void DpdChecker::initSrcs()
                 {
                     const PAGNode *pagNode = *ait;
 
-                    outs() << pagNode->getValueName() << "WHICH IS ";
+                    NodeWorkList worklist;
+                    SVFGNodeBS visited;
 
-                    if (pagNode->isPointer()) {
-                      outs() << "POINTER";
+                    worklist.push(svfg->getDefSVFGNode(pagNode));
+                    visited.set(svfg->getDefSVFGNode(pagNode)->getId());
 
-                    //   const SVFGNode *src = getSVFG()->getActualParmVFGNode(pagNode, it->first);
-                      const SVFGNode* src = svfg->getDefSVFGNode(pagNode);
-                      addToSources(src);
-                      addSrcToCSID(src, it->first);
-                      
-                    }else {
-                      outs() << "NOT POINTER";
+                    NodeID freeNodeId = svfg->getDefSVFGNode(pagNode)->getICFGNode()->getId();
+
+                    while (! worklist.empty()) {
+                        const SVFGNode* svfgNode = worklist.pop();
+                        outs() << "Node Popped : " << svfgNode << "\n";
+
+                        for(auto EdgeIt = svfgNode->InEdgeBegin(), EndEdgeIt = svfgNode->InEdgeEnd() ; EdgeIt != EndEdgeIt ; EdgeIt++){
+
+                            const VFGEdge* edge = *EdgeIt;
+
+                            // outs() << ;
+                            const SVFGNode* dstNode = edge->getSrcNode();
+                            if (visited.test(dstNode->getId()) == 0) {
+                                outs() << "Node Added : " << dstNode << "\n";
+                                visited.set(dstNode->getId());
+
+                                if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Store && dstNode->getICFGNode()->getId() < freeNodeId)
+                                {
+                                    outs() << "SETTING SOURCE : " << dstNode << "\n";
+                                    // addToSinks(dstNode);
+                                    addToSources(dstNode);
+                                    addSrcToCSID(dstNode, it->first);
+                                }
+                                
+                                
+
+                                worklist.push(dstNode);
+                            }
+                            else
+                                continue;
+                        }
                     }
+
+                    // outs() << pagNode->getValueName() << "WHICH IS ";
+
+                    // if (pagNode->isPointer()) {
+                    //   outs() << "POINTER";
+
+                    // //   const SVFGNode *src = getSVFG()->getActualParmVFGNode(pagNode, it->first);
+                    //   const SVFGNode* src = svfg->getDefSVFGNode(pagNode);
+                    //   addToSources(src);
+                    //   addSrcToCSID(src, it->first);
+                      
+                    // }else {
+                    //   outs() << "NOT POINTER";
+                    // }
 
                 }
             }
@@ -199,6 +238,8 @@ void DpdChecker::initSnks()
                   worklist.push(svfg->getDefSVFGNode(pagNode));
                   visited.set(svfg->getDefSVFGNode(pagNode)->getId());
 
+                  NodeID freeNodeId = svfg->getDefSVFGNode(pagNode)->getId();
+
                   while (! worklist.empty()) {
                       const SVFGNode* svfgNode = worklist.pop();
                       outs() << "Node Popped : " << svfgNode << "\n";
@@ -213,7 +254,7 @@ void DpdChecker::initSnks()
                             outs() << "Node Added : " << dstNode << "\n";
                             visited.set(dstNode->getId());
 
-                            if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Load)
+                            if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Load && dstNode->getId() > freeNodeId)
                             {
                                 outs() << "SETTING SINK : " << dstNode << "\n";
                                 addToSinks(dstNode);
@@ -235,7 +276,7 @@ void DpdChecker::initSnks()
                             outs() << "Node Added : " << dstNode << "\n";
                             visited.set(dstNode->getId());
 
-                            if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Load)
+                            if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Load && dstNode->getId() > freeNodeId)
                             {
                                 outs() << "SETTING SINK : " << dstNode << "\n";
                                 addToSinks(dstNode);
@@ -280,7 +321,7 @@ void DpdChecker::reportBug(ProgSlice* slice)
     {
         reportPartialLeak(slice->getSource());
         SVFUtil::errs() << "\t\t conditional free path: \n" << slice->evalFinalCond() << "\n";
-        slice->annotatePaths();
+        // slice->annotatePaths();
     }
 
     if(Options::ValidateTests)
