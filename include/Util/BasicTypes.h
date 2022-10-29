@@ -117,7 +117,7 @@ private:
     bool isDecl;
     bool isIntri;
     Function* fun;
-    BasicBlock* exitBB;
+    const BasicBlock* exitBB;
     std::vector<const BasicBlock*> reachableBBs;
     bool isUncalled;
     bool isNotRet;
@@ -127,15 +127,7 @@ private:
     Map<const BasicBlock*,std::vector<const BasicBlock*>> bb2LoopMap;
 public:
 
-    SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false)
-    {
-    }
-
-    SVFFunction(Function* f, BasicBlock* exitBB, std::vector<const BasicBlock*> reachableBBs): SVFValue(f->getName().str(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(exitBB), reachableBBs(reachableBBs), isUncalled(false), isNotRet(false)
-    {
-    }
+    SVFFunction(Function *f);
 
     inline Function* getLLVMFun() const
     {
@@ -186,11 +178,6 @@ public:
     inline const void setIsNotRet(const bool doesNotRet)
     {
         this->isNotRet = doesNotRet;
-    }
-
-    inline const void setExitBB(BasicBlock* exitBB)
-    {
-        this->exitBB = exitBB;
     }
 
     inline const void setReachableBBs(std::vector<const BasicBlock*> reachableBBs)

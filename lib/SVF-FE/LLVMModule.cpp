@@ -145,9 +145,7 @@ void LLVMModuleSet::build()
         {
             std::vector<const BasicBlock*> reachableBBs;
             LLVMUtil::getFunReachableBBs(func, reachableBBs);
-            BasicBlock *exitBB =  const_cast<BasicBlock*>(LLVMUtil::getFunExitBB(func));
             svffun->setReachableBBs(reachableBBs);
-            svffun->setExitBB(exitBB);
 
             //process and stored dt & df
             DominatorTree dt;

@@ -4,6 +4,14 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+SVFFunction::SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
+        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false)
+{
+    if (!SVFUtil::isExtCall(this))
+    {
+        exitBB = &f->back();
+    }
+}
 
 const std::vector<const BasicBlock*>& SVFFunction::getLoopInfo(const BasicBlock* bb) const
 {
