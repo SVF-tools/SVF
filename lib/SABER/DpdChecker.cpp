@@ -295,33 +295,45 @@ void DpdChecker::initSnks()
 }
 
 
-void DpdChecker::reportNeverFree(const SVFGNode* src)
+void DpdChecker::reportAlwaysUAF(ProgSlice* slice)
 {
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
+    const CallICFGNode* cs = getSrcCSID(slice->getSource());
+    for (auto SinksIt = slice->sinksBegin(), SinksEnd = slice->sinksEnd() ; SinksIt != SinksEnd ; SinksIt++) {
+        const SVFGNode* sinkNode = *SinksIt;
+        SVFIR* pag = getPAG();
+        PAGNode* pagSinkNode = pag->getGNode(sinkNode->getId());
+        SVFUtil::errs() << " memory used at : ("
+                    << getSourceLoc(pagSinkNode->getValue()) << ")\n";
+    }
+    SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory freed at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
-void DpdChecker::reportPartialLeak(const SVFGNode* src)
+void DpdChecker::reportConditionalUAF(ProgSlice* slice)
 {
 
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
+    const CallICFGNode* cs = getSrcCSID(slice->getSource());
+    for (auto SinksIt = slice->sinksBegin(), SinksEnd = slice->sinksEnd() ; SinksIt != SinksEnd ; SinksIt++) {
+        const SVFGNode* sinkNode = *SinksIt;
+        SVFIR* pag = getPAG();
+        PAGNode* pagSinkNode = pag->getGNode(sinkNode->getId());
+        SVFUtil::errs() << " memory used at : ("
+                    << getSourceLoc(pagSinkNode->getValue()) << ")\n";
+    }
+    SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory freed at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
 void DpdChecker::reportBug(ProgSlice* slice)
 {
 
-    if(isAllPathReachable() == false && isSomePathReachable() == false)
+    if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
-        reportNeverFree(slice->getSource());
-    }
-    else if (isAllPathReachable() == false && isSomePathReachable() == true)
-    {
-        reportPartialLeak(slice->getSource());
+        reportConditionalUAF(slice);
         SVFUtil::errs() << "\t\t conditional free path: \n" << slice->evalFinalCond() << "\n";
         // slice->annotatePaths();
+    } else if (isAllPathReachable() == true) {
+        reportAlwaysUAF(slice);
     }
 
     if(Options::ValidateTests)
