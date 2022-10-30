@@ -305,7 +305,7 @@ void DpdChecker::reportAlwaysUAF(ProgSlice* slice)
         SVFUtil::errs() << " memory used at : ("
                     << getSourceLoc(pagSinkNode->getValue()) << ")\n";
     }
-    SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory freed at : ("
+    SVFUtil::errs() << bugMsg1("\t Always UAF :") <<  " memory freed at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
@@ -320,7 +320,7 @@ void DpdChecker::reportConditionalUAF(ProgSlice* slice)
         SVFUtil::errs() << " memory used at : ("
                     << getSourceLoc(pagSinkNode->getValue()) << ")\n";
     }
-    SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory freed at : ("
+    SVFUtil::errs() << bugMsg2("\t Conditional UAF :") <<  " memory freed at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
