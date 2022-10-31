@@ -69,7 +69,7 @@ void CFLStat::CFLSolverStat()
     timeStatMap["AnalysisTime"] = pta->timeOfSolving;
     PTNumStatMap["numOfIteration"] = pta->numOfIteration;
     PTNumStatMap["SumEdges"] = pta->numOfStartEdges;
-    
+
     PTAStat::printStat("CFL-reachability Solver Stats");
 }
 

@@ -31,7 +31,7 @@
 
 using namespace SVF;
 
-double CFLSolver::numOfChecks = 0;  
+double CFLSolver::numOfChecks = 0;
 
 void CFLSolver::initialize()
 {

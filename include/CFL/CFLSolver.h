@@ -47,7 +47,7 @@ public:
     typedef CFLGrammar::Production Production;
     typedef CFLGrammar::Symbol Symbol;
 
-    static double numOfChecks;   
+    static double numOfChecks;
 
     CFLSolver(CFLGraph* _graph, CFLGrammar* _grammar): graph(_graph), grammar(_grammar)
     {
