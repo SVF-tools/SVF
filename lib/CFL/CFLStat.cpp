@@ -46,17 +46,6 @@ CFLStat::CFLStat(CFLBase* p): PTAStat(p),pta(p)
  */
 void  CFLStat::collectCFLInfo(CFLGraph* CFLGraph)
 {
-    timeStatMap["timeOfBuildCFLGraph"] = pta->timeOfBuildCFLGraph;
-    PTNumStatMap["NumOfNodes"] = CFLGraph->getTotalNodeNum();
-    PTNumStatMap["NumOfEdges"] = CFLGraph->getCFLEdges().size();
-
-    PTAStat::printStat("CFLGraph Stats");
-}
-
-void CFLStat::constraintGraphStat()
-{
-
-
     u32_t numOfCopys = 0;
     u32_t numOfGeps = 0;
 
@@ -102,13 +91,17 @@ void CFLStat::constraintGraphStat()
     timeStatMap["AvgIn/OutAddrEdge"] = addravgIn;
     timeStatMap["AvgIn/OutEdge"] = avgIn;
 
-    PTAStat::printStat("CFL Graph Stats");
+    timeStatMap["BuildingTime"] = pta->timeOfBuildCFLGraph;
+    PTNumStatMap["NumOfNodes"] = CFLGraph->getTotalNodeNum();
+    PTNumStatMap["NumOfEdges"] = CFLGraph->getCFLEdges().size();
+
+    PTAStat::printStat("CFLGraph Stats");
 }
 
 void CFLStat::CFLGrammarStat()
 {
-    timeStatMap["timeOfBuildCFLGrammar"] = pta->timeOfBuildCFLGrammar;
-    timeStatMap["timeOfNormalizeGrammar"] = pta->timeOfNormalizeGrammar;
+    timeStatMap["BuildingTime"] = pta->timeOfBuildCFLGrammar;
+    timeStatMap["NormalizationTime"] = pta->timeOfNormalizeGrammar;
     PTAStat::printStat("CFLGrammar Stats");
 }
 
@@ -120,9 +113,11 @@ void CFLStat::performStat()
     assert((SVFUtil::isa<CFLAlias>(pta)||SVFUtil::isa<CFLVF>(pta)) && "not an CFLAlias pass!! what else??");
     endClk();
 
-    pta->countSumEdges();
+    // Grammar stat
+    CFLGrammarStat();
 
     // CFLGraph stat
+    pta->countSumEdges();
     CFLGraph* CFLGraph = pta->getCFLGraph();
     collectCFLInfo(CFLGraph);
 
@@ -131,12 +126,7 @@ void CFLStat::performStat()
     PTNumStatMap["SumEdges"] = pta->numOfStartEdges;
     PTAStat::printStat("CFL-reachability analysis Stats");
 
-    // Grammar stat
-    CFLGrammarStat();
-
+    // Stat about Call graph and General stat
     PTAStat::performStat();
-
-    // ConstraintGraph stat
-    constraintGraphStat();
 }
 
