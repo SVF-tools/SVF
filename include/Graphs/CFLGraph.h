@@ -84,47 +84,57 @@ public:
     ~CFLNode() override = default;
 
     /// Different Kind(label) associated edges set
-    typedef std::map <CFLEdge::GEdgeKind, CFLEdge::CFLEdgeSetTy> CFLEdgeDataTy;
+    typedef std::map <GrammarBase::Symbol, CFLEdge::CFLEdgeSetTy> CFLEdgeDataTy;
 
 private:
     CFLEdgeDataTy inCFLEdges;
     CFLEdgeDataTy outCFLEdges;
 
 public:
-    inline const CFLEdge::CFLEdgeSetTy& getInEdgeWithTy(CFLEdge::GEdgeKind k)
+    inline const CFLEdge::CFLEdgeSetTy& getInEdgeWithTy(GrammarBase::Symbol s)
     {
-        return inCFLEdges[k];
+        return inCFLEdges[s];
     }
 
-    inline const CFLEdge::CFLEdgeSetTy& getOutEdgeWithTy(CFLEdge::GEdgeKind k)
+    inline const CFLEdge::CFLEdgeSetTy& getOutEdgeWithTy(GrammarBase::Symbol s)
     {
-        return outCFLEdges[k];
+        return outCFLEdges[s];
     }
 
-    inline bool addInEdgeWithKind(CFLEdge* inEdge, CFLEdge::GEdgeKind k)
+    inline bool addInEdgeWithKind(CFLEdge* inEdge, GrammarBase::Symbol s)
     {
         assert(inEdge->getDstID() == this->getId());
-        bool added1 = addIncomingEdge(inEdge);
-        bool added2 = inCFLEdges[k].insert(inEdge).second;
+        bool added1 = GenericNode::addIncomingEdge(inEdge);
+        bool added2 = inCFLEdges[s].insert(inEdge).second;
 
         return added1 && added2;
     }
 
-    inline bool addOutEdgeWithKind(CFLEdge* outEdge, CFLEdge::GEdgeKind k)
+    inline bool addIngoingEdge(CFLEdge* inEdge)
+    {
+        return addInEdgeWithKind(inEdge, inEdge->getEdgeKind());
+    }
+
+    inline bool addOutEdgeWithKind(CFLEdge* outEdge, GrammarBase::Symbol s)
     {
         assert(outEdge->getSrcID() == this->getId());
-        bool added1 = addOutgoingEdge(outEdge);
-        bool added2 = outCFLEdges[k].insert(outEdge).second;
+        bool added1 = GenericNode::addOutgoingEdge(outEdge);
+        bool added2 = outCFLEdges[s].insert(outEdge).second;
 
         return added1 && added2;
+    }
+
+    inline bool addOutgoingEdge(CFLEdge* OutEdge)
+    {
+        return addOutEdgeWithKind(OutEdge, OutEdge->getEdgeKind());
     }
 
     inline bool removeCFLInEdge(CFLEdge* inEdge)
     {
         u32_t num1 = removeIncomingEdge(inEdge);
 
-        CFLEdge::GEdgeKind k = inEdge->getEdgeKind();
-        u32_t num2 = inCFLEdges[k].erase(inEdge);
+        GrammarBase::Symbol s = inEdge->getEdgeKind();
+        u32_t num2 = inCFLEdges[s].erase(inEdge);
 
         return num1 && num2;
     }
@@ -133,8 +143,8 @@ public:
     {
         u32_t num1 = removeOutgoingEdge(outEdge);
 
-        CFLEdge::GEdgeKind k = outEdge->getEdgeKind();
-        u32_t num2 = outCFLEdges[k].erase(outEdge);
+        GrammarBase::Symbol s = outEdge->getEdgeKind();
+        u32_t num2 = outCFLEdges[s].erase(outEdge);
 
         return num1 && num2;
     }

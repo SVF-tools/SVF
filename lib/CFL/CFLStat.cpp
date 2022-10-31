@@ -44,8 +44,11 @@ CFLStat::CFLStat(CFLBase* p): PTAStat(p),pta(p)
 /*!
  * Collect CFLGraph information
  */
-void  CFLStat::collectCFLInfo(CFLGraph* CFLGraph)
+void  CFLStat::CFLGraphStat()
 {
+    pta->countSumEdges();
+    CFLGraph* CFLGraph = pta->getCFLGraph();
+
     timeStatMap["BuildingTime"] = pta->timeOfBuildCFLGraph;
     PTNumStatMap["NumOfNodes"] = CFLGraph->getTotalNodeNum();
     PTNumStatMap["NumOfEdges"] = CFLGraph->getCFLEdges().size();
@@ -57,7 +60,17 @@ void CFLStat::CFLGrammarStat()
 {
     timeStatMap["BuildingTime"] = pta->timeOfBuildCFLGrammar;
     timeStatMap["NormalizationTime"] = pta->timeOfNormalizeGrammar;
+
     PTAStat::printStat("CFLGrammar Stats");
+}
+
+void CFLStat::CFLSolverStat()
+{
+    timeStatMap["AnalysisTime"] = pta->timeOfSolving;
+    PTNumStatMap["numOfIteration"] = pta->numOfIteration;
+    PTNumStatMap["SumEdges"] = pta->numOfStartEdges;
+    
+    PTAStat::printStat("CFL-reachability Solver Stats");
 }
 
 /*!
@@ -72,14 +85,10 @@ void CFLStat::performStat()
     CFLGrammarStat();
 
     // CFLGraph stat
-    pta->countSumEdges();
-    CFLGraph* CFLGraph = pta->getCFLGraph();
-    collectCFLInfo(CFLGraph);
+    CFLGraphStat();
 
     // Solver stat
-    timeStatMap["AnalysisTime"] = pta->timeOfSolving;
-    PTNumStatMap["SumEdges"] = pta->numOfStartEdges;
-    PTAStat::printStat("CFL-reachability analysis Stats");
+    CFLSolverStat();
 
     // Stat about Call graph and General stat
     PTAStat::performStat();

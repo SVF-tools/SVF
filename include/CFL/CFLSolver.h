@@ -47,6 +47,8 @@ public:
     typedef CFLGrammar::Production Production;
     typedef CFLGrammar::Symbol Symbol;
 
+    static double numOfChecks;   
+
     CFLSolver(CFLGraph* _graph, CFLGrammar* _grammar): graph(_graph), grammar(_grammar)
     {
     }
@@ -56,6 +58,12 @@ public:
         delete graph;
         delete grammar;
     }
+
+    /// Initialize worklist
+    void initialize();
+
+    /// Process CFLEdge
+    void processCFLEdge(const CFLEdge* Y_edge);
 
     /// Start solving
     void solve();
