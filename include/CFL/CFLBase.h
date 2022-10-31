@@ -94,6 +94,8 @@ public:
     static double numOfNonterminalEdges;            // Number of nonterminal labeled edges
     static double numOfStartEdges;                  // Number of start nonterminal labeled edges
     // Solver
+    static double numOfIteration;                   // Number solving Iteration
+    static double numOfChecks;                      // Number of checks
     static double timeOfSolving;                    // time of solving CFL Reachability
     //@}
 

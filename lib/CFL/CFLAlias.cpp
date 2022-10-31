@@ -33,6 +33,8 @@ using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
 
+double CFLBase::numOfIteration = 1;
+
 /*!
  * On the fly call graph construction
  * callsites is candidate indirect callsites need to be analyzed based on points-to results
@@ -226,7 +228,10 @@ void CFLAlias::solve()
     if (Options::CFLGraph.empty())
     {
         while (updateCallGraph(svfir->getIndirectCallsites()))
+        {
+            numOfIteration++;
             solver->solve();
+        }
     } // Only cflgraph built from bc could reanlyze by update call graph
 
     double end = stat->getClk(true);
