@@ -46,51 +46,6 @@ CFLStat::CFLStat(CFLBase* p): PTAStat(p),pta(p)
  */
 void  CFLStat::collectCFLInfo(CFLGraph* CFLGraph)
 {
-    u32_t numOfCopys = 0;
-    u32_t numOfGeps = 0;
-
-    u32_t totalNodeNumber = 0;
-    u32_t cgNodeNumber = 0;
-    u32_t objNodeNumber = 0;
-    u32_t addrtotalIn = 0;
-    u32_t addrmaxIn = 0;
-    u32_t addrmaxOut = 0;
-    u32_t copytotalIn = 0;
-    u32_t copymaxIn = 0;
-    u32_t copymaxOut = 0;
-    u32_t loadtotalIn = 0;
-    u32_t loadmaxIn = 0;
-    u32_t loadmaxOut = 0;
-    u32_t storetotalIn = 0;
-    u32_t storemaxIn = 0;
-    u32_t storemaxOut = 0;
-
-    double storeavgIn = (double)storetotalIn/cgNodeNumber;
-    double loadavgIn = (double)loadtotalIn/cgNodeNumber;
-    double copyavgIn = (double)copytotalIn/cgNodeNumber;
-    double addravgIn = (double)addrtotalIn/cgNodeNumber;
-    double avgIn = (double)(addrtotalIn + copytotalIn + loadtotalIn + storetotalIn)/cgNodeNumber;
-
-
-    PTNumStatMap["NumOfCGNode"] = totalNodeNumber;
-    PTNumStatMap["TotalValidNode"] = cgNodeNumber;
-    PTNumStatMap["TotalValidObjNode"] = objNodeNumber;
-    PTNumStatMap["NumOfCopys"] = numOfCopys;
-    PTNumStatMap["NumOfGeps"] =  numOfGeps;
-    PTNumStatMap["MaxInCopyEdge"] = copymaxIn;
-    PTNumStatMap["MaxOutCopyEdge"] = copymaxOut;
-    PTNumStatMap["MaxInLoadEdge"] = loadmaxIn;
-    PTNumStatMap["MaxOutLoadEdge"] = loadmaxOut;
-    PTNumStatMap["MaxInStoreEdge"] = storemaxIn;
-    PTNumStatMap["MaxOutStoreEdge"] = storemaxOut;
-    PTNumStatMap["AvgIn/OutStoreEdge"] = storeavgIn;
-    PTNumStatMap["MaxInAddrEdge"] = addrmaxIn;
-    PTNumStatMap["MaxOutAddrEdge"] = addrmaxOut;
-    timeStatMap["AvgIn/OutCopyEdge"] = copyavgIn;
-    timeStatMap["AvgIn/OutLoadEdge"] = loadavgIn;
-    timeStatMap["AvgIn/OutAddrEdge"] = addravgIn;
-    timeStatMap["AvgIn/OutEdge"] = avgIn;
-
     timeStatMap["BuildingTime"] = pta->timeOfBuildCFLGraph;
     PTNumStatMap["NumOfNodes"] = CFLGraph->getTotalNodeNum();
     PTNumStatMap["NumOfEdges"] = CFLGraph->getCFLEdges().size();
