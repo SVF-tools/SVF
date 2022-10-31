@@ -62,6 +62,10 @@ GrammarBase::Kind GrammarBase::str2Kind(std::string str) const
     auto nit = nonterminals.find(str);
     if(nit!=nonterminals.end())
         return nit->second;
+    
+    auto sit = EBNFSigns.find(str);
+    if(sit!=EBNFSigns.end())
+        return sit->second;
 
     assert(false && "kind not found!");
     abort();
@@ -116,6 +120,16 @@ std::string GrammarBase::kind2Str(Kind kind) const
         {
             nkey = ni.first;
             return nkey;
+        }
+    }
+
+    std::string signs = "";
+    for (auto &i : EBNFSigns)
+    {
+        if (i.second == kind)
+        {
+            signs = i.first;
+            return signs;
         }
     }
 
@@ -217,7 +231,11 @@ std::string GrammarBase::extractAttributeStrFromSymbolStr(const std::string symb
 GrammarBase::Symbol GrammarBase::insertSymbol(std::string symbolStr)
 {
     Symbol symbol;
-    if (isupper(symbolStr[0]))
+    if (symbolStr == "?" || symbolStr == "*")
+    {
+        symbol = insertEBNFSigns(symbolStr);
+    }
+    else if (isupper(symbolStr[0]))
     {
         symbol = insertNonTerminalSymbol(symbolStr);
     }
@@ -290,6 +308,21 @@ GrammarBase::Symbol GrammarBase::insertTerminalSymbol(std::string symbolStr)
     return symbol;
 }
 
+GrammarBase::Symbol GrammarBase::insertEBNFSigns(std::string symbolStr)
+{
+    Symbol sign;
+    if (EBNFSigns.find(symbolStr) == EBNFSigns.end())
+    {
+        sign = totalKind++;
+        EBNFSigns.insert({symbolStr, sign});
+    }
+    else
+    {
+        sign = str2Kind(symbolStr);
+    }
+    return sign;
+    
+}
 
 void GrammarBase::insertAttribute(Kind kind, Attribute attribute)
 {

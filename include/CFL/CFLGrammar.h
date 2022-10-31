@@ -177,6 +177,16 @@ public:
         this->terminals = terminals;
     }
 
+    inline Map<std::string, Kind>& getEBNFSigns()
+    {
+        return this->EBNFSigns;
+    }
+
+    inline void setEBNFSigns(Map<std::string, Kind>& EBNFSigns)
+    {
+        this->EBNFSigns = EBNFSigns;
+    }
+
     inline SymbolMap<Symbol, Productions>& getRawProductions()
     {
         return this->rawProductions;
@@ -248,6 +258,8 @@ public:
 
     Symbol insertTerminalSymbol(std::string strLit);
 
+    Symbol insertEBNFSigns(std::string strLit);
+    
     void insertAttribute(Kind kind, Attribute a);
 
     inline static Kind getAttributedKind(Attribute attribute, Kind kind)
@@ -268,6 +280,7 @@ protected:
 private:
     Map<std::string, Kind> nonterminals;
     Map<std::string, Kind> terminals;
+    Map<std::string, Kind> EBNFSigns; /// Map contains Signs' String and associated Symbols
     Set<Kind> attributeKinds;
     Map<Kind,  Set<Attribute>> kind2AttrsMap;
     SymbolMap<Symbol, Productions> rawProductions;
