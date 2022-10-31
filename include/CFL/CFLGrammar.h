@@ -259,7 +259,7 @@ public:
     Symbol insertTerminalSymbol(std::string strLit);
 
     Symbol insertEBNFSigns(std::string strLit);
-    
+
     void insertAttribute(Kind kind, Attribute a);
 
     inline static Kind getAttributedKind(Attribute attribute, Kind kind)

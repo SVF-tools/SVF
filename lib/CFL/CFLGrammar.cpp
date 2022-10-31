@@ -62,7 +62,7 @@ GrammarBase::Kind GrammarBase::str2Kind(std::string str) const
     auto nit = nonterminals.find(str);
     if(nit!=nonterminals.end())
         return nit->second;
-    
+
     auto sit = EBNFSigns.find(str);
     if(sit!=EBNFSigns.end())
         return sit->second;
@@ -321,7 +321,7 @@ GrammarBase::Symbol GrammarBase::insertEBNFSigns(std::string symbolStr)
         sign = str2Kind(symbolStr);
     }
     return sign;
-    
+
 }
 
 void GrammarBase::insertAttribute(Kind kind, Attribute attribute)

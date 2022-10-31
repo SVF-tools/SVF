@@ -87,7 +87,7 @@ public:
     typedef std::map <CFLEdge::GEdgeKind, CFLEdge::CFLEdgeSetTy> CFLEdgeDataTy;
 
 private:
-    CFLEdgeDataTy inCFLEdges;   
+    CFLEdgeDataTy inCFLEdges;
     CFLEdgeDataTy outCFLEdges;
 
 public:
