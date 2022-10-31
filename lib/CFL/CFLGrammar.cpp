@@ -231,7 +231,7 @@ std::string GrammarBase::extractAttributeStrFromSymbolStr(const std::string symb
 GrammarBase::Symbol GrammarBase::insertSymbol(std::string symbolStr)
 {
     Symbol symbol;
-    if (symbolStr == "?" || symbolStr == "*")
+    if ((symbolStr.size() == 1) && (!isalpha(symbolStr[0])))
     {
         symbol = insertEBNFSigns(symbolStr);
     }
