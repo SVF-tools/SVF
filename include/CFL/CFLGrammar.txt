@@ -3,37 +3,13 @@ Start:
 Terminal:
    addr copy store load gep vgep 
 Productions:
-   F -> epsilon;
-   F -> F copy;
-   F -> addr Memflow;
-   F -> F store V load;
-   F -> store Memflow load;
-   Fbar -> epsilon;
-   Fbar -> copybar Fbar;
-   Fbar -> Memflowbar addrbar;
-   Fbar -> loadbar V storebar Fbar;
-   Fbar -> loadbar Memflowbar storebar;
-   V -> Fbar V F;
-   V -> addrbar addr;
-   V -> gepbar_i V gep_i;
-   V -> gepbarpath V gep_0;
-   V -> gepbar_i F gep_i;
-   V -> gepbar_i Fbar gep_i;
-   copy -> vgep;
+   F -> epsilon | F copy | addr Memflow | F store V load | store Memflow load;
+   Fbar -> epsilon | copybar Fbar | Memflowbar addrbar | loadbar V storebar Fbar | loadbar Memflowbar storebar;
+   V -> Fbar V F | addrbar addr | gepbar_i V gep_i | gepbarpath V gep_0 | gepbar_i F gep_i | gepbar_i Fbar gep_i;
+   copy -> vgep； 
    copybar -> vgepbar;
-   gep_1 -> gep_0 F gep_1;
-   gepbar_1 -> gepbar_1 Fbar gepbar_0;
-   gep_1 -> gep_0 F vgep;
-   gepbar_1 -> vgepbar Fbar gepbar_0;
-   gepbarpath -> gepbar_0 gepbar_0;
-   gepbarpath -> gepbarpath gepbar_0;
-   Memflow -> load store;
-   Memflow -> Fbar Memflow;
-   Memflow -> F Memflow Fbar;
-   Memflow -> gep_i Memflow gepbar_i;
-   Memflow -> gepbar_i Memflow gep_i;
-   Memflowbar -> storebar loadbar;
-   Memflowbar -> Memflowbar F;
-   Memflowbar -> F Memflowbar Fbar;
-   Memflowbar -> gep_i Memflowbar gepbar_i;
-   Memflowbar -> gepbar_i Memflowbar gep_i;
+   gep_1 -> gep_0 F vgep | gep_0 F gep_1;
+   gepbar_1 -> gepbar_1 Fbar gepbar_0 | vgepbar Fbar gepbar_0;
+   gepbarpath -> gepbar_0 gepbar_0 | gepbarpath gepbar_0;
+   Memflow -> load store | Fbar Memflow | F Memflow Fbar | gep_i Memflow gepbar_i | gepbar_i Memflow gep_i;;
+   Memflowbar -> storebar loadbar | Memflowbar F | F Memflowbar Fbar | gep_i Memflowbar gepbar_i | gepbar_i Memflowbar gep_i;

@@ -67,8 +67,6 @@ public:
 
     void collectCFLInfo(CFLGraph* CFLGraph);
 
-    void constraintGraphStat();
-
     void CFLGrammarStat();
 };
 

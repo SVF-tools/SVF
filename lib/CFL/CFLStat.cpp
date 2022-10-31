@@ -46,69 +46,17 @@ CFLStat::CFLStat(CFLBase* p): PTAStat(p),pta(p)
  */
 void  CFLStat::collectCFLInfo(CFLGraph* CFLGraph)
 {
-    timeStatMap["timeOfBuildCFLGraph"] = pta->timeOfBuildCFLGraph;
+    timeStatMap["BuildingTime"] = pta->timeOfBuildCFLGraph;
     PTNumStatMap["NumOfNodes"] = CFLGraph->getTotalNodeNum();
     PTNumStatMap["NumOfEdges"] = CFLGraph->getCFLEdges().size();
 
     PTAStat::printStat("CFLGraph Stats");
 }
 
-void CFLStat::constraintGraphStat()
-{
-
-
-    u32_t numOfCopys = 0;
-    u32_t numOfGeps = 0;
-
-    u32_t totalNodeNumber = 0;
-    u32_t cgNodeNumber = 0;
-    u32_t objNodeNumber = 0;
-    u32_t addrtotalIn = 0;
-    u32_t addrmaxIn = 0;
-    u32_t addrmaxOut = 0;
-    u32_t copytotalIn = 0;
-    u32_t copymaxIn = 0;
-    u32_t copymaxOut = 0;
-    u32_t loadtotalIn = 0;
-    u32_t loadmaxIn = 0;
-    u32_t loadmaxOut = 0;
-    u32_t storetotalIn = 0;
-    u32_t storemaxIn = 0;
-    u32_t storemaxOut = 0;
-
-    double storeavgIn = (double)storetotalIn/cgNodeNumber;
-    double loadavgIn = (double)loadtotalIn/cgNodeNumber;
-    double copyavgIn = (double)copytotalIn/cgNodeNumber;
-    double addravgIn = (double)addrtotalIn/cgNodeNumber;
-    double avgIn = (double)(addrtotalIn + copytotalIn + loadtotalIn + storetotalIn)/cgNodeNumber;
-
-
-    PTNumStatMap["NumOfCGNode"] = totalNodeNumber;
-    PTNumStatMap["TotalValidNode"] = cgNodeNumber;
-    PTNumStatMap["TotalValidObjNode"] = objNodeNumber;
-    PTNumStatMap["NumOfCopys"] = numOfCopys;
-    PTNumStatMap["NumOfGeps"] =  numOfGeps;
-    PTNumStatMap["MaxInCopyEdge"] = copymaxIn;
-    PTNumStatMap["MaxOutCopyEdge"] = copymaxOut;
-    PTNumStatMap["MaxInLoadEdge"] = loadmaxIn;
-    PTNumStatMap["MaxOutLoadEdge"] = loadmaxOut;
-    PTNumStatMap["MaxInStoreEdge"] = storemaxIn;
-    PTNumStatMap["MaxOutStoreEdge"] = storemaxOut;
-    PTNumStatMap["AvgIn/OutStoreEdge"] = storeavgIn;
-    PTNumStatMap["MaxInAddrEdge"] = addrmaxIn;
-    PTNumStatMap["MaxOutAddrEdge"] = addrmaxOut;
-    timeStatMap["AvgIn/OutCopyEdge"] = copyavgIn;
-    timeStatMap["AvgIn/OutLoadEdge"] = loadavgIn;
-    timeStatMap["AvgIn/OutAddrEdge"] = addravgIn;
-    timeStatMap["AvgIn/OutEdge"] = avgIn;
-
-    PTAStat::printStat("CFL Graph Stats");
-}
-
 void CFLStat::CFLGrammarStat()
 {
-    timeStatMap["timeOfBuildCFLGrammar"] = pta->timeOfBuildCFLGrammar;
-    timeStatMap["timeOfNormalizeGrammar"] = pta->timeOfNormalizeGrammar;
+    timeStatMap["BuildingTime"] = pta->timeOfBuildCFLGrammar;
+    timeStatMap["NormalizationTime"] = pta->timeOfNormalizeGrammar;
     PTAStat::printStat("CFLGrammar Stats");
 }
 
@@ -120,9 +68,11 @@ void CFLStat::performStat()
     assert((SVFUtil::isa<CFLAlias>(pta)||SVFUtil::isa<CFLVF>(pta)) && "not an CFLAlias pass!! what else??");
     endClk();
 
-    pta->countSumEdges();
+    // Grammar stat
+    CFLGrammarStat();
 
     // CFLGraph stat
+    pta->countSumEdges();
     CFLGraph* CFLGraph = pta->getCFLGraph();
     collectCFLInfo(CFLGraph);
 
@@ -131,12 +81,7 @@ void CFLStat::performStat()
     PTNumStatMap["SumEdges"] = pta->numOfStartEdges;
     PTAStat::printStat("CFL-reachability analysis Stats");
 
-    // Grammar stat
-    CFLGrammarStat();
-
+    // Stat about Call graph and General stat
     PTAStat::performStat();
-
-    // ConstraintGraph stat
-    constraintGraphStat();
 }
 

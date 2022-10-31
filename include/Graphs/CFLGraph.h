@@ -47,6 +47,8 @@ typedef GenericEdge<CFLNode> GenericCFLEdgeTy;
 class CFLEdge: public GenericCFLEdgeTy
 {
 public:
+    typedef GenericNode<CFLNode, CFLEdge>::GEdgeSetTy CFLEdgeSetTy;
+
     CFLEdge(CFLNode *s, CFLNode *d, GEdgeFlag k = 0):
         GenericCFLEdgeTy(s,d,k)
     {
@@ -78,7 +80,64 @@ public:
         GenericCFLNodeTy(i, k)
     {
     }
+
     ~CFLNode() override = default;
+
+    /// Different Kind(label) associated edges set
+    typedef std::map <CFLEdge::GEdgeKind, CFLEdge::CFLEdgeSetTy> CFLEdgeDataTy;
+
+private:
+    CFLEdgeDataTy inCFLEdges;   
+    CFLEdgeDataTy outCFLEdges;
+
+public:
+    inline const CFLEdge::CFLEdgeSetTy& getInEdgeWithTy(CFLEdge::GEdgeKind k)
+    {
+        return inCFLEdges[k];
+    }
+
+    inline const CFLEdge::CFLEdgeSetTy& getOutEdgeWithTy(CFLEdge::GEdgeKind k)
+    {
+        return outCFLEdges[k];
+    }
+
+    inline bool addInEdgeWithKind(CFLEdge* inEdge, CFLEdge::GEdgeKind k)
+    {
+        assert(inEdge->getDstID() == this->getId());
+        bool added1 = addIncomingEdge(inEdge);
+        bool added2 = inCFLEdges[k].insert(inEdge).second;
+
+        return added1 && added2;
+    }
+
+    inline bool addOutEdgeWithKind(CFLEdge* outEdge, CFLEdge::GEdgeKind k)
+    {
+        assert(outEdge->getSrcID() == this->getId());
+        bool added1 = addOutgoingEdge(outEdge);
+        bool added2 = outCFLEdges[k].insert(outEdge).second;
+
+        return added1 && added2;
+    }
+
+    inline bool removeCFLInEdge(CFLEdge* inEdge)
+    {
+        u32_t num1 = removeIncomingEdge(inEdge);
+
+        CFLEdge::GEdgeKind k = inEdge->getEdgeKind();
+        u32_t num2 = inCFLEdges[k].erase(inEdge);
+
+        return num1 && num2;
+    }
+
+    inline bool removeCFLOutEdge(CFLEdge* outEdge)
+    {
+        u32_t num1 = removeOutgoingEdge(outEdge);
+
+        CFLEdge::GEdgeKind k = outEdge->getEdgeKind();
+        u32_t num2 = outCFLEdges[k].erase(outEdge);
+
+        return num1 && num2;
+    }
 };
 
 /// Edge-labeled graph for CFL Reachability analysis
