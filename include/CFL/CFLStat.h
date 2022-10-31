@@ -38,36 +38,28 @@
 namespace SVF
 {
 
-class CFLAlias;
-class CFLVF;
-class SVFIR;
-class ConstraintGraph;
-
 /*!
  * Statistics of CFL's analysis
  */
 class CFLStat : public PTAStat
 {
-
 private:
     CFLBase* pta;
 
 public:
-    /// CFL Stat
-    u32_t _NumofCFLGraphNode;
-
     CFLStat(CFLBase* p);
 
     virtual ~CFLStat()
     {
-
     }
 
     virtual void performStat();
 
-    void collectCFLInfo(CFLGraph* CFLGraph);
+    void CFLGraphStat();
 
     void CFLGrammarStat();
+
+    void CFLSolverStat();
 };
 
 } // End namespace SVF
