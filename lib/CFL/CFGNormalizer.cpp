@@ -45,6 +45,7 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar)
     grammar->setStartKind(generalGrammar->getStartKind());
     grammar->setTerminals(generalGrammar->getTerminals());
     grammar->setNonterminals(generalGrammar->getNonterminals());
+    grammar->setEBNFSigns(generalGrammar->getEBNFSigns());
     grammar->setTotalKind(generalGrammar->getTotalKind());
     grammar->setAttributeKinds(generalGrammar->getAttrSyms());
     grammar->setKind2AttrsMap(generalGrammar->getKind2AttrsMap());
