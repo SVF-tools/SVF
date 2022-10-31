@@ -33,6 +33,7 @@
 #include "Util/SVFBasicTypes.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
+#include "Util/SVFArgument.h"
 #include <llvm/ADT/SparseBitVector.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
@@ -84,7 +85,6 @@ typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
 
 /// LLVM Aliases and constants
-typedef llvm::Argument Argument;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::GlobalAlias GlobalAlias;
@@ -125,6 +125,7 @@ private:
     Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
     Map<const BasicBlock*,Set<const BasicBlock*>> pdtBBsMap;
     Map<const BasicBlock*,std::vector<const BasicBlock*>> bb2LoopMap;
+    Map<const Value*, const SVFArgument*> LLVMValue2SVFArgumentMap;
 public:
 
     SVFFunction(Function *f);
@@ -240,6 +241,14 @@ public:
     inline const BasicBlock* getExitBB() const
     {
         return this->exitBB;
+    }
+
+    inline const SVFArgument* getSVFArgument(const Value* val) const
+    {
+        Map<const Value*, const SVFArgument*>::const_iterator argIter = LLVMValue2SVFArgumentMap.find(val); 
+        if (argIter != LLVMValue2SVFArgumentMap.end())
+            return argIter->second;
+        return nullptr;
     }
 
     void getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const;

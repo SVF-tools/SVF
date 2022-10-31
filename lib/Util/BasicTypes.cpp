@@ -10,6 +10,12 @@ SVFFunction::SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVF
     if (!SVFUtil::isExtCall(this))
     {
         exitBB = &f->back();
+        for (Function::arg_iterator I = f->arg_begin(), E = f->arg_end();I != E; ++I)
+        {
+            const Argument* arg = SVFUtil::dyn_cast<Argument>(&*I);
+            const SVFArgument* svfArg = new SVFArgument(arg->getName().str(),this,arg->getArgNo());
+            LLVMValue2SVFArgumentMap[&*I] = svfArg;
+        }
     }
 }
 

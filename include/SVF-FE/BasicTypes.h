@@ -191,6 +191,9 @@ typedef llvm::SCEV SCEV;
 /// LLVM outputs
 typedef llvm::raw_fd_ostream raw_fd_ostream;
 
+/// LLVM Aliases and constants
+typedef llvm::Argument Argument;
+
 // LLVM Types.
 typedef llvm::VectorType VectorType;
 #if (LLVM_VERSION_MAJOR >= 9)

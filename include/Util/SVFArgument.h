@@ -5,24 +5,17 @@
 
 namespace SVF
 {
+    class SVFFunction;
 
     class SVFArgument: public SVFValue
     {
     private:
-        const Argument* arg;
         const SVFFunction* parentFunction;
-        unsigned argNo;
+        const unsigned argNo;
 
     public:
-        SVFArgument(const Argument* arg, const SVFFunction* parentFunction): SVFValue(arg->getName().str(),SVFValue::SVFArg),
-        arg(arg), parentFunction(parentFunction),argNo(arg->getArgNo())
+        SVFArgument(const std::string argName, const SVFFunction* parentFunction, const unsigned argNo): SVFValue(argName,SVFValue::SVFArg), parentFunction(parentFunction),argNo(argNo)
         {
-        }
-
-        inline const Argument* getLLVMArgument()
-        {
-            assert(arg && "no LLVM Argument found!");
-            return arg;
         }
 
         unsigned getArgNo() const 

@@ -31,6 +31,7 @@
 #define CPPUtil_H_
 
 #include "Util/BasicTypes.h"
+#include "SVF-FE/BasicTypes.h"
 
 namespace SVF
 {

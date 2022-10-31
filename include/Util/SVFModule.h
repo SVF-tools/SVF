@@ -34,7 +34,6 @@
 #include "Util/ExtAPI.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/ThreadAPI.h"
-#include "Util/SVFArgument.h"
 
 namespace SVF
 {
@@ -47,7 +46,6 @@ public:
     typedef std::vector<GlobalVariable*> GlobalSetType;
     typedef std::vector<GlobalAlias*> AliasSetType;
     typedef Map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
-    typedef Map<const Argument*,const SVFArgument*> LLVMArg2SVFArgMap;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
@@ -67,7 +65,6 @@ private:
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
-    LLVMArg2SVFArgMap LLVMArg2SVFArg;
     Set<const Value*> argsOfUncalledFunction;
     Set<const Instruction*> returnInsts;
     Set<const Value*> nullPtrSyms;
@@ -77,7 +74,6 @@ private:
     Map<const PointerType*, const Type*> ptrElementTypeMap;
     Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbSuccessorPosMap;
     Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbPredecessorPosMap;
-    Map<const Value*, const SVFArgument*> LLVMValue2SVFArgumentMap;
 
 public:
     /// Constructors
@@ -122,14 +118,6 @@ public:
         LLVMFunc2SVFFunc[svfFunc->getLLVMFun()] = svfFunc;
     }
 
-    inline void addArgumentSet(const Value* val)
-    {
-        const Argument* arg = SVFUtil::dyn_cast<Argument>(val);
-        SVFArgument* svfArg = new SVFArgument(arg,getSVFFunction(arg->getParent()));
-        LLVMArg2SVFArg[svfArg->getLLVMArgument()] = svfArg;
-        LLVMValue2SVFArgumentMap[val] = svfArg;
-    }
-
     inline void addGlobalSet(GlobalVariable* glob)
     {
         GlobalSet.push_back(glob);
@@ -145,14 +133,6 @@ public:
         LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
         assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
         return it->second;
-    }
-
-    inline const SVFArgument* getSVFArgument(const Value* val)
-    {
-        Map<const Value*, const SVFArgument*>::iterator argIter = LLVMValue2SVFArgumentMap.find(val); 
-        if (argIter != LLVMValue2SVFArgumentMap.end())
-            return argIter->second;
-        return nullptr;
     }
 
     /// Iterators

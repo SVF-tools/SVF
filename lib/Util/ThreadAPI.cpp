@@ -143,6 +143,23 @@ const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const
 {
     return SVFUtil::getCallee(cs);
 }
+const Value* ThreadAPI::getJoinedThread(const Instruction *inst) const
+{
+    assert(isTDJoin(inst) && "not a thread join function!");
+    CallSite cs = getLLVMCallSite(inst);
+    Value* join = cs.getArgument(0);
+    if(SVFUtil::isa<LoadInst>(join))
+        return SVFUtil::cast<LoadInst>(join)->getPointerOperand();
+    else if(SVFUtil::getArgument(join))
+        return join;
+    assert(false && "the value of the first argument at join is not a load instruction?");
+    return nullptr;
+}
+
+const Value* ThreadAPI::getJoinedThread(CallSite cs) const
+{
+    return getJoinedThread(cs.getInstruction());
+}
 
 /*!
  *
