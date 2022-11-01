@@ -208,6 +208,8 @@ void CFLAlias::initialize()
 
 void CFLAlias::finalize()
 {
+    numOfChecks = solver->numOfChecks;
+
     if(Options::PrintCFL == true)
     {
         if (Options::CFLGraph.empty())

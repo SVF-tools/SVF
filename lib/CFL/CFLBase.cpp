@@ -106,6 +106,13 @@ void CFLBase::solve()
     timeOfSolving += (end - start) / TIMEINTERVAL;
 }
 
+void CFLBase::finalize()
+{
+    numOfChecks = solver->numOfChecks;
+
+    BVDataPTAImpl::finalize();
+}
+
 void CFLBase::analyze()
 {
     initialize();
