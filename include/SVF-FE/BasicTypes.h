@@ -15,6 +15,7 @@
 #include <llvm/IR/InstIterator.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Statepoint.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
 #include <llvm/Analysis/DominanceFrontier.h>
