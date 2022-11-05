@@ -39,7 +39,12 @@ double CFLBase::timeOfBuildCFLGrammar = 0;
 double CFLBase::timeOfNormalizeGrammar = 0;
 double CFLBase::timeOfBuildCFLGraph = 0;
 double CFLBase::timeOfSolving = 0;
+double CFLBase::numOfTerminalEdges = 0;
+double CFLBase::numOfTemporaryNonterminalEdges = 0; 
+double CFLBase::numOfNonterminalEdges = 0;  
 double CFLBase::numOfStartEdges = 0;
+double CFLBase::numOfIteration = 1;
+double CFLBase::numOfChecks = 1;
 
 void CFLBase::buildCFLGrammar()
 {
@@ -104,6 +109,13 @@ void CFLBase::solve()
 
     double end = stat->getClk(true);
     timeOfSolving += (end - start) / TIMEINTERVAL;
+}
+
+void CFLBase::finalize()
+{
+    numOfChecks = solver->numOfChecks;
+
+    BVDataPTAImpl::finalize();
 }
 
 void CFLBase::analyze()

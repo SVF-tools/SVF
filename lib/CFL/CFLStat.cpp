@@ -67,6 +67,7 @@ void CFLStat::CFLGrammarStat()
 void CFLStat::CFLSolverStat()
 {
     timeStatMap["AnalysisTime"] = pta->timeOfSolving;
+    PTNumStatMap["numOfChecks"] = pta->numOfChecks;
     PTNumStatMap["numOfIteration"] = pta->numOfIteration;
     PTNumStatMap["SumEdges"] = pta->numOfStartEdges;
 

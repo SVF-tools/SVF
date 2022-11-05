@@ -5689,8 +5689,8 @@
 		}
     },
     "_ZNSt5arrayIPK1ALm2EE4backEv":{
-        "return":  "void",
-        "arguments":  "()",
+        "return":  "%class.A** ",
+        "arguments":  "(%struct.std::array *)",
         "type": "CPP_EFT_DYNAMIC_CAST",
         "overwrite_app_function": 1,
         "GepStmt1": {

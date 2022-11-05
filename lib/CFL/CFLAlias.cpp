@@ -33,8 +33,6 @@ using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
 
-double CFLBase::numOfIteration = 1;
-
 /*!
  * On the fly call graph construction
  * callsites is candidate indirect callsites need to be analyzed based on points-to results
@@ -208,6 +206,8 @@ void CFLAlias::initialize()
 
 void CFLAlias::finalize()
 {
+    numOfChecks = solver->numOfChecks;
+
     if(Options::PrintCFL == true)
     {
         if (Options::CFLGraph.empty())
