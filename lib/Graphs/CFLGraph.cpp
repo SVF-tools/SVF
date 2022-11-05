@@ -50,7 +50,7 @@ const CFLEdge* CFLGraph::addCFLEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFl
     if(cflEdgeSet.insert(edge).second)
     {
         src->addOutgoingEdge(edge);
-        dst->addIncomingEdge(edge);
+        dst->addIngoingEdge(edge);
         return edge;
     }
     else

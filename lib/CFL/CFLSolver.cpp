@@ -85,16 +85,13 @@ void CFLSolver::processCFLEdge(const CFLEdge* Y_edge)
         for(const Production& prod : grammar->getProdsFromFirstRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
-            for(const CFLEdge* Z_edge : j->getOutEdges())
+            for(const CFLEdge* Z_edge : j->getOutEdgeWithTy(grammar->getSecondRHSSymbol(prod)))
             {
-                if (Z_edge->getEdgeKind() == grammar->getSecondRHSSymbol(prod))
+                CFLNode* k = Z_edge->getDstNode();
+                numOfChecks++;
+                if(const CFLEdge* newEdge = graph->addCFLEdge(i, k, X))
                 {
-                    CFLNode* k = Z_edge->getDstNode();
-                    numOfChecks++;
-                    if(const CFLEdge* newEdge = graph->addCFLEdge(i, k, X))
-                    {
-                        pushIntoWorklist(newEdge);
-                    }
+                    pushIntoWorklist(newEdge);
                 }
             }
         }
@@ -106,16 +103,13 @@ void CFLSolver::processCFLEdge(const CFLEdge* Y_edge)
         for(const Production& prod : grammar->getProdsFromSecondRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
-            for(const CFLEdge* Z_edge : i->getInEdges())
+            for(const CFLEdge* Z_edge : i->getInEdgeWithTy(grammar->getFirstRHSSymbol(prod)))
             {
-                if(Z_edge->getEdgeKind() == grammar->getFirstRHSSymbol(prod))
+                CFLNode* k = Z_edge->getSrcNode();
+                numOfChecks++;
+                if(const CFLEdge* newEdge = graph->addCFLEdge(k, j, X))
                 {
-                    CFLNode* k = Z_edge->getSrcNode();
-                    numOfChecks++;
-                    if(const CFLEdge* newEdge = graph->addCFLEdge(k, j, X))
-                    {
-                        pushIntoWorklist(newEdge);
-                    }
+                    pushIntoWorklist(newEdge);
                 }
             }
         }
