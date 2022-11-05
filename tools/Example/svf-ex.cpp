@@ -161,8 +161,8 @@ int main(int argc, char ** argv)
     svfModule->buildSymbolTableInfo();
 
     /// Build Program Assignment Graph (SVFIR)
-    SVFIRBuilder builder;
-    SVFIR* pag = builder.build(svfModule);
+    SVFIRBuilder builder(svfModule);
+    SVFIR* pag = builder.build();
 
     /// Create Andersen's pointer analysis
     Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);

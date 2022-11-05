@@ -196,9 +196,6 @@ const std::string RetCFGEdge::toString() const
  */
 ICFG::ICFG(): totalICFGNode(0)
 {
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG ...\n"));
-    globalBlockNode = new GlobalICFGNode(totalICFGNode++);
-    addICFGNode(globalBlockNode);
 }
 
 ICFG::~ICFG()

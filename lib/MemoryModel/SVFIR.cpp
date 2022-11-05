@@ -39,9 +39,6 @@ SVFIR* SVFIR::pag = nullptr;
 
 SVFIR::SVFIR(bool buildFromFile) : IRGraph(buildFromFile)
 {
-    icfg = new ICFG();
-    ICFGBuilder builder(icfg);
-    builder.build(getModule());
 }
 
 /*!

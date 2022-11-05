@@ -47,13 +47,13 @@ class SVFIRBuilder: public llvm::InstVisitor<SVFIRBuilder>
 
 private:
     SVFIR* pag;
-    SVFModule* svfMod;
+    SVFModule* svfModule;
     const BasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
     const Value* curVal;	///< Current Value during SVFIR construction when visiting the module
 
 public:
     /// Constructor
-    SVFIRBuilder(): pag(SVFIR::getPAG()), svfMod(nullptr), curBB(nullptr),curVal(nullptr)
+    SVFIRBuilder(SVFModule* mod): pag(SVFIR::getPAG()), svfModule(mod), curBB(nullptr),curVal(nullptr)
     {
     }
     /// Destructor
@@ -62,7 +62,7 @@ public:
     }
 
     /// Start building SVFIR here
-    virtual SVFIR* build(SVFModule* svfModule);
+    virtual SVFIR* build();
 
     /// Return SVFIR
     SVFIR* getPAG() const

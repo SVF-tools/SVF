@@ -108,8 +108,8 @@ void DDAPass::selectClient(SVFModule* module)
 void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
 {
 
-    SVFIRBuilder builder;
-    SVFIR* pag = builder.build(module);
+    SVFIRBuilder builder(module);
+    SVFIR* pag = builder.build();
 
     ContextCond::setMaxPathLen(Options::MaxPathLen);
     ContextCond::setMaxCxtLen(Options::MaxContextLen);

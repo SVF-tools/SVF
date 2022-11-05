@@ -47,9 +47,20 @@ using namespace LLVMUtil;
 /*!
  * Start building SVFIR here
  */
-SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
+SVFIR* SVFIRBuilder::build()
 {
     double startTime = SVFStat::getClk(true);
+
+    DBOUT(DGENERAL, outs() << pasMsg("\t Building SVFIR ...\n"));
+
+    // Set SVFModule from SVFIRBuilder
+    pag->setModule(svfModule);
+
+    // Build ICFG
+    ICFG* icfg = new ICFG();
+    ICFGBuilder builder(icfg);
+    builder.build(svfModule);
+    pag->setICFG(icfg);
 
     // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
     if (SVFModule::pagReadFromTXT())
@@ -61,8 +72,6 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
     // If the SVFIR has been built before, then we return the unique SVFIR of the program
     if(pag->getNodeNumAfterPAGBuild() > 1)
         return pag;
-
-    svfMod = svfModule;
 
     /// initial external library information
     /// initial SVFIR nodes
@@ -1342,7 +1351,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         {
                             if(const ConstantDataArray* constarray = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer()))
                             {
-                                if(const SVFFunction* fun = getProgFunction(svfMod,constarray->getAsCString().str()))
+                                if(const SVFFunction* fun = getProgFunction(svfModule,constarray->getAsCString().str()))
                                 {
                                     NodeID srcNode = getValueNode(fun->getLLVMFun());
                                     addCopyEdge(srcNode,  getValueNode(inst));

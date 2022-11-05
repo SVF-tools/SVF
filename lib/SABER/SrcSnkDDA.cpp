@@ -41,8 +41,8 @@ using namespace SVFUtil;
 /// Initialize analysis
 void SrcSnkDDA::initialize(SVFModule* module)
 {
-    SVFIRBuilder builder;
-    SVFIR* pag = builder.build(module);
+    SVFIRBuilder builder(module);
+    SVFIR* pag = builder.build();
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
     if(Options::SABERFULLSVFG)

@@ -209,6 +209,11 @@ public:
     {
         return globalBlockNode;
     }
+    inline void addGlobalICFGNode()
+    {
+        globalBlockNode = new GlobalICFGNode(totalICFGNode++);
+        addICFGNode(globalBlockNode);
+    }
     //@}
 
 private:

@@ -61,8 +61,8 @@ int main(int argc, char ** argv)
     {
         SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
         svfModule->buildSymbolTableInfo();
-        SVFIRBuilder builder;
-        svfir = builder.build(svfModule);
+        SVFIRBuilder builder(svfModule);
+        svfir = builder.build();
     }  // if no dot form CFLGraph is specified, we use svfir from .bc.
 
     CFLBase* cfl;

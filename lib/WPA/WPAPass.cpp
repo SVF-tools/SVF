@@ -83,8 +83,8 @@ void WPAPass::runOnModule(SVFModule* svfModule)
 void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
 {
     /// Build SVFIR
-    SVFIRBuilder builder;
-    SVFIR* pag = builder.build(svfModule);
+    SVFIRBuilder builder(svfModule);
+    SVFIR* pag = builder.build();
     /// Initialize pointer analysis.
     switch (kind)
     {

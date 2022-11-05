@@ -41,6 +41,10 @@ using namespace LLVMUtil;
  */
 void ICFGBuilder::build(SVFModule* svfModule)
 {
+    DBOUT(DGENERAL, outs() << pasMsg("\t Building ICFG ...\n"));
+    // Add the unqiue global ICFGNode at the entry of a program (before the main method).
+    icfg->addGlobalICFGNode();
+
     for (SVFModule::const_iterator iter = svfModule->begin(), eiter = svfModule->end(); iter != eiter; ++iter)
     {
         const SVFFunction *fun = *iter;

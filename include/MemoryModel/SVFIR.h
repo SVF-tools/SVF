@@ -92,7 +92,7 @@ private:
     OrderedNodeSet candidatePointers;
     ICFG* icfg; // ICFG
     CallSiteSet callSiteSet; /// all the callsites of a program
-
+    SVFModule* svfModule; /// SVF Module
     /// Constructor
     SVFIR(bool buildFromFile);
 
@@ -128,9 +128,14 @@ public:
     {
         return GepObjVarMap;
     }
-    /// Return ICFG
+    /// Set/Get ICFG
+    inline void setICFG(ICFG* i)
+    {
+        icfg = i;
+    }
     inline ICFG* getICFG()
     {
+        assert(icfg->totalICFGNode>0 && "empty ICFG! Build SVF IR first!");
         return icfg;
     }
     /// Return valid pointers
@@ -151,10 +156,15 @@ public:
     /// Whether to handle blackhole edge
     static void handleBlackHole(bool b);
     //@}
-    /// Get LLVM Module
+    /// Set/Get LLVM Module
+    inline void setModule(SVFModule* mod)
+    {
+        svfModule = mod;
+    }
     inline SVFModule* getModule()
     {
-        return SymbolTableInfo::SymbolInfo()->getModule();
+        assert(svfModule && "empty SVFModule! Build SVF IR first!");
+        return svfModule;
     }
     /// Get/set methods to get SVFStmts based on their kinds and ICFGNodes
     //@{
