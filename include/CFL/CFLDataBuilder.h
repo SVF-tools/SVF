@@ -67,12 +67,7 @@ public:
         return _cflData;
     }
 
-    CFLData* build()
-    {
-        return _cflData;
-    }
-
-    //CFL data operations
+        //CFL data operations
     //@{
     virtual bool addEdge(const NodeID srcId, const NodeID dstId, const Label ty)
     {
@@ -84,6 +79,14 @@ public:
         return cflData()->addEdges(srcId, dstData, ty);
     }
     //@}
+    CFLData* build()
+    {
+        for (CFLEdge* edge: _graph->getCFLEdges())
+            addEdge(edge->getSrcID(), edge->getDstID(), edge->getEdgeKind());
+        return  cflData();
+    }   
+
+
 };
 }// SVF
 

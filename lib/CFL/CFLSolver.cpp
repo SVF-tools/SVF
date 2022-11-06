@@ -128,3 +128,11 @@ void CFLSolver::solve()
         processCFLEdge(Y_edge);
     }
 }
+
+void POCRSolver::initialize()
+{
+    // for (CFLEdge* edge: getGraph()->getCFLEdges()) {
+    //     addEdge(edge->getSrcID(), edge->getDstID(), std::make_pair(a, 0));
+    //     pushIntoWorklist(edge->getSrcID(), edge->getDstID(), std::make_pair(a, 0));
+    // }
+}

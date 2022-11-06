@@ -165,7 +165,7 @@ public:
     virtual void initialize();
 
     /// Init CFLData
-    virtual void buildCFLDate();
+    virtual void buildCFLData();
 
 private:
     /// Graph dataset

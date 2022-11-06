@@ -251,7 +251,7 @@ void POCRAlias::initialize()
     buildCFLGraph();
 
     // Build CFL Data
-    buildCFLDate
+    buildCFLData();
 
     // Normalize CFL Grammar
     normalizeCFLGrammar();
@@ -260,7 +260,7 @@ void POCRAlias::initialize()
     solver = new CFLSolver(graph, grammar);
 }
 
-void POCRAlias::buildCFLDate()
+void POCRAlias::buildCFLData()
 {
      // Start building CFLGraph
     double start = stat->getClk(true);
