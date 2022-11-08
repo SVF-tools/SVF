@@ -263,6 +263,10 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
     if (cs.getCalledFunction() != nullptr || cs.arg_empty())
         return false;
 
+    // the first argument (this pointer) must be a pointer type and must be a class name
+    if (cs.getArgOperand(0)->getType()->isPointerTy() == false)
+        return false;
+
     const Value *vfunc = cs.getCalledValue();
     if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
     {
