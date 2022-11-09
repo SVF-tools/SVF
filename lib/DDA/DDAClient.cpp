@@ -146,8 +146,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
-        outs() << SVFUtil::value2String((nIter->second)->getCallSite()) << "\n";
-        outs() << getSourceLoc((nIter->second)->getCallSite()) << "\n";
+        outs() << SVFUtil::value2String((nIter->second)->getCallSite()->getLLVMInstruction()) << "\n";
+        outs() << getSourceLoc((nIter->second)->getCallSite()->getLLVMInstruction()) << "\n";
         outs() << "\n";
         outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";
         outs() << "------DDA vfn num---(" << ander_vfns.size() << ")--\n";

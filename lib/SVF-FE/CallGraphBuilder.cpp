@@ -50,7 +50,8 @@ PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
         Function *fun = *F;
         for (inst_iterator I = inst_begin(*fun), J = inst_end(*fun); I != J; ++I)
         {
-            const Instruction *inst = &*I;
+            const Instruction *is = &*I;
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(is);
             if (SVFUtil::isNonInstricCallSite(inst))
             {
                 if(const SVFFunction* callee = getCallee(inst))
@@ -80,7 +81,8 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
         const Function *fun = *fi;
         for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II)
         {
-            const Instruction *inst = &*II;
+            const Instruction *i = &*II;
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (tdAPI->isTDFork(inst))
             {
                 const CallICFGNode* cs = icfg->getCallICFGNode(inst);
@@ -119,7 +121,8 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
         const Function *fun = *fi;
         for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II)
         {
-            const Instruction *inst = &*II;
+            const Instruction *i = &*II;
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (tdAPI->isTDJoin(inst))
             {
                 const CallICFGNode* cs = icfg->getCallICFGNode(inst);

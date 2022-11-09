@@ -336,8 +336,8 @@ void PointerAnalysis::printIndCSTargets(const CallICFGNode* cs, const FunctionSe
 {
     outs() << "\nNodeID: " << getFunPtr(cs);
     outs() << "\nCallSite: ";
-    outs() << SVFUtil::value2String(cs->getCallSite());
-    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
+    outs() << SVFUtil::value2String(cs->getCallSite()->getLLVMInstruction());
+    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite()->getLLVMInstruction());
     outs() << "\t with Targets: ";
 
     if (!targets.empty())
@@ -384,8 +384,8 @@ void PointerAnalysis::printIndCSTargets()
         {
             outs() << "\nNodeID: " << csIt->second;
             outs() << "\nCallSite: ";
-            outs() << SVFUtil::value2String(cs->getCallSite());
-            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
+            outs() << SVFUtil::value2String(cs->getCallSite()->getLLVMInstruction());
+            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite()->getLLVMInstruction());
             outs() << "\n\t!!!has no targets!!!\n";
         }
     }
@@ -541,8 +541,9 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
             if (SVFUtil::isCallSite(*i))
             {
-
-                CallSite cs(*i);
+                
+                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(*i));
+                CallSite cs(svfInst);
                 assert(cs.getNumArgOperands() == 2
                        && "arguments should be two pointers!!");
                 Value* V1 = cs.getArgOperand(0);

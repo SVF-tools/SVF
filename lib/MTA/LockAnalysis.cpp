@@ -53,7 +53,9 @@ public:
     }
     bool protectedByCommonLocks(const Instruction *I1, const Instruction *I2)
     {
-        return lsa->isProtectedByCommonLock(I1, I2);
+        const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I1);
+        const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I2);
+        return lsa->isProtectedByCommonLock(inst1, inst2);
     }
 private:
     LockAnalysis *lsa;
@@ -98,7 +100,8 @@ void LockAnalysis::collectLockUnlocksites()
     {
         for (inst_iterator II = inst_begin((*F)->getLLVMFun()), EE = inst_end((*F)->getLLVMFun()); II != EE; ++II)
         {
-            const Instruction *inst = &*II;
+            const Instruction *i = &*II;
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (tcg->getThreadAPI()->isTDRelease(inst))
             {
                 unlocksites.insert(inst);
@@ -124,8 +127,8 @@ void LockAnalysis::buildCandidateFuncSetforLock()
 
     for (InstSet::iterator it = locksites.begin(), eit = locksites.end(); it != eit; ++it)
     {
-        const Function* fun=(*it)->getParent()->getParent();
-        PTACallGraphNode* cgnode = tcg->getCallGraphNode(tct->getSVFFun(fun));
+        const SVFFunction* fun=(*it)->getParent()->getParent();
+        PTACallGraphNode* cgnode = tcg->getCallGraphNode(fun);
         if (visited.find(cgnode) == visited.end())
         {
             worklist.push(cgnode);
@@ -134,8 +137,8 @@ void LockAnalysis::buildCandidateFuncSetforLock()
     }
     for (InstSet::iterator it = unlocksites.begin(), eit = unlocksites.end(); it != eit; ++it)
     {
-        const Function* fun = (*it)->getParent()->getParent();
-        PTACallGraphNode* cgnode = tcg->getCallGraphNode(tct->getSVFFun(fun));
+        const SVFFunction* fun = (*it)->getParent()->getParent();
+        PTACallGraphNode* cgnode = tcg->getCallGraphNode(fun);
         if (visited.find(cgnode) == visited.end())
         {
             worklist.push(cgnode);
@@ -168,8 +171,8 @@ void LockAnalysis::analyzeIntraProcedualLock()
     // Identify the protected Instructions.
     for (InstSet::const_iterator it = locksites.begin(), ie = locksites.end(); it != ie; ++it)
     {
-        const CallInst *lockSite = SVFUtil::dyn_cast<CallInst>(*it);
-        assert(lockSite && "Lock acquire instruction must be CallInst");
+        const SVFInstruction* lockSite = *it;
+        assert(SVFUtil::isa<CallInst>(lockSite->getLLVMInstruction()) && "Lock acquire instruction must be CallInst");
 
         // Perform forward traversal
         InstSet forwardInsts;
@@ -190,20 +193,19 @@ void LockAnalysis::analyzeIntraProcedualLock()
 /*!
  * Intra-procedural forward traversal
  */
-bool LockAnalysis::intraForwardTraverse(const Instruction* lockSite, InstSet& unlockSet, InstSet& forwardInsts)
+bool LockAnalysis::intraForwardTraverse(const SVFInstruction* lockSite, InstSet& unlockSet, InstSet& forwardInsts)
 {
 
-    const Function* fun = lockSite->getParent()->getParent();
-    const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+    const SVFFunction* svfFun = lockSite->getFunction();
 
     InstVec worklist;
     worklist.push_back(lockSite);
     while (!worklist.empty())
     {
-        const Instruction *I = worklist.back();
+        const SVFInstruction *I = worklist.back();
         worklist.pop_back();
-
-        if(&(getFunExitBB(svfFun)->back()) == I)
+        const SVFInstruction* exitInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(getFunExitBB(svfFun)->back()));
+        if(exitInst == I)
             return false;
 
         // Skip the visited Instructions.
@@ -214,8 +216,8 @@ bool LockAnalysis::intraForwardTraverse(const Instruction* lockSite, InstSet& un
         if (isTDRelease(I) && isAliasedLocks(lockSite, I))
         {
             unlockSet.insert(I);
-            DBOUT(DMTA, outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(lockSite)<<"\n");
-            DBOUT(DMTA, outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(I)<<"\n");
+            DBOUT(DMTA, outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(lockSite->getLLVMInstruction())<<"\n");
+            DBOUT(DMTA, outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(I->getLLVMInstruction())<<"\n");
             continue;
         }
 
@@ -240,14 +242,14 @@ bool LockAnalysis::intraBackwardTraverse(const InstSet& unlockSet, InstSet& back
     InstVec worklist;
     for(InstSet::const_iterator it = unlockSet.begin(), eit = unlockSet.end(); it!=eit; ++it)
     {
-        const Instruction* unlockSite = *it;
-        const Function* fun = unlockSite->getParent()->getParent();
-        const Instruction* entryInst = &(fun->getEntryBlock().back());
+        const SVFInstruction* unlockSite = *it;
+        const Function* fun = unlockSite->getFunction()->getLLVMFun();
+        const SVFInstruction* entryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(fun->getEntryBlock().back()));
         worklist.push_back(*it);
 
         while (!worklist.empty())
         {
-            const Instruction *I = worklist.back();
+            const SVFInstruction *I = worklist.back();
             worklist.pop_back();
 
             if(entryInst == I)
@@ -260,8 +262,8 @@ bool LockAnalysis::intraBackwardTraverse(const InstSet& unlockSet, InstSet& back
 
             if (isTDAcquire(I) && isAliasedLocks(unlockSite, I))
             {
-                DBOUT(DMTA, outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(I)<<"\n");
-                DBOUT(DMTA, outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(unlockSite)<<"\n");
+                DBOUT(DMTA, outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(I->getLLVMInstruction())<<"\n");
+                DBOUT(DMTA, outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(unlockSite->getLLVMInstruction())<<"\n");
                 continue;
             }
 
@@ -359,7 +361,8 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
         if (!isLockCandidateFun(*it))
             continue;
         CallStrCxt cxt;
-        CxtStmt cxtstmt(cxt, &((*it)->front().front()));
+        const SVFInstruction* frontInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&((*it)->front().front()));
+        CxtStmt cxtstmt(cxt, frontInst);
         pushToCTSWorkList(cxtstmt);
     }
 
@@ -368,7 +371,7 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
         CxtStmt cts = popFromCTSWorkList();
 
         touchCxtStmt(cts);
-        const Instruction* curInst = cts.getStmt();
+        const SVFInstruction* curInst = cts.getStmt();
         instToCxtStmtSet[curInst].insert(cts);
 
         DBOUT(DMTA, outs() << "\nVisit cxtStmt: ");
@@ -392,11 +395,11 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
             if(removeCxtStmtToSpan(cts,cts))
                 handleIntra(cts);
         }
-        else if (SVFUtil::isa<CallInst>(curInst) && !isExtCall(curInst))
+        else if (SVFUtil::isa<CallInst>(curInst->getLLVMInstruction()) && !isExtCall(curInst))
         {
             handleCall(cts);
         }
-        else if (SVFUtil::isa<ReturnInst>(curInst))
+        else if (SVFUtil::isa<ReturnInst>(curInst->getLLVMInstruction()))
         {
             handleRet(cts);
         }
@@ -428,7 +431,7 @@ void LockAnalysis::printLocks(const CxtStmt& cts)
 /// Handle fork
 void LockAnalysis::handleFork(const CxtStmt& cts)
 {
-    const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
+    const SVFInstruction* call = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
     CallICFGNode* cbn = tct->getCallICFGNode(call);
     if(getTCG()->hasThreadForkEdge(cbn))
@@ -440,7 +443,8 @@ void LockAnalysis::handleFork(const CxtStmt& cts)
             const Function* callee = svfcallee->getLLVMFun();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt,call,callee);
-            CxtStmt newCts(newCxt, &(callee->getEntryBlock().front()));
+            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(callee->getEntryBlock().front()));
+            CxtStmt newCts(newCxt, svfInst);
             markCxtStmtFlag(newCts, cts);
         }
     }
@@ -451,7 +455,7 @@ void LockAnalysis::handleFork(const CxtStmt& cts)
 void LockAnalysis::handleCall(const CxtStmt& cts)
 {
 
-    const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
+    const SVFInstruction* call = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
     CallICFGNode* cbn = tct->getCallICFGNode(call);
     if (getTCG()->hasCallGraphEdge(cbn))
@@ -465,7 +469,8 @@ void LockAnalysis::handleCall(const CxtStmt& cts)
                 continue;
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt, call, callee);
-            CxtStmt newCts(newCxt, &(callee->getEntryBlock().front()));
+            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(callee->getEntryBlock().front()));
+            CxtStmt newCts(newCxt, svfInst);
             markCxtStmtFlag(newCts, cts);
         }
     }
@@ -475,9 +480,9 @@ void LockAnalysis::handleCall(const CxtStmt& cts)
 void LockAnalysis::handleRet(const CxtStmt& cts)
 {
 
-    const Instruction* curInst = cts.getStmt();
+    const SVFInstruction* curInst = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
-    const SVFFunction* svffun = tct->getSVFFun(curInst->getParent()->getParent());
+    const SVFFunction* svffun = curInst->getFunction();
     PTACallGraphNode* curFunNode = getTCG()->getCallGraphNode(svffun);
 
     for (PTACallGraphNode::const_iterator it = curFunNode->getInEdges().begin(), eit = curFunNode->getInEdges().end(); it != eit; ++it)
@@ -489,7 +494,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                 ++cit)
         {
             CallStrCxt newCxt = curCxt;
-            const Instruction* inst = (*cit)->getCallSite();
+            const SVFInstruction* inst = (*cit)->getCallSite();
             if (matchCxt(newCxt, inst, curFunNode->getFunction()->getLLVMFun()))
             {
                 InstVec nextInsts;
@@ -505,7 +510,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                 cit != ecit; ++cit)
         {
             CallStrCxt newCxt = curCxt;
-            const Instruction* inst = (*cit)->getCallSite();
+            const SVFInstruction* inst = (*cit)->getCallSite();
             if (matchCxt(newCxt, inst, curFunNode->getFunction()->getLLVMFun()))
             {
                 InstVec nextInsts;
@@ -524,7 +529,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
 void LockAnalysis::handleIntra(const CxtStmt& cts)
 {
 
-    const Instruction* curInst = cts.getStmt();
+    const SVFInstruction* curInst = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
     InstVec nextInsts;
@@ -537,11 +542,10 @@ void LockAnalysis::handleIntra(const CxtStmt& cts)
 }
 
 
-void LockAnalysis::pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee)
+void LockAnalysis::pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee)
 {
-    const Function* caller = call->getParent()->getParent();
     const SVFFunction* svfcallee = tct->getSVFFun(callee);
-    const SVFFunction* svfcaller = tct->getSVFFun(caller);
+    const SVFFunction* svfcaller = call->getParent()->getParent();
     CallICFGNode* cbn = tct->getCallICFGNode(call);
     CallSiteID csId = getTCG()->getCallSiteID(cbn, svfcallee);
 
@@ -556,11 +560,10 @@ void LockAnalysis::pushCxt(CallStrCxt& cxt, const Instruction* call, const Funct
     }
 }
 
-bool LockAnalysis::matchCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee)
+bool LockAnalysis::matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee)
 {
-    const Function* caller = call->getParent()->getParent();
     const SVFFunction* svfcallee = tct->getSVFFun(callee);
-    const SVFFunction* svfcaller = tct->getSVFFun(caller);
+    const SVFFunction* svfcaller = call->getParent()->getParent();
     CallICFGNode* cbn = tct->getCallICFGNode(call);
     CallSiteID csId = getTCG()->getCallSiteID(cbn, svfcallee);
 
@@ -587,7 +590,7 @@ bool LockAnalysis::matchCxt(CallStrCxt& cxt, const Instruction* call, const Func
 /*!
  * Protected by at least one common lock under every context
  */
-bool LockAnalysis::isProtectedByCommonLock(const Instruction *i1, const Instruction *i2)
+bool LockAnalysis::isProtectedByCommonLock(const SVFInstruction *i1, const SVFInstruction *i2)
 {
     numOfTotalQueries++;
     bool commonlock = false;
@@ -604,7 +607,7 @@ bool LockAnalysis::isProtectedByCommonLock(const Instruction *i1, const Instruct
 /*!
  * Protected by at least one common context-insensitive lock
  */
-bool LockAnalysis::isProtectedByCommonCILock(const Instruction *i1, const Instruction *i2)
+bool LockAnalysis::isProtectedByCommonCILock(const SVFInstruction *i1, const SVFInstruction *i2)
 {
 
     if(!isInsideCondIntraLock(i1) && !isInsideCondIntraLock(i2))
@@ -641,7 +644,7 @@ bool LockAnalysis::isProtectedByCommonCxtLock(const CxtStmt& cxtStmt1, const Cxt
 /*!
  * Protected by at least one common context-sensitive lock under each context
  */
-bool LockAnalysis::isProtectedByCommonCxtLock(const Instruction *i1, const Instruction *i2)
+bool LockAnalysis::isProtectedByCommonCxtLock(const SVFInstruction *i1, const SVFInstruction *i2)
 {
     if(!hasCxtStmtfromInst(i1) || !hasCxtStmtfromInst(i2))
         return false;
@@ -665,7 +668,7 @@ bool LockAnalysis::isProtectedByCommonCxtLock(const Instruction *i1, const Instr
 /*!
  * Return true if two instructions are inside at least one common lock span
  */
-bool LockAnalysis::isInSameSpan(const Instruction *i1, const Instruction *i2)
+bool LockAnalysis::isInSameSpan(const SVFInstruction *i1, const SVFInstruction *i2)
 {
     DOTIMESTAT(double queryStart = PTAStat::getClk(true));
 
@@ -683,7 +686,7 @@ bool LockAnalysis::isInSameSpan(const Instruction *i1, const Instruction *i2)
 /*!
  * Return true if two instructions are inside same context-insensitive lock span
  */
-bool LockAnalysis::isInSameCISpan(const Instruction *i1, const Instruction *i2) const
+bool LockAnalysis::isInSameCISpan(const SVFInstruction *i1, const SVFInstruction *i2) const
 {
     if(!isInsideCondIntraLock(i1) && !isInsideCondIntraLock(i2))
     {
@@ -718,7 +721,7 @@ bool LockAnalysis::isInSameCSSpan(const CxtStmt& cxtStmt1, const CxtStmt& cxtStm
 /*!
  * Return true if two instructions are inside at least one common contex-sensitive lock span
  */
-bool LockAnalysis::isInSameCSSpan(const Instruction *I1, const Instruction *I2) const
+bool LockAnalysis::isInSameCSSpan(const SVFInstruction *I1, const SVFInstruction *I2) const
 {
     if(!hasCxtStmtfromInst(I1) || !hasCxtStmtfromInst(I2))
         return false;

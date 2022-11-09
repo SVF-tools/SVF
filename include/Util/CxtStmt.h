@@ -42,7 +42,7 @@ class CxtStmt
 {
 public:
     /// Constructor
-    CxtStmt(const CallStrCxt& c, const Instruction* f) :cxt(c), inst(f)
+    CxtStmt(const CallStrCxt& c, const SVFInstruction* f) :cxt(c), inst(f)
     {
     }
     /// Copy constructor
@@ -59,7 +59,7 @@ public:
         return cxt;
     }
     /// Return current statement
-    inline const Instruction* getStmt() const
+    inline const SVFInstruction* getStmt() const
     {
         return inst;
     }
@@ -108,12 +108,12 @@ public:
     /// Dump CxtStmt
     inline void dump() const
     {
-        SVFUtil::outs() << "[ Current Stmt: " << SVFUtil::getSourceLoc(inst) << " " << SVFUtil::value2String(inst) << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Stmt: " << SVFUtil::getSourceLoc(inst->getLLVMInstruction()) << " " << SVFUtil::value2String(inst->getLLVMInstruction()) << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 protected:
     CallStrCxt cxt;
-    const Instruction* inst;
+    const SVFInstruction* inst;
 };
 
 
@@ -124,7 +124,7 @@ class CxtThreadStmt : public CxtStmt
 {
 public:
     /// Constructor
-    CxtThreadStmt(NodeID t, const CallStrCxt& c, const Instruction* f) :CxtStmt(c,f), tid(t)
+    CxtThreadStmt(NodeID t, const CallStrCxt& c, const SVFInstruction* f) :CxtStmt(c,f), tid(t)
     {
     }
     /// Copy constructor
@@ -174,7 +174,7 @@ public:
     /// Dump CxtThreadStmt
     inline void dump() const
     {
-        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << SVFUtil::getSourceLoc(inst) << " " << SVFUtil::value2String(inst) << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << SVFUtil::getSourceLoc(inst->getLLVMInstruction()) << " " << SVFUtil::value2String(inst->getLLVMInstruction()) << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 private:
@@ -483,8 +483,8 @@ template <> struct std::hash<SVF::CxtStmt>
 {
     size_t operator()(const SVF::CxtStmt& cs) const
     {
-        std::hash<SVF::Instruction*> h;
-        SVF::Instruction* inst = const_cast<SVF::Instruction*> (cs.getStmt());
+        std::hash<SVF::SVFInstruction*> h;
+        SVF::SVFInstruction* inst = const_cast<SVF::SVFInstruction*> (cs.getStmt());
         return h(inst);
     }
 };

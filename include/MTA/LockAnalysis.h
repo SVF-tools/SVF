@@ -59,11 +59,11 @@ public:
 
     typedef NodeBS LockSet;
     typedef TCT::InstVec InstVec;
-    typedef Set<const Instruction*> InstSet;
+    typedef Set<const SVFInstruction*> InstSet;
     typedef InstSet CISpan;
-    typedef Map<const Instruction*, CISpan>CILockToSpan;
+    typedef Map<const SVFInstruction*, CISpan>CILockToSpan;
     typedef Set<const Function*> FunSet;
-    typedef Map<const Instruction*, InstSet> InstToInstSetMap;
+    typedef Map<const SVFInstruction*, InstSet> InstToInstSetMap;
     typedef Map<CxtStmt, ValDomain> CxtStmtToLockFlagMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
     typedef Set<CxtStmt> LockSpan;
@@ -72,13 +72,13 @@ public:
 
     typedef Map<CxtLock, LockSpan> CxtLockToSpan;
     typedef Map<CxtLock, NodeBS> CxtLockToLockSet;
-    typedef Map<const Instruction*, NodeBS> LockSiteToLockSet;
-    typedef Map<const Instruction*, LockSpan> InstToCxtStmtSet;
+    typedef Map<const SVFInstruction*, NodeBS> LockSiteToLockSet;
+    typedef Map<const SVFInstruction*, LockSpan> InstToCxtStmtSet;
     typedef Map<CxtStmt, CxtLockSet> CxtStmtToCxtLockSet;
     typedef FIFOWorkList<CxtLockProc> CxtLockProcVec;
     typedef Set<CxtLockProc> CxtLockProcSet;
 
-    typedef Map<const Instruction*, CxtStmtSet> InstToCxtStmt;
+    typedef Map<const SVFInstruction*, CxtStmtSet> InstToCxtStmt;
 
     LockAnalysis(TCT* t) : tct(t), lockTime(0),numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0)
     {
@@ -89,7 +89,7 @@ public:
     /// (2) maps a context-sensitive lock site to its corresponding lock span.
     void analyze();
     void analyzeIntraProcedualLock();
-    bool intraForwardTraverse(const Instruction* lock, InstSet& unlockset, InstSet& forwardInsts);
+    bool intraForwardTraverse(const SVFInstruction* lock, InstSet& unlockset, InstSet& forwardInsts);
     bool intraBackwardTraverse(const InstSet& unlockset, InstSet& backwardInsts);
 
     void collectCxtLock();
@@ -101,14 +101,14 @@ public:
     /// Intraprocedural locks
     //@{
     /// Return true if the lock is an intra-procedural lock
-    inline bool isIntraLock(const Instruction* lock) const
+    inline bool isIntraLock(const SVFInstruction* lock) const
     {
         assert(locksites.find(lock)!=locksites.end() && "not a lock site?");
         return ciLocktoSpan.find(lock)!=ciLocktoSpan.end();
     }
 
     /// Add intra-procedural lock
-    inline void addIntraLock(const Instruction* lockSite, const InstSet& stmts)
+    inline void addIntraLock(const SVFInstruction* lockSite, const InstSet& stmts)
     {
         for(InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it!=eit; ++it)
         {
@@ -118,7 +118,7 @@ public:
     }
 
     /// Add intra-procedural lock
-    inline void addCondIntraLock(const Instruction* lockSite, const InstSet& stmts)
+    inline void addCondIntraLock(const SVFInstruction* lockSite, const InstSet& stmts)
     {
         for(InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it!=eit; ++it)
         {
@@ -127,18 +127,18 @@ public:
     }
 
     /// Return true if a statement is inside an intra-procedural lock
-    inline bool isInsideIntraLock(const Instruction* stmt) const
+    inline bool isInsideIntraLock(const SVFInstruction* stmt) const
     {
         return instCILocksMap.find(stmt)!=instCILocksMap.end() || isInsideCondIntraLock(stmt);
     }
 
     /// Return true if a statement is inside a partial lock/unlock pair (conditional lock with unconditional unlock)
-    inline bool isInsideCondIntraLock(const Instruction* stmt) const
+    inline bool isInsideCondIntraLock(const SVFInstruction* stmt) const
     {
         return instTocondCILocksMap.find(stmt)!=instTocondCILocksMap.end();
     }
 
-    inline const InstSet& getIntraLockSet(const Instruction* stmt) const
+    inline const InstSet& getIntraLockSet(const SVFInstruction* stmt) const
     {
         InstToInstSetMap::const_iterator it = instCILocksMap.find(stmt);
         assert(it!=instCILocksMap.end() && "intralock not found!");
@@ -149,7 +149,7 @@ public:
     /// Context-sensitive locks
     //@{
     /// Add inter-procedural context-sensitive lock
-    inline void addCxtLock(const CallStrCxt& cxt,const Instruction* inst)
+    inline void addCxtLock(const CallStrCxt& cxt,const SVFInstruction* inst)
     {
         CxtLock cxtlock(cxt,inst);
         cxtLockset.insert(cxtlock);
@@ -201,12 +201,12 @@ public:
     /// Context-sensitive statement and lock spans
     //@{
     /// Get LockSet and LockSpan
-    inline bool hasCxtStmtfromInst(const Instruction* inst) const
+    inline bool hasCxtStmtfromInst(const SVFInstruction* inst) const
     {
         InstToCxtStmtSet::const_iterator it = instToCxtStmtSet.find(inst);
         return (it != instToCxtStmtSet.end());
     }
-    inline const CxtStmtSet& getCxtStmtfromInst(const Instruction* inst) const
+    inline const CxtStmtSet& getCxtStmtfromInst(const SVFInstruction* inst) const
     {
         InstToCxtStmtSet::const_iterator it = instToCxtStmtSet.find(inst);
         assert(it != instToCxtStmtSet.end());
@@ -270,7 +270,7 @@ public:
 
 
     /// Check if one instruction's context stmt is in a lock span
-    inline bool hasOneCxtInLockSpan(const Instruction *I, LockSpan lspan) const
+    inline bool hasOneCxtInLockSpan(const SVFInstruction *I, LockSpan lspan) const
     {
         if(!hasCxtStmtfromInst(I))
             return false;
@@ -285,7 +285,7 @@ public:
         return false;
     }
 
-    inline bool hasAllCxtInLockSpan(const Instruction *I, LockSpan lspan) const
+    inline bool hasAllCxtInLockSpan(const SVFInstruction *I, LockSpan lspan) const
     {
         if(!hasCxtStmtfromInst(I))
             return false;
@@ -304,15 +304,15 @@ public:
     /// Check if two Instructions are protected by common locks
     /// echo inst may have multiple cxt stmt
     /// we check whether every cxt stmt of instructions is protected by a common lock.
-    bool isProtectedByCommonLock(const Instruction *i1, const Instruction *i2);
-    bool isProtectedByCommonCxtLock(const Instruction *i1, const Instruction *i2);
+    bool isProtectedByCommonLock(const SVFInstruction *i1, const SVFInstruction *i2);
+    bool isProtectedByCommonCxtLock(const SVFInstruction *i1, const SVFInstruction *i2);
     bool isProtectedByCommonCxtLock(const CxtStmt& cxtStmt1, const CxtStmt& cxtStmt2);
-    bool isProtectedByCommonCILock(const Instruction *i1, const Instruction *i2);
+    bool isProtectedByCommonCILock(const SVFInstruction *i1, const SVFInstruction *i2);
 
-    bool isInSameSpan(const Instruction *I1, const Instruction *I2);
-    bool isInSameCSSpan(const Instruction *i1, const Instruction *i2) const;
+    bool isInSameSpan(const SVFInstruction *I1, const SVFInstruction *I2);
+    bool isInSameCSSpan(const SVFInstruction *i1, const SVFInstruction *i2) const;
     bool isInSameCSSpan(const CxtStmt& cxtStmt1, const CxtStmt& cxtStmt2) const;
-    bool isInSameCISpan(const Instruction *i1, const Instruction *i2) const;
+    bool isInSameCISpan(const SVFInstruction *i1, const SVFInstruction *i2) const;
 
     inline u32_t getNumOfCxtLocks()
     {
@@ -347,7 +347,7 @@ private:
     {
         return isAliasedLocks(cl1.getStmt(), cl2.getStmt());
     }
-    bool isAliasedLocks(const Instruction* i1, const Instruction* i2)
+    bool isAliasedLocks(const SVFInstruction* i1, const SVFInstruction* i2)
     {
         /// todo: must alias
         return tct->getPTA()->alias(getLockVal(i1), getLockVal(i2));
@@ -433,29 +433,29 @@ private:
     //@}
 
     /// Push calling context
-    void pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee);
+    void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee);
     /// Match context
-    bool matchCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee);
+    bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee);
 
     void validateResults();
 
     /// Whether it is a lock site
-    inline bool isTDFork(const Instruction* call)
+    inline bool isTDFork(const SVFInstruction* call)
     {
         return getTCG()->getThreadAPI()->isTDFork(call);
     }
     /// Whether it is a lock site
-    inline bool isTDAcquire(const Instruction* call)
+    inline bool isTDAcquire(const SVFInstruction* call)
     {
         return getTCG()->getThreadAPI()->isTDAcquire(call);
     }
     /// Whether it is a unlock site
-    inline bool isTDRelease(const Instruction* call)
+    inline bool isTDRelease(const SVFInstruction* call)
     {
         return getTCG()->getThreadAPI()->isTDRelease(call);
     }
     /// Get lock value
-    inline const Value* getLockVal(const Instruction* call)
+    inline const Value* getLockVal(const SVFInstruction* call)
     {
         return getTCG()->getThreadAPI()->getLockVal(call);
     }

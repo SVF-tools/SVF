@@ -100,7 +100,8 @@ void SVFG::writeToFile(const string& filename)
             // opvers
             f << " >= MVER: {";
             f << *phiNode->getResVer();
-            f << "} >= ICFGNodeID: " << pag->getICFG()->getICFGNode(&(phiNode->getICFGNode()->getBB()->front()))->getId();
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(phiNode->getICFGNode()->getBB()->front()));
+            f << "} >= ICFGNodeID: " << pag->getICFG()->getICFGNode(inst)->getId();
             f << " >= OPVers: {";
             for (auto x: opvers)
             {

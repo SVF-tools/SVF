@@ -303,7 +303,8 @@ const Function *cppUtil::getThunkTarget(const Function *F)
             if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
                     || llvm::isa<CallBrInst>(inst))
             {
-                CallSite cs(const_cast<Instruction*>(&inst));
+                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&inst);
+                CallSite cs(svfInst);
                 // assert(cs.getCalledFunction() &&
                 //        "Indirect call detected in thunk func");
                 // assert(ret == nullptr && "multiple callsites in thunk func");
@@ -524,7 +525,7 @@ bool cppUtil::isDestructor(const Function *F)
 string cppUtil::getClassNameOfThisPtr(CallSite cs)
 {
     string thisPtrClassName;
-    Instruction *inst = cs.getInstruction();
+    const Instruction *inst = cs.getInstruction()->getLLVMInstruction();
     if (const MDNode *N = inst->getMetadata("VCallPtrType"))
     {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
@@ -551,7 +552,7 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs)
 string cppUtil::getFunNameOfVCallSite(CallSite cs)
 {
     string funName;
-    Instruction *inst = cs.getInstruction();
+    const Instruction *inst = cs.getInstruction()->getLLVMInstruction();
     if (const MDNode *N = inst->getMetadata("VCallFunName"))
     {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));

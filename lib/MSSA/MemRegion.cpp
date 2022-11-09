@@ -147,7 +147,7 @@ void MRGenerator::generateMRs()
     updateAliasMRs();
 }
 
-bool MRGenerator::hasSVFStmtList(const Instruction* inst)
+bool MRGenerator::hasSVFStmtList(const SVFInstruction* inst)
 {
     SVFIR* pag = pta->getPAG();
     if (ptrOnlyMSSA)
@@ -156,7 +156,7 @@ bool MRGenerator::hasSVFStmtList(const Instruction* inst)
         return pag->hasSVFStmtList(pag->getICFG()->getICFGNode(inst));
 }
 
-SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const Instruction* inst)
+SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const SVFInstruction* inst)
 {
     SVFIR* pag = pta->getPAG();
     if (ptrOnlyMSSA)
@@ -188,8 +188,9 @@ void MRGenerator::collectModRefForLoadStore()
             for (BasicBlock::const_iterator bit = bb.begin(), ebit = bb.end();
                     bit != ebit; ++bit)
             {
-                const Instruction& inst = *bit;
-                SVFStmtList& pagEdgeList = getPAGEdgesFromInst(&inst);
+                const Instruction& i = *bit;
+                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&i);
+                SVFStmtList& pagEdgeList = getPAGEdgesFromInst(svfInst);
                 for (SVFStmtList::iterator bit = pagEdgeList.begin(), ebit =
                             pagEdgeList.end(); bit != ebit; ++bit)
                 {

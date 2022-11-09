@@ -56,18 +56,18 @@ std::vector<std::string> MTAResultValidator::split(const std::string &s, char de
     split(s, delim, elems);
     return elems;
 }
-NodeID MTAResultValidator::getIntArg(const Instruction* inst, unsigned int arg_num)
+NodeID MTAResultValidator::getIntArg(const SVFInstruction* inst, unsigned int arg_num)
 {
-    assert(SVFUtil::isa<CallInst>(inst) && "getFirstIntArg: inst is not a callinst");
+    assert(SVFUtil::isa<CallInst>(inst->getLLVMInstruction()) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
     ConstantInt* x = SVFUtil::dyn_cast<ConstantInt>(cs.getArgument(arg_num));
     assert((arg_num < cs.arg_size()) && "Does not has this argument");
     return (NodeID) x->getSExtValue();
 }
 
-std::vector<std::string> MTAResultValidator::getStringArg(const Instruction* inst, unsigned int arg_num)
+std::vector<std::string> MTAResultValidator::getStringArg(const SVFInstruction* inst, unsigned int arg_num)
 {
-    assert(SVFUtil::isa<CallInst>(inst) && "getFirstIntArg: inst is not a callinst");
+    assert(SVFUtil::isa<CallInst>(inst->getLLVMInstruction()) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
     assert((arg_num < cs.arg_size()) && "Does not has this argument");
     const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(arg_num));
@@ -82,7 +82,7 @@ std::vector<std::string> MTAResultValidator::getStringArg(const Instruction* ins
     return split(vthdcxtstring, ',');
 }
 
-CallStrCxt MTAResultValidator::getCxtArg(const Instruction* inst, unsigned int arg_num)
+CallStrCxt MTAResultValidator::getCxtArg(const SVFInstruction* inst, unsigned int arg_num)
 {
     std::vector<std::string> x = getStringArg(inst, arg_num);
     CallStrCxt cxt;
@@ -95,7 +95,8 @@ CallStrCxt MTAResultValidator::getCxtArg(const Instruction* inst, unsigned int a
         y[0].erase(y[0].find("cs"), 2);
 
         const SVFFunction* callee = SVFUtil::getFunction(y[1]);
-        CallSite cs = SVFUtil::getLLVMCallSite(csnumToInstMap[atoi(y[0].c_str())]);
+        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(csnumToInstMap[atoi(y[0].c_str())]);
+        CallSite cs = SVFUtil::getLLVMCallSite(svfInst);
         assert(callee && "callee error");
         CallICFGNode* cbn = mhp->getTCT()->getCallICFGNode(cs.getInstruction());
         CallSiteID csId = tcg->getCallSiteID(cbn, callee);
@@ -164,7 +165,7 @@ void MTAResultValidator::dumpCxt(const CallStrCxt& cxt) const
     for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it)
     {
         rawstr << " ' " << *it << " ' ";
-        rawstr << *(tcg->getCallSite(*it)->getCallSite());
+        rawstr << *(tcg->getCallSite(*it)->getCallSite()->getLLVMInstruction());
         rawstr << "  call  " << tcg->getCallSite(*it)->getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";
@@ -238,9 +239,10 @@ bool MTAResultValidator::collectCxtThreadTargets()
         const Use *u = &*it;
         const Value *user = u->getUser();
         const Instruction *inst = SVFUtil::dyn_cast<Instruction>(user);
+        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
 
-        NodeID vthdnum = getIntArg(inst, 0);
-        CallStrCxt cxt = getCxtArg(inst, 1);
+        NodeID vthdnum = getIntArg(svfInst, 0);
+        CallStrCxt cxt = getCxtArg(svfInst, 1);
 
         vthdToCxt[vthdnum] = cxt;
     }
@@ -269,10 +271,11 @@ bool MTAResultValidator::collectTCTTargets()
         const Use *u = &*it;
         const Value *user = u->getUser();
         const Instruction *inst = SVFUtil::dyn_cast<Instruction>(user);
+        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
 
-        NodeID vthdnum = getIntArg(inst, 0);
+        NodeID vthdnum = getIntArg(svfInst, 0);
         NodeID rthdnum = vthdTorthd[vthdnum];
-        std::vector<std::string> x = getStringArg(inst, 1);
+        std::vector<std::string> x = getStringArg(svfInst, 1);
 
         for (std::vector<std::string>::iterator i = x.begin(); i != x.end(); i++)
         {
@@ -304,11 +307,12 @@ bool MTAResultValidator::collectInterleavingTargets()
         const Use *u = &*it;
         const Value *user = u->getUser();
         const Instruction *inst = SVFUtil::dyn_cast<Instruction>(user);
+        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
 
-        NodeID vthdnum = getIntArg(inst, 0);
+        NodeID vthdnum = getIntArg(svfInst, 0);
         NodeID rthdnum = vthdTorthd[vthdnum];
-        CallStrCxt x = getCxtArg(inst, 1);
-        std::vector<std::string> y = getStringArg(inst, 2);
+        CallStrCxt x = getCxtArg(svfInst, 1);
+        std::vector<std::string> y = getStringArg(svfInst, 2);
 
         // Record given interleaving
         NodeBS lev;
@@ -321,8 +325,9 @@ bool MTAResultValidator::collectInterleavingTargets()
         }
 
         const Instruction* memInst = getPreviousMemoryAccessInst(inst);
-        CxtThreadStmt cts(rthdnum, x, memInst);
-        instToTSMap[memInst].insert(cts);
+        const SVFInstruction* svfMemInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(memInst);
+        CxtThreadStmt cts(rthdnum, x, svfMemInst);
+        instToTSMap[svfMemInst].insert(cts);
         threadStmtToInterLeaving[cts] = lev;
     }
     return true;
@@ -460,7 +465,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
 
     for (MHP::InstToThreadStmtSetMap::iterator seti = instToTSMap.begin(), eseti = instToTSMap.end(); seti != eseti; ++seti)
     {
-        const Instruction* inst = (*seti).first;
+        const SVFInstruction* inst = (*seti).first;
 
         const MHP::CxtThreadStmtSet& tsSet = mhp->getThreadStmtSet(inst);
 
@@ -468,7 +473,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
         {
             if (Options::PrintValidRes)
             {
-                outs() << errMsg("\n Validate Interleaving: Wrong at : ") << SVFUtil::getSourceLoc(inst) << "\n";
+                outs() << errMsg("\n Validate Interleaving: Wrong at : ") << SVFUtil::getSourceLoc(inst->getLLVMInstruction()) << "\n";
                 outs() << "Reason: The number of thread running on stmt is wrong\n";
                 outs() << "\n----Given threads:\n";
                 for (MHP::CxtThreadStmtSet::iterator thdlevi = (*seti).second.begin(), ethdlevi = (*seti).second.end(); thdlevi != ethdlevi;
@@ -505,7 +510,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
                     {
                         if (Options::PrintValidRes)
                         {
-                            outs() << errMsg("\nValidate Interleaving: Wrong at: ") << SVFUtil::getSourceLoc(inst) << "\n";
+                            outs() << errMsg("\nValidate Interleaving: Wrong at: ") << SVFUtil::getSourceLoc(inst->getLLVMInstruction()) << "\n";
                             outs() << "Reason: thread interleaving on stmt is wrong\n";
                             dumpCxt(ts.getContext());
                             outs() << "Given result:    \tTID " << rthdTovthd[ts.getTid()];
@@ -541,7 +546,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
             {
                 if (Options::PrintValidRes)
                 {
-                    outs() << errMsg("\nValidate Interleaving: Wrong at:") << SVFUtil::getSourceLoc(inst) << "\n";
+                    outs() << errMsg("\nValidate Interleaving: Wrong at:") << SVFUtil::getSourceLoc(inst->getLLVMInstruction()) << "\n";
                     outs() << "Reason: analysis thread cxt is not matched by given thread cxt\n";
                     dumpCxt(ts.getContext());
                     NodeBS lev = mhp->getInterleavingThreads(ts);

@@ -19,7 +19,7 @@ class LockResultValidator
 {
 public:
     typedef Set<std::string> CxtLockSetStr;
-    typedef Map<const Instruction*, CxtLockSetStr> CxtStmtToCxtLockS;
+    typedef Map<const SVFInstruction*, CxtLockSetStr> CxtStmtToCxtLockS;
 
     typedef unsigned LOCK_FLAG;
 
@@ -38,7 +38,7 @@ public:
     }
 private:
     // Get CallICFGNode
-    inline CallICFGNode* getCBN(const Instruction* inst)
+    inline CallICFGNode* getCBN(const SVFInstruction* inst)
     {
         return _la->getTCT()->getCallICFGNode(inst);
     }
@@ -54,7 +54,8 @@ private:
             if(SVFUtil::isa<CallInst> (I))
             {
                 PTACallGraph::FunctionSet callees;
-                _la->getTCT()->getThreadCallGraph()->getCallees(getCBN(I), callees);
+                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
+                _la->getTCT()->getThreadCallGraph()->getCallees(getCBN(svfInst), callees);
 
                 for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
                         ecit = callees.end(); cit!=ecit; cit++)
@@ -93,7 +94,7 @@ private:
 
     std::string getOutput(const char* scenario, LOCK_FLAG analysisRes);
 
-    Set<std::string> getStringArg(const Instruction* inst, unsigned int arg_num);
+    Set<std::string> getStringArg(const SVFInstruction* inst, unsigned int arg_num);
 
     bool collectLockTargets();
     LOCK_FLAG validateStmtInLock();

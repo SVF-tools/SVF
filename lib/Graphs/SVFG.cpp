@@ -79,10 +79,10 @@ const std::string ActualINSVFGNode::toString() const
 {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "ActualINSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " {fun: " << getFun()->getName() << "}";
+    rawstr << "ActualINSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite()->getLLVMInstruction() << " {fun: " << getFun()->getName() << "}";
     rawstr << "CSMU(" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
     rawstr << getMRVer()->getMR()->dumpStr() << "\n";
-    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]";
+    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()->getLLVMInstruction()) << "]";
     return rawstr.str();
 }
 
@@ -90,11 +90,11 @@ const std::string ActualOUTSVFGNode::toString() const
 {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "ActualOUTSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " {fun: " << getFun()->getName() << "}";
+    rawstr << "ActualOUTSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite()->getLLVMInstruction() << " {fun: " << getFun()->getName() << "}";
     rawstr <<  getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() <<
            " = CSCHI(MR_" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
     rawstr << getMRVer()->getMR()->dumpStr() << "\n";
-    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]" ;
+    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()->getLLVMInstruction()) << "]" ;
     return rawstr.str();
 }
 
@@ -138,7 +138,7 @@ const std::string InterMSSAPHISVFGNode::toString() const
     if(isFormalINPHI())
         rawstr << "FormalINPHISVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     else
-        rawstr << "ActualOUTPHISVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " {fun: " << getFun()->getName() << "}";
+        rawstr << "ActualOUTPHISVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite()->getLLVMInstruction() << " {fun: " << getFun()->getName() << "}";
     rawstr << MSSAPHISVFGNode::toString();
     return rawstr.str();
 }
@@ -271,7 +271,8 @@ void SVFG::addSVFGNodesForAddrTakenVars()
         for(PHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
         {
             MemSSA::PHI* phi =  *pi;
-            addIntraMSSAPHISVFGNode(pag->getICFG()->getICFGNode(&(phi->getBasicBlock()->front())), phi->opVerBegin(), phi->opVerEnd(),phi->getResVer(), totalVFGNode++);
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(phi->getBasicBlock()->front()));
+            addIntraMSSAPHISVFGNode(pag->getICFG()->getICFGNode(inst), phi->opVerBegin(), phi->opVerEnd(),phi->getResVer(), totalVFGNode++);
         }
     }
     /// initialize memory SSA entry chi nodes

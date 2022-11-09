@@ -331,9 +331,9 @@ bool SymbolTableInfo::isArgOfUncalledFunction(const Value *val)
     return argOfUncalledFunctionSet.find(val) != argOfUncalledFunctionSet.end();
 }
 
-bool SymbolTableInfo::isReturn(const Instruction *inst)
+bool SymbolTableInfo::isReturn(const SVFInstruction *inst)
 {
-    const Set<const Instruction*>& returnInstsSet = symInfo->getModule()->getReturns();
+    const Set<const SVFInstruction*>& returnInstsSet = symInfo->getModule()->getReturns();
     return returnInstsSet.find(inst) != returnInstsSet.end();
 }
 

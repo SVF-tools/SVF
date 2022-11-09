@@ -131,7 +131,7 @@ void ThreadAPI::init()
 /*!
  *
  */
-const SVFFunction* ThreadAPI::getCallee(const Instruction *inst) const
+const SVFFunction* ThreadAPI::getCallee(const SVFInstruction *inst) const
 {
     return SVFUtil::getCallee(inst);
 }
@@ -147,7 +147,7 @@ const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const
 /*!
  *
  */
-const CallSite ThreadAPI::getLLVMCallSite(const Instruction *inst) const
+const CallSite ThreadAPI::getLLVMCallSite(const SVFInstruction *inst) const
 {
     return SVFUtil::getLLVMCallSite(inst);
 }
@@ -213,7 +213,8 @@ void ThreadAPI::performAPIStat(SVFModule* module)
                 const Instruction *inst = &*ii;
                 if (!SVFUtil::isa<CallInst>(inst))
                     continue;
-                const SVFFunction* fun = getCallee(inst);
+                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+                const SVFFunction* fun = getCallee(svfInst);
                 TD_TYPE type = getType(fun);
                 switch (type)
                 {

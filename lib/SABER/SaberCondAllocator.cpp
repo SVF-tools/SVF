@@ -97,7 +97,8 @@ void SaberCondAllocator::allocateForBB(const BasicBlock &bb)
         std::vector<Condition> condVec;
         for (u32_t i = 0; i < bit_num; i++)
         {
-            condVec.push_back(newCond(bb.getTerminator()));
+            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(bb.getTerminator());
+            condVec.push_back(newCond(svfInst));
         }
 
         // iterate each successor
@@ -299,7 +300,9 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const Basic
         return getTrueCond();
     }
 
-    if (ICFGNode *icfgNode = getICFG()->getICFGNode(bb->getTerminator()))
+    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(bb->getTerminator());
+
+    if (ICFGNode *icfgNode = getICFG()->getICFGNode(svfInst))
     {
         for (const auto &svfStmt: icfgNode->getSVFStmts())
         {
@@ -412,9 +415,10 @@ void SaberCondAllocator::collectBBCallingProgExit(const BasicBlock &bb)
 
     for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end(); it != eit; it++)
     {
-        const Instruction *inst = &*it;
-        if (SVFUtil::isCallSite(inst))
-            if (SVFUtil::isProgExitCall(inst))
+        const Instruction* inst = &*it;
+        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+        if (SVFUtil::isCallSite(svfInst))
+            if (SVFUtil::isProgExitCall(svfInst))
             {
                 funToExitBBsMap[bb.getParent()].insert(&bb);
             }
@@ -581,7 +585,7 @@ void SaberCondAllocator::printPathCond()
 }
 
 /// Allocate a new condition
-SaberCondAllocator::Condition SaberCondAllocator::newCond(const Instruction *inst)
+SaberCondAllocator::Condition SaberCondAllocator::newCond(const SVFInstruction* inst)
 {
     u32_t condCountIdx = totalCondNum++;
     Condition expr = Condition::getContext().bool_const(("c" + std::to_string(condCountIdx)).c_str());

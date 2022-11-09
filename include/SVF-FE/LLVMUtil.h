@@ -65,9 +65,9 @@ bool isConstantObjSym(const Value *val);
 
 
 /// Whether an instruction is a return instruction
-inline bool isReturn(const Instruction* inst)
+inline bool isReturn(const SVFInstruction* inst)
 {
-    return SVFUtil::isa<ReturnInst>(inst);
+    return SVFUtil::isa<ReturnInst>(inst->getLLVMInstruction());
 }
 
 static inline Type *getPtrElementType(const PointerType* pty)
@@ -104,9 +104,9 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
     return refType;
 }
 
-inline const PointerType *getRefTypeOfHeapAllocOrStatic(const Instruction *inst)
+inline const PointerType *getRefTypeOfHeapAllocOrStatic(const SVFInstruction* inst)
 {
-    CallSite cs(const_cast<Instruction*>(inst));
+    CallSite cs(inst);
     return getRefTypeOfHeapAllocOrStatic(cs);
 }
 //@}
@@ -177,7 +177,7 @@ const Value * stripConstantCasts(const Value *val);
 const Value *stripAllCasts(const Value *val) ;
 
 /// Get the type of the heap allocation
-const Type *getTypeOfHeapAlloc(const llvm::Instruction *inst) ;
+const Type *getTypeOfHeapAlloc(const SVFInstruction* inst) ;
 
 /// Return the bitcast instruction which is val's only use site, otherwise return nullptr
 const Value* getUniqueUseViaCastInst(const Value* val);
@@ -287,10 +287,10 @@ inline static DataLayout* getDataLayout(Module* mod)
 }
 
 /// Get the next instructions following control flow
-void getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
+void getNextInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList);
 
 /// Get the previous instructions following control flow
-void getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
+void getPrevInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList);
 
 /// Get basic block successor position
 u32_t getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ);

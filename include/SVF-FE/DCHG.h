@@ -406,7 +406,7 @@ private:
     /// Retrieves the metadata associated with a *virtual* callsite.
     const DIType *getCSStaticType(CallSite cs) const
     {
-        MDNode *md = cs.getInstruction()->getMetadata(cppUtil::ctir::derefMDName);
+        MDNode *md = cs.getInstruction()->getLLVMInstruction()->getMetadata(cppUtil::ctir::derefMDName);
         assert(md != nullptr && "Missing type metadata at virtual callsite");
         DIType *diType = SVFUtil::dyn_cast<DIType>(md);
         assert(diType != nullptr && "Incorrect metadata type at virtual callsite");

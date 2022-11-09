@@ -147,7 +147,9 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
         {
             for(InstSet::const_iterator it2 = instSet2.begin(), eit2 = instSet2.end(); it2!=eit2; ++it2)
             {
-                mhp->mayHappenInParallel(*it1,*it2);
+                const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it1);
+                const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it2);
+                mhp->mayHappenInParallel(inst1,inst2);
             }
         }
     }

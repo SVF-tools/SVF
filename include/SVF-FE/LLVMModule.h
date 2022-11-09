@@ -116,6 +116,16 @@ public:
         return svfModule->getSVFFunction(fun);
     }
 
+    const SVFBasicBlock *getSVFBasicBlock(const BasicBlock *bb) const
+    {
+        return svfModule->getSVFBasicBlock(bb);
+    }
+
+    const SVFInstruction *getSVFInstruction(const Instruction *i) const
+    {
+        return svfModule->getSVFInstruction(i);
+    }
+
     /// Get the corresponding Function based on its name
     inline const SVFFunction *getSVFFunction(std::string name)
     {

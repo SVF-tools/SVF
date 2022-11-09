@@ -127,11 +127,13 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 
 void LLVMModuleSet::build()
 {
+    if(preProcessed==false)
+        prePassSchedule();
+
     buildFunToFunMap();
     initialize();
     buildGlobalDefToRepMap();
-    if(preProcessed==false)
-        prePassSchedule();
+
     const SVFModule::FunctionSetType& functions = svfModule->getFunctionSet();
     for (SVFModule::FunctionSetType::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
     {
@@ -311,11 +313,13 @@ void LLVMModuleSet::initialize()
                 BasicBlock* bb = &*bit;
                 SVFBasicBlock* svfBB = new SVFBasicBlock(bb, svfFunc);
                 svfFunc->addBasicBlock(svfBB);
+                svfModule->addBasicBlockMap(svfBB);
                 for (BasicBlock::iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
                 {
                     Instruction* inst = &*iit;
                     SVFInstruction* svfInst = new SVFInstruction(inst,svfBB);
                     svfBB->addInstruction(svfInst);
+                    svfModule->addInstructionMap(svfInst);
                 }
             }
         }

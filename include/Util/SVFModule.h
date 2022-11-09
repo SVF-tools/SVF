@@ -70,7 +70,7 @@ private:
     LLVMBB2SVFBBMap LLVMBB2SVFBB;
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
     Set<const Value*> argsOfUncalledFunction;
-    Set<const Instruction*> returnInsts;
+    Set<const SVFInstruction*> returnInsts;
     Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
     Set<const Value*> ptrsInUncalledFunctions;
@@ -143,6 +143,20 @@ public:
     {
         LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
         assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
+        return it->second;
+    }
+
+    inline const SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb) const
+    {
+        LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
+        assert(it!=LLVMBB2SVFBB.end() && "SVF BasicBlock not found!");
+        return it->second;
+    }
+
+    inline const SVFInstruction* getSVFInstruction(const Instruction* inst) const
+    {
+        LLVMInst2SVFInstMap::const_iterator it = LLVMInst2SVFInst.find(inst);
+        assert(it!=LLVMInst2SVFInst.end() && "SVF Instruction not found!");
         return it->second;
     }
 
@@ -250,7 +264,7 @@ public:
         return argsOfUncalledFunction;
     }
 
-    inline const Set<const Instruction*>& getReturns() const
+    inline const Set<const SVFInstruction*>& getReturns() const
     {
         return returnInsts;
     }
@@ -344,7 +358,7 @@ public:
         argsOfUncalledFunction.insert(val);
     }
 
-    inline void addReturn(const Instruction* inst)
+    inline void addReturn(const SVFInstruction* inst)
     {
         returnInsts.insert(inst);
     }

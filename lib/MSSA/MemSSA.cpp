@@ -145,7 +145,8 @@ void MemSSA::createMUCHI(const SVFFunction& fun)
         for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
                 it != eit; ++it)
         {
-            const Instruction* inst = &*it;
+            const Instruction* i = &*it;
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if(mrGen->hasSVFStmtList(inst))
             {
                 SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
@@ -285,7 +286,8 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
     for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
             it != eit; ++it)
     {
-        const Instruction* inst = &*it;
+        const Instruction* i = &*it;
+        const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
         if(mrGen->hasSVFStmtList(inst))
         {
             SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
@@ -616,11 +618,12 @@ void MemSSA::dumpMSSA(OutStream& Out)
             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it)
             {
-                Instruction& inst = *it;
-                bool isAppCall = isNonInstricCallSite(&inst) && !isExtCall(&inst);
-                if (isAppCall || isHeapAllocExtCall(&inst))
+                const Instruction& i = *it;
+                const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&i);
+                bool isAppCall = isNonInstricCallSite(inst) && !isExtCall(inst);
+                if (isAppCall || isHeapAllocExtCall(inst))
                 {
-                    const CallICFGNode* cs = pag->getICFG()->getCallICFGNode(&inst);
+                    const CallICFGNode* cs = pag->getICFG()->getCallICFGNode(inst);
                     if(hasMU(cs))
                     {
                         if (!last_is_chi)
@@ -634,7 +637,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
                         }
                     }
 
-                    Out << SVFUtil::value2String(&inst) << "\n";
+                    Out << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
 
                     if(hasCHI(cs))
                     {
@@ -652,7 +655,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
                 else
                 {
                     bool dump_preamble = false;
-                    SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(&inst);
+                    SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
                     for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                             bit!=ebit; ++bit)
                     {
@@ -672,7 +675,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
                         }
                     }
 
-                    Out << SVFUtil::value2String(&inst) << "\n";
+                    Out << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
 
                     bool has_chi = false;
                     for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();

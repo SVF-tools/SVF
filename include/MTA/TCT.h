@@ -141,13 +141,13 @@ public:
     typedef TCTEdge::ThreadCreateEdgeSet ThreadCreateEdgeSet;
     typedef ThreadCreateEdgeSet::iterator TCTNodeIter;
     typedef Set<const Function*> FunSet;
-    typedef std::vector<const Instruction*> InstVec;
-    typedef Set<const Instruction*> InstSet;
+    typedef std::vector<const SVFInstruction*> InstVec;
+    typedef Set<const SVFInstruction*> InstSet;
     typedef Set<const PTACallGraphNode*> PTACGNodeSet;
     typedef Map<CxtThread,TCTNode*> CxtThreadToNodeMap;
     typedef Map<CxtThread,CallStrCxt> CxtThreadToForkCxt;
     typedef Map<CxtThread,const Function*> CxtThreadToFun;
-    typedef Map<const Instruction*, const Loop*> InstToLoopMap;
+    typedef Map<const SVFInstruction*, const Loop*> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
     typedef Set<CxtThreadProc> CxtThreadProcSet;
     typedef SCCDetection<PTACallGraph*> ThreadCallGraphSCC;
@@ -169,7 +169,7 @@ public:
         destroy();
     }
     /// Get CallICFGNode given inst
-    CallICFGNode* getCallICFGNode(const Instruction* inst)
+    CallICFGNode* getCallICFGNode(const SVFInstruction* inst)
     {
         return pta->getICFG()->getCallICFGNode(inst);
     }
@@ -365,7 +365,7 @@ public:
     }
 
     /// Get loop for join site
-    inline const Loop* getJoinLoop(const Instruction* join)
+    inline const Loop* getJoinLoop(const SVFInstruction* join)
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         InstToLoopMap::const_iterator it = joinSiteToLoopMap.find(join);
@@ -374,9 +374,9 @@ public:
         return nullptr;
     }
     /// Return true if a join instruction must be executed inside a loop
-    bool isJoinMustExecutedInLoop(const Loop* lp,const Instruction* join);
+    bool isJoinMustExecutedInLoop(const Loop* lp,const SVFInstruction* join);
     /// Get loop for an instruction
-    const Loop* getLoop(const Instruction* inst);
+    const Loop* getLoop(const SVFInstruction* inst);
     /// Get dominator for a function
     const DominatorTree* getDT(const Function* fun);
     /// Get dominator for a function
@@ -384,14 +384,14 @@ public:
     /// Get loop for fork/join site
     const Loop* getLoop(const BasicBlock* bb);
     /// Get SE for function
-    ScalarEvolution* getSE(const Instruction* inst);
+    ScalarEvolution* getSE(const SVFInstruction* inst);
 
     /// Get the next instructions following control flow
-    void getNextInsts(const Instruction* inst, InstVec& instSet);
+    void getNextInsts(const SVFInstruction* inst, InstVec& instSet);
     /// Push calling context
-    void pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee);
+    void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee);
     /// Match context
-    bool matchCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee);
+    bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee);
 
     inline void pushCxt(CallStrCxt& cxt, CallSiteID csId)
     {
@@ -400,7 +400,7 @@ public:
             MaxCxtSize = cxt.size();
     }
     /// Whether a join site is in recursion
-    inline bool isJoinSiteInRecursion(const Instruction* join) const
+    inline bool isJoinSiteInRecursion(const SVFInstruction* join) const
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         return inRecurJoinSites.find(join)!=inRecurJoinSites.end();
@@ -475,9 +475,9 @@ private:
     /// Multi-forked threads
     //@{
     /// Whether an instruction is in a loop
-    bool isInLoopInstruction(const Instruction* inst);
+    bool isInLoopInstruction(const SVFInstruction* inst);
     /// Whether an instruction is in a recursion
-    bool isInRecursion(const Instruction* inst) const;
+    bool isInRecursion(const SVFInstruction* inst) const;
     //@}
 
     /// Handle call relations
@@ -508,8 +508,9 @@ private:
         /// non-main thread
         if(ct.getThread() != nullptr)
         {
-            ct.setInloop(isInLoopInstruction(ct.getThread()));
-            ct.setIncycle(isInRecursion(ct.getThread()));
+            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(ct.getThread());
+            ct.setInloop(isInLoopInstruction(svfInst));
+            ct.setIncycle(isInRecursion(svfInst));
         }
         /// main thread
         else

@@ -122,18 +122,9 @@ public:
     void visitStoreInst(StoreInst &I);
     void visitLoadInst(LoadInst &I);
     void visitGetElementPtrInst(GetElementPtrInst &I);
-    void visitCallInst(CallInst &I)
-    {
-        visitCallSite(&I);
-    }
-    void visitInvokeInst(InvokeInst &II)
-    {
-        visitCallSite(&II);
-    }
-    void visitCallBrInst(CallBrInst &I)
-    {
-        return visitCallSite(&I);
-    }
+    void visitCallInst(CallInst &I);
+    void visitInvokeInst(InvokeInst &II);
+    void visitCallBrInst(CallBrInst &I);
     void visitCallSite(CallSite cs);
     void visitReturnInst(ReturnInst &I);
     void visitCastInst(CastInst &I);
@@ -359,8 +350,10 @@ protected:
     inline void addStoreEdge(NodeID src, NodeID dst)
     {
         IntraICFGNode* node;
-        if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
+        if(const Instruction* i = SVFUtil::dyn_cast<Instruction>(curVal)){
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             node = pag->getICFG()->getIntraICFGNode(inst);
+        }
         else
             node = nullptr;
         if(StoreStmt *edge = pag->addStoreStmt(src, dst, node))

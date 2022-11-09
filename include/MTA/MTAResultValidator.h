@@ -52,9 +52,9 @@ protected:
     std::vector<std::string> split(const std::string &s, char delim);
 
     // Get special arguments of given call sites
-    NodeID getIntArg(const Instruction* inst, unsigned int arg_num);
-    std::vector<std::string> getStringArg(const Instruction* inst, unsigned int arg_num);
-    CallStrCxt getCxtArg(const Instruction* inst, unsigned int arg_num);
+    NodeID getIntArg(const SVFInstruction* inst, unsigned int arg_num);
+    std::vector<std::string> getStringArg(const SVFInstruction* inst, unsigned int arg_num);
+    CallStrCxt getCxtArg(const SVFInstruction* inst, unsigned int arg_num);
 
     /*
      * Get the previous LoadInst or StoreInst from Instruction "I" in the
@@ -414,7 +414,9 @@ private:
             if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
                 return I;
 
-            if (const SVFFunction *callee = SVFUtil::getCallee(I))
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
+
+            if (const SVFFunction *callee = SVFUtil::getCallee(inst))
             {
                 if (callee->getName().find("llvm.memset") != std::string::npos)
                     return I;

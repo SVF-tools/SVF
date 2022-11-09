@@ -143,7 +143,8 @@ void CHGBuilder::buildCHGEdges(const SVFFunction* fun)
             {
                 if (SVFUtil::isCallSite(&(*I)))
                 {
-                    CallSite cs = SVFUtil::getLLVMCallSite(&(*I));
+                    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(*I));
+                    CallSite cs = SVFUtil::getLLVMCallSite(svfInst);
                     connectInheritEdgeViaCall(fun, cs);
                 }
                 else if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(&(*I)))

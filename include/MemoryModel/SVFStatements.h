@@ -104,9 +104,13 @@ public:
 
     /// Get/set methods for llvm instruction
     //@{
-    inline const Instruction* getInst() const
+    inline const SVFInstruction* getInst() const
     {
-        return SVFUtil::dyn_cast<Instruction>(value);
+        if(const Instruction* i = SVFUtil::dyn_cast<Instruction>(value)){
+            return LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
+        }
+        else
+            return nullptr;
     }
     inline void setValue(const Value *val)
     {

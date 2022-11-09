@@ -328,6 +328,8 @@ public:
         SVFValue(i->getName().str(), SVFInst), inst(i), bb(b)
     {
     }
+    SVFInstruction(const Instruction* i) = delete;
+    SVFInstruction(void) = delete;
 
     inline const Instruction* getLLVMInstruction() const
     {
@@ -342,6 +344,21 @@ public:
     inline const SVFBasicBlock* getParent() const
     {
         return bb;
+    }
+
+    inline const SVFFunction* getFunction() const
+    {
+        return bb->getParent();
+    }
+
+    inline const Type* getType() const
+    {
+        return inst->getType();
+    }
+
+    inline bool isTerminator() const
+    {
+        return inst->isTerminator();
     }
 };
 
@@ -365,24 +382,24 @@ public:
 class CallSite
 {
 private:
-    CallBase *CB;
+    const CallBase *CB;
+    const SVFInstruction* inst;
 public:
-    CallSite(Instruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I)) {}
-    CallSite(Value *I) : CB(SVFUtil::dyn_cast<CallBase>(I)) {}
+    CallSite(const SVFInstruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I->getLLVMInstruction())), inst(I) {}
 
-    CallBase *getInstruction() const
+    const SVFInstruction* getInstruction() const
     {
-        return CB;
+        return inst;
     }
-    Value *getArgument(unsigned ArgNo) const
+    Value* getArgument(unsigned ArgNo) const
     {
         return CB->getArgOperand(ArgNo);
     }
-    Type *getType() const
+    Type* getType() const
     {
         return CB->getType();
     }
-    unsigned arg_size() const
+    u32_t arg_size() const
     {
         return CB->arg_size();
     }
@@ -390,27 +407,27 @@ public:
     {
         return CB->arg_empty();
     }
-    Value *getArgOperand(unsigned i) const
+    Value* getArgOperand(unsigned i) const
     {
         return CB->getArgOperand(i);
     }
-    unsigned getNumArgOperands() const
+    u32_t getNumArgOperands() const
     {
         return CB->arg_size();
     }
-    Function *getCalledFunction() const
+    Function* getCalledFunction() const
     {
         return CB->getCalledFunction();
     }
-    Value *getCalledValue() const
+    Value* getCalledValue() const
     {
         return CB->getCalledOperand();
     }
-    Function *getCaller() const
+    const Function* getCaller() const
     {
         return CB->getCaller();
     }
-    FunctionType *getFunctionType() const
+    FunctionType* getFunctionType() const
     {
         return CB->getFunctionType();
     }
@@ -448,7 +465,7 @@ template <> struct std::hash<SVF::CallSite>
 {
     size_t operator()(const SVF::CallSite &cs) const
     {
-        std::hash<SVF::Instruction *> h;
+        std::hash<const SVF::SVFInstruction *> h;
         return h(cs.getInstruction());
     }
 };

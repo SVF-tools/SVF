@@ -75,10 +75,10 @@ bool PCG::mayHappenInParallelBetweenFunctions(const Function* fun1, const Functi
     return true;
 }
 
-bool PCG::mayHappenInParallel(const Instruction* i1, const Instruction* i2) const
+bool PCG::mayHappenInParallel(const SVFInstruction* i1, const SVFInstruction* i2) const
 {
-    const Function* fun1 = i1->getParent()->getParent();
-    const Function* fun2 = i2->getParent()->getParent();
+    const Function* fun1 = i1->getFunction()->getLLVMFun();
+    const Function* fun2 = i2->getFunction()->getLLVMFun();
     return mayHappenInParallelBetweenFunctions(fun1, fun2);
 }
 
@@ -95,7 +95,8 @@ void PCG::initFromThreadAPI(SVFModule* module)
         const Function* fun = (*fi)->getLLVMFun();
         for (inst_iterator II = inst_begin((*fi)->getLLVMFun()), E = inst_end((*fi)->getLLVMFun()); II != E; ++II)
         {
-            const Instruction *inst = &*II;
+            const Instruction *i = &*II;
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (tdAPI->isTDFork(inst))
             {
                 const Value* forkVal = tdAPI->getForkedFun(inst);
@@ -109,7 +110,7 @@ void PCG::initFromThreadAPI(SVFModule* module)
                 else
                 {
                     writeWrnMsg("pthread create");
-                    outs() << SVFUtil::value2String(inst) << "\n";
+                    outs() << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
                     writeWrnMsg("invoke spawnee indirectly");
                 }
             }
@@ -215,16 +216,17 @@ void PCG::identifyFollowers()
 
     for (CallInstSet::const_iterator sit = spawnSitesBegin(), esit = spawnSitesEnd(); sit != esit; ++sit)
     {
-        const Instruction* inst = *sit;
+        const SVFInstruction* inst = *sit;
         BBWorkList bb_worklist;
         Set<const BasicBlock*> visitedBBs;
-        bb_worklist.push(inst->getParent());
+        bb_worklist.push(inst->getParent()->getLLVMBasicBlock());
         while (!bb_worklist.empty())
         {
             const BasicBlock* bb = bb_worklist.pop();
             for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it)
             {
-                const Instruction* inst = &*it;
+                const Instruction* i = &*it;
+                const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
                 // mark the callee of this callsite as follower
                 // if this is an call/invoke instruction but not a spawn site
                 if ((SVFUtil::isCallSite(inst)) && !isSpawnsite(inst))

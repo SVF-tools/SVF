@@ -278,12 +278,12 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
         if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge))
         {
-            const Instruction* callInst= calledge->getCallSite()->getCallSite();
+            const Instruction* callInst= calledge->getCallSite()->getCallSite()->getLLVMInstruction();
             return SVFUtil::getSourceLoc(callInst);
         }
         else if(const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge))
         {
-            const Instruction* callInst= retedge->getCallSite()->getCallSite();
+            const Instruction* callInst= retedge->getCallSite()->getCallSite()->getLLVMInstruction();
             return SVFUtil::getSourceLoc(callInst);
         }
         return "";

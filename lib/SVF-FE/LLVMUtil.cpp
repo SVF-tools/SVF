@@ -42,9 +42,9 @@ using namespace SVF;
 bool LLVMUtil::isObject(const Value * ref)
 {
     bool createobj = false;
-    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(SVFUtil::cast<Instruction>(ref)) )
+    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))) )
         createobj = true;
-    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isHeapAllocExtCallViaRet(SVFUtil::cast<Instruction>(ref)))
+    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isHeapAllocExtCallViaRet(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))))
         createobj = true;
     if (SVFUtil::isa<GlobalVariable>(ref))
         createobj = true;
@@ -256,54 +256,60 @@ const Value * LLVMUtil::stripAllCasts(const Value *val)
 }
 
 /// Get the next instructions following control flow
-void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
+void LLVMUtil::getNextInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList)
 {
     if (!curInst->isTerminator())
     {
-        const Instruction* nextInst = curInst->getNextNode();
-        if (SVFUtil::isIntrinsicInst(nextInst))
-            getNextInsts(nextInst, instList);
+        const Instruction* nextInst = curInst->getLLVMInstruction()->getNextNode();
+        const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(nextInst);
+        if (SVFUtil::isIntrinsicInst(svfNextInst))
+            getNextInsts(svfNextInst, instList);
         else
-            instList.push_back(nextInst);
+            instList.push_back(svfNextInst);
     }
     else
     {
-        const BasicBlock *BB = curInst->getParent();
+        const BasicBlock *BB = curInst->getParent()->getLLVMBasicBlock();
         // Visit all successors of BB in the CFG
         for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it)
         {
             const Instruction* nextInst = &((*it)->front());
-            if (SVFUtil::isIntrinsicInst(nextInst))
-                getNextInsts(nextInst, instList);
+            const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(nextInst);
+            if (SVFUtil::isIntrinsicInst(svfNextInst))
+                getNextInsts(svfNextInst, instList);
             else
-                instList.push_back(nextInst);
+                instList.push_back(svfNextInst);
         }
     }
 }
 
 
 /// Get the previous instructions following control flow
-void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
+void LLVMUtil::getPrevInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList)
 {
-    if (curInst != &(curInst->getParent()->front()))
+    
+    const SVFInstruction* entryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(curInst->getParent()->getLLVMBasicBlock()->front()));
+    if (curInst != entryInst)
     {
-        const Instruction* prevInst = curInst->getPrevNode();
-        if (SVFUtil::isIntrinsicInst(prevInst))
-            getPrevInsts(prevInst, instList);
+        const Instruction* prevInst = curInst->getLLVMInstruction()->getPrevNode();
+        const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(prevInst);
+        if (SVFUtil::isIntrinsicInst(svfPrevInst))
+            getPrevInsts(svfPrevInst, instList);
         else
-            instList.push_back(prevInst);
+            instList.push_back(svfPrevInst);
     }
     else
     {
-        const BasicBlock *BB = curInst->getParent();
+        const BasicBlock *BB = curInst->getParent()->getLLVMBasicBlock();
         // Visit all successors of BB in the CFG
         for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
         {
             const Instruction* prevInst = &((*it)->back());
-            if (SVFUtil::isIntrinsicInst(prevInst))
-                getPrevInsts(prevInst, instList);
+            const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(prevInst);
+            if (SVFUtil::isIntrinsicInst(svfPrevInst))
+                getPrevInsts(svfPrevInst, instList);
             else
-                instList.push_back(prevInst);
+                instList.push_back(svfPrevInst);
         }
     }
 }
@@ -332,13 +338,13 @@ const Value* LLVMUtil::getUniqueUseViaCastInst(const Value* val)
 /*!
  * Return the type of the object from a heap allocation
  */
-const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
+const Type* LLVMUtil::getTypeOfHeapAlloc(const SVFInstruction *inst)
 {
     const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
 
     if(SVFUtil::isHeapAllocExtCallViaRet(inst))
     {
-        if(const Value* v = getUniqueUseViaCastInst(inst))
+        if(const Value* v = getUniqueUseViaCastInst(inst->getLLVMInstruction()))
         {
             if(const PointerType* newTy = SVFUtil::dyn_cast<PointerType>(v->getType()))
                 type = newTy;

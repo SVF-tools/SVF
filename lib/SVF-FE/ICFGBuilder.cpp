@@ -64,7 +64,7 @@ void ICFGBuilder::build(SVFModule* svfModule)
 void ICFGBuilder::processFunEntry(const SVFFunction*  fun, WorkList& worklist)
 {
     FunEntryICFGNode* FunEntryICFGNode = icfg->getFunEntryICFGNode(fun);
-    const Instruction* entryInst = &((fun->getLLVMFun()->getEntryBlock()).front());
+    const SVFInstruction* entryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&((fun->getLLVMFun()->getEntryBlock()).front()));
     InstVec insts;
     if (isIntrinsicInst(entryInst))
         getNextInsts(entryInst, insts);
@@ -88,15 +88,14 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
     /// function body
     while (!worklist.empty())
     {
-        const Instruction* inst = worklist.pop();
+        const SVFInstruction* inst = worklist.pop();
         if (visited.find(inst) == visited.end())
         {
             visited.insert(inst);
             ICFGNode* srcNode = getOrAddBlockICFGNode(inst);
             if (isReturn(inst))
             {
-                const Function* fun = inst->getFunction();
-                const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+                const SVFFunction* svfFun = inst->getFunction();
                 FunExitICFGNode* FunExitICFGNode = icfg->getFunExitICFGNode(svfFun);
                 icfg->addIntraEdge(srcNode, FunExitICFGNode);
             }
@@ -106,7 +105,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
             for (InstVec::const_iterator nit = nextInsts.begin(), enit =
                         nextInsts.end(); nit != enit; ++nit)
             {
-                const Instruction* succ = *nit;
+                const SVFInstruction* succ = *nit;
                 ICFGNode* dstNode = getOrAddBlockICFGNode(succ);
                 if (isNonInstricCallSite(inst))
                 {
@@ -115,7 +114,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                 }
 
 
-                if (const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(inst))
+                if (const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(inst->getLLVMInstruction()))
                 {
                     assert(branchID <= 2 && "if/else has more than two branches?");
                     if(br->isConditional())
@@ -123,10 +122,10 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                     else
                         icfg->addIntraEdge(srcNode, dstNode);
                 }
-                else if (const SwitchInst* si = SVFUtil::dyn_cast<SwitchInst>(inst))
+                else if (const SwitchInst* si = SVFUtil::dyn_cast<SwitchInst>(inst->getLLVMInstruction()))
                 {
                     /// branch condition value
-                    const ConstantInt* condVal = const_cast<SwitchInst*>(si)->findCaseDest(const_cast<BasicBlock*>(succ->getParent()));
+                    const ConstantInt* condVal = const_cast<SwitchInst*>(si)->findCaseDest(const_cast<BasicBlock*>(succ->getParent()->getLLVMBasicBlock()));
                     /// default case is set to -1;
                     s32_t val = condVal ? condVal->getSExtValue() : -1;
                     icfg->addConditionalIntraEdge(srcNode, dstNode, si->getCondition(),val);
@@ -152,8 +151,9 @@ void ICFGBuilder::processFunExit(const SVFFunction*  fun)
 
     for (inst_iterator II = inst_begin(fun->getLLVMFun()), EE = inst_end(fun->getLLVMFun()); II != EE; ++II)
     {
-        const Instruction *inst = &*II;
-        if(SVFUtil::isa<ReturnInst>(inst))
+        const Instruction *i = &*II;
+        const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
+        if(SVFUtil::isa<ReturnInst>(i))
         {
             ICFGNode* instNode = getOrAddBlockICFGNode(inst);
             icfg->addIntraEdge(instNode, FunExitICFGNode);
@@ -168,7 +168,7 @@ void ICFGBuilder::processFunExit(const SVFFunction*  fun)
  * (1) Add and get CallBlockICFGNode
  * (2) Handle call instruction by creating interprocedural edges
  */
-InterICFGNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
+InterICFGNode* ICFGBuilder::getOrAddInterBlockICFGNode(const SVFInstruction* inst)
 {
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
@@ -180,7 +180,7 @@ InterICFGNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
 /*!
  * Create edges between ICFG nodes across functions
  */
-void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction* callee)
+void ICFGBuilder::addICFGInterEdges(const SVFInstruction* cs, const SVFFunction* callee)
 {
     CallICFGNode* callICFGNode = getCallICFGNode(cs);
     RetICFGNode* retBlockNode = getRetICFGNode(cs);

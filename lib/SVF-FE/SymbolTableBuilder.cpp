@@ -169,15 +169,14 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
             {
                 collectSym(sw->getCondition());
             }
-            else if (isNonInstricCallSite(inst))
+            else if (isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst)))
             {
 
-                CallSite cs = SVFUtil::getLLVMCallSite(inst);
+                CallSite cs = SVFUtil::getLLVMCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst));
                 symInfo->callSiteSet.insert(cs);
-                for (User::op_iterator it = cs.getInstruction()->arg_begin();
-                        it != cs.getInstruction()->arg_end(); ++it)
+                for (u32_t i = 0; i < cs.arg_size(); i++)
                 {
-                    collectSym(*it);
+                    collectSym(cs.getArgOperand(i));
                 }
                 // Calls to inline asm need to be added as well because the callee isn't
                 // referenced anywhere else.
@@ -256,8 +255,10 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val)
 
     if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
     {
-        if (LLVMUtil::isReturn(inst))
-            symInfo->getModule()->addReturn(inst);
+        const SVFInstruction* ret = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+        if (LLVMUtil::isReturn(ret)){
+            symInfo->getModule()->addReturn(ret);
+        }
     }
 
     if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
@@ -577,8 +578,11 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
 
     // We consider two types of objects:
     // (1) A heap/static object from a callsite
-    if (I && isNonInstricCallSite(I))
-        refTy = getRefTypeOfHeapAllocOrStatic(I);
+    if (I && isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I)))
+    {
+        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
+        refTy = getRefTypeOfHeapAllocOrStatic(svfInst);
+    }
     // (2) Other objects (e.g., alloca, global, etc.)
     else
         refTy = SVFUtil::dyn_cast<PointerType>(val->getType());
@@ -724,13 +728,13 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
         analyzeObjType(typeinfo,val);
         objSize = getObjSize(typeinfo->getType());
     }
-    else if (SVFUtil::isa<Instruction>(val) && isHeapAllocExtCall(SVFUtil::cast<Instruction>(val)))
+    else if (SVFUtil::isa<Instruction>(val) && isHeapAllocExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
     {
         analyzeHeapObjType(typeinfo,val);
         // Heap object, label its field as infinite here
         objSize = typeinfo->getMaxFieldOffsetLimit();
     }
-    else if (SVFUtil::isa<Instruction>(val) && isStaticExtCall(SVFUtil::cast<Instruction>(val)))
+    else if (SVFUtil::isa<Instruction>(val) && isStaticExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
     {
         analyzeStaticObjType(typeinfo,val);
         // static object allocated before main, label its field as infinite here

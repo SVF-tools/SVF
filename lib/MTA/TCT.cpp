@@ -45,19 +45,19 @@ using namespace SVFUtil;
  * (1) the instruction i itself
  * (2) all the callsites invoke the function where i resides in
  */
-bool TCT::isInLoopInstruction(const Instruction* inst)
+bool TCT::isInLoopInstruction(const SVFInstruction* inst)
 {
     assert(inst && "null value instruction!!");
 
     InstSet insts;
-    FIFOWorkList<const Instruction*> worklist;
+    FIFOWorkList<const SVFInstruction*> worklist;
     worklist.push(inst);
 
     while(!worklist.empty())
     {
-        const Instruction* inst = worklist.pop();
+        const SVFInstruction* inst = worklist.pop();
         insts.insert(inst);
-        PTACallGraphNode* cgnode = tcg->getCallGraphNode(getSVFFun(inst->getParent()->getParent()));
+        PTACallGraphNode* cgnode = tcg->getCallGraphNode(inst->getFunction());
         for(PTACallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
         {
             for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
@@ -77,7 +77,7 @@ bool TCT::isInLoopInstruction(const Instruction* inst)
 
     for(InstSet::const_iterator it = insts.begin(), eit = insts.end(); it!=eit; ++it)
     {
-        const Instruction* i = *it;
+        const SVFInstruction* i = *it;
         if(getLoop(i))
             return true;
     }
@@ -91,9 +91,9 @@ bool TCT::isInLoopInstruction(const Instruction* inst)
  * (1) the function f where i resides in is in a recursion
  * (2) any caller function starting from the function f in is in a recursion
  */
-bool TCT::isInRecursion(const Instruction* inst) const
+bool TCT::isInRecursion(const SVFInstruction* inst) const
 {
-    const Function* f = inst->getParent()->getParent();
+    const Function* f = inst->getFunction()->getLLVMFun();
     FIFOWorkList<const Function*> worklist;
     Set<const Function*> visits;
     worklist.push(f);
@@ -113,14 +113,14 @@ bool TCT::isInRecursion(const Instruction* inst) const
             for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
                     ecit = (*nit)->directCallsEnd(); cit!=ecit; ++cit)
             {
-                const Function* caller = (*cit)->getCallSite()->getParent()->getParent();
+                const Function* caller = (*cit)->getCallSite()->getFunction()->getLLVMFun();
                 if(visits.find(caller)==visits.end())
                     worklist.push(caller);
             }
             for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->indirectCallsBegin(),
                     ecit = (*nit)->indirectCallsEnd(); cit!=ecit; ++cit)
             {
-                const Function* caller = (*cit)->getCallSite()->getParent()->getParent();
+                const Function* caller = (*cit)->getCallSite()->getFunction()->getLLVMFun();
                 if(visits.find(caller)==visits.end())
                     worklist.push(caller);
             }
@@ -265,7 +265,7 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge,
 
     else if(cgEdge->getEdgeKind() == PTACallGraphEdge::TDForkEdge)
     {
-        const CallInst* fork = SVFUtil::cast<CallInst>(cs.getInstruction());
+        const CallInst* fork = SVFUtil::cast<CallInst>(cs.getInstruction()->getLLVMInstruction());
 
         /// Create spawnee TCT node
         TCTNode* spawneeNode = getOrCreateTCTNode(cxt,fork, oldCxt, llvmcallee);
@@ -292,10 +292,10 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge,
  * Return true if a join instruction must be executed inside a loop
  * joinbb should post dominate the successive basic block of a loop header
  */
-bool TCT::isJoinMustExecutedInLoop(const Loop* lp,const Instruction* join)
+bool TCT::isJoinMustExecutedInLoop(const Loop* lp,const SVFInstruction* join)
 {
     const BasicBlock* loopheadbb = lp->getHeader();
-    const BasicBlock* joinbb = join->getParent();
+    const BasicBlock* joinbb = join->getParent()->getLLVMBasicBlock();
     assert(loopheadbb->getParent()==joinbb->getParent() && "should inside same function");
 
     const PostDominatorTree* pdt = getPostDT(loopheadbb->getParent());
@@ -320,7 +320,7 @@ void TCT::collectLoopInfoForJoin()
 {
     for(ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it!=eit; ++it)
     {
-        const Instruction* join = (*it)->getCallSite();
+        const SVFInstruction* join = (*it)->getCallSite();
         const Loop* lp = getLoop(join);
         if(lp && isJoinMustExecutedInLoop(lp,join))
         {
@@ -369,10 +369,10 @@ bool TCT::isLoopExitOfJoinLoop(const BasicBlock* bb)
 /*!
  * Get loop for fork/join site
  */
-const Loop* TCT::getLoop(const Instruction* inst)
+const Loop* TCT::getLoop(const SVFInstruction* inst)
 {
-    const Function* fun = inst->getParent()->getParent();
-    return loopInfoBuilder.getLoopInfo(fun)->getLoopFor(inst->getParent());
+    const Function* fun = inst->getFunction()->getLLVMFun();
+    return loopInfoBuilder.getLoopInfo(fun)->getLoopFor(inst->getParent()->getLLVMBasicBlock());
 }
 
 /// Get dominator for a function
@@ -398,9 +398,9 @@ const Loop* TCT::getLoop(const BasicBlock* bb)
 /*!
  * Get SE for function
  */
-ScalarEvolution* TCT::getSE(const Instruction* inst)
+ScalarEvolution* TCT::getSE(const SVFInstruction* inst)
 {
-    const Function* fun = inst->getParent()->getParent();
+    const Function* fun = inst->getFunction()->getLLVMFun();
     return MTA::getSE(fun);
 }
 
@@ -468,16 +468,17 @@ void TCT::build()
 /*!
  *  Get the next instructions following control flow
  */
-void TCT::getNextInsts(const Instruction* curInst, InstVec& instList)
+void TCT::getNextInsts(const SVFInstruction* curInst, InstVec& instList)
 {
     /// traverse to successive statements
     if (!curInst->isTerminator())
     {
-        instList.push_back(curInst->getNextNode());
+        const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(curInst->getLLVMInstruction()->getNextNode());
+        instList.push_back(svfNextInst);
     }
     else
     {
-        const BasicBlock *BB = curInst->getParent();
+        const BasicBlock *BB = curInst->getParent()->getLLVMBasicBlock();
         // Visit all successors of BB in the CFG
         for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB);
                 it != ie; ++it)
@@ -487,7 +488,8 @@ void TCT::getNextInsts(const Instruction* curInst, InstVec& instList)
             {
                 continue;
             }
-            instList.push_back(&((*it)->front()));
+            const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&((*it)->front()));
+            instList.push_back(svfSuccInst);
         }
     }
 }
@@ -495,10 +497,10 @@ void TCT::getNextInsts(const Instruction* curInst, InstVec& instList)
 /*!
  * Push calling context
  */
-void TCT::pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee)
+void TCT::pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee)
 {
 
-    const Function* caller = call->getParent()->getParent();
+    const Function* caller = call->getFunction()->getLLVMFun();
     const SVFFunction* svfcallee = getSVFFun(callee);
     CallSiteID csId = tcg->getCallSiteID(getCallICFGNode(call), svfcallee);
 
@@ -517,10 +519,10 @@ void TCT::pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* call
 /*!
  * Match calling context
  */
-bool TCT::matchCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee)
+bool TCT::matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee)
 {
 
-    const Function* caller = call->getParent()->getParent();
+    const Function* caller = call->getFunction()->getLLVMFun();
     const SVFFunction* svfcallee = getSVFFun(callee);
     CallSiteID csId = tcg->getCallSiteID(getCallICFGNode(call), svfcallee);
 
@@ -556,7 +558,7 @@ void TCT::dumpCxt(CallStrCxt& cxt)
     for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
     {
         rawstr << " ' "<< *it << " ' ";
-        rawstr << *(tcg->getCallSite(*it)->getCallSite());
+        rawstr << *(tcg->getCallSite(*it)->getCallSite()->getLLVMInstruction());
         rawstr << "  call  " << tcg->getCallSite(*it)->getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";

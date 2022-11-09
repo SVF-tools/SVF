@@ -50,7 +50,7 @@ class SaberCondAllocator
 public:
 
     typedef Z3Expr Condition;   /// z3 condition
-    typedef Map<u32_t, const Instruction *> IndexToTermInstMap; /// id to instruction map for z3
+    typedef Map<u32_t, const SVFInstruction *> IndexToTermInstMap; /// id to instruction map for z3
     typedef Map<u32_t,Condition> CondPosMap;		///< map a branch to its Condition
     typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	/// map bb to a Condition
     typedef Set<const BasicBlock*> BasicBlockSet;
@@ -118,21 +118,21 @@ public:
     }
 
     /// Allocate a new condition
-    Condition newCond(const Instruction* inst);
+    Condition newCond(const SVFInstruction* inst);
 
     /// Perform path allocation
     void allocate(const SVFModule* module);
 
     /// Get/Set instruction based on Z3 expression id
     //{@
-    inline const Instruction *getCondInst(u32_t id) const
+    inline const SVFInstruction* getCondInst(u32_t id) const
     {
         IndexToTermInstMap::const_iterator it = idToTermInstMap.find(id);
         assert(it != idToTermInstMap.end() && "this should be a fresh condition");
         return it->second;
     }
 
-    inline void setCondInst(const Condition &condition, const Instruction *inst)
+    inline void setCondInst(const Condition &condition, const SVFInstruction* inst)
     {
         assert(idToTermInstMap.find(condition.id()) == idToTermInstMap.end() && "this should be a fresh condition");
         idToTermInstMap[condition.id()] = inst;
@@ -233,7 +233,7 @@ public:
 
 
     /// mark neg Z3 expression
-    inline void setNegCondInst(const Condition &condition, const Instruction *inst)
+    inline void setNegCondInst(const Condition &condition, const SVFInstruction* inst)
     {
         setCondInst(condition, inst);
         negConds.set(condition.id());

@@ -210,14 +210,16 @@ void MTAAnnotator::pruneAliasMHP(PointerAnalysis* pta)
     InstSet needannold;
     for (InstSet::iterator it1 = storeset.begin(), eit1 = storeset.end(); it1 != eit1; ++it1)
     {
+        const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it1);
         for (InstSet::iterator it2 = it1, eit2 = storeset.end(); it2 != eit2; ++it2)
         {
+            const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it2);
             if(!pta->alias(getStoreOperand(*it1), getStoreOperand(*it2)))
                 continue;
 
             if (AnnoMHP)
             {
-                if (mhp->mayHappenInParallel(*it1, *it2) && !lsa->isProtectedByCommonLock(*it1, *it2))
+                if (mhp->mayHappenInParallel(inst1, inst2) && !lsa->isProtectedByCommonLock(inst1, inst2))
                 {
                     needannost.insert(*it1);
                     needannost.insert(*it2);
@@ -234,12 +236,13 @@ void MTAAnnotator::pruneAliasMHP(PointerAnalysis* pta)
         }
         for (InstSet::iterator it2 = loadset.begin(), eit2 = loadset.end(); it2 != eit2; ++it2)
         {
+            const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it2);
             if(!pta->alias(getStoreOperand(*it1), getLoadOperand(*it2)))
                 continue;
 
             if (AnnoMHP)
             {
-                if (mhp->mayHappenInParallel(*it1, *it2) && !lsa->isProtectedByCommonLock(*it1, *it2))
+                if (mhp->mayHappenInParallel(inst1, inst2) && !lsa->isProtectedByCommonLock(inst1, inst2))
                 {
                     needannost.insert(*it1);
                     needannold.insert(*it2);
