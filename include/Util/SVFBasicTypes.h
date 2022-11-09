@@ -31,10 +31,6 @@
 #ifndef INCLUDE_UTIL_SVFBASICTYPES_H_
 #define INCLUDE_UTIL_SVFBASICTYPES_H_
 
-// TODO: these are just for SmallBBVector.
-#include <llvm/IR/BasicBlock.h>
-#include <llvm/ADT/SmallVector.h>
-
 #include <llvm/Support/CommandLine.h>	// for command line options
 
 #include <Util/SparseBitVector.h>
@@ -116,7 +112,6 @@ template<typename Key, typename Value, typename Hash = Hash<Key>,
                   typename Allocator = std::allocator<std::pair<const Key, Value>>>
                           using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 
-                  typedef llvm::SmallVector<llvm::BasicBlock*, 8> SmallBBVector;
                   typedef std::pair<NodeID, NodeID> NodePair;
                   typedef OrderedSet<NodeID> OrderedNodeSet;
                   typedef Set<NodeID> NodeSet;

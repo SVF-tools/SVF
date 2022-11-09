@@ -33,36 +33,15 @@
 #include "Util/SVFBasicTypes.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
-#include <llvm/ADT/SparseBitVector.h>
 #include <llvm/IR/Instructions.h>
-#include <llvm/IR/InstVisitor.h>	// for instruction visitor
-#include <llvm/IR/InstIterator.h>	// for inst iteration
 #include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
-#include <llvm/ADT/StringExtras.h>	// for utostr_32
-#include <llvm/Analysis/AliasAnalysis.h>
-#include <llvm/Analysis/CallGraph.h>	// call graph
 #include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
+#include <llvm/IR/BasicBlock.h>
 
-#include <llvm/Bitcode/BitcodeWriter.h>		// for WriteBitcodeToFile
-#include <llvm/Bitcode/BitcodeReader.h>     /// for isBitcode
-#include <llvm/IRReader/IRReader.h>	// IR reader for bit file
-#include <llvm/Analysis/DominanceFrontier.h>
-#include <llvm/Analysis/PostDominators.h>
-#include <llvm/ADT/GraphTraits.h>		// for Graphtraits
-#include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
-
-#if (LLVM_VERSION_MAJOR >= 14)
-#include <llvm/BinaryFormat/Dwarf.h>
-#endif
-
-#include "llvm/IR/CFG.h"
 #include "llvm/BinaryFormat/Dwarf.h"
 
 namespace SVF
 {
-
-class BddCond;
-
 
 /// LLVM Basic classes
 typedef llvm::Type Type;

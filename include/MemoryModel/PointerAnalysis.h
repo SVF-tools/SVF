@@ -99,7 +99,6 @@ public:
 
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
-    typedef llvm::AliasAnalysis AliasAnalysis;
     typedef Set<const CallICFGNode*> CallSiteSet;
     typedef SVFIR::CallSiteToFunPtrMap CallSiteToFunPtrMap;
     typedef Set<const SVFFunction*> FunctionSet;

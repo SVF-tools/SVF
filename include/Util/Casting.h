@@ -28,6 +28,7 @@
 #include <cassert>
 #include <memory>
 #include <type_traits>
+#include <llvm/IR/BasicBlock.h>
 
 namespace SVF
 {

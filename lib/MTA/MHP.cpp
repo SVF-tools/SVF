@@ -267,7 +267,7 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
     {
         if(const Loop* joinLoop = fja->getJoinLoop(call))
         {
-            SmallBBVector exitbbs;
+            llvm::SmallVector<llvm::BasicBlock*, 8>  exitbbs;
             joinLoop->getExitBlocks(exitbbs);
             while(!exitbbs.empty())
             {
@@ -290,7 +290,7 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
     {
         if(const Loop* joinLoop = fja->getJoinLoop(call))
         {
-            SmallBBVector exitbbs;
+            llvm::SmallVector<llvm::BasicBlock*, 8>  exitbbs;
             joinLoop->getExitBlocks(exitbbs);
             while(!exitbbs.empty())
             {
@@ -853,7 +853,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         {
             if(const Loop* joinLoop = getJoinLoop(joinSite))
             {
-                SmallBBVector exitbbs;
+                llvm::SmallVector<llvm::BasicBlock*, 8>  exitbbs;
                 joinLoop->getExitBlocks(exitbbs);
                 while(!exitbbs.empty())
                 {
@@ -882,7 +882,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
         {
             if(const Loop* joinLoop = getJoinLoop(joinSite))
             {
-                SmallBBVector exitbbs;
+                llvm::SmallVector<llvm::BasicBlock*, 8>  exitbbs;
                 joinLoop->getExitBlocks(exitbbs);
                 while(!exitbbs.empty())
                 {

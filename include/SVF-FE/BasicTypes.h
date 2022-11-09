@@ -27,7 +27,13 @@
 
 #include <llvm/Support/SourceMgr.h>
 
-#include "llvm/Analysis/LoopInfo.h"
+#include <llvm/Bitcode/BitcodeWriter.h>		// for WriteBitcodeToFile
+#include <llvm/Bitcode/BitcodeReader.h>     /// for isBitcode
+#include <llvm/IRReader/IRReader.h>	// IR reader for bit file
+#include <llvm/IR/InstVisitor.h>	// for instruction visitor
+#include <llvm/IR/InstIterator.h>	// for inst iteration
+
+#include <llvm/Analysis/LoopInfo.h>
 
 namespace SVF
 {

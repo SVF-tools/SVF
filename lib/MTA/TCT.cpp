@@ -353,7 +353,7 @@ bool TCT::isLoopExitOfJoinLoop(const BasicBlock* bb)
 {
     for(InstToLoopMap::const_iterator it = joinSiteToLoopMap.begin(), eit = joinSiteToLoopMap.end(); it!=eit; ++it)
     {
-        SmallBBVector exitbbs;
+        llvm::SmallVector<llvm::BasicBlock*, 8>  exitbbs;
         it->second->getExitBlocks(exitbbs);
         while(!exitbbs.empty())
         {
