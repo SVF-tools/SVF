@@ -300,12 +300,24 @@ void LLVMModuleSet::initialize()
     for (Module& mod : modules)
     {
         /// Function
-        for (Module::iterator it = mod.begin(), eit = mod.end();
-                it != eit; ++it)
+        for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
         {
             Function *func = &*it;
             SVFFunction* svfFunc = new SVFFunction(func);
             svfModule->addFunctionSet(svfFunc);
+
+            for (Function::iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
+            {
+                BasicBlock* bb = &*bit;
+                SVFBasicBlock* svfBB = new SVFBasicBlock(bb, svfFunc);
+                svfFunc->addBasicBlock(svfBB);
+                for (BasicBlock::iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
+                {
+                    Instruction* inst = &*iit;
+                    SVFInstruction* svfInst = new SVFInstruction(inst,svfBB);
+                    svfBB->addInstruction(svfInst);
+                }
+            }
         }
 
         /// GlobalVariable

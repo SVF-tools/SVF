@@ -90,6 +90,10 @@ typedef llvm::IntegerType IntegerType;
 // LLVM Debug Information
 typedef llvm::DISubprogram DISubprogram;
 
+
+class SVFInstruction;
+class SVFBasicBlock;
+
 class SVFFunction : public SVFValue
 {
 private:
@@ -98,12 +102,14 @@ private:
     Function* fun;
     BasicBlock* exitBB;
     std::vector<const BasicBlock*> reachableBBs;
+    std::vector<const SVFBasicBlock*> allBBs;
     bool isUncalled;
     bool isNotRet;
     Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
     Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
     Map<const BasicBlock*,Set<const BasicBlock*>> pdtBBsMap;
     Map<const BasicBlock*,std::vector<const BasicBlock*>> bb2LoopMap;
+
 public:
 
     SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
@@ -111,9 +117,11 @@ public:
     {
     }
 
-    SVFFunction(Function* f, BasicBlock* exitBB, std::vector<const BasicBlock*> reachableBBs): SVFValue(f->getName().str(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(exitBB), reachableBBs(reachableBBs), isUncalled(false), isNotRet(false)
+    SVFFunction(void) = delete;
+
+    static inline bool classof(const SVFValue *node)
     {
+        return node->getKind() == SVFFunc;
     }
 
     inline Function* getLLVMFun() const
@@ -145,6 +153,21 @@ public:
     inline bool isVarArg() const
     {
         return getLLVMFun()->isVarArg();
+    }
+
+    inline void addBasicBlock(const SVFBasicBlock* bb) 
+    {
+        allBBs.push_back(bb);
+    }
+
+    inline std::vector<const SVFBasicBlock*>::const_iterator begin() const
+    {
+        return allBBs.begin();
+    }
+
+    inline std::vector<const SVFBasicBlock*>::const_iterator end() const
+    {
+        return allBBs.end();
     }
 
     inline const std::vector<const BasicBlock*>& getReachableBBs() const
@@ -250,25 +273,94 @@ public:
 
 };
 
+class SVFBasicBlock : public SVFValue
+{
+
+private:
+    std::vector<const SVFInstruction*> allInsts;
+    const BasicBlock* bb;
+    const SVFFunction* fun;
+public:
+    SVFBasicBlock(const BasicBlock* b, const SVFFunction* f): SVFValue(b->getName().str(),SVFValue::SVFBB), bb(b), fun(f)
+    {
+    }
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFBB;
+    }
+
+    inline void addInstruction(const SVFInstruction* inst) 
+    {
+        allInsts.push_back(inst);
+    }
+
+    inline std::vector<const SVFInstruction*>::const_iterator begin() const
+    {
+        return allInsts.begin();
+    }
+
+    inline std::vector<const SVFInstruction*>::const_iterator end() const
+    {
+        return allInsts.end();
+    }
+
+    inline const SVFFunction* getParent() const
+    {
+        return fun;
+    }
+
+    inline const BasicBlock* getLLVMBasicBlock() const
+    {
+        return bb;
+    }
+};
+
+class SVFInstruction : public SVFValue 
+{
+
+private:
+    const Instruction* inst;
+    const SVFBasicBlock* bb;
+
+public:
+    SVFInstruction(const Instruction* i, const SVFBasicBlock* b): 
+        SVFValue(i->getName().str(), SVFInst), inst(i), bb(b)
+    {
+    }
+
+    inline const Instruction* getLLVMInstruction() const
+    {
+        return inst;
+    }
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFInst;
+    }
+
+    inline const SVFBasicBlock* getParent() const
+    {
+        return bb;
+    }
+};
+
+
 class SVFGlobal : public SVFValue
 {
 
 public:
-    SVFGlobal(const std::string& val): SVFValue(val,SVFValue::SVFGlob)
+    SVFGlobal(const GlobalValue* gv): SVFValue(gv->getName().str(),SVFValue::SVFGlob)
     {
     }
 
-};
-
-class SVFBasicBlock : public SVFValue
-{
-
-public:
-    SVFBasicBlock(const std::string& val): SVFValue(val,SVFValue::SVFBB)
+    static inline bool classof(const SVFValue *node)
     {
+        return node->getKind() == SVFGlob;
     }
-
 };
+
+
 
 class CallSite
 {

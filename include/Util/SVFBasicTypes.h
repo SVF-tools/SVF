@@ -206,19 +206,23 @@ public:
     {
         SVFVal,
         SVFFunc,
-        SVFGlob,
-        SVFBB,
         SVFInst,
+        SVFGlob,
+        SVFBB
     };
 
 private:
     const std::string value;
     GNodeK kind;	///< Type of this SVFValue
-public:
+
+protected:
     /// Constructor
     SVFValue(const std::string& val, SVFValKind k): value(val), kind(k)
     {
     }
+
+public:
+    SVFValue(void) = delete;
 
     /// Get the type of this SVFValue
     inline GNodeK getKind() const

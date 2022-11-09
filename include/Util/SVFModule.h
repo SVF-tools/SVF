@@ -46,6 +46,8 @@ public:
     typedef std::vector<GlobalVariable*> GlobalSetType;
     typedef std::vector<GlobalAlias*> AliasSetType;
     typedef Map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
+    typedef Map<const BasicBlock*,const SVFBasicBlock*> LLVMBB2SVFBBMap;
+    typedef Map<const Instruction*,const SVFInstruction*> LLVMInst2SVFInstMap;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
@@ -65,6 +67,8 @@ private:
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
+    LLVMBB2SVFBBMap LLVMBB2SVFBB;
+    LLVMInst2SVFInstMap LLVMInst2SVFInst;
     Set<const Value*> argsOfUncalledFunction;
     Set<const Instruction*> returnInsts;
     Set<const Value*> nullPtrSyms;
@@ -116,6 +120,14 @@ public:
         FunctionSet.push_back(svfFunc);
         LLVMFunctionSet.push_back(svfFunc->getLLVMFun());
         LLVMFunc2SVFFunc[svfFunc->getLLVMFun()] = svfFunc;
+    }
+    inline void addBasicBlockMap(SVFBasicBlock* svfBB)
+    {
+        LLVMBB2SVFBB[svfBB->getLLVMBasicBlock()] = svfBB;
+    }
+    inline void addInstructionMap(SVFInstruction* svfInst)
+    {
+        LLVMInst2SVFInst[svfInst->getLLVMInstruction()] = svfInst;
     }
     inline void addGlobalSet(GlobalVariable* glob)
     {
