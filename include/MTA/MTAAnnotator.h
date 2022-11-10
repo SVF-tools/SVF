@@ -68,7 +68,7 @@ public:
 
 
     /// Check if Function "F" is memset
-    inline bool isMemset(const Instruction *I)
+    inline bool isMemset(const Instruction* I)
     {
         const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
         const Function* F =SVFUtil::getCallee(svfInst)->getLLVMFun();
@@ -76,7 +76,7 @@ public:
     }
 
     /// Check if Function "F" is memcpy
-    inline bool isMemcpy(const Instruction *I)
+    inline bool isMemcpy(const Instruction* I)
     {
         const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
         const SVFFunction* F = SVFUtil::getCallee(svfInst);

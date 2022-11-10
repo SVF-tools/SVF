@@ -62,7 +62,7 @@ public:
     typedef Set<const SVFInstruction*> InstSet;
     typedef InstSet CISpan;
     typedef Map<const SVFInstruction*, CISpan>CILockToSpan;
-    typedef Set<const Function*> FunSet;
+    typedef Set<const SVFFunction*> FunSet;
     typedef Map<const SVFInstruction*, InstSet> InstToInstSetMap;
     typedef Map<CxtStmt, ValDomain> CxtStmtToLockFlagMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
@@ -193,7 +193,7 @@ public:
     //@}
 
     /// Return true if it is a candidate function
-    inline bool isLockCandidateFun(const Function* fun) const
+    inline bool isLockCandidateFun(const SVFFunction* fun) const
     {
         return lockcandidateFuncSet.find(fun)!=lockcandidateFuncSet.end();
     }
@@ -433,9 +433,9 @@ private:
     //@}
 
     /// Push calling context
-    void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee);
+    void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee);
     /// Match context
-    bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee);
+    bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee);
 
     void validateResults();
 

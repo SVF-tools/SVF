@@ -6,7 +6,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 SVFFunction::SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false)
+        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false), varArg(f->isVarArg())
 {
 }
 
@@ -22,7 +22,7 @@ const Value* SVFFunction::getArg(u32_t idx) const
 
 bool SVFFunction::isVarArg() const
 {
-    return getLLVMFun()->isVarArg();
+    return varArg;
 }
 
 const std::vector<const BasicBlock*>& SVFFunction::getLoopInfo(const BasicBlock* bb) const

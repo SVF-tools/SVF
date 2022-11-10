@@ -186,6 +186,7 @@ namespace dwarf = llvm::dwarf;
 
 // Iterators.
 typedef llvm::inst_iterator inst_iterator;
+typedef llvm::const_inst_iterator const_inst_iterator;
 typedef llvm::gep_type_iterator gep_type_iterator;
 typedef llvm::bridge_gep_iterator bridge_gep_iterator;
 typedef llvm::const_inst_iterator const_inst_iterator;

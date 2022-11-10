@@ -257,7 +257,7 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateProgExit(const BranchS
  */
 SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const BasicBlock *bb, const BasicBlock *dst)
 {
-    const Function *fun = bb->getParent();
+    const Function* fun = bb->getParent();
     assert(fun == dst->getParent() && "two basic blocks should be in the same function");
 
     const SVFFunction * svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
@@ -420,7 +420,8 @@ void SaberCondAllocator::collectBBCallingProgExit(const BasicBlock &bb)
         if (SVFUtil::isCallSite(svfInst))
             if (SVFUtil::isProgExitCall(svfInst))
             {
-                funToExitBBsMap[bb.getParent()].insert(&bb);
+                const SVFFunction* svfun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
+                funToExitBBsMap[svfun].insert(&bb);
             }
     }
 }
@@ -430,8 +431,8 @@ void SaberCondAllocator::collectBBCallingProgExit(const BasicBlock &bb)
  */
 bool SaberCondAllocator::isBBCallsProgExit(const BasicBlock *bb)
 {
-    const Function *fun = bb->getParent();
-    FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(fun);
+    const SVFFunction* svfun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
+    FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(svfun);
     if (it != funToExitBBsMap.end())
     {
         for (const auto &bit: it->second)

@@ -84,23 +84,23 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     // Add symbols for all of the functions and the instructions in them.
     for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
     {
-        Function *fun = *F;
+        const Function *fun = *F;
         collectSym(fun);
         collectRet(fun);
         if (fun->getFunctionType()->isVarArg())
             collectVararg(fun);
 
         // Add symbols for all formal parameters.
-        for (Function::arg_iterator I = fun->arg_begin(), E = fun->arg_end();
+        for (Function::const_arg_iterator I = fun->arg_begin(), E = fun->arg_end();
                 I != E; ++I)
         {
             collectSym(&*I);
         }
 
         // collect and create symbols inside the function body
-        for (inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II)
+        for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II)
         {
-            const Instruction *inst = &*II;
+            const Instruction* inst = &*II;
             collectSym(inst);
 
             // initialization for some special instructions
@@ -363,11 +363,12 @@ void SymbolTableBuilder::collectObj(const Value *val)
  */
 void SymbolTableBuilder::collectRet(const Function *val)
 {
-    SymbolTableInfo::FunToIDMapTy::iterator iter = symInfo->returnSymMap.find(val);
+    const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(val);
+    SymbolTableInfo::FunToIDMapTy::iterator iter = symInfo->returnSymMap.find(svffun);
     if (iter == symInfo->returnSymMap.end())
     {
         SymID id = NodeIDAllocator::get()->allocateValueId();
-        symInfo->returnSymMap.insert(std::make_pair(val, id));
+        symInfo->returnSymMap.insert(std::make_pair(svffun, id));
         DBOUT(DMemModel,
               outs() << "create a return sym " << id << "\n");
     }
@@ -378,11 +379,12 @@ void SymbolTableBuilder::collectRet(const Function *val)
  */
 void SymbolTableBuilder::collectVararg(const Function *val)
 {
-    SymbolTableInfo::FunToIDMapTy::iterator iter = symInfo->varargSymMap.find(val);
+    const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(val);
+    SymbolTableInfo::FunToIDMapTy::iterator iter = symInfo->varargSymMap.find(svffun);
     if (iter == symInfo->varargSymMap.end())
     {
         SymID id = NodeIDAllocator::get()->allocateValueId();
-        symInfo->varargSymMap.insert(std::make_pair(val, id));
+        symInfo->varargSymMap.insert(std::make_pair(svffun, id));
         DBOUT(DMemModel,
               outs() << "create a vararg sym " << id << "\n");
     }
@@ -574,7 +576,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
 {
     const PointerType *refTy = nullptr;
 
-    const Instruction *I = SVFUtil::dyn_cast<Instruction>(val);
+    const Instruction* I = SVFUtil::dyn_cast<Instruction>(val);
 
     // We consider two types of objects:
     // (1) A heap/static object from a callsite

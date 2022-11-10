@@ -99,7 +99,7 @@ SVFIR* SVFIRBuilder::build()
 
             /// To be noted, we do not record arguments which are in declared function without body
             /// TODO: what about external functions with SVFIR imported by commandline?
-            for (Function::arg_iterator I = fun.getLLVMFun()->arg_begin(), E = fun.getLLVMFun()->arg_end();
+            for (Function::const_arg_iterator I = fun.getLLVMFun()->arg_begin(), E = fun.getLLVMFun()->arg_end();
                     I != E; ++I)
             {
                 setCurrentLocation(&*I,&fun.getLLVMFun()->getEntryBlock());
@@ -114,16 +114,16 @@ SVFIR* SVFIRBuilder::build()
                 pag->addFunArgs(&fun,pag->getGNode(argValNodeId));
             }
         }
-        for (Function::iterator bit = fun.getLLVMFun()->begin(), ebit = fun.getLLVMFun()->end();
+        for (Function::const_iterator bit = fun.getLLVMFun()->begin(), ebit = fun.getLLVMFun()->end();
                 bit != ebit; ++bit)
         {
-            BasicBlock& bb = *bit;
-            for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
+            const BasicBlock& bb = *bit;
+            for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it)
             {
-                Instruction& inst = *it;
+                const Instruction& inst = *it;
                 setCurrentLocation(&inst,&bb);
-                visit(inst);
+                visit(const_cast<Instruction&>(inst));
             }
         }
     }
@@ -197,8 +197,7 @@ void SVFIRBuilder::initialiseNodes()
             ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
-        const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(iter->first);
-        pag->addRetNode(fun, iter->second);
+        pag->addRetNode(iter->first, iter->second);
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
@@ -206,8 +205,7 @@ void SVFIRBuilder::initialiseNodes()
             iter != symTable->varargSyms().end(); ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
-        const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(iter->first);
-        pag->addVarargNode(fun, iter->second);
+        pag->addVarargNode(iter->first, iter->second);
     }
 
     /// add address edges for constant nodes.
@@ -568,7 +566,7 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
     for (SVFModule::llvm_const_iterator I = svfModule->llvmFunBegin(), E =
                 svfModule->llvmFunEnd(); I != E; ++I)
     {
-        const Function *fun = *I;
+        const Function* fun = *I;
         NodeID idx = getValueNode(fun);
         NodeID obj = getObjectNode(fun);
 
@@ -1424,7 +1422,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         /// create inter-procedural SVFIR edges for thread forks
         if (isThreadForkCall(inst))
         {
-            if (const Function *forkedFun = getLLVMFunction(getForkedFun(inst)))
+            if (const Function* forkedFun = getLLVMFunction(getForkedFun(inst)))
             {
                 forkedFun = getDefFunForMultipleModule(forkedFun)->getLLVMFun();
                 const Value *actualParm = getActualParmAtForkSite(inst);
@@ -1458,7 +1456,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         /// create inter-procedural SVFIR edges for hare_parallel_for calls
         else if (isHareParForCall(inst))
         {
-            if (const Function *taskFunc = getLLVMFunction(getTaskFuncAtHareParForSite(inst)))
+            if (const Function* taskFunc = getLLVMFunction(getTaskFuncAtHareParForSite(inst)))
             {
                 /// The task function of hare_parallel_for has 3 args.
                 assert((taskFunc->arg_size() == 3) && "Size of formal parameter of hare_parallel_for's task routine should be 3");
@@ -1579,17 +1577,19 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     // backmap in valuToEdgeMap
     pag->mapValueToEdge(curVal, edge);
     ICFGNode* icfgNode = pag->getICFG()->getGlobalICFGNode();
-    if (const Instruction *curInst = SVFUtil::dyn_cast<Instruction>(curVal))
+    if (const Instruction* curInst = SVFUtil::dyn_cast<Instruction>(curVal))
     {
-        const Function* srcFun = edge->getSrcNode()->getFunction();
-        const Function* dstFun = edge->getDstNode()->getFunction();
+        const SVFFunction* srcFun = edge->getSrcNode()->getFunction();
+        const SVFFunction* dstFun = edge->getDstNode()->getFunction();
         if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<Function>(edge->getSrcNode()->getValue()))
         {
-            assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
+            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(curInst);
+            assert(srcFun==svfInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
         }
         if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<Function>(edge->getDstNode()->getValue()))
         {
-            assert(dstFun==curInst->getFunction() && "DstNode of the PAGEdge not in the same function?");
+            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(curInst);
+            assert(dstFun==svfInst->getFunction() && "DstNode of the PAGEdge not in the same function?");
         }
 
         /// We assume every GepValVar and its GepStmt are unique across whole program

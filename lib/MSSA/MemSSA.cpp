@@ -602,10 +602,10 @@ void MemSSA::dumpMSSA(OutStream& Out)
             }
         }
 
-        for (Function::iterator bit = fun->getLLVMFun()->begin(), ebit = fun->getLLVMFun()->end();
+        for (Function::const_iterator bit = fun->getLLVMFun()->begin(), ebit = fun->getLLVMFun()->end();
                 bit != ebit; ++bit)
         {
-            BasicBlock& bb = *bit;
+            const BasicBlock& bb = *bit;
             if (bb.hasName())
                 Out << bb.getName().str() << "\n";
             PHISet& phiSet = getPHISet(&bb);
@@ -615,7 +615,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
             }
 
             bool last_is_chi = false;
-            for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
+            for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it)
             {
                 const Instruction& i = *it;

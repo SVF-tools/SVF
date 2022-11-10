@@ -129,7 +129,7 @@ public:
     /// Get the corresponding Function based on its name
     inline const SVFFunction* getSVFFunction(std::string name)
     {
-        Function *fun = nullptr;
+        Function* fun = nullptr;
 
         for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i)
         {

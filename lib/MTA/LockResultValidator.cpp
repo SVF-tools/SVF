@@ -87,7 +87,7 @@ bool LockResultValidator::collectLockTargets()
     {
         const Use *u = &*it;
         const Value *user = u->getUser();
-        const Instruction *inst = SVFUtil::dyn_cast<Instruction>(user);
+        const Instruction* inst = SVFUtil::dyn_cast<Instruction>(user);
         const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
         CxtLockSetStr y = getStringArg(svfInst, 0);
         const Instruction* memInst = getPreviousMemoryAccessInst(inst);

@@ -470,9 +470,8 @@ protected:
         assert(obj && "object not found!!");
         if(obj->isStack())
         {
-            if(const Function* fun = _pag->getGNode(id)->getFunction())
+            if(const SVFFunction* svffun = _pag->getGNode(id)->getFunction())
             {
-                const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
                 return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(svffun)->getId());
             }
         }

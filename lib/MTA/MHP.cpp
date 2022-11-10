@@ -50,7 +50,7 @@ public:
     MHPValidator(MHP *mhp) :mhp(mhp)
     {
     }
-    bool mayHappenInParallel(const Instruction *I1, const Instruction *I2)
+    bool mayHappenInParallel(const Instruction* I1, const Instruction* I2)
     {
         const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I1);
         const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I2);
@@ -104,8 +104,8 @@ void MHP::analyzeInterleaving()
     {
         const CxtThread& ct = it->second->getCxtThread();
         NodeID rootTid = it->first;
-        const Function* routine = tct->getStartRoutineOfCxtThread(ct);
-        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(routine->getEntryBlock().front()));
+        const SVFFunction* routine = tct->getStartRoutineOfCxtThread(ct);
+        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(routine->getLLVMFun()->getEntryBlock().front()));
         CxtThreadStmt rootcts(rootTid,ct.getContext(),svfInst);
 
         addInterleavingThread(rootcts,rootTid);
@@ -173,12 +173,11 @@ void MHP::analyzeInterleaving()
 void MHP::updateNonCandidateFunInterleaving()
 {
     SVFModule* module = tct->getSVFModule();
-    for (SVFModule::iterator F = module->begin(), E = module->end(); F != E; ++F)
+    for (const SVFFunction* fun : module->getFunctionSet())
     {
-        const SVFFunction* fun = *F;
-        if (!tct->isCandidateFun(fun->getLLVMFun()) && !isExtCall(fun))
+        if (!tct->isCandidateFun(fun) && !isExtCall(fun))
         {
-            const Instruction *i = &(fun->getLLVMFun()->getEntryBlock().front());
+            const Instruction* i = &(fun->getLLVMFun()->getEntryBlock().front());
             const SVFInstruction* entryinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (!hasThreadStmtSet(entryinst))
                 continue;
@@ -190,9 +189,9 @@ void MHP::updateNonCandidateFunInterleaving()
                 const CxtThreadStmt& cts = *it1;
                 const CallStrCxt& curCxt = cts.getContext();
 
-                for (inst_iterator II = inst_begin(fun->getLLVMFun()), EE = inst_end(fun->getLLVMFun()); II != EE; ++II)
+                for (const_inst_iterator II = inst_begin(fun->getLLVMFun()), EE = inst_end(fun->getLLVMFun()); II != EE; ++II)
                 {
-                    const Instruction *inst = &*II;
+                    const Instruction* inst = &*II;
                     const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
                     if (svfInst == entryinst)
                         continue;
@@ -246,10 +245,9 @@ void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
                 ecgIt = tcg->getForkEdgeEnd(cbn); cgIt != ecgIt; ++cgIt)
         {
             const SVFFunction* svfroutine = (*cgIt)->getDstNode()->getFunction();
-            const Function* routine = svfroutine->getLLVMFun();
             CallStrCxt newCxt = curCxt;
-            pushCxt(newCxt,call,routine);
-            const SVFInstruction* stmt = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(routine->getEntryBlock().front()));
+            pushCxt(newCxt,call,svfroutine);
+            const SVFInstruction* stmt = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(svfroutine->getLLVMFun()->getEntryBlock().front()));
             CxtThread ct(newCxt,call);
             CxtThreadStmt newcts(tct->getTCTNode(ct)->getId(),ct.getContext(),stmt);
             addInterleavingThread(newcts,cts);
@@ -328,12 +326,11 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
         {
 
             const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getFunction();
-            const Function* callee = svfcallee->getLLVMFun();
             if (isExtCall(svfcallee))
                 continue;
             CallStrCxt newCxt = curCxt;
-            pushCxt(newCxt,call,callee);
-            const SVFInstruction* svfEntryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(callee->getEntryBlock().front()));
+            pushCxt(newCxt,call,svfcallee);
+            const SVFInstruction* svfEntryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(svfcallee->getLLVMFun()->getEntryBlock().front()));
             CxtThreadStmt newCts(cts.getTid(),newCxt,svfEntryInst);
             addInterleavingThread(newCts,cts);
         }
@@ -356,7 +353,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 ecit = (edge)->directCallsEnd(); cit!=ecit; ++cit)
         {
             CallStrCxt newCxt = cts.getContext();
-            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()->getLLVMFun()))
+            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
                 InstVec nextInsts;
                 getNextInsts((*cit)->getCallSite(),nextInsts);
@@ -371,7 +368,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 ecit = (edge)->indirectCallsEnd(); cit!=ecit; ++cit)
         {
             CallStrCxt newCxt = cts.getContext();
-            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()->getLLVMFun()))
+            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
                 InstVec nextInsts;
                 getNextInsts((*cit)->getCallSite(),nextInsts);
@@ -453,8 +450,8 @@ void MHP::updateSiblingThreads(NodeID curTid)
                 continue;
 
             const CxtThread& ct = tct->getTCTNode(*it)->getCxtThread();
-            const Function* routine = tct->getStartRoutineOfCxtThread(ct);
-            const SVFInstruction* stmt = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(routine->getEntryBlock().front()));
+            const SVFFunction* routine = tct->getStartRoutineOfCxtThread(ct);
+            const SVFInstruction* stmt = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(routine->getLLVMFun()->getEntryBlock().front()));
             CxtThreadStmt cts(*it,ct.getContext(),stmt);
             addInterleavingThread(cts,curTid);
         }
@@ -538,9 +535,9 @@ bool MHP::isHBPair(NodeID tid1, NodeID tid2)
 
 
 
-bool MHP::isConnectedfromMain(const Function* fun)
+bool MHP::isConnectedfromMain(const SVFFunction* fun)
 {
-    PTACallGraphNode* cgnode = tcg->getCallGraphNode(tct->getSVFFun(fun));
+    PTACallGraphNode* cgnode = tcg->getCallGraphNode(fun);
     FIFOWorkList<const PTACallGraphNode*> worklist;
     TCT::PTACGNodeSet visited;
     worklist.push(cgnode);
@@ -615,7 +612,7 @@ bool MHP::mayHappenInParallelCache(const SVFInstruction* i1, const SVFInstructio
 {
     if(!tct->isCandidateFun(i1->getParent()->getParent()) &&!tct->isCandidateFun(i2->getParent()->getParent()))
     {
-        FuncPair funpair = std::make_pair(i1->getFunction()->getLLVMFun(), i2->getFunction()->getLLVMFun());
+        FuncPair funpair = std::make_pair(i1->getFunction(), i2->getFunction());
         FuncPairToBool::const_iterator it = nonCandidateFuncMHPRelMap.find(funpair);
         if (it==nonCandidateFuncMHPRelMap.end())
         {
@@ -706,22 +703,21 @@ void MHP::printInterleaving()
 void ForkJoinAnalysis::collectSCEVInfo()
 {
     typedef Set<const SVFInstruction*> CallInstSet;
-    typedef Map<const Function*, CallInstSet > FunToFJSites;
+    typedef Map<const SVFFunction*, CallInstSet > FunToFJSites;
     FunToFJSites funToFJSites;
 
     for(ThreadCallGraph::CallSiteSet::const_iterator it = tct->getThreadCallGraph()->forksitesBegin(),
             eit = tct->getThreadCallGraph()->forksitesEnd(); it!=eit; ++it)
     {
         const SVFInstruction* fork = (*it)->getCallSite();
-        const Function* fun = fork->getFunction()->getLLVMFun();
-        funToFJSites[fun].insert(fork);
+        funToFJSites[fork->getFunction()].insert(fork);
     }
 
     for(ThreadCallGraph::CallSiteSet::const_iterator it = tct->getThreadCallGraph()->joinsitesBegin(),
             eit = tct->getThreadCallGraph()->joinsitesEnd(); it!=eit; ++it)
     {
         const SVFInstruction* join = (*it)->getCallSite();
-        funToFJSites[join->getFunction()->getLLVMFun()].insert(join);
+        funToFJSites[join->getFunction()].insert(join);
     }
 
     for(FunToFJSites::const_iterator it = funToFJSites.begin(), eit = funToFJSites.end(); it!=eit; ++it)
@@ -833,7 +829,7 @@ void ForkJoinAnalysis::handleFork(const CxtStmt& cts, NodeID rootTid)
         for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = getTCG()->getForkEdgeBegin(cbn),
                 ecgIt = getTCG()->getForkEdgeEnd(cbn); cgIt != ecgIt; ++cgIt)
         {
-            const Function* callee = (*cgIt)->getDstNode()->getFunction()->getLLVMFun();
+            const SVFFunction* callee = (*cgIt)->getDstNode()->getFunction();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt,call,callee);
             CxtThread ct(newCxt,call);
@@ -925,7 +921,7 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
             if (isExtCall(svfcallee))
                 continue;
             CallStrCxt newCxt = curCxt;
-            pushCxt(newCxt,call,callee);
+            pushCxt(newCxt,call,svfcallee);
             const SVFInstruction* svfEntryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(callee->getEntryBlock().front()));
             CxtStmt newCts(newCxt,svfEntryInst);
             markCxtStmtFlag(newCts,cts);
@@ -950,7 +946,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                 ecit = (edge)->directCallsEnd(); cit!=ecit; ++cit)
         {
             CallStrCxt newCxt = curCxt;
-            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()->getLLVMFun()))
+            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
                 InstVec nextInsts;
                 getNextInsts((*cit)->getCallSite(),nextInsts);
@@ -965,7 +961,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                 ecit = (edge)->indirectCallsEnd(); cit!=ecit; ++cit)
         {
             CallStrCxt newCxt = curCxt;
-            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()->getLLVMFun()))
+            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
                 InstVec nextInsts;
                 getNextInsts((*cit)->getCallSite(),nextInsts);

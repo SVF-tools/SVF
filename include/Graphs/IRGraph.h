@@ -138,12 +138,12 @@ public:
     /// GetReturnNode - Return the unique node representing the return value of a function
     inline NodeID getReturnNode(const SVFFunction* func) const
     {
-        return symInfo->getRetSym(func->getLLVMFun());
+        return symInfo->getRetSym(func);
     }
     /// getVarargNode - Return the unique node representing the variadic argument of a variadic function.
     inline NodeID getVarargNode(const SVFFunction* func) const
     {
-        return symInfo->getVarargSym(func->getLLVMFun());
+        return symInfo->getVarargSym(func);
     }
     inline NodeID getBlackHoleNode() const
     {

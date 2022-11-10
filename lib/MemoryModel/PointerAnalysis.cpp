@@ -151,9 +151,8 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
     assert(obj && "object not found!!");
     if(obj->isStack())
     {
-        if(const Function* fun = pag->getGNode(id)->getFunction())
+        if(const SVFFunction* svffun = pag->getGNode(id)->getFunction())
         {
-            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
             return callGraphSCC->isInCycle(getPTACallGraph()->getCallGraphNode(svffun)->getId());
         }
     }
@@ -537,7 +536,7 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
         if(!checkFun->getLLVMFun()->use_empty())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
-        for (Value::user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
+        for (Value::const_user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
             if (SVFUtil::isCallSite(*i))
             {
@@ -607,7 +606,7 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
         if(!checkFun->getLLVMFun()->use_empty())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
-        for (Value::user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
+        for (Value::const_user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
             if (isCallSite(*i))
             {

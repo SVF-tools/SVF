@@ -42,7 +42,7 @@ private:
     {
         return _la->getTCT()->getCallICFGNode(inst);
     }
-    const Instruction *getPreviousMemoryAccessInst( const Instruction *I)
+    const Instruction* getPreviousMemoryAccessInst( const Instruction* I)
     {
         I = I->getPrevNode();
         while (I)

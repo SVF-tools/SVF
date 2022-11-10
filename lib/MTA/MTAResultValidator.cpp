@@ -104,7 +104,7 @@ CallStrCxt MTAResultValidator::getCxtArg(const SVFInstruction* inst, unsigned in
     return cxt;
 }
 
-const Instruction* MTAResultValidator::getPreviousMemoryAccessInst(const Instruction *I)
+const Instruction* MTAResultValidator::getPreviousMemoryAccessInst(const Instruction* I)
 {
     I = I->getPrevNode();
     while (I)
@@ -214,7 +214,7 @@ bool MTAResultValidator::collectCallsiteTargets()
 
 bool MTAResultValidator::collectCxtThreadTargets()
 {
-    const Function *F = nullptr;
+    const Function* F = nullptr;
     for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++)
     {
         const std::string fName = (*it)->getName().str();
@@ -237,7 +237,7 @@ bool MTAResultValidator::collectCxtThreadTargets()
     {
         const Use *u = &*it;
         const Value *user = u->getUser();
-        const Instruction *inst = SVFUtil::dyn_cast<Instruction>(user);
+        const Instruction* inst = SVFUtil::dyn_cast<Instruction>(user);
         const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
 
         NodeID vthdnum = getIntArg(svfInst, 0);
@@ -252,7 +252,7 @@ bool MTAResultValidator::collectTCTTargets()
 {
 
     // Collect call sites of all TCT_ACCESS function calls.
-    const Function *F = nullptr;
+    const Function* F = nullptr;
     for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++)
     {
         const std::string fName = (*it)->getName().str();
@@ -269,7 +269,7 @@ bool MTAResultValidator::collectTCTTargets()
     {
         const Use *u = &*it;
         const Value *user = u->getUser();
-        const Instruction *inst = SVFUtil::dyn_cast<Instruction>(user);
+        const Instruction* inst = SVFUtil::dyn_cast<Instruction>(user);
         const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
 
         NodeID vthdnum = getIntArg(svfInst, 0);
@@ -288,7 +288,7 @@ bool MTAResultValidator::collectInterleavingTargets()
 {
 
     // Collect call sites of all INTERLEV_ACCESS function calls.
-    const Function *F = nullptr;
+    const Function* F = nullptr;
     for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++)
     {
         const std::string fName = (*it)->getName().str();
@@ -305,7 +305,7 @@ bool MTAResultValidator::collectInterleavingTargets()
     {
         const Use *u = &*it;
         const Value *user = u->getUser();
-        const Instruction *inst = SVFUtil::dyn_cast<Instruction>(user);
+        const Instruction* inst = SVFUtil::dyn_cast<Instruction>(user);
         const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
 
         NodeID vthdnum = getIntArg(svfInst, 0);

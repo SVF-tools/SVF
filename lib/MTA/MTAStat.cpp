@@ -119,17 +119,16 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
         InstSet instSet1;
         InstSet instSet2;
         SVFModule* mod = mhp->getTCT()->getSVFModule();
-        for (SVFModule::iterator F = mod->begin(), E = mod->end(); F != E; ++F)
+        for (const SVFFunction* fun : mod->getFunctionSet())
         {
-            const SVFFunction* fun = (*F);
             const Function* llvmfun = fun->getLLVMFun();
             if(SVFUtil::isExtCall(fun))
                 continue;
-            if(!mhp->isConnectedfromMain(llvmfun))
+            if(!mhp->isConnectedfromMain(fun))
                 continue;
             for (const_inst_iterator II = inst_begin(llvmfun), E = inst_end(llvmfun); II != E; ++II)
             {
-                const Instruction *inst = &*II;
+                const Instruction* inst = &*II;
                 if(SVFUtil::isa<LoadInst>(inst))
                 {
                     instSet1.insert(inst);

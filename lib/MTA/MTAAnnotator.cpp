@@ -37,13 +37,13 @@ void MTAAnnotator::annotateDRCheck(Instruction* inst)
 void MTAAnnotator::collectLoadStoreInst(SVFModule* mod)
 {
 
-    for (SVFModule::iterator F = mod->begin(), E = mod->end(); F != E; ++F)
+    for (SVFModule::const_iterator F = mod->begin(), E = mod->end(); F != E; ++F)
     {
         if (SVFUtil::isExtCall(*F))
             continue;
-        for (inst_iterator II = inst_begin((*F)->getLLVMFun()), E = inst_end((*F)->getLLVMFun()); II != E; ++II)
+        for (const_inst_iterator II = inst_begin((*F)->getLLVMFun()), E = inst_end((*F)->getLLVMFun()); II != E; ++II)
         {
-            const Instruction *inst = &*II;
+            const Instruction* inst = &*II;
             if (SVFUtil::isa<LoadInst>(inst))
             {
                 loadset.insert(inst);

@@ -139,13 +139,13 @@ class TCT: public GenericThreadCreateTreeTy
 public:
     typedef TCTEdge::ThreadCreateEdgeSet ThreadCreateEdgeSet;
     typedef ThreadCreateEdgeSet::iterator TCTNodeIter;
-    typedef Set<const Function*> FunSet;
+    typedef Set<const SVFFunction*> FunSet;
     typedef std::vector<const SVFInstruction*> InstVec;
     typedef Set<const SVFInstruction*> InstSet;
     typedef Set<const PTACallGraphNode*> PTACGNodeSet;
     typedef Map<CxtThread,TCTNode*> CxtThreadToNodeMap;
     typedef Map<CxtThread,CallStrCxt> CxtThreadToForkCxt;
-    typedef Map<CxtThread,const Function*> CxtThreadToFun;
+    typedef Map<CxtThread,const SVFFunction*> CxtThreadToFun;
     typedef Map<const SVFInstruction*, const Loop*> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
     typedef Set<CxtThreadProc> CxtThreadProcSet;
@@ -171,11 +171,6 @@ public:
     CallICFGNode* getCallICFGNode(const SVFInstruction* inst)
     {
         return pta->getICFG()->getCallICFGNode(inst);
-    }
-    /// Get SVFFuntion given Function
-    const SVFFunction* getSVFFun(const Function* fun) const
-    {
-        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
     }
     /// Get SVFFModule
     SVFModule* getSVFModule() const
@@ -271,18 +266,14 @@ public:
         for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
                 ecit = callees.end(); cit!=ecit; cit++)
         {
-            if(candidateFuncSet.find((*cit)->getLLVMFun())!=candidateFuncSet.end())
+            if(candidateFuncSet.find((*cit))!=candidateFuncSet.end())
                 return true;
         }
         return false;
     }
-    inline bool isCandidateFun(const Function* fun) const
-    {
-        return candidateFuncSet.find(fun)!=candidateFuncSet.end();
-    }
     inline bool isCandidateFun(const SVFFunction* fun) const
     {
-        return isCandidateFun(fun->getLLVMFun());
+        return candidateFuncSet.find(fun)!=candidateFuncSet.end();
     }
     /// Whether two functions in the same callgraph scc
     inline bool inSameCallGraphSCC(const PTACallGraphNode* src,const PTACallGraphNode* dst)
@@ -356,7 +347,7 @@ public:
     }
 
     /// get the start routine function of a thread
-    const Function* getStartRoutineOfCxtThread(const CxtThread& ct) const
+    const SVFFunction* getStartRoutineOfCxtThread(const CxtThread& ct) const
     {
         CxtThreadToFun::const_iterator it = ctToRoutineFunMap.find(ct);
         assert(it!=ctToRoutineFunMap.end() && "Cxt Thread not found!!");
@@ -388,9 +379,9 @@ public:
     /// Get the next instructions following control flow
     void getNextInsts(const SVFInstruction* inst, InstVec& instSet);
     /// Push calling context
-    void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee);
+    void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee);
     /// Match context
-    bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee);
+    bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee);
 
     inline void pushCxt(CallStrCxt& cxt, CallSiteID csId)
     {
@@ -451,7 +442,7 @@ private:
     /// Mark relevant procedures that are backward reachable from any fork/join site
     //@{
     void markRelProcs();
-    void markRelProcs(const Function* fun);
+    void markRelProcs(const SVFFunction* fun);
     //@}
 
     /// Get entry functions that are neither called by other functions nor extern functions
@@ -484,7 +475,7 @@ private:
 
     /// Get or create a tct node based on CxtThread
     //@{
-    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const SVFInstruction* fork,const CallStrCxt& oldCxt, const Function* routine)
+    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const SVFInstruction* fork,const CallStrCxt& oldCxt, const SVFFunction* routine)
     {
         CxtThread ct(cxt,fork);
         CxtThreadToNodeMap::const_iterator it = ctpToNodeMap.find(ct);
@@ -525,7 +516,7 @@ private:
         ctToForkCxtMap[ct] = cxt;
     }
     /// Add start routine function of a cxt thread
-    void addStartRoutineOfCxtThread(const Function* fun, const CxtThread& ct)
+    void addStartRoutineOfCxtThread(const SVFFunction* fun, const CxtThread& ct)
     {
         ctToRoutineFunMap[ct] = fun;
     }

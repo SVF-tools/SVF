@@ -118,7 +118,7 @@ bool isObject (const Value * ref);
 /// function address is not taken and never be used in call or invoke instruction
 //@{
 /// whether this is a function without any possible caller?
-bool isUncalledFunction (const Function * fun);
+bool isUncalledFunction (const Function*  fun);
 
 /// whether this is an argument in dead function
 inline bool ArgInDeadFunction (const Value * val)
@@ -143,7 +143,7 @@ bool isPtrInUncalledFunction (const Value * value);
 /// Function does not have any possible caller in the call graph
 //@{
 /// Return true if the function does not have a caller (either it is a main function or a dead function)
-inline bool isNoCallerFunction (const Function * fun)
+inline bool isNoCallerFunction (const Function*  fun)
 {
     return isUncalledFunction(fun) || SVFUtil::isProgEntryFunction(fun);
 }
@@ -157,7 +157,7 @@ inline bool isArgOfUncalledFunction (const Value * val)
 //@}
 
 /// Return true if the function has a return instruction reachable from function entry
-bool functionDoesNotRet (const Function * fun);
+bool functionDoesNotRet (const Function*  fun);
 
 /// Get reachable basic block from function entry
 void getFunReachableBBs (const SVFFunction* svfFun, std::vector<const BasicBlock*>& bbs);

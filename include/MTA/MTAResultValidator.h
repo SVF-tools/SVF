@@ -60,7 +60,7 @@ protected:
      * Get the previous LoadInst or StoreInst from Instruction "I" in the
      * same BasicBlock. Return nullptr if none exists.
      */
-    const Instruction *getPreviousMemoryAccessInst(const Instruction *I);
+    const Instruction* getPreviousMemoryAccessInst(const Instruction* I);
 
     // Compare two cxts
     bool matchCxt(const CallStrCxt cxt1, const CallStrCxt cxt2) const;
@@ -177,7 +177,7 @@ public:
     {
     public:
         /// Constructor
-        AccessPair(const Instruction *I1, const Instruction *I2,
+        AccessPair(const Instruction* I1, const Instruction* I2,
                    const RC_FLAG flags) :
             I1(I1), I2(I2), flags(flags)
         {
@@ -189,19 +189,19 @@ public:
         {
             return flags & flag;
         }
-        inline const Instruction *getInstruction1() const
+        inline const Instruction* getInstruction1() const
         {
             return I1;
         }
-        inline const Instruction *getInstruction2() const
+        inline const Instruction* getInstruction2() const
         {
             return I2;
         }
         //@}
 
     private:
-        const Instruction *I1;
-        const Instruction *I2;
+        const Instruction* I1;
+        const Instruction* I2;
         RC_FLAG flags;
     };
 
@@ -240,26 +240,26 @@ protected:
     /// Interface to the specific validation properties.
     /// Override one or more to implement your own analysis.
     //@{
-    virtual bool mayAccessAliases(const Instruction *I1,
-                                  const Instruction *I2)
+    virtual bool mayAccessAliases(const Instruction* I1,
+                                  const Instruction* I2)
     {
         selectedValidationScenarios &= ~RC_ALIASES;
         return true;
     }
-    virtual bool mayHappenInParallel(const Instruction *I1,
-                                     const Instruction *I2)
+    virtual bool mayHappenInParallel(const Instruction* I1,
+                                     const Instruction* I2)
     {
         selectedValidationScenarios &= ~RC_MHP;
         return true;
     }
-    virtual bool protectedByCommonLocks(const Instruction *I1,
-                                        const Instruction *I2)
+    virtual bool protectedByCommonLocks(const Instruction* I1,
+                                        const Instruction* I2)
     {
         selectedValidationScenarios &= ~RC_PROTECTED;
         return true;
     }
-    virtual bool mayHaveDataRace(const Instruction *I1,
-                                 const Instruction *I2)
+    virtual bool mayHaveDataRace(const Instruction* I1,
+                                 const Instruction* I2)
     {
         selectedValidationScenarios &= ~RC_RACE;
         return true;
@@ -275,7 +275,7 @@ protected:
     {
         // Collect call sites of all RC_ACCESS function calls.
         std::vector<CallSite> csInsts;
-        const Function *F = nullptr;
+        const Function* F = nullptr;
         for(auto it = M->llvmFunBegin(); it != M->llvmFunEnd(); it++)
         {
             const std::string fName = (*it)->getName().str();
@@ -309,8 +309,8 @@ protected:
             CallSite CI2 = csInsts[i++];
             const ConstantInt *C = SVFUtil::dyn_cast<ConstantInt>(CI1.getArgOperand(1));
             assert(C);
-            const Instruction *I1 = getPreviousMemoryAccessInst(CI1.getInstruction()->getLLVMInstruction());
-            const Instruction *I2 = getPreviousMemoryAccessInst(CI2.getInstruction()->getLLVMInstruction());
+            const Instruction* I1 = getPreviousMemoryAccessInst(CI1.getInstruction()->getLLVMInstruction());
+            const Instruction* I2 = getPreviousMemoryAccessInst(CI2.getInstruction()->getLLVMInstruction());
             assert(I1 && I2 && "RC_ACCESS should be placed immediately after the target memory access.");
             RC_FLAG flags = C->getZExtValue();
             accessPairs.push_back(AccessPair(I1, I2, flags));
@@ -326,8 +326,8 @@ protected:
         for (int i = 0, e = accessPairs.size(); i != e; ++i)
         {
             const AccessPair &ap = accessPairs[i];
-            const Instruction *I1 = ap.getInstruction1();
-            const Instruction *I2 = ap.getInstruction2();
+            const Instruction* I1 = ap.getInstruction1();
+            const Instruction* I2 = ap.getInstruction2();
 
             bool mhp = mayHappenInParallel(I1, I2);
             bool alias = mayAccessAliases(I1, I2);
@@ -406,8 +406,8 @@ private:
      * same BasicBlock.
      * Return nullptr if none exists.
      */
-    const Instruction *getPreviousMemoryAccessInst(
-        const Instruction *I)
+    const Instruction* getPreviousMemoryAccessInst(
+        const Instruction* I)
     {
         I = I->getPrevNode();
         while (I)

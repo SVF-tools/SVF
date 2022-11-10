@@ -278,7 +278,7 @@ inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
 inline const SVFFunction* getCallee(const CallSite cs)
 {
     // FIXME: do we need to strip-off the casts here to discover more library functions
-    const Function *callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
+    const Function* callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
     return getDefFunForMultipleModule(callee);
 }
 
@@ -294,7 +294,7 @@ inline const SVFFunction* getCallee(const SVFInstruction *inst)
 /// Return source code including line number and file name from debug information
 //@{
 std::string  getSourceLoc(const Value *val);
-std::string  getSourceLocOfFunction(const Function *F);
+std::string  getSourceLocOfFunction(const Function* F);
 const std::string value2String(const Value* value);
 //@}
 
@@ -476,7 +476,7 @@ inline bool isAnAllocationWraper(const SVFInstruction*)
 /// Return LLVM function if this value is
 inline const Function* getLLVMFunction(const Value* val)
 {
-    const Function *fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
+    const Function* fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
     return fun;
 }
 
@@ -705,7 +705,7 @@ inline const Value* getTaskDataAtHareParForSite(const SVFInstruction *inst)
 }
 //@}
 
-inline bool isProgEntryFunction (const Function * fun)
+inline bool isProgEntryFunction (const Function*  fun)
 {
     return fun && fun->getName() == "main";
 }

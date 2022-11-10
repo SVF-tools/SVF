@@ -57,10 +57,10 @@ std::string getBeforeBrackets(const std::string &name);
 bool isValVtbl(const Value *val);
 bool isLoadVtblInst(const LoadInst *loadInst);
 bool isVirtualCallSite(CallSite cs);
-bool isConstructor(const Function *F);
-bool isDestructor(const Function *F);
-bool isCPPThunkFunction(const Function *F);
-const Function *getThunkTarget(const Function *F);
+bool isConstructor(const Function* F);
+bool isDestructor(const Function* F);
+bool isCPPThunkFunction(const Function* F);
+const Function* getThunkTarget(const Function* F);
 
 /*
  * VtableA = {&A::foo}

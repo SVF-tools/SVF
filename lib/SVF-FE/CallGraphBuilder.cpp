@@ -47,10 +47,10 @@ PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
     /// create edges
     for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
     {
-        Function *fun = *F;
-        for (inst_iterator I = inst_begin(*fun), J = inst_end(*fun); I != J; ++I)
+        const Function* fun = *F;
+        for (const_inst_iterator I = inst_begin(*fun), J = inst_end(*fun); I != J; ++I)
         {
-            const Instruction *is = &*I;
+            const Instruction* is = &*I;
             const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(is);
             if (SVFUtil::isNonInstricCallSite(inst))
             {
@@ -78,10 +78,10 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
     for (SVFModule::llvm_const_iterator fi = svfModule->llvmFunBegin(), efi = svfModule->llvmFunEnd(); fi != efi; ++fi)
     {
-        const Function *fun = *fi;
+        const Function* fun = *fi;
         for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II)
         {
-            const Instruction *i = &*II;
+            const Instruction* i = &*II;
             const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (tdAPI->isTDFork(inst))
             {
@@ -118,10 +118,10 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
     // record join sites
     for (SVFModule::llvm_const_iterator fi = svfModule->llvmFunBegin(), efi = svfModule->llvmFunEnd(); fi != efi; ++fi)
     {
-        const Function *fun = *fi;
+        const Function* fun = *fi;
         for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II)
         {
-            const Instruction *i = &*II;
+            const Instruction* i = &*II;
             const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (tdAPI->isTDJoin(inst))
             {

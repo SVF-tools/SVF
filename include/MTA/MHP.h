@@ -47,7 +47,7 @@ class MHP
 {
 
 public:
-    typedef Set<const Function*> FunSet;
+    typedef Set<const SVFFunction*> FunSet;
     typedef Set<const SVFInstruction*> InstSet;
     typedef TCT::InstVec InstVec;
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
@@ -57,7 +57,7 @@ public:
 
     typedef Set<CxtStmt> LockSpan;
 
-    typedef std::pair<const Function*,const Function*> FuncPair;
+    typedef std::pair<const SVFFunction*,const SVFFunction*> FuncPair;
     typedef Map<FuncPair, bool> FuncPairToBool;
 
     /// Constructor
@@ -91,7 +91,7 @@ public:
     }
 
     /// Whether the function is connected from main function in thread call graph
-    bool isConnectedfromMain(const Function* fun);
+    bool isConnectedfromMain(const SVFFunction* fun);
 
 //    /// Interface to query whether two instructions are protected by common locks
 //    virtual bool isProtectedByACommonLock(const SVFInstruction* i1, const SVFInstruction* i2);
@@ -228,12 +228,12 @@ private:
         tct->getNextInsts(inst,instVec);
     }
     /// Push calling context
-    inline void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee)
+    inline void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee)
     {
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
-    inline bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee)
+    inline bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee)
     {
         return tct->matchCxt(cxt,call,callee);
     }
@@ -362,9 +362,8 @@ public:
     {
         NodeID parentTid = tct->getParentThread(tid);
         const CxtThread& parentct = tct->getTCTNode(parentTid)->getCxtThread();
-        const Function* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
-        const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(parentRoutine);
-        const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(LLVMUtil::getFunExitBB(svfFun)->back()));
+        const SVFFunction* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
+        const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(LLVMUtil::getFunExitBB(parentRoutine)->back()));
         return inst;
     }
 
@@ -483,12 +482,12 @@ private:
         tct->getNextInsts(inst,instSet);
     }
     /// Push calling context
-    inline void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee)
+    inline void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee)
     {
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
-    inline bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const Function* callee)
+    inline bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee)
     {
         return tct->matchCxt(cxt,call,callee);
     }

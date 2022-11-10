@@ -61,7 +61,7 @@ bool PCG::analyze()
     return false;
 }
 
-bool PCG::mayHappenInParallelBetweenFunctions(const Function* fun1, const Function* fun2) const
+bool PCG::mayHappenInParallelBetweenFunctions(const SVFFunction* fun1, const SVFFunction* fun2) const
 {
     // if neither of functions are spawnees, then they won't happen in parallel
     if (isSpawneeFun(fun1) == false && isSpawneeFun(fun2) == false)
@@ -77,8 +77,8 @@ bool PCG::mayHappenInParallelBetweenFunctions(const Function* fun1, const Functi
 
 bool PCG::mayHappenInParallel(const SVFInstruction* i1, const SVFInstruction* i2) const
 {
-    const Function* fun1 = i1->getFunction()->getLLVMFun();
-    const Function* fun2 = i2->getFunction()->getLLVMFun();
+    const SVFFunction* fun1 = i1->getFunction();
+    const SVFFunction* fun2 = i2->getFunction();
     return mayHappenInParallelBetweenFunctions(fun1, fun2);
 }
 
@@ -90,21 +90,21 @@ bool PCG::mayHappenInParallel(const SVFInstruction* i1, const SVFInstruction* i2
  */
 void PCG::initFromThreadAPI(SVFModule* module)
 {
-    for (SVFModule::const_iterator fi = module->begin(), efi = module->end(); fi != efi; ++fi)
+    for (const SVFFunction* fun : module->getFunctionSet())
     {
-        const Function* fun = (*fi)->getLLVMFun();
-        for (inst_iterator II = inst_begin((*fi)->getLLVMFun()), E = inst_end((*fi)->getLLVMFun()); II != E; ++II)
+        for (const_inst_iterator II = inst_begin(fun->getLLVMFun()), E = inst_end(fun->getLLVMFun()); II != E; ++II)
         {
-            const Instruction *i = &*II;
+            const Instruction* i = &*II;
             const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (tdAPI->isTDFork(inst))
             {
                 const Value* forkVal = tdAPI->getForkedFun(inst);
                 if (const Function* forkFun = getLLVMFunction(forkVal))
                 {
+                    const SVFFunction* svForkfun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(forkFun);
                     addSpawnsite(inst);
                     spawners.insert(fun);
-                    spawnees.insert(forkFun);
+                    spawnees.insert(svForkfun);
                 }
                 /// TODO: handle indirect call here for the fork Fun
                 else
@@ -149,14 +149,13 @@ void PCG::collectSpawners()
     }
     while (!worklist.empty())
     {
-        const Function* fun = worklist.pop();
-        const SVFFunction* svffun = getSVFFun(fun);
+        const SVFFunction* svffun = worklist.pop();
         PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
         for (PTACallGraphNode::const_iterator it = funNode->InEdgeBegin(), eit = funNode->InEdgeEnd(); it != eit;
                 ++it)
         {
             PTACallGraphEdge* callEdge = (*it);
-            const Function* caller = callEdge->getSrcNode()->getFunction()->getLLVMFun();
+            const SVFFunction* caller = callEdge->getSrcNode()->getFunction();
             if (isSpawnerFun(caller) == false)
             {
                 worklist.push(caller);
@@ -191,13 +190,12 @@ void PCG::collectSpawnees()
     }
     while (!worklist.empty())
     {
-        const Function* fun = worklist.pop();
-        const SVFFunction* svffun = getSVFFun(fun);
+        const SVFFunction* svffun = worklist.pop();
         PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
         for (PTACallGraphNode::const_iterator it = funNode->OutEdgeBegin(), eit = funNode->OutEdgeEnd(); it != eit;
                 ++it)
         {
-            const Function* caller = (*it)->getDstNode()->getFunction()->getLLVMFun();
+            const SVFFunction* caller = (*it)->getDstNode()->getFunction();
             if (isSpawneeFun(caller) == false)
             {
                 worklist.push(caller);
@@ -238,7 +236,7 @@ void PCG::identifyFollowers()
                                 ecgIt = callgraph->getCallEdgeEnd(cbn); cgIt != ecgIt; ++cgIt)
                         {
                             const PTACallGraphEdge* edge = *cgIt;
-                            addFollowerFun(edge->getDstNode()->getFunction()->getLLVMFun());
+                            addFollowerFun(edge->getDstNode()->getFunction());
                         }
                     }
                 }
@@ -275,13 +273,12 @@ void PCG::collectFollowers()
     }
     while (!worklist.empty())
     {
-        const Function* fun = worklist.pop();
-        const SVFFunction* svffun = getSVFFun(fun);
+        const SVFFunction* svffun = worklist.pop();
         PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
         for (PTACallGraphNode::const_iterator it = funNode->OutEdgeBegin(), eit = funNode->OutEdgeEnd(); it != eit;
                 ++it)
         {
-            const Function* caller = (*it)->getDstNode()->getFunction()->getLLVMFun();
+            const SVFFunction* caller = (*it)->getDstNode()->getFunction();
             if (isFollowerFun(caller) == false)
             {
                 worklist.push(caller);
@@ -310,18 +307,18 @@ void PCG::interferenceAnalysis()
         const SVFFunction* fun = *F;
         if (isExtCall(fun))
             continue;
-        worklist.push_back(fun->getLLVMFun());
+        worklist.push_back(fun);
     }
 
     while (!worklist.empty())
     {
-        const Function* fun1 = worklist.back();
+        const SVFFunction* fun1 = worklist.back();
         worklist.pop_back();
 
         bool ismhpfun = false;
         for (PCG::FunVec::iterator it = worklist.begin(), eit = worklist.end(); it != eit; ++it)
         {
-            const Function* fun2 = *it;
+            const SVFFunction* fun2 = *it;
             if (mayHappenInParallelBetweenFunctions(fun1, fun2))
             {
                 ismhpfun = true;
@@ -352,13 +349,13 @@ void PCG::printTDFuns()
 
     for (SVFModule::const_iterator fi = mod->begin(), efi = mod->end(); fi != efi; ++fi)
     {
-        const Function* fun = (*fi)->getLLVMFun();
+        const SVFFunction* fun = (*fi);
         if (fun->isDeclaration())
             continue;
 
         std::string isSpawner = isSpawnerFun(fun) ? " SPAWNER " : "";
         std::string isSpawnee = isSpawneeFun(fun) ? " CHILDREN " : "";
         std::string isFollower = isFollowerFun(fun) ? " FOLLOWER " : "";
-        outs() << fun->getName().str() << " [" << isSpawner << isSpawnee << isFollower << "]\n";
+        outs() << fun->getName() << " [" << isSpawner << isSpawnee << isFollower << "]\n";
     }
 }

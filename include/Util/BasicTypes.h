@@ -100,6 +100,7 @@ private:
     std::vector<const SVFBasicBlock*> allBBs;
     bool isUncalled;
     bool isNotRet;
+    bool varArg;
     Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
     Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
     Map<const BasicBlock*,Set<const BasicBlock*>> pdtBBsMap;
@@ -116,7 +117,7 @@ public:
         return node->getKind() == SVFFunc;
     }
 
-    inline Function* getLLVMFun() const
+    inline const Function* getLLVMFun() const
     {
         assert(fun && "no LLVM Function found!");
         return fun;

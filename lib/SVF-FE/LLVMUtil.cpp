@@ -96,7 +96,7 @@ void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const 
     assert(!SVFUtil::isExtCall(svfFun) && "The calling function cannot be an external function.");
     //initial DominatorTree
     DominatorTree dt;
-    dt.recalculate(*svfFun->getLLVMFun());
+    dt.recalculate(const_cast<Function&>(*svfFun->getLLVMFun()));
 
     Set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;
@@ -125,7 +125,7 @@ void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const 
 /*!
  * Return true if the function has a return instruction reachable from function entry
  */
-bool LLVMUtil::functionDoesNotRet (const Function * fun)
+bool LLVMUtil::functionDoesNotRet (const Function*  fun)
 {
     const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
     if (SVFUtil::isExtCall(svffun))
@@ -166,7 +166,7 @@ bool LLVMUtil::functionDoesNotRet (const Function * fun)
 /*!
  * Return true if this is a function without any possible caller
  */
-bool LLVMUtil::isUncalledFunction (const Function * fun)
+bool LLVMUtil::isUncalledFunction (const Function*  fun)
 {
     if(fun->hasAddressTaken())
         return false;
@@ -183,7 +183,7 @@ bool LLVMUtil::isUncalledFunction (const Function * fun)
         for (LLVMModuleSet::FunctionSetType::const_iterator it = decls.begin(),
                 eit = decls.end(); it != eit; ++it)
         {
-            const Function *decl = *it;
+            const Function* decl = *it;
             if(decl->hasAddressTaken())
                 return false;
             for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i)

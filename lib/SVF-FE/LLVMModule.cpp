@@ -154,10 +154,10 @@ void LLVMModuleSet::build()
             //process and stored dt & df
             DominatorTree dt;
             DominanceFrontier df;
-            dt.recalculate(*svffun->getLLVMFun());
+            dt.recalculate(const_cast<Function&>(*svffun->getLLVMFun()));
             df.analyze(dt);
             LoopInfo loopInfo = LoopInfo(dt);
-            PostDominatorTree pdt = PostDominatorTree(*(func->getLLVMFun()));
+            PostDominatorTree pdt = PostDominatorTree(const_cast<Function&>(*(func->getLLVMFun())));
             Map<const BasicBlock*,Set<const BasicBlock*>> & dfBBsMap = svffun->getDomFrontierMap();
             for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
             {
@@ -304,7 +304,7 @@ void LLVMModuleSet::initialize()
         /// Function
         for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
         {
-            Function *func = &*it;
+            Function* func = &*it;
             SVFFunction* svfFunc = new SVFFunction(func);
             svfModule->addFunctionSet(svfFunc);
 
@@ -342,7 +342,7 @@ void LLVMModuleSet::initialize()
     }
 }
 
-std::vector<const Function *> LLVMModuleSet::getLLVMGlobalFunctions(
+std::vector<const Function* > LLVMModuleSet::getLLVMGlobalFunctions(
     const GlobalVariable *global)
 {
     // This function is used to extract constructor and destructor functions
@@ -370,9 +370,9 @@ std::vector<const Function *> LLVMModuleSet::getLLVMGlobalFunctions(
     {
     public:
         u32_t priority;
-        const Function *func;
+        const Function* func;
         LLVMGlobalFunction() {};
-        LLVMGlobalFunction(u32_t _priority, const Function *_func)
+        LLVMGlobalFunction(u32_t _priority, const Function* _func)
             : priority(_priority), func(_func) {};
         bool operator>(const LLVMGlobalFunction &other) const
         {
@@ -390,7 +390,7 @@ std::vector<const Function *> LLVMModuleSet::getLLVMGlobalFunctions(
     std::priority_queue<LLVMGlobalFunction, std::vector<LLVMGlobalFunction>,
         greater<LLVMGlobalFunction>>
         queue;
-    std::vector<const Function *> result;
+    std::vector<const Function* > result;
 
     // The @llvm.global_ctors/dtors global variable is an array of struct. Each
     // struct has three fields: {i32 priority, void ()* @ctor/dtor, i8* @data}.
@@ -410,7 +410,7 @@ std::vector<const Function *> LLVMModuleSet::getLLVMGlobalFunctions(
                 // Extract priority and function from the struct
                 const ConstantInt *priority = SVFUtil::dyn_cast<ConstantInt>(
                                                   globalFuncItem->getOperand(0));
-                const Function *func = SVFUtil::dyn_cast<Function>(
+                const Function* func = SVFUtil::dyn_cast<Function>(
                                            globalFuncItem->getOperand(1));
 
                 if (priority && func)
@@ -434,9 +434,9 @@ std::vector<const Function *> LLVMModuleSet::getLLVMGlobalFunctions(
 
 void LLVMModuleSet::addSVFMain()
 {
-    std::vector<const Function *> ctor_funcs;
-    std::vector<const Function *> dtor_funcs;
-    Function * orgMain = 0;
+    std::vector<const Function* > ctor_funcs;
+    std::vector<const Function* > dtor_funcs;
+    Function*  orgMain = 0;
     Module* mainMod = nullptr;
 
     for (Module &mod : modules)
@@ -490,9 +490,9 @@ void LLVMModuleSet::addSVFMain()
                                        Type::getVoidTy(M.getContext()),
                                        i32,i8ptr2,i8ptr2
                                    );
-        Function *svfmain = SVFUtil::dyn_cast<Function>(svfmainFn.getCallee());
+        Function* svfmain = SVFUtil::dyn_cast<Function>(svfmainFn.getCallee());
 #else
-        Function *svfmain = SVFUtil::dyn_cast<Function>(M.getOrInsertFunction(
+        Function* svfmain = SVFUtil::dyn_cast<Function>(M.getOrInsertFunction(
                                 SVF_MAIN_FUNC_NAME,
                                 Type::getVoidTy(M.getContext()),
                                 i32,i8ptr2,i8ptr2
@@ -536,15 +536,15 @@ void LLVMModuleSet::addSVFMain()
 
 void LLVMModuleSet::buildFunToFunMap()
 {
-    Set<Function*> funDecls, funDefs;
+    Set<const Function*> funDecls, funDefs;
     OrderedSet<string> declNames, defNames, intersectNames;
-    typedef Map<string, Function*> NameToFunDefMapTy;
-    typedef Map<string, Set<Function*>> NameToFunDeclsMapTy;
+    typedef Map<string, const Function*> NameToFunDefMapTy;
+    typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
 
     for (SVFModule::LLVMFunctionSetType::iterator it = svfModule->llvmFunBegin(),
             eit = svfModule->llvmFunEnd(); it != eit; ++it)
     {
-        Function *fun = *it;
+        const Function* fun = *it;
         if (fun->isDeclaration())
         {
             funDecls.insert(fun);
@@ -579,10 +579,10 @@ void LLVMModuleSet::buildFunToFunMap()
 
     ///// name to def map
     NameToFunDefMapTy nameToFunDefMap;
-    for (Set<Function*>::iterator it = funDefs.begin(),
+    for (Set<const Function*>::iterator it = funDefs.begin(),
             eit = funDefs.end(); it != eit; ++it)
     {
-        Function *fdef = *it;
+        const Function* fdef = *it;
         string funName = fdef->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
@@ -591,32 +591,32 @@ void LLVMModuleSet::buildFunToFunMap()
 
     ///// name to decls map
     NameToFunDeclsMapTy nameToFunDeclsMap;
-    for (Set<Function*>::iterator it = funDecls.begin(),
+    for (Set<const Function*>::iterator it = funDecls.begin(),
             eit = funDecls.end(); it != eit; ++it)
     {
-        Function *fdecl = *it;
+        const Function* fdecl = *it;
         string funName = fdecl->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
         NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
         if (mit == nameToFunDeclsMap.end())
         {
-            Set<Function*> decls;
+            Set<const Function*> decls;
             decls.insert(fdecl);
             nameToFunDeclsMap[funName] = decls;
         }
         else
         {
-            Set<Function*> &decls = mit->second;
+            Set<const Function*> &decls = mit->second;
             decls.insert(fdecl);
         }
     }
 
     /// Fun decl --> def
-    for (Set<Function*>::iterator it = funDecls.begin(),
+    for (Set<const Function*>::iterator it = funDecls.begin(),
             eit = funDecls.end(); it != eit; ++it)
     {
-        const Function *fdecl = *it;
+        const Function* fdecl = *it;
         string funName = fdecl->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
@@ -627,10 +627,10 @@ void LLVMModuleSet::buildFunToFunMap()
     }
 
     /// Fun def --> decls
-    for (Set<Function*>::iterator it = funDefs.begin(),
+    for (Set<const Function*>::iterator it = funDefs.begin(),
             eit = funDefs.end(); it != eit; ++it)
     {
-        const Function *fdef = *it;
+        const Function* fdef = *it;
         string funName = fdef->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
@@ -638,7 +638,7 @@ void LLVMModuleSet::buildFunToFunMap()
         if (mit == nameToFunDeclsMap.end())
             continue;
         std::vector<const Function*>& decls = FunDefToDeclsMap[fdef];
-        for (Set<Function*>::iterator sit = mit->second.begin(),
+        for (Set<const Function*>::iterator sit = mit->second.begin(),
                 seit = mit->second.end(); sit != seit; ++sit)
         {
             decls.push_back(*sit);

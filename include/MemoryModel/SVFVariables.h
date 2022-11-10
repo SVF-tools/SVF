@@ -124,16 +124,16 @@ public:
     virtual const std::string getValueName() const = 0;
 
     /// Return the function that this SVFVar resides in. Return nullptr if it is a global or constantexpr node
-    virtual inline const Function* getFunction() const
+    virtual inline const SVFFunction* getFunction() const
     {
         if(value)
         {
             if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
-                return inst->getParent()->getParent();
+                return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(inst->getParent()->getParent());
             else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
-                return arg->getParent();
+                return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(arg->getParent());
             else if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
-                return fun;
+                return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
         }
         return nullptr;
     }

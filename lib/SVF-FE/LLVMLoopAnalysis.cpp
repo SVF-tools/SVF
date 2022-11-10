@@ -52,8 +52,8 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> 
     {
         // do not analyze external call
         if (SVFUtil::isExtCall(svfFunc)) continue;
-        llvm::Function *func = svfFunc->getLLVMFun();
-        DT.recalculate(*func);
+        const Function* func = svfFunc->getLLVMFun();
+        DT.recalculate(const_cast<Function&>(*func));
         auto loopInfo = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
         loopInfo->releaseMemory();
         loopInfo->analyze(DT);
