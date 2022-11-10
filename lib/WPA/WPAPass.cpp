@@ -206,39 +206,35 @@ AliasResult WPAPass::alias(const Value* V1, const Value* V2)
 }
 
 /*!
- * Return mod-ref result of a CallInst
+ * Return mod-ref result of a Callsite
  */
-ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst)
+ModRefInfo WPAPass::getModRefInfo(const CallSite callInst)
 {
     assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
-    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst);
-    const CallICFGNode* cbn = icfg->getCallICFGNode(svfInst);
+    const CallICFGNode* cbn = icfg->getCallICFGNode(callInst.getInstruction());
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn);
 }
 
 /*!
- * Return mod-ref results of a CallInst to a specific memory location
+ * Return mod-ref results of a Callsite to a specific memory location
  */
-ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst, const Value* V)
+ModRefInfo WPAPass::getModRefInfo(const CallSite callInst, const Value* V)
 {
     assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
-    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst);
-    const CallICFGNode* cbn = icfg->getCallICFGNode(svfInst);
+    const CallICFGNode* cbn = icfg->getCallICFGNode(callInst.getInstruction());
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn, V);
 }
 
 /*!
  * Return mod-ref result between two CallInsts
  */
-ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst1, const CallInst* callInst2)
+ModRefInfo WPAPass::getModRefInfo(const CallSite callInst1, const CallSite callInst2)
 {
     assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
-    const SVFInstruction* svfInst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst1);
-    const SVFInstruction* svfInst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst2);
-    const CallICFGNode* cbn1 = icfg->getCallICFGNode(svfInst1);
-    const CallICFGNode* cbn2 = icfg->getCallICFGNode(svfInst2);
+    const CallICFGNode* cbn1 = icfg->getCallICFGNode(callInst1.getInstruction());
+    const CallICFGNode* cbn2 = icfg->getCallICFGNode(callInst2.getInstruction());
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn1, cbn2);
 }

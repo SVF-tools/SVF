@@ -51,7 +51,6 @@ typedef GenericEdge<TCTNode> GenericTCTEdgeTy;
 class TCTEdge: public GenericTCTEdgeTy
 {
 public:
-    typedef Set<const Instruction*> CallInstSet;
     enum CEDGEK
     {
         ThreadCreateEdge
@@ -485,7 +484,7 @@ private:
 
     /// Get or create a tct node based on CxtThread
     //@{
-    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const CallInst* fork,const CallStrCxt& oldCxt, const Function* routine)
+    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const SVFInstruction* fork,const CallStrCxt& oldCxt, const Function* routine)
     {
         CxtThread ct(cxt,fork);
         CxtThreadToNodeMap::const_iterator it = ctpToNodeMap.find(ct);
@@ -508,7 +507,7 @@ private:
         /// non-main thread
         if(ct.getThread() != nullptr)
         {
-            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(ct.getThread());
+            const SVFInstruction* svfInst = ct.getThread();
             ct.setInloop(isInLoopInstruction(svfInst));
             ct.setIncycle(isInRecursion(svfInst));
         }

@@ -94,12 +94,12 @@ public:
     bool isConnectedfromMain(const Function* fun);
 
 //    /// Interface to query whether two instructions are protected by common locks
-//    virtual bool isProtectedByACommonLock(const Instruction* i1, const Instruction* i2);
-//    virtual bool isAllCxtInSameLockSpan(const Instruction *I1, const Instruction *I2);
-//    virtual bool isOneCxtInSameLockSpan(const Instruction *I1, const Instruction *I2);
+//    virtual bool isProtectedByACommonLock(const SVFInstruction* i1, const SVFInstruction* i2);
+//    virtual bool isAllCxtInSameLockSpan(const SVFInstruction *I1, const SVFInstruction *I2);
+//    virtual bool isOneCxtInSameLockSpan(const SVFInstruction *I1, const SVFInstruction *I2);
 //
-//    bool hasOneCxtInLockSpan(const Instruction *I, LockSpan lspan);
-//    bool hasAllCxtInLockSpan(const Instruction *I, LockSpan lspan);
+//    bool hasOneCxtInLockSpan(const SVFInstruction *I, LockSpan lspan);
+//    bool hasAllCxtInLockSpan(const SVFInstruction *I, LockSpan lspan);
 //
 //
 //    LockSpan getSpanfromCxtLock(NodeID l);

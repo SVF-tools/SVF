@@ -233,7 +233,7 @@ protected:
     //@{
     virtual void parseOperations(std::vector<ExtAPI::Operation>  &operations, CallSite cs);
     virtual void handleExtCall(CallSite cs, const SVFFunction *F);
-    void addComplexConsForExt(Value *D, Value *S, const Value* sz);
+    void addComplexConsForExt(const Value *D, const Value *S, const Value* sz);
     //@}
 
     /// Set current basic block in order to keep track of control flow information

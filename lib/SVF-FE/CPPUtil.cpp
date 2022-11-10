@@ -300,10 +300,9 @@ const Function *cppUtil::getThunkTarget(const Function *F)
     {
         for (auto &inst: bb)
         {
-            if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
-                    || llvm::isa<CallBrInst>(inst))
+            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&inst);
+            if (SVFUtil::isCallSite(svfInst))
             {
-                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&inst);
                 CallSite cs(svfInst);
                 // assert(cs.getCalledFunction() &&
                 //        "Indirect call detected in thunk func");

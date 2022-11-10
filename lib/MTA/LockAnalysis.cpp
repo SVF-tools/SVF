@@ -172,7 +172,7 @@ void LockAnalysis::analyzeIntraProcedualLock()
     for (InstSet::const_iterator it = locksites.begin(), ie = locksites.end(); it != ie; ++it)
     {
         const SVFInstruction* lockSite = *it;
-        assert(SVFUtil::isa<CallInst>(lockSite->getLLVMInstruction()) && "Lock acquire instruction must be CallInst");
+        assert(SVFUtil::isCallSite(lockSite) && "Lock acquire instruction must be a CallSite");
 
         // Perform forward traversal
         InstSet forwardInsts;
@@ -395,11 +395,11 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
             if(removeCxtStmtToSpan(cts,cts))
                 handleIntra(cts);
         }
-        else if (SVFUtil::isa<CallInst>(curInst->getLLVMInstruction()) && !isExtCall(curInst))
+        else if (SVFUtil::isCallSite(curInst) && !isExtCall(curInst))
         {
             handleCall(cts);
         }
-        else if (SVFUtil::isa<ReturnInst>(curInst->getLLVMInstruction()))
+        else if (SymbolTableInfo::isReturn(curInst))
         {
             handleRet(cts);
         }

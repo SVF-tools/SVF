@@ -546,8 +546,8 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
                 CallSite cs(svfInst);
                 assert(cs.getNumArgOperands() == 2
                        && "arguments should be two pointers!!");
-                Value* V1 = cs.getArgOperand(0);
-                Value* V2 = cs.getArgOperand(1);
+                const Value* V1 = cs.getArgOperand(0);
+                const Value* V2 = cs.getArgOperand(1);
                 AliasResult aliasRes = alias(V1, V2);
 
                 bool checkSuccessful = false;
@@ -609,12 +609,13 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 
         for (Value::user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
-            if (CallInst *call = SVFUtil::dyn_cast<CallInst>(*i))
+            if (isCallSite(*i))
             {
-                assert(call->arg_size() == 2
+                CallSite call = getLLVMCallSite(*i);
+                assert(call.arg_size() == 2
                        && "arguments should be two pointers!!");
-                Value* V1 = call->getArgOperand(0);
-                Value* V2 = call->getArgOperand(1);
+                const Value* V1 = call.getArgOperand(0);
+                const Value* V2 = call.getArgOperand(1);
                 AliasResult aliasRes = alias(V1, V2);
 
                 bool expectedFailure = false;
@@ -638,11 +639,11 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 
                 if (expectedFailure)
                     outs() << sucMsg("\t EXPECTED-FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                           << getSourceLoc(call) << ")\n";
+                           << getSourceLoc(call.getInstruction()->getLLVMInstruction()) << ")\n";
                 else
                 {
                     SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                                    << getSourceLoc(call) << ")\n";
+                                    << getSourceLoc(call.getInstruction()->getLLVMInstruction()) << ")\n";
                     assert(false && "test case failed!");
                 }
             }

@@ -1014,7 +1014,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
         DBOUT(DPAGBuild, outs() << "\n      varargs:");
         for (; itA != ieA; ++itA)
         {
-            Value *AA = cs.getArgOperand(itA);
+            const Value *AA = cs.getArgOperand(itA);
             NodeID vnAA = getValueNode(AA);
             CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
             FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(F);
@@ -1119,7 +1119,7 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
  * Add the load/store constraints and temp. nodes for the complex constraint
  * *D = *S (where D/S may point to structs).
  */
-void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue)
+void SVFIRBuilder::addComplexConsForExt(const Value *D, const Value *S, const Value* szValue)
 {
     assert(D && S);
     NodeID vnD= getValueNode(D), vnS= getValueNode(S);
@@ -1386,8 +1386,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     {
                         assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
 
-                        Value *vArg1 = cs.getArgument(1);
-                        Value *vArg3 = cs.getArgument(3);
+                        const Value *vArg1 = cs.getArgument(1);
+                        const Value *vArg3 = cs.getArgument(3);
 
                         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                         // Now we calculate the offset from base to vArg3

@@ -189,7 +189,7 @@ class CxtThread
 {
 public:
     /// Constructor
-    CxtThread(const CallStrCxt& c, const CallInst* fork) : cxt(c), forksite(fork), inloop(false), incycle(false)
+    CxtThread(const CallStrCxt& c, const SVFInstruction* fork) : cxt(c), forksite(fork), inloop(false), incycle(false)
     {
     }
     /// Copy constructor
@@ -207,7 +207,7 @@ public:
         return cxt;
     }
     /// Return forksite
-    inline const CallInst* getThread() const
+    inline const SVFInstruction* getThread() const
     {
         return forksite;
     }
@@ -282,7 +282,8 @@ public:
 
         if(forksite)
         {
-            SVFUtil::outs() << "[ Thread: $" << SVFUtil::getSourceLoc(forksite) << "$ " << SVFUtil::value2String(forksite)  << "\t Contexts: " << cxtToStr()
+            SVFUtil::outs() << "[ Thread: $" << SVFUtil::getSourceLoc(forksite->getLLVMInstruction()) << "$ " 
+                            << SVFUtil::value2String(forksite->getLLVMInstruction())  << "\t Contexts: " << cxtToStr()
                             << loop << cycle <<"  ]\n";
         }
         else
@@ -293,7 +294,7 @@ public:
     }
 protected:
     CallStrCxt cxt;
-    const CallInst* forksite;
+    const SVFInstruction* forksite;
     bool inloop;
     bool incycle;
 };

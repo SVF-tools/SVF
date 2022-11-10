@@ -56,18 +56,18 @@ std::vector<std::string> MTAResultValidator::split(const std::string &s, char de
     split(s, delim, elems);
     return elems;
 }
-NodeID MTAResultValidator::getIntArg(const SVFInstruction* inst, unsigned int arg_num)
+NodeID MTAResultValidator::getIntArg(const SVFInstruction* inst, u32_t arg_num)
 {
-    assert(SVFUtil::isa<CallInst>(inst->getLLVMInstruction()) && "getFirstIntArg: inst is not a callinst");
+    assert(SVFUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
-    ConstantInt* x = SVFUtil::dyn_cast<ConstantInt>(cs.getArgument(arg_num));
+    const ConstantInt* x = SVFUtil::dyn_cast<ConstantInt>(cs.getArgument(arg_num));
     assert((arg_num < cs.arg_size()) && "Does not has this argument");
     return (NodeID) x->getSExtValue();
 }
 
 std::vector<std::string> MTAResultValidator::getStringArg(const SVFInstruction* inst, unsigned int arg_num)
 {
-    assert(SVFUtil::isa<CallInst>(inst->getLLVMInstruction()) && "getFirstIntArg: inst is not a callinst");
+    assert(SVFUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
     assert((arg_num < cs.arg_size()) && "Does not has this argument");
     const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(arg_num));
@@ -95,10 +95,9 @@ CallStrCxt MTAResultValidator::getCxtArg(const SVFInstruction* inst, unsigned in
         y[0].erase(y[0].find("cs"), 2);
 
         const SVFFunction* callee = SVFUtil::getFunction(y[1]);
-        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(csnumToInstMap[atoi(y[0].c_str())]);
-        CallSite cs = SVFUtil::getLLVMCallSite(svfInst);
+        const SVFInstruction* svfInst = csnumToInstMap[atoi(y[0].c_str())];
         assert(callee && "callee error");
-        CallICFGNode* cbn = mhp->getTCT()->getCallICFGNode(cs.getInstruction());
+        CallICFGNode* cbn = mhp->getTCT()->getCallICFGNode(svfInst);
         CallSiteID csId = tcg->getCallSiteID(cbn, callee);
         cxt.push_back(csId);
     }
@@ -203,8 +202,8 @@ bool MTAResultValidator::collectCallsiteTargets()
                     inst = inst->getNextNode();
                     assert(inst && "Wrong cs label, cannot find callsite");
                 }
-                const CallInst *csInst = SVFUtil::dyn_cast<CallInst>(inst);
-                csnumToInstMap[csnum] = csInst;
+                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+                csnumToInstMap[csnum] = svfInst;
             }
         }
     }

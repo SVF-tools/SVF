@@ -1,9 +1,29 @@
 #include "Util/BasicTypes.h"
 #include "Util/SVFUtil.h"
+#include <llvm/IR/Instructions.h>
 
 using namespace SVF;
 using namespace SVFUtil;
 
+SVFFunction::SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
+        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false)
+{
+}
+
+u32_t SVFFunction::arg_size() const
+{
+    return getLLVMFun()->arg_size();
+}
+
+const Value* SVFFunction::getArg(u32_t idx) const
+{
+    return getLLVMFun()->getArg(idx);
+}
+
+bool SVFFunction::isVarArg() const
+{
+    return getLLVMFun()->isVarArg();
+}
 
 const std::vector<const BasicBlock*>& SVFFunction::getLoopInfo(const BasicBlock* bb) const
 {
@@ -107,4 +127,15 @@ bool SVFFunction::isLoopHeader(const BasicBlock* bb) const
         return blocks.front() == bb;
     }
     return false;
+}
+
+SVFBasicBlock::SVFBasicBlock(const BasicBlock* b, const SVFFunction* f): 
+    SVFValue(b->getName().str(),SVFValue::SVFBB), bb(b), fun(f)
+{
+}
+
+SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b): 
+    SVFValue(i->getName().str(), SVFInst), inst(i), bb(b), fun(bb->getParent()), 
+    type(i->getType()), terminator(i->isTerminator())
+{
 }

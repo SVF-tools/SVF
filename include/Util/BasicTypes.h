@@ -72,11 +72,6 @@ typedef llvm::GlobalAlias GlobalAlias;
 typedef llvm::NamedMDNode NamedMDNode;
 typedef llvm::MDNode MDNode;
 
-/// LLVM Instructions
-typedef llvm::CallInst CallInst;
-typedef llvm::StoreInst StoreInst;
-typedef llvm::LoadInst LoadInst;
-
 
 /// LLVM Iterators
 #if LLVM_VERSION_MAJOR >= 11
@@ -112,10 +107,7 @@ private:
 
 public:
 
-    SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false)
-    {
-    }
+    SVFFunction(Function* f);
 
     SVFFunction(void) = delete;
 
@@ -140,20 +132,9 @@ public:
         return isIntri;
     }
 
-    inline u32_t arg_size() const
-    {
-        return getLLVMFun()->arg_size();
-    }
-
-    const Value* getArg(u32_t idx) const
-    {
-        return getLLVMFun()->getArg(idx);
-    }
-
-    inline bool isVarArg() const
-    {
-        return getLLVMFun()->isVarArg();
-    }
+    u32_t arg_size() const;
+    const Value* getArg(u32_t idx) const;
+    bool isVarArg() const;
 
     inline void addBasicBlock(const SVFBasicBlock* bb) 
     {
@@ -281,9 +262,7 @@ private:
     const BasicBlock* bb;
     const SVFFunction* fun;
 public:
-    SVFBasicBlock(const BasicBlock* b, const SVFFunction* f): SVFValue(b->getName().str(),SVFValue::SVFBB), bb(b), fun(f)
-    {
-    }
+    SVFBasicBlock(const BasicBlock* b, const SVFFunction* f);
 
     static inline bool classof(const SVFValue *node)
     {
@@ -322,12 +301,11 @@ class SVFInstruction : public SVFValue
 private:
     const Instruction* inst;
     const SVFBasicBlock* bb;
-
+    const SVFFunction* fun;
+    const Type* type;
+    bool terminator;
 public:
-    SVFInstruction(const Instruction* i, const SVFBasicBlock* b): 
-        SVFValue(i->getName().str(), SVFInst), inst(i), bb(b)
-    {
-    }
+    SVFInstruction(const Instruction* i, const SVFBasicBlock* b);
     SVFInstruction(const Instruction* i) = delete;
     SVFInstruction(void) = delete;
 
@@ -348,17 +326,17 @@ public:
 
     inline const SVFFunction* getFunction() const
     {
-        return bb->getParent();
+        return fun;
     }
 
     inline const Type* getType() const
     {
-        return inst->getType();
+        return type;
     }
 
     inline bool isTerminator() const
     {
-        return inst->isTerminator();
+        return terminator;
     }
 };
 
@@ -385,13 +363,15 @@ private:
     const CallBase *CB;
     const SVFInstruction* inst;
 public:
-    CallSite(const SVFInstruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I->getLLVMInstruction())), inst(I) {}
+    CallSite(const SVFInstruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I->getLLVMInstruction())), inst(I) {
+        assert(CB && "not a callsite?");
+    }
 
     const SVFInstruction* getInstruction() const
     {
         return inst;
     }
-    Value* getArgument(unsigned ArgNo) const
+    const Value* getArgument(u32_t ArgNo) const
     {
         return CB->getArgOperand(ArgNo);
     }
@@ -407,7 +387,7 @@ public:
     {
         return CB->arg_empty();
     }
-    Value* getArgOperand(unsigned i) const
+    const Value* getArgOperand(u32_t i) const
     {
         return CB->getArgOperand(i);
     }
@@ -415,11 +395,11 @@ public:
     {
         return CB->arg_size();
     }
-    Function* getCalledFunction() const
+    const Function* getCalledFunction() const
     {
         return CB->getCalledFunction();
     }
-    Value* getCalledValue() const
+    const Value* getCalledValue() const
     {
         return CB->getCalledOperand();
     }
@@ -427,7 +407,7 @@ public:
     {
         return CB->getCaller();
     }
-    FunctionType* getFunctionType() const
+    const FunctionType* getFunctionType() const
     {
         return CB->getFunctionType();
     }

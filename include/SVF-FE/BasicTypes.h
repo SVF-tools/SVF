@@ -88,6 +88,9 @@ typedef llvm::LoopInfo LoopInfo;
 typedef llvm::User User;
 
 // LLVM Instructions
+typedef llvm::CallInst CallInst;
+typedef llvm::StoreInst StoreInst;
+typedef llvm::LoadInst LoadInst;
 typedef llvm::AllocaInst AllocaInst;
 typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
 typedef llvm::AtomicRMWInst AtomicRMWInst;

@@ -51,7 +51,7 @@ private:
                 return I;
             SVFFunction* callee = nullptr;
 
-            if(SVFUtil::isa<CallInst> (I))
+            if(SVFUtil::isCallSite(I))
             {
                 PTACallGraph::FunctionSet callees;
                 const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);

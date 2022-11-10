@@ -213,11 +213,20 @@ inline bool isNonInstricCallSite(const SVFInstruction* inst)
     return isCallSite(inst);
 }
 
-/// Return LLVM callsite given a instruction
+/// Return LLVM callsite given an instruction
 inline CallSite getLLVMCallSite(const SVFInstruction* inst)
 {
     assert(isCallSite(inst) && "not a callsite?");
     CallSite cs(inst);
+    return cs;
+}
+
+/// Return LLVM callsite given a value
+inline CallSite getLLVMCallSite(const Value* value)
+{
+    assert(isCallSite(value) && "not a callsite?");
+    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<CallBase>(value));
+    CallSite cs(svfInst);
     return cs;
 }
 
@@ -269,7 +278,7 @@ inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
 inline const SVFFunction* getCallee(const CallSite cs)
 {
     // FIXME: do we need to strip-off the casts here to discover more library functions
-    Function *callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
+    const Function *callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
     return getDefFunForMultipleModule(callee);
 }
 

@@ -77,7 +77,7 @@ protected:
     /*
      * Collect the callsite targets for validations.
      * The targets are labeled by "cs1:", "cs2:"... that are the names of its basic blocks.
-     * The collected targets are stored in csnumToInstMap that maps label "cs1" to CallInst.
+     * The collected targets are stored in csnumToInstMap that maps label "cs1" to its Callsite.
      */
     bool collectCallsiteTargets();
 
@@ -117,7 +117,7 @@ protected:
 
 private:
 
-    typedef Map<NodeID, const CallInst*> csnumToInst;
+    typedef Map<NodeID, const SVFInstruction*> csnumToInst;
     typedef Map<NodeID, CallStrCxt> vthdToCxtMap;
     typedef Map<NodeID, NodeID> vthdTorthdMap;
     typedef Map<NodeID, NodeID> rthdTovthdMap;
@@ -274,7 +274,7 @@ protected:
     void collectValidationTargets()
     {
         // Collect call sites of all RC_ACCESS function calls.
-        std::vector<const CallInst*> csInsts;
+        std::vector<CallSite> csInsts;
         const Function *F = nullptr;
         for(auto it = M->llvmFunBegin(); it != M->llvmFunEnd(); it++)
         {
@@ -292,9 +292,10 @@ protected:
         {
             const Use *u = &*it;
             const Value *user = u->getUser();
-            const CallInst *csInst = SVFUtil::dyn_cast<CallInst>(user);
-            assert(csInst);
-            csInsts.push_back(csInst);
+            if(SVFUtil::isCallSite(user)){
+                CallSite csInst = SVFUtil::getLLVMCallSite(user);
+                csInsts.push_back(csInst);
+            }
         }
         assert(csInsts.size() % 2 == 0 && "We should have RC_ACCESS called in pairs.");
 
@@ -304,12 +305,12 @@ protected:
         // Generate access pairs.
         for (int i = 0, e = csInsts.size(); i != e;)
         {
-            const CallInst *CI1 = csInsts[i++];
-            const CallInst *CI2 = csInsts[i++];
-            const ConstantInt *C = SVFUtil::dyn_cast<ConstantInt>(CI1->getOperand(1));
+            CallSite CI1 = csInsts[i++];
+            CallSite CI2 = csInsts[i++];
+            const ConstantInt *C = SVFUtil::dyn_cast<ConstantInt>(CI1.getArgOperand(1));
             assert(C);
-            const Instruction *I1 = getPreviousMemoryAccessInst(CI1);
-            const Instruction *I2 = getPreviousMemoryAccessInst(CI2);
+            const Instruction *I1 = getPreviousMemoryAccessInst(CI1.getInstruction()->getLLVMInstruction());
+            const Instruction *I2 = getPreviousMemoryAccessInst(CI2.getInstruction()->getLLVMInstruction());
             assert(I1 && I2 && "RC_ACCESS should be placed immediately after the target memory access.");
             RC_FLAG flags = C->getZExtValue();
             accessPairs.push_back(AccessPair(I1, I2, flags));
@@ -390,10 +391,10 @@ private:
      * Comparison function to sort the validation targets in ascending order of
      * the validation id (i.e., the 1st argument of RC_ACCESS function call).
      */
-    static bool compare(const CallInst *CI1, const CallInst *CI2)
+    static bool compare(CallSite CI1, CallSite CI2)
     {
-        const Value *V1 = CI1->getOperand(0);
-        const Value *V2 = CI2->getOperand(0);
+        const Value *V1 = CI1.getArgOperand(0);
+        const Value *V2 = CI2.getArgOperand(0);
         const ConstantInt *C1 = SVFUtil::dyn_cast<ConstantInt>(V1);
         const ConstantInt *C2 = SVFUtil::dyn_cast<ConstantInt>(V2);
         assert(0 != C1 && 0 != C2);

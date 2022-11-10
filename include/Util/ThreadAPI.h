@@ -234,18 +234,7 @@ public:
     //@{
     /// Return the first argument of the call,
     /// Note that, it is the pthread_t pointer
-    inline const Value* getJoinedThread(const SVFInstruction *inst) const
-    {
-        assert(isTDJoin(inst) && "not a thread join function!");
-        CallSite cs = getLLVMCallSite(inst);
-        Value* join = cs.getArgument(0);
-        if(SVFUtil::isa<LoadInst>(join))
-            return SVFUtil::cast<LoadInst>(join)->getPointerOperand();
-        else if(SVFUtil::isa<Argument>(join))
-            return join;
-        assert(false && "the value of the first argument at join is not a load instruction?");
-        return nullptr;
-    }
+    const Value* getJoinedThread(const SVFInstruction *inst) const;
     inline const Value* getJoinedThread(CallSite cs) const
     {
         return getJoinedThread(cs.getInstruction());
