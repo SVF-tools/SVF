@@ -91,20 +91,24 @@ class SVFBasicBlock;
 
 class SVFFunction : public SVFValue
 {
+
+public:
+    typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
+
 private:
     bool isDecl;
     bool isIntri;
     Function* fun;
-    BasicBlock* exitBB;
-    std::vector<const BasicBlock*> reachableBBs;
+    const SVFBasicBlock* exitBB;
+    std::vector<const SVFBasicBlock*> reachableBBs;
     std::vector<const SVFBasicBlock*> allBBs;
     bool isUncalled;
     bool isNotRet;
     bool varArg;
-    Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
-    Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
-    Map<const BasicBlock*,Set<const BasicBlock*>> pdtBBsMap;
-    Map<const BasicBlock*,std::vector<const BasicBlock*>> bb2LoopMap;
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> dtBBsMap;
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> dfBBsMap;
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> pdtBBsMap;
+    Map<const SVFBasicBlock*,std::vector<const SVFBasicBlock*>> bb2LoopMap;
 
 public:
 
@@ -141,18 +145,23 @@ public:
     {
         allBBs.push_back(bb);
     }
+    
+    inline const SVFBasicBlock* getEntryBlock() const
+    {
+        return allBBs.front();
+    }
 
-    inline std::vector<const SVFBasicBlock*>::const_iterator begin() const
+    inline const_iterator begin() const
     {
         return allBBs.begin();
     }
 
-    inline std::vector<const SVFBasicBlock*>::const_iterator end() const
+    inline const_iterator end() const
     {
         return allBBs.end();
     }
 
-    inline const std::vector<const BasicBlock*>& getReachableBBs() const
+    inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
     {
         return reachableBBs;
     }
@@ -162,69 +171,69 @@ public:
         return isUncalled;
     }
 
-    inline const void setIsUncalledFunction(const bool isUncalledFunction)
+    inline const void setIsUncalledFunction(bool isUncalledFunction)
     {
         this->isUncalled = isUncalledFunction;
     }
 
-    inline const void setIsNotRet(const bool doesNotRet)
+    inline const void setIsNotRet(bool doesNotRet)
     {
         this->isNotRet = doesNotRet;
     }
 
-    inline const void setExitBB(BasicBlock* exitBB)
+    inline const void setExitBB(const SVFBasicBlock* exitBB)
     {
         this->exitBB = exitBB;
     }
 
-    inline const void setReachableBBs(std::vector<const BasicBlock*> reachableBBs)
+    inline const void setReachableBBs(std::vector<const SVFBasicBlock*> reachableBBs)
     {
         this->reachableBBs = reachableBBs;
     }
 
-    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getDomFrontierMap() const
+    inline const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomFrontierMap() const
     {
         return dfBBsMap;
     }
 
-    inline Map<const BasicBlock*,Set<const BasicBlock*>>& getDomFrontierMap()
+    inline Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomFrontierMap()
     {
         return dfBBsMap;
     }
 
-    inline bool hasLoopInfo(const BasicBlock* bb) const
+    inline bool hasLoopInfo(const SVFBasicBlock* bb) const
     {
         return bb2LoopMap.find(bb)!=bb2LoopMap.end();
     }
 
-    const std::vector<const BasicBlock*>& getLoopInfo(const BasicBlock* bb) const;
+    const std::vector<const SVFBasicBlock*>& getLoopInfo(const SVFBasicBlock* bb) const;
 
-    inline void addToBB2LoopMap(const BasicBlock* bb, const BasicBlock* loopBB)
+    inline void addToBB2LoopMap(const SVFBasicBlock* bb, const SVFBasicBlock* loopBB)
     {
         bb2LoopMap[bb].push_back(loopBB);
     }
 
-    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getPostDomTreeMap() const
+    inline const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getPostDomTreeMap() const
     {
         return pdtBBsMap;
     }
 
-    inline Map<const BasicBlock*,Set<const BasicBlock*>>& getPostDomTreeMap()
+    inline Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getPostDomTreeMap()
     {
         return pdtBBsMap;
     }
 
-    inline Map<const BasicBlock*,Set<const BasicBlock*>>& getDomTreeMap()
+    inline Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomTreeMap()
     {
         return dtBBsMap;
     }
 
-    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getDomTreeMap() const
+    inline const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomTreeMap() const
     {
         return dtBBsMap;
     }
 
-    inline bool isUnreachable(const BasicBlock* bb) const
+    inline bool isUnreachable(const SVFBasicBlock* bb) const
     {
         return std::find(reachableBBs.begin(), reachableBBs.end(), bb)==reachableBBs.end();
     }
@@ -234,18 +243,18 @@ public:
         return isNotRet;
     }
 
-    inline const BasicBlock* getExitBB() const
+    inline const SVFBasicBlock* getExitBB() const
     {
         return this->exitBB;
     }
 
-    void getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const;
+    void getExitBlocksOfLoop(const SVFBasicBlock* bb, Set<const SVFBasicBlock*>& exitbbs) const;
 
-    bool isLoopHeader(const BasicBlock* bb) const;
+    bool isLoopHeader(const SVFBasicBlock* bb) const;
 
-    bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const;
+    bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
 
-    bool postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const;
+    bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
 
     // Dump Control Flow Graph of llvm function, with instructions
     void viewCFG();
@@ -257,6 +266,9 @@ public:
 
 class SVFBasicBlock : public SVFValue
 {
+
+public:
+    typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
 
 private:
     std::vector<const SVFInstruction*> allInsts;
@@ -275,12 +287,12 @@ public:
         allInsts.push_back(inst);
     }
 
-    inline std::vector<const SVFInstruction*>::const_iterator begin() const
+    inline const_iterator begin() const
     {
         return allInsts.begin();
     }
 
-    inline std::vector<const SVFInstruction*>::const_iterator end() const
+    inline const_iterator end() const
     {
         return allInsts.end();
     }
@@ -288,6 +300,16 @@ public:
     inline const SVFFunction* getParent() const
     {
         return fun;
+    }
+
+    inline const SVFInstruction* front() const
+    {
+        return allInsts.front();
+    }
+
+    inline const SVFInstruction* back() const
+    {
+        return allInsts.back();
     }
 
     inline const BasicBlock* getLLVMBasicBlock() const

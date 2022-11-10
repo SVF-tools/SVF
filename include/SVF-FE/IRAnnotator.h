@@ -124,7 +124,7 @@ private:
         {
             processGlobalVarNode(globalVar, nodeId, writeFlag);
         }
-        else if (auto basicBlock = const_cast<BasicBlock *>(SVFUtil::dyn_cast<BasicBlock>(value)))
+        else if (auto basicBlock = const_cast<BasicBlock* >(SVFUtil::dyn_cast<BasicBlock>(value)))
         {
             processBasicBlockNode(basicBlock, nodeId, writeFlag);
         }
@@ -215,7 +215,7 @@ private:
         }
     }
 
-    void processBasicBlockNode(BasicBlock *basicBlock, const SVF::NodeID &nodeId, bool writeFlag)
+    void processBasicBlockNode(BasicBlock* basicBlock, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "bnode-" + std::to_string(nodeId);
 

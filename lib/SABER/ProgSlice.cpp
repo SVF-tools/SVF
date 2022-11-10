@@ -61,8 +61,8 @@ bool ProgSlice::AllPathReachableSolve()
             if(inBackwardSlice(succ))
             {
                 Condition vfCond;
-                const BasicBlock* nodeBB = getSVFGNodeBB(node);
-                const BasicBlock* succBB = getSVFGNodeBB(succ);
+                const SVFBasicBlock* nodeBB = getSVFGNodeBB(node);
+                const SVFBasicBlock* succBB = getSVFGNodeBB(succ);
                 /// clean up the control flow conditions for next round guard computation
                 clearCFCond();
 

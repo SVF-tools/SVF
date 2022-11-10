@@ -343,9 +343,9 @@ bool SymbolTableInfo::isPtrInUncalledFunction (const Value * value)
     return ptrInUncalledFunctionSet.find(value) != ptrInUncalledFunctionSet.end();
 }
 
-const u32_t SymbolTableInfo::getBBSuccessorNum(const BasicBlock *bb)
+const u32_t SymbolTableInfo::getBBSuccessorNum(const SVFBasicBlock* bb)
 {
-    Map<const BasicBlock*, const u32_t>::const_iterator bbSuccessorNumMapIter = symInfo->getModule()->getBBSuccessorNumMap().find(bb);
+    Map<const SVFBasicBlock*, const u32_t>::const_iterator bbSuccessorNumMapIter = symInfo->getModule()->getBBSuccessorNumMap().find(bb);
     if (bbSuccessorNumMapIter != symInfo->getModule()->getBBSuccessorNumMap().end())
     {
         return bbSuccessorNumMapIter->second;
@@ -353,13 +353,13 @@ const u32_t SymbolTableInfo::getBBSuccessorNum(const BasicBlock *bb)
     return 0;
 }
 
-const u32_t SymbolTableInfo::getBBSuccessorPos(const BasicBlock *bb, const BasicBlock *succ)
+const u32_t SymbolTableInfo::getBBSuccessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* succ)
 {
-    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::const_iterator bbSuccessorPosMapIter = symInfo->getModule()->getBBSuccessorPosMap().find(bb);
+    Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>::const_iterator bbSuccessorPosMapIter = symInfo->getModule()->getBBSuccessorPosMap().find(bb);
     if(bbSuccessorPosMapIter != symInfo->getModule()->getBBSuccessorPosMap().end())
     {
-        const Map <const BasicBlock *, const u32_t> value = bbSuccessorPosMapIter->second;
-        Map <const BasicBlock *, const u32_t>::const_iterator valueIter = value.find(succ);
+        const Map <const SVFBasicBlock* , const u32_t> value = bbSuccessorPosMapIter->second;
+        Map <const SVFBasicBlock* , const u32_t>::const_iterator valueIter = value.find(succ);
         if(valueIter != value.end())
         {
             u32_t pos = valueIter->second;
@@ -369,11 +369,11 @@ const u32_t SymbolTableInfo::getBBSuccessorPos(const BasicBlock *bb, const Basic
     return 0;
 }
 
-const u32_t SymbolTableInfo::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *Pred)
+const u32_t SymbolTableInfo::getBBPredecessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* Pred)
 {
     if(symInfo->getModule()->getBBPredecessorPosMap().find(bb) != symInfo->getModule()->getBBPredecessorPosMap().end())
     {
-        const Map <const BasicBlock *, const u32_t> value = symInfo->getModule()->getBBPredecessorPosMap().find(bb)->second;
+        const Map <const SVFBasicBlock* , const u32_t> value = symInfo->getModule()->getBBPredecessorPosMap().find(bb)->second;
         if(value.find(Pred) != value.end())
         {
             u32_t pos = value.find(Pred)->second;

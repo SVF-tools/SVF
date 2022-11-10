@@ -160,7 +160,7 @@ inline bool isArgOfUncalledFunction (const Value * val)
 bool functionDoesNotRet (const Function*  fun);
 
 /// Get reachable basic block from function entry
-void getFunReachableBBs (const SVFFunction* svfFun, std::vector<const BasicBlock*>& bbs);
+void getFunReachableBBs (const SVFFunction* svfFun, std::vector<const SVFBasicBlock*>& bbs);
 
 /// Get function exit basic block
 /// FIXME: this back() here is only valid when UnifyFunctionExitNodes pass is invoked
@@ -293,13 +293,13 @@ void getNextInsts(const SVFInstruction* curInst, std::vector<const SVFInstructio
 void getPrevInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList);
 
 /// Get basic block successor position
-u32_t getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ);
+u32_t getBBSuccessorPos(const BasicBlock* BB, const BasicBlock* Succ);
 /// Get num of BB's successors
-u32_t getBBSuccessorNum(const BasicBlock *BB);
+u32_t getBBSuccessorNum(const BasicBlock* BB);
 /// Get basic block predecessor positin
-u32_t getBBPredecessorPos(const BasicBlock *BB, const BasicBlock *Pred);
+u32_t getBBPredecessorPos(const BasicBlock* BB, const BasicBlock* Pred);
 /// Get num of BB's predecessors
-u32_t getBBPredecessorNum(const BasicBlock *BB);
+u32_t getBBPredecessorNum(const BasicBlock* BB);
 
 
 

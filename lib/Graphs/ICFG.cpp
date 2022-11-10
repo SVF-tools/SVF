@@ -43,7 +43,7 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGN
     // if function is implemented
     if (f->getLLVMFun()->begin() != f->getLLVMFun()->end())
     {
-        bb = &(f->getLLVMFun()->getEntryBlock());
+        bb = f->getEntryBlock();
     }
 }
 
@@ -118,7 +118,7 @@ const std::string FunExitICFGNode::toString() const
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
-        rawstr << getSourceLoc(getFun()->getExitBB()->getFirstNonPHI());
+        rawstr << getSourceLoc(getFun()->getExitBB()->front()->getLLVMInstruction());
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();

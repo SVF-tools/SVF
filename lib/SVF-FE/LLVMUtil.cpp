@@ -91,7 +91,7 @@ bool LLVMUtil::isConstantObjSym(const Value *val)
 /*!
  * Return reachable bbs from function entry
  */
-void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const BasicBlock*> &reachableBBs)
+void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const SVFBasicBlock*> &reachableBBs)
 {
     assert(!SVFUtil::isExtCall(svfFun) && "The calling function cannot be an external function.");
     //initial DominatorTree
@@ -105,7 +105,8 @@ void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const 
     {
         const BasicBlock* bb = bbVec.back();
         bbVec.pop_back();
-        reachableBBs.push_back(bb);
+        const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
+        reachableBBs.push_back(svfbb);
         if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb)))
         {
             for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end();
@@ -269,7 +270,7 @@ void LLVMUtil::getNextInsts(const SVFInstruction* curInst, std::vector<const SVF
     }
     else
     {
-        const BasicBlock *BB = curInst->getParent()->getLLVMBasicBlock();
+        const BasicBlock* BB = curInst->getParent()->getLLVMBasicBlock();
         // Visit all successors of BB in the CFG
         for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it)
         {
@@ -300,7 +301,7 @@ void LLVMUtil::getPrevInsts(const SVFInstruction* curInst, std::vector<const SVF
     }
     else
     {
-        const BasicBlock *BB = curInst->getParent()->getLLVMBasicBlock();
+        const BasicBlock* BB = curInst->getParent()->getLLVMBasicBlock();
         // Visit all successors of BB in the CFG
         for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
         {
@@ -369,10 +370,10 @@ const Type* LLVMUtil::getTypeOfHeapAlloc(const SVFInstruction *inst)
 /*!
  * Get position of a successor basic block
  */
-u32_t LLVMUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ)
+u32_t LLVMUtil::getBBSuccessorPos(const BasicBlock* BB, const BasicBlock* Succ)
 {
     u32_t i = 0;
-    for (const BasicBlock *SuccBB: successors(BB))
+    for (const BasicBlock* SuccBB: successors(BB))
     {
         if (SuccBB == Succ)
             return i;
@@ -386,7 +387,7 @@ u32_t LLVMUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ)
 /*!
  * Return a position index from current bb to it successor bb
  */
-u32_t LLVMUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succbb)
+u32_t LLVMUtil::getBBPredecessorPos(const BasicBlock* bb, const BasicBlock* succbb)
 {
     u32_t pos = 0;
     for (const_pred_iterator it = pred_begin(succbb), et = pred_end(succbb); it != et; ++it, ++pos)
@@ -401,7 +402,7 @@ u32_t LLVMUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succ
 /*!
  *  Get the num of BB's successors
  */
-u32_t LLVMUtil::getBBSuccessorNum(const BasicBlock *BB)
+u32_t LLVMUtil::getBBSuccessorNum(const BasicBlock* BB)
 {
     return BB->getTerminator()->getNumSuccessors();
 }
@@ -409,7 +410,7 @@ u32_t LLVMUtil::getBBSuccessorNum(const BasicBlock *BB)
 /*!
  * Get the num of BB's predecessors
  */
-u32_t LLVMUtil::getBBPredecessorNum(const BasicBlock *BB)
+u32_t LLVMUtil::getBBPredecessorNum(const BasicBlock* BB)
 {
     u32_t num = 0;
     for (const_pred_iterator it = pred_begin(BB), et = pred_end(BB); it != et; ++it)

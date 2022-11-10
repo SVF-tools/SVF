@@ -58,7 +58,7 @@ public:
 
 private:
     const Value* value;	///< LLVM value
-    const BasicBlock *basicBlock;   ///< LLVM BasicBlock
+    const SVFBasicBlock* basicBlock;   ///< LLVM BasicBlock
     ICFGNode *icfgNode;   ///< ICFGNode
     EdgeID edgeId;					///< Edge ID
 public:
@@ -120,11 +120,11 @@ public:
     {
         return value;
     }
-    inline void setBB(const BasicBlock *bb)
+    inline void setBB(const SVFBasicBlock* bb)
     {
         basicBlock = bb;
     }
-    inline const BasicBlock* getBB() const
+    inline const SVFBasicBlock* getBB() const
     {
         return basicBlock;
     }

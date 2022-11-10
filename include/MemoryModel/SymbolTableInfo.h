@@ -163,10 +163,10 @@ public:
     static bool isArgOfUncalledFunction(const Value *val);
     static bool isReturn(const SVFInstruction *inst);
     static bool isPtrInUncalledFunction (const Value * value);
-    static const u32_t getBBSuccessorNum(const BasicBlock *bb);
+    static const u32_t getBBSuccessorNum(const SVFBasicBlock* bb);
     static const Type* getPtrElementType(const PointerType* pty);
-    static const u32_t getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ);
-    static const u32_t getBBPredecessorPos(const BasicBlock *BB, const BasicBlock *Pred);
+    static const u32_t getBBSuccessorPos(const SVFBasicBlock* BB, const SVFBasicBlock* Succ);
+    static const u32_t getBBPredecessorPos(const SVFBasicBlock* BB, const SVFBasicBlock* Pred);
 
     static inline bool isBlkPtr(NodeID id)
     {

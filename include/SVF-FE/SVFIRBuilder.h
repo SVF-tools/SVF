@@ -246,7 +246,7 @@ protected:
     {
         return curVal;
     }
-    inline const BasicBlock *getCurrentBB() const
+    inline const BasicBlock* getCurrentBB() const
     {
         return curBB;
     }

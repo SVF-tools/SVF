@@ -140,13 +140,11 @@ void MemSSA::createMUCHI(const SVFFunction& fun)
     for (BBList::const_iterator iter = reachableBBs.begin(), eiter = reachableBBs.end();
             iter != eiter; ++iter)
     {
-        const BasicBlock* bb = *iter;
+        const SVFBasicBlock* bb = *iter;
         varKills.clear();
-        for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
-                it != eit; ++it)
+        for (SVFBasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it)
         {
-            const Instruction* i = &*it;
-            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
+            const SVFInstruction* inst = *it;
             if(mrGen->hasSVFStmtList(inst))
             {
                 SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
@@ -207,7 +205,7 @@ void MemSSA::insertPHI(const SVFFunction& fun)
     DBOUT(DMSSA,
           outs() << "\t insert phi for function " << fun.getName() << "\n");
 
-    const Map<const BasicBlock*,Set<const BasicBlock*>>& df = fun.getDomFrontierMap();
+    const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& df = fun.getDomFrontierMap();
     // record whether a phi of mr has already been inserted into the bb.
     BBToMRSetMap bb2MRSetMap;
 
@@ -220,16 +218,16 @@ void MemSSA::insertPHI(const SVFFunction& fun)
         BBList bbs = reg2BBMap[mr];
         while (!bbs.empty())
         {
-            const BasicBlock* bb = bbs.back();
+            const SVFBasicBlock* bb = bbs.back();
             bbs.pop_back();
-            Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator it = df.find(bb);
+            Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>::const_iterator it = df.find(bb);
             if(it == df.end())
             {
                 writeWrnMsg("bb not in the dominance frontier map??");
                 continue;
             }
-            const Set<const BasicBlock*>& domSet = it->second;
-            for (const BasicBlock *pbb : domSet)
+            const Set<const SVFBasicBlock*>& domSet = it->second;
+            for (const SVFBasicBlock* pbb : domSet)
             {
                 // if we never insert this phi node before
                 if (0 == bb2MRSetMap[pbb].count(mr))
@@ -255,14 +253,14 @@ void MemSSA::SSARename(const SVFFunction& fun)
     DBOUT(DMSSA,
           outs() << "\t ssa rename for function " << fun.getName() << "\n");
 
-    SSARenameBB(fun.getLLVMFun()->getEntryBlock());
+    SSARenameBB(*fun.getEntryBlock());
 }
 
 /*!
  * Renaming for each memory regions
  * See the renaming algorithm in book Engineering A Compiler (Figure 9.12)
  */
-void MemSSA::SSARenameBB(const BasicBlock& bb)
+void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
 {
 
     SVFIR* pag = pta->getPAG();
@@ -283,11 +281,10 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
     // 		rewrite r' with top mrver of stack(r)
     // 		rewrite r with new name
 
-    for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
+    for (SVFBasicBlock::const_iterator it = bb.begin(), eit = bb.end();
             it != eit; ++it)
     {
-        const Instruction* i = &*it;
-        const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
+        const SVFInstruction* inst = *it;
         if(mrGen->hasSVFStmtList(inst))
         {
             SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
@@ -314,30 +311,30 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
         }
         else if(SymbolTableInfo::isReturn(inst))
         {
-            const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
+            const SVFFunction* fun = bb.getParent();
             RenameMuSet(getReturnMuSet(fun));
         }
     }
 
 
     // fill phi operands of succ basic blocks
-    for (succ_const_iterator sit = succ_begin(&bb), esit = succ_end(&bb);
+    for (succ_const_iterator sit = succ_begin(bb.getLLVMBasicBlock()), esit = succ_end(bb.getLLVMBasicBlock());
             sit != esit; ++sit)
     {
-        const BasicBlock* succ = *sit;
+        const SVFBasicBlock* succ = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(*sit);
         u32_t pos = SymbolTableInfo::getBBPredecessorPos(&bb, succ);
         if (hasPHISet(succ))
             RenamePhiOps(getPHISet(succ),pos,memRegs);
     }
 
     // for succ basic block in dominator tree
-    const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
-    const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = fun->getDomTreeMap();
-    Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(&bb);
+    const SVFFunction* fun = bb.getParent();
+    const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& dtBBsMap = fun->getDomTreeMap();
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>::const_iterator mapIter = dtBBsMap.find(&bb);
     if (mapIter != dtBBsMap.end())
     {
-        const Set<const BasicBlock*>& dtBBs = mapIter->second;
-        for (const BasicBlock *dtbb : dtBBs)
+        const Set<const SVFBasicBlock*>& dtBBs = mapIter->second;
+        for (const SVFBasicBlock* dtbb : dtBBs)
         {
             SSARenameBB(*dtbb);
         }
@@ -602,24 +599,22 @@ void MemSSA::dumpMSSA(OutStream& Out)
             }
         }
 
-        for (Function::const_iterator bit = fun->getLLVMFun()->begin(), ebit = fun->getLLVMFun()->end();
+        for (SVFFunction::const_iterator bit = fun->begin(), ebit = fun->end();
                 bit != ebit; ++bit)
         {
-            const BasicBlock& bb = *bit;
-            if (bb.hasName())
-                Out << bb.getName().str() << "\n";
-            PHISet& phiSet = getPHISet(&bb);
+            const SVFBasicBlock* bb = *bit;
+            Out << bb->getName() << "\n";
+            PHISet& phiSet = getPHISet(bb);
             for(PHISet::iterator pi = phiSet.begin(), epi = phiSet.end(); pi !=epi; ++pi)
             {
                 (*pi)->dump();
             }
 
             bool last_is_chi = false;
-            for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
+            for (SVFBasicBlock::const_iterator it = bb->begin(), eit = bb->end();
                     it != eit; ++it)
             {
-                const Instruction& i = *it;
-                const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&i);
+                const SVFInstruction* inst = *it;
                 bool isAppCall = isNonInstricCallSite(inst) && !isExtCall(inst);
                 if (isAppCall || isHeapAllocExtCall(inst))
                 {

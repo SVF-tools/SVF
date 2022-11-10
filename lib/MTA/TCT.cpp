@@ -137,7 +137,7 @@ void TCT::markRelProcs()
 {
     for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
     {
-        const SVFFunction* svfun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction((*it)->getParent()->getParent());
+        const SVFFunction* svfun = (*it)->getParent()->getParent();
         markRelProcs(svfun);
 
         for(ThreadCallGraph::ForkEdgeSet::const_iterator nit = tcg->getForkEdgeBegin(*it), neit = tcg->getForkEdgeEnd(*it); nit!=neit; nit++)
@@ -150,7 +150,7 @@ void TCT::markRelProcs()
 
     for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it)
     {
-        const SVFFunction* svfun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction((*it)->getParent()->getParent());
+        const SVFFunction* svfun = (*it)->getParent()->getParent();
         markRelProcs(svfun);
     }
 
@@ -291,17 +291,17 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge,
  */
 bool TCT::isJoinMustExecutedInLoop(const Loop* lp,const SVFInstruction* join)
 {
-    const BasicBlock* loopheadbb = lp->getHeader();
-    const BasicBlock* joinbb = join->getParent()->getLLVMBasicBlock();
+    const SVFBasicBlock* loopheadbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(lp->getHeader());
+    const SVFBasicBlock* joinbb = join->getParent();
     assert(loopheadbb->getParent()==joinbb->getParent() && "should inside same function");
 
-    const PostDominatorTree* pdt = getPostDT(loopheadbb->getParent());
-    for (succ_const_iterator it = succ_begin(loopheadbb), ie = succ_end(loopheadbb);
+    const PostDominatorTree* pdt = getPostDT(loopheadbb->getParent()->getLLVMFun());
+    for (succ_const_iterator it = succ_begin(loopheadbb->getLLVMBasicBlock()), ie = succ_end(loopheadbb->getLLVMBasicBlock());
             it != ie; ++it)
     {
         if(lp->contains(*it))
         {
-            if(pdt->dominates(joinbb,*it)==false)
+            if(pdt->dominates(joinbb->getLLVMBasicBlock(),*it)==false)
                 return false;
         }
     }
@@ -332,11 +332,11 @@ void TCT::collectLoopInfoForJoin()
 /*!
  * Return true if a given bb is a loop head of a inloop join site
  */
-bool TCT::isLoopHeaderOfJoinLoop(const BasicBlock* bb)
+bool TCT::isLoopHeaderOfJoinLoop(const SVFBasicBlock* bb)
 {
     for(InstToLoopMap::const_iterator it = joinSiteToLoopMap.begin(), eit = joinSiteToLoopMap.end(); it!=eit; ++it)
     {
-        if(it->second->getHeader() == bb)
+        if(it->second->getHeader() == bb->getLLVMBasicBlock())
             return true;
     }
 
@@ -346,7 +346,7 @@ bool TCT::isLoopHeaderOfJoinLoop(const BasicBlock* bb)
 /*!
  * Whether a given bb is an exit of a inloop join site
  */
-bool TCT::isLoopExitOfJoinLoop(const BasicBlock* bb)
+bool TCT::isLoopExitOfJoinLoop(const SVFBasicBlock* bb)
 {
     for(InstToLoopMap::const_iterator it = joinSiteToLoopMap.begin(), eit = joinSiteToLoopMap.end(); it!=eit; ++it)
     {
@@ -355,7 +355,7 @@ bool TCT::isLoopExitOfJoinLoop(const BasicBlock* bb)
         while(!exitbbs.empty())
         {
             BasicBlock* eb = exitbbs.pop_back_val();
-            if(eb == bb)
+            if(eb == bb->getLLVMBasicBlock())
                 return true;
         }
     }
@@ -386,10 +386,10 @@ const PostDominatorTree* TCT::getPostDT(const Function* fun)
 /*!
  * Get loop for fork/join site
  */
-const Loop* TCT::getLoop(const BasicBlock* bb)
+const Loop* TCT::getLoop(const SVFBasicBlock* bb)
 {
-    const Function* fun = bb->getParent();
-    return loopInfoBuilder.getLoopInfo(fun)->getLoopFor(bb);
+    const SVFFunction* fun = bb->getParent();
+    return loopInfoBuilder.getLoopInfo(fun->getLLVMFun())->getLoopFor(bb->getLLVMBasicBlock());
 }
 
 /*!
@@ -474,9 +474,9 @@ void TCT::getNextInsts(const SVFInstruction* curInst, InstVec& instList)
     }
     else
     {
-        const BasicBlock *BB = curInst->getParent()->getLLVMBasicBlock();
+        const SVFBasicBlock* BB = curInst->getParent();
         // Visit all successors of BB in the CFG
-        for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB);
+        for (succ_const_iterator it = succ_begin(BB->getLLVMBasicBlock()), ie = succ_end(BB->getLLVMBasicBlock());
                 it != ie; ++it)
         {
             /// if we are sitting at the loop header, then go inside the loop but ignore loop exit

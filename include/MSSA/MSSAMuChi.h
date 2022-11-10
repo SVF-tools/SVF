@@ -167,12 +167,12 @@ class LoadMU : public MSSAMU<Cond>
 
 private:
     const LoadStmt* inst;
-    const BasicBlock* bb;
+    const SVFBasicBlock* bb;
 
 public:
     /// Constructor/Destructor for MU
     //@{
-    LoadMU(const BasicBlock* b,const LoadStmt* i, const MemRegion* m, Cond c = true) :
+    LoadMU(const SVFBasicBlock* b,const LoadStmt* i, const MemRegion* m, Cond c = true) :
         MSSAMU<Cond>(MSSAMU<Cond>::LoadMSSAMU,m,c), inst(i), bb(b)
     {
     }
@@ -189,7 +189,7 @@ public:
     }
 
     /// Return basic block
-    inline const BasicBlock* getBasicBlock() const
+    inline const SVFBasicBlock* getBasicBlock() const
     {
         return bb;
     }
@@ -244,9 +244,9 @@ public:
     }
 
     /// Return basic block
-    inline const BasicBlock* getBasicBlock() const
+    inline const SVFBasicBlock* getBasicBlock() const
     {
-        return callsite->getCallSite()->getParent()->getLLVMBasicBlock();
+        return callsite->getCallSite()->getParent();
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -461,12 +461,12 @@ template<class Cond>
 class StoreCHI : public MSSACHI<Cond>
 {
 private:
-    const BasicBlock* bb;
+    const SVFBasicBlock* bb;
     const StoreStmt* inst;
 public:
     /// Constructors for StoreCHI
     //@{
-    StoreCHI(const BasicBlock* b, const StoreStmt* i, const MemRegion* m, Cond c = true) :
+    StoreCHI(const SVFBasicBlock* b, const StoreStmt* i, const MemRegion* m, Cond c = true) :
         MSSACHI<Cond>(MSSADEF::StoreMSSACHI,m,c), bb(b), inst(i)
     {
     }
@@ -476,7 +476,7 @@ public:
     //@}
 
     /// Get basic block
-    inline const BasicBlock* getBasicBlock() const
+    inline const SVFBasicBlock* getBasicBlock() const
     {
         return bb;
     }
@@ -535,9 +535,9 @@ public:
     //@}
 
     /// Return basic block
-    inline const BasicBlock* getBasicBlock() const
+    inline const SVFBasicBlock* getBasicBlock() const
     {
-        return callsite->getCallSite()->getParent()->getLLVMBasicBlock();
+        return callsite->getCallSite()->getParent();
     }
 
     /// Return callsite
@@ -632,13 +632,13 @@ class MSSAPHI : public MSSADEF
 public:
     typedef Map<u32_t,const MRVer*> OPVers;
 private:
-    const BasicBlock* bb;
+    const SVFBasicBlock* bb;
     OPVers opVers;
     Cond cond;
 public:
     /// Constructors for PHI
     //@{
-    MSSAPHI(const BasicBlock* b, const MemRegion* m, Cond c = true) :
+    MSSAPHI(const SVFBasicBlock* b, const MemRegion* m, Cond c = true) :
         MSSADEF(MSSADEF::SSAPHI,m), bb(b), cond(c)
     {
     }
@@ -681,7 +681,7 @@ public:
     //@}
 
     /// Return the basic block
-    inline const BasicBlock* getBasicBlock() const
+    inline const SVFBasicBlock* getBasicBlock() const
     {
         return bb;
     }

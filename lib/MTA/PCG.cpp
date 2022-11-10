@@ -216,15 +216,14 @@ void PCG::identifyFollowers()
     {
         const SVFInstruction* inst = *sit;
         BBWorkList bb_worklist;
-        Set<const BasicBlock*> visitedBBs;
-        bb_worklist.push(inst->getParent()->getLLVMBasicBlock());
+        Set<const SVFBasicBlock*> visitedBBs;
+        bb_worklist.push(inst->getParent());
         while (!bb_worklist.empty())
         {
-            const BasicBlock* bb = bb_worklist.pop();
-            for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it)
+            const SVFBasicBlock* bb = bb_worklist.pop();
+            for (SVFBasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it)
             {
-                const Instruction* i = &*it;
-                const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
+                const SVFInstruction* inst = *it;
                 // mark the callee of this callsite as follower
                 // if this is an call/invoke instruction but not a spawn site
                 if ((SVFUtil::isCallSite(inst)) && !isSpawnsite(inst))
@@ -241,13 +240,14 @@ void PCG::identifyFollowers()
                     }
                 }
             }
-            for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
+            for (succ_const_iterator succ_it = succ_begin(bb->getLLVMBasicBlock()); succ_it != succ_end(bb->getLLVMBasicBlock()); succ_it++)
             {
                 const BasicBlock* succ_bb = *succ_it;
-                if (visitedBBs.count(succ_bb) == 0)
+                const SVFBasicBlock* svf_scc_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(succ_bb);
+                if (visitedBBs.count(svf_scc_bb) == 0)
                 {
-                    visitedBBs.insert(succ_bb);
-                    bb_worklist.push(succ_bb);
+                    visitedBBs.insert(svf_scc_bb);
+                    bb_worklist.push(svf_scc_bb);
                 }
             }
         }

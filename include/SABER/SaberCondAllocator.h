@@ -52,11 +52,11 @@ public:
     typedef Z3Expr Condition;   /// z3 condition
     typedef Map<u32_t, const SVFInstruction *> IndexToTermInstMap; /// id to instruction map for z3
     typedef Map<u32_t,Condition> CondPosMap;		///< map a branch to its Condition
-    typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	/// map bb to a Condition
-    typedef Set<const BasicBlock*> BasicBlockSet;
+    typedef Map<const SVFBasicBlock*, CondPosMap > BBCondMap;	/// map bb to a Condition
+    typedef Set<const SVFBasicBlock*> BasicBlockSet;
     typedef Map<const SVFFunction*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
-    typedef Map<const BasicBlock*, Condition> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
-    typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
+    typedef Map<const SVFBasicBlock*, Condition> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
+    typedef FIFOWorkList<const SVFBasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
 
 
     /// Constructor
@@ -144,19 +144,19 @@ public:
         return negConds.test(id);
     }
 
-    inline bool postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
+    inline bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
     {
-        const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
-        const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
+        const SVFFunction*  keyFunc = bbKey->getParent();
+        const SVFFunction*  valueFunc = bbValue->getParent();
         assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
 
         return keyFunc->postDominate(bbKey,bbValue);
     }
 
-    inline bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
+    inline bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
     {
-        const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
-        const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
+        const SVFFunction*  keyFunc = bbKey->getParent();
+        const SVFFunction*  valueFunc = bbValue->getParent();
         assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
 
         return keyFunc->dominate(bbKey,bbValue);
@@ -164,13 +164,13 @@ public:
 
     /// Guard Computation for a value-flow (between two basic blocks)
     //@{
-    virtual Condition ComputeIntraVFGGuard(const BasicBlock* src, const BasicBlock* dst);
-    virtual Condition ComputeInterCallVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* callBB);
-    virtual Condition ComputeInterRetVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* retBB);
+    virtual Condition ComputeIntraVFGGuard(const SVFBasicBlock* src, const SVFBasicBlock* dst);
+    virtual Condition ComputeInterCallVFGGuard(const SVFBasicBlock* src, const SVFBasicBlock* dst, const SVFBasicBlock* callBB);
+    virtual Condition ComputeInterRetVFGGuard(const SVFBasicBlock* src, const SVFBasicBlock* dst, const SVFBasicBlock* retBB);
 
     /// Get complement condition (from B1 to B0) according to a complementBB (BB2) at a phi
     /// e.g., B0: dstBB; B1:incomingBB; B2:complementBB
-    virtual Condition getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0);
+    virtual Condition getPHIComplementCond(const SVFBasicBlock* BB1, const SVFBasicBlock* BB2, const SVFBasicBlock* BB0);
 
     inline void clearCFCond()
     {
@@ -210,7 +210,7 @@ public:
 
     /// Get/Set control-flow conditions
     //@{
-    inline bool setCFCond(const BasicBlock* bb, const Condition& cond)
+    inline bool setCFCond(const SVFBasicBlock* bb, const Condition& cond)
     {
         BBToCondMap::iterator it = bbToCondMap.find(bb);
         // until a fixed-point is reached (condition is not changed)
@@ -220,7 +220,7 @@ public:
         bbToCondMap[bb] = cond;
         return true;
     }
-    inline Condition getCFCond(const BasicBlock* bb) const
+    inline Condition getCFCond(const SVFBasicBlock* bb) const
     {
         BBToCondMap::const_iterator it = bbToCondMap.find(bb);
         if(it==bbToCondMap.end())
@@ -241,30 +241,30 @@ public:
 private:
 
     /// Allocate path condition for every basic block
-    virtual void allocateForBB(const BasicBlock& bb);
+    virtual void allocateForBB(const SVFBasicBlock& bb);
 
     /// Get/Set a branch condition, and its terminator instruction
     //@{
     /// Set branch condition
-    void setBranchCond(const BasicBlock *bb, const BasicBlock *succ, const Condition& cond);
+    void setBranchCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ, const Condition& cond);
     /// Get branch condition
-    Condition getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const;
+    Condition getBranchCond(const SVFBasicBlock*  bb, const SVFBasicBlock* succ) const;
     ///Get a condition, evaluate the value for conditions if necessary (e.g., testNull like express)
-    Condition getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ);
+    Condition getEvalBrCond(const SVFBasicBlock*  bb, const SVFBasicBlock* succ);
     //@}
     /// Evaluate branch conditions
     //@{
     /// Evaluate the branch condtion
-    Condition evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ) ;
+    Condition evaluateBranchCond(const SVFBasicBlock*  bb, const SVFBasicBlock* succ) ;
     /// Evaluate loop exit branch
-    Condition evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *succ);
+    Condition evaluateLoopExitBranch(const SVFBasicBlock*  bb, const SVFBasicBlock* succ);
     /// Return branch condition after evaluating test null like expression
-    Condition evaluateTestNullLikeExpr(const BranchStmt* branchStmt, const BasicBlock *succ);
+    Condition evaluateTestNullLikeExpr(const BranchStmt* branchStmt, const SVFBasicBlock* succ);
     /// Return condition when there is a branch calls program exit
-    Condition evaluateProgExit(const BranchStmt* branchStmt, const BasicBlock *succ);
+    Condition evaluateProgExit(const BranchStmt* branchStmt, const SVFBasicBlock* succ);
     /// Collect basic block contains program exit function call
-    void collectBBCallingProgExit(const BasicBlock& bb);
-    bool isBBCallsProgExit(const BasicBlock* bb);
+    void collectBBCallingProgExit(const SVFBasicBlock& bb);
+    bool isBBCallsProgExit(const SVFBasicBlock* bb);
     //@}
 
     /// Evaluate test null/not null like expressions

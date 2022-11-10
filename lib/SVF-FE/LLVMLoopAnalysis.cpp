@@ -114,7 +114,7 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
             icfg->addNodeToSVFLoop(node, svf_loop);
         }
         // mark loop header's first inst
-        BasicBlock *header_blk = llvmLoop->getHeader();
+        BasicBlock* header_blk = llvmLoop->getHeader();
         Instruction &in_ins = *header_blk->begin();
         const SVFInstruction* svfInInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&in_ins);
         ICFGNode *in_node = icfg->getICFGNode(svfInInst);
@@ -150,7 +150,7 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
             }
         }
         // mark loop end's first inst
-        llvm::SmallVector<BasicBlock *, 8> ExitBlocks;
+        llvm::SmallVector<BasicBlock* , 8> ExitBlocks;
         llvmLoop->getExitBlocks(ExitBlocks);
         for (const auto& exit_blk: ExitBlocks)
         {

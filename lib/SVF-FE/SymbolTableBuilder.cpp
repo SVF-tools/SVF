@@ -225,28 +225,31 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val)
         {
             for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
             {
-                const BasicBlock *bb = &*bit;
+                const BasicBlock* bb = &*bit;
+                const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
                 const u32_t num = LLVMUtil::getBBSuccessorNum(bb);
-                symInfo->getModule()->addBBSuccessorNum(bb,num);
+                symInfo->getModule()->addBBSuccessorNum(svfbb,num);
                 if (num >1)
                 {
                     for (succ_const_iterator succIt = succ_begin(bb); succIt != succ_end(bb); succIt++)
                     {
                         const BasicBlock* succ = *succIt;
+                        const SVFBasicBlock* svf_scc_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(succ);
                         const u32_t successorPos = LLVMUtil::getBBSuccessorPos(bb,succ);
                         if (successorPos != 0)
                         {
-                            symInfo->getModule()->addBBSuccessorPos(bb,succ,successorPos);
+                            symInfo->getModule()->addBBSuccessorPos(svfbb,svf_scc_bb,successorPos);
                         }
                     }
                 }
                 for (succ_const_iterator succIt = succ_begin(bb); succIt != succ_end(bb); succIt++)
                 {
                     const BasicBlock* succ = *succIt;
+                    const SVFBasicBlock* svf_scc_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(succ);
                     const u32_t predecessorPos = LLVMUtil::getBBPredecessorPos(bb,succ);
                     if (predecessorPos != 0)
                     {
-                        symInfo->getModule()->addBBPredecessorPos(bb,succ,predecessorPos);
+                        symInfo->getModule()->addBBPredecessorPos(svfbb,svf_scc_bb,predecessorPos);
                     }
                 }
             }

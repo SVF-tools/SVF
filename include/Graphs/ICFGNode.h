@@ -83,7 +83,7 @@ public:
     }
 
     /// Return the function of this ICFGNode
-    virtual const BasicBlock* getBB() const
+    virtual const SVFBasicBlock* getBB() const
     {
         return bb;
     }
@@ -130,7 +130,7 @@ public:
 
 protected:
     const SVFFunction* fun;
-    const BasicBlock* bb;
+    const SVFBasicBlock* bb;
     VFGNodeList VFGNodes; //< a list of VFGNodes
     SVFStmtList pagEdges; //< a list of PAGEdges
 
@@ -181,7 +181,7 @@ public:
     IntraICFGNode(NodeID id, const SVFInstruction *i) : ICFGNode(id, IntraBlock), inst(i)
     {
         fun = inst->getFunction();
-        bb = inst->getParent()->getLLVMBasicBlock();
+        bb = inst->getParent();
     }
 
     inline const SVFInstruction *getInst() const
@@ -373,7 +373,7 @@ public:
     CallICFGNode(NodeID id, const SVFInstruction* c) : InterICFGNode(id, FunCallBlock), cs(c), ret(nullptr)
     {
         fun = cs->getFunction();
-        bb = cs->getParent()->getLLVMBasicBlock();
+        bb = cs->getParent();
     }
 
     /// Return callsite
@@ -402,9 +402,9 @@ public:
     }
 
     /// Return Basic Block
-    inline const BasicBlock* getParent() const
+    inline const SVFBasicBlock* getParent() const
     {
-        return cs->getParent()->getLLVMBasicBlock();
+        return cs->getParent();
     }
 
     /// Return true if this is an indirect call
@@ -467,7 +467,7 @@ public:
         InterICFGNode(id, FunRetBlock), cs(c), actualRet(nullptr), callBlockNode(cb)
     {
         fun = cs->getFunction();
-        bb = cs->getParent()->getLLVMBasicBlock();
+        bb = cs->getParent();
     }
 
     /// Return callsite

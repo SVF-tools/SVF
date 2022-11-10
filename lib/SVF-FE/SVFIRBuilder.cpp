@@ -417,7 +417,7 @@ void SVFIRBuilder::processCE(const Value *val)
             // blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
             // is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
             const Value *cval = getCurrentValue();
-            const BasicBlock *cbb = getCurrentBB();
+            const BasicBlock* cbb = getCurrentBB();
             setCurrentLocation(ref, nullptr);
             NodeID dst = pag->getValueNode(ref);
             addAddrEdge(pag->getConstantNode(), dst);
@@ -1572,7 +1572,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         return;
 
     assert(curVal && "current Val is nullptr?");
-    edge->setBB(curBB);
+    edge->setBB(curBB!=nullptr ? LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(curBB) : nullptr);
     edge->setValue(curVal);
     // backmap in valuToEdgeMap
     pag->mapValueToEdge(curVal, edge);

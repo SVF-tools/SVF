@@ -55,7 +55,7 @@ public:
     typedef std::vector<const SVFFunction*> FunVec;
     typedef Set<const SVFInstruction*> CallInstSet;
     typedef FIFOWorkList<const SVFFunction*> FunWorkList;
-    typedef FIFOWorkList<const BasicBlock*> BBWorkList;
+    typedef FIFOWorkList<const SVFBasicBlock*> BBWorkList;
 
 private:
     FunSet spawners;

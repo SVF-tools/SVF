@@ -25,9 +25,9 @@ bool SVFFunction::isVarArg() const
     return varArg;
 }
 
-const std::vector<const BasicBlock*>& SVFFunction::getLoopInfo(const BasicBlock* bb) const
+const std::vector<const SVFBasicBlock*>& SVFFunction::getLoopInfo(const SVFBasicBlock* bb) const
 {
-    Map<const BasicBlock*, std::vector<const BasicBlock*>>::const_iterator mapIter = bb2LoopMap.find(bb);
+    Map<const SVFBasicBlock*, std::vector<const SVFBasicBlock*>>::const_iterator mapIter = bb2LoopMap.find(bb);
     if(mapIter != bb2LoopMap.end())
         return mapIter->second;
     else
@@ -37,18 +37,18 @@ const std::vector<const BasicBlock*>& SVFFunction::getLoopInfo(const BasicBlock*
     }
 }
 
-void SVFFunction::getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const
+void SVFFunction::getExitBlocksOfLoop(const SVFBasicBlock* bb, Set<const SVFBasicBlock*>& exitbbs) const
 {
     if (SVFFunction::hasLoopInfo(bb))
     {
-        const std::vector<const BasicBlock*> blocks = getLoopInfo(bb);
+        const std::vector<const SVFBasicBlock*> blocks = getLoopInfo(bb);
         if (!blocks.empty())
         {
-            for (const BasicBlock* block : blocks)
+            for (const SVFBasicBlock* block : blocks)
             {
-                for (succ_const_iterator succIt = succ_begin(block); succIt != succ_end(block); succIt++)
+                for (succ_const_iterator succIt = llvm::succ_begin(block->getLLVMBasicBlock()); succIt != llvm::succ_end(block->getLLVMBasicBlock()); succIt++)
                 {
-                    const BasicBlock* succ = *succIt;
+                    const SVFBasicBlock* succ = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(*succIt);
                     if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
                         exitbbs.insert(succ);
                 }
@@ -57,7 +57,7 @@ void SVFFunction::getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock
     }
 }
 
-bool SVFFunction::dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
+bool SVFFunction::dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
 {
     if (bbKey == bbValue)
         return true;
@@ -74,11 +74,11 @@ bool SVFFunction::dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) c
         return false;
     }
 
-    const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = getDomTreeMap();
-    Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
+    const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& dtBBsMap = getDomTreeMap();
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
     if (mapIter != dtBBsMap.end())
     {
-        const Set<const BasicBlock*> & dtBBs = mapIter->second;
+        const Set<const SVFBasicBlock*> & dtBBs = mapIter->second;
         if (dtBBs.find(bbValue) != dtBBs.end())
         {
             return true;
@@ -88,7 +88,7 @@ bool SVFFunction::dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) c
     return false;
 }
 
-bool SVFFunction::postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const
+bool SVFFunction::postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
 {
     if (bbKey == bbValue)
         return true;
@@ -105,11 +105,11 @@ bool SVFFunction::postDominate(const BasicBlock* bbKey, const BasicBlock* bbValu
         return false;
     }
 
-    const Map<const BasicBlock*,Set<const BasicBlock*>>& dtBBsMap = getPostDomTreeMap();
-    Map<const BasicBlock*,Set<const BasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
+    const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& dtBBsMap = getPostDomTreeMap();
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
     if (mapIter != dtBBsMap.end())
     {
-        const Set<const BasicBlock*> & dtBBs = mapIter->second;
+        const Set<const SVFBasicBlock*> & dtBBs = mapIter->second;
         if (dtBBs.find(bbValue) != dtBBs.end())
         {
             return true;
@@ -118,11 +118,11 @@ bool SVFFunction::postDominate(const BasicBlock* bbKey, const BasicBlock* bbValu
     return false;
 }
 
-bool SVFFunction::isLoopHeader(const BasicBlock* bb) const
+bool SVFFunction::isLoopHeader(const SVFBasicBlock* bb) const
 {
     if (hasLoopInfo(bb))
     {
-        const std::vector<const BasicBlock*>& blocks = getLoopInfo(bb);
+        const std::vector<const SVFBasicBlock*>& blocks = getLoopInfo(bb);
         assert(!blocks.empty() && "no available loop info?");
         return blocks.front() == bb;
     }
@@ -130,7 +130,7 @@ bool SVFFunction::isLoopHeader(const BasicBlock* bb) const
 }
 
 SVFBasicBlock::SVFBasicBlock(const BasicBlock* b, const SVFFunction* f): 
-    SVFValue(b->getName().str(),SVFValue::SVFBB), bb(b), fun(f)
+    SVFValue(b->hasName() ? b->getName().str(): "",SVFValue::SVFBB), bb(b), fun(f)
 {
 }
 

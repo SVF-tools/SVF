@@ -372,7 +372,7 @@ public:
     /// Get dominator for a function
     const PostDominatorTree* getPostDT(const Function* fun);
     /// Get loop for fork/join site
-    const Loop* getLoop(const BasicBlock* bb);
+    const Loop* getLoop(const SVFBasicBlock* bb);
     /// Get SE for function
     ScalarEvolution* getSE(const SVFInstruction* inst);
 
@@ -457,9 +457,9 @@ private:
     /// collect loop info for join sites
     void collectLoopInfoForJoin();
     /// Whether a given bb is a loop head of a inloop join site
-    bool isLoopHeaderOfJoinLoop(const BasicBlock* bb);
+    bool isLoopHeaderOfJoinLoop(const SVFBasicBlock* bb);
     /// Whether a given bb is an exit of a inloop join site
-    bool isLoopExitOfJoinLoop(const BasicBlock* bb);
+    bool isLoopExitOfJoinLoop(const SVFBasicBlock* bb);
     //@}
 
     /// Multi-forked threads
