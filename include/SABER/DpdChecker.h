@@ -45,6 +45,7 @@ class DpdChecker : public SrcSnkDDA
 public:
     typedef Map<const SVFGNode*,const CallICFGNode*> SVFGNodeToCSIDMap;
     typedef FIFOWorkList<const CallICFGNode*> CSWorkList;
+    typedef FIFOWorkList<const SVFGNode*> NodeWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
     enum LEAK_TYPE
@@ -93,8 +94,8 @@ protected:
     /// Report leaks
     //@{
     virtual void reportBug(ProgSlice* slice) override;
-    void reportNeverFree(const SVFGNode* src);
-    void reportPartialLeak(const SVFGNode* src);
+    void reportAlwaysUAF(ProgSlice* slice);
+    void reportConditionalUAF(ProgSlice* slice);
     //@}
 
     /// Validate test cases for regression test purpose

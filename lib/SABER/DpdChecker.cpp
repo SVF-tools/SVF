@@ -57,81 +57,315 @@ void DpdChecker::initSrcs()
                 {
                     const PAGNode *pagNode = *ait;
 
-                    outs() << pagNode->getValueName() << "WHICH IS ";
+                    NodeWorkList worklist;
+                    SVFGNodeBS visited;
 
-                    if (pagNode->isPointer()) {
-                      outs() << "POINTER";
-                    }else {
-                      outs() << "NOT POINTER";
+                    worklist.push(svfg->getDefSVFGNode(pagNode));
+                    visited.set(svfg->getDefSVFGNode(pagNode)->getId());
+
+                    NodeID freeNodeId = svfg->getDefSVFGNode(pagNode)->getICFGNode()->getId();
+
+                    while (! worklist.empty()) {
+                        const SVFGNode* svfgNode = worklist.pop();
+                        outs() << "Node Popped : " << svfgNode << "\n";
+
+                        for(auto EdgeIt = svfgNode->InEdgeBegin(), EndEdgeIt = svfgNode->InEdgeEnd() ; EdgeIt != EndEdgeIt ; EdgeIt++){
+
+                            const VFGEdge* edge = *EdgeIt;
+
+                            // outs() << ;
+                            const SVFGNode* dstNode = edge->getSrcNode();
+                            if (visited.test(dstNode->getId()) == 0) {
+                                outs() << "Node Added : " << dstNode << "\n";
+                                visited.set(dstNode->getId());
+
+                                if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Store && dstNode->getICFGNode()->getId() < freeNodeId)
+                                {
+                                    outs() << "SETTING SOURCE : " << dstNode << "\n";
+                                    // addToSinks(dstNode);
+                                    addToSources(dstNode);
+                                    addSrcToCSID(dstNode, it->first);
+                                }
+                                
+                                
+
+                                worklist.push(dstNode);
+                            }
+                            else
+                                continue;
+                        }
                     }
+
+                    // outs() << pagNode->getValueName() << "WHICH IS ";
+
+                    // if (pagNode->isPointer()) {
+                    //   outs() << "POINTER";
+
+                    // //   const SVFGNode *src = getSVFG()->getActualParmVFGNode(pagNode, it->first);
+                    //   const SVFGNode* src = svfg->getDefSVFGNode(pagNode);
+                    //   addToSources(src);
+                    //   addSrcToCSID(src, it->first);
+                      
+                    // }else {
+                    //   outs() << "NOT POINTER";
+                    // }
 
                 }
             }
         }
     }
 
-    for(SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
-            eit = pag->getCallSiteRets().end(); it!=eit; ++it)
-    {
-        const RetICFGNode* cs = it->first;
-        /// if this callsite return reside in a dead function then we do not care about its leaks
-        /// for example instruction `int* p = malloc(size)` is in a dead function, then program won't allocate this memory
-        /// for example a customized malloc `int p = malloc()` returns an integer value, then program treat it as a system malloc
-        if(SymbolTableInfo::isPtrInUncalledFunction(cs->getCallSite()) || !cs->getCallSite()->getType()->isPointerTy())
-            continue;
-
-        PTACallGraph::FunctionSet callees;
-        getCallgraph()->getCallees(cs->getCallICFGNode(),callees);
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
-        {
-            const SVFFunction* fun = *cit;
-
-            if (isSourceLikeFun(fun))
-            {
-                Function * ll_fun = fun->getLLVMFun();
-                outs() << "FOUND AN ALLOCATION FUNCTION NAMED " << ll_fun->getName().data() << " WITH ARGUMENTS :\n";
-
-            }
-        }
-    }
+    // for(SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
+    //         eit = pag->getCallSiteRets().end(); it!=eit; ++it)
+    // {
+    //     const RetICFGNode* cs = it->first;
+    //     /// if this callsite return reside in a dead function then we do not care about its leaks
+    //     /// for example instruction `int* p = malloc(size)` is in a dead function, then program won't allocate this memory
+    //     /// for example a customized malloc `int p = malloc()` returns an integer value, then program treat it as a system malloc
+    //     if(SymbolTableInfo::isPtrInUncalledFunction(cs->getCallSite()) || !cs->getCallSite()->getType()->isPointerTy())
+    //         continue;
+    //
+    //     PTACallGraph::FunctionSet callees;
+    //     getCallgraph()->getCallees(cs->getCallICFGNode(),callees);
+    //     for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+    //     {
+    //         const SVFFunction* fun = *cit;
+    //
+    //         if (isSourceLikeFun(fun))
+    //         {
+    //             Function * ll_fun = fun->getLLVMFun();
+    //             outs() << "FOUND AN ALLOCATION FUNCTION NAMED " << ll_fun->getName().data() << " WITH ARGUMENTS :\n";
+    //
+    //         }
+    //     }
+    // }
 
 }
+
+// void DpdChecker::initSrcs()
+// {
+
+//     SVFIR* pag = getPAG();
+//     ICFG* icfg = pag->getICFG();
+//     for(SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
+//             eit = pag->getCallSiteRets().end(); it!=eit; ++it)
+//     {
+//         const RetICFGNode* cs = it->first;
+//         /// if this callsite return reside in a dead function then we do not care about its leaks
+//         /// for example instruction `int* p = malloc(size)` is in a dead function, then program won't allocate this memory
+//         /// for example a customized malloc `int p = malloc()` returns an integer value, then program treat it as a system malloc
+//         if(SymbolTableInfo::isPtrInUncalledFunction(cs->getCallSite()) || !cs->getCallSite()->getType()->isPointerTy())
+//             continue;
+
+//         PTACallGraph::FunctionSet callees;
+//         getCallgraph()->getCallees(cs->getCallICFGNode(),callees);
+//         for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+//         {
+//             const SVFFunction* fun = *cit;
+//             if (isSourceLikeFun(fun))
+//             {
+//                 CSWorkList worklist;
+//                 SVFGNodeBS visited;
+//                 worklist.push(it->first->getCallICFGNode());
+//                 while (!worklist.empty())
+//                 {
+//                     const CallICFGNode* cs = worklist.pop();
+//                     const RetICFGNode* retBlockNode = icfg->getRetICFGNode(cs->getCallSite());
+//                     const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
+//                     const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
+//                     if (visited.test(node->getId()) == 0)
+//                         visited.set(node->getId());
+//                     else
+//                         continue;
+
+//                     CallSiteSet csSet;
+//                     // if this node is in an allocation wrapper, find all its call nodes
+//                     if (isInAWrapper(node, csSet))
+//                     {
+//                         for (CallSiteSet::iterator it = csSet.begin(), eit =
+//                                     csSet.end(); it != eit; ++it)
+//                         {
+//                             worklist.push(*it);
+//                         }
+//                     }
+//                     // otherwise, this is the source we are interested
+//                     else
+//                     {
+//                         // exclude sources in dead functions
+//                         if (SymbolTableInfo::isPtrInUncalledFunction(cs->getCallSite()) == false)
+//                         {
+//                             addToSources(node);
+//                             addSrcToCSID(node, cs);
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+
+// }
 
 /*!
  * Initialize sinks
  */
 void DpdChecker::initSnks()
 {
+  SVFIR* pag = getPAG();
+
+  for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
+          eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
+  {
+
+      PTACallGraph::FunctionSet callees;
+      getCallgraph()->getCallees(it->first,callees);
+      for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+      {
+          const SVFFunction* fun = *cit;
+          if (isSinkLikeFun(fun))
+          {
+              SVFIR::SVFVarList &arglist = it->second;
+              assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
+              /// we only choose pointer parameters among all the actual parameters
+              for (SVFIR::SVFVarList::const_iterator ait = arglist.begin(),
+                      aeit = arglist.end(); ait != aeit; ++ait)
+              {
+                  const PAGNode *pagNode = *ait;
+                  // const SVFGNode* svfgNode = svfg->getDefSVFGNode(pagNode);
+
+                  NodeWorkList worklist;
+                  SVFGNodeBS visited;
+
+                  worklist.push(svfg->getDefSVFGNode(pagNode));
+                  visited.set(svfg->getDefSVFGNode(pagNode)->getId());
+
+                //   NodeID freeNodeId;
+
+                //   while (! worklist.empty()) {
+                //       const SVFGNode* svfgNode = worklist.pop();
+                //       outs() << "Node Popped : " << svfgNode << "\n";
+
+                //       for(auto EdgeIt = svfgNode->InEdgeBegin(), EndEdgeIt = svfgNode->InEdgeEnd() ; EdgeIt != EndEdgeIt ; EdgeIt++){
+
+                //         const VFGEdge* edge = *EdgeIt;
+
+                //         // outs() << ;
+                //         const SVFGNode* dstNode = edge->getSrcNode();
+                //         if (visited.test(dstNode->getId()) == 0) {
+                //             outs() << "Node Added : " << dstNode << "\n";
+                //             visited.set(dstNode->getId());
+
+                //             if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Load)
+                //             {
+                //                 outs() << "FOUND LOAD OF : " << dstNode << "\n";
+                //                 dstNode->getICFGNode()->getId();
+                //                 break;
+                //             }
+                            
+                            
+
+                //             worklist.push(dstNode);
+                //           }
+                //         else
+                //             continue;
+                //       }
+                //   }
+
+                  NodeID freeNodeId = svfg->getDefSVFGNode(pagNode)->getICFGNode()->getId();
+
+                  while (! worklist.empty()) {
+                      const SVFGNode* svfgNode = worklist.pop();
+                      outs() << "Node Popped : " << svfgNode << "\n";
+
+                      for(auto EdgeIt = svfgNode->InEdgeBegin(), EndEdgeIt = svfgNode->InEdgeEnd() ; EdgeIt != EndEdgeIt ; EdgeIt++){
+
+                        const VFGEdge* edge = *EdgeIt;
+
+                        // outs() << ;
+                        const SVFGNode* dstNode = edge->getSrcNode();
+                        if (visited.test(dstNode->getId()) == 0) {
+                            outs() << "Node Added : " << dstNode << "\n";
+                            visited.set(dstNode->getId());
+
+                            if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Load && dstNode->getICFGNode()->getId() > freeNodeId)
+                            {
+                                outs() << "SETTING SINK : " << dstNode << "\n";
+                                addToSinks(dstNode);
+                            }
+                            
+                            
+
+                            worklist.push(dstNode);
+                          }
+                        else
+                            continue;
+                      }
+
+                      for(auto EdgeIt = svfgNode->OutEdgeBegin(), EndEdgeIt = svfgNode->OutEdgeEnd() ; EdgeIt != EndEdgeIt ; EdgeIt++){
+
+                        const VFGEdge* edge = *EdgeIt;
+                        const SVFGNode* dstNode = edge->getDstNode();
+                        if (visited.test(dstNode->getId()) == 0) {
+                            outs() << "Node Added : " << dstNode << "\n";
+                            visited.set(dstNode->getId());
+
+                            if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Load && dstNode->getICFGNode()->getId() > freeNodeId)
+                            {
+                                outs() << "SETTING SINK : " << dstNode << "\n";
+                                addToSinks(dstNode);
+                            }
+
+                            worklist.push(dstNode);
+                          }
+                        else
+                            continue;
+                      }
+                  }
+              }
+          }
+      }
+  }
 }
 
 
-void DpdChecker::reportNeverFree(const SVFGNode* src)
+void DpdChecker::reportAlwaysUAF(ProgSlice* slice)
 {
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
+    const CallICFGNode* cs = getSrcCSID(slice->getSource());
+    for (auto SinksIt = slice->sinksBegin(), SinksEnd = slice->sinksEnd() ; SinksIt != SinksEnd ; SinksIt++) {
+        const SVFGNode* sinkNode = *SinksIt;
+        SVFIR* pag = getPAG();
+        PAGNode* pagSinkNode = pag->getGNode(sinkNode->getId());
+        SVFUtil::errs() << " memory used at : ("
+                    << getSourceLoc(pagSinkNode->getValue()) << ")\n";
+    }
+    SVFUtil::errs() << bugMsg1("\t Always UAF :") <<  " memory freed at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
-void DpdChecker::reportPartialLeak(const SVFGNode* src)
+void DpdChecker::reportConditionalUAF(ProgSlice* slice)
 {
 
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
+    const CallICFGNode* cs = getSrcCSID(slice->getSource());
+    for (auto SinksIt = slice->sinksBegin(), SinksEnd = slice->sinksEnd() ; SinksIt != SinksEnd ; SinksIt++) {
+        const SVFGNode* sinkNode = *SinksIt;
+        SVFIR* pag = getPAG();
+        PAGNode* pagSinkNode = pag->getGNode(sinkNode->getId());
+        SVFUtil::errs() << " memory used at : ("
+                    << getSourceLoc(pagSinkNode->getValue()) << ")\n";
+    }
+    SVFUtil::errs() << bugMsg2("\t Conditional UAF :") <<  " memory freed at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
 void DpdChecker::reportBug(ProgSlice* slice)
 {
 
-    if(isAllPathReachable() == false && isSomePathReachable() == false)
+    if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
-        reportNeverFree(slice->getSource());
-    }
-    else if (isAllPathReachable() == false && isSomePathReachable() == true)
-    {
-        reportPartialLeak(slice->getSource());
+        reportConditionalUAF(slice);
         SVFUtil::errs() << "\t\t conditional free path: \n" << slice->evalFinalCond() << "\n";
-        slice->annotatePaths();
+        // slice->annotatePaths();
+    } else if (isAllPathReachable() == true) {
+        reportAlwaysUAF(slice);
     }
 
     if(Options::ValidateTests)
