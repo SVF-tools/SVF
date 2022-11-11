@@ -296,12 +296,11 @@ bool TCT::isJoinMustExecutedInLoop(const Loop* lp,const SVFInstruction* join)
     assert(loopheadbb->getParent()==joinbb->getParent() && "should inside same function");
 
     const PostDominatorTree* pdt = getPostDT(loopheadbb->getParent()->getLLVMFun());
-    for (succ_const_iterator it = succ_begin(loopheadbb->getLLVMBasicBlock()), ie = succ_end(loopheadbb->getLLVMBasicBlock());
-            it != ie; ++it)
+    for (const SVFBasicBlock* svf_scc_bb : loopheadbb->getSuccessors())
     {
-        if(lp->contains(*it))
+        if(lp->contains(svf_scc_bb->getLLVMBasicBlock()))
         {
-            if(pdt->dominates(joinbb->getLLVMBasicBlock(),*it)==false)
+            if(pdt->dominates(joinbb->getLLVMBasicBlock(),svf_scc_bb->getLLVMBasicBlock())==false)
                 return false;
         }
     }
@@ -476,15 +475,14 @@ void TCT::getNextInsts(const SVFInstruction* curInst, InstVec& instList)
     {
         const SVFBasicBlock* BB = curInst->getParent();
         // Visit all successors of BB in the CFG
-        for (succ_const_iterator it = succ_begin(BB->getLLVMBasicBlock()), ie = succ_end(BB->getLLVMBasicBlock());
-                it != ie; ++it)
+        for (const SVFBasicBlock* svf_scc_bb : BB->getSuccessors())
         {
             /// if we are sitting at the loop header, then go inside the loop but ignore loop exit
-            if(isLoopHeaderOfJoinLoop(BB) && !getLoop(BB)->contains(*it))
+            if(isLoopHeaderOfJoinLoop(BB) && !getLoop(BB)->contains(svf_scc_bb->getLLVMBasicBlock()))
             {
                 continue;
             }
-            const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&((*it)->front()));
+            const SVFInstruction* svfSuccInst = svf_scc_bb->front();
             instList.push_back(svfSuccInst);
         }
     }

@@ -46,9 +46,8 @@ void SVFFunction::getExitBlocksOfLoop(const SVFBasicBlock* bb, Set<const SVFBasi
         {
             for (const SVFBasicBlock* block : blocks)
             {
-                for (succ_const_iterator succIt = llvm::succ_begin(block->getLLVMBasicBlock()); succIt != llvm::succ_end(block->getLLVMBasicBlock()); succIt++)
+                for (const SVFBasicBlock* succ : block->getSuccessors())
                 {
-                    const SVFBasicBlock* succ = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(*succIt);
                     if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
                         exitbbs.insert(succ);
                 }

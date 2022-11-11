@@ -102,6 +102,8 @@ private:
     const SVFBasicBlock* exitBB;
     std::vector<const SVFBasicBlock*> reachableBBs;
     std::vector<const SVFBasicBlock*> allBBs;
+    std::vector<const SVFInstruction*> allInsts;
+
     bool isUncalled;
     bool isNotRet;
     bool varArg;
@@ -113,7 +115,6 @@ private:
 public:
 
     SVFFunction(Function* f);
-
     SVFFunction(void) = delete;
 
     static inline bool classof(const SVFValue *node)
@@ -146,6 +147,11 @@ public:
         allBBs.push_back(bb);
     }
     
+    inline void addInstruction(const SVFInstruction* inst) 
+    {
+        allInsts.push_back(inst);
+    }
+    
     inline const SVFBasicBlock* getEntryBlock() const
     {
         return allBBs.front();
@@ -161,9 +167,19 @@ public:
         return allBBs.end();
     }
 
+    inline const std::vector<const SVFBasicBlock*>& getBasicBlockList() const
+    {
+        return allBBs;
+    }
+    
     inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
     {
         return reachableBBs;
+    }
+
+    inline const std::vector<const SVFInstruction*>& getInstructionList() const
+    {
+        return allInsts;
     }
 
     inline const bool isUncalledFunction() const
@@ -272,6 +288,7 @@ public:
 
 private:
     std::vector<const SVFInstruction*> allInsts;
+    std::vector<const SVFBasicBlock*> succBBs;
     const BasicBlock* bb;
     const SVFFunction* fun;
 public:
@@ -285,6 +302,11 @@ public:
     inline void addInstruction(const SVFInstruction* inst) 
     {
         allInsts.push_back(inst);
+    }
+
+    inline const std::vector<const SVFInstruction*>& getInstructionList() const
+    {
+        return allInsts;
     }
 
     inline const_iterator begin() const
@@ -310,6 +332,16 @@ public:
     inline const SVFInstruction* back() const
     {
         return allInsts.back();
+    }
+
+    inline void addSuccBasicBlock(const SVFBasicBlock* succ) 
+    {
+        succBBs.push_back(succ);
+    }
+
+    inline const std::vector<const SVFBasicBlock*>& getSuccessors() const
+    {
+        return succBBs;
     }
 
     inline const BasicBlock* getLLVMBasicBlock() const

@@ -98,10 +98,8 @@ void LockAnalysis::collectLockUnlocksites()
     ThreadCallGraph* tcg=tct->getThreadCallGraph();
     for (const SVFFunction* F : tct->getSVFModule()->getFunctionSet())
     {
-        for (const_inst_iterator II = inst_begin(F->getLLVMFun()), EE = inst_end(F->getLLVMFun()); II != EE; ++II)
+        for (const SVFInstruction* inst : F->getInstructionList())
         {
-            const Instruction* i = &*II;
-            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (tcg->getThreadAPI()->isTDRelease(inst))
             {
                 unlocksites.insert(inst);

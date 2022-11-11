@@ -102,14 +102,8 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
         }
 
         // iterate each successor
-        for (succ_const_iterator succ_it = succ_begin(bb.getLLVMBasicBlock());
-                succ_it != succ_end(bb.getLLVMBasicBlock());
-                succ_it++, succ_index++)
+        for (const SVFBasicBlock* svf_succ_bb : bb.getSuccessors())
         {
-
-            const BasicBlock* succ = *succ_it;
-            const SVFBasicBlock* svf_succ_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(succ);
-
             Condition path_cond = getTrueCond();
 
             ///TODO: handle BranchInst and SwitchInst individually here!!
@@ -131,6 +125,8 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
                 }
             }
             setBranchCond(&bb, svf_succ_bb, path_cond);
+
+            succ_index++;
         }
 
     }
@@ -524,11 +520,8 @@ SaberCondAllocator::Condition SaberCondAllocator::ComputeIntraVFGGuard(const SVF
         if (!eq(loopExitCond, Condition::nullExpr()))
             return condAnd(cond, loopExitCond);
 
-
-        for (succ_const_iterator succ_it = succ_begin(bb->getLLVMBasicBlock());
-                succ_it != succ_end(bb->getLLVMBasicBlock()); succ_it++)
+        for (const SVFBasicBlock* succ : bb->getSuccessors())
         {
-            const SVFBasicBlock* succ = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(*succ_it);
             /// calculate the branch condition
             /// if succ post dominate bb, then we get brCond quicker by using postDT
             /// note that we assume loop exit always post dominate loop bodys

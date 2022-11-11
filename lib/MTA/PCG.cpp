@@ -92,10 +92,8 @@ void PCG::initFromThreadAPI(SVFModule* module)
 {
     for (const SVFFunction* fun : module->getFunctionSet())
     {
-        for (const_inst_iterator II = inst_begin(fun->getLLVMFun()), E = inst_end(fun->getLLVMFun()); II != E; ++II)
+        for (const SVFInstruction* inst : fun->getInstructionList())
         {
-            const Instruction* i = &*II;
-            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (tdAPI->isTDFork(inst))
             {
                 const Value* forkVal = tdAPI->getForkedFun(inst);
@@ -240,10 +238,8 @@ void PCG::identifyFollowers()
                     }
                 }
             }
-            for (succ_const_iterator succ_it = succ_begin(bb->getLLVMBasicBlock()); succ_it != succ_end(bb->getLLVMBasicBlock()); succ_it++)
+            for (const SVFBasicBlock* svf_scc_bb : bb->getSuccessors())
             {
-                const BasicBlock* succ_bb = *succ_it;
-                const SVFBasicBlock* svf_scc_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(succ_bb);
                 if (visitedBBs.count(svf_scc_bb) == 0)
                 {
                     visitedBBs.insert(svf_scc_bb);

@@ -189,10 +189,8 @@ void MHP::updateNonCandidateFunInterleaving()
                 const CxtThreadStmt& cts = *it1;
                 const CallStrCxt& curCxt = cts.getContext();
 
-                for (const_inst_iterator II = inst_begin(fun->getLLVMFun()), EE = inst_end(fun->getLLVMFun()); II != EE; ++II)
+                for (const SVFInstruction* svfInst : fun->getInstructionList())
                 {
-                    const Instruction* inst = &*II;
-                    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
                     if (svfInst == entryinst)
                         continue;
                     CxtThreadStmt newCts(cts.getTid(), curCxt, svfInst);

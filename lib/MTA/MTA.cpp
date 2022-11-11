@@ -198,9 +198,9 @@ void MTA::detect(SVFModule* module)
     for (const SVFFunction* F : module->getFunctionSet())
     {
         // collect and create symbols inside the function body
-        for (const_inst_iterator II = inst_begin(F->getLLVMFun()), E = inst_end(F->getLLVMFun()); II != E; ++II)
+        for (const SVFInstruction* svfInst : F->getInstructionList())
         {
-            const Instruction* inst = &*II;
+            const Instruction* inst = svfInst->getLLVMInstruction();
             if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(inst))
             {
                 loads.insert(load);

@@ -65,6 +65,8 @@ private:
     LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false) {}
 
     void build();
+    void processSVFFunction();
+    void processSVFBasicBlock(const SVFFunction* func);
 
 public:
     static inline LLVMModuleSet* getLLVMModuleSet()

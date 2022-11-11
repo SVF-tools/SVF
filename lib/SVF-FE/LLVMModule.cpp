@@ -103,37 +103,20 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     return svfModule;
 }
 
-void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
-{
-    loadModules(moduleNameVec);
-    prePassSchedule();
-
-    std::string preProcessSuffix = ".pre.bc";
-    // Get the existing module names, remove old extention, add preProcessSuffix
-    for (u32_t i = 0; i < moduleNameVec.size(); i++)
-    {
-        u32_t lastIndex = moduleNameVec[i].find_last_of(".");
-        std::string rawName = moduleNameVec[i].substr(0, lastIndex);
-        moduleNameVec[i] = (rawName + preProcessSuffix);
-    }
-
-    dumpModulesToFile(preProcessSuffix);
-    preProcessed = true;
-
-    releaseLLVMModuleSet();
-}
-
-
-
 void LLVMModuleSet::build()
 {
     if(preProcessed==false)
         prePassSchedule();
 
     buildFunToFunMap();
-    initialize();
     buildGlobalDefToRepMap();
 
+    initialize();
+    processSVFFunction(); 
+}
+
+void LLVMModuleSet::processSVFFunction()
+{
     const SVFModule::FunctionSetType& functions = svfModule->getFunctionSet();
     for (SVFModule::FunctionSetType::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
     {
@@ -143,6 +126,14 @@ void LLVMModuleSet::build()
         SVFFunction* svffun = const_cast<SVFFunction*>(func);
         svffun->setIsNotRet(isNotRetFunction);
         svffun->setIsUncalledFunction(isUncalledFunction);
+        for (const_inst_iterator II = inst_begin(svffun->getLLVMFun()), EE = inst_end(svffun->getLLVMFun()); II != EE; ++II)
+        {
+            const Instruction* i = &*II;
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
+            svffun->addInstruction(inst);
+        }
+        processSVFBasicBlock(svffun);
+
         if (SVFUtil::isExtCall(func) == false)
         {
             std::vector<const SVFBasicBlock*> reachableBBs;
@@ -219,6 +210,18 @@ void LLVMModuleSet::build()
     }
 }
 
+void LLVMModuleSet::processSVFBasicBlock(const SVFFunction* svffun)
+{
+    for(const SVFBasicBlock* bb : svffun->getBasicBlockList())
+    {
+        for (succ_const_iterator succ_it = succ_begin(bb->getLLVMBasicBlock()); succ_it != succ_end(bb->getLLVMBasicBlock()); succ_it++)
+        {
+            const SVFBasicBlock* svf_scc_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(*succ_it);
+            const_cast<SVFBasicBlock*>(bb)->addSuccBasicBlock(svf_scc_bb);
+        }
+    }
+}
+
 /*!
  * Invoke llvm passes to modify module
  */
@@ -248,6 +251,25 @@ void LLVMModuleSet::prePassSchedule()
     }
 }
 
+void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
+{
+    loadModules(moduleNameVec);
+    prePassSchedule();
+
+    std::string preProcessSuffix = ".pre.bc";
+    // Get the existing module names, remove old extention, add preProcessSuffix
+    for (u32_t i = 0; i < moduleNameVec.size(); i++)
+    {
+        u32_t lastIndex = moduleNameVec[i].find_last_of(".");
+        std::string rawName = moduleNameVec[i].substr(0, lastIndex);
+        moduleNameVec[i] = (rawName + preProcessSuffix);
+    }
+
+    dumpModulesToFile(preProcessSuffix);
+    preProcessed = true;
+
+    releaseLLVMModuleSet();
+}
 
 void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 {
