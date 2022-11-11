@@ -19,20 +19,20 @@ void* SAFEMALLOCFP(int n){
     return malloc(n);
 }
 /// safe free function
-void* SAFEFREE(int * p){
+void SAFEFREE(int * p){
     free(p);
 }
 /// double free
-void* DOUBLEFREE(int * p){
+void DOUBLEFREE(int * p){
     free(p);
 }
 
 // use after free
-int *USEAFTERFREE(int * p){
+int USEAFTERFREE(int * p){
     return *p;
 }
 
 // safe use function
-int *SAFEUSE(int * p){
+int SAFEUSE(int * p){
     return *p;
 }
