@@ -72,13 +72,6 @@ typedef llvm::GlobalAlias GlobalAlias;
 typedef llvm::NamedMDNode NamedMDNode;
 typedef llvm::MDNode MDNode;
 
-
-/// LLVM Iterators
-#if LLVM_VERSION_MAJOR >= 11
-typedef llvm::const_succ_iterator succ_const_iterator;
-#else
-typedef llvm::succ_const_iterator succ_const_iterator;
-#endif
 typedef llvm::GraphPrinter GraphPrinter;
 typedef llvm::IntegerType IntegerType;
 

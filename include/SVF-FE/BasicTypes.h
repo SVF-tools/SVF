@@ -208,6 +208,12 @@ typedef llvm::VectorType VectorType;
 typedef llvm::FunctionCallee FunctionCallee;
 #endif
 
+/// LLVM Iterators
+#if LLVM_VERSION_MAJOR >= 11
+typedef llvm::const_succ_iterator succ_const_iterator;
+#else
+typedef llvm::succ_const_iterator succ_const_iterator;
+#endif
 } // End namespace SVF
 
 #endif  // SVF_FE_BASIC_TYPES_H
