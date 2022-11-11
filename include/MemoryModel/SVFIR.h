@@ -456,6 +456,7 @@ private:
     inline void addToStmt2TypeMap(SVFStmt* edge)
     {
         bool added = KindToSVFStmtSetMap[edge->getEdgeKind()].insert(edge).second;
+        (void) added; // Make compiler happy :)
         assert(added && "duplicated edge, not added!!!");
         if (edge->isPTAEdge())
         {
@@ -494,7 +495,8 @@ private:
     /// Add indirect callsites
     inline void addIndirectCallsites(const CallICFGNode* cs,NodeID funPtr)
     {
-        bool added = indCallSiteToFunPtrMap.insert(std::make_pair(cs,funPtr)).second;
+        bool added = indCallSiteToFunPtrMap.emplace(cs, funPtr).second;
+        (void) added;
         funPtrToCallSitesMap[funPtr].insert(cs);
         assert(added && "adding the same indirect callsite twice?");
     }

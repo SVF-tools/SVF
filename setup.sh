@@ -18,7 +18,7 @@ function set_llvm {
     [ -n "$LLVM_DIR" ] && return 0
 
     # use local download directory
-    LLVM_DIR="$SVF_DIR/llvm-13.0.0.obj"
+    LLVM_DIR="$SVF_DIR/llvm-15.0.0.obj"
     [ -d "$LLVM_DIR" ] && return 0
 
     # ... otherwise don't set LLVM_DIR
@@ -57,12 +57,12 @@ fi
 #########
 #export PATH FOR SVF and LLVM executables
 #########
-if [[ $1 == 'debug' ]]
-then
-PTAOBJTY='Debug'
+if [[ $1 =~ ^[Dd]ebug ]]; then
+    PTAOBJTY='Debug'
 else
-PTAOBJTY='Release'
+    PTAOBJTY='Release'
 fi
+
 Build=$PTAOBJTY'-build'
 
 export PATH=$LLVM_DIR/bin:$PATH

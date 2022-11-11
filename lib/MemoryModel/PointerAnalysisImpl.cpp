@@ -322,7 +322,9 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
         ss >> id >> base >> offset;
 
         NodeID n = pag->getGepObjVar(base, LocationSet(offset));
-        assert(id == n && "Error adding GepObjNode into SVFIR!");
+        bool matched = id == n;
+        (void) matched;
+        assert(matched && "Error adding GepObjNode into SVFIR!");
 
         getline(F, line);
     }

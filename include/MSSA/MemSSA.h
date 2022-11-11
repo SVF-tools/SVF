@@ -324,9 +324,9 @@ public:
     {
         if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(inst))
         {
-            assert(0 != load2MuSetMap.count(load)
-                   && "not associated with mem region!");
-            return true;
+            bool has_mu = load2MuSetMap.count(load) != 0;
+            assert(has_mu && "not associated with mem region!");
+            return has_mu;
         }
         else
             return false;
@@ -336,9 +336,9 @@ public:
         if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(
                                          inst))
         {
-            assert(0 != store2ChiSetMap.count(store)
-                   && "not associated with mem region!");
-            return true;
+            bool has_store = store2ChiSetMap.count(store) != 0;
+            assert(has_store && "not associated with mem region!");
+            return has_store;
         }
         else
             return false;
