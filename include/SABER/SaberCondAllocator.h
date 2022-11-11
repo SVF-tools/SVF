@@ -148,6 +148,7 @@ public:
     {
         const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
         const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
+        (void)(keyFunc == valueFunc);  // make compiler happy
         assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
 
         return keyFunc->postDominate(bbKey,bbValue);
@@ -157,6 +158,7 @@ public:
     {
         const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
         const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
+        (void)(keyFunc == valueFunc); // Make compiler happy
         assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
 
         return keyFunc->dominate(bbKey,bbValue);

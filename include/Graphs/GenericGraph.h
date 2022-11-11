@@ -292,13 +292,15 @@ public:
     {
         iterator it = InEdges.find(edge);
         assert(it != InEdges.end() && "can not find in edge in SVFG node");
-        return InEdges.erase(edge);
+        InEdges.erase(it);
+        return 1;
     }
     inline u32_t removeOutgoingEdge(EdgeType* edge)
     {
         iterator it = OutEdges.find(edge);
         assert(it != OutEdges.end() && "can not find out edge in SVFG node");
-        return OutEdges.erase(edge);
+        OutEdges.erase(it);
+        return 1;
     }
     ///@}
 

@@ -661,6 +661,7 @@ struct DOTGraphTraits<TCT*> : public DefaultDOTGraphTraits
     {
 
         TCTEdge* edge = csThreadTree->getGraphEdge(node, *EI, TCTEdge::ThreadCreateEdge);
+        (void) edge; // Make compiler happy
         assert(edge && "No edge found!!");
         /// black edge for direct call while two functions contain indirect calls will be label with red color
         return "color=black";

@@ -101,6 +101,7 @@ private:
             LocationSet locationSet = LocationSet(locationSetOffset);
             SVF::NodeID gepnodeId = pag->getGepObjVar(baseNodeId, locationSet);
 
+            (void)(nodeId, gepnodeId); // Make compiler happy
             assert(nodeId == gepnodeId && "nodeId != gepnodeId");
         }
     }

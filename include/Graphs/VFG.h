@@ -340,8 +340,9 @@ public:
     {
         bool added1 = edge->getDstNode()->addIncomingEdge(edge);
         bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
-        assert(added1 && added2 && "edge not added??");
-        return true;
+        bool both_added = added1 & added2;
+        assert(both_added && "VFGEdge not added??");
+        return both_added;
     }
 
 protected:
