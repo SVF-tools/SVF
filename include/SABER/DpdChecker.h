@@ -46,8 +46,10 @@ public:
     typedef Map<const SVFGNode*,const CallICFGNode*> SVFGNodeToCSIDMap;
     typedef FIFOWorkList<const CallICFGNode*> CSWorkList;
     typedef FIFOWorkList<const SVFGNode*> NodeWorkList;
+    typedef FIFOWorkList<const ICFGNode*> ICFGNodeWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
+    typedef NodeBS ICFGNodeBS;
     enum LEAK_TYPE
     {
         NEVER_FREE_LEAK,
