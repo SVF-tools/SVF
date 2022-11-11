@@ -321,7 +321,7 @@ public:
             if (Bits[i] != 0)
                 return i * BITWORD_SIZE + countTrailingZeros(Bits[i]);
         assert(false && "SBV: find_first: SBV cannot be empty");
-        return -1; // Unreachable. Make the compiler happy
+        abort();
     }
 
     /// find_last - Returns the index of the last set bit.
@@ -335,7 +335,7 @@ public:
                        countLeadingZeros(Bits[Idx]) - 1;
         }
         assert(false && "SBV: find_last: SBV cannot be empty");
-        return -1; // Unreachable. Make the compiler happy
+        abort();
     }
 
     /// find_next - Returns the index of the next set bit starting from the

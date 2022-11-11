@@ -174,10 +174,9 @@ AddrCGEdge* ConstraintGraph::addAddrCGEdge(NodeID src, NodeID dst)
     if (hasEdge(srcNode, dstNode, ConstraintEdge::Addr))
         return nullptr;
     AddrCGEdge* edge = new AddrCGEdge(srcNode, dstNode, edgeIndex++);
-    if (!AddrCGEdgeSet.insert(edge).second)
-    {
-        assert(!"new AddrCGEdge not added??");
-    }
+    bool inserted = AddrCGEdgeSet.insert(edge).second;
+    (void)inserted; // Make compiler happy
+    assert(inserted && "new AddrCGEdge not added??");
     srcNode->addOutgoingAddrEdge(edge);
     dstNode->addIncomingAddrEdge(edge);
     return edge;
@@ -195,9 +194,9 @@ CopyCGEdge* ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
         return nullptr;
 
     CopyCGEdge* edge = new CopyCGEdge(srcNode, dstNode, edgeIndex++);
-    if (!directEdgeSet.insert(edge).second) {
-        assert(!"new CopyCGEdge not added??");
-    }
+    bool inserted = directEdgeSet.insert(edge).second;
+    (void)inserted; // Make compiler happy
+    assert(inserted && "new CopyCGEdge not added??");
     srcNode->addOutgoingCopyEdge(edge);
     dstNode->addIncomingCopyEdge(edge);
     return edge;
@@ -215,10 +214,9 @@ NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, co
         return nullptr;
 
     NormalGepCGEdge* edge = new NormalGepCGEdge(srcNode, dstNode,ls, edgeIndex++);
-    if (!directEdgeSet.insert(edge).second)
-    {
-        assert(!"new NormalGepCGEdge not added??");
-    }
+    bool inserted = directEdgeSet.insert(edge).second;
+    (void)inserted; // Make compiler happy
+    assert(inserted && "new NormalGepCGEdge not added??");
     srcNode->addOutgoingGepEdge(edge);
     dstNode->addIncomingGepEdge(edge);
     return edge;
@@ -235,10 +233,9 @@ VariantGepCGEdge* ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst)
         return nullptr;
 
     VariantGepCGEdge* edge = new VariantGepCGEdge(srcNode, dstNode, edgeIndex++);
-    if (!directEdgeSet.insert(edge).second)
-    {
-        assert(!"new VariantGepCGEdge not added??");
-    }
+    bool inserted = directEdgeSet.insert(edge).second;
+    (void)inserted; // Make compiler happy
+    assert(inserted && "new VariantGepCGEdge not added??");
     srcNode->addOutgoingGepEdge(edge);
     dstNode->addIncomingGepEdge(edge);
     return edge;
@@ -255,10 +252,9 @@ LoadCGEdge* ConstraintGraph::addLoadCGEdge(NodeID src, NodeID dst)
         return nullptr;
 
     LoadCGEdge* edge = new LoadCGEdge(srcNode, dstNode, edgeIndex++);
-    if (!LoadCGEdgeSet.insert(edge).second)
-    {
-        assert(!"new LoadCGEdge not added??");
-    }
+    bool inserted = LoadCGEdgeSet.insert(edge).second;
+    (void)inserted; // Make compiler happy
+    assert(inserted && "new LoadCGEdge not added??");
     srcNode->addOutgoingLoadEdge(edge);
     dstNode->addIncomingLoadEdge(edge);
     return edge;
@@ -275,10 +271,9 @@ StoreCGEdge* ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
         return nullptr;
 
     StoreCGEdge* edge = new StoreCGEdge(srcNode, dstNode, edgeIndex++);
-    if (!StoreCGEdgeSet.insert(edge).second)
-    {
-        assert(!"new StoreCGEdge not added??");
-    }
+    bool inserted = StoreCGEdgeSet.insert(edge).second;
+    (void)inserted; // Make compiler happy
+    assert(inserted && "new StoreCGEdge not added??");
     srcNode->addOutgoingStoreEdge(edge);
     dstNode->addIncomingStoreEdge(edge);
     return edge;
