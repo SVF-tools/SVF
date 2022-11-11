@@ -99,6 +99,11 @@ public:
         return modules.size();
     }
 
+    const std::vector<std::reference_wrapper<Module>>& getLLVMModules() const
+    {
+        return modules;
+    }
+
     Module *getModule(u32_t idx) const
     {
         return &getModuleRef(idx);
@@ -216,8 +221,7 @@ public:
     }
 
 private:
-    std::vector<const Function*> getLLVMGlobalFunctions(
-        const GlobalVariable* global);
+    std::vector<const Function*> getLLVMGlobalFunctions(const GlobalVariable* global);
 
     void loadModules(const std::vector<std::string>& moduleNameVec);
     void addSVFMain();

@@ -10,6 +10,12 @@ SVFFunction::SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVF
 {
 }
 
+SVFFunction::~SVFFunction()
+{
+    for(const SVFBasicBlock* bb : allBBs)
+        delete bb;
+}
+
 u32_t SVFFunction::arg_size() const
 {
     return getLLVMFun()->arg_size();
@@ -131,6 +137,12 @@ bool SVFFunction::isLoopHeader(const SVFBasicBlock* bb) const
 SVFBasicBlock::SVFBasicBlock(const BasicBlock* b, const SVFFunction* f): 
     SVFValue(b->hasName() ? b->getName().str(): "",SVFValue::SVFBB), bb(b), fun(f)
 {
+}
+
+SVFBasicBlock::~SVFBasicBlock()
+{
+    for(const SVFInstruction* inst : allInsts)
+        delete inst;
 }
 
 SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b): 

@@ -229,19 +229,17 @@ void LLVMModuleSet::prePassSchedule()
 {
     /// BreakConstantGEPs Pass
     std::unique_ptr<BreakConstantGEPs> p1 = std::make_unique<BreakConstantGEPs>();
-    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
+    for (Module &M : getLLVMModules())
     {
-        Module *module = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
-        p1->runOnModule(*module);
+        p1->runOnModule(M);
     }
 
     /// MergeFunctionRets Pass
     std::unique_ptr<UnifyFunctionExitNodes> p2 =
         std::make_unique<UnifyFunctionExitNodes>();
-    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
+    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-        Module *module = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
-        for (auto F = module->begin(), E = module->end(); F != E; ++F)
+        for (auto F = M.begin(), E = M.end(); F != E; ++F)
         {
             Function &fun = *F;
             if (fun.isDeclaration())
@@ -354,8 +352,9 @@ void LLVMModuleSet::initialize()
         for (Module::global_iterator it = mod.global_begin(),
                 eit = mod.global_end(); it != eit; ++it)
         {
-            GlobalVariable *global = &*it;
-            svfModule->addGlobalSet(global);
+            GlobalVariable* global = &*it;
+            SVFGlobalValue* svfglobal = new SVFGlobalValue(global);
+            svfModule->addGlobalSet(svfglobal);
         }
 
         /// GlobalAlias
@@ -363,13 +362,13 @@ void LLVMModuleSet::initialize()
                 eit = mod.alias_end(); it != eit; ++it)
         {
             GlobalAlias *alias = &*it;
-            svfModule->addAliasSet(alias);
+            SVFGlobalValue* svfglobal = new SVFGlobalValue(alias);
+            svfModule->addAliasSet(svfglobal);
         }
     }
 }
 
-std::vector<const Function* > LLVMModuleSet::getLLVMGlobalFunctions(
-    const GlobalVariable *global)
+std::vector<const Function* > LLVMModuleSet::getLLVMGlobalFunctions(const GlobalVariable *global)
 {
     // This function is used to extract constructor and destructor functions
     // sorted by their priority from @llvm.global_ctors or @llvm.global_dtors.
@@ -468,9 +467,7 @@ void LLVMModuleSet::addSVFMain()
     for (Module &mod : modules)
     {
         // Collect ctor and dtor functions
-        for (Module::global_iterator it = mod.global_begin(),
-                eit = mod.global_end();
-                it != eit; ++it)
+        for (Module::global_iterator it = mod.global_begin(), eit = mod.global_end(); it != eit; ++it)
         {
             const GlobalVariable *global = &*it;
 
@@ -567,10 +564,12 @@ void LLVMModuleSet::buildFunToFunMap()
     typedef Map<string, const Function*> NameToFunDefMapTy;
     typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
 
-    for (SVFModule::LLVMFunctionSetType::iterator it = svfModule->llvmFunBegin(),
-            eit = svfModule->llvmFunEnd(); it != eit; ++it)
+    for (Module& mod : modules)
     {
-        const Function* fun = *it;
+        /// Function
+        for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
+        {
+        const Function* fun = &*it;
         if (fun->isDeclaration())
         {
             funDecls.insert(fun);
@@ -580,6 +579,7 @@ void LLVMModuleSet::buildFunToFunMap()
         {
             funDefs.insert(fun);
             defNames.insert(fun->getName().str());
+        }
         }
     }
     // Find the intersectNames
@@ -676,10 +676,12 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
 {
     typedef Map<string, Set<GlobalVariable*>> NameToGlobalsMapTy;
     NameToGlobalsMapTy nameToGlobalsMap;
-    for (SVFModule::global_iterator it = svfModule->global_begin(),
-            eit = svfModule->global_end(); it != eit; ++it)
+    for (Module &mod : modules)
     {
-        GlobalVariable *global = *it;
+        // Collect ctor and dtor functions
+        for (Module::global_iterator it = mod.global_begin(), eit = mod.global_end(); it != eit; ++it)
+        {
+        GlobalVariable *global = &*it;
         if (global->hasPrivateLinkage())
             continue;
         string name = global->getName().str();
@@ -694,6 +696,7 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
         {
             Set<GlobalVariable*> &globals = mit->second;
             globals.insert(global);
+        }
         }
     }
 

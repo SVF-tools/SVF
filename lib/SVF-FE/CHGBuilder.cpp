@@ -61,21 +61,19 @@ void CHGBuilder::buildCHG()
 
     double timeStart, timeEnd;
     timeStart = PTAStat::getClk(true);
-    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
+    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-        Module *M = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
-        assert(M && "module not found?");
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("construct CHGraph From module "
-                + M->getName().str() + "...\n"));
-        readInheritanceMetadataFromModule(*M);
-        for (Module::const_global_iterator I = M->global_begin(), E = M->global_end(); I != E; ++I)
+                + M.getName().str() + "...\n"));
+        readInheritanceMetadataFromModule(M);
+        for (Module::const_global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I)
             buildCHGNodes(&(*I));
-        for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
+        for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
             buildCHGNodes(getDefFunForMultipleModule(&(*F)));
-        for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
+        for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
             buildCHGEdges(getDefFunForMultipleModule(&(*F)));
 
-        analyzeVTables(*M);
+        analyzeVTables(M);
     }
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("build Internal Maps ...\n"));

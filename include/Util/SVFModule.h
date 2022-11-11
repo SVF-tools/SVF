@@ -43,11 +43,12 @@ class SVFModule
 public:
     typedef std::vector<const SVFFunction*> FunctionSetType;
     typedef std::vector<const Function*> LLVMFunctionSetType;
-    typedef std::vector<GlobalVariable*> GlobalSetType;
-    typedef std::vector<GlobalAlias*> AliasSetType;
+    typedef std::vector<SVFGlobalValue*> GlobalSetType;
+    typedef std::vector<SVFGlobalValue*> AliasSetType;
     typedef Map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
     typedef Map<const BasicBlock*,const SVFBasicBlock*> LLVMBB2SVFBBMap;
     typedef Map<const Instruction*,const SVFInstruction*> LLVMInst2SVFInstMap;
+    typedef Map<const GlobalValue*,const SVFGlobalValue*> LLVMGlobal2SVFGlobalMap;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
@@ -87,8 +88,12 @@ public:
 
     ~SVFModule()
     {
-        for (auto * f : FunctionSet)
+        for (const SVFFunction* f : FunctionSet)
             delete f;
+        for (const SVFGlobalValue* g : GlobalSet)
+            delete g;
+        for (const SVFGlobalValue* a : AliasSet)
+            delete a;
         NodeIDAllocator::unset();
         ThreadAPI::destroy();
         ExtAPI::destory();
@@ -129,11 +134,11 @@ public:
     {
         LLVMInst2SVFInst[svfInst->getLLVMInstruction()] = svfInst;
     }
-    inline void addGlobalSet(GlobalVariable* glob)
+    inline void addGlobalSet(SVFGlobalValue* glob)
     {
         GlobalSet.push_back(glob);
     }
-    inline void addAliasSet(GlobalAlias* alias)
+    inline void addAliasSet(SVFGlobalValue* alias)
     {
         AliasSet.push_back(alias);
     }

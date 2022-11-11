@@ -544,10 +544,11 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
 {
 
     /// initialize global variable
-    for (SVFModule::global_iterator I = svfModule->global_begin(), E =
-                svfModule->global_end(); I != E; ++I)
+    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-        GlobalVariable *gvar = *I;
+    for (Module::global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I)
+    {
+        GlobalVariable *gvar = &*I;
         NodeID idx = getValueNode(gvar);
         NodeID obj = getObjectNode(gvar);
 
@@ -561,12 +562,12 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
             InitialGlobal(gvar, C, 0);
         }
     }
+    
 
     /// initialize global functions
-    for (SVFModule::llvm_const_iterator I = svfModule->llvmFunBegin(), E =
-                svfModule->llvmFunEnd(); I != E; ++I)
+    for (Module::const_iterator I = M.begin(), E = M.end(); I != E; ++I)
     {
-        const Function* fun = *I;
+        const Function* fun = &*I;
         NodeID idx = getValueNode(fun);
         NodeID obj = getObjectNode(fun);
 
@@ -576,13 +577,15 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
     }
 
     // Handle global aliases (due to linkage of multiple bc files), e.g., @x = internal alias @y. We need to add a copy from y to x.
-    for (SVFModule::alias_iterator I = svfModule->alias_begin(), E = svfModule->alias_end(); I != E; I++)
+    for (Module::alias_iterator I = M.alias_begin(), E = M.alias_end(); I != E; I++)
     {
-        NodeID dst = pag->getValueNode(*I);
-        NodeID src = pag->getValueNode((*I)->getAliasee());
-        processCE((*I)->getAliasee());
-        setCurrentLocation(*I, nullptr);
+        const GlobalAlias* alias = &*I;
+        NodeID dst = pag->getValueNode(alias);
+        NodeID src = pag->getValueNode(alias->getAliasee());
+        processCE(alias->getAliasee());
+        setCurrentLocation(alias, nullptr);
         addCopyEdge(src,dst);
+    }
     }
 }
 

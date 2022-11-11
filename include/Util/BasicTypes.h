@@ -61,6 +61,7 @@ typedef llvm::StructType StructType;
 typedef llvm::ArrayType ArrayType;
 typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
+typedef llvm::IntegerType IntegerType;
 
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
@@ -73,7 +74,6 @@ typedef llvm::NamedMDNode NamedMDNode;
 typedef llvm::MDNode MDNode;
 
 typedef llvm::GraphPrinter GraphPrinter;
-typedef llvm::IntegerType IntegerType;
 
 // LLVM Debug Information
 typedef llvm::DISubprogram DISubprogram;
@@ -81,6 +81,90 @@ typedef llvm::DISubprogram DISubprogram;
 
 class SVFInstruction;
 class SVFBasicBlock;
+
+
+class SVFValue
+{
+
+public:
+    typedef s64_t GNodeK;
+
+    enum SVFValKind
+    {
+        SVFVal,
+        SVFFunc,
+        SVFInst,
+        SVFGlob,
+        SVFBB
+    };
+
+private:
+    const std::string value;
+    GNodeK kind;	///< Type of this SVFValue
+
+protected:
+    /// Constructor
+    SVFValue(const std::string& val, SVFValKind k): value(val), kind(k)
+    {
+    }
+
+public:
+    SVFValue(void) = delete;
+    virtual ~SVFValue() = default;
+    
+    /// Get the type of this SVFValue
+    inline GNodeK getKind() const
+    {
+        return kind;
+    }
+
+    /// Add the hash function for std::set (we also can overload operator< to implement this)
+    //  and duplicated elements in the set are not inserted (binary tree comparison)
+    //@{
+    bool operator()(const SVFValue* lhs, const SVFValue* rhs) const
+    {
+        return lhs->value < rhs->value;
+    }
+
+    inline bool operator==(SVFValue* rhs) const
+    {
+        return value == rhs->value;
+    }
+
+    inline bool operator!=(SVFValue* rhs) const
+    {
+        return value != rhs->value;
+    }
+    //@}
+
+    const std::string getName() const
+    {
+        return value;
+    }
+
+    const std::string& getValue() const
+    {
+        return value;
+    }
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend OutStream& operator<< (OutStream &o, const SVFValue &node)
+    {
+        o << node.getName();
+        return o;
+    }
+    //@}
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFValue::SVFVal ||
+               node->getKind() == SVFValue::SVFFunc ||
+               node->getKind() == SVFValue::SVFGlob ||
+               node->getKind() == SVFValue::SVFBB ||
+               node->getKind() == SVFValue::SVFInst;
+    }
+};
 
 class SVFFunction : public SVFValue
 {
@@ -109,6 +193,7 @@ public:
 
     SVFFunction(Function* f);
     SVFFunction(void) = delete;
+    virtual ~SVFFunction();
 
     static inline bool classof(const SVFValue *node)
     {
@@ -286,6 +371,8 @@ private:
     const SVFFunction* fun;
 public:
     SVFBasicBlock(const BasicBlock* b, const SVFFunction* f);
+    SVFBasicBlock(void) = delete;
+    virtual ~SVFBasicBlock();
 
     static inline bool classof(const SVFValue *node)
     {
@@ -389,12 +476,19 @@ public:
 };
 
 
-class SVFGlobal : public SVFValue
+class SVFGlobalValue : public SVFValue
 {
-
+private:
+    const GlobalValue* gv;
 public:
-    SVFGlobal(const GlobalValue* gv): SVFValue(gv->getName().str(),SVFValue::SVFGlob)
+    SVFGlobalValue(const GlobalValue* _gv): SVFValue(_gv->getName().str(), SVFValue::SVFGlob), gv(_gv)
     {
+    }
+    SVFGlobalValue() = delete;
+
+    const GlobalValue* getLLVMGlobalValue() const
+    {
+        return gv;
     }
 
     static inline bool classof(const SVFValue *node)

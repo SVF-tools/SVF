@@ -165,10 +165,12 @@ void DCHGraph::handleTypedef(const DIType *typedefType)
 
 void DCHGraph::buildVTables(const SVFModule &module)
 {
-    for (SVFModule::const_global_iterator gvI = module.global_begin(); gvI != module.global_end(); ++gvI)
+    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
+    {
+    for (Module::const_global_iterator gvI = M.global_begin(); gvI != M.global_end(); ++gvI)
     {
         // Though this will return more than GlobalVariables, we only care about GlobalVariables (for the vtbls).
-        const GlobalVariable *gv = SVFUtil::dyn_cast<const GlobalVariable>(*gvI);
+        const GlobalVariable *gv = SVFUtil::dyn_cast<const GlobalVariable>(&*gvI);
         if (gv == nullptr) continue;
         if (gv->hasMetadata(cppUtil::ctir::vtMDName) && gv->getNumOperands() > 0)
         {
@@ -214,6 +216,7 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 }
             }
         }
+    }
     }
 }
 
@@ -458,9 +461,9 @@ void DCHGraph::buildCHG(bool extend)
 {
     extended = extend;
     DebugInfoFinder finder;
-    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
+    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-        finder.processModule(*(LLVMModuleSet::getLLVMModuleSet()->getModule(i)));
+        finder.processModule(M);
     }
 
     // Create the void node regardless of whether it appears.

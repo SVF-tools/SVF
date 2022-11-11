@@ -66,25 +66,25 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     assert(symInfo->totalSymNum++ == SymbolTableInfo::ConstantObj && "Something changed!");
     symInfo->createConstantObj(SymbolTableInfo::ConstantObj);
 
-    // Add symbols for all the globals .
-    for (SVFModule::global_iterator I = svfModule->global_begin(), E =
-                svfModule->global_end(); I != E; ++I)
+    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-        collectSym(*I);
+    // Add symbols for all the globals .
+    for (Module::global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I)
+    {
+        collectSym(&*I);
     }
 
     // Add symbols for all the global aliases
-    for (SVFModule::alias_iterator I = svfModule->alias_begin(), E =
-                svfModule->alias_end(); I != E; I++)
+    for (Module::alias_iterator I = M.alias_begin(), E = M.alias_end(); I != E; I++)
     {
-        collectSym(*I);
-        collectSym((*I)->getAliasee());
+        collectSym(&*I);
+        collectSym((&*I)->getAliasee());
     }
 
     // Add symbols for all of the functions and the instructions in them.
-    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
+    for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
     {
-        const Function *fun = *F;
+        const Function *fun = &*F;
         collectSym(fun);
         collectRet(fun);
         if (fun->getFunctionType()->isVarArg())
@@ -189,6 +189,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
             }
             //@}
         }
+    }
     }
 
     symInfo->totalSymNum = NodeIDAllocator::get()->endSymbolAllocation();
