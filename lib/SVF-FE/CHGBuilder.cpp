@@ -176,7 +176,7 @@ void CHGBuilder::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSit
         if (cs.arg_size() < 1 || (cs.arg_size() < 2 && cs.paramHasAttr(0, llvm::Attribute::StructRet)))
             return;
         const Value *csThisPtr = getVCallThisPtr(cs);
-        //const Argument *consThisPtr = getConstructorThisPtr(caller);
+        //const Argument* consThisPtr = getConstructorThisPtr(caller);
         //bool samePtr = isSameThisPtrInConstructor(consThisPtr, csThisPtr);
         bool samePtrTrue = true;
         if (csThisPtr != nullptr && samePtrTrue)

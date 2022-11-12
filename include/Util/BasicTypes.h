@@ -81,7 +81,7 @@ typedef llvm::DISubprogram DISubprogram;
 
 class SVFInstruction;
 class SVFBasicBlock;
-
+class SVFArgument;
 
 class SVFValue
 {
@@ -93,18 +93,22 @@ public:
     {
         SVFVal,
         SVFFunc,
+        SVFBB,
         SVFInst,
         SVFGlob,
-        SVFBB
+        SVFArg
     };
 
 private:
-    const std::string value;
+    const Value* value;
+    const Type* type;
     GNodeK kind;	///< Type of this SVFValue
 
 protected:
+    std::string name;
+
     /// Constructor
-    SVFValue(const std::string& val, SVFValKind k): value(val), kind(k)
+    SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k), name(val->getName())
     {
     }
 
@@ -139,12 +143,17 @@ public:
 
     const std::string getName() const
     {
+        return name;
+    }
+
+    const Value* getValue() const
+    {
         return value;
     }
 
-    const std::string& getValue() const
+    const Type* getType() const
     {
-        return value;
+        return type;
     }
 
     /// Overloading operator << for dumping ICFG node ID
@@ -180,6 +189,7 @@ private:
     std::vector<const SVFBasicBlock*> reachableBBs;
     std::vector<const SVFBasicBlock*> allBBs;
     std::vector<const SVFInstruction*> allInsts;
+    std::vector<const SVFArgument*> allArgs;
 
     bool isUncalled;
     bool isNotRet;
@@ -217,7 +227,7 @@ public:
     }
 
     u32_t arg_size() const;
-    const Value* getArg(u32_t idx) const;
+    const SVFArgument* getArg(u32_t idx) const;
     bool isVarArg() const;
 
     inline void addBasicBlock(const SVFBasicBlock* bb) 
@@ -230,6 +240,11 @@ public:
         allInsts.push_back(inst);
     }
     
+    inline void addArgument(SVFArgument* arg)
+    {
+        allArgs.push_back(arg);
+    }
+
     inline const SVFBasicBlock* getEntryBlock() const
     {
         return allBBs.front();
@@ -437,7 +452,6 @@ private:
     const Instruction* inst;
     const SVFBasicBlock* bb;
     const SVFFunction* fun;
-    const Type* type;
     bool terminator;
 public:
     SVFInstruction(const Instruction* i, const SVFBasicBlock* b);
@@ -464,24 +478,18 @@ public:
         return fun;
     }
 
-    inline const Type* getType() const
-    {
-        return type;
-    }
-
     inline bool isTerminator() const
     {
         return terminator;
     }
 };
 
-
 class SVFGlobalValue : public SVFValue
 {
 private:
     const GlobalValue* gv;
 public:
-    SVFGlobalValue(const GlobalValue* _gv): SVFValue(_gv->getName().str(), SVFValue::SVFGlob), gv(_gv)
+    SVFGlobalValue(const GlobalValue* _gv): SVFValue(_gv, SVFValue::SVFGlob), gv(_gv)
     {
     }
     SVFGlobalValue() = delete;
@@ -494,6 +502,41 @@ public:
     static inline bool classof(const SVFValue *node)
     {
         return node->getKind() == SVFGlob;
+    }
+};
+
+class SVFArgument : public SVFValue
+{
+private:
+    const SVFFunction* fun;
+    const Argument* arg;
+    u32_t argNo;
+public:
+    SVFArgument(const Argument* _arg, const SVFFunction* _fun): SVFValue(_arg, SVFValue::SVFArg), fun(_fun), arg(_arg), argNo(_arg->getArgNo())
+    {
+    }
+    SVFArgument() = delete;
+
+    const Argument* getLLVMAgument() const
+    {
+        return arg;
+    }
+
+    inline const SVFFunction* getParent() const
+    {
+        return fun;
+    }
+
+    ///  Return the index of this formal argument in its containing function.
+    /// For example in "void foo(int a, float b)" a is 0 and b is 1.
+    inline u32_t getArgNo() const
+    {
+        return argNo;
+    }
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFArg;
     }
 };
 

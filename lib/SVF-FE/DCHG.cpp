@@ -1076,7 +1076,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
                 DISubrange *sr = SVFUtil::dyn_cast<DISubrange>(sizes[0]);
                 assert(sr != nullptr && "DCHG: non-subrange as array element?");
                 int64_t count = -1;
-                if (const ConstantInt *ci = sr->getCount().dyn_cast<ConstantInt *>())
+                if (const ConstantInt* ci = sr->getCount().dyn_cast<ConstantInt* >())
                 {
                     count = ci->getSExtValue();
                 }

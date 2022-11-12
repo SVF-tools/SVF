@@ -112,7 +112,7 @@ private:
         {
             processInstructionNode(instruction, nodeId, writeFlag);
         }
-        else if (auto argument = const_cast<Argument *>(SVFUtil::dyn_cast<Argument>(value)))
+        else if (auto argument = const_cast<Argument* >(SVFUtil::dyn_cast<Argument>(value)))
         {
             processArgumentNode(argument, nodeId, writeFlag);
         }
@@ -161,7 +161,7 @@ private:
         }
     }
 
-    void processArgumentNode(Argument *argument, const SVF::NodeID &nodeId, bool writeFlag)
+    void processArgumentNode(Argument* argument, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "anode-" + std::to_string(nodeId);
 

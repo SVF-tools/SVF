@@ -366,7 +366,7 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
     }
 }
 
-const Argument *cppUtil::getConstructorThisPtr(const Function* fun)
+const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
 {
     assert((isConstructor(fun) || isDestructor(fun)) && "not a constructor?");
     assert(fun->arg_size() >=1 && "argument size >= 1?");
@@ -400,7 +400,7 @@ u64_t cppUtil::getVCallIdx(CallSite cs)
     const GetElementPtrInst *vfuncptrgepinst =
         SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
-    const ConstantInt *idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
+    const ConstantInt* idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
     u64_t idx_value;
     if (idx == nullptr)
     {

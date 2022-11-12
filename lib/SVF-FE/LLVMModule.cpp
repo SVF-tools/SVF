@@ -115,6 +115,62 @@ void LLVMModuleSet::build()
     processSVFFunction(); 
 }
 
+void LLVMModuleSet::initialize()
+{
+    if (Options::SVFMain)
+        addSVFMain();
+
+    for (Module& mod : modules)
+    {
+        /// Function
+        for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
+        {
+            Function* func = &*it;
+            SVFFunction* svfFunc = new SVFFunction(func);
+            svfModule->addFunctionSet(svfFunc);
+
+            for (Function::const_arg_iterator I = func->arg_begin(), E = func->arg_end(); I != E; ++I)
+            {
+                SVFArgument* svfarg = new SVFArgument(&*I,svfFunc);
+                svfFunc->addArgument(svfarg);
+            }
+
+            for (Function::iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
+            {
+                BasicBlock* bb = &*bit;
+                SVFBasicBlock* svfBB = new SVFBasicBlock(bb, svfFunc);
+                svfFunc->addBasicBlock(svfBB);
+                svfModule->addBasicBlockMap(svfBB);
+                for (BasicBlock::iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
+                {
+                    Instruction* inst = &*iit;
+                    SVFInstruction* svfInst = new SVFInstruction(inst,svfBB);
+                    svfBB->addInstruction(svfInst);
+                    svfModule->addInstructionMap(svfInst);
+                }
+            }
+        }
+
+        /// GlobalVariable
+        for (Module::global_iterator it = mod.global_begin(),
+                eit = mod.global_end(); it != eit; ++it)
+        {
+            GlobalVariable* global = &*it;
+            SVFGlobalValue* svfglobal = new SVFGlobalValue(global);
+            svfModule->addGlobalSet(svfglobal);
+        }
+
+        /// GlobalAlias
+        for (Module::alias_iterator it = mod.alias_begin(),
+                eit = mod.alias_end(); it != eit; ++it)
+        {
+            GlobalAlias *alias = &*it;
+            SVFGlobalValue* svfglobal = new SVFGlobalValue(alias);
+            svfModule->addAliasSet(svfglobal);
+        }
+    }
+}
+
 void LLVMModuleSet::processSVFFunction()
 {
     const SVFModule::FunctionSetType& functions = svfModule->getFunctionSet();
@@ -318,56 +374,6 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     }
 }
 
-void LLVMModuleSet::initialize()
-{
-    if (Options::SVFMain)
-        addSVFMain();
-
-    for (Module& mod : modules)
-    {
-        /// Function
-        for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
-        {
-            Function* func = &*it;
-            SVFFunction* svfFunc = new SVFFunction(func);
-            svfModule->addFunctionSet(svfFunc);
-
-            for (Function::iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
-            {
-                BasicBlock* bb = &*bit;
-                SVFBasicBlock* svfBB = new SVFBasicBlock(bb, svfFunc);
-                svfFunc->addBasicBlock(svfBB);
-                svfModule->addBasicBlockMap(svfBB);
-                for (BasicBlock::iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
-                {
-                    Instruction* inst = &*iit;
-                    SVFInstruction* svfInst = new SVFInstruction(inst,svfBB);
-                    svfBB->addInstruction(svfInst);
-                    svfModule->addInstructionMap(svfInst);
-                }
-            }
-        }
-
-        /// GlobalVariable
-        for (Module::global_iterator it = mod.global_begin(),
-                eit = mod.global_end(); it != eit; ++it)
-        {
-            GlobalVariable* global = &*it;
-            SVFGlobalValue* svfglobal = new SVFGlobalValue(global);
-            svfModule->addGlobalSet(svfglobal);
-        }
-
-        /// GlobalAlias
-        for (Module::alias_iterator it = mod.alias_begin(),
-                eit = mod.alias_end(); it != eit; ++it)
-        {
-            GlobalAlias *alias = &*it;
-            SVFGlobalValue* svfglobal = new SVFGlobalValue(alias);
-            svfModule->addAliasSet(svfglobal);
-        }
-    }
-}
-
 std::vector<const Function* > LLVMModuleSet::getLLVMGlobalFunctions(const GlobalVariable *global)
 {
     // This function is used to extract constructor and destructor functions
@@ -433,7 +439,7 @@ std::vector<const Function* > LLVMModuleSet::getLLVMGlobalFunctions(const Global
             {
 
                 // Extract priority and function from the struct
-                const ConstantInt *priority = SVFUtil::dyn_cast<ConstantInt>(
+                const ConstantInt* priority = SVFUtil::dyn_cast<ConstantInt>(
                                                   globalFuncItem->getOperand(0));
                 const Function* func = SVFUtil::dyn_cast<Function>(
                                            globalFuncItem->getOperand(1));

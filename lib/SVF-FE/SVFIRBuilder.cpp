@@ -270,7 +270,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         ls.addOffsetValue(offsetVal, gepTy);
 
         //The int value of the current index operand
-        const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
+        const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
 
         // if Options::ModelConsts is disabled. We will treat whole array as one,
         // but we can distinguish different field of an array of struct, e.g. s[1].f1 is differet from s[0].f2
@@ -1041,7 +1041,7 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
         s32_t totalidx = 0;
         for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi)
         {
-            if(const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
+            if(const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
                 totalidx += op->getSExtValue();
         }
         if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
@@ -1434,7 +1434,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 assert((forkedFun->arg_size() <= 2) && "Size of formal parameter of start routine should be one");
                 if (forkedFun->arg_size() <= 2 && forkedFun->arg_size() >= 1)
                 {
-                    const Argument *formalParm = &(*forkedFun->arg_begin());
+                    const Argument* formalParm = &(*forkedFun->arg_begin());
                     /// Connect actual parameter to formal parameter of the start routine
                     if (SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()))
                     {
@@ -1464,7 +1464,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 /// The task function of hare_parallel_for has 3 args.
                 assert((taskFunc->arg_size() == 3) && "Size of formal parameter of hare_parallel_for's task routine should be 3");
                 const Value *actualParm = getTaskDataAtHareParForSite(inst);
-                const Argument *formalParm = &(*taskFunc->arg_begin());
+                const Argument* formalParm = &(*taskFunc->arg_begin());
                 /// Connect actual parameter to formal parameter of the start routine
                 if (SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()))
                 {

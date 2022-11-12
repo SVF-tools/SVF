@@ -5,7 +5,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-SVFFunction::SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
+SVFFunction::SVFFunction(Function* f): SVFValue(f,SVFValue::SVFFunc),
         isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false), varArg(f->isVarArg())
 {
 }
@@ -18,12 +18,13 @@ SVFFunction::~SVFFunction()
 
 u32_t SVFFunction::arg_size() const
 {
-    return getLLVMFun()->arg_size();
+    return allArgs.size();
 }
 
-const Value* SVFFunction::getArg(u32_t idx) const
+const SVFArgument* SVFFunction::getArg(u32_t idx) const
 {
-    return getLLVMFun()->getArg(idx);
+    assert (idx < allArgs.size() && "getArg() out of range!");
+    return allArgs[idx];
 }
 
 bool SVFFunction::isVarArg() const
@@ -135,8 +136,9 @@ bool SVFFunction::isLoopHeader(const SVFBasicBlock* bb) const
 }
 
 SVFBasicBlock::SVFBasicBlock(const BasicBlock* b, const SVFFunction* f): 
-    SVFValue(b->hasName() ? b->getName().str(): "",SVFValue::SVFBB), bb(b), fun(f)
+    SVFValue(b,SVFValue::SVFBB), bb(b), fun(f)
 {
+    name = b->hasName() ? b->getName().str(): "";
 }
 
 SVFBasicBlock::~SVFBasicBlock()
@@ -146,7 +148,6 @@ SVFBasicBlock::~SVFBasicBlock()
 }
 
 SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b): 
-    SVFValue(i->getName().str(), SVFInst), inst(i), bb(b), fun(bb->getParent()), 
-    type(i->getType()), terminator(i->isTerminator())
+    SVFValue(i, SVFInst), inst(i), bb(b), fun(bb->getParent()), terminator(i->isTerminator())
 {
 }
