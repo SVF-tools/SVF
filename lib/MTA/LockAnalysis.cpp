@@ -396,7 +396,7 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
         {
             handleCall(cts);
         }
-        else if (SymbolTableInfo::isReturn(curInst))
+        else if (curInst->isRetInst())
         {
             handleRet(cts);
         }

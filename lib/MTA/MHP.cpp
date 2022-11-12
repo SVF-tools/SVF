@@ -145,7 +145,7 @@ void MHP::analyzeInterleaving()
                     if(!tct->isCandidateFun(getCallee(curInst, callees)))
                         handleIntra(cts);
                 }
-                else if(SymbolTableInfo::isReturn(curInst))
+                else if(curInst->isRetInst())
                 {
                     handleRet(cts);
                 }
@@ -792,7 +792,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
 
                     handleCall(cts,rootTid);
                 }
-                else if(SymbolTableInfo::isReturn(curInst))
+                else if(curInst->isRetInst())
                 {
                     handleRet(cts);
                 }

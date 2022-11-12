@@ -93,7 +93,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
         {
             visited.insert(inst);
             ICFGNode* srcNode = getOrAddBlockICFGNode(inst);
-            if (isReturn(inst))
+            if (inst->isRetInst())
             {
                 const SVFFunction* svfFun = inst->getFunction();
                 FunExitICFGNode* FunExitICFGNode = icfg->getFunExitICFGNode(svfFun);

@@ -63,13 +63,6 @@ inline bool isNullPtrSym(const Value *val)
 /// Check whether this value points-to a constant object
 bool isConstantObjSym(const Value *val);
 
-
-/// Whether an instruction is a return instruction
-inline bool isReturn(const SVFInstruction* inst)
-{
-    return SVFUtil::isa<ReturnInst>(inst->getLLVMInstruction());
-}
-
 static inline Type *getPtrElementType(const PointerType* pty)
 {
 #if (LLVM_VERSION_MAJOR < 14)

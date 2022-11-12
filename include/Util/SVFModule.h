@@ -71,7 +71,6 @@ private:
     LLVMBB2SVFBBMap LLVMBB2SVFBB;
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
     Set<const Value*> argsOfUncalledFunction;
-    Set<const SVFInstruction*> returnInsts;
     Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
     Set<const Value*> ptrsInUncalledFunctions;
@@ -267,11 +266,6 @@ public:
         return argsOfUncalledFunction;
     }
 
-    inline const Set<const SVFInstruction*>& getReturns() const
-    {
-        return returnInsts;
-    }
-
     inline const Set<const Value*>& getPtrsInUncalledFunctions() const
     {
         return ptrsInUncalledFunctions;
@@ -327,11 +321,6 @@ public:
     inline void addArgsOfUncalledFunction(const Value *val)
     {
         argsOfUncalledFunction.insert(val);
-    }
-
-    inline void addReturn(const SVFInstruction* inst)
-    {
-        returnInsts.insert(inst);
     }
 
 };

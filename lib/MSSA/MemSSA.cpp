@@ -309,7 +309,7 @@ void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
             if(mrGen->hasModMRSet(cs))
                 RenameChiSet(getCHISet(cs),memRegs);
         }
-        else if(SymbolTableInfo::isReturn(inst))
+        else if(inst->isRetInst())
         {
             const SVFFunction* fun = bb.getParent();
             RenameMuSet(getReturnMuSet(fun));

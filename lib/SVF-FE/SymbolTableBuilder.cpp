@@ -242,14 +242,6 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val)
         }
     }
 
-    if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
-    {
-        const SVFInstruction* ret = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
-        if (LLVMUtil::isReturn(ret)){
-            symInfo->getModule()->addReturn(ret);
-        }
-    }
-
     if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
     {
         const Type* type = LLVMUtil::getPtrElementType(ptrType);
