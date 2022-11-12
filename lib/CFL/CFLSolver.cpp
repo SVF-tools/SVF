@@ -129,10 +129,10 @@ void CFLSolver::solve()
     }
 }
 
-void POCRSolver::initialize()
-{
-    // for (CFLEdge* edge: getGraph()->getCFLEdges()) {
-    //     addEdge(edge->getSrcID(), edge->getDstID(), std::make_pair(a, 0));
-    //     pushIntoWorklist(edge->getSrcID(), edge->getDstID(), std::make_pair(a, 0));
-    // }
-}
+// void POCRSolver::initialize()
+// {
+//     // for (CFLEdge* edge: getGraph()->getCFLEdges()) {
+//     //     addEdge(edge->getSrcID(), edge->getDstID(), std::make_pair(a, 0));
+//     //     pushIntoWorklist(edge->getSrcID(), edge->getDstID(), std::make_pair(a, 0));
+//     // }
+// }

@@ -255,6 +255,7 @@ public:
     static const llvm::cl::opt<bool> FlexSymMap;
     static const llvm::cl::opt<bool>  PEGTransfer;
     static const llvm::cl::opt<bool>  CFLSVFG;
+    static const llvm::cl::opt<bool> CFLData;
 
     // Loop Analysis
     static const llvm::cl::opt<bool> LoopAnalysis;

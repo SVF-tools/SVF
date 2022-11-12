@@ -68,6 +68,8 @@ int main(int argc, char ** argv)
     CFLBase* cfl;
     if (Options::CFLSVFG)
         cfl = new CFLVF(svfir);
+    else if (Options::CFLData) 
+        cfl = new POCRAlias(svfir);
     else
         cfl = new CFLAlias(svfir); // if no svfg is specified, we use CFLAlias as the default one.
     cfl->analyze();
