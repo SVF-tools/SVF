@@ -228,8 +228,6 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val)
             {
                 const BasicBlock* bb = &*bit;
                 const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
-                const u32_t num = LLVMUtil::getBBSuccessorNum(bb);
-                symInfo->getModule()->addBBSuccessorNum(svfbb,num);
                 for (succ_const_iterator succIt = succ_begin(bb); succIt != succ_end(bb); succIt++)
                 {
                     const BasicBlock* succ = *succIt;

@@ -450,6 +450,11 @@ public:
         return predBBs;
     }
 
+    inline u32_t getBBsuccessorNum() const
+    {
+        return bb->getTerminator()->getNumSuccessors();
+    }
+
     u32_t getBBSuccessorPos(const SVFBasicBlock* succbb);
     u32_t getBBSuccessorPos(const SVFBasicBlock* succbb) const;
     u32_t getBBPredecessorPos(const SVFBasicBlock* succbb);

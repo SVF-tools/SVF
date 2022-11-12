@@ -343,16 +343,6 @@ bool SymbolTableInfo::isPtrInUncalledFunction (const Value * value)
     return ptrInUncalledFunctionSet.find(value) != ptrInUncalledFunctionSet.end();
 }
 
-const u32_t SymbolTableInfo::getBBSuccessorNum(const SVFBasicBlock* bb)
-{
-    Map<const SVFBasicBlock*, const u32_t>::const_iterator bbSuccessorNumMapIter = symInfo->getModule()->getBBSuccessorNumMap().find(bb);
-    if (bbSuccessorNumMapIter != symInfo->getModule()->getBBSuccessorNumMap().end())
-    {
-        return bbSuccessorNumMapIter->second;
-    }
-    return 0;
-}
-
 const u32_t SymbolTableInfo::getBBPredecessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* Pred)
 {
     if(symInfo->getModule()->getBBPredecessorPosMap().find(bb) != symInfo->getModule()->getBBPredecessorPosMap().end())

@@ -383,14 +383,6 @@ u32_t LLVMUtil::getBBPredecessorPos(const BasicBlock* bb, const BasicBlock* succ
 }
 
 /*!
- *  Get the num of BB's successors
- */
-u32_t LLVMUtil::getBBSuccessorNum(const BasicBlock* BB)
-{
-    return BB->getTerminator()->getNumSuccessors();
-}
-
-/*!
  * Get the num of BB's predecessors
  */
 u32_t LLVMUtil::getBBPredecessorNum(const BasicBlock* BB)
