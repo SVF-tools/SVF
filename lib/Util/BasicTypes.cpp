@@ -5,7 +5,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-SVFFunction::SVFFunction(Function* f): SVFValue(f,SVFValue::SVFFunc),
+SVFFunction::SVFFunction(const Function* f): SVFValue(f,SVFValue::SVFFunc),
         isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false), varArg(f->isVarArg())
 {
 }
@@ -147,7 +147,39 @@ SVFBasicBlock::~SVFBasicBlock()
         delete inst;
 }
 
-SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b): 
-    SVFValue(i, SVFInst), inst(i), bb(b), fun(bb->getParent()), terminator(i->isTerminator())
+/*!
+ * Get position of a successor basic block
+ */
+u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ)
+{
+    u32_t i = 0;
+    for (const SVFBasicBlock* SuccBB: succBBs)
+    {
+        if (SuccBB == Succ)
+            return i;
+        i++;
+    }
+    assert(false && "Didn't find succesor edge?");
+    return 0;
+}
+
+
+/*!
+ * Return a position index from current bb to it successor bb
+ */
+u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb)
+{
+    u32_t pos = 0;
+    for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
+    {
+        if(PredBB == this)
+            return pos;
+    }
+    assert(false && "Didn't find predecessor edge?");
+    return pos;
+}
+
+SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b, bool isRet): 
+    SVFValue(i, SVFInst), inst(i), bb(b), fun(bb->getParent()), terminator(i->isTerminator()), ret(isRet)
 {
 }

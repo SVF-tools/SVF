@@ -184,7 +184,7 @@ public:
 private:
     bool isDecl;
     bool isIntri;
-    Function* fun;
+    const Function* fun;
     const SVFBasicBlock* exitBB;
     std::vector<const SVFBasicBlock*> reachableBBs;
     std::vector<const SVFBasicBlock*> allBBs;
@@ -201,7 +201,7 @@ private:
 
 public:
 
-    SVFFunction(Function* f);
+    SVFFunction(const Function* f);
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
 
@@ -382,6 +382,7 @@ public:
 private:
     std::vector<const SVFInstruction*> allInsts;
     std::vector<const SVFBasicBlock*> succBBs;
+    std::vector<const SVFBasicBlock*> predBBs;
     const BasicBlock* bb;
     const SVFFunction* fun;
 public:
@@ -434,10 +435,23 @@ public:
         succBBs.push_back(succ);
     }
 
+    inline void addPredBasicBlock(const SVFBasicBlock* pred) 
+    {
+        predBBs.push_back(pred);
+    }
+
     inline const std::vector<const SVFBasicBlock*>& getSuccessors() const
     {
         return succBBs;
     }
+
+    inline const std::vector<const SVFBasicBlock*>& getPredecessors() const
+    {
+        return predBBs;
+    }
+
+    u32_t getBBSuccessorPos(const SVFBasicBlock* succbb);
+    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb);
 
     inline const BasicBlock* getLLVMBasicBlock() const
     {
@@ -453,8 +467,9 @@ private:
     const SVFBasicBlock* bb;
     const SVFFunction* fun;
     bool terminator;
+    bool ret;
 public:
-    SVFInstruction(const Instruction* i, const SVFBasicBlock* b);
+    SVFInstruction(const Instruction* i, const SVFBasicBlock* b, bool isRet);
     SVFInstruction(const Instruction* i) = delete;
     SVFInstruction(void) = delete;
 
@@ -481,6 +496,11 @@ public:
     inline bool isTerminator() const
     {
         return terminator;
+    }
+
+    inline bool isRetInst() const
+    {
+        return ret;
     }
 };
 
@@ -511,8 +531,9 @@ private:
     const SVFFunction* fun;
     const Argument* arg;
     u32_t argNo;
+    bool uncalled;
 public:
-    SVFArgument(const Argument* _arg, const SVFFunction* _fun): SVFValue(_arg, SVFValue::SVFArg), fun(_fun), arg(_arg), argNo(_arg->getArgNo())
+    SVFArgument(const Argument* _arg, const SVFFunction* _fun, bool _uncalled): SVFValue(_arg, SVFValue::SVFArg), fun(_fun), arg(_arg), argNo(_arg->getArgNo()), uncalled(_uncalled)
     {
     }
     SVFArgument() = delete;
@@ -532,6 +553,11 @@ public:
     inline u32_t getArgNo() const
     {
         return argNo;
+    }
+
+    inline bool isArgOfUncalledFunction() const 
+    {
+        return uncalled;
     }
 
     static inline bool classof(const SVFValue *node)

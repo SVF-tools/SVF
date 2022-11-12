@@ -111,14 +111,15 @@ void LLVMModuleSet::build()
     buildFunToFunMap();
     buildGlobalDefToRepMap();
 
-    initialize();
-    processSVFFunction(); 
-}
-
-void LLVMModuleSet::initialize()
-{
     if (Options::SVFMain)
         addSVFMain();
+
+    createSVFDataStructure();
+    initSVFFunction(); 
+}
+
+void LLVMModuleSet::createSVFDataStructure()
+{
 
     for (Module& mod : modules)
     {
@@ -131,7 +132,7 @@ void LLVMModuleSet::initialize()
 
             for (Function::const_arg_iterator I = func->arg_begin(), E = func->arg_end(); I != E; ++I)
             {
-                SVFArgument* svfarg = new SVFArgument(&*I,svfFunc);
+                SVFArgument* svfarg = new SVFArgument(&*I,svfFunc, LLVMUtil::isArgOfUncalledFunction(&*I));
                 svfFunc->addArgument(svfarg);
             }
 
@@ -144,7 +145,7 @@ void LLVMModuleSet::initialize()
                 for (BasicBlock::iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
                 {
                     Instruction* inst = &*iit;
-                    SVFInstruction* svfInst = new SVFInstruction(inst,svfBB);
+                    SVFInstruction* svfInst = new SVFInstruction(inst,svfBB, SVFUtil::isa<ReturnInst>(inst));
                     svfBB->addInstruction(svfInst);
                     svfModule->addInstructionMap(svfInst);
                 }
@@ -171,14 +172,17 @@ void LLVMModuleSet::initialize()
     }
 }
 
-void LLVMModuleSet::processSVFFunction()
+void LLVMModuleSet::initSVFFunction()
 {
-    const SVFModule::FunctionSetType& functions = svfModule->getFunctionSet();
-    for (SVFModule::FunctionSetType::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+    for (Module& mod : modules)
     {
-        const SVFFunction*  func = *func_iter;
-        const bool isUncalledFunction = LLVMUtil::isUncalledFunction(func->getLLVMFun());
-        const bool isNotRetFunction = LLVMUtil::functionDoesNotRet(func->getLLVMFun());
+        /// Function
+        for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
+        {
+        const Function* f = &*it;
+        const SVFFunction*  func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(f);
+        const bool isUncalledFunction = LLVMUtil::isUncalledFunction(f);
+        const bool isNotRetFunction = LLVMUtil::functionDoesNotRet(f);
         SVFFunction* svffun = const_cast<SVFFunction*>(func);
         svffun->setIsNotRet(isNotRetFunction);
         svffun->setIsUncalledFunction(isUncalledFunction);
@@ -188,7 +192,8 @@ void LLVMModuleSet::processSVFFunction()
             const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             svffun->addInstruction(inst);
         }
-        processSVFBasicBlock(svffun);
+
+        initSVFBasicBlock(svffun);
 
         if (SVFUtil::isExtCall(func) == false)
         {
@@ -199,6 +204,32 @@ void LLVMModuleSet::processSVFFunction()
             svffun->setReachableBBs(reachableBBs);
             svffun->setExitBB(svfexitbb);
 
+            initDomTree(func);
+        }
+        }
+    }
+}
+
+void LLVMModuleSet::initSVFBasicBlock(const SVFFunction* func)
+{
+    for(const SVFBasicBlock* bb : func->getBasicBlockList())
+    {
+        for (succ_const_iterator succ_it = succ_begin(bb->getLLVMBasicBlock()); succ_it != succ_end(bb->getLLVMBasicBlock()); succ_it++)
+        {
+            const SVFBasicBlock* svf_scc_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(*succ_it);
+            const_cast<SVFBasicBlock*>(bb)->addSuccBasicBlock(svf_scc_bb);
+        }
+        for (const_pred_iterator pred_it = pred_begin(bb->getLLVMBasicBlock()); pred_it != pred_end(bb->getLLVMBasicBlock()); pred_it++)
+        {
+            const SVFBasicBlock* svf_pred_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(*pred_it);
+            const_cast<SVFBasicBlock*>(bb)->addPredBasicBlock(svf_pred_bb);
+        }
+    }
+}
+
+void LLVMModuleSet::initDomTree(const SVFFunction* func)
+{
+    SVFFunction* svffun = const_cast<SVFFunction*>(func);
             //process and stored dt & df
             DominatorTree dt;
             DominanceFrontier df;
@@ -262,21 +293,8 @@ void LLVMModuleSet::processSVFFunction()
                     }
                 }
             }
-        }
-    }
 }
 
-void LLVMModuleSet::processSVFBasicBlock(const SVFFunction* svffun)
-{
-    for(const SVFBasicBlock* bb : svffun->getBasicBlockList())
-    {
-        for (succ_const_iterator succ_it = succ_begin(bb->getLLVMBasicBlock()); succ_it != succ_end(bb->getLLVMBasicBlock()); succ_it++)
-        {
-            const SVFBasicBlock* svf_scc_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(*succ_it);
-            const_cast<SVFBasicBlock*>(bb)->addSuccBasicBlock(svf_scc_bb);
-        }
-    }
-}
 
 /*!
  * Invoke llvm passes to modify module

@@ -65,8 +65,6 @@ private:
     LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false) {}
 
     void build();
-    void processSVFFunction();
-    void processSVFBasicBlock(const SVFFunction* func);
 
 public:
     static inline LLVMModuleSet* getLLVMModuleSet()
@@ -225,7 +223,12 @@ private:
 
     void loadModules(const std::vector<std::string>& moduleNameVec);
     void addSVFMain();
-    void initialize();
+
+    void createSVFDataStructure();
+    void initSVFFunction();
+    void initSVFBasicBlock(const SVFFunction* func);
+    void initDomTree(const SVFFunction* func);
+
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module
