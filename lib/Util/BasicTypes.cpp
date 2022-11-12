@@ -14,6 +14,8 @@ SVFFunction::~SVFFunction()
 {
     for(const SVFBasicBlock* bb : allBBs)
         delete bb;
+    for(const SVFArgument* arg : allArgs)
+        delete arg;
 }
 
 u32_t SVFFunction::arg_size() const
