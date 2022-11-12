@@ -137,7 +137,7 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
  */
 SaberCondAllocator::Condition SaberCondAllocator::getBranchCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ) const
 {
-    u32_t pos = SymbolTableInfo::getBBSuccessorPos(bb,succ);
+    u32_t pos = bb->getBBSuccessorPos(succ);
     if(SymbolTableInfo::getBBSuccessorNum(bb) == 1)
         return getTrueCond();
     else
@@ -165,7 +165,7 @@ void SaberCondAllocator::setBranchCond(const SVFBasicBlock* bb, const SVFBasicBl
 {
     /// we only care about basic blocks have more than one successor
     assert(SymbolTableInfo::getBBSuccessorNum(bb) > 1 && "not more than one successor??");
-    u32_t pos = SymbolTableInfo::getBBSuccessorPos(bb,succ);
+    u32_t pos = bb->getBBSuccessorPos(succ);
     CondPosMap& condPosMap = bbConds[bb];
 
     /// FIXME: llvm getNumSuccessors allows duplicated block in the successors, it makes this assertion fail

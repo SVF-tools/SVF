@@ -292,8 +292,6 @@ void getNextInsts(const SVFInstruction* curInst, std::vector<const SVFInstructio
 /// Get the previous instructions following control flow
 void getPrevInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList);
 
-/// Get basic block successor position
-u32_t getBBSuccessorPos(const BasicBlock* BB, const BasicBlock* Succ);
 /// Get num of BB's successors
 u32_t getBBSuccessorNum(const BasicBlock* BB);
 /// Get basic block predecessor positin

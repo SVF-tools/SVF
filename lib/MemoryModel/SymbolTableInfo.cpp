@@ -353,22 +353,6 @@ const u32_t SymbolTableInfo::getBBSuccessorNum(const SVFBasicBlock* bb)
     return 0;
 }
 
-const u32_t SymbolTableInfo::getBBSuccessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* succ)
-{
-    Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>::const_iterator bbSuccessorPosMapIter = symInfo->getModule()->getBBSuccessorPosMap().find(bb);
-    if(bbSuccessorPosMapIter != symInfo->getModule()->getBBSuccessorPosMap().end())
-    {
-        const Map <const SVFBasicBlock* , const u32_t> value = bbSuccessorPosMapIter->second;
-        Map <const SVFBasicBlock* , const u32_t>::const_iterator valueIter = value.find(succ);
-        if(valueIter != value.end())
-        {
-            u32_t pos = valueIter->second;
-            return pos;
-        }
-    }
-    return 0;
-}
-
 const u32_t SymbolTableInfo::getBBPredecessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* Pred)
 {
     if(symInfo->getModule()->getBBPredecessorPosMap().find(bb) != symInfo->getModule()->getBBPredecessorPosMap().end())

@@ -77,7 +77,7 @@ private:
     Set<const Value*> ptrsInUncalledFunctions;
     Map<const SVFBasicBlock*, const u32_t> bbSuccessorNumMap;
     Map<const PointerType*, const Type*> ptrElementTypeMap;
-    Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>> bbSuccessorPosMap;
+    // Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>> bbSuccessorPosMap;
     Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>> bbPredecessorPosMap;
 
 public:
@@ -284,10 +284,10 @@ public:
         return bbSuccessorNumMap;
     }
 
-    inline const Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>& getBBSuccessorPosMap()
-    {
-        return bbSuccessorPosMap;
-    }
+    // inline const Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>& getBBSuccessorPosMap()
+    // {
+    //     return bbSuccessorPosMap;
+    // }
 
     inline const Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>& getBBPredecessorPosMap()
     {
@@ -304,22 +304,22 @@ public:
         bbSuccessorNumMap.insert({bb,num});
     }
 
-    inline void addBBSuccessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* succ,const u32_t pos)
-    {
-        Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>::iterator bbSuccessorPosMapIter = bbSuccessorPosMap.find(bb);
-        if(bbSuccessorPosMapIter != bbSuccessorPosMap.end())
-        {
-            Map<const SVFBasicBlock*, const u32_t> foundValue = bbSuccessorPosMapIter->second;
-            foundValue.insert({succ,pos});
-            bbSuccessorPosMap.insert({bb,foundValue});
-        }
-        else
-        {
-            Map<const SVFBasicBlock*, const u32_t> valueMap;
-            valueMap.insert({succ,pos});
-            bbSuccessorPosMap.insert({bb,valueMap});
-        }
-    }
+    // inline void addBBSuccessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* succ,const u32_t pos)
+    // {
+    //     Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>::iterator bbSuccessorPosMapIter = bbSuccessorPosMap.find(bb);
+    //     if(bbSuccessorPosMapIter != bbSuccessorPosMap.end())
+    //     {
+    //         Map<const SVFBasicBlock*, const u32_t> foundValue = bbSuccessorPosMapIter->second;
+    //         foundValue.insert({succ,pos});
+    //         bbSuccessorPosMap.insert({bb,foundValue});
+    //     }
+    //     else
+    //     {
+    //         Map<const SVFBasicBlock*, const u32_t> valueMap;
+    //         valueMap.insert({succ,pos});
+    //         bbSuccessorPosMap.insert({bb,valueMap});
+    //     }
+    // }
 
     inline void addBBPredecessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* Pred,const u32_t pos)
     {
