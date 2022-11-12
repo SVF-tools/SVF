@@ -50,9 +50,11 @@ public:
     MHPValidator(MHP *mhp) :mhp(mhp)
     {
     }
-    bool mayHappenInParallel(const Instruction *I1, const Instruction *I2)
+    bool mayHappenInParallel(const Instruction* I1, const Instruction* I2)
     {
-        return mhp->mayHappenInParallel(I1, I2);
+        const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I1);
+        const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I2);
+        return mhp->mayHappenInParallel(inst1, inst2);
     }
 private:
     MHP *mhp;
@@ -102,8 +104,9 @@ void MHP::analyzeInterleaving()
     {
         const CxtThread& ct = it->second->getCxtThread();
         NodeID rootTid = it->first;
-        const Function* routine = tct->getStartRoutineOfCxtThread(ct);
-        CxtThreadStmt rootcts(rootTid,ct.getContext(),&(routine->getEntryBlock().front()));
+        const SVFFunction* routine = tct->getStartRoutineOfCxtThread(ct);
+        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(routine->getLLVMFun()->getEntryBlock().front()));
+        CxtThreadStmt rootcts(rootTid,ct.getContext(),svfInst);
 
         addInterleavingThread(rootcts,rootTid);
         updateAncestorThreads(rootTid);
@@ -112,7 +115,7 @@ void MHP::analyzeInterleaving()
         while(!cxtStmtList.empty())
         {
             CxtThreadStmt cts = popFromCTSWorkList();
-            const Instruction* curInst = cts.getStmt();
+            const SVFInstruction* curInst = cts.getStmt();
             DBOUT(DMTA,outs() << "-----\nMHP analysis root thread: " << rootTid << " ");
             DBOUT(DMTA,cts.dump());
             DBOUT(DMTA,outs() << "current thread interleaving: < ");
@@ -135,14 +138,14 @@ void MHP::analyzeInterleaving()
                 {
                     handleJoin(cts,rootTid);
                 }
-                else if(SVFUtil::isa<CallInst>(curInst) && !isExtCall(curInst))
+                else if(SVFUtil::isCallSite(curInst) && !isExtCall(curInst))
                 {
                     handleCall(cts,rootTid);
                     PTACallGraph::FunctionSet callees;
                     if(!tct->isCandidateFun(getCallee(curInst, callees)))
                         handleIntra(cts);
                 }
-                else if(SVFUtil::isa<ReturnInst>(curInst))
+                else if(SymbolTableInfo::isReturn(curInst))
                 {
                     handleRet(cts);
                 }
@@ -170,12 +173,12 @@ void MHP::analyzeInterleaving()
 void MHP::updateNonCandidateFunInterleaving()
 {
     SVFModule* module = tct->getSVFModule();
-    for (SVFModule::iterator F = module->begin(), E = module->end(); F != E; ++F)
+    for (const SVFFunction* fun : module->getFunctionSet())
     {
-        const SVFFunction* fun = *F;
-        if (!tct->isCandidateFun(fun->getLLVMFun()) && !isExtCall(fun))
+        if (!tct->isCandidateFun(fun) && !isExtCall(fun))
         {
-            const Instruction *entryinst = &(fun->getLLVMFun()->getEntryBlock().front());
+            const Instruction* i = &(fun->getLLVMFun()->getEntryBlock().front());
+            const SVFInstruction* entryinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             if (!hasThreadStmtSet(entryinst))
                 continue;
 
@@ -186,14 +189,13 @@ void MHP::updateNonCandidateFunInterleaving()
                 const CxtThreadStmt& cts = *it1;
                 const CallStrCxt& curCxt = cts.getContext();
 
-                for (inst_iterator II = inst_begin(fun->getLLVMFun()), EE = inst_end(fun->getLLVMFun()); II != EE; ++II)
+                for (const SVFInstruction* svfInst : fun->getInstructionList())
                 {
-                    const Instruction *inst = &*II;
-                    if (inst == entryinst)
+                    if (svfInst == entryinst)
                         continue;
-                    CxtThreadStmt newCts(cts.getTid(), curCxt, inst);
+                    CxtThreadStmt newCts(cts.getTid(), curCxt, svfInst);
                     threadStmtToTheadInterLeav[newCts] |= threadStmtToTheadInterLeav[cts];
-                    instToTSMap[inst].insert(newCts);
+                    instToTSMap[svfInst].insert(newCts);
                 }
             }
         }
@@ -205,17 +207,19 @@ void MHP::updateNonCandidateFunInterleaving()
  */
 void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
 {
-    const Instruction* curInst = cts.getStmt();
-    const Function* curfun = curInst->getParent()->getParent();
-    assert(curInst == &(curfun->getEntryBlock().front()) && "curInst is not the entry of non candidate function.");
+    const SVFInstruction* curInst = cts.getStmt();
+    const SVFFunction* curfun = curInst->getParent()->getParent();
+    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(curfun->getLLVMFun()->getEntryBlock().front()));
+    assert((curInst == svfInst) && "curInst is not the entry of non candidate function.");
     const CallStrCxt& curCxt = cts.getContext();
-    PTACallGraphNode* node = tcg->getCallGraphNode(tct->getSVFFun(curfun));
+    PTACallGraphNode* node = tcg->getCallGraphNode(curfun);
     for (PTACallGraphNode::const_iterator nit = node->OutEdgeBegin(), neit = node->OutEdgeEnd(); nit != neit; nit++)
     {
         const SVFFunction* callee = (*nit)->getDstNode()->getFunction();
         if (!isExtCall(callee))
         {
-            CxtThreadStmt newCts(cts.getTid(), curCxt, &(callee->getLLVMFun()->getEntryBlock().front()));
+            const SVFInstruction* calleeInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(callee->getLLVMFun()->getEntryBlock().front()));
+            CxtThreadStmt newCts(cts.getTid(), curCxt, calleeInst);
             addInterleavingThread(newCts, cts);
         }
     }
@@ -227,7 +231,7 @@ void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
 void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
 {
 
-    const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
+    const SVFInstruction* call = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
     assert(isTDFork(call));
@@ -239,10 +243,9 @@ void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
                 ecgIt = tcg->getForkEdgeEnd(cbn); cgIt != ecgIt; ++cgIt)
         {
             const SVFFunction* svfroutine = (*cgIt)->getDstNode()->getFunction();
-            const Function* routine = svfroutine->getLLVMFun();
             CallStrCxt newCxt = curCxt;
-            pushCxt(newCxt,call,routine);
-            const Instruction* stmt = &(routine->getEntryBlock().front());
+            pushCxt(newCxt,call,svfroutine);
+            const SVFInstruction* stmt = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(svfroutine->getLLVMFun()->getEntryBlock().front()));
             CxtThread ct(newCxt,call);
             CxtThreadStmt newcts(tct->getTCTNode(ct)->getId(),ct.getContext(),stmt);
             addInterleavingThread(newcts,cts);
@@ -257,7 +260,7 @@ void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
 void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
 {
 
-    const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
+    const SVFInstruction* call = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
     assert(isTDJoin(call));
@@ -272,7 +275,8 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
             while(!exitbbs.empty())
             {
                 BasicBlock* eb = exitbbs.pop_back_val();
-                CxtThreadStmt newCts(cts.getTid(),curCxt,&(eb->front()));
+                const SVFInstruction* svfEntryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(eb->front()));
+                CxtThreadStmt newCts(cts.getTid(),curCxt,svfEntryInst);
                 addInterleavingThread(newCts,cts);
                 if(isJoinInSymmetricLoop(curCxt,call))
                     rmInterleavingThread(newCts,joinedTids,call);
@@ -281,7 +285,7 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
         else
         {
             rmInterleavingThread(cts,joinedTids,call);
-            DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call) <<  " for thread " << rootTid << "\n");
+            DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call->getLLVMInstruction()) <<  " for thread " << rootTid << "\n");
         }
     }
     /// for the join site in a loop loop which does not join the current thread
@@ -295,7 +299,8 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
             while(!exitbbs.empty())
             {
                 BasicBlock* eb = exitbbs.pop_back_val();
-                CxtThreadStmt newCts(cts.getTid(),cts.getContext(),&(eb->front()));
+                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(eb->front()));
+                CxtThreadStmt newCts(cts.getTid(),cts.getContext(),svfInst);
                 addInterleavingThread(newCts,cts);
             }
         }
@@ -309,7 +314,7 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
 void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
 {
 
-    const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
+    const SVFInstruction* call = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
     CallICFGNode* cbn = getCBN(call);
     if(tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
@@ -319,12 +324,12 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
         {
 
             const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getFunction();
-            const Function* callee = svfcallee->getLLVMFun();
             if (isExtCall(svfcallee))
                 continue;
             CallStrCxt newCxt = curCxt;
-            pushCxt(newCxt,call,callee);
-            CxtThreadStmt newCts(cts.getTid(),newCxt,&(callee->getEntryBlock().front()));
+            pushCxt(newCxt,call,svfcallee);
+            const SVFInstruction* svfEntryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(svfcallee->getLLVMFun()->getEntryBlock().front()));
+            CxtThreadStmt newCts(cts.getTid(),newCxt,svfEntryInst);
             addInterleavingThread(newCts,cts);
         }
     }
@@ -336,7 +341,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
 void MHP::handleRet(const CxtThreadStmt& cts)
 {
 
-    PTACallGraphNode* curFunNode = tcg->getCallGraphNode(tct->getSVFFun(cts.getStmt()->getParent()->getParent()));
+    PTACallGraphNode* curFunNode = tcg->getCallGraphNode(cts.getStmt()->getParent()->getParent());
     for(PTACallGraphNode::const_iterator it = curFunNode->getInEdges().begin(), eit = curFunNode->getInEdges().end(); it!=eit; ++it)
     {
         PTACallGraphEdge* edge = *it;
@@ -346,7 +351,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 ecit = (edge)->directCallsEnd(); cit!=ecit; ++cit)
         {
             CallStrCxt newCxt = cts.getContext();
-            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()->getLLVMFun()))
+            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
                 InstVec nextInsts;
                 getNextInsts((*cit)->getCallSite(),nextInsts);
@@ -361,7 +366,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
                 ecit = (edge)->indirectCallsEnd(); cit!=ecit; ++cit)
         {
             CallStrCxt newCxt = cts.getContext();
-            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()->getLLVMFun()))
+            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
                 InstVec nextInsts;
                 getNextInsts((*cit)->getCallSite(),nextInsts);
@@ -405,7 +410,7 @@ void MHP::updateAncestorThreads(NodeID curTid)
     for(NodeBS::iterator it = tds.begin(), eit = tds.end(); it!=eit; ++it)
     {
         const CxtThread& ct = tct->getTCTNode(*it)->getCxtThread();
-        if(const CallInst* forkInst = ct.getThread())
+        if(const SVFInstruction* forkInst = ct.getThread())
         {
             CallStrCxt forkSiteCxt = tct->getCxtOfCxtThread(ct);
             InstVec nextInsts;
@@ -443,8 +448,8 @@ void MHP::updateSiblingThreads(NodeID curTid)
                 continue;
 
             const CxtThread& ct = tct->getTCTNode(*it)->getCxtThread();
-            const Function* routine = tct->getStartRoutineOfCxtThread(ct);
-            const Instruction* stmt = &(routine->getEntryBlock().front());
+            const SVFFunction* routine = tct->getStartRoutineOfCxtThread(ct);
+            const SVFInstruction* stmt = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(routine->getLLVMFun()->getEntryBlock().front()));
             CxtThreadStmt cts(*it,ct.getContext(),stmt);
             addInterleavingThread(cts,curTid);
         }
@@ -494,7 +499,7 @@ bool MHP::isRecurFullJoin(NodeID parentTid, NodeID curTid)
  * (1) t is not a multiforked thread
  * (2) the join site of t is not in recursion
  */
-bool MHP::isMustJoin(NodeID curTid, const Instruction* joinsite)
+bool MHP::isMustJoin(NodeID curTid, const SVFInstruction* joinsite)
 {
     assert(isTDJoin(joinsite) && "not a join site!");
     return !isMultiForkedThread(curTid) && !tct->isJoinSiteInRecursion(joinsite);
@@ -503,7 +508,7 @@ bool MHP::isMustJoin(NodeID curTid, const Instruction* joinsite)
 /*!
  * Return thread id(s) which are directly or indirectly joined at this join site
  */
-NodeBS MHP::getDirAndIndJoinedTid(const CallStrCxt& cxt, const Instruction* call)
+NodeBS MHP::getDirAndIndJoinedTid(const CallStrCxt& cxt, const SVFInstruction* call)
 {
     CxtStmt cs(cxt,call);
     return fja->getDirAndIndJoinedTid(cs);
@@ -512,7 +517,7 @@ NodeBS MHP::getDirAndIndJoinedTid(const CallStrCxt& cxt, const Instruction* call
 /*!
  *  Whether a context-sensitive join satisfies symmetric loop pattern
  */
-const Loop* MHP::isJoinInSymmetricLoop(const CallStrCxt& cxt, const Instruction* call) const
+const Loop* MHP::isJoinInSymmetricLoop(const CallStrCxt& cxt, const SVFInstruction* call) const
 {
     CxtStmt cs(cxt,call);
     return fja->isJoinInSymmetricLoop(cs);
@@ -528,9 +533,9 @@ bool MHP::isHBPair(NodeID tid1, NodeID tid2)
 
 
 
-bool MHP::isConnectedfromMain(const Function* fun)
+bool MHP::isConnectedfromMain(const SVFFunction* fun)
 {
-    PTACallGraphNode* cgnode = tcg->getCallGraphNode(tct->getSVFFun(fun));
+    PTACallGraphNode* cgnode = tcg->getCallGraphNode(fun);
     FIFOWorkList<const PTACallGraphNode*> worklist;
     TCT::PTACGNodeSet visited;
     worklist.push(cgnode);
@@ -563,7 +568,7 @@ bool MHP::isConnectedfromMain(const Function* fun)
  * (2) t1!=t2 and t1 \in l2 and t2 \in l1
  */
 
-bool MHP::mayHappenInParallelInst(const Instruction* i1, const Instruction* i2)
+bool MHP::mayHappenInParallelInst(const SVFInstruction* i1, const SVFInstruction* i2)
 {
 
     /// TODO: Any instruction in dead function is assumed no MHP with others
@@ -601,11 +606,11 @@ bool MHP::mayHappenInParallelInst(const Instruction* i1, const Instruction* i2)
     return false;
 }
 
-bool MHP::mayHappenInParallelCache(const Instruction* i1, const Instruction* i2)
+bool MHP::mayHappenInParallelCache(const SVFInstruction* i1, const SVFInstruction* i2)
 {
     if(!tct->isCandidateFun(i1->getParent()->getParent()) &&!tct->isCandidateFun(i2->getParent()->getParent()))
     {
-        FuncPair funpair = std::make_pair(i1->getParent()->getParent(), i2->getParent()->getParent());
+        FuncPair funpair = std::make_pair(i1->getFunction(), i2->getFunction());
         FuncPairToBool::const_iterator it = nonCandidateFuncMHPRelMap.find(funpair);
         if (it==nonCandidateFuncMHPRelMap.end())
         {
@@ -623,7 +628,7 @@ bool MHP::mayHappenInParallelCache(const Instruction* i1, const Instruction* i2)
     return mayHappenInParallelInst(i1,i2);
 }
 
-bool MHP::mayHappenInParallel(const Instruction* i1, const Instruction* i2)
+bool MHP::mayHappenInParallel(const SVFInstruction* i1, const SVFInstruction* i2)
 {
     numOfTotalQueries++;
 
@@ -635,7 +640,7 @@ bool MHP::mayHappenInParallel(const Instruction* i1, const Instruction* i2)
     return mhp;
 }
 
-bool MHP::executedByTheSameThread(const Instruction* i1, const Instruction* i2)
+bool MHP::executedByTheSameThread(const SVFInstruction* i1, const SVFInstruction* i2)
 {
     if(!hasThreadStmtSet(i1) || !hasThreadStmtSet(i2))
         return true;
@@ -676,7 +681,7 @@ void MHP::printInterleaving()
 {
     for(ThreadStmtToThreadInterleav::const_iterator it = threadStmtToTheadInterLeav.begin(), eit = threadStmtToTheadInterLeav.end(); it!=eit; ++it)
     {
-        outs() << "( t" << it->first.getTid() << " , $" << SVFUtil::getSourceLoc(it->first.getStmt()) << "$" << SVFUtil::value2String(it->first.getStmt()) << " ) ==> [";
+        outs() << "( t" << it->first.getTid() << " , $" << SVFUtil::getSourceLoc(it->first.getStmt()->getLLVMInstruction()) << "$" << SVFUtil::value2String(it->first.getStmt()->getLLVMInstruction()) << " ) ==> [";
         for (NodeBS::iterator ii = it->second.begin(), ie = it->second.end();
                 ii != ie; ii++)
         {
@@ -695,23 +700,22 @@ void MHP::printInterleaving()
  */
 void ForkJoinAnalysis::collectSCEVInfo()
 {
-    typedef Set<const Instruction*> CallInstSet;
-    typedef Map<const Function*, CallInstSet > FunToFJSites;
+    typedef Set<const SVFInstruction*> CallInstSet;
+    typedef Map<const SVFFunction*, CallInstSet > FunToFJSites;
     FunToFJSites funToFJSites;
 
     for(ThreadCallGraph::CallSiteSet::const_iterator it = tct->getThreadCallGraph()->forksitesBegin(),
             eit = tct->getThreadCallGraph()->forksitesEnd(); it!=eit; ++it)
     {
-        const Instruction* fork = (*it)->getCallSite();
-        const Function* fun = fork->getParent()->getParent();
-        funToFJSites[fun].insert(fork);
+        const SVFInstruction* fork = (*it)->getCallSite();
+        funToFJSites[fork->getFunction()].insert(fork);
     }
 
     for(ThreadCallGraph::CallSiteSet::const_iterator it = tct->getThreadCallGraph()->joinsitesBegin(),
             eit = tct->getThreadCallGraph()->joinsitesEnd(); it!=eit; ++it)
     {
-        const Instruction* join = (*it)->getCallSite();
-        funToFJSites[join->getParent()->getParent()].insert(join);
+        const SVFInstruction* join = (*it)->getCallSite();
+        funToFJSites[join->getFunction()].insert(join);
     }
 
     for(FunToFJSites::const_iterator it = funToFJSites.begin(), eit = funToFJSites.end(); it!=eit; ++it)
@@ -719,7 +723,7 @@ void ForkJoinAnalysis::collectSCEVInfo()
         // ScalarEvolution* SE = MTA::getSE(it->first);
         for(CallInstSet::const_iterator sit = it->second.begin(), esit = it->second.end(); sit!=esit; ++sit)
         {
-            const Instruction* callInst =  *sit;
+            const SVFInstruction* callInst =  *sit;
             if(tct->getThreadCallGraph()->isForksite(getCBN(callInst)))
             {
                 const Value *forkSiteTidPtr = getForkedThread(callInst);
@@ -754,11 +758,11 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
         const CxtThread& ct = it->second->getCxtThread();
         const NodeID rootTid = it->first;
         clearFlagMap();
-        if(const CallInst* forkInst = ct.getThread())
+        if(const SVFInstruction* forkInst = ct.getThread())
         {
             CallStrCxt forkSiteCxt = tct->getCxtOfCxtThread(ct);
-            const Instruction* exitInst = getExitInstOfParentRoutineFun(rootTid);
-
+            const SVFInstruction* exitInst = getExitInstOfParentRoutineFun(rootTid);
+            
             InstVec nextInsts;
             getNextInsts(forkInst,nextInsts);
             for(InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit!=enit; ++nit)
@@ -770,7 +774,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
             while(!cxtStmtList.empty())
             {
                 CxtStmt cts = popFromCTSWorkList();
-                const Instruction* curInst = cts.getStmt();
+                const SVFInstruction* curInst = cts.getStmt();
                 DBOUT(DMTA,outs() << "-----\nForkJoinAnalysis root thread: " << it->first << " ");
                 DBOUT(DMTA,cts.dump());
                 DBOUT(DMTA,outs() << "-----\n");
@@ -783,12 +787,12 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
                 {
                     handleJoin(cts,rootTid);
                 }
-                else if(SVFUtil::isa<CallInst>(curInst) && tct->isCandidateFun(getCallee(curInst, callees)))
+                else if(SVFUtil::isCallSite(curInst) && tct->isCandidateFun(getCallee(curInst, callees)))
                 {
 
                     handleCall(cts,rootTid);
                 }
-                else if(SVFUtil::isa<ReturnInst>(curInst))
+                else if(SymbolTableInfo::isReturn(curInst))
                 {
                     handleRet(cts);
                 }
@@ -813,7 +817,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
 /// Handle fork
 void ForkJoinAnalysis::handleFork(const CxtStmt& cts, NodeID rootTid)
 {
-    const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
+    const SVFInstruction* call = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
     assert(isTDFork(call));
@@ -823,7 +827,7 @@ void ForkJoinAnalysis::handleFork(const CxtStmt& cts, NodeID rootTid)
         for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = getTCG()->getForkEdgeBegin(cbn),
                 ecgIt = getTCG()->getForkEdgeEnd(cbn); cgIt != ecgIt; ++cgIt)
         {
-            const Function* callee = (*cgIt)->getDstNode()->getFunction()->getLLVMFun();
+            const SVFFunction* callee = (*cgIt)->getDstNode()->getFunction();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt,call,callee);
             CxtThread ct(newCxt,call);
@@ -839,15 +843,15 @@ void ForkJoinAnalysis::handleFork(const CxtStmt& cts, NodeID rootTid)
 /// Handle join
 void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
 {
-    const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
+    const SVFInstruction* call = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
     assert(isTDJoin(call));
     CallICFGNode* cbn = getCBN(call);
     if(getTCG()->hasCallGraphEdge(cbn))
     {
-        const Instruction* forkSite = tct->getTCTNode(rootTid)->getCxtThread().getThread();
-        const Instruction* joinSite = cts.getStmt();
+        const SVFInstruction* forkSite = tct->getTCTNode(rootTid)->getCxtThread().getThread();
+        const SVFInstruction* joinSite = cts.getStmt();
 
         if(isAliasedForkJoin(forkSite, joinSite))
         {
@@ -858,7 +862,8 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
                 while(!exitbbs.empty())
                 {
                     BasicBlock* eb = exitbbs.pop_back_val();
-                    CxtStmt newCts(curCxt,&(eb->front()));
+                    const SVFInstruction* svfEntryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(eb->front()));
+                    CxtStmt newCts(curCxt,svfEntryInst);
                     addDirectlyJoinTID(cts,rootTid);
                     if(isSameSCEV(forkSite,joinSite))
                     {
@@ -873,7 +878,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
             {
                 markCxtStmtFlag(cts,TDDead);
                 addDirectlyJoinTID(cts,rootTid);
-                DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call) <<  "for thread " << rootTid << "\n");
+                DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call->getLLVMInstruction()) <<  "for thread " << rootTid << "\n");
             }
         }
         /// for the join site in a loop loop which does not join the current thread
@@ -887,7 +892,8 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
                 while(!exitbbs.empty())
                 {
                     BasicBlock* eb = exitbbs.pop_back_val();
-                    CxtStmt newCts(curCxt,&(eb->front()));
+                    const SVFInstruction* svfEntryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(eb->front()));
+                    CxtStmt newCts(curCxt,svfEntryInst);
                     markCxtStmtFlag(newCts,cts);
                 }
             }
@@ -900,7 +906,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
 void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
 {
 
-    const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
+    const SVFInstruction* call = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
     CallICFGNode* cbn = getCBN(call);
     if(getTCG()->hasCallGraphEdge(cbn))
@@ -913,8 +919,9 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
             if (isExtCall(svfcallee))
                 continue;
             CallStrCxt newCxt = curCxt;
-            pushCxt(newCxt,call,callee);
-            CxtStmt newCts(newCxt,&(callee->getEntryBlock().front()));
+            pushCxt(newCxt,call,svfcallee);
+            const SVFInstruction* svfEntryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(callee->getEntryBlock().front()));
+            CxtStmt newCts(newCxt,svfEntryInst);
             markCxtStmtFlag(newCts,cts);
         }
     }
@@ -924,10 +931,10 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
 void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
 {
 
-    const Instruction* curInst = cts.getStmt();
+    const SVFInstruction* curInst = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
-    PTACallGraphNode* curFunNode = getTCG()->getCallGraphNode(tct->getSVFFun(curInst->getParent()->getParent()));
+    PTACallGraphNode* curFunNode = getTCG()->getCallGraphNode(curInst->getFunction());
     for(PTACallGraphNode::const_iterator it = curFunNode->getInEdges().begin(), eit = curFunNode->getInEdges().end(); it!=eit; ++it)
     {
         PTACallGraphEdge* edge = *it;
@@ -937,7 +944,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                 ecit = (edge)->directCallsEnd(); cit!=ecit; ++cit)
         {
             CallStrCxt newCxt = curCxt;
-            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()->getLLVMFun()))
+            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
                 InstVec nextInsts;
                 getNextInsts((*cit)->getCallSite(),nextInsts);
@@ -952,7 +959,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
                 ecit = (edge)->indirectCallsEnd(); cit!=ecit; ++cit)
         {
             CallStrCxt newCxt = curCxt;
-            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()->getLLVMFun()))
+            if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
                 InstVec nextInsts;
                 getNextInsts((*cit)->getCallSite(),nextInsts);
@@ -970,7 +977,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
 void ForkJoinAnalysis::handleIntra(const CxtStmt& cts)
 {
 
-    const Instruction* curInst = cts.getStmt();
+    const SVFInstruction* curInst = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
     InstVec nextInsts;
@@ -1062,7 +1069,7 @@ static bool accessSameArrayIndex(const GetElementPtrInst* ptr1, const GetElement
  *  pointers of fork thread and join thread should have same scev start and step.
  *  and should have same loop trip count
  */
-bool ForkJoinAnalysis::isSameSCEV(const Instruction* forkSite, const Instruction* joinSite)
+bool ForkJoinAnalysis::isSameSCEV(const SVFInstruction* forkSite, const SVFInstruction* joinSite)
 {
 
     const PTASCEV& forkse = fkjnToPTASCEVMap[forkSite];
@@ -1084,7 +1091,7 @@ bool ForkJoinAnalysis::isSameSCEV(const Instruction* forkSite, const Instruction
 /*!
  * The fork and join have same loop trip count
  */
-bool ForkJoinAnalysis::sameLoopTripCount(const Instruction* forkSite, const Instruction* joinSite)
+bool ForkJoinAnalysis::sameLoopTripCount(const SVFInstruction* forkSite, const SVFInstruction* joinSite)
 {
 
     ScalarEvolution* forkSE = getSE(forkSite);

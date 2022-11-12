@@ -59,13 +59,12 @@ void SaberAnnotator::annotateSinks()
     {
         if(const ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(*it))
         {
-            const Instruction* sinkinst = ap->getCallSite()->getCallSite();
-            assert(SVFUtil::isa<CallInst>(sinkinst) && "not a call instruction?");
-            const CallInst* sink = SVFUtil::cast<CallInst>(sinkinst);
+            assert(SVFUtil::isCallSite(ap->getCallSite()->getCallSite()) && "not a call instruction?");
+            CallSite sink = SVFUtil::getLLVMCallSite(ap->getCallSite()->getCallSite());
             std::string str;
             raw_string_ostream rawstr(str);
             rawstr << SB_SLICESINK << _curSlice->getSource()->getId();
-            addMDTag(const_cast<CallInst*>(sink),sink->getArgOperand(0),rawstr.str());
+            addMDTag(const_cast<Instruction*>(sink.getInstruction()->getLLVMInstruction()),const_cast<Value*>(sink.getArgOperand(0)),rawstr.str());
         }
         else
             assert(false && "sink node is not a actual parameter?");
@@ -83,7 +82,7 @@ void SaberAnnotator::annotateFeasibleBranch(const BranchStmt *branchStmt, u32_t 
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << SB_FESIBLE << _curSlice->getSource()->getId();
-    addMDTag(const_cast<Instruction *>(branchStmt->getInst()),
+    addMDTag(const_cast<Instruction*>(branchStmt->getInst()->getLLVMInstruction()),
              const_cast<Value *>(branchStmt->getCondition()->getValue()), rawstr.str());
 }
 
@@ -98,7 +97,7 @@ void SaberAnnotator::annotateInfeasibleBranch(const BranchStmt *branchStmt, u32_
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << SB_INFESIBLE << _curSlice->getSource()->getId();
-    addMDTag(const_cast<Instruction *>(branchStmt->getInst()),
+    addMDTag(const_cast<Instruction* >(branchStmt->getInst()->getLLVMInstruction()),
              const_cast<Value *>(branchStmt->getCondition()->getValue()), rawstr.str());
 }
 

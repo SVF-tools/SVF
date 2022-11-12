@@ -169,16 +169,16 @@ class CallCFGEdge : public ICFGEdge
 {
 
 private:
-    const Instruction*  cs;
+    const SVFInstruction*  cs;
     std::vector<const CallPE*> callPEs;
 public:
     /// Constructor
-    CallCFGEdge(ICFGNode* s, ICFGNode* d, const Instruction*  c):
+    CallCFGEdge(ICFGNode* s, ICFGNode* d, const SVFInstruction*  c):
         ICFGEdge(s,d,CallCF),cs(c)
     {
     }
     /// Return callsite ID
-    inline const Instruction*  getCallSite() const
+    inline const SVFInstruction*  getCallSite() const
     {
         return cs;
     }
@@ -217,16 +217,16 @@ class RetCFGEdge : public ICFGEdge
 {
 
 private:
-    const Instruction*  cs;
+    const SVFInstruction*  cs;
     const RetPE* retPE;
 public:
     /// Constructor
-    RetCFGEdge(ICFGNode* s, ICFGNode* d, const Instruction*  c):
+    RetCFGEdge(ICFGNode* s, ICFGNode* d, const SVFInstruction*  c):
         ICFGEdge(s,d,RetCF),cs(c),retPE(nullptr)
     {
     }
     /// Return callsite ID
-    inline const Instruction*  getCallSite() const
+    inline const SVFInstruction*  getCallSite() const
     {
         return cs;
     }

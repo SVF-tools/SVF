@@ -42,10 +42,13 @@ class SVFModule
 {
 public:
     typedef std::vector<const SVFFunction*> FunctionSetType;
-    typedef std::vector<Function*> LLVMFunctionSetType;
-    typedef std::vector<GlobalVariable*> GlobalSetType;
-    typedef std::vector<GlobalAlias*> AliasSetType;
+    typedef std::vector<const Function*> LLVMFunctionSetType;
+    typedef std::vector<SVFGlobalValue*> GlobalSetType;
+    typedef std::vector<SVFGlobalValue*> AliasSetType;
     typedef Map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
+    typedef Map<const BasicBlock*,const SVFBasicBlock*> LLVMBB2SVFBBMap;
+    typedef Map<const Instruction*,const SVFInstruction*> LLVMInst2SVFInstMap;
+    typedef Map<const GlobalValue*,const SVFGlobalValue*> LLVMGlobal2SVFGlobalMap;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
@@ -65,15 +68,17 @@ private:
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
+    LLVMBB2SVFBBMap LLVMBB2SVFBB;
+    LLVMInst2SVFInstMap LLVMInst2SVFInst;
     Set<const Value*> argsOfUncalledFunction;
-    Set<const Instruction*> returnInsts;
+    Set<const SVFInstruction*> returnInsts;
     Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
     Set<const Value*> ptrsInUncalledFunctions;
-    Map<const BasicBlock*, const u32_t> bbSuccessorNumMap;
+    Map<const SVFBasicBlock*, const u32_t> bbSuccessorNumMap;
     Map<const PointerType*, const Type*> ptrElementTypeMap;
-    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbSuccessorPosMap;
-    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbPredecessorPosMap;
+    Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>> bbSuccessorPosMap;
+    Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>> bbPredecessorPosMap;
 
 public:
     /// Constructors
@@ -83,8 +88,12 @@ public:
 
     ~SVFModule()
     {
-        for (auto * f : FunctionSet)
+        for (const SVFFunction* f : FunctionSet)
             delete f;
+        for (const SVFGlobalValue* g : GlobalSet)
+            delete g;
+        for (const SVFGlobalValue* a : AliasSet)
+            delete a;
         NodeIDAllocator::unset();
         ThreadAPI::destroy();
         ExtAPI::destory();
@@ -117,11 +126,19 @@ public:
         LLVMFunctionSet.push_back(svfFunc->getLLVMFun());
         LLVMFunc2SVFFunc[svfFunc->getLLVMFun()] = svfFunc;
     }
-    inline void addGlobalSet(GlobalVariable* glob)
+    inline void addBasicBlockMap(SVFBasicBlock* svfBB)
+    {
+        LLVMBB2SVFBB[svfBB->getLLVMBasicBlock()] = svfBB;
+    }
+    inline void addInstructionMap(SVFInstruction* svfInst)
+    {
+        LLVMInst2SVFInst[svfInst->getLLVMInstruction()] = svfInst;
+    }
+    inline void addGlobalSet(SVFGlobalValue* glob)
     {
         GlobalSet.push_back(glob);
     }
-    inline void addAliasSet(GlobalAlias* alias)
+    inline void addAliasSet(SVFGlobalValue* alias)
     {
         AliasSet.push_back(alias);
     }
@@ -131,6 +148,20 @@ public:
     {
         LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
         assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
+        return it->second;
+    }
+
+    inline const SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb) const
+    {
+        LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
+        assert(it!=LLVMBB2SVFBB.end() && "SVF BasicBlock not found!");
+        return it->second;
+    }
+
+    inline const SVFInstruction* getSVFInstruction(const Instruction* inst) const
+    {
+        LLVMInst2SVFInstMap::const_iterator it = LLVMInst2SVFInst.find(inst);
+        assert(it!=LLVMInst2SVFInst.end() && "SVF Instruction not found!");
         return it->second;
     }
 
@@ -238,7 +269,7 @@ public:
         return argsOfUncalledFunction;
     }
 
-    inline const Set<const Instruction*>& getReturns() const
+    inline const Set<const SVFInstruction*>& getReturns() const
     {
         return returnInsts;
     }
@@ -248,17 +279,17 @@ public:
         return ptrsInUncalledFunctions;
     }
 
-    inline const Map<const BasicBlock*, const u32_t>& getBBSuccessorNumMap()
+    inline const Map<const SVFBasicBlock*, const u32_t>& getBBSuccessorNumMap()
     {
         return bbSuccessorNumMap;
     }
 
-    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>& getBBSuccessorPosMap()
+    inline const Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>& getBBSuccessorPosMap()
     {
         return bbSuccessorPosMap;
     }
 
-    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>& getBBPredecessorPosMap()
+    inline const Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>& getBBPredecessorPosMap()
     {
         return bbPredecessorPosMap;
     }
@@ -268,40 +299,40 @@ public:
         return ptrElementTypeMap;
     }
 
-    inline void addBBSuccessorNum(const BasicBlock *bb, const u32_t num)
+    inline void addBBSuccessorNum(const SVFBasicBlock* bb, const u32_t num)
     {
         bbSuccessorNumMap.insert({bb,num});
     }
 
-    inline void addBBSuccessorPos(const BasicBlock *bb, const BasicBlock* succ,const u32_t pos)
+    inline void addBBSuccessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* succ,const u32_t pos)
     {
-        Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::iterator bbSuccessorPosMapIter = bbSuccessorPosMap.find(bb);
+        Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>::iterator bbSuccessorPosMapIter = bbSuccessorPosMap.find(bb);
         if(bbSuccessorPosMapIter != bbSuccessorPosMap.end())
         {
-            Map<const BasicBlock*, const u32_t> foundValue = bbSuccessorPosMapIter->second;
+            Map<const SVFBasicBlock*, const u32_t> foundValue = bbSuccessorPosMapIter->second;
             foundValue.insert({succ,pos});
             bbSuccessorPosMap.insert({bb,foundValue});
         }
         else
         {
-            Map<const BasicBlock*, const u32_t> valueMap;
+            Map<const SVFBasicBlock*, const u32_t> valueMap;
             valueMap.insert({succ,pos});
             bbSuccessorPosMap.insert({bb,valueMap});
         }
     }
 
-    inline void addBBPredecessorPos(const BasicBlock *bb, const BasicBlock* Pred,const u32_t pos)
+    inline void addBBPredecessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* Pred,const u32_t pos)
     {
-        Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::iterator bbPredecessorPosMapIter = bbPredecessorPosMap.find(bb);
+        Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>::iterator bbPredecessorPosMapIter = bbPredecessorPosMap.find(bb);
         if(bbPredecessorPosMapIter != bbPredecessorPosMap.end())
         {
-            Map<const BasicBlock*, const u32_t> foundValue = bbPredecessorPosMapIter->second;
+            Map<const SVFBasicBlock*, const u32_t> foundValue = bbPredecessorPosMapIter->second;
             foundValue.insert({Pred,pos});
             bbPredecessorPosMap.insert({bb,foundValue});
         }
         else
         {
-            Map<const BasicBlock*, const u32_t> valueMap;
+            Map<const SVFBasicBlock*, const u32_t> valueMap;
             valueMap.insert({Pred,pos});
             bbPredecessorPosMap.insert({bb,valueMap});
         }
@@ -332,7 +363,7 @@ public:
         argsOfUncalledFunction.insert(val);
     }
 
-    inline void addReturn(const Instruction* inst)
+    inline void addReturn(const SVFInstruction* inst)
     {
         returnInsts.insert(inst);
     }

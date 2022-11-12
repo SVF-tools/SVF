@@ -245,7 +245,7 @@ void SVFUtil::increaseStackSize()
 /*!
  * Get source code line number of a function according to debug info
  */
-std::string SVFUtil::getSourceLocOfFunction(const Function *F)
+std::string SVFUtil::getSourceLocOfFunction(const Function* F)
 {
     std::string str;
     raw_string_ostream rawstr(str);
@@ -272,7 +272,7 @@ std::string SVFUtil::getSourceLoc(const Value* val)
     raw_string_ostream rawstr(str);
     rawstr << "{ ";
 
-    if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(val))
+    if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
     {
         if (SVFUtil::isa<AllocaInst>(inst))
         {

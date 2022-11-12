@@ -83,7 +83,7 @@ public:
     }
 
     /// Return the function of this ICFGNode
-    virtual const BasicBlock* getBB() const
+    virtual const SVFBasicBlock* getBB() const
     {
         return bb;
     }
@@ -130,7 +130,7 @@ public:
 
 protected:
     const SVFFunction* fun;
-    const BasicBlock* bb;
+    const SVFBasicBlock* bb;
     VFGNodeList VFGNodes; //< a list of VFGNodes
     SVFStmtList pagEdges; //< a list of PAGEdges
 
@@ -175,16 +175,16 @@ public:
 class IntraICFGNode : public ICFGNode
 {
 private:
-    const Instruction *inst;
+    const SVFInstruction *inst;
 
 public:
-    IntraICFGNode(NodeID id, const Instruction *i) : ICFGNode(id, IntraBlock), inst(i)
+    IntraICFGNode(NodeID id, const SVFInstruction *i) : ICFGNode(id, IntraBlock), inst(i)
     {
-        fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(inst->getFunction());
+        fun = inst->getFunction();
         bb = inst->getParent();
     }
 
-    inline const Instruction *getInst() const
+    inline const SVFInstruction *getInst() const
     {
         return inst;
     }
@@ -366,18 +366,18 @@ class CallICFGNode : public InterICFGNode
 public:
     typedef std::vector<const SVFVar *> ActualParmNodeVec;
 private:
-    const Instruction* cs;
+    const SVFInstruction* cs;
     const RetICFGNode* ret;
     ActualParmNodeVec APNodes;
 public:
-    CallICFGNode(NodeID id, const Instruction* c) : InterICFGNode(id, FunCallBlock), cs(c), ret(nullptr)
+    CallICFGNode(NodeID id, const SVFInstruction* c) : InterICFGNode(id, FunCallBlock), cs(c), ret(nullptr)
     {
-        fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
+        fun = cs->getFunction();
         bb = cs->getParent();
     }
 
     /// Return callsite
-    inline const Instruction* getCallSite() const
+    inline const SVFInstruction* getCallSite() const
     {
         return cs;
     }
@@ -398,11 +398,11 @@ public:
     /// Return callsite
     inline const SVFFunction* getCaller() const
     {
-        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
+        return cs->getFunction();
     }
 
     /// Return Basic Block
-    inline const BasicBlock* getParent() const
+    inline const SVFBasicBlock* getParent() const
     {
         return cs->getParent();
     }
@@ -459,19 +459,19 @@ class RetICFGNode : public InterICFGNode
 {
 
 private:
-    const Instruction* cs;
+    const SVFInstruction* cs;
     const SVFVar *actualRet;
     const CallICFGNode* callBlockNode;
 public:
-    RetICFGNode(NodeID id, const Instruction* c, CallICFGNode* cb) :
+    RetICFGNode(NodeID id, const SVFInstruction* c, CallICFGNode* cb) :
         InterICFGNode(id, FunRetBlock), cs(c), actualRet(nullptr), callBlockNode(cb)
     {
-        fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
+        fun = cs->getFunction();
         bb = cs->getParent();
     }
 
     /// Return callsite
-    inline const Instruction* getCallSite() const
+    inline const SVFInstruction* getCallSite() const
     {
         return cs;
     }

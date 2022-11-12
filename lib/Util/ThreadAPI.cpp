@@ -32,6 +32,7 @@
 
 #include "Util/ThreadAPI.h"
 #include "Util/SVFUtil.h"
+#include "MemoryModel/SVFIR.h"
 
 #include <iostream>		/// std output
 #include <stdio.h>
@@ -131,7 +132,7 @@ void ThreadAPI::init()
 /*!
  *
  */
-const SVFFunction* ThreadAPI::getCallee(const Instruction *inst) const
+const SVFFunction* ThreadAPI::getCallee(const SVFInstruction *inst) const
 {
     return SVFUtil::getCallee(inst);
 }
@@ -147,9 +148,27 @@ const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const
 /*!
  *
  */
-const CallSite ThreadAPI::getLLVMCallSite(const Instruction *inst) const
+const CallSite ThreadAPI::getLLVMCallSite(const SVFInstruction *inst) const
 {
     return SVFUtil::getLLVMCallSite(inst);
+}
+
+const Value* ThreadAPI::getJoinedThread(const SVFInstruction *inst) const
+{
+    assert(isTDJoin(inst) && "not a thread join function!");
+    CallSite cs = getLLVMCallSite(inst);
+    const Value* join = cs.getArgument(0);
+    const SVFVar* var = PAG::getPAG()->getGNode(PAG::getPAG()->getValueNode(join));
+    for(const SVFStmt* stmt : var->getInEdges())
+    {
+        if(SVFUtil::isa<LoadStmt>(stmt))
+            return stmt->getSrcNode()->getValue();
+    }
+    if(SVFUtil::isa<Argument>(join))
+        return join;
+
+    assert(false && "the value of the first argument at join is not a load instruction?");
+    return nullptr;
 }
 
 /*!
@@ -205,15 +224,15 @@ void ThreadAPI::performAPIStat(SVFModule* module)
     for (SVFModule::llvm_iterator it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
             ++it)
     {
-        for (Function::iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
+        for (Function::const_iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
         {
-            BasicBlock& bb = *bit;
-            for (BasicBlock::iterator ii = bb.begin(), eii = bb.end(); ii != eii; ++ii)
+            const BasicBlock& bb = *bit;
+            for (BasicBlock::const_iterator ii = bb.begin(), eii = bb.end(); ii != eii; ++ii)
             {
-                const Instruction *inst = &*ii;
-                if (!SVFUtil::isa<CallInst>(inst))
+                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&*ii);
+                if (!SVFUtil::isCallSite(svfInst))
                     continue;
-                const SVFFunction* fun = getCallee(inst);
+                const SVFFunction* fun = getCallee(svfInst);
                 TD_TYPE type = getType(fun);
                 switch (type)
                 {

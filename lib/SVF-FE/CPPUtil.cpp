@@ -286,24 +286,24 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
     return false;
 }
 
-bool cppUtil::isCPPThunkFunction(const Function *F)
+bool cppUtil::isCPPThunkFunction(const Function* F)
 {
     cppUtil::DemangledName dname = cppUtil::demangle(F->getName().str());
     return dname.isThunkFunc;
 }
 
-const Function *cppUtil::getThunkTarget(const Function *F)
+const Function* cppUtil::getThunkTarget(const Function* F)
 {
-    const Function *ret = nullptr;
+    const Function* ret = nullptr;
 
     for (auto &bb:*F)
     {
         for (auto &inst: bb)
         {
-            if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
-                    || llvm::isa<CallBrInst>(inst))
+            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&inst);
+            if (SVFUtil::isCallSite(svfInst))
             {
-                CallSite cs(const_cast<Instruction*>(&inst));
+                CallSite cs(svfInst);
                 // assert(cs.getCalledFunction() &&
                 //        "Indirect call detected in thunk func");
                 // assert(ret == nullptr && "multiple callsites in thunk func");
@@ -366,7 +366,7 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
     }
 }
 
-const Argument *cppUtil::getConstructorThisPtr(const Function* fun)
+const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
 {
     assert((isConstructor(fun) || isDestructor(fun)) && "not a constructor?");
     assert(fun->arg_size() >=1 && "argument size >= 1?");
@@ -400,7 +400,7 @@ u64_t cppUtil::getVCallIdx(CallSite cs)
     const GetElementPtrInst *vfuncptrgepinst =
         SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
-    const ConstantInt *idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
+    const ConstantInt* idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
     u64_t idx_value;
     if (idx == nullptr)
     {
@@ -455,7 +455,7 @@ string cppUtil::getClassNameFromVtblObj(const Value *value)
     return className;
 }
 
-bool cppUtil::isConstructor(const Function *F)
+bool cppUtil::isConstructor(const Function* F)
 {
     if (F->isDeclaration())
         return false;
@@ -487,7 +487,7 @@ bool cppUtil::isConstructor(const Function *F)
         return false;
 }
 
-bool cppUtil::isDestructor(const Function *F)
+bool cppUtil::isDestructor(const Function* F)
 {
     if (F->isDeclaration())
         return false;
@@ -524,7 +524,7 @@ bool cppUtil::isDestructor(const Function *F)
 string cppUtil::getClassNameOfThisPtr(CallSite cs)
 {
     string thisPtrClassName;
-    Instruction *inst = cs.getInstruction();
+    const Instruction* inst = cs.getInstruction()->getLLVMInstruction();
     if (const MDNode *N = inst->getMetadata("VCallPtrType"))
     {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
@@ -551,7 +551,7 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs)
 string cppUtil::getFunNameOfVCallSite(CallSite cs)
 {
     string funName;
-    Instruction *inst = cs.getInstruction();
+    const Instruction* inst = cs.getInstruction()->getLLVMInstruction();
     if (const MDNode *N = inst->getMetadata("VCallFunName"))
     {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
@@ -567,7 +567,7 @@ string cppUtil::getFunNameOfVCallSite(CallSite cs)
 bool cppUtil::VCallInCtorOrDtor(CallSite cs)
 {
     std::string classNameOfThisPtr = getClassNameOfThisPtr(cs);
-    const Function *func = cs.getCaller();
+    const Function* func = cs.getCaller();
     if (isConstructor(func) || isDestructor(func))
     {
         struct DemangledName dname = demangle(func->getName().str());

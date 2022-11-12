@@ -66,9 +66,9 @@ public:
 
     void collectObj(const Value *val);
 
-    void collectRet(const Function *val);
+    void collectRet(const Function* val);
 
-    void collectVararg(const Function *val);
+    void collectVararg(const Function* val);
     //@}
 
     /// Handle constant expression

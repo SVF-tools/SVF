@@ -172,13 +172,13 @@ public:
     }
 
     /// Returns the vector of virtual function vectors.
-    const std::vector<std::vector<const Function *>> &getVfnVectors(void) const
+    const std::vector<std::vector<const Function* >> &getVfnVectors(void) const
     {
         return vfnVectors;
     }
 
     /// Return the nth virtual function vector in the vtable.
-    std::vector<const Function *> &getVfnVector(unsigned n)
+    std::vector<const Function* > &getVfnVector(unsigned n)
     {
         if (vfnVectors.size() < n + 1)
         {
@@ -197,7 +197,7 @@ private:
     std::string typeName;
     size_t flags;
     /// The virtual functions which this class actually defines/overrides.
-    std::vector<const Function *> primaryVTable;
+    std::vector<const Function* > primaryVTable;
     /// If a vtable is split into more than one vfn vector for multiple inheritance,
     /// 0 would be the primary base + this classes virtual functions, 1 would be
     /// the second parent, 2 would be third parent, etc.
@@ -406,7 +406,7 @@ private:
     /// Retrieves the metadata associated with a *virtual* callsite.
     const DIType *getCSStaticType(CallSite cs) const
     {
-        MDNode *md = cs.getInstruction()->getMetadata(cppUtil::ctir::derefMDName);
+        MDNode *md = cs.getInstruction()->getLLVMInstruction()->getMetadata(cppUtil::ctir::derefMDName);
         assert(md != nullptr && "Missing type metadata at virtual callsite");
         DIType *diType = SVFUtil::dyn_cast<DIType>(md);
         assert(diType != nullptr && "Incorrect metadata type at virtual callsite");

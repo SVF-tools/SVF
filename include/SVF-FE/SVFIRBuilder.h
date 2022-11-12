@@ -122,18 +122,9 @@ public:
     void visitStoreInst(StoreInst &I);
     void visitLoadInst(LoadInst &I);
     void visitGetElementPtrInst(GetElementPtrInst &I);
-    void visitCallInst(CallInst &I)
-    {
-        visitCallSite(&I);
-    }
-    void visitInvokeInst(InvokeInst &II)
-    {
-        visitCallSite(&II);
-    }
-    void visitCallBrInst(CallBrInst &I)
-    {
-        return visitCallSite(&I);
-    }
+    void visitCallInst(CallInst &I);
+    void visitInvokeInst(InvokeInst &II);
+    void visitCallBrInst(CallBrInst &I);
     void visitCallSite(CallSite cs);
     void visitReturnInst(ReturnInst &I);
     void visitCastInst(CastInst &I);
@@ -242,7 +233,7 @@ protected:
     //@{
     virtual void parseOperations(std::vector<ExtAPI::Operation>  &operations, CallSite cs);
     virtual void handleExtCall(CallSite cs, const SVFFunction *F);
-    void addComplexConsForExt(Value *D, Value *S, const Value* sz);
+    void addComplexConsForExt(const Value *D, const Value *S, const Value* sz);
     //@}
 
     /// Set current basic block in order to keep track of control flow information
@@ -255,7 +246,7 @@ protected:
     {
         return curVal;
     }
-    inline const BasicBlock *getCurrentBB() const
+    inline const BasicBlock* getCurrentBB() const
     {
         return curBB;
     }
@@ -359,8 +350,10 @@ protected:
     inline void addStoreEdge(NodeID src, NodeID dst)
     {
         IntraICFGNode* node;
-        if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
+        if(const Instruction* i = SVFUtil::dyn_cast<Instruction>(curVal)){
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             node = pag->getICFG()->getIntraICFGNode(inst);
+        }
         else
             node = nullptr;
         if(StoreStmt *edge = pag->addStoreStmt(src, dst, node))

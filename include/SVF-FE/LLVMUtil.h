@@ -65,9 +65,9 @@ bool isConstantObjSym(const Value *val);
 
 
 /// Whether an instruction is a return instruction
-inline bool isReturn(const Instruction* inst)
+inline bool isReturn(const SVFInstruction* inst)
 {
-    return SVFUtil::isa<ReturnInst>(inst);
+    return SVFUtil::isa<ReturnInst>(inst->getLLVMInstruction());
 }
 
 static inline Type *getPtrElementType(const PointerType* pty)
@@ -104,9 +104,9 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
     return refType;
 }
 
-inline const PointerType *getRefTypeOfHeapAllocOrStatic(const Instruction *inst)
+inline const PointerType *getRefTypeOfHeapAllocOrStatic(const SVFInstruction* inst)
 {
-    CallSite cs(const_cast<Instruction*>(inst));
+    CallSite cs(inst);
     return getRefTypeOfHeapAllocOrStatic(cs);
 }
 //@}
@@ -118,7 +118,7 @@ bool isObject (const Value * ref);
 /// function address is not taken and never be used in call or invoke instruction
 //@{
 /// whether this is a function without any possible caller?
-bool isUncalledFunction (const Function * fun);
+bool isUncalledFunction (const Function*  fun);
 
 /// whether this is an argument in dead function
 inline bool ArgInDeadFunction (const Value * val)
@@ -143,7 +143,7 @@ bool isPtrInUncalledFunction (const Value * value);
 /// Function does not have any possible caller in the call graph
 //@{
 /// Return true if the function does not have a caller (either it is a main function or a dead function)
-inline bool isNoCallerFunction (const Function * fun)
+inline bool isNoCallerFunction (const Function*  fun)
 {
     return isUncalledFunction(fun) || SVFUtil::isProgEntryFunction(fun);
 }
@@ -157,10 +157,10 @@ inline bool isArgOfUncalledFunction (const Value * val)
 //@}
 
 /// Return true if the function has a return instruction reachable from function entry
-bool functionDoesNotRet (const Function * fun);
+bool functionDoesNotRet (const Function*  fun);
 
 /// Get reachable basic block from function entry
-void getFunReachableBBs (const SVFFunction* svfFun, std::vector<const BasicBlock*>& bbs);
+void getFunReachableBBs (const SVFFunction* svfFun, std::vector<const SVFBasicBlock*>& bbs);
 
 /// Get function exit basic block
 /// FIXME: this back() here is only valid when UnifyFunctionExitNodes pass is invoked
@@ -177,7 +177,7 @@ const Value * stripConstantCasts(const Value *val);
 const Value *stripAllCasts(const Value *val) ;
 
 /// Get the type of the heap allocation
-const Type *getTypeOfHeapAlloc(const llvm::Instruction *inst) ;
+const Type *getTypeOfHeapAlloc(const SVFInstruction* inst) ;
 
 /// Return the bitcast instruction which is val's only use site, otherwise return nullptr
 const Value* getUniqueUseViaCastInst(const Value* val);
@@ -287,19 +287,19 @@ inline static DataLayout* getDataLayout(Module* mod)
 }
 
 /// Get the next instructions following control flow
-void getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
+void getNextInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList);
 
 /// Get the previous instructions following control flow
-void getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
+void getPrevInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList);
 
 /// Get basic block successor position
-u32_t getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ);
+u32_t getBBSuccessorPos(const BasicBlock* BB, const BasicBlock* Succ);
 /// Get num of BB's successors
-u32_t getBBSuccessorNum(const BasicBlock *BB);
+u32_t getBBSuccessorNum(const BasicBlock* BB);
 /// Get basic block predecessor positin
-u32_t getBBPredecessorPos(const BasicBlock *BB, const BasicBlock *Pred);
+u32_t getBBPredecessorPos(const BasicBlock* BB, const BasicBlock* Pred);
 /// Get num of BB's predecessors
-u32_t getBBPredecessorNum(const BasicBlock *BB);
+u32_t getBBPredecessorNum(const BasicBlock* BB);
 
 
 

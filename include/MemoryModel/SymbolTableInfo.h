@@ -71,13 +71,10 @@ public:
     /// sym id to memory object map
     typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
     /// function to sym id map
-    typedef OrderedMap<const Function *, SymID> FunToIDMapTy;
+    typedef OrderedMap<const SVFFunction* , SymID> FunToIDMapTy;
     /// struct type to struct info map
     typedef OrderedMap<const Type*, StInfo*> TypeToFieldInfoMap;
     typedef Set<CallSite> CallSiteSet;
-    typedef OrderedMap<const Instruction*,CallSiteID> CallSiteToIDMapTy;
-    typedef OrderedMap<CallSiteID,const Instruction*> IDToCallSiteMapTy;
-
     //@}
 
 private:
@@ -164,12 +161,12 @@ public:
     static bool isNullPtrSym(const Value *val);
     static bool isBlackholeSym(const Value *val);
     static bool isArgOfUncalledFunction(const Value *val);
-    static bool isReturn(const Instruction *inst);
+    static bool isReturn(const SVFInstruction *inst);
     static bool isPtrInUncalledFunction (const Value * value);
-    static const u32_t getBBSuccessorNum(const BasicBlock *bb);
+    static const u32_t getBBSuccessorNum(const SVFBasicBlock* bb);
     static const Type* getPtrElementType(const PointerType* pty);
-    static const u32_t getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ);
-    static const u32_t getBBPredecessorPos(const BasicBlock *BB, const BasicBlock *Pred);
+    static const u32_t getBBSuccessorPos(const SVFBasicBlock* BB, const SVFBasicBlock* Succ);
+    static const u32_t getBBPredecessorPos(const SVFBasicBlock* BB, const SVFBasicBlock* Pred);
 
     static inline bool isBlkPtr(NodeID id)
     {
@@ -249,14 +246,14 @@ public:
         return iter->second;
     }
 
-    inline SymID getRetSym(const Function *val) const
+    inline SymID getRetSym(const SVFFunction* val) const
     {
         FunToIDMapTy::const_iterator iter =  returnSymMap.find(val);
         assert(iter!=returnSymMap.end() && "ret sym not found");
         return iter->second;
     }
 
-    inline SymID getVarargSym(const Function *val) const
+    inline SymID getVarargSym(const SVFFunction* val) const
     {
         FunToIDMapTy::const_iterator iter =  varargSymMap.find(val);
         assert(iter!=varargSymMap.end() && "vararg sym not found");

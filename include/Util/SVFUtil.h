@@ -178,9 +178,9 @@ inline bool isIntrinsicFun(const Function* func)
 }
 
 /// Return true if it is an intrinsic instruction
-inline bool isIntrinsicInst(const Instruction* inst)
+inline bool isIntrinsicInst(const SVFInstruction* inst)
 {
-    if (const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(inst))
+    if (const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(inst->getLLVMInstruction()))
     {
         const Function* func = call->getCalledFunction();
         if (isIntrinsicFun(func))
@@ -193,31 +193,40 @@ inline bool isIntrinsicInst(const Instruction* inst)
 //@}
 
 /// Whether an instruction is a call or invoke instruction
-inline bool isCallSite(const Instruction* inst)
+inline bool isCallSite(const SVFInstruction* inst)
 {
-    return SVFUtil::isa<CallBase>(inst);
+    return SVFUtil::isa<CallBase>(inst->getLLVMInstruction());
 }
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Value* val)
 {
-    if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
-        return SVFUtil::isCallSite(inst);
+    if(SVFUtil::isa<CallBase>(val))
+        return true;
     else
         return false;
 }
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
-inline bool isNonInstricCallSite(const Instruction* inst)
+inline bool isNonInstricCallSite(const SVFInstruction* inst)
 {
     if(isIntrinsicInst(inst))
         return false;
     return isCallSite(inst);
 }
 
-/// Return LLVM callsite given a instruction
-inline CallSite getLLVMCallSite(const Instruction* inst)
+/// Return LLVM callsite given an instruction
+inline CallSite getLLVMCallSite(const SVFInstruction* inst)
 {
     assert(isCallSite(inst) && "not a callsite?");
-    CallSite cs(const_cast<Instruction*>(inst));
+    CallSite cs(inst);
+    return cs;
+}
+
+/// Return LLVM callsite given a value
+inline CallSite getLLVMCallSite(const Value* value)
+{
+    assert(isCallSite(value) && "not a callsite?");
+    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<CallBase>(value));
+    CallSite cs(svfInst);
     return cs;
 }
 
@@ -269,15 +278,15 @@ inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
 inline const SVFFunction* getCallee(const CallSite cs)
 {
     // FIXME: do we need to strip-off the casts here to discover more library functions
-    Function *callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
+    const Function* callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
     return getDefFunForMultipleModule(callee);
 }
 
-inline const SVFFunction* getCallee(const Instruction *inst)
+inline const SVFFunction* getCallee(const SVFInstruction *inst)
 {
     if (!isCallSite(inst))
         return nullptr;
-    CallSite cs(const_cast<Instruction*>(inst));
+    CallSite cs(inst);
     return getCallee(cs);
 }
 //@}
@@ -285,7 +294,7 @@ inline const SVFFunction* getCallee(const Instruction *inst)
 /// Return source code including line number and file name from debug information
 //@{
 std::string  getSourceLoc(const Value *val);
-std::string  getSourceLocOfFunction(const Function *F);
+std::string  getSourceLocOfFunction(const Function* F);
 const std::string value2String(const Value* value);
 //@}
 
@@ -450,7 +459,7 @@ inline const Value* getForkedFun(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(cs);
 }
-inline const Value* getForkedFun(const Instruction *inst)
+inline const Value* getForkedFun(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(inst);
 }
@@ -459,7 +468,7 @@ inline const Value* getForkedFun(const Instruction *inst)
 const std::string type2String(const Type* type);
 
 /// This function servers a allocation wrapper detector
-inline bool isAnAllocationWraper(const Instruction*)
+inline bool isAnAllocationWraper(const SVFInstruction*)
 {
     return false;
 }
@@ -467,7 +476,7 @@ inline bool isAnAllocationWraper(const Instruction*)
 /// Return LLVM function if this value is
 inline const Function* getLLVMFunction(const Value* val)
 {
-    const Function *fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
+    const Function* fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
     return fun;
 }
 
@@ -476,7 +485,7 @@ inline bool isExtCall(const CallSite cs)
     return isExtCall(getCallee(cs));
 }
 
-inline bool isExtCall(const Instruction *inst)
+inline bool isExtCall(const SVFInstruction *inst)
 {
     return isExtCall(getCallee(inst));
 }
@@ -486,7 +495,7 @@ inline bool isHeapAllocExtCallViaArg(const CallSite cs)
     return isHeapAllocExtFunViaArg(getCallee(cs));
 }
 
-inline bool isHeapAllocExtCallViaArg(const Instruction *inst)
+inline bool isHeapAllocExtCallViaArg(const SVFInstruction *inst)
 {
     return isHeapAllocExtFunViaArg(getCallee(inst));
 }
@@ -498,7 +507,7 @@ inline bool isHeapAllocExtCallViaRet(const CallSite cs)
     return isPtrTy && isHeapAllocExtFunViaRet(getCallee(cs));
 }
 
-inline bool isHeapAllocExtCallViaRet(const Instruction *inst)
+inline bool isHeapAllocExtCallViaRet(const SVFInstruction *inst)
 {
     bool isPtrTy = inst->getType()->isPointerTy();
     return isPtrTy && isHeapAllocExtFunViaRet(getCallee(inst));
@@ -509,7 +518,7 @@ inline bool isHeapAllocExtCall(const CallSite cs)
     return isHeapAllocExtCallViaRet(cs) || isHeapAllocExtCallViaArg(cs);
 }
 
-inline bool isHeapAllocExtCall(const Instruction *inst)
+inline bool isHeapAllocExtCall(const SVFInstruction *inst)
 {
     return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
 }
@@ -520,7 +529,7 @@ inline int getHeapAllocHoldingArgPosition(const CallSite cs)
     return getHeapAllocHoldingArgPosition(getCallee(cs));
 }
 
-inline int getHeapAllocHoldingArgPosition(const Instruction *inst)
+inline int getHeapAllocHoldingArgPosition(const SVFInstruction *inst)
 {
     return getHeapAllocHoldingArgPosition(getCallee(inst));
 }
@@ -532,7 +541,7 @@ inline bool isReallocExtCall(const CallSite cs)
     return isPtrTy && isReallocExtFun(getCallee(cs));
 }
 
-inline bool isReallocExtCall(const Instruction *inst)
+inline bool isReallocExtCall(const SVFInstruction *inst)
 {
     bool isPtrTy = inst->getType()->isPointerTy();
     return isPtrTy && isReallocExtFun(getCallee(inst));
@@ -544,7 +553,7 @@ inline bool isDeallocExtCall(const CallSite cs)
     return isDeallocExtFun(getCallee(cs));
 }
 
-inline bool isDeallocExtCall(const Instruction *inst)
+inline bool isDeallocExtCall(const SVFInstruction *inst)
 {
     return isDeallocExtFun(getCallee(inst));
 }
@@ -556,7 +565,7 @@ inline bool isStaticExtCall(const CallSite cs)
     return isPtrTy && isStaticExtFun(getCallee(cs));
 }
 
-inline bool isStaticExtCall(const Instruction *inst)
+inline bool isStaticExtCall(const SVFInstruction *inst)
 {
     bool isPtrTy = inst->getType()->isPointerTy();
     return isPtrTy && isStaticExtFun(getCallee(inst));
@@ -570,7 +579,7 @@ inline bool isHeapAllocOrStaticExtCall(const CallSite cs)
     return isStaticExtCall(cs) || isHeapAllocExtCall(cs);
 }
 
-inline bool isHeapAllocOrStaticExtCall(const Instruction *inst)
+inline bool isHeapAllocOrStaticExtCall(const SVFInstruction *inst)
 {
     return isStaticExtCall(inst) || isHeapAllocExtCall(inst);
 }
@@ -582,7 +591,7 @@ inline bool isThreadForkCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDFork(cs);
 }
-inline bool isThreadForkCall(const Instruction *inst)
+inline bool isThreadForkCall(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->isTDFork(inst);
 }
@@ -594,7 +603,7 @@ inline bool isHareParForCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isHareParFor(cs);
 }
-inline bool isHareParForCall(const Instruction *inst)
+inline bool isHareParForCall(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->isHareParFor(inst);
 }
@@ -606,7 +615,7 @@ inline bool isThreadJoinCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDJoin(cs);
 }
-inline bool isThreadJoinCall(const Instruction *inst)
+inline bool isThreadJoinCall(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->isTDJoin(inst);
 }
@@ -618,7 +627,7 @@ inline bool isThreadExitCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDExit(cs);
 }
-inline bool isThreadExitCall(const Instruction *inst)
+inline bool isThreadExitCall(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->isTDExit(inst);
 }
@@ -630,7 +639,7 @@ inline bool isLockAquireCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDAcquire(cs);
 }
-inline bool isLockAquireCall(const Instruction *inst)
+inline bool isLockAquireCall(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->isTDAcquire(inst);
 }
@@ -642,7 +651,7 @@ inline bool isLockReleaseCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDRelease(cs);
 }
-inline bool isLockReleaseCall(const Instruction *inst)
+inline bool isLockReleaseCall(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->isTDRelease(inst);
 }
@@ -654,7 +663,7 @@ inline bool isBarrierWaitCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDBarWait(cs);
 }
-inline bool isBarrierWaitCall(const Instruction *inst)
+inline bool isBarrierWaitCall(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->isTDBarWait(inst);
 }
@@ -666,7 +675,7 @@ inline const Value* getActualParmAtForkSite(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
 }
-inline const Value* getActualParmAtForkSite(const Instruction *inst)
+inline const Value* getActualParmAtForkSite(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(inst);
 }
@@ -678,7 +687,7 @@ inline const Value* getTaskFuncAtHareParForSite(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(cs);
 }
-inline const Value* getTaskFuncAtHareParForSite(const Instruction *inst)
+inline const Value* getTaskFuncAtHareParForSite(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(inst);
 }
@@ -690,13 +699,13 @@ inline const Value* getTaskDataAtHareParForSite(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(cs);
 }
-inline const Value* getTaskDataAtHareParForSite(const Instruction *inst)
+inline const Value* getTaskDataAtHareParForSite(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(inst);
 }
 //@}
 
-inline bool isProgEntryFunction (const Function * fun)
+inline bool isProgEntryFunction (const Function*  fun)
 {
     return fun && fun->getName() == "main";
 }
@@ -707,7 +716,7 @@ inline bool isProgExitCall(const CallSite cs)
     return isProgExitFunction(getCallee(cs));
 }
 
-inline bool isProgExitCall(const Instruction *inst)
+inline bool isProgExitCall(const SVFInstruction *inst)
 {
     return isProgExitFunction(getCallee(inst));
 }

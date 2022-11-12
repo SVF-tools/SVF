@@ -104,7 +104,7 @@ public:
     typedef Set<const SVFGNode*> SVFGNodeSet;
     typedef std::vector<const SVFGNode*> SVFGNodeVec;
     typedef NodeBS SVFGNodeIDSet;
-    typedef Set<const Instruction*> InstSet;
+    typedef Set<const SVFInstruction*> InstSet;
     typedef std::pair<NodeID,NodeID> NodeIDPair;
     typedef Map<SVFGNodeLockSpan, bool> PairToBoolMap;
 

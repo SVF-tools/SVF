@@ -41,12 +41,12 @@ public:
 
     /// SB Has flag methods
     //@{
-    inline bool hasSBSourceFlag(Instruction *inst) const
+    inline bool hasSBSourceFlag(Instruction* inst) const
     {
         std::vector<Value *> values;
         return evalMDTag(inst, inst, SB_SLICESOURCE, values);
     }
-    inline bool hasSBSinkFlag(Instruction *inst) const
+    inline bool hasSBSinkFlag(Instruction* inst) const
     {
         std::vector<Value *> values;
         return evalMDTag(inst, inst, SB_SLICESINK, values);
@@ -55,7 +55,7 @@ public:
 
     /// Race Detection Has flag methods
     //@{
-    inline bool hasDRNotCheckFlag(Instruction *inst) const
+    inline bool hasDRNotCheckFlag(Instruction* inst) const
     {
         //std::vector<Value *> values;
         //return evalMDTag(inst, inst, DR_NOT_CHECK, values);
@@ -64,7 +64,7 @@ public:
         else
             return false;
     }
-    inline bool hasDRNotCheckFlag(const Instruction *inst) const
+    inline bool hasDRNotCheckFlag(const Instruction* inst) const
     {
         //std::vector<Value *> values;
         //return evalMDTag(inst, inst, DR_NOT_CHECK, values);
@@ -74,7 +74,7 @@ public:
             return false;
     }
 
-    inline bool hasDRCheckFlag(Instruction *inst) const
+    inline bool hasDRCheckFlag(Instruction* inst) const
     {
         //std::vector<Value *> values;
         //return evalMDTag(inst, inst, DR_CHECK, values);
@@ -83,7 +83,7 @@ public:
         else
             return false;
     }
-    inline bool hasDRCheckFlag(const Instruction *inst) const
+    inline bool hasDRCheckFlag(const Instruction* inst) const
     {
         //std::vector<Value *> values;
         //return evalMDTag(inst, inst, DR_CHECK, values);
@@ -96,11 +96,11 @@ public:
 
     /// Simple add/remove meta data information
     //@{
-    inline void addMDTag(Instruction *inst, std::string str)
+    inline void addMDTag(Instruction* inst, std::string str)
     {
         addMDTag(inst, inst, str);
     }
-    inline void removeMDTag(Instruction *inst, std::string str)
+    inline void removeMDTag(Instruction* inst, std::string str)
     {
         removeMDTag(inst, inst, str);
     }
@@ -109,7 +109,7 @@ public:
     /// manipulate llvm meta data on instructions for a specific value
     //@{
     /// add flag to llvm metadata
-    inline void addMDTag(Instruction *inst, Value *val, std::string str)
+    inline void addMDTag(Instruction* inst, Value *val, std::string str)
     {
         assert(!val->getType()->isVoidTy() && "expecting non-void value for MD!");
         std::vector<Value *> values;
@@ -127,7 +127,7 @@ public:
     }
 
     /// remove flag from llvm metadata
-    inline void removeMDTag(Instruction *inst, Value *val, std::string str)
+    inline void removeMDTag(Instruction* inst, Value *val, std::string str)
     {
         assert(!val->getType()->isVoidTy() && "expecting non-void value for MD!");
         std::vector<Value *> values;
@@ -145,7 +145,7 @@ public:
 private:
 
     /// evaluate llvm metadata
-    inline bool evalMDTag(const Instruction *inst, const Value *val, std::string str,
+    inline bool evalMDTag(const Instruction* inst, const Value *val, std::string str,
                           std::vector<Value *>&) const
     {
 

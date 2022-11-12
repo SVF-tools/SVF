@@ -68,16 +68,18 @@ public:
 
 
     /// Check if Function "F" is memset
-    inline bool isMemset(const Instruction *I)
+    inline bool isMemset(const Instruction* I)
     {
-        const Function* F =SVFUtil::getCallee(I)->getLLVMFun();
+        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
+        const Function* F =SVFUtil::getCallee(svfInst)->getLLVMFun();
         return F && F->getName().find("llvm.memset") != std::string::npos;
     }
 
     /// Check if Function "F" is memcpy
-    inline bool isMemcpy(const Instruction *I)
+    inline bool isMemcpy(const Instruction* I)
     {
-        const SVFFunction* F =SVFUtil::getCallee(I);
+        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
+        const SVFFunction* F = SVFUtil::getCallee(svfInst);
         return F && F->getName().find("llvm.memcpy") != std::string::npos;
     }
 
