@@ -340,7 +340,7 @@ bool SaberCondAllocator::isNECmp(const CmpInst *cmp) const
     return (cmp->getPredicate() == CmpInst::ICMP_NE);
 }
 
-bool SaberCondAllocator::isTestNullExpr(const Value *test) const
+bool SaberCondAllocator::isTestNullExpr(const Value* test) const
 {
     if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(test))
     {
@@ -349,7 +349,7 @@ bool SaberCondAllocator::isTestNullExpr(const Value *test) const
     return false;
 }
 
-bool SaberCondAllocator::isTestNotNullExpr(const Value *test) const
+bool SaberCondAllocator::isTestNotNullExpr(const Value* test) const
 {
     if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(test))
     {
@@ -373,11 +373,11 @@ bool SaberCondAllocator::isTestNotNullExpr(const Value *test) const
 bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpInst *cmp) const
 {
 
-    const Value *op0 = cmp->getOperand(0);
-    const Value *op1 = cmp->getOperand(1);
+    const Value* op0 = cmp->getOperand(0);
+    const Value* op1 = cmp->getOperand(1);
     if (SVFUtil::isa<ConstantPointerNull>(op1))
     {
-        Set<const Value *> inDirVal;
+        Set<const Value* > inDirVal;
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
         {
             if (it->isIndirectVFGEdge())
@@ -389,7 +389,7 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpInst *cmp) const
     }
     else if (SVFUtil::isa<ConstantPointerNull>(op0))
     {
-        Set<const Value *> inDirVal;
+        Set<const Value* > inDirVal;
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
         {
             if (it->isIndirectVFGEdge())

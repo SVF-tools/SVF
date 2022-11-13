@@ -312,7 +312,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
 /*!
  * Handle constant expression, and connect the gep edge
  */
-void SVFIRBuilder::processCE(const Value *val)
+void SVFIRBuilder::processCE(const Value* val)
 {
     if (const Constant* ref = SVFUtil::dyn_cast<Constant>(val))
     {
@@ -416,7 +416,7 @@ void SVFIRBuilder::processCE(const Value *val)
         {
             // blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
             // is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
-            const Value *cval = getCurrentValue();
+            const Value* cval = getCurrentValue();
             const BasicBlock* cbb = getCurrentBB();
             setCurrentLocation(ref, nullptr);
             NodeID dst = pag->getValueNode(ref);
@@ -704,7 +704,7 @@ void SVFIRBuilder::visitCastInst(CastInst &inst)
     }
     else
     {
-        const Value * opnd = inst.getOperand(0);
+        const Value*  opnd = inst.getOperand(0);
         if (!SVFUtil::isa<PointerType>(opnd->getType()))
             opnd = stripAllCasts(opnd);
 
@@ -848,7 +848,7 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 
     DBOUT(DPAGBuild, outs() << "process return  " << SVFUtil::value2String(&inst) << " \n");
 
-    if(Value *src = inst.getReturnValue())
+    if(Value* src = inst.getReturnValue())
     {
         const SVFFunction *F = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(inst.getParent()->getParent());
 
@@ -998,7 +998,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
             DBOUT(DPAGBuild, outs() << " !! not enough args\n");
             break;
         }
-        const Value *AA = cs.getArgOperand(itA), *FA = &*itF; //current actual/formal arg
+        const Value* AA = cs.getArgOperand(itA), *FA = &*itF; //current actual/formal arg
 
         DBOUT(DPAGBuild, outs() << "process actual parm  " << SVFUtil::value2String(AA) << " \n");
 
@@ -1015,7 +1015,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
         DBOUT(DPAGBuild, outs() << "\n      varargs:");
         for (; itA != ieA; ++itA)
         {
-            const Value *AA = cs.getArgOperand(itA);
+            const Value* AA = cs.getArgOperand(itA);
             NodeID vnAA = getValueNode(AA);
             CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
             FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(F);
@@ -1034,7 +1034,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
 
 const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 {
-    const Value * value = stripAllCasts(V);
+    const Value*  value = stripAllCasts(V);
     assert(value && "null ptr?");
     if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
     {
@@ -1089,7 +1089,7 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
-const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* szValue)
+const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vector<LocationSet> &fields, const Value* szValue)
 {
     assert(V);
     const Value* value = getBaseValueForExtArg(V);
@@ -1120,7 +1120,7 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
  * Add the load/store constraints and temp. nodes for the complex constraint
  * *D = *S (where D/S may point to structs).
  */
-void SVFIRBuilder::addComplexConsForExt(const Value *D, const Value *S, const Value* szValue)
+void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Value* szValue)
 {
     assert(D && S);
     NodeID vnD= getValueNode(D), vnS= getValueNode(S);
@@ -1245,7 +1245,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         {
             assert(isHeapAllocExtCallViaArg(cs) && "Must be heap alloc call via arg.");
             u32_t arg_pos = getHeapAllocHoldingArgPosition(callee);
-            const Value *arg = cs.getArgument(arg_pos);
+            const Value* arg = cs.getArgument(arg_pos);
             if (arg->getType()->isPointerTy())
             {
                 NodeID vnArg = getValueNode(arg);
@@ -1368,7 +1368,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     else if (op.getOperator() == "funptr_ops")
                     {
                         /// handling external function e.g., void *dlsym(void *handle, const char *funname);
-                        const Value *src = cs.getArgument(1);
+                        const Value* src = cs.getArgument(1);
                         if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
                             src = stripConstantCasts(gep->getPointerOperand());
                         if(const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(src))
@@ -1387,8 +1387,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     {
                         assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
 
-                        const Value *vArg1 = cs.getArgument(1);
-                        const Value *vArg3 = cs.getArgument(3);
+                        const Value* vArg1 = cs.getArgument(1);
+                        const Value* vArg3 = cs.getArgument(3);
 
                         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                         // Now we calculate the offset from base to vArg3
@@ -1428,7 +1428,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             if (const Function* forkedFun = getLLVMFunction(getForkedFun(inst)))
             {
                 forkedFun = getDefFunForMultipleModule(forkedFun)->getLLVMFun();
-                const Value *actualParm = getActualParmAtForkSite(inst);
+                const Value* actualParm = getActualParmAtForkSite(inst);
                 /// pthread_create has 1 arg.
                 /// apr_thread_create has 2 arg.
                 assert((forkedFun->arg_size() <= 2) && "Size of formal parameter of start routine should be one");
@@ -1463,7 +1463,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             {
                 /// The task function of hare_parallel_for has 3 args.
                 assert((taskFunc->arg_size() == 3) && "Size of formal parameter of hare_parallel_for's task routine should be 3");
-                const Value *actualParm = getTaskDataAtHareParForSite(inst);
+                const Value* actualParm = getTaskDataAtHareParForSite(inst);
                 const Argument* formalParm = &(*taskFunc->arg_begin());
                 /// Connect actual parameter to formal parameter of the start routine
                 if (SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()))

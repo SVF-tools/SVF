@@ -726,7 +726,7 @@ void ForkJoinAnalysis::collectSCEVInfo()
             const SVFInstruction* callInst =  *sit;
             if(tct->getThreadCallGraph()->isForksite(getCBN(callInst)))
             {
-                const Value *forkSiteTidPtr = getForkedThread(callInst);
+                const Value* forkSiteTidPtr = getForkedThread(callInst);
                 // const SCEV *forkSiteTidPtrSCEV = SE->getSCEV(const_cast<Value*>(forkSiteTidPtr));
                 // const SCEV *baseForkTidPtrSCEV = SE->getSCEV(const_cast<Value*>(getBasePtr(forkSiteTidPtr)));
                 // forkSiteTidPtrSCEV = getSCEVMinusExpr(forkSiteTidPtrSCEV, baseForkTidPtrSCEV, SE);
@@ -735,7 +735,7 @@ void ForkJoinAnalysis::collectSCEVInfo()
             }
             else
             {
-                const Value *joinSiteTidPtr = getJoinedThread(callInst);
+                const Value* joinSiteTidPtr = getJoinedThread(callInst);
                 //const SCEV *joinSiteTidPtrSCEV = SE->getSCEV(const_cast<Value*>(joinSiteTidPtr));
                 //const SCEV *baseJoinTidPtrSCEV = SE->getSCEV(const_cast<Value*>(getBasePtr(joinSiteTidPtr)));
                 //joinSiteTidPtrSCEV = getSCEVMinusExpr(joinSiteTidPtrSCEV, baseJoinTidPtrSCEV, SE);

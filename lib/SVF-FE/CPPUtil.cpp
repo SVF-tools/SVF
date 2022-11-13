@@ -121,7 +121,7 @@ string cppUtil::getBeforeBrackets(const string &name)
     return name.substr(0, pos);
 }
 
-bool cppUtil::isValVtbl(const Value *val)
+bool cppUtil::isValVtbl(const Value* val)
 {
     if (!SVFUtil::isa<GlobalVariable>(val))
         return false;
@@ -228,7 +228,7 @@ struct cppUtil::DemangledName cppUtil::demangle(const string &name)
 
 bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
 {
-    const Value *loadSrc = loadInst->getPointerOperand();
+    const Value* loadSrc = loadInst->getPointerOperand();
     const Type *valTy = loadSrc->getType();
     const Type *elemTy = valTy;
     for (u32_t i = 0; i < 3; ++i)
@@ -267,16 +267,16 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
     if (cs.getArgOperand(0)->getType()->isPointerTy() == false)
         return false;
 
-    const Value *vfunc = cs.getCalledValue();
+    const Value* vfunc = cs.getCalledValue();
     if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
     {
-        const Value *vfuncptr = vfuncloadinst->getPointerOperand();
+        const Value* vfuncptr = vfuncloadinst->getPointerOperand();
         if (const GetElementPtrInst *vfuncptrgepinst =
                     SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
         {
             if (vfuncptrgepinst->getNumIndices() != 1)
                 return false;
-            const Value *vtbl = vfuncptrgepinst->getPointerOperand();
+            const Value* vtbl = vfuncptrgepinst->getPointerOperand();
             if (SVFUtil::isa<LoadInst>(vtbl))
             {
                 return true;
@@ -316,7 +316,7 @@ const Function* cppUtil::getThunkTarget(const Function* F)
     return ret;
 }
 
-const Value *cppUtil::getVCallThisPtr(CallSite cs)
+const Value* cppUtil::getVCallThisPtr(CallSite cs)
 {
     if (cs.paramHasAttr(0, llvm::Attribute::StructRet))
     {
@@ -348,11 +348,11 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
     }
     else
     {
-        for (const Value *thisU : thisPtr1->users())
+        for (const Value* thisU : thisPtr1->users())
         {
             if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(thisU))
             {
-                for (const Value *storeU : store->getPointerOperand()->users())
+                for (const Value* storeU : store->getPointerOperand()->users())
                 {
                     if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(storeU))
                     {
@@ -381,14 +381,14 @@ const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
  * %x = load %vfn
  * call %x (...)
  */
-const Value *cppUtil::getVCallVtblPtr(CallSite cs)
+const Value* cppUtil::getVCallVtblPtr(CallSite cs)
 {
     const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(loadInst != nullptr);
-    const Value *vfuncptr = loadInst->getPointerOperand();
+    const Value* vfuncptr = loadInst->getPointerOperand();
     const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     assert(gepInst != nullptr);
-    const Value *vtbl = gepInst->getPointerOperand();
+    const Value* vtbl = gepInst->getPointerOperand();
     return vtbl;
 }
 
@@ -396,7 +396,7 @@ u64_t cppUtil::getVCallIdx(CallSite cs)
 {
     const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(vfuncloadinst != nullptr);
-    const Value *vfuncptr = vfuncloadinst->getPointerOperand();
+    const Value* vfuncptr = vfuncloadinst->getPointerOperand();
     const GetElementPtrInst *vfuncptrgepinst =
         SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
@@ -435,7 +435,7 @@ string cppUtil::getClassNameFromType(const Type *ty)
     return className;
 }
 
-string cppUtil::getClassNameFromVtblObj(const Value *value)
+string cppUtil::getClassNameFromVtblObj(const Value* value)
 {
     string className = "";
 
@@ -532,7 +532,7 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs)
     }
     if (thisPtrClassName.size() == 0)
     {
-        const Value *thisPtr = getVCallThisPtr(cs);
+        const Value* thisPtr = getVCallThisPtr(cs);
         thisPtrClassName = getClassNameFromType(thisPtr->getType());
     }
 

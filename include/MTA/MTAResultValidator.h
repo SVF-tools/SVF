@@ -276,14 +276,17 @@ protected:
         // Collect call sites of all RC_ACCESS function calls.
         std::vector<CallSite> csInsts;
         const Function* F = nullptr;
-        for(auto it = M->llvmFunBegin(); it != M->llvmFunEnd(); it++)
+        for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
         {
-            const std::string fName = (*it)->getName().str();
+        for(auto it = M.begin(); it != M.end(); it++)
+        {
+            const std::string fName = (*it).getName().str();
             if(fName.find(RC_ACCESS) != std::string::npos)
             {
-                F = (*it);
+                F = &(*it);
                 break;
             }
+        }
         }
         if (!F)     return;
 

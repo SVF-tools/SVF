@@ -45,13 +45,13 @@ namespace LLVMUtil
 
 
 /// Check whether this value is a black hole
-inline bool isBlackholeSym(const Value *val)
+inline bool isBlackholeSym(const Value* val)
 {
     return (SVFUtil::isa<UndefValue>(val));
 }
 
 /// Check whether this value is a black hole
-inline bool isNullPtrSym(const Value *val)
+inline bool isNullPtrSym(const Value* val)
 {
     if (const Constant* v = SVFUtil::dyn_cast<Constant>(val))
     {
@@ -61,7 +61,7 @@ inline bool isNullPtrSym(const Value *val)
 }
 
 /// Check whether this value points-to a constant object
-bool isConstantObjSym(const Value *val);
+bool isConstantObjSym(const Value* val);
 
 static inline Type *getPtrElementType(const PointerType* pty)
 {
@@ -82,7 +82,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
     if (SVFUtil::isHeapAllocExtCallViaArg(cs))
     {
         int argPos = SVFUtil::getHeapAllocHoldingArgPosition(cs);
-        const Value *arg = cs.getArgument(argPos);
+        const Value* arg = cs.getArgument(argPos);
         if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
             refType = SVFUtil::dyn_cast<PointerType>(getPtrElementType(argType));
     }
@@ -105,7 +105,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const SVFInstruction* in
 //@}
 
 /// Return true if this value refers to a object
-bool isObject (const Value * ref);
+bool isObject (const Value*  ref);
 
 /// Method for dead function, which does not have any possible caller
 /// function address is not taken and never be used in call or invoke instruction
@@ -114,7 +114,7 @@ bool isObject (const Value * ref);
 bool isUncalledFunction (const Function*  fun);
 
 /// whether this is an argument in dead function
-inline bool ArgInDeadFunction (const Value * val)
+inline bool ArgInDeadFunction (const Value*  val)
 {
     return SVFUtil::isa<Argument>(val)
            && isUncalledFunction(SVFUtil::cast<Argument>(val)->getParent());
@@ -122,13 +122,13 @@ inline bool ArgInDeadFunction (const Value * val)
 //@}
 
 /// Return true if this is an argument of a program entry function (e.g. main)
-inline bool ArgInProgEntryFunction (const Value * val)
+inline bool ArgInProgEntryFunction (const Value*  val)
 {
     return SVFUtil::isa<Argument>(val)
            && SVFUtil::isProgEntryFunction(SVFUtil::cast<Argument>(val)->getParent());
 }
 /// Return true if this is value in a dead function (function without any caller)
-bool isPtrInUncalledFunction (const Value * value);
+bool isPtrInUncalledFunction (const Value*  value);
 //@}
 
 //@}
@@ -142,7 +142,7 @@ inline bool isNoCallerFunction (const Function*  fun)
 }
 
 /// Return true if the argument in a function does not have a caller
-inline bool isArgOfUncalledFunction (const Value * val)
+inline bool isArgOfUncalledFunction (const Value*  val)
 {
     return SVFUtil::isa<Argument>(val)
            && isNoCallerFunction(SVFUtil::cast<Argument>(val)->getParent());
@@ -164,10 +164,10 @@ inline const BasicBlock* getFunExitBB(const SVFFunction* svfFun)
     return &fun->back();
 }
 /// Strip off the constant casts
-const Value * stripConstantCasts(const Value *val);
+const Value*  stripConstantCasts(const Value* val);
 
 /// Strip off the all casts
-const Value *stripAllCasts(const Value *val) ;
+const Value* stripAllCasts(const Value* val) ;
 
 /// Get the type of the heap allocation
 const Type *getTypeOfHeapAlloc(const SVFInstruction* inst) ;
@@ -177,7 +177,7 @@ const Value* getUniqueUseViaCastInst(const Value* val);
 
 /// Return corresponding constant expression, otherwise return nullptr
 //@{
-inline const ConstantExpr *isGepConstantExpr(const Value *val)
+inline const ConstantExpr *isGepConstantExpr(const Value* val)
 {
     if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
@@ -187,7 +187,7 @@ inline const ConstantExpr *isGepConstantExpr(const Value *val)
     return nullptr;
 }
 
-inline const ConstantExpr *isInt2PtrConstantExpr(const Value *val)
+inline const ConstantExpr *isInt2PtrConstantExpr(const Value* val)
 {
     if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
@@ -197,7 +197,7 @@ inline const ConstantExpr *isInt2PtrConstantExpr(const Value *val)
     return nullptr;
 }
 
-inline const ConstantExpr *isPtr2IntConstantExpr(const Value *val)
+inline const ConstantExpr *isPtr2IntConstantExpr(const Value* val)
 {
     if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
@@ -207,7 +207,7 @@ inline const ConstantExpr *isPtr2IntConstantExpr(const Value *val)
     return nullptr;
 }
 
-inline const ConstantExpr *isCastConstantExpr(const Value *val)
+inline const ConstantExpr *isCastConstantExpr(const Value* val)
 {
     if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
@@ -217,7 +217,7 @@ inline const ConstantExpr *isCastConstantExpr(const Value *val)
     return nullptr;
 }
 
-inline const ConstantExpr *isSelectConstantExpr(const Value *val)
+inline const ConstantExpr *isSelectConstantExpr(const Value* val)
 {
     if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
@@ -227,7 +227,7 @@ inline const ConstantExpr *isSelectConstantExpr(const Value *val)
     return nullptr;
 }
 
-inline const ConstantExpr *isTruncConstantExpr(const Value *val)
+inline const ConstantExpr *isTruncConstantExpr(const Value* val)
 {
     if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
@@ -241,7 +241,7 @@ inline const ConstantExpr *isTruncConstantExpr(const Value *val)
     return nullptr;
 }
 
-inline const ConstantExpr *isCmpConstantExpr(const Value *val)
+inline const ConstantExpr *isCmpConstantExpr(const Value* val)
 {
     if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
@@ -251,7 +251,7 @@ inline const ConstantExpr *isCmpConstantExpr(const Value *val)
     return nullptr;
 }
 
-inline const ConstantExpr *isBinaryConstantExpr(const Value *val)
+inline const ConstantExpr *isBinaryConstantExpr(const Value* val)
 {
     if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
@@ -261,7 +261,7 @@ inline const ConstantExpr *isBinaryConstantExpr(const Value *val)
     return nullptr;
 }
 
-inline const ConstantExpr *isUnaryConstantExpr(const Value *val)
+inline const ConstantExpr *isUnaryConstantExpr(const Value* val)
 {
     if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {

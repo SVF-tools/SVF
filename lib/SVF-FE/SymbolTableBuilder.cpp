@@ -220,7 +220,7 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val)
 
     if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
     {
-        const SVFFunction *svfFun = symInfo->getModule()->getSVFFunction(fun);
+        const SVFFunction *svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
 
         if (!isExtCall(svfFun))
         {
@@ -277,6 +277,24 @@ void SymbolTableBuilder::collectSym(const Value *val)
     {
         collectObj(val);
     }
+}
+
+/*!
+ * Map llvm value to SVF value
+*/
+const SVFValue* SymbolTableBuilder::mapLLVM2SVFValue(const Value* value)
+{
+    if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
+    else if (const GlobalValue* glob = SVFUtil::dyn_cast<GlobalValue>(value))
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(glob);
+    else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+    else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFArgument(arg);
+    return nullptr;
 }
 
 /*!

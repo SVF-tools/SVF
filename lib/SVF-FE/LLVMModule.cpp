@@ -124,50 +124,55 @@ void LLVMModuleSet::createSVFDataStructure()
     for (Module& mod : modules)
     {
         /// Function
-        for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
+        for (Module::const_iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
         {
-            Function* func = &*it;
+            const Function* func = &*it;
             SVFFunction* svfFunc = new SVFFunction(func);
             svfModule->addFunctionSet(svfFunc);
+            addFunctionMap(func,svfFunc);
 
             for (Function::const_arg_iterator I = func->arg_begin(), E = func->arg_end(); I != E; ++I)
             {
-                SVFArgument* svfarg = new SVFArgument(&*I,svfFunc, LLVMUtil::isArgOfUncalledFunction(&*I));
+                const Argument* arg = &*I;
+                SVFArgument* svfarg = new SVFArgument(arg,svfFunc, LLVMUtil::isArgOfUncalledFunction(arg));
                 svfFunc->addArgument(svfarg);
+                addArgumentMap(arg,svfarg);
             }
 
-            for (Function::iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
+            for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
             {
-                BasicBlock* bb = &*bit;
+                const BasicBlock* bb = &*bit;
                 SVFBasicBlock* svfBB = new SVFBasicBlock(bb, svfFunc);
                 svfFunc->addBasicBlock(svfBB);
-                svfModule->addBasicBlockMap(svfBB);
-                for (BasicBlock::iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
+                addBasicBlockMap(bb,svfBB);
+                for (BasicBlock::const_iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
                 {
-                    Instruction* inst = &*iit;
+                    const Instruction* inst = &*iit;
                     SVFInstruction* svfInst = new SVFInstruction(inst,svfBB, SVFUtil::isa<ReturnInst>(inst));
                     svfBB->addInstruction(svfInst);
-                    svfModule->addInstructionMap(svfInst);
+                    addInstructionMap(inst,svfInst);
                 }
             }
         }
 
         /// GlobalVariable
-        for (Module::global_iterator it = mod.global_begin(),
+        for (Module::const_global_iterator it = mod.global_begin(),
                 eit = mod.global_end(); it != eit; ++it)
         {
-            GlobalVariable* global = &*it;
+            const GlobalVariable* global = &*it;
             SVFGlobalValue* svfglobal = new SVFGlobalValue(global);
             svfModule->addGlobalSet(svfglobal);
+            addGlobalValueMap(global,svfglobal);
         }
 
         /// GlobalAlias
-        for (Module::alias_iterator it = mod.alias_begin(),
+        for (Module::const_alias_iterator it = mod.alias_begin(),
                 eit = mod.alias_end(); it != eit; ++it)
         {
-            GlobalAlias *alias = &*it;
-            SVFGlobalValue* svfglobal = new SVFGlobalValue(alias);
-            svfModule->addAliasSet(svfglobal);
+            const GlobalAlias *alias = &*it;
+            SVFGlobalValue* svfalias = new SVFGlobalValue(alias);
+            svfModule->addAliasSet(svfalias);
+            addGlobalValueMap(alias,svfalias);
         }
     }
 }
@@ -561,7 +566,7 @@ void LLVMModuleSet::addSVFMain()
         // main() should be called after all ctor functions and before dtor
         // functions.
         Function::arg_iterator arg_it = svfmain->arg_begin();
-        Value * args[] = {arg_it, arg_it + 1, arg_it + 2 };
+        Value*  args[] = {arg_it, arg_it + 1, arg_it + 2 };
         size_t cnt = orgMain->arg_size();
         assert(cnt <= 3 && "Too many arguments for main()");
         Builder.CreateCall(orgMain, llvm::ArrayRef<Value*>(args,args + cnt));

@@ -45,16 +45,10 @@ public:
     typedef std::vector<const Function*> LLVMFunctionSetType;
     typedef std::vector<SVFGlobalValue*> GlobalSetType;
     typedef std::vector<SVFGlobalValue*> AliasSetType;
-    typedef Map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
-    typedef Map<const BasicBlock*,const SVFBasicBlock*> LLVMBB2SVFBBMap;
-    typedef Map<const Instruction*,const SVFInstruction*> LLVMInst2SVFInstMap;
-    typedef Map<const GlobalValue*,const SVFGlobalValue*> LLVMGlobal2SVFGlobalMap;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
     typedef FunctionSetType::const_iterator const_iterator;
-    typedef LLVMFunctionSetType::iterator llvm_iterator;
-    typedef LLVMFunctionSetType::const_iterator llvm_const_iterator;
     typedef GlobalSetType::iterator global_iterator;
     typedef GlobalSetType::const_iterator const_global_iterator;
     typedef AliasSetType::iterator alias_iterator;
@@ -64,12 +58,8 @@ private:
     static std::string pagReadFromTxt;
     std::string moduleIdentifier;
     FunctionSetType FunctionSet;  ///< The Functions in the module
-    LLVMFunctionSetType LLVMFunctionSet;  ///< The Functions in the module
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
-    LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
-    LLVMBB2SVFBBMap LLVMBB2SVFBB;
-    LLVMInst2SVFInstMap LLVMInst2SVFInst;
     Set<const Value*> argsOfUncalledFunction;
     Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
@@ -120,16 +110,6 @@ public:
     inline void addFunctionSet(SVFFunction* svfFunc)
     {
         FunctionSet.push_back(svfFunc);
-        LLVMFunctionSet.push_back(svfFunc->getLLVMFun());
-        LLVMFunc2SVFFunc[svfFunc->getLLVMFun()] = svfFunc;
-    }
-    inline void addBasicBlockMap(SVFBasicBlock* svfBB)
-    {
-        LLVMBB2SVFBB[svfBB->getLLVMBasicBlock()] = svfBB;
-    }
-    inline void addInstructionMap(SVFInstruction* svfInst)
-    {
-        LLVMInst2SVFInst[svfInst->getLLVMInstruction()] = svfInst;
     }
     inline void addGlobalSet(SVFGlobalValue* glob)
     {
@@ -141,46 +121,8 @@ public:
     }
     ///@}
 
-    inline const SVFFunction* getSVFFunction(const Function* fun) const
-    {
-        LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
-        assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
-        return it->second;
-    }
-
-    inline const SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb) const
-    {
-        LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
-        assert(it!=LLVMBB2SVFBB.end() && "SVF BasicBlock not found!");
-        return it->second;
-    }
-
-    inline const SVFInstruction* getSVFInstruction(const Instruction* inst) const
-    {
-        LLVMInst2SVFInstMap::const_iterator it = LLVMInst2SVFInst.find(inst);
-        assert(it!=LLVMInst2SVFInst.end() && "SVF Instruction not found!");
-        return it->second;
-    }
-
     /// Iterators
     ///@{
-    llvm_iterator llvmFunBegin()
-    {
-        return LLVMFunctionSet.begin();
-    }
-    llvm_const_iterator llvmFunBegin() const
-    {
-        return LLVMFunctionSet.begin();
-    }
-    llvm_iterator llvmFunEnd()
-    {
-        return LLVMFunctionSet.end();
-    }
-    llvm_const_iterator llvmFunEnd() const
-    {
-        return LLVMFunctionSet.end();
-    }
-
     iterator begin()
     {
         return FunctionSet.begin();
@@ -237,7 +179,7 @@ public:
     {
         if (pagReadFromTxt.empty())
         {
-            assert(moduleIdentifier.empty()==false && "No LLVM module found! Are you reading from a file other than LLVM-IR?");
+            assert(moduleIdentifier.empty()==false && "No module found! Are you reading from a file other than LLVM-IR?");
             return moduleIdentifier;
         }
         else
@@ -303,22 +245,22 @@ public:
         ptrElementTypeMap.insert({ptrType, type});
     }
 
-    inline void addPtrInUncalledFunction (const Value * value)
+    inline void addPtrInUncalledFunction (const Value*  value)
     {
         ptrsInUncalledFunctions.insert(value);
     }
 
-    inline void addNullPtrSyms(const Value *val)
+    inline void addNullPtrSyms(const Value* val)
     {
         nullPtrSyms.insert(val);
     }
 
-    inline void addBlackholeSyms(const Value *val)
+    inline void addBlackholeSyms(const Value* val)
     {
         blackholeSyms.insert(val);
     }
 
-    inline void addArgsOfUncalledFunction(const Value *val)
+    inline void addArgsOfUncalledFunction(const Value* val)
     {
         argsOfUncalledFunction.insert(val);
     }

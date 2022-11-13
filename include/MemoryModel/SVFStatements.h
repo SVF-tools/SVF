@@ -112,7 +112,7 @@ public:
         else
             return nullptr;
     }
-    inline void setValue(const Value *val)
+    inline void setValue(const Value* val)
     {
         value = val;
     }
