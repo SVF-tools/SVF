@@ -218,30 +218,6 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val)
         symInfo->getModule()->addPtrInUncalledFunction(val);
     }
 
-    if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
-    {
-        const SVFFunction *svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-
-        if (!isExtCall(svfFun))
-        {
-            for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
-            {
-                const BasicBlock* bb = &*bit;
-                const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
-                for (succ_const_iterator succIt = succ_begin(bb); succIt != succ_end(bb); succIt++)
-                {
-                    const BasicBlock* succ = *succIt;
-                    const SVFBasicBlock* svf_scc_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(succ);
-                    const u32_t predecessorPos = LLVMUtil::getBBPredecessorPos(bb,succ);
-                    if (predecessorPos != 0)
-                    {
-                        symInfo->getModule()->addBBPredecessorPos(svfbb,svf_scc_bb,predecessorPos);
-                    }
-                }
-            }
-        }
-    }
-
     if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
     {
         const Type* type = LLVMUtil::getPtrElementType(ptrType);

@@ -338,20 +338,6 @@ bool SymbolTableInfo::isPtrInUncalledFunction (const Value*  value)
     return ptrInUncalledFunctionSet.find(value) != ptrInUncalledFunctionSet.end();
 }
 
-const u32_t SymbolTableInfo::getBBPredecessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* Pred)
-{
-    if(symInfo->getModule()->getBBPredecessorPosMap().find(bb) != symInfo->getModule()->getBBPredecessorPosMap().end())
-    {
-        const Map <const SVFBasicBlock* , const u32_t> value = symInfo->getModule()->getBBPredecessorPosMap().find(bb)->second;
-        if(value.find(Pred) != value.end())
-        {
-            u32_t pos = value.find(Pred)->second;
-            return pos;
-        }
-    }
-    return 0;
-}
-
 const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
 {
     Map<const PointerType*, const Type*>::const_iterator ptrElementTypeMapIter = symInfo->getModule()->getPtrElementTypeMap().find(pty);

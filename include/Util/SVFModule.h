@@ -74,7 +74,6 @@ private:
     Set<const Value*> blackholeSyms;
     Set<const Value*> ptrsInUncalledFunctions;
     Map<const PointerType*, const Type*> ptrElementTypeMap;
-    Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>> bbPredecessorPosMap;
 
 public:
     /// Constructors
@@ -253,33 +252,11 @@ public:
         return ptrsInUncalledFunctions;
     }
 
-    inline const Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>& getBBPredecessorPosMap()
-    {
-        return bbPredecessorPosMap;
-    }
-
     inline const Map<const PointerType*, const Type*>& getPtrElementTypeMap()
     {
         return ptrElementTypeMap;
     }
-
-    inline void addBBPredecessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* Pred,const u32_t pos)
-    {
-        Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>::iterator bbPredecessorPosMapIter = bbPredecessorPosMap.find(bb);
-        if(bbPredecessorPosMapIter != bbPredecessorPosMap.end())
-        {
-            Map<const SVFBasicBlock*, const u32_t> foundValue = bbPredecessorPosMapIter->second;
-            foundValue.insert({Pred,pos});
-            bbPredecessorPosMap.insert({bb,foundValue});
-        }
-        else
-        {
-            Map<const SVFBasicBlock*, const u32_t> valueMap;
-            valueMap.insert({Pred,pos});
-            bbPredecessorPosMap.insert({bb,valueMap});
-        }
-    }
-
+    
     inline void addptrElementType(const PointerType* ptrType, const Type* type)
     {
         ptrElementTypeMap.insert({ptrType, type});

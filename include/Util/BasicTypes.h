@@ -490,6 +490,7 @@ public:
     u32_t getBBSuccessorPos(const SVFBasicBlock* succbb);
     u32_t getBBSuccessorPos(const SVFBasicBlock* succbb) const;
     u32_t getBBPredecessorPos(const SVFBasicBlock* succbb);
+    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) const;
 
     inline const BasicBlock* getLLVMBasicBlock() const
     {

@@ -320,7 +320,7 @@ void MemSSA::SSARenameBB(const SVFBasicBlock& bb)
     // fill phi operands of succ basic blocks
     for (const SVFBasicBlock* succ : bb.getSuccessors())
     {
-        u32_t pos = SymbolTableInfo::getBBPredecessorPos(&bb, succ);
+        u32_t pos = bb.getBBPredecessorPos(succ);
         if (hasPHISet(succ))
             RenamePhiOps(getPHISet(succ),pos,memRegs);
     }
