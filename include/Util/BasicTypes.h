@@ -96,6 +96,7 @@ public:
         SVFFunc,
         SVFBB,
         SVFInst,
+        SVFCall,
         SVFGlob,
         SVFArg,
         SVFConstData,
@@ -232,7 +233,6 @@ private:
     const SVFBasicBlock* exitBB;
     std::vector<const SVFBasicBlock*> reachableBBs;
     std::vector<const SVFBasicBlock*> allBBs;
-    std::vector<const SVFInstruction*> allInsts;
     std::vector<const SVFArgument*> allArgs;
 
     bool isUncalled;
@@ -279,11 +279,6 @@ public:
         allBBs.push_back(bb);
     }
     
-    inline void addInstruction(const SVFInstruction* inst) 
-    {
-        allInsts.push_back(inst);
-    }
-    
     inline void addArgument(SVFArgument* arg)
     {
         allArgs.push_back(arg);
@@ -312,11 +307,6 @@ public:
     inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
     {
         return reachableBBs;
-    }
-
-    inline const std::vector<const SVFInstruction*>& getInstructionList() const
-    {
-        return allInsts;
     }
 
     inline const bool isUncalledFunction() const
@@ -528,7 +518,7 @@ public:
 
     static inline bool classof(const SVFValue *node)
     {
-        return node->getKind() == SVFInst;
+        return node->getKind() == SVFInst || node->getKind() == SVFCall;
     }
 
     inline const SVFBasicBlock* getParent() const
@@ -549,6 +539,32 @@ public:
     inline bool isRetInst() const
     {
         return ret;
+    }
+};
+
+class SVFCallInst : public SVFInstruction
+{
+private:
+    std::vector<const SVFValue*> args;
+
+public:
+    SVFCallInst(const CallBase* i, const SVFBasicBlock* b) : SVFInstruction(i,b,false)
+    {
+    }
+    SVFCallInst(const Instruction* i) = delete;
+    SVFCallInst(const CallBase* i) = delete;
+    SVFCallInst(void) = delete;
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFCall;
+    }
+    static inline bool classof(const SVFInstruction *node)
+    {
+        return node->getKind() == SVFCall;
+    }
+    inline void addArgument(const SVFValue* a){
+        args.push_back(a);
     }
 };
 

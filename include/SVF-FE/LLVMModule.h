@@ -47,13 +47,13 @@ public:
     typedef Map<const Function*, FunctionSetType> FunDefToDeclsMapTy;
     typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
-    typedef Map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
-    typedef Map<const BasicBlock*,const SVFBasicBlock*> LLVMBB2SVFBBMap;
-    typedef Map<const Instruction*,const SVFInstruction*> LLVMInst2SVFInstMap;
-    typedef Map<const GlobalValue*,const SVFGlobalValue*> LLVMGlobal2SVFGlobalMap;
-    typedef Map<const Argument*,const SVFArgument*> LLVMArgument2SVFArgumentMap;
-    typedef Map<const ConstantData*,const SVFConstantData*> LLVMConstData2SVFConstDataMap;
-    typedef Map<const Value*,const SVFOtherValue*> LLVMValue2SVFOtherValueMap;
+    typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
+    typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
+    typedef Map<const Instruction*, SVFInstruction*> LLVMInst2SVFInstMap;
+    typedef Map<const GlobalValue*, SVFGlobalValue*> LLVMGlobal2SVFGlobalMap;
+    typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
+    typedef Map<const ConstantData*, SVFConstantData*> LLVMConstData2SVFConstDataMap;
+    typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -132,85 +132,44 @@ public:
     // Dump modules to files
     void dumpModulesToFile(const std::string suffix);
 
-    inline void addFunctionMap(const Function* func, const SVFFunction* svfFunc)
+    inline void addFunctionMap(const Function* func, SVFFunction* svfFunc)
     {
         LLVMFunc2SVFFunc[func] = svfFunc;
     }
-    inline void addBasicBlockMap(const BasicBlock* bb, const SVFBasicBlock* svfBB)
+    inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
     {
         LLVMBB2SVFBB[bb] = svfBB;
     }
-    inline void addInstructionMap(const Instruction* inst, const SVFInstruction* svfInst)
+    inline void addInstructionMap(const Instruction* inst, SVFInstruction* svfInst)
     {
         LLVMInst2SVFInst[inst] = svfInst;
     }
-    inline void addArgumentMap(const Argument* arg, const SVFArgument* svfArg)
+    inline void addArgumentMap(const Argument* arg, SVFArgument* svfArg)
     {
         LLVMArgument2SVFArgument[arg] = svfArg;
     }
-    inline void addGlobalValueMap(const GlobalValue* glob, const SVFGlobalValue* svfglob)
+    inline void addGlobalValueMap(const GlobalValue* glob, SVFGlobalValue* svfglob)
     {
         LLVMGlobal2SVFGlobal[glob] = svfglob;
     }
-    inline void addConstantDataMap(const ConstantData* cd, const SVFConstantData* svfcd)
+    inline void addConstantDataMap(const ConstantData* cd, SVFConstantData* svfcd)
     {
         LLVMConstData2SVFConstData[cd] = svfcd;
     }
-    inline void addOtherValueMap(const Value* ov, const SVFOtherValue* svfov)
+    inline void addOtherValueMap(const Value* ov, SVFOtherValue* svfov)
     {
         LLVMValue2SVFOtherValue[ov] = svfov;
     }
-
-    inline const SVFValue* getSVFValue(const Value* fun) const;
-
-    inline const SVFFunction* getSVFFunction(const Function* fun) const
-    {
-        LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
-        assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
-        return it->second;
-    }
-
-    inline const SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb) const
-    {
-        LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
-        assert(it!=LLVMBB2SVFBB.end() && "SVF BasicBlock not found!");
-        return it->second;
-    }
-
-    inline const SVFInstruction* getSVFInstruction(const Instruction* inst) const
-    {
-        LLVMInst2SVFInstMap::const_iterator it = LLVMInst2SVFInst.find(inst);
-        assert(it!=LLVMInst2SVFInst.end() && "SVF Instruction not found!");
-        return it->second;
-    }
-
-    inline const SVFArgument* getSVFArgument(const Argument* arg) const
-    {
-        LLVMArgument2SVFArgumentMap::const_iterator it = LLVMArgument2SVFArgument.find(arg);
-        assert(it!=LLVMArgument2SVFArgument.end() && "SVF Argument not found!");
-        return it->second;
-    }
-
-    inline const SVFGlobalValue* getSVFGlobalValue(const GlobalValue* g) const
-    {
-        LLVMGlobal2SVFGlobalMap::const_iterator it = LLVMGlobal2SVFGlobal.find(g);
-        assert(it!=LLVMGlobal2SVFGlobal.end() && "SVF Global not found!");
-        return it->second;
-    }
-
-    inline const SVFConstantData* getSVFConstantData(const ConstantData* cd) const
-    {
-        LLVMConstData2SVFConstDataMap::const_iterator it = LLVMConstData2SVFConstData.find(cd);
-        assert(it!=LLVMConstData2SVFConstData.end() && "SVF ConstantData not found!");
-        return it->second;
-    }
-
-    inline const SVFOtherValue* getSVFOtherValue(const Value* ov) const
-    {
-        LLVMValue2SVFOtherValueMap::const_iterator it = LLVMValue2SVFOtherValue.find(ov);
-        assert(it!=LLVMValue2SVFOtherValue.end() && "SVF OtherValue not found!");
-        return it->second;
-    }
+    /// LLVM Value to SVFValue
+    const SVFValue* getSVFValue(const Value* value);
+    SVFFunction* getSVFFunction(const Function* fun);
+    SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb);
+    SVFInstruction* getSVFInstruction(const Instruction* inst);
+    SVFArgument* getSVFArgument(const Argument* arg);
+    SVFGlobalValue* getSVFGlobalVariable(const GlobalVariable* g);
+    SVFGlobalValue* getSVFGlobalAlias(const GlobalAlias* g);
+    SVFConstantData* getSVFConstantData(const ConstantData* cd);
+    SVFOtherValue* getSVFOtherValue(const Value* ov);
 
     /// Get the corresponding Function based on its name
     inline const SVFFunction* getSVFFunction(std::string name)
@@ -308,7 +267,7 @@ private:
     void createSVFDataStructure();
     void initSVFFunction();
     void initSVFBasicBlock(const SVFFunction* func);
-    void initDomTree(const SVFFunction* func);
+    void initDomTree(SVFFunction* func, const Function* f);
 
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();

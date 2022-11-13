@@ -92,8 +92,10 @@ void PCG::initFromThreadAPI(SVFModule* module)
 {
     for (const SVFFunction* fun : module->getFunctionSet())
     {
-        for (const SVFInstruction* inst : fun->getInstructionList())
+        for (const SVFBasicBlock* svfbb : fun->getBasicBlockList())
         {
+            for (const SVFInstruction* inst : svfbb->getInstructionList())
+            {
             if (tdAPI->isTDFork(inst))
             {
                 const Value* forkVal = tdAPI->getForkedFun(inst);
@@ -111,6 +113,7 @@ void PCG::initFromThreadAPI(SVFModule* module)
                     outs() << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
                     writeWrnMsg("invoke spawnee indirectly");
                 }
+            }
             }
         }
     }

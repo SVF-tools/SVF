@@ -69,8 +69,6 @@ public:
     void collectRet(const Function* val);
 
     void collectVararg(const Function* val);
-
-    const SVFValue* mapLLVM2SVFValue(const Value* val);
     //@}
 
     /// Handle constant expression

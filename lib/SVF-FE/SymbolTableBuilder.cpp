@@ -280,54 +280,6 @@ void SymbolTableBuilder::collectSym(const Value *val)
 }
 
 /*!
- * Map llvm value to SVF value
-*/
-const SVFValue* SymbolTableBuilder::mapLLVM2SVFValue(const Value* value)
-{
-    const SVFValue* svfValue = nullptr;
-    if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
-        svfValue = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
-        svfValue = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
-    else if (const GlobalValue* glob = SVFUtil::dyn_cast<GlobalValue>(value))
-        svfValue = LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(glob);
-    else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
-        svfValue = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
-    else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
-        svfValue = LLVMModuleSet::getLLVMModuleSet()->getSVFArgument(arg);
-    else if (const ConstantData* cd = SVFUtil::dyn_cast<ConstantData>(value))
-    {
-        SVFConstantData* svfcd = new SVFConstantData(cd);
-        symInfo->getModule()->addConstantData(svfcd);
-        LLVMModuleSet::getLLVMModuleSet()->addConstantDataMap(cd,svfcd);
-        svfValue = svfcd;
-    }
-    else
-    {
-        SVFOtherValue* svfov = new SVFOtherValue(value);
-        symInfo->getModule()->addOtherValue(svfov);
-        LLVMModuleSet::getLLVMModuleSet()->addOtherValueMap(value,svfov);
-        svfValue = svfov;
-    }
-
-    assert(svfValue && "svfValue is a nullptr?");
-    SVFValue* nonconstval = const_cast<SVFValue*>(svfValue);
-    if (LLVMUtil::isPtrInUncalledFunction(value))
-        nonconstval->setPtrInUncalledFunction();
-    if (LLVMUtil::isNullPtrSym(value))
-        nonconstval->setNullPtr();
-    if (LLVMUtil::isBlackholeSym(value))
-        nonconstval->setBlackhole();
-    if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(value->getType()))
-    {
-        const Type* elementType = LLVMUtil::getPtrElementType(ptrType);
-        nonconstval->setPtrElementType(elementType);
-    }
-
-    return svfValue;
-}
-
-/*!
  * Get value sym, if not available create a new one
  */
 void SymbolTableBuilder::collectVal(const Value *val)
