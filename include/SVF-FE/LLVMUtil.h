@@ -155,14 +155,6 @@ bool functionDoesNotRet (const Function*  fun);
 /// Get reachable basic block from function entry
 void getFunReachableBBs (const SVFFunction* svfFun, std::vector<const SVFBasicBlock*>& bbs);
 
-/// Get function exit basic block
-/// FIXME: this back() here is only valid when UnifyFunctionExitNodes pass is invoked
-inline const BasicBlock* getFunExitBB(const SVFFunction* svfFun)
-{
-    const Function* fun = svfFun->getLLVMFun();
-    assert(!SVFUtil::isExtCall(svfFun) && "The function cannot be an external call");
-    return &fun->back();
-}
 /// Strip off the constant casts
 const Value*  stripConstantCasts(const Value* val);
 

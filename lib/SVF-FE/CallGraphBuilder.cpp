@@ -46,8 +46,10 @@ PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
     /// create edges
     for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
     {
-        for (const SVFInstruction* inst : (*F)->getInstructionList())
+        for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
         {
+            for (const SVFInstruction* inst : svfbb->getInstructionList())
+            {
             if (SVFUtil::isNonInstricCallSite(inst))
             {
                 if(const SVFFunction* callee = getCallee(inst))
@@ -55,6 +57,7 @@ PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
                     const CallICFGNode* callBlockNode = icfg->getCallICFGNode(inst);
                     callgraph->addDirectCallGraphEdge(callBlockNode,*F,callee);
                 }
+            }
             }
         }
     }
@@ -73,8 +76,10 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
     ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
     for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
     {
-        for (const SVFInstruction* inst : (*F)->getInstructionList())
+        for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
         {
+            for (const SVFInstruction* inst : svfbb->getInstructionList())
+            {
             if (tdAPI->isTDFork(inst))
             {
                 const CallICFGNode* cs = icfg->getCallICFGNode(inst);
@@ -105,17 +110,21 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
                     cg->addHareParForEdgeSetMap(cs,nullptr);
                 }
             }
+            }
         }
     }
     // record join sites
     for (SVFModule::const_iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F)
     {
-        for (const SVFInstruction* inst : (*F)->getInstructionList())
+        for (const SVFBasicBlock* svfbb : (*F)->getBasicBlockList())
         {
+            for (const SVFInstruction* inst : svfbb->getInstructionList())
+            {
             if (tdAPI->isTDJoin(inst))
             {
                 const CallICFGNode* cs = icfg->getCallICFGNode(inst);
                 cg->addJoinsite(cs);
+            }
             }
         }
     }

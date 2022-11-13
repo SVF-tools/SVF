@@ -98,8 +98,10 @@ void LockAnalysis::collectLockUnlocksites()
     ThreadCallGraph* tcg=tct->getThreadCallGraph();
     for (const SVFFunction* F : tct->getSVFModule()->getFunctionSet())
     {
-        for (const SVFInstruction* inst : F->getInstructionList())
+        for (const SVFBasicBlock* bb : F->getBasicBlockList())
         {
+            for (const SVFInstruction* inst : bb->getInstructionList())
+            {
             if (tcg->getThreadAPI()->isTDRelease(inst))
             {
                 unlocksites.insert(inst);
@@ -107,6 +109,7 @@ void LockAnalysis::collectLockUnlocksites()
             if (tcg->getThreadAPI()->isTDAcquire(inst))
             {
                 locksites.insert(inst);
+            }
             }
         }
     }
@@ -202,7 +205,7 @@ bool LockAnalysis::intraForwardTraverse(const SVFInstruction* lockSite, InstSet&
     {
         const SVFInstruction *I = worklist.back();
         worklist.pop_back();
-        const SVFInstruction* exitInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(getFunExitBB(svfFun)->back()));
+        const SVFInstruction* exitInst = svfFun->getExitBB()->back();
         if(exitInst == I)
             return false;
 

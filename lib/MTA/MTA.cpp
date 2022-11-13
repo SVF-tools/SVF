@@ -198,8 +198,10 @@ void MTA::detect(SVFModule* module)
     for (const SVFFunction* F : module->getFunctionSet())
     {
         // collect and create symbols inside the function body
-        for (const SVFInstruction* svfInst : F->getInstructionList())
+        for (const SVFBasicBlock* svfbb : F->getBasicBlockList())
         {
+            for (const SVFInstruction* svfInst : svfbb->getInstructionList())
+            {
             const Instruction* inst = svfInst->getLLVMInstruction();
             if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(inst))
             {
@@ -208,6 +210,7 @@ void MTA::detect(SVFModule* module)
             else if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(inst))
             {
                 stores.insert(store);
+            }
             }
         }
     }

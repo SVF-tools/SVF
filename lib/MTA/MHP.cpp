@@ -189,13 +189,16 @@ void MHP::updateNonCandidateFunInterleaving()
                 const CxtThreadStmt& cts = *it1;
                 const CallStrCxt& curCxt = cts.getContext();
 
-                for (const SVFInstruction* svfInst : fun->getInstructionList())
+                for (const SVFBasicBlock* svfbb : fun->getBasicBlockList())
+                {
+                for (const SVFInstruction* svfInst : svfbb->getInstructionList())
                 {
                     if (svfInst == entryinst)
                         continue;
                     CxtThreadStmt newCts(cts.getTid(), curCxt, svfInst);
                     threadStmtToTheadInterLeav[newCts] |= threadStmtToTheadInterLeav[cts];
                     instToTSMap[svfInst].insert(newCts);
+                }
                 }
             }
         }
