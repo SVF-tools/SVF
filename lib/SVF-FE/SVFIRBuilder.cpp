@@ -621,7 +621,10 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
     {
         const Value* val = inst.getIncomingValue(i);
         const Instruction* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
-        assert((incomingInst==nullptr) || (incomingInst->getFunction() == inst.getFunction()));
+        bool matched = (incomingInst == nullptr ||
+                incomingInst->getFunction() == inst.getFunction());
+        (void) matched; // Make the compiler happy
+        assert(matched && "incomingInst's Function incorrect");
         const Instruction* predInst = &inst.getIncomingBlock(i)->back();
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(predInst);
         NodeID src = getValueNode(val);

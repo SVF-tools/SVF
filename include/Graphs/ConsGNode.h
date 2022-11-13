@@ -259,56 +259,68 @@ public:
         storeInEdges.insert(inEdge);
         addIncomingEdge(inEdge);
     }
-    inline void addIncomingDirectEdge(ConstraintEdge* inEdge)
+    inline bool addIncomingDirectEdge(ConstraintEdge* inEdge)
     {
         assert(inEdge->getDstID() == this->getId());
         bool added1 = directInEdges.insert(inEdge).second;
         bool added2 = addIncomingEdge(inEdge);
-        assert(added1 && added2 && "edge not added, duplicated adding!!");
+        bool both_added = added1 & added2;
+        assert(both_added && "edge not added, duplicated adding!!");
+        return both_added;
     }
     inline void addOutgoingAddrEdge(AddrCGEdge* outEdge)
     {
         addressOutEdges.insert(outEdge);
         addOutgoingEdge(outEdge);
     }
-    inline void addOutgoingLoadEdge(LoadCGEdge* outEdge)
+    inline bool addOutgoingLoadEdge(LoadCGEdge* outEdge)
     {
         bool added1 = loadOutEdges.insert(outEdge).second;
         bool added2 = addOutgoingEdge(outEdge);
-        assert(added1 && added2 && "edge not added, duplicated adding!!");
+        bool both_added = added1 & added2;
+        assert(both_added && "edge not added, duplicated adding!!");
+        return both_added;
     }
-    inline void addOutgoingStoreEdge(StoreCGEdge* outEdge)
+    inline bool addOutgoingStoreEdge(StoreCGEdge* outEdge)
     {
         bool added1 = storeOutEdges.insert(outEdge).second;
         bool added2 = addOutgoingEdge(outEdge);
-        assert(added1 && added2 && "edge not added, duplicated adding!!");
+        bool both_added = added1 & added2;
+        assert(both_added && "edge not added, duplicated adding!!");
+        return both_added;
     }
-    inline void addOutgoingDirectEdge(ConstraintEdge* outEdge)
+    inline bool addOutgoingDirectEdge(ConstraintEdge* outEdge)
     {
         assert(outEdge->getSrcID() == this->getId());
         bool added1 = directOutEdges.insert(outEdge).second;
         bool added2 = addOutgoingEdge(outEdge);
-        assert(added1 && added2 && "edge not added, duplicated adding!!");
+        bool both_added = added1 & added2;
+        assert(both_added && "edge not added, duplicated adding!!");
+        return both_added;
     }
     //@}
 
     /// Remove constraint graph edges
     //{@
-    inline void removeOutgoingAddrEdge(AddrCGEdge* outEdge)
+    inline bool removeOutgoingAddrEdge(AddrCGEdge* outEdge)
     {
         u32_t num1 = addressOutEdges.erase(outEdge);
         u32_t num2 = removeOutgoingEdge(outEdge);
-        assert((num1 && num2) && "edge not in the set, can not remove!!!");
+        bool removed = (num1 > 0) & (num2 > 0);
+        assert(removed && "edge not in the set, can not remove!!!");
+        return removed;
     }
 
-    inline void removeIncomingAddrEdge(AddrCGEdge* inEdge)
+    inline bool removeIncomingAddrEdge(AddrCGEdge* inEdge)
     {
         u32_t num1 = addressInEdges.erase(inEdge);
         u32_t num2 = removeIncomingEdge(inEdge);
-        assert((num1 && num2) && "edge not in the set, can not remove!!!");
+        bool removed = (num1 > 0) & (num2 > 0);
+        assert(removed && "edge not in the set, can not remove!!!");
+        return removed;
     }
 
-    inline void removeOutgoingDirectEdge(ConstraintEdge* outEdge)
+    inline bool removeOutgoingDirectEdge(ConstraintEdge* outEdge)
     {
         if (SVFUtil::isa<GepCGEdge>(outEdge))
             gepOutEdges.erase(outEdge);
@@ -316,10 +328,12 @@ public:
             copyOutEdges.erase(outEdge);
         u32_t num1 = directOutEdges.erase(outEdge);
         u32_t num2 = removeOutgoingEdge(outEdge);
-        assert((num1 && num2) && "edge not in the set, can not remove!!!");
+        bool removed = (num1 > 0) & (num2 > 0);
+        assert(removed && "edge not in the set, can not remove!!!");
+        return removed;
     }
 
-    inline void removeIncomingDirectEdge(ConstraintEdge* inEdge)
+    inline bool removeIncomingDirectEdge(ConstraintEdge* inEdge)
     {
         if (SVFUtil::isa<GepCGEdge>(inEdge))
             gepInEdges.erase(inEdge);
@@ -327,35 +341,45 @@ public:
             copyInEdges.erase(inEdge);
         u32_t num1 = directInEdges.erase(inEdge);
         u32_t num2 = removeIncomingEdge(inEdge);
-        assert((num1 && num2) && "edge not in the set, can not remove!!!");
+        bool removed = (num1 > 0) & (num2 > 0);
+        assert(removed && "edge not in the set, can not remove!!!");
+        return removed;
     }
 
-    inline void removeOutgoingLoadEdge(LoadCGEdge* outEdge)
+    inline bool removeOutgoingLoadEdge(LoadCGEdge* outEdge)
     {
         u32_t num1 = loadOutEdges.erase(outEdge);
         u32_t num2 = removeOutgoingEdge(outEdge);
-        assert((num1 && num2) && "edge not in the set, can not remove!!!");
+        bool removed = (num1 > 0) & (num2 > 0);
+        assert(removed && "edge not in the set, can not remove!!!");
+        return removed;
     }
 
-    inline void removeIncomingLoadEdge(LoadCGEdge* inEdge)
+    inline bool removeIncomingLoadEdge(LoadCGEdge* inEdge)
     {
         u32_t num1 = loadInEdges.erase(inEdge);
         u32_t num2 = removeIncomingEdge(inEdge);
-        assert((num1 && num2) && "edge not in the set, can not remove!!!");
+        bool removed = (num1 > 0) & (num2 > 0);
+        assert(removed && "edge not in the set, can not remove!!!");
+        return removed;
     }
 
-    inline void removeOutgoingStoreEdge(StoreCGEdge* outEdge)
+    inline bool removeOutgoingStoreEdge(StoreCGEdge* outEdge)
     {
         u32_t num1 = storeOutEdges.erase(outEdge);
         u32_t num2 = removeOutgoingEdge(outEdge);
-        assert((num1 && num2) && "edge not in the set, can not remove!!!");
+        bool removed = (num1 > 0) & (num2 > 0);
+        assert(removed && "edge not in the set, can not remove!!!");
+        return removed;
     }
 
-    inline void removeIncomingStoreEdge(StoreCGEdge* inEdge)
+    inline bool removeIncomingStoreEdge(StoreCGEdge* inEdge)
     {
         u32_t num1 = storeInEdges.erase(inEdge);
         u32_t num2 = removeIncomingEdge(inEdge);
-        assert((num1 && num2) && "edge not in the set, can not remove!!!");
+        bool removed = (num1 > 0) & (num2 > 0);
+        assert(removed && "edge not in the set, can not remove!!!");
+        return removed;
     }
     //@}
 
