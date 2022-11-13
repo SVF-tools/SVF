@@ -84,7 +84,7 @@ OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(SVFIR* p)
     {
         if (cppUtil::isVirtualCallSite(SVFUtil::getLLVMCallSite(it->first->getCallSite())))
         {
-            const Value *vtblPtr = cppUtil::getVCallVtblPtr(SVFUtil::getLLVMCallSite(it->first->getCallSite()));
+            const Value* vtblPtr = cppUtil::getVCallVtblPtr(SVFUtil::getLLVMCallSite(it->first->getCallSite()));
             assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
             NodeID vtblId = pag->getValueNode(vtblPtr);
             addCandidate(vtblId);

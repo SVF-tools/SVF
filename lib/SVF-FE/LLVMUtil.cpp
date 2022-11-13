@@ -39,7 +39,7 @@ using namespace SVF;
  * 3) stack
  * 4) heap
  */
-bool LLVMUtil::isObject(const Value * ref)
+bool LLVMUtil::isObject(const Value*  ref)
 {
     bool createobj = false;
     if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))) )
@@ -57,7 +57,7 @@ bool LLVMUtil::isObject(const Value * ref)
 /*!
  * Check whether this value points-to a constant object
  */
-bool LLVMUtil::isConstantObjSym(const Value *val)
+bool LLVMUtil::isConstantObjSym(const Value* val)
 {
     if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
     {
@@ -200,7 +200,7 @@ bool LLVMUtil::isUncalledFunction (const Function*  fun)
 /*!
  * Return true if this is a value in a dead function (function without any caller)
  */
-bool LLVMUtil::isPtrInUncalledFunction (const Value * value)
+bool LLVMUtil::isPtrInUncalledFunction (const Value*  value)
 {
     if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
     {
@@ -218,7 +218,7 @@ bool LLVMUtil::isPtrInUncalledFunction (const Value * value)
 /*!
  * Strip constant casts
  */
-const Value * LLVMUtil::stripConstantCasts(const Value *val)
+const Value*  LLVMUtil::stripConstantCasts(const Value* val)
 {
     if (SVFUtil::isa<GlobalValue>(val) || isInt2PtrConstantExpr(val))
         return val;
@@ -233,7 +233,7 @@ const Value * LLVMUtil::stripConstantCasts(const Value *val)
 /*!
  * Strip all casts
  */
-const Value * LLVMUtil::stripAllCasts(const Value *val)
+const Value*  LLVMUtil::stripAllCasts(const Value* val)
 {
     while (true)
     {
@@ -355,7 +355,7 @@ const Type* LLVMUtil::getTypeOfHeapAlloc(const SVFInstruction *inst)
     {
         CallSite cs = SVFUtil::getLLVMCallSite(inst);
         int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getCallee(cs));
-        const Value *arg = cs.getArgument(arg_pos);
+        const Value* arg = cs.getArgument(arg_pos);
         type = SVFUtil::dyn_cast<PointerType>(arg->getType());
     }
     else

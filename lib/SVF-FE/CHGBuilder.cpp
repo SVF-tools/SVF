@@ -104,7 +104,7 @@ void CHGBuilder::buildCHGNodes(const GlobalValue *globalvalue)
             {
                 if(const ConstantExpr *ce = isCastConstantExpr(vtbl->getOperand(i)))
                 {
-                    const Value *bitcastValue = ce->getOperand(0);
+                    const Value* bitcastValue = ce->getOperand(0);
                     if (const  Function* func = SVFUtil::dyn_cast<Function>(bitcastValue))
                     {
                         struct DemangledName dname = demangle(func->getName().str());
@@ -175,7 +175,7 @@ void CHGBuilder::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSit
     {
         if (cs.arg_size() < 1 || (cs.arg_size() < 2 && cs.paramHasAttr(0, llvm::Attribute::StructRet)))
             return;
-        const Value *csThisPtr = getVCallThisPtr(cs);
+        const Value* csThisPtr = getVCallThisPtr(cs);
         //const Argument* consThisPtr = getConstructorThisPtr(caller);
         //bool samePtr = isSameThisPtrInConstructor(consThisPtr, csThisPtr);
         bool samePtrTrue = true;
@@ -198,12 +198,12 @@ void CHGBuilder::connectInheritEdgeViaStore(const SVFFunction* caller, const Sto
     {
         if (ce->getOpcode() == Instruction::BitCast)
         {
-            const Value *bitcastval = ce->getOperand(0);
+            const Value* bitcastval = ce->getOperand(0);
             if (const ConstantExpr *bcce = SVFUtil::dyn_cast<ConstantExpr>(bitcastval))
             {
                 if (bcce->getOpcode() == Instruction::GetElementPtr)
                 {
-                    const Value *gepval = bcce->getOperand(0);
+                    const Value* gepval = bcce->getOperand(0);
                     if (isValVtbl(gepval))
                     {
                         string vtblClassName = getClassNameFromVtblObj(gepval);
@@ -412,7 +412,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                     SVFUtil::dyn_cast<ConstantExpr>(vtbl->getOperand(i-1));
                                 if (ce->getOpcode() == Instruction::BitCast)
                                 {
-                                    const Value *bitcastValue = ce->getOperand(0);
+                                    const Value* bitcastValue = ce->getOperand(0);
                                     string bitcastValueName = bitcastValue->getName().str();
                                     if (bitcastValueName.compare(0, ztiLabel.size(), ztiLabel) == 0)
                                     {
@@ -446,7 +446,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                         }
                         if (opcode == Instruction::BitCast)
                         {
-                            const Value *bitcastValue = ce->getOperand(0);
+                            const Value* bitcastValue = ce->getOperand(0);
                             string bitcastValueName = bitcastValue->getName().str();
                             /*
                              * value in bitcast:
@@ -699,7 +699,7 @@ void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f
     if (isCPPThunkFunction(lf))
     {
         if(const auto *tf = getThunkTarget(lf))
-            v.push_back(chg->svfMod->getSVFFunction(tf));
+            v.push_back(f);
     }
     else
     {

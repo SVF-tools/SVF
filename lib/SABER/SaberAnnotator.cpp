@@ -83,7 +83,7 @@ void SaberAnnotator::annotateFeasibleBranch(const BranchStmt *branchStmt, u32_t 
     raw_string_ostream rawstr(str);
     rawstr << SB_FESIBLE << _curSlice->getSource()->getId();
     addMDTag(const_cast<Instruction*>(branchStmt->getInst()->getLLVMInstruction()),
-             const_cast<Value *>(branchStmt->getCondition()->getValue()), rawstr.str());
+             const_cast<Value* >(branchStmt->getCondition()->getValue()), rawstr.str());
 }
 
 /*!
@@ -98,7 +98,7 @@ void SaberAnnotator::annotateInfeasibleBranch(const BranchStmt *branchStmt, u32_
     raw_string_ostream rawstr(str);
     rawstr << SB_INFESIBLE << _curSlice->getSource()->getId();
     addMDTag(const_cast<Instruction* >(branchStmt->getInst()->getLLVMInstruction()),
-             const_cast<Value *>(branchStmt->getCondition()->getValue()), rawstr.str());
+             const_cast<Value* >(branchStmt->getCondition()->getValue()), rawstr.str());
 }
 
 

@@ -221,15 +221,14 @@ void ThreadAPI::performAPIStat(SVFModule* module)
 
     statInit(tdAPIStatMap);
 
-    for (SVFModule::llvm_iterator it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
-            ++it)
+    for (SVFModule::const_iterator it = module->begin(), eit = module->end(); it != eit; ++it)
     {
-        for (Function::const_iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
+        for (SVFFunction::const_iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
         {
-            const BasicBlock& bb = *bit;
-            for (BasicBlock::const_iterator ii = bb.begin(), eii = bb.end(); ii != eii; ++ii)
+            const SVFBasicBlock* bb = *bit;
+            for (SVFBasicBlock::const_iterator ii = bb->begin(), eii = bb->end(); ii != eii; ++ii)
             {
-                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&*ii);
+                const SVFInstruction* svfInst = *ii;
                 if (!SVFUtil::isCallSite(svfInst))
                     continue;
                 const SVFFunction* fun = getCallee(svfInst);

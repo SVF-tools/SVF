@@ -75,7 +75,7 @@ public:
     const SCEV *scev;
     const Value* start;
     const Value* step;
-    const Value *ptr;
+    const Value* ptr;
     bool inloop;
     unsigned tripcount;
 

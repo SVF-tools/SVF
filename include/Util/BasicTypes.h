@@ -449,7 +449,10 @@ public:
     {
         return predBBs;
     }
-
+    u32_t getNumSuccessors() const 
+    {
+        return succBBs.size();
+    }
     u32_t getBBSuccessorPos(const SVFBasicBlock* succbb);
     u32_t getBBPredecessorPos(const SVFBasicBlock* succbb);
 
@@ -538,7 +541,7 @@ public:
     }
     SVFArgument() = delete;
 
-    const Argument* getLLVMAgument() const
+    const Argument* getLLVMArgument() const
     {
         return arg;
     }

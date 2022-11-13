@@ -293,7 +293,7 @@ inline const SVFFunction* getCallee(const SVFInstruction *inst)
 
 /// Return source code including line number and file name from debug information
 //@{
-std::string  getSourceLoc(const Value *val);
+std::string  getSourceLoc(const Value* val);
 std::string  getSourceLocOfFunction(const Function* F);
 const std::string value2String(const Value* value);
 //@}

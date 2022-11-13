@@ -319,13 +319,13 @@ void SymbolTableInfo::destroy()
 /*!
  * Check whether this value is null pointer
  */
-bool SymbolTableInfo::isNullPtrSym(const Value *val)
+bool SymbolTableInfo::isNullPtrSym(const Value* val)
 {
     const Set<const Value*>& nullPtrSyms = symInfo->getModule()->getNullPtrSyms();
     return nullPtrSyms.find(val) != nullPtrSyms.end();
 }
 
-bool SymbolTableInfo::isArgOfUncalledFunction(const Value *val)
+bool SymbolTableInfo::isArgOfUncalledFunction(const Value* val)
 {
     const Set<const Value*>& argOfUncalledFunctionSet = symInfo->getModule()->getArgsOfUncalledFunction();
     return argOfUncalledFunctionSet.find(val) != argOfUncalledFunctionSet.end();
@@ -337,7 +337,7 @@ bool SymbolTableInfo::isReturn(const SVFInstruction *inst)
     return returnInstsSet.find(inst) != returnInstsSet.end();
 }
 
-bool SymbolTableInfo::isPtrInUncalledFunction (const Value * value)
+bool SymbolTableInfo::isPtrInUncalledFunction (const Value*  value)
 {
     const Set<const Value*>& ptrInUncalledFunctionSet = symInfo->getModule()->getPtrsInUncalledFunctions();
     return ptrInUncalledFunctionSet.find(value) != ptrInUncalledFunctionSet.end();
@@ -396,7 +396,7 @@ const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
 /*!
  * Check whether this value is blackhole object
  */
-bool SymbolTableInfo::isBlackholeSym(const Value *val)
+bool SymbolTableInfo::isBlackholeSym(const Value* val)
 {
     const Set<const Value*>  blackholeSyms = symInfo->getModule()->getBlackholeSyms();
     return blackholeSyms.find(val)!= blackholeSyms.end();
@@ -603,12 +603,10 @@ std::string SymbolTableInfo::toString(SYMTYPE symtype)
 void SymbolTableInfo::dump()
 {
     OrderedMap<SymID, Value*> idmap;
-    SymID maxid = 0;
     for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
             ++iter)
     {
         const SymID i = iter->second;
-        maxid = max(i, maxid);
         Value* val = (Value*) iter->first;
         idmap[i] = val;
     }
@@ -616,7 +614,6 @@ void SymbolTableInfo::dump()
             ++iter)
     {
         const SymID i = iter->second;
-        maxid = max(i, maxid);
         Value* val = (Value*) iter->first;
         idmap[i] = val;
     }
@@ -624,7 +621,6 @@ void SymbolTableInfo::dump()
             ++iter)
     {
         const SymID i = iter->second;
-        maxid = max(i, maxid);
         Value* val = (Value*) iter->first;
         idmap[i] = val;
     }
@@ -632,7 +628,6 @@ void SymbolTableInfo::dump()
             ++iter)
     {
         const SymID i = iter->second;
-        maxid = max(i, maxid);
         Value* val = (Value*) iter->first;
         idmap[i] = val;
     }
@@ -689,7 +684,7 @@ void MemObj::setFieldSensitive()
 /*!
  * Constructor of a memory object
  */
-MemObj::MemObj(SymID id, ObjTypeInfo* ti, const Value *val) :
+MemObj::MemObj(SymID id, ObjTypeInfo* ti, const Value* val) :
     typeInfo(ti), refVal(val), symId(id)
 {
 }
@@ -831,7 +826,7 @@ const std::string MemObj::toString() const
 
 /// Get different kinds of syms
 //@{
-SymID SymbolTableInfo::getValSym(const Value *val)
+SymID SymbolTableInfo::getValSym(const Value* val)
 {
 
     if(SymbolTableInfo::isNullPtrSym(val))

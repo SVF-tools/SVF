@@ -84,7 +84,7 @@ STATISTIC (TotalChanges, "Number of Converted Constant Expressions");
 //  ~nullptr - A pointer to the value casted into a ConstantExpr is returned.
 //
 static ConstantExpr *
-hasConstantGEP (Value * V)
+hasConstantGEP (Value*  V)
 {
     if (ConstantExpr * CE = SVFUtil::dyn_cast<ConstantExpr>(V))
     {

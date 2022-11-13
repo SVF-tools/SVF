@@ -78,7 +78,7 @@ protected:
     SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind, const SVFVar* op2);
 
     /// Map a value to a set of edges
-    inline void mapValueToEdge(const Value *V, SVFStmt *edge)
+    inline void mapValueToEdge(const Value* V, SVFStmt *edge)
     {
         auto inserted = valueToEdgeMap.emplace(V, SVFStmtSet{edge});
         if (!inserted.second)
@@ -108,7 +108,7 @@ public:
         return fromFile;
     }
     /// Get all SVFIR Edges that corresponds to an LLVM value
-    inline const SVFStmtSet& getValueEdges(const Value *V)
+    inline const SVFStmtSet& getValueEdges(const Value* V)
     {
         auto it = valueToEdgeMap.find(V);
         if (it == valueToEdgeMap.end())
@@ -121,7 +121,7 @@ public:
 
     /// Get SVFIR Node according to LLVM value
     ///getNode - Return the node corresponding to the specified pointer.
-    inline NodeID getValueNode(const Value *V)
+    inline NodeID getValueNode(const Value* V)
     {
         return symInfo->getValSym(V);
     }
@@ -131,7 +131,7 @@ public:
     }
     /// getObject - Return the obj node id refer to the memory object for the
     /// specified global, heap or alloca instruction according to llvm value.
-    inline NodeID getObjectNode(const Value *V)
+    inline NodeID getObjectNode(const Value* V)
     {
         return symInfo->getObjSym(V);
     }

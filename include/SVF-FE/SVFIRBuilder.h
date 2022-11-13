@@ -83,7 +83,7 @@ public:
     /// Get different kinds of node
     //@{
     // GetValNode - Return the value node according to a LLVM Value.
-    NodeID getValueNode(const Value *V)
+    NodeID getValueNode(const Value* V)
     {
         // first handle gep edge if val if a constant expression
         processCE(V);
@@ -93,7 +93,7 @@ public:
     }
 
     /// GetObject - Return the object node (stack/global/heap/function) according to a LLVM Value
-    inline NodeID getObjectNode(const Value *V)
+    inline NodeID getObjectNode(const Value* V)
     {
         return pag->getObjectNode(V);
     }
@@ -209,7 +209,7 @@ protected:
     //@}
 
     /// Process constant expression
-    void processCE(const Value *val);
+    void processCE(const Value* val);
 
     /// Infer field index from byteoffset.
     u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s32_t idx);
@@ -221,7 +221,7 @@ protected:
     const Value* getBaseValueForExtArg(const Value* V);
 
     /// Get the base type and max offset
-    const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* sz);
+    const Type *getBaseTypeAndFlattenedFields(const Value* V, std::vector<LocationSet> &fields, const Value* sz);
 
     /// Handle direct call
     void handleDirectCall(CallSite cs, const SVFFunction *F);
@@ -233,7 +233,7 @@ protected:
     //@{
     virtual void parseOperations(std::vector<ExtAPI::Operation>  &operations, CallSite cs);
     virtual void handleExtCall(CallSite cs, const SVFFunction *F);
-    void addComplexConsForExt(const Value *D, const Value *S, const Value* sz);
+    void addComplexConsForExt(const Value* D, const Value* S, const Value* sz);
     //@}
 
     /// Set current basic block in order to keep track of control flow information
@@ -242,7 +242,7 @@ protected:
         curBB = bb;
         curVal = val;
     }
-    inline const Value *getCurrentValue() const
+    inline const Value* getCurrentValue() const
     {
         return curVal;
     }

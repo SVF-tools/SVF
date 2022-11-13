@@ -207,15 +207,15 @@ void SVFStat::branchStat()
     SVFModule* module = SVFIR::getPAG()->getModule();
     u32_t numOfBB_2Succ = 0;
     u32_t numOfBB_3Succ = 0;
-    for (SVFModule::llvm_const_iterator funIter = module->llvmFunBegin(), funEiter = module->llvmFunEnd();
+    for (SVFModule::const_iterator funIter = module->begin(), funEiter = module->end();
             funIter != funEiter; ++funIter)
     {
-        const Function* func = *funIter;
-        for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
+        const SVFFunction* func = *funIter;
+        for (SVFFunction::const_iterator bbIt = func->begin(), bbEit = func->end();
                 bbIt != bbEit; ++bbIt)
         {
-            const BasicBlock& bb = *bbIt;
-            u32_t numOfSucc = bb.getTerminator()->getNumSuccessors();
+            const SVFBasicBlock* bb = *bbIt;
+            u32_t numOfSucc = bb->getNumSuccessors();
             if (numOfSucc == 2)
                 numOfBB_2Succ++;
             else if (numOfSucc > 2)

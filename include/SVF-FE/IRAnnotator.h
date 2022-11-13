@@ -106,7 +106,7 @@ private:
     }
 
     // Deduce the LLVM value's type, and process the metadata accordingly
-    void processPAGNode(const Value *value, SVF::NodeID nodeId, bool writeFlag)
+    void processPAGNode(const Value* value, SVF::NodeID nodeId, bool writeFlag)
     {
         if (auto instruction = const_cast<Instruction* >(SVFUtil::dyn_cast<Instruction>(value)))
         {

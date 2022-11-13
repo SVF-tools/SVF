@@ -54,7 +54,7 @@ struct DemangledName
 struct DemangledName demangle(const std::string &name);
 
 std::string getBeforeBrackets(const std::string &name);
-bool isValVtbl(const Value *val);
+bool isValVtbl(const Value* val);
 bool isLoadVtblInst(const LoadInst *loadInst);
 bool isVirtualCallSite(CallSite cs);
 bool isConstructor(const Function* F);
@@ -84,10 +84,10 @@ const Function* getThunkTarget(const Function* F);
  * getClassNameFromType(type of p) return type A
  */
 const Argument* getConstructorThisPtr(const Function* fun);
-const Value *getVCallThisPtr(CallSite cs);
-const Value *getVCallVtblPtr(CallSite cs);
+const Value* getVCallThisPtr(CallSite cs);
+const Value* getVCallVtblPtr(CallSite cs);
 u64_t getVCallIdx(CallSite cs);
-std::string getClassNameFromVtblObj(const Value *value);
+std::string getClassNameFromVtblObj(const Value* value);
 std::string getClassNameFromType(const Type *ty);
 std::string getClassNameOfThisPtr(CallSite cs);
 std::string getFunNameOfVCallSite(CallSite cs);

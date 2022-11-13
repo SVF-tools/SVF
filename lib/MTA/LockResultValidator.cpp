@@ -72,21 +72,24 @@ inline std::string LockResultValidator::getOutput(const char *scenario, LOCK_FLA
 bool LockResultValidator::collectLockTargets()
 {
     const Function* F = nullptr;
-    for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++)
+    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-        const std::string fName = (*it)->getName().str();
+    for(auto it = M.begin(); it != M.end(); it++)
+    {
+        const std::string fName = (*it).getName().str();
         if(fName.find(LOCK) != std::string::npos)
         {
-            F = (*it);
+            F = &(*it);
             break;
         }
+    }
     }
     if (!F)
         return false;
     for(Value::const_use_iterator it = F->use_begin(), ie = F->use_end(); it!=ie; it++)
     {
         const Use *u = &*it;
-        const Value *user = u->getUser();
+        const Value* user = u->getUser();
         const Instruction* inst = SVFUtil::dyn_cast<Instruction>(user);
         const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
         CxtLockSetStr y = getStringArg(svfInst, 0);

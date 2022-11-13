@@ -67,7 +67,7 @@ public:
     //{@
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
-    typedef OrderedMap<const Value *, SymID> ValueToIDMapTy;
+    typedef OrderedMap<const Value* , SymID> ValueToIDMapTy;
     /// sym id to memory object map
     typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
     /// function to sym id map
@@ -158,11 +158,11 @@ public:
 
     /// special value
     // @{
-    static bool isNullPtrSym(const Value *val);
-    static bool isBlackholeSym(const Value *val);
-    static bool isArgOfUncalledFunction(const Value *val);
+    static bool isNullPtrSym(const Value* val);
+    static bool isBlackholeSym(const Value* val);
+    static bool isArgOfUncalledFunction(const Value* val);
     static bool isReturn(const SVFInstruction *inst);
-    static bool isPtrInUncalledFunction (const Value * value);
+    static bool isPtrInUncalledFunction (const Value*  value);
     static const u32_t getBBSuccessorNum(const SVFBasicBlock* bb);
     static const Type* getPtrElementType(const PointerType* pty);
     static const u32_t getBBSuccessorPos(const SVFBasicBlock* BB, const SVFBasicBlock* Succ);
@@ -228,11 +228,11 @@ public:
 
     /// Get different kinds of syms
     //@{
-    SymID getValSym(const Value *val);
+    SymID getValSym(const Value* val);
 
     bool hasValSym(const Value* val);
 
-    inline SymID getObjSym(const Value *val) const
+    inline SymID getObjSym(const Value* val) const
     {
         ValueToIDMapTy::const_iterator iter = objSymMap.find(SVFUtil::getGlobalRep(val));
         assert(iter!=objSymMap.end() && "obj sym not found");
@@ -379,13 +379,13 @@ private:
     /// Type information of this object
     ObjTypeInfo* typeInfo;
     /// The unique value of this symbol/variable
-    const Value *refVal;
+    const Value* refVal;
     /// The unique id to represent this symbol
     SymID symId;
 
 public:
     /// Constructor
-    MemObj(SymID id, ObjTypeInfo* ti, const Value *val = nullptr);
+    MemObj(SymID id, ObjTypeInfo* ti, const Value* val = nullptr);
 
     /// Destructor
     virtual ~MemObj()
