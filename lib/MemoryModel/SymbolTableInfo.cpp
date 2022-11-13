@@ -331,42 +331,11 @@ bool SymbolTableInfo::isArgOfUncalledFunction(const Value* val)
     return argOfUncalledFunctionSet.find(val) != argOfUncalledFunctionSet.end();
 }
 
-bool SymbolTableInfo::isReturn(const SVFInstruction *inst)
-{
-    const Set<const SVFInstruction*>& returnInstsSet = symInfo->getModule()->getReturns();
-    return returnInstsSet.find(inst) != returnInstsSet.end();
-}
 
 bool SymbolTableInfo::isPtrInUncalledFunction (const Value*  value)
 {
     const Set<const Value*>& ptrInUncalledFunctionSet = symInfo->getModule()->getPtrsInUncalledFunctions();
     return ptrInUncalledFunctionSet.find(value) != ptrInUncalledFunctionSet.end();
-}
-
-const u32_t SymbolTableInfo::getBBSuccessorNum(const SVFBasicBlock* bb)
-{
-    Map<const SVFBasicBlock*, const u32_t>::const_iterator bbSuccessorNumMapIter = symInfo->getModule()->getBBSuccessorNumMap().find(bb);
-    if (bbSuccessorNumMapIter != symInfo->getModule()->getBBSuccessorNumMap().end())
-    {
-        return bbSuccessorNumMapIter->second;
-    }
-    return 0;
-}
-
-const u32_t SymbolTableInfo::getBBSuccessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* succ)
-{
-    Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>::const_iterator bbSuccessorPosMapIter = symInfo->getModule()->getBBSuccessorPosMap().find(bb);
-    if(bbSuccessorPosMapIter != symInfo->getModule()->getBBSuccessorPosMap().end())
-    {
-        const Map <const SVFBasicBlock* , const u32_t> value = bbSuccessorPosMapIter->second;
-        Map <const SVFBasicBlock* , const u32_t>::const_iterator valueIter = value.find(succ);
-        if(valueIter != value.end())
-        {
-            u32_t pos = valueIter->second;
-            return pos;
-        }
-    }
-    return 0;
 }
 
 const u32_t SymbolTableInfo::getBBPredecessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* Pred)

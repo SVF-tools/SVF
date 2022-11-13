@@ -84,7 +84,7 @@ void SaberCondAllocator::allocate(const SVFModule *M)
 void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
 {
 
-    u32_t succ_number = SymbolTableInfo::getBBSuccessorNum(&bb);
+    u32_t succ_number = bb.getBBsuccessorNum();
 
     // if successor number greater than 1, allocate new decision variable for successors
     if (succ_number > 1)
@@ -137,8 +137,8 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
  */
 SaberCondAllocator::Condition SaberCondAllocator::getBranchCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ) const
 {
-    u32_t pos = SymbolTableInfo::getBBSuccessorPos(bb,succ);
-    if(SymbolTableInfo::getBBSuccessorNum(bb) == 1)
+    u32_t pos = bb->getBBSuccessorPos(succ);
+    if(bb->getBBsuccessorNum() == 1)
         return getTrueCond();
     else
     {
@@ -164,8 +164,8 @@ SaberCondAllocator::Condition SaberCondAllocator::getEvalBrCond(const SVFBasicBl
 void SaberCondAllocator::setBranchCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ, const Condition &cond)
 {
     /// we only care about basic blocks have more than one successor
-    assert(SymbolTableInfo::getBBSuccessorNum(bb) > 1 && "not more than one successor??");
-    u32_t pos = SymbolTableInfo::getBBSuccessorPos(bb,succ);
+    assert(bb->getBBsuccessorNum() > 1 && "not more than one successor??");
+    u32_t pos = bb->getBBSuccessorPos(succ);
     CondPosMap& condPosMap = bbConds[bb];
 
     /// FIXME: llvm getNumSuccessors allows duplicated block in the successors, it makes this assertion fail
@@ -290,7 +290,7 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const S
  */
 SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBasicBlock* bb, const SVFBasicBlock* succ)
 {
-    if(SymbolTableInfo::getBBSuccessorNum(bb) == 1)
+    if(bb->getBBsuccessorNum() == 1)
     {
         assert(bb->getLLVMBasicBlock()->getTerminator()->getSuccessor(0) == succ->getLLVMBasicBlock() && "not the unique successor?");
         return getTrueCond();

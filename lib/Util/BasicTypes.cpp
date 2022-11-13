@@ -165,6 +165,19 @@ u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ)
     return 0;
 }
 
+u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ) const
+{
+    u32_t i = 0;
+    for (const SVFBasicBlock* SuccBB: succBBs)
+    {
+        if (SuccBB == Succ)
+            return i;
+        i++;
+    }
+    assert(false && "Didn't find succesor edge?");
+    return 0;
+}
+
 
 /*!
  * Return a position index from current bb to it successor bb

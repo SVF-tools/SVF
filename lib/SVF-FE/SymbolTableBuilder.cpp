@@ -228,21 +228,6 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val)
             {
                 const BasicBlock* bb = &*bit;
                 const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
-                const u32_t num = LLVMUtil::getBBSuccessorNum(bb);
-                symInfo->getModule()->addBBSuccessorNum(svfbb,num);
-                if (num >1)
-                {
-                    for (succ_const_iterator succIt = succ_begin(bb); succIt != succ_end(bb); succIt++)
-                    {
-                        const BasicBlock* succ = *succIt;
-                        const SVFBasicBlock* svf_scc_bb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(succ);
-                        const u32_t successorPos = LLVMUtil::getBBSuccessorPos(bb,succ);
-                        if (successorPos != 0)
-                        {
-                            symInfo->getModule()->addBBSuccessorPos(svfbb,svf_scc_bb,successorPos);
-                        }
-                    }
-                }
                 for (succ_const_iterator succIt = succ_begin(bb); succIt != succ_end(bb); succIt++)
                 {
                     const BasicBlock* succ = *succIt;
@@ -254,14 +239,6 @@ void SymbolTableBuilder::collectSpecialSym(const Value* val)
                     }
                 }
             }
-        }
-    }
-
-    if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
-    {
-        const SVFInstruction* ret = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
-        if (LLVMUtil::isReturn(ret)){
-            symInfo->getModule()->addReturn(ret);
         }
     }
 

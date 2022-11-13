@@ -70,13 +70,10 @@ private:
     OtherValueType  OtherValueSet;   ///< All other values in the module
 
     Set<const Value*> argsOfUncalledFunction;
-    Set<const SVFInstruction*> returnInsts;
     Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
     Set<const Value*> ptrsInUncalledFunctions;
-    Map<const SVFBasicBlock*, const u32_t> bbSuccessorNumMap;
     Map<const PointerType*, const Type*> ptrElementTypeMap;
-    Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>> bbSuccessorPosMap;
     Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>> bbPredecessorPosMap;
 
 public:
@@ -251,24 +248,9 @@ public:
         return argsOfUncalledFunction;
     }
 
-    inline const Set<const SVFInstruction*>& getReturns() const
-    {
-        return returnInsts;
-    }
-
     inline const Set<const Value*>& getPtrsInUncalledFunctions() const
     {
         return ptrsInUncalledFunctions;
-    }
-
-    inline const Map<const SVFBasicBlock*, const u32_t>& getBBSuccessorNumMap()
-    {
-        return bbSuccessorNumMap;
-    }
-
-    inline const Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>& getBBSuccessorPosMap()
-    {
-        return bbSuccessorPosMap;
     }
 
     inline const Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>& getBBPredecessorPosMap()
@@ -279,28 +261,6 @@ public:
     inline const Map<const PointerType*, const Type*>& getPtrElementTypeMap()
     {
         return ptrElementTypeMap;
-    }
-
-    inline void addBBSuccessorNum(const SVFBasicBlock* bb, const u32_t num)
-    {
-        bbSuccessorNumMap.insert({bb,num});
-    }
-
-    inline void addBBSuccessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* succ,const u32_t pos)
-    {
-        Map<const SVFBasicBlock*, const Map<const SVFBasicBlock*, const u32_t>>::iterator bbSuccessorPosMapIter = bbSuccessorPosMap.find(bb);
-        if(bbSuccessorPosMapIter != bbSuccessorPosMap.end())
-        {
-            Map<const SVFBasicBlock*, const u32_t> foundValue = bbSuccessorPosMapIter->second;
-            foundValue.insert({succ,pos});
-            bbSuccessorPosMap.insert({bb,foundValue});
-        }
-        else
-        {
-            Map<const SVFBasicBlock*, const u32_t> valueMap;
-            valueMap.insert({succ,pos});
-            bbSuccessorPosMap.insert({bb,valueMap});
-        }
     }
 
     inline void addBBPredecessorPos(const SVFBasicBlock* bb, const SVFBasicBlock* Pred,const u32_t pos)
@@ -343,11 +303,6 @@ public:
     inline void addArgsOfUncalledFunction(const Value* val)
     {
         argsOfUncalledFunction.insert(val);
-    }
-
-    inline void addReturn(const SVFInstruction* inst)
-    {
-        returnInsts.insert(inst);
     }
 
 };

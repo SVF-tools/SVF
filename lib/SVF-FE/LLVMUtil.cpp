@@ -368,23 +368,6 @@ const Type* LLVMUtil::getTypeOfHeapAlloc(const SVFInstruction *inst)
 }
 
 /*!
- * Get position of a successor basic block
- */
-u32_t LLVMUtil::getBBSuccessorPos(const BasicBlock* BB, const BasicBlock* Succ)
-{
-    u32_t i = 0;
-    for (const BasicBlock* SuccBB: successors(BB))
-    {
-        if (SuccBB == Succ)
-            return i;
-        i++;
-    }
-    assert(false && "Didn't find succesor edge?");
-    return 0;
-}
-
-
-/*!
  * Return a position index from current bb to it successor bb
  */
 u32_t LLVMUtil::getBBPredecessorPos(const BasicBlock* bb, const BasicBlock* succbb)
@@ -397,14 +380,6 @@ u32_t LLVMUtil::getBBPredecessorPos(const BasicBlock* bb, const BasicBlock* succ
     }
     assert(false && "Didn't find predecessor edge?");
     return pos;
-}
-
-/*!
- *  Get the num of BB's successors
- */
-u32_t LLVMUtil::getBBSuccessorNum(const BasicBlock* BB)
-{
-    return BB->getTerminator()->getNumSuccessors();
 }
 
 /*!
