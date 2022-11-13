@@ -189,6 +189,19 @@ u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb)
     {
         if(PredBB == this)
             return pos;
+        ++pos;
+    }
+    assert(false && "Didn't find predecessor edge?");
+    return pos;
+}
+u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
+{
+    u32_t pos = 0;
+    for (const SVFBasicBlock* PredBB : succbb->getPredecessors())
+    {
+        if(PredBB == this)
+            return pos;
+        ++pos;
     }
     assert(false && "Didn't find predecessor edge?");
     return pos;
