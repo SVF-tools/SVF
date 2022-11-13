@@ -322,12 +322,14 @@ const SVFValue* SymbolTableBuilder::mapLLVM2SVFValue(const Value* value)
     {
         SVFConstantData* svfcd = new SVFConstantData(cd);
         symInfo->getModule()->addConstantData(svfcd);
+        LLVMModuleSet::getLLVMModuleSet()->addConstantDataMap(cd,svfcd);
         svfValue = svfcd;
     }
     else
     {
         SVFOtherValue* svfov = new SVFOtherValue(value);
         symInfo->getModule()->addOtherValue(svfov);
+        LLVMModuleSet::getLLVMModuleSet()->addOtherValueMap(value,svfov);
         svfValue = svfov;
     }
 

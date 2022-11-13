@@ -779,3 +779,22 @@ void LLVMModuleSet::dumpModulesToFile(const std::string suffix)
         OS.flush();
     }
 }
+
+
+const SVFValue* LLVMModuleSet::getSVFValue(const Value* value) const
+{
+    if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
+        return getSVFFunction(fun);
+    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
+        return getSVFBasicBlock(bb);
+    else if (const GlobalValue* glob = SVFUtil::dyn_cast<GlobalValue>(value))
+        return getSVFGlobalValue(glob);
+    else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
+        return getSVFInstruction(inst);
+    else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
+        return getSVFArgument(arg);
+    else if (const ConstantData* cd = SVFUtil::dyn_cast<ConstantData>(value))
+        return getSVFConstantData(cd);
+    else
+        return getSVFOtherValue(value);
+}

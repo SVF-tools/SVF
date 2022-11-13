@@ -52,6 +52,9 @@ public:
     typedef Map<const Instruction*,const SVFInstruction*> LLVMInst2SVFInstMap;
     typedef Map<const GlobalValue*,const SVFGlobalValue*> LLVMGlobal2SVFGlobalMap;
     typedef Map<const Argument*,const SVFArgument*> LLVMArgument2SVFArgumentMap;
+    typedef Map<const ConstantData*,const SVFConstantData*> LLVMConstData2SVFConstDataMap;
+    typedef Map<const Value*,const SVFOtherValue*> LLVMValue2SVFOtherValueMap;
+
 private:
     static LLVMModuleSet* llvmModuleSet;
     SVFModule* svfModule;
@@ -71,6 +74,8 @@ private:
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
     LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
     LLVMGlobal2SVFGlobalMap LLVMGlobal2SVFGlobal;
+    LLVMConstData2SVFConstDataMap LLVMConstData2SVFConstData;
+    LLVMValue2SVFOtherValueMap LLVMValue2SVFOtherValue;
 
     /// Constructor
     LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false) {}
@@ -147,6 +152,16 @@ public:
     {
         LLVMGlobal2SVFGlobal[glob] = svfglob;
     }
+    inline void addConstantDataMap(const ConstantData* cd, const SVFConstantData* svfcd)
+    {
+        LLVMConstData2SVFConstData[cd] = svfcd;
+    }
+    inline void addOtherValueMap(const Value* ov, const SVFOtherValue* svfov)
+    {
+        LLVMValue2SVFOtherValue[ov] = svfov;
+    }
+
+    inline const SVFValue* getSVFValue(const Value* fun) const;
 
     inline const SVFFunction* getSVFFunction(const Function* fun) const
     {
@@ -180,6 +195,20 @@ public:
     {
         LLVMGlobal2SVFGlobalMap::const_iterator it = LLVMGlobal2SVFGlobal.find(g);
         assert(it!=LLVMGlobal2SVFGlobal.end() && "SVF Global not found!");
+        return it->second;
+    }
+
+    inline const SVFConstantData* getSVFConstantData(const ConstantData* cd) const
+    {
+        LLVMConstData2SVFConstDataMap::const_iterator it = LLVMConstData2SVFConstData.find(cd);
+        assert(it!=LLVMConstData2SVFConstData.end() && "SVF ConstantData not found!");
+        return it->second;
+    }
+
+    inline const SVFOtherValue* getSVFOtherValue(const Value* ov) const
+    {
+        LLVMValue2SVFOtherValueMap::const_iterator it = LLVMValue2SVFOtherValue.find(ov);
+        assert(it!=LLVMValue2SVFOtherValue.end() && "SVF OtherValue not found!");
         return it->second;
     }
 
