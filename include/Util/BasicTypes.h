@@ -65,6 +65,7 @@ typedef llvm::IntegerType IntegerType;
 
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
+typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::GlobalAlias GlobalAlias;
@@ -96,19 +97,27 @@ public:
         SVFBB,
         SVFInst,
         SVFGlob,
-        SVFArg
+        SVFArg,
+        SVFConstData,
+        SVFOther
     };
 
 private:
     const Value* value;
     const Type* type;
     GNodeK kind;	///< Type of this SVFValue
-
+    bool ptrInUncalledFun;
+    bool blackHoleSym;
+    bool nullptrSym;
+    bool isPtr;
+    const Type* ptrElementType;
 protected:
     std::string name;
 
     /// Constructor
-    SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k), name(val->getName())
+    SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k), 
+        ptrInUncalledFun(false), blackHoleSym(false), nullptrSym(false), isPtr(val->getType()->isPointerTy()), 
+        ptrElementType(nullptr),name(val->getName())
     {
     }
 
@@ -141,21 +150,56 @@ public:
     }
     //@}
 
-    const std::string getName() const
+    inline const std::string getName() const
     {
         return name;
     }
 
-    const Value* getValue() const
+    inline const Value* getLLVMValue() const
     {
         return value;
     }
 
-    const Type* getType() const
+    inline const Type* getType() const
     {
         return type;
     }
 
+    inline void setPtrInUncalledFunction() 
+    {
+        ptrInUncalledFun = true;
+    }
+
+    inline bool ptrInUncalledFunction() const 
+    {
+        return ptrInUncalledFun;
+    }
+    inline void setBlackhole() 
+    {
+        blackHoleSym = true;
+    }
+    inline bool isblackHole() const 
+    {
+        return blackHoleSym;
+    }
+    inline void setNullPtr() 
+    {
+        nullptrSym = true;
+    }
+    inline bool isNullPtr() const 
+    {
+        return nullptrSym;
+    }
+    inline const Type* getPtrElementType() const
+    {
+        assert(isPtr && "value is not a pointer?");
+        return ptrElementType;
+    }
+    inline void setPtrElementType(const Type* t)
+    {
+        assert(isPtr && "value is not a pointer?");
+        ptrElementType = t;
+    }
     /// Overloading operator << for dumping ICFG node ID
     //@{
     friend OutStream& operator<< (OutStream &o, const SVFValue &node)
@@ -569,6 +613,43 @@ public:
     }
 };
 
+
+class SVFConstantData : public SVFValue
+{
+private:
+    const ConstantData* constData;
+
+public:
+    SVFConstantData(const ConstantData* _const): SVFValue(_const, SVFValue::SVFConstData), constData(_const)
+    {
+    }
+    SVFConstantData() = delete;
+
+    const ConstantData* getLLVMConstantData() const
+    {
+        return constData;
+    }
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFConstData;
+    }
+};
+
+
+class SVFOtherValue : public SVFValue
+{
+public:
+    SVFOtherValue(const Value* other): SVFValue(other, SVFValue::SVFOther)
+    {
+    }
+    SVFOtherValue() = delete;
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFOther;
+    }
+};
 
 
 class CallSite

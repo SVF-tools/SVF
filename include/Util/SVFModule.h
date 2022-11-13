@@ -45,6 +45,8 @@ public:
     typedef std::vector<const Function*> LLVMFunctionSetType;
     typedef std::vector<SVFGlobalValue*> GlobalSetType;
     typedef std::vector<SVFGlobalValue*> AliasSetType;
+    typedef std::vector<SVFConstantData*> ConstantDataType;
+    typedef std::vector<SVFOtherValue*> OtherValueType;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
@@ -53,6 +55,10 @@ public:
     typedef GlobalSetType::const_iterator const_global_iterator;
     typedef AliasSetType::iterator alias_iterator;
     typedef AliasSetType::const_iterator const_alias_iterator;
+    typedef ConstantDataType::iterator cdata_iterator;
+    typedef ConstantDataType::const_iterator const_cdata_iterator;
+    typedef OtherValueType::iterator ovalue_iterator;
+    typedef OtherValueType::const_iterator const_ovalue_iterator;
 
 private:
     static std::string pagReadFromTxt;
@@ -60,6 +66,9 @@ private:
     FunctionSetType FunctionSet;  ///< The Functions in the module
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
+    ConstantDataType ConstantDataSet;        ///< The ConstantData in the module
+    OtherValueType  OtherValueSet;   ///< All other values in the module
+
     Set<const Value*> argsOfUncalledFunction;
     Set<const SVFInstruction*> returnInsts;
     Set<const Value*> nullPtrSyms;
@@ -76,18 +85,7 @@ public:
     {
     }
 
-    ~SVFModule()
-    {
-        for (const SVFFunction* f : FunctionSet)
-            delete f;
-        for (const SVFGlobalValue* g : GlobalSet)
-            delete g;
-        for (const SVFGlobalValue* a : AliasSet)
-            delete a;
-        NodeIDAllocator::unset();
-        ThreadAPI::destroy();
-        ExtAPI::destory();
-    }
+    ~SVFModule();
 
     static inline void setPagFromTXT(std::string txt)
     {
@@ -122,6 +120,15 @@ public:
     {
         AliasSet.push_back(alias);
     }
+    inline void addConstantData(SVFConstantData* cd)
+    {
+        ConstantDataSet.push_back(cd);
+    }
+    inline void addOtherValue(SVFOtherValue* ov)
+    {
+        OtherValueSet.push_back(ov);
+    }
+    
     ///@}
 
     /// Iterators
@@ -176,6 +183,23 @@ public:
     {
         return AliasSet.end();
     }
+
+    cdata_iterator cdata_begin()
+    {
+        return ConstantDataSet.begin();
+    }
+    const_cdata_iterator cdata_begin() const
+    {
+        return ConstantDataSet.begin();
+    }
+    cdata_iterator cdata_end()
+    {
+        return ConstantDataSet.end();
+    }
+    const_cdata_iterator cdata_end() const
+    {
+        return ConstantDataSet.end();
+    }
     ///@}
 
     const std::string& getModuleIdentifier() const
@@ -194,6 +218,22 @@ public:
     inline const FunctionSetType& getFunctionSet() const
     {
         return FunctionSet;
+    }
+    inline const ConstantDataType& getConstantDataSet() const
+    {
+        return ConstantDataSet;
+    }
+    inline const GlobalSetType& getGlobalSet() const
+    {
+        return GlobalSet;
+    }
+    inline const AliasSetType& getAliasSet() const
+    {
+        return AliasSet;
+    }
+    inline const OtherValueType& getOtherValueSet() const
+    {
+        return OtherValueSet;
     }
 
     inline const Set<const Value*>& getNullPtrSyms() const

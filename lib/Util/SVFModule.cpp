@@ -28,6 +28,21 @@
 
 using namespace SVF;
 
+SVFModule::~SVFModule()
+{
+    for (const SVFFunction* f : FunctionSet)
+        delete f;
+    for (const SVFGlobalValue* g : GlobalSet)
+        delete g;
+    for (const SVFGlobalValue* a : AliasSet)
+        delete a;
+    for (const SVFConstantData* c : ConstantDataSet)
+        delete c;
+    NodeIDAllocator::unset();
+    ThreadAPI::destroy();
+    ExtAPI::destory();
+}
+
 void SVFModule::buildSymbolTableInfo()
 {
     double startTime = SVFStat::getClk(true);

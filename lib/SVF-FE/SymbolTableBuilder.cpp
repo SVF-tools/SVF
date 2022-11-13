@@ -307,17 +307,45 @@ void SymbolTableBuilder::collectSym(const Value *val)
 */
 const SVFValue* SymbolTableBuilder::mapLLVM2SVFValue(const Value* value)
 {
+    const SVFValue* svfValue = nullptr;
     if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
-        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+        svfValue = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
     else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
-        return LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
+        svfValue = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
     else if (const GlobalValue* glob = SVFUtil::dyn_cast<GlobalValue>(value))
-        return LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(glob);
+        svfValue = LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(glob);
     else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
-        return LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+        svfValue = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
-        return LLVMModuleSet::getLLVMModuleSet()->getSVFArgument(arg);
-    return nullptr;
+        svfValue = LLVMModuleSet::getLLVMModuleSet()->getSVFArgument(arg);
+    else if (const ConstantData* cd = SVFUtil::dyn_cast<ConstantData>(value))
+    {
+        SVFConstantData* svfcd = new SVFConstantData(cd);
+        symInfo->getModule()->addConstantData(svfcd);
+        svfValue = svfcd;
+    }
+    else
+    {
+        SVFOtherValue* svfov = new SVFOtherValue(value);
+        symInfo->getModule()->addOtherValue(svfov);
+        svfValue = svfov;
+    }
+
+    assert(svfValue && "svfValue is a nullptr?");
+    SVFValue* nonconstval = const_cast<SVFValue*>(svfValue);
+    if (LLVMUtil::isPtrInUncalledFunction(value))
+        nonconstval->setPtrInUncalledFunction();
+    if (LLVMUtil::isNullPtrSym(value))
+        nonconstval->setNullPtr();
+    if (LLVMUtil::isBlackholeSym(value))
+        nonconstval->setBlackhole();
+    if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(value->getType()))
+    {
+        const Type* elementType = LLVMUtil::getPtrElementType(ptrType);
+        nonconstval->setPtrElementType(elementType);
+    }
+
+    return svfValue;
 }
 
 /*!
