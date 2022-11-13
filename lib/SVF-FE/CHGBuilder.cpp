@@ -698,8 +698,8 @@ void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f
     const auto *lf = f->getLLVMFun();
     if (isCPPThunkFunction(lf))
     {
-        if(const auto *tf = getThunkTarget(lf))
-            v.push_back(f);
+        if (const auto *tf = getThunkTarget(lf))
+            v.push_back(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(tf));
     }
     else
     {
