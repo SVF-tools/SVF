@@ -70,7 +70,6 @@ private:
     OtherValueType  OtherValueSet;   ///< All other values in the module
 
     Set<const Value*> argsOfUncalledFunction;
-    Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
     Set<const Value*> ptrsInUncalledFunctions;
     Map<const PointerType*, const Type*> ptrElementTypeMap;
@@ -232,11 +231,6 @@ public:
         return OtherValueSet;
     }
 
-    inline const Set<const Value*>& getNullPtrSyms() const
-    {
-        return nullPtrSyms;
-    }
-
     inline const Set<const Value*>& getBlackholeSyms() const
     {
         return blackholeSyms;
@@ -256,7 +250,7 @@ public:
     {
         return ptrElementTypeMap;
     }
-    
+
     inline void addptrElementType(const PointerType* ptrType, const Type* type)
     {
         ptrElementTypeMap.insert({ptrType, type});
@@ -265,11 +259,6 @@ public:
     inline void addPtrInUncalledFunction (const Value*  value)
     {
         ptrsInUncalledFunctions.insert(value);
-    }
-
-    inline void addNullPtrSyms(const Value* val)
-    {
-        nullPtrSyms.insert(val);
     }
 
     inline void addBlackholeSyms(const Value* val)

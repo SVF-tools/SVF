@@ -158,7 +158,6 @@ public:
 
     /// special value
     // @{
-    static bool isNullPtrSym(const Value* val);
     static bool isBlackholeSym(const Value* val);
     static bool isArgOfUncalledFunction(const Value* val);
     static bool isReturn(const SVFInstruction *inst);

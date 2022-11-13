@@ -316,15 +316,6 @@ void SymbolTableInfo::destroy()
     }
 }
 
-/*!
- * Check whether this value is null pointer
- */
-bool SymbolTableInfo::isNullPtrSym(const Value* val)
-{
-    const Set<const Value*>& nullPtrSyms = symInfo->getModule()->getNullPtrSyms();
-    return nullPtrSyms.find(val) != nullPtrSyms.end();
-}
-
 bool SymbolTableInfo::isArgOfUncalledFunction(const Value* val)
 {
     const Set<const Value*>& argOfUncalledFunctionSet = symInfo->getModule()->getArgsOfUncalledFunction();
@@ -784,7 +775,7 @@ const std::string MemObj::toString() const
 SymID SymbolTableInfo::getValSym(const Value* val)
 {
 
-    if(SymbolTableInfo::isNullPtrSym(val))
+    if(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->isNullPtr())
         return nullPtrSymID();
     else if (SymbolTableInfo::isBlackholeSym(val))
         return blkPtrSymID();
@@ -798,7 +789,7 @@ SymID SymbolTableInfo::getValSym(const Value* val)
 
 bool SymbolTableInfo::hasValSym(const Value* val)
 {
-    if (SymbolTableInfo::isNullPtrSym(val) || SymbolTableInfo::isBlackholeSym(val))
+    if (LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->isNullPtr() || SymbolTableInfo::isBlackholeSym(val))
         return true;
     else
         return (valSymMap.find(val) != valSymMap.end());
