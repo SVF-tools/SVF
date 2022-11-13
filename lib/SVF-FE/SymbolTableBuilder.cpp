@@ -326,6 +326,7 @@ void SymbolTableBuilder::collectObj(const Value *val)
         else
         {
             // create obj sym and sym type
+            LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
             SymID id = NodeIDAllocator::get()->allocateObjectId();
             symInfo->objSymMap.insert(std::make_pair(val, id));
             DBOUT(DMemModel,

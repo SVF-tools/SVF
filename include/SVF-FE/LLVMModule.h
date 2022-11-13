@@ -135,40 +135,78 @@ public:
     inline void addFunctionMap(const Function* func, SVFFunction* svfFunc)
     {
         LLVMFunc2SVFFunc[func] = svfFunc;
+        setValueAttr(func,svfFunc);
     }
     inline void addBasicBlockMap(const BasicBlock* bb, SVFBasicBlock* svfBB)
     {
         LLVMBB2SVFBB[bb] = svfBB;
+        setValueAttr(bb,svfBB);
     }
     inline void addInstructionMap(const Instruction* inst, SVFInstruction* svfInst)
     {
         LLVMInst2SVFInst[inst] = svfInst;
+        setValueAttr(inst,svfInst);
     }
     inline void addArgumentMap(const Argument* arg, SVFArgument* svfArg)
     {
         LLVMArgument2SVFArgument[arg] = svfArg;
+        setValueAttr(arg,svfArg);
     }
     inline void addGlobalValueMap(const GlobalValue* glob, SVFGlobalValue* svfglob)
     {
         LLVMGlobal2SVFGlobal[glob] = svfglob;
+        setValueAttr(glob,svfglob);
     }
     inline void addConstantDataMap(const ConstantData* cd, SVFConstantData* svfcd)
     {
         LLVMConstData2SVFConstData[cd] = svfcd;
+        setValueAttr(cd,svfcd);
     }
     inline void addOtherValueMap(const Value* ov, SVFOtherValue* svfov)
     {
         LLVMValue2SVFOtherValue[ov] = svfov;
+        setValueAttr(ov,svfov);
     }
-    /// LLVM Value to SVFValue
-    const SVFValue* getSVFValue(const Value* value);
-    SVFFunction* getSVFFunction(const Function* fun);
-    SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb);
-    SVFInstruction* getSVFInstruction(const Instruction* inst);
-    SVFArgument* getSVFArgument(const Argument* arg);
-    SVFGlobalValue* getSVFGlobalVariable(const GlobalVariable* g);
-    SVFGlobalValue* getSVFGlobalAlias(const GlobalAlias* g);
+
+    SVFValue* getSVFValue(const Value* value);
+
+    inline SVFFunction* getSVFFunction(const Function* fun) const
+    {
+        LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
+        assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
+        return it->second;
+    }
+
+    inline SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb) const
+    {
+        LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
+        assert(it!=LLVMBB2SVFBB.end() && "SVF BasicBlock not found!");
+        return it->second;
+    }
+
+    inline SVFInstruction* getSVFInstruction(const Instruction* inst) const
+    {
+        LLVMInst2SVFInstMap::const_iterator it = LLVMInst2SVFInst.find(inst);
+        assert(it!=LLVMInst2SVFInst.end() && "SVF Instruction not found!");
+        return it->second;
+    }
+
+    inline SVFArgument* getSVFArgument(const Argument* arg) const
+    {
+        LLVMArgument2SVFArgumentMap::const_iterator it = LLVMArgument2SVFArgument.find(arg);
+        assert(it!=LLVMArgument2SVFArgument.end() && "SVF Argument not found!");
+        return it->second;
+    }
+
+    inline SVFGlobalValue* getSVFGlobalValue(const GlobalValue* g) const
+    {
+        LLVMGlobal2SVFGlobalMap::const_iterator it = LLVMGlobal2SVFGlobal.find(g);
+        assert(it!=LLVMGlobal2SVFGlobal.end() && "SVF Global not found!");
+        return it->second;
+    }
+
     SVFConstantData* getSVFConstantData(const ConstantData* cd);
+
     SVFOtherValue* getSVFOtherValue(const Value* ov);
 
     /// Get the corresponding Function based on its name
@@ -265,10 +303,10 @@ private:
     void addSVFMain();
 
     void createSVFDataStructure();
-    void initSVFFunction();
-    void initSVFBasicBlock(const SVFFunction* func);
+    void initSVFControlFlowInfo();
+    void initSVFBasicBlock(const Function* func);
     void initDomTree(SVFFunction* func, const Function* f);
-
+    void setValueAttr(const Value* val, SVFValue* value);
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module
