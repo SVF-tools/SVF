@@ -303,9 +303,9 @@ private:
     void addSVFMain();
 
     void createSVFDataStructure();
-    void initSVFControlFlowInfo();
-    void initSVFBasicBlock(const Function* func);
-    void initDomTree(SVFFunction* func, const Function* f);
+    void initSVFFunction();
+    void initSVFBasicBlock(const SVFFunction* func);
+    void initDomTree(const SVFFunction* func);
     void setValueAttr(const Value* val, SVFValue* value);
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();
