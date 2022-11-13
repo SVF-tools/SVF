@@ -60,8 +60,8 @@ class MTA: public ModulePass
 public:
     typedef Set<const LoadInst*> LoadSet;
     typedef Set<const StoreInst*> StoreSet;
-    typedef Map<const Function*, ScalarEvolution*> FunToSEMap;
-    typedef Map<const Function*, LoopInfo*> FunToLoopInfoMap;
+    typedef Map<const SVFFunction*, ScalarEvolution*> FunToSEMap;
+    typedef Map<const SVFFunction*, LoopInfo*> FunToLoopInfoMap;
 
     /// Pass ID
     static char ID;
@@ -96,12 +96,12 @@ public:
     void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
 
     // Get ScalarEvolution for Function F.
-    static inline ScalarEvolution* getSE(const Function *F)
+    static inline ScalarEvolution* getSE(const SVFFunction* F)
     {
         FunToSEMap::iterator it = func2ScevMap.find(F);
         if (it != func2ScevMap.end())
             return it->second;
-        ScalarEvolutionWrapperPass *scev = &modulePass->getAnalysis<ScalarEvolutionWrapperPass>(*const_cast<Function*>(F));
+        ScalarEvolutionWrapperPass *scev = &modulePass->getAnalysis<ScalarEvolutionWrapperPass>(*const_cast<Function*>(F->getLLVMFun()));
         func2ScevMap[F] = &scev->getSE();
         return &scev->getSE();
     }

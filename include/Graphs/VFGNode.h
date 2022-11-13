@@ -182,7 +182,7 @@ public:
                || node->getNodeKind() == Load;
     }
 
-    inline const Instruction* getInst() const
+    inline const SVFInstruction* getInst() const
     {
         /// should return a valid instruction unless it is a global PAGEdge
         return pagEdge->getInst();

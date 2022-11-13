@@ -61,8 +61,8 @@ bool ProgSlice::AllPathReachableSolve()
             if(inBackwardSlice(succ))
             {
                 Condition vfCond;
-                const BasicBlock* nodeBB = getSVFGNodeBB(node);
-                const BasicBlock* succBB = getSVFGNodeBB(succ);
+                const SVFBasicBlock* nodeBB = getSVFGNodeBB(node);
+                const SVFBasicBlock* succBB = getSVFGNodeBB(succ);
                 /// clean up the control flow conditions for next round guard computation
                 clearCFCond();
 
@@ -165,11 +165,11 @@ std::string ProgSlice::evalFinalCond() const
     Set<std::string> locations;
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
-        const Instruction* tinst = pathAllocator->getCondInst(*it);
+        const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
         if(pathAllocator->isNegCond(*it))
-            locations.insert(getSourceLoc(tinst)+"|False");
+            locations.insert(getSourceLoc(tinst->getLLVMInstruction())+"|False");
         else
-            locations.insert(getSourceLoc(tinst)+"|True");
+            locations.insert(getSourceLoc(tinst->getLLVMInstruction())+"|True");
     }
     /// print leak path after eliminating duplicated element
     for(Set<std::string>::iterator iter = locations.begin(), eiter = locations.end();
@@ -194,7 +194,7 @@ void ProgSlice::annotatePaths()
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
-        const Instruction* tinst = pathAllocator->getCondInst(*it);
+        const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
         if (ICFGNode *icfgNode = pathAllocator->getICFG()->getICFGNode(tinst))
         {
             for (const auto &svfStmt: icfgNode->getSVFStmts())

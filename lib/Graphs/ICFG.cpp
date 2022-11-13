@@ -43,7 +43,7 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGN
     // if function is implemented
     if (f->getLLVMFun()->begin() != f->getLLVMFun()->end())
     {
-        bb = &(f->getLLVMFun()->getEntryBlock());
+        bb = f->getEntryBlock();
     }
 }
 
@@ -88,11 +88,11 @@ const std::string IntraICFGNode::toString() const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getInst()) << "}";
+    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getInst()->getLLVMInstruction()) << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     if(getSVFStmts().empty())
-        rawstr << "\n" << value2String(getInst());
+        rawstr << "\n" << value2String(getInst()->getLLVMInstruction());
     return rawstr.str();
 }
 
@@ -118,7 +118,7 @@ const std::string FunExitICFGNode::toString() const
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
-        rawstr << getSourceLoc(getFun()->getExitBB()->getFirstNonPHI());
+        rawstr << getSourceLoc(getFun()->getExitBB()->front()->getLLVMInstruction());
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -131,7 +131,7 @@ const std::string CallICFGNode::toString() const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()) << "}";
+    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()->getLLVMInstruction()) << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     return rawstr.str();
@@ -142,7 +142,7 @@ const std::string RetICFGNode::toString() const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "RetICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()) << "}";
+    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()->getLLVMInstruction()) << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     return rawstr.str();
@@ -173,7 +173,7 @@ const std::string CallCFGEdge::toString() const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallCFGEdge " << " [ICFGNode";
-    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << *cs << "\t";
+    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << *cs->getLLVMInstruction() << "\t";
     return rawstr.str();
 }
 
@@ -182,7 +182,7 @@ const std::string RetCFGEdge::toString() const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "RetCFGEdge " << " [ICFGNode";
-    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << *cs << "\t";
+    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << *cs->getLLVMInstruction() << "\t";
     return rawstr.str();
 }
 
@@ -217,7 +217,7 @@ ICFG::~ICFG()
 }
 
 /// Get a basic block ICFGNode
-ICFGNode* ICFG::getICFGNode(const Instruction* inst)
+ICFGNode* ICFG::getICFGNode(const SVFInstruction* inst)
 {
     ICFGNode* node;
     if(SVFUtil::isNonInstricCallSite(inst))
@@ -233,10 +233,10 @@ ICFGNode* ICFG::getICFGNode(const Instruction* inst)
 }
 
 
-CallICFGNode* ICFG::getCallICFGNode(const Instruction* inst)
+CallICFGNode* ICFG::getCallICFGNode(const SVFInstruction* inst)
 {
     if(SVFUtil::isCallSite(inst) ==false)
-        outs() << SVFUtil::value2String(inst) << "\n";
+        outs() << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     CallICFGNode* node = getCallBlock(inst);
@@ -246,7 +246,7 @@ CallICFGNode* ICFG::getCallICFGNode(const Instruction* inst)
     return node;
 }
 
-RetICFGNode* ICFG::getRetICFGNode(const Instruction* inst)
+RetICFGNode* ICFG::getRetICFGNode(const SVFInstruction* inst)
 {
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
@@ -257,7 +257,7 @@ RetICFGNode* ICFG::getRetICFGNode(const Instruction* inst)
     return node;
 }
 
-IntraICFGNode* ICFG::getIntraICFGNode(const Instruction* inst)
+IntraICFGNode* ICFG::getIntraICFGNode(const SVFInstruction* inst)
 {
     IntraICFGNode* node = getIntraBlock(inst);
     if(node==nullptr)
@@ -400,7 +400,7 @@ ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, co
 /*!
  * Add interprocedural call edges between two nodes
  */
-ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruction*  cs)
+ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction*  cs)
 {
     if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallCF))
     {
@@ -417,7 +417,7 @@ ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruct
 /*!
  * Add interprocedural return edges between two nodes
  */
-ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruction*  cs)
+ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction*  cs)
 {
     if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::RetCF))
     {
@@ -458,7 +458,7 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
     for (; iter != eiter; iter++)
     {
         const CallICFGNode* callBlock = iter->first;
-        const Instruction* cs = callBlock->getCallSite();
+        const SVFInstruction* cs = callBlock->getCallSite();
         assert(callBlock->isIndirectCall() && "this is not an indirect call?");
         const PTACallGraph::FunctionSet & functions = iter->second;
         for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)

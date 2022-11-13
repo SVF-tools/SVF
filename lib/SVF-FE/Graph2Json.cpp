@@ -35,7 +35,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
         ICFGNode_Obj["Node Type"] = getICFGKind(node->getNodeKind());
         if(IntraICFGNode* bNode = SVFUtil::dyn_cast<IntraICFGNode>(node))
         {
-            ICFGNode_Obj["Source Location"] = getSourceLoc(bNode->getInst());
+            ICFGNode_Obj["Source Location"] = getSourceLoc(bNode->getInst()->getLLVMInstruction());
             SVFIR::SVFStmtList&  edges = SVFIR::getPAG()->getPTASVFStmtList(bNode);
             llvm::json::Array PAGEdge_array;
 
@@ -87,11 +87,11 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
         }
         else if (CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
-            ICFGNode_Obj["Source Location"] = getSourceLoc(call->getCallSite());
+            ICFGNode_Obj["Source Location"] = getSourceLoc(call->getCallSite()->getLLVMInstruction());
         }
         else if (RetICFGNode* ret = SVFUtil::dyn_cast<RetICFGNode>(node))
         {
-            ICFGNode_Obj["Source Location"] = getSourceLoc(ret->getCallSite());
+            ICFGNode_Obj["Source Location"] = getSourceLoc(ret->getCallSite()->getLLVMInstruction());
         }
         else
             assert(false && "what else kinds of nodes do we have??");

@@ -121,7 +121,7 @@ string cppUtil::getBeforeBrackets(const string &name)
     return name.substr(0, pos);
 }
 
-bool cppUtil::isValVtbl(const Value *val)
+bool cppUtil::isValVtbl(const Value* val)
 {
     if (!SVFUtil::isa<GlobalVariable>(val))
         return false;
@@ -228,7 +228,7 @@ struct cppUtil::DemangledName cppUtil::demangle(const string &name)
 
 bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
 {
-    const Value *loadSrc = loadInst->getPointerOperand();
+    const Value* loadSrc = loadInst->getPointerOperand();
     const Type *valTy = loadSrc->getType();
     const Type *elemTy = valTy;
     for (u32_t i = 0; i < 3; ++i)
@@ -267,16 +267,16 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
     if (cs.getArgOperand(0)->getType()->isPointerTy() == false)
         return false;
 
-    const Value *vfunc = cs.getCalledValue();
+    const Value* vfunc = cs.getCalledValue();
     if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
     {
-        const Value *vfuncptr = vfuncloadinst->getPointerOperand();
+        const Value* vfuncptr = vfuncloadinst->getPointerOperand();
         if (const GetElementPtrInst *vfuncptrgepinst =
                     SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
         {
             if (vfuncptrgepinst->getNumIndices() != 1)
                 return false;
-            const Value *vtbl = vfuncptrgepinst->getPointerOperand();
+            const Value* vtbl = vfuncptrgepinst->getPointerOperand();
             if (SVFUtil::isa<LoadInst>(vtbl))
             {
                 return true;
@@ -286,24 +286,24 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
     return false;
 }
 
-bool cppUtil::isCPPThunkFunction(const Function *F)
+bool cppUtil::isCPPThunkFunction(const Function* F)
 {
     cppUtil::DemangledName dname = cppUtil::demangle(F->getName().str());
     return dname.isThunkFunc;
 }
 
-const Function *cppUtil::getThunkTarget(const Function *F)
+const Function* cppUtil::getThunkTarget(const Function* F)
 {
-    const Function *ret = nullptr;
+    const Function* ret = nullptr;
 
     for (auto &bb:*F)
     {
         for (auto &inst: bb)
         {
-            if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
-                    || llvm::isa<CallBrInst>(inst))
+            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&inst);
+            if (SVFUtil::isCallSite(svfInst))
             {
-                CallSite cs(const_cast<Instruction*>(&inst));
+                CallSite cs(svfInst);
                 // assert(cs.getCalledFunction() &&
                 //        "Indirect call detected in thunk func");
                 // assert(ret == nullptr && "multiple callsites in thunk func");
@@ -316,7 +316,7 @@ const Function *cppUtil::getThunkTarget(const Function *F)
     return ret;
 }
 
-const Value *cppUtil::getVCallThisPtr(CallSite cs)
+const Value* cppUtil::getVCallThisPtr(CallSite cs)
 {
     if (cs.paramHasAttr(0, llvm::Attribute::StructRet))
     {
@@ -348,11 +348,11 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
     }
     else
     {
-        for (const Value *thisU : thisPtr1->users())
+        for (const Value* thisU : thisPtr1->users())
         {
             if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(thisU))
             {
-                for (const Value *storeU : store->getPointerOperand()->users())
+                for (const Value* storeU : store->getPointerOperand()->users())
                 {
                     if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(storeU))
                     {
@@ -366,7 +366,7 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
     }
 }
 
-const Argument *cppUtil::getConstructorThisPtr(const Function* fun)
+const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
 {
     assert((isConstructor(fun) || isDestructor(fun)) && "not a constructor?");
     assert(fun->arg_size() >=1 && "argument size >= 1?");
@@ -381,14 +381,14 @@ const Argument *cppUtil::getConstructorThisPtr(const Function* fun)
  * %x = load %vfn
  * call %x (...)
  */
-const Value *cppUtil::getVCallVtblPtr(CallSite cs)
+const Value* cppUtil::getVCallVtblPtr(CallSite cs)
 {
     const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(loadInst != nullptr);
-    const Value *vfuncptr = loadInst->getPointerOperand();
+    const Value* vfuncptr = loadInst->getPointerOperand();
     const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     assert(gepInst != nullptr);
-    const Value *vtbl = gepInst->getPointerOperand();
+    const Value* vtbl = gepInst->getPointerOperand();
     return vtbl;
 }
 
@@ -396,11 +396,11 @@ u64_t cppUtil::getVCallIdx(CallSite cs)
 {
     const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(vfuncloadinst != nullptr);
-    const Value *vfuncptr = vfuncloadinst->getPointerOperand();
+    const Value* vfuncptr = vfuncloadinst->getPointerOperand();
     const GetElementPtrInst *vfuncptrgepinst =
         SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
-    const ConstantInt *idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
+    const ConstantInt* idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
     u64_t idx_value;
     if (idx == nullptr)
     {
@@ -435,7 +435,7 @@ string cppUtil::getClassNameFromType(const Type *ty)
     return className;
 }
 
-string cppUtil::getClassNameFromVtblObj(const Value *value)
+string cppUtil::getClassNameFromVtblObj(const Value* value)
 {
     string className = "";
 
@@ -455,7 +455,7 @@ string cppUtil::getClassNameFromVtblObj(const Value *value)
     return className;
 }
 
-bool cppUtil::isConstructor(const Function *F)
+bool cppUtil::isConstructor(const Function* F)
 {
     if (F->isDeclaration())
         return false;
@@ -487,7 +487,7 @@ bool cppUtil::isConstructor(const Function *F)
         return false;
 }
 
-bool cppUtil::isDestructor(const Function *F)
+bool cppUtil::isDestructor(const Function* F)
 {
     if (F->isDeclaration())
         return false;
@@ -524,7 +524,7 @@ bool cppUtil::isDestructor(const Function *F)
 string cppUtil::getClassNameOfThisPtr(CallSite cs)
 {
     string thisPtrClassName;
-    Instruction *inst = cs.getInstruction();
+    const Instruction* inst = cs.getInstruction()->getLLVMInstruction();
     if (const MDNode *N = inst->getMetadata("VCallPtrType"))
     {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
@@ -532,7 +532,7 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs)
     }
     if (thisPtrClassName.size() == 0)
     {
-        const Value *thisPtr = getVCallThisPtr(cs);
+        const Value* thisPtr = getVCallThisPtr(cs);
         thisPtrClassName = getClassNameFromType(thisPtr->getType());
     }
 
@@ -551,7 +551,7 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs)
 string cppUtil::getFunNameOfVCallSite(CallSite cs)
 {
     string funName;
-    Instruction *inst = cs.getInstruction();
+    const Instruction* inst = cs.getInstruction()->getLLVMInstruction();
     if (const MDNode *N = inst->getMetadata("VCallFunName"))
     {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
@@ -567,7 +567,7 @@ string cppUtil::getFunNameOfVCallSite(CallSite cs)
 bool cppUtil::VCallInCtorOrDtor(CallSite cs)
 {
     std::string classNameOfThisPtr = getClassNameOfThisPtr(cs);
-    const Function *func = cs.getCaller();
+    const Function* func = cs.getCaller();
     if (isConstructor(func) || isDestructor(func))
     {
         struct DemangledName dname = demangle(func->getName().str());

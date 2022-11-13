@@ -165,10 +165,12 @@ void DCHGraph::handleTypedef(const DIType *typedefType)
 
 void DCHGraph::buildVTables(const SVFModule &module)
 {
-    for (SVFModule::const_global_iterator gvI = module.global_begin(); gvI != module.global_end(); ++gvI)
+    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
+    {
+    for (Module::const_global_iterator gvI = M.global_begin(); gvI != M.global_end(); ++gvI)
     {
         // Though this will return more than GlobalVariables, we only care about GlobalVariables (for the vtbls).
-        const GlobalVariable *gv = SVFUtil::dyn_cast<const GlobalVariable>(*gvI);
+        const GlobalVariable *gv = SVFUtil::dyn_cast<const GlobalVariable>(&*gvI);
         if (gv == nullptr) continue;
         if (gv->hasMetadata(cppUtil::ctir::vtMDName) && gv->getNumOperands() > 0)
         {
@@ -185,7 +187,7 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 const ConstantArray *vtbl = SVFUtil::dyn_cast<ConstantArray>(vtbls->getOperand(nthVtbl));
                 assert(vtbl && "Element of vtbl struct not an array");
 
-                std::vector<const Function *> &vfns = node->getVfnVector(nthVtbl);
+                std::vector<const Function* > &vfns = node->getVfnVector(nthVtbl);
 
                 // Iterating over the vtbl, we will run into:
                 // 1. i8* null         (don't care for now).
@@ -205,7 +207,7 @@ void DCHGraph::buildVTables(const SVFModule &module)
                     if (ce->getOpcode() == Instruction::BitCast)
                     {
                         // Could be a GlobalAlias which we don't care about, or a virtual/thunk function.
-                        const Function *vfn = SVFUtil::dyn_cast<Function>(ce->getOperand(0));
+                        const Function* vfn = SVFUtil::dyn_cast<Function>(ce->getOperand(0));
                         if (vfn != nullptr)
                         {
                             vfns.push_back(vfn);
@@ -214,6 +216,7 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 }
             }
         }
+    }
     }
 }
 
@@ -458,9 +461,9 @@ void DCHGraph::buildCHG(bool extend)
 {
     extended = extend;
     DebugInfoFinder finder;
-    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
+    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-        finder.processModule(*(LLVMModuleSet::getLLVMModuleSet()->getModule(i)));
+        finder.processModule(M);
     }
 
     // Create the void node regardless of whether it appears.
@@ -587,8 +590,8 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
         const DIType *type = vtblToTypeMap[vtbl];
         assert(hasNode(type) && "trying to get vtbl for type not in graph");
         const DCHNode *node = getNode(type);
-        std::vector<std::vector<const Function *>> allVfns = node->getVfnVectors();
-        for (std::vector<const Function *> vfnV : allVfns)
+        std::vector<std::vector<const Function* >> allVfns = node->getVfnVectors();
+        for (std::vector<const Function* > vfnV : allVfns)
         {
             // We only care about any virtual function corresponding to idx.
             if (idx >= vfnV.size())
@@ -596,7 +599,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                 continue;
             }
 
-            const Function *callee = vfnV[idx];
+            const Function* callee = vfnV[idx];
             // Practically a copy of that in lib/MemoryModel/CHA.cpp
             if (cs.arg_size() == callee->arg_size() || (cs.getFunctionType()->isVarArg() && callee->isVarArg()))
             {
@@ -1073,7 +1076,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
                 DISubrange *sr = SVFUtil::dyn_cast<DISubrange>(sizes[0]);
                 assert(sr != nullptr && "DCHG: non-subrange as array element?");
                 int64_t count = -1;
-                if (const ConstantInt *ci = sr->getCount().dyn_cast<ConstantInt *>())
+                if (const ConstantInt* ci = sr->getCount().dyn_cast<ConstantInt* >())
                 {
                     count = ci->getSExtValue();
                 }
@@ -1163,7 +1166,7 @@ void DCHGraph::print(void)
         currIndent += singleIndent;
         SVFUtil::outs() << indent(currIndent) << "Virtual functions\n";
         currIndent += singleIndent;
-        const std::vector<std::vector<const Function *>> &vfnVectors = node->getVfnVectors();
+        const std::vector<std::vector<const Function* >> &vfnVectors = node->getVfnVectors();
         for (unsigned i = 0; i < vfnVectors.size(); ++i)
         {
             SVFUtil::outs() << indent(currIndent) << "[ vtable #" << i << " ]\n";

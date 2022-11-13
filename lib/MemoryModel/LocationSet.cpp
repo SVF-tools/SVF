@@ -128,7 +128,7 @@ s32_t LocationSet::accumulateConstantOffset() const
     {
         const Value* value = offsetValues[i].first;
         const Type* type = offsetValues[i].second;
-        const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(value);
+        const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(value);
         assert(op && "not a constant offset?");
         if(type==nullptr)
         {

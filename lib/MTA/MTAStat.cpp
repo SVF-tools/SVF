@@ -119,17 +119,16 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
         InstSet instSet1;
         InstSet instSet2;
         SVFModule* mod = mhp->getTCT()->getSVFModule();
-        for (SVFModule::iterator F = mod->begin(), E = mod->end(); F != E; ++F)
+        for (const SVFFunction* fun : mod->getFunctionSet())
         {
-            const SVFFunction* fun = (*F);
             const Function* llvmfun = fun->getLLVMFun();
             if(SVFUtil::isExtCall(fun))
                 continue;
-            if(!mhp->isConnectedfromMain(llvmfun))
+            if(!mhp->isConnectedfromMain(fun))
                 continue;
             for (const_inst_iterator II = inst_begin(llvmfun), E = inst_end(llvmfun); II != E; ++II)
             {
-                const Instruction *inst = &*II;
+                const Instruction* inst = &*II;
                 if(SVFUtil::isa<LoadInst>(inst))
                 {
                     instSet1.insert(inst);
@@ -147,7 +146,9 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
         {
             for(InstSet::const_iterator it2 = instSet2.begin(), eit2 = instSet2.end(); it2!=eit2; ++it2)
             {
-                mhp->mayHappenInParallel(*it1,*it2);
+                const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it1);
+                const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it2);
+                mhp->mayHappenInParallel(inst1,inst2);
             }
         }
     }

@@ -39,12 +39,12 @@ using namespace SVF;
  * 3) stack
  * 4) heap
  */
-bool LLVMUtil::isObject(const Value * ref)
+bool LLVMUtil::isObject(const Value*  ref)
 {
     bool createobj = false;
-    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(SVFUtil::cast<Instruction>(ref)) )
+    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))) )
         createobj = true;
-    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isHeapAllocExtCallViaRet(SVFUtil::cast<Instruction>(ref)))
+    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isHeapAllocExtCallViaRet(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))))
         createobj = true;
     if (SVFUtil::isa<GlobalVariable>(ref))
         createobj = true;
@@ -57,7 +57,7 @@ bool LLVMUtil::isObject(const Value * ref)
 /*!
  * Check whether this value points-to a constant object
  */
-bool LLVMUtil::isConstantObjSym(const Value *val)
+bool LLVMUtil::isConstantObjSym(const Value* val)
 {
     if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
     {
@@ -91,12 +91,12 @@ bool LLVMUtil::isConstantObjSym(const Value *val)
 /*!
  * Return reachable bbs from function entry
  */
-void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const BasicBlock*> &reachableBBs)
+void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const SVFBasicBlock*> &reachableBBs)
 {
     assert(!SVFUtil::isExtCall(svfFun) && "The calling function cannot be an external function.");
     //initial DominatorTree
     DominatorTree dt;
-    dt.recalculate(*svfFun->getLLVMFun());
+    dt.recalculate(const_cast<Function&>(*svfFun->getLLVMFun()));
 
     Set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;
@@ -105,7 +105,8 @@ void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const 
     {
         const BasicBlock* bb = bbVec.back();
         bbVec.pop_back();
-        reachableBBs.push_back(bb);
+        const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb);
+        reachableBBs.push_back(svfbb);
         if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb)))
         {
             for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end();
@@ -125,7 +126,7 @@ void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const 
 /*!
  * Return true if the function has a return instruction reachable from function entry
  */
-bool LLVMUtil::functionDoesNotRet (const Function * fun)
+bool LLVMUtil::functionDoesNotRet (const Function*  fun)
 {
     const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
     if (SVFUtil::isExtCall(svffun))
@@ -166,7 +167,7 @@ bool LLVMUtil::functionDoesNotRet (const Function * fun)
 /*!
  * Return true if this is a function without any possible caller
  */
-bool LLVMUtil::isUncalledFunction (const Function * fun)
+bool LLVMUtil::isUncalledFunction (const Function*  fun)
 {
     if(fun->hasAddressTaken())
         return false;
@@ -183,7 +184,7 @@ bool LLVMUtil::isUncalledFunction (const Function * fun)
         for (LLVMModuleSet::FunctionSetType::const_iterator it = decls.begin(),
                 eit = decls.end(); it != eit; ++it)
         {
-            const Function *decl = *it;
+            const Function* decl = *it;
             if(decl->hasAddressTaken())
                 return false;
             for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i)
@@ -199,7 +200,7 @@ bool LLVMUtil::isUncalledFunction (const Function * fun)
 /*!
  * Return true if this is a value in a dead function (function without any caller)
  */
-bool LLVMUtil::isPtrInUncalledFunction (const Value * value)
+bool LLVMUtil::isPtrInUncalledFunction (const Value*  value)
 {
     if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
     {
@@ -217,7 +218,7 @@ bool LLVMUtil::isPtrInUncalledFunction (const Value * value)
 /*!
  * Strip constant casts
  */
-const Value * LLVMUtil::stripConstantCasts(const Value *val)
+const Value*  LLVMUtil::stripConstantCasts(const Value* val)
 {
     if (SVFUtil::isa<GlobalValue>(val) || isInt2PtrConstantExpr(val))
         return val;
@@ -232,7 +233,7 @@ const Value * LLVMUtil::stripConstantCasts(const Value *val)
 /*!
  * Strip all casts
  */
-const Value * LLVMUtil::stripAllCasts(const Value *val)
+const Value*  LLVMUtil::stripAllCasts(const Value* val)
 {
     while (true)
     {
@@ -256,54 +257,60 @@ const Value * LLVMUtil::stripAllCasts(const Value *val)
 }
 
 /// Get the next instructions following control flow
-void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
+void LLVMUtil::getNextInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList)
 {
     if (!curInst->isTerminator())
     {
-        const Instruction* nextInst = curInst->getNextNode();
-        if (SVFUtil::isIntrinsicInst(nextInst))
-            getNextInsts(nextInst, instList);
+        const Instruction* nextInst = curInst->getLLVMInstruction()->getNextNode();
+        const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(nextInst);
+        if (SVFUtil::isIntrinsicInst(svfNextInst))
+            getNextInsts(svfNextInst, instList);
         else
-            instList.push_back(nextInst);
+            instList.push_back(svfNextInst);
     }
     else
     {
-        const BasicBlock *BB = curInst->getParent();
+        const BasicBlock* BB = curInst->getParent()->getLLVMBasicBlock();
         // Visit all successors of BB in the CFG
         for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it)
         {
             const Instruction* nextInst = &((*it)->front());
-            if (SVFUtil::isIntrinsicInst(nextInst))
-                getNextInsts(nextInst, instList);
+            const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(nextInst);
+            if (SVFUtil::isIntrinsicInst(svfNextInst))
+                getNextInsts(svfNextInst, instList);
             else
-                instList.push_back(nextInst);
+                instList.push_back(svfNextInst);
         }
     }
 }
 
 
 /// Get the previous instructions following control flow
-void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
+void LLVMUtil::getPrevInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList)
 {
-    if (curInst != &(curInst->getParent()->front()))
+    
+    const SVFInstruction* entryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(curInst->getParent()->getLLVMBasicBlock()->front()));
+    if (curInst != entryInst)
     {
-        const Instruction* prevInst = curInst->getPrevNode();
-        if (SVFUtil::isIntrinsicInst(prevInst))
-            getPrevInsts(prevInst, instList);
+        const Instruction* prevInst = curInst->getLLVMInstruction()->getPrevNode();
+        const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(prevInst);
+        if (SVFUtil::isIntrinsicInst(svfPrevInst))
+            getPrevInsts(svfPrevInst, instList);
         else
-            instList.push_back(prevInst);
+            instList.push_back(svfPrevInst);
     }
     else
     {
-        const BasicBlock *BB = curInst->getParent();
+        const BasicBlock* BB = curInst->getParent()->getLLVMBasicBlock();
         // Visit all successors of BB in the CFG
         for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
         {
             const Instruction* prevInst = &((*it)->back());
-            if (SVFUtil::isIntrinsicInst(prevInst))
-                getPrevInsts(prevInst, instList);
+            const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(prevInst);
+            if (SVFUtil::isIntrinsicInst(svfPrevInst))
+                getPrevInsts(svfPrevInst, instList);
             else
-                instList.push_back(prevInst);
+                instList.push_back(svfPrevInst);
         }
     }
 }
@@ -332,13 +339,13 @@ const Value* LLVMUtil::getUniqueUseViaCastInst(const Value* val)
 /*!
  * Return the type of the object from a heap allocation
  */
-const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
+const Type* LLVMUtil::getTypeOfHeapAlloc(const SVFInstruction *inst)
 {
     const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
 
     if(SVFUtil::isHeapAllocExtCallViaRet(inst))
     {
-        if(const Value* v = getUniqueUseViaCastInst(inst))
+        if(const Value* v = getUniqueUseViaCastInst(inst->getLLVMInstruction()))
         {
             if(const PointerType* newTy = SVFUtil::dyn_cast<PointerType>(v->getType()))
                 type = newTy;
@@ -348,7 +355,7 @@ const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
     {
         CallSite cs = SVFUtil::getLLVMCallSite(inst);
         int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getCallee(cs));
-        const Value *arg = cs.getArgument(arg_pos);
+        const Value* arg = cs.getArgument(arg_pos);
         type = SVFUtil::dyn_cast<PointerType>(arg->getType());
     }
     else
@@ -361,26 +368,9 @@ const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
 }
 
 /*!
- * Get position of a successor basic block
- */
-u32_t LLVMUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ)
-{
-    u32_t i = 0;
-    for (const BasicBlock *SuccBB: successors(BB))
-    {
-        if (SuccBB == Succ)
-            return i;
-        i++;
-    }
-    assert(false && "Didn't find succesor edge?");
-    return 0;
-}
-
-
-/*!
  * Return a position index from current bb to it successor bb
  */
-u32_t LLVMUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succbb)
+u32_t LLVMUtil::getBBPredecessorPos(const BasicBlock* bb, const BasicBlock* succbb)
 {
     u32_t pos = 0;
     for (const_pred_iterator it = pred_begin(succbb), et = pred_end(succbb); it != et; ++it, ++pos)
@@ -393,17 +383,9 @@ u32_t LLVMUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succ
 }
 
 /*!
- *  Get the num of BB's successors
- */
-u32_t LLVMUtil::getBBSuccessorNum(const BasicBlock *BB)
-{
-    return BB->getTerminator()->getNumSuccessors();
-}
-
-/*!
  * Get the num of BB's predecessors
  */
-u32_t LLVMUtil::getBBPredecessorNum(const BasicBlock *BB)
+u32_t LLVMUtil::getBBPredecessorNum(const BasicBlock* BB)
 {
     u32_t num = 0;
     for (const_pred_iterator it = pred_begin(BB), et = pred_end(BB); it != et; ++it)

@@ -88,6 +88,9 @@ typedef llvm::LoopInfo LoopInfo;
 typedef llvm::User User;
 
 // LLVM Instructions
+typedef llvm::CallInst CallInst;
+typedef llvm::StoreInst StoreInst;
+typedef llvm::LoadInst LoadInst;
 typedef llvm::AllocaInst AllocaInst;
 typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
 typedef llvm::AtomicRMWInst AtomicRMWInst;
@@ -183,6 +186,7 @@ namespace dwarf = llvm::dwarf;
 
 // Iterators.
 typedef llvm::inst_iterator inst_iterator;
+typedef llvm::const_inst_iterator const_inst_iterator;
 typedef llvm::gep_type_iterator gep_type_iterator;
 typedef llvm::bridge_gep_iterator bridge_gep_iterator;
 typedef llvm::const_inst_iterator const_inst_iterator;
@@ -204,6 +208,12 @@ typedef llvm::VectorType VectorType;
 typedef llvm::FunctionCallee FunctionCallee;
 #endif
 
+/// LLVM Iterators
+#if LLVM_VERSION_MAJOR >= 11
+typedef llvm::const_succ_iterator succ_const_iterator;
+#else
+typedef llvm::succ_const_iterator succ_const_iterator;
+#endif
 } // End namespace SVF
 
 #endif  // SVF_FE_BASIC_TYPES_H

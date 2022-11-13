@@ -56,30 +56,32 @@ public:
 
     /// collect the syms
     //@{
-    void collectNullPtrBlackholeSyms(const Value *val);
+    void collectNullPtrBlackholeSyms(const Value* val);
 
     void collectSpecialSym(const Value* val);
 
-    void collectSym(const Value *val);
+    void collectSym(const Value* val);
 
-    void collectVal(const Value *val);
+    void collectVal(const Value* val);
 
-    void collectObj(const Value *val);
+    void collectObj(const Value* val);
 
-    void collectRet(const Function *val);
+    void collectRet(const Function* val);
 
-    void collectVararg(const Function *val);
+    void collectVararg(const Function* val);
+
+    const SVFValue* mapLLVM2SVFValue(const Value* val);
     //@}
 
     /// Handle constant expression
     // @{
     void handleGlobalCE(const GlobalVariable *G);
     void handleGlobalInitializerCE(const Constant *C);
-    void handleCE(const Value *val);
+    void handleCE(const Value* val);
     // @}
 
     /// Create an objectInfo based on LLVM value
-    ObjTypeInfo* createObjTypeInfo(const Value *val);
+    ObjTypeInfo* createObjTypeInfo(const Value* val);
 
     /// Initialize TypeInfo based on LLVM Value
     void initTypeInfo(ObjTypeInfo* typeinfo, const Value* value);

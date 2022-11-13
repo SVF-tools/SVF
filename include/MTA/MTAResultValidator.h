@@ -52,15 +52,15 @@ protected:
     std::vector<std::string> split(const std::string &s, char delim);
 
     // Get special arguments of given call sites
-    NodeID getIntArg(const Instruction* inst, unsigned int arg_num);
-    std::vector<std::string> getStringArg(const Instruction* inst, unsigned int arg_num);
-    CallStrCxt getCxtArg(const Instruction* inst, unsigned int arg_num);
+    NodeID getIntArg(const SVFInstruction* inst, unsigned int arg_num);
+    std::vector<std::string> getStringArg(const SVFInstruction* inst, unsigned int arg_num);
+    CallStrCxt getCxtArg(const SVFInstruction* inst, unsigned int arg_num);
 
     /*
      * Get the previous LoadInst or StoreInst from Instruction "I" in the
      * same BasicBlock. Return nullptr if none exists.
      */
-    const Instruction *getPreviousMemoryAccessInst(const Instruction *I);
+    const Instruction* getPreviousMemoryAccessInst(const Instruction* I);
 
     // Compare two cxts
     bool matchCxt(const CallStrCxt cxt1, const CallStrCxt cxt2) const;
@@ -77,7 +77,7 @@ protected:
     /*
      * Collect the callsite targets for validations.
      * The targets are labeled by "cs1:", "cs2:"... that are the names of its basic blocks.
-     * The collected targets are stored in csnumToInstMap that maps label "cs1" to CallInst.
+     * The collected targets are stored in csnumToInstMap that maps label "cs1" to its Callsite.
      */
     bool collectCallsiteTargets();
 
@@ -117,7 +117,7 @@ protected:
 
 private:
 
-    typedef Map<NodeID, const CallInst*> csnumToInst;
+    typedef Map<NodeID, const SVFInstruction*> csnumToInst;
     typedef Map<NodeID, CallStrCxt> vthdToCxtMap;
     typedef Map<NodeID, NodeID> vthdTorthdMap;
     typedef Map<NodeID, NodeID> rthdTovthdMap;
@@ -177,7 +177,7 @@ public:
     {
     public:
         /// Constructor
-        AccessPair(const Instruction *I1, const Instruction *I2,
+        AccessPair(const Instruction* I1, const Instruction* I2,
                    const RC_FLAG flags) :
             I1(I1), I2(I2), flags(flags)
         {
@@ -189,19 +189,19 @@ public:
         {
             return flags & flag;
         }
-        inline const Instruction *getInstruction1() const
+        inline const Instruction* getInstruction1() const
         {
             return I1;
         }
-        inline const Instruction *getInstruction2() const
+        inline const Instruction* getInstruction2() const
         {
             return I2;
         }
         //@}
 
     private:
-        const Instruction *I1;
-        const Instruction *I2;
+        const Instruction* I1;
+        const Instruction* I2;
         RC_FLAG flags;
     };
 
@@ -240,26 +240,26 @@ protected:
     /// Interface to the specific validation properties.
     /// Override one or more to implement your own analysis.
     //@{
-    virtual bool mayAccessAliases(const Instruction *I1,
-                                  const Instruction *I2)
+    virtual bool mayAccessAliases(const Instruction* I1,
+                                  const Instruction* I2)
     {
         selectedValidationScenarios &= ~RC_ALIASES;
         return true;
     }
-    virtual bool mayHappenInParallel(const Instruction *I1,
-                                     const Instruction *I2)
+    virtual bool mayHappenInParallel(const Instruction* I1,
+                                     const Instruction* I2)
     {
         selectedValidationScenarios &= ~RC_MHP;
         return true;
     }
-    virtual bool protectedByCommonLocks(const Instruction *I1,
-                                        const Instruction *I2)
+    virtual bool protectedByCommonLocks(const Instruction* I1,
+                                        const Instruction* I2)
     {
         selectedValidationScenarios &= ~RC_PROTECTED;
         return true;
     }
-    virtual bool mayHaveDataRace(const Instruction *I1,
-                                 const Instruction *I2)
+    virtual bool mayHaveDataRace(const Instruction* I1,
+                                 const Instruction* I2)
     {
         selectedValidationScenarios &= ~RC_RACE;
         return true;
@@ -274,16 +274,19 @@ protected:
     void collectValidationTargets()
     {
         // Collect call sites of all RC_ACCESS function calls.
-        std::vector<const CallInst*> csInsts;
-        const Function *F = nullptr;
-        for(auto it = M->llvmFunBegin(); it != M->llvmFunEnd(); it++)
+        std::vector<CallSite> csInsts;
+        const Function* F = nullptr;
+        for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
         {
-            const std::string fName = (*it)->getName().str();
+        for(auto it = M.begin(); it != M.end(); it++)
+        {
+            const std::string fName = (*it).getName().str();
             if(fName.find(RC_ACCESS) != std::string::npos)
             {
-                F = (*it);
+                F = &(*it);
                 break;
             }
+        }
         }
         if (!F)     return;
 
@@ -292,9 +295,10 @@ protected:
         {
             const Use *u = &*it;
             const Value *user = u->getUser();
-            const CallInst *csInst = SVFUtil::dyn_cast<CallInst>(user);
-            assert(csInst);
-            csInsts.push_back(csInst);
+            if(SVFUtil::isCallSite(user)){
+                CallSite csInst = SVFUtil::getLLVMCallSite(user);
+                csInsts.push_back(csInst);
+            }
         }
         assert(csInsts.size() % 2 == 0 && "We should have RC_ACCESS called in pairs.");
 
@@ -304,12 +308,12 @@ protected:
         // Generate access pairs.
         for (int i = 0, e = csInsts.size(); i != e;)
         {
-            const CallInst *CI1 = csInsts[i++];
-            const CallInst *CI2 = csInsts[i++];
-            const ConstantInt *C = SVFUtil::dyn_cast<ConstantInt>(CI1->getOperand(1));
+            CallSite CI1 = csInsts[i++];
+            CallSite CI2 = csInsts[i++];
+            const ConstantInt* C = SVFUtil::dyn_cast<ConstantInt>(CI1.getArgOperand(1));
             assert(C);
-            const Instruction *I1 = getPreviousMemoryAccessInst(CI1);
-            const Instruction *I2 = getPreviousMemoryAccessInst(CI2);
+            const Instruction* I1 = getPreviousMemoryAccessInst(CI1.getInstruction()->getLLVMInstruction());
+            const Instruction* I2 = getPreviousMemoryAccessInst(CI2.getInstruction()->getLLVMInstruction());
             assert(I1 && I2 && "RC_ACCESS should be placed immediately after the target memory access.");
             RC_FLAG flags = C->getZExtValue();
             accessPairs.push_back(AccessPair(I1, I2, flags));
@@ -325,8 +329,8 @@ protected:
         for (int i = 0, e = accessPairs.size(); i != e; ++i)
         {
             const AccessPair &ap = accessPairs[i];
-            const Instruction *I1 = ap.getInstruction1();
-            const Instruction *I2 = ap.getInstruction2();
+            const Instruction* I1 = ap.getInstruction1();
+            const Instruction* I2 = ap.getInstruction2();
 
             bool mhp = mayHappenInParallel(I1, I2);
             bool alias = mayAccessAliases(I1, I2);
@@ -390,12 +394,12 @@ private:
      * Comparison function to sort the validation targets in ascending order of
      * the validation id (i.e., the 1st argument of RC_ACCESS function call).
      */
-    static bool compare(const CallInst *CI1, const CallInst *CI2)
+    static bool compare(CallSite CI1, CallSite CI2)
     {
-        const Value *V1 = CI1->getOperand(0);
-        const Value *V2 = CI2->getOperand(0);
-        const ConstantInt *C1 = SVFUtil::dyn_cast<ConstantInt>(V1);
-        const ConstantInt *C2 = SVFUtil::dyn_cast<ConstantInt>(V2);
+        const Value *V1 = CI1.getArgOperand(0);
+        const Value *V2 = CI2.getArgOperand(0);
+        const ConstantInt* C1 = SVFUtil::dyn_cast<ConstantInt>(V1);
+        const ConstantInt* C2 = SVFUtil::dyn_cast<ConstantInt>(V2);
         assert(0 != C1 && 0 != C2);
         return C1->getZExtValue() < C2->getZExtValue();
     }
@@ -405,8 +409,8 @@ private:
      * same BasicBlock.
      * Return nullptr if none exists.
      */
-    const Instruction *getPreviousMemoryAccessInst(
-        const Instruction *I)
+    const Instruction* getPreviousMemoryAccessInst(
+        const Instruction* I)
     {
         I = I->getPrevNode();
         while (I)
@@ -414,7 +418,9 @@ private:
             if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
                 return I;
 
-            if (const SVFFunction *callee = SVFUtil::getCallee(I))
+            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
+
+            if (const SVFFunction *callee = SVFUtil::getCallee(inst))
             {
                 if (callee->getName().find("llvm.memset") != std::string::npos)
                     return I;

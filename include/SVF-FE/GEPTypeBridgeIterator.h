@@ -95,7 +95,7 @@ public:
         return operator*();
     }
 
-    Value *getOperand() const
+    Value* getOperand() const
     {
         return const_cast<Value*>(&**OpIt);
     }

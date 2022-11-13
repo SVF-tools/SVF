@@ -47,8 +47,16 @@ public:
     typedef Map<const Function*, FunctionSetType> FunDefToDeclsMapTy;
     typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
+    typedef Map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
+    typedef Map<const BasicBlock*,const SVFBasicBlock*> LLVMBB2SVFBBMap;
+    typedef Map<const Instruction*,const SVFInstruction*> LLVMInst2SVFInstMap;
+    typedef Map<const GlobalValue*,const SVFGlobalValue*> LLVMGlobal2SVFGlobalMap;
+    typedef Map<const Argument*,const SVFArgument*> LLVMArgument2SVFArgumentMap;
+    typedef Map<const ConstantData*,const SVFConstantData*> LLVMConstData2SVFConstDataMap;
+    typedef Map<const Value*,const SVFOtherValue*> LLVMValue2SVFOtherValueMap;
+
 private:
-    static LLVMModuleSet *llvmModuleSet;
+    static LLVMModuleSet* llvmModuleSet;
     SVFModule* svfModule;
     std::unique_ptr<LLVMContext> cxts;
     std::vector<std::unique_ptr<Module>> owned_modules;
@@ -61,13 +69,21 @@ private:
     /// Global definition to a rep definition map
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
+    LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
+    LLVMBB2SVFBBMap LLVMBB2SVFBB;
+    LLVMInst2SVFInstMap LLVMInst2SVFInst;
+    LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
+    LLVMGlobal2SVFGlobalMap LLVMGlobal2SVFGlobal;
+    LLVMConstData2SVFConstDataMap LLVMConstData2SVFConstData;
+    LLVMValue2SVFOtherValueMap LLVMValue2SVFOtherValue;
+
     /// Constructor
     LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false) {}
 
     void build();
 
 public:
-    static inline LLVMModuleSet *getLLVMModuleSet()
+    static inline LLVMModuleSet* getLLVMModuleSet()
     {
         if (llvmModuleSet == nullptr)
             llvmModuleSet = new LLVMModuleSet();
@@ -81,8 +97,8 @@ public:
         llvmModuleSet = nullptr;
     }
 
-    SVFModule* buildSVFModule(Module &mod);
-    SVFModule* buildSVFModule(const std::vector<std::string> &moduleNameVec);
+    SVFModule* buildSVFModule(Module& mod);
+    SVFModule* buildSVFModule(const std::vector<std::string>& moduleNameVec);
 
     inline SVFModule* getSVFModule()
     {
@@ -90,11 +106,16 @@ public:
         return svfModule;
     }
 
-    void preProcessBCs(std::vector<std::string> &moduleNameVec);
+    void preProcessBCs(std::vector<std::string>& moduleNameVec);
 
     u32_t getModuleNum() const
     {
         return modules.size();
+    }
+
+    const std::vector<std::reference_wrapper<Module>>& getLLVMModules() const
+    {
+        return modules;
     }
 
     Module *getModule(u32_t idx) const
@@ -111,19 +132,94 @@ public:
     // Dump modules to files
     void dumpModulesToFile(const std::string suffix);
 
-    const SVFFunction *getSVFFunction(const Function *fun) const
+    inline void addFunctionMap(const Function* func, const SVFFunction* svfFunc)
     {
-        return svfModule->getSVFFunction(fun);
+        LLVMFunc2SVFFunc[func] = svfFunc;
+    }
+    inline void addBasicBlockMap(const BasicBlock* bb, const SVFBasicBlock* svfBB)
+    {
+        LLVMBB2SVFBB[bb] = svfBB;
+    }
+    inline void addInstructionMap(const Instruction* inst, const SVFInstruction* svfInst)
+    {
+        LLVMInst2SVFInst[inst] = svfInst;
+    }
+    inline void addArgumentMap(const Argument* arg, const SVFArgument* svfArg)
+    {
+        LLVMArgument2SVFArgument[arg] = svfArg;
+    }
+    inline void addGlobalValueMap(const GlobalValue* glob, const SVFGlobalValue* svfglob)
+    {
+        LLVMGlobal2SVFGlobal[glob] = svfglob;
+    }
+    inline void addConstantDataMap(const ConstantData* cd, const SVFConstantData* svfcd)
+    {
+        LLVMConstData2SVFConstData[cd] = svfcd;
+    }
+    inline void addOtherValueMap(const Value* ov, const SVFOtherValue* svfov)
+    {
+        LLVMValue2SVFOtherValue[ov] = svfov;
+    }
+
+    inline const SVFValue* getSVFValue(const Value* fun) const;
+
+    inline const SVFFunction* getSVFFunction(const Function* fun) const
+    {
+        LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
+        assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
+        return it->second;
+    }
+
+    inline const SVFBasicBlock* getSVFBasicBlock(const BasicBlock* bb) const
+    {
+        LLVMBB2SVFBBMap::const_iterator it = LLVMBB2SVFBB.find(bb);
+        assert(it!=LLVMBB2SVFBB.end() && "SVF BasicBlock not found!");
+        return it->second;
+    }
+
+    inline const SVFInstruction* getSVFInstruction(const Instruction* inst) const
+    {
+        LLVMInst2SVFInstMap::const_iterator it = LLVMInst2SVFInst.find(inst);
+        assert(it!=LLVMInst2SVFInst.end() && "SVF Instruction not found!");
+        return it->second;
+    }
+
+    inline const SVFArgument* getSVFArgument(const Argument* arg) const
+    {
+        LLVMArgument2SVFArgumentMap::const_iterator it = LLVMArgument2SVFArgument.find(arg);
+        assert(it!=LLVMArgument2SVFArgument.end() && "SVF Argument not found!");
+        return it->second;
+    }
+
+    inline const SVFGlobalValue* getSVFGlobalValue(const GlobalValue* g) const
+    {
+        LLVMGlobal2SVFGlobalMap::const_iterator it = LLVMGlobal2SVFGlobal.find(g);
+        assert(it!=LLVMGlobal2SVFGlobal.end() && "SVF Global not found!");
+        return it->second;
+    }
+
+    inline const SVFConstantData* getSVFConstantData(const ConstantData* cd) const
+    {
+        LLVMConstData2SVFConstDataMap::const_iterator it = LLVMConstData2SVFConstData.find(cd);
+        assert(it!=LLVMConstData2SVFConstData.end() && "SVF ConstantData not found!");
+        return it->second;
+    }
+
+    inline const SVFOtherValue* getSVFOtherValue(const Value* ov) const
+    {
+        LLVMValue2SVFOtherValueMap::const_iterator it = LLVMValue2SVFOtherValue.find(ov);
+        assert(it!=LLVMValue2SVFOtherValue.end() && "SVF OtherValue not found!");
+        return it->second;
     }
 
     /// Get the corresponding Function based on its name
-    inline const SVFFunction *getSVFFunction(std::string name)
+    inline const SVFFunction* getSVFFunction(std::string name)
     {
-        Function *fun = nullptr;
+        Function* fun = nullptr;
 
         for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i)
         {
-            Module *mod = llvmModuleSet->getModule(i);
+            Module* mod = llvmModuleSet->getModule(i);
             fun = mod->getFunction(name);
             if (fun)
             {
@@ -133,14 +229,14 @@ public:
         return nullptr;
     }
 
-    bool hasDefinition(const Function *fun) const
+    bool hasDefinition(const Function* fun) const
     {
         assert(fun->isDeclaration() && "not a function declaration?");
         FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
         return it != FunDeclToDefMap.end();
     }
 
-    const Function *getDefinition(const Function *fun) const
+    const Function* getDefinition(const Function* fun) const
     {
         assert(fun->isDeclaration() && "not a function declaration?");
         FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
@@ -148,7 +244,7 @@ public:
         return it->second;
     }
 
-    bool hasDeclaration(const Function *fun) const
+    bool hasDeclaration(const Function* fun) const
     {
         if(fun->isDeclaration() && !hasDefinition(fun))
             return false;
@@ -161,7 +257,7 @@ public:
         return it != FunDefToDeclsMap.end();
     }
 
-    const FunctionSetType& getDeclaration(const Function *fun) const
+    const FunctionSetType& getDeclaration(const Function* fun) const
     {
         const Function* funDef = fun;
         if(fun->isDeclaration() && hasDefinition(fun))
@@ -173,13 +269,13 @@ public:
     }
 
     /// Global to rep
-    bool hasGlobalRep(const GlobalVariable *val) const
+    bool hasGlobalRep(const GlobalVariable* val) const
     {
         GlobalDefToRepMapTy::const_iterator it = GlobalDefToRepMap.find(val);
         return it != GlobalDefToRepMap.end();
     }
 
-    GlobalVariable *getGlobalRep(const GlobalVariable *val) const
+    GlobalVariable *getGlobalRep(const GlobalVariable* val) const
     {
         GlobalDefToRepMapTy::const_iterator it = GlobalDefToRepMap.find(val);
         assert(it != GlobalDefToRepMap.end() && "has no rep?");
@@ -187,7 +283,7 @@ public:
     }
 
 
-    Module *getMainLLVMModule() const
+    Module* getMainLLVMModule() const
     {
         return getModule(0);
     }
@@ -204,12 +300,16 @@ public:
     }
 
 private:
-    std::vector<const Function *> getLLVMGlobalFunctions(
-        const GlobalVariable *global);
+    std::vector<const Function*> getLLVMGlobalFunctions(const GlobalVariable* global);
 
-    void loadModules(const std::vector<std::string> &moduleNameVec);
+    void loadModules(const std::vector<std::string>& moduleNameVec);
     void addSVFMain();
-    void initialize();
+
+    void createSVFDataStructure();
+    void initSVFFunction();
+    void initSVFBasicBlock(const SVFFunction* func);
+    void initDomTree(const SVFFunction* func);
+
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module
