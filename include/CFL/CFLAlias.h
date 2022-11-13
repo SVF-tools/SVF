@@ -162,7 +162,7 @@ public:
     }
 
     /// Initialize the grammar, graph, CFLData, solver
-    // virtual void initialize();
+    virtual void initialize();
 
     /// Init CFLData
     virtual void buildCFLData();

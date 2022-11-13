@@ -240,25 +240,25 @@ void CFLAlias::solve()
 
 double POCRAlias::timeOfBuildCFLData = 0;            // Time of building CFLData from CFLGraph
 
-// void POCRAlias::initialize()
-// {
-//     stat = new CFLStat(this);
+void POCRAlias::initialize()
+{
+    stat = new CFLStat(this);
 
-//     // Build CFL Grammar
-//     buildCFLGrammar();
+    // Build CFL Grammar
+    buildCFLGrammar();
 
-//     // Build CFL Graph
-//     buildCFLGraph();
+    // Build CFL Graph
+    buildCFLGraph();
 
-//     // Build CFL Data
-//     buildCFLData();
+    // Build CFL Data
+    buildCFLData();
 
-//     // Normalize CFL Grammar
-//     normalizeCFLGrammar();
+    // Normalize CFL Grammar
+    normalizeCFLGrammar();
 
-//     // Initialize sovler
-//     solver = new CFLSolver(graph, grammar);
-// }
+    // Initialize sovler
+    solver = new CFLSolver(graph, grammar);
+}
 
 void POCRAlias::buildCFLData()
 {

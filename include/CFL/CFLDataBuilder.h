@@ -58,8 +58,6 @@ public:
     /// Destructor
     virtual ~CFLDataBuilder()
     {
-        delete _cflData;
-        delete _graph;
     }
 
     CFLData* cflData()
