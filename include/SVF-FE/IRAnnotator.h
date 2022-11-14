@@ -102,7 +102,7 @@ private:
             SVF::NodeID gepnodeId = pag->getGepObjVar(baseNodeId, locationSet);
 
             bool idEq = (nodeId == gepnodeId);
-            (void)idEq; // Make the compiler happy
+            (void)idEq; // Suppress warning of unused variable under release build
             assert(idEq && "nodeId is not equal to gepnodeId?");
         }
     }

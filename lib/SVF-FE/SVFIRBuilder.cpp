@@ -623,7 +623,7 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
         const Instruction* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
         bool matched = (incomingInst == nullptr ||
                 incomingInst->getFunction() == inst.getFunction());
-        (void) matched; // Make the compiler happy
+        (void) matched; // Suppress warning of unused variable under release build
         assert(matched && "incomingInst's Function incorrect");
         const Instruction* predInst = &inst.getIncomingBlock(i)->back();
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(predInst);

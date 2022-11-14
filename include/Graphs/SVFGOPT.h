@@ -269,7 +269,7 @@ private:
     inline void setActualINDef(NodeID ai, NodeID def)
     {
         bool inserted = actualInToDefMap.emplace(ai, def).second;
-        (void) inserted; // Make compiler happy
+        (void)inserted; // Suppress warning of unused variable under release build
         assert(inserted && "can not set actual-in's def twice");
         defNodes.set(def);
     }

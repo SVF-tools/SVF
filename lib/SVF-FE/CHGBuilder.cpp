@@ -491,7 +491,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                     else if (const ConstantExpr *aliasconst =
                                                  SVFUtil::dyn_cast<ConstantExpr>(aliasValue))
                                     {
-                                        (void) aliasconst; // Make compiler happy
+                                        (void)aliasconst; // Suppress warning of unused variable under release build
                                         assert(aliasconst->getOpcode() == Instruction::BitCast &&
                                                "aliased constantexpr in vtable not a bitcast");
                                         const Function* aliasbitcastfunc =

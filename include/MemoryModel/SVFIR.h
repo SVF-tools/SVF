@@ -456,7 +456,7 @@ private:
     inline void addToStmt2TypeMap(SVFStmt* edge)
     {
         bool added = KindToSVFStmtSetMap[edge->getEdgeKind()].insert(edge).second;
-        (void) added; // Make compiler happy :)
+        (void)added; // Suppress warning of unused variable under release build
         assert(added && "duplicated edge, not added!!!");
         if (edge->isPTAEdge())
         {
