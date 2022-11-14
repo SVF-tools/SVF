@@ -161,7 +161,7 @@ public:
         const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
         bool funcEq = (keyFunc == valueFunc);
         (void)funcEq; // Suppress warning of unused variable under release build
- 
+
         assert(funcEq && "two basicblocks should be in the same function!");
 
         return keyFunc->dominate(bbKey,bbValue);
