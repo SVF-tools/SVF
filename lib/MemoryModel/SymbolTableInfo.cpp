@@ -318,15 +318,18 @@ void SymbolTableInfo::destroy()
 
 bool SymbolTableInfo::isArgOfUncalledFunction(const Value* val)
 {
-    const Set<const Value*>& argOfUncalledFunctionSet = symInfo->getModule()->getArgsOfUncalledFunction();
-    return argOfUncalledFunctionSet.find(val) != argOfUncalledFunctionSet.end();
+    const SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
+    if(const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(svfval))
+        return arg->isArgOfUncalledFunction();
+    else
+        return false;
 }
 
 
 bool SymbolTableInfo::isPtrInUncalledFunction (const Value*  value)
 {
-    const Set<const Value*>& ptrInUncalledFunctionSet = symInfo->getModule()->getPtrsInUncalledFunctions();
-    return ptrInUncalledFunctionSet.find(value) != ptrInUncalledFunctionSet.end();
+    const SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(value);
+    return svfval->ptrInUncalledFunction();
 }
 
 const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
@@ -344,8 +347,8 @@ const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
  */
 bool SymbolTableInfo::isBlackholeSym(const Value* val)
 {
-    const Set<const Value*>  blackholeSyms = symInfo->getModule()->getBlackholeSyms();
-    return blackholeSyms.find(val)!= blackholeSyms.end();
+    const SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
+    return svfval->isblackHole();
 }
 
 

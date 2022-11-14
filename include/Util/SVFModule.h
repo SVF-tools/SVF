@@ -69,9 +69,6 @@ private:
     ConstantDataType ConstantDataSet;        ///< The ConstantData in the module
     OtherValueType  OtherValueSet;   ///< All other values in the module
 
-    Set<const Value*> argsOfUncalledFunction;
-    Set<const Value*> blackholeSyms;
-    Set<const Value*> ptrsInUncalledFunctions;
     Map<const PointerType*, const Type*> ptrElementTypeMap;
 
 public:
@@ -231,21 +228,6 @@ public:
         return OtherValueSet;
     }
 
-    inline const Set<const Value*>& getBlackholeSyms() const
-    {
-        return blackholeSyms;
-    }
-
-    inline const Set<const Value*>& getArgsOfUncalledFunction() const
-    {
-        return argsOfUncalledFunction;
-    }
-
-    inline const Set<const Value*>& getPtrsInUncalledFunctions() const
-    {
-        return ptrsInUncalledFunctions;
-    }
-
     inline const Map<const PointerType*, const Type*>& getPtrElementTypeMap()
     {
         return ptrElementTypeMap;
@@ -254,21 +236,6 @@ public:
     inline void addptrElementType(const PointerType* ptrType, const Type* type)
     {
         ptrElementTypeMap.insert({ptrType, type});
-    }
-
-    inline void addPtrInUncalledFunction (const Value*  value)
-    {
-        ptrsInUncalledFunctions.insert(value);
-    }
-
-    inline void addBlackholeSyms(const Value* val)
-    {
-        blackholeSyms.insert(val);
-    }
-
-    inline void addArgsOfUncalledFunction(const Value* val)
-    {
-        argsOfUncalledFunction.insert(val);
     }
 
 };
