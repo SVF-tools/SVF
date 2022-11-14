@@ -173,7 +173,8 @@ void CHGBuilder::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSit
     struct DemangledName dname = demangle(caller->getName().str());
     if ((isConstructor(caller) && isConstructor(callee)) || (isDestructor(caller) && isDestructor(callee)))
     {
-        if (cs.arg_size() < 1 || (cs.arg_size() < 2 && cs.paramHasAttr(0, llvm::Attribute::StructRet)))
+        const CallBase* cb = SVFUtil::cast<CallBase>(cs.getInstruction()->getLLVMInstruction());
+        if (cs.arg_size() < 1 || (cs.arg_size() < 2 && cb->paramHasAttr(0, llvm::Attribute::StructRet)))
             return;
         const Value* csThisPtr = getVCallThisPtr(cs);
         //const Argument* consThisPtr = getConstructorThisPtr(caller);

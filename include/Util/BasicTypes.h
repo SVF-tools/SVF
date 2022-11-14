@@ -508,7 +508,7 @@ private:
     bool terminator;
     bool ret;
 public:
-    SVFInstruction(const Instruction* i, const SVFBasicBlock* b, bool isRet);
+    SVFInstruction(const Instruction* i, const SVFBasicBlock* b, bool isRet, SVFValKind k = SVFInst);
     SVFInstruction(const Instruction* i) = delete;
     SVFInstruction(void) = delete;
 
@@ -547,9 +547,10 @@ class SVFCallInst : public SVFInstruction
 {
 private:
     std::vector<const SVFValue*> args;
-
+    const FunctionType* calledFunType;
+    const SVFValue* calledVal;
 public:
-    SVFCallInst(const CallBase* i, const SVFBasicBlock* b) : SVFInstruction(i,b,false)
+    SVFCallInst(const CallBase* i, const SVFBasicBlock* b, const FunctionType* t) : SVFInstruction(i,b,false,SVFCall), calledFunType(t), calledVal(nullptr)
     {
     }
     SVFCallInst(const Instruction* i) = delete;
@@ -567,6 +568,43 @@ public:
     inline void addArgument(const SVFValue* a)
     {
         args.push_back(a);
+    }
+    u32_t arg_size() const
+    {
+        return args.size();
+    }
+    bool arg_empty() const
+    {
+        return args.empty();
+    }
+    const SVFValue* getArgOperand(u32_t i) const
+    {
+        assert(i < arg_size() && "out of bound access of the argument");
+        return args[i];
+    }
+    u32_t getNumArgOperands() const
+    {
+        return arg_size();
+    }
+    void setCalledOperand(const SVFValue* v)
+    {
+        calledVal = v;
+    }
+    const SVFValue* getCalledOperand() const
+    {
+        return calledVal;
+    }
+    const FunctionType* getFunctionType() const
+    {
+        return calledFunType;
+    }
+    const SVFFunction* getCalledFunction() const
+    {
+        return SVFUtil::dyn_cast<SVFFunction>(calledVal);
+    }
+    const SVFFunction* getCaller() const
+    {
+        return getFunction();
     }
 };
 
@@ -674,23 +712,21 @@ public:
 class CallSite
 {
 private:
-    const CallBase *CB;
-    const SVFInstruction* inst;
+    const SVFCallInst *CB;
 public:
-    CallSite(const SVFInstruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I->getLLVMInstruction())), inst(I)
+    CallSite(const SVFInstruction *I) : CB(SVFUtil::dyn_cast<SVFCallInst>(I))
     {
         assert(CB && "not a callsite?");
     }
-
     const SVFInstruction* getInstruction() const
     {
-        return inst;
+        return CB;
     }
     const Value* getArgument(u32_t ArgNo) const
     {
-        return CB->getArgOperand(ArgNo);
+        return CB->getArgOperand(ArgNo)->getLLVMValue();
     }
-    Type* getType() const
+    const Type* getType() const
     {
         return CB->getType();
     }
@@ -704,7 +740,7 @@ public:
     }
     const Value* getArgOperand(u32_t i) const
     {
-        return CB->getArgOperand(i);
+        return CB->getArgOperand(i)->getLLVMValue();
     }
     u32_t getNumArgOperands() const
     {
@@ -712,25 +748,20 @@ public:
     }
     const Function* getCalledFunction() const
     {
-        return CB->getCalledFunction();
+        return (CB->getCalledFunction()==nullptr ? nullptr: CB->getCalledFunction()->getLLVMFun());
     }
     const Value* getCalledValue() const
     {
-        return CB->getCalledOperand();
+        return CB->getCalledOperand()->getLLVMValue();
     }
     const Function* getCaller() const
     {
-        return CB->getCaller();
+        return CB->getCaller()->getLLVMFun();
     }
     const FunctionType* getFunctionType() const
     {
         return CB->getFunctionType();
     }
-    bool paramHasAttr(unsigned ArgNo, llvm::Attribute::AttrKind Kind) const
-    {
-        return CB->paramHasAttr(ArgNo, Kind);
-    }
-
     bool operator==(const CallSite &CS) const
     {
         return CB == CS.CB;

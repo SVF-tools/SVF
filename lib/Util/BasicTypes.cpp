@@ -207,7 +207,7 @@ u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
     return pos;
 }
 
-SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b, bool isRet):
-    SVFValue(i, SVFInst), inst(i), bb(b), fun(bb->getParent()), terminator(i->isTerminator()), ret(isRet)
+SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b, bool isRet, SVFValKind k):
+    SVFValue(i, k), inst(i), bb(b), fun(bb->getParent()), terminator(i->isTerminator()), ret(isRet)
 {
 }

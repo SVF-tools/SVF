@@ -318,7 +318,8 @@ const Function* cppUtil::getThunkTarget(const Function* F)
 
 const Value* cppUtil::getVCallThisPtr(CallSite cs)
 {
-    if (cs.paramHasAttr(0, llvm::Attribute::StructRet))
+    const CallBase* cb = SVFUtil::cast<CallBase>(cs.getInstruction()->getLLVMInstruction());
+    if (cb->paramHasAttr(0, llvm::Attribute::StructRet))
     {
         return cs.getArgument(1);
     }
