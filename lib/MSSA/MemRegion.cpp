@@ -563,6 +563,7 @@ void MRGenerator::getEscapObjviaGlobals(NodeBS& globs, const NodeBS& calleeModRe
     for(NodeBS::iterator it = calleeModRef.begin(), eit = calleeModRef.end(); it!=eit; ++it)
     {
         const MemObj* obj = pta->getPAG()->getObject(*it);
+        (void)obj; // Suppress warning of unused variable under release build
         assert(obj && "object not found!!");
         if(allGlobals.test(*it))
             globs.set(*it);

@@ -179,8 +179,9 @@ protected:
     {
         bool added1 = edge->getDstNode()->addIncomingEdge(edge);
         bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
-        assert(added1 && added2 && "edge not added??");
-        return true;
+        bool all_added = added1 && added2;
+        assert(all_added && "ICFGEdge not added?");
+        return all_added;
     }
 
     /// Add a ICFG node

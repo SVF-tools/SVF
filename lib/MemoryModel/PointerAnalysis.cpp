@@ -540,7 +540,7 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
             if (SVFUtil::isCallSite(*i))
             {
-                
+
                 const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(*i));
                 CallSite cs(svfInst);
                 assert(cs.getNumArgOperands() == 2

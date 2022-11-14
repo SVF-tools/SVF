@@ -335,18 +335,21 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
 {
     const MemObj* mem = _pag->getObject(getPtrNodeID(var));
     assert(mem && "memory object is null??");
-    if(mem->isHeap())
+    if (mem->isHeap())
     {
         if (!mem->getValue())
         {
             PAGNode *pnode = _pag->getGNode(getPtrNodeID(var));
-            if(GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pnode))
+            GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pnode);
+            if (gepobj != nullptr)
             {
-                assert(SVFUtil::isa<DummyObjVar>(_pag->getGNode(gepobj->getBaseNode())) && "emtpy refVal in a gep object whose base is a non-dummy object");
+                assert(SVFUtil::isa<DummyObjVar>(_pag->getGNode(gepobj->getBaseNode()))
+                       && "emtpy refVal in a gep object whose base is a non-dummy object");
             }
             else
             {
-                assert((SVFUtil::isa<DummyObjVar>(pnode) || SVFUtil::isa<DummyValVar>(pnode)) && "empty refVal in non-dummy object");
+                assert((SVFUtil::isa<DummyObjVar>(pnode) || SVFUtil::isa<DummyValVar>(pnode))
+                       && "empty refVal in non-dummy object");
             }
             return true;
         }

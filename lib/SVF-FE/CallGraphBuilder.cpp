@@ -50,14 +50,14 @@ PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
         {
             for (const SVFInstruction* inst : svfbb->getInstructionList())
             {
-            if (SVFUtil::isNonInstricCallSite(inst))
-            {
-                if(const SVFFunction* callee = getCallee(inst))
+                if (SVFUtil::isNonInstricCallSite(inst))
                 {
-                    const CallICFGNode* callBlockNode = icfg->getCallICFGNode(inst);
-                    callgraph->addDirectCallGraphEdge(callBlockNode,*F,callee);
+                    if(const SVFFunction* callee = getCallee(inst))
+                    {
+                        const CallICFGNode* callBlockNode = icfg->getCallICFGNode(inst);
+                        callgraph->addDirectCallGraphEdge(callBlockNode,*F,callee);
+                    }
                 }
-            }
             }
         }
     }
@@ -80,36 +80,36 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
         {
             for (const SVFInstruction* inst : svfbb->getInstructionList())
             {
-            if (tdAPI->isTDFork(inst))
-            {
-                const CallICFGNode* cs = icfg->getCallICFGNode(inst);
-                cg->addForksite(cs);
-                const Function* forkee = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(inst));
-                if (forkee)
+                if (tdAPI->isTDFork(inst))
                 {
-                    cg->addDirectForkEdge(cs);
+                    const CallICFGNode* cs = icfg->getCallICFGNode(inst);
+                    cg->addForksite(cs);
+                    const Function* forkee = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(inst));
+                    if (forkee)
+                    {
+                        cg->addDirectForkEdge(cs);
+                    }
+                    // indirect call to the start routine function
+                    else
+                    {
+                        cg->addThreadForkEdgeSetMap(cs,nullptr);
+                    }
                 }
-                // indirect call to the start routine function
-                else
+                else if (tdAPI->isHareParFor(inst))
                 {
-                    cg->addThreadForkEdgeSetMap(cs,nullptr);
+                    const CallICFGNode* cs = icfg->getCallICFGNode(inst);
+                    cg->addParForSite(cs);
+                    const Function* taskFunc = SVFUtil::dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(inst));
+                    if (taskFunc)
+                    {
+                        cg->addDirectParForEdge(cs);
+                    }
+                    // indirect call to the start routine function
+                    else
+                    {
+                        cg->addHareParForEdgeSetMap(cs,nullptr);
+                    }
                 }
-            }
-            else if (tdAPI->isHareParFor(inst))
-            {
-                const CallICFGNode* cs = icfg->getCallICFGNode(inst);
-                cg->addParForSite(cs);
-                const Function* taskFunc = SVFUtil::dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(inst));
-                if (taskFunc)
-                {
-                    cg->addDirectParForEdge(cs);
-                }
-                // indirect call to the start routine function
-                else
-                {
-                    cg->addHareParForEdgeSetMap(cs,nullptr);
-                }
-            }
             }
         }
     }
@@ -120,11 +120,11 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
         {
             for (const SVFInstruction* inst : svfbb->getInstructionList())
             {
-            if (tdAPI->isTDJoin(inst))
-            {
-                const CallICFGNode* cs = icfg->getCallICFGNode(inst);
-                cg->addJoinsite(cs);
-            }
+                if (tdAPI->isTDJoin(inst))
+                {
+                    const CallICFGNode* cs = icfg->getCallICFGNode(inst);
+                    cg->addJoinsite(cs);
+                }
             }
         }
     }

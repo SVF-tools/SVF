@@ -677,7 +677,8 @@ VFGEdge* VFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId)
     VFGNode* srcNode = getVFGNode(srcId);
     VFGNode* dstNode = getVFGNode(dstId);
     checkIntraEdgeParents(srcNode, dstNode);
-    if(VFGEdge* edge = hasIntraVFGEdge(srcNode,dstNode, VFGEdge::IntraDirectVF))
+    VFGEdge* edge = hasIntraVFGEdge(srcNode, dstNode, VFGEdge::IntraDirectVF);
+    if (edge != nullptr)
     {
         assert(edge->isDirectVFGEdge() && "this should be a direct value flow edge!");
         return nullptr;
@@ -701,7 +702,8 @@ VFGEdge* VFG::addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId)
 {
     VFGNode* srcNode = getVFGNode(srcId);
     VFGNode* dstNode = getVFGNode(dstId);
-    if(VFGEdge* edge = hasInterVFGEdge(srcNode,dstNode, VFGEdge::CallDirVF,csId))
+    VFGEdge* edge = hasInterVFGEdge(srcNode, dstNode, VFGEdge::CallDirVF, csId);
+    if (edge != nullptr)
     {
         assert(edge->isCallDirectVFGEdge() && "this should be a direct value flow edge!");
         return nullptr;
@@ -720,7 +722,8 @@ VFGEdge* VFG::addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId)
 {
     VFGNode* srcNode = getVFGNode(srcId);
     VFGNode* dstNode = getVFGNode(dstId);
-    if(VFGEdge* edge = hasInterVFGEdge(srcNode,dstNode, VFGEdge::RetDirVF,csId))
+    VFGEdge* edge = hasInterVFGEdge(srcNode, dstNode, VFGEdge::RetDirVF, csId);
+    if (edge != nullptr)
     {
         assert(edge->isRetDirectVFGEdge() && "this should be a direct value flow edge!");
         return nullptr;

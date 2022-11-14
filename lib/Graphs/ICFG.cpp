@@ -364,7 +364,8 @@ ICFGEdge* ICFG::getICFGEdge(const ICFGNode* src, const ICFGNode* dst, ICFGEdge::
 ICFGEdge* ICFG::addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode)
 {
     checkIntraEdgeParents(srcNode, dstNode);
-    if(ICFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, ICFGEdge::IntraCF))
+    ICFGEdge* edge = hasIntraICFGEdge(srcNode, dstNode, ICFGEdge::IntraCF);
+    if (edge != nullptr)
     {
         assert(edge->isIntraCFGEdge() && "this should be an intra CFG edge!");
         return nullptr;
@@ -383,7 +384,8 @@ ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, co
 {
 
     checkIntraEdgeParents(srcNode, dstNode);
-    if(ICFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, ICFGEdge::IntraCF))
+    ICFGEdge* edge = hasIntraICFGEdge(srcNode, dstNode, ICFGEdge::IntraCF);
+    if (edge != nullptr)
     {
         assert(edge->isIntraCFGEdge() && "this should be an intra CFG edge!");
         return nullptr;
@@ -402,7 +404,8 @@ ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, co
  */
 ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction*  cs)
 {
-    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallCF))
+    ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallCF);
+    if (edge != nullptr)
     {
         assert(edge->isCallCFGEdge() && "this should be a call CFG edge!");
         return nullptr;
@@ -419,7 +422,8 @@ ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstr
  */
 ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction*  cs)
 {
-    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::RetCF))
+    ICFGEdge* edge = hasInterICFGEdge(srcNode, dstNode, ICFGEdge::RetCF);
+    if (edge != nullptr)
     {
         assert(edge->isRetCFGEdge() && "this should be a return CFG edge!");
         return nullptr;

@@ -84,7 +84,8 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
         if (isVirtualCallSite(cs))
         {
             virtualCallSites.insert(cs);
-            const Value* vtbl = getVCallVtblPtr(cs);
+            const Value *vtbl = getVCallVtblPtr(cs);
+            (void)vtbl; // Suppress warning of unused variable under release build
             assert(pag->hasValueNode(vtbl));
             VFunSet vfns;
             getVFnsFromCHA(cbn, vfns);

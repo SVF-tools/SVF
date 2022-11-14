@@ -116,8 +116,8 @@ protected:
     std::string name;
 
     /// Constructor
-    SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k), 
-        ptrInUncalledFun(false), blackHoleSym(false), nullptrSym(false), isPtr(val->getType()->isPointerTy()), 
+    SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k),
+        ptrInUncalledFun(false), blackHoleSym(false), nullptrSym(false), isPtr(val->getType()->isPointerTy()),
         ptrElementType(nullptr),name(val->getName())
     {
     }
@@ -125,7 +125,7 @@ protected:
 public:
     SVFValue(void) = delete;
     virtual ~SVFValue() = default;
-    
+
     /// Get the type of this SVFValue
     inline GNodeK getKind() const
     {
@@ -166,28 +166,28 @@ public:
         return type;
     }
 
-    inline void setPtrInUncalledFunction() 
+    inline void setPtrInUncalledFunction()
     {
         ptrInUncalledFun = true;
     }
 
-    inline bool ptrInUncalledFunction() const 
+    inline bool ptrInUncalledFunction() const
     {
         return ptrInUncalledFun;
     }
-    inline void setBlackhole() 
+    inline void setBlackhole()
     {
         blackHoleSym = true;
     }
-    inline bool isblackHole() const 
+    inline bool isblackHole() const
     {
         return blackHoleSym;
     }
-    inline void setNullPtr() 
+    inline void setNullPtr()
     {
         nullptrSym = true;
     }
-    inline bool isNullPtr() const 
+    inline bool isNullPtr() const
     {
         return nullptrSym;
     }
@@ -274,11 +274,11 @@ public:
     const SVFArgument* getArg(u32_t idx) const;
     bool isVarArg() const;
 
-    inline void addBasicBlock(const SVFBasicBlock* bb) 
+    inline void addBasicBlock(const SVFBasicBlock* bb)
     {
         allBBs.push_back(bb);
     }
-    
+
     inline void addArgument(SVFArgument* arg)
     {
         allArgs.push_back(arg);
@@ -303,7 +303,7 @@ public:
     {
         return allBBs;
     }
-    
+
     inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
     {
         return reachableBBs;
@@ -429,7 +429,7 @@ public:
         return node->getKind() == SVFBB;
     }
 
-    inline void addInstruction(const SVFInstruction* inst) 
+    inline void addInstruction(const SVFInstruction* inst)
     {
         allInsts.push_back(inst);
     }
@@ -464,12 +464,12 @@ public:
         return allInsts.back();
     }
 
-    inline void addSuccBasicBlock(const SVFBasicBlock* succ) 
+    inline void addSuccBasicBlock(const SVFBasicBlock* succ)
     {
         succBBs.push_back(succ);
     }
 
-    inline void addPredBasicBlock(const SVFBasicBlock* pred) 
+    inline void addPredBasicBlock(const SVFBasicBlock* pred)
     {
         predBBs.push_back(pred);
     }
@@ -483,7 +483,7 @@ public:
     {
         return predBBs;
     }
-    u32_t getNumSuccessors() const 
+    u32_t getNumSuccessors() const
     {
         return succBBs.size();
     }
@@ -498,7 +498,7 @@ public:
     }
 };
 
-class SVFInstruction : public SVFValue 
+class SVFInstruction : public SVFValue
 {
 
 private:
@@ -564,7 +564,8 @@ public:
     {
         return node->getKind() == SVFCall;
     }
-    inline void addArgument(const SVFValue* a){
+    inline void addArgument(const SVFValue* a)
+    {
         args.push_back(a);
     }
 };
@@ -620,7 +621,7 @@ public:
         return argNo;
     }
 
-    inline bool isArgOfUncalledFunction() const 
+    inline bool isArgOfUncalledFunction() const
     {
         return uncalled;
     }
@@ -676,7 +677,8 @@ private:
     const CallBase *CB;
     const SVFInstruction* inst;
 public:
-    CallSite(const SVFInstruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I->getLLVMInstruction())), inst(I) {
+    CallSite(const SVFInstruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I->getLLVMInstruction())), inst(I)
+    {
         assert(CB && "not a callsite?");
     }
 

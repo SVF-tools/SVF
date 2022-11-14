@@ -546,46 +546,46 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
     /// initialize global variable
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-    for (Module::global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I)
-    {
-        GlobalVariable *gvar = &*I;
-        NodeID idx = getValueNode(gvar);
-        NodeID obj = getObjectNode(gvar);
-
-        setCurrentLocation(gvar, nullptr);
-        addAddrEdge(obj, idx);
-
-        if (gvar->hasInitializer())
+        for (Module::global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I)
         {
-            Constant *C = gvar->getInitializer();
-            DBOUT(DPAGBuild, outs() << "add global var node " << SVFUtil::value2String(gvar) << "\n");
-            InitialGlobal(gvar, C, 0);
+            GlobalVariable *gvar = &*I;
+            NodeID idx = getValueNode(gvar);
+            NodeID obj = getObjectNode(gvar);
+
+            setCurrentLocation(gvar, nullptr);
+            addAddrEdge(obj, idx);
+
+            if (gvar->hasInitializer())
+            {
+                Constant *C = gvar->getInitializer();
+                DBOUT(DPAGBuild, outs() << "add global var node " << SVFUtil::value2String(gvar) << "\n");
+                InitialGlobal(gvar, C, 0);
+            }
         }
-    }
-    
 
-    /// initialize global functions
-    for (Module::const_iterator I = M.begin(), E = M.end(); I != E; ++I)
-    {
-        const Function* fun = &*I;
-        NodeID idx = getValueNode(fun);
-        NodeID obj = getObjectNode(fun);
 
-        DBOUT(DPAGBuild, outs() << "add global function node " << fun->getName().str() << "\n");
-        setCurrentLocation(fun, nullptr);
-        addAddrEdge(obj, idx);
-    }
+        /// initialize global functions
+        for (Module::const_iterator I = M.begin(), E = M.end(); I != E; ++I)
+        {
+            const Function* fun = &*I;
+            NodeID idx = getValueNode(fun);
+            NodeID obj = getObjectNode(fun);
 
-    // Handle global aliases (due to linkage of multiple bc files), e.g., @x = internal alias @y. We need to add a copy from y to x.
-    for (Module::alias_iterator I = M.alias_begin(), E = M.alias_end(); I != E; I++)
-    {
-        const GlobalAlias* alias = &*I;
-        NodeID dst = pag->getValueNode(alias);
-        NodeID src = pag->getValueNode(alias->getAliasee());
-        processCE(alias->getAliasee());
-        setCurrentLocation(alias, nullptr);
-        addCopyEdge(src,dst);
-    }
+            DBOUT(DPAGBuild, outs() << "add global function node " << fun->getName().str() << "\n");
+            setCurrentLocation(fun, nullptr);
+            addAddrEdge(obj, idx);
+        }
+
+        // Handle global aliases (due to linkage of multiple bc files), e.g., @x = internal alias @y. We need to add a copy from y to x.
+        for (Module::alias_iterator I = M.alias_begin(), E = M.alias_end(); I != E; I++)
+        {
+            const GlobalAlias* alias = &*I;
+            NodeID dst = pag->getValueNode(alias);
+            NodeID src = pag->getValueNode(alias->getAliasee());
+            processCE(alias->getAliasee());
+            setCurrentLocation(alias, nullptr);
+            addCopyEdge(src,dst);
+        }
     }
 }
 
@@ -622,7 +622,10 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
     {
         const Value* val = inst.getIncomingValue(i);
         const Instruction* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
-        assert((incomingInst==nullptr) || (incomingInst->getFunction() == inst.getFunction()));
+        bool matched = (incomingInst == nullptr ||
+                        incomingInst->getFunction() == inst.getFunction());
+        (void) matched; // Suppress warning of unused variable under release build
+        assert(matched && "incomingInst's Function incorrect");
         const Instruction* predInst = &inst.getIncomingBlock(i)->back();
         const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(predInst);
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfPrevInst);
@@ -784,7 +787,7 @@ void SVFIRBuilder::visitInvokeInst(InvokeInst &i)
     const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&i);
     visitCallSite(inst);
 }
-    
+
 void SVFIRBuilder::visitCallBrInst(CallBrInst &i)
 {
     const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&i);

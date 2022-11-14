@@ -167,56 +167,56 @@ void DCHGraph::buildVTables(const SVFModule &module)
 {
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-    for (Module::const_global_iterator gvI = M.global_begin(); gvI != M.global_end(); ++gvI)
-    {
-        // Though this will return more than GlobalVariables, we only care about GlobalVariables (for the vtbls).
-        const GlobalVariable *gv = SVFUtil::dyn_cast<const GlobalVariable>(&*gvI);
-        if (gv == nullptr) continue;
-        if (gv->hasMetadata(cppUtil::ctir::vtMDName) && gv->getNumOperands() > 0)
+        for (Module::const_global_iterator gvI = M.global_begin(); gvI != M.global_end(); ++gvI)
         {
-            DIType *type = SVFUtil::dyn_cast<DIType>(gv->getMetadata(cppUtil::ctir::vtMDName));
-            assert(type && "DCHG::buildVTables: bad metadata for ctir.vt");
-            DCHNode *node = getOrCreateNode(type);
-            node->setVTable(gv);
-            vtblToTypeMap[gv] = getCanonicalType(type);
-
-            const ConstantStruct *vtbls = SVFUtil::dyn_cast<ConstantStruct>(gv->getOperand(0));
-            assert(vtbls && "unexpected vtable type");
-            for (unsigned nthVtbl = 0; nthVtbl < vtbls->getNumOperands(); ++nthVtbl)
+            // Though this will return more than GlobalVariables, we only care about GlobalVariables (for the vtbls).
+            const GlobalVariable *gv = SVFUtil::dyn_cast<const GlobalVariable>(&*gvI);
+            if (gv == nullptr) continue;
+            if (gv->hasMetadata(cppUtil::ctir::vtMDName) && gv->getNumOperands() > 0)
             {
-                const ConstantArray *vtbl = SVFUtil::dyn_cast<ConstantArray>(vtbls->getOperand(nthVtbl));
-                assert(vtbl && "Element of vtbl struct not an array");
+                DIType *type = SVFUtil::dyn_cast<DIType>(gv->getMetadata(cppUtil::ctir::vtMDName));
+                assert(type && "DCHG::buildVTables: bad metadata for ctir.vt");
+                DCHNode *node = getOrCreateNode(type);
+                node->setVTable(gv);
+                vtblToTypeMap[gv] = getCanonicalType(type);
 
-                std::vector<const Function* > &vfns = node->getVfnVector(nthVtbl);
-
-                // Iterating over the vtbl, we will run into:
-                // 1. i8* null         (don't care for now).
-                // 2. i8* inttoptr ... (don't care for now).
-                // 3. i8* bitcast  ... (we only care when a function pointer is being bitcasted).
-                for (unsigned cN = 0; cN < vtbl->getNumOperands(); ++cN)
+                const ConstantStruct *vtbls = SVFUtil::dyn_cast<ConstantStruct>(gv->getOperand(0));
+                assert(vtbls && "unexpected vtable type");
+                for (unsigned nthVtbl = 0; nthVtbl < vtbls->getNumOperands(); ++nthVtbl)
                 {
-                    Constant *c = vtbl->getOperand(cN);
-                    if (SVFUtil::isa<ConstantPointerNull>(c))
-                    {
-                        // Don't care for now.
-                        continue;
-                    }
+                    const ConstantArray *vtbl = SVFUtil::dyn_cast<ConstantArray>(vtbls->getOperand(nthVtbl));
+                    assert(vtbl && "Element of vtbl struct not an array");
 
-                    ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(c);
-                    assert(ce && "non-ConstantExpr, non-ConstantPointerNull in vtable?");
-                    if (ce->getOpcode() == Instruction::BitCast)
+                    std::vector<const Function* > &vfns = node->getVfnVector(nthVtbl);
+
+                    // Iterating over the vtbl, we will run into:
+                    // 1. i8* null         (don't care for now).
+                    // 2. i8* inttoptr ... (don't care for now).
+                    // 3. i8* bitcast  ... (we only care when a function pointer is being bitcasted).
+                    for (unsigned cN = 0; cN < vtbl->getNumOperands(); ++cN)
                     {
-                        // Could be a GlobalAlias which we don't care about, or a virtual/thunk function.
-                        const Function* vfn = SVFUtil::dyn_cast<Function>(ce->getOperand(0));
-                        if (vfn != nullptr)
+                        Constant *c = vtbl->getOperand(cN);
+                        if (SVFUtil::isa<ConstantPointerNull>(c))
                         {
-                            vfns.push_back(vfn);
+                            // Don't care for now.
+                            continue;
+                        }
+
+                        ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(c);
+                        assert(ce && "non-ConstantExpr, non-ConstantPointerNull in vtable?");
+                        if (ce->getOpcode() == Instruction::BitCast)
+                        {
+                            // Could be a GlobalAlias which we don't care about, or a virtual/thunk function.
+                            const Function* vfn = SVFUtil::dyn_cast<Function>(ce->getOperand(0));
+                            if (vfn != nullptr)
+                            {
+                                vfns.push_back(vfn);
+                            }
                         }
                     }
                 }
             }
         }
-    }
     }
 }
 

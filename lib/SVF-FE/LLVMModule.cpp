@@ -112,7 +112,7 @@ void LLVMModuleSet::build()
         addSVFMain();
 
     createSVFDataStructure();
-    initSVFFunction(); 
+    initSVFFunction();
 }
 
 void LLVMModuleSet::createSVFDataStructure()
@@ -181,25 +181,25 @@ void LLVMModuleSet::initSVFFunction()
         /// Function
         for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
         {
-        const Function* f = &*it;
-        const SVFFunction*  func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(f);
-        const bool isUncalledFunction = LLVMUtil::isUncalledFunction(f);
-        const bool isNotRetFunction = LLVMUtil::functionDoesNotRet(f);
-        SVFFunction* svffun = const_cast<SVFFunction*>(func);
-        svffun->setIsNotRet(isNotRetFunction);
-        svffun->setIsUncalledFunction(isUncalledFunction);
-        initSVFBasicBlock(svffun);
+            const Function* f = &*it;
+            const SVFFunction*  func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(f);
+            const bool isUncalledFunction = LLVMUtil::isUncalledFunction(f);
+            const bool isNotRetFunction = LLVMUtil::functionDoesNotRet(f);
+            SVFFunction* svffun = const_cast<SVFFunction*>(func);
+            svffun->setIsNotRet(isNotRetFunction);
+            svffun->setIsUncalledFunction(isUncalledFunction);
+            initSVFBasicBlock(svffun);
 
-        if (SVFUtil::isExtCall(func) == false)
-        {
-            std::vector<const SVFBasicBlock*> reachableBBs;
-            LLVMUtil::getFunReachableBBs(func, reachableBBs);
-            const SVFBasicBlock* svfexitbb = getSVFBasicBlock(&f->back());
-            svffun->setReachableBBs(reachableBBs);
-            svffun->setExitBB(svfexitbb);
+            if (SVFUtil::isExtCall(func) == false)
+            {
+                std::vector<const SVFBasicBlock*> reachableBBs;
+                LLVMUtil::getFunReachableBBs(func, reachableBBs);
+                const SVFBasicBlock* svfexitbb = getSVFBasicBlock(&f->back());
+                svffun->setReachableBBs(reachableBBs);
+                svffun->setExitBB(svfexitbb);
 
-            initDomTree(func);
-        }
+                initDomTree(func);
+            }
         }
     }
 }
@@ -224,69 +224,69 @@ void LLVMModuleSet::initSVFBasicBlock(const SVFFunction* func)
 void LLVMModuleSet::initDomTree(const SVFFunction* func)
 {
     SVFFunction* svffun = const_cast<SVFFunction*>(func);
-            //process and stored dt & df
-            DominatorTree dt;
-            DominanceFrontier df;
-            dt.recalculate(const_cast<Function&>(*svffun->getLLVMFun()));
-            df.analyze(dt);
-            LoopInfo loopInfo = LoopInfo(dt);
-            PostDominatorTree pdt = PostDominatorTree(const_cast<Function&>(*(func->getLLVMFun())));
-            Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> & dfBBsMap = svffun->getDomFrontierMap();
-            for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
+    //process and stored dt & df
+    DominatorTree dt;
+    DominanceFrontier df;
+    dt.recalculate(const_cast<Function&>(*svffun->getLLVMFun()));
+    df.analyze(dt);
+    LoopInfo loopInfo = LoopInfo(dt);
+    PostDominatorTree pdt = PostDominatorTree(const_cast<Function&>(*(func->getLLVMFun())));
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> & dfBBsMap = svffun->getDomFrontierMap();
+    for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
+    {
+        const BasicBlock* keyBB = dfIter->first;
+        const std::set<BasicBlock* >& domSet = dfIter->second;
+        Set<const SVFBasicBlock*>& valueBasicBlocks = dfBBsMap[LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(keyBB)];
+        for (const BasicBlock* bbValue:domSet)
+        {
+            valueBasicBlocks.insert(LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bbValue));
+        }
+    }
+    for (SVFFunction::const_iterator bit = svffun->begin(), ebit = svffun->end(); bit != ebit; ++bit)
+    {
+        const SVFBasicBlock* bb = *bit;
+        if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb->getLLVMBasicBlock())))
+        {
+            DomTreeNode::iterator DI = dtNode->begin();
+            if (DI != dtNode->end())
             {
-                const BasicBlock* keyBB = dfIter->first;
-                const std::set<BasicBlock* >& domSet = dfIter->second;
-                Set<const SVFBasicBlock*>& valueBasicBlocks = dfBBsMap[LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(keyBB)];
-                for (const BasicBlock* bbValue:domSet)
+                for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end(); DI != DE; ++DI)
                 {
-                    valueBasicBlocks.insert(LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bbValue));
+                    const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock((*DI)->getBlock());
+                    svffun->getDomTreeMap()[bb].insert(svfbb);
                 }
             }
-            for (SVFFunction::const_iterator bit = svffun->begin(), ebit = svffun->end(); bit != ebit; ++bit)
+            else
             {
-                const SVFBasicBlock* bb = *bit;
-                if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb->getLLVMBasicBlock())))
-                {
-                    DomTreeNode::iterator DI = dtNode->begin();
-                    if (DI != dtNode->end())
-                    {
-                        for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end(); DI != DE; ++DI)
-                        {
-                            const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock((*DI)->getBlock());
-                            svffun->getDomTreeMap()[bb].insert(svfbb);
-                        }
-                    }
-                    else
-                    {
-                        svffun->getDomTreeMap()[bb] = Set<const SVFBasicBlock* >();
-                    }
-                }
+                svffun->getDomTreeMap()[bb] = Set<const SVFBasicBlock* >();
+            }
+        }
 
-                if(DomTreeNode * pdtNode = pdt.getNode(const_cast<BasicBlock*>(bb->getLLVMBasicBlock())))
+        if(DomTreeNode * pdtNode = pdt.getNode(const_cast<BasicBlock*>(bb->getLLVMBasicBlock())))
+        {
+            DomTreeNode::iterator DI = pdtNode->begin();
+            if (DI != pdtNode->end())
+            {
+                for (DomTreeNode::iterator DI = pdtNode->begin(), DE = pdtNode->end(); DI != DE; ++DI)
                 {
-                    DomTreeNode::iterator DI = pdtNode->begin();
-                    if (DI != pdtNode->end())
-                    {
-                        for (DomTreeNode::iterator DI = pdtNode->begin(), DE = pdtNode->end(); DI != DE; ++DI)
-                        {
-                            const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock((*DI)->getBlock());
-                            svffun->getPostDomTreeMap()[bb].insert(svfbb);
-                        }
-                    }
-                    else
-                    {
-                        svffun->getPostDomTreeMap()[bb] = Set<const SVFBasicBlock* >();
-                    }
-                }
-                if (const Loop *loop = loopInfo.getLoopFor(bb->getLLVMBasicBlock()))
-                {
-                    for (BasicBlock* loopBlock:loop->getBlocks())
-                    {
-                        const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(loopBlock);
-                        svffun->addToBB2LoopMap(bb,svfbb);
-                    }
+                    const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock((*DI)->getBlock());
+                    svffun->getPostDomTreeMap()[bb].insert(svfbb);
                 }
             }
+            else
+            {
+                svffun->getPostDomTreeMap()[bb] = Set<const SVFBasicBlock* >();
+            }
+        }
+        if (const Loop *loop = loopInfo.getLoopFor(bb->getLLVMBasicBlock()))
+        {
+            for (BasicBlock* loopBlock:loop->getBlocks())
+            {
+                const SVFBasicBlock* svfbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(loopBlock);
+                svffun->addToBB2LoopMap(bb,svfbb);
+            }
+        }
+    }
 }
 
 
@@ -587,17 +587,17 @@ void LLVMModuleSet::buildFunToFunMap()
         /// Function
         for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
         {
-        const Function* fun = &*it;
-        if (fun->isDeclaration())
-        {
-            funDecls.insert(fun);
-            declNames.insert(fun->getName().str());
-        }
-        else
-        {
-            funDefs.insert(fun);
-            defNames.insert(fun->getName().str());
-        }
+            const Function* fun = &*it;
+            if (fun->isDeclaration())
+            {
+                funDecls.insert(fun);
+                declNames.insert(fun->getName().str());
+            }
+            else
+            {
+                funDefs.insert(fun);
+                defNames.insert(fun->getName().str());
+            }
         }
     }
     // Find the intersectNames
@@ -699,22 +699,22 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
         // Collect ctor and dtor functions
         for (Module::global_iterator it = mod.global_begin(), eit = mod.global_end(); it != eit; ++it)
         {
-        GlobalVariable *global = &*it;
-        if (global->hasPrivateLinkage())
-            continue;
-        string name = global->getName().str();
-        NameToGlobalsMapTy::iterator mit = nameToGlobalsMap.find(name);
-        if (mit == nameToGlobalsMap.end())
-        {
-            Set<GlobalVariable*> globals;
-            globals.insert(global);
-            nameToGlobalsMap[name] = globals;
-        }
-        else
-        {
-            Set<GlobalVariable*> &globals = mit->second;
-            globals.insert(global);
-        }
+            GlobalVariable *global = &*it;
+            if (global->hasPrivateLinkage())
+                continue;
+            string name = global->getName().str();
+            NameToGlobalsMapTy::iterator mit = nameToGlobalsMap.find(name);
+            if (mit == nameToGlobalsMap.end())
+            {
+                Set<GlobalVariable*> globals;
+                globals.insert(global);
+                nameToGlobalsMap[name] = globals;
+            }
+            else
+            {
+                Set<GlobalVariable*> &globals = mit->second;
+                globals.insert(global);
+            }
         }
     }
 

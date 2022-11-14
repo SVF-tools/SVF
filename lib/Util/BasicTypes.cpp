@@ -6,7 +6,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 SVFFunction::SVFFunction(const Function* f): SVFValue(f,SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false), varArg(f->isVarArg())
+    isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false), varArg(f->isVarArg())
 {
 }
 
@@ -137,7 +137,7 @@ bool SVFFunction::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
-SVFBasicBlock::SVFBasicBlock(const BasicBlock* b, const SVFFunction* f): 
+SVFBasicBlock::SVFBasicBlock(const BasicBlock* b, const SVFFunction* f):
     SVFValue(b,SVFValue::SVFBB), bb(b), fun(f)
 {
     name = b->hasName() ? b->getName().str(): "";
@@ -207,7 +207,7 @@ u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
     return pos;
 }
 
-SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b, bool isRet): 
+SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b, bool isRet):
     SVFValue(i, SVFInst), inst(i), bb(b), fun(bb->getParent()), terminator(i->isTerminator()), ret(isRet)
 {
 }

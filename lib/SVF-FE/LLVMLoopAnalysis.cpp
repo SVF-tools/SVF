@@ -150,7 +150,7 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
             }
         }
         // mark loop end's first inst
-        llvm::SmallVector<BasicBlock* , 8> ExitBlocks;
+        llvm::SmallVector<BasicBlock*, 8> ExitBlocks;
         llvmLoop->getExitBlocks(ExitBlocks);
         for (const auto& exit_blk: ExitBlocks)
         {
