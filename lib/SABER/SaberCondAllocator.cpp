@@ -309,7 +309,9 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const Basic
                 {
                     const BasicBlock *succ1 = branchStmt->getSuccessor(0)->getBB();
                     const BasicBlock *succ2 = branchStmt->getSuccessor(1)->getBB();
-                    assert((succ1 == succ || succ2 == succ) && "not a successor??");
+                    bool is_succ = (succ1 == succ || succ2 == succ);
+                    (void)is_succ; // Suppress warning of unused variable under release build
+                    assert(is_succ && "not a successor??");
 
                     Condition evalLoopExit = evaluateLoopExitBranch(bb, succ);
                     if (!eq(evalLoopExit, Condition::nullExpr()))

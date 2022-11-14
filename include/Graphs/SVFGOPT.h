@@ -261,23 +261,23 @@ private:
     {
         PAGNodeToDefMapTy::iterator it = PAGNodeToDefMap.find(pagNode);
         assert(it != PAGNodeToDefMap.end() && "a SVFIR node doesn't have definition before");
-        PAGNodeToDefMap[pagNode] = node->getId();
+        it->second = node->getId();
     }
 
     /// Set def-site of actual-in/formal-out.
     ///@{
     inline void setActualINDef(NodeID ai, NodeID def)
     {
-        NodeIDToNodeIDMap::const_iterator it = actualInToDefMap.find(ai);
-        assert(it == actualInToDefMap.end() && "can not set actual-in's def twice");
-        actualInToDefMap[ai] = def;
+        bool inserted = actualInToDefMap.emplace(ai, def).second;
+        (void)inserted; // Suppress warning of unused variable under release build
+        assert(inserted && "can not set actual-in's def twice");
         defNodes.set(def);
     }
     inline void setFormalOUTDef(NodeID fo, NodeID def)
     {
-        NodeIDToNodeIDMap::const_iterator it = formalOutToDefMap.find(fo);
-        assert(it == formalOutToDefMap.end() && "can not set formal-out's def twice");
-        formalOutToDefMap[fo] = def;
+        bool inserted = formalOutToDefMap.emplace(fo, def).second;
+        (void) inserted;
+        assert(inserted && "can not set formal-out's def twice");
         defNodes.set(def);
     }
     ///@}

@@ -148,7 +148,9 @@ public:
     {
         const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
         const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
-        assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
+        bool funcEq = (keyFunc == valueFunc);
+        (void)funcEq; // Suppress warning of unused variable under release build
+        assert(funcEq && "two basicblocks should be in the same function!");
 
         return keyFunc->postDominate(bbKey,bbValue);
     }
@@ -157,7 +159,10 @@ public:
     {
         const SVFFunction*  keyFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbKey->getParent());
         const SVFFunction*  valueFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bbValue->getParent());
-        assert((keyFunc == valueFunc) && "two basicblocks should be in the same function!");
+        bool funcEq = (keyFunc == valueFunc);
+        (void)funcEq; // Suppress warning of unused variable under release build
+ 
+        assert(funcEq && "two basicblocks should be in the same function!");
 
         return keyFunc->dominate(bbKey,bbValue);
     }

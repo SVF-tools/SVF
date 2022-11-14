@@ -139,7 +139,10 @@ void AndersenSFR::fieldExpand(NodeSet& initials, s32_t offset, NodeBS& strides, 
             else if (SVFUtil::isa<FIObjVar>(initPN) || SVFUtil::isa<DummyObjVar>(initPN))
                 initOffset = 0;
             else
+            {
                 assert(false && "Not an object node!!");
+                abort();
+            }
 
             Set<s32_t> offsets;
             offsets.insert(offset);

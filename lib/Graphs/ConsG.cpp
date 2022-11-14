@@ -157,8 +157,11 @@ AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
 {
     // Retarget addr edges may lead s to be a dummy node
     PAGNode* node = SVFIR::getPAG()->getGNode(s->getId());
+    (void)node; // Suppress warning of unused variable under release build
     if (!SVFModule::pagReadFromTXT())
+    {
         assert(!SVFUtil::isa<DummyValVar>(node) && "a dummy node??");
+    }
 }
 
 /*!
@@ -168,11 +171,14 @@ AddrCGEdge* ConstraintGraph::addAddrCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if(hasEdge(srcNode,dstNode,ConstraintEdge::Addr))
+    if (hasEdge(srcNode, dstNode, ConstraintEdge::Addr))
         return nullptr;
     AddrCGEdge* edge = new AddrCGEdge(srcNode, dstNode, edgeIndex++);
-    bool added = AddrCGEdgeSet.insert(edge).second;
-    assert(added && "not added??");
+
+    bool inserted = AddrCGEdgeSet.insert(edge).second;
+    (void)inserted; // Suppress warning of unused variable under release build
+    assert(inserted && "new AddrCGEdge not added??");
+
     srcNode->addOutgoingAddrEdge(edge);
     dstNode->addIncomingAddrEdge(edge);
     return edge;
@@ -186,13 +192,15 @@ CopyCGEdge* ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
 
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if(hasEdge(srcNode,dstNode,ConstraintEdge::Copy)
-            || srcNode == dstNode)
+    if (hasEdge(srcNode, dstNode, ConstraintEdge::Copy) || srcNode == dstNode)
         return nullptr;
 
     CopyCGEdge* edge = new CopyCGEdge(srcNode, dstNode, edgeIndex++);
-    bool added = directEdgeSet.insert(edge).second;
-    assert(added && "not added??");
+
+    bool inserted = directEdgeSet.insert(edge).second;
+    (void)inserted; // Suppress warning of unused variable under release build
+    assert(inserted && "new CopyCGEdge not added??");
+
     srcNode->addOutgoingCopyEdge(edge);
     dstNode->addIncomingCopyEdge(edge);
     return edge;
@@ -206,12 +214,15 @@ NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, co
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if(hasEdge(srcNode,dstNode,ConstraintEdge::NormalGep))
+    if (hasEdge(srcNode, dstNode, ConstraintEdge::NormalGep))
         return nullptr;
 
     NormalGepCGEdge* edge = new NormalGepCGEdge(srcNode, dstNode,ls, edgeIndex++);
-    bool added = directEdgeSet.insert(edge).second;
-    assert(added && "not added??");
+
+    bool inserted = directEdgeSet.insert(edge).second;
+    (void)inserted; // Suppress warning of unused variable under release build
+    assert(inserted && "new NormalGepCGEdge not added??");
+
     srcNode->addOutgoingGepEdge(edge);
     dstNode->addIncomingGepEdge(edge);
     return edge;
@@ -224,12 +235,15 @@ VariantGepCGEdge* ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if(hasEdge(srcNode,dstNode,ConstraintEdge::VariantGep))
+    if (hasEdge(srcNode, dstNode, ConstraintEdge::VariantGep))
         return nullptr;
 
     VariantGepCGEdge* edge = new VariantGepCGEdge(srcNode, dstNode, edgeIndex++);
-    bool added = directEdgeSet.insert(edge).second;
-    assert(added && "not added??");
+
+    bool inserted = directEdgeSet.insert(edge).second;
+    (void)inserted; // Suppress warning of unused variable under release build
+    assert(inserted && "new VariantGepCGEdge not added??");
+
     srcNode->addOutgoingGepEdge(edge);
     dstNode->addIncomingGepEdge(edge);
     return edge;
@@ -242,12 +256,15 @@ LoadCGEdge* ConstraintGraph::addLoadCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if(hasEdge(srcNode,dstNode,ConstraintEdge::Load))
+    if (hasEdge(srcNode, dstNode, ConstraintEdge::Load))
         return nullptr;
 
     LoadCGEdge* edge = new LoadCGEdge(srcNode, dstNode, edgeIndex++);
-    bool added = LoadCGEdgeSet.insert(edge).second;
-    assert(added && "not added??");
+
+    bool inserted = LoadCGEdgeSet.insert(edge).second;
+    (void)inserted; // Suppress warning of unused variable under release build
+    assert(inserted && "new LoadCGEdge not added??");
+
     srcNode->addOutgoingLoadEdge(edge);
     dstNode->addIncomingLoadEdge(edge);
     return edge;
@@ -260,12 +277,15 @@ StoreCGEdge* ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if(hasEdge(srcNode,dstNode,ConstraintEdge::Store))
+    if (hasEdge(srcNode, dstNode, ConstraintEdge::Store))
         return nullptr;
 
     StoreCGEdge* edge = new StoreCGEdge(srcNode, dstNode, edgeIndex++);
-    bool added = StoreCGEdgeSet.insert(edge).second;
-    assert(added && "not added??");
+
+    bool inserted = StoreCGEdgeSet.insert(edge).second;
+    (void)inserted; // Suppress warning of unused variable under release build
+    assert(inserted && "new StoreCGEdge not added??");
+
     srcNode->addOutgoingStoreEdge(edge);
     dstNode->addIncomingStoreEdge(edge);
     return edge;
@@ -369,8 +389,9 @@ void ConstraintGraph::removeAddrEdge(AddrCGEdge* edge)
     getConstraintNode(edge->getSrcID())->removeOutgoingAddrEdge(edge);
     getConstraintNode(edge->getDstID())->removeIncomingAddrEdge(edge);
     u32_t num = AddrCGEdgeSet.erase(edge);
-    delete edge;
+    (void)num; // Suppress warning of unused variable under release build
     assert(num && "edge not in the set, can not remove!!!");
+    delete edge;
 }
 
 /*!
@@ -381,8 +402,9 @@ void ConstraintGraph::removeLoadEdge(LoadCGEdge* edge)
     getConstraintNode(edge->getSrcID())->removeOutgoingLoadEdge(edge);
     getConstraintNode(edge->getDstID())->removeIncomingLoadEdge(edge);
     u32_t num = LoadCGEdgeSet.erase(edge);
-    delete edge;
+    (void)num; // Suppress warning of unused variable under release build
     assert(num && "edge not in the set, can not remove!!!");
+    delete edge;
 }
 
 /*!
@@ -393,8 +415,9 @@ void ConstraintGraph::removeStoreEdge(StoreCGEdge* edge)
     getConstraintNode(edge->getSrcID())->removeOutgoingStoreEdge(edge);
     getConstraintNode(edge->getDstID())->removeIncomingStoreEdge(edge);
     u32_t num = StoreCGEdgeSet.erase(edge);
-    delete edge;
+    (void)num; // Suppress warning of unused variable under release build
     assert(num && "edge not in the set, can not remove!!!");
+    delete edge;
 }
 
 /*!
@@ -406,7 +429,7 @@ void ConstraintGraph::removeDirectEdge(ConstraintEdge* edge)
     getConstraintNode(edge->getSrcID())->removeOutgoingDirectEdge(edge);
     getConstraintNode(edge->getDstID())->removeIncomingDirectEdge(edge);
     u32_t num = directEdgeSet.erase(edge);
-
+    (void)num; // Suppress warning of unused variable under release build
     assert(num && "edge not in the set, can not remove!!!");
     delete edge;
 }
