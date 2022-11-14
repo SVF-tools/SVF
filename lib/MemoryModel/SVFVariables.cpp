@@ -38,7 +38,7 @@ using namespace SVFUtil;
 /*!
  * SVFVar constructor
  */
-SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
+SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     GenericPAGNodeTy(i,k), value(val)
 {
     assert( ValNode <= k && k <= DummyObjNode && "new SVFIR node kind?");
@@ -54,7 +54,7 @@ SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
     case RetNode:
     {
         assert(val != nullptr && "value is nullptr for RetNode");
-        isPtr = SVFUtil::cast<Function>(val)->getReturnType()->isPointerTy();
+        isPtr = SVFUtil::cast<Function>(val->getLLVMValue())->getReturnType()->isPointerTy();
         break;
     }
     case VarargNode:
@@ -82,8 +82,8 @@ bool SVFVar::isIsolatedNode() const
         return true;
     else if (isConstantData())
         return true;
-    else if (value && SVFUtil::isa<Function>(value))
-        return SVFUtil::isIntrinsicFun(SVFUtil::cast<Function>(value));
+    else if (value && SVFUtil::isa<SVFFunction>(value))
+        return SVFUtil::isIntrinsicFun(SVFUtil::cast<SVFFunction>(value)->getLLVMFun());
     else
         return false;
 }
@@ -171,7 +171,7 @@ const std::string RetPN::toString() const
 {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "RetPN ID: " << getId() << " unique return node for function " << SVFUtil::cast<Function>(value)->getName();
+    rawstr << "RetPN ID: " << getId() << " unique return node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
     return rawstr.str();
 }
 
@@ -179,7 +179,7 @@ const std::string VarArgPN::toString() const
 {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << SVFUtil::cast<Function>(value)->getName();
+    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
     return rawstr.str();
 }
 
@@ -204,7 +204,7 @@ const std::string DummyObjVar::toString() const
 bool SVFVar::isConstantData() const
 {
     if (hasValue())
-        return SVFUtil::isConstantData(value);
+        return SVFUtil::isConstantData(value->getLLVMValue());
     else
         return false;
 }

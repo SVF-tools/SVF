@@ -341,18 +341,18 @@ bool SaberCondAllocator::isNECmp(const CmpInst *cmp) const
     return (cmp->getPredicate() == CmpInst::ICMP_NE);
 }
 
-bool SaberCondAllocator::isTestNullExpr(const Value* test) const
+bool SaberCondAllocator::isTestNullExpr(const SVFValue* test) const
 {
-    if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(test))
+    if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(test->getLLVMValue()))
     {
         return isTestContainsNullAndTheValue(cmp) && isEQCmp(cmp);
     }
     return false;
 }
 
-bool SaberCondAllocator::isTestNotNullExpr(const Value* test) const
+bool SaberCondAllocator::isTestNotNullExpr(const SVFValue* test) const
 {
-    if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(test))
+    if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(test->getLLVMValue()))
     {
         return isTestContainsNullAndTheValue(cmp) && isNECmp(cmp);
     }
@@ -374,11 +374,11 @@ bool SaberCondAllocator::isTestNotNullExpr(const Value* test) const
 bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpInst *cmp) const
 {
 
-    const Value* op0 = cmp->getOperand(0);
-    const Value* op1 = cmp->getOperand(1);
-    if (SVFUtil::isa<ConstantPointerNull>(op1))
+    const SVFValue* op0 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cmp->getOperand(0));
+    const SVFValue* op1 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cmp->getOperand(1));
+    if (SVFUtil::isa<ConstantPointerNull>(op1->getLLVMValue()))
     {
-        Set<const Value* > inDirVal;
+        Set<const SVFValue* > inDirVal;
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
         {
             if (it->isIndirectVFGEdge())
@@ -388,9 +388,9 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpInst *cmp) const
         }
         return inDirVal.find(op0) != inDirVal.end();
     }
-    else if (SVFUtil::isa<ConstantPointerNull>(op0))
+    else if (SVFUtil::isa<ConstantPointerNull>(op0->getLLVMValue()))
     {
-        Set<const Value* > inDirVal;
+        Set<const SVFValue* > inDirVal;
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
         {
             if (it->isIndirectVFGEdge())

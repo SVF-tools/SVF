@@ -40,9 +40,9 @@ void SaberAnnotator::annotateSource()
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << SB_SLICESOURCE ; //<< _curSlice->getSource()->getId();
-    if(const Instruction* sourceinst = SVFUtil::dyn_cast<Instruction>(_curSlice->getSource()->getValue()))
+    if(const SVFInstruction* sourceinst = SVFUtil::dyn_cast<SVFInstruction>(_curSlice->getSource()->getValue()))
     {
-        addMDTag(const_cast<Instruction*>(sourceinst),rawstr.str());
+        addMDTag(const_cast<Instruction*>(sourceinst->getLLVMInstruction()),rawstr.str());
     }
     else
         assert(false && "instruction of source node not found");
@@ -64,7 +64,7 @@ void SaberAnnotator::annotateSinks()
             std::string str;
             raw_string_ostream rawstr(str);
             rawstr << SB_SLICESINK << _curSlice->getSource()->getId();
-            addMDTag(const_cast<Instruction*>(sink.getInstruction()->getLLVMInstruction()),const_cast<Value*>(sink.getArgOperand(0)),rawstr.str());
+            addMDTag(const_cast<Instruction*>(sink.getInstruction()->getLLVMInstruction()),const_cast<Value*>(sink.getArgOperand(0)->getLLVMValue()),rawstr.str());
         }
         else
             assert(false && "sink node is not a actual parameter?");
@@ -83,7 +83,7 @@ void SaberAnnotator::annotateFeasibleBranch(const BranchStmt *branchStmt, u32_t 
     raw_string_ostream rawstr(str);
     rawstr << SB_FESIBLE << _curSlice->getSource()->getId();
     addMDTag(const_cast<Instruction*>(branchStmt->getInst()->getLLVMInstruction()),
-             const_cast<Value* >(branchStmt->getCondition()->getValue()), rawstr.str());
+             const_cast<Value* >(branchStmt->getCondition()->getValue()->getLLVMValue()), rawstr.str());
 }
 
 /*!
@@ -98,7 +98,7 @@ void SaberAnnotator::annotateInfeasibleBranch(const BranchStmt *branchStmt, u32_
     raw_string_ostream rawstr(str);
     rawstr << SB_INFESIBLE << _curSlice->getSource()->getId();
     addMDTag(const_cast<Instruction* >(branchStmt->getInst()->getLLVMInstruction()),
-             const_cast<Value* >(branchStmt->getCondition()->getValue()), rawstr.str());
+             const_cast<Value* >(branchStmt->getCondition()->getValue()->getLLVMValue()), rawstr.str());
 }
 
 

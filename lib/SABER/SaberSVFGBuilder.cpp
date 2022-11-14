@@ -78,9 +78,9 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
             if(SVFUtil::isa<DummyObjVar>(pag->getGNode(gepobj->getBaseNode())))
                 continue;
         }
-        if(const Value* val = pagNode->getValue())
+        if(const SVFValue* val = pagNode->getValue())
         {
-            if(SVFUtil::isa<GlobalVariable>(val))
+            if(SVFUtil::isa<GlobalVariable>(val->getLLVMValue()))
                 worklist.push_back(it->first);
         }
     }
@@ -230,7 +230,7 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 
         if(const StoreSVFGNode* stmtNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            if(SVFUtil::isa<StoreInst>(stmtNode->getValue()))
+            if(SVFUtil::isa<StoreInst>(stmtNode->getValue()->getLLVMValue()))
             {
                 NodeID singleton;
                 if(isStrongUpdate(node, singleton, pta))

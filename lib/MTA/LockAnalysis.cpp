@@ -217,8 +217,8 @@ bool LockAnalysis::intraForwardTraverse(const SVFInstruction* lockSite, InstSet&
         if (isTDRelease(I) && isAliasedLocks(lockSite, I))
         {
             unlockSet.insert(I);
-            DBOUT(DMTA, outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(lockSite->getLLVMInstruction())<<"\n");
-            DBOUT(DMTA, outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(I->getLLVMInstruction())<<"\n");
+            DBOUT(DMTA, outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(lockSite)<<"\n");
+            DBOUT(DMTA, outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(I)<<"\n");
             continue;
         }
 
@@ -263,8 +263,8 @@ bool LockAnalysis::intraBackwardTraverse(const InstSet& unlockSet, InstSet& back
 
             if (isTDAcquire(I) && isAliasedLocks(unlockSite, I))
             {
-                DBOUT(DMTA, outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(I->getLLVMInstruction())<<"\n");
-                DBOUT(DMTA, outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(unlockSite->getLLVMInstruction())<<"\n");
+                DBOUT(DMTA, outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(I)<<"\n");
+                DBOUT(DMTA, outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(unlockSite)<<"\n");
                 continue;
             }
 

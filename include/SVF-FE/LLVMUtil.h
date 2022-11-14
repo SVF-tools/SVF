@@ -43,6 +43,35 @@ namespace SVF
 namespace LLVMUtil
 {
 
+/// Whether an instruction is a call or invoke instruction
+inline bool isCallSite(const SVFInstruction* inst)
+{
+    return SVFUtil::isa<CallBase>(inst->getLLVMInstruction());
+}
+/// Whether an instruction is a call or invoke instruction
+inline bool isCallSite(const Value* val)
+{
+    if(SVFUtil::isa<CallBase>(val))
+        return true;
+    else
+        return false;
+}
+
+/// Return LLVM callsite given a value
+inline CallSite getLLVMCallSite(const Value* value)
+{
+    assert(isCallSite(value) && "not a callsite?");
+    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<CallBase>(value));
+    CallSite cs(svfInst);
+    return cs;
+}
+
+/// Return LLVM function if this value is
+inline const Function* getLLVMFunction(const Value* val)
+{
+    const Function* fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
+    return fun;
+}
 
 /// Check whether this value is a black hole
 inline bool isBlackholeSym(const Value* val)
@@ -82,7 +111,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
     if (SVFUtil::isHeapAllocExtCallViaArg(cs))
     {
         int argPos = SVFUtil::getHeapAllocHoldingArgPosition(cs);
-        const Value* arg = cs.getArgument(argPos);
+        const SVFValue* arg = cs.getArgument(argPos);
         if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
             refType = SVFUtil::dyn_cast<PointerType>(getPtrElementType(argType));
     }

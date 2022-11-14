@@ -166,7 +166,7 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
     InstSet needannold;
     for (InstSet::iterator it = storeset.begin(), eit = storeset.end(); it != eit; ++it)
     {
-        PointsTo pts = pta->getPts(pag->getValueNode(getStoreOperand(*it)));
+        PointsTo pts = pta->getPts(pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(getStoreOperand(*it))));
         for (PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit != epit; ++pit)
         {
             if (nonlocalobjs.test(*pit))
@@ -179,7 +179,7 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
 
     for (InstSet::iterator it = loadset.begin(), eit = loadset.end(); it != eit; ++it)
     {
-        PointsTo pts = pta->getPts(pag->getValueNode(getLoadOperand(*it)));
+        PointsTo pts = pta->getPts(pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(getLoadOperand(*it))));
         for (PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit != epit; ++pit)
         {
             if (nonlocalobjs.test(*pit))
@@ -214,7 +214,10 @@ void MTAAnnotator::pruneAliasMHP(PointerAnalysis* pta)
         for (InstSet::iterator it2 = it1, eit2 = storeset.end(); it2 != eit2; ++it2)
         {
             const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it2);
-            if(!pta->alias(getStoreOperand(*it1), getStoreOperand(*it2)))
+            const SVFValue* v1 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(getStoreOperand(*it1));
+            const SVFValue* v2 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(getStoreOperand(*it2));
+
+            if(!pta->alias(v1, v2))
                 continue;
 
             if (AnnoMHP)
@@ -237,7 +240,10 @@ void MTAAnnotator::pruneAliasMHP(PointerAnalysis* pta)
         for (InstSet::iterator it2 = loadset.begin(), eit2 = loadset.end(); it2 != eit2; ++it2)
         {
             const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it2);
-            if(!pta->alias(getStoreOperand(*it1), getLoadOperand(*it2)))
+            const SVFValue* v1 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(getStoreOperand(*it1));
+            const SVFValue* v2 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(getLoadOperand(*it2));
+
+            if(!pta->alias(v1,v2))
                 continue;
 
             if (AnnoMHP)

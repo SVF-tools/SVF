@@ -67,11 +67,11 @@ public:
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
     typedef Map<NodeOffset,NodeID> NodeOffsetMap;
     typedef Map<NodeLocationSet,NodeID> NodeLocationSetMap;
-    typedef Map<const Value*, NodeLocationSetMap> GepValueVarMap;
+    typedef Map<const SVFValue*, NodeLocationSetMap> GepValueVarMap;
     typedef Map<NodePair,NodeID> NodePairSetMap;
 
 private:
-    /// ValueNodes - This map indicates the Node that a particular Value* is
+    /// ValueNodes - This map indicates the Node that a particular SVFValue* is
     /// represented by.  This contains entries for all pointers.
     ICFGNode2SVFStmtsMap icfgNode2SVFStmtsMap;	///< Map an ICFGNode to its SVFStmts
     ICFGNode2SVFStmtsMap icfgNode2PTASVFStmtsMap;	///< Map an ICFGNode to its PointerAnalysis related SVFStmts
@@ -302,7 +302,7 @@ public:
     //@}
 
     /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
-    NodeID getGepValVar(const Value* curInst, NodeID base, const LocationSet& ls) const;
+    NodeID getGepValVar(const SVFValue* curInst, NodeID base, const LocationSet& ls) const;
 
     /// Add/get indirect callsites
     //@{
@@ -504,13 +504,13 @@ private:
     /// add node into SVFIR
     //@{
     /// Add a value (pointer) node
-    inline NodeID addValNode(const Value* val, NodeID i)
+    inline NodeID addValNode(const SVFValue* val, NodeID i)
     {
         SVFVar *node = new ValVar(val,i);
         return addValNode(val, node, i);
     }
     /// Add a memory obj node
-    inline NodeID addObjNode(const Value* val, NodeID i)
+    inline NodeID addObjNode(const SVFValue* val, NodeID i)
     {
         const MemObj* mem = getMemObj(val);
         assert(((mem->getId() == i)) && "not same object id?");
@@ -530,7 +530,7 @@ private:
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValVar
-    NodeID addGepValNode(const Value* curInst,const Value* val, const LocationSet& ls, NodeID i, const Type *type);
+    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const LocationSet& ls, NodeID i, const Type *type);
     /// Add a field obj node, this method can only invoked by getGepObjVar
     NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
@@ -567,13 +567,13 @@ private:
     //@}
 
     /// Add a value (pointer) node
-    inline NodeID addValNode(const Value*, SVFVar *node, NodeID i)
+    inline NodeID addValNode(const SVFValue*, SVFVar *node, NodeID i)
     {
         assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DEBUG to SEQ or DENSE");
         return addNode(node,i);
     }
     /// Add a memory obj node
-    inline NodeID addObjNode(const Value*, SVFVar *node, NodeID i)
+    inline NodeID addObjNode(const SVFValue*, SVFVar *node, NodeID i)
     {
         assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DEBUG to SEQ or DENSE");
         return addNode(node,i);

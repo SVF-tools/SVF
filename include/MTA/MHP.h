@@ -503,12 +503,12 @@ private:
         return getTCG()->getThreadAPI()->isTDJoin(call);
     }
     /// Get forked thread
-    inline const Value* getForkedThread(const SVFInstruction* call)
+    inline const SVFValue* getForkedThread(const SVFInstruction* call)
     {
         return getTCG()->getThreadAPI()->getForkedThread(call);
     }
     /// Get joined thread
-    inline const Value* getJoinedThread(const SVFInstruction* call)
+    inline const SVFValue* getJoinedThread(const SVFInstruction* call)
     {
         return getTCG()->getThreadAPI()->getJoinedThread(call);
     }

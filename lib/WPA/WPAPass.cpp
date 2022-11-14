@@ -161,7 +161,7 @@ void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
  * Return alias results based on our points-to/alias analysis
  * TODO: Need to handle PartialAlias and MustAlias here.
  */
-AliasResult WPAPass::alias(const Value* V1, const Value* V2)
+AliasResult WPAPass::alias(const SVFValue* V1, const SVFValue* V2)
 {
 
     AliasResult result = AliasResult::MayAlias;
@@ -219,7 +219,7 @@ ModRefInfo WPAPass::getModRefInfo(const CallSite callInst)
 /*!
  * Return mod-ref results of a Callsite to a specific memory location
  */
-ModRefInfo WPAPass::getModRefInfo(const CallSite callInst, const Value* V)
+ModRefInfo WPAPass::getModRefInfo(const CallSite callInst, const SVFValue* V)
 {
     assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();

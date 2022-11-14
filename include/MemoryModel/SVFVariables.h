@@ -73,14 +73,14 @@ public:
 
 
 protected:
-    const Value* value; ///< value of this SVFIR node
+    const SVFValue* value; ///< value of this SVFIR node
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
     bool isPtr;	/// whether it is a pointer (top-level or address-taken)
 
 public:
     /// Constructor
-    SVFVar(const Value* val, NodeID i, PNODEK k);
+    SVFVar(const SVFValue* val, NodeID i, PNODEK k);
     /// Destructor
     virtual ~SVFVar()
     {
@@ -88,7 +88,7 @@ public:
 
     ///  Get/has methods of the components
     //@{
-    inline const Value* getValue() const
+    inline const SVFValue* getValue() const
     {
         assert((this->getNodeKind() != DummyValNode && this->getNodeKind() != DummyObjNode) && "dummy node do not have value!");
         assert((SymbolTableInfo::isBlkObjOrConstantObj(this->getId())==false) && "blackhole and constant obj do not have value");
@@ -128,12 +128,12 @@ public:
     {
         if(value)
         {
-            if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
-                return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(inst->getParent()->getParent());
-            else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
-                return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(arg->getParent());
-            else if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
-                return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+            if(const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(value))
+                return inst->getParent()->getParent();
+            else if (const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(value))
+                return arg->getParent();
+            else if (const SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(value))
+                return fun;
         }
         return nullptr;
     }
@@ -282,7 +282,7 @@ public:
     //@}
 
     /// Constructor
-    ValVar(const Value* val, NodeID i, PNODEK ty = ValNode) :
+    ValVar(const SVFValue* val, NodeID i, PNODEK ty = ValNode) :
         SVFVar(val, i, ty)
     {
     }
@@ -290,7 +290,7 @@ public:
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName().str();
+            return value->getName();
         return "";
     }
 
@@ -307,7 +307,7 @@ class ObjVar: public SVFVar
 protected:
     const MemObj* mem;	///< memory object
     /// Constructor
-    ObjVar(const Value* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
+    ObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
         SVFVar(val, i, ty), mem(m)
     {
     }
@@ -344,7 +344,7 @@ public:
     virtual const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName().str();
+            return value->getName();
         return "";
     }
     /// Return type of the value
@@ -391,7 +391,7 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(const Value* val, NodeID i, const LocationSet& l, const Type *ty) :
+    GepValVar(const SVFValue* val, NodeID i, const LocationSet& l, const Type *ty) :
         ValVar(val, i, GepValNode), ls(l), gepValType(ty)
     {
     }
@@ -406,7 +406,7 @@ public:
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName().str() + "_" + std::to_string(getConstantFieldIdx());
+            return value->getName() + "_" + std::to_string(getConstantFieldIdx());
         return "offset_" + std::to_string(getConstantFieldIdx());
     }
 
@@ -491,7 +491,7 @@ public:
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName().str() + "_" + std::to_string(ls.accumulateConstantFieldIdx());
+            return value->getName() + "_" + std::to_string(ls.accumulateConstantFieldIdx());
         return "offset_" + std::to_string(ls.accumulateConstantFieldIdx());
     }
 
@@ -527,7 +527,7 @@ public:
     //@}
 
     /// Constructor
-    FIObjVar(const Value* val, NodeID i, const MemObj* mem, PNODEK ty = FIObjNode) :
+    FIObjVar(const SVFValue* val, NodeID i, const MemObj* mem, PNODEK ty = FIObjNode) :
         ObjVar(val, i, mem, ty)
     {
     }
@@ -536,7 +536,7 @@ public:
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName().str() + " (base object)";
+            return value->getName() + " (base object)";
         return " (base object)";
     }
 
@@ -572,14 +572,14 @@ public:
 
     /// Constructor
     RetPN(const SVFFunction* val, NodeID i) :
-        ValVar(val->getLLVMFun(), i, RetNode)
+        ValVar(val, i, RetNode)
     {
     }
 
     /// Return name of a LLVM value
     const std::string getValueName() const
     {
-        return value->getName().str() + "_ret";
+        return value->getName() + "_ret";
     }
 
     virtual const std::string toString() const;
@@ -615,14 +615,14 @@ public:
 
     /// Constructor
     VarArgPN(const SVFFunction* val, NodeID i) :
-        ValVar(val->getLLVMFun(), i, VarargNode)
+        ValVar(val, i, VarargNode)
     {
     }
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
-        return value->getName().str() + "_vararg";
+        return value->getName() + "_vararg";
     }
 
     virtual const std::string toString() const;

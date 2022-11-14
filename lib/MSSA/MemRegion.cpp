@@ -735,7 +735,7 @@ ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs)
  * Determine whether a const CallICFGNode* instruction can mod or ref
  * a specific memory location pointed by V
  */
-ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs, const Value* V)
+ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs, const SVFValue* V)
 {
     bool ref = false;
     bool mod = false;

@@ -111,6 +111,7 @@ private:
     bool blackHoleSym;
     bool nullptrSym;
     bool isPtr;
+    bool has_name;
     const Type* ptrElementType;
 protected:
     std::string name;
@@ -118,7 +119,7 @@ protected:
     /// Constructor
     SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k),
         ptrInUncalledFun(false), blackHoleSym(false), nullptrSym(false), isPtr(val->getType()->isPointerTy()),
-        ptrElementType(nullptr),name(val->getName())
+        has_name(false), ptrElementType(nullptr),name(val->getName())
     {
     }
 
@@ -190,6 +191,14 @@ public:
     inline bool isNullPtr() const
     {
         return nullptrSym;
+    }
+    inline void setHasName()
+    {
+        has_name = true;
+    }
+    inline bool hasName() const
+    {
+        return has_name;
     }
     inline const Type* getPtrElementType() const
     {
@@ -722,9 +731,9 @@ public:
     {
         return CB;
     }
-    const Value* getArgument(u32_t ArgNo) const
+    const SVFValue* getArgument(u32_t ArgNo) const
     {
-        return CB->getArgOperand(ArgNo)->getLLVMValue();
+        return CB->getArgOperand(ArgNo);
     }
     const Type* getType() const
     {
@@ -738,21 +747,21 @@ public:
     {
         return CB->arg_empty();
     }
-    const Value* getArgOperand(u32_t i) const
+    const SVFValue* getArgOperand(u32_t i) const
     {
-        return CB->getArgOperand(i)->getLLVMValue();
+        return CB->getArgOperand(i);
     }
     u32_t getNumArgOperands() const
     {
         return CB->arg_size();
     }
-    const Function* getCalledFunction() const
+    const SVFFunction* getCalledFunction() const
     {
-        return (CB->getCalledFunction()==nullptr ? nullptr: CB->getCalledFunction()->getLLVMFun());
+        return CB->getCalledFunction();
     }
-    const Value* getCalledValue() const
+    const SVFValue* getCalledValue() const
     {
-        return CB->getCalledOperand()->getLLVMValue();
+        return CB->getCalledOperand();
     }
     const Function* getCaller() const
     {

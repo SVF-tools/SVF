@@ -290,7 +290,7 @@ const std::string ActualParmVFGNode::toString() const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ActualParmVFGNode ID: " << getId() << " ";
-    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()->getLLVMInstruction()) << "]";
+    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]";
     rawstr << param->toString();
     return rawstr.str();
 }
@@ -324,7 +324,7 @@ const std::string ActualRetVFGNode::toString() const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ActualRetVFGNode ID: " << getId() << " ";
-    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()->getLLVMInstruction()) << "]";
+    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]";
     rawstr << param->toString();
     return rawstr.str();
 }
@@ -1063,27 +1063,27 @@ const SVFFunction* VFG::isFunEntryVFGNode(const VFGNode* node) const
 }
 
 
-const Value* StmtVFGNode::getValue() const
+const SVFValue* StmtVFGNode::getValue() const
 {
     return getPAGEdge()->getValue();
 }
 
-const Value* CmpVFGNode::getValue() const
+const SVFValue* CmpVFGNode::getValue() const
 {
     return getRes()->getValue();
 }
 
-const Value* BinaryOPVFGNode::getValue() const
+const SVFValue* BinaryOPVFGNode::getValue() const
 {
     return getRes()->getValue();
 }
 
-const Value* PHIVFGNode::getValue() const
+const SVFValue* PHIVFGNode::getValue() const
 {
     return getRes()->getValue();
 }
 
-const Value* ArgumentVFGNode::getValue() const
+const SVFValue* ArgumentVFGNode::getValue() const
 {
     return param->hasValue() ? param->getValue() : nullptr;
 }

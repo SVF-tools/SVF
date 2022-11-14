@@ -57,7 +57,7 @@ public:
     ~DDAPass();
 
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const Value* V1,	const Value* V2);
+    virtual AliasResult alias(const SVFValue* V1,	const SVFValue* V2);
 
     /// Interface expose to users of our pointer analysis, given PAGNodes
     virtual AliasResult alias(NodeID V1, NodeID V2);

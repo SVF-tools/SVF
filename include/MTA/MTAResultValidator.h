@@ -295,9 +295,9 @@ protected:
         {
             const Use *u = &*it;
             const Value *user = u->getUser();
-            if(SVFUtil::isCallSite(user))
+            if(LLVMUtil::isCallSite(user))
             {
-                CallSite csInst = SVFUtil::getLLVMCallSite(user);
+                CallSite csInst = LLVMUtil::getLLVMCallSite(user);
                 csInsts.push_back(csInst);
             }
         }
@@ -311,7 +311,7 @@ protected:
         {
             CallSite CI1 = csInsts[i++];
             CallSite CI2 = csInsts[i++];
-            const ConstantInt* C = SVFUtil::dyn_cast<ConstantInt>(CI1.getArgOperand(1));
+            const ConstantInt* C = SVFUtil::dyn_cast<ConstantInt>(CI1.getArgOperand(1)->getLLVMValue());
             assert(C);
             const Instruction* I1 = getPreviousMemoryAccessInst(CI1.getInstruction()->getLLVMInstruction());
             const Instruction* I2 = getPreviousMemoryAccessInst(CI2.getInstruction()->getLLVMInstruction());
@@ -339,8 +339,8 @@ protected:
             bool racy = mayHaveDataRace(I1, I2);
 
             SVFUtil::outs() << "For the memory access pair at ("
-                            << SVFUtil::getSourceLoc(I1) << ", "
-                            << SVFUtil::getSourceLoc(I2) << ")\n";
+                            << SVFUtil::getSourceLoc(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(I1)) << ", "
+                            << SVFUtil::getSourceLoc(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(I2)) << ")\n";
             if (selectedValidationScenarios & RC_ALIASES)
             {
                 SVFUtil::outs() << "\t"
@@ -397,10 +397,10 @@ private:
      */
     static bool compare(CallSite CI1, CallSite CI2)
     {
-        const Value *V1 = CI1.getArgOperand(0);
-        const Value *V2 = CI2.getArgOperand(0);
-        const ConstantInt* C1 = SVFUtil::dyn_cast<ConstantInt>(V1);
-        const ConstantInt* C2 = SVFUtil::dyn_cast<ConstantInt>(V2);
+        const SVFValue *V1 = CI1.getArgOperand(0);
+        const SVFValue *V2 = CI2.getArgOperand(0);
+        const ConstantInt* C1 = SVFUtil::dyn_cast<ConstantInt>(V1->getLLVMValue());
+        const ConstantInt* C2 = SVFUtil::dyn_cast<ConstantInt>(V2->getLLVMValue());
         assert(0 != C1 && 0 != C2);
         return C1->getZExtValue() < C2->getZExtValue();
     }

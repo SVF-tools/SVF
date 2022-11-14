@@ -84,7 +84,7 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
                 {
                     const CallICFGNode* cs = icfg->getCallICFGNode(inst);
                     cg->addForksite(cs);
-                    const Function* forkee = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(inst));
+                    const SVFFunction* forkee = SVFUtil::dyn_cast<SVFFunction>(tdAPI->getForkedFun(inst));
                     if (forkee)
                     {
                         cg->addDirectForkEdge(cs);
@@ -99,7 +99,7 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
                 {
                     const CallICFGNode* cs = icfg->getCallICFGNode(inst);
                     cg->addParForSite(cs);
-                    const Function* taskFunc = SVFUtil::dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(inst));
+                    const SVFFunction* taskFunc = SVFUtil::dyn_cast<SVFFunction>(tdAPI->getTaskFuncAtHareParForSite(inst));
                     if (taskFunc)
                     {
                         cg->addDirectParForEdge(cs);

@@ -35,7 +35,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
         ICFGNode_Obj["Node Type"] = getICFGKind(node->getNodeKind());
         if(IntraICFGNode* bNode = SVFUtil::dyn_cast<IntraICFGNode>(node))
         {
-            ICFGNode_Obj["Source Location"] = getSourceLoc(bNode->getInst()->getLLVMInstruction());
+            ICFGNode_Obj["Source Location"] = getSourceLoc(bNode->getInst());
             SVFIR::SVFStmtList&  edges = SVFIR::getPAG()->getPTASVFStmtList(bNode);
             llvm::json::Array PAGEdge_array;
 
@@ -70,7 +70,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
             else
             {
                 ICFGNode_Obj["isExtCall"] = false;
-                ICFGNode_Obj["Source Location"] = getSourceLoc(entry->getFun()->getLLVMFun());
+                ICFGNode_Obj["Source Location"] = getSourceLoc(entry->getFun()->getExitBB());
             }
             ICFGNode_Obj["Function Name"] = entry->getFun()->getName();
         }
@@ -81,17 +81,17 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
             else
             {
                 ICFGNode_Obj["isExtCall"] = false;
-                ICFGNode_Obj["Source Location"] = getSourceLoc(&(exit->getFun()->getLLVMFun()->back()));
+                ICFGNode_Obj["Source Location"] = getSourceLoc(exit->getFun()->getExitBB());
             }
             ICFGNode_Obj["Function Name"] = exit->getFun()->getName();
         }
         else if (CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
-            ICFGNode_Obj["Source Location"] = getSourceLoc(call->getCallSite()->getLLVMInstruction());
+            ICFGNode_Obj["Source Location"] = getSourceLoc(call->getCallSite());
         }
         else if (RetICFGNode* ret = SVFUtil::dyn_cast<RetICFGNode>(node))
         {
-            ICFGNode_Obj["Source Location"] = getSourceLoc(ret->getCallSite()->getLLVMInstruction());
+            ICFGNode_Obj["Source Location"] = getSourceLoc(ret->getCallSite());
         }
         else
             assert(false && "what else kinds of nodes do we have??");

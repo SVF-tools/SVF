@@ -267,7 +267,7 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
     if (cs.getArgOperand(0)->getType()->isPointerTy() == false)
         return false;
 
-    const Value* vfunc = cs.getCalledValue();
+    const Value* vfunc = cs.getCalledValue()->getLLVMValue();
     if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
     {
         const Value* vfuncptr = vfuncloadinst->getPointerOperand();
@@ -300,15 +300,13 @@ const Function* cppUtil::getThunkTarget(const Function* F)
     {
         for (auto &inst: bb)
         {
-            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&inst);
-            if (SVFUtil::isCallSite(svfInst))
+            if (const CallBase* callbase = SVFUtil::dyn_cast<CallBase>(&inst))
             {
-                CallSite cs(svfInst);
                 // assert(cs.getCalledFunction() &&
                 //        "Indirect call detected in thunk func");
                 // assert(ret == nullptr && "multiple callsites in thunk func");
 
-                ret = cs.getCalledFunction();
+                ret = callbase->getCalledFunction();
             }
         }
     }
@@ -321,11 +319,11 @@ const Value* cppUtil::getVCallThisPtr(CallSite cs)
     const CallBase* cb = SVFUtil::cast<CallBase>(cs.getInstruction()->getLLVMInstruction());
     if (cb->paramHasAttr(0, llvm::Attribute::StructRet))
     {
-        return cs.getArgument(1);
+        return cs.getArgument(1)->getLLVMValue();
     }
     else
     {
-        return cs.getArgument(0);
+        return cs.getArgument(0)->getLLVMValue();
     }
 }
 
@@ -384,7 +382,7 @@ const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
  */
 const Value* cppUtil::getVCallVtblPtr(CallSite cs)
 {
-    const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
+    const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue()->getLLVMValue());
     assert(loadInst != nullptr);
     const Value* vfuncptr = loadInst->getPointerOperand();
     const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
@@ -395,7 +393,7 @@ const Value* cppUtil::getVCallVtblPtr(CallSite cs)
 
 u64_t cppUtil::getVCallIdx(CallSite cs)
 {
-    const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
+    const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue()->getLLVMValue());
     assert(vfuncloadinst != nullptr);
     const Value* vfuncptr = vfuncloadinst->getPointerOperand();
     const GetElementPtrInst *vfuncptrgepinst =

@@ -10,6 +10,7 @@
 #define LOCKRESULTVALIDATOR_H_
 
 #include "MTA/LockAnalysis.h"
+#include "SVF-FE/LLVMUtil.h"
 
 /* Validate the result of lock analysis */
 
@@ -51,7 +52,7 @@ private:
                 return I;
             SVFFunction* callee = nullptr;
 
-            if(SVFUtil::isCallSite(I))
+            if(LLVMUtil::isCallSite(I))
             {
                 PTACallGraph::FunctionSet callees;
                 const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);

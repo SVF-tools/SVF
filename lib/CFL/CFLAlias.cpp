@@ -46,7 +46,8 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
 
         if (isVirtualCallSite(SVFUtil::getLLVMCallSite(cs->getCallSite())))
         {
-            const Value* vtbl = getVCallVtblPtr(SVFUtil::getLLVMCallSite(cs->getCallSite()));
+            const Value* csval = getVCallVtblPtr(SVFUtil::getLLVMCallSite(cs->getCallSite()));
+            const SVFValue* vtbl = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(csval);
             assert(pag->hasValueNode(vtbl));
             NodeID vtblId = pag->getValueNode(vtbl);
             resolveCPPIndCalls(cs, getCFLPts(vtblId), newEdges);
@@ -64,7 +65,7 @@ void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
 {
     assert(F);
 
-    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << SVFUtil::value2String(cs.getInstruction()->getLLVMInstruction()) << " to callee " << *F << "\n");
+    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << SVFUtil::value2String(cs.getInstruction()) << " to callee " << *F << "\n");
 
     CallICFGNode* callBlockNode = svfir->getICFG()->getCallICFGNode(cs.getInstruction());
     RetICFGNode* retBlockNode = svfir->getICFG()->getRetICFGNode(cs.getInstruction());
@@ -138,7 +139,7 @@ void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
         if(csArgIt != csArgEit)
         {
             writeWrnMsg("too many args to non-vararg func.");
-            writeWrnMsg("(" + getSourceLoc(cs.getInstruction()->getLLVMInstruction()) + ")");
+            writeWrnMsg("(" + getSourceLoc(cs.getInstruction()) + ")");
         }
     }
 }

@@ -54,7 +54,7 @@ public:
         NonOverlap, Overlap, Subset, Superset, Same
     };
 
-    typedef std::vector<std::pair<const Value*, const Type*> > OffsetValueVec;
+    typedef std::vector<std::pair<const SVFValue*, const Type*> > OffsetValueVec;
 
     /// Constructor
     LocationSet(s32_t o = 0) : fldIdx(o)
@@ -107,7 +107,7 @@ public:
     /// Return element number of a type.
     u32_t getElementNum(const Type* type) const;
 
-    bool addOffsetValue(const Value* offsetValue, const Type* type);
+    bool addOffsetValue(const SVFValue* offsetValue, const Type* type);
 
     /// Return TRUE if this is a constant location set.
     bool isConstantOffset() const;

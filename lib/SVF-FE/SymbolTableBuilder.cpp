@@ -176,11 +176,11 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                     symInfo->callSiteSet.insert(cs);
                     for (u32_t i = 0; i < cs.arg_size(); i++)
                     {
-                        collectSym(cs.getArgOperand(i));
+                        collectSym(cs.getArgOperand(i)->getLLVMValue());
                     }
                     // Calls to inline asm need to be added as well because the callee isn't
                     // referenced anywhere else.
-                    const Value *Callee = cs.getCalledValue();
+                    const Value *Callee = cs.getCalledValue()->getLLVMValue();
                     collectSym(Callee);
 
                     //TODO handle inlineAsm
@@ -217,7 +217,7 @@ void SymbolTableBuilder::collectSym(const Value *val)
 
     //TODO: filter the non-pointer type // if (!SVFUtil::isa<PointerType>(val->getType()))  return;
 
-    DBOUT(DMemModel, outs() << "collect sym from ##" << SVFUtil::value2String(val) << " \n");
+    DBOUT(DMemModel, outs() << "collect sym from ##" << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)) << " \n");
 
     //TODO handle constant expression value here??
     handleCE(val);
@@ -244,12 +244,13 @@ void SymbolTableBuilder::collectVal(const Value *val)
     {
         return;
     }
-    SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->valSymMap.find(val);
+    SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->valSymMap.find(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
     if (iter == symInfo->valSymMap.end())
     {
         // create val sym and sym type
+        SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
         SymID id = NodeIDAllocator::get()->allocateValueId();
-        symInfo->valSymMap.insert(std::make_pair(val, id));
+        symInfo->valSymMap.insert(std::make_pair(svfVal, id));
         DBOUT(DMemModel,
               outs() << "create a new value sym " << id << "\n");
         ///  handle global constant expression here
@@ -267,27 +268,27 @@ void SymbolTableBuilder::collectVal(const Value *val)
 void SymbolTableBuilder::collectObj(const Value *val)
 {
     val = getGlobalRep(val);
-    SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->objSymMap.find(val);
+    SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->objSymMap.find(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
     if (iter == symInfo->objSymMap.end())
     {
+        SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
         if((LLVMUtil::isConstantObjSym(val) && !symInfo->getModelConstants()))
         {
-            symInfo->objSymMap.insert(std::make_pair(val, symInfo->constantSymID()));
+            symInfo->objSymMap.insert(std::make_pair(svfVal, symInfo->constantSymID()));
         }
         // otherwise, we will create an object for each abstract memory location
         else
         {
             // create obj sym and sym type
-            LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
             SymID id = NodeIDAllocator::get()->allocateObjectId();
-            symInfo->objSymMap.insert(std::make_pair(val, id));
+            symInfo->objSymMap.insert(std::make_pair(svfVal, id));
             DBOUT(DMemModel,
                   outs() << "create a new obj sym " << id << "\n");
 
             // create a memory object
-            MemObj* mem = new MemObj(id, createObjTypeInfo(val), val);
+            MemObj* mem = new MemObj(id, createObjTypeInfo(val), LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
             assert(symInfo->objMap.find(id) == symInfo->objMap.end());
             symInfo->objMap[id] = mem;
         }
@@ -337,7 +338,7 @@ void SymbolTableBuilder::handleCE(const Value *val)
         if (const ConstantExpr* ce = isGepConstantExpr(ref))
         {
             DBOUT(DMemModelCE,
-                  outs() << "handle constant expression " << SVFUtil::value2String(ref) << "\n");
+                  outs() << "handle constant expression " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)) << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             // handle the recursive constant express case
@@ -347,7 +348,7 @@ void SymbolTableBuilder::handleCE(const Value *val)
         else if (const ConstantExpr* ce = isCastConstantExpr(ref))
         {
             DBOUT(DMemModelCE,
-                  outs() << "handle constant expression " << SVFUtil::value2String(ref) << "\n");
+                  outs() << "handle constant expression " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)) << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             // handle the recursive constant express case
@@ -357,7 +358,7 @@ void SymbolTableBuilder::handleCE(const Value *val)
         else if (const ConstantExpr* ce = isSelectConstantExpr(ref))
         {
             DBOUT(DMemModelCE,
-                  outs() << "handle constant expression " << SVFUtil::value2String(ref) << "\n");
+                  outs() << "handle constant expression " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)) << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             collectVal(ce->getOperand(1));
@@ -536,7 +537,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
     {
         writeWrnMsg("try to create an object with a non-pointer type.");
         writeWrnMsg(val->getName().str());
-        writeWrnMsg("(" + getSourceLoc(val) + ")");
+        writeWrnMsg("(" + getSourceLoc(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)) + ")");
         if(LLVMUtil::isConstantObjSym(val))
         {
             ObjTypeInfo* typeInfo = new ObjTypeInfo(val->getType(), 0);

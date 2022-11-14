@@ -297,7 +297,7 @@ AliasResult DDAPass::alias(NodeID node1, NodeID node2)
  * Return alias results based on our points-to/alias analysis
  * TODO: Need to handle PartialAlias and MustAlias here.
  */
-AliasResult DDAPass::alias(const Value* V1, const Value* V2)
+AliasResult DDAPass::alias(const SVFValue* V1, const SVFValue* V2)
 {
     SVFIR* pag = _pta->getPAG();
 

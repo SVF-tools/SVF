@@ -43,7 +43,7 @@ namespace SVF
 class SVFModule;
 class CHNode;
 
-typedef Set<const GlobalValue*> VTableSet;
+typedef Set<const SVFGlobalValue*> VTableSet;
 typedef Set<const SVFFunction*> VFunSet;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.

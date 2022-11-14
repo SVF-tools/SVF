@@ -570,7 +570,7 @@ const VTableSet &DCHGraph::getCSVtblsBasedonCHA(CallSite cs)
         // TODO: what if it is null?
         if (vtbl != nullptr)
         {
-            vtblSet.insert(vtbl);
+            vtblSet.insert(LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(vtbl));
         }
     }
 
@@ -584,10 +584,10 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
 {
     size_t idx = cppUtil::getVCallIdx(cs);
     std::string funName = cppUtil::getFunNameOfVCallSite(cs);
-    for (const GlobalValue *vtbl : vtbls)
+    for (const SVFGlobalValue *vtbl : vtbls)
     {
-        assert(vtblToTypeMap.find(vtbl) != vtblToTypeMap.end() && "floating vtbl");
-        const DIType *type = vtblToTypeMap[vtbl];
+        assert(vtblToTypeMap.find(vtbl->getLLVMGlobalValue()) != vtblToTypeMap.end() && "floating vtbl");
+        const DIType *type = vtblToTypeMap[vtbl->getLLVMGlobalValue()];
         assert(hasNode(type) && "trying to get vtbl for type not in graph");
         const DCHNode *node = getNode(type);
         std::vector<std::vector<const Function* >> allVfns = node->getVfnVectors();

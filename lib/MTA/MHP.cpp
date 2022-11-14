@@ -288,7 +288,7 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
         else
         {
             rmInterleavingThread(cts,joinedTids,call);
-            DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call->getLLVMInstruction()) <<  " for thread " << rootTid << "\n");
+            DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call) <<  " for thread " << rootTid << "\n");
         }
     }
     /// for the join site in a loop loop which does not join the current thread
@@ -684,7 +684,7 @@ void MHP::printInterleaving()
 {
     for(ThreadStmtToThreadInterleav::const_iterator it = threadStmtToTheadInterLeav.begin(), eit = threadStmtToTheadInterLeav.end(); it!=eit; ++it)
     {
-        outs() << "( t" << it->first.getTid() << " , $" << SVFUtil::getSourceLoc(it->first.getStmt()->getLLVMInstruction()) << "$" << SVFUtil::value2String(it->first.getStmt()->getLLVMInstruction()) << " ) ==> [";
+        outs() << "( t" << it->first.getTid() << " , $" << SVFUtil::getSourceLoc(it->first.getStmt()) << "$" << SVFUtil::value2String(it->first.getStmt()) << " ) ==> [";
         for (NodeBS::iterator ii = it->second.begin(), ie = it->second.end();
                 ii != ie; ii++)
         {
@@ -729,21 +729,21 @@ void ForkJoinAnalysis::collectSCEVInfo()
             const SVFInstruction* callInst =  *sit;
             if(tct->getThreadCallGraph()->isForksite(getCBN(callInst)))
             {
-                const Value* forkSiteTidPtr = getForkedThread(callInst);
+                const SVFValue* forkSiteTidPtr = getForkedThread(callInst);
                 // const SCEV *forkSiteTidPtrSCEV = SE->getSCEV(const_cast<Value*>(forkSiteTidPtr));
                 // const SCEV *baseForkTidPtrSCEV = SE->getSCEV(const_cast<Value*>(getBasePtr(forkSiteTidPtr)));
                 // forkSiteTidPtrSCEV = getSCEVMinusExpr(forkSiteTidPtrSCEV, baseForkTidPtrSCEV, SE);
-                PTASCEV scev(forkSiteTidPtr,nullptr,nullptr);
+                PTASCEV scev(forkSiteTidPtr->getLLVMValue(),nullptr,nullptr);
                 fkjnToPTASCEVMap.insert(std::make_pair(callInst,scev));
             }
             else
             {
-                const Value* joinSiteTidPtr = getJoinedThread(callInst);
+                const SVFValue* joinSiteTidPtr = getJoinedThread(callInst);
                 //const SCEV *joinSiteTidPtrSCEV = SE->getSCEV(const_cast<Value*>(joinSiteTidPtr));
                 //const SCEV *baseJoinTidPtrSCEV = SE->getSCEV(const_cast<Value*>(getBasePtr(joinSiteTidPtr)));
                 //joinSiteTidPtrSCEV = getSCEVMinusExpr(joinSiteTidPtrSCEV, baseJoinTidPtrSCEV, SE);
 
-                PTASCEV scev(joinSiteTidPtr,nullptr,nullptr);
+                PTASCEV scev(joinSiteTidPtr->getLLVMValue(),nullptr,nullptr);
                 fkjnToPTASCEVMap.insert(std::make_pair(callInst,scev));
             }
         }
@@ -881,7 +881,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
             {
                 markCxtStmtFlag(cts,TDDead);
                 addDirectlyJoinTID(cts,rootTid);
-                DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call->getLLVMInstruction()) <<  "for thread " << rootTid << "\n");
+                DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call) <<  "for thread " << rootTid << "\n");
             }
         }
         /// for the join site in a loop loop which does not join the current thread

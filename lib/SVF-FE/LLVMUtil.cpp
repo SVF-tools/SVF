@@ -175,7 +175,7 @@ bool LLVMUtil::isUncalledFunction (const Function*  fun)
         return false;
     for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i)
     {
-        if (SVFUtil::isCallSite(*i))
+        if (LLVMUtil::isCallSite(*i))
             return false;
     }
     if (LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun))
@@ -189,7 +189,7 @@ bool LLVMUtil::isUncalledFunction (const Function*  fun)
                 return false;
             for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i)
             {
-                if (SVFUtil::isCallSite(*i))
+                if (LLVMUtil::isCallSite(*i))
                     return false;
             }
         }
@@ -355,7 +355,7 @@ const Type* LLVMUtil::getTypeOfHeapAlloc(const SVFInstruction *inst)
     {
         CallSite cs = SVFUtil::getLLVMCallSite(inst);
         int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getCallee(cs));
-        const Value* arg = cs.getArgument(arg_pos);
+        const SVFValue* arg = cs.getArgument(arg_pos);
         type = SVFUtil::dyn_cast<PointerType>(arg->getType());
     }
     else
@@ -448,4 +448,3 @@ u32_t LLVMUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
     else
         return stTySL->getElementOffset(field_idx);
 }
-

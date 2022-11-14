@@ -60,7 +60,7 @@ NodeID MTAResultValidator::getIntArg(const SVFInstruction* inst, u32_t arg_num)
 {
     assert(SVFUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
-    const ConstantInt* x = SVFUtil::dyn_cast<ConstantInt>(cs.getArgument(arg_num));
+    const ConstantInt* x = SVFUtil::dyn_cast<ConstantInt>(cs.getArgument(arg_num)->getLLVMValue());
     assert((arg_num < cs.arg_size()) && "Does not has this argument");
     return (NodeID) x->getSExtValue();
 }
@@ -70,7 +70,7 @@ std::vector<std::string> MTAResultValidator::getStringArg(const SVFInstruction* 
     assert(SVFUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
     assert((arg_num < cs.arg_size()) && "Does not has this argument");
-    const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(arg_num));
+    const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(arg_num)->getLLVMValue());
     const Constant* arrayinst = SVFUtil::dyn_cast<Constant>(gepinst->getOperand(0));
     const ConstantDataArray* cxtarray = SVFUtil::dyn_cast<ConstantDataArray>(arrayinst->getOperand(0));
     if (!cxtarray)
@@ -164,7 +164,7 @@ void MTAResultValidator::dumpCxt(const CallStrCxt& cxt) const
     for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it)
     {
         rawstr << " ' " << *it << " ' ";
-        rawstr << *(tcg->getCallSite(*it)->getCallSite()->getLLVMInstruction());
+        rawstr << value2String(tcg->getCallSite(*it)->getCallSite());
         rawstr << "  call  " << tcg->getCallSite(*it)->getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";
@@ -481,7 +481,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
         {
             if (Options::PrintValidRes)
             {
-                outs() << errMsg("\n Validate Interleaving: Wrong at : ") << SVFUtil::getSourceLoc(inst->getLLVMInstruction()) << "\n";
+                outs() << errMsg("\n Validate Interleaving: Wrong at : ") << SVFUtil::getSourceLoc(inst) << "\n";
                 outs() << "Reason: The number of thread running on stmt is wrong\n";
                 outs() << "\n----Given threads:\n";
                 for (MHP::CxtThreadStmtSet::iterator thdlevi = (*seti).second.begin(), ethdlevi = (*seti).second.end(); thdlevi != ethdlevi;
@@ -518,7 +518,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
                     {
                         if (Options::PrintValidRes)
                         {
-                            outs() << errMsg("\nValidate Interleaving: Wrong at: ") << SVFUtil::getSourceLoc(inst->getLLVMInstruction()) << "\n";
+                            outs() << errMsg("\nValidate Interleaving: Wrong at: ") << SVFUtil::getSourceLoc(inst) << "\n";
                             outs() << "Reason: thread interleaving on stmt is wrong\n";
                             dumpCxt(ts.getContext());
                             outs() << "Given result:    \tTID " << rthdTovthd[ts.getTid()];
@@ -554,7 +554,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
             {
                 if (Options::PrintValidRes)
                 {
-                    outs() << errMsg("\nValidate Interleaving: Wrong at:") << SVFUtil::getSourceLoc(inst->getLLVMInstruction()) << "\n";
+                    outs() << errMsg("\nValidate Interleaving: Wrong at:") << SVFUtil::getSourceLoc(inst) << "\n";
                     outs() << "Reason: analysis thread cxt is not matched by given thread cxt\n";
                     dumpCxt(ts.getContext());
                     NodeBS lev = mhp->getInterleavingThreads(ts);

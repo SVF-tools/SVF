@@ -455,7 +455,7 @@ private:
         return getTCG()->getThreadAPI()->isTDRelease(call);
     }
     /// Get lock value
-    inline const Value* getLockVal(const SVFInstruction* call)
+    inline const SVFValue* getLockVal(const SVFInstruction* call)
     {
         return getTCG()->getThreadAPI()->getLockVal(call);
     }

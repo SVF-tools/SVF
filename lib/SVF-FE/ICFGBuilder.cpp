@@ -118,7 +118,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                 {
                     assert(branchID <= 2 && "if/else has more than two branches?");
                     if(br->isConditional())
-                        icfg->addConditionalIntraEdge(srcNode, dstNode, br->getCondition(), 1 - branchID);
+                        icfg->addConditionalIntraEdge(srcNode, dstNode, LLVMModuleSet::getLLVMModuleSet()->getSVFValue(br->getCondition()), 1 - branchID);
                     else
                         icfg->addIntraEdge(srcNode, dstNode);
                 }
@@ -128,7 +128,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                     const ConstantInt* condVal = const_cast<SwitchInst*>(si)->findCaseDest(const_cast<BasicBlock*>(succ->getParent()->getLLVMBasicBlock()));
                     /// default case is set to -1;
                     s32_t val = condVal ? condVal->getSExtValue() : -1;
-                    icfg->addConditionalIntraEdge(srcNode, dstNode, si->getCondition(),val);
+                    icfg->addConditionalIntraEdge(srcNode, dstNode, LLVMModuleSet::getLLVMModuleSet()->getSVFValue(si->getCondition()),val);
                 }
                 else
                     icfg->addIntraEdge(srcNode, dstNode);

@@ -316,20 +316,12 @@ void SymbolTableInfo::destroy()
     }
 }
 
-bool SymbolTableInfo::isArgOfUncalledFunction(const Value* val)
+bool SymbolTableInfo::isArgOfUncalledFunction(const SVFValue* svfval)
 {
-    const SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
     if(const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(svfval))
         return arg->isArgOfUncalledFunction();
     else
         return false;
-}
-
-
-bool SymbolTableInfo::isPtrInUncalledFunction (const Value*  value)
-{
-    const SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(value);
-    return svfval->ptrInUncalledFunction();
 }
 
 const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
@@ -341,16 +333,6 @@ const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
     }
     return nullptr;
 }
-
-/*!
- * Check whether this value is blackhole object
- */
-bool SymbolTableInfo::isBlackholeSym(const Value* val)
-{
-    const SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
-    return svfval->isblackHole();
-}
-
 
 
 MemObj* SymbolTableInfo::createBlkObj(SymID symId)
@@ -551,33 +533,33 @@ std::string SymbolTableInfo::toString(SYMTYPE symtype)
 
 void SymbolTableInfo::dump()
 {
-    OrderedMap<SymID, Value*> idmap;
+    OrderedMap<SymID, SVFValue*> idmap;
     for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
             ++iter)
     {
         const SymID i = iter->second;
-        Value* val = (Value*) iter->first;
+        SVFValue* val = (SVFValue*) iter->first;
         idmap[i] = val;
     }
     for (ValueToIDMapTy::iterator iter = objSymMap.begin(); iter != objSymMap.end();
             ++iter)
     {
         const SymID i = iter->second;
-        Value* val = (Value*) iter->first;
+        SVFValue* val = (SVFValue*) iter->first;
         idmap[i] = val;
     }
     for (FunToIDMapTy::iterator iter = returnSymMap.begin(); iter != returnSymMap.end();
             ++iter)
     {
         const SymID i = iter->second;
-        Value* val = (Value*) iter->first;
+        SVFValue* val = (SVFValue*) iter->first;
         idmap[i] = val;
     }
     for (FunToIDMapTy::iterator iter = varargSymMap.begin(); iter != varargSymMap.end();
             ++iter)
     {
         const SymID i = iter->second;
-        Value* val = (Value*) iter->first;
+        SVFValue* val = (SVFValue*) iter->first;
         idmap[i] = val;
     }
     outs() << "{SymbolTableInfo \n";
@@ -633,7 +615,7 @@ void MemObj::setFieldSensitive()
 /*!
  * Constructor of a memory object
  */
-MemObj::MemObj(SymID id, ObjTypeInfo* ti, const Value* val) :
+MemObj::MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val) :
     typeInfo(ti), refVal(val), symId(id)
 {
 }
@@ -775,12 +757,12 @@ const std::string MemObj::toString() const
 
 /// Get different kinds of syms
 //@{
-SymID SymbolTableInfo::getValSym(const Value* val)
+SymID SymbolTableInfo::getValSym(const SVFValue* val)
 {
 
-    if(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->isNullPtr())
+    if(val->isNullPtr())
         return nullPtrSymID();
-    else if (SymbolTableInfo::isBlackholeSym(val))
+    else if (val->isblackHole())
         return blkPtrSymID();
     else
     {
@@ -790,9 +772,9 @@ SymID SymbolTableInfo::getValSym(const Value* val)
     }
 }
 
-bool SymbolTableInfo::hasValSym(const Value* val)
+bool SymbolTableInfo::hasValSym(const SVFValue* val)
 {
-    if (LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->isNullPtr() || SymbolTableInfo::isBlackholeSym(val))
+    if (val->isNullPtr() || val->isblackHole())
         return true;
     else
         return (valSymMap.find(val) != valSymMap.end());

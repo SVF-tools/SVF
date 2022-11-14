@@ -384,7 +384,7 @@ GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
  * Add a temp field value node, this method can only invoked by getGepValVar
  * due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
  */
-NodeID SVFIR::addGepValNode(const Value* curInst,const Value* gepVal, const LocationSet& ls, NodeID i, const Type *type)
+NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const LocationSet& ls, NodeID i, const Type *type)
 {
     NodeID base = getBaseValVar(getValueNode(gepVal));
     //assert(findPAGNode(i) == false && "this node should not be created before");
@@ -536,7 +536,7 @@ NodeID SVFIR::getBaseValVar(NodeID nodeId)
 /*!
  * It is used to create a dummy GepValVar during global initiailzation.
  */
-NodeID SVFIR::getGepValVar(const Value* curInst, NodeID base, const LocationSet& ls) const
+NodeID SVFIR::getGepValVar(const SVFValue* curInst, NodeID base, const LocationSet& ls) const
 {
     GepValueVarMap::const_iterator iter = GepValObjMap.find(curInst);
     if(iter==GepValObjMap.end())

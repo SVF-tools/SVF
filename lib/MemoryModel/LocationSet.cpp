@@ -39,7 +39,7 @@ using namespace SVFUtil;
 /*!
  * Add offset value to vector offsetValues
  */
-bool LocationSet::addOffsetValue(const Value* offsetVal, const Type* type)
+bool LocationSet::addOffsetValue(const SVFValue* offsetVal, const Type* type)
 {
     offsetValues.push_back(std::make_pair(offsetVal,type));
     return true;
@@ -50,7 +50,7 @@ bool LocationSet::isConstantOffset() const
 {
     for(auto it : offsetValues)
     {
-        if(SVFUtil::isa<ConstantInt>(it.first) == false)
+        if(SVFUtil::isa<ConstantInt>(it.first->getLLVMValue()) == false)
             return false;
     }
     return true;
@@ -126,9 +126,9 @@ s32_t LocationSet::accumulateConstantOffset() const
     s32_t totalConstOffset = 0;
     for(int i = offsetValues.size() - 1; i >= 0; i--)
     {
-        const Value* value = offsetValues[i].first;
+        const SVFValue* value = offsetValues[i].first;
         const Type* type = offsetValues[i].second;
-        const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(value);
+        const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(value->getLLVMValue());
         assert(op && "not a constant offset?");
         if(type==nullptr)
         {

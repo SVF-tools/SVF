@@ -67,7 +67,7 @@ public:
     //{@
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
-    typedef OrderedMap<const Value*, SymID> ValueToIDMapTy;
+    typedef OrderedMap<const SVFValue*, SymID> ValueToIDMapTy;
     /// sym id to memory object map
     typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
     /// function to sym id map
@@ -158,11 +158,7 @@ public:
 
     /// special value
     // @{
-    static bool isBlackholeSym(const Value* val);
-    static bool isArgOfUncalledFunction(const Value* val);
-    static bool isReturn(const SVFInstruction *inst);
-    static bool isPtrInUncalledFunction (const Value*  value);
-    static const u32_t getBBSuccessorNum(const SVFBasicBlock* bb);
+    static bool isArgOfUncalledFunction(const SVFValue* val);
     static const Type* getPtrElementType(const PointerType* pty);
 
     static inline bool isBlkPtr(NodeID id)
@@ -225,13 +221,14 @@ public:
 
     /// Get different kinds of syms
     //@{
-    SymID getValSym(const Value* val);
+    SymID getValSym(const SVFValue* val);
 
-    bool hasValSym(const Value* val);
+    bool hasValSym(const SVFValue* val);
 
-    inline SymID getObjSym(const Value* val) const
+    inline SymID getObjSym(const SVFValue* val) const
     {
-        ValueToIDMapTy::const_iterator iter = objSymMap.find(SVFUtil::getGlobalRep(val));
+        SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(SVFUtil::getGlobalRep(val->getLLVMValue()));
+        ValueToIDMapTy::const_iterator iter = objSymMap.find(svfVal);
         assert(iter!=objSymMap.end() && "obj sym not found");
         return iter->second;
     }
@@ -376,13 +373,13 @@ private:
     /// Type information of this object
     ObjTypeInfo* typeInfo;
     /// The unique value of this symbol/variable
-    const Value* refVal;
+    const SVFValue* refVal;
     /// The unique id to represent this symbol
     SymID symId;
 
 public:
     /// Constructor
-    MemObj(SymID id, ObjTypeInfo* ti, const Value* val = nullptr);
+    MemObj(SymID id, ObjTypeInfo* ti, const SVFValue* val = nullptr);
 
     /// Destructor
     virtual ~MemObj()
@@ -393,7 +390,7 @@ public:
     virtual const std::string toString() const;
 
     /// Get the reference value to this object
-    inline const Value* getValue() const
+    inline const SVFValue* getValue() const
     {
         return refVal;
     }

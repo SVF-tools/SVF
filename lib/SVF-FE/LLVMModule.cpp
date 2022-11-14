@@ -227,9 +227,6 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
             if(const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
             {
                 SVFCallInst* svfcall = SVFUtil::cast<SVFCallInst>(getSVFInstruction(call));
-                if(call->getCalledFunction() == nullptr){
-                    SVFUtil::value2String(call->getCalledOperand());
-                }
                 SVFValue* callee = getSVFValue(call->getCalledOperand());
                 svfcall->setCalledOperand(callee);
                 for(u32_t i = 0; i < call->arg_size(); i++){
@@ -831,6 +828,8 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
         svfvalue->setNullPtr();
     if (LLVMUtil::isBlackholeSym(val))
         svfvalue->setBlackhole();
+    if (val->hasName())
+        svfvalue->setHasName();
     if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
     {
         const Type* elementType = LLVMUtil::getPtrElementType(ptrType);

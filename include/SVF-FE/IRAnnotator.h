@@ -50,7 +50,7 @@ public:
             }
             else if (pagNode->hasValue())
             {
-                processPAGNode(pagNode->getValue(), nodeId, writeFlag);
+                processPAGNode(pagNode->getValue()->getLLVMValue(), nodeId, writeFlag);
             }
         }
 
@@ -141,7 +141,6 @@ private:
         else
         {
             SVFUtil::outs() << "Value is NOT a Instruction, Argument, Function, GlobalVariable, BasicBlock, Constant or InlineAsm" << std::endl;
-            SVFUtil::outs() << SVFUtil::value2String(value) << "\n";
         }
     }
 

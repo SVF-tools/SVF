@@ -443,7 +443,8 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
 
         if (isVirtualCallSite(SVFUtil::getLLVMCallSite(cs->getCallSite())))
         {
-            const Value* vtbl = getVCallVtblPtr(SVFUtil::getLLVMCallSite(cs->getCallSite()));
+            const Value* csval = getVCallVtblPtr(SVFUtil::getLLVMCallSite(cs->getCallSite()));
+            const SVFValue* vtbl = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(csval);
             assert(pag->hasValueNode(vtbl));
             NodeID vtblId = pag->getValueNode(vtbl);
             resolveCPPIndCalls(cs, getPts(vtblId), newEdges);
@@ -515,8 +516,8 @@ void BVDataPTAImpl::normalizePointsTo()
 /*!
  * Return alias results based on our points-to/alias analysis
  */
-AliasResult BVDataPTAImpl::alias(const Value* V1,
-                                 const Value* V2)
+AliasResult BVDataPTAImpl::alias(const SVFValue* V1,
+                                 const SVFValue* V2)
 {
     return alias(pag->getValueNode(V1),pag->getValueNode(V2));
 }

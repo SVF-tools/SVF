@@ -195,16 +195,17 @@ inline bool isIntrinsicInst(const SVFInstruction* inst)
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const SVFInstruction* inst)
 {
-    return SVFUtil::isa<CallBase>(inst->getLLVMInstruction());
+    return SVFUtil::isa<SVFCallInst>(inst);
 }
 /// Whether an instruction is a call or invoke instruction
-inline bool isCallSite(const Value* val)
+inline bool isCallSite(const SVFValue* val)
 {
-    if(SVFUtil::isa<CallBase>(val))
+    if(SVFUtil::isa<SVFCallInst>(val))
         return true;
     else
         return false;
 }
+
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 inline bool isNonInstricCallSite(const SVFInstruction* inst)
 {
@@ -222,10 +223,10 @@ inline CallSite getLLVMCallSite(const SVFInstruction* inst)
 }
 
 /// Return LLVM callsite given a value
-inline CallSite getLLVMCallSite(const Value* value)
+inline CallSite getLLVMCallSite(const SVFValue* value)
 {
     assert(isCallSite(value) && "not a callsite?");
-    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<CallBase>(value));
+    const SVFCallInst* svfInst = SVFUtil::cast<SVFCallInst>(value);
     CallSite cs(svfInst);
     return cs;
 }
@@ -278,7 +279,7 @@ inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
 inline const SVFFunction* getCallee(const CallSite cs)
 {
     // FIXME: do we need to strip-off the casts here to discover more library functions
-    const Function* callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
+    const Function* callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->getLLVMValue()->stripPointerCasts());
     return getDefFunForMultipleModule(callee);
 }
 
@@ -293,9 +294,9 @@ inline const SVFFunction* getCallee(const SVFInstruction *inst)
 
 /// Return source code including line number and file name from debug information
 //@{
-std::string  getSourceLoc(const Value* val);
-std::string  getSourceLocOfFunction(const Function* F);
-const std::string value2String(const Value* value);
+std::string  getSourceLoc(const SVFValue* val);
+std::string  getSourceLocOfFunction(const SVFFunction* F);
+const std::string value2String(const SVFValue* value);
 //@}
 
 /// Given a map mapping points-to sets to a count, adds from into to.
@@ -455,11 +456,11 @@ inline bool isConstantData(const Value* val)
 
 /// Return thread fork function
 //@{
-inline const Value* getForkedFun(const CallSite cs)
+inline const SVFValue* getForkedFun(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(cs);
 }
-inline const Value* getForkedFun(const SVFInstruction *inst)
+inline const SVFValue* getForkedFun(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(inst);
 }
@@ -471,13 +472,6 @@ const std::string type2String(const Type* type);
 inline bool isAnAllocationWraper(const SVFInstruction*)
 {
     return false;
-}
-
-/// Return LLVM function if this value is
-inline const Function* getLLVMFunction(const Value* val)
-{
-    const Function* fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
-    return fun;
 }
 
 inline bool isExtCall(const CallSite cs)
@@ -671,11 +665,11 @@ inline bool isBarrierWaitCall(const SVFInstruction *inst)
 
 /// Return sole argument of the thread routine
 //@{
-inline const Value* getActualParmAtForkSite(const CallSite cs)
+inline const SVFValue* getActualParmAtForkSite(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
 }
-inline const Value* getActualParmAtForkSite(const SVFInstruction *inst)
+inline const SVFValue* getActualParmAtForkSite(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(inst);
 }
@@ -683,11 +677,11 @@ inline const Value* getActualParmAtForkSite(const SVFInstruction *inst)
 
 /// Return the task function of the parallel_for routine
 //@{
-inline const Value* getTaskFuncAtHareParForSite(const CallSite cs)
+inline const SVFValue* getTaskFuncAtHareParForSite(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(cs);
 }
-inline const Value* getTaskFuncAtHareParForSite(const SVFInstruction *inst)
+inline const SVFValue* getTaskFuncAtHareParForSite(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(inst);
 }
@@ -695,11 +689,11 @@ inline const Value* getTaskFuncAtHareParForSite(const SVFInstruction *inst)
 
 /// Return the task data argument of the parallel_for rountine
 //@{
-inline const Value* getTaskDataAtHareParForSite(const CallSite cs)
+inline const SVFValue* getTaskDataAtHareParForSite(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(cs);
 }
-inline const Value* getTaskDataAtHareParForSite(const SVFInstruction *inst)
+inline const SVFValue* getTaskDataAtHareParForSite(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(inst);
 }

@@ -480,7 +480,7 @@ public:
     NodeBS getModInfoForCall(const CallICFGNode* cs);
     NodeBS getRefInfoForCall(const CallICFGNode* cs);
     ModRefInfo getModRefInfo(const CallICFGNode* cs);
-    ModRefInfo getModRefInfo(const CallICFGNode* cs, const Value* V);
+    ModRefInfo getModRefInfo(const CallICFGNode* cs, const SVFValue* V);
     ModRefInfo getModRefInfo(const CallICFGNode* cs1, const CallICFGNode* cs2);
     //@}
 

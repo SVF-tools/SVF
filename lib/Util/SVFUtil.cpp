@@ -245,7 +245,7 @@ void SVFUtil::increaseStackSize()
 /*!
  * Get source code line number of a function according to debug info
  */
-std::string SVFUtil::getSourceLocOfFunction(const Function* F)
+std::string SVFUtil::getSourceLocOfFunction(const SVFFunction* F)
 {
     std::string str;
     raw_string_ostream rawstr(str);
@@ -253,9 +253,9 @@ std::string SVFUtil::getSourceLocOfFunction(const Function* F)
      * https://reviews.llvm.org/D18074?id=50385
      * looks like the relevant
      */
-    if (llvm::DISubprogram *SP =  F->getSubprogram())
+    if (llvm::DISubprogram *SP =  F->getLLVMFun()->getSubprogram())
     {
-        if (SP->describes(F))
+        if (SP->describes(F->getLLVMFun()))
             rawstr << "in line: " << SP->getLine() << " file: " << SP->getFilename();
     }
     return rawstr.str();
@@ -264,9 +264,11 @@ std::string SVFUtil::getSourceLocOfFunction(const Function* F)
 /*!
  * Get the meta data (line number and file name) info of a LLVM value
  */
-std::string SVFUtil::getSourceLoc(const Value* val)
+std::string SVFUtil::getSourceLoc(const SVFValue* v)
 {
-    if(val==nullptr)  return "{ empty val }";
+    if(v==nullptr ||  v->getLLVMValue() == nullptr)  return "{ empty val }";
+    
+    const Value* val = v->getLLVMValue();
 
     std::string str;
     raw_string_ostream rawstr(str);
@@ -317,7 +319,7 @@ std::string SVFUtil::getSourceLoc(const Value* val)
         else
             rawstr << argument->getArgNo() << "th";
         rawstr << " arg " << argument->getParent()->getName() << " "
-               << getSourceLocOfFunction(argument->getParent());
+               << getSourceLocOfFunction(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(argument->getParent()));
     }
     else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
     {
@@ -343,11 +345,11 @@ std::string SVFUtil::getSourceLoc(const Value* val)
     }
     else if (const Function* func = SVFUtil::dyn_cast<Function>(val))
     {
-        rawstr << getSourceLocOfFunction(func);
+        rawstr << getSourceLocOfFunction(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(func));
     }
     else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(val))
     {
-        rawstr << "basic block: " << bb->getName() << " " << getSourceLoc(bb->getFirstNonPHI());
+        rawstr << "basic block: " << bb->getName() << " " << getSourceLoc(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(bb->getFirstNonPHI()));
     }
     else if(SVFUtil::isConstantData(val))
     {
@@ -387,16 +389,16 @@ std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
 /*!
  * return string of an LLVM Value
  */
-const std::string SVFUtil::value2String(const Value* value)
+const std::string SVFUtil::value2String(const SVFValue* value)
 {
     std::string str;
     raw_string_ostream rawstr(str);
     if(value)
     {
-        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
+        if(const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(value))
             rawstr << " " << fun->getName() << " ";
         else
-            rawstr << " " << *value << " ";
+            rawstr << " " << *value->getLLVMValue() << " ";
         rawstr << getSourceLoc(value);
     }
     return rawstr.str();

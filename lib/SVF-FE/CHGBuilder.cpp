@@ -139,7 +139,7 @@ void CHGBuilder::buildCHGEdges(const SVFFunction* fun)
         {
             for (BasicBlock::const_iterator I = B->begin(), E = B->end(); I != E; ++I)
             {
-                if (SVFUtil::isCallSite(&(*I)))
+                if (LLVMUtil::isCallSite(&(*I)))
                 {
                     const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(*I));
                     CallSite cs = SVFUtil::getLLVMCallSite(svfInst);
@@ -183,7 +183,7 @@ void CHGBuilder::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSit
         if (csThisPtr != nullptr && samePtrTrue)
         {
             struct DemangledName basename = demangle(callee->getName().str());
-            if (!SVFUtil::isCallSite(csThisPtr)  &&
+            if (!LLVMUtil::isCallSite(csThisPtr)  &&
                     basename.className.size() > 0)
             {
                 chg->addEdge(dname.className, basename.className, CHEdge::INHERITANCE);
@@ -657,7 +657,7 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
             const GlobalValue *vtbl = child->getVTable();
             if (vtbl != nullptr)
             {
-                vtbls.insert(vtbl);
+                vtbls.insert(LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(vtbl));
             }
         }
         if (vtbls.size() > 0)

@@ -253,13 +253,13 @@ void PointerAnalysis::dumpAllTypes()
         if (SVFUtil::isa<DummyObjVar>(node) || SVFUtil::isa<DummyValVar>(node))
             continue;
 
-        outs() << "##<" << node->getValue()->getName().str() << "> ";
+        outs() << "##<" << node->getValue()->getName() << "> ";
         outs() << "Source Loc: " << getSourceLoc(node->getValue());
         outs() << "\nNodeID " << node->getId() << "\n";
 
-        Type* type = node->getValue()->getType();
+        const Type* type = node->getValue()->getType();
         SymbolTableInfo::SymbolInfo()->printFlattenFields(type);
-        if (PointerType* ptType = SVFUtil::dyn_cast<PointerType>(type))
+        if (const PointerType* ptType = SVFUtil::dyn_cast<PointerType>(type))
             SymbolTableInfo::SymbolInfo()->printFlattenFields(SymbolTableInfo::getPtrElementType(ptType));
     }
 }
@@ -280,7 +280,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
     {
         if (node->hasValue())
         {
-            outs() << "##<" << node->getValue()->getName().str() << "> ";
+            outs() << "##<" << node->getValue()->getName() << "> ";
             outs() << "Source Loc: " << getSourceLoc(node->getValue());
         }
     }
@@ -319,7 +319,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
             {
                 if (node->hasValue())
                 {
-                    outs() << "<" << pagNode->getValue()->getName().str() << "> ";
+                    outs() << "<" << pagNode->getValue()->getName() << "> ";
                     outs() << "Source Loc: "
                            << getSourceLoc(pagNode->getValue()) << "] \n";
                 }
@@ -335,8 +335,8 @@ void PointerAnalysis::printIndCSTargets(const CallICFGNode* cs, const FunctionSe
 {
     outs() << "\nNodeID: " << getFunPtr(cs);
     outs() << "\nCallSite: ";
-    outs() << SVFUtil::value2String(cs->getCallSite()->getLLVMInstruction());
-    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite()->getLLVMInstruction());
+    outs() << SVFUtil::value2String(cs->getCallSite());
+    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
     outs() << "\t with Targets: ";
 
     if (!targets.empty())
@@ -383,8 +383,8 @@ void PointerAnalysis::printIndCSTargets()
         {
             outs() << "\nNodeID: " << csIt->second;
             outs() << "\nCallSite: ";
-            outs() << SVFUtil::value2String(cs->getCallSite()->getLLVMInstruction());
-            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite()->getLLVMInstruction());
+            outs() << SVFUtil::value2String(cs->getCallSite());
+            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
             outs() << "\n\t!!!has no targets!!!\n";
         }
     }
@@ -416,8 +416,8 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
 
             if(obj->isFunction())
             {
-                const Function* calleefun = SVFUtil::cast<Function>(obj->getValue());
-                const SVFFunction* callee = getDefFunForMultipleModule(calleefun);
+                const SVFFunction* calleefun = SVFUtil::cast<SVFFunction>(obj->getValue());
+                const SVFFunction* callee = getDefFunForMultipleModule(calleefun->getLLVMFun());
 
                 /// if the arg size does not match then we do not need to connect this parameter
                 /// even if the callee is a variadic function (the first parameter of variadic function is its paramter number)
@@ -468,14 +468,14 @@ void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &tar
 
     if (chgraph->csHasVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite())))
     {
-        Set<const GlobalValue*> vtbls;
+        Set<const SVFGlobalValue*> vtbls;
         const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite()));
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it)
         {
             const PAGNode *ptdnode = pag->getGNode(*it);
             if (ptdnode->hasValue())
             {
-                if (const GlobalValue *vtbl = SVFUtil::dyn_cast<GlobalValue>(ptdnode->getValue()))
+                if (const SVFGlobalValue *vtbl = SVFUtil::dyn_cast<SVFGlobalValue>(ptdnode->getValue()))
                 {
                     if (chaVtbls.find(vtbl) != chaVtbls.end())
                         vtbls.insert(vtbl);
@@ -538,15 +538,17 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 
         for (Value::const_user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
-            if (SVFUtil::isCallSite(*i))
+        {
+            SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(*i);
+            if (SVFUtil::isCallSite(svfVal))
             {
 
-                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(*i));
+                const SVFInstruction* svfInst = SVFUtil::cast<SVFInstruction>(svfVal);
                 CallSite cs(svfInst);
                 assert(cs.getNumArgOperands() == 2
                        && "arguments should be two pointers!!");
-                const Value* V1 = cs.getArgOperand(0);
-                const Value* V2 = cs.getArgOperand(1);
+                const SVFValue* V1 = cs.getArgOperand(0);
+                const SVFValue* V2 = cs.getArgOperand(1);
                 AliasResult aliasRes = alias(V1, V2);
 
                 bool checkSuccessful = false;
@@ -580,18 +582,18 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 
                 if (checkSuccessful)
                     outs() << sucMsg("\t SUCCESS :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                           << getSourceLoc(*i) << ")\n";
+                           << getSourceLoc(svfVal) << ")\n";
                 else
                 {
                     SVFUtil::errs() << errMsg("\t FAILURE :") << fun
                                     << " check <id:" << id1 << ", id:" << id2
-                                    << "> at (" << getSourceLoc(*i) << ")\n";
+                                    << "> at (" << getSourceLoc(svfVal) << ")\n";
                     assert(false && "test case failed!");
                 }
             }
             else
                 assert(false && "alias check functions not only used at callsite??");
-
+        }
     }
 }
 
@@ -608,13 +610,15 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 
         for (Value::const_user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
-            if (isCallSite(*i))
+        {
+            SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(*i);
+            if (isCallSite(svfVal))
             {
-                CallSite call = getLLVMCallSite(*i);
+                CallSite call = getLLVMCallSite(svfVal);
                 assert(call.arg_size() == 2
                        && "arguments should be two pointers!!");
-                const Value* V1 = call.getArgOperand(0);
-                const Value* V2 = call.getArgOperand(1);
+                const SVFValue* V1 = call.getArgOperand(0);
+                const SVFValue* V2 = call.getArgOperand(1);
                 AliasResult aliasRes = alias(V1, V2);
 
                 bool expectedFailure = false;
@@ -638,15 +642,16 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 
                 if (expectedFailure)
                     outs() << sucMsg("\t EXPECTED-FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                           << getSourceLoc(call.getInstruction()->getLLVMInstruction()) << ")\n";
+                           << getSourceLoc(call.getInstruction()) << ")\n";
                 else
                 {
                     SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                                    << getSourceLoc(call.getInstruction()->getLLVMInstruction()) << ")\n";
+                                    << getSourceLoc(call.getInstruction()) << ")\n";
                     assert(false && "test case failed!");
                 }
             }
             else
                 assert(false && "alias check functions not only used at callsite??");
+        }
     }
 }

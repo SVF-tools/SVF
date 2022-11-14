@@ -152,39 +152,39 @@ public:
     //@{
     /// Return the first argument of the call,
     /// Note that, it is the pthread_t pointer
-    inline const Value* getForkedThread(const SVFInstruction *inst) const
+    inline const SVFValue* getForkedThread(const SVFInstruction *inst) const
     {
         assert(isTDFork(inst) && "not a thread fork function!");
         CallSite cs = getLLVMCallSite(inst);
         return cs.getArgument(0);
     }
-    inline const Value* getForkedThread(CallSite cs) const
+    inline const SVFValue* getForkedThread(CallSite cs) const
     {
         return getForkedThread(cs.getInstruction());
     }
 
     /// Return the third argument of the call,
     /// Note that, it could be function type or a void* pointer
-    inline const Value* getForkedFun(const SVFInstruction *inst) const
+    inline const SVFValue* getForkedFun(const SVFInstruction *inst) const
     {
         assert(isTDFork(inst) && "not a thread fork function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs.getArgument(2)->stripPointerCasts();
+        return cs.getArgument(2);
     }
-    inline const Value* getForkedFun(CallSite cs) const
+    inline const SVFValue* getForkedFun(CallSite cs) const
     {
         return getForkedFun(cs.getInstruction());
     }
 
     /// Return the forth argument of the call,
     /// Note that, it is the sole argument of start routine ( a void* pointer )
-    inline const Value* getActualParmAtForkSite(const SVFInstruction *inst) const
+    inline const SVFValue* getActualParmAtForkSite(const SVFInstruction *inst) const
     {
         assert(isTDFork(inst) && "not a thread fork function!");
         CallSite cs = getLLVMCallSite(inst);
         return cs.getArgument(3);
     }
-    inline const Value* getActualParmAtForkSite(CallSite cs) const
+    inline const SVFValue* getActualParmAtForkSite(CallSite cs) const
     {
         return getActualParmAtForkSite(cs.getInstruction());
     }
@@ -192,13 +192,13 @@ public:
 
     /// Get the task function (i.e., the 5th parameter) of the hare_parallel_for call
     //@{
-    inline const Value* getTaskFuncAtHareParForSite(const SVFInstruction *inst) const
+    inline const SVFValue* getTaskFuncAtHareParForSite(const SVFInstruction *inst) const
     {
         assert(isHareParFor(inst) && "not a hare_parallel_for function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs.getArgument(4)->stripPointerCasts();
+        return cs.getArgument(4);
     }
-    inline const Value* getTaskFuncAtHareParForSite(CallSite cs) const
+    inline const SVFValue* getTaskFuncAtHareParForSite(CallSite cs) const
     {
         return getTaskFuncAtHareParForSite(cs.getInstruction());
     }
@@ -206,13 +206,13 @@ public:
 
     /// Get the task data (i.e., the 6th parameter) of the hare_parallel_for call
     //@{
-    inline const Value* getTaskDataAtHareParForSite(const SVFInstruction *inst) const
+    inline const SVFValue* getTaskDataAtHareParForSite(const SVFInstruction *inst) const
     {
         assert(isHareParFor(inst) && "not a hare_parallel_for function!");
         CallSite cs = getLLVMCallSite(inst);
         return cs.getArgument(5);
     }
-    inline const Value* getTaskDataAtHareParForSite(CallSite cs) const
+    inline const SVFValue* getTaskDataAtHareParForSite(CallSite cs) const
     {
         return getTaskDataAtHareParForSite(cs.getInstruction());
     }
@@ -234,20 +234,20 @@ public:
     //@{
     /// Return the first argument of the call,
     /// Note that, it is the pthread_t pointer
-    const Value* getJoinedThread(const SVFInstruction *inst) const;
-    inline const Value* getJoinedThread(CallSite cs) const
+    const SVFValue* getJoinedThread(const SVFInstruction *inst) const;
+    inline const SVFValue* getJoinedThread(CallSite cs) const
     {
         return getJoinedThread(cs.getInstruction());
     }
     /// Return the send argument of the call,
     /// Note that, it is the pthread_t pointer
-    inline const Value* getRetParmAtJoinedSite(const SVFInstruction *inst) const
+    inline const SVFValue* getRetParmAtJoinedSite(const SVFInstruction *inst) const
     {
         assert(isTDJoin(inst) && "not a thread join function!");
         CallSite cs = getLLVMCallSite(inst);
         return cs.getArgument(1);
     }
-    inline const Value* getRetParmAtJoinedSite(CallSite cs) const
+    inline const SVFValue* getRetParmAtJoinedSite(CallSite cs) const
     {
         return getRetParmAtJoinedSite(cs.getInstruction());
     }
@@ -296,13 +296,13 @@ public:
     /// Return lock value
     //@{
     /// First argument of pthread_mutex_lock/pthread_mutex_unlock
-    inline const Value* getLockVal(const SVFInstruction *inst) const
+    inline const SVFValue* getLockVal(const SVFInstruction *inst) const
     {
         assert((isTDAcquire(inst) || isTDRelease(inst)) && "not a lock acquire or release function");
         CallSite cs = getLLVMCallSite(inst);
         return cs.getArgument(0);
     }
-    inline const Value* getLockVal(CallSite cs) const
+    inline const SVFValue* getLockVal(CallSite cs) const
     {
         return getLockVal(cs.getInstruction());
     }
