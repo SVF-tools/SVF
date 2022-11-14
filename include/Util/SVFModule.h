@@ -42,38 +42,37 @@ class SVFModule
 {
 public:
     typedef std::vector<const SVFFunction*> FunctionSetType;
-    typedef std::vector<Function*> LLVMFunctionSetType;
-    typedef std::vector<GlobalVariable*> GlobalSetType;
-    typedef std::vector<GlobalAlias*> AliasSetType;
-    typedef Map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
+    typedef std::vector<const Function*> LLVMFunctionSetType;
+    typedef std::vector<SVFGlobalValue*> GlobalSetType;
+    typedef std::vector<SVFGlobalValue*> AliasSetType;
+    typedef std::vector<SVFConstantData*> ConstantDataType;
+    typedef std::vector<SVFOtherValue*> OtherValueType;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
     typedef FunctionSetType::const_iterator const_iterator;
-    typedef LLVMFunctionSetType::iterator llvm_iterator;
-    typedef LLVMFunctionSetType::const_iterator llvm_const_iterator;
     typedef GlobalSetType::iterator global_iterator;
     typedef GlobalSetType::const_iterator const_global_iterator;
     typedef AliasSetType::iterator alias_iterator;
     typedef AliasSetType::const_iterator const_alias_iterator;
+    typedef ConstantDataType::iterator cdata_iterator;
+    typedef ConstantDataType::const_iterator const_cdata_iterator;
+    typedef OtherValueType::iterator ovalue_iterator;
+    typedef OtherValueType::const_iterator const_ovalue_iterator;
 
 private:
     static std::string pagReadFromTxt;
     std::string moduleIdentifier;
     FunctionSetType FunctionSet;  ///< The Functions in the module
-    LLVMFunctionSetType LLVMFunctionSet;  ///< The Functions in the module
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
-    LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
+    ConstantDataType ConstantDataSet;        ///< The ConstantData in the module
+    OtherValueType  OtherValueSet;   ///< All other values in the module
+
     Set<const Value*> argsOfUncalledFunction;
-    Set<const Instruction*> returnInsts;
-    Set<const Value*> nullPtrSyms;
     Set<const Value*> blackholeSyms;
     Set<const Value*> ptrsInUncalledFunctions;
-    Map<const BasicBlock*, const u32_t> bbSuccessorNumMap;
     Map<const PointerType*, const Type*> ptrElementTypeMap;
-    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbSuccessorPosMap;
-    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>> bbPredecessorPosMap;
 
 public:
     /// Constructors
@@ -81,14 +80,7 @@ public:
     {
     }
 
-    ~SVFModule()
-    {
-        for (auto * f : FunctionSet)
-            delete f;
-        NodeIDAllocator::unset();
-        ThreadAPI::destroy();
-        ExtAPI::destory();
-    }
+    ~SVFModule();
 
     static inline void setPagFromTXT(std::string txt)
     {
@@ -114,45 +106,28 @@ public:
     inline void addFunctionSet(SVFFunction* svfFunc)
     {
         FunctionSet.push_back(svfFunc);
-        LLVMFunctionSet.push_back(svfFunc->getLLVMFun());
-        LLVMFunc2SVFFunc[svfFunc->getLLVMFun()] = svfFunc;
     }
-    inline void addGlobalSet(GlobalVariable* glob)
+    inline void addGlobalSet(SVFGlobalValue* glob)
     {
         GlobalSet.push_back(glob);
     }
-    inline void addAliasSet(GlobalAlias* alias)
+    inline void addAliasSet(SVFGlobalValue* alias)
     {
         AliasSet.push_back(alias);
     }
-    ///@}
-
-    inline const SVFFunction* getSVFFunction(const Function* fun) const
+    inline void addConstantData(SVFConstantData* cd)
     {
-        LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
-        assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
-        return it->second;
+        ConstantDataSet.push_back(cd);
     }
+    inline void addOtherValue(SVFOtherValue* ov)
+    {
+        OtherValueSet.push_back(ov);
+    }
+    
+    ///@}
 
     /// Iterators
     ///@{
-    llvm_iterator llvmFunBegin()
-    {
-        return LLVMFunctionSet.begin();
-    }
-    llvm_const_iterator llvmFunBegin() const
-    {
-        return LLVMFunctionSet.begin();
-    }
-    llvm_iterator llvmFunEnd()
-    {
-        return LLVMFunctionSet.end();
-    }
-    llvm_const_iterator llvmFunEnd() const
-    {
-        return LLVMFunctionSet.end();
-    }
-
     iterator begin()
     {
         return FunctionSet.begin();
@@ -203,13 +178,30 @@ public:
     {
         return AliasSet.end();
     }
+
+    cdata_iterator cdata_begin()
+    {
+        return ConstantDataSet.begin();
+    }
+    const_cdata_iterator cdata_begin() const
+    {
+        return ConstantDataSet.begin();
+    }
+    cdata_iterator cdata_end()
+    {
+        return ConstantDataSet.end();
+    }
+    const_cdata_iterator cdata_end() const
+    {
+        return ConstantDataSet.end();
+    }
     ///@}
 
     const std::string& getModuleIdentifier() const
     {
         if (pagReadFromTxt.empty())
         {
-            assert(moduleIdentifier.empty()==false && "No LLVM module found! Are you reading from a file other than LLVM-IR?");
+            assert(moduleIdentifier.empty()==false && "No module found! Are you reading from a file other than LLVM-IR?");
             return moduleIdentifier;
         }
         else
@@ -222,10 +214,21 @@ public:
     {
         return FunctionSet;
     }
-
-    inline const Set<const Value*>& getNullPtrSyms() const
+    inline const ConstantDataType& getConstantDataSet() const
     {
-        return nullPtrSyms;
+        return ConstantDataSet;
+    }
+    inline const GlobalSetType& getGlobalSet() const
+    {
+        return GlobalSet;
+    }
+    inline const AliasSetType& getAliasSet() const
+    {
+        return AliasSet;
+    }
+    inline const OtherValueType& getOtherValueSet() const
+    {
+        return OtherValueSet;
     }
 
     inline const Set<const Value*>& getBlackholeSyms() const
@@ -238,29 +241,9 @@ public:
         return argsOfUncalledFunction;
     }
 
-    inline const Set<const Instruction*>& getReturns() const
-    {
-        return returnInsts;
-    }
-
     inline const Set<const Value*>& getPtrsInUncalledFunctions() const
     {
         return ptrsInUncalledFunctions;
-    }
-
-    inline const Map<const BasicBlock*, const u32_t>& getBBSuccessorNumMap()
-    {
-        return bbSuccessorNumMap;
-    }
-
-    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>& getBBSuccessorPosMap()
-    {
-        return bbSuccessorPosMap;
-    }
-
-    inline const Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>& getBBPredecessorPosMap()
-    {
-        return bbPredecessorPosMap;
     }
 
     inline const Map<const PointerType*, const Type*>& getPtrElementTypeMap()
@@ -268,73 +251,24 @@ public:
         return ptrElementTypeMap;
     }
 
-    inline void addBBSuccessorNum(const BasicBlock *bb, const u32_t num)
-    {
-        bbSuccessorNumMap.insert({bb,num});
-    }
-
-    inline void addBBSuccessorPos(const BasicBlock *bb, const BasicBlock* succ,const u32_t pos)
-    {
-        Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::iterator bbSuccessorPosMapIter = bbSuccessorPosMap.find(bb);
-        if(bbSuccessorPosMapIter != bbSuccessorPosMap.end())
-        {
-            Map<const BasicBlock*, const u32_t> foundValue = bbSuccessorPosMapIter->second;
-            foundValue.insert({succ,pos});
-            bbSuccessorPosMap.insert({bb,foundValue});
-        }
-        else
-        {
-            Map<const BasicBlock*, const u32_t> valueMap;
-            valueMap.insert({succ,pos});
-            bbSuccessorPosMap.insert({bb,valueMap});
-        }
-    }
-
-    inline void addBBPredecessorPos(const BasicBlock *bb, const BasicBlock* Pred,const u32_t pos)
-    {
-        Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::iterator bbPredecessorPosMapIter = bbPredecessorPosMap.find(bb);
-        if(bbPredecessorPosMapIter != bbPredecessorPosMap.end())
-        {
-            Map<const BasicBlock*, const u32_t> foundValue = bbPredecessorPosMapIter->second;
-            foundValue.insert({Pred,pos});
-            bbPredecessorPosMap.insert({bb,foundValue});
-        }
-        else
-        {
-            Map<const BasicBlock*, const u32_t> valueMap;
-            valueMap.insert({Pred,pos});
-            bbPredecessorPosMap.insert({bb,valueMap});
-        }
-    }
-
     inline void addptrElementType(const PointerType* ptrType, const Type* type)
     {
         ptrElementTypeMap.insert({ptrType, type});
     }
 
-    inline void addPtrInUncalledFunction (const Value * value)
+    inline void addPtrInUncalledFunction (const Value*  value)
     {
         ptrsInUncalledFunctions.insert(value);
     }
 
-    inline void addNullPtrSyms(const Value *val)
-    {
-        nullPtrSyms.insert(val);
-    }
-
-    inline void addBlackholeSyms(const Value *val)
+    inline void addBlackholeSyms(const Value* val)
     {
         blackholeSyms.insert(val);
     }
 
-    inline void addArgsOfUncalledFunction(const Value *val)
+    inline void addArgsOfUncalledFunction(const Value* val)
     {
         argsOfUncalledFunction.insert(val);
-    }
-
-    inline void addReturn(const Instruction* inst)
-    {
-        returnInsts.insert(inst);
     }
 
 };

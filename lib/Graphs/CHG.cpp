@@ -49,7 +49,7 @@ static bool hasEdge(const CHNode *src, const CHNode *dst,
     return false;
 }
 
-static bool checkArgTypes(CallSite cs, const Function *fn)
+static bool checkArgTypes(CallSite cs, const SVFFunction* fn)
 {
 
     // here we skip the first argument (i.e., this pointer)
@@ -121,7 +121,7 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
 
                 // if argument types do not match
                 // skip this one
-                if (!checkArgTypes(cs, callee->getLLVMFun()))
+                if (!checkArgTypes(cs, callee))
                     continue;
 
                 cppUtil::DemangledName dname = cppUtil::demangle(callee->getName());

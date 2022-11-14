@@ -67,17 +67,14 @@ public:
     //{@
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
-    typedef OrderedMap<const Value *, SymID> ValueToIDMapTy;
+    typedef OrderedMap<const Value* , SymID> ValueToIDMapTy;
     /// sym id to memory object map
     typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
     /// function to sym id map
-    typedef OrderedMap<const Function *, SymID> FunToIDMapTy;
+    typedef OrderedMap<const SVFFunction* , SymID> FunToIDMapTy;
     /// struct type to struct info map
     typedef OrderedMap<const Type*, StInfo*> TypeToFieldInfoMap;
     typedef Set<CallSite> CallSiteSet;
-    typedef OrderedMap<const Instruction*,CallSiteID> CallSiteToIDMapTy;
-    typedef OrderedMap<CallSiteID,const Instruction*> IDToCallSiteMapTy;
-
     //@}
 
 private:
@@ -161,15 +158,12 @@ public:
 
     /// special value
     // @{
-    static bool isNullPtrSym(const Value *val);
-    static bool isBlackholeSym(const Value *val);
-    static bool isArgOfUncalledFunction(const Value *val);
-    static bool isReturn(const Instruction *inst);
-    static bool isPtrInUncalledFunction (const Value * value);
-    static const u32_t getBBSuccessorNum(const BasicBlock *bb);
+    static bool isBlackholeSym(const Value* val);
+    static bool isArgOfUncalledFunction(const Value* val);
+    static bool isReturn(const SVFInstruction *inst);
+    static bool isPtrInUncalledFunction (const Value*  value);
+    static const u32_t getBBSuccessorNum(const SVFBasicBlock* bb);
     static const Type* getPtrElementType(const PointerType* pty);
-    static const u32_t getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ);
-    static const u32_t getBBPredecessorPos(const BasicBlock *BB, const BasicBlock *Pred);
 
     static inline bool isBlkPtr(NodeID id)
     {
@@ -231,11 +225,11 @@ public:
 
     /// Get different kinds of syms
     //@{
-    SymID getValSym(const Value *val);
+    SymID getValSym(const Value* val);
 
     bool hasValSym(const Value* val);
 
-    inline SymID getObjSym(const Value *val) const
+    inline SymID getObjSym(const Value* val) const
     {
         ValueToIDMapTy::const_iterator iter = objSymMap.find(SVFUtil::getGlobalRep(val));
         assert(iter!=objSymMap.end() && "obj sym not found");
@@ -249,14 +243,14 @@ public:
         return iter->second;
     }
 
-    inline SymID getRetSym(const Function *val) const
+    inline SymID getRetSym(const SVFFunction* val) const
     {
         FunToIDMapTy::const_iterator iter =  returnSymMap.find(val);
         assert(iter!=returnSymMap.end() && "ret sym not found");
         return iter->second;
     }
 
-    inline SymID getVarargSym(const Function *val) const
+    inline SymID getVarargSym(const SVFFunction* val) const
     {
         FunToIDMapTy::const_iterator iter =  varargSymMap.find(val);
         assert(iter!=varargSymMap.end() && "vararg sym not found");
@@ -382,13 +376,13 @@ private:
     /// Type information of this object
     ObjTypeInfo* typeInfo;
     /// The unique value of this symbol/variable
-    const Value *refVal;
+    const Value* refVal;
     /// The unique id to represent this symbol
     SymID symId;
 
 public:
     /// Constructor
-    MemObj(SymID id, ObjTypeInfo* ti, const Value *val = nullptr);
+    MemObj(SymID id, ObjTypeInfo* ti, const Value* val = nullptr);
 
     /// Destructor
     virtual ~MemObj()

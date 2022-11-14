@@ -81,7 +81,7 @@ public:
     typedef Map<const StoreStmt*, CHISet> StoreToChiSetMap;
     typedef Map<const CallICFGNode*, MUSet> CallSiteToMUSetMap;
     typedef Map<const CallICFGNode*, CHISet> CallSiteToCHISetMap;
-    typedef OrderedMap<const BasicBlock*, PHISet> BBToPhiSetMap;
+    typedef OrderedMap<const SVFBasicBlock*, PHISet> BBToPhiSetMap;
     //@}
 
     /// Map from fun to its entry chi set and return mu set
@@ -90,8 +90,8 @@ public:
 
     /// For phi insertion
     //@{
-    typedef std::vector<const BasicBlock*> BBList;
-    typedef Map<const BasicBlock*, MRSet> BBToMRSetMap;
+    typedef std::vector<const SVFBasicBlock*> BBList;
+    typedef Map<const SVFBasicBlock*, MRSet> BBToMRSetMap;
     typedef Map<const MemRegion*, BBList> MemRegToBBsMap;
     //@}
 
@@ -129,7 +129,7 @@ protected:
     /// SSA rename for a function
     virtual void SSARename(const SVFFunction& fun);
     /// SSA rename for a basic block
-    virtual void SSARenameBB(const BasicBlock& bb);
+    virtual void SSARenameBB(const SVFBasicBlock& bb);
 private:
     LoadToMUSetMap load2MuSetMap;
     StoreToChiSetMap store2ChiSetMap;
@@ -175,7 +175,7 @@ private:
         if (0 == varKills.count(mr))
             usedRegs.insert(mr);
     }
-    inline void collectRegDefs(const BasicBlock* bb, const MemRegion* mr)
+    inline void collectRegDefs(const SVFBasicBlock* bb, const MemRegion* mr)
     {
         varKills.insert(mr);
         reg2BBMap[mr].push_back(bb);
@@ -184,12 +184,12 @@ private:
 
     /// Add methods for mus/chis/phis
     //@{
-    inline void AddLoadMU(const BasicBlock* bb, const LoadStmt* load, const MRSet& mrSet)
+    inline void AddLoadMU(const SVFBasicBlock* bb, const LoadStmt* load, const MRSet& mrSet)
     {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddLoadMU(bb,load,*iter);
     }
-    inline void AddStoreCHI(const BasicBlock* bb, const StoreStmt* store, const MRSet& mrSet)
+    inline void AddStoreCHI(const SVFBasicBlock* bb, const StoreStmt* store, const MRSet& mrSet)
     {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddStoreCHI(bb,store,*iter);
@@ -204,18 +204,18 @@ private:
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddCallSiteCHI(cs,*iter);
     }
-    inline void AddMSSAPHI(const BasicBlock* bb, const MRSet& mrSet)
+    inline void AddMSSAPHI(const SVFBasicBlock* bb, const MRSet& mrSet)
     {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddMSSAPHI(bb,*iter);
     }
-    inline void AddLoadMU(const BasicBlock* bb, const LoadStmt* load, const MemRegion* mr)
+    inline void AddLoadMU(const SVFBasicBlock* bb, const LoadStmt* load, const MemRegion* mr)
     {
         LOADMU* mu = new LOADMU(bb,load, mr);
         load2MuSetMap[load].insert(mu);
         collectRegUses(mr);
     }
-    inline void AddStoreCHI(const BasicBlock* bb, const StoreStmt* store, const MemRegion* mr)
+    inline void AddStoreCHI(const SVFBasicBlock* bb, const StoreStmt* store, const MemRegion* mr)
     {
         STORECHI* chi = new STORECHI(bb,store, mr);
         store2ChiSetMap[store].insert(chi);
@@ -235,7 +235,7 @@ private:
         collectRegUses(mr);
         collectRegDefs(chi->getBasicBlock(),mr);
     }
-    inline void AddMSSAPHI(const BasicBlock* bb, const MemRegion* mr)
+    inline void AddMSSAPHI(const SVFBasicBlock* bb, const MemRegion* mr)
     {
         bb2PhiSetMap[bb].insert(new PHI(bb, mr));
     }
@@ -392,11 +392,11 @@ public:
     {
         return callsiteToChiSetMap[cs];
     }
-    inline PHISet& getPHISet(const BasicBlock* bb)
+    inline PHISet& getPHISet(const SVFBasicBlock* bb)
     {
         return bb2PhiSetMap[bb];
     }
-    inline bool hasPHISet(const BasicBlock* bb) const
+    inline bool hasPHISet(const SVFBasicBlock* bb) const
     {
         return bb2PhiSetMap.find(bb)!=bb2PhiSetMap.end();
     }

@@ -163,8 +163,8 @@ class ThreadCallGraph: public PTACallGraph
 public:
     typedef Set<const CallICFGNode*> InstSet;
     typedef InstSet CallSiteSet;
-    typedef std::vector<const Instruction*> InstVector;
-    typedef Map<const Instruction*, InstSet> CallToInstMap;
+    typedef std::vector<const SVFInstruction*> InstVector;
+    typedef Map<const SVFInstruction*, InstSet> CallToInstMap;
     typedef Set<CallSiteSet*> CtxSet;
     typedef ThreadForkEdge::ForkEdgeSet ForkEdgeSet;
     typedef Map<const CallICFGNode*, ForkEdgeSet> CallInstToForkEdgesMap;

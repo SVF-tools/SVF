@@ -82,19 +82,19 @@ public:
     virtual void PrintAliasPairs(PointerAnalysis* pta);
 
     /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref any memory location
-    virtual ModRefInfo getModRefInfo(const CallInst* callInst);
+    virtual ModRefInfo getModRefInfo(const CallSite callInst);
 
     /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Location infos
-    virtual inline ModRefInfo getModRefInfo(const CallInst* callInst, const MemoryLocation& Loc)
+    virtual inline ModRefInfo getModRefInfo(const CallSite callInst, const MemoryLocation& Loc)
     {
         return getModRefInfo(callInst, Loc.Ptr);
     }
 
     /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Value infos
-    virtual ModRefInfo getModRefInfo(const CallInst* callInst, const Value* V);
+    virtual ModRefInfo getModRefInfo(const CallSite callInst, const Value* V);
 
     /// Interface of mod-ref analysis between two CallSite instructions
-    virtual ModRefInfo getModRefInfo(const CallInst* callInst1, const CallInst* callInst2);
+    virtual ModRefInfo getModRefInfo(const CallSite callInst1, const CallSite callInst2);
 
     /// Run pointer analysis on SVFModule
     virtual void runOnModule(SVFModule* svfModule);

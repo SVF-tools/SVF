@@ -108,17 +108,17 @@ private:
     }
 
     // Deduce the LLVM value's type, and process the metadata accordingly
-    void processPAGNode(const Value *value, SVF::NodeID nodeId, bool writeFlag)
+    void processPAGNode(const Value* value, SVF::NodeID nodeId, bool writeFlag)
     {
-        if (auto instruction = const_cast<Instruction *>(SVFUtil::dyn_cast<Instruction>(value)))
+        if (auto instruction = const_cast<Instruction* >(SVFUtil::dyn_cast<Instruction>(value)))
         {
             processInstructionNode(instruction, nodeId, writeFlag);
         }
-        else if (auto argument = const_cast<Argument *>(SVFUtil::dyn_cast<Argument>(value)))
+        else if (auto argument = const_cast<Argument* >(SVFUtil::dyn_cast<Argument>(value)))
         {
             processArgumentNode(argument, nodeId, writeFlag);
         }
-        else if (auto function = const_cast<Function *>(SVFUtil::dyn_cast<Function>(value)))
+        else if (auto function = const_cast<Function* >(SVFUtil::dyn_cast<Function>(value)))
         {
             processFunctionNode(function, nodeId, writeFlag);
         }
@@ -126,7 +126,7 @@ private:
         {
             processGlobalVarNode(globalVar, nodeId, writeFlag);
         }
-        else if (auto basicBlock = const_cast<BasicBlock *>(SVFUtil::dyn_cast<BasicBlock>(value)))
+        else if (auto basicBlock = const_cast<BasicBlock* >(SVFUtil::dyn_cast<BasicBlock>(value)))
         {
             processBasicBlockNode(basicBlock, nodeId, writeFlag);
         }
@@ -145,7 +145,7 @@ private:
         }
     }
 
-    void processInstructionNode(Instruction *instruction, const SVF::NodeID &nodeId, bool writeFlag)
+    void processInstructionNode(Instruction* instruction, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "inode-" + std::to_string(nodeId);
 
@@ -163,7 +163,7 @@ private:
         }
     }
 
-    void processArgumentNode(Argument *argument, const SVF::NodeID &nodeId, bool writeFlag)
+    void processArgumentNode(Argument* argument, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "anode-" + std::to_string(nodeId);
 
@@ -181,7 +181,7 @@ private:
         }
     }
 
-    void processFunctionNode(Function *function, const SVF::NodeID &nodeId, bool writeFlag)
+    void processFunctionNode(Function* function, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "fnode-" + std::to_string(nodeId);
 
@@ -217,7 +217,7 @@ private:
         }
     }
 
-    void processBasicBlockNode(BasicBlock *basicBlock, const SVF::NodeID &nodeId, bool writeFlag)
+    void processBasicBlockNode(BasicBlock* basicBlock, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "bnode-" + std::to_string(nodeId);
 

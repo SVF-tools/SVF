@@ -290,7 +290,7 @@ const std::string ActualParmVFGNode::toString() const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ActualParmVFGNode ID: " << getId() << " ";
-    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]";
+    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()->getLLVMInstruction()) << "]";
     rawstr << param->toString();
     return rawstr.str();
 }
@@ -324,7 +324,7 @@ const std::string ActualRetVFGNode::toString() const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ActualRetVFGNode ID: " << getId() << " ";
-    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]";
+    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()->getLLVMInstruction()) << "]";
     rawstr << param->toString();
     return rawstr.str();
 }

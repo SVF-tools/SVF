@@ -151,9 +151,8 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
     assert(obj && "object not found!!");
     if(obj->isStack())
     {
-        if(const Function* fun = pag->getGNode(id)->getFunction())
+        if(const SVFFunction* svffun = pag->getGNode(id)->getFunction())
         {
-            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
             return callGraphSCC->isInCycle(getPTACallGraph()->getCallGraphNode(svffun)->getId());
         }
     }
@@ -336,8 +335,8 @@ void PointerAnalysis::printIndCSTargets(const CallICFGNode* cs, const FunctionSe
 {
     outs() << "\nNodeID: " << getFunPtr(cs);
     outs() << "\nCallSite: ";
-    outs() << SVFUtil::value2String(cs->getCallSite());
-    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
+    outs() << SVFUtil::value2String(cs->getCallSite()->getLLVMInstruction());
+    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite()->getLLVMInstruction());
     outs() << "\t with Targets: ";
 
     if (!targets.empty())
@@ -384,8 +383,8 @@ void PointerAnalysis::printIndCSTargets()
         {
             outs() << "\nNodeID: " << csIt->second;
             outs() << "\nCallSite: ";
-            outs() << SVFUtil::value2String(cs->getCallSite());
-            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
+            outs() << SVFUtil::value2String(cs->getCallSite()->getLLVMInstruction());
+            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite()->getLLVMInstruction());
             outs() << "\n\t!!!has no targets!!!\n";
         }
     }
@@ -537,16 +536,17 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
         if(!checkFun->getLLVMFun()->use_empty())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
-        for (Value::user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
+        for (Value::const_user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
             if (SVFUtil::isCallSite(*i))
             {
-
-                CallSite cs(*i);
+                
+                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(*i));
+                CallSite cs(svfInst);
                 assert(cs.getNumArgOperands() == 2
                        && "arguments should be two pointers!!");
-                Value* V1 = cs.getArgOperand(0);
-                Value* V2 = cs.getArgOperand(1);
+                const Value* V1 = cs.getArgOperand(0);
+                const Value* V2 = cs.getArgOperand(1);
                 AliasResult aliasRes = alias(V1, V2);
 
                 bool checkSuccessful = false;
@@ -606,14 +606,15 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
         if(!checkFun->getLLVMFun()->use_empty())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
-        for (Value::user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
+        for (Value::const_user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
-            if (CallInst *call = SVFUtil::dyn_cast<CallInst>(*i))
+            if (isCallSite(*i))
             {
-                assert(call->arg_size() == 2
+                CallSite call = getLLVMCallSite(*i);
+                assert(call.arg_size() == 2
                        && "arguments should be two pointers!!");
-                Value* V1 = call->getArgOperand(0);
-                Value* V2 = call->getArgOperand(1);
+                const Value* V1 = call.getArgOperand(0);
+                const Value* V2 = call.getArgOperand(1);
                 AliasResult aliasRes = alias(V1, V2);
 
                 bool expectedFailure = false;
@@ -637,11 +638,11 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 
                 if (expectedFailure)
                     outs() << sucMsg("\t EXPECTED-FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                           << getSourceLoc(call) << ")\n";
+                           << getSourceLoc(call.getInstruction()->getLLVMInstruction()) << ")\n";
                 else
                 {
                     SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                                    << getSourceLoc(call) << ")\n";
+                                    << getSourceLoc(call.getInstruction()->getLLVMInstruction()) << ")\n";
                     assert(false && "test case failed!");
                 }
             }

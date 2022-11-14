@@ -123,7 +123,7 @@ DominatorTree* PTACFInfoBuilder::getDT(const Function* f)
 }
 
 
-void IteratedDominanceFrontier::calculate(BasicBlock * bb,
+void IteratedDominanceFrontier::calculate(BasicBlock*  bb,
         const DominanceFrontier &DF)
 {
 
@@ -135,7 +135,7 @@ void IteratedDominanceFrontier::calculate(BasicBlock * bb,
     worklist.insert(it->second.begin(), it->second.end());
     while (!worklist.empty())
     {
-        BasicBlock *item = *worklist.begin();
+        BasicBlock* item = *worklist.begin();
         worklist.erase(worklist.begin());
         if (Frontiers[bb].find(item) == Frontiers[bb].end())
         {

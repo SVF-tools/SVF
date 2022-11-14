@@ -316,71 +316,17 @@ void SymbolTableInfo::destroy()
     }
 }
 
-/*!
- * Check whether this value is null pointer
- */
-bool SymbolTableInfo::isNullPtrSym(const Value *val)
-{
-    const Set<const Value*>& nullPtrSyms = symInfo->getModule()->getNullPtrSyms();
-    return nullPtrSyms.find(val) != nullPtrSyms.end();
-}
-
-bool SymbolTableInfo::isArgOfUncalledFunction(const Value *val)
+bool SymbolTableInfo::isArgOfUncalledFunction(const Value* val)
 {
     const Set<const Value*>& argOfUncalledFunctionSet = symInfo->getModule()->getArgsOfUncalledFunction();
     return argOfUncalledFunctionSet.find(val) != argOfUncalledFunctionSet.end();
 }
 
-bool SymbolTableInfo::isReturn(const Instruction *inst)
-{
-    const Set<const Instruction*>& returnInstsSet = symInfo->getModule()->getReturns();
-    return returnInstsSet.find(inst) != returnInstsSet.end();
-}
 
-bool SymbolTableInfo::isPtrInUncalledFunction (const Value * value)
+bool SymbolTableInfo::isPtrInUncalledFunction (const Value*  value)
 {
     const Set<const Value*>& ptrInUncalledFunctionSet = symInfo->getModule()->getPtrsInUncalledFunctions();
     return ptrInUncalledFunctionSet.find(value) != ptrInUncalledFunctionSet.end();
-}
-
-const u32_t SymbolTableInfo::getBBSuccessorNum(const BasicBlock *bb)
-{
-    Map<const BasicBlock*, const u32_t>::const_iterator bbSuccessorNumMapIter = symInfo->getModule()->getBBSuccessorNumMap().find(bb);
-    if (bbSuccessorNumMapIter != symInfo->getModule()->getBBSuccessorNumMap().end())
-    {
-        return bbSuccessorNumMapIter->second;
-    }
-    return 0;
-}
-
-const u32_t SymbolTableInfo::getBBSuccessorPos(const BasicBlock *bb, const BasicBlock *succ)
-{
-    Map<const BasicBlock*, const Map<const BasicBlock*, const u32_t>>::const_iterator bbSuccessorPosMapIter = symInfo->getModule()->getBBSuccessorPosMap().find(bb);
-    if(bbSuccessorPosMapIter != symInfo->getModule()->getBBSuccessorPosMap().end())
-    {
-        const Map <const BasicBlock *, const u32_t> value = bbSuccessorPosMapIter->second;
-        Map <const BasicBlock *, const u32_t>::const_iterator valueIter = value.find(succ);
-        if(valueIter != value.end())
-        {
-            u32_t pos = valueIter->second;
-            return pos;
-        }
-    }
-    return 0;
-}
-
-const u32_t SymbolTableInfo::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *Pred)
-{
-    if(symInfo->getModule()->getBBPredecessorPosMap().find(bb) != symInfo->getModule()->getBBPredecessorPosMap().end())
-    {
-        const Map <const BasicBlock *, const u32_t> value = symInfo->getModule()->getBBPredecessorPosMap().find(bb)->second;
-        if(value.find(Pred) != value.end())
-        {
-            u32_t pos = value.find(Pred)->second;
-            return pos;
-        }
-    }
-    return 0;
 }
 
 const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
@@ -396,7 +342,7 @@ const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
 /*!
  * Check whether this value is blackhole object
  */
-bool SymbolTableInfo::isBlackholeSym(const Value *val)
+bool SymbolTableInfo::isBlackholeSym(const Value* val)
 {
     const Set<const Value*>  blackholeSyms = symInfo->getModule()->getBlackholeSyms();
     return blackholeSyms.find(val)!= blackholeSyms.end();
@@ -603,12 +549,10 @@ std::string SymbolTableInfo::toString(SYMTYPE symtype)
 void SymbolTableInfo::dump()
 {
     OrderedMap<SymID, Value*> idmap;
-    SymID maxid = 0;
     for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
             ++iter)
     {
         const SymID i = iter->second;
-        maxid = max(i, maxid);
         Value* val = (Value*) iter->first;
         idmap[i] = val;
     }
@@ -616,7 +560,6 @@ void SymbolTableInfo::dump()
             ++iter)
     {
         const SymID i = iter->second;
-        maxid = max(i, maxid);
         Value* val = (Value*) iter->first;
         idmap[i] = val;
     }
@@ -624,7 +567,6 @@ void SymbolTableInfo::dump()
             ++iter)
     {
         const SymID i = iter->second;
-        maxid = max(i, maxid);
         Value* val = (Value*) iter->first;
         idmap[i] = val;
     }
@@ -632,7 +574,6 @@ void SymbolTableInfo::dump()
             ++iter)
     {
         const SymID i = iter->second;
-        maxid = max(i, maxid);
         Value* val = (Value*) iter->first;
         idmap[i] = val;
     }
@@ -689,7 +630,7 @@ void MemObj::setFieldSensitive()
 /*!
  * Constructor of a memory object
  */
-MemObj::MemObj(SymID id, ObjTypeInfo* ti, const Value *val) :
+MemObj::MemObj(SymID id, ObjTypeInfo* ti, const Value* val) :
     typeInfo(ti), refVal(val), symId(id)
 {
 }
@@ -831,10 +772,10 @@ const std::string MemObj::toString() const
 
 /// Get different kinds of syms
 //@{
-SymID SymbolTableInfo::getValSym(const Value *val)
+SymID SymbolTableInfo::getValSym(const Value* val)
 {
 
-    if(SymbolTableInfo::isNullPtrSym(val))
+    if(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->isNullPtr())
         return nullPtrSymID();
     else if (SymbolTableInfo::isBlackholeSym(val))
         return blkPtrSymID();
@@ -848,7 +789,7 @@ SymID SymbolTableInfo::getValSym(const Value *val)
 
 bool SymbolTableInfo::hasValSym(const Value* val)
 {
-    if (SymbolTableInfo::isNullPtrSym(val) || SymbolTableInfo::isBlackholeSym(val))
+    if (LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->isNullPtr() || SymbolTableInfo::isBlackholeSym(val))
         return true;
     else
         return (valSymMap.find(val) != valSymMap.end());

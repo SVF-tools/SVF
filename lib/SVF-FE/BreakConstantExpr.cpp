@@ -84,7 +84,7 @@ STATISTIC (TotalChanges, "Number of Converted Constant Expressions");
 //  ~nullptr - A pointer to the value casted into a ConstantExpr is returned.
 //
 static ConstantExpr *
-hasConstantGEP (Value * V)
+hasConstantGEP (Value*  V)
 {
     if (ConstantExpr * CE = SVFUtil::dyn_cast<ConstantExpr>(V))
     {
@@ -114,8 +114,8 @@ hasConstantGEP (Value * V)
 //  perform any recursion, so the resulting instruction may have constant
 //  expression operands.
 //
-static Instruction *
-convertExpression (ConstantExpr * CE, Instruction * InsertPt)
+static Instruction* 
+convertExpression (ConstantExpr * CE, Instruction*  InsertPt)
 {
     //
     // Convert this constant expression into a regular instruction.
@@ -145,7 +145,7 @@ BreakConstantGEPs::runOnModule (Module & module)
     for (Module::iterator F = module.begin(), E = module.end(); F != E; ++F)
     {
         // Worklist of values to check for constant GEP expressions
-        std::vector<Instruction *> Worklist;
+        std::vector<Instruction* > Worklist;
 
         //
         // Initialize the worklist by finding all instructions that have one or more
@@ -159,7 +159,7 @@ BreakConstantGEPs::runOnModule (Module & module)
                 // Scan through the operands of this instruction.  If it is a constant
                 // expression GEP, insert an instruction GEP before the instruction.
                 //
-                Instruction * I = &(*i);
+                Instruction*  I = &(*i);
                 for (unsigned index = 0; index < I->getNumOperands(); ++index)
                 {
                     if (hasConstantGEP (I->getOperand(index)))
@@ -182,7 +182,7 @@ BreakConstantGEPs::runOnModule (Module & module)
         //
         while (Worklist.size())
         {
-            Instruction * I = Worklist.back();
+            Instruction*  I = Worklist.back();
             Worklist.pop_back();
 
             //
@@ -203,10 +203,10 @@ BreakConstantGEPs::runOnModule (Module & module)
                     // incoming basic block listed multiple times; this seems okay as long
                     // the same value is listed for the incoming block.
                     //
-                    Instruction * InsertPt = PHI->getIncomingBlock(index)->getTerminator();
+                    Instruction*  InsertPt = PHI->getIncomingBlock(index)->getTerminator();
                     if (ConstantExpr * CE = hasConstantGEP (PHI->getIncomingValue(index)))
                     {
-                        Instruction * NewInst = convertExpression (CE, InsertPt);
+                        Instruction*  NewInst = convertExpression (CE, InsertPt);
                         for (unsigned i2 = index; i2 < PHI->getNumIncomingValues(); ++i2)
                         {
                             if ((PHI->getIncomingBlock (i2)) == PHI->getIncomingBlock (index))
@@ -227,7 +227,7 @@ BreakConstantGEPs::runOnModule (Module & module)
                     //
                     if (ConstantExpr * CE = hasConstantGEP (I->getOperand(index)))
                     {
-                        Instruction * NewInst = convertExpression (CE, I);
+                        Instruction*  NewInst = convertExpression (CE, I);
                         I->replaceUsesOfWith (CE, NewInst);
                         Worklist.push_back (NewInst);
                     }

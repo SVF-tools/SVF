@@ -61,9 +61,11 @@ typedef llvm::StructType StructType;
 typedef llvm::ArrayType ArrayType;
 typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
+typedef llvm::IntegerType IntegerType;
 
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
+typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::GlobalAlias GlobalAlias;
@@ -72,51 +74,187 @@ typedef llvm::GlobalAlias GlobalAlias;
 typedef llvm::NamedMDNode NamedMDNode;
 typedef llvm::MDNode MDNode;
 
-/// LLVM Instructions
-typedef llvm::CallInst CallInst;
-typedef llvm::StoreInst StoreInst;
-typedef llvm::LoadInst LoadInst;
-
-
-/// LLVM Iterators
-#if LLVM_VERSION_MAJOR >= 11
-typedef llvm::const_succ_iterator succ_const_iterator;
-#else
-typedef llvm::succ_const_iterator succ_const_iterator;
-#endif
 typedef llvm::GraphPrinter GraphPrinter;
-typedef llvm::IntegerType IntegerType;
 
 // LLVM Debug Information
 typedef llvm::DISubprogram DISubprogram;
 
+
+class SVFInstruction;
+class SVFBasicBlock;
+class SVFArgument;
+
+class SVFValue
+{
+
+public:
+    typedef s64_t GNodeK;
+
+    enum SVFValKind
+    {
+        SVFVal,
+        SVFFunc,
+        SVFBB,
+        SVFInst,
+        SVFCall,
+        SVFGlob,
+        SVFArg,
+        SVFConstData,
+        SVFOther
+    };
+
+private:
+    const Value* value;
+    const Type* type;
+    GNodeK kind;	///< Type of this SVFValue
+    bool ptrInUncalledFun;
+    bool blackHoleSym;
+    bool nullptrSym;
+    bool isPtr;
+    const Type* ptrElementType;
+protected:
+    std::string name;
+
+    /// Constructor
+    SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k), 
+        ptrInUncalledFun(false), blackHoleSym(false), nullptrSym(false), isPtr(val->getType()->isPointerTy()), 
+        ptrElementType(nullptr),name(val->getName())
+    {
+    }
+
+public:
+    SVFValue(void) = delete;
+    virtual ~SVFValue() = default;
+    
+    /// Get the type of this SVFValue
+    inline GNodeK getKind() const
+    {
+        return kind;
+    }
+
+    /// Add the hash function for std::set (we also can overload operator< to implement this)
+    //  and duplicated elements in the set are not inserted (binary tree comparison)
+    //@{
+    bool operator()(const SVFValue* lhs, const SVFValue* rhs) const
+    {
+        return lhs->value < rhs->value;
+    }
+
+    inline bool operator==(SVFValue* rhs) const
+    {
+        return value == rhs->value;
+    }
+
+    inline bool operator!=(SVFValue* rhs) const
+    {
+        return value != rhs->value;
+    }
+    //@}
+
+    inline const std::string getName() const
+    {
+        return name;
+    }
+
+    inline const Value* getLLVMValue() const
+    {
+        return value;
+    }
+
+    inline const Type* getType() const
+    {
+        return type;
+    }
+
+    inline void setPtrInUncalledFunction() 
+    {
+        ptrInUncalledFun = true;
+    }
+
+    inline bool ptrInUncalledFunction() const 
+    {
+        return ptrInUncalledFun;
+    }
+    inline void setBlackhole() 
+    {
+        blackHoleSym = true;
+    }
+    inline bool isblackHole() const 
+    {
+        return blackHoleSym;
+    }
+    inline void setNullPtr() 
+    {
+        nullptrSym = true;
+    }
+    inline bool isNullPtr() const 
+    {
+        return nullptrSym;
+    }
+    inline const Type* getPtrElementType() const
+    {
+        assert(isPtr && "value is not a pointer?");
+        return ptrElementType;
+    }
+    inline void setPtrElementType(const Type* t)
+    {
+        assert(isPtr && "value is not a pointer?");
+        ptrElementType = t;
+    }
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend OutStream& operator<< (OutStream &o, const SVFValue &node)
+    {
+        o << node.getName();
+        return o;
+    }
+    //@}
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFValue::SVFVal ||
+               node->getKind() == SVFValue::SVFFunc ||
+               node->getKind() == SVFValue::SVFGlob ||
+               node->getKind() == SVFValue::SVFBB ||
+               node->getKind() == SVFValue::SVFInst;
+    }
+};
+
 class SVFFunction : public SVFValue
 {
+
+public:
+    typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
+
 private:
     bool isDecl;
     bool isIntri;
-    Function* fun;
-    BasicBlock* exitBB;
-    std::vector<const BasicBlock*> reachableBBs;
+    const Function* fun;
+    const SVFBasicBlock* exitBB;
+    std::vector<const SVFBasicBlock*> reachableBBs;
+    std::vector<const SVFBasicBlock*> allBBs;
+    std::vector<const SVFArgument*> allArgs;
+
     bool isUncalled;
     bool isNotRet;
-    Map<const BasicBlock*,Set<const BasicBlock*>> dtBBsMap;
-    Map<const BasicBlock*,Set<const BasicBlock*>> dfBBsMap;
-    Map<const BasicBlock*,Set<const BasicBlock*>> pdtBBsMap;
-    Map<const BasicBlock*,std::vector<const BasicBlock*>> bb2LoopMap;
+    bool varArg;
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> dtBBsMap;
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> dfBBsMap;
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> pdtBBsMap;
+    Map<const SVFBasicBlock*,std::vector<const SVFBasicBlock*>> bb2LoopMap;
+
 public:
 
-    SVFFunction(Function* f): SVFValue(f->getName().str(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false)
+    SVFFunction(const Function* f);
+    SVFFunction(void) = delete;
+    virtual ~SVFFunction();
+
+    static inline bool classof(const SVFValue *node)
     {
+        return node->getKind() == SVFFunc;
     }
 
-    SVFFunction(Function* f, BasicBlock* exitBB, std::vector<const BasicBlock*> reachableBBs): SVFValue(f->getName().str(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(exitBB), reachableBBs(reachableBBs), isUncalled(false), isNotRet(false)
-    {
-    }
-
-    inline Function* getLLVMFun() const
+    inline const Function* getLLVMFun() const
     {
         assert(fun && "no LLVM Function found!");
         return fun;
@@ -132,22 +270,41 @@ public:
         return isIntri;
     }
 
-    inline u32_t arg_size() const
+    u32_t arg_size() const;
+    const SVFArgument* getArg(u32_t idx) const;
+    bool isVarArg() const;
+
+    inline void addBasicBlock(const SVFBasicBlock* bb) 
     {
-        return getLLVMFun()->arg_size();
+        allBBs.push_back(bb);
+    }
+    
+    inline void addArgument(SVFArgument* arg)
+    {
+        allArgs.push_back(arg);
     }
 
-    const Value* getArg(u32_t idx) const
+    inline const SVFBasicBlock* getEntryBlock() const
     {
-        return getLLVMFun()->getArg(idx);
+        return allBBs.front();
     }
 
-    inline bool isVarArg() const
+    inline const_iterator begin() const
     {
-        return getLLVMFun()->isVarArg();
+        return allBBs.begin();
     }
 
-    inline const std::vector<const BasicBlock*>& getReachableBBs() const
+    inline const_iterator end() const
+    {
+        return allBBs.end();
+    }
+
+    inline const std::vector<const SVFBasicBlock*>& getBasicBlockList() const
+    {
+        return allBBs;
+    }
+    
+    inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
     {
         return reachableBBs;
     }
@@ -157,69 +314,69 @@ public:
         return isUncalled;
     }
 
-    inline const void setIsUncalledFunction(const bool isUncalledFunction)
+    inline const void setIsUncalledFunction(bool isUncalledFunction)
     {
         this->isUncalled = isUncalledFunction;
     }
 
-    inline const void setIsNotRet(const bool doesNotRet)
+    inline const void setIsNotRet(bool doesNotRet)
     {
         this->isNotRet = doesNotRet;
     }
 
-    inline const void setExitBB(BasicBlock* exitBB)
+    inline const void setExitBB(const SVFBasicBlock* exitBB)
     {
         this->exitBB = exitBB;
     }
 
-    inline const void setReachableBBs(std::vector<const BasicBlock*> reachableBBs)
+    inline const void setReachableBBs(std::vector<const SVFBasicBlock*> reachableBBs)
     {
         this->reachableBBs = reachableBBs;
     }
 
-    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getDomFrontierMap() const
+    inline const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomFrontierMap() const
     {
         return dfBBsMap;
     }
 
-    inline Map<const BasicBlock*,Set<const BasicBlock*>>& getDomFrontierMap()
+    inline Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomFrontierMap()
     {
         return dfBBsMap;
     }
 
-    inline bool hasLoopInfo(const BasicBlock* bb) const
+    inline bool hasLoopInfo(const SVFBasicBlock* bb) const
     {
         return bb2LoopMap.find(bb)!=bb2LoopMap.end();
     }
 
-    const std::vector<const BasicBlock*>& getLoopInfo(const BasicBlock* bb) const;
+    const std::vector<const SVFBasicBlock*>& getLoopInfo(const SVFBasicBlock* bb) const;
 
-    inline void addToBB2LoopMap(const BasicBlock* bb, const BasicBlock* loopBB)
+    inline void addToBB2LoopMap(const SVFBasicBlock* bb, const SVFBasicBlock* loopBB)
     {
         bb2LoopMap[bb].push_back(loopBB);
     }
 
-    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getPostDomTreeMap() const
+    inline const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getPostDomTreeMap() const
     {
         return pdtBBsMap;
     }
 
-    inline Map<const BasicBlock*,Set<const BasicBlock*>>& getPostDomTreeMap()
+    inline Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getPostDomTreeMap()
     {
         return pdtBBsMap;
     }
 
-    inline Map<const BasicBlock*,Set<const BasicBlock*>>& getDomTreeMap()
+    inline Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomTreeMap()
     {
         return dtBBsMap;
     }
 
-    inline const Map<const BasicBlock*,Set<const BasicBlock*>>& getDomTreeMap() const
+    inline const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomTreeMap() const
     {
         return dtBBsMap;
     }
 
-    inline bool isUnreachable(const BasicBlock* bb) const
+    inline bool isUnreachable(const SVFBasicBlock* bb) const
     {
         return std::find(reachableBBs.begin(), reachableBBs.end(), bb)==reachableBBs.end();
     }
@@ -229,18 +386,18 @@ public:
         return isNotRet;
     }
 
-    inline const BasicBlock* getExitBB() const
+    inline const SVFBasicBlock* getExitBB() const
     {
         return this->exitBB;
     }
 
-    void getExitBlocksOfLoop(const BasicBlock* bb, Set<const BasicBlock*>& exitbbs) const;
+    void getExitBlocksOfLoop(const SVFBasicBlock* bb, Set<const SVFBasicBlock*>& exitbbs) const;
 
-    bool isLoopHeader(const BasicBlock* bb) const;
+    bool isLoopHeader(const SVFBasicBlock* bb) const;
 
-    bool dominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const;
+    bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
 
-    bool postDominate(const BasicBlock* bbKey, const BasicBlock* bbValue) const;
+    bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
 
     // Dump Control Flow Graph of llvm function, with instructions
     void viewCFG();
@@ -250,47 +407,292 @@ public:
 
 };
 
-class SVFGlobal : public SVFValue
-{
-
-public:
-    SVFGlobal(const std::string& val): SVFValue(val,SVFValue::SVFGlob)
-    {
-    }
-
-};
-
 class SVFBasicBlock : public SVFValue
 {
 
 public:
-    SVFBasicBlock(const std::string& val): SVFValue(val,SVFValue::SVFBB)
+    typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
+
+private:
+    std::vector<const SVFInstruction*> allInsts;
+    std::vector<const SVFBasicBlock*> succBBs;
+    std::vector<const SVFBasicBlock*> predBBs;
+    const BasicBlock* bb;
+    const SVFFunction* fun;
+public:
+    SVFBasicBlock(const BasicBlock* b, const SVFFunction* f);
+    SVFBasicBlock(void) = delete;
+    virtual ~SVFBasicBlock();
+
+    static inline bool classof(const SVFValue *node)
     {
+        return node->getKind() == SVFBB;
     }
 
+    inline void addInstruction(const SVFInstruction* inst) 
+    {
+        allInsts.push_back(inst);
+    }
+
+    inline const std::vector<const SVFInstruction*>& getInstructionList() const
+    {
+        return allInsts;
+    }
+
+    inline const_iterator begin() const
+    {
+        return allInsts.begin();
+    }
+
+    inline const_iterator end() const
+    {
+        return allInsts.end();
+    }
+
+    inline const SVFFunction* getParent() const
+    {
+        return fun;
+    }
+
+    inline const SVFInstruction* front() const
+    {
+        return allInsts.front();
+    }
+
+    inline const SVFInstruction* back() const
+    {
+        return allInsts.back();
+    }
+
+    inline void addSuccBasicBlock(const SVFBasicBlock* succ) 
+    {
+        succBBs.push_back(succ);
+    }
+
+    inline void addPredBasicBlock(const SVFBasicBlock* pred) 
+    {
+        predBBs.push_back(pred);
+    }
+
+    inline const std::vector<const SVFBasicBlock*>& getSuccessors() const
+    {
+        return succBBs;
+    }
+
+    inline const std::vector<const SVFBasicBlock*>& getPredecessors() const
+    {
+        return predBBs;
+    }
+    u32_t getNumSuccessors() const 
+    {
+        return succBBs.size();
+    }
+    u32_t getBBSuccessorPos(const SVFBasicBlock* succbb);
+    u32_t getBBSuccessorPos(const SVFBasicBlock* succbb) const;
+    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb);
+    u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) const;
+
+    inline const BasicBlock* getLLVMBasicBlock() const
+    {
+        return bb;
+    }
 };
+
+class SVFInstruction : public SVFValue 
+{
+
+private:
+    const Instruction* inst;
+    const SVFBasicBlock* bb;
+    const SVFFunction* fun;
+    bool terminator;
+    bool ret;
+public:
+    SVFInstruction(const Instruction* i, const SVFBasicBlock* b, bool isRet);
+    SVFInstruction(const Instruction* i) = delete;
+    SVFInstruction(void) = delete;
+
+    inline const Instruction* getLLVMInstruction() const
+    {
+        return inst;
+    }
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFInst || node->getKind() == SVFCall;
+    }
+
+    inline const SVFBasicBlock* getParent() const
+    {
+        return bb;
+    }
+
+    inline const SVFFunction* getFunction() const
+    {
+        return fun;
+    }
+
+    inline bool isTerminator() const
+    {
+        return terminator;
+    }
+
+    inline bool isRetInst() const
+    {
+        return ret;
+    }
+};
+
+class SVFCallInst : public SVFInstruction
+{
+private:
+    std::vector<const SVFValue*> args;
+
+public:
+    SVFCallInst(const CallBase* i, const SVFBasicBlock* b) : SVFInstruction(i,b,false)
+    {
+    }
+    SVFCallInst(const Instruction* i) = delete;
+    SVFCallInst(const CallBase* i) = delete;
+    SVFCallInst(void) = delete;
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFCall;
+    }
+    static inline bool classof(const SVFInstruction *node)
+    {
+        return node->getKind() == SVFCall;
+    }
+    inline void addArgument(const SVFValue* a){
+        args.push_back(a);
+    }
+};
+
+class SVFGlobalValue : public SVFValue
+{
+private:
+    const GlobalValue* gv;
+public:
+    SVFGlobalValue(const GlobalValue* _gv): SVFValue(_gv, SVFValue::SVFGlob), gv(_gv)
+    {
+    }
+    SVFGlobalValue() = delete;
+
+    const GlobalValue* getLLVMGlobalValue() const
+    {
+        return gv;
+    }
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFGlob;
+    }
+};
+
+class SVFArgument : public SVFValue
+{
+private:
+    const SVFFunction* fun;
+    const Argument* arg;
+    u32_t argNo;
+    bool uncalled;
+public:
+    SVFArgument(const Argument* _arg, const SVFFunction* _fun, bool _uncalled): SVFValue(_arg, SVFValue::SVFArg), fun(_fun), arg(_arg), argNo(_arg->getArgNo()), uncalled(_uncalled)
+    {
+    }
+    SVFArgument() = delete;
+
+    const Argument* getLLVMArgument() const
+    {
+        return arg;
+    }
+
+    inline const SVFFunction* getParent() const
+    {
+        return fun;
+    }
+
+    ///  Return the index of this formal argument in its containing function.
+    /// For example in "void foo(int a, float b)" a is 0 and b is 1.
+    inline u32_t getArgNo() const
+    {
+        return argNo;
+    }
+
+    inline bool isArgOfUncalledFunction() const 
+    {
+        return uncalled;
+    }
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFArg;
+    }
+};
+
+
+class SVFConstantData : public SVFValue
+{
+private:
+    const ConstantData* constData;
+
+public:
+    SVFConstantData(const ConstantData* _const): SVFValue(_const, SVFValue::SVFConstData), constData(_const)
+    {
+    }
+    SVFConstantData() = delete;
+
+    const ConstantData* getLLVMConstantData() const
+    {
+        return constData;
+    }
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFConstData;
+    }
+};
+
+
+class SVFOtherValue : public SVFValue
+{
+public:
+    SVFOtherValue(const Value* other): SVFValue(other, SVFValue::SVFOther)
+    {
+    }
+    SVFOtherValue() = delete;
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFOther;
+    }
+};
+
 
 class CallSite
 {
 private:
-    CallBase *CB;
+    const CallBase *CB;
+    const SVFInstruction* inst;
 public:
-    CallSite(Instruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I)) {}
-    CallSite(Value *I) : CB(SVFUtil::dyn_cast<CallBase>(I)) {}
-
-    CallBase *getInstruction() const
-    {
-        return CB;
+    CallSite(const SVFInstruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I->getLLVMInstruction())), inst(I) {
+        assert(CB && "not a callsite?");
     }
-    Value *getArgument(unsigned ArgNo) const
+
+    const SVFInstruction* getInstruction() const
+    {
+        return inst;
+    }
+    const Value* getArgument(u32_t ArgNo) const
     {
         return CB->getArgOperand(ArgNo);
     }
-    Type *getType() const
+    Type* getType() const
     {
         return CB->getType();
     }
-    unsigned arg_size() const
+    u32_t arg_size() const
     {
         return CB->arg_size();
     }
@@ -298,27 +700,27 @@ public:
     {
         return CB->arg_empty();
     }
-    Value *getArgOperand(unsigned i) const
+    const Value* getArgOperand(u32_t i) const
     {
         return CB->getArgOperand(i);
     }
-    unsigned getNumArgOperands() const
+    u32_t getNumArgOperands() const
     {
         return CB->arg_size();
     }
-    Function *getCalledFunction() const
+    const Function* getCalledFunction() const
     {
         return CB->getCalledFunction();
     }
-    Value *getCalledValue() const
+    const Value* getCalledValue() const
     {
         return CB->getCalledOperand();
     }
-    Function *getCaller() const
+    const Function* getCaller() const
     {
         return CB->getCaller();
     }
-    FunctionType *getFunctionType() const
+    const FunctionType* getFunctionType() const
     {
         return CB->getFunctionType();
     }
@@ -356,7 +758,7 @@ template <> struct std::hash<SVF::CallSite>
 {
     size_t operator()(const SVF::CallSite &cs) const
     {
-        std::hash<SVF::Instruction *> h;
+        std::hash<const SVF::SVFInstruction *> h;
         return h(cs.getInstruction());
     }
 };

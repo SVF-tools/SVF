@@ -84,7 +84,7 @@ void ExeState::initObjVar(const ObjVar *objVar, Z3Expr &e)
         /// constant data
         if (obj->isConstantData() || obj->isConstantArray() || obj->isConstantStruct())
         {
-            if (const ConstantInt *consInt = SVFUtil::dyn_cast<ConstantInt>(obj->getValue()))
+            if (const ConstantInt* consInt = SVFUtil::dyn_cast<ConstantInt>(obj->getValue()))
             {
                 if (consInt == llvm::ConstantInt::getTrue(LLVMModuleSet::getLLVMModuleSet()->getContext()))
                 {

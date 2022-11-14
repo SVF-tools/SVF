@@ -353,10 +353,10 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
             }
             return true;
         }
-        else if (const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getValue()))
+        else if(const Instruction* i = SVFUtil::dyn_cast<Instruction>(mem->getValue()))
         {
-            const Function* fun = mallocSite->getFunction();
-            const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+            const SVFInstruction* mallocSite = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
+            const SVFFunction* svfFun = mallocSite->getFunction();
             if(_ander->isInRecursion(svfFun))
                 return true;
             if(var.get_cond().isConcreteCxt() == false)

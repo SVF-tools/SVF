@@ -101,7 +101,7 @@ public:
     {
         return getType(fun) == CK_ALLOC;
     }
-    inline bool isMemAlloc(const Instruction *inst) const
+    inline bool isMemAlloc(const SVFInstruction* inst) const
     {
         return getType(SVFUtil::getCallee(inst)) == CK_ALLOC;
     }
@@ -117,7 +117,7 @@ public:
     {
         return getType(fun) == CK_FREE;
     }
-    inline bool isMemDealloc(const Instruction *inst) const
+    inline bool isMemDealloc(const SVFInstruction *inst) const
     {
         return getType(SVFUtil::getCallee(inst)) == CK_FREE;
     }
@@ -133,7 +133,7 @@ public:
     {
         return getType(fun) == CK_FOPEN;
     }
-    inline bool isFOpen(const Instruction *inst) const
+    inline bool isFOpen(const SVFInstruction* inst) const
     {
         return getType(SVFUtil::getCallee(inst)) == CK_FOPEN;
     }
@@ -149,7 +149,7 @@ public:
     {
         return getType(fun) == CK_FCLOSE;
     }
-    inline bool isFClose(const Instruction *inst) const
+    inline bool isFClose(const SVFInstruction* inst) const
     {
         return getType(SVFUtil::getCallee(inst)) == CK_FCLOSE;
     }

@@ -334,7 +334,7 @@ inline typename cast_retty<X, std::unique_ptr<Y>>::ret_type
 // be used to test for a type as well as cast if successful.  This should be
 // used in the context of an if statement like this:
 //
-//  if (const Instruction *I = dyn_cast<Instruction>(myVal)) { ... }
+//  if (const Instruction* I = dyn_cast<Instruction>(myVal)) { ... }
 //
 
 template <class X, class Y>
