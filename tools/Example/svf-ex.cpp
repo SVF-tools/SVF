@@ -42,7 +42,7 @@ static llvm::cl::opt<std::string> InputFilename(llvm::cl::Positional,
 /*!
  * An example to query alias results of two LLVM values
  */
-SVF::AliasResult aliasQuery(PointerAnalysis* pta, Value* v1, Value* v2)
+SVF::AliasResult aliasQuery(PointerAnalysis* pta, SVFValue* v1, SVFValue* v2)
 {
     return pta->alias(v1,v2);
 }
@@ -50,7 +50,7 @@ SVF::AliasResult aliasQuery(PointerAnalysis* pta, Value* v1, Value* v2)
 /*!
  * An example to print points-to set of an LLVM value
  */
-std::string printPts(PointerAnalysis* pta, Value* val)
+std::string printPts(PointerAnalysis* pta, SVFValue* val)
 {
 
     std::string str;
@@ -65,7 +65,7 @@ std::string printPts(PointerAnalysis* pta, Value* val)
         PAGNode* targetObj = pta->getPAG()->getGNode(*ii);
         if(targetObj->hasValue())
         {
-            rawstr << "(" <<*targetObj->getValue() << ")\t ";
+            rawstr << "(" << SVFUtil::value2String(targetObj->getValue()) << ")\t ";
         }
     }
 
@@ -77,9 +77,8 @@ std::string printPts(PointerAnalysis* pta, Value* val)
 /*!
  * An example to query/collect all successor nodes from a ICFGNode (iNode) along control-flow graph (ICFG)
  */
-void traverseOnICFG(ICFG* icfg, const Instruction* inst)
+void traverseOnICFG(ICFG* icfg, const SVFInstruction* svfInst)
 {
-    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
     ICFGNode* iNode = icfg->getICFGNode(svfInst);
     FIFOWorkList<const ICFGNode*> worklist;
     Set<const ICFGNode*> visited;
@@ -106,7 +105,7 @@ void traverseOnICFG(ICFG* icfg, const Instruction* inst)
 /*!
  * An example to query/collect all the uses of a definition of a value along value-flow graph (VFG)
  */
-void traverseOnVFG(const SVFG* vfg, Value* val)
+void traverseOnVFG(const SVFG* vfg, SVFValue* val)
 {
     SVFIR* pag = SVFIR::getPAG();
 
@@ -139,7 +138,7 @@ void traverseOnVFG(const SVFG* vfg, Value* val)
         // const VFGNode* node = *it;
         /// can only query VFGNode involving top-level pointers (starting with % or @ in LLVM IR)
         /// PAGNode* pNode = vfg->getLHSTopLevPtr(node);
-        /// Value* val = pNode->getValue();
+        /// SVFValue* val = pNode->getValue();
     }
 }
 
