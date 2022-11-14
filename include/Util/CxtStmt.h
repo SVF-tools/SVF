@@ -282,7 +282,7 @@ public:
 
         if(forksite)
         {
-            SVFUtil::outs() << "[ Thread: $" << SVFUtil::getSourceLoc(forksite->getLLVMInstruction()) << "$ " 
+            SVFUtil::outs() << "[ Thread: $" << SVFUtil::getSourceLoc(forksite->getLLVMInstruction()) << "$ "
                             << SVFUtil::value2String(forksite->getLLVMInstruction())  << "\t Contexts: " << cxtToStr()
                             << loop << cycle <<"  ]\n";
         }

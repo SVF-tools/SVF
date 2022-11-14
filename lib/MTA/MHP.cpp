@@ -191,14 +191,14 @@ void MHP::updateNonCandidateFunInterleaving()
 
                 for (const SVFBasicBlock* svfbb : fun->getBasicBlockList())
                 {
-                for (const SVFInstruction* svfInst : svfbb->getInstructionList())
-                {
-                    if (svfInst == entryinst)
-                        continue;
-                    CxtThreadStmt newCts(cts.getTid(), curCxt, svfInst);
-                    threadStmtToTheadInterLeav[newCts] |= threadStmtToTheadInterLeav[cts];
-                    instToTSMap[svfInst].insert(newCts);
-                }
+                    for (const SVFInstruction* svfInst : svfbb->getInstructionList())
+                    {
+                        if (svfInst == entryinst)
+                            continue;
+                        CxtThreadStmt newCts(cts.getTid(), curCxt, svfInst);
+                        threadStmtToTheadInterLeav[newCts] |= threadStmtToTheadInterLeav[cts];
+                        instToTSMap[svfInst].insert(newCts);
+                    }
                 }
             }
         }
@@ -765,7 +765,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
         {
             CallStrCxt forkSiteCxt = tct->getCxtOfCxtThread(ct);
             const SVFInstruction* exitInst = getExitInstOfParentRoutineFun(rootTid);
-            
+
             InstVec nextInsts;
             getNextInsts(forkInst,nextInsts);
             for(InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit!=enit; ++nit)

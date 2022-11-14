@@ -202,15 +202,15 @@ void MTA::detect(SVFModule* module)
         {
             for (const SVFInstruction* svfInst : svfbb->getInstructionList())
             {
-            const Instruction* inst = svfInst->getLLVMInstruction();
-            if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(inst))
-            {
-                loads.insert(load);
-            }
-            else if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(inst))
-            {
-                stores.insert(store);
-            }
+                const Instruction* inst = svfInst->getLLVMInstruction();
+                if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(inst))
+                {
+                    loads.insert(load);
+                }
+                else if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(inst))
+                {
+                    stores.insert(store);
+                }
             }
         }
     }

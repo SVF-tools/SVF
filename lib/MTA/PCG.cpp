@@ -96,24 +96,24 @@ void PCG::initFromThreadAPI(SVFModule* module)
         {
             for (const SVFInstruction* inst : svfbb->getInstructionList())
             {
-            if (tdAPI->isTDFork(inst))
-            {
-                const Value* forkVal = tdAPI->getForkedFun(inst);
-                if (const Function* forkFun = getLLVMFunction(forkVal))
+                if (tdAPI->isTDFork(inst))
                 {
-                    const SVFFunction* svForkfun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(forkFun);
-                    addSpawnsite(inst);
-                    spawners.insert(fun);
-                    spawnees.insert(svForkfun);
+                    const Value* forkVal = tdAPI->getForkedFun(inst);
+                    if (const Function* forkFun = getLLVMFunction(forkVal))
+                    {
+                        const SVFFunction* svForkfun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(forkFun);
+                        addSpawnsite(inst);
+                        spawners.insert(fun);
+                        spawnees.insert(svForkfun);
+                    }
+                    /// TODO: handle indirect call here for the fork Fun
+                    else
+                    {
+                        writeWrnMsg("pthread create");
+                        outs() << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
+                        writeWrnMsg("invoke spawnee indirectly");
+                    }
                 }
-                /// TODO: handle indirect call here for the fork Fun
-                else
-                {
-                    writeWrnMsg("pthread create");
-                    outs() << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
-                    writeWrnMsg("invoke spawnee indirectly");
-                }
-            }
             }
         }
     }

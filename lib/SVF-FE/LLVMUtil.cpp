@@ -288,7 +288,7 @@ void LLVMUtil::getNextInsts(const SVFInstruction* curInst, std::vector<const SVF
 /// Get the previous instructions following control flow
 void LLVMUtil::getPrevInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList)
 {
-    
+
     const SVFInstruction* entryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(curInst->getParent()->getLLVMBasicBlock()->front()));
     if (curInst != entryInst)
     {

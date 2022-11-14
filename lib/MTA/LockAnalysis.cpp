@@ -102,14 +102,14 @@ void LockAnalysis::collectLockUnlocksites()
         {
             for (const SVFInstruction* inst : bb->getInstructionList())
             {
-            if (tcg->getThreadAPI()->isTDRelease(inst))
-            {
-                unlocksites.insert(inst);
-            }
-            if (tcg->getThreadAPI()->isTDAcquire(inst))
-            {
-                locksites.insert(inst);
-            }
+                if (tcg->getThreadAPI()->isTDRelease(inst))
+                {
+                    unlocksites.insert(inst);
+                }
+                if (tcg->getThreadAPI()->isTDAcquire(inst))
+                {
+                    locksites.insert(inst);
+                }
             }
         }
     }

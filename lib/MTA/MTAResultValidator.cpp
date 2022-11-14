@@ -217,15 +217,15 @@ bool MTAResultValidator::collectCxtThreadTargets()
     const Function* F = nullptr;
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-    for(auto it = M.begin(); it != M.end(); it++)
-    {
-        const std::string fName = (*it).getName().str();
-        if(fName.find(CXT_THREAD) != std::string::npos)
+        for(auto it = M.begin(); it != M.end(); it++)
         {
-            F = &(*it);
-            break;
+            const std::string fName = (*it).getName().str();
+            if(fName.find(CXT_THREAD) != std::string::npos)
+            {
+                F = &(*it);
+                break;
+            }
         }
-    }
     }
     if (!F)
         return false;
@@ -258,15 +258,15 @@ bool MTAResultValidator::collectTCTTargets()
     const Function* F = nullptr;
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-    for(auto it = M.begin(); it != M.end(); it++)
-    {
-        const std::string fName = (*it).getName().str();
-        if(fName.find(TCT_ACCESS) != std::string::npos)
+        for(auto it = M.begin(); it != M.end(); it++)
         {
-            F = &(*it);
-            break;
+            const std::string fName = (*it).getName().str();
+            if(fName.find(TCT_ACCESS) != std::string::npos)
+            {
+                F = &(*it);
+                break;
+            }
         }
-    }
     }
     if (!F)
         return false;
@@ -297,15 +297,15 @@ bool MTAResultValidator::collectInterleavingTargets()
     const Function* F = nullptr;
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-    for(auto it = M.begin(); it != M.end(); it++)
-    {
-        const std::string fName = (*it).getName().str();
-        if(fName.find(INTERLEV_ACCESS) != std::string::npos)
+        for(auto it = M.begin(); it != M.end(); it++)
         {
-            F = &(*it);
-            break;
+            const std::string fName = (*it).getName().str();
+            if(fName.find(INTERLEV_ACCESS) != std::string::npos)
+            {
+                F = &(*it);
+                break;
+            }
         }
-    }
     }
     if (!F)
         return false;

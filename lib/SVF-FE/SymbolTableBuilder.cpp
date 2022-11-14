@@ -68,128 +68,128 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-    // Add symbols for all the globals .
-    for (Module::global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I)
-    {
-        collectSym(&*I);
-    }
-
-    // Add symbols for all the global aliases
-    for (Module::alias_iterator I = M.alias_begin(), E = M.alias_end(); I != E; I++)
-    {
-        collectSym(&*I);
-        collectSym((&*I)->getAliasee());
-    }
-
-    // Add symbols for all of the functions and the instructions in them.
-    for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
-    {
-        const Function *fun = &*F;
-        collectSym(fun);
-        collectRet(fun);
-        if (fun->getFunctionType()->isVarArg())
-            collectVararg(fun);
-
-        // Add symbols for all formal parameters.
-        for (Function::const_arg_iterator I = fun->arg_begin(), E = fun->arg_end();
-                I != E; ++I)
+        // Add symbols for all the globals .
+        for (Module::global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I)
         {
             collectSym(&*I);
         }
 
-        // collect and create symbols inside the function body
-        for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II)
+        // Add symbols for all the global aliases
+        for (Module::alias_iterator I = M.alias_begin(), E = M.alias_end(); I != E; I++)
         {
-            const Instruction* inst = &*II;
-            collectSym(inst);
-
-            // initialization for some special instructions
-            //{@
-            if (const StoreInst *st = SVFUtil::dyn_cast<StoreInst>(inst))
-            {
-                collectSym(st->getPointerOperand());
-                collectSym(st->getValueOperand());
-            }
-            else if (const LoadInst *ld = SVFUtil::dyn_cast<LoadInst>(inst))
-            {
-                collectSym(ld->getPointerOperand());
-            }
-            else if (const AllocaInst *alloc = SVFUtil::dyn_cast<AllocaInst>(inst))
-            {
-                collectSym(alloc->getArraySize());
-            }
-            else if (const PHINode *phi = SVFUtil::dyn_cast<PHINode>(inst))
-            {
-                for (u32_t i = 0; i < phi->getNumIncomingValues(); ++i)
-                {
-                    collectSym(phi->getIncomingValue(i));
-                }
-            }
-            else if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(
-                    inst))
-            {
-                collectSym(gep->getPointerOperand());
-            }
-            else if (const SelectInst *sel = SVFUtil::dyn_cast<SelectInst>(inst))
-            {
-                collectSym(sel->getTrueValue());
-                collectSym(sel->getFalseValue());
-                collectSym(sel->getCondition());
-            }
-            else if (const BinaryOperator *binary = SVFUtil::dyn_cast<BinaryOperator>(inst))
-            {
-                for (u32_t i = 0; i < binary->getNumOperands(); i++)
-                    collectSym(binary->getOperand(i));
-            }
-            else if (const UnaryOperator *unary = SVFUtil::dyn_cast<UnaryOperator>(inst))
-            {
-                for (u32_t i = 0; i < unary->getNumOperands(); i++)
-                    collectSym(unary->getOperand(i));
-            }
-            else if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(inst))
-            {
-                for (u32_t i = 0; i < cmp->getNumOperands(); i++)
-                    collectSym(cmp->getOperand(i));
-            }
-            else if (const CastInst *cast = SVFUtil::dyn_cast<CastInst>(inst))
-            {
-                collectSym(cast->getOperand(0));
-            }
-            else if (const ReturnInst *ret = SVFUtil::dyn_cast<ReturnInst>(inst))
-            {
-                if(ret->getReturnValue())
-                    collectSym(ret->getReturnValue());
-            }
-            else if (const BranchInst *br = SVFUtil::dyn_cast<BranchInst>(inst))
-            {
-                Value* opnd = br->isConditional() ? br->getCondition() : br->getOperand(0);
-                collectSym(opnd);
-            }
-            else if (const SwitchInst *sw = SVFUtil::dyn_cast<SwitchInst>(inst))
-            {
-                collectSym(sw->getCondition());
-            }
-            else if (isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst)))
-            {
-
-                CallSite cs = SVFUtil::getLLVMCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst));
-                symInfo->callSiteSet.insert(cs);
-                for (u32_t i = 0; i < cs.arg_size(); i++)
-                {
-                    collectSym(cs.getArgOperand(i));
-                }
-                // Calls to inline asm need to be added as well because the callee isn't
-                // referenced anywhere else.
-                const Value *Callee = cs.getCalledValue();
-                collectSym(Callee);
-
-                //TODO handle inlineAsm
-                ///if (SVFUtil::isa<InlineAsm>(Callee))
-
-            }
-            //@}
+            collectSym(&*I);
+            collectSym((&*I)->getAliasee());
         }
-    }
+
+        // Add symbols for all of the functions and the instructions in them.
+        for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
+        {
+            const Function *fun = &*F;
+            collectSym(fun);
+            collectRet(fun);
+            if (fun->getFunctionType()->isVarArg())
+                collectVararg(fun);
+
+            // Add symbols for all formal parameters.
+            for (Function::const_arg_iterator I = fun->arg_begin(), E = fun->arg_end();
+                    I != E; ++I)
+            {
+                collectSym(&*I);
+            }
+
+            // collect and create symbols inside the function body
+            for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II)
+            {
+                const Instruction* inst = &*II;
+                collectSym(inst);
+
+                // initialization for some special instructions
+                //{@
+                if (const StoreInst *st = SVFUtil::dyn_cast<StoreInst>(inst))
+                {
+                    collectSym(st->getPointerOperand());
+                    collectSym(st->getValueOperand());
+                }
+                else if (const LoadInst *ld = SVFUtil::dyn_cast<LoadInst>(inst))
+                {
+                    collectSym(ld->getPointerOperand());
+                }
+                else if (const AllocaInst *alloc = SVFUtil::dyn_cast<AllocaInst>(inst))
+                {
+                    collectSym(alloc->getArraySize());
+                }
+                else if (const PHINode *phi = SVFUtil::dyn_cast<PHINode>(inst))
+                {
+                    for (u32_t i = 0; i < phi->getNumIncomingValues(); ++i)
+                    {
+                        collectSym(phi->getIncomingValue(i));
+                    }
+                }
+                else if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(
+                        inst))
+                {
+                    collectSym(gep->getPointerOperand());
+                }
+                else if (const SelectInst *sel = SVFUtil::dyn_cast<SelectInst>(inst))
+                {
+                    collectSym(sel->getTrueValue());
+                    collectSym(sel->getFalseValue());
+                    collectSym(sel->getCondition());
+                }
+                else if (const BinaryOperator *binary = SVFUtil::dyn_cast<BinaryOperator>(inst))
+                {
+                    for (u32_t i = 0; i < binary->getNumOperands(); i++)
+                        collectSym(binary->getOperand(i));
+                }
+                else if (const UnaryOperator *unary = SVFUtil::dyn_cast<UnaryOperator>(inst))
+                {
+                    for (u32_t i = 0; i < unary->getNumOperands(); i++)
+                        collectSym(unary->getOperand(i));
+                }
+                else if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(inst))
+                {
+                    for (u32_t i = 0; i < cmp->getNumOperands(); i++)
+                        collectSym(cmp->getOperand(i));
+                }
+                else if (const CastInst *cast = SVFUtil::dyn_cast<CastInst>(inst))
+                {
+                    collectSym(cast->getOperand(0));
+                }
+                else if (const ReturnInst *ret = SVFUtil::dyn_cast<ReturnInst>(inst))
+                {
+                    if(ret->getReturnValue())
+                        collectSym(ret->getReturnValue());
+                }
+                else if (const BranchInst *br = SVFUtil::dyn_cast<BranchInst>(inst))
+                {
+                    Value* opnd = br->isConditional() ? br->getCondition() : br->getOperand(0);
+                    collectSym(opnd);
+                }
+                else if (const SwitchInst *sw = SVFUtil::dyn_cast<SwitchInst>(inst))
+                {
+                    collectSym(sw->getCondition());
+                }
+                else if (isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst)))
+                {
+
+                    CallSite cs = SVFUtil::getLLVMCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst));
+                    symInfo->callSiteSet.insert(cs);
+                    for (u32_t i = 0; i < cs.arg_size(); i++)
+                    {
+                        collectSym(cs.getArgOperand(i));
+                    }
+                    // Calls to inline asm need to be added as well because the callee isn't
+                    // referenced anywhere else.
+                    const Value *Callee = cs.getCalledValue();
+                    collectSym(Callee);
+
+                    //TODO handle inlineAsm
+                    ///if (SVFUtil::isa<InlineAsm>(Callee))
+
+                }
+                //@}
+            }
+        }
     }
 
     symInfo->totalSymNum = NodeIDAllocator::get()->endSymbolAllocation();

@@ -114,7 +114,7 @@ hasConstantGEP (Value*  V)
 //  perform any recursion, so the resulting instruction may have constant
 //  expression operands.
 //
-static Instruction* 
+static Instruction*
 convertExpression (ConstantExpr * CE, Instruction*  InsertPt)
 {
     //

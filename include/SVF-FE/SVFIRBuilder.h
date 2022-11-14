@@ -350,7 +350,8 @@ protected:
     inline void addStoreEdge(NodeID src, NodeID dst)
     {
         IntraICFGNode* node;
-        if(const Instruction* i = SVFUtil::dyn_cast<Instruction>(curVal)){
+        if(const Instruction* i = SVFUtil::dyn_cast<Instruction>(curVal))
+        {
             const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             node = pag->getICFG()->getIntraICFGNode(inst);
         }

@@ -278,15 +278,15 @@ protected:
         const Function* F = nullptr;
         for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
         {
-        for(auto it = M.begin(); it != M.end(); it++)
-        {
-            const std::string fName = (*it).getName().str();
-            if(fName.find(RC_ACCESS) != std::string::npos)
+            for(auto it = M.begin(); it != M.end(); it++)
             {
-                F = &(*it);
-                break;
+                const std::string fName = (*it).getName().str();
+                if(fName.find(RC_ACCESS) != std::string::npos)
+                {
+                    F = &(*it);
+                    break;
+                }
             }
-        }
         }
         if (!F)     return;
 
@@ -295,7 +295,8 @@ protected:
         {
             const Use *u = &*it;
             const Value *user = u->getUser();
-            if(SVFUtil::isCallSite(user)){
+            if(SVFUtil::isCallSite(user))
+            {
                 CallSite csInst = SVFUtil::getLLVMCallSite(user);
                 csInsts.push_back(csInst);
             }

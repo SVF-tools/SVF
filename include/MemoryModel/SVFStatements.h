@@ -106,7 +106,8 @@ public:
     //@{
     inline const SVFInstruction* getInst() const
     {
-        if(const Instruction* i = SVFUtil::dyn_cast<Instruction>(value)){
+        if(const Instruction* i = SVFUtil::dyn_cast<Instruction>(value))
+        {
             return LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
         }
         else
