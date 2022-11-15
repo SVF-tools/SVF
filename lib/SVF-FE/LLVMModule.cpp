@@ -793,6 +793,9 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
         svfvalue->setPtrInUncalledFunction();
     if (val->hasName())
         svfvalue->setHasName();
+
+    svfvalue->setSourceLoc(LLVMUtil::getSourceLoc(val));
+    svfvalue->setToString(LLVMUtil::value2String(val));
 }
 
 SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
@@ -812,9 +815,9 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
             double dval = cfp->isNormalFP() ? cfp->getValueAPF().convertToDouble() : 0;
             svfcd = new SVFConstantFP(cd, dval);
         }
-        else if(const ConstantPointerNull* cfp = SVFUtil::dyn_cast<ConstantPointerNull>(cd))
+        else if(SVFUtil::isa<ConstantPointerNull>(cd))
             svfcd = new SVFConstantNullPtr(cd);
-        else if (const UndefValue* bh = SVFUtil::dyn_cast<UndefValue>(cd))
+        else if (SVFUtil::isa<UndefValue>(cd))
             svfcd = new SVFBlackHoleValue(cd);
         else
             svfcd = new SVFConstantData(cd);

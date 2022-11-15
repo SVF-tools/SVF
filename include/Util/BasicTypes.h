@@ -114,11 +114,12 @@ private:
     bool has_name;
 protected:
     std::string name;
-
+    std::string sourceLoc;
+    std::string toStr;
     /// Constructor
     SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k),
         ptrInUncalledFun(false), isPtr(val->getType()->isPointerTy()),
-        has_name(false), name(val->getName())
+        has_name(false), name(val->getName()), sourceLoc("No source code Info"), toStr("toString not set")
     {
     }
 
@@ -190,6 +191,22 @@ public:
     inline bool hasName() const
     {
         return has_name;
+    }
+    inline void setSourceLoc(const std::string& sourceCodeInfo)
+    {
+        sourceLoc = sourceCodeInfo;
+    }
+    inline const std::string& getSourceLoc() const
+    {
+        return sourceLoc;
+    }
+    inline void setToString(const std::string& str)
+    {
+        toStr = str;
+    }
+    inline const std::string& toString() const
+    {
+        return toStr;
     }
     /// Overloading operator << for dumping ICFG node ID
     //@{

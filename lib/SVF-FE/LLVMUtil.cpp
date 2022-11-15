@@ -448,3 +448,146 @@ u32_t LLVMUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
     else
         return stTySL->getElementOffset(field_idx);
 }
+
+/*!
+ * Get the meta data (line number and file name) info of a LLVM value
+ */
+const std::string LLVMUtil::getSourceLoc(const Value* val )
+{
+    if(val==nullptr)  return "{ empty val }";
+    
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "{ ";
+
+    if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
+    {
+        if (SVFUtil::isa<AllocaInst>(inst))
+        {
+            for (llvm::DbgInfoIntrinsic *DII : FindDbgAddrUses(const_cast<Instruction*>(inst)))
+            {
+                if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII))
+                {
+                    llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
+                    rawstr << "ln: " << DIVar->getLine() << " fl: " << DIVar->getFilename();
+                    break;
+                }
+            }
+        }
+        else if (MDNode *N = inst->getMetadata("dbg"))   // Here I is an LLVM instruction
+        {
+            llvm::DILocation* Loc = SVFUtil::cast<llvm::DILocation>(N);                   // DILocation is in DebugInfo.h
+            unsigned Line = Loc->getLine();
+            unsigned Column = Loc->getColumn();
+            std::string File = Loc->getFilename().str();
+            //StringRef Dir = Loc.getDirectory();
+            if(File.empty() || Line == 0)
+            {
+                auto inlineLoc = Loc->getInlinedAt();
+                if(inlineLoc)
+                {
+                    Line = inlineLoc->getLine();
+                    Column = inlineLoc->getColumn();
+                    File = inlineLoc->getFilename().str();
+                }
+            }
+            rawstr << "ln: " << Line << "  cl: " << Column << "  fl: " << File;
+        }
+    }
+    else if (const Argument* argument = SVFUtil::dyn_cast<Argument>(val))
+    {
+        if (argument->getArgNo()%10 == 1)
+            rawstr << argument->getArgNo() << "st";
+        else if (argument->getArgNo()%10 == 2)
+            rawstr << argument->getArgNo() << "nd";
+        else if (argument->getArgNo()%10 == 3)
+            rawstr << argument->getArgNo() << "rd";
+        else
+            rawstr << argument->getArgNo() << "th";
+        rawstr << " arg " << argument->getParent()->getName() << " "
+               << getSourceLocOfFunction(argument->getParent());
+    }
+    else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
+    {
+        rawstr << "Glob ";
+        NamedMDNode* CU_Nodes = gvar->getParent()->getNamedMetadata("llvm.dbg.cu");
+        if(CU_Nodes)
+        {
+            for (unsigned i = 0, e = CU_Nodes->getNumOperands(); i != e; ++i)
+            {
+                llvm::DICompileUnit *CUNode = SVFUtil::cast<llvm::DICompileUnit>(CU_Nodes->getOperand(i));
+                for (llvm::DIGlobalVariableExpression *GV : CUNode->getGlobalVariables())
+                {
+                    llvm::DIGlobalVariable * DGV = GV->getVariable();
+
+                    if(DGV->getName() == gvar->getName())
+                    {
+                        rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename();
+                    }
+
+                }
+            }
+        }
+    }
+    else if (const Function* func = SVFUtil::dyn_cast<Function>(val))
+    {
+        rawstr << getSourceLocOfFunction(func);
+    }
+    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(val))
+    {
+        rawstr << "basic block: " << bb->getName() << " " << getSourceLoc(bb->getFirstNonPHI());
+    }
+    else if(SVFUtil::isConstantData(val))
+    {
+        rawstr << "constant data";
+    }
+    else
+    {
+        rawstr << "Can only get source location for instruction, argument, global var, function or constant data.";
+    }
+    rawstr << " }";
+
+    if(rawstr.str()=="{  }")
+        return "";
+    return rawstr.str();
+}
+
+
+/*!
+ * Get source code line number of a function according to debug info
+ */
+const std::string LLVMUtil::getSourceLocOfFunction(const Function* F)
+{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    /*
+     * https://reviews.llvm.org/D18074?id=50385
+     * looks like the relevant
+     */
+    if (llvm::DISubprogram *SP =  F->getSubprogram())
+    {
+        if (SP->describes(F))
+            rawstr << "in line: " << SP->getLine() << " file: " << SP->getFilename();
+    }
+    return rawstr.str();
+}
+
+/*!
+ * return string of an LLVM Value
+ */
+const std::string LLVMUtil::value2String(const Value* value)
+{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    if(value)
+    {
+        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
+            rawstr << "Function: " << fun->getName() << " ";
+        else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
+            rawstr << "BasicBlock: " << bb->getName() << " ";
+        else
+            rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}

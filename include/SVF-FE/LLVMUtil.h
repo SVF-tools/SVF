@@ -320,6 +320,9 @@ u32_t getTypeSizeInBytes(const Type* type);
 u32_t getTypeSizeInBytes(const StructType *sty, u32_t field_index);
 //@}
 
+const std::string getSourceLoc(const Value* val);
+const std::string getSourceLocOfFunction(const Function* F);
+const std::string value2String(const Value* value);
 
 } // End namespace LLVMUtil
 
