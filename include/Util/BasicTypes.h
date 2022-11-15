@@ -553,13 +553,9 @@ private:
     std::vector<const SVFValue*> args;
     const FunctionType* calledFunType;
     const SVFValue* calledVal;
-    bool virtualCall;
-    const SVFValue* vCallVtblPtr;
-    s32_t virtualFunIdx;
-    std::string funNameOfVcall;
 public:
-    SVFCallInst(const Instruction* i, const SVFBasicBlock* b, bool isvcall, const FunctionType* t) : SVFInstruction(i,b,false,SVFCall), 
-        calledFunType(t), calledVal(nullptr), virtualCall(isvcall), vCallVtblPtr(nullptr), virtualFunIdx(-1), funNameOfVcall("")
+    SVFCallInst(const Instruction* i, const SVFBasicBlock* b, const FunctionType* t, SVFValKind k = SVFCall) : SVFInstruction(i,b,false,k), 
+        calledFunType(t), calledVal(nullptr)
     {
     }
     SVFCallInst(const Instruction* i) = delete;
@@ -567,7 +563,7 @@ public:
 
     static inline bool classof(const SVFValue *node)
     {
-        return node->getKind() == SVFCall;
+        return node->getKind() == SVFCall || node->getKind() == SVFVCall;
     }
     static inline bool classof(const SVFInstruction *node)
     {
@@ -598,39 +594,6 @@ public:
     {
         calledVal = v;
     }
-    inline bool isVirtualCall() const
-    {
-        return virtualCall;
-    }
-    inline void setVtablePtr(const SVFValue* vptr)
-    {
-        vCallVtblPtr = vptr;
-    }
-    inline const SVFValue* getVtablePtr() const
-    {
-        assert(isVirtualCall() && "not a virtual call?");
-        assert(vCallVtblPtr && "virtual call does not have a vtblptr? set it first");
-        return vCallVtblPtr;
-    }
-    inline void setFunIdxInVtable(s32_t idx)
-    {
-        virtualFunIdx = idx;
-    }
-    inline s32_t getFunIdxInVtable() const
-    {
-        assert(isVirtualCall() && "not a virtual call?");
-        assert(virtualFunIdx >=0 && "virtual function idx is less than 0? not set yet?");
-        return virtualFunIdx;
-    }
-    inline void setFunNameOfVirtualCall(const std::string& name)
-    {
-        funNameOfVcall = name;
-    }
-    inline const std::string& getFunNameOfVirtualCall() const
-    {
-        assert(isVirtualCall() && "not a virtual call?");
-        return funNameOfVcall;
-    }
     inline const SVFValue* getCalledOperand() const
     {
         return calledVal;
@@ -646,6 +609,57 @@ public:
     inline  const SVFFunction* getCaller() const
     {
         return getFunction();
+    }
+};
+
+class SVFVirtualCallInst : public SVFCallInst
+{
+private:
+    const SVFValue* vCallVtblPtr;
+    s32_t virtualFunIdx;
+    std::string funNameOfVcall;
+public:
+    SVFVirtualCallInst(const Instruction* i, const SVFBasicBlock* b, const FunctionType* t) : 
+        SVFCallInst(i,b,t,SVFVCall), vCallVtblPtr(nullptr), virtualFunIdx(-1), funNameOfVcall("")
+    {
+    }
+    inline void setVtablePtr(const SVFValue* vptr)
+    {
+        vCallVtblPtr = vptr;
+    }
+    inline const SVFValue* getVtablePtr() const
+    {
+        assert(vCallVtblPtr && "virtual call does not have a vtblptr? set it first");
+        return vCallVtblPtr;
+    }
+    inline void setFunIdxInVtable(s32_t idx)
+    {
+        virtualFunIdx = idx;
+    }
+    inline s32_t getFunIdxInVtable() const
+    {
+        assert(virtualFunIdx >=0 && "virtual function idx is less than 0? not set yet?");
+        return virtualFunIdx;
+    }
+    inline void setFunNameOfVirtualCall(const std::string& name)
+    {
+        funNameOfVcall = name;
+    }
+    inline const std::string& getFunNameOfVirtualCall() const
+    {
+        return funNameOfVcall;
+    }
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFVCall;
+    }
+    static inline bool classof(const SVFInstruction *node)
+    {
+        return node->getKind() == SVFVCall;
+    }
+    static inline bool classof(const SVFCallInst *node)
+    {
+        return node->getKind() == SVFVCall;
     }
 };
 
@@ -893,19 +907,22 @@ public:
     }
     const bool isVirtualCall() const
     {
-        return CB->isVirtualCall();
+        return SVFUtil::isa<SVFVirtualCallInst>(CB);
     }
     const SVFValue* getVtablePtr() const
     {
-        return CB->getVtablePtr();
+        assert(isVirtualCall() && "not a virtual call?");
+        return SVFUtil::cast<SVFVirtualCallInst>(CB)->getVtablePtr();
     }
     s32_t getFunIdxInVtable() const
     {
-        return CB->getFunIdxInVtable();
+        assert(isVirtualCall() && "not a virtual call?");
+        return SVFUtil::cast<SVFVirtualCallInst>(CB)->getFunIdxInVtable();
     }
     const std::string& getFunNameOfVirtualCall() const
     {
-        return CB->getFunNameOfVirtualCall();
+        assert(isVirtualCall() && "not a virtual call?");
+        return SVFUtil::cast<SVFVirtualCallInst>(CB)->getFunNameOfVirtualCall();
     }
     bool operator==(const CallSite &CS) const
     {
