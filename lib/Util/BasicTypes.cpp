@@ -5,8 +5,8 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-SVFFunction::SVFFunction(const Function* f): SVFValue(f,SVFValue::SVFFunc),
-    isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f), exitBB(nullptr), isUncalled(false), isNotRet(false), varArg(f->isVarArg())
+SVFFunction::SVFFunction(const Function* f, bool declare, bool intric): SVFValue(f,SVFValue::SVFFunc),
+    isDecl(declare), intricsic(intric), exitBB(nullptr), isUncalled(false), isNotRet(false), varArg(f->isVarArg())
 {
 }
 

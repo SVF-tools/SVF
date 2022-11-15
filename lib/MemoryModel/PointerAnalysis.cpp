@@ -417,7 +417,7 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
             if(obj->isFunction())
             {
                 const SVFFunction* calleefun = SVFUtil::cast<SVFFunction>(obj->getValue());
-                const SVFFunction* callee = getDefFunForMultipleModule(calleefun->getLLVMFun());
+                const SVFFunction* callee = calleefun->getDefFunForMultipleModule();
 
                 /// if the arg size does not match then we do not need to connect this parameter
                 /// even if the callee is a variadic function (the first parameter of variadic function is its paramter number)
@@ -496,7 +496,7 @@ void PointerAnalysis::connectVCallToVFns(const CallICFGNode* cs, const VFunSet &
             feit = vfns.end(); fit != feit; ++fit)
     {
         const SVFFunction* callee = *fit;
-        callee = getDefFunForMultipleModule(callee->getLLVMFun());
+        callee = callee->getDefFunForMultipleModule();
         if (getIndCallMap()[cs].count(callee) > 0)
             continue;
         if(SVFUtil::getLLVMCallSite(cs->getCallSite()).arg_size() == callee->arg_size() ||

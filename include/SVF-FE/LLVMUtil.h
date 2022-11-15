@@ -324,6 +324,25 @@ const std::string getSourceLoc(const Value* val);
 const std::string getSourceLocOfFunction(const Function* F);
 const std::string value2String(const Value* value);
 
+bool isIntrinsicInst(const Instruction* inst);
+bool isIntrinsicFun(const Function* func);
+
+/// Get the definition of a function across multiple modules
+inline const Function* getDefFunForMultipleModule(const Function* fun)
+{
+    if(fun == nullptr) return nullptr;
+    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
+    if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
+        fun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
+    return fun;
+}
+
+// Dump Control Flow Graph of llvm function, with instructions
+void viewCFG(const Function* fun);
+
+// Dump Control Flow Graph of llvm function, without instructions
+void viewCFGOnly(const Function* fun);
+
 } // End namespace LLVMUtil
 
 } // End namespace SVF

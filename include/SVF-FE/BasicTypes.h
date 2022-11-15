@@ -99,6 +99,7 @@ typedef llvm::User User;
 
 // LLVM Instructions
 typedef llvm::Argument Argument;
+typedef llvm::CallBase CallBase;
 typedef llvm::CallInst CallInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;

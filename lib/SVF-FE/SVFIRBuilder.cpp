@@ -1430,7 +1430,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         {
             if (const Function* forkedFun = LLVMUtil::getLLVMFunction(getForkedFun(inst)->getLLVMValue()))
             {
-                forkedFun = getDefFunForMultipleModule(forkedFun)->getLLVMFun();
+                forkedFun = LLVMUtil::getDefFunForMultipleModule(forkedFun);
                 const Value* actualParm = getActualParmAtForkSite(inst)->getLLVMValue();
                 /// pthread_create has 1 arg.
                 /// apr_thread_create has 2 arg.

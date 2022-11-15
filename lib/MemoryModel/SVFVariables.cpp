@@ -83,7 +83,7 @@ bool SVFVar::isIsolatedNode() const
     else if (isConstantData())
         return true;
     else if (value && SVFUtil::isa<SVFFunction>(value))
-        return SVFUtil::isIntrinsicFun(SVFUtil::cast<SVFFunction>(value)->getLLVMFun());
+        return SVFUtil::cast<SVFFunction>(value)->isIntrinsic();
     else
         return false;
 }

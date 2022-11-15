@@ -241,6 +241,21 @@ void SVFUtil::increaseStackSize()
     }
 }
 
+/*!
+ * Return true if it is an llvm intrinsic instruction
+*/
+bool SVFUtil::isIntrinsicInst(const SVFInstruction* inst)
+{
+    if (const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
+    {
+        const SVFFunction* func = call->getCalledFunction();
+        if (func && func->isIntrinsic())
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 /*!
  * Get source code line number of a function according to debug info
@@ -283,23 +298,6 @@ std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
     default:
         assert(false && "SVFUtil::hclustMethodToString: unknown method");
         abort();
-    }
-}
-
-
-void SVFFunction::viewCFG()
-{
-    if (fun != nullptr)
-    {
-        fun->viewCFG();
-    }
-}
-
-void SVFFunction::viewCFGOnly()
-{
-    if (fun != nullptr)
-    {
-        fun->viewCFGOnly();
     }
 }
 

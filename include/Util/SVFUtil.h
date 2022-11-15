@@ -164,32 +164,8 @@ inline NodeBS ptsToNodeBS(const PointsTo &pts)
 typedef OrderedSet<PointsTo, equalPointsTo> PointsToList;
 void dumpPointsToList(const PointsToList& ptl);
 
-inline bool isIntrinsicFun(const Function* func)
-{
-    if (func && (func->getIntrinsicID() == llvm::Intrinsic::donothing ||
-                 func->getIntrinsicID() == llvm::Intrinsic::dbg_addr ||
-                 func->getIntrinsicID() == llvm::Intrinsic::dbg_declare ||
-                 func->getIntrinsicID() == llvm::Intrinsic::dbg_label ||
-                 func->getIntrinsicID() == llvm::Intrinsic::dbg_value))
-    {
-        return true;
-    }
-    return false;
-}
-
-/// Return true if it is an intrinsic instruction
-inline bool isIntrinsicInst(const SVFInstruction* inst)
-{
-    if (const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(inst->getLLVMInstruction()))
-    {
-        const Function* func = call->getCalledFunction();
-        if (isIntrinsicFun(func))
-        {
-            return true;
-        }
-    }
-    return false;
-}
+/// Return true if it is an llvm intrinsic instruction
+bool isIntrinsicInst(const SVFInstruction* inst);
 //@}
 
 /// Whether an instruction is a call or invoke instruction
@@ -263,24 +239,16 @@ inline const Value* getGlobalRep(const Value* val)
     return val;
 }
 
-/// Get the definition of a function across multiple modules
-inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
-{
-    if(fun == nullptr) return nullptr;
-    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
-    const SVFFunction* svfFun = llvmModuleset->getSVFFunction(fun);
-    if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
-        svfFun = llvmModuleset->getSVFFunction(LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun));
-    return svfFun;
-}
-
 /// Return callee of a callsite. Return null if this is an indirect call
 //@{
 inline const SVFFunction* getCallee(const CallSite cs)
 {
     // FIXME: do we need to strip-off the casts here to discover more library functions
     const Function* callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->getLLVMValue()->stripPointerCasts());
-    return getDefFunForMultipleModule(callee);
+    if(callee) 
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee)->getDefFunForMultipleModule();
+    else
+        return nullptr;
 }
 
 inline const SVFFunction* getCallee(const SVFInstruction *inst)

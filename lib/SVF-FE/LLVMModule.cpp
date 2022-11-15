@@ -124,7 +124,7 @@ void LLVMModuleSet::createSVFDataStructure()
         for (Module::const_iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
         {
             const Function* func = &*it;
-            SVFFunction* svfFunc = new SVFFunction(func);
+            SVFFunction* svfFunc = new SVFFunction(func, func->isDeclaration(), LLVMUtil::isIntrinsicFun(func));
             svfModule->addFunctionSet(svfFunc);
             addFunctionMap(func,svfFunc);
 
@@ -189,6 +189,7 @@ void LLVMModuleSet::initSVFFunction()
             SVFFunction* svffun = getSVFFunction(f);
             svffun->setIsNotRet(LLVMUtil::functionDoesNotRet(f));
             svffun->setIsUncalledFunction(LLVMUtil::isUncalledFunction(f));
+            svffun->setDefFunForMultipleModule(getSVFFunction(LLVMUtil::getDefFunForMultipleModule(f)));
             initSVFBasicBlock(f);
 
             if (SVFUtil::isExtCall(svffun) == false)

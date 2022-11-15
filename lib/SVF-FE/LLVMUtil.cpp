@@ -215,10 +215,37 @@ bool LLVMUtil::isPtrInUncalledFunction (const Value*  value)
     return false;
 }
 
+bool LLVMUtil::isIntrinsicFun(const Function* func)
+{
+    if (func && (func->getIntrinsicID() == llvm::Intrinsic::donothing ||
+                 func->getIntrinsicID() == llvm::Intrinsic::dbg_addr ||
+                 func->getIntrinsicID() == llvm::Intrinsic::dbg_declare ||
+                 func->getIntrinsicID() == llvm::Intrinsic::dbg_label ||
+                 func->getIntrinsicID() == llvm::Intrinsic::dbg_value))
+    {
+        return true;
+    }
+    return false;
+}
+
+/// Return true if it is an intrinsic instruction
+bool LLVMUtil::isIntrinsicInst(const Instruction* inst)
+{
+    if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
+    {
+        const Function* func = call->getCalledFunction();
+        if (isIntrinsicFun(func))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 /*!
  * Strip constant casts
  */
-const Value*  LLVMUtil::stripConstantCasts(const Value* val)
+const Value* LLVMUtil::stripConstantCasts(const Value* val)
 {
     if (SVFUtil::isa<GlobalValue>(val) || isInt2PtrConstantExpr(val))
         return val;
@@ -228,6 +255,22 @@ const Value*  LLVMUtil::stripConstantCasts(const Value* val)
             return stripConstantCasts(CE->getOperand(0));
     }
     return val;
+}
+
+void LLVMUtil::viewCFG(const Function* fun)
+{
+    if (fun != nullptr)
+    {
+        fun->viewCFG();
+    }
+}
+
+void LLVMUtil::viewCFGOnly(const Function* fun)
+{
+    if (fun != nullptr)
+    {
+        fun->viewCFGOnly();
+    }
 }
 
 /*!

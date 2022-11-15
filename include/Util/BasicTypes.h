@@ -49,7 +49,6 @@ typedef llvm::Function Function;
 typedef llvm::BasicBlock BasicBlock;
 typedef llvm::Value Value;
 typedef llvm::Instruction Instruction;
-typedef llvm::CallBase CallBase;
 typedef llvm::GlobalValue GlobalValue;
 
 /// LLVM outputs
@@ -216,8 +215,8 @@ public:
 
 private:
     bool isDecl;
-    bool isIntri;
-    const Function* fun;
+    bool intricsic;
+    const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
     const SVFBasicBlock* exitBB;
     std::vector<const SVFBasicBlock*> reachableBBs;
     std::vector<const SVFBasicBlock*> allBBs;
@@ -233,7 +232,8 @@ private:
 
 public:
 
-    SVFFunction(const Function* f);
+    SVFFunction(const Function* f, bool declare, bool intricsic);
+    SVFFunction(const Function* f) = delete;
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
 
@@ -244,8 +244,8 @@ public:
 
     inline const Function* getLLVMFun() const
     {
-        assert(fun && "no LLVM Function found!");
-        return fun;
+        assert(getLLVMValue() && "no LLVM Function found!");
+        return SVFUtil::dyn_cast<Function>(getLLVMValue());
     }
 
     inline bool isDeclaration() const
@@ -255,7 +255,17 @@ public:
 
     inline bool isIntrinsic() const
     {
-        return isIntri;
+        return intricsic;
+    }
+
+    inline void setDefFunForMultipleModule(const SVFFunction* deffun)
+    {
+        realDefFun = deffun;
+    }
+
+    inline const SVFFunction* getDefFunForMultipleModule() const
+    {
+        return realDefFun;
     }
 
     u32_t arg_size() const;
@@ -386,12 +396,6 @@ public:
     bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
 
     bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
-
-    // Dump Control Flow Graph of llvm function, with instructions
-    void viewCFG();
-
-    // Dump Control Flow Graph of llvm function, without instructions
-    void viewCFGOnly();
 
 };
 
@@ -538,11 +542,10 @@ private:
     const FunctionType* calledFunType;
     const SVFValue* calledVal;
 public:
-    SVFCallInst(const CallBase* i, const SVFBasicBlock* b, const FunctionType* t) : SVFInstruction(i,b,false,SVFCall), calledFunType(t), calledVal(nullptr)
+    SVFCallInst(const Instruction* i, const SVFBasicBlock* b, const FunctionType* t) : SVFInstruction(i,b,false,SVFCall), calledFunType(t), calledVal(nullptr)
     {
     }
     SVFCallInst(const Instruction* i) = delete;
-    SVFCallInst(const CallBase* i) = delete;
     SVFCallInst(void) = delete;
 
     static inline bool classof(const SVFValue *node)

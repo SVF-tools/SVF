@@ -69,9 +69,9 @@ void CHGBuilder::buildCHG()
         for (Module::const_global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I)
             buildCHGNodes(&(*I));
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
-            buildCHGNodes(getDefFunForMultipleModule(&(*F)));
+            buildCHGNodes(LLVMUtil::getDefFunForMultipleModule(&(*F)));
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
-            buildCHGEdges(getDefFunForMultipleModule(&(*F)));
+            buildCHGEdges(LLVMUtil::getDefFunForMultipleModule(&(*F)));
 
         analyzeVTables(M);
     }
@@ -117,9 +117,8 @@ void CHGBuilder::buildCHGNodes(const GlobalValue *globalvalue)
     }
 }
 
-void CHGBuilder::buildCHGNodes(const SVFFunction* fun)
+void CHGBuilder::buildCHGNodes(const Function* F)
 {
-    const Function* F = fun->getLLVMFun();
     if (isConstructor(F) || isDestructor(F))
     {
         struct DemangledName dname = demangle(F->getName().str());
@@ -129,10 +128,8 @@ void CHGBuilder::buildCHGNodes(const SVFFunction* fun)
     }
 }
 
-void CHGBuilder::buildCHGEdges(const SVFFunction* fun)
+void CHGBuilder::buildCHGEdges(const Function* F)
 {
-    const Function* F = fun->getLLVMFun();
-
     if (isConstructor(F) || isDestructor(F))
     {
         for (Function::const_iterator B = F->begin(), E = F->end(); B != E; ++B)
@@ -143,11 +140,11 @@ void CHGBuilder::buildCHGEdges(const SVFFunction* fun)
                 {
                     const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(*I));
                     CallSite cs = SVFUtil::getLLVMCallSite(svfInst);
-                    connectInheritEdgeViaCall(fun, cs);
+                    connectInheritEdgeViaCall(F, cs);
                 }
                 else if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(&(*I)))
                 {
-                    connectInheritEdgeViaStore(fun, store);
+                    connectInheritEdgeViaStore(F, store);
                 }
             }
         }
@@ -162,13 +159,12 @@ void CHGBuilder::buildInternalMaps()
     buildCSToCHAVtblsAndVfnsMap();
 }
 
-void CHGBuilder::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSite cs)
+void CHGBuilder::connectInheritEdgeViaCall(const Function* caller, CallSite cs)
 {
     if (getCallee(cs) == nullptr)
         return;
 
     const Function* callee = getCallee(cs)->getLLVMFun();
-    const Function* caller = callerfun->getLLVMFun();
 
     struct DemangledName dname = demangle(caller->getName().str());
     if ((isConstructor(caller) && isConstructor(callee)) || (isDestructor(caller) && isDestructor(callee)))
@@ -192,9 +188,9 @@ void CHGBuilder::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSit
     }
 }
 
-void CHGBuilder::connectInheritEdgeViaStore(const SVFFunction* caller, const StoreInst* storeInst)
+void CHGBuilder::connectInheritEdgeViaStore(const Function* caller, const StoreInst* storeInst)
 {
-    struct DemangledName dname = demangle(caller->getName());
+    struct DemangledName dname = demangle(caller->getName().str());
     if (const ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(storeInst->getValueOperand()))
     {
         if (ce->getOpcode() == Instruction::BitCast)
