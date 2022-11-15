@@ -65,6 +65,11 @@ typedef llvm::ConstantStruct ConstantStruct;
 typedef llvm::MemoryLocation MemoryLocation;
 typedef llvm::DataLayout DataLayout;
 
+/// LLVM metadata and debug information
+typedef llvm::NamedMDNode NamedMDNode;
+typedef llvm::MDNode MDNode;
+typedef llvm::DISubprogram DISubprogram;
+
 // LLVM Aliases and constants
 typedef llvm::ConstantAggregate ConstantAggregate;
 typedef llvm::ConstantAggregateZero ConstantAggregateZero;
@@ -77,6 +82,8 @@ typedef llvm::Constant Constant;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantFP ConstantFP;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
+typedef llvm::GlobalAlias GlobalAlias;
+typedef llvm::GlobalVariable GlobalVariable;
 
 /// LLVM Dominators
 typedef llvm::DominatorTree DominatorTree;
@@ -91,6 +98,7 @@ typedef llvm::LoopInfo LoopInfo;
 typedef llvm::User User;
 
 // LLVM Instructions
+typedef llvm::Argument Argument;
 typedef llvm::CallInst CallInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;

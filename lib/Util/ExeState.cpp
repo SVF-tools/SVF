@@ -86,7 +86,7 @@ void ExeState::initObjVar(const ObjVar *objVar, Z3Expr &e)
         {
             if (const SVFConstantInt* consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue()))
             {
-                e = getContext().int_val(consInt->getSExtValue());
+                e = getContext().int_val((s32_t)consInt->getSExtValue());
             }
             else if (const SVFConstantFP *consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue()))
                 e = getContext().int_val(static_cast<u32_t>(consFP->getFPValue()));

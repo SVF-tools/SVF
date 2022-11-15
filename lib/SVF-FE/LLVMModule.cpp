@@ -131,7 +131,7 @@ void LLVMModuleSet::createSVFDataStructure()
             for (Function::const_arg_iterator I = func->arg_begin(), E = func->arg_end(); I != E; ++I)
             {
                 const Argument* arg = &*I;
-                SVFArgument* svfarg = new SVFArgument(arg,svfFunc, LLVMUtil::isArgOfUncalledFunction(arg));
+                SVFArgument* svfarg = new SVFArgument(arg,svfFunc, arg->getArgNo(), LLVMUtil::isArgOfUncalledFunction(arg));
                 svfFunc->addArgument(svfarg);
                 addArgumentMap(arg,svfarg);
             }

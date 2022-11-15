@@ -51,7 +51,6 @@ typedef llvm::Value Value;
 typedef llvm::Instruction Instruction;
 typedef llvm::CallBase CallBase;
 typedef llvm::GlobalValue GlobalValue;
-typedef llvm::GlobalVariable GlobalVariable;
 
 /// LLVM outputs
 typedef llvm::raw_string_ostream raw_string_ostream;
@@ -64,18 +63,9 @@ typedef llvm::FunctionType FunctionType;
 typedef llvm::IntegerType IntegerType;
 
 /// LLVM Aliases and constants
-typedef llvm::Argument Argument;
-typedef llvm::GlobalAlias GlobalAlias;
 typedef llvm::ConstantData ConstantData;
 
-/// LLVM metadata
-typedef llvm::NamedMDNode NamedMDNode;
-typedef llvm::MDNode MDNode;
-
 typedef llvm::GraphPrinter GraphPrinter;
-
-// LLVM Debug Information
-typedef llvm::DISubprogram DISubprogram;
 
 
 class SVFInstruction;
@@ -631,19 +621,13 @@ class SVFArgument : public SVFValue
 {
 private:
     const SVFFunction* fun;
-    const Argument* arg;
     u32_t argNo;
     bool uncalled;
 public:
-    SVFArgument(const Argument* _arg, const SVFFunction* _fun, bool _uncalled): SVFValue(_arg, SVFValue::SVFArg), fun(_fun), arg(_arg), argNo(_arg->getArgNo()), uncalled(_uncalled)
+    SVFArgument(const Value* _arg, const SVFFunction* _fun, u32_t _argNo, bool _uncalled): SVFValue(_arg, SVFValue::SVFArg), fun(_fun), argNo(_argNo), uncalled(_uncalled)
     {
     }
     SVFArgument() = delete;
-
-    const Argument* getLLVMArgument() const
-    {
-        return arg;
-    }
 
     inline const SVFFunction* getParent() const
     {
