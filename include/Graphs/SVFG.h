@@ -173,6 +173,11 @@ public:
         return getSVFGNode(getDef(pagNode));
     }
 
+    /// Return the corresponding SVFGNodes to a given llvm::Value.
+    /// return an empty list, if the no mapping is possible
+    std::set<const SVFGNode*> fromValue(const llvm::Value* value) const;
+
+
     /// Perform statistics
     void performStat();
 
