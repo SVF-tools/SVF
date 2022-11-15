@@ -578,22 +578,22 @@ void SVFG::dump(const std::string& file, bool simple)
 
 std::set<const SVFGNode*> SVFG::fromValue(const llvm::Value* value) const
 {
-    SVFIR* pag = SVFIR::getPAG();
+    SVFIR* svfir = SVFIR::getPAG();
     std::set<const SVFGNode*> ret;
-    // search for all PAGEdges first
-    for (const PAGEdge* pagEdge : pag->getValueEdges(value))
+    // search for all SVFStmts first
+    for (const SVFStmt* svfStmt : svfir->getValueEdges(value))
     {
-        PAGEdgeToStmtVFGNodeMapTy::const_iterator it = PAGEdgeToStmtVFGNodeMap.find(pagEdge);
+        PAGEdgeToStmtVFGNodeMapTy::const_iterator it = PAGEdgeToStmtVFGNodeMap.find(svfStmt);
         if (it != PAGEdgeToStmtVFGNodeMap.end())
         {
             ret.emplace(it->second);
         }
     }
-    // add all PAGNodes
-    PAGNode* pagNode = pag->getGNode(pag->getValueNode(value));
-    if(hasDef(pagNode))
+    // add all SVFVars
+    SVFVar* svfVar = svfir->getGNode(svfir->getValueNode(value));
+    if(hasDef(svfVar))
     {
-        ret.emplace(getDefSVFGNode(pagNode));
+        ret.emplace(getDefSVFGNode(svfVar));
     }
     return ret;
 }
