@@ -3,8 +3,7 @@ name: svf-publish
 # Triggers the publish workflow only on master
 on:
   push:
-    branches: [ colindelotavo-patch-1 ]    
-#     branches: [ master ]
+    branches: [ master ]
 
 # Customize the env variable
 env:
@@ -14,7 +13,7 @@ env:
 
 jobs:
   publish:
-#     if: github.repository == 'SVF-tools/SVF'
+    if: github.repository == 'SVF-tools/SVF'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -85,11 +84,11 @@ jobs:
       # update performance testing to Test-Suite
       - name: upload-performance-testing-to-Test-Suite
         working-directory: ${{github.workspace}}/Release-build
-#         if: |
-#             github.event_name == 'push' && 
-#             github.repository == 'SVF-tools/SVF' && 
-#             runner.os == 'Linux' &&
-#             github.ref == 'refs/heads/master'
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            runner.os == 'Linux' &&
+            github.ref == 'refs/heads/master'
         run: |
             ctest -R diff-perf-cruxbc -VV
             git pull
