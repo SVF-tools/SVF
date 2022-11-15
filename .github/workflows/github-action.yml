@@ -50,48 +50,48 @@ jobs:
         run: 
           ctest -R wpa_tests -VV
  
-      - name: ctest dvf and mta
-        working-directory: ${{github.workspace}}/Release-build
-        run: 
-          ctest -R dvf_tests -VV
+      # - name: ctest dvf and mta
+      #   working-directory: ${{github.workspace}}/Release-build
+      #   run: 
+      #     ctest -R dvf_tests -VV
 
-      - name: ctest andersen differential analysis
-        working-directory: ${{github.workspace}}/Release-build
-        run: 
-          ctest -R diff_tests-ander -VV
+      # - name: ctest andersen differential analysis
+      #   working-directory: ${{github.workspace}}/Release-build
+      #   run: 
+      #     ctest -R diff_tests-ander -VV
 
-      - name: ctest flow-sensitive differential analysis
-        working-directory: ${{github.workspace}}/Release-build
-        run: 
-          ctest -R diff_tests-fs -VV
+      # - name: ctest flow-sensitive differential analysis
+      #   working-directory: ${{github.workspace}}/Release-build
+      #   run: 
+      #     ctest -R diff_tests-fs -VV
 
-      - name: ctest Andersen file-write-read 
-        working-directory: ${{github.workspace}}/Release-build
-        run: 
-          ctest -R diff_tests-wr-ander -VV
+      # - name: ctest Andersen file-write-read 
+      #   working-directory: ${{github.workspace}}/Release-build
+      #   run: 
+      #     ctest -R diff_tests-wr-ander -VV
 
-      - name: ctest mem_leak
-        working-directory: ${{github.workspace}}/Release-build
-        run:
-          ctest -R mem_leak -VV
+      # - name: ctest mem_leak
+      #   working-directory: ${{github.workspace}}/Release-build
+      #   run:
+      #     ctest -R mem_leak -VV
 
-      - name: ctest double_free
-        working-directory: ${{github.workspace}}/Release-build
-        run:
-          ctest -R double_free -VV
+      # - name: ctest double_free
+      #   working-directory: ${{github.workspace}}/Release-build
+      #   run:
+      #     ctest -R double_free -VV
 
-      - name: ctest cfl_tests
-        working-directory: ${{github.workspace}}/Release-build
-        run: 
-          ctest -R cfl_tests -VV
+      # - name: ctest cfl_tests
+      #   working-directory: ${{github.workspace}}/Release-build
+      #   run: 
+      #     ctest -R cfl_tests -VV
           
       - name: ctest performance tests on cruxbc
         working-directory: ${{github.workspace}}/Release-build
         if: runner.os == 'Linux'
         run: 
           ctest -R diff-perf-cruxbc -VV
-          pip3 install -R requirements.txt
-          python3 ./perf_compary.py --help
+          pip3 install -R ../requirements.txt
+          python3 ../perf_compare.py --help
 
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
