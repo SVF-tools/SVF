@@ -90,6 +90,8 @@ jobs:
         if: runner.os == 'Linux'
         run: 
           ctest -R diff-perf-cruxbc -VV
+          pip3 install -R requirements.txt
+          python3 ./perf_compary.py --help
 
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
