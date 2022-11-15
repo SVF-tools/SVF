@@ -92,6 +92,7 @@ public:
     }
     //@}
 
+    const std::string getSVFGNodeLoc(const SVFGNode* N);
 protected:
     /// Report leaks
     //@{
@@ -99,7 +100,6 @@ protected:
     void reportAlwaysUAF(ProgSlice* slice);
     void reportConditionalUAF(ProgSlice* slice);
     //@}
-
     /// Validate test cases for regression test purpose
     void testsValidation(const ProgSlice* slice);
     void validateSuccessTests(const SVFGNode* source, const SVFFunction* fun);
@@ -120,6 +120,7 @@ protected:
     //@}
 private:
     SVFGNodeToCSIDMap srcToCSIDMap;
+
 };
 
 } // End namespace SVF

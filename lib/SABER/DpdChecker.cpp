@@ -222,16 +222,36 @@ void DpdChecker::initSnks()
   }
 }
 
+const std::string DpdChecker::getSVFGNodeLoc(const SVFGNode* N){
+    const SVF::Instruction* Inst = nullptr;
+    if (auto* X = dyn_cast<StmtSVFGNode>(N)) {
+        Inst = (X->getInst());
+    } if (auto* X = dyn_cast<ActualParmSVFGNode>(N)) {
+        Inst = X->getCallSite()->getCallSite();
+    } else if (auto* X = dyn_cast<ActualINSVFGNode>(N)) {
+        Inst = X->getCallSite()->getCallSite();
+    } else if (auto* X = dyn_cast<ActualRetSVFGNode>(N)) {
+        Inst = X->getCallSite()->getCallSite();
+    } else if (auto* X = dyn_cast<ActualOUTSVFGNode>(N)) {
+        Inst = X->getCallSite()->getCallSite();
+    }
 
+    const llvm::DebugLoc& location = Inst->getDebugLoc();
+    std::string Ret;
+    llvm::raw_string_ostream O(Ret);
+    location.print(O);
+    return std::move(O.str());
+}
 void DpdChecker::reportAlwaysUAF(ProgSlice* slice)
 {
     const CallICFGNode* cs = getSrcCSID(slice->getSource());
     for (auto SinksIt = slice->sinksBegin(), SinksEnd = slice->sinksEnd() ; SinksIt != SinksEnd ; SinksIt++) {
         const SVFGNode* sinkNode = *SinksIt;
-        SVFIR* pag = getPAG();
-        PAGNode* pagSinkNode = pag->getGNode(sinkNode->getId());
+        // SVFIR* pag = getPAG();
+        // PAGNode* pagSinkNode = pag->getGNode(sinkNode->getId());
+        // SVFGNode* svfgnode = svfg->getDefSVFGNode(pagSinkNode);
         SVFUtil::errs() << " memory used at : ("
-                    << getSourceLoc(pagSinkNode->getValue()) << ")\n";
+                    << getSVFGNodeLoc(sinkNode) << ")\n";
     }
     SVFUtil::errs() << bugMsg1("\t Always UAF :") <<  " memory freed at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";
@@ -243,10 +263,10 @@ void DpdChecker::reportConditionalUAF(ProgSlice* slice)
     const CallICFGNode* cs = getSrcCSID(slice->getSource());
     for (auto SinksIt = slice->sinksBegin(), SinksEnd = slice->sinksEnd() ; SinksIt != SinksEnd ; SinksIt++) {
         const SVFGNode* sinkNode = *SinksIt;
-        SVFIR* pag = getPAG();
-        PAGNode* pagSinkNode = pag->getGNode(sinkNode->getId());
+        // SVFIR* pag = getPAG();
+        // PAGNode* pagSinkNode = pag->getGNode(sinkNode->getId());
         SVFUtil::errs() << " memory used at : ("
-                    << getSourceLoc(pagSinkNode->getValue()) << ")\n";
+                    << getSVFGNodeLoc(sinkNode) << ")\n";
     }
     SVFUtil::errs() << bugMsg2("\t Conditional UAF :") <<  " memory freed at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";
