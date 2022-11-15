@@ -148,15 +148,15 @@ const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const
 /*!
  *
  */
-const CallSite ThreadAPI::getLLVMCallSite(const SVFInstruction *inst) const
+const CallSite ThreadAPI::getSVFCallSite(const SVFInstruction *inst) const
 {
-    return SVFUtil::getLLVMCallSite(inst);
+    return SVFUtil::getSVFCallSite(inst);
 }
 
 const SVFValue* ThreadAPI::getJoinedThread(const SVFInstruction *inst) const
 {
     assert(isTDJoin(inst) && "not a thread join function!");
-    CallSite cs = getLLVMCallSite(inst);
+    CallSite cs = getSVFCallSite(inst);
     const SVFValue* join = cs.getArgument(0);
     const SVFVar* var = PAG::getPAG()->getGNode(PAG::getPAG()->getValueNode(join));
     for(const SVFStmt* stmt : var->getInEdges())

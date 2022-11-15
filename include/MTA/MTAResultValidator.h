@@ -274,7 +274,7 @@ protected:
     void collectValidationTargets()
     {
         // Collect call sites of all RC_ACCESS function calls.
-        std::vector<CallSite> csInsts;
+        std::vector<const CallBase*> csInsts;
         const Function* F = nullptr;
         for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
         {
@@ -297,7 +297,7 @@ protected:
             const Value *user = u->getUser();
             if(LLVMUtil::isCallSite(user))
             {
-                CallSite csInst = LLVMUtil::getLLVMCallSite(user);
+                const CallBase* csInst = LLVMUtil::getLLVMCallSite(user);
                 csInsts.push_back(csInst);
             }
         }
@@ -309,12 +309,12 @@ protected:
         // Generate access pairs.
         for (int i = 0, e = csInsts.size(); i != e;)
         {
-            CallSite CI1 = csInsts[i++];
-            CallSite CI2 = csInsts[i++];
-            const SVFConstantInt* C = SVFUtil::dyn_cast<SVFConstantInt>(CI1.getArgOperand(1));
+            const CallBase* CI1 = csInsts[i++];
+            const CallBase* CI2 = csInsts[i++];
+            const ConstantInt* C = SVFUtil::dyn_cast<ConstantInt>(CI1->getArgOperand(1));
             assert(C);
-            const Instruction* I1 = getPreviousMemoryAccessInst(CI1.getInstruction()->getLLVMInstruction());
-            const Instruction* I2 = getPreviousMemoryAccessInst(CI2.getInstruction()->getLLVMInstruction());
+            const Instruction* I1 = getPreviousMemoryAccessInst(CI1);
+            const Instruction* I2 = getPreviousMemoryAccessInst(CI2);
             assert(I1 && I2 && "RC_ACCESS should be placed immediately after the target memory access.");
             RC_FLAG flags = C->getZExtValue();
             accessPairs.push_back(AccessPair(I1, I2, flags));
@@ -395,12 +395,12 @@ private:
      * Comparison function to sort the validation targets in ascending order of
      * the validation id (i.e., the 1st argument of RC_ACCESS function call).
      */
-    static bool compare(CallSite CI1, CallSite CI2)
+    static bool compare(const CallBase* CI1, const CallBase* CI2)
     {
-        const SVFValue *V1 = CI1.getArgOperand(0);
-        const SVFValue *V2 = CI2.getArgOperand(0);
-        const SVFConstantInt* C1 = SVFUtil::dyn_cast<SVFConstantInt>(V1);
-        const SVFConstantInt* C2 = SVFUtil::dyn_cast<SVFConstantInt>(V2);
+        const Value *V1 = CI1->getArgOperand(0);
+        const Value *V2 = CI2->getArgOperand(0);
+        const ConstantInt* C1 = SVFUtil::dyn_cast<ConstantInt>(V1);
+        const ConstantInt* C2 = SVFUtil::dyn_cast<ConstantInt>(V2);
         assert(0 != C1 && 0 != C2);
         return C1->getZExtValue() < C2->getZExtValue();
     }

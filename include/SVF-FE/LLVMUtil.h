@@ -57,13 +57,31 @@ inline bool isCallSite(const Value* val)
         return false;
 }
 
+/// Get the definition of a function across multiple modules
+inline const Function* getDefFunForMultipleModule(const Function* fun)
+{
+    if(fun == nullptr) return nullptr;
+    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
+    if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
+        fun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
+    return fun;
+}
+
 /// Return LLVM callsite given a value
-inline CallSite getLLVMCallSite(const Value* value)
+inline const CallBase* getLLVMCallSite(const Value* value)
 {
     assert(isCallSite(value) && "not a callsite?");
-    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<CallBase>(value));
-    CallSite cs(svfInst);
-    return cs;
+    return SVFUtil::cast<CallBase>(value);
+}
+
+inline const Function* getCallee(const CallBase* cs)
+{
+    // FIXME: do we need to strip-off the casts here to discover more library functions
+    const Function* callee = SVFUtil::dyn_cast<Function>(cs->getCalledOperand()->stripPointerCasts());
+    if(callee) 
+        return getDefFunForMultipleModule(callee);
+    else
+        return nullptr;
 }
 
 /// Return LLVM function if this value is
@@ -341,16 +359,6 @@ inline bool isConstantOrMetaData(const Value* val)
            || SVFUtil::isa<ConstantAggregate>(val)
            || SVFUtil::isa<MetadataAsValue>(val)
            || SVFUtil::isa<BlockAddress>(val);
-}
-
-/// Get the definition of a function across multiple modules
-inline const Function* getDefFunForMultipleModule(const Function* fun)
-{
-    if(fun == nullptr) return nullptr;
-    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
-    if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
-        fun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
-    return fun;
 }
 
 /// find the unique defined global across multiple modules

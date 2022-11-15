@@ -60,7 +60,7 @@ void SaberAnnotator::annotateSinks()
         if(const ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(*it))
         {
             assert(SVFUtil::isCallSite(ap->getCallSite()->getCallSite()) && "not a call instruction?");
-            CallSite sink = SVFUtil::getLLVMCallSite(ap->getCallSite()->getCallSite());
+            CallSite sink = SVFUtil::getSVFCallSite(ap->getCallSite()->getCallSite());
             std::string str;
             raw_string_ostream rawstr(str);
             rawstr << SB_SLICESINK << _curSlice->getSource()->getId();

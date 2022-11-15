@@ -228,7 +228,7 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
             if(const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
             {
                 SVFCallInst* svfcall = SVFUtil::cast<SVFCallInst>(getSVFInstruction(call));
-                SVFValue* callee = getSVFValue(call->getCalledOperand());
+                SVFValue* callee = getSVFValue(call->getCalledOperand()->stripPointerCasts());
                 svfcall->setCalledOperand(callee);
                 for(u32_t i = 0; i < call->arg_size(); i++){
                     SVFValue* svfval = getSVFValue(call->getArgOperand(i));

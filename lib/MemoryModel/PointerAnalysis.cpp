@@ -448,7 +448,7 @@ bool PointerAnalysis::matchArgs(const CallICFGNode* cs, const SVFFunction* calle
     if(ThreadAPI::getThreadAPI()->isTDFork(cs->getCallSite()))
         return true;
     else
-        return SVFUtil::getLLVMCallSite(cs->getCallSite()).arg_size() == callee->arg_size();
+        return SVFUtil::getSVFCallSite(cs->getCallSite()).arg_size() == callee->arg_size();
 }
 
 /*
@@ -456,8 +456,8 @@ bool PointerAnalysis::matchArgs(const CallICFGNode* cs, const SVFFunction* calle
  */
 void PointerAnalysis::getVFnsFromCHA(const CallICFGNode* cs, VFunSet &vfns)
 {
-    if (chgraph->csHasVFnsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite())))
-        vfns = chgraph->getCSVFsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite()));
+    if (chgraph->csHasVFnsBasedonCHA(SVFUtil::getSVFCallSite(cs->getCallSite())))
+        vfns = chgraph->getCSVFsBasedonCHA(SVFUtil::getSVFCallSite(cs->getCallSite()));
 }
 
 /*
@@ -466,10 +466,10 @@ void PointerAnalysis::getVFnsFromCHA(const CallICFGNode* cs, VFunSet &vfns)
 void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &target, VFunSet &vfns)
 {
 
-    if (chgraph->csHasVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite())))
+    if (chgraph->csHasVtblsBasedonCHA(SVFUtil::getSVFCallSite(cs->getCallSite())))
     {
         Set<const SVFGlobalValue*> vtbls;
-        const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite()));
+        const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(SVFUtil::getSVFCallSite(cs->getCallSite()));
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it)
         {
             const PAGNode *ptdnode = pag->getGNode(*it);
@@ -482,7 +482,7 @@ void PointerAnalysis::getVFnsFromPts(const CallICFGNode* cs, const PointsTo &tar
                 }
             }
         }
-        chgraph->getVFnsFromVtbls(SVFUtil::getLLVMCallSite(cs->getCallSite()), vtbls, vfns);
+        chgraph->getVFnsFromVtbls(SVFUtil::getSVFCallSite(cs->getCallSite()), vtbls, vfns);
     }
 }
 
@@ -499,8 +499,8 @@ void PointerAnalysis::connectVCallToVFns(const CallICFGNode* cs, const VFunSet &
         callee = callee->getDefFunForMultipleModule();
         if (getIndCallMap()[cs].count(callee) > 0)
             continue;
-        if(SVFUtil::getLLVMCallSite(cs->getCallSite()).arg_size() == callee->arg_size() ||
-                (SVFUtil::getLLVMCallSite(cs->getCallSite()).getFunctionType()->isVarArg() && callee->isVarArg()))
+        if(SVFUtil::getSVFCallSite(cs->getCallSite()).arg_size() == callee->arg_size() ||
+                (SVFUtil::getSVFCallSite(cs->getCallSite()).getFunctionType()->isVarArg() && callee->isVarArg()))
         {
             newEdges[cs].insert(callee);
             getIndCallMap()[cs].insert(callee);
@@ -513,7 +513,7 @@ void PointerAnalysis::connectVCallToVFns(const CallICFGNode* cs, const VFunSet &
 /// Resolve cpp indirect call edges
 void PointerAnalysis::resolveCPPIndCalls(const CallICFGNode* cs, const PointsTo& target, CallEdgeMap& newEdges)
 {
-    assert(isVirtualCallSite(SVFUtil::getLLVMCallSite(cs->getCallSite())) && "not cpp virtual call");
+    assert(isVirtualCallSite(SVFUtil::getSVFCallSite(cs->getCallSite())) && "not cpp virtual call");
 
     VFunSet vfns;
     if (Options::ConnectVCallOnCHA)
@@ -614,7 +614,7 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
             SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(*i);
             if (isCallSite(svfVal))
             {
-                CallSite call = getLLVMCallSite(svfVal);
+                CallSite call = getSVFCallSite(svfVal);
                 assert(call.arg_size() == 2
                        && "arguments should be two pointers!!");
                 const SVFValue* V1 = call.getArgOperand(0);

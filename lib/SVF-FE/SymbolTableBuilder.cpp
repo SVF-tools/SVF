@@ -172,7 +172,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                 else if (isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst)))
                 {
 
-                    CallSite cs = SVFUtil::getLLVMCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst));
+                    CallSite cs = SVFUtil::getSVFCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst));
                     symInfo->callSiteSet.insert(cs);
                     for (u32_t i = 0; i < cs.arg_size(); i++)
                     {

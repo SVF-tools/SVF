@@ -439,13 +439,13 @@ void TCT::build()
                     ecit = cgEdge->directCallsEnd(); cit!=ecit; ++cit)
             {
                 DBOUT(DMTA,outs() << "\nTCT handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
-                handleCallRelation(ctp,cgEdge,getLLVMCallSite((*cit)->getCallSite()));
+                handleCallRelation(ctp,cgEdge,getSVFCallSite((*cit)->getCallSite()));
             }
             for(PTACallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(),
                     eind = cgEdge->indirectCallsEnd(); ind!=eind; ++ind)
             {
                 DBOUT(DMTA,outs() << "\nTCT handling indirect call:" << **ind << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
-                handleCallRelation(ctp,cgEdge,getLLVMCallSite((*ind)->getCallSite()));
+                handleCallRelation(ctp,cgEdge,getSVFCallSite((*ind)->getCallSite()));
             }
         }
     }

@@ -16,7 +16,7 @@ using namespace SVFUtil;
 Set<std::string> LockResultValidator::getStringArg(const SVFInstruction* inst, unsigned int arg_num)
 {
     assert(SVFUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callsite");
-    CallSite cs = SVFUtil::getLLVMCallSite(inst);
+    CallSite cs = SVFUtil::getSVFCallSite(inst);
     assert((arg_num < cs.arg_size()) && "Does not has this argument");
     const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(arg_num)->getLLVMValue());
     const Constant* arrayinst = SVFUtil::dyn_cast<Constant>(gepinst->getOperand(0));

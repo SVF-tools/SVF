@@ -121,7 +121,7 @@ public:
     //@{
     const SVFFunction* getCallee(const SVFInstruction *inst) const;
     const SVFFunction* getCallee(const CallSite cs) const;
-    const CallSite getLLVMCallSite(const SVFInstruction *inst) const;
+    const CallSite getSVFCallSite(const SVFInstruction *inst) const;
     //@}
 
     /// Return true if this call create a new thread
@@ -155,7 +155,7 @@ public:
     inline const SVFValue* getForkedThread(const SVFInstruction *inst) const
     {
         assert(isTDFork(inst) && "not a thread fork function!");
-        CallSite cs = getLLVMCallSite(inst);
+        CallSite cs = getSVFCallSite(inst);
         return cs.getArgument(0);
     }
     inline const SVFValue* getForkedThread(CallSite cs) const
@@ -168,7 +168,7 @@ public:
     inline const SVFValue* getForkedFun(const SVFInstruction *inst) const
     {
         assert(isTDFork(inst) && "not a thread fork function!");
-        CallSite cs = getLLVMCallSite(inst);
+        CallSite cs = getSVFCallSite(inst);
         return cs.getArgument(2);
     }
     inline const SVFValue* getForkedFun(CallSite cs) const
@@ -181,7 +181,7 @@ public:
     inline const SVFValue* getActualParmAtForkSite(const SVFInstruction *inst) const
     {
         assert(isTDFork(inst) && "not a thread fork function!");
-        CallSite cs = getLLVMCallSite(inst);
+        CallSite cs = getSVFCallSite(inst);
         return cs.getArgument(3);
     }
     inline const SVFValue* getActualParmAtForkSite(CallSite cs) const
@@ -195,7 +195,7 @@ public:
     inline const SVFValue* getTaskFuncAtHareParForSite(const SVFInstruction *inst) const
     {
         assert(isHareParFor(inst) && "not a hare_parallel_for function!");
-        CallSite cs = getLLVMCallSite(inst);
+        CallSite cs = getSVFCallSite(inst);
         return cs.getArgument(4);
     }
     inline const SVFValue* getTaskFuncAtHareParForSite(CallSite cs) const
@@ -209,7 +209,7 @@ public:
     inline const SVFValue* getTaskDataAtHareParForSite(const SVFInstruction *inst) const
     {
         assert(isHareParFor(inst) && "not a hare_parallel_for function!");
-        CallSite cs = getLLVMCallSite(inst);
+        CallSite cs = getSVFCallSite(inst);
         return cs.getArgument(5);
     }
     inline const SVFValue* getTaskDataAtHareParForSite(CallSite cs) const
@@ -244,7 +244,7 @@ public:
     inline const SVFValue* getRetParmAtJoinedSite(const SVFInstruction *inst) const
     {
         assert(isTDJoin(inst) && "not a thread join function!");
-        CallSite cs = getLLVMCallSite(inst);
+        CallSite cs = getSVFCallSite(inst);
         return cs.getArgument(1);
     }
     inline const SVFValue* getRetParmAtJoinedSite(CallSite cs) const
@@ -299,7 +299,7 @@ public:
     inline const SVFValue* getLockVal(const SVFInstruction *inst) const
     {
         assert((isTDAcquire(inst) || isTDRelease(inst)) && "not a lock acquire or release function");
-        CallSite cs = getLLVMCallSite(inst);
+        CallSite cs = getSVFCallSite(inst);
         return cs.getArgument(0);
     }
     inline const SVFValue* getLockVal(CallSite cs) const
