@@ -251,7 +251,8 @@ def compare_metrics(older, newer):
     "-t",
     "--tablefmt",
     help="choose table format.",
-    type=click.Choice(TABLEFMT_CHOICES, case_sensitive=False),
+#     type=click.Choice(TABLEFMT_CHOICES, case_sensitive=False),
+    type=click.Choice(TABLEFMT_CHOICES),
     default="plain",
     show_default=True,
 )
