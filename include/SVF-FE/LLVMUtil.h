@@ -68,7 +68,7 @@ static inline Type *getPtrElementType(const PointerType* pty)
 #if (LLVM_VERSION_MAJOR < 14)
     return pty->getElementType();
 #else
-    assert(!pty->isOpaque() && "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointer'");
+    assert(!pty->isOpaque() && "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointers'");
     return pty->getNonOpaquePointerElementType();
 #endif
 }
