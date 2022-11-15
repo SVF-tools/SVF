@@ -3,7 +3,8 @@ name: svf-publish
 # Triggers the publish workflow only on master
 on:
   push:
-    branches: [ master ]
+    branches: [ colindelotavo-patch-1 ]    
+#     branches: [ master ]
 
 # Customize the env variable
 env:
@@ -13,7 +14,7 @@ env:
 
 jobs:
   publish:
-    if: github.repository == 'SVF-tools/SVF'
+#     if: github.repository == 'SVF-tools/SVF'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -84,11 +85,11 @@ jobs:
       # update performance testing to Test-Suite
       - name: upload-performance-testing-to-Test-Suite
         working-directory: ${{github.workspace}}/Release-build
-        if: |
-            github.event_name == 'push' && 
-            github.repository == 'SVF-tools/SVF' && 
-            runner.os == 'Linux' &&
-            github.ref == 'refs/heads/master'
+#         if: |
+#             github.event_name == 'push' && 
+#             github.repository == 'SVF-tools/SVF' && 
+#             runner.os == 'Linux' &&
+#             github.ref == 'refs/heads/master'
         run: |
             ctest -R diff-perf-cruxbc -VV
             git pull
@@ -98,7 +99,7 @@ jobs:
             python3 -m pip install --upgrade pip setuptools wheel
             pip3 install -r ../../requirements.txt
             cp ../../perf_compare.py .
-            python3 perf_compare.py -d ./perf_history/ --exit-on-error --only-show-changed --threshold-percentage 10
+            python3 perf_compare.py -d ./perf_history/ --tablefmt grid --exit-on-error --only-show-changed --threshold-percentage 10
             git add .     
             if [ -n "$(git status -s)" ]; then git commit -m"update latest SVF performance data"       ; fi
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/Test-Suite.git   HEAD:master   
