@@ -434,7 +434,7 @@ void SymbolTableBuilder::handleGlobalCE(const GlobalVariable *G)
     assert(G);
 
     //The type this global points to
-    const Type *T = G->getType()->getContainedType(0);
+    const Type *T = G->getValueType();
     bool is_array = 0;
     //An array is considered a single variable of its type.
     while (const ArrayType *AT = SVFUtil::dyn_cast<ArrayType>(T))
