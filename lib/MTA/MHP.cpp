@@ -1040,7 +1040,7 @@ static bool accessSameArrayIndex(const GetElementPtrInst* ptr1, const GetElement
     for (gep_type_iterator gi = gep_type_begin(*ptr1), ge = gep_type_end(*ptr1);
             gi != ge; ++gi)
     {
-        if(ConstantInt* ci = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
+        if(SVFConstantInt* ci = SVFUtil::dyn_cast<SVFConstantInt>(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(gi.getOperand())))
         {
             s32_t idx = ci->getSExtValue();
             ptr1vec.push_back(idx);
@@ -1053,7 +1053,7 @@ static bool accessSameArrayIndex(const GetElementPtrInst* ptr1, const GetElement
     for (gep_type_iterator gi = gep_type_begin(*ptr2), ge = gep_type_end(*ptr2);
             gi != ge; ++gi)
     {
-        if(ConstantInt* ci = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
+        if(SVFConstantInt* ci = SVFUtil::dyn_cast<SVFConstantInt>(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(gi.getOperand())))
         {
             s32_t idx = ci->getSExtValue();
             ptr2vec.push_back(idx);

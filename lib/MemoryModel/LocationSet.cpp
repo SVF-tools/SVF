@@ -50,7 +50,7 @@ bool LocationSet::isConstantOffset() const
 {
     for(auto it : offsetValues)
     {
-        if(SVFUtil::isa<ConstantInt>(it.first->getLLVMValue()) == false)
+        if(SVFUtil::isa<SVFConstantInt>(it.first) == false)
             return false;
     }
     return true;
@@ -128,7 +128,7 @@ s32_t LocationSet::accumulateConstantOffset() const
     {
         const SVFValue* value = offsetValues[i].first;
         const Type* type = offsetValues[i].second;
-        const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(value->getLLVMValue());
+        const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         assert(op && "not a constant offset?");
         if(type==nullptr)
         {

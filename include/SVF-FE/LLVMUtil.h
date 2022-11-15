@@ -82,11 +82,7 @@ inline bool isBlackholeSym(const Value* val)
 /// Check whether this value is a black hole
 inline bool isNullPtrSym(const Value* val)
 {
-    if (const Constant* v = SVFUtil::dyn_cast<Constant>(val))
-    {
-        return v->isNullValue() && v->getType()->isPointerTy();
-    }
-    return false;
+    return SVFUtil::dyn_cast<ConstantPointerNull>(val);
 }
 
 /// Check whether this value points-to a constant object

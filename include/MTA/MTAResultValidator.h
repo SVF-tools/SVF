@@ -311,7 +311,7 @@ protected:
         {
             CallSite CI1 = csInsts[i++];
             CallSite CI2 = csInsts[i++];
-            const ConstantInt* C = SVFUtil::dyn_cast<ConstantInt>(CI1.getArgOperand(1)->getLLVMValue());
+            const SVFConstantInt* C = SVFUtil::dyn_cast<SVFConstantInt>(CI1.getArgOperand(1));
             assert(C);
             const Instruction* I1 = getPreviousMemoryAccessInst(CI1.getInstruction()->getLLVMInstruction());
             const Instruction* I2 = getPreviousMemoryAccessInst(CI2.getInstruction()->getLLVMInstruction());
@@ -399,8 +399,8 @@ private:
     {
         const SVFValue *V1 = CI1.getArgOperand(0);
         const SVFValue *V2 = CI2.getArgOperand(0);
-        const ConstantInt* C1 = SVFUtil::dyn_cast<ConstantInt>(V1->getLLVMValue());
-        const ConstantInt* C2 = SVFUtil::dyn_cast<ConstantInt>(V2->getLLVMValue());
+        const SVFConstantInt* C1 = SVFUtil::dyn_cast<SVFConstantInt>(V1);
+        const SVFConstantInt* C2 = SVFUtil::dyn_cast<SVFConstantInt>(V2);
         assert(0 != C1 && 0 != C2);
         return C1->getZExtValue() < C2->getZExtValue();
     }

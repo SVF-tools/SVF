@@ -84,22 +84,13 @@ void ExeState::initObjVar(const ObjVar *objVar, Z3Expr &e)
         /// constant data
         if (obj->isConstantData() || obj->isConstantArray() || obj->isConstantStruct())
         {
-            if (const ConstantInt* consInt = SVFUtil::dyn_cast<ConstantInt>(obj->getValue()->getLLVMValue()))
+            if (const SVFConstantInt* consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue()))
             {
-                if (consInt == llvm::ConstantInt::getTrue(LLVMModuleSet::getLLVMModuleSet()->getContext()))
-                {
-                    e = getContext().int_val(1);
-                }
-                else if (consInt == llvm::ConstantInt::getFalse(LLVMModuleSet::getLLVMModuleSet()->getContext()))
-                    e = getContext().int_val(0);
-                else
-                {
-                    e = getContext().int_val(consInt->getSExtValue());
-                }
+                e = getContext().int_val(consInt->getSExtValue());
             }
-            else if (const llvm::ConstantFP *consFP = SVFUtil::dyn_cast<llvm::ConstantFP>(obj->getValue()->getLLVMValue()))
-                e = getContext().int_val(static_cast<u32_t>(consFP->getValueAPF().convertToFloat()));
-            else if (SVFUtil::isa<ConstantPointerNull>(obj->getValue()->getLLVMValue()))
+            else if (const SVFConstantFP *consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue()))
+                e = getContext().int_val(static_cast<u32_t>(consFP->getFPValue()));
+            else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue()))
                 e = getContext().int_val(0);
             else if (SVFUtil::isa<GlobalVariable>(obj->getValue()->getLLVMValue()))
                 e = getContext().int_val(getVirtualMemAddress(objVar->getId()));

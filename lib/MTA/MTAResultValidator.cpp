@@ -60,7 +60,7 @@ NodeID MTAResultValidator::getIntArg(const SVFInstruction* inst, u32_t arg_num)
 {
     assert(SVFUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
-    const ConstantInt* x = SVFUtil::dyn_cast<ConstantInt>(cs.getArgument(arg_num)->getLLVMValue());
+    const SVFConstantInt* x = SVFUtil::dyn_cast<SVFConstantInt>(cs.getArgument(arg_num));
     assert((arg_num < cs.arg_size()) && "Does not has this argument");
     return (NodeID) x->getSExtValue();
 }

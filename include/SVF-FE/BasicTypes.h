@@ -74,6 +74,9 @@ typedef llvm::ConstantDataArray ConstantDataArray;
 typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantArray ConstantArray;
 typedef llvm::Constant Constant;
+typedef llvm::ConstantInt ConstantInt;
+typedef llvm::ConstantFP ConstantFP;
+typedef llvm::ConstantPointerNull ConstantPointerNull;
 
 /// LLVM Dominators
 typedef llvm::DominatorTree DominatorTree;

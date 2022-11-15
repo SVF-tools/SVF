@@ -65,10 +65,8 @@ typedef llvm::IntegerType IntegerType;
 
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
-typedef llvm::ConstantData ConstantData;
-typedef llvm::ConstantInt ConstantInt;
-typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::GlobalAlias GlobalAlias;
+typedef llvm::ConstantData ConstantData;
 
 /// LLVM metadata
 typedef llvm::NamedMDNode NamedMDNode;
@@ -100,6 +98,10 @@ public:
         SVFGlob,
         SVFArg,
         SVFConstData,
+        SVFConstInt,
+        SVFConstFP,
+        SVFConstNullPtr,
+        SVFBlackHole,
         SVFOther
     };
 
@@ -108,18 +110,15 @@ private:
     const Type* type;
     GNodeK kind;	///< Type of this SVFValue
     bool ptrInUncalledFun;
-    bool blackHoleSym;
-    bool nullptrSym;
     bool isPtr;
     bool has_name;
-    const Type* ptrElementType;
 protected:
     std::string name;
 
     /// Constructor
     SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k),
-        ptrInUncalledFun(false), blackHoleSym(false), nullptrSym(false), isPtr(val->getType()->isPointerTy()),
-        has_name(false), ptrElementType(nullptr),name(val->getName())
+        ptrInUncalledFun(false), isPtr(val->getType()->isPointerTy()),
+        has_name(false), name(val->getName())
     {
     }
 
@@ -176,21 +175,13 @@ public:
     {
         return ptrInUncalledFun;
     }
-    inline void setBlackhole()
-    {
-        blackHoleSym = true;
-    }
     inline bool isblackHole() const
     {
-        return blackHoleSym;
-    }
-    inline void setNullPtr()
-    {
-        nullptrSym = true;
+        return getKind() == SVFBlackHole;;
     }
     inline bool isNullPtr() const
     {
-        return nullptrSym;
+        return getKind() == SVFConstNullPtr;
     }
     inline void setHasName()
     {
@@ -200,16 +191,6 @@ public:
     {
         return has_name;
     }
-    inline const Type* getPtrElementType() const
-    {
-        assert(isPtr && "value is not a pointer?");
-        return ptrElementType;
-    }
-    inline void setPtrElementType(const Type* t)
-    {
-        assert(isPtr && "value is not a pointer?");
-        ptrElementType = t;
-    }
     /// Overloading operator << for dumping ICFG node ID
     //@{
     friend OutStream& operator<< (OutStream &o, const SVFValue &node)
@@ -218,15 +199,6 @@ public:
         return o;
     }
     //@}
-
-    static inline bool classof(const SVFValue *node)
-    {
-        return node->getKind() == SVFValue::SVFVal ||
-               node->getKind() == SVFValue::SVFFunc ||
-               node->getKind() == SVFValue::SVFGlob ||
-               node->getKind() == SVFValue::SVFBB ||
-               node->getKind() == SVFValue::SVFInst;
-    }
 };
 
 class SVFFunction : public SVFValue
@@ -686,7 +658,7 @@ private:
     const ConstantData* constData;
 
 public:
-    SVFConstantData(const ConstantData* _const): SVFValue(_const, SVFValue::SVFConstData), constData(_const)
+    SVFConstantData(const ConstantData* _const, SVFValKind k = SVFConstData): SVFValue(_const, k), constData(_const)
     {
     }
     SVFConstantData() = delete;
@@ -698,10 +670,93 @@ public:
 
     static inline bool classof(const SVFValue *node)
     {
-        return node->getKind() == SVFConstData;
+        return node->getKind() == SVFConstData || 
+               node->getKind() == SVFConstInt || 
+               node->getKind() == SVFConstFP ||
+               node->getKind() == SVFConstNullPtr ||
+               node->getKind() == SVFBlackHole;
     }
 };
 
+
+class SVFConstantInt : public SVFConstantData
+{
+private:
+    u64_t zval;
+    s64_t sval;
+public:
+    SVFConstantInt(const ConstantData* _const, u64_t z, s64_t s): SVFConstantData(_const, SVFValue::SVFConstInt), zval(z), sval(s)
+    {
+    }
+    SVFConstantInt() = delete;
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFConstInt;
+    }
+    //  Return the constant as a 64-bit unsigned integer value after it has been zero extended as appropriate for the type of this constant.
+    inline u64_t getZExtValue () const
+    {
+        return zval;
+    }
+    // Return the constant as a 64-bit integer value after it has been sign extended as appropriate for the type of this constan
+    inline s64_t getSExtValue () const
+    {
+        return sval;
+    }
+};
+
+
+class SVFConstantFP : public SVFConstantData
+{
+private:
+    float dval;
+public:
+    SVFConstantFP(const ConstantData* _const, double d): SVFConstantData(_const, SVFValue::SVFConstFP), dval(d)
+    {
+    }
+    SVFConstantFP() = delete;
+
+    inline double getFPValue () const
+    {
+        return dval;
+    }
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFConstFP;
+    }
+};
+
+
+class SVFConstantNullPtr : public SVFConstantData
+{
+
+public:
+    SVFConstantNullPtr(const ConstantData* _const): SVFConstantData(_const, SVFValue::SVFConstNullPtr)
+    {
+    }
+    SVFConstantNullPtr() = delete;
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFConstNullPtr;
+    }
+};
+
+class SVFBlackHoleValue : public SVFConstantData
+{
+
+public:
+    SVFBlackHoleValue(const ConstantData* _const): SVFConstantData(_const, SVFValue::SVFBlackHole)
+    {
+    }
+    SVFBlackHoleValue() = delete;
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFBlackHole;
+    }
+};
 
 class SVFOtherValue : public SVFValue
 {

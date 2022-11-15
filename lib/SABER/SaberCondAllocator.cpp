@@ -376,7 +376,7 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpInst *cmp) const
 
     const SVFValue* op0 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cmp->getOperand(0));
     const SVFValue* op1 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cmp->getOperand(1));
-    if (SVFUtil::isa<ConstantPointerNull>(op1->getLLVMValue()))
+    if (SVFUtil::isa<SVFConstantNullPtr>(op1))
     {
         Set<const SVFValue* > inDirVal;
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
@@ -388,7 +388,7 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpInst *cmp) const
         }
         return inDirVal.find(op0) != inDirVal.end();
     }
-    else if (SVFUtil::isa<ConstantPointerNull>(op0->getLLVMValue()))
+    else if (SVFUtil::isa<SVFConstantNullPtr>(op0))
     {
         Set<const SVFValue* > inDirVal;
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())

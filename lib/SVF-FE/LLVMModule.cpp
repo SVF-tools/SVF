@@ -787,6 +787,14 @@ void LLVMModuleSet::dumpModulesToFile(const std::string suffix)
     }
 }
 
+void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
+{
+    if (LLVMUtil::isPtrInUncalledFunction(val))
+        svfvalue->setPtrInUncalledFunction();
+    if (val->hasName())
+        svfvalue->setHasName();
+}
+
 SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
 {
     LLVMConstData2SVFConstDataMap::const_iterator it = LLVMConstData2SVFConstData.find(cd);
@@ -796,7 +804,20 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
     }
     else
     {
-        SVFConstantData* svfcd = new SVFConstantData(cd);
+        SVFConstantData* svfcd = nullptr;
+        if(const ConstantInt* cint = SVFUtil::dyn_cast<ConstantInt>(cd))
+            svfcd = new SVFConstantInt(cd,cint->getZExtValue(),cint->getSExtValue());
+        else if(const ConstantFP* cfp = SVFUtil::dyn_cast<ConstantFP>(cd))
+        {
+            double dval = cfp->isNormalFP() ? cfp->getValueAPF().convertToDouble() : 0;
+            svfcd = new SVFConstantFP(cd, dval);
+        }
+        else if(const ConstantPointerNull* cfp = SVFUtil::dyn_cast<ConstantPointerNull>(cd))
+            svfcd = new SVFConstantNullPtr(cd);
+        else if (const UndefValue* bh = SVFUtil::dyn_cast<UndefValue>(cd))
+            svfcd = new SVFBlackHoleValue(cd);
+        else
+            svfcd = new SVFConstantData(cd);
         svfModule->addConstantData(svfcd);
         addConstantDataMap(cd,svfcd);
         return svfcd;
@@ -819,23 +840,6 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
     }
 }
 
-
-void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
-{
-    if (LLVMUtil::isPtrInUncalledFunction(val))
-        svfvalue->setPtrInUncalledFunction();
-    if (LLVMUtil::isNullPtrSym(val))
-        svfvalue->setNullPtr();
-    if (LLVMUtil::isBlackholeSym(val))
-        svfvalue->setBlackhole();
-    if (val->hasName())
-        svfvalue->setHasName();
-    if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
-    {
-        const Type* elementType = LLVMUtil::getPtrElementType(ptrType);
-        svfvalue->setPtrElementType(elementType);
-    }
-}
 
 SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
 {
