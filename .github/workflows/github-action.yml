@@ -45,10 +45,11 @@ jobs:
           source ${{github.workspace}}/build.sh
       # run ctest
       # run ctest
-      - name: ctest wpa
-        working-directory: ${{github.workspace}}/Release-build
-        run: 
-          ctest -R wpa_tests -VV
+
+      # - name: ctest wpa
+      #   working-directory: ${{github.workspace}}/Release-build
+      #   run: 
+      #     ctest -R wpa_tests -VV
  
       # - name: ctest dvf and mta
       #   working-directory: ${{github.workspace}}/Release-build
@@ -90,8 +91,13 @@ jobs:
         if: runner.os == 'Linux'
         run: 
           ctest -R diff-perf-cruxbc -VV
-          pip3 install -R ../requirements.txt
-          python3 ../perf_compare.py --help
+          git pull
+          cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf_history/perf-$(date +'%Y-%m-%dT%H:%M:%S').txt
+          cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-latest.txt
+          cd $GITHUB_WORKSPACE/Test-Suite/diff_tests
+          pip3 install -R ../../requirements.txt
+          cp ../../perf_compare.py .
+          python3 perf_compare.py -d ./perf_history/ --exit-on-error --only-show-changed --threshold-percentage 10
 
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
