@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# python3 perf_compare.py -d /mnt/d/Code-Suite/UTS/Test-Suite/diff_tests/perf_history/ -eoe -osc -T 10
-
 import copy
 import json
 import os
