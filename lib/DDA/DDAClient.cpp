@@ -82,10 +82,9 @@ OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(SVFIR* p)
     for(SVFIR::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
             eit = pag->getIndirectCallsites().end(); it!=eit; ++it)
     {
-        if (cppUtil::isVirtualCallSite(SVFUtil::getSVFCallSite(it->first->getCallSite())))
+        if (SVFUtil::getSVFCallSite(it->first->getCallSite()).isVirtualCall())
         {
-            const Value* csval = cppUtil::getVCallVtblPtr(SVFUtil::getSVFCallSite(it->first->getCallSite()));
-            const SVFValue* vtblPtr = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(csval);
+            const SVFValue* vtblPtr = SVFUtil::getSVFCallSite(it->first->getCallSite()).getVtablePtr();
             assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
             NodeID vtblId = pag->getValueNode(vtblPtr);
             addCandidate(vtblId);

@@ -81,12 +81,11 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
     {
         const CallICFGNode* cbn = iter->first;
         CallSite cs = SVFUtil::getSVFCallSite(cbn->getCallSite());
-        if (isVirtualCallSite(cs))
+        if (cs.isVirtualCall())
         {
-            virtualCallSites.insert(cs);
-            const Value *vtbl = getVCallVtblPtr(cs);
+            const SVFValue* vtbl = cs.getVtablePtr();
             (void)vtbl; // Suppress warning of unused variable under release build
-            assert(pag->hasValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(vtbl)));
+            assert(pag->hasValueNode(vtbl));
             VFunSet vfns;
             getVFnsFromCHA(cbn, vfns);
             connectVCallToVFns(cbn, vfns, newEdges);

@@ -513,7 +513,7 @@ void PointerAnalysis::connectVCallToVFns(const CallICFGNode* cs, const VFunSet &
 /// Resolve cpp indirect call edges
 void PointerAnalysis::resolveCPPIndCalls(const CallICFGNode* cs, const PointsTo& target, CallEdgeMap& newEdges)
 {
-    assert(isVirtualCallSite(SVFUtil::getSVFCallSite(cs->getCallSite())) && "not cpp virtual call");
+    assert(SVFUtil::getSVFCallSite(cs->getCallSite()).isVirtualCall() && "not cpp virtual call");
 
     VFunSet vfns;
     if (Options::ConnectVCallOnCHA)

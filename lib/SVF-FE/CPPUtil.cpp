@@ -257,17 +257,17 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
  * %x = load %vfn
  * call %x (this)
  */
-bool cppUtil::isVirtualCallSite(CallSite cs)
+bool cppUtil::isVirtualCallSite(const CallBase* cs)
 {
     // the callsite must be an indirect one with at least one argument (this ptr)
-    if (cs.getCalledFunction() != nullptr || cs.arg_empty())
+    if (cs->getCalledFunction() != nullptr || cs->arg_empty())
         return false;
 
     // the first argument (this pointer) must be a pointer type and must be a class name
-    if (cs.getArgOperand(0)->getType()->isPointerTy() == false)
+    if (cs->getArgOperand(0)->getType()->isPointerTy() == false)
         return false;
 
-    const Value* vfunc = cs.getCalledValue()->getLLVMValue();
+    const Value* vfunc = cs->getCalledOperand();
     if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
     {
         const Value* vfuncptr = vfuncloadinst->getPointerOperand();
@@ -314,16 +314,15 @@ const Function* cppUtil::getThunkTarget(const Function* F)
     return ret;
 }
 
-const Value* cppUtil::getVCallThisPtr(CallSite cs)
+const Value* cppUtil::getVCallThisPtr(const CallBase* cs)
 {
-    const CallBase* cb = SVFUtil::cast<CallBase>(cs.getInstruction()->getLLVMInstruction());
-    if (cb->paramHasAttr(0, llvm::Attribute::StructRet))
+    if (cs->paramHasAttr(0, llvm::Attribute::StructRet))
     {
-        return cs.getArgument(1)->getLLVMValue();
+        return cs->getArgOperand(1);
     }
     else
     {
-        return cs.getArgument(0)->getLLVMValue();
+        return cs->getArgOperand(0);
     }
 }
 
@@ -380,9 +379,9 @@ const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
  * %x = load %vfn
  * call %x (...)
  */
-const Value* cppUtil::getVCallVtblPtr(CallSite cs)
+const Value* cppUtil::getVCallVtblPtr(const CallBase* cs)
 {
-    const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue()->getLLVMValue());
+    const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs->getCalledOperand());
     assert(loadInst != nullptr);
     const Value* vfuncptr = loadInst->getPointerOperand();
     const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
@@ -391,23 +390,23 @@ const Value* cppUtil::getVCallVtblPtr(CallSite cs)
     return vtbl;
 }
 
-u64_t cppUtil::getVCallIdx(CallSite cs)
+s32_t cppUtil::getVCallIdx(const CallBase* cs)
 {
-    const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue()->getLLVMValue());
+    const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs->getCalledOperand());
     assert(vfuncloadinst != nullptr);
     const Value* vfuncptr = vfuncloadinst->getPointerOperand();
     const GetElementPtrInst *vfuncptrgepinst =
         SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
     const ConstantInt* idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
-    u64_t idx_value;
+    s32_t idx_value;
     if (idx == nullptr)
     {
         SVFUtil::errs() << "vcall gep idx not constantint\n";
         idx_value = 0;
     }
     else
-        idx_value = idx->getSExtValue();
+        idx_value = (s32_t)idx->getSExtValue();
     return idx_value;
 }
 
@@ -520,10 +519,9 @@ bool cppUtil::isDestructor(const Function* F)
         return false;
 }
 
-string cppUtil::getClassNameOfThisPtr(CallSite cs)
+string cppUtil::getClassNameOfThisPtr(const CallBase* inst)
 {
     string thisPtrClassName;
-    const Instruction* inst = cs.getInstruction()->getLLVMInstruction();
     if (const MDNode *N = inst->getMetadata("VCallPtrType"))
     {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
@@ -531,7 +529,7 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs)
     }
     if (thisPtrClassName.size() == 0)
     {
-        const Value* thisPtr = getVCallThisPtr(cs);
+        const Value* thisPtr = getVCallThisPtr(inst);
         thisPtrClassName = getClassNameFromType(thisPtr->getType());
     }
 
@@ -547,10 +545,9 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs)
     return thisPtrClassName;
 }
 
-string cppUtil::getFunNameOfVCallSite(CallSite cs)
+string cppUtil::getFunNameOfVCallSite(const CallBase* inst)
 {
     string funName;
-    const Instruction* inst = cs.getInstruction()->getLLVMInstruction();
     if (const MDNode *N = inst->getMetadata("VCallFunName"))
     {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
@@ -563,10 +560,10 @@ string cppUtil::getFunNameOfVCallSite(CallSite cs)
 /*
  * Is this virtual call inside its own constructor or destructor?
  */
-bool cppUtil::VCallInCtorOrDtor(CallSite cs)
+bool cppUtil::VCallInCtorOrDtor(const CallBase* cs)
 {
     std::string classNameOfThisPtr = getClassNameOfThisPtr(cs);
-    const Function* func = cs.getCaller();
+    const Function* func = cs->getCaller();
     if (isConstructor(func) || isDestructor(func))
     {
         struct DemangledName dname = demangle(func->getName().str());

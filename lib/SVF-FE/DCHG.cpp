@@ -581,8 +581,8 @@ const VTableSet &DCHGraph::getCSVtblsBasedonCHA(CallSite cs)
 
 void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions)
 {
-    size_t idx = cppUtil::getVCallIdx(cs);
-    std::string funName = cppUtil::getFunNameOfVCallSite(cs);
+    size_t idx = cs.getFunIdxInVtable();
+    std::string funName = cs.getFunNameOfVirtualCall();
     for (const SVFGlobalValue *vtbl : vtbls)
     {
         assert(vtblToTypeMap.find(vtbl->getLLVMGlobalValue()) != vtblToTypeMap.end() && "floating vtbl");

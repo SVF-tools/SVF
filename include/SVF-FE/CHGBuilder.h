@@ -56,7 +56,7 @@ public:
 
     CHNode *createNode(const std::string name);
 
-    void connectInheritEdgeViaCall(const Function* caller, CallSite cs);
+    void connectInheritEdgeViaCall(const Function* caller, const CallBase* cs);
     void connectInheritEdgeViaStore(const Function* caller, const StoreInst* store);
 
     void buildClassNameToAncestorsDescendantsMap();
@@ -65,7 +65,7 @@ public:
     void analyzeVTables(const Module &M);
     void buildVirtualFunctionToIDMap();
     void buildCSToCHAVtblsAndVfnsMap();
-    const CHNodeSetTy& getCSClasses(CallSite cs);
+    const CHNodeSetTy& getCSClasses(const CallBase* cs);
     void addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f);
 };
 

@@ -101,9 +101,9 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
 {
 
     /// get target virtual functions
-    size_t idx = cppUtil::getVCallIdx(cs);
+    size_t idx = cs.getFunIdxInVtable();
     /// get the function name of the virtual callsite
-    string funName = cppUtil::getFunNameOfVCallSite(cs);
+    string funName = cs.getFunNameOfVirtualCall();
     for (const SVFGlobalValue *vt : vtbls)
     {
         const CHNode *child = getNode(cppUtil::getClassNameFromVtblObj(vt->getLLVMValue()));
