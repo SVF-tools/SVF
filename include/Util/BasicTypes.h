@@ -101,14 +101,14 @@ private:
     bool ptrInUncalledFun;
     bool isPtr;
     bool has_name;
+    bool constantOrMetaData;
 protected:
     std::string name;
     std::string sourceLoc;
-    std::string toStr;
     /// Constructor
     SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k),
         ptrInUncalledFun(false), isPtr(val->getType()->isPointerTy()),
-        has_name(false), name(val->getName()), sourceLoc("No source code Info"), toStr("toString not set")
+        has_name(false), constantOrMetaData(SVFConstData==k), name(val->getName()), sourceLoc("No source code Info")
     {
     }
 
@@ -156,11 +156,18 @@ public:
         return type;
     }
 
+    inline void setConstantOrMetaData()
+    {
+        constantOrMetaData = true;
+    }
+    inline bool isConstantOrMetaData() const
+    {
+        return constantOrMetaData;
+    }
     inline void setPtrInUncalledFunction()
     {
         ptrInUncalledFun = true;
     }
-
     inline bool ptrInUncalledFunction() const
     {
         return ptrInUncalledFun;
@@ -191,11 +198,11 @@ public:
     }
     inline void setToString(const std::string& str)
     {
-        toStr = str;
+        name = str;
     }
     inline const std::string& toString() const
     {
-        return toStr;
+        return name;
     }
     /// Overloading operator << for dumping ICFG node ID
     //@{
@@ -265,6 +272,8 @@ public:
 
     inline const SVFFunction* getDefFunForMultipleModule() const
     {
+        if(realDefFun==nullptr)
+            return this;
         return realDefFun;
     }
 
@@ -603,8 +612,9 @@ class SVFGlobalValue : public SVFValue
 {
 private:
     const GlobalValue* gv;
+    const SVFValue* realDefGlobal;  /// the definition of a function across multiple modules
 public:
-    SVFGlobalValue(const GlobalValue* _gv): SVFValue(_gv, SVFValue::SVFGlob), gv(_gv)
+    SVFGlobalValue(const GlobalValue* _gv): SVFValue(_gv, SVFValue::SVFGlob), gv(_gv), realDefGlobal(nullptr)
     {
     }
     SVFGlobalValue() = delete;
@@ -613,7 +623,17 @@ public:
     {
         return gv;
     }
+    inline void setDefGlobalForMultipleModule(const SVFValue* defg)
+    {
+        realDefGlobal = defg;
+    }
 
+    inline const SVFValue* getDefGlobalForMultipleModule() const
+    {
+        if(realDefGlobal==nullptr)
+            return this;
+        return realDefGlobal;
+    }
     static inline bool classof(const SVFValue *node)
     {
         return node->getKind() == SVFGlob;

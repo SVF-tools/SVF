@@ -278,7 +278,19 @@ const std::string& SVFUtil::getSourceLoc(const SVFValue* v)
  */
 const std::string& SVFUtil::value2String(const SVFValue* value)
 {
-    return value->toString();
+    std::string str;
+    raw_string_ostream rawstr(str);
+    if(value)
+    {
+        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value->getLLVMValue()))
+            rawstr << "Function: " << fun->getName() << " ";
+        else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value->getLLVMValue()))
+            rawstr << "BasicBlock: " << bb->getName() << " ";
+        else
+            rawstr << " " << *value->getLLVMValue() << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
 }
 
 std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)

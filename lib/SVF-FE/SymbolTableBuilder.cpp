@@ -267,7 +267,7 @@ void SymbolTableBuilder::collectVal(const Value *val)
  */
 void SymbolTableBuilder::collectObj(const Value *val)
 {
-    val = getGlobalRep(val);
+    val = LLVMUtil::getGlobalRep(val);
     SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->objSymMap.find(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
     if (iter == symInfo->objSymMap.end())
     {
@@ -685,7 +685,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
         // user input data, label its field as infinite here
         objSize = typeinfo->getMaxFieldOffsetLimit();
     }
-    else if(SVFUtil::isConstantData(val))
+    else if(LLVMUtil::isConstantOrMetaData(val))
     {
         typeinfo->setFlag(ObjTypeInfo::CONST_DATA);
         objSize = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(val->getType());

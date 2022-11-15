@@ -207,12 +207,6 @@ inline CallSite getLLVMCallSite(const SVFValue* value)
     return cs;
 }
 
-/// Get the corresponding Function based on its name
-inline const SVFFunction* getFunction(std::string name)
-{
-    return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(name);
-}
-
 /// Split into two substrings around the first occurrence of a separator string.
 inline std::vector<std::string> split(const std::string& s, char seperator)
 {
@@ -226,17 +220,6 @@ inline std::vector<std::string> split(const std::string& s, char seperator)
     }
     output.push_back(s.substr(prev_pos, pos-prev_pos));
     return output;
-}
-
-/// find the unique defined global across multiple modules
-inline const Value* getGlobalRep(const Value* val)
-{
-    if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
-    {
-        if (LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(gvar))
-            val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
-    }
-    return val;
 }
 
 /// Return callee of a callsite. Return null if this is an indirect call
@@ -411,15 +394,6 @@ inline bool isProgExitFunction (const SVFFunction * fun)
     return fun && (fun->getName() == "exit" ||
                    fun->getName() == "__assert_rtn" ||
                    fun->getName() == "__assert_fail" );
-}
-
-/// Return true if the value refers to constant data, e.g., i32 0
-inline bool isConstantData(const Value* val)
-{
-    return SVFUtil::isa<ConstantData>(val)
-           || SVFUtil::isa<ConstantAggregate>(val)
-           || SVFUtil::isa<MetadataAsValue>(val)
-           || SVFUtil::isa<BlockAddress>(val);
 }
 
 /// Return thread fork function

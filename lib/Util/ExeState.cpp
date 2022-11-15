@@ -82,7 +82,7 @@ void ExeState::initObjVar(const ObjVar *objVar, Z3Expr &e)
     {
         const MemObj *obj = objVar->getMemObj();
         /// constant data
-        if (obj->isConstantData() || obj->isConstantArray() || obj->isConstantStruct())
+        if (obj->isConstantOrMetaData() || obj->isConstantArray() || obj->isConstantStruct())
         {
             if (const SVFConstantInt* consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue()))
             {

@@ -1145,7 +1145,7 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
     /// If sz is 0, we will add edges for all fields.
     u32_t sz = fields.size();
 
-    if (fields.size() == 1 && (isConstantData(D) || isConstantData(S)))
+    if (fields.size() == 1 && (LLVMUtil::isConstantOrMetaData(D) || LLVMUtil::isConstantOrMetaData(S)))
     {
         NodeID dummy = pag->addDummyValNode();
         addLoadEdge(vnD,dummy);

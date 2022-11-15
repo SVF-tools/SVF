@@ -99,6 +99,8 @@ public:
 
     void buildSymbolTableInfo();
 
+    const SVFFunction* getSVFFunction(const std::string name);
+
     ///@{
     inline void addFunctionSet(SVFFunction* svfFunc)
     {

@@ -85,7 +85,7 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
             return v->isConstant();
         }
     }
-    return SVFUtil::isConstantData(val);
+    return LLVMUtil::isConstantOrMetaData(val);
 }
 
 /*!
@@ -580,7 +580,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     {
         rawstr << "basic block: " << bb->getName() << " " << getSourceLoc(bb->getFirstNonPHI());
     }
-    else if(SVFUtil::isConstantData(val))
+    else if(LLVMUtil::isConstantOrMetaData(val))
     {
         rawstr << "constant data";
     }
@@ -631,6 +631,20 @@ const std::string LLVMUtil::value2String(const Value* value)
         else
             rawstr << " " << *value << " ";
         rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+/*!
+ * return string of an LLVM Value
+ */
+const std::string LLVMUtil::value2ShortString(const Value* value)
+{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    if(value && value->hasName())
+    {
+        rawstr << " " << value->getName() << " ";
     }
     return rawstr.str();
 }

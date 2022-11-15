@@ -323,9 +323,25 @@ u32_t getTypeSizeInBytes(const StructType *sty, u32_t field_index);
 const std::string getSourceLoc(const Value* val);
 const std::string getSourceLocOfFunction(const Function* F);
 const std::string value2String(const Value* value);
+const std::string value2ShortString(const Value* value);
 
 bool isIntrinsicInst(const Instruction* inst);
 bool isIntrinsicFun(const Function* func);
+
+/// Get the corresponding Function based on its name
+inline const SVFFunction* getFunction(std::string name)
+{
+    return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(name);
+}
+
+/// Return true if the value refers to constant data, e.g., i32 0
+inline bool isConstantOrMetaData(const Value* val)
+{
+    return SVFUtil::isa<ConstantData>(val)
+           || SVFUtil::isa<ConstantAggregate>(val)
+           || SVFUtil::isa<MetadataAsValue>(val)
+           || SVFUtil::isa<BlockAddress>(val);
+}
 
 /// Get the definition of a function across multiple modules
 inline const Function* getDefFunForMultipleModule(const Function* fun)
@@ -336,6 +352,18 @@ inline const Function* getDefFunForMultipleModule(const Function* fun)
         fun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
     return fun;
 }
+
+/// find the unique defined global across multiple modules
+inline const Value* getGlobalRep(const Value* val)
+{
+    if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
+    {
+        if (LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(gvar))
+            val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
+    }
+    return val;
+}
+
 
 // Dump Control Flow Graph of llvm function, with instructions
 void viewCFG(const Function* fun);

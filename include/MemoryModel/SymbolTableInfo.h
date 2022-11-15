@@ -227,7 +227,9 @@ public:
 
     inline SymID getObjSym(const SVFValue* val) const
     {
-        SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(SVFUtil::getGlobalRep(val->getLLVMValue()));
+        const SVFValue* svfVal = val;
+        if(const SVFGlobalValue* g = SVFUtil::dyn_cast<SVFGlobalValue>(val))
+            svfVal = g->getDefGlobalForMultipleModule();
         ValueToIDMapTy::const_iterator iter = objSymMap.find(svfVal);
         assert(iter!=objSymMap.end() && "obj sym not found");
         return iter->second;
@@ -439,7 +441,7 @@ public:
     bool isConstantStruct() const;
     bool isConstantArray() const;
     bool isConstDataOrConstGlobal() const;
-    bool isConstantData() const;
+    bool isConstantOrMetaData() const;
     bool hasPtrObj() const;
     bool isNonPtrFieldObj(const LocationSet& ls) const;
     //@}
@@ -692,7 +694,7 @@ public:
     {
         return hasFlag(CONST_GLOBAL_OBJ) || hasFlag(CONST_DATA);
     }
-    inline bool isConstantData()
+    inline bool isConstantOrMetaData()
     {
         return hasFlag(CONST_DATA);
     }

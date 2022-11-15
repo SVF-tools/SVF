@@ -94,7 +94,7 @@ CallStrCxt MTAResultValidator::getCxtArg(const SVFInstruction* inst, unsigned in
         std::vector<std::string> y = split((*i), '.');
         y[0].erase(y[0].find("cs"), 2);
 
-        const SVFFunction* callee = SVFUtil::getFunction(y[1]);
+        const SVFFunction* callee = mod->getSVFFunction(y[1]);
         const SVFInstruction* svfInst = csnumToInstMap[atoi(y[0].c_str())];
         assert(callee && "callee error");
         CallICFGNode* cbn = mhp->getTCT()->getCallICFGNode(svfInst);

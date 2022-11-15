@@ -792,11 +792,18 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
 {
     if (LLVMUtil::isPtrInUncalledFunction(val))
         svfvalue->setPtrInUncalledFunction();
+    if (LLVMUtil::isConstantOrMetaData(val))
+        svfvalue->setConstantOrMetaData();
+    if (SVFGlobalValue* glob = SVFUtil::dyn_cast<SVFGlobalValue>(svfvalue))
+    {
+        const Value* llvmVal = LLVMUtil::getGlobalRep(val);
+        assert(SVFUtil::isa<GlobalValue>(llvmVal) && "not a GlobalValue?");
+        glob->setDefGlobalForMultipleModule(getSVFGlobalValue(SVFUtil::cast<GlobalValue>(llvmVal)));
+    }
     if (val->hasName())
         svfvalue->setHasName();
 
     svfvalue->setSourceLoc(LLVMUtil::getSourceLoc(val));
-    svfvalue->setToString(LLVMUtil::value2String(val));
 }
 
 SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
@@ -813,7 +820,9 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
             svfcd = new SVFConstantInt(cd,cint->getZExtValue(),cint->getSExtValue());
         else if(const ConstantFP* cfp = SVFUtil::dyn_cast<ConstantFP>(cd))
         {
-            double dval = cfp->isNormalFP() ? cfp->getValueAPF().convertToDouble() : 0;
+            double dval = 0;
+            if(cfp->isNormalFP() &&  (&cfp->getValueAPF().getSemantics()== &llvm::APFloatBase::IEEEdouble()))
+                dval =  cfp->getValueAPF().convertToDouble();
             svfcd = new SVFConstantFP(cd, dval);
         }
         else if(SVFUtil::isa<ConstantPointerNull>(cd))

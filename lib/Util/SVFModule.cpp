@@ -57,3 +57,15 @@ void SVFModule::buildSymbolTableInfo()
     double endTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingSymbolTable = (endTime - startTime)/TIMEINTERVAL;
 }
+
+const SVFFunction* SVFModule::getSVFFunction(std::string name)
+{
+    for (const SVFFunction* fun : getFunctionSet())
+    {
+        if (fun->getName() == name)
+        {
+            return fun;
+        }
+    }
+    return nullptr;
+}

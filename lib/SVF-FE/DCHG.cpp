@@ -13,8 +13,7 @@
 #include "SVF-FE/DCHG.h"
 #include "SVF-FE/CPPUtil.h"
 #include "Util/SVFUtil.h"
-
-#include "llvm/IR/DebugInfo.h"
+#include "SVF-FE/LLVMUtil.h"
 
 using namespace SVF;
 
@@ -628,7 +627,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                  */
                 if (funName.size() == 0)
                 {
-                    virtualFunctions.insert(SVFUtil::getFunction(callee->getName().str()));
+                    virtualFunctions.insert(LLVMUtil::getFunction(callee->getName().str()));
                 }
                 else if (funName[0] == '~')
                 {
@@ -644,7 +643,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                      */
                     if (calleeName[0] == '~')
                     {
-                        virtualFunctions.insert(SVFUtil::getFunction(callee->getName().str()));
+                        virtualFunctions.insert(LLVMUtil::getFunction(callee->getName().str()));
                     }
                 }
                 else
@@ -655,7 +654,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                      */
                     if (funName.compare(calleeName) == 0)
                     {
-                        virtualFunctions.insert(SVFUtil::getFunction(callee->getName().str()));
+                        virtualFunctions.insert(LLVMUtil::getFunction(callee->getName().str()));
                     }
                 }
             }
