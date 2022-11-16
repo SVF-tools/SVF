@@ -204,11 +204,11 @@ void MTA::detect(SVFModule* module)
 
                 for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(svfInst)))
                 {
-                if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+                if (SVFUtil::isa<LoadStmt>(stmt))
                 {
                     loads.insert(svfInst);
                 }
-                else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+                else if (SVFUtil::isa<StoreStmt>(stmt))
                 {
                     stores.insert(svfInst);
                 }
