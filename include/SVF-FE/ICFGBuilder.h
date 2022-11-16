@@ -41,14 +41,14 @@ class ICFGBuilder
 
 public:
 
-    typedef std::vector<const SVFInstruction*> InstVec;
-    typedef Set<const SVFInstruction*> BBSet;
+    typedef std::vector<const Instruction*> InstVec;
+    typedef Set<const Instruction*> BBSet;
 
 private:
     ICFG* icfg;
 
 public:
-    typedef FIFOWorkList<const SVFInstruction*> WorkList;
+    typedef FIFOWorkList<const Instruction*> WorkList;
 
     ICFGBuilder(ICFG* i): icfg(i)
     {
@@ -59,11 +59,11 @@ public:
 private:
     /// Create edges between ICFG nodes within a function
     ///@{
-    void processFunEntry(const SVFFunction*  fun, WorkList& worklist);
+    void processFunEntry(const Function*  fun, WorkList& worklist);
 
     void processFunBody(WorkList& worklist);
 
-    void processFunExit(const SVFFunction*  fun);
+    void processFunExit(const Function*  fun);
     //@}
 
     void connectGlobalToProgEntry(SVFModule* svfModule);

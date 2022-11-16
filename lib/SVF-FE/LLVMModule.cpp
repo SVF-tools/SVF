@@ -216,6 +216,7 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
     {
         const BasicBlock* bb = &*bit;
         SVFBasicBlock* svfbb = getSVFBasicBlock(bb);
+        svfbb->setTerminator(getSVFInstruction(bb->getTerminator()));
         for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
         {
             const SVFBasicBlock* svf_scc_bb = getSVFBasicBlock(*succ_it);

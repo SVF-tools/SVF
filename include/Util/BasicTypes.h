@@ -511,6 +511,7 @@ private:
     std::vector<const SVFBasicBlock*> predBBs;
     const BasicBlock* bb;
     const SVFFunction* fun;
+    const SVFInstruction* terminatorInst;
 public:
     SVFBasicBlock(const BasicBlock* b, const SVFFunction* f);
     SVFBasicBlock(void) = delete;
@@ -554,6 +555,16 @@ public:
     inline const SVFInstruction* back() const
     {
         return allInsts.back();
+    }
+
+    inline void setTerminator(const SVFInstruction* ti)
+    {
+        terminatorInst = ti;
+    }
+
+    inline const SVFInstruction* getTerminator() const
+    {
+        return terminatorInst;
     }
 
     inline void addSuccBasicBlock(const SVFBasicBlock* succ)

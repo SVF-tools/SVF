@@ -379,6 +379,12 @@ void viewCFG(const Function* fun);
 // Dump Control Flow Graph of llvm function, without instructions
 void viewCFGOnly(const Function* fun);
 
+/// Get the next instructions following control flow
+void getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
+
+/// Get the previous instructions following control flow
+void getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
+
 } // End namespace LLVMUtil
 
 } // End namespace SVF

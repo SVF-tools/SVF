@@ -97,7 +97,7 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
         std::vector<Condition> condVec;
         for (u32_t i = 0; i < bit_num; i++)
         {
-            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(bb.getLLVMBasicBlock()->getTerminator());
+            const SVFInstruction* svfInst = bb.getTerminator();
             condVec.push_back(newCond(svfInst));
         }
 
@@ -292,11 +292,10 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBa
 {
     if(bb->getNumSuccessors() == 1)
     {
-        assert(bb->getLLVMBasicBlock()->getTerminator()->getSuccessor(0) == succ->getLLVMBasicBlock() && "not the unique successor?");
         return getTrueCond();
     }
 
-    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(bb->getLLVMBasicBlock()->getTerminator());
+    const SVFInstruction* svfInst = bb->getTerminator();
 
     if (ICFGNode *icfgNode = getICFG()->getICFGNode(svfInst))
     {
@@ -563,12 +562,12 @@ void SaberCondAllocator::printPathCond()
         for (const auto &cit: bbCond.second)
         {
             u32_t i = 0;
-            for (const BasicBlock* succ: successors(bb->getLLVMBasicBlock()))
+            for (const SVFBasicBlock* succ: bb->getSuccessors())
             {
                 if (i == cit.first)
                 {
                     Condition cond = cit.second;
-                    outs() << bb->getName() << "-->" << succ->getName().str() << ":";
+                    outs() << bb->getName() << "-->" << succ->getName() << ":";
                     outs() << dumpCond(cond) << "\n";
                     break;
                 }

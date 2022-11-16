@@ -134,7 +134,7 @@ bool SVFFunction::isVarArg() const
 }
 
 SVFBasicBlock::SVFBasicBlock(const BasicBlock* b, const SVFFunction* f):
-    SVFValue(b,SVFValue::SVFBB), bb(b), fun(f)
+    SVFValue(b,SVFValue::SVFBB), bb(b), fun(f), terminatorInst(nullptr)
 {
     name = b->hasName() ? b->getName().str(): "";
 }

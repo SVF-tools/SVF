@@ -48,8 +48,8 @@ class SVFIRBuilder: public llvm::InstVisitor<SVFIRBuilder>
 private:
     SVFIR* pag;
     SVFModule* svfModule;
-    const BasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
-    const Value* curVal;	///< Current Value during SVFIR construction when visiting the module
+    const SVFBasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
+    const SVFValue* curVal;	///< Current Value during SVFIR construction when visiting the module
 
 public:
     /// Constructor
@@ -241,14 +241,19 @@ protected:
     /// Set current basic block in order to keep track of control flow information
     inline void setCurrentLocation(const Value* val, const BasicBlock* bb)
     {
+        curBB = (bb == nullptr? nullptr : LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(bb));
+        curVal = (val == nullptr ? nullptr: LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
+    }
+    inline void setCurrentLocation(const SVFValue* val, const SVFBasicBlock* bb)
+    {
         curBB = bb;
         curVal = val;
     }
-    inline const Value* getCurrentValue() const
+    inline const SVFValue* getCurrentValue() const
     {
         return curVal;
     }
-    inline const BasicBlock* getCurrentBB() const
+    inline const SVFBasicBlock* getCurrentBB() const
     {
         return curBB;
     }
@@ -256,8 +261,8 @@ protected:
     /// Add global black hole Address edge
     void addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce)
     {
-        const Value* cval = getCurrentValue();
-        const BasicBlock* cbb = getCurrentBB();
+        const SVFValue* cval = getCurrentValue();
+        const SVFBasicBlock* cbb = getCurrentBB();
         setCurrentLocation(int2Ptrce,nullptr);
         addBlackHoleAddrEdge(node);
         setCurrentLocation(cval,cbb);
@@ -352,11 +357,8 @@ protected:
     inline void addStoreEdge(NodeID src, NodeID dst)
     {
         IntraICFGNode* node;
-        if(const Instruction* i = SVFUtil::dyn_cast<Instruction>(curVal))
-        {
-            const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
+        if(const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
             node = pag->getICFG()->getIntraICFGNode(inst);
-        }
         else
             node = nullptr;
         if(StoreStmt *edge = pag->addStoreStmt(src, dst, node))
