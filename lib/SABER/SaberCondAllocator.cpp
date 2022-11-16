@@ -260,7 +260,7 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const S
     if (svffun->isLoopHeader(bb))
     {
         Set<const SVFBasicBlock* > filteredbbs;
-        Set<const SVFBasicBlock*> exitbbs;
+        std::vector<const SVFBasicBlock*> exitbbs;
         svffun->getExitBlocksOfLoop(bb,exitbbs);
         /// exclude exit bb which calls program exit
         for(const SVFBasicBlock* eb : exitbbs)

@@ -176,8 +176,9 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 DIType *type = SVFUtil::dyn_cast<DIType>(gv->getMetadata(cppUtil::ctir::vtMDName));
                 assert(type && "DCHG::buildVTables: bad metadata for ctir.vt");
                 DCHNode *node = getOrCreateNode(type);
+                const SVFGlobalValue* svfgv = LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(gv);
                 node->setVTable(gv);
-                vtblToTypeMap[gv] = getCanonicalType(type);
+                vtblToTypeMap[svfgv] = getCanonicalType(type);
 
                 const ConstantStruct *vtbls = SVFUtil::dyn_cast<ConstantStruct>(gv->getOperand(0));
                 assert(vtbls && "unexpected vtable type");
@@ -585,8 +586,8 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
     std::string funName = cs.getFunNameOfVirtualCall();
     for (const SVFGlobalValue *vtbl : vtbls)
     {
-        assert(vtblToTypeMap.find(vtbl->getLLVMGlobalValue()) != vtblToTypeMap.end() && "floating vtbl");
-        const DIType *type = vtblToTypeMap[vtbl->getLLVMGlobalValue()];
+        assert(vtblToTypeMap.find(vtbl) != vtblToTypeMap.end() && "floating vtbl");
+        const DIType *type = vtblToTypeMap[vtbl];
         assert(hasNode(type) && "trying to get vtbl for type not in graph");
         const DCHNode *node = getNode(type);
         std::vector<std::vector<const Function* >> allVfns = node->getVfnVectors();

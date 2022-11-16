@@ -54,6 +54,7 @@ public:
     typedef Set<CxtThreadStmt> CxtThreadStmtSet;
     typedef Map<CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
     typedef Map<const SVFInstruction*,CxtThreadStmtSet> InstToThreadStmtSetMap;
+    typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
 
     typedef Set<CxtStmt> LockSpan;
 
@@ -265,7 +266,10 @@ private:
     NodeBS getDirAndIndJoinedTid(const CallStrCxt& cxt, const SVFInstruction* call);
 
     /// Whether a context-sensitive join satisfies symmetric loop pattern
-    const Loop* isJoinInSymmetricLoop(const CallStrCxt& cxt, const SVFInstruction* call) const;
+    bool hasJoinInSymmetricLoop(const CallStrCxt& cxt, const SVFInstruction* call) const;
+    
+    /// Whether a context-sensitive join satisfies symmetric loop pattern
+    const LoopBBs& getJoinInSymmetricLoop(const CallStrCxt& cxt, const SVFInstruction* call) const;
 
     /// Whether thread t1 happens before t2 based on ForkJoin Analysis
     bool isHBPair(NodeID tid1, NodeID tid2);
@@ -303,13 +307,14 @@ public:
         TDDead,  //  thread is dead
     };
 
+    typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
     typedef TCT::InstVec InstVec;
     typedef Map<CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
     typedef Map<CxtStmt,NodeBS> CxtStmtToTIDMap;
     typedef Set<NodePair> ThreadPairSet;
-    typedef Map<CxtStmt, const Loop*> CxtStmtToLoopMap;
+    typedef Map<CxtStmt, LoopBBs> CxtStmtToLoopMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
-    typedef Map<const SVFInstruction*, PTASCEV> forkjoinToPTASCEVMap;
+
     ForkJoinAnalysis(TCT* t) : tct(t)
     {
         collectSCEVInfo();
@@ -331,12 +336,16 @@ public:
     NodeBS getDirAndIndJoinedTid(const CxtStmt& cs);
 
     /// Whether a context-sensitive join satisfies symmetric loop pattern
-    inline const Loop* isJoinInSymmetricLoop(const CxtStmt& cs) const
+    inline const LoopBBs& getJoinInSymmetricLoop(const CxtStmt& cs) const
     {
         CxtStmtToLoopMap::const_iterator it = cxtJoinInLoop.find(cs);
-        if(it!=cxtJoinInLoop.end())
-            return it->second;
-        return nullptr;
+        assert(it!=cxtJoinInLoop.end() && "does not have the loop");
+        return it->second;
+    }
+    inline bool hasJoinInSymmetricLoop(const CxtStmt& cs) const
+    {
+        CxtStmtToLoopMap::const_iterator it = cxtJoinInLoop.find(cs);
+        return it!=cxtJoinInLoop.end();
     }
     /// Whether thread t1 happens-before thread t2
     inline bool isHBPair(NodeID tid1, NodeID tid2)
@@ -368,14 +377,13 @@ public:
     }
 
     /// Get loop for join site
-    inline const Loop* getJoinLoop(const SVFInstruction* inst)
+    inline LoopBBs& getJoinLoop(const SVFInstruction* inst)
     {
         return tct->getJoinLoop(inst);
     }
-    /// Get SE for function
-    inline ScalarEvolution* getSE(const SVFInstruction* inst)
+    inline bool hasJoinLoop(const SVFInstruction* inst)
     {
-        return tct->getSE(inst);
+        return tct->hasJoinLoop(inst);
     }
 private:
 
@@ -555,7 +563,7 @@ private:
     //@}
 
     /// Add inloop join
-    inline void addSymmetricLoopJoin(const CxtStmt& cs, const Loop* lp)
+    inline void addSymmetricLoopJoin(const CxtStmt& cs, LoopBBs& lp)
     {
         cxtJoinInLoop[cs] = lp;
     }
@@ -569,8 +577,6 @@ private:
     ThreadPairSet HPPair;		///< threads happen-in-parallel
     ThreadPairSet fullJoin;		///< t1 fully joins t2 along all program path
     ThreadPairSet partialJoin;		///< t1 partially joins t2 along some program path(s)
-    PTACFInfoBuilder  ptaCFInfo; ///< PTA control flow info
-    forkjoinToPTASCEVMap fkjnToPTASCEVMap; //< map a pointer at a fork/join site to its corresponing scev expression
 };
 
 } // End namespace SVF

@@ -124,7 +124,8 @@ void LLVMModuleSet::createSVFDataStructure()
         for (Module::const_iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
         {
             const Function* func = &*it;
-            SVFFunction* svfFunc = new SVFFunction(func, func->isDeclaration(), LLVMUtil::isIntrinsicFun(func));
+            SVFLoopAndDomInfo* ld = new SVFLoopAndDomInfo();
+            SVFFunction* svfFunc = new SVFFunction(func, func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), ld);
             svfModule->addFunctionSet(svfFunc);
             addFunctionMap(func,svfFunc);
 
@@ -201,12 +202,8 @@ void LLVMModuleSet::initSVFFunction()
 
             if (SVFUtil::isExtCall(svffun) == false)
             {
-                std::vector<const SVFBasicBlock*> reachableBBs;
-                LLVMUtil::getFunReachableBBs(svffun, reachableBBs);
                 const SVFBasicBlock* svfexitbb = getSVFBasicBlock(&f->back());
-                svffun->setReachableBBs(reachableBBs);
                 svffun->setExitBB(svfexitbb);
-
                 initDomTree(svffun, f);
             }
         }
@@ -262,7 +259,9 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
     df.analyze(dt);
     LoopInfo loopInfo = LoopInfo(dt);
     PostDominatorTree pdt = PostDominatorTree(const_cast<Function&>(*fun));
-    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> & dfBBsMap = svffun->getDomFrontierMap();
+    SVFLoopAndDomInfo* ld = svffun->getLoopAndDomInfo();
+
+    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> & dfBBsMap = ld->getDomFrontierMap();
     for (DominanceFrontierBase::const_iterator dfIter = df.begin(), eDfIter = df.end(); dfIter != eDfIter; dfIter++)
     {
         const BasicBlock* keyBB = dfIter->first;
@@ -273,6 +272,10 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
             valueBasicBlocks.insert(getSVFBasicBlock(bbValue));
         }
     }
+    std::vector<const SVFBasicBlock*> reachableBBs;
+    LLVMUtil::getFunReachableBBs(fun, reachableBBs);
+    ld->setReachableBBs(reachableBBs);
+
     for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
     {
         const BasicBlock* bb = &*bit;
@@ -285,12 +288,12 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
                 for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end(); DI != DE; ++DI)
                 {
                     const SVFBasicBlock* dombb = getSVFBasicBlock((*DI)->getBlock());
-                    svffun->getDomTreeMap()[svf_bb].insert(dombb);
+                    ld->getDomTreeMap()[svf_bb].insert(dombb);
                 }
             }
             else
             {
-                svffun->getDomTreeMap()[svf_bb] = Set<const SVFBasicBlock* >();
+                ld->getDomTreeMap()[svf_bb] = Set<const SVFBasicBlock* >();
             }
         }
 
@@ -302,12 +305,12 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
                 for (DomTreeNode::iterator DI = pdtNode->begin(), DE = pdtNode->end(); DI != DE; ++DI)
                 {
                     const SVFBasicBlock* dombb = getSVFBasicBlock((*DI)->getBlock());
-                    svffun->getPostDomTreeMap()[svf_bb].insert(dombb);
+                    ld->getPostDomTreeMap()[svf_bb].insert(dombb);
                 }
             }
             else
             {
-                svffun->getPostDomTreeMap()[svf_bb] = Set<const SVFBasicBlock* >();
+                ld->getPostDomTreeMap()[svf_bb] = Set<const SVFBasicBlock* >();
             }
         }
         if (const Loop *loop = loopInfo.getLoopFor(bb))
@@ -315,7 +318,7 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
             for (BasicBlock* loopBlock:loop->getBlocks())
             {
                 const SVFBasicBlock* loopbb = getSVFBasicBlock(loopBlock);
-                svffun->addToBB2LoopMap(svf_bb,loopbb);
+                ld->addToBB2LoopMap(svf_bb,loopbb);
             }
         }
     }

@@ -91,16 +91,17 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
 /*!
  * Return reachable bbs from function entry
  */
-void LLVMUtil::getFunReachableBBs (const SVFFunction* svfFun, std::vector<const SVFBasicBlock*> &reachableBBs)
+void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBasicBlock*> &reachableBBs)
 {
+    const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
     assert(!SVFUtil::isExtCall(svfFun) && "The calling function cannot be an external function.");
     //initial DominatorTree
     DominatorTree dt;
-    dt.recalculate(const_cast<Function&>(*svfFun->getLLVMFun()));
+    dt.recalculate(const_cast<Function&>(*fun));
 
     Set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;
-    bbVec.push_back(&svfFun->getLLVMFun()->getEntryBlock());
+    bbVec.push_back(&fun->getEntryBlock());
     while(!bbVec.empty())
     {
         const BasicBlock* bb = bbVec.back();

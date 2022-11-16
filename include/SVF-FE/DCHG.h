@@ -357,7 +357,7 @@ protected:
     /// Maps DITypes to their nodes.
     Map<const DIType *, DCHNode *> diTypeToNodeMap;
     /// Maps VTables to the DIType associated with them.
-    Map<const GlobalValue *, const DIType *> vtblToTypeMap;
+    Map<const SVFGlobalValue *, const DIType *> vtblToTypeMap;
     /// Maps types to all children (i.e. CHA).
     Map<const DIType *, NodeBS> chaMap;
     /// Maps types to all children but also considering first field.

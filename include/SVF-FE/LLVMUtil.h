@@ -196,7 +196,7 @@ inline bool isArgOfUncalledFunction (const Value*  val)
 bool functionDoesNotRet (const Function*  fun);
 
 /// Get reachable basic block from function entry
-void getFunReachableBBs (const SVFFunction* svfFun, std::vector<const SVFBasicBlock*>& bbs);
+void getFunReachableBBs (const Function* svfFun, std::vector<const SVFBasicBlock*>& bbs);
 
 /// Strip off the constant casts
 const Value*  stripConstantCasts(const Value* val);

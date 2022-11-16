@@ -5,8 +5,106 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-SVFFunction::SVFFunction(const Function* f, bool declare, bool intric): SVFValue(f,SVFValue::SVFFunc),
-    isDecl(declare), intricsic(intric), realDefFun(nullptr), exitBB(nullptr), isUncalled(false), isNotRet(false), varArg(f->isVarArg())
+const SVFLoopAndDomInfo::LoopBBs& SVFLoopAndDomInfo::getLoopInfo(const SVFBasicBlock* bb) const
+{
+    assert(hasLoopInfo(bb) && "loopinfo does not exit (bb not in a loop)");
+    Map<const SVFBasicBlock*, LoopBBs>::const_iterator mapIter = bb2LoopMap.find(bb);
+    return mapIter->second;
+}
+
+void SVFLoopAndDomInfo::getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const
+{
+    if (hasLoopInfo(bb))
+    {
+        const LoopBBs blocks = getLoopInfo(bb);
+        if (!blocks.empty())
+        {
+            for (const SVFBasicBlock* block : blocks)
+            {
+                for (const SVFBasicBlock* succ : block->getSuccessors())
+                {
+                    if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
+                        exitbbs.push_back(succ);
+                }
+            }
+        }
+    }
+}
+
+bool SVFLoopAndDomInfo::dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+{
+    if (bbKey == bbValue)
+        return true;
+
+    // An unreachable node is dominated by anything.
+    if (isUnreachable(bbValue))
+    {
+        return true;
+    }
+
+    // And dominates nothing.
+    if (isUnreachable(bbKey))
+    {
+        return false;
+    }
+
+    const Map<const SVFBasicBlock*,BBSet>& dtBBsMap = getDomTreeMap();
+    Map<const SVFBasicBlock*,BBSet>::const_iterator mapIter = dtBBsMap.find(bbKey);
+    if (mapIter != dtBBsMap.end())
+    {
+        const BBSet & dtBBs = mapIter->second;
+        if (dtBBs.find(bbValue) != dtBBs.end())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool SVFLoopAndDomInfo::postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+{
+    if (bbKey == bbValue)
+        return true;
+
+    // An unreachable node is dominated by anything.
+    if (isUnreachable(bbValue))
+    {
+        return true;
+    }
+
+    // And dominates nothing.
+    if (isUnreachable(bbKey))
+    {
+        return false;
+    }
+
+    const Map<const SVFBasicBlock*,BBSet>& dtBBsMap = getPostDomTreeMap();
+    Map<const SVFBasicBlock*,BBSet>::const_iterator mapIter = dtBBsMap.find(bbKey);
+    if (mapIter != dtBBsMap.end())
+    {
+        const BBSet & dtBBs = mapIter->second;
+        if (dtBBs.find(bbValue) != dtBBs.end())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
+{
+    if (hasLoopInfo(bb))
+    {
+        const LoopBBs& blocks = getLoopInfo(bb);
+        assert(!blocks.empty() && "no available loop info?");
+        return blocks.front() == bb;
+    }
+    return false;
+}
+
+SVFFunction::SVFFunction(const Function* f, bool declare, bool intric, SVFLoopAndDomInfo* ld): SVFValue(f,SVFValue::SVFFunc),
+    isDecl(declare), intricsic(intric),realDefFun(nullptr), exitBB(nullptr), loopAndDom(ld), isUncalled(false), isNotRet(false), varArg(f->isVarArg())
 {
 }
 
@@ -16,6 +114,7 @@ SVFFunction::~SVFFunction()
         delete bb;
     for(const SVFArgument* arg : allArgs)
         delete arg;
+    delete loopAndDom;
 }
 
 u32_t SVFFunction::arg_size() const
@@ -32,109 +131,6 @@ const SVFArgument* SVFFunction::getArg(u32_t idx) const
 bool SVFFunction::isVarArg() const
 {
     return varArg;
-}
-
-const std::vector<const SVFBasicBlock*>& SVFFunction::getLoopInfo(const SVFBasicBlock* bb) const
-{
-    Map<const SVFBasicBlock*, std::vector<const SVFBasicBlock*>>::const_iterator mapIter = bb2LoopMap.find(bb);
-    if(mapIter != bb2LoopMap.end())
-        return mapIter->second;
-    else
-    {
-        assert(SVFFunction::hasLoopInfo(bb) && "loopinfo does not exit(bb not in a loop)");
-        abort();
-    }
-}
-
-void SVFFunction::getExitBlocksOfLoop(const SVFBasicBlock* bb, Set<const SVFBasicBlock*>& exitbbs) const
-{
-    if (SVFFunction::hasLoopInfo(bb))
-    {
-        const std::vector<const SVFBasicBlock*> blocks = getLoopInfo(bb);
-        if (!blocks.empty())
-        {
-            for (const SVFBasicBlock* block : blocks)
-            {
-                for (const SVFBasicBlock* succ : block->getSuccessors())
-                {
-                    if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
-                        exitbbs.insert(succ);
-                }
-            }
-        }
-    }
-}
-
-bool SVFFunction::dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
-{
-    if (bbKey == bbValue)
-        return true;
-
-    // An unreachable node is dominated by anything.
-    if (isUnreachable(bbValue))
-    {
-        return true;
-    }
-
-    // And dominates nothing.
-    if (isUnreachable(bbKey))
-    {
-        return false;
-    }
-
-    const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& dtBBsMap = getDomTreeMap();
-    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
-    if (mapIter != dtBBsMap.end())
-    {
-        const Set<const SVFBasicBlock*> & dtBBs = mapIter->second;
-        if (dtBBs.find(bbValue) != dtBBs.end())
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool SVFFunction::postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
-{
-    if (bbKey == bbValue)
-        return true;
-
-    // An unreachable node is dominated by anything.
-    if (isUnreachable(bbValue))
-    {
-        return true;
-    }
-
-    // And dominates nothing.
-    if (isUnreachable(bbKey))
-    {
-        return false;
-    }
-
-    const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& dtBBsMap = getPostDomTreeMap();
-    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>::const_iterator mapIter = dtBBsMap.find(bbKey);
-    if (mapIter != dtBBsMap.end())
-    {
-        const Set<const SVFBasicBlock*> & dtBBs = mapIter->second;
-        if (dtBBs.find(bbValue) != dtBBs.end())
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool SVFFunction::isLoopHeader(const SVFBasicBlock* bb) const
-{
-    if (hasLoopInfo(bb))
-    {
-        const std::vector<const SVFBasicBlock*>& blocks = getLoopInfo(bb);
-        assert(!blocks.empty() && "no available loop info?");
-        return blocks.front() == bb;
-    }
-    return false;
 }
 
 SVFBasicBlock::SVFBasicBlock(const BasicBlock* b, const SVFFunction* f):

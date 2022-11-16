@@ -47,8 +47,6 @@ static llvm::RegisterPass<MTA> RACEDETECOR("mta", "May-Happen-in-Parallel Analys
 
 char MTA::ID = 0;
 ModulePass* MTA::modulePass = nullptr;
-MTA::FunToSEMap MTA::func2ScevMap;
-MTA::FunToLoopInfoMap MTA::func2LoopInfoMap;
 
 MTA::MTA() :
     ModulePass(ID), tcg(nullptr), tct(nullptr)

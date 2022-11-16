@@ -70,6 +70,104 @@ typedef llvm::GraphPrinter GraphPrinter;
 class SVFInstruction;
 class SVFBasicBlock;
 class SVFArgument;
+class SVFFunction;
+
+class SVFLoopAndDomInfo
+{
+public:
+    typedef Set<const SVFBasicBlock*> BBSet;
+    typedef std::vector<const SVFBasicBlock*> BBList;
+    typedef BBList LoopBBs;
+
+private:
+    BBList reachableBBs;
+    Map<const SVFBasicBlock*,BBSet> dtBBsMap;
+    Map<const SVFBasicBlock*,BBSet> dfBBsMap;
+    Map<const SVFBasicBlock*,BBSet> pdtBBsMap;
+    Map<const SVFBasicBlock*, LoopBBs> bb2LoopMap;
+public:
+    SVFLoopAndDomInfo()
+    {
+    }
+
+    virtual ~SVFLoopAndDomInfo() {}
+
+    inline const Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap() const
+    {
+        return dfBBsMap;
+    }
+
+    inline Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap()
+    {
+        return dfBBsMap;
+    }
+
+    inline bool hasLoopInfo(const SVFBasicBlock* bb) const
+    {
+        return bb2LoopMap.find(bb)!=bb2LoopMap.end();
+    }
+
+    const LoopBBs& getLoopInfo(const SVFBasicBlock* bb) const;
+
+    inline const SVFBasicBlock* getLoopHeader(const LoopBBs& lp) const 
+    {
+        assert(!lp.empty() && "this is not a loop, empty basic block");
+        return lp.front();
+    }
+
+    inline bool loopContainsBB(const LoopBBs& lp, const SVFBasicBlock* bb) const
+    {
+        return std::find(lp.begin(), lp.end(), bb)!=lp.end();
+    }
+
+    inline void addToBB2LoopMap(const SVFBasicBlock* bb, const SVFBasicBlock* loopBB)
+    {
+        bb2LoopMap[bb].push_back(loopBB);
+    }
+
+    inline const Map<const SVFBasicBlock*,BBSet>& getPostDomTreeMap() const
+    {
+        return pdtBBsMap;
+    }
+
+    inline Map<const SVFBasicBlock*,BBSet>& getPostDomTreeMap()
+    {
+        return pdtBBsMap;
+    }
+
+    inline Map<const SVFBasicBlock*,BBSet>& getDomTreeMap()
+    {
+        return dtBBsMap;
+    }
+
+    inline const Map<const SVFBasicBlock*,BBSet>& getDomTreeMap() const
+    {
+        return dtBBsMap;
+    }
+
+    inline bool isUnreachable(const SVFBasicBlock* bb) const
+    {
+        return std::find(reachableBBs.begin(), reachableBBs.end(), bb)==reachableBBs.end();
+    }
+    
+    inline const BBList& getReachableBBs() const
+    {
+        return this->reachableBBs;
+    }
+
+    inline const void setReachableBBs(BBList& reachableBBs)
+    {
+        this->reachableBBs = reachableBBs;
+    }
+    
+    void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const;
+
+    bool isLoopHeader(const SVFBasicBlock* bb) const;
+
+    bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
+
+    bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
+};
 
 class SVFValue
 {
@@ -220,27 +318,25 @@ class SVFFunction : public SVFValue
 
 public:
     typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
+    typedef SVFLoopAndDomInfo::BBSet BBSet;
+    typedef SVFLoopAndDomInfo::BBList BBList;
+    typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
 
 private:
     bool isDecl;
     bool intricsic;
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
     const SVFBasicBlock* exitBB;
-    std::vector<const SVFBasicBlock*> reachableBBs;
+    SVFLoopAndDomInfo* loopAndDom;
     std::vector<const SVFBasicBlock*> allBBs;
     std::vector<const SVFArgument*> allArgs;
-
     bool isUncalled;
     bool isNotRet;
     bool varArg;
-    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> dtBBsMap;
-    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> dfBBsMap;
-    Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>> pdtBBsMap;
-    Map<const SVFBasicBlock*,std::vector<const SVFBasicBlock*>> bb2LoopMap;
 
 public:
 
-    SVFFunction(const Function* f, bool declare, bool intricsic);
+    SVFFunction(const Function* f, bool declare, bool intricsic, SVFLoopAndDomInfo* ld);
     SVFFunction(const Function* f) = delete;
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
@@ -256,6 +352,10 @@ public:
         return SVFUtil::dyn_cast<Function>(getLLVMValue());
     }
 
+    inline SVFLoopAndDomInfo* getLoopAndDomInfo()
+    {
+        return loopAndDom;
+    }
     inline bool isDeclaration() const
     {
         return isDecl;
@@ -314,7 +414,7 @@ public:
 
     inline const std::vector<const SVFBasicBlock*>& getReachableBBs() const
     {
-        return reachableBBs;
+        return loopAndDom->getReachableBBs();
     }
 
     inline const bool isUncalledFunction() const
@@ -337,58 +437,6 @@ public:
         this->exitBB = exitBB;
     }
 
-    inline const void setReachableBBs(std::vector<const SVFBasicBlock*> reachableBBs)
-    {
-        this->reachableBBs = reachableBBs;
-    }
-
-    inline const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomFrontierMap() const
-    {
-        return dfBBsMap;
-    }
-
-    inline Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomFrontierMap()
-    {
-        return dfBBsMap;
-    }
-
-    inline bool hasLoopInfo(const SVFBasicBlock* bb) const
-    {
-        return bb2LoopMap.find(bb)!=bb2LoopMap.end();
-    }
-
-    const std::vector<const SVFBasicBlock*>& getLoopInfo(const SVFBasicBlock* bb) const;
-
-    inline void addToBB2LoopMap(const SVFBasicBlock* bb, const SVFBasicBlock* loopBB)
-    {
-        bb2LoopMap[bb].push_back(loopBB);
-    }
-
-    inline const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getPostDomTreeMap() const
-    {
-        return pdtBBsMap;
-    }
-
-    inline Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getPostDomTreeMap()
-    {
-        return pdtBBsMap;
-    }
-
-    inline Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomTreeMap()
-    {
-        return dtBBsMap;
-    }
-
-    inline const Map<const SVFBasicBlock*,Set<const SVFBasicBlock*>>& getDomTreeMap() const
-    {
-        return dtBBsMap;
-    }
-
-    inline bool isUnreachable(const SVFBasicBlock* bb) const
-    {
-        return std::find(reachableBBs.begin(), reachableBBs.end(), bb)==reachableBBs.end();
-    }
-
     inline bool isNotRetFunction() const
     {
         return isNotRet;
@@ -399,13 +447,55 @@ public:
         return this->exitBB;
     }
 
-    void getExitBlocksOfLoop(const SVFBasicBlock* bb, Set<const SVFBasicBlock*>& exitbbs) const;
+    inline void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const
+    {
+        return loopAndDom->getExitBlocksOfLoop(bb,exitbbs);
+    }
 
-    bool isLoopHeader(const SVFBasicBlock* bb) const;
+    inline bool hasLoopInfo(const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->hasLoopInfo(bb);
+    }
 
-    bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
+    const LoopBBs& getLoopInfo(const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->getLoopInfo(bb);
+    }
 
-    bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
+    inline const SVFBasicBlock* getLoopHeader(const BBList& lp) const 
+    {
+        return loopAndDom->getLoopHeader(lp);
+    }
+
+    inline bool loopContainsBB(const BBList& lp, const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->loopContainsBB(lp,bb);
+    }
+
+    inline const Map<const SVFBasicBlock*,BBSet>& getDomTreeMap() const
+    {
+        return loopAndDom->getDomTreeMap();
+    }
+
+    inline const Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap() const
+    {
+        return loopAndDom->getDomFrontierMap();
+    }
+
+    inline bool isLoopHeader(const SVFBasicBlock* bb) const
+    {
+        return loopAndDom->isLoopHeader(bb);
+    }
+
+    inline bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    {
+        return loopAndDom->dominate(bbKey,bbValue);
+    }
+
+    inline bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const
+    {
+        return loopAndDom->postDominate(bbKey,bbValue);
+    }
 
 };
 
@@ -666,18 +756,13 @@ public:
 class SVFGlobalValue : public SVFValue
 {
 private:
-    const GlobalValue* gv;
     const SVFValue* realDefGlobal;  /// the definition of a function across multiple modules
 public:
-    SVFGlobalValue(const GlobalValue* _gv): SVFValue(_gv, SVFValue::SVFGlob), gv(_gv), realDefGlobal(nullptr)
+    SVFGlobalValue(const GlobalValue* _gv): SVFValue(_gv, SVFValue::SVFGlob), realDefGlobal(nullptr)
     {
     }
     SVFGlobalValue() = delete;
 
-    const GlobalValue* getLLVMGlobalValue() const
-    {
-        return gv;
-    }
     inline void setDefGlobalForMultipleModule(const SVFValue* defg)
     {
         realDefGlobal = defg;

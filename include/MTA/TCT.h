@@ -34,7 +34,6 @@
 #include "Util/SVFUtil.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/CxtStmt.h"
-#include "SVF-FE/DataFlowUtil.h"
 #include <set>
 #include <vector>
 
@@ -137,6 +136,7 @@ class TCT: public GenericThreadCreateTreeTy
 {
 
 public:
+    typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
     typedef TCTEdge::ThreadCreateEdgeSet ThreadCreateEdgeSet;
     typedef ThreadCreateEdgeSet::iterator TCTNodeIter;
     typedef Set<const SVFFunction*> FunSet;
@@ -146,7 +146,7 @@ public:
     typedef Map<CxtThread,TCTNode*> CxtThreadToNodeMap;
     typedef Map<CxtThread,CallStrCxt> CxtThreadToForkCxt;
     typedef Map<CxtThread,const SVFFunction*> CxtThreadToFun;
-    typedef Map<const SVFInstruction*, const Loop*> InstToLoopMap;
+    typedef Map<const SVFInstruction*, LoopBBs> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
     typedef Set<CxtThreadProc> CxtThreadProcSet;
     typedef SCCDetection<PTACallGraph*> ThreadCallGraphSCC;
@@ -355,26 +355,36 @@ public:
     }
 
     /// Get loop for join site
-    inline const Loop* getJoinLoop(const SVFInstruction* join)
+    inline LoopBBs& getJoinLoop(const SVFInstruction* join)
+    {
+        assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
+        InstToLoopMap::iterator it = joinSiteToLoopMap.find(join);
+        assert(it!=joinSiteToLoopMap.end() && "loop not found");
+        return it->second;
+    }
+
+    inline bool hasJoinLoop(const SVFInstruction* join) const
     {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         InstToLoopMap::const_iterator it = joinSiteToLoopMap.find(join);
-        if(it!=joinSiteToLoopMap.end())
-            return it->second;
-        return nullptr;
+        return it!=joinSiteToLoopMap.end();
+    }
+
+    bool hasLoop(const SVFBasicBlock* bb) const
+    {
+        const SVFFunction* fun = bb->getParent();
+        return fun->hasLoopInfo(bb);
+    }
+    bool hasLoop(const SVFInstruction* inst) const
+    {
+        return hasLoop(inst->getParent());
     }
     /// Return true if a join instruction must be executed inside a loop
-    bool isJoinMustExecutedInLoop(const Loop* lp,const SVFInstruction* join);
+    bool isJoinMustExecutedInLoop(const LoopBBs& lp,const SVFInstruction* join);
     /// Get loop for an instruction
-    const Loop* getLoop(const SVFInstruction* inst);
-    /// Get dominator for a function
-    const DominatorTree* getDT(const Function* fun);
-    /// Get dominator for a function
-    const PostDominatorTree* getPostDT(const Function* fun);
+    const LoopBBs& getLoop(const SVFInstruction* inst);
     /// Get loop for fork/join site
-    const Loop* getLoop(const SVFBasicBlock* bb);
-    /// Get SE for function
-    ScalarEvolution* getSE(const SVFInstruction* inst);
+    const LoopBBs& getLoop(const SVFBasicBlock* bb);
 
     /// Get the next instructions following control flow
     void getNextInsts(const SVFInstruction* inst, InstVec& instSet);
@@ -558,7 +568,6 @@ private:
     CxtThreadToNodeMap ctpToNodeMap; /// Map a ctp to its graph node
     CxtThreadToForkCxt ctToForkCxtMap; /// Map a CxtThread to the context at its spawning site (fork site).
     CxtThreadToFun ctToRoutineFunMap; /// Map a CxtThread to its start routine function.
-    PTACFInfoBuilder loopInfoBuilder; ///< LoopInfo
     InstToLoopMap joinSiteToLoopMap; ///< map an inloop join to its loop class
     InstSet inRecurJoinSites;	///< Fork or Join sites in recursions
 };
