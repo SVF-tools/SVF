@@ -732,7 +732,7 @@ public:
                     ii != ie; ii++)
             {
                 char int2str[16];
-                sprintf(int2str, "%d", *ii);
+                snprintf(int2str, sizeof(int2str), "%d", *ii);
                 str += int2str;
                 str += " ";
             }
