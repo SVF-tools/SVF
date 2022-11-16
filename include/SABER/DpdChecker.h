@@ -45,8 +45,11 @@ class DpdChecker : public SrcSnkDDA
 public:
     typedef Map<const SVFGNode*,const CallICFGNode*> SVFGNodeToCSIDMap;
     typedef FIFOWorkList<const CallICFGNode*> CSWorkList;
+    typedef FIFOWorkList<const SVFGNode*> NodeWorkList;
+    typedef FIFOWorkList<const ICFGNode*> ICFGNodeWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
+    typedef NodeBS ICFGNodeBS;
     enum LEAK_TYPE
     {
         NEVER_FREE_LEAK,
@@ -89,14 +92,14 @@ public:
     }
     //@}
 
+    const std::string getSVFGNodeLoc(const SVFGNode* N);
 protected:
     /// Report leaks
     //@{
     virtual void reportBug(ProgSlice* slice) override;
-    void reportNeverFree(const SVFGNode* src);
-    void reportPartialLeak(const SVFGNode* src);
+    void reportAlwaysUAF(ProgSlice* slice);
+    void reportConditionalUAF(ProgSlice* slice);
     //@}
-
     /// Validate test cases for regression test purpose
     void testsValidation(const ProgSlice* slice);
     void validateSuccessTests(const SVFGNode* source, const SVFFunction* fun);
@@ -117,6 +120,7 @@ protected:
     //@}
 private:
     SVFGNodeToCSIDMap srcToCSIDMap;
+
 };
 
 } // End namespace SVF
