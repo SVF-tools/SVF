@@ -438,34 +438,6 @@ void TCT::build()
 }
 
 /*!
- *  Get the next instructions following control flow
- */
-void TCT::getNextInsts(const SVFInstruction* curInst, InstVec& instList)
-{
-    /// traverse to successive statements
-    if (!curInst->isTerminator())
-    {
-        const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(curInst->getLLVMInstruction()->getNextNode());
-        instList.push_back(svfNextInst);
-    }
-    else
-    {
-        const SVFBasicBlock* BB = curInst->getParent();
-        // Visit all successors of BB in the CFG
-        for (const SVFBasicBlock* svf_scc_bb : BB->getSuccessors())
-        {
-            /// if we are sitting at the loop header, then go inside the loop but ignore loop exit
-            if(isLoopHeaderOfJoinLoop(BB) && !BB->getParent()->loopContainsBB(getLoop(BB),svf_scc_bb))
-            {
-                continue;
-            }
-            const SVFInstruction* svfSuccInst = svf_scc_bb->front();
-            instList.push_back(svfSuccInst);
-        }
-    }
-}
-
-/*!
  * Push calling context
  */
 void TCT::pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee)
@@ -527,7 +499,7 @@ void TCT::dumpCxt(CallStrCxt& cxt)
     for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
     {
         rawstr << " ' "<< *it << " ' ";
-        rawstr << *(tcg->getCallSite(*it)->getCallSite()->getLLVMInstruction());
+        rawstr << value2String(tcg->getCallSite(*it)->getCallSite());
         rawstr << "  call  " << tcg->getCallSite(*it)->getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";

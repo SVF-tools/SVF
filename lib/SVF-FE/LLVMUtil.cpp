@@ -382,21 +382,21 @@ const Value* LLVMUtil::getUniqueUseViaCastInst(const Value* val)
 /*!
  * Return the type of the object from a heap allocation
  */
-const Type* LLVMUtil::getTypeOfHeapAlloc(const SVFInstruction *inst)
+const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
 {
     const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
-
-    if(SVFUtil::isHeapAllocExtCallViaRet(inst))
+    const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+    if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
     {
-        if(const Value* v = getUniqueUseViaCastInst(inst->getLLVMInstruction()))
+        if(const Value* v = getUniqueUseViaCastInst(inst))
         {
             if(const PointerType* newTy = SVFUtil::dyn_cast<PointerType>(v->getType()))
                 type = newTy;
         }
     }
-    else if(SVFUtil::isHeapAllocExtCallViaArg(inst))
+    else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
     {
-        CallSite cs = SVFUtil::getSVFCallSite(inst);
+        CallSite cs = SVFUtil::getSVFCallSite(svfinst);
         int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getCallee(cs));
         const SVFValue* arg = cs.getArgument(arg_pos);
         type = SVFUtil::dyn_cast<PointerType>(arg->getType());

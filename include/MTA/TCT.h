@@ -386,8 +386,6 @@ public:
     /// Get loop for fork/join site
     const LoopBBs& getLoop(const SVFBasicBlock* bb);
 
-    /// Get the next instructions following control flow
-    void getNextInsts(const SVFInstruction* inst, InstVec& instSet);
     /// Push calling context
     void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee);
     /// Match context

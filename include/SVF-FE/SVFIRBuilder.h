@@ -127,7 +127,7 @@ public:
     void visitCallInst(CallInst &I);
     void visitInvokeInst(InvokeInst &II);
     void visitCallBrInst(CallBrInst &I);
-    void visitCallSite(CallSite cs);
+    void visitCallSite(CallBase* cs);
     void visitReturnInst(ReturnInst &I);
     void visitCastInst(CastInst &I);
     void visitSelectInst(SelectInst &I);

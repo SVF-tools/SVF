@@ -222,12 +222,6 @@ private:
     {
         return tct->getTCTNode(curTid)->isMultiforked();
     }
-
-    /// Get the next instructions following control flow
-    inline void getNextInsts(const SVFInstruction* inst, InstVec& instVec)
-    {
-        tct->getNextInsts(inst,instVec);
-    }
     /// Push calling context
     inline void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee)
     {
@@ -484,11 +478,6 @@ private:
     }
     //@}
 
-    /// Get the next instructions following control flow
-    inline void getNextInsts(const SVFInstruction* inst, InstVec& instSet)
-    {
-        tct->getNextInsts(inst,instSet);
-    }
     /// Push calling context
     inline void pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee)
     {

@@ -778,65 +778,63 @@ void SVFIRBuilder::visitSelectInst(SelectInst &inst)
 
 void SVFIRBuilder::visitCallInst(CallInst &i)
 {
-    const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&i);
-    visitCallSite(inst);
+    visitCallSite(&i);
 }
 
 void SVFIRBuilder::visitInvokeInst(InvokeInst &i)
 {
-    const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&i);
-    visitCallSite(inst);
+    visitCallSite(&i);
 }
 
 void SVFIRBuilder::visitCallBrInst(CallBrInst &i)
 {
-    const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&i);
-    visitCallSite(inst);
+    visitCallSite(&i);
 }
 
 /*
  * Visit callsites
  */
-void SVFIRBuilder::visitCallSite(CallSite cs)
+void SVFIRBuilder::visitCallSite(CallBase* cs)
 {
 
     // skip llvm intrinsics
-    if(isIntrinsicInst(cs.getInstruction()))
+    if(isIntrinsicInst(cs))
         return;
 
-    DBOUT(DPAGBuild,
-          outs() << "process callsite " << SVFUtil::value2String(cs.getInstruction()) << "\n");
+    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
 
-    CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs.getInstruction());
+    DBOUT(DPAGBuild,
+          outs() << "process callsite " << SVFUtil::value2String(svfcall) << "\n");
+
+    CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(svfcall);
+    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(svfcall);
 
     pag->addCallSite(callBlockNode);
 
     /// Collect callsite arguments and returns
-    for (u32_t i = 0; i < cs.arg_size(); i++)
-        pag->addCallSiteArgs(callBlockNode,pag->getGNode(getValueNode(cs.getArgOperand(i)->getLLVMValue())));
+    for (u32_t i = 0; i < cs->arg_size(); i++)
+        pag->addCallSiteArgs(callBlockNode,pag->getGNode(getValueNode(cs->getArgOperand(i))));
 
-    if(!cs.getType()->isVoidTy())
-        pag->addCallSiteRets(retBlockNode,pag->getGNode(getValueNode(cs.getInstruction()->getLLVMInstruction())));
+    if(!cs->getType()->isVoidTy())
+        pag->addCallSiteRets(retBlockNode,pag->getGNode(getValueNode(cs)));
 
-    const SVFFunction *callee = getCallee(cs);
-
-    if (callee)
+    if (const Function *callee = LLVMUtil::getCallee(cs))
     {
-        if (isExtCall(callee))
+        const SVFFunction* svfcallee = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+        if (isExtCall(svfcallee))
         {
             // There is no extpag for the function, use the old method.
-            handleExtCall(cs, callee);
+            handleExtCall(SVFUtil::getSVFCallSite(svfcall), svfcallee);
         }
         else
         {
-            handleDirectCall(cs, callee);
+            handleDirectCall(SVFUtil::getSVFCallSite(svfcall), svfcallee);
         }
     }
     else
     {
         //If the callee was not identified as a function (null F), this is indirect.
-        handleIndCall(cs);
+        handleIndCall(SVFUtil::getSVFCallSite(svfcall));
     }
 }
 
