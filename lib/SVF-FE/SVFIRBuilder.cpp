@@ -824,17 +824,17 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
         if (isExtCall(svfcallee))
         {
             // There is no extpag for the function, use the old method.
-            handleExtCall(SVFUtil::getSVFCallSite(svfcall), svfcallee);
+            handleExtCall(cs, callee);
         }
         else
         {
-            handleDirectCall(SVFUtil::getSVFCallSite(svfcall), svfcallee);
+            handleDirectCall(cs, callee);
         }
     }
     else
     {
         //If the callee was not identified as a function (null F), this is indirect.
-        handleIndCall(SVFUtil::getSVFCallSite(svfcall));
+        handleIndCall(cs);
     }
 }
 
@@ -968,27 +968,28 @@ void SVFIRBuilder::visitFreezeInst(FreezeInst &inst)
 /*!
  * Add the constraints for a direct, non-external call.
  */
-void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
+void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
 {
 
     assert(F);
-
+    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
+    const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(F);
     DBOUT(DPAGBuild,
-          outs() << "handle direct call " << SVFUtil::value2String(cs.getInstruction()) << " callee " << *F << "\n");
+          outs() << "handle direct call " << SVFUtil::value2String(svfcall) << " callee " << F->getName().str() << "\n");
 
     //Only handle the ret.val. if it's used as a ptr.
-    NodeID dstrec = getValueNode(cs.getInstruction()->getLLVMInstruction());
+    NodeID dstrec = getValueNode(cs);
     //Does it actually return a ptr?
-    if (!cs.getType()->isVoidTy())
+    if (!cs->getType()->isVoidTy())
     {
-        NodeID srcret = getReturnNode(F);
-        CallICFGNode* callICFGNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
-        FunExitICFGNode* exitICFGNode = pag->getICFG()->getFunExitICFGNode(F);
+        NodeID srcret = getReturnNode(svffun);
+        CallICFGNode* callICFGNode = pag->getICFG()->getCallICFGNode(svfcall);
+        FunExitICFGNode* exitICFGNode = pag->getICFG()->getFunExitICFGNode(svffun);
         addRetEdge(srcret, dstrec,callICFGNode, exitICFGNode);
     }
     //Iterators for the actual and formal parameters
-    u32_t itA = 0, ieA = cs.arg_size();
-    Function::const_arg_iterator itF = F->getLLVMFun()->arg_begin(), ieF = F->getLLVMFun()->arg_end();
+    u32_t itA = 0, ieA = cs->arg_size();
+    Function::const_arg_iterator itF = F->arg_begin(), ieF = F->arg_end();
     //Go through the fixed parameters.
     DBOUT(DPAGBuild, outs() << "      args:");
     for (; itF != ieF; ++itA, ++itF)
@@ -999,27 +1000,27 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
             DBOUT(DPAGBuild, outs() << " !! not enough args\n");
             break;
         }
-        const Value* AA = cs.getArgOperand(itA)->getLLVMValue(), *FA = &*itF; //current actual/formal arg
+        const Value* AA = cs->getArgOperand(itA), *FA = &*itF; //current actual/formal arg
 
         DBOUT(DPAGBuild, outs() << "process actual parm  " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(AA)) << " \n");
 
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);
-        CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
-        FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(F);
+        CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(svfcall);
+        FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svffun);
         addCallEdge(srcAA, dstFA, icfgNode, entry);
     }
     //Any remaining actual args must be varargs.
-    if (F->getLLVMFun()->isVarArg())
+    if (F->isVarArg())
     {
-        NodeID vaF = getVarargNode(F);
+        NodeID vaF = getVarargNode(svffun);
         DBOUT(DPAGBuild, outs() << "\n      varargs:");
         for (; itA != ieA; ++itA)
         {
-            const Value* AA = cs.getArgOperand(itA)->getLLVMValue();
+            const Value* AA = cs->getArgOperand(itA);
             NodeID vnAA = getValueNode(AA);
-            CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
-            FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(F);
+            CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(svfcall);
+            FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(svffun);
             addCallEdge(vnAA,vaF, icfgNode,entry);
         }
     }
@@ -1028,7 +1029,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
         /// FIXME: this assertion should be placed for correct checking except
         /// bug program like 188.ammp, 300.twolf
         writeWrnMsg("too many args to non-vararg func.");
-        writeWrnMsg("(" + getSourceLoc(cs.getInstruction()) + ")");
+        writeWrnMsg("(" + getSourceLoc(svfcall) + ")");
 
     }
 }
@@ -1164,7 +1165,7 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
     }
 }
 
-void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, CallSite cs)
+void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, CallBase* cs)
 {
     // Record all dummy nodes
     std::map<std::string, NodeID> nodeIDMap;
@@ -1183,18 +1184,18 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                 s32_t nodeIDType = ExtAPI::getExtAPI()->getNodeIDType(s);
                 if (nodeIDType >= 0)
                 {
-                    if( cs.arg_size() <= (u32_t) nodeIDType)
+                    if( cs->arg_size() <= (u32_t) nodeIDType)
                         assert(false && "Argument out of bounds!");
                     else
                     {
-                        operands.push_back(getValueNode(cs.getArgument(nodeIDType)->getLLVMValue()));
-                        nodeIDMap[s] = getValueNode(cs.getArgument(nodeIDType)->getLLVMValue());
+                        operands.push_back(getValueNode(cs->getArgOperand(nodeIDType)));
+                        nodeIDMap[s] = getValueNode(cs->getArgOperand(nodeIDType));
                     }
                 }
                 else if (nodeIDType == -1)
                 {
-                    operands.push_back(getValueNode(cs.getInstruction()->getLLVMInstruction()));
-                    nodeIDMap[s] = getValueNode(cs.getInstruction()->getLLVMInstruction());
+                    operands.push_back(getValueNode(cs));
+                    nodeIDMap[s] = getValueNode(cs);
                 }
                 else if (nodeIDType == -2)
                 {
@@ -1203,10 +1204,10 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                 }
                 else if (nodeIDType == -3)
                 {
-                    if (SVFUtil::isa<PointerType>(cs.getInstruction()->getType()))
+                    if (SVFUtil::isa<PointerType>(cs->getType()))
                     {
-                        operands.push_back(getObjectNode(cs.getInstruction()->getLLVMInstruction()));
-                        nodeIDMap[s] = getObjectNode(cs.getInstruction()->getLLVMInstruction());
+                        operands.push_back(getObjectNode(cs));
+                        nodeIDMap[s] = getObjectNode(cs);
                     }
                 }
                 else if (nodeIDType == -4)
@@ -1229,24 +1230,26 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
 /*!
  * Handle external calls
  */
-void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
+void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
 {
-    const SVFInstruction *inst = cs.getInstruction();
-    if (isHeapAllocOrStaticExtCall(cs))
+    const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
+    const SVFFunction* svfcallee = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+
+    if (isHeapAllocOrStaticExtCall(svfinst))
     {
         // case 1: ret = new obj
-        if (isHeapAllocExtCallViaRet(cs) || isStaticExtCall(cs))
+        if (isHeapAllocExtCallViaRet(svfinst) || isStaticExtCall(svfinst))
         {
-            NodeID val = getValueNode(inst->getLLVMInstruction());
-            NodeID obj = getObjectNode(inst->getLLVMInstruction());
+            NodeID val = getValueNode(cs);
+            NodeID obj = getObjectNode(cs);
             addAddrEdge(obj, val);
         }
         // case 2: *arg = new obj
         else
         {
-            assert(isHeapAllocExtCallViaArg(cs) && "Must be heap alloc call via arg.");
-            u32_t arg_pos = getHeapAllocHoldingArgPosition(callee);
-            const Value* arg = cs.getArgument(arg_pos)->getLLVMValue();
+            assert(isHeapAllocExtCallViaArg(svfinst) && "Must be heap alloc call via arg.");
+            u32_t arg_pos = getHeapAllocHoldingArgPosition(svfcallee);
+            const Value* arg = cs->getArgOperand(arg_pos);
             if (arg->getType()->isPointerTy())
             {
                 NodeID vnArg = getValueNode(arg);
@@ -1266,9 +1269,9 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
     }
     else
     {
-        if (isExtCall(callee))
+        if (isExtCall(svfcallee))
         {
-            std::string funName = ExtAPI::getExtAPI()->get_name(callee);
+            std::string funName = ExtAPI::getExtAPI()->get_name(svfcallee);
             std::vector<ExtAPI::Operation>  allOperations = ExtAPI::getExtAPI()->getAllOperations(funName);
             if (allOperations.size() == 0)
             {
@@ -1346,30 +1349,30 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         // this is for memset(void *str, int c, size_t n)
                         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
                         std::vector<LocationSet> dstFields;
-                        const Type *dtype = getBaseTypeAndFlattenedFields(cs.getArgument(0)->getLLVMValue(), dstFields, cs.getArgument(2)->getLLVMValue());
+                        const Type *dtype = getBaseTypeAndFlattenedFields(cs->getArgOperand(0), dstFields, cs->getArgOperand(2));
                         u32_t sz = dstFields.size();
                         //For each field (i), add store edge *(arg0 + i) = arg1
                         for (u32_t index = 0; index < sz; index++)
                         {
                             const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, dstFields[index].accumulateConstantFieldIdx());
-                            NodeID dField = getGepValVar(cs.getArgument(0)->getLLVMValue(), dstFields[index], dElementType);
-                            addStoreEdge(pag->getValueNode(cs.getArgument(1)),dField);
+                            NodeID dField = getGepValVar(cs->getArgOperand(0), dstFields[index], dElementType);
+                            addStoreEdge(getValueNode(cs->getArgOperand(1)),dField);
                         }
-                        if(SVFUtil::isa<PointerType>(inst->getType()))
-                            addCopyEdge(getValueNode(cs.getArgument(0)->getLLVMValue()), getValueNode(inst->getLLVMInstruction()));
+                        if(SVFUtil::isa<PointerType>(cs->getType()))
+                            addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs));
                     }
                     else if (op.getOperator() == "memcpy_like")
                     {
                         /// handle strcpy
                         if(op.getOperands().size() == 3)
-                            addComplexConsForExt(cs.getArgument(op.getOperands()[0])->getLLVMValue(), cs.getArgument(op.getOperands()[1])->getLLVMValue(), cs.getArgument(op.getOperands()[2])->getLLVMValue());
+                            addComplexConsForExt(cs->getArgOperand(op.getOperands()[0]), cs->getArgOperand(op.getOperands()[1]), cs->getArgOperand(op.getOperands()[2]));
                         else
-                            addComplexConsForExt(cs.getArgument(op.getOperands()[0])->getLLVMValue(), cs.getArgument(op.getOperands()[1])->getLLVMValue(), nullptr);
+                            addComplexConsForExt(cs->getArgOperand(op.getOperands()[0]), cs->getArgOperand(op.getOperands()[1]), nullptr);
                     }
                     else if (op.getOperator() == "funptr_ops")
                     {
                         /// handling external function e.g., void *dlsym(void *handle, const char *funname);
-                        const Value* src = cs.getArgument(1)->getLLVMValue();
+                        const Value* src = cs->getArgOperand(1);
                         if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
                             src = stripConstantCasts(gep->getPointerOperand());
                         if(const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(src))
@@ -1379,17 +1382,17 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                                 if(const SVFFunction* fun = getProgFunction(svfModule,constarray->getAsCString().str()))
                                 {
                                     NodeID srcNode = getValueNode(fun->getLLVMFun());
-                                    addCopyEdge(srcNode,  getValueNode(inst->getLLVMInstruction()));
+                                    addCopyEdge(srcNode,  getValueNode(cs));
                                 }
                             }
                         }
                     }
                     else if (op.getOperator() == "Rb_tree_ops")
                     {
-                        assert(cs.arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
+                        assert(cs->arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
 
-                        const Value* vArg1 = cs.getArgument(1)->getLLVMValue();
-                        const Value* vArg3 = cs.getArgument(3)->getLLVMValue();
+                        const Value* vArg1 = cs->getArgOperand(1);
+                        const Value* vArg3 = cs->getArgOperand(3);
 
                         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                         // Now we calculate the offset from base to vArg3
@@ -1424,24 +1427,24 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         }
 
         /// create inter-procedural SVFIR edges for thread forks
-        if (isThreadForkCall(inst))
+        if (isThreadForkCall(svfinst))
         {
-            if (const Function* forkedFun = LLVMUtil::getLLVMFunction(getForkedFun(inst)->getLLVMValue()))
+            if (const SVFFunction* forkedFun = SVFUtil::dyn_cast<SVFFunction>(getForkedFun(svfinst)))
             {
-                forkedFun = LLVMUtil::getDefFunForMultipleModule(forkedFun);
-                const Value* actualParm = getActualParmAtForkSite(inst)->getLLVMValue();
+                forkedFun = forkedFun->getDefFunForMultipleModule();
+                const SVFValue* actualParm = getActualParmAtForkSite(svfinst);
                 /// pthread_create has 1 arg.
                 /// apr_thread_create has 2 arg.
                 assert((forkedFun->arg_size() <= 2) && "Size of formal parameter of start routine should be one");
                 if (forkedFun->arg_size() <= 2 && forkedFun->arg_size() >= 1)
                 {
-                    const Argument* formalParm = &(*forkedFun->arg_begin());
+                    const SVFArgument* formalParm = forkedFun->getArg(0);
                     /// Connect actual parameter to formal parameter of the start routine
-                    if (SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()))
+                    if (actualParm->getType()->isPointerTy() && formalParm->getType()->isPointerTy())
                     {
-                        CallICFGNode *icfgNode = pag->getICFG()->getCallICFGNode(inst);
-                        FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(forkedFun));
-                        addThreadForkEdge(pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(actualParm)), pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(formalParm)), icfgNode, entry);
+                        CallICFGNode *icfgNode = pag->getICFG()->getCallICFGNode(svfinst);
+                        FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(forkedFun);
+                        addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm), icfgNode, entry);
                     }
                 }
             }
@@ -1458,20 +1461,20 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         }
 
         /// create inter-procedural SVFIR edges for hare_parallel_for calls
-        else if (isHareParForCall(inst))
+        else if (isHareParForCall(svfinst))
         {
-            if (const Function* taskFunc = LLVMUtil::getLLVMFunction(getTaskFuncAtHareParForSite(inst)->getLLVMValue()))
+            if (const SVFFunction* taskFunc = SVFUtil::dyn_cast<SVFFunction>(getTaskFuncAtHareParForSite(svfinst)))
             {
                 /// The task function of hare_parallel_for has 3 args.
                 assert((taskFunc->arg_size() == 3) && "Size of formal parameter of hare_parallel_for's task routine should be 3");
-                const Value* actualParm = getTaskDataAtHareParForSite(inst)->getLLVMValue();
-                const Argument* formalParm = &(*taskFunc->arg_begin());
+                const SVFValue* actualParm = getTaskDataAtHareParForSite(svfinst);
+                const SVFArgument* formalParm = taskFunc->getArg(0);
                 /// Connect actual parameter to formal parameter of the start routine
-                if (SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()))
+                if (actualParm->getType()->isPointerTy() && formalParm->getType()->isPointerTy())
                 {
-                    CallICFGNode *icfgNode = pag->getICFG()->getCallICFGNode(inst);
-                    FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(taskFunc));
-                    addThreadForkEdge(pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(actualParm)), pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(formalParm)), icfgNode, entry);
+                    CallICFGNode *icfgNode = pag->getICFG()->getCallICFGNode(svfinst);
+                    FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(taskFunc);
+                    addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm), icfgNode, entry);
                 }
             }
             else
@@ -1490,10 +1493,13 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 /*!
  * Indirect call is resolved on-the-fly during pointer analysis
  */
-void SVFIRBuilder::handleIndCall(CallSite cs)
+void SVFIRBuilder::handleIndCall(CallBase* cs)
 {
-    const CallICFGNode* cbn = pag->getICFG()->getCallICFGNode(cs.getInstruction());
-    pag->addIndirectCallsites(cbn,pag->getValueNode(cs.getCalledValue()));
+    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
+    const SVFValue* svfcalledval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getCalledOperand());
+
+    const CallICFGNode* cbn = pag->getICFG()->getCallICFGNode(svfcall);
+    pag->addIndirectCallsites(cbn,pag->getValueNode(svfcalledval));
 }
 
 /*
@@ -1664,36 +1670,6 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     }
 }
 
-void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
-{
-    PTACallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
-    PTACallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
-    for (; iter != eiter; iter++)
-    {
-        const CallICFGNode* callBlock = iter->first;
-        CallSite cs = getSVFCallSite(callBlock->getCallSite());
-        assert(callBlock->isIndirectCall() && "this is not an indirect call?");
-        const PTACallGraph::FunctionSet & functions = iter->second;
-        for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
-        {
-            const SVFFunction*  callee = *func_iter;
-            if (isExtCall(callee))
-            {
-                setCurrentLocation(callee, callee->getEntryBlock());
-                handleExtCall(cs, callee);
-            }
-            else
-            {
-                setCurrentLocation(callBlock->getCallSite(), callBlock->getCallSite()->getParent());
-                handleDirectCall(cs, callee);
-            }
-        }
-    }
-
-    // dump SVFIR
-    if (Options::PAGDotGraph)
-        pag->dump("svfir_final");
-}
 
 /*!
  * Get a base SVFVar given a pointer

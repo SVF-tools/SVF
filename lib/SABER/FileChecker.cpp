@@ -58,7 +58,6 @@ void FileChecker::reportBug(ProgSlice* slice)
     {
         reportPartialClose(slice->getSource());
         SVFUtil::errs() << "\t\t conditional file close path: \n" << slice->evalFinalCond() << "\n";
-        slice->annotatePaths();
     }
 
 }

@@ -606,7 +606,6 @@ public:
     typedef std::vector<const SVFInstruction*> InstVec;
 
 private:
-    const Instruction* inst;
     const SVFBasicBlock* bb;
     bool terminator;
     bool ret;
@@ -617,11 +616,6 @@ public:
     SVFInstruction(const Instruction* i, const SVFBasicBlock* b, bool isRet, SVFValKind k = SVFInst);
     SVFInstruction(const Instruction* i) = delete;
     SVFInstruction(void) = delete;
-
-    inline const Instruction* getLLVMInstruction() const
-    {
-        return inst;
-    }
 
     static inline bool classof(const SVFValue *node)
     {
@@ -852,19 +846,11 @@ public:
 
 class SVFConstantData : public SVFValue
 {
-private:
-    const ConstantData* constData;
-
 public:
-    SVFConstantData(const ConstantData* _const, SVFValKind k = SVFConstData): SVFValue(_const, k), constData(_const)
+    SVFConstantData(const ConstantData* _const, SVFValKind k = SVFConstData): SVFValue(_const, k)
     {
     }
     SVFConstantData() = delete;
-
-    const ConstantData* getLLVMConstantData() const
-    {
-        return constData;
-    }
 
     static inline bool classof(const SVFValue *node)
     {

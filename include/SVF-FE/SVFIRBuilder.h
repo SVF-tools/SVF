@@ -112,8 +112,6 @@ public:
         return pag->getVarargNode(func);
     }
     //@}
-    /// Update SVFIR given a call graph (creating new CallPE and RetPE for resolved indirect calls)
-    void updateCallGraph(PTACallGraph* callgraph);
 
 
     /// Our visit overrides.
@@ -226,15 +224,15 @@ protected:
     const Type *getBaseTypeAndFlattenedFields(const Value* V, std::vector<LocationSet> &fields, const Value* sz);
 
     /// Handle direct call
-    void handleDirectCall(CallSite cs, const SVFFunction *F);
+    void handleDirectCall(CallBase* cs, const Function *F);
 
     /// Handle indirect call
-    void handleIndCall(CallSite cs);
+    void handleIndCall(CallBase* cs);
 
     /// Handle external call
     //@{
-    virtual void parseOperations(std::vector<ExtAPI::Operation>  &operations, CallSite cs);
-    virtual void handleExtCall(CallSite cs, const SVFFunction *F);
+    virtual void parseOperations(std::vector<ExtAPI::Operation>  &operations, CallBase* cs);
+    virtual void handleExtCall(CallBase* cs, const Function *F);
     void addComplexConsForExt(const Value* D, const Value* S, const Value* sz);
     //@}
 

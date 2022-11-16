@@ -256,8 +256,9 @@ public:
 
     virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) override;
 
-    virtual bool csHasVtblsBasedonCHA(CallSite cs) override
+    virtual bool csHasVtblsBasedonCHA(CallBase* cs)
     {
+        assert(false && "not supported");
         const DIType *type = getCanonicalType(getCSStaticType(cs));
         if (!hasNode(type))
         {
@@ -265,6 +266,11 @@ public:
         }
 
         return getNode(type)->getVTable() != nullptr;
+    }
+
+    virtual bool csHasVtblsBasedonCHA(CallSite cs) override
+    {
+        assert(false && "not supported!");
     }
 
     virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override;
@@ -404,13 +410,18 @@ private:
     DCHNode *getOrCreateNode(const DIType *type);
 
     /// Retrieves the metadata associated with a *virtual* callsite.
-    const DIType *getCSStaticType(CallSite cs) const
+    const DIType *getCSStaticType(CallBase* cs) const
     {
-        MDNode *md = cs.getInstruction()->getLLVMInstruction()->getMetadata(cppUtil::ctir::derefMDName);
+        MDNode *md = cs->getMetadata(cppUtil::ctir::derefMDName);
         assert(md != nullptr && "Missing type metadata at virtual callsite");
         DIType *diType = SVFUtil::dyn_cast<DIType>(md);
         assert(diType != nullptr && "Incorrect metadata type at virtual callsite");
         return diType;
+    }
+
+    const DIType *getCSStaticType(CallSite cs) const
+    {
+        assert(false && "not supported!");
     }
 
     /// Checks if a node exists for type.

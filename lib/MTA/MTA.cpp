@@ -190,8 +190,9 @@ void MTA::detect(SVFModule* module)
 
     LoadSet loads;
     StoreSet stores;
+    SVFIR* pag = SVFIR::getPAG();
 
-    Set<const Instruction*> needcheckinst;
+    Set<const SVFInstruction*> needcheckinst;
     // Add symbols for all of the functions and the instructions in them.
     for (const SVFFunction* F : module->getFunctionSet())
     {
@@ -200,14 +201,17 @@ void MTA::detect(SVFModule* module)
         {
             for (const SVFInstruction* svfInst : svfbb->getInstructionList())
             {
-                const Instruction* inst = svfInst->getLLVMInstruction();
-                if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(inst))
+
+                for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(svfInst)))
                 {
-                    loads.insert(load);
+                if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+                {
+                    loads.insert(svfInst);
                 }
-                else if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(inst))
+                else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(stmt))
                 {
-                    stores.insert(store);
+                    stores.insert(svfInst);
+                }
                 }
             }
         }
@@ -215,11 +219,11 @@ void MTA::detect(SVFModule* module)
 
     for (LoadSet::const_iterator lit = loads.begin(), elit = loads.end(); lit != elit; ++lit)
     {
-        const LoadInst* load = *lit;
+        const SVFInstruction* load = *lit;
         bool loadneedcheck = false;
         for (StoreSet::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit)
         {
-            const StoreInst* store = *sit;
+            const SVFInstruction* store = *sit;
 
             loadneedcheck = true;
             needcheckinst.insert(store);

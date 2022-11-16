@@ -173,7 +173,6 @@ void LeakChecker::reportBug(ProgSlice* slice)
     {
         reportPartialLeak(slice->getSource());
         SVFUtil::errs() << "\t\t conditional free path: \n" << slice->evalFinalCond() << "\n";
-        slice->annotatePaths();
     }
 
     if(Options::ValidateTests)

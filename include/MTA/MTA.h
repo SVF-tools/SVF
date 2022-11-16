@@ -57,8 +57,8 @@ class MTA: public ModulePass
 {
 
 public:
-    typedef Set<const LoadInst*> LoadSet;
-    typedef Set<const StoreInst*> StoreSet;
+    typedef Set<const SVFInstruction*> LoadSet;
+    typedef Set<const SVFInstruction*> StoreSet;
 
     /// Pass ID
     static char ID;

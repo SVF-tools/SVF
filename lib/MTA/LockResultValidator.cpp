@@ -112,13 +112,20 @@ bool LockResultValidator::collectLockTargets()
 
 LockResultValidator::LOCK_FLAG LockResultValidator::validateStmtInLock()
 {
+    SVFIR* pag = SVFIR::getPAG();
     LockResultValidator::LOCK_FLAG res = LockResultValidator::LOCK_TRUE;
     LockAnalysis::CxtStmtToCxtLockSet analyedLS = _la->getCSTCLS();
     for(LockAnalysis::CxtStmtToCxtLockSet::iterator it = analyedLS.begin(),
             eit = analyedLS.end(); it!=eit; it++)
     {
         const SVFInstruction* inst = ((*it).first).getStmt();
-        if(!SVFUtil::isa<LoadInst> (inst->getLLVMInstruction()) && !SVFUtil::isa<StoreInst> (inst->getLLVMInstruction()))
+        bool interestedInst = true;
+        for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(inst)))
+        {
+            if(!SVFUtil::isa<LoadStmt>(stmt) && !SVFUtil::isa<StoreStmt>(stmt))
+                interestedInst = false;
+        }
+        if(interestedInst==false)
             continue;
         const SVFFunction* F = inst->getFunction();
         if(inFilter(F->getName()))
@@ -140,8 +147,7 @@ LockResultValidator::LOCK_FLAG LockResultValidator::validateStmtInLock()
                         eit2 = (*it).second.end(); it2 != eit2; ++it)
                 {
                     const SVFInstruction* call = (*it2).getStmt();
-                    std::string lockName = call->getLLVMInstruction()->getOperand(0)->getName().str();
-                    outs()<<"Lock  " << lockName << " ";
+                    outs()<<"Lock  " << value2String(call) << " ";
                 }
                 outs() << "\n";
             }
@@ -152,7 +158,9 @@ LockResultValidator::LOCK_FLAG LockResultValidator::validateStmtInLock()
         for(LockAnalysis::CxtLockSet::iterator it3 = LSA.begin(), eit3=LSA.end(); it3!=eit3; it3++)
         {
             const SVFInstruction* call = (*it3).getStmt();
-            std::string lockName = call->getLLVMInstruction()->getOperand(0)->getName().str();
+            if(SVFUtil::isCallSite(call) == false)
+                continue;
+            std::string lockName = SVFUtil::getSVFCallSite(call).getArgOperand(0)->getName();
             if(!match(lockName, LS))
             {
                 if(Options::PrintValidRes)

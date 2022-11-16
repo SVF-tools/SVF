@@ -44,7 +44,6 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
         SVFUtil::errs() << bugMsg2("\t Double Free :") <<  " memory allocation at : ("
                         << getSourceLoc(cs->getCallSite()) << ")\n";
         SVFUtil::errs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
-        slice->annotatePaths();
     }
     if(Options::ValidateTests)
         testsValidation(slice);
