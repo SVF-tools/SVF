@@ -8,10 +8,6 @@ configure_file(${CMAKE_SOURCE_DIR}/.config.in ${CMAKE_BINARY_DIR}/include/Util/c
 # we check for the presence of the add_llvm_loadable_module command.
 # - if this command is not present, we are building out-of-source
 if(NOT COMMAND add_llvm_library)
-    if (DEFINED LLVM_DIR)
-        set(ENV{LLVM_DIR} "${LLVM_DIR}")
-    endif()
-    if (DEFINED ENV{LLVM_DIR})
         # We need to match the build environment for LLVM:
         # In particular, we need C++14 and the -fno-rtti flag
         set(CMAKE_CXX_STANDARD 14)
@@ -27,10 +23,14 @@ if(NOT COMMAND add_llvm_library)
         else()
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O3 -fno-rtti")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS} -O3")
+        find_package(LLVM REQUIRED CONFIG
+          HINTS "${LLVM_DIR}")
+
+        message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+        message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
         endif()
 
-        find_package(LLVM REQUIRED CONFIG)
-        
         list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
         include(AddLLVM)
 
@@ -42,13 +42,6 @@ if(NOT COMMAND add_llvm_library)
         else()
             llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support transformutils)
         endif()
-
-    else()
-        message(FATAL_ERROR "\
-WARNING: The LLVM_DIR var was not set (required for an out-of-source build)!\n\
-Please set this to environment variable to point to the LLVM build directory\
-(e.g. on linux: export LLVM_DIR=/path/to/llvm/build/dir)")
-    endif()
 else()
         set(IN_SOURCE_BUILD 1)
 endif()
