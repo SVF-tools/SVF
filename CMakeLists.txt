@@ -17,18 +17,20 @@ if(NOT COMMAND add_llvm_library)
 
         add_compile_options("-Werror" "-Wall")
 
-        if(CMAKE_BUILD_TYPE MATCHES "Debug")
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O0 -fno-rtti")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS} -O0")
-        else()
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O3 -fno-rtti")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS} -O3")
         find_package(LLVM REQUIRED CONFIG
           HINTS "${LLVM_DIR}")
 
         message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
         message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
+        if (NOT LLVM_ENABLE_RTTI)
+          add_compile_options("-fno-rtti")
+          message(STATUS "Disable RTTI")
+        endif()
+
+        if (NOT LLVM_ENABLE_EH)
+          add_compile_options("-fno-exceptions")
+          message(STATUS "Disable exceptions")
         endif()
 
         list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
