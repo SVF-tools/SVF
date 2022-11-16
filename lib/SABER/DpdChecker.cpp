@@ -63,11 +63,20 @@ void DpdChecker::initSrcs()
                     worklist.push(svfg->getDefSVFGNode(pagNode));
                     visited.set(svfg->getDefSVFGNode(pagNode)->getId());
 
+                    const SVFGNode* topStore = NULL;
+
                     // NodeID freeNodeId = svfg->getDefSVFGNode(pagNode)->getICFGNode()->getId();
 
                     while (! worklist.empty()) {
                         const SVFGNode* svfgNode = worklist.pop();
                         outs() << "Node Popped : " << svfgNode << "\n";
+
+                        if (svfgNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Store)
+                                {
+                                    // outs() << "SETTING SOURCE : " << svfgNode << "\n";
+                                    // addToSinks(dstNode);
+                                    topStore = svfgNode;
+                                }
 
                         for(auto EdgeIt = svfgNode->InEdgeBegin(), EndEdgeIt = svfgNode->InEdgeEnd() ; EdgeIt != EndEdgeIt ; EdgeIt++){
 
@@ -79,21 +88,25 @@ void DpdChecker::initSrcs()
                                 outs() << "Node Added : " << dstNode << "\n";
                                 visited.set(dstNode->getId());
 
-                                if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Store)
-                                {
-                                    outs() << "SETTING SOURCE : " << dstNode << "\n";
-                                    // addToSinks(dstNode);
-                                    addToSources(dstNode);
-                                    addSrcToCSID(dstNode, it->first);
-                                }
-                                
-                                
+                                // if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Store)
+                                // {
+                                //     outs() << "SETTING SOURCE : " << dstNode << "\n";
+                                //     // addToSinks(dstNode);
+                                //     addToSources(dstNode);
+                                //     addSrcToCSID(dstNode, it->first);
+                                // }
 
                                 worklist.push(dstNode);
                             }
                             else
                                 continue;
                         }
+                    }
+
+                    if ( topStore) {
+                        outs() << "SETTING SOURCE : " << topStore << "\n";
+                        addToSources(topStore);
+                        addSrcToCSIDs(topStore, it->first);
                     }
 
                 }
@@ -244,32 +257,47 @@ const std::string DpdChecker::getSVFGNodeLoc(const SVFGNode* N){
 }
 void DpdChecker::reportAlwaysUAF(ProgSlice* slice)
 {
-    const CallICFGNode* cs = getSrcCSID(slice->getSource());
+    // const CallICFGNode* cs = getSrcCSID(slice->getSource());
+    List<const CallICFGNode*> cs = getSrcCSIDs(slice->getSource());
+    SVFUtil::errs() << bugMsg1("\t Potential Always UAF (A potential use of a freed memory location always reacheable after deallocation) :") ;
+    while(!cs.empty()){
+        const CallICFGNode* csN = cs.pop();
+        SVFUtil::errs() << "memory freed at deallocation function call : ("
+                        << getSourceLoc(csN->getCallSite()) << ")\n";
+    }
+    SVFUtil::errs() << "\ndeallocated memory potentially used at : ";
     for (auto SinksIt = slice->sinksBegin(), SinksEnd = slice->sinksEnd() ; SinksIt != SinksEnd ; SinksIt++) {
         const SVFGNode* sinkNode = *SinksIt;
         // SVFIR* pag = getPAG();
         // PAGNode* pagSinkNode = pag->getGNode(sinkNode->getId());
-        // SVFGNode* svfgnode = svfg->getDefSVFGNode(pagSinkNode);
-        SVFUtil::errs() << " memory used at : ("
+        SVFUtil::errs() << "("
                     << getSVFGNodeLoc(sinkNode) << ")\n";
     }
-    SVFUtil::errs() << bugMsg1("\t Always UAF :") <<  " memory freed at : ("
-                    << getSourceLoc(cs->getCallSite()) << ")\n";
+    SVFUtil::errs() << "\n\n\n";
 }
 
 void DpdChecker::reportConditionalUAF(ProgSlice* slice)
 {
 
-    const CallICFGNode* cs = getSrcCSID(slice->getSource());
+    // const CallICFGNode* cs = getSrcCSID(slice->getSource());
+    List<const CallICFGNode*> cs = getSrcCSIDs(slice->getSource());
+    SVFUtil::errs() << bugMsg1("\t Potential Conditional UAF (A potential use of a freed memory location conditionally reacheable after deallocation) :") ;
+    while(!cs.empty()){
+        const CallICFGNode* csN = cs.pop();
+        SVFUtil::errs() << "memory freed at deallocation function call : ("
+                        << getSourceLoc(csN->getCallSite()) << ")\n";
+    }
+    SVFUtil::errs() << "\ndeallocated memory potentially used at : ";
     for (auto SinksIt = slice->sinksBegin(), SinksEnd = slice->sinksEnd() ; SinksIt != SinksEnd ; SinksIt++) {
         const SVFGNode* sinkNode = *SinksIt;
         // SVFIR* pag = getPAG();
         // PAGNode* pagSinkNode = pag->getGNode(sinkNode->getId());
-        SVFUtil::errs() << " memory used at : ("
+        SVFUtil::errs() << "("
                     << getSVFGNodeLoc(sinkNode) << ")\n";
     }
-    SVFUtil::errs() << bugMsg2("\t Conditional UAF :") <<  " memory freed at : ("
-                    << getSourceLoc(cs->getCallSite()) << ")\n";
+    SVFUtil::errs() << "\n\n\n";
+    // SVFUtil::errs() << bugMsg2("\t Conditional UAF :") <<  " memory freed at : ("
+    //                 << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
 void DpdChecker::reportBug(ProgSlice* slice)

@@ -44,6 +44,7 @@ class DpdChecker : public SrcSnkDDA
 
 public:
     typedef Map<const SVFGNode*,const CallICFGNode*> SVFGNodeToCSIDMap;
+    typedef Map<const SVFGNode*,List<const CallICFGNode*>> SVFGNodeToCSIDsMap;
     typedef FIFOWorkList<const CallICFGNode*> CSWorkList;
     typedef FIFOWorkList<const SVFGNode*> NodeWorkList;
     typedef FIFOWorkList<const ICFGNode*> ICFGNodeWorkList;
@@ -117,9 +118,23 @@ protected:
         assert(it!=srcToCSIDMap.end() && "source node not at a callsite??");
         return it->second;
     }
+
+    /// Record a source to its callsites
+    //@{
+    inline void addSrcToCSIDs(const SVFGNode* src, const CallICFGNode* cs)
+    {
+        srcToCSIDsMap[src].push(cs);
+    }
+    inline List<const CallICFGNode*> getSrcCSIDs(const SVFGNode* src)
+    {
+        SVFGNodeToCSIDsMap::iterator it =srcToCSIDsMap.find(src);
+        assert(it!=srcToCSIDsMap.end() && "source node not at a callsite??");
+        return it->second;
+    }
     //@}
 private:
     SVFGNodeToCSIDMap srcToCSIDMap;
+    SVFGNodeToCSIDsMap srcToCSIDsMap;
 
 };
 
