@@ -134,7 +134,7 @@ bool SVFFunction::isVarArg() const
 }
 
 SVFBasicBlock::SVFBasicBlock(const BasicBlock* b, const SVFFunction* f):
-    SVFValue(b,SVFValue::SVFBB), bb(b), fun(f), terminatorInst(nullptr)
+    SVFValue(b,SVFValue::SVFBB), fun(f), terminatorInst(nullptr)
 {
     name = b->hasName() ? b->getName().str(): "";
 }
@@ -204,6 +204,6 @@ u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
 }
 
 SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b, bool isRet, SVFValKind k):
-    SVFValue(i, k), inst(i), bb(b), fun(bb->getParent()), terminator(i->isTerminator()), ret(isRet)
+    SVFValue(i, k), inst(i), bb(b), terminator(i->isTerminator()), ret(isRet)
 {
 }

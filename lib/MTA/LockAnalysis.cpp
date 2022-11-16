@@ -222,8 +222,7 @@ bool LockAnalysis::intraForwardTraverse(const SVFInstruction* lockSite, InstSet&
             continue;
         }
 
-        InstVec nextInsts;
-        getNextInsts(I, nextInsts);
+        const InstVec& nextInsts = I->getSuccInstructions();
         for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit)
         {
             worklist.push_back(*nit);
@@ -268,8 +267,7 @@ bool LockAnalysis::intraBackwardTraverse(const InstSet& unlockSet, InstSet& back
                 continue;
             }
 
-            InstVec nextInsts;
-            getPrevInsts(I, nextInsts);
+            const InstVec& nextInsts = I->getPredInstructions();
             for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit)
             {
                 worklist.push_back(*nit);
@@ -495,8 +493,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
             const SVFInstruction* inst = (*cit)->getCallSite();
             if (matchCxt(newCxt, inst, curFunNode->getFunction()))
             {
-                InstVec nextInsts;
-                getNextInsts(inst, nextInsts);
+                const InstVec& nextInsts = inst->getSuccInstructions();
                 for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit)
                 {
                     CxtStmt newCts(newCxt, *nit);
@@ -511,8 +508,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
             const SVFInstruction* inst = (*cit)->getCallSite();
             if (matchCxt(newCxt, inst, curFunNode->getFunction()))
             {
-                InstVec nextInsts;
-                getNextInsts(inst, nextInsts);
+                const InstVec& nextInsts = inst->getSuccInstructions();
                 for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit)
                 {
                     CxtStmt newCts(newCxt, *nit);
@@ -530,8 +526,7 @@ void LockAnalysis::handleIntra(const CxtStmt& cts)
     const SVFInstruction* curInst = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
-    InstVec nextInsts;
-    getNextInsts(curInst, nextInsts);
+    const InstVec& nextInsts = curInst->getSuccInstructions();
     for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit)
     {
         CxtStmt newCts(curCxt, *nit);

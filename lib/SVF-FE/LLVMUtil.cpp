@@ -301,27 +301,27 @@ const Value*  LLVMUtil::stripAllCasts(const Value* val)
 }
 
 /// Get the next instructions following control flow
-void LLVMUtil::getNextInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList)
+void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const SVFInstruction*>& instList)
 {
     if (!curInst->isTerminator())
     {
-        const Instruction* nextInst = curInst->getLLVMInstruction()->getNextNode();
+        const Instruction* nextInst = curInst->getNextNode();
         const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(nextInst);
-        if (SVFUtil::isIntrinsicInst(svfNextInst))
-            getNextInsts(svfNextInst, instList);
+        if (LLVMUtil::isIntrinsicInst(nextInst))
+            getNextInsts(nextInst, instList);
         else
             instList.push_back(svfNextInst);
     }
     else
     {
-        const BasicBlock* BB = curInst->getParent()->getLLVMBasicBlock();
+        const BasicBlock* BB = curInst->getParent();
         // Visit all successors of BB in the CFG
         for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it)
         {
             const Instruction* nextInst = &((*it)->front());
             const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(nextInst);
-            if (SVFUtil::isIntrinsicInst(svfNextInst))
-                getNextInsts(svfNextInst, instList);
+            if (LLVMUtil::isIntrinsicInst(nextInst))
+                getNextInsts(nextInst, instList);
             else
                 instList.push_back(svfNextInst);
         }
@@ -330,29 +330,28 @@ void LLVMUtil::getNextInsts(const SVFInstruction* curInst, std::vector<const SVF
 
 
 /// Get the previous instructions following control flow
-void LLVMUtil::getPrevInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList)
+void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const SVFInstruction*>& instList)
 {
 
-    const SVFInstruction* entryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(curInst->getParent()->getLLVMBasicBlock()->front()));
-    if (curInst != entryInst)
+    if (curInst != &(curInst->getParent()->front()))
     {
-        const Instruction* prevInst = curInst->getLLVMInstruction()->getPrevNode();
+        const Instruction* prevInst = curInst->getPrevNode();
         const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(prevInst);
-        if (SVFUtil::isIntrinsicInst(svfPrevInst))
-            getPrevInsts(svfPrevInst, instList);
+        if (LLVMUtil::isIntrinsicInst(prevInst))
+            getPrevInsts(prevInst, instList);
         else
             instList.push_back(svfPrevInst);
     }
     else
     {
-        const BasicBlock* BB = curInst->getParent()->getLLVMBasicBlock();
+        const BasicBlock* BB = curInst->getParent();
         // Visit all successors of BB in the CFG
         for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
         {
             const Instruction* prevInst = &((*it)->back());
             const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(prevInst);
-            if (SVFUtil::isIntrinsicInst(svfPrevInst))
-                getPrevInsts(svfPrevInst, instList);
+            if (LLVMUtil::isIntrinsicInst(prevInst))
+                getPrevInsts(prevInst, instList);
             else
                 instList.push_back(svfPrevInst);
         }
@@ -656,8 +655,7 @@ void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const Instru
     if (!curInst->isTerminator())
     {
         const Instruction* nextInst = curInst->getNextNode();
-        const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(nextInst);
-        if (SVFUtil::isIntrinsicInst(svfNextInst))
+        if (LLVMUtil::isIntrinsicInst(nextInst))
             getNextInsts(nextInst, instList);
         else
             instList.push_back(nextInst);
@@ -669,8 +667,7 @@ void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const Instru
         for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it)
         {
             const Instruction* nextInst = &((*it)->front());
-            const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(nextInst);
-            if (SVFUtil::isIntrinsicInst(svfNextInst))
+            if (LLVMUtil::isIntrinsicInst(nextInst))
                 getNextInsts(nextInst, instList);
             else
                 instList.push_back(nextInst);
@@ -685,8 +682,7 @@ void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instru
     if (curInst != &(curInst->getParent()->front()))
     {
         const Instruction* prevInst = curInst->getPrevNode();
-        const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(prevInst);
-        if (SVFUtil::isIntrinsicInst(svfPrevInst))
+        if (LLVMUtil::isIntrinsicInst(prevInst))
             getPrevInsts(prevInst, instList);
         else
             instList.push_back(prevInst);
@@ -698,8 +694,7 @@ void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instru
         for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
         {
             const Instruction* prevInst = &((*it)->back());
-            const SVFInstruction* svfPrevInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(prevInst);
-            if (SVFUtil::isIntrinsicInst(svfPrevInst))
+            if (LLVMUtil::isIntrinsicInst(prevInst))
                 getPrevInsts(prevInst, instList);
             else
                 instList.push_back(prevInst);

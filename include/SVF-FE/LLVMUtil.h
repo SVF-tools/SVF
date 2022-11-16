@@ -44,9 +44,9 @@ namespace LLVMUtil
 {
 
 /// Whether an instruction is a call or invoke instruction
-inline bool isCallSite(const SVFInstruction* inst)
+inline bool isCallSite(const Instruction* inst)
 {
-    return SVFUtil::isa<CallBase>(inst->getLLVMInstruction());
+    return SVFUtil::isa<CallBase>(inst);
 }
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Value* val)
@@ -315,10 +315,16 @@ inline static DataLayout* getDataLayout(Module* mod)
 }
 
 /// Get the next instructions following control flow
-void getNextInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList);
+void getNextInsts(const Instruction* curInst, std::vector<const SVFInstruction*>& instList);
 
 /// Get the previous instructions following control flow
-void getPrevInsts(const SVFInstruction* curInst, std::vector<const SVFInstruction*>& instList);
+void getPrevInsts(const Instruction* curInst, std::vector<const SVFInstruction*>& instList);
+
+/// Get the next instructions following control flow
+void getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
+
+/// Get the previous instructions following control flow
+void getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
 
 /// Get num of BB's predecessors
 u32_t getBBPredecessorNum(const BasicBlock* BB);
@@ -378,12 +384,6 @@ void viewCFG(const Function* fun);
 
 // Dump Control Flow Graph of llvm function, without instructions
 void viewCFGOnly(const Function* fun);
-
-/// Get the next instructions following control flow
-void getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
-
-/// Get the previous instructions following control flow
-void getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
 
 } // End namespace LLVMUtil
 

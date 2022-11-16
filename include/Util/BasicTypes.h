@@ -509,7 +509,6 @@ private:
     std::vector<const SVFInstruction*> allInsts;
     std::vector<const SVFBasicBlock*> succBBs;
     std::vector<const SVFBasicBlock*> predBBs;
-    const BasicBlock* bb;
     const SVFFunction* fun;
     const SVFInstruction* terminatorInst;
 public:
@@ -543,6 +542,11 @@ public:
     }
 
     inline const SVFFunction* getParent() const
+    {
+        return fun;
+    }
+
+    inline const SVFFunction* getFunction() const
     {
         return fun;
     }
@@ -594,22 +598,21 @@ public:
     u32_t getBBSuccessorPos(const SVFBasicBlock* succbb) const;
     u32_t getBBPredecessorPos(const SVFBasicBlock* succbb);
     u32_t getBBPredecessorPos(const SVFBasicBlock* succbb) const;
-
-    inline const BasicBlock* getLLVMBasicBlock() const
-    {
-        return bb;
-    }
 };
 
 class SVFInstruction : public SVFValue
 {
+public:
+    typedef std::vector<const SVFInstruction*> InstVec;
 
 private:
     const Instruction* inst;
     const SVFBasicBlock* bb;
-    const SVFFunction* fun;
     bool terminator;
     bool ret;
+    InstVec succInsts;
+    InstVec predInsts;
+
 public:
     SVFInstruction(const Instruction* i, const SVFBasicBlock* b, bool isRet, SVFValKind k = SVFInst);
     SVFInstruction(const Instruction* i) = delete;
@@ -631,10 +634,30 @@ public:
     {
         return bb;
     }
+    
+    inline InstVec& getSuccInstructions()
+    {
+        return succInsts;
+    }
+
+    inline InstVec& getPredInstructions()
+    {
+        return predInsts;
+    }
+
+    inline const InstVec& getSuccInstructions() const
+    {
+        return succInsts;
+    }
+
+    inline const InstVec& getPredInstructions() const
+    {
+        return predInsts;
+    }
 
     inline const SVFFunction* getFunction() const
     {
-        return fun;
+        return bb->getParent();
     }
 
     inline bool isTerminator() const

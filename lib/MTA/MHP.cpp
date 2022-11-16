@@ -357,8 +357,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
             CallStrCxt newCxt = cts.getContext();
             if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
-                InstVec nextInsts;
-                getNextInsts((*cit)->getCallSite(),nextInsts);
+                const InstVec& nextInsts = (*cit)->getCallSite()->getSuccInstructions();
                 for(InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit!=enit; ++nit)
                 {
                     CxtThreadStmt newCts(cts.getTid(),newCxt,*nit);
@@ -372,8 +371,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
             CallStrCxt newCxt = cts.getContext();
             if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
-                InstVec nextInsts;
-                getNextInsts((*cit)->getCallSite(),nextInsts);
+                const InstVec& nextInsts = (*cit)->getCallSite()->getSuccInstructions();
                 for(InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit!=enit; ++nit)
                 {
                     CxtThreadStmt newCts(cts.getTid(),newCxt,*nit);
@@ -390,8 +388,7 @@ void MHP::handleRet(const CxtThreadStmt& cts)
 void MHP::handleIntra(const CxtThreadStmt& cts)
 {
 
-    InstVec nextInsts;
-    getNextInsts(cts.getStmt(),nextInsts);
+    const InstVec& nextInsts = cts.getStmt()->getSuccInstructions();
     for(InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit!=enit; ++nit)
     {
         CxtThreadStmt newCts(cts.getTid(),cts.getContext(),*nit);
@@ -417,8 +414,7 @@ void MHP::updateAncestorThreads(NodeID curTid)
         if(const SVFInstruction* forkInst = ct.getThread())
         {
             CallStrCxt forkSiteCxt = tct->getCxtOfCxtThread(ct);
-            InstVec nextInsts;
-            getNextInsts(forkInst,nextInsts);
+            const InstVec& nextInsts = forkInst->getSuccInstructions();
             for(InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit!=enit; ++nit)
             {
                 CxtThreadStmt cts(tct->getParentThread(*it),forkSiteCxt,*nit);
@@ -775,8 +771,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
             CallStrCxt forkSiteCxt = tct->getCxtOfCxtThread(ct);
             const SVFInstruction* exitInst = getExitInstOfParentRoutineFun(rootTid);
 
-            InstVec nextInsts;
-            getNextInsts(forkInst,nextInsts);
+            const InstVec& nextInsts = forkInst->getSuccInstructions();
             for(InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit!=enit; ++nit)
             {
                 CxtStmt cs(forkSiteCxt,*nit);
@@ -961,8 +956,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
             CallStrCxt newCxt = curCxt;
             if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
-                InstVec nextInsts;
-                getNextInsts((*cit)->getCallSite(),nextInsts);
+                const InstVec& nextInsts = (*cit)->getCallSite()->getSuccInstructions();
                 for(InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit!=enit; ++nit)
                 {
                     CxtStmt newCts(newCxt,*nit);
@@ -976,8 +970,7 @@ void ForkJoinAnalysis::handleRet(const CxtStmt& cts)
             CallStrCxt newCxt = curCxt;
             if(matchCxt(newCxt,(*cit)->getCallSite(),curFunNode->getFunction()))
             {
-                InstVec nextInsts;
-                getNextInsts((*cit)->getCallSite(),nextInsts);
+                const InstVec& nextInsts = (*cit)->getCallSite()->getSuccInstructions();
                 for(InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit!=enit; ++nit)
                 {
                     CxtStmt newCts(newCxt,*nit);
@@ -995,8 +988,7 @@ void ForkJoinAnalysis::handleIntra(const CxtStmt& cts)
     const SVFInstruction* curInst = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
 
-    InstVec nextInsts;
-    getNextInsts(curInst,nextInsts);
+    const InstVec& nextInsts = curInst->getSuccInstructions();
     for(InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit!=enit; ++nit)
     {
         CxtStmt newCts(curCxt,*nit);
