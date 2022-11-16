@@ -1,0 +1,315 @@
+
+*********CallGraph Stats***************
+################ (program : uaf00.ll)###############
+-------------------------------------------------------
+TotalNode           12
+TotalEdge           10
+TotalCycle          0
+MaxNodeInCycle      0
+NodeInCycle         0
+CalRetPairInCycle   0
+#######################################################
+
+*********General Stats***************
+################ (program : uaf00.ll)###############
+BBWith2Succ         1
+BBWith3Succ         0
+TotalPointers       106
+TotalObjects        29
+TotalFieldObjects   0
+MaxStructSize       0
+TotalSVFStmts       81
+TotalPTASVFStmts    51
+FIObjNum            0
+FSObjNum            28
+AddrsNum            30
+LoadsNum            15
+StoresNum           11
+CopysNum            8
+GepsNum             0
+CallsNum            4
+ReturnsNum          2
+FunctionObjs        12
+GlobalObjs          0
+HeapObjs            4
+StackObjs           11
+VarStructObj        0
+VarArrayObj         0
+ConstStructObj      0
+ConstArrayObj       0
+NonPtrObj           19
+ConstantObj         0
+IndCallSites        0
+TotalCallSite       10
+-------------------------------------------------------
+LLVMIRTime          0.026
+SymbolTableTime     0.002
+SVFIRTime           0.001
+#######################################################
+
+*********Constraint Graph Stats***************
+################ (program : uaf00.ll)###############
+-------------------------------------------------------
+AvgIn/OutCopyEdge   0.32
+AvgIn/OutLoadEdge   0.0933333
+AvgIn/OutAddrEdge   0.36
+AvgIn/OutEdge       0.84
+NumOfCGNode         149
+TotalValidNode      75
+TotalValidObjNode   27
+NumOfCGEdge         36
+NumOfAddrs          27
+NumOfCopys          24
+NumOfGeps           0
+NumOfLoads          7
+NumOfStores         5
+MaxInCopyEdge       2
+MaxOutCopyEdge      3
+MaxInLoadEdge       1
+MaxOutLoadEdge      3
+MaxInStoreEdge      1
+MaxOutStoreEdge     1
+AvgIn/OutStoreEdge  0
+MaxInAddrEdge       1
+MaxOutAddrEdge      1
+LocalVarInRecur     0
+#######################################################
+
+*********Andersen Pointer Analysis Stats***************
+################ (program : uaf00.ll)###############
+-------------------------------------------------------
+TotalTime           0.001
+SCCDetectTime       0
+SCCMergeTime        0
+LoadStoreTime       0
+CopyGepTime         0
+UpdateCGTime        0
+AvgPtsSetSize       0.295302
+AvgTopLvlPtsSize    0.931818
+CollapseTime        0
+TotalPointers       106
+Pointers            106
+TotalObjects        29
+IndCallSites        0
+AddrProcessed       27
+CopyProcessed       18
+GepProcessed        0
+LoadProcessed       7
+StoreProcessed      5
+NumOfSFRs           0
+NumOfFieldExpand    0
+MemObjects          29
+DummyFieldPtrs      0
+FieldObjs           0
+MaxPtsSetSize       1
+SolveIterations     2
+IndEdgeSolved       0
+NumOfSCCDetect      2
+TotalCycleNum       0
+TotalPWCCycleNum    0
+NodesInCycles       0
+MaxNodesInSCC       0
+NullPointer         0
+PointsToConstPtr    0
+PointsToBlkPtr      0
+#######################################################
+
+****Persistent Points-To Cache Statistics: Andersen's analysis bitvector****
+################ (program : uaf00.ll)###############
+UniquePointsToSets       28
+TotalUnions              45
+PropertyUnions           45
+UniqueUnions             0
+LookupUnions             0
+PreemptiveUnions         0
+TotalComplements         298
+PropertyComplements      298
+UniqueComplements        0
+LookupComplements        0
+PreemptiveComplements    0
+TotalIntersections       12
+PropertyIntersections    12
+UniqueIntersections      0
+LookupIntersections      0
+PreemptiveIntersections  0
+#######################################################
+
+*********Memory SSA Statistics***************
+################ (program : uaf00.ll)###############
+-------------------------------------------------------
+AverageRegSize      1
+SSARenameTime       0
+InsertPHITime       0
+GenMUCHITime        0
+GenRegionTime       0.001
+TotalMSSATime       0.001
+BBHasMSSAPhi        0
+MSSAPhi             0
+StoreHasChi         5
+LoadHasMu           7
+CSHasMu             5
+CSHasChi            5
+FunHasRetMu         9
+FunHasEntryChi      9
+StoreChiNode        5
+LoadMuNode          7
+CSMuNode            5
+CSChiNode           5
+FunRetMu            10
+FunEntryChi         10
+MemRegions          9
+MaxRegSize          1
+#######################################################
+
+****SVFG Statistics****
+
+************************
+################ (program : uaf00.ll)###############
+-------------------------------------------------------
+TotalTime           0
+ConnDirEdgeTime     0
+ConnIndEdgeTime     0
+TLNodeTime          0
+ATNodeTime          0
+OptTime             0
+AvgWeight           1
+TotalNode           94
+FormalIn            10
+FormalOut           10
+FormalParam         4
+FormalRet           4
+ActualIn            5
+ActualOut           5
+ActualParam         7
+ActualRet           1
+Addr                27
+Copy                4
+Gep                 0
+PHI                 4
+TotalEdge           52
+DirectEdge          28
+IndirectEdge        24
+IndirectEdgeLabels  24
+IndCallEdge         1
+IndRetEdge          1
+DirectCallEdge      3
+DirectRetEdge       1
+AvgInDegree         0
+AvgOutDegree        0
+MaxInDegree         2
+MaxOutDegree        4
+AvgIndInDeg         1
+AvgIndOutDeg        1
+MaxIndInDeg         1
+MaxIndOutDeg        4
+MSSAPhi             0
+Load                7
+Store               5
+#######################################################
+
+****SVFG Statistics****
+
+************************
+################ (program : uaf00.ll)###############
+-------------------------------------------------------
+TotalTime           0
+ConnDirEdgeTime     0
+ConnIndEdgeTime     0
+TLNodeTime          0
+ATNodeTime          0
+OptTime             0
+AvgWeight           1
+TotalNode           94
+FormalIn            10
+FormalOut           10
+FormalParam         4
+FormalRet           4
+ActualIn            5
+ActualOut           5
+ActualParam         7
+ActualRet           1
+Addr                27
+Copy                4
+Gep                 0
+PHI                 4
+TotalEdge           52
+DirectEdge          28
+IndirectEdge        24
+IndirectEdgeLabels  24
+IndCallEdge         1
+IndRetEdge          1
+DirectCallEdge      3
+DirectRetEdge       1
+AvgInDegree         0
+AvgOutDegree        0
+MaxInDegree         2
+MaxOutDegree        4
+AvgIndInDeg         1
+AvgIndOutDeg        1
+MaxIndInDeg         1
+MaxIndOutDeg        4
+MSSAPhi             0
+Load                7
+Store               5
+#######################################################
+FOUND A DEALLOCATION FUNCTION NAMED free WITH ARGUMENTS :
+SETTING SOURCE : 0x55c09ebccc30
+FOUND A DEALLOCATION FUNCTION NAMED free WITH ARGUMENTS :
+SETTING SOURCE : 0x55c09ebcc8a0
+ICFG Node Popped : 0x55c09eb4aeb0
+ICFG Node Added : 0x55c09eb4b000
+ICFG Node Popped : 0x55c09eb4b000
+ICFG Node Added : 0x55c09eb4b280
+ICFG Node Popped : 0x55c09eb4b280
+ICFG Node Added : 0x55c09eb4b450
+ICFG Node Popped : 0x55c09eb4b450
+ICFG Node Added : 0x55c09eb500f0
+ICFG Node Added : 0x55c09eb50590
+ICFG Node Popped : 0x55c09eb500f0
+ICFG Node Added : 0x55c09eb509d0
+ICFG Node Popped : 0x55c09eb50590
+ICFG Node Added : 0x55c09eb50bc0
+ICFG Node Popped : 0x55c09eb509d0
+ICFG Node Added : 0x55c09eb50db0
+ICFG Node Popped : 0x55c09eb50bc0
+ICFG Node Popped : 0x55c09eb50db0
+ICFG Node Added : 0x55c09eb51040
+ICFG Node Popped : 0x55c09eb51040
+ICFG Node Added : 0x55c09eb4c7f0
+ICFG Node Popped : 0x55c09eb4c7f0
+ICFG Node Added : 0x55c09eb4c930
+ICFG Node Popped : 0x55c09eb4c930
+ICFG Node Added : 0x55c09eb4cb00
+ICFG Node Popped : 0x55c09eb4cb00
+ICFG Node Added : 0x55c09eb4ccd0
+ICFG Node Popped : 0x55c09eb4ccd0
+ICFG Node Added : 0x55c09eb4cea0
+ICFG Node Popped : 0x55c09eb4cea0
+ICFG Node Added : 0x55c09eb4d470
+ICFG Node Popped : 0x55c09eb4d470
+ICFG Node Added : 0x55c09eb4d640
+ICFG Node Popped : 0x55c09eb4d640
+ICFG Node Added : 0x55c09eb51190
+ICFG Node Popped : 0x55c09eb51190
+ICFG Node Added : 0x55c09eb514e0
+ICFG Node Popped : 0x55c09eb514e0
+ICFG Node Added : 0x55c09eb516d0
+ICFG Node Popped : 0x55c09eb516d0
+ICFG Node Added : 0x55c09eb518c0
+ICFG Node Popped : 0x55c09eb518c0
+SETTING SINK : 0x55c09ebcc610
+SETTING SINK : 0x55c09ebcc090
+ICFG Node Popped : 0x55c09eb4bea0
+ICFG Node Added : 0x55c09eb4bff0
+ICFG Node Popped : 0x55c09eb4bff0
+ICFG Node Added : 0x55c09eb4c270
+ICFG Node Popped : 0x55c09eb4c270
+ICFG Node Added : 0x55c09eb4c620
+ICFG Node Popped : 0x55c09eb4c620
+[1;33m	 Potential Always UAF (A potential use of a freed memory location always reacheable after deallocation) :[1;0mmemory freed at deallocation function call : ({ ln: 23  cl: 5  fl: uaf00/doublefree_check.h })
+
+deallocated memory potentially used at : (uaf00/doublefree_check.h:32:13)
+(uaf00/uaf00.c:11:18)
+
+
+

@@ -1,0 +1,7 @@
+[1;33m	 Potential Always UAF (A potential use of a freed memory location always reacheable after deallocation) :[1;0mmemory freed at deallocation function call : ({ ln: 23  cl: 5  fl: uaf2/doublefree_check.h })
+
+deallocated memory potentially used at : (uaf2/doublefree_check.h:23:10)
+(uaf2/uaf2.c:10:14)
+
+
+

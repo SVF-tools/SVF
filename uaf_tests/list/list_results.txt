@@ -1,0 +1,60 @@
+[1;33m	 Potential Always UAF (A potential use of a freed memory location always reacheable after deallocation) :[1;0mmemory freed at deallocation function call : ({ ln: 73  cl: 17  fl: list/list.c })
+memory freed at deallocation function call : ({ ln: 80  cl: 21  fl: list/list.c })
+memory freed at deallocation function call : ({ ln: 97  cl: 17  fl: list/list.c })
+memory freed at deallocation function call : ({ ln: 104  cl: 21  fl: list/list.c })
+
+deallocated memory potentially used at : (list/list.c:104:36)
+(list/list.c:97:32)
+(list/list.c:80:36)
+(list/list.c:73:32)
+
+
+
+[1;33m	 Potential Always UAF (A potential use of a freed memory location always reacheable after deallocation) :[1;0mmemory freed at deallocation function call : ({ ln: 368  cl: 9  fl: list/list.c })
+memory freed at deallocation function call : ({ ln: 74  cl: 17  fl: list/list.c })
+memory freed at deallocation function call : ({ ln: 98  cl: 17  fl: list/list.c })
+memory freed at deallocation function call : ({ ln: 59  cl: 13  fl: list/list.c })
+memory freed at deallocation function call : ({ ln: 278  cl: 9  fl: list/list.c })
+memory freed at deallocation function call : ({ ln: 82  cl: 21  fl: list/list.c })
+memory freed at deallocation function call : ({ ln: 314  cl: 9  fl: list/list.c })
+memory freed at deallocation function call : ({ ln: 105  cl: 21  fl: list/list.c })
+
+deallocated memory potentially used at : (list/list.c:379:25)
+(list/list.c:378:5)
+(list/list.c:368:14)
+(list/list.c:367:9)
+(list/list.c:322:28)
+(list/list.c:320:22)
+(list/list.c:319:22)
+(list/list.c:314:14)
+(list/list.c:313:9)
+(list/list.c:286:9)
+(list/list.c:73:22)
+(list/list.c:117:1)
+(list/list.c:74:22)
+(list/list.c:80:26)
+(list/list.c:277:9)
+(list/list.c:81:26)
+(list/list.c:278:14)
+(list/list.c:82:26)
+(list/list.c:283:22)
+(list/list.c:97:22)
+(list/list.c:284:22)
+(list/list.c:98:22)
+(list/list.c:287:22)
+(list/list.c:104:26)
+(list/list.c:105:26)
+
+
+
+[1;33m	 Potential Always UAF (A potential use of a freed memory location always reacheable after deallocation) :[1;0mmemory freed at deallocation function call : ({ ln: 632  cl: 9  fl: list/list.c })
+
+deallocated memory potentially used at : (list/list.c:632:14)
+(list/list.c:631:14)
+(list/list.c:629:18)
+(list/list.c:628:13)
+(list/list.c:627:16)
+(list/list.c:633:16)
+
+
+

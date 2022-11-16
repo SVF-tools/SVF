@@ -1,0 +1,23 @@
+[1;33m	 Potential Always UAF (A potential use of a freed memory location always reacheable after deallocation) :[1;0mmemory freed at deallocation function call : ({ ln: 39  cl: 17  fl: uaf_ctf_1/uaf_ctf_1.c })
+
+deallocated memory potentially used at : (uaf_ctf_1/uaf_ctf_1.c:39:22)
+(uaf_ctf_1/uaf_ctf_1.c:12:61)
+(uaf_ctf_1/uaf_ctf_1.c:12:56)
+(uaf_ctf_1/uaf_ctf_1.c:12:12)
+(uaf_ctf_1/uaf_ctf_1.c:36:32)
+
+
+
+[1;33m	 Potential Always UAF (A potential use of a freed memory location always reacheable after deallocation) :[1;0mmemory freed at deallocation function call : ({ ln: 40  cl: 17  fl: uaf_ctf_1/uaf_ctf_1.c })
+
+deallocated memory potentially used at : (uaf_ctf_1/uaf_ctf_1.c:43:27)
+(uaf_ctf_1/uaf_ctf_1.c:11:60)
+(uaf_ctf_1/uaf_ctf_1.c:11:55)
+(uaf_ctf_1/uaf_ctf_1.c:30:28)
+(uaf_ctf_1/uaf_ctf_1.c:11:12)
+(uaf_ctf_1/uaf_ctf_1.c:27:27)
+(uaf_ctf_1/uaf_ctf_1.c:40:22)
+(uaf_ctf_1/uaf_ctf_1.c:26:32)
+
+
+

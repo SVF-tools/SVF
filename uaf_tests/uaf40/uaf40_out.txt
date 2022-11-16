@@ -1,0 +1,485 @@
+
+*********CallGraph Stats***************
+################ (program : uaf40.ll)###############
+-------------------------------------------------------
+TotalNode           66
+TotalEdge           45
+TotalCycle          0
+MaxNodeInCycle      0
+NodeInCycle         0
+CalRetPairInCycle   0
+#######################################################
+
+*********General Stats***************
+################ (program : uaf40.ll)###############
+BBWith2Succ         12
+BBWith3Succ         0
+TotalPointers       609
+TotalObjects        121
+TotalFieldObjects   1
+MaxStructSize       2
+TotalSVFStmts       423
+TotalPTASVFStmts    240
+FIObjNum            0
+FSObjNum            120
+AddrsNum            148
+LoadsNum            76
+StoresNum           57
+CopysNum            28
+GepsNum             34
+CallsNum            7
+ReturnsNum          4
+FunctionObjs        66
+GlobalObjs          5
+HeapObjs            6
+StackObjs           42
+VarStructObj        0
+VarArrayObj         1
+ConstStructObj      0
+ConstArrayObj       0
+NonPtrObj           97
+ConstantObj         0
+IndCallSites        0
+TotalCallSite       45
+-------------------------------------------------------
+LLVMIRTime          0.03
+SymbolTableTime     0.003
+SVFIRTime           0.004
+#######################################################
+
+*********Constraint Graph Stats***************
+################ (program : uaf40.ll)###############
+-------------------------------------------------------
+AvgIn/OutCopyEdge   0.294286
+AvgIn/OutLoadEdge   0.08
+AvgIn/OutAddrEdge   0.391429
+AvgIn/OutEdge       0.822857
+NumOfCGNode         803
+TotalValidNode      350
+TotalValidObjNode   120
+NumOfCGEdge         151
+NumOfAddrs          137
+NumOfCopys          69
+NumOfGeps           34
+NumOfLoads          28
+NumOfStores         20
+MaxInCopyEdge       3
+MaxOutCopyEdge      5
+MaxInLoadEdge       1
+MaxOutLoadEdge      3
+MaxInStoreEdge      2
+MaxOutStoreEdge     4
+AvgIn/OutStoreEdge  0
+MaxInAddrEdge       1
+MaxOutAddrEdge      18
+LocalVarInRecur     0
+#######################################################
+
+*********Andersen Pointer Analysis Stats***************
+################ (program : uaf40.ll)###############
+-------------------------------------------------------
+TotalTime           0.004
+SCCDetectTime       0
+SCCMergeTime        0
+LoadStoreTime       0
+CopyGepTime         0
+UpdateCGTime        0
+AvgPtsSetSize       0.240349
+AvgTopLvlPtsSize    0.861751
+CollapseTime        0
+TotalPointers       609
+Pointers            609
+TotalObjects        122
+IndCallSites        0
+AddrProcessed       137
+CopyProcessed       33
+GepProcessed        21
+LoadProcessed       28
+StoreProcessed      20
+NumOfSFRs           0
+NumOfFieldExpand    0
+MemObjects          121
+DummyFieldPtrs      0
+FieldObjs           1
+MaxPtsSetSize       2
+SolveIterations     2
+IndEdgeSolved       0
+NumOfSCCDetect      2
+TotalCycleNum       0
+TotalPWCCycleNum    0
+NodesInCycles       0
+MaxNodesInSCC       0
+NullPointer         0
+PointsToConstPtr    3
+PointsToBlkPtr      0
+#######################################################
+
+****Persistent Points-To Cache Statistics: Andersen's analysis bitvector****
+################ (program : uaf40.ll)###############
+UniquePointsToSets       123
+TotalUnions              193
+PropertyUnions           190
+UniqueUnions             1
+LookupUnions             0
+PreemptiveUnions         2
+TotalComplements         1605
+PropertyComplements      1605
+UniqueComplements        0
+LookupComplements        0
+PreemptiveComplements    0
+TotalIntersections       48
+PropertyIntersections    48
+UniqueIntersections      0
+LookupIntersections      0
+PreemptiveIntersections  0
+#######################################################
+
+*********Memory SSA Statistics***************
+################ (program : uaf40.ll)###############
+-------------------------------------------------------
+AverageRegSize      1
+SSARenameTime       0
+InsertPHITime       0
+GenMUCHITime        0
+GenRegionTime       0.003
+TotalMSSATime       0.005
+BBHasMSSAPhi        0
+MSSAPhi             0
+StoreHasChi         19
+LoadHasMu           28
+CSHasMu             7
+CSHasChi            7
+FunHasRetMu         51
+FunHasEntryChi      18
+StoreChiNode        19
+LoadMuNode          28
+CSMuNode            7
+CSChiNode           7
+FunRetMu            25
+FunEntryChi         25
+MemRegions          22
+MaxRegSize          1
+#######################################################
+
+****SVFG Statistics****
+
+************************
+################ (program : uaf40.ll)###############
+-------------------------------------------------------
+TotalTime           0.001
+ConnDirEdgeTime     0
+ConnIndEdgeTime     0
+TLNodeTime          0
+ATNodeTime          0
+OptTime             0
+AvgWeight           1
+TotalNode           352
+FormalIn            25
+FormalOut           25
+FormalParam         13
+FormalRet           4
+ActualIn            7
+ActualOut           7
+ActualParam         34
+ActualRet           3
+Addr                137
+Copy                10
+Gep                 34
+PHI                 4
+TotalEdge           179
+DirectEdge          113
+IndirectEdge        66
+IndirectEdgeLabels  66
+IndCallEdge         3
+IndRetEdge          3
+DirectCallEdge      4
+DirectRetEdge       3
+AvgInDegree         0
+AvgOutDegree        0
+MaxInDegree         3
+MaxOutDegree        6
+AvgIndInDeg         1
+AvgIndOutDeg        1
+MaxIndInDeg         2
+MaxIndOutDeg        4
+MSSAPhi             0
+Load                28
+Store               20
+#######################################################
+
+****SVFG Statistics****
+
+************************
+################ (program : uaf40.ll)###############
+-------------------------------------------------------
+TotalTime           0.001
+ConnDirEdgeTime     0
+ConnIndEdgeTime     0
+TLNodeTime          0
+ATNodeTime          0
+OptTime             0
+AvgWeight           1
+TotalNode           352
+FormalIn            25
+FormalOut           25
+FormalParam         13
+FormalRet           4
+ActualIn            7
+ActualOut           7
+ActualParam         34
+ActualRet           3
+Addr                137
+Copy                10
+Gep                 34
+PHI                 4
+TotalEdge           179
+DirectEdge          113
+IndirectEdge        66
+IndirectEdgeLabels  66
+IndCallEdge         3
+IndRetEdge          3
+DirectCallEdge      4
+DirectRetEdge       3
+AvgInDegree         0
+AvgOutDegree        0
+MaxInDegree         3
+MaxOutDegree        6
+AvgIndInDeg         1
+AvgIndOutDeg        1
+MaxIndInDeg         2
+MaxIndOutDeg        4
+MSSAPhi             0
+Load                28
+Store               20
+#######################################################
+FOUND A DEALLOCATION FUNCTION NAMED free WITH ARGUMENTS :
+SETTING SOURCE : 0x55a15e959240
+FOUND A DEALLOCATION FUNCTION NAMED free WITH ARGUMENTS :
+SETTING SOURCE : 0x55a15e957e10
+ICFG Node Popped : 0x55a15e6bee80
+ICFG Node Added : 0x55a15e6befd0
+ICFG Node Popped : 0x55a15e6befd0
+ICFG Node Added : 0x55a15e6bf250
+ICFG Node Popped : 0x55a15e6bf250
+ICFG Node Added : 0x55a15e6bf420
+ICFG Node Popped : 0x55a15e6bf420
+ICFG Node Added : 0x55a15e6f0890
+ICFG Node Added : 0x55a15e6f6ab0
+ICFG Node Added : 0x55a15e6f9270
+ICFG Node Popped : 0x55a15e6f0890
+ICFG Node Added : 0x55a15e6f0bc0
+ICFG Node Popped : 0x55a15e6f6ab0
+ICFG Node Added : 0x55a15e6f6ed0
+ICFG Node Popped : 0x55a15e6f9270
+ICFG Node Added : 0x55a15e6f95a0
+ICFG Node Popped : 0x55a15e6f0bc0
+ICFG Node Added : 0x55a15e6f0d90
+ICFG Node Popped : 0x55a15e6f6ed0
+ICFG Node Added : 0x55a15e6f70a0
+ICFG Node Popped : 0x55a15e6f95a0
+ICFG Node Added : 0x55a15e6f2460
+ICFG Node Popped : 0x55a15e6f0d90
+ICFG Node Added : 0x55a15e6f0f60
+ICFG Node Popped : 0x55a15e6f70a0
+ICFG Node Added : 0x55a15e6f1db0
+ICFG Node Popped : 0x55a15e6f2460
+ICFG Node Added : 0x55a15e6f21e0
+ICFG Node Popped : 0x55a15e6f0f60
+ICFG Node Added : 0x55a15e6f1130
+ICFG Node Popped : 0x55a15e6f1db0
+ICFG Node Added : 0x55a15e6f1b30
+ICFG Node Popped : 0x55a15e6f21e0
+ICFG Node Added : 0x55a15e6f2780
+ICFG Node Popped : 0x55a15e6f1130
+ICFG Node Added : 0x55a15e6c07c0
+ICFG Node Popped : 0x55a15e6f1b30
+ICFG Node Added : 0x55a15e6f2090
+ICFG Node Popped : 0x55a15e6f2780
+ICFG Node Added : 0x55a15e6f2950
+ICFG Node Popped : 0x55a15e6c07c0
+ICFG Node Added : 0x55a15e6c0900
+ICFG Node Popped : 0x55a15e6f2090
+ICFG Node Added : 0x55a15e6f2320
+ICFG Node Popped : 0x55a15e6f2950
+ICFG Node Added : 0x55a15e6f4200
+ICFG Node Popped : 0x55a15e6c0900
+ICFG Node Added : 0x55a15e6c0ad0
+ICFG Node Popped : 0x55a15e6f2320
+ICFG Node Added : 0x55a15e6f7310
+ICFG Node Popped : 0x55a15e6f4200
+ICFG Node Added : 0x55a15e6f4570
+ICFG Node Popped : 0x55a15e6c0ad0
+ICFG Node Added : 0x55a15e6c0ca0
+ICFG Node Popped : 0x55a15e6f7310
+ICFG Node Added : 0x55a15e6f74e0
+ICFG Node Popped : 0x55a15e6f4570
+ICFG Node Added : 0x55a15e6ee910
+ICFG Node Popped : 0x55a15e6c0ca0
+ICFG Node Added : 0x55a15e6c0e70
+ICFG Node Popped : 0x55a15e6f74e0
+ICFG Node Added : 0x55a15e6f76b0
+ICFG Node Popped : 0x55a15e6ee910
+ICFG Node Added : 0x55a15e6eea50
+ICFG Node Popped : 0x55a15e6c0e70
+ICFG Node Added : 0x55a15e6c1440
+ICFG Node Popped : 0x55a15e6f76b0
+ICFG Node Added : 0x55a15e6f6de0
+ICFG Node Popped : 0x55a15e6eea50
+ICFG Node Added : 0x55a15e6eebe0
+ICFG Node Popped : 0x55a15e6c1440
+ICFG Node Added : 0x55a15e6c1610
+ICFG Node Popped : 0x55a15e6f6de0
+ICFG Node Added : 0x55a15e5bd260
+ICFG Node Popped : 0x55a15e6eebe0
+ICFG Node Added : 0x55a15e6eedb0
+ICFG Node Popped : 0x55a15e6c1610
+ICFG Node Added : 0x55a15e6f1280
+ICFG Node Popped : 0x55a15e5bd260
+ICFG Node Added : 0x55a15e606c90
+ICFG Node Popped : 0x55a15e6eedb0
+ICFG Node Added : 0x55a15e6ca310
+ICFG Node Popped : 0x55a15e6f1280
+ICFG Node Added : 0x55a15e6f15b0
+ICFG Node Popped : 0x55a15e606c90
+ICFG Node Added : 0x55a15e6075d0
+ICFG Node Popped : 0x55a15e6ca310
+ICFG Node Added : 0x55a15e60bd50
+ICFG Node Popped : 0x55a15e6f15b0
+ICFG Node Added : 0x55a15e6f1780
+ICFG Node Popped : 0x55a15e6075d0
+ICFG Node Added : 0x55a15e607f10
+ICFG Node Popped : 0x55a15e60bd50
+ICFG Node Added : 0x55a15e609330
+ICFG Node Popped : 0x55a15e6f1780
+ICFG Node Added : 0x55a15e6f46c0
+ICFG Node Popped : 0x55a15e607f10
+ICFG Node Added : 0x55a15e608850
+ICFG Node Popped : 0x55a15e609330
+ICFG Node Added : 0x55a15e6bbcc0
+ICFG Node Popped : 0x55a15e6f46c0
+ICFG Node Added : 0x55a15e6f49f0
+ICFG Node Popped : 0x55a15e608850
+ICFG Node Added : 0x55a15e6a8ef0
+ICFG Node Popped : 0x55a15e6bbcc0
+ICFG Node Added : 0x55a15e6bbe90
+ICFG Node Popped : 0x55a15e6f49f0
+ICFG Node Added : 0x55a15e6f4b80
+ICFG Node Popped : 0x55a15e6a8ef0
+ICFG Node Added : 0x55a15e5bbd90
+ICFG Node Popped : 0x55a15e6bbe90
+ICFG Node Added : 0x55a15e6bc060
+ICFG Node Popped : 0x55a15e6f4b80
+ICFG Node Popped : 0x55a15e5bbd90
+ICFG Node Added : 0x55a15e609190
+ICFG Node Popped : 0x55a15e6bc060
+ICFG Node Added : 0x55a15e6a36d0
+ICFG Node Popped : 0x55a15e609190
+ICFG Node Added : 0x55a15e609260
+ICFG Node Popped : 0x55a15e6a36d0
+ICFG Node Added : 0x55a15e5b2a60
+ICFG Node Popped : 0x55a15e609260
+ICFG Node Added : 0x55a15e6f53e0
+ICFG Node Added : 0x55a15e6f78e0
+ICFG Node Popped : 0x55a15e5b2a60
+ICFG Node Added : 0x55a15e6bc430
+ICFG Node Popped : 0x55a15e6f53e0
+ICFG Node Added : 0x55a15e6f5710
+ICFG Node Popped : 0x55a15e6f78e0
+ICFG Node Added : 0x55a15e6f7c10
+ICFG Node Popped : 0x55a15e6bc430
+ICFG Node Added : 0x55a15e6bc600
+ICFG Node Popped : 0x55a15e6f5710
+ICFG Node Added : 0x55a15e6f58e0
+ICFG Node Popped : 0x55a15e6f7c10
+ICFG Node Added : 0x55a15e6f7de0
+ICFG Node Popped : 0x55a15e6bc600
+ICFG Node Added : 0x55a15e6ef1c0
+ICFG Node Popped : 0x55a15e6f58e0
+ICFG Node Added : 0x55a15e6f5ab0
+ICFG Node Popped : 0x55a15e6f7de0
+ICFG Node Added : 0x55a15e6f7fb0
+ICFG Node Popped : 0x55a15e6ef1c0
+ICFG Node Added : 0x55a15e6ef6d0
+ICFG Node Popped : 0x55a15e6f5ab0
+ICFG Node Added : 0x55a15e6f5c80
+ICFG Node Popped : 0x55a15e6f7fb0
+ICFG Node Added : 0x55a15e6f8180
+ICFG Node Popped : 0x55a15e6ef6d0
+ICFG Node Added : 0x55a15e6ef8a0
+ICFG Node Popped : 0x55a15e6f5c80
+ICFG Node Added : 0x55a15e6f5e50
+ICFG Node Popped : 0x55a15e6f8180
+ICFG Node Added : 0x55a15e6f8350
+ICFG Node Popped : 0x55a15e6ef8a0
+ICFG Node Added : 0x55a15e6efa70
+ICFG Node Popped : 0x55a15e6f5e50
+ICFG Node Added : 0x55a15e6f6020
+ICFG Node Added : 0x55a15e6f63f0
+ICFG Node Popped : 0x55a15e6f8350
+ICFG Node Added : 0x55a15e6f8520
+ICFG Node Added : 0x55a15e6f88f0
+ICFG Node Popped : 0x55a15e6efa70
+ICFG Node Added : 0x55a15e6efc40
+ICFG Node Popped : 0x55a15e6f6020
+ICFG Node Added : 0x55a15e6f6170
+ICFG Node Popped : 0x55a15e6f63f0
+ICFG Node Added : 0x55a15e6f6790
+ICFG Node Popped : 0x55a15e6f8520
+ICFG Node Added : 0x55a15e6f8670
+ICFG Node Popped : 0x55a15e6f88f0
+ICFG Node Added : 0x55a15e6f8c90
+ICFG Node Popped : 0x55a15e6efc40
+ICFG Node Added : 0x55a15e6efe10
+ICFG Node Popped : 0x55a15e6f6170
+ICFG Node Added : 0x55a15e6f65c0
+ICFG Node Popped : 0x55a15e6f6790
+ICFG Node Added : 0x55a15e6f6960
+ICFG Node Popped : 0x55a15e6f8670
+ICFG Node Added : 0x55a15e6f8ac0
+ICFG Node Popped : 0x55a15e6f8c90
+ICFG Node Added : 0x55a15e6f8e60
+ICFG Node Popped : 0x55a15e6efe10
+ICFG Node Added : 0x55a15e6cc090
+ICFG Node Added : 0x55a15e6f02c0
+ICFG Node Popped : 0x55a15e6f65c0
+ICFG Node Popped : 0x55a15e6f6960
+ICFG Node Added : 0x55a15e6be600
+ICFG Node Popped : 0x55a15e6f8ac0
+ICFG Node Popped : 0x55a15e6f8e60
+ICFG Node Added : 0x55a15e6f9120
+ICFG Node Popped : 0x55a15e6cc090
+ICFG Node Added : 0x55a15e6f0040
+ICFG Node Popped : 0x55a15e6f02c0
+ICFG Node Added : 0x55a15e6f0660
+ICFG Node Popped : 0x55a15e6be600
+ICFG Node Added : 0x55a15e6be740
+ICFG Node Popped : 0x55a15e6f9120
+ICFG Node Popped : 0x55a15e6f0040
+ICFG Node Added : 0x55a15e6f0490
+ICFG Node Popped : 0x55a15e6f0660
+ICFG Node Added : 0x55a15e6cbe60
+ICFG Node Popped : 0x55a15e6be740
+ICFG Node Added : 0x55a15e6be910
+ICFG Node Popped : 0x55a15e6f0490
+ICFG Node Popped : 0x55a15e6cbe60
+ICFG Node Popped : 0x55a15e6be910
+ICFG Node Added : 0x55a15e6beae0
+ICFG Node Popped : 0x55a15e6beae0
+ICFG Node Added : 0x55a15e6becb0
+ICFG Node Popped : 0x55a15e6becb0
+SETTING SINK : 0x55a15e955530
+SETTING SINK : 0x55a15e957370
+SETTING SINK : 0x55a15e957790
+SETTING SINK : 0x55a15e957a50
+SETTING SINK : 0x55a15e957210
+SETTING SINK : 0x55a15e9574d0
+SETTING SINK : 0x55a15e957630
+SETTING SINK : 0x55a15e9578f0
+SETTING SINK : 0x55a15e9557f0
+ICFG Node Popped : 0x55a15e6bfe70
+ICFG Node Added : 0x55a15e6bffc0
+ICFG Node Popped : 0x55a15e6bffc0
+ICFG Node Added : 0x55a15e6c0240
+ICFG Node Popped : 0x55a15e6c0240
+ICFG Node Added : 0x55a15e6c05f0
+ICFG Node Popped : 0x55a15e6c05f0

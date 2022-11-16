@@ -69,7 +69,7 @@ void DpdChecker::initSrcs()
 
                     while (! worklist.empty()) {
                         const SVFGNode* svfgNode = worklist.pop();
-                        outs() << "Node Popped : " << svfgNode << "\n";
+                        // outs() << "Node Popped : " << svfgNode << "\n";
 
                         if (svfgNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Store)
                                 {
@@ -85,7 +85,7 @@ void DpdChecker::initSrcs()
                             // outs() << ;
                             const SVFGNode* dstNode = edge->getSrcNode();
                             if (visited.test(dstNode->getId()) == 0) {
-                                outs() << "Node Added : " << dstNode << "\n";
+                                // outs() << "Node Added : " << dstNode << "\n";
                                 visited.set(dstNode->getId());
 
                                 // if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Store)
@@ -148,8 +148,10 @@ void DpdChecker::initSnks()
                   ICFGNodeBS ICFGvisited;
                   
 
-                  ICFGworklist.push(svfg->getDefSVFGNode(pagNode)->getICFGNode());
-                  ICFGvisited.set(svfg->getDefSVFGNode(pagNode)->getICFGNode()->getId());
+                //   ICFGworklist.push(svfg->getDefSVFGNode(pagNode)->getICFGNode());
+                //   ICFGvisited.set(svfg->getDefSVFGNode(pagNode)->getICFGNode()->getId());
+                ICFGworklist.push(it->first);
+                ICFGvisited.set(it->first->getId());
 
                   while (! ICFGworklist.empty()) {
                       const ICFGNode* icfgNode = ICFGworklist.pop();
@@ -183,7 +185,7 @@ void DpdChecker::initSnks()
 
                   while (! worklist.empty()) {
                       const SVFGNode* svfgNode = worklist.pop();
-                      outs() << "Node Popped : " << svfgNode << "\n";
+                    //   outs() << "Node Popped : " << svfgNode << "\n";
 
                       for(auto EdgeIt = svfgNode->InEdgeBegin(), EndEdgeIt = svfgNode->InEdgeEnd() ; EdgeIt != EndEdgeIt ; EdgeIt++){
 
@@ -192,7 +194,7 @@ void DpdChecker::initSnks()
                         // outs() << ;
                         const SVFGNode* dstNode = edge->getSrcNode();
                         if (visited.test(dstNode->getId()) == 0) {
-                            outs() << "Node Added : " << dstNode << "\n";
+                            // outs() << "Node Added : " << dstNode << "\n";
                             visited.set(dstNode->getId());
 
                             if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Load && ICFGvisited.test(dstNode->getICFGNode()->getId()) != 0)
@@ -214,7 +216,7 @@ void DpdChecker::initSnks()
                         const VFGEdge* edge = *EdgeIt;
                         const SVFGNode* dstNode = edge->getDstNode();
                         if (visited.test(dstNode->getId()) == 0) {
-                            outs() << "Node Added : " << dstNode << "\n";
+                            // outs() << "Node Added : " << dstNode << "\n";
                             visited.set(dstNode->getId());
 
                             if (dstNode->getNodeKind() == SVF::VFGNode::VFGNodeK::Load && ICFGvisited.test(dstNode->getICFGNode()->getId()) != 0)
