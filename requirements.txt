@@ -1,4 +1,0 @@
-click
-tabulate
-colorama
-termcolor
