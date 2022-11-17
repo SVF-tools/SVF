@@ -71,7 +71,7 @@ public:
     inline bool isMemset(const Instruction* I)
     {
         const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
-        const Function* F =SVFUtil::getCallee(svfInst)->getLLVMFun();
+        const SVFFunction* F =SVFUtil::getCallee(svfInst);
         return F && F->getName().find("llvm.memset") != std::string::npos;
     }
 

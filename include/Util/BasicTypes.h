@@ -198,7 +198,6 @@ private:
     const Type* type;
     GNodeK kind;	///< Type of this SVFValue
     bool ptrInUncalledFun;
-    bool isPtr;
     bool has_name;
     bool constantOrMetaData;
 protected:
@@ -206,8 +205,7 @@ protected:
     std::string sourceLoc;
     /// Constructor
     SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k),
-        ptrInUncalledFun(false), isPtr(val->getType()->isPointerTy()),
-        has_name(false), constantOrMetaData(SVFConstData==k), name(val->getName()), sourceLoc("No source code Info")
+        ptrInUncalledFun(false), has_name(false), constantOrMetaData(SVFConstData==k), name(val->getName()), sourceLoc("No source code Info")
     {
     }
 
@@ -325,9 +323,11 @@ public:
 private:
     bool isDecl;
     bool intricsic;
+    bool addrTaken;
+    const FunctionType* funType;
+    SVFLoopAndDomInfo* loopAndDom;
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
     const SVFBasicBlock* exitBB;
-    SVFLoopAndDomInfo* loopAndDom;
     std::vector<const SVFBasicBlock*> allBBs;
     std::vector<const SVFArgument*> allArgs;
     bool isUncalled;
@@ -335,8 +335,7 @@ private:
     bool varArg;
 
 public:
-
-    SVFFunction(const Function* f, bool declare, bool intricsic, SVFLoopAndDomInfo* ld);
+    SVFFunction(const Function* f, bool declare, bool intricsic, bool addrTaken, const FunctionType* ft, SVFLoopAndDomInfo* ld);
     SVFFunction(const Function* f) = delete;
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
@@ -344,12 +343,6 @@ public:
     static inline bool classof(const SVFValue *node)
     {
         return node->getKind() == SVFFunc;
-    }
-
-    inline const Function* getLLVMFun() const
-    {
-        assert(getLLVMValue() && "no LLVM Function found!");
-        return SVFUtil::dyn_cast<Function>(getLLVMValue());
     }
 
     inline SVFLoopAndDomInfo* getLoopAndDomInfo()
@@ -364,6 +357,23 @@ public:
     inline bool isIntrinsic() const
     {
         return intricsic;
+    }
+
+    inline bool hasAddressTaken() const
+    {
+        return addrTaken;
+    }
+
+    /// Returns the FunctionType
+    inline const FunctionType* getFunctionType() const 
+    {
+        return funType;
+    }
+
+    /// Returns the FunctionType
+    inline const Type* getReturnType() const 
+    {
+        return funType->getReturnType();
     }
 
     inline void setDefFunForMultipleModule(const SVFFunction* deffun)

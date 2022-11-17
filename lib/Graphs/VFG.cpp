@@ -568,7 +568,7 @@ void VFG::addVFGNodes()
             addFormalParmVFGNode(param,func,callPEs);
         }
 
-        if (func->getLLVMFun()->getFunctionType()->isVarArg())
+        if (func->isVarArg())
         {
             const PAGNode* varParam = pag->getGNode(pag->getVarargNode(func));
             if (isInterestedPAGNode(varParam) == false || hasBlackHoleConstObjAddrAsDef(varParam))
@@ -982,7 +982,7 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
                 connectAParamAndFParam(cs_arg, fun_arg, callBlockNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
-        if (callee->getLLVMFun()->isVarArg())
+        if (callee->isVarArg())
         {
             NodeID varFunArg = pag->getVarargNode(callee);
             const PAGNode* varFunArgNode = pag->getGNode(varFunArg);

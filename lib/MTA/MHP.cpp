@@ -104,7 +104,7 @@ void MHP::analyzeInterleaving()
         const CxtThread& ct = it->second->getCxtThread();
         NodeID rootTid = it->first;
         const SVFFunction* routine = tct->getStartRoutineOfCxtThread(ct);
-        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(routine->getLLVMFun()->getEntryBlock().front()));
+        const SVFInstruction* svfInst = routine->getEntryBlock()->front();
         CxtThreadStmt rootcts(rootTid,ct.getContext(),svfInst);
 
         addInterleavingThread(rootcts,rootTid);
@@ -176,8 +176,7 @@ void MHP::updateNonCandidateFunInterleaving()
     {
         if (!tct->isCandidateFun(fun) && !isExtCall(fun))
         {
-            const Instruction* i = &(fun->getLLVMFun()->getEntryBlock().front());
-            const SVFInstruction* entryinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
+            const SVFInstruction* entryinst = fun->getEntryBlock()->front();
             if (!hasThreadStmtSet(entryinst))
                 continue;
 
@@ -211,7 +210,7 @@ void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
 {
     const SVFInstruction* curInst = cts.getStmt();
     const SVFFunction* curfun = curInst->getParent()->getParent();
-    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(curfun->getLLVMFun()->getEntryBlock().front()));
+    const SVFInstruction* svfInst = curfun->getEntryBlock()->front();
     assert((curInst == svfInst) && "curInst is not the entry of non candidate function.");
     const CallStrCxt& curCxt = cts.getContext();
     PTACallGraphNode* node = tcg->getCallGraphNode(curfun);
@@ -220,7 +219,7 @@ void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
         const SVFFunction* callee = (*nit)->getDstNode()->getFunction();
         if (!isExtCall(callee))
         {
-            const SVFInstruction* calleeInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(callee->getLLVMFun()->getEntryBlock().front()));
+            const SVFInstruction* calleeInst = callee->getEntryBlock()->front();
             CxtThreadStmt newCts(cts.getTid(), curCxt, calleeInst);
             addInterleavingThread(newCts, cts);
         }
@@ -247,7 +246,7 @@ void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
             const SVFFunction* svfroutine = (*cgIt)->getDstNode()->getFunction();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt,call,svfroutine);
-            const SVFInstruction* stmt = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(svfroutine->getLLVMFun()->getEntryBlock().front()));
+            const SVFInstruction* stmt = svfroutine->getEntryBlock()->front();
             CxtThread ct(newCxt,call);
             CxtThreadStmt newcts(tct->getTCTNode(ct)->getId(),ct.getContext(),stmt);
             addInterleavingThread(newcts,cts);
@@ -332,7 +331,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
                 continue;
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt,call,svfcallee);
-            const SVFInstruction* svfEntryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(svfcallee->getLLVMFun()->getEntryBlock().front()));
+            const SVFInstruction* svfEntryInst = svfcallee->getEntryBlock()->front();
             CxtThreadStmt newCts(cts.getTid(),newCxt,svfEntryInst);
             addInterleavingThread(newCts,cts);
         }
@@ -449,7 +448,7 @@ void MHP::updateSiblingThreads(NodeID curTid)
 
             const CxtThread& ct = tct->getTCTNode(*it)->getCxtThread();
             const SVFFunction* routine = tct->getStartRoutineOfCxtThread(ct);
-            const SVFInstruction* stmt = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(routine->getLLVMFun()->getEntryBlock().front()));
+            const SVFInstruction* stmt = routine->getEntryBlock()->front();
             CxtThreadStmt cts(*it,ct.getContext(),stmt);
             addInterleavingThread(cts,curTid);
         }
@@ -925,12 +924,11 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
                 ecgIt = getTCG()->getCallEdgeEnd(cbn); cgIt != ecgIt; ++cgIt)
         {
             const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getFunction();
-            const Function* callee = svfcallee->getLLVMFun();
             if (isExtCall(svfcallee))
                 continue;
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt,call,svfcallee);
-            const SVFInstruction* svfEntryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(callee->getEntryBlock().front()));
+            const SVFInstruction* svfEntryInst = svfcallee->getEntryBlock()->front();
             CxtStmt newCts(newCxt,svfEntryInst);
             markCxtStmtFlag(newCts,cts);
         }

@@ -183,9 +183,11 @@ void MTAResultValidator::dumpInterlev(NodeBS& lev)
 
 bool MTAResultValidator::collectCallsiteTargets()
 {
-    for (SVFModule::const_iterator fi = getModule()->begin(), efi = getModule()->end(); fi != efi; ++fi)
+    for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-        for (Function::const_iterator bi = ((*fi)->getLLVMFun())->begin(), ebi = ((*fi)->getLLVMFun())->end(); bi != ebi; ++bi)
+        for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
+        {
+        for (Function::const_iterator bi = (*F).begin(), ebi = (*F).end(); bi != ebi; ++bi)
         {
             const BasicBlock* bb = &*bi;
             if (!bb->getName().str().compare(0, 2, "cs"))
@@ -204,6 +206,7 @@ bool MTAResultValidator::collectCallsiteTargets()
                 const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
                 csnumToInstMap[csnum] = svfInst;
             }
+        }
         }
     }
     if (csnumToInstMap.empty())

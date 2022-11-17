@@ -113,41 +113,47 @@ void MTAStat::performTCTStat(TCT* tct)
 void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
 {
 
+    SVFIR* pag = SVFIR::getPAG();
     if(Options::AllPairMHP)
     {
-        InstSet instSet1;
-        InstSet instSet2;
+        Set<const SVFInstruction*> instSet1;
+        Set<const SVFInstruction*> instSet2;
         SVFModule* mod = mhp->getTCT()->getSVFModule();
         for (const SVFFunction* fun : mod->getFunctionSet())
         {
-            const Function* llvmfun = fun->getLLVMFun();
             if(SVFUtil::isExtCall(fun))
                 continue;
             if(!mhp->isConnectedfromMain(fun))
                 continue;
-            for (const_inst_iterator II = inst_begin(llvmfun), E = inst_end(llvmfun); II != E; ++II)
+        for (SVFFunction::const_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
+        {
+            const SVFBasicBlock* bb = *bit;
+            for (SVFBasicBlock::const_iterator ii = bb->begin(), eii = bb->end(); ii != eii; ++ii)
             {
-                const Instruction* inst = &*II;
-                if(SVFUtil::isa<LoadInst>(inst))
+                const SVFInstruction* inst = *ii;
+                for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(inst)))
+                {
+                if(SVFUtil::isa<LoadStmt>(stmt))
                 {
                     instSet1.insert(inst);
                 }
-                else if(SVFUtil::isa<StoreInst>(inst))
+                else if(SVFUtil::isa<StoreStmt>(stmt))
                 {
                     instSet1.insert(inst);
                     instSet2.insert(inst);
                 }
+                }
+            
             }
+        }
         }
 
 
-        for(InstSet::const_iterator it1 = instSet1.begin(), eit1 = instSet1.end(); it1!=eit1; ++it1)
+        for(Set<const SVFInstruction*>::const_iterator it1 = instSet1.begin(), eit1 = instSet1.end(); it1!=eit1; ++it1)
         {
-            for(InstSet::const_iterator it2 = instSet2.begin(), eit2 = instSet2.end(); it2!=eit2; ++it2)
+            for(Set<const SVFInstruction*>::const_iterator it2 = instSet2.begin(), eit2 = instSet2.end(); it2!=eit2; ++it2)
             {
-                const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it1);
-                const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*it2);
-                mhp->mayHappenInParallel(inst1,inst2);
+                mhp->mayHappenInParallel(*it1,*it2);
             }
         }
     }

@@ -452,9 +452,8 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                    SVFUtil::isa<GlobalValue>(bitcastValue));
                             if (const Function* f = SVFUtil::dyn_cast<Function>(bitcastValue))
                             {
-                                const SVFFunction* func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(f);
-                                addFuncToFuncVector(virtualFunctions, func);
-                                if (func->getName().compare(pureVirtualFunName) == 0)
+                                addFuncToFuncVector(virtualFunctions, f);
+                                if (f->getName().str().compare(pureVirtualFunName) == 0)
                                 {
                                     pure_abstract &= true;
                                 }
@@ -462,7 +461,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                 {
                                     pure_abstract &= false;
                                 }
-                                struct DemangledName dname = demangle(func->getName());
+                                struct DemangledName dname = demangle(f->getName().str());
                                 if (dname.className.size() > 0 &&
                                         vtblClassName.compare(dname.className) != 0)
                                 {
@@ -478,8 +477,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                     if (const Function* aliasFunc =
                                                 SVFUtil::dyn_cast<Function>(aliasValue))
                                     {
-                                        const SVFFunction* func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(aliasFunc);
-                                        addFuncToFuncVector(virtualFunctions, func);
+                                        addFuncToFuncVector(virtualFunctions, aliasFunc);
                                     }
                                     else if (const ConstantExpr *aliasconst =
                                                  SVFUtil::dyn_cast<ConstantExpr>(aliasValue))
@@ -491,8 +489,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                             SVFUtil::dyn_cast<Function>(aliasconst->getOperand(0));
                                         assert(aliasbitcastfunc &&
                                                "aliased bitcast in vtable not a function");
-                                        const SVFFunction* func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(aliasbitcastfunc);
-                                        addFuncToFuncVector(virtualFunctions, func);
+                                        addFuncToFuncVector(virtualFunctions, aliasbitcastfunc);
                                     }
                                     else
                                     {
@@ -696,9 +693,8 @@ const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
     }
 }
 
-void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f)
+void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const Function *lf)
 {
-    const auto *lf = f->getLLVMFun();
     if (isCPPThunkFunction(lf))
     {
         if (const auto *tf = getThunkTarget(lf))
@@ -706,6 +702,6 @@ void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f
     }
     else
     {
-        v.push_back(f);
+        v.push_back(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(lf));
     }
 }

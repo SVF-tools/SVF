@@ -66,7 +66,7 @@ public:
     void buildVirtualFunctionToIDMap();
     void buildCSToCHAVtblsAndVfnsMap();
     const CHNodeSetTy& getCSClasses(const CallBase* cs);
-    void addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f);
+    void addFuncToFuncVector(CHNode::FuncVector &v, const Function *f);
 };
 
 } // End namespace SVF

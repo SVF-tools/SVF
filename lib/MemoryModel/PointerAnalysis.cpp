@@ -529,21 +529,18 @@ void PointerAnalysis::resolveCPPIndCalls(const CallICFGNode* cs, const PointsTo&
  */
 void PointerAnalysis::validateSuccessTests(std::string fun)
 {
-
     // check for must alias cases, whether our alias analysis produce the correct results
     if (const SVFFunction* checkFun = svfMod->getSVFFunction(fun))
     {
-        if(!checkFun->getLLVMFun()->use_empty())
+        if(!checkFun->isUncalledFunction())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
-        for (Value::const_user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
-                    checkFun->getLLVMFun()->user_end(); i != e; ++i)
+        for(const CallICFGNode* callNode : pag->getCallSiteSet())
         {
-            SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(*i);
-            if (SVFUtil::isCallSite(svfVal))
+            const SVFInstruction* svfInst = callNode->getCallSite();
+            if (SVFUtil::getCallee(svfInst) == checkFun)
             {
 
-                const SVFInstruction* svfInst = SVFUtil::cast<SVFInstruction>(svfVal);
                 CallSite cs(svfInst);
                 assert(cs.getNumArgOperands() == 2
                        && "arguments should be two pointers!!");
@@ -582,17 +579,15 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 
                 if (checkSuccessful)
                     outs() << sucMsg("\t SUCCESS :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                           << getSourceLoc(svfVal) << ")\n";
+                           << getSourceLoc(svfInst) << ")\n";
                 else
                 {
                     SVFUtil::errs() << errMsg("\t FAILURE :") << fun
                                     << " check <id:" << id1 << ", id:" << id2
-                                    << "> at (" << getSourceLoc(svfVal) << ")\n";
+                                    << "> at (" << getSourceLoc(svfInst) << ")\n";
                     assert(false && "test case failed!");
                 }
             }
-            else
-                assert(false && "alias check functions not only used at callsite??");
         }
     }
 }
@@ -605,16 +600,15 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 
     if (const SVFFunction* checkFun = svfMod->getSVFFunction(fun))
     {
-        if(!checkFun->getLLVMFun()->use_empty())
+        if(!checkFun->isUncalledFunction())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
-        for (Value::const_user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
-                    checkFun->getLLVMFun()->user_end(); i != e; ++i)
+        for(const CallICFGNode* callNode : pag->getCallSiteSet())
         {
-            SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(*i);
-            if (isCallSite(svfVal))
+            const SVFInstruction* svfInst = callNode->getCallSite();
+            if (SVFUtil::getCallee(svfInst) == checkFun)
             {
-                CallSite call = getSVFCallSite(svfVal);
+                CallSite call = getSVFCallSite(svfInst);
                 assert(call.arg_size() == 2
                        && "arguments should be two pointers!!");
                 const SVFValue* V1 = call.getArgOperand(0);
@@ -650,8 +644,6 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
                     assert(false && "test case failed!");
                 }
             }
-            else
-                assert(false && "alias check functions not only used at callsite??");
         }
     }
 }

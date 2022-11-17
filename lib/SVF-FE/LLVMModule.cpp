@@ -125,7 +125,7 @@ void LLVMModuleSet::createSVFDataStructure()
         {
             const Function* func = &*it;
             SVFLoopAndDomInfo* ld = new SVFLoopAndDomInfo();
-            SVFFunction* svfFunc = new SVFFunction(func, func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), ld);
+            SVFFunction* svfFunc = new SVFFunction(func, func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), func->hasAddressTaken(), func->getFunctionType(), ld);
             svfModule->addFunctionSet(svfFunc);
             addFunctionMap(func,svfFunc);
 

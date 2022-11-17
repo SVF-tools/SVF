@@ -181,15 +181,14 @@ void MRGenerator::collectModRefForLoadStore()
         if (Options::IgnoreDeadFun && fun.isUncalledFunction())
             continue;
 
-        for (Function::const_iterator iter = fun.getLLVMFun()->begin(), eiter = fun.getLLVMFun()->end();
+        for (SVFFunction::const_iterator iter = fun.begin(), eiter = fun.end();
                 iter != eiter; ++iter)
         {
-            const BasicBlock& bb = *iter;
-            for (BasicBlock::const_iterator bit = bb.begin(), ebit = bb.end();
+            const SVFBasicBlock* bb = *iter;
+            for (SVFBasicBlock::const_iterator bit = bb->begin(), ebit = bb->end();
                     bit != ebit; ++bit)
             {
-                const Instruction& i = *bit;
-                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&i);
+                const SVFInstruction* svfInst = *bit;
                 SVFStmtList& pagEdgeList = getPAGEdgesFromInst(svfInst);
                 for (SVFStmtList::iterator bit = pagEdgeList.begin(), ebit =
                             pagEdgeList.end(); bit != ebit; ++bit)

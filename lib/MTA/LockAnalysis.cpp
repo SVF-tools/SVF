@@ -243,8 +243,7 @@ bool LockAnalysis::intraBackwardTraverse(const InstSet& unlockSet, InstSet& back
     for(InstSet::const_iterator it = unlockSet.begin(), eit = unlockSet.end(); it!=eit; ++it)
     {
         const SVFInstruction* unlockSite = *it;
-        const Function* fun = unlockSite->getFunction()->getLLVMFun();
-        const SVFInstruction* entryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(fun->getEntryBlock().back()));
+        const SVFInstruction* entryInst = unlockSite->getFunction()->getEntryBlock()->back();
         worklist.push_back(*it);
 
         while (!worklist.empty())
@@ -359,7 +358,7 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
         if (!isLockCandidateFun(*it))
             continue;
         CallStrCxt cxt;
-        const SVFInstruction* frontInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&((*it)->getLLVMFun()->front().front()));
+        const SVFInstruction* frontInst = (*it)->getEntryBlock()->front();
         CxtStmt cxtstmt(cxt, frontInst);
         pushToCTSWorkList(cxtstmt);
     }
@@ -440,7 +439,7 @@ void LockAnalysis::handleFork(const CxtStmt& cts)
             const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getFunction();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt,call,svfcallee);
-            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(svfcallee->getLLVMFun()->getEntryBlock().front()));
+            const SVFInstruction* svfInst = svfcallee->getEntryBlock()->front();
             CxtStmt newCts(newCxt, svfInst);
             markCxtStmtFlag(newCts, cts);
         }
@@ -465,7 +464,7 @@ void LockAnalysis::handleCall(const CxtStmt& cts)
                 continue;
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt, call, svfcallee);
-            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&(svfcallee->getLLVMFun()->getEntryBlock().front()));
+            const SVFInstruction* svfInst = svfcallee->getEntryBlock()->front();
             CxtStmt newCts(newCxt, svfInst);
             markCxtStmtFlag(newCts, cts);
         }

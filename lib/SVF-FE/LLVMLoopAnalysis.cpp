@@ -48,11 +48,14 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> 
 {
     llvm::DominatorTree DT = llvm::DominatorTree();
     std::vector<const Loop *> loop_stack;
-    for (const auto &svfFunc: *mod)
+    for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
+    for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
+    {
+        const Function* func = &*F;
+        const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(func);
         // do not analyze external call
-        if (SVFUtil::isExtCall(svfFunc)) continue;
-        const Function* func = svfFunc->getLLVMFun();
+        if (SVFUtil::isExtCall(svffun)) continue;
         DT.recalculate(const_cast<Function&>(*func));
         auto loopInfo = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
         loopInfo->releaseMemory();
@@ -72,6 +75,7 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> 
                 loop_stack.push_back(subloop);
             }
         }
+    }
     }
 }
 

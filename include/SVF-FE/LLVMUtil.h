@@ -91,6 +91,21 @@ inline const Function* getLLVMFunction(const Value* val)
     return fun;
 }
 
+/// Get program entry function from module.
+inline const Function* getProgFunction(const std::string& funName)
+{
+    for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
+    {
+        for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
+        {
+            const Function *fun = &*F;
+            if (fun->getName().str()==funName)
+                return fun;
+        }
+    }
+    return nullptr;
+}
+
 /// Check whether this value is a black hole
 inline bool isBlackholeSym(const Value* val)
 {
