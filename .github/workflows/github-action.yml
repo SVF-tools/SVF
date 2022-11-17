@@ -94,9 +94,9 @@ jobs:
           cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf_history/perf-$(date +'%Y-%m-%dT%H:%M:%S').txt
           cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-latest.txt
           cd $GITHUB_WORKSPACE/Test-Suite/diff_tests
-          python3 -m pip install --upgrade pip setuptools wheel
-          pip3 install -r ./requirements.txt
-          python3 perf_compare.py -d ./perf_history/ --tablefmt grid --exit-on-error --only-show-changed --threshold-percentage 10
+          time python3 -m pip install --upgrade pip setuptools wheel
+          time pip3 install -r ./requirements.txt
+          time python3 perf_compare.py -d ./perf_history/ --tablefmt grid --exit-on-error --only-show-changed --threshold-percentage 10
 
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
