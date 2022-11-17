@@ -37,6 +37,7 @@
 #include "MemoryModel/PAGBuilderFromFile.h"
 #include "SVF-FE/LLVMLoopAnalysis.h"
 #include "Util/Options.h"
+#include "SVF-FE/CHGBuilder.h"
 
 using namespace std;
 using namespace SVF;
@@ -58,9 +59,14 @@ SVFIR* SVFIRBuilder::build()
 
     // Build ICFG
     ICFG* icfg = new ICFG();
-    ICFGBuilder builder(icfg);
-    builder.build(svfModule);
+    ICFGBuilder icfgbuilder(icfg);
+    icfgbuilder.build(svfModule);
     pag->setICFG(icfg);
+
+    CHGraph *chg = new CHGraph(pag->getModule());
+    CHGBuilder chgbuilder(chg);
+    chgbuilder.buildCHG();
+    pag->setCHG(chg);
 
     // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
     if (SVFModule::pagReadFromTXT())
@@ -1594,11 +1600,11 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     {
         const SVFFunction* srcFun = edge->getSrcNode()->getFunction();
         const SVFFunction* dstFun = edge->getDstNode()->getFunction();
-        if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<Function>(edge->getSrcNode()->getValue()->getLLVMValue()))
+        if(srcFun!=nullptr && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<SVFFunction>(edge->getSrcNode()->getValue()))
         {
             assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
         }
-        if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<Function>(edge->getDstNode()->getValue()->getLLVMValue()))
+        if(dstFun!=nullptr && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<SVFFunction>(edge->getDstNode()->getValue()))
         {
             assert(dstFun==curInst->getFunction() && "DstNode of the PAGEdge not in the same function?");
         }

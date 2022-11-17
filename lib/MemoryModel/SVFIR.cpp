@@ -37,7 +37,7 @@ using namespace SVFUtil;
 
 SVFIR* SVFIR::pag = nullptr;
 
-SVFIR::SVFIR(bool buildFromFile) : IRGraph(buildFromFile)
+SVFIR::SVFIR(bool buildFromFile) : IRGraph(buildFromFile), svfModule(nullptr), icfg(nullptr), chgraph(nullptr)
 {
 }
 
@@ -561,6 +561,8 @@ void SVFIR::destroy()
 {
     delete icfg;
     icfg = nullptr;
+    delete chgraph;
+    chgraph = nullptr;
 }
 
 /*!

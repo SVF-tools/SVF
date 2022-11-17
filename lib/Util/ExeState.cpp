@@ -92,9 +92,9 @@ void ExeState::initObjVar(const ObjVar *objVar, Z3Expr &e)
                 e = getContext().int_val(static_cast<u32_t>(consFP->getFPValue()));
             else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue()))
                 e = getContext().int_val(0);
-            else if (SVFUtil::isa<GlobalVariable>(obj->getValue()->getLLVMValue()))
+            else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue()))
                 e = getContext().int_val(getVirtualMemAddress(objVar->getId()));
-            else if (SVFUtil::isa<ConstantAggregate>(obj->getValue()->getLLVMValue()))
+            else if (obj->isConstantArray() || obj->isConstantStruct())
                 assert(false && "implement this part");
             else
             {

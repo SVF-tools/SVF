@@ -54,7 +54,7 @@ SVFVar::SVFVar(const SVFValue* val, NodeID i, PNODEK k) :
     case RetNode:
     {
         assert(val != nullptr && "value is nullptr for RetNode");
-        isPtr = SVFUtil::cast<Function>(val->getLLVMValue())->getReturnType()->isPointerTy();
+        isPtr = SVFUtil::cast<SVFFunction>(val)->getReturnType()->isPointerTy();
         break;
     }
     case VarargNode:

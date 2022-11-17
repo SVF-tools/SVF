@@ -92,7 +92,7 @@ void CHGBuilder::buildCHGNodes(const GlobalValue *globalvalue)
     {
         const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
         assert(vtblStruct && "Initializer of a vtable not a struct?");
-        string className = getClassNameFromVtblObj(globalvalue);
+        string className = getClassNameFromVtblObj(globalvalue->getName().str());
         if (!chg->getNode(className))
             createNode(className);
 
@@ -200,7 +200,7 @@ void CHGBuilder::connectInheritEdgeViaStore(const Function* caller, const StoreI
                     const Value* gepval = bcce->getOperand(0);
                     if (isValVtbl(gepval))
                     {
-                        string vtblClassName = getClassNameFromVtblObj(gepval);
+                        string vtblClassName = getClassNameFromVtblObj(gepval->getName().str());
                         if (vtblClassName.size() > 0 && dname.className.compare(vtblClassName) != 0)
                         {
                             chg->addEdge(dname.className, vtblClassName, CHEdge::INHERITANCE);
@@ -371,7 +371,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                 SVFUtil::dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
             assert(vtblStruct && "Initializer of a vtable not a struct?");
 
-            string vtblClassName = getClassNameFromVtblObj(globalvalue);
+            string vtblClassName = getClassNameFromVtblObj(globalvalue->getName().str());
             CHNode *node = chg->getNode(vtblClassName);
             assert(node && "node not found?");
 

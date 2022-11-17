@@ -34,7 +34,7 @@
 
 namespace SVF
 {
-
+class CommonCHGraph;
 /*!
  * SVF Intermediate representation, representing variables and statements as a Program Assignment Graph (PAG)
  * Variables as nodes and statements as edges.
@@ -90,9 +90,10 @@ private:
     /// Valid pointers for pointer analysis resolution connected by SVFIR edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     OrderedNodeSet candidatePointers;
-    ICFG* icfg; // ICFG
-    CallSiteSet callSiteSet; /// all the callsites of a program
     SVFModule* svfModule; /// SVF Module
+    ICFG* icfg; // ICFG
+    CommonCHGraph* chgraph; // class hierarchy graph 
+    CallSiteSet callSiteSet; /// all the callsites of a program
     /// Constructor
     SVFIR(bool buildFromFile);
 
@@ -128,16 +129,6 @@ public:
     {
         return GepObjVarMap;
     }
-    /// Set/Get ICFG
-    inline void setICFG(ICFG* i)
-    {
-        icfg = i;
-    }
-    inline ICFG* getICFG()
-    {
-        assert(icfg->totalICFGNode>0 && "empty ICFG! Build SVF IR first!");
-        return icfg;
-    }
     /// Return valid pointers
     inline OrderedNodeSet& getAllValidPtrs()
     {
@@ -165,6 +156,26 @@ public:
     {
         assert(svfModule && "empty SVFModule! Build SVF IR first!");
         return svfModule;
+    }
+    /// Set/Get ICFG
+    inline void setICFG(ICFG* i)
+    {
+        icfg = i;
+    }
+    inline ICFG* getICFG()
+    {
+        assert(icfg->totalICFGNode>0 && "empty ICFG! Build SVF IR first!");
+        return icfg;
+    }
+    /// Set/Get CHG
+    inline void setCHG(CommonCHGraph* c)
+    {
+        chgraph = c;
+    }
+    inline CommonCHGraph* getCHG()
+    {
+        assert(chgraph && "empty ICFG! Build SVF IR first!");
+        return chgraph;
     }
     /// Get/set methods to get SVFStmts based on their kinds and ICFGNodes
     //@{

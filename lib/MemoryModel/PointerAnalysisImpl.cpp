@@ -30,8 +30,6 @@
 
 
 #include "MemoryModel/PointerAnalysisImpl.h"
-#include "SVF-FE/CPPUtil.h"
-#include "SVF-FE/DCHG.h"
 #include "Util/Options.h"
 #include "SVF-FE/IRAnnotator.h"
 #include <fstream>
@@ -202,20 +200,6 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         f << "}\n";
     }
 
-
-    // Write GepPAGNodes to file
-    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
-    {
-        PAGNode* pagNode = it->second;
-        if (GepObjVar *gepObjPN = SVFUtil::dyn_cast<GepObjVar>(pagNode))
-        {
-            f << it->first << " ";
-            f << pag->getBaseObjVar(it->first) << " ";
-            f << gepObjPN->getConstantFieldIdx() << "\n";
-        }
-    }
-
-    f << "------\n";
     // Write BaseNodes insensitivity to file
     NodeBS NodeIDs;
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
@@ -227,6 +211,19 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         f << n << " ";
         f << isFieldInsensitive(n) << "\n";
         NodeIDs.set(n);
+    }
+
+    f << "------\n";
+    // Write GepPAGNodes to file
+    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
+    {
+        PAGNode* pagNode = it->second;
+        if (GepObjVar *gepObjPN = SVFUtil::dyn_cast<GepObjVar>(pagNode))
+        {
+            f << it->first << " ";
+            f << pag->getBaseObjVar(it->first) << " ";
+            f << gepObjPN->getConstantFieldIdx() << "\n";
+        }
     }
 
     // Job finish and close file
@@ -314,25 +311,6 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     while (F.good())
     {
         if (line == "------")     break;
-        // Parse a single line in the form of "ID baseNodeID offset"
-        istringstream ss(line);
-        NodeID id;
-        NodeID base;
-        size_t offset;
-        ss >> id >> base >> offset;
-
-        NodeID n = pag->getGepObjVar(base, LocationSet(offset));
-        bool matched = (id == n);
-        (void)matched;
-        assert(matched && "Error adding GepObjNode into SVFIR!");
-
-        getline(F, line);
-    }
-
-    // Read BaseNode insensitivity
-    while (F.good())
-    {
-        getline(F, line);
         // Parse a single line in the form of "baseNodeID insensitive"
         istringstream ss(line);
         NodeID base;
@@ -341,6 +319,24 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
 
         if (insensitive)
             setObjFieldInsensitive(base);
+
+        getline(F, line);
+    }
+
+    // Read BaseNode insensitivity
+    while (F.good())
+    {
+        getline(F, line);
+        // Parse a single line in the form of "ID baseNodeID offset"
+        istringstream ss(line);
+        NodeID id;
+        NodeID base;
+        size_t offset;
+        ss >> id >> base >> offset;
+        NodeID n = pag->getGepObjVar(base, LocationSet(offset));
+        bool matched = (id == n);
+        (void)matched;
+        assert(matched && "Error adding GepObjNode into SVFIR!");
     }
 
     // Update callgraph

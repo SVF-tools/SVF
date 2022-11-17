@@ -433,11 +433,10 @@ string cppUtil::getClassNameFromType(const Type *ty)
     return className;
 }
 
-string cppUtil::getClassNameFromVtblObj(const Value* value)
+string cppUtil::getClassNameFromVtblObj(const std::string& vtblName)
 {
     string className = "";
 
-    string vtblName = value->getName().str();
     s32_t status;
     char *realname = abi::__cxa_demangle(vtblName.c_str(), 0, 0, &status);
     if (realname != nullptr)

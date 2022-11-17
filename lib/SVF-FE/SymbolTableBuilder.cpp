@@ -172,15 +172,16 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                 else if (isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst)))
                 {
 
-                    CallSite cs = SVFUtil::getSVFCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst));
-                    symInfo->callSiteSet.insert(cs);
-                    for (u32_t i = 0; i < cs.arg_size(); i++)
+                    const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
+                    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
+                    symInfo->callSiteSet.insert(SVFUtil::getSVFCallSite(svfcall));
+                    for (u32_t i = 0; i < cs->arg_size(); i++)
                     {
-                        collectSym(cs.getArgOperand(i)->getLLVMValue());
+                        collectSym(cs->getArgOperand(i));
                     }
                     // Calls to inline asm need to be added as well because the callee isn't
                     // referenced anywhere else.
-                    const Value *Callee = cs.getCalledValue()->getLLVMValue();
+                    const Value *Callee = cs->getCalledOperand();
                     collectSym(Callee);
 
                     //TODO handle inlineAsm

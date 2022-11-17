@@ -28,10 +28,6 @@
  */
 
 #include "Util/Options.h"
-#include "SVF-FE/CallGraphBuilder.h"
-#include "SVF-FE/CHGBuilder.h"
-#include "SVF-FE/DCHG.h"
-#include "SVF-FE/CPPUtil.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 
@@ -40,6 +36,7 @@
 #include "Util/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
+#include "SVF-FE/CallGraphBuilder.h"
 
 #include <iomanip>
 #include <iostream>
@@ -100,9 +97,6 @@ void PointerAnalysis::destroy()
 
     delete stat;
     stat = nullptr;
-
-    delete chgraph;
-    chgraph = nullptr;
 }
 
 /*!
@@ -111,15 +105,9 @@ void PointerAnalysis::destroy()
 void PointerAnalysis::initialize()
 {
     assert(pag && "SVFIR has not been built!");
-    if (chgraph == nullptr)
-    {
-        CHGraph *chg = new CHGraph(pag->getModule());
-        CHGBuilder builder(chg);
-        builder.buildCHG();
-        chgraph = chg;
-    }
-
+    
     svfMod = pag->getModule();
+    chgraph = pag->getCHG();
 
     /// initialise pta call graph for every pointer analysis instance
     if(Options::EnableThreadCallGraph)
