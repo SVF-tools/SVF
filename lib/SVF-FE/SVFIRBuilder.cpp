@@ -1153,7 +1153,7 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
     /// If sz is 0, we will add edges for all fields.
     u32_t sz = fields.size();
 
-    if (fields.size() == 1 && (LLVMUtil::isConstantOrMetaData(D) || LLVMUtil::isConstantOrMetaData(S)))
+    if (fields.size() == 1 && (LLVMUtil::isConstDataOrAggData(D) || LLVMUtil::isConstDataOrAggData(S)))
     {
         NodeID dummy = pag->addDummyValNode();
         addLoadEdge(vnD,dummy);
@@ -1631,7 +1631,8 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         assert(curBB && (curBB->getParent()->getEntryBlock() == curBB));
         icfgNode = pag->getICFG()->getFunEntryICFGNode(arg->getParent());
     }
-    else if (SVFUtil::isa<ConstantExpr>(curVal->getLLVMValue()))
+    else if (SVFUtil::isa<Constant>(curVal->getLLVMValue()) ||
+             SVFUtil::isa<MetadataAsValue>(curVal->getLLVMValue()))
     {
         if (!curBB)
             pag->addGlobalPAGEdge(edge);
@@ -1639,12 +1640,6 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         {
             icfgNode = pag->getICFG()->getICFGNode(curBB->front());
         }
-    }
-    else if (SVFUtil::isa<GlobalVariable>(curVal->getLLVMValue()) ||
-             SVFUtil::isa<Constant>(curVal->getLLVMValue()) ||
-             SVFUtil::isa<MetadataAsValue>(curVal->getLLVMValue()))
-    {
-        pag->addGlobalPAGEdge(edge);
     }
     else if(const SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(curVal))
     {

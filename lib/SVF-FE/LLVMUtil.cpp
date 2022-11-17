@@ -85,7 +85,7 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
             return v->isConstant();
         }
     }
-    return LLVMUtil::isConstantOrMetaData(val);
+    return LLVMUtil::isConstDataOrAggData(val);
 }
 
 /*!
@@ -580,7 +580,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     {
         rawstr << "basic block: " << bb->getName() << " " << getSourceLoc(bb->getFirstNonPHI());
     }
-    else if(LLVMUtil::isConstantOrMetaData(val))
+    else if(LLVMUtil::isConstDataOrAggData(val))
     {
         rawstr << "constant data";
     }

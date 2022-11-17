@@ -115,7 +115,7 @@ public:
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087
-    bool isConstantOrMetaData() const;
+    bool isConstDataOrAggDataButNotNullPtr() const;
 
     /// Whether this is an isoloated node on the SVFIR graph
     bool isIsolatedNode() const;

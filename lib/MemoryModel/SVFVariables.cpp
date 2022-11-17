@@ -80,7 +80,7 @@ bool SVFVar::isIsolatedNode() const
 {
     if (getInEdges().empty() && getOutEdges().empty())
         return true;
-    else if (isConstantOrMetaData())
+    else if (isConstDataOrAggDataButNotNullPtr())
         return true;
     else if (value && SVFUtil::isa<SVFFunction>(value))
         return SVFUtil::cast<SVFFunction>(value)->isIntrinsic();
@@ -201,10 +201,10 @@ const std::string DummyObjVar::toString() const
 
 /// Whether it is constant data, i.e., "0", "1.001", "str"
 /// or llvm's metadata, i.e., metadata !4087
-bool SVFVar::isConstantOrMetaData() const
+bool SVFVar::isConstDataOrAggDataButNotNullPtr() const
 {
     if (hasValue())
-        return value->isConstantOrMetaData();
+        return value->isConstDataOrAggData() && (!SVFUtil::isa<SVFConstantNullPtr>(value)) && (!SVFUtil::isa<SVFBlackHoleValue>(value));
     else
         return false;
 }

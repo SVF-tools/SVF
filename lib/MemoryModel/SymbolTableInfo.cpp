@@ -732,9 +732,9 @@ bool MemObj::isConstDataOrConstGlobal() const
     return typeInfo->isConstDataOrConstGlobal();
 }
 
-bool MemObj::isConstantOrMetaData() const
+bool MemObj::isConstDataOrAggData() const
 {
-    return typeInfo->isConstantOrMetaData();
+    return typeInfo->isConstDataOrAggData();
 }
 
 bool MemObj::hasPtrObj() const

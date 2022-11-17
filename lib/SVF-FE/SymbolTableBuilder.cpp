@@ -686,7 +686,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
         // user input data, label its field as infinite here
         objSize = typeinfo->getMaxFieldOffsetLimit();
     }
-    else if(LLVMUtil::isConstantOrMetaData(val))
+    else if(LLVMUtil::isConstDataOrAggData(val))
     {
         typeinfo->setFlag(ObjTypeInfo::CONST_DATA);
         objSize = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(val->getType());

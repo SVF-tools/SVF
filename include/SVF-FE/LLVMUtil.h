@@ -374,12 +374,13 @@ inline const SVFFunction* getFunction(std::string name)
 }
 
 /// Return true if the value refers to constant data, e.g., i32 0
-inline bool isConstantOrMetaData(const Value* val)
-{
-    return SVFUtil::isa<ConstantData>(val)
+inline bool isConstDataOrAggData(const Value* val)
+{ 
+    bool constDataOrConstAggregate = SVFUtil::isa<ConstantData>(val)
            || SVFUtil::isa<ConstantAggregate>(val)
            || SVFUtil::isa<MetadataAsValue>(val)
            || SVFUtil::isa<BlockAddress>(val);
+    return constDataOrConstAggregate;
 }
 
 /// find the unique defined global across multiple modules

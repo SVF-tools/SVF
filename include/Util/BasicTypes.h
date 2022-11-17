@@ -185,10 +185,11 @@ public:
         SVFVCall,
         SVFGlob,
         SVFArg,
+        SVFConst,
         SVFConstData,
         SVFConstInt,
         SVFConstFP,
-        SVFConstNullPtr,
+        SVFNullPtr,
         SVFBlackHole,
         SVFOther
     };
@@ -199,13 +200,13 @@ private:
     GNodeK kind;	///< Type of this SVFValue
     bool ptrInUncalledFun;
     bool has_name;
-    bool constantOrMetaData;
+    bool constDataOrAggData;
 protected:
     std::string name;
     std::string sourceLoc;
     /// Constructor
     SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k),
-        ptrInUncalledFun(false), has_name(false), constantOrMetaData(SVFConstData==k), name(val->getName()), sourceLoc("No source code Info")
+        ptrInUncalledFun(false), has_name(false), constDataOrAggData(SVFConstData==k), name(val->getName()), sourceLoc("No source code Info")
     {
     }
 
@@ -253,13 +254,13 @@ public:
         return type;
     }
 
-    inline void setConstantOrMetaData()
+    inline void setConstDataOrAggData()
     {
-        constantOrMetaData = true;
+        constDataOrAggData = true;
     }
-    inline bool isConstantOrMetaData() const
+    inline bool isConstDataOrAggData() const
     {
-        return constantOrMetaData;
+        return constDataOrAggData;
     }
     inline void setPtrInUncalledFunction()
     {
@@ -275,7 +276,7 @@ public:
     }
     inline bool isNullPtr() const
     {
-        return getKind() == SVFConstNullPtr;
+        return getKind() == SVFNullPtr;
     }
     inline void setHasName()
     {
@@ -853,11 +854,29 @@ public:
     }
 };
 
-
-class SVFConstantData : public SVFValue
+class SVFConstant : public SVFValue
 {
 public:
-    SVFConstantData(const ConstantData* _const, SVFValKind k = SVFConstData): SVFValue(_const, k)
+    SVFConstant(const Value* _const, SVFValKind k = SVFConst): SVFValue(_const, k)
+    {
+    }
+    SVFConstant() = delete;
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFConst || 
+               node->getKind() == SVFConstData || 
+               node->getKind() == SVFConstInt || 
+               node->getKind() == SVFConstFP ||
+               node->getKind() == SVFNullPtr ||
+               node->getKind() == SVFBlackHole;
+    }
+};
+
+class SVFConstantData : public SVFConstant
+{
+public:
+    SVFConstantData(const ConstantData* _const, SVFValKind k = SVFConstData): SVFConstant(_const, k)
     {
     }
     SVFConstantData() = delete;
@@ -867,7 +886,15 @@ public:
         return node->getKind() == SVFConstData || 
                node->getKind() == SVFConstInt || 
                node->getKind() == SVFConstFP ||
-               node->getKind() == SVFConstNullPtr ||
+               node->getKind() == SVFNullPtr ||
+               node->getKind() == SVFBlackHole;
+    }
+    static inline bool classof(const SVFConstantData *node)
+    {
+        return node->getKind() == SVFConstData || 
+               node->getKind() == SVFConstInt || 
+               node->getKind() == SVFConstFP ||
+               node->getKind() == SVFNullPtr ||
                node->getKind() == SVFBlackHole;
     }
 };
@@ -885,6 +912,10 @@ public:
     SVFConstantInt() = delete;
 
     static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFConstInt;
+    }
+    static inline bool classof(const SVFConstantData *node)
     {
         return node->getKind() == SVFConstInt;
     }
@@ -919,6 +950,10 @@ public:
     {
         return node->getKind() == SVFConstFP;
     }
+    static inline bool classof(const SVFConstantData *node)
+    {
+        return node->getKind() == SVFConstFP;
+    }
 };
 
 
@@ -926,14 +961,18 @@ class SVFConstantNullPtr : public SVFConstantData
 {
 
 public:
-    SVFConstantNullPtr(const ConstantData* _const): SVFConstantData(_const, SVFValue::SVFConstNullPtr)
+    SVFConstantNullPtr(const ConstantData* _const): SVFConstantData(_const, SVFValue::SVFNullPtr)
     {
     }
     SVFConstantNullPtr() = delete;
 
     static inline bool classof(const SVFValue *node)
     {
-        return node->getKind() == SVFConstNullPtr;
+        return node->getKind() == SVFNullPtr;
+    }
+    static inline bool classof(const SVFConstantData *node)
+    {
+        return node->getKind() == SVFNullPtr;
     }
 };
 
@@ -947,6 +986,10 @@ public:
     SVFBlackHoleValue() = delete;
 
     static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFBlackHole;
+    }
+    static inline bool classof(const SVFConstantData *node)
     {
         return node->getKind() == SVFBlackHole;
     }

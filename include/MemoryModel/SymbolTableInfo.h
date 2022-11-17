@@ -441,7 +441,7 @@ public:
     bool isConstantStruct() const;
     bool isConstantArray() const;
     bool isConstDataOrConstGlobal() const;
-    bool isConstantOrMetaData() const;
+    bool isConstDataOrAggData() const;
     bool hasPtrObj() const;
     bool isNonPtrFieldObj(const LocationSet& ls) const;
     //@}
@@ -694,7 +694,7 @@ public:
     {
         return hasFlag(CONST_GLOBAL_OBJ) || hasFlag(CONST_DATA);
     }
-    inline bool isConstantOrMetaData()
+    inline bool isConstDataOrAggData()
     {
         return hasFlag(CONST_DATA);
     }

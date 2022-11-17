@@ -206,6 +206,7 @@ public:
     }
 
     SVFConstantData* getSVFConstantData(const ConstantData* cd);
+    SVFConstant* getSVFOtherConstant(const Value* oc);
 
     SVFOtherValue* getSVFOtherValue(const Value* ov);
 
