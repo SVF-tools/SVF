@@ -52,9 +52,9 @@ protected:
     std::vector<std::string> split(const std::string &s, char delim);
 
     // Get special arguments of given call sites
-    NodeID getIntArg(const SVFInstruction* inst, unsigned int arg_num);
-    std::vector<std::string> getStringArg(const SVFInstruction* inst, unsigned int arg_num);
-    CallStrCxt getCxtArg(const SVFInstruction* inst, unsigned int arg_num);
+    NodeID getIntArg(const Instruction* inst, unsigned int arg_num);
+    std::vector<std::string> getStringArg(const Instruction* inst, unsigned int arg_num);
+    CallStrCxt getCxtArg(const Instruction* inst, unsigned int arg_num);
 
     /*
      * Get the previous LoadInst or StoreInst from Instruction "I" in the

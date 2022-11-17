@@ -330,30 +330,42 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBa
     return getBranchCond(bb, succ);
 }
 
-bool SaberCondAllocator::isEQCmp(const CmpInst *cmp) const
+bool SaberCondAllocator::isEQCmp(const CmpStmt *cmp) const
 {
     return (cmp->getPredicate() == CmpInst::ICMP_EQ);
 }
 
-bool SaberCondAllocator::isNECmp(const CmpInst *cmp) const
+bool SaberCondAllocator::isNECmp(const CmpStmt *cmp) const
 {
     return (cmp->getPredicate() == CmpInst::ICMP_NE);
 }
 
 bool SaberCondAllocator::isTestNullExpr(const SVFValue* test) const
 {
-    if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(test->getLLVMValue()))
+    if(const SVFInstruction* svfInst = SVFUtil::dyn_cast<SVFInstruction>(test))
     {
-        return isTestContainsNullAndTheValue(cmp) && isEQCmp(cmp);
+        for(const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(getICFG()->getICFGNode(svfInst)))
+        {
+            if(const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+            {
+                return isTestContainsNullAndTheValue(cmp) && isEQCmp(cmp);
+            }
+        }
     }
     return false;
 }
 
 bool SaberCondAllocator::isTestNotNullExpr(const SVFValue* test) const
 {
-    if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(test->getLLVMValue()))
+    if(const SVFInstruction* svfInst = SVFUtil::dyn_cast<SVFInstruction>(test))
     {
-        return isTestContainsNullAndTheValue(cmp) && isNECmp(cmp);
+        for(const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(getICFG()->getICFGNode(svfInst)))
+        {
+            if(const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+            {
+                return isTestContainsNullAndTheValue(cmp) && isNECmp(cmp);
+            }
+        }
     }
     return false;
 }
@@ -370,11 +382,11 @@ bool SaberCondAllocator::isTestNotNullExpr(const SVFValue* test) const
  *                       4. br i1 %tobool, label %if.end, label %if.then, !dbg !161
  *     There is an indirect edge 1->2 with value %0
  */
-bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpInst *cmp) const
+bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
 {
 
-    const SVFValue* op0 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cmp->getOperand(0));
-    const SVFValue* op1 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cmp->getOperand(1));
+    const SVFValue* op0 = cmp->getOpVar(0)->getValue();
+    const SVFValue* op1 = cmp->getOpVar(1)->getValue();
     if (SVFUtil::isa<SVFConstantNullPtr>(op1))
     {
         Set<const SVFValue* > inDirVal;

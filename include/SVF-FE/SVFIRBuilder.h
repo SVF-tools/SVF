@@ -269,10 +269,9 @@ protected:
     /// Add NullPtr PAGNode
     inline NodeID addNullPtrNode()
     {
-        NodeID nullPtr = pag->addDummyValNode(pag->getNullPtr());
-        /// let all undef value or non-determined pointers points-to black hole
-        LLVMContext &cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
-        ConstantPointerNull *constNull = ConstantPointerNull::get(Type::getInt8PtrTy(cxt));
+        LLVMContext& cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
+        ConstantPointerNull* constNull = ConstantPointerNull::get(Type::getInt8PtrTy(cxt));
+        NodeID nullPtr = pag->addValNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(constNull),pag->getNullPtr());
         setCurrentLocation(constNull, nullptr);
         addBlackHoleAddrEdge(pag->getBlkPtr());
         return nullPtr;

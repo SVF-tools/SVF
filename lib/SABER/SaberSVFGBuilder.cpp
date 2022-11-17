@@ -80,7 +80,7 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
         }
         if(const SVFValue* val = pagNode->getValue())
         {
-            if(SVFUtil::isa<GlobalVariable>(val->getLLVMValue()))
+            if(SVFUtil::isa<SVFGlobalValue>(val))
                 worklist.push_back(it->first);
         }
     }
@@ -230,7 +230,9 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 
         if(const StoreSVFGNode* stmtNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            if(SVFUtil::isa<StoreInst>(stmtNode->getValue()->getLLVMValue()))
+            for(const SVFStmt* svfstmt : pta->getPAG()->getSVFStmtList(stmtNode->getICFGNode()))
+            {
+            if(SVFUtil::isa<StoreStmt>(svfstmt))
             {
                 NodeID singleton;
                 if(isStrongUpdate(node, singleton, pta))
@@ -249,6 +251,7 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
                     }
                 }
 
+            }
             }
         }
     }

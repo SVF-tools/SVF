@@ -272,15 +272,15 @@ private:
     /// Evaluate test null/not null like expressions
     //@{
     /// Return true if the predicate of this compare instruction is equal
-    bool isEQCmp(const CmpInst* cmp) const;
+    bool isEQCmp(const CmpStmt* cmp) const;
     /// Return true if the predicate of this compare instruction is not equal
-    bool isNECmp(const CmpInst* cmp) const;
+    bool isNECmp(const CmpStmt* cmp) const;
     /// Return true if this is a test null expression
     bool isTestNullExpr(const SVFValue* test) const;
     /// Return true if this is a test not null expression
     bool isTestNotNullExpr(const SVFValue* test) const;
     /// Return true if two values on the predicate are what we want
-    bool isTestContainsNullAndTheValue(const CmpInst* cmp) const;
+    bool isTestContainsNullAndTheValue(const CmpStmt* cmp) const;
     //@}
 
     /// Release memory

@@ -738,7 +738,7 @@ void ForkJoinAnalysis::collectSCEVInfo()
     //             // const SCEV *forkSiteTidPtrSCEV = SE->getSCEV(const_cast<Value*>(forkSiteTidPtr));
     //             // const SCEV *baseForkTidPtrSCEV = SE->getSCEV(const_cast<Value*>(getBasePtr(forkSiteTidPtr)));
     //             // forkSiteTidPtrSCEV = getSCEVMinusExpr(forkSiteTidPtrSCEV, baseForkTidPtrSCEV, SE);
-    //             // PTASCEV scev(forkSiteTidPtr->getLLVMValue(),nullptr,nullptr);
+    //             // PTASCEV scev(forkSiteTidPtr,nullptr,nullptr);
     //             // fkjnToPTASCEVMap.insert(std::make_pair(callInst,scev));
     //         }
     //         else
@@ -748,7 +748,7 @@ void ForkJoinAnalysis::collectSCEVInfo()
     //             //const SCEV *baseJoinTidPtrSCEV = SE->getSCEV(const_cast<Value*>(getBasePtr(joinSiteTidPtr)));
     //             //joinSiteTidPtrSCEV = getSCEVMinusExpr(joinSiteTidPtrSCEV, baseJoinTidPtrSCEV, SE);
 
-    //             // PTASCEV scev(joinSiteTidPtr->getLLVMValue(),nullptr,nullptr);
+    //             // PTASCEV scev(joinSiteTidPtr,nullptr,nullptr);
     //             // fkjnToPTASCEVMap.insert(std::make_pair(callInst,scev));
     //         }
     //     }

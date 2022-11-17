@@ -811,7 +811,7 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
 {
     if (LLVMUtil::isPtrInUncalledFunction(val))
         svfvalue->setPtrInUncalledFunction();
-    if (LLVMUtil::isConstantOrMetaData(val))
+    if (LLVMUtil::isConstantOrMetaData(val) && !SVFUtil::isa<SVFConstantNullPtr>(svfvalue) && !SVFUtil::isa<SVFBlackHoleValue>(svfvalue))
         svfvalue->setConstantOrMetaData();
     if (SVFGlobalValue* glob = SVFUtil::dyn_cast<SVFGlobalValue>(svfvalue))
     {

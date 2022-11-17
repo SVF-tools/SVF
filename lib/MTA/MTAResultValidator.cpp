@@ -55,21 +55,21 @@ std::vector<std::string> MTAResultValidator::split(const std::string &s, char de
     split(s, delim, elems);
     return elems;
 }
-NodeID MTAResultValidator::getIntArg(const SVFInstruction* inst, u32_t arg_num)
+NodeID MTAResultValidator::getIntArg(const Instruction* inst, u32_t arg_num)
 {
-    assert(SVFUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callinst");
-    CallSite cs = SVFUtil::getSVFCallSite(inst);
-    const SVFConstantInt* x = SVFUtil::dyn_cast<SVFConstantInt>(cs.getArgument(arg_num));
-    assert((arg_num < cs.arg_size()) && "Does not has this argument");
+    assert(LLVMUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callinst");
+    const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
+    const ConstantInt* x = SVFUtil::dyn_cast<ConstantInt>(cs->getArgOperand(arg_num));
+    assert((arg_num < cs->arg_size()) && "Does not has this argument");
     return (NodeID) x->getSExtValue();
 }
 
-std::vector<std::string> MTAResultValidator::getStringArg(const SVFInstruction* inst, unsigned int arg_num)
+std::vector<std::string> MTAResultValidator::getStringArg(const Instruction* inst, unsigned int arg_num)
 {
-    assert(SVFUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callinst");
-    CallSite cs = SVFUtil::getSVFCallSite(inst);
-    assert((arg_num < cs.arg_size()) && "Does not has this argument");
-    const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(arg_num)->getLLVMValue());
+    assert(LLVMUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callinst");
+    const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
+    assert((arg_num < cs->arg_size()) && "Does not has this argument");
+    const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs->getArgOperand(arg_num));
     const Constant* arrayinst = SVFUtil::dyn_cast<Constant>(gepinst->getOperand(0));
     const ConstantDataArray* cxtarray = SVFUtil::dyn_cast<ConstantDataArray>(arrayinst->getOperand(0));
     if (!cxtarray)
@@ -81,7 +81,7 @@ std::vector<std::string> MTAResultValidator::getStringArg(const SVFInstruction* 
     return split(vthdcxtstring, ',');
 }
 
-CallStrCxt MTAResultValidator::getCxtArg(const SVFInstruction* inst, unsigned int arg_num)
+CallStrCxt MTAResultValidator::getCxtArg(const Instruction* inst, unsigned int arg_num)
 {
     std::vector<std::string> x = getStringArg(inst, arg_num);
     CallStrCxt cxt;
@@ -243,10 +243,9 @@ bool MTAResultValidator::collectCxtThreadTargets()
         const Use *u = &*it;
         const Value* user = u->getUser();
         const Instruction* inst = SVFUtil::dyn_cast<Instruction>(user);
-        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
 
-        NodeID vthdnum = getIntArg(svfInst, 0);
-        CallStrCxt cxt = getCxtArg(svfInst, 1);
+        NodeID vthdnum = getIntArg(inst, 0);
+        CallStrCxt cxt = getCxtArg(inst, 1);
 
         vthdToCxt[vthdnum] = cxt;
     }
@@ -278,11 +277,10 @@ bool MTAResultValidator::collectTCTTargets()
         const Use *u = &*it;
         const Value* user = u->getUser();
         const Instruction* inst = SVFUtil::dyn_cast<Instruction>(user);
-        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
 
-        NodeID vthdnum = getIntArg(svfInst, 0);
+        NodeID vthdnum = getIntArg(inst, 0);
         NodeID rthdnum = vthdTorthd[vthdnum];
-        std::vector<std::string> x = getStringArg(svfInst, 1);
+        std::vector<std::string> x = getStringArg(inst, 1);
 
         for (std::vector<std::string>::iterator i = x.begin(); i != x.end(); i++)
         {
@@ -317,12 +315,11 @@ bool MTAResultValidator::collectInterleavingTargets()
         const Use *u = &*it;
         const Value* user = u->getUser();
         const Instruction* inst = SVFUtil::dyn_cast<Instruction>(user);
-        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
 
-        NodeID vthdnum = getIntArg(svfInst, 0);
+        NodeID vthdnum = getIntArg(inst, 0);
         NodeID rthdnum = vthdTorthd[vthdnum];
-        CallStrCxt x = getCxtArg(svfInst, 1);
-        std::vector<std::string> y = getStringArg(svfInst, 2);
+        CallStrCxt x = getCxtArg(inst, 1);
+        std::vector<std::string> y = getStringArg(inst, 2);
 
         // Record given interleaving
         NodeBS lev;
