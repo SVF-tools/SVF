@@ -97,7 +97,7 @@ void BVDataPTAImpl::finalize()
 
     if (Options::ptDataBacking == PTBackingType::Persistent && print_stat)
     {
-        std::string moduleName(SymbolTableInfo::SymbolInfo()->getModule()->getModuleIdentifier());
+        std::string moduleName(pag->getModule()->getModuleIdentifier());
         std::vector<std::string> names = SVFUtil::split(moduleName,'/');
         if (names.size() > 1)
             moduleName = names[names.size() - 1];

@@ -561,7 +561,7 @@ private:
     }
     inline const MemObj* addDummyMemObj(NodeID i, const Type* type)
     {
-        return SymbolTableInfo::SymbolInfo()->createDummyObj(i,type);
+        return getSymbolInfo()->createDummyObj(i,type);
     }
     inline NodeID addBlackholeObjNode()
     {

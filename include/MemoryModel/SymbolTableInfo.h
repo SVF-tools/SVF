@@ -74,7 +74,6 @@ public:
     typedef OrderedMap<const SVFFunction*, SymID> FunToIDMapTy;
     /// struct type to struct info map
     typedef OrderedMap<const Type*, StInfo*> TypeToFieldInfoMap;
-    typedef Set<CallSite> CallSiteSet;
     //@}
 
 private:
@@ -83,8 +82,6 @@ private:
     FunToIDMapTy returnSymMap;		///< return  map
     FunToIDMapTy varargSymMap;	    ///< vararg map
     IDToMemMapTy		objMap;		///< map a memory sym id to its obj
-
-    CallSiteSet callSiteSet;
 
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
     static SymbolTableInfo* symInfo;
@@ -134,14 +131,6 @@ public:
     bool getModelConstants() const
     {
         return modelConstants;
-    }
-    //@}
-
-    /// Get callsite set
-    //@{
-    inline const CallSiteSet& getCallSiteSet() const
-    {
-        return callSiteSet;
     }
     //@}
 
@@ -301,14 +290,8 @@ public:
 
     /// Get struct info
     //@{
-    ///Get an iterator for StructInfo, designed as internal methods
-    TypeToFieldInfoMap::iterator getStructInfoIter(const Type *T);
-
     ///Get a reference to StructInfo.
-    inline StInfo* getStructInfo(const Type *T)
-    {
-        return getStructInfoIter(T)->second;
-    }
+    StInfo* getStructInfo(const Type *T);
 
     ///Get a reference to the components of struct_info.
     /// Number of flattenned elements of an array or struct
@@ -324,8 +307,6 @@ public:
     const Type* getFlatternedElemType(const Type* baseType, u32_t flatten_idx);
     //@}
 
-    /// Collect type info
-    void collectTypeInfo(const Type* T);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
     virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
 
@@ -338,6 +319,9 @@ public:
     virtual void dump();
 
 protected:
+    /// Collect type info
+    void collectTypeInfo(const Type* T);
+
     /// Return the flattened field type for struct type only
     const std::vector<const Type*>& getFlattenFieldTypes(const StructType *T);
 

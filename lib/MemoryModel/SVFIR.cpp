@@ -428,7 +428,7 @@ NodeID SVFIR::getGepObjVar(const MemObj* obj, const LocationSet& ls)
     if (obj->isFieldInsensitive())
         return getFIObjVar(obj);
 
-    LocationSet newLS = SymbolTableInfo::SymbolInfo()->getModulusOffset(obj,ls);
+    LocationSet newLS = pag->getSymbolInfo()->getModulusOffset(obj,ls);
 
     // Base and first field are the same memory location.
     if (Options::FirstFieldEqBase && newLS.accumulateConstantFieldIdx() == 0) return base;

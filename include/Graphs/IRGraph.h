@@ -102,6 +102,10 @@ public:
 
     virtual ~IRGraph();
 
+    inline SymbolTableInfo* getSymbolInfo() const
+    {
+        return symInfo;
+    }
     /// Whether this SVFIR built from a txt file
     inline bool isBuiltFromFile()
     {

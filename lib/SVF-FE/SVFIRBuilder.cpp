@@ -174,7 +174,7 @@ void SVFIRBuilder::initialiseNodes()
 {
     DBOUT(DPAGBuild, outs() << "Initialise SVFIR Nodes ...\n");
 
-    SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
+    SymbolTableInfo* symTable = pag->getSymbolInfo();
 
     pag->addBlackholeObjNode();
     pag->addConstantObjNode();
@@ -288,7 +288,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             if(!op || (arrTy->getArrayNumElements() <= (u32_t)op->getSExtValue()))
                 continue;
             s32_t idx = op->getSExtValue();
-            u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(arrTy, idx);
+            u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(arrTy, idx);
             ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);
         }
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
@@ -296,7 +296,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             assert(op && "non-const offset accessing a struct");
             //The actual index
             s32_t idx = op->getSExtValue();
-            u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(ST, idx);
+            u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(ST, idx);
             ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);
         }
         else if (gepTy->isSingleValueType())
@@ -517,7 +517,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             return;
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
-            u32_t off = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(C->getType(), i);
+            u32_t off = pag->getSymbolInfo()->getFlattenedElemIdx(C->getType(), i);
             InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset + off);
         }
     }
@@ -529,7 +529,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             {
                 for(u32_t i = 0; i < seq->getNumElements(); i++)
                 {
-                    u32_t off = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(C->getType(), i);
+                    u32_t off = pag->getSymbolInfo()->getFlattenedElemIdx(C->getType(), i);
                     Constant* ct = seq->getElementAsConstant(i);
                     InitialGlobal(gvar, ct, offset + off);
                 }
@@ -1108,7 +1108,7 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
         T = getPtrElementType(ptype);
 
-    u32_t numOfElems = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(T);
+    u32_t numOfElems = pag->getSymbolInfo()->getNumOfFlattenElements(T);
     /// use user-specified size for this copy operation if the size is a constaint int
     if(szValue && SVFUtil::isa<ConstantInt>(szValue))
     {
@@ -1164,8 +1164,8 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
-        const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, fields[index].accumulateConstantFieldIdx());
-        const Type* sElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(stype, fields[index].accumulateConstantFieldIdx());
+        const Type* dElementType = pag->getSymbolInfo()->getFlatternedElemType(dtype, fields[index].accumulateConstantFieldIdx());
+        const Type* sElementType = pag->getSymbolInfo()->getFlatternedElemType(stype, fields[index].accumulateConstantFieldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
         NodeID dummy = pag->addDummyValNode();
@@ -1363,7 +1363,7 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         //For each field (i), add store edge *(arg0 + i) = arg1
                         for (u32_t index = 0; index < sz; index++)
                         {
-                            const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, dstFields[index].accumulateConstantFieldIdx());
+                            const Type* dElementType = pag->getSymbolInfo()->getFlatternedElemType(dtype, dstFields[index].accumulateConstantFieldIdx());
                             NodeID dField = getGepValVar(cs->getArgOperand(0), dstFields[index], dElementType);
                             addStoreEdge(getValueNode(cs->getArgOperand(1)),dField);
                         }
@@ -1418,7 +1418,7 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         {
                             if((u32_t)i >= fields.size())
                                 break;
-                            const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
+                            const Type* elementType = pag->getSymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
                             NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
                             NodeID vnS = getValueNode(vArg1);
                             if(vnD && vnS)

@@ -246,9 +246,9 @@ void PointerAnalysis::dumpAllTypes()
         outs() << "\nNodeID " << node->getId() << "\n";
 
         const Type* type = node->getValue()->getType();
-        SymbolTableInfo::SymbolInfo()->printFlattenFields(type);
+        pag->getSymbolInfo()->printFlattenFields(type);
         if (const PointerType* ptType = SVFUtil::dyn_cast<PointerType>(type))
-            SymbolTableInfo::SymbolInfo()->printFlattenFields(SymbolTableInfo::getPtrElementType(ptType));
+            pag->getSymbolInfo()->printFlattenFields(SymbolTableInfo::getPtrElementType(ptType));
     }
 }
 

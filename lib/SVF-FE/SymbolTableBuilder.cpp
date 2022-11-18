@@ -173,8 +173,6 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                 {
 
                     const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
-                    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
-                    symInfo->callSiteSet.insert(SVFUtil::getSVFCallSite(svfcall));
                     for (u32_t i = 0; i < cs->arg_size(); i++)
                     {
                         collectSym(cs->getArgOperand(i));
@@ -196,7 +194,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     symInfo->totalSymNum = NodeIDAllocator::get()->endSymbolAllocation();
     if (Options::SymTabPrint)
     {
-        SymbolTableInfo::SymbolInfo()->dump();
+        symInfo->dump();
     }
 }
 
@@ -577,7 +575,7 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
     }
     if (const StructType *ST= SVFUtil::dyn_cast<StructType>(elemTy))
     {
-        const std::vector<const Type*>& flattenFields = SymbolTableInfo::SymbolInfo()->getFlattenFieldTypes(ST);
+        const std::vector<const Type*>& flattenFields = symInfo->getFlattenFieldTypes(ST);
         for(std::vector<const Type*>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
                 it!=eit; ++it)
         {
@@ -689,7 +687,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
     else if(LLVMUtil::isConstDataOrAggData(val))
     {
         typeinfo->setFlag(ObjTypeInfo::CONST_DATA);
-        objSize = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(val->getType());
+        objSize = symInfo->getNumOfFlattenElements(val->getType());
     }
     else
     {
@@ -711,7 +709,7 @@ u32_t SymbolTableBuilder::getObjSize(const Type* ety)
     u32_t numOfFields = 1;
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
-        numOfFields = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(ety);
+        numOfFields = symInfo->getNumOfFlattenElements(ety);
     }
     return numOfFields;
 }

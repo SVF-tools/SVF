@@ -34,9 +34,6 @@
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
 #include <llvm/IR/Instructions.h>
-#include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
-#include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
-#include <llvm/IR/BasicBlock.h>
 
 #include "llvm/BinaryFormat/Dwarf.h"
 
