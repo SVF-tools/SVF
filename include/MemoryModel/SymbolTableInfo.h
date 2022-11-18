@@ -291,24 +291,24 @@ public:
     /// Get struct info
     //@{
     ///Get a reference to StructInfo.
-    StInfo* getStructInfo(const Type *T);
+    StInfo* getTypeInfo(const Type *T);
+    inline bool hasTypeInfo(const Type *T)
+    {
+        return typeToFieldInfo.find(T) != typeToFieldInfo.end();
+    }
 
     ///Get a reference to the components of struct_info.
     /// Number of flattenned elements of an array or struct
     u32_t getNumOfFlattenElements(const Type *T);
     /// Flatterned element idx of an array or struct by considering stride
     u32_t getFlattenedElemIdx(const Type *T, u32_t origId);
-
+    /// Return the type of a flattened element given a flattened index
+    const Type* getFlatternedElemType(const Type* baseType, u32_t flatten_idx);
     ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
     ///  OriginalElemType of b with field_idx 1 : Struct A
     ///  FlatternedElemType of b with field_idx 1 : int
     const Type* getOriginalElemType(const Type* baseType, u32_t origId);
-    /// Return the type of a flattened element given a flattened index
-    const Type* getFlatternedElemType(const Type* baseType, u32_t flatten_idx);
     //@}
-
-    /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
 
     /// Debug method
     void printFlattenFields(const Type* type);
@@ -318,19 +318,24 @@ public:
     /// Another debug method
     virtual void dump();
 
-protected:
-    /// Collect type info
-    void collectTypeInfo(const Type* T);
+    /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
+    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
 
+    ///The struct type with the most fields
+    const Type* maxStruct;
+
+    ///The number of fields in max_struct
+    u32_t maxStSize;
+
+protected:
+
+    inline void addTypeInfo(const Type* ty, StInfo* info)
+    {
+        assert(typeToFieldInfo.find(ty) == typeToFieldInfo.end() && "this type info has been added before");
+        typeToFieldInfo[ty] = info;
+    }
     /// Return the flattened field type for struct type only
     const std::vector<const Type*>& getFlattenFieldTypes(const StructType *T);
-
-    /// Collect the struct info
-    virtual void collectStructInfo(const StructType *T);
-    /// Collect the array info
-    virtual void collectArrayInfo(const ArrayType* T);
-    /// Collect simple type (non-aggregate) info
-    virtual void collectSimpleTypeInfo(const Type* T);
 
     /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
     ObjTypeInfo* createObjTypeInfo(const Type *type);
@@ -340,12 +345,6 @@ protected:
     /// fsize[i] is the number of fields in the largest such struct, else fsize[i] = 1.
     /// fsize[0] is always the size of the expanded struct.
     TypeToFieldInfoMap typeToFieldInfo;
-
-    ///The struct type with the most fields
-    const Type* maxStruct;
-
-    ///The number of fields in max_struct
-    u32_t maxStSize;
 };
 
 

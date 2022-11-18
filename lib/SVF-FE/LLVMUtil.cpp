@@ -55,40 +55,6 @@ bool LLVMUtil::isObject(const Value*  ref)
 }
 
 /*!
- * Check whether this value points-to a constant object
- */
-bool LLVMUtil::isConstantObjSym(const Value* val)
-{
-    if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
-    {
-        if (cppUtil::isValVtbl(v))
-            return false;
-        else if (!v->hasInitializer())
-        {
-            if(v->isExternalLinkage(v->getLinkage()))
-                return false;
-            else
-                return true;
-        }
-        else
-        {
-            StInfo *stInfo = SymbolTableInfo::SymbolInfo()->getStructInfo(v->getInitializer()->getType());
-            const std::vector<const Type*> &fields = stInfo->getFlattenFieldTypes();
-            for (std::vector<const Type*>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
-            {
-                const Type *elemTy = *it;
-                assert(!SVFUtil::isa<FunctionType>(elemTy) && "Initializer of a global is a function?");
-                if (SVFUtil::isa<PointerType>(elemTy))
-                    return false;
-            }
-
-            return v->isConstant();
-        }
-    }
-    return LLVMUtil::isConstDataOrAggData(val);
-}
-
-/*!
  * Return reachable bbs from function entry
  */
 void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBasicBlock*> &reachableBBs)

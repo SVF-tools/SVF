@@ -118,9 +118,6 @@ inline bool isNullPtrSym(const Value* val)
     return SVFUtil::dyn_cast<ConstantPointerNull>(val);
 }
 
-/// Check whether this value points-to a constant object
-bool isConstantObjSym(const Value* val);
-
 static inline Type *getPtrElementType(const PointerType* pty)
 {
 #if (LLVM_VERSION_MAJOR < 14)

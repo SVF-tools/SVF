@@ -54,9 +54,17 @@ public:
     /// Start building memory model
     void buildMemModel(SVFModule* svfModule);
 
+    /// Return size of this object based on LLVM value
+    u32_t getObjSize(const Type* type);
+
+    /// Check whether this value points-to a constant object
+    bool isConstantObjSym(const Value* val);
+
+protected:
+
     /// collect the syms
     //@{
-    void collectSpecialSym(const Value* val);
+    void collectSVFTypeInfo(const Value* val);
 
     void collectSym(const Value* val);
 
@@ -88,8 +96,21 @@ public:
     /// Analyse types of heap and static objects
     void analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val);
 
-    /// Return size of this object based on LLVM value
-    u32_t getObjSize(const Type* type);
+    ///Get a reference to the components of struct_info.
+    /// Number of flattenned elements of an array or struct
+    u32_t getNumOfFlattenElements(const Type *T);
+    
+    ///Get a reference to StructInfo.
+    StInfo* getStructInfo(const Type *T);
+
+    /// Collect type info
+    void collectTypeInfo(const Type* T);
+    /// Collect the struct info
+    void collectStructInfo(const StructType *T);
+    /// Collect the array info
+    void collectArrayInfo(const ArrayType* T);
+    /// Collect simple type (non-aggregate) info
+    void collectSimpleTypeInfo(const Type* T);
 };
 
 } // End namespace SVF

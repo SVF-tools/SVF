@@ -194,7 +194,6 @@ private:
     bool ptrInUncalledFun;  ///< true if this pointer is in an uncalled function
     bool has_name;          ///< true if this value has a name
     bool constDataOrAggData;    ///< true if this value is a ConstantData (e.g., numbers, string, floats) or a constantAggregate
-    bool constantObjSym;    ///< true if this value is an object allocation and the object is a constant symbol.
 
 protected:
     std::string name;
@@ -202,7 +201,7 @@ protected:
     /// Constructor
     SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k),
         ptrInUncalledFun(false), has_name(false), constDataOrAggData(SVFConstData==k), 
-        constantObjSym(constDataOrAggData), name(val->getName()), sourceLoc("No source code Info")
+        name(val->getName()), sourceLoc("No source code Info")
     {
     }
 
@@ -210,10 +209,6 @@ protected:
     inline void setConstDataOrAggData()
     {
         constDataOrAggData = true;
-    }
-    inline void setConstantObjSym()
-    {
-        constantObjSym = true;
     }
     inline void setPtrInUncalledFunction()
     {
@@ -270,10 +265,6 @@ public:
     inline bool isConstDataOrAggData() const
     {
         return constDataOrAggData;
-    }
-    inline bool isConstantObjSym() const
-    {
-        return constantObjSym;
     }
     inline bool ptrInUncalledFunction() const
     {

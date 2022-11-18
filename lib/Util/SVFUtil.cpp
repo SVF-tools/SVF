@@ -276,7 +276,7 @@ const std::string& SVFUtil::getSourceLoc(const SVFValue* v)
 /*!
  * return string of an LLVM Value
  */
-const std::string& SVFUtil::value2String(const SVFValue* value)
+const std::string SVFUtil::value2String(const SVFValue* value)
 {
     std::string str;
     raw_string_ostream rawstr(str);

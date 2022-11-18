@@ -240,9 +240,9 @@ inline const SVFFunction* getCallee(const SVFInstruction *inst)
 
 /// Return source code including line number and file name from debug information
 //@{
-const std::string&  getSourceLoc(const SVFValue* val);
-const std::string&  getSourceLocOfFunction(const SVFFunction* F);
-const std::string& value2String(const SVFValue* value);
+const std::string& getSourceLoc(const SVFValue* val);
+const std::string& getSourceLocOfFunction(const SVFFunction* F);
+const std::string value2String(const SVFValue* value);
 //@}
 
 /// Given a map mapping points-to sets to a count, adds from into to.
