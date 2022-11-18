@@ -113,7 +113,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                         nextInsts.end(); nit != enit; ++nit)
             {
                 const Instruction* succ = *nit;
-                const SVFInstruction* svfsucc = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+                const SVFInstruction* svfsucc = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succ);
                 ICFGNode* dstNode = getOrAddBlockICFGNode(svfsucc);
                 if (isNonInstricCallSite(svfinst))
                 {
