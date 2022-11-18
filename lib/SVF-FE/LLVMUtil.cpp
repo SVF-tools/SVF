@@ -638,6 +638,23 @@ const std::string LLVMUtil::value2String(const Value* value)
 /*!
  * return string of an LLVM Value
  */
+void LLVMUtil::value2String(const Value* value, raw_string_ostream& rawstr)
+{
+    if(value)
+    {
+        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
+            rawstr << "Function: " << fun->getName() << " ";
+        else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
+            rawstr << "BasicBlock: " << bb->getName() << " ";
+        else
+            rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+}
+
+/*!
+ * return string of an LLVM Value
+ */
 const std::string LLVMUtil::value2ShortString(const Value* value)
 {
     std::string str;

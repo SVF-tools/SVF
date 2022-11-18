@@ -302,9 +302,9 @@ public:
     {
         return sourceLoc;
     }
-    inline virtual std::string& toString()
+    inline void setToString(const std::string& ts)
     {
-        return name;
+        name = ts;
     }
     inline virtual const std::string& toString() const
     {

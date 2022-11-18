@@ -34,7 +34,6 @@
  *
  */
 #include "MTA/TCT.h"
-#include "SVF-FE/DataFlowUtil.h"
 
 namespace SVF
 {

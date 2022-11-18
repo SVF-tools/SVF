@@ -28,8 +28,7 @@
  */
 
 #include "Util/Options.h"
-#include "SVF-FE/CPPUtil.h"
-#include "SVF-FE/ICFGBuilder.h"
+#include "Util/ICFGBuilder.h"
 #include "Graphs/CHG.h"
 #include "WPA/TypeAnalysis.h"
 #include "Util/PTAStat.h"

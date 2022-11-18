@@ -31,7 +31,6 @@
 #define PATHALLOCATOR_H_
 
 #include "Util/SVFModule.h"
-#include "SVF-FE/DataFlowUtil.h"
 #include "SVF-FE/BasicTypes.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
@@ -293,7 +292,6 @@ private:
     void extractSubConds(const Condition &condition, NodeBS &support) const;
 
 
-    PTACFInfoBuilder cfInfoBuilder;		    ///< map a function to its loop info
     FunToExitBBsMap funToExitBBsMap;		///< map a function to all its basic blocks calling program exit
     BBToCondMap bbToCondMap;				///< map a basic block to its path condition starting from root
     const SVFGNode* curEvalSVFGNode{};			///< current llvm value to evaluate branch condition when computing guards

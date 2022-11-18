@@ -29,7 +29,7 @@
 
 #include "Util/Options.h"
 #include "MemoryModel/SVFIR.h"
-#include "SVF-FE/ICFGBuilder.h"
+#include "Util/ICFGBuilder.h"
 
 using namespace SVF;
 using namespace SVFUtil;
