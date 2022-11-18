@@ -191,6 +191,7 @@ public:
         SVFConstFP,
         SVFNullPtr,
         SVFBlackHole,
+        SVFMetaAsValue,
         SVFOther
     };
 
@@ -403,8 +404,14 @@ public:
         allArgs.push_back(arg);
     }
 
+    inline bool hasBasicBlock() const
+    {
+        return !allBBs.empty();
+    }
+
     inline const SVFBasicBlock* getEntryBlock() const
     {
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
         return allBBs.front();
     }
 
@@ -792,12 +799,32 @@ public:
     }
 };
 
-class SVFGlobalValue : public SVFValue
+class SVFConstant : public SVFValue
+{
+public:
+    SVFConstant(const Value* _const, SVFValKind k = SVFConst): SVFValue(_const, k)
+    {
+    }
+    SVFConstant() = delete;
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFConst || 
+               node->getKind() == SVFGlob ||
+               node->getKind() == SVFConstData || 
+               node->getKind() == SVFConstInt || 
+               node->getKind() == SVFConstFP ||
+               node->getKind() == SVFNullPtr ||
+               node->getKind() == SVFBlackHole;
+    }
+};
+
+class SVFGlobalValue : public SVFConstant
 {
 private:
     const SVFValue* realDefGlobal;  /// the definition of a function across multiple modules
 public:
-    SVFGlobalValue(const GlobalValue* _gv): SVFValue(_gv, SVFValue::SVFGlob), realDefGlobal(nullptr)
+    SVFGlobalValue(const GlobalValue* _gv): SVFConstant(_gv, SVFValue::SVFGlob), realDefGlobal(nullptr)
     {
     }
     SVFGlobalValue() = delete;
@@ -814,6 +841,10 @@ public:
         return realDefGlobal;
     }
     static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFGlob;
+    }
+    static inline bool classof(const SVFConstant *node)
     {
         return node->getKind() == SVFGlob;
     }
@@ -854,24 +885,7 @@ public:
     }
 };
 
-class SVFConstant : public SVFValue
-{
-public:
-    SVFConstant(const Value* _const, SVFValKind k = SVFConst): SVFValue(_const, k)
-    {
-    }
-    SVFConstant() = delete;
 
-    static inline bool classof(const SVFValue *node)
-    {
-        return node->getKind() == SVFConst || 
-               node->getKind() == SVFConstData || 
-               node->getKind() == SVFConstInt || 
-               node->getKind() == SVFConstFP ||
-               node->getKind() == SVFNullPtr ||
-               node->getKind() == SVFBlackHole;
-    }
-};
 
 class SVFConstantData : public SVFConstant
 {
@@ -998,7 +1012,7 @@ public:
 class SVFOtherValue : public SVFValue
 {
 public:
-    SVFOtherValue(const Value* other): SVFValue(other, SVFValue::SVFOther)
+    SVFOtherValue(const Value* other, SVFValKind k = SVFValue::SVFOther): SVFValue(other, k)
     {
     }
     SVFOtherValue() = delete;
@@ -1006,6 +1020,27 @@ public:
     static inline bool classof(const SVFValue *node)
     {
         return node->getKind() == SVFOther;
+    }
+};
+
+/*
+ * This class is only for LLVM's MetadataAsValue
+*/
+class SVFMetadataAsValue : public SVFOtherValue
+{
+public:
+    SVFMetadataAsValue(const Value* other): SVFOtherValue(other, SVFValue::SVFMetaAsValue)
+    {
+    }
+    SVFMetadataAsValue() = delete;
+
+    static inline bool classof(const SVFValue *node)
+    {
+        return node->getKind() == SVFMetaAsValue;
+    }
+    static inline bool classof(const SVFOtherValue *node)
+    {
+        return node->getKind() == SVFMetaAsValue;
     }
 };
 

@@ -45,7 +45,7 @@ public:
     typedef std::vector<const Function*> LLVMFunctionSetType;
     typedef std::vector<SVFGlobalValue*> GlobalSetType;
     typedef std::vector<SVFGlobalValue*> AliasSetType;
-    typedef std::vector<SVFConstantData*> ConstantDataType;
+    typedef std::vector<SVFConstant*> ConstantType;
     typedef std::vector<SVFOtherValue*> OtherValueType;
 
     /// Iterators type def
@@ -55,8 +55,8 @@ public:
     typedef GlobalSetType::const_iterator const_global_iterator;
     typedef AliasSetType::iterator alias_iterator;
     typedef AliasSetType::const_iterator const_alias_iterator;
-    typedef ConstantDataType::iterator cdata_iterator;
-    typedef ConstantDataType::const_iterator const_cdata_iterator;
+    typedef ConstantType::iterator cdata_iterator;
+    typedef ConstantType::const_iterator const_cdata_iterator;
     typedef OtherValueType::iterator ovalue_iterator;
     typedef OtherValueType::const_iterator const_ovalue_iterator;
 
@@ -66,7 +66,7 @@ private:
     FunctionSetType FunctionSet;  ///< The Functions in the module
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
-    ConstantDataType ConstantDataSet;        ///< The ConstantData in the module
+    ConstantType ConstantSet;        ///< The ConstantData in the module
     OtherValueType  OtherValueSet;   ///< All other values in the module
 
     Map<const PointerType*, const Type*> ptrElementTypeMap;
@@ -109,14 +109,16 @@ public:
     inline void addGlobalSet(SVFGlobalValue* glob)
     {
         GlobalSet.push_back(glob);
+        addConstant(glob);
     }
     inline void addAliasSet(SVFGlobalValue* alias)
     {
         AliasSet.push_back(alias);
+        addConstant(alias);
     }
-    inline void addConstantData(SVFConstantData* cd)
+    inline void addConstant(SVFConstant* cd)
     {
-        ConstantDataSet.push_back(cd);
+        ConstantSet.push_back(cd);
     }
     inline void addOtherValue(SVFOtherValue* ov)
     {
@@ -178,21 +180,21 @@ public:
         return AliasSet.end();
     }
 
-    cdata_iterator cdata_begin()
+    cdata_iterator constant_begin()
     {
-        return ConstantDataSet.begin();
+        return ConstantSet.begin();
     }
-    const_cdata_iterator cdata_begin() const
+    const_cdata_iterator constant_begin() const
     {
-        return ConstantDataSet.begin();
+        return ConstantSet.begin();
     }
-    cdata_iterator cdata_end()
+    cdata_iterator constant_end()
     {
-        return ConstantDataSet.end();
+        return ConstantSet.end();
     }
-    const_cdata_iterator cdata_end() const
+    const_cdata_iterator constant_end() const
     {
-        return ConstantDataSet.end();
+        return ConstantSet.end();
     }
     ///@}
 
@@ -213,9 +215,9 @@ public:
     {
         return FunctionSet;
     }
-    inline const ConstantDataType& getConstantDataSet() const
+    inline const ConstantType& getConstantSet() const
     {
-        return ConstantDataSet;
+        return ConstantSet;
     }
     inline const GlobalSetType& getGlobalSet() const
     {

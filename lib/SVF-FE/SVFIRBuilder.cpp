@@ -1631,8 +1631,9 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         assert(curBB && (curBB->getParent()->getEntryBlock() == curBB));
         icfgNode = pag->getICFG()->getFunEntryICFGNode(arg->getParent());
     }
-    else if (SVFUtil::isa<Constant>(curVal->getLLVMValue()) ||
-             SVFUtil::isa<MetadataAsValue>(curVal->getLLVMValue()))
+    else if (SVFUtil::isa<SVFConstant>(curVal) ||
+             SVFUtil::isa<SVFFunction>(curVal) ||
+             SVFUtil::isa<SVFMetadataAsValue>(curVal))
     {
         if (!curBB)
             pag->addGlobalPAGEdge(edge);
@@ -1640,16 +1641,6 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         {
             icfgNode = pag->getICFG()->getICFGNode(curBB->front());
         }
-    }
-    else if(const SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(curVal))
-    {
-        if((fun->getEntryBlock() == curBB) && isExtCall(fun))
-        {
-            /// all external function connected to a indirect call, we will put SVFStmts in the FunctionEntryICFGNode
-            icfgNode = pag->getICFG()->getFunEntryICFGNode(fun);
-        }
-        else
-            pag->addGlobalPAGEdge(edge);
     }
     else
     {

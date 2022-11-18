@@ -827,10 +827,11 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
 
 SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
 {
-    LLVMConstData2SVFConstDataMap::const_iterator it = LLVMConstData2SVFConstData.find(cd);
-    if(it!=LLVMConstData2SVFConstData.end())
+    LLVMConst2SVFConstMap::const_iterator it = LLVMConst2SVFConst.find(cd);
+    if(it!=LLVMConst2SVFConst.end())
     {
-        return it->second;
+        assert(SVFUtil::isa<SVFConstantData>(it->second) && "not a SVFConstantData type!");
+        return SVFUtil::cast<SVFConstantData>(it->second);
     }
     else
     {
@@ -850,9 +851,25 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
             svfcd = new SVFBlackHoleValue(cd);
         else
             svfcd = new SVFConstantData(cd);
-        svfModule->addConstantData(svfcd);
+        svfModule->addConstant(svfcd);
         addConstantDataMap(cd,svfcd);
         return svfcd;
+    }
+}
+
+SVFConstant* LLVMModuleSet::getOtherSVFConstant(const Constant* oc)
+{
+    LLVMConst2SVFConstMap::const_iterator it = LLVMConst2SVFConst.find(oc);
+    if(it!=LLVMConst2SVFConst.end())
+    {
+        return it->second;
+    }
+    else
+    {
+        SVFConstant* svfoc = new SVFConstant(oc);
+        svfModule->addConstant(svfoc);
+        addOtherConstantMap(oc,svfoc);
+        return svfoc;
     }
 }
 
@@ -865,13 +882,16 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
     }
     else
     {
-        SVFOtherValue* svfov = new SVFOtherValue(ov);
+        SVFOtherValue* svfov = nullptr;
+        if(SVFUtil::isa<MetadataAsValue>(ov))
+            svfov = new SVFMetadataAsValue(ov);
+        else
+            svfov = new SVFOtherValue(ov);
         svfModule->addOtherValue(svfov);
         addOtherValueMap(ov,svfov);
         return svfov;
     }
 }
-
 
 SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
 {
@@ -879,14 +899,19 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
         return getSVFFunction(fun);
     else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
         return getSVFBasicBlock(bb);
-    else if (const GlobalValue* glob = SVFUtil::dyn_cast<GlobalValue>(value))
-        return getSVFGlobalValue(glob);
     else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
         return getSVFInstruction(inst);
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
         return getSVFArgument(arg);
-    else if (const ConstantData* cd = SVFUtil::dyn_cast<ConstantData>(value))
-        return getSVFConstantData(cd);
+    else if (const Constant* cons = SVFUtil::dyn_cast<Constant>(value))
+    {
+        if (const ConstantData* cd = SVFUtil::dyn_cast<ConstantData>(cons))
+            return getSVFConstantData(cd);
+        else if (const GlobalValue* glob = SVFUtil::dyn_cast<GlobalValue>(cons))
+            return getSVFGlobalValue(glob);
+        else
+            return getOtherSVFConstant(cons);
+    }
     else
         return getSVFOtherValue(value);
 }

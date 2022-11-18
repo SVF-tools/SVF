@@ -32,12 +32,10 @@ SVFModule::~SVFModule()
 {
     for (const SVFFunction* f : FunctionSet)
         delete f;
-    for (const SVFGlobalValue* g : GlobalSet)
-        delete g;
-    for (const SVFGlobalValue* a : AliasSet)
-        delete a;
-    for (const SVFConstantData* c : ConstantDataSet)
+    for (const SVFConstant* c : ConstantSet)
         delete c;
+    for (const SVFValue* o : OtherValueSet)
+        delete o;
     NodeIDAllocator::unset();
     ThreadAPI::destroy();
     ExtAPI::destory();

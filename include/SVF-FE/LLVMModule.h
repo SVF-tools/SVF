@@ -50,9 +50,8 @@ public:
     typedef Map<const Function*, SVFFunction*> LLVMFun2SVFFunMap;
     typedef Map<const BasicBlock*, SVFBasicBlock*> LLVMBB2SVFBBMap;
     typedef Map<const Instruction*, SVFInstruction*> LLVMInst2SVFInstMap;
-    typedef Map<const GlobalValue*, SVFGlobalValue*> LLVMGlobal2SVFGlobalMap;
     typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
-    typedef Map<const ConstantData*, SVFConstantData*> LLVMConstData2SVFConstDataMap;
+    typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
     typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
 
 private:
@@ -73,8 +72,7 @@ private:
     LLVMBB2SVFBBMap LLVMBB2SVFBB;
     LLVMInst2SVFInstMap LLVMInst2SVFInst;
     LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
-    LLVMGlobal2SVFGlobalMap LLVMGlobal2SVFGlobal;
-    LLVMConstData2SVFConstDataMap LLVMConstData2SVFConstData;
+    LLVMConst2SVFConstMap LLVMConst2SVFConst;
     LLVMValue2SVFOtherValueMap LLVMValue2SVFOtherValue;
 
     /// Constructor
@@ -154,13 +152,18 @@ public:
     }
     inline void addGlobalValueMap(const GlobalValue* glob, SVFGlobalValue* svfglob)
     {
-        LLVMGlobal2SVFGlobal[glob] = svfglob;
+        LLVMConst2SVFConst[glob] = svfglob;
         setValueAttr(glob,svfglob);
     }
     inline void addConstantDataMap(const ConstantData* cd, SVFConstantData* svfcd)
     {
-        LLVMConstData2SVFConstData[cd] = svfcd;
+        LLVMConst2SVFConst[cd] = svfcd;
         setValueAttr(cd,svfcd);
+    }
+    inline void addOtherConstantMap(const Constant* cons, SVFConstant* svfcons)
+    {
+        LLVMConst2SVFConst[cons] = svfcons;
+        setValueAttr(cons,svfcons);
     }
     inline void addOtherValueMap(const Value* ov, SVFOtherValue* svfov)
     {
@@ -200,13 +203,14 @@ public:
 
     inline SVFGlobalValue* getSVFGlobalValue(const GlobalValue* g) const
     {
-        LLVMGlobal2SVFGlobalMap::const_iterator it = LLVMGlobal2SVFGlobal.find(g);
-        assert(it!=LLVMGlobal2SVFGlobal.end() && "SVF Global not found!");
-        return it->second;
+        LLVMConst2SVFConstMap::const_iterator it = LLVMConst2SVFConst.find(g);
+        assert(it!=LLVMConst2SVFConst.end() && "SVF Global not found!");
+        assert(SVFUtil::isa<SVFGlobalValue>(it->second) && "not a SVFGlobal type!");
+        return SVFUtil::cast<SVFGlobalValue>(it->second);
     }
 
     SVFConstantData* getSVFConstantData(const ConstantData* cd);
-    SVFConstant* getSVFOtherConstant(const Value* oc);
+    SVFConstant* getOtherSVFConstant(const Constant* oc);
 
     SVFOtherValue* getSVFOtherValue(const Value* ov);
 
