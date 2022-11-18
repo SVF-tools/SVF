@@ -125,7 +125,7 @@ void LLVMModuleSet::createSVFDataStructure()
         {
             const Function* func = &*it;
             SVFLoopAndDomInfo* ld = new SVFLoopAndDomInfo();
-            SVFFunction* svfFunc = new SVFFunction(func, func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), func->hasAddressTaken(), func->getFunctionType(), ld);
+            SVFFunction* svfFunc = new SVFFunction(func, func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), func->hasAddressTaken(), func->isVarArg(), func->getFunctionType(), ld);
             svfModule->addFunctionSet(svfFunc);
             addFunctionMap(func,svfFunc);
 
@@ -150,13 +150,13 @@ void LLVMModuleSet::createSVFDataStructure()
                     if(const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
                     {
                         if(cppUtil::isVirtualCallSite(call))
-                            svfInst = new SVFVirtualCallInst(call,svfBB,call->getFunctionType());
+                            svfInst = new SVFVirtualCallInst(call,svfBB,call->getFunctionType(),inst->isTerminator());
                         else
-                            svfInst = new SVFCallInst(call,svfBB,call->getFunctionType());
+                            svfInst = new SVFCallInst(call,svfBB,call->getFunctionType(),inst->isTerminator());
                     }
                     else
                     {
-                        svfInst = new SVFInstruction(inst,svfBB, SVFUtil::isa<ReturnInst>(inst));
+                        svfInst = new SVFInstruction(inst,svfBB, inst->isTerminator(), SVFUtil::isa<ReturnInst>(inst));
                     }
                     svfBB->addInstruction(svfInst);
                     addInstructionMap(inst,svfInst);
@@ -202,8 +202,6 @@ void LLVMModuleSet::initSVFFunction()
 
             if (SVFUtil::isExtCall(svffun) == false)
             {
-                const SVFBasicBlock* svfexitbb = getSVFBasicBlock(&f->back());
-                svffun->setExitBB(svfexitbb);
                 initDomTree(svffun, f);
             }
         }
@@ -216,7 +214,6 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
     {
         const BasicBlock* bb = &*bit;
         SVFBasicBlock* svfbb = getSVFBasicBlock(bb);
-        svfbb->setTerminator(getSVFInstruction(bb->getTerminator()));
         for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
         {
             const SVFBasicBlock* svf_scc_bb = getSVFBasicBlock(*succ_it);
@@ -232,7 +229,8 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
             const Instruction* inst = &*iit;
             if(const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
             {
-                SVFCallInst* svfcall = SVFUtil::cast<SVFCallInst>(getSVFInstruction(call));
+                SVFInstruction* svfinst = getSVFInstruction(call);
+                SVFCallInst* svfcall = SVFUtil::cast<SVFCallInst>(svfinst);
                 SVFValue* callee = getSVFValue(call->getCalledOperand()->stripPointerCasts());
                 svfcall->setCalledOperand(callee);
                 if(SVFVirtualCallInst* virtualCall = SVFUtil::dyn_cast<SVFVirtualCallInst>(svfcall))
@@ -813,6 +811,8 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
         svfvalue->setPtrInUncalledFunction();
     if (LLVMUtil::isConstDataOrAggData(val))
         svfvalue->setConstDataOrAggData();
+    if (LLVMUtil::isConstantObjSym(val))
+        svfvalue->setConstantObjSym();
     if (SVFGlobalValue* glob = SVFUtil::dyn_cast<SVFGlobalValue>(svfvalue))
     {
         const Value* llvmVal = LLVMUtil::getGlobalRep(val);

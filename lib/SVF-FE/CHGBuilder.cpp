@@ -375,7 +375,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
             CHNode *node = chg->getNode(vtblClassName);
             assert(node && "node not found?");
 
-            node->setVTable(globalvalue);
+            node->setVTable(LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(globalvalue));
 
             for (unsigned int ei = 0; ei < vtblStruct->getNumOperands(); ++ei)
             {
@@ -648,10 +648,10 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
         for (CHNodeSetTy::const_iterator it = chClasses.begin(), eit = chClasses.end(); it != eit; ++it)
         {
             const CHNode *child = *it;
-            const GlobalValue *vtbl = child->getVTable();
+            const SVFGlobalValue *vtbl = child->getVTable();
             if (vtbl != nullptr)
             {
-                vtbls.insert(LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(vtbl));
+                vtbls.insert(vtbl);
             }
         }
         if (vtbls.size() > 0)

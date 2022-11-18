@@ -174,18 +174,18 @@ public:
     }
     void getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const;
 
-    const GlobalValue *getVTable() const
+    const SVFGlobalValue *getVTable() const
     {
         return vtable;
     }
 
-    void setVTable(const GlobalValue *vtbl)
+    void setVTable(const SVFGlobalValue *vtbl)
     {
         vtable = vtbl;
     }
 
 private:
-    const GlobalValue* vtable;
+    const SVFGlobalValue* vtable;
     std::string className;
     size_t flags;
     /*

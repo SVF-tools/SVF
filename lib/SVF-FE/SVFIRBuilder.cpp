@@ -222,10 +222,10 @@ void SVFIRBuilder::initialiseNodes()
                 symTable->objSyms().begin(); iter != symTable->objSyms().end(); ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add address edges for constant node " << iter->second << "\n");
-        const Value* val = iter->first->getLLVMValue();
-        if (LLVMUtil::isConstantObjSym(val))
+        const SVFValue* val = iter->first;
+        if (val->isConstantObjSym())
         {
-            NodeID ptr = pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
+            NodeID ptr = pag->getValueNode(val);
             if(ptr!= pag->getBlkPtr() && ptr!= pag->getNullPtr())
             {
                 setCurrentLocation(val, nullptr);

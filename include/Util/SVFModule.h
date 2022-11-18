@@ -42,7 +42,6 @@ class SVFModule
 {
 public:
     typedef std::vector<const SVFFunction*> FunctionSetType;
-    typedef std::vector<const Function*> LLVMFunctionSetType;
     typedef std::vector<SVFGlobalValue*> GlobalSetType;
     typedef std::vector<SVFGlobalValue*> AliasSetType;
     typedef std::vector<SVFConstant*> ConstantType;

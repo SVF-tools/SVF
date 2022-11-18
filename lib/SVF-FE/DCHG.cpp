@@ -177,7 +177,7 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 assert(type && "DCHG::buildVTables: bad metadata for ctir.vt");
                 DCHNode *node = getOrCreateNode(type);
                 const SVFGlobalValue* svfgv = LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(gv);
-                node->setVTable(gv);
+                node->setVTable(svfgv);
                 vtblToTypeMap[svfgv] = getCanonicalType(type);
 
                 const ConstantStruct *vtbls = SVFUtil::dyn_cast<ConstantStruct>(gv->getOperand(0));
@@ -566,11 +566,11 @@ const VTableSet &DCHGraph::getCSVtblsBasedonCHA(CallSite cs)
     for (NodeID childId : children)
     {
         DCHNode *child = getGNode(childId);
-        const GlobalValue *vtbl = child->getVTable();
+        const SVFGlobalValue *vtbl = child->getVTable();
         // TODO: what if it is null?
         if (vtbl != nullptr)
         {
-            vtblSet.insert(LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(vtbl));
+            vtblSet.insert(vtbl);
         }
     }
 

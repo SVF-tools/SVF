@@ -161,12 +161,12 @@ public:
         return typedefs;
     }
 
-    void setVTable(const GlobalValue *vtbl)
+    void setVTable(const SVFGlobalValue *vtbl)
     {
         vtable = vtbl;
     }
 
-    const GlobalValue *getVTable() const
+    const SVFGlobalValue *getVTable() const
     {
         return vtable;
     }
@@ -193,7 +193,7 @@ private:
     const DIType *diType;
     /// Typedefs which map to this type.
     Set<const DIDerivedType *> typedefs;
-    const GlobalValue* vtable;
+    const SVFGlobalValue* vtable;
     std::string typeName;
     size_t flags;
     /// The virtual functions which this class actually defines/overrides.

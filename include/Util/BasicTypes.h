@@ -45,11 +45,7 @@ namespace SVF
 
 /// LLVM Basic classes
 typedef llvm::Type Type;
-typedef llvm::Function Function;
-typedef llvm::BasicBlock BasicBlock;
 typedef llvm::Value Value;
-typedef llvm::Instruction Instruction;
-typedef llvm::GlobalValue GlobalValue;
 
 /// LLVM outputs
 typedef llvm::raw_string_ostream raw_string_ostream;
@@ -62,8 +58,6 @@ typedef llvm::FunctionType FunctionType;
 typedef llvm::IntegerType IntegerType;
 
 /// LLVM Aliases and constants
-typedef llvm::ConstantData ConstantData;
-
 typedef llvm::GraphPrinter GraphPrinter;
 
 
@@ -80,11 +74,11 @@ public:
     typedef BBList LoopBBs;
 
 private:
-    BBList reachableBBs;
-    Map<const SVFBasicBlock*,BBSet> dtBBsMap;
-    Map<const SVFBasicBlock*,BBSet> dfBBsMap;
-    Map<const SVFBasicBlock*,BBSet> pdtBBsMap;
-    Map<const SVFBasicBlock*, LoopBBs> bb2LoopMap;
+    BBList reachableBBs;    ///< reachable BasicBlocks from the function entry.
+    Map<const SVFBasicBlock*,BBSet> dtBBsMap;   ///< map a BasicBlock to BasicBlocks it Dominates 
+    Map<const SVFBasicBlock*,BBSet> pdtBBsMap;   ///< map a BasicBlock to BasicBlocks it PostDominates 
+    Map<const SVFBasicBlock*,BBSet> dfBBsMap;    ///< map a BasicBlock to its Dominate Frontier BasicBlocks
+    Map<const SVFBasicBlock*, LoopBBs> bb2LoopMap;  ///< map a BasicBlock (if it is in a loop) to all the BasicBlocks in this loop 
 public:
     SVFLoopAndDomInfo()
     {
@@ -171,6 +165,7 @@ public:
 
 class SVFValue
 {
+friend class LLVMModuleSet;
 
 public:
     typedef s64_t GNodeK;
@@ -197,20 +192,41 @@ public:
 
 private:
     const Value* value;
-    const Type* type;
-    GNodeK kind;	///< Type of this SVFValue
-    bool ptrInUncalledFun;
-    bool has_name;
-    bool constDataOrAggData;
+    const Type* type;   ///< Type of this SVFValue
+    GNodeK kind;	///< used for classof 
+    bool ptrInUncalledFun;  ///< true if this pointer is in an uncalled function
+    bool has_name;          ///< true if this value has a name
+    bool constDataOrAggData;    ///< true if this value is a ConstantData (e.g., numbers, string, floats) or a constantAggregate
+    bool constantObjSym;    ///< true if this value is an object allocation and the object is a constant symbol.
+
 protected:
     std::string name;
     std::string sourceLoc;
     /// Constructor
     SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k),
-        ptrInUncalledFun(false), has_name(false), constDataOrAggData(SVFConstData==k), name(val->getName()), sourceLoc("No source code Info")
+        ptrInUncalledFun(false), has_name(false), constDataOrAggData(SVFConstData==k), 
+        constantObjSym(constDataOrAggData), name(val->getName()), sourceLoc("No source code Info")
     {
     }
 
+    ///@{ attributes to be set only through Module builders e.g., LLVMModule
+    inline void setConstDataOrAggData()
+    {
+        constDataOrAggData = true;
+    }
+    inline void setConstantObjSym()
+    {
+        constantObjSym = true;
+    }
+    inline void setPtrInUncalledFunction()
+    {
+        ptrInUncalledFun = true;
+    }
+    inline void setHasName()
+    {
+        has_name = true;
+    }
+    ///@}
 public:
     SVFValue(void) = delete;
     virtual ~SVFValue() = default;
@@ -240,32 +256,27 @@ public:
     }
     //@}
 
-    inline const std::string getName() const
+    inline virtual const std::string getName() const
     {
         return name;
+    }
+
+    inline virtual const Type* getType() const
+    {
+        return type;
     }
 
     inline const Value* getLLVMValue() const
     {
         return value;
     }
-
-    inline const Type* getType() const
-    {
-        return type;
-    }
-
-    inline void setConstDataOrAggData()
-    {
-        constDataOrAggData = true;
-    }
     inline bool isConstDataOrAggData() const
     {
         return constDataOrAggData;
     }
-    inline void setPtrInUncalledFunction()
+    inline bool isConstantObjSym() const
     {
-        ptrInUncalledFun = true;
+        return constantObjSym;
     }
     inline bool ptrInUncalledFunction() const
     {
@@ -279,27 +290,23 @@ public:
     {
         return getKind() == SVFNullPtr;
     }
-    inline void setHasName()
-    {
-        has_name = true;
-    }
     inline bool hasName() const
     {
         return has_name;
     }
-    inline void setSourceLoc(const std::string& sourceCodeInfo)
+    inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
     {
         sourceLoc = sourceCodeInfo;
     }
-    inline const std::string& getSourceLoc() const
+    inline virtual const std::string& getSourceLoc() const
     {
         return sourceLoc;
     }
-    inline void setToString(const std::string& str)
+    inline virtual std::string& toString()
     {
-        name = str;
+        return name;
     }
-    inline const std::string& toString() const
+    inline virtual const std::string& toString() const
     {
         return name;
     }
@@ -307,7 +314,7 @@ public:
     //@{
     friend OutStream& operator<< (OutStream &o, const SVFValue &node)
     {
-        o << node.getName();
+        o << node.toString();
         return o;
     }
     //@}
@@ -315,6 +322,7 @@ public:
 
 class SVFFunction : public SVFValue
 {
+friend class LLVMModuleSet;
 
 public:
     typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
@@ -323,22 +331,50 @@ public:
     typedef SVFLoopAndDomInfo::LoopBBs LoopBBs;
 
 private:
-    bool isDecl;
-    bool intricsic;
-    bool addrTaken;
-    const FunctionType* funType;
-    SVFLoopAndDomInfo* loopAndDom;
+    bool isDecl;   /// return true if this function does not have a body
+    bool intricsic; /// return true if this function is an intricsic function (e.g., llvm.dbg), which does not reside in the application code
+    bool addrTaken; /// return true if this function is address-taken (for indirect call purposes)
+    bool isUncalled;    /// return true if this function is never called
+    bool isNotRet;   /// return true if this function never returns
+    bool varArg;    /// return true if this function supports variable arguments 
+    const FunctionType* funType;    /// the type of this function
+    SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
-    const SVFBasicBlock* exitBB;
-    std::vector<const SVFBasicBlock*> allBBs;
-    std::vector<const SVFArgument*> allArgs;
-    bool isUncalled;
-    bool isNotRet;
-    bool varArg;
+    std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
+    std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
+
+
+protected:
+    ///@{ attributes to be set only through Module builders e.g., LLVMModule
+    inline void addBasicBlock(const SVFBasicBlock* bb)
+    {
+        allBBs.push_back(bb);
+    }
+
+    inline void addArgument(SVFArgument* arg)
+    {
+        allArgs.push_back(arg);
+    }
+
+    inline void setIsUncalledFunction(bool isUncalledFunction)
+    {
+        this->isUncalled = isUncalledFunction;
+    }
+
+    inline void setIsNotRet(bool doesNotRet)
+    {
+        this->isNotRet = doesNotRet;
+    }
+
+    inline void setDefFunForMultipleModule(const SVFFunction* deffun)
+    {
+        realDefFun = deffun;
+    }
+    /// @}
 
 public:
-    SVFFunction(const Function* f, bool declare, bool intricsic, bool addrTaken, const FunctionType* ft, SVFLoopAndDomInfo* ld);
-    SVFFunction(const Function* f) = delete;
+    SVFFunction(const Value* f, bool declare, bool intricsic, bool addrTaken, bool varg, const FunctionType* ft, SVFLoopAndDomInfo* ld);
+    SVFFunction(const Value* f) = delete;
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
 
@@ -378,11 +414,6 @@ public:
         return funType->getReturnType();
     }
 
-    inline void setDefFunForMultipleModule(const SVFFunction* deffun)
-    {
-        realDefFun = deffun;
-    }
-
     inline const SVFFunction* getDefFunForMultipleModule() const
     {
         if(realDefFun==nullptr)
@@ -394,16 +425,6 @@ public:
     const SVFArgument* getArg(u32_t idx) const;
     bool isVarArg() const;
 
-    inline void addBasicBlock(const SVFBasicBlock* bb)
-    {
-        allBBs.push_back(bb);
-    }
-
-    inline void addArgument(SVFArgument* arg)
-    {
-        allArgs.push_back(arg);
-    }
-
     inline bool hasBasicBlock() const
     {
         return !allBBs.empty();
@@ -413,6 +434,22 @@ public:
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
         return allBBs.front();
+    }
+
+    inline const SVFBasicBlock* getExitBB() const
+    {
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        return allBBs.back();
+    }
+
+    inline const SVFBasicBlock* front() const
+    {
+        return getEntryBlock();
+    }
+    
+    inline const SVFBasicBlock* back() const
+    {
+        return getExitBB();
     }
 
     inline const_iterator begin() const
@@ -435,34 +472,14 @@ public:
         return loopAndDom->getReachableBBs();
     }
 
-    inline const bool isUncalledFunction() const
+    inline bool isUncalledFunction() const
     {
         return isUncalled;
-    }
-
-    inline const void setIsUncalledFunction(bool isUncalledFunction)
-    {
-        this->isUncalled = isUncalledFunction;
-    }
-
-    inline const void setIsNotRet(bool doesNotRet)
-    {
-        this->isNotRet = doesNotRet;
-    }
-
-    inline const void setExitBB(const SVFBasicBlock* exitBB)
-    {
-        this->exitBB = exitBB;
     }
 
     inline bool isNotRetFunction() const
     {
         return isNotRet;
-    }
-
-    inline const SVFBasicBlock* getExitBB() const
-    {
-        return this->exitBB;
     }
 
     inline void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const
@@ -519,29 +536,43 @@ public:
 
 class SVFBasicBlock : public SVFValue
 {
+friend class LLVMModuleSet;
 
 public:
     typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
 
 private:
-    std::vector<const SVFInstruction*> allInsts;
-    std::vector<const SVFBasicBlock*> succBBs;
-    std::vector<const SVFBasicBlock*> predBBs;
-    const SVFFunction* fun;
-    const SVFInstruction* terminatorInst;
+    std::vector<const SVFInstruction*> allInsts;    ///< all Instructions in this BasicBlock
+    std::vector<const SVFBasicBlock*> succBBs;  ///< all successor BasicBlocks of this BasicBlock
+    std::vector<const SVFBasicBlock*> predBBs;  ///< all predecessor BasicBlocks of this BasicBlock
+    const SVFFunction* fun;                 /// Function where this BasicBlock is
+
+protected:
+    ///@{ attributes to be set only through Module builders e.g., LLVMModule
+    inline void addInstruction(const SVFInstruction* inst)
+    {
+        allInsts.push_back(inst);
+    }
+
+    inline void addSuccBasicBlock(const SVFBasicBlock* succ)
+    {
+        succBBs.push_back(succ);
+    }
+
+    inline void addPredBasicBlock(const SVFBasicBlock* pred)
+    {
+        predBBs.push_back(pred);
+    }
+    /// @}
+
 public:
-    SVFBasicBlock(const BasicBlock* b, const SVFFunction* f);
+    SVFBasicBlock(const Value* b, const SVFFunction* f);
     SVFBasicBlock(void) = delete;
     virtual ~SVFBasicBlock();
 
     static inline bool classof(const SVFValue *node)
     {
         return node->getKind() == SVFBB;
-    }
-
-    inline void addInstruction(const SVFInstruction* inst)
-    {
-        allInsts.push_back(inst);
     }
 
     inline const std::vector<const SVFInstruction*>& getInstructionList() const
@@ -579,25 +610,9 @@ public:
         return allInsts.back();
     }
 
-    inline void setTerminator(const SVFInstruction* ti)
-    {
-        terminatorInst = ti;
-    }
-
-    inline const SVFInstruction* getTerminator() const
-    {
-        return terminatorInst;
-    }
-
-    inline void addSuccBasicBlock(const SVFBasicBlock* succ)
-    {
-        succBBs.push_back(succ);
-    }
-
-    inline void addPredBasicBlock(const SVFBasicBlock* pred)
-    {
-        predBBs.push_back(pred);
-    }
+    /// Returns the terminator instruction if the block is well formed or null
+    /// if the block is not well formed.
+    const SVFInstruction* getTerminator() const;
 
     inline const std::vector<const SVFBasicBlock*>& getSuccessors() const
     {
@@ -624,15 +639,15 @@ public:
     typedef std::vector<const SVFInstruction*> InstVec;
 
 private:
-    const SVFBasicBlock* bb;
-    bool terminator;
-    bool ret;
-    InstVec succInsts;
-    InstVec predInsts;
+    const SVFBasicBlock* bb;    /// The BasicBlock where this Instruction resides
+    bool terminator;    /// return true if this is a terminator instruction
+    bool ret;           /// return true if this is an return instruction of a function
+    InstVec succInsts;  /// successor Instructions
+    InstVec predInsts;  /// predecessor Instructions
 
 public:
-    SVFInstruction(const Instruction* i, const SVFBasicBlock* b, bool isRet, SVFValKind k = SVFInst);
-    SVFInstruction(const Instruction* i) = delete;
+    SVFInstruction(const Value* i, const SVFBasicBlock* b, bool tm, bool isRet, SVFValKind k = SVFInst);
+    SVFInstruction(const Value* i) = delete;
     SVFInstruction(void) = delete;
 
     static inline bool classof(const SVFValue *node)
@@ -685,16 +700,31 @@ public:
 
 class SVFCallInst : public SVFInstruction
 {
+friend class LLVMModuleSet;
+
 private:
     std::vector<const SVFValue*> args;
     const FunctionType* calledFunType;
     const SVFValue* calledVal;
+
+protected:
+    ///@{ attributes to be set only through Module builders e.g., LLVMModule
+    inline void addArgument(const SVFValue* a)
+    {
+        args.push_back(a);
+    }
+    inline void setCalledOperand(const SVFValue* v)
+    {
+        calledVal = v;
+    }
+    /// @}
+
 public:
-    SVFCallInst(const Instruction* i, const SVFBasicBlock* b, const FunctionType* t, SVFValKind k = SVFCall) : SVFInstruction(i,b,false,k), 
-        calledFunType(t), calledVal(nullptr)
+    SVFCallInst(const Value* i, const SVFBasicBlock* b, const FunctionType* t, bool tm, SVFValKind k = SVFCall) : 
+        SVFInstruction(i,b,tm,false,k), calledFunType(t), calledVal(nullptr)
     {
     }
-    SVFCallInst(const Instruction* i) = delete;
+    SVFCallInst(const Value* i) = delete;
     SVFCallInst(void) = delete;
 
     static inline bool classof(const SVFValue *node)
@@ -704,10 +734,6 @@ public:
     static inline bool classof(const SVFInstruction *node)
     {
         return node->getKind() == SVFCall || node->getKind() == SVFVCall;
-    }
-    inline void addArgument(const SVFValue* a)
-    {
-        args.push_back(a);
     }
     inline u32_t arg_size() const
     {
@@ -725,10 +751,6 @@ public:
     inline u32_t getNumArgOperands() const
     {
         return arg_size();
-    }
-    inline void setCalledOperand(const SVFValue* v)
-    {
-        calledVal = v;
     }
     inline const SVFValue* getCalledOperand() const
     {
@@ -750,36 +772,41 @@ public:
 
 class SVFVirtualCallInst : public SVFCallInst
 {
+friend class LLVMModuleSet;
+
 private:
-    const SVFValue* vCallVtblPtr;
-    s32_t virtualFunIdx;
-    std::string funNameOfVcall;
-public:
-    SVFVirtualCallInst(const Instruction* i, const SVFBasicBlock* b, const FunctionType* t) : 
-        SVFCallInst(i,b,t,SVFVCall), vCallVtblPtr(nullptr), virtualFunIdx(-1), funNameOfVcall("")
+    const SVFValue* vCallVtblPtr;   /// virtual table pointer
+    s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
+    std::string funNameOfVcall;     /// the function name of this virtual call
+
+protected:
+    inline void setFunIdxInVtable(s32_t idx)
     {
+        virtualFunIdx = idx;
+    }
+    inline void setFunNameOfVirtualCall(const std::string& name)
+    {
+        funNameOfVcall = name;
     }
     inline void setVtablePtr(const SVFValue* vptr)
     {
         vCallVtblPtr = vptr;
+    }
+
+public:
+    SVFVirtualCallInst(const Value* i, const SVFBasicBlock* b, const FunctionType* t, bool tm) : 
+        SVFCallInst(i,b,t,tm, SVFVCall), vCallVtblPtr(nullptr), virtualFunIdx(-1), funNameOfVcall("")
+    {
     }
     inline const SVFValue* getVtablePtr() const
     {
         assert(vCallVtblPtr && "virtual call does not have a vtblptr? set it first");
         return vCallVtblPtr;
     }
-    inline void setFunIdxInVtable(s32_t idx)
-    {
-        virtualFunIdx = idx;
-    }
     inline s32_t getFunIdxInVtable() const
     {
         assert(virtualFunIdx >=0 && "virtual function idx is less than 0? not set yet?");
         return virtualFunIdx;
-    }
-    inline void setFunNameOfVirtualCall(const std::string& name)
-    {
-        funNameOfVcall = name;
     }
     inline const std::string& getFunNameOfVirtualCall() const
     {
@@ -821,18 +848,23 @@ public:
 
 class SVFGlobalValue : public SVFConstant
 {
+friend class LLVMModuleSet;
+
 private:
     const SVFValue* realDefGlobal;  /// the definition of a function across multiple modules
-public:
-    SVFGlobalValue(const GlobalValue* _gv): SVFConstant(_gv, SVFValue::SVFGlob), realDefGlobal(nullptr)
-    {
-    }
-    SVFGlobalValue() = delete;
 
+protected:
     inline void setDefGlobalForMultipleModule(const SVFValue* defg)
     {
         realDefGlobal = defg;
     }
+
+public:
+    SVFGlobalValue(const Value* _gv): SVFConstant(_gv, SVFValue::SVFGlob), realDefGlobal(nullptr)
+    {
+    }
+    SVFGlobalValue() = delete;
+
 
     inline const SVFValue* getDefGlobalForMultipleModule() const
     {
@@ -890,7 +922,7 @@ public:
 class SVFConstantData : public SVFConstant
 {
 public:
-    SVFConstantData(const ConstantData* _const, SVFValKind k = SVFConstData): SVFConstant(_const, k)
+    SVFConstantData(const Value* _const, SVFValKind k = SVFConstData): SVFConstant(_const, k)
     {
     }
     SVFConstantData() = delete;
@@ -920,7 +952,7 @@ private:
     u64_t zval;
     s64_t sval;
 public:
-    SVFConstantInt(const ConstantData* _const, u64_t z, s64_t s): SVFConstantData(_const, SVFValue::SVFConstInt), zval(z), sval(s)
+    SVFConstantInt(const Value* _const, u64_t z, s64_t s): SVFConstantData(_const, SVFValue::SVFConstInt), zval(z), sval(s)
     {
     }
     SVFConstantInt() = delete;
@@ -951,7 +983,7 @@ class SVFConstantFP : public SVFConstantData
 private:
     float dval;
 public:
-    SVFConstantFP(const ConstantData* _const, double d): SVFConstantData(_const, SVFValue::SVFConstFP), dval(d)
+    SVFConstantFP(const Value* _const, double d): SVFConstantData(_const, SVFValue::SVFConstFP), dval(d)
     {
     }
     SVFConstantFP() = delete;
@@ -975,7 +1007,7 @@ class SVFConstantNullPtr : public SVFConstantData
 {
 
 public:
-    SVFConstantNullPtr(const ConstantData* _const): SVFConstantData(_const, SVFValue::SVFNullPtr)
+    SVFConstantNullPtr(const Value* _const): SVFConstantData(_const, SVFValue::SVFNullPtr)
     {
     }
     SVFConstantNullPtr() = delete;
@@ -994,7 +1026,7 @@ class SVFBlackHoleValue : public SVFConstantData
 {
 
 public:
-    SVFBlackHoleValue(const ConstantData* _const): SVFConstantData(_const, SVFValue::SVFBlackHole)
+    SVFBlackHoleValue(const Value* _const): SVFConstantData(_const, SVFValue::SVFBlackHole)
     {
     }
     SVFBlackHoleValue() = delete;

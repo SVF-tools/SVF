@@ -296,7 +296,6 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBa
     }
 
     const SVFInstruction* svfInst = bb->getTerminator();
-
     if (ICFGNode *icfgNode = getICFG()->getICFGNode(svfInst))
     {
         for (const auto &svfStmt: icfgNode->getSVFStmts())

@@ -282,9 +282,9 @@ const std::string& SVFUtil::value2String(const SVFValue* value)
     raw_string_ostream rawstr(str);
     if(value)
     {
-        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value->getLLVMValue()))
+        if(const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(value))
             rawstr << "Function: " << fun->getName() << " ";
-        else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value->getLLVMValue()))
+        else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(value))
             rawstr << "BasicBlock: " << bb->getName() << " ";
         else
             rawstr << " " << *value->getLLVMValue() << " ";

@@ -103,8 +103,8 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
-SVFFunction::SVFFunction(const Function* f, bool declare, bool intric, bool adt, const FunctionType* ft, SVFLoopAndDomInfo* ld): SVFValue(f,SVFValue::SVFFunc),
-    isDecl(declare), intricsic(intric), addrTaken(adt), funType(ft), loopAndDom(ld), realDefFun(nullptr), exitBB(nullptr), isUncalled(false), isNotRet(false), varArg(f->isVarArg())
+SVFFunction::SVFFunction(const Value* f, bool declare, bool intric, bool adt, bool varg, const FunctionType* ft, SVFLoopAndDomInfo* ld): SVFValue(f,SVFValue::SVFFunc),
+    isDecl(declare), intricsic(intric), addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg), funType(ft), loopAndDom(ld), realDefFun(nullptr)
 {
 }
 
@@ -133,8 +133,8 @@ bool SVFFunction::isVarArg() const
     return varArg;
 }
 
-SVFBasicBlock::SVFBasicBlock(const BasicBlock* b, const SVFFunction* f):
-    SVFValue(b,SVFValue::SVFBB), fun(f), terminatorInst(nullptr)
+SVFBasicBlock::SVFBasicBlock(const Value* b, const SVFFunction* f):
+    SVFValue(b,SVFValue::SVFBB), fun(f)
 {
     name = b->hasName() ? b->getName().str(): "";
 }
@@ -174,6 +174,12 @@ u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ) const
     return 0;
 }
 
+const SVFInstruction* SVFBasicBlock::getTerminator() const
+{
+    if (allInsts.empty() || !allInsts.back()->isTerminator())
+        return nullptr;
+    return allInsts.back();
+}
 
 /*!
  * Return a position index from current bb to it successor bb
@@ -203,7 +209,7 @@ u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
     return pos;
 }
 
-SVFInstruction::SVFInstruction(const llvm::Instruction* i, const SVFBasicBlock* b, bool isRet, SVFValKind k):
-    SVFValue(i, k), bb(b), terminator(i->isTerminator()), ret(isRet)
+SVFInstruction::SVFInstruction(const Value* i, const SVFBasicBlock* b,  bool tm, bool isRet, SVFValKind k):
+    SVFValue(i, k), bb(b), terminator(tm), ret(isRet)
 {
 }

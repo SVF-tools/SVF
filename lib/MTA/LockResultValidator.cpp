@@ -12,12 +12,12 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-Set<std::string> LockResultValidator::getStringArg(const SVFInstruction* inst, unsigned int arg_num)
+Set<std::string> LockResultValidator::getStringArg(const Instruction* inst, unsigned int arg_num)
 {
-    assert(SVFUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callsite");
-    CallSite cs = SVFUtil::getSVFCallSite(inst);
-    assert((arg_num < cs.arg_size()) && "Does not has this argument");
-    const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(arg_num)->getLLVMValue());
+    assert(LLVMUtil::isCallSite(inst) && "getFirstIntArg: inst is not a callsite");
+    const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
+    assert((arg_num < cs->arg_size()) && "Does not has this argument");
+    const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs->getArgOperand(arg_num));
     const Constant* arrayinst = SVFUtil::dyn_cast<Constant>(gepinst->getOperand(0));
     const ConstantDataArray* cxtarray = SVFUtil::dyn_cast<ConstantDataArray>(arrayinst->getOperand(0));
     if (!cxtarray)
@@ -90,8 +90,7 @@ bool LockResultValidator::collectLockTargets()
         const Use *u = &*it;
         const Value* user = u->getUser();
         const Instruction* inst = SVFUtil::dyn_cast<Instruction>(user);
-        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
-        CxtLockSetStr y = getStringArg(svfInst, 0);
+        CxtLockSetStr y = getStringArg(inst, 0);
         const Instruction* memInst = getPreviousMemoryAccessInst(inst);
         const SVFInstruction* svfMemInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(memInst);
 

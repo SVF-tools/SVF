@@ -95,7 +95,7 @@ private:
 
     std::string getOutput(const char* scenario, LOCK_FLAG analysisRes);
 
-    Set<std::string> getStringArg(const SVFInstruction* inst, unsigned int arg_num);
+    Set<std::string> getStringArg(const Instruction* inst, unsigned int arg_num);
 
     bool collectLockTargets();
     LOCK_FLAG validateStmtInLock();

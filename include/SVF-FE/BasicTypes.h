@@ -50,6 +50,10 @@ typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
 #endif
 
 typedef llvm::Module Module;
+typedef llvm::Function Function;
+typedef llvm::BasicBlock BasicBlock;
+typedef llvm::Instruction Instruction;
+typedef llvm::GlobalValue GlobalValue;
 
 typedef llvm::SMDiagnostic SMDiagnostic;
 
@@ -71,6 +75,7 @@ typedef llvm::MDNode MDNode;
 typedef llvm::DISubprogram DISubprogram;
 
 // LLVM Aliases and constants
+typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantAggregate ConstantAggregate;
 typedef llvm::ConstantAggregateZero ConstantAggregateZero;
 typedef llvm::ConstantDataSequential ConstantDataSequential;
