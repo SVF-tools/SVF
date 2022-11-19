@@ -95,9 +95,7 @@ public:
         else
             return true;
     }
-
-    void buildSymbolTableInfo();
-
+    
     const SVFFunction* getSVFFunction(const std::string name);
 
     ///@{

@@ -22,7 +22,7 @@
 
 
 #include "Util/SVFModule.h"
-#include "SVF-FE/SymbolTableBuilder.h"
+#include "MemoryModel/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
 
@@ -39,21 +39,6 @@ SVFModule::~SVFModule()
     NodeIDAllocator::unset();
     ThreadAPI::destroy();
     ExtAPI::destory();
-}
-
-void SVFModule::buildSymbolTableInfo()
-{
-    double startTime = SVFStat::getClk(true);
-    if (!pagReadFromTXT())
-    {
-        /// building symbol table
-        DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableInfo *symInfo = SymbolTableInfo::SymbolInfo();
-        SymbolTableBuilder builder(symInfo);
-        builder.buildMemModel(this);
-    }
-    double endTime = SVFStat::getClk(true);
-    SVFStat::timeOfBuildingSymbolTable = (endTime - startTime)/TIMEINTERVAL;
 }
 
 const SVFFunction* SVFModule::getSVFFunction(std::string name)

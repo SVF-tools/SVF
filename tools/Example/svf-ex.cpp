@@ -158,7 +158,6 @@ int main(int argc, char ** argv)
     }
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-    svfModule->buildSymbolTableInfo();
 
     /// Build Program Assignment Graph (SVFIR)
     SVFIRBuilder builder(svfModule);

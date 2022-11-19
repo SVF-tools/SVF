@@ -34,6 +34,7 @@
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/BreakConstantExpr.h"
+#include "SVF-FE/SymbolTableBuilder.h"
 #include "MSSA/SVFGBuilder.h"
 
 using namespace std;
@@ -81,7 +82,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 
 SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec)
 {
-    double startTime = SVFStat::getClk(true);
+    double startSVFModuleTime = SVFStat::getClk(true);
 
     assert(llvmModuleSet && "LLVM Module set needs to be created!");
 
@@ -94,8 +95,20 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 
     build();
 
-    double endTime = SVFStat::getClk(true);
-    SVFStat::timeOfBuildingLLVMModule = (endTime - startTime)/TIMEINTERVAL;
+    double endSVFModuleTime = SVFStat::getClk(true);
+    SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
+
+    double startSymInfoTime = SVFStat::getClk(true);
+    if (!SVFModule::pagReadFromTXT())
+    {
+        /// building symbol table
+        DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
+        SymbolTableInfo *symInfo = SymbolTableInfo::SymbolInfo();
+        SymbolTableBuilder builder(symInfo);
+        builder.buildMemModel(svfModule);
+    }
+    double endSymInfoTime = SVFStat::getClk(true);
+    SVFStat::timeOfBuildingSymbolTable = (endSymInfoTime - startSymInfoTime)/TIMEINTERVAL;
 
     return svfModule;
 }

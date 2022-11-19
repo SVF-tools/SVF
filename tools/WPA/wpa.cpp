@@ -54,7 +54,6 @@ int main(int argc, char ** argv)
     }
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-    svfModule->buildSymbolTableInfo();
     /// Build SVFIR
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
