@@ -576,7 +576,7 @@ bool MemObj::isNonPtrFieldObj(const LocationSet& ls) const
 const std::string MemObj::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "MemObj : " << getId() << SVFUtil::value2String(getValue())<< "\n";
     return rawstr.str();
 }

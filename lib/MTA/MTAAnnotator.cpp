@@ -18,7 +18,7 @@ using namespace SVFUtil;
 void MTAAnnotator::annotateDRCheck(Instruction* inst)
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << DR_CHECK;
 
     /// memcpy and memset is not annotated

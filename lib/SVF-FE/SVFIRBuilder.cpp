@@ -1285,8 +1285,8 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
             if (allOperations.size() == 0)
             {
                 std::string str;
-                raw_string_ostream rawstr(str);
-                rawstr << "function " << callee->getName() << " not in the external function summary ExtAPI.json file";
+                std::stringstream rawstr(str);
+                rawstr << "function " << callee->getName().str() << " not in the external function summary ExtAPI.json file";
                 writeWrnMsg(rawstr.str());
             }
             else

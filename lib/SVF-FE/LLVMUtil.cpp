@@ -29,6 +29,7 @@
 
 #include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/SymbolTableInfo.h"
+#include <sstream>
 
 using namespace SVF;
 
@@ -466,7 +467,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     if(val==nullptr)  return "{ empty val }";
     
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "{ ";
 
     if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
@@ -478,7 +479,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                 if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII))
                 {
                     llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
-                    rawstr << "ln: " << DIVar->getLine() << " fl: " << DIVar->getFilename();
+                    rawstr << "ln: " << DIVar->getLine() << " fl: " << DIVar->getFilename().str();
                     break;
                 }
             }
@@ -513,7 +514,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
             rawstr << argument->getArgNo() << "rd";
         else
             rawstr << argument->getArgNo() << "th";
-        rawstr << " arg " << argument->getParent()->getName() << " "
+        rawstr << " arg " << argument->getParent()->getName().str() << " "
                << getSourceLocOfFunction(argument->getParent());
     }
     else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
@@ -531,7 +532,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
 
                     if(DGV->getName() == gvar->getName())
                     {
-                        rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename();
+                        rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename().str();
                     }
 
                 }
@@ -544,7 +545,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     }
     else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(val))
     {
-        rawstr << "basic block: " << bb->getName() << " " << getSourceLoc(bb->getFirstNonPHI());
+        rawstr << "basic block: " << bb->getName().str() << " " << getSourceLoc(bb->getFirstNonPHI());
     }
     else if(LLVMUtil::isConstDataOrAggData(val))
     {
@@ -568,7 +569,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
 const std::string LLVMUtil::getSourceLocOfFunction(const Function* F)
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     /*
      * https://reviews.llvm.org/D18074?id=50385
      * looks like the relevant
@@ -576,7 +577,7 @@ const std::string LLVMUtil::getSourceLocOfFunction(const Function* F)
     if (llvm::DISubprogram *SP =  F->getSubprogram())
     {
         if (SP->describes(F))
-            rawstr << "in line: " << SP->getLine() << " file: " << SP->getFilename();
+            rawstr << "in line: " << SP->getLine() << " file: " << SP->getFilename().str();
     }
     return rawstr.str();
 }
@@ -604,30 +605,13 @@ const std::string LLVMUtil::value2String(const Value* value)
 /*!
  * return string of an LLVM Value
  */
-void LLVMUtil::value2String(const Value* value, raw_string_ostream& rawstr)
-{
-    if(value)
-    {
-        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
-            rawstr << "Function: " << fun->getName() << " ";
-        else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
-            rawstr << "BasicBlock: " << bb->getName() << " ";
-        else
-            rawstr << " " << *value << " ";
-        rawstr << getSourceLoc(value);
-    }
-}
-
-/*!
- * return string of an LLVM Value
- */
 const std::string LLVMUtil::value2ShortString(const Value* value)
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     if(value && value->hasName())
     {
-        rawstr << " " << value->getName() << " ";
+        rawstr << " " << value->getName().str() << " ";
     }
     return rawstr.str();
 }

@@ -62,7 +62,7 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNod
 const std::string ICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "ICFGNode" << getId();
     return rawstr.str();
 }
@@ -75,7 +75,7 @@ void ICFGNode::dump() const
 const std::string GlobalICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "GlobalICFGNode" << getId();
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -86,7 +86,7 @@ const std::string GlobalICFGNode::toString() const
 const std::string IntraICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "IntraICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getInst()) << "}";
     for (const SVFStmt *stmt : getSVFStmts())
@@ -100,7 +100,7 @@ const std::string IntraICFGNode::toString() const
 const std::string FunEntryICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "FunEntryICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
@@ -114,7 +114,7 @@ const std::string FunEntryICFGNode::toString() const
 const std::string FunExitICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
@@ -129,7 +129,7 @@ const std::string FunExitICFGNode::toString() const
 const std::string CallICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "CallICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()) << "}";
     for (const SVFStmt *stmt : getSVFStmts())
@@ -140,7 +140,7 @@ const std::string CallICFGNode::toString() const
 const std::string RetICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "RetICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()) << "}";
     for (const SVFStmt *stmt : getSVFStmts())
@@ -151,7 +151,7 @@ const std::string RetICFGNode::toString() const
 const std::string ICFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "ICFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t";
     return rawstr.str();
 }
@@ -159,7 +159,7 @@ const std::string ICFGEdge::toString() const
 const std::string IntraCFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     if(getCondition() == nullptr)
         rawstr << "IntraCFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t";
     else
@@ -171,7 +171,7 @@ const std::string IntraCFGEdge::toString() const
 const std::string CallCFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "CallCFGEdge " << " [ICFGNode";
     rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << value2String(cs) << "\t";
     return rawstr.str();
@@ -180,7 +180,7 @@ const std::string CallCFGEdge::toString() const
 const std::string RetCFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "RetCFGEdge " << " [ICFGNode";
     rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << value2String(cs) << "\t";
     return rawstr.str();
@@ -549,7 +549,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
     static std::string getNodeAttributes(NodeType *node, ICFG*)
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
 
         if(SVFUtil::isa<IntraICFGNode>(node))
         {
@@ -604,7 +604,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
         assert(edge && "No edge found!!");
 
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         if (CallCFGEdge* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge))
             rawstr << dirCall->getCallSite();
         else if (RetCFGEdge* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge))
