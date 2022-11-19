@@ -1,7 +1,7 @@
 #ifndef SVFINSTRUCTION_H_
 #define SVFINSTRUCTION_H_
 
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 
 namespace SVF
 {

@@ -32,7 +32,7 @@
 
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/CPPUtil.h"
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 #include "Util/SVFModule.h"
 
 namespace SVF
@@ -306,7 +306,19 @@ public:
         return getModuleNum() == 0;
     }
 
+    /// Get or create SVFType and typeinfo
+    StInfo* getSVFTypeInfo(const Type* T);
+
 private:
+    /// Create SVFTypes
+    void addSVFTypeInfo(const Type* t, StInfo* stinfo);
+    /// Collect the struct info
+    StInfo* collectStructInfo(const StructType *T);
+    /// Collect the array info
+    StInfo* collectArrayInfo(const ArrayType* T);
+    /// Collect simple type (non-aggregate) info
+    StInfo* collectSimpleTypeInfo(const Type* T);
+
     std::vector<const Function*> getLLVMGlobalFunctions(const GlobalVariable* global);
 
     void loadModules(const std::vector<std::string>& moduleNameVec);

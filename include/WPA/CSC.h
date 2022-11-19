@@ -31,7 +31,7 @@
 #define PROJECT_CSC_H
 
 #include "Util/SCC.h"
-#include "Util/BasicTypes.h"    // for NodeBS
+#include "Util/SVFValues.h"    // for NodeBS
 #include "Graphs/ConsG.h"
 #include "Util/WorkList.h"
 #include <limits.h>

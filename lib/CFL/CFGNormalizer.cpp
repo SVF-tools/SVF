@@ -30,7 +30,7 @@
 #include "CFL/CFGNormalizer.h"
 #include "Util/SVFUtil.h"
 #include "Util/WorkList.h"
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 #include <string>
 #include <regex>
 #include <fstream>

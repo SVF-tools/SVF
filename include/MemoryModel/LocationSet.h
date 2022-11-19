@@ -34,7 +34,7 @@
 #define LOCATIONSET_H_
 
 
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 
 namespace SVF
 {

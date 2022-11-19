@@ -8,8 +8,8 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/PTAStat.h"
 #include "Util/NodeIDAllocator.h"
-#include "Util/BasicTypes.h"
-#include "Util/SVFBasicTypes.h"
+#include "Util/SVFValues.h"
+#include "Util/SVFTypes.h"
 #include "Util/SVFUtil.h"
 #include "Util/Options.h"
 

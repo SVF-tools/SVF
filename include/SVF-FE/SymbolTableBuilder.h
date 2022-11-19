@@ -102,16 +102,6 @@ protected:
     
     ///Get a reference to StructInfo.
     StInfo* getOrAddSVFTypeInfo(const Type* T);
-    /// Create SVFTypes
-    void addSVFTypeInfo(const Type* t, StInfo* stinfo);
-    /// Collect type info
-    void collectTypeInfo(const Type* T);
-    /// Collect the struct info
-    StInfo* collectStructInfo(const StructType *T);
-    /// Collect the array info
-    StInfo* collectArrayInfo(const ArrayType* T);
-    /// Collect simple type (non-aggregate) info
-    StInfo* collectSimpleTypeInfo(const Type* T);
 };
 
 } // End namespace SVF

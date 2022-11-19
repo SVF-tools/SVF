@@ -31,7 +31,7 @@
 #define PATHALLOCATOR_H_
 
 #include "Util/SVFModule.h"
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
 #include "Util/Z3Expr.h"

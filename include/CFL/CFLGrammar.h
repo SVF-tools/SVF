@@ -28,7 +28,7 @@
  */
 #ifndef CFLGrammar_H_
 #define CFLGrammar_H_
-#include "Util/SVFBasicTypes.h"
+#include "Util/SVFTypes.h"
 
 namespace SVF
 {

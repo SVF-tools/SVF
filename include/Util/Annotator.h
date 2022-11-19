@@ -8,7 +8,7 @@
 #ifndef ANNOTATOR_H_
 #define ANNOTATOR_H_
 
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 #include <vector>
 
 namespace SVF

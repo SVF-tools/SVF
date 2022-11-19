@@ -15,7 +15,7 @@
 #ifndef BREAKCONSTANTGEPS_H
 #define BREAKCONSTANTGEPS_H
 
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 
 namespace SVF
 {

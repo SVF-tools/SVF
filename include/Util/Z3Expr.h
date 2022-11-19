@@ -30,7 +30,7 @@
 #define Z3_EXAMPLE_Z3EXPR_H
 
 #include "z3++.h"
-#include "Util/SVFBasicTypes.h"
+#include "Util/SVFTypes.h"
 
 namespace SVF
 {

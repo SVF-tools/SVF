@@ -57,9 +57,9 @@ void ObjTypeInfo::resetTypeForHeapStaticObj(const Type* t)
 StInfo* SymbolTableInfo::getTypeInfo(const Type* T)
 {
     assert(T);
-    TypeToFieldInfoMap::iterator it = typeToFieldInfo.find(T);
+    TypeToSVFTyInfoMap::iterator it = typeToFieldInfo.find(T);
     assert(it != typeToFieldInfo.end() && "type info not found? collect them first during SVFIR Building");
-    return it->second;
+    return it->second->getTypeInfo();
 }
 
 /*
@@ -128,7 +128,7 @@ void SymbolTableInfo::destroy()
         if (iter->second)
             delete iter->second;
     }
-    for (TypeToFieldInfoMap::iterator iter = typeToFieldInfo.begin();
+    for (TypeToSVFTyInfoMap::iterator iter = typeToFieldInfo.begin();
             iter != typeToFieldInfo.end(); ++iter)
     {
         if (iter->second)

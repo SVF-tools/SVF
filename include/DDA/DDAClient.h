@@ -37,7 +37,7 @@
 #include "MemoryModel/SVFIR.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 
 namespace SVF
 {

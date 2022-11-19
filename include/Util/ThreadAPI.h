@@ -30,7 +30,7 @@
 #ifndef THREADAPI_H_
 #define THREADAPI_H_
 
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 
 namespace SVF
 {

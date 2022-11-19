@@ -8,7 +8,7 @@
 #ifndef MTAANNOTATOR_H_
 #define MTAANNOTATOR_H_
 
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 #include "Util/Annotator.h"
 #include "MTA/MHP.h"
 

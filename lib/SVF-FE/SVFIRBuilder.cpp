@@ -33,7 +33,7 @@
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
 #include "SVF-FE/LLVMLoopAnalysis.h"
 #include "Util/Options.h"

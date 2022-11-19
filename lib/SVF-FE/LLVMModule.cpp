@@ -939,3 +939,180 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
     else
         return getSVFOtherValue(value);
 }
+
+/*!
+ * Get or create SVFType and typeinfo
+ */
+StInfo* LLVMModuleSet::getSVFTypeInfo(const Type* T)
+{
+    assert(T);
+    if (symInfo->hasTypeInfo(T))
+        return symInfo->getTypeInfo(T);
+    else
+    {
+        StInfo* stinfo = nullptr;
+        if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T))
+            stinfo = collectArrayInfo(aty);
+        else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T))
+            stinfo = collectStructInfo(sty);
+        else
+            stinfo = collectSimpleTypeInfo(T);
+
+        addSVFTypeInfo(T, stinfo);
+        return stinfo;
+    }
+}
+
+
+void LLVMModuleSet::addSVFTypeInfo(const Type* T, StInfo* stinfo)
+{
+    SVFType* svftype = nullptr;
+    if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
+        svftype = new SVFPointerType(pt,stinfo);
+    else if (const IntegerType* it = SVFUtil::dyn_cast<IntegerType>(T))
+        svftype = new SVFIntergerType(it,stinfo);
+    else if (const FunctionType* ft = SVFUtil::dyn_cast<FunctionType>(T))
+        svftype = new SVFFunctionType(ft,stinfo);
+    else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
+        svftype = new SVFStructType(st,stinfo);
+    else if (const ArrayType* at = SVFUtil::dyn_cast<ArrayType>(T))
+        svftype = new SVFArrayType(at,stinfo);    
+    else
+        svftype = new SVFOtherType(T,stinfo);
+    symInfo->addTypeInfo(T, svftype);
+}
+
+/*!
+ * Fill in StInfo for an array type.
+ */
+StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
+{
+    u64_t totalElemNum = ty->getNumElements();
+    const Type* elemTy = ty->getElementType();
+    while (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(elemTy))
+    {
+        totalElemNum *= aty->getNumElements();
+        elemTy = aty->getElementType();
+    }
+
+    StInfo* stinfo = new StInfo(totalElemNum);
+
+    /// array without any element (this is not true in C/C++ arrays) we assume there is an empty dummy element
+    if(totalElemNum==0)
+    {
+        stinfo->addFldWithType(0, elemTy, 0);
+        stinfo->setNumOfFieldsAndElems(1, 1);
+        stinfo->getFlattenFieldTypes().push_back(elemTy);
+        stinfo->getFlattenElementTypes().push_back(elemTy);
+        return stinfo;
+    }
+
+    /// Array's flatten field infor is the same as its element's
+    /// flatten infor.
+    StInfo* elemStInfo = getSVFTypeInfo(elemTy);
+    u32_t nfE = elemStInfo->getNumOfFlattenFields();
+    for (u32_t j = 0; j < nfE; j++)
+    {
+        const Type* fieldTy = elemStInfo->getFlattenFieldTypes()[j];
+        stinfo->getFlattenFieldTypes().push_back(fieldTy);
+    }
+
+    /// Flatten arrays, map each array element index `i` to flattened index `(i * nfE * totalElemNum)/outArrayElemNum`
+    /// nfE>1 if the array element is a struct with more than one field.
+    u32_t outArrayElemNum = ty->getNumElements();
+    for(u32_t i = 0; i < outArrayElemNum; i++)
+        stinfo->addFldWithType(0, elemTy, (i * nfE * totalElemNum)/outArrayElemNum);
+
+    for(u32_t i = 0; i < totalElemNum; i++)
+    {
+        for(u32_t j = 0; j < nfE; j++)
+        {
+            stinfo->getFlattenElementTypes().push_back(elemStInfo->getFlattenFieldTypes()[j]);
+        }
+    }
+
+    assert(stinfo->getFlattenElementTypes().size() == nfE * totalElemNum && "typeForArray size incorrect!!!");
+    stinfo->setNumOfFieldsAndElems(nfE, nfE * totalElemNum);
+
+    return stinfo;
+}
+
+
+/*!
+ * Fill in struct_info for T.
+ * Given a Struct type, we recursively extend and record its fields and types.
+ */
+StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
+{
+    /// The struct info should not be processed before
+    StInfo* stinfo = new StInfo(1);
+
+    // Number of fields after flattening the struct
+    u32_t nf = 0;
+    // The offset when considering array stride info
+    u32_t strideOffset = 0;
+    for (StructType::element_iterator it = sty->element_begin(), ie =
+                sty->element_end(); it != ie; ++it)
+    {
+        const Type* et = *it;
+        /// offset with int_32 (s32_t) is large enough and will not cause overflow
+        stinfo->addFldWithType(nf, et, strideOffset);
+
+        if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
+        {
+            StInfo * subStinfo = getSVFTypeInfo(et);
+            u32_t nfE = subStinfo->getNumOfFlattenFields();
+            //Copy ST's info, whose element 0 is the size of ST itself.
+            for (u32_t j = 0; j < nfE; j++)
+            {
+                const Type* elemTy = subStinfo->getFlattenFieldTypes()[j];
+                stinfo->getFlattenFieldTypes().push_back(elemTy);
+            }
+            nf += nfE;
+            strideOffset += nfE * subStinfo->getStride();
+            for(u32_t tpi = 0; tpi < subStinfo->getStride(); tpi++)
+            {
+                for(u32_t tpj = 0; tpj < nfE; tpj++)
+                {
+                    stinfo->getFlattenElementTypes().push_back(subStinfo->getFlattenFieldTypes()[tpj]);
+                }
+            }
+        }
+        else     //simple type
+        {
+            nf += 1;
+            strideOffset += 1;
+            stinfo->getFlattenFieldTypes().push_back(et);
+            stinfo->getFlattenElementTypes().push_back(et);
+        }
+    }
+
+    assert(stinfo->getFlattenElementTypes().size() == strideOffset && "typeForStruct size incorrect!");
+    stinfo->setNumOfFieldsAndElems(nf,strideOffset);
+
+    //Record the size of the complete struct and update max_struct.
+    if (nf > symInfo->maxStSize)
+    {
+        symInfo->maxStruct = sty;
+        symInfo->maxStSize = nf;
+    }
+
+    return stinfo;
+}
+
+
+/*!
+ * Collect simple type (non-aggregate) info
+ */
+StInfo* LLVMModuleSet::collectSimpleTypeInfo(const Type* ty)
+{
+    StInfo* stinfo = new StInfo(1);
+    /// Only one field
+    stinfo->addFldWithType(0, ty, 0);
+
+    stinfo->getFlattenFieldTypes().push_back(ty);
+    stinfo->getFlattenElementTypes().push_back(ty);
+    stinfo->setNumOfFieldsAndElems(1,1);
+
+    return stinfo;
+}

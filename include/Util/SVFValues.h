@@ -30,16 +30,14 @@
 #ifndef BASICTYPES_H_
 #define BASICTYPES_H_
 
-#include "Util/SVFBasicTypes.h"
+#include "Util/SVFTypes.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
-#include <llvm/IR/Instructions.h>
 
 namespace SVF
 {
 
 /// LLVM Basic classes
-typedef llvm::Type Type;
 typedef llvm::Value Value;
 
 /// LLVM types
@@ -60,221 +58,6 @@ class SVFFunction;
 class SVFType;
 
 
-/*!
- * Flatterned type information of StructType, ArrayType and SingleValueType
- */
-class StInfo
-{
-
-private:
-    /// flattened field indices of a struct (ignoring arrays)
-    std::vector<u32_t> fldIdxVec;
-    /// flattened element indices including structs and arrays by considering strides
-    std::vector<u32_t> elemIdxVec;
-    /// Types of all fields of a struct
-    Map<u32_t, const Type*> fldIdx2TypeMap;
-    /// All field infos after flattening a struct
-    std::vector<const Type*> finfo;
-    /// stride represents the number of repetitive elements if this StInfo represent an ArrayType. stride is 1 by default.
-    u32_t stride;
-    /// number of elements after flattenning (including array elements)
-    u32_t numOfFlattenElements;
-    /// number of fields after flattenning (ignoring array elements)
-    u32_t numOfFlattenFields;
-    /// Type vector of fields
-    std::vector<const Type*> flattenElementTypes;
-    /// Max field limit
-
-    StInfo(); ///< place holder
-    StInfo(const StInfo& st); ///< place holder
-    void operator=(const StInfo&); ///< place holder
-
-public:
-    /// Constructor
-    StInfo(u32_t s) : stride(s), numOfFlattenElements(s), numOfFlattenFields(s)
-    {
-    }
-    /// Destructor
-    ~StInfo()
-    {
-    }
-
-    ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
-    ///  OriginalFieldType of b with field_idx 1 : Struct A
-    ///  FlatternedFieldType of b with field_idx 1 : int
-    //{@
-    const Type* getOriginalElemType(u32_t fldIdx);
-
-    inline std::vector<u32_t>& getFlattenedFieldIdxVec()
-    {
-        return fldIdxVec;
-    }
-    inline std::vector<u32_t>& getFlattenedElemIdxVec()
-    {
-        return elemIdxVec;
-    }
-    inline std::vector<const Type*>& getFlattenElementTypes()
-    {
-        return flattenElementTypes;
-    }
-    inline std::vector<const Type*>& getFlattenFieldTypes()
-    {
-        return finfo;
-    }
-    //@}
-
-    /// Add field index and element index and their corresponding type
-    void addFldWithType(u32_t fldIdx, const Type* type, u32_t elemIdx);
-
-    /// Set number of fields and elements of an aggrate
-    inline void setNumOfFieldsAndElems(u32_t nf, u32_t ne)
-    {
-        numOfFlattenFields = nf;
-        numOfFlattenElements = ne;
-    }
-
-    /// Return number of elements after flattenning (including array elements)
-    inline u32_t getNumOfFlattenElements() const
-    {
-        return numOfFlattenElements;
-    }
-
-    /// Return the number of fields after flattenning (ignoring array elements)
-    inline u32_t getNumOfFlattenFields() const
-    {
-        return numOfFlattenFields;
-    }
-    /// Return the stride
-    inline u32_t getStride() const
-    {
-        return stride;
-    }
-};
-
-class SVFType
-{
-
-public:
-    typedef s64_t GNodeK;
-
-    enum SVFTyKind
-    {
-        SVFTy,
-        SVFPointerTy,
-        SVFIntergerTy,
-        SVFFunctionTy,
-        SVFStructTy,
-        SVFArrayTy,
-        SVFOtherTy,
-    };
-
-private:
-    GNodeK kind;	///< used for classof 
-    const Type* type;   ///< LLVM type
-    const StInfo* typeinfo; /// < SVF's TypeInfo
-    std::string toStr;  ///< string format of the type
-
-protected:
-    SVFType(const Type* ty, const StInfo* ti, SVFTyKind k) : kind(k), type(ty), typeinfo(ti), toStr("")
-    {
-    }
-
-public:
-    SVFType(void) = delete;
-    virtual ~SVFType() = default;
-
-    inline GNodeK getKind() const
-    {
-        return kind;
-    }
-
-    inline virtual const std::string toString() const
-    {
-        return toStr;
-    }
-
-    inline const StInfo*  getTypeInfo() const
-    {
-        return typeinfo;
-    }
-
-    inline const Type* getLLVMType() const
-    {
-        return type;
-    }
-};
-
-class SVFPointerType : public SVFType
-{
-public:
-    SVFPointerType(const Type* ty, const StInfo* ti) : SVFType(ty, ti, SVFPointerTy)
-    {
-    }
-    static inline bool classof(const SVFType *node)
-    {
-        return node->getKind() == SVFPointerTy;
-    }
-};
-
-class SVFIntergerType : public SVFType
-{
-public:
-    SVFIntergerType(const Type* ty, const StInfo* ti) : SVFType(ty, ti, SVFIntergerTy)
-    {
-    }
-    static inline bool classof(const SVFType *node)
-    {
-        return node->getKind() == SVFIntergerTy;
-    }
-};
-
-class SVFFunctionType : public SVFType
-{
-public:
-    SVFFunctionType(const Type* ty, const StInfo* ti) : SVFType(ty, ti, SVFFunctionTy)
-    {
-    }
-    static inline bool classof(const SVFType *node)
-    {
-        return node->getKind() == SVFFunctionTy;
-    }
-};
-
-class SVFStructType : public SVFType
-{
-public:
-    SVFStructType(const Type* ty, const StInfo* ti) : SVFType(ty, ti, SVFStructTy)
-    {
-    }
-    static inline bool classof(const SVFType *node)
-    {
-        return node->getKind() == SVFStructTy;
-    }
-};
-
-class SVFArrayType : public SVFType
-{
-public:
-    SVFArrayType(const Type* ty, const StInfo* ti) : SVFType(ty, ti, SVFArrayTy)
-    {
-    }
-    static inline bool classof(const SVFType *node)
-    {
-        return node->getKind() == SVFArrayTy;
-    }
-};
-
-class SVFOtherType : public SVFType
-{
-public:
-    SVFOtherType(const Type* ty, const StInfo* ti) : SVFType(ty, ti, SVFOtherTy)
-    {
-    }
-    static inline bool classof(const SVFType *node)
-    {
-        return node->getKind() == SVFOtherTy;
-    }
-};
 
 class SVFLoopAndDomInfo
 {
@@ -356,12 +139,12 @@ public:
     
     inline const BBList& getReachableBBs() const
     {
-        return this->reachableBBs;
+        return reachableBBs;
     }
 
-    inline const void setReachableBBs(BBList& reachableBBs)
+    inline const void setReachableBBs(BBList& bbs)
     {
-        this->reachableBBs = reachableBBs;
+        reachableBBs = bbs;
     }
     
     void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const;

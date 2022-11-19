@@ -73,7 +73,7 @@ public:
     /// function to sym id map
     typedef OrderedMap<const SVFFunction*, SymID> FunToIDMapTy;
     /// struct type to struct info map
-    typedef OrderedMap<const Type*, StInfo*> TypeToFieldInfoMap;
+    typedef OrderedMap<const Type*, SVFType*> TypeToSVFTyInfoMap;
     //@}
 
 private:
@@ -327,13 +327,14 @@ public:
     ///The number of fields in max_struct
     u32_t maxStSize;
 
-protected:
-
-    inline void addTypeInfo(const Type* ty, StInfo* info)
+    inline void addTypeInfo(const Type* ty, SVFType* info)
     {
         assert(!hasTypeInfo(ty) && "this type info has been added before");
         typeToFieldInfo[ty] = info;
     }
+
+protected:
+
     /// Return the flattened field type for struct type only
     const std::vector<const Type*>& getFlattenFieldTypes(const StructType *T);
 
@@ -344,7 +345,7 @@ protected:
     /// which contains size (fsize) , offset(foffset)
     /// fsize[i] is the number of fields in the largest such struct, else fsize[i] = 1.
     /// fsize[0] is always the size of the expanded struct.
-    TypeToFieldInfoMap typeToFieldInfo;
+    TypeToSVFTyInfoMap typeToFieldInfo;
 };
 
 

@@ -31,7 +31,7 @@
 #define SABERSVFGBUILDER_H_
 
 #include "MSSA/SVFGBuilder.h"
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 #include "Util/WorkList.h"
 
 namespace SVF

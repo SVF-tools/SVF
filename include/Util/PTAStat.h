@@ -30,7 +30,7 @@
 #ifndef ANDERSENSTAT_H_
 #define ANDERSENSTAT_H_
 
-#include "Util/BasicTypes.h"
+#include "Util/SVFValues.h"
 #include "MemoryModel/PointsTo.h"
 #include "Util/SVFStat.h"
 #include <iostream>
