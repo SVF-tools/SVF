@@ -159,7 +159,7 @@ const CallICFGNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
 std::string ProgSlice::evalFinalCond() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
     Set<std::string> locations;
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)

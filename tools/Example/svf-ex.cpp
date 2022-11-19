@@ -54,7 +54,7 @@ std::string printPts(PointerAnalysis* pta, SVFValue* val)
 {
 
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
 
     NodeID pNodeId = pta->getPAG()->getValueNode(val);
     const PointsTo& pts = pta->getPts(pNodeId);

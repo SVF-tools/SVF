@@ -92,7 +92,7 @@ bool SVFVar::isIsolatedNode() const
 const std::string SVFVar::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "SVFVar ID: " << getId();
     return rawstr.str();
 }
@@ -105,7 +105,7 @@ void SVFVar::dump() const
 const std::string ValVar::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "ValVar ID: " << getId();
     if (Options::ShowSVFIRValue)
     {
@@ -118,7 +118,7 @@ const std::string ValVar::toString() const
 const std::string ObjVar::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "ObjVar ID: " << getId();
     if (Options::ShowSVFIRValue)
     {
@@ -131,7 +131,7 @@ const std::string ObjVar::toString() const
 const std::string GepValVar::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "GepValVar ID: " << getId() << " with offset_" + std::to_string(getConstantFieldIdx());
     if (Options::ShowSVFIRValue)
     {
@@ -144,7 +144,7 @@ const std::string GepValVar::toString() const
 const std::string GepObjVar::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "GepObjVar ID: " << getId() << " with offset_" + std::to_string(ls.accumulateConstantFieldIdx());
     if (Options::ShowSVFIRValue)
     {
@@ -157,7 +157,7 @@ const std::string GepObjVar::toString() const
 const std::string FIObjVar::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "FIObjVar ID: " << getId() << " (base object)";
     if (Options::ShowSVFIRValue)
     {
@@ -170,7 +170,7 @@ const std::string FIObjVar::toString() const
 const std::string RetPN::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "RetPN ID: " << getId() << " unique return node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
     return rawstr.str();
 }
@@ -178,7 +178,7 @@ const std::string RetPN::toString() const
 const std::string VarArgPN::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << SVFUtil::cast<SVFFunction>(value)->getName();
     return rawstr.str();
 }
@@ -186,7 +186,7 @@ const std::string VarArgPN::toString() const
 const std::string DummyValVar::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "DummyValVar ID: " << getId();
     return rawstr.str();
 }
@@ -194,7 +194,7 @@ const std::string DummyValVar::toString() const
 const std::string DummyObjVar::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "DummyObjVar ID: " << getId();
     return rawstr.str();
 }

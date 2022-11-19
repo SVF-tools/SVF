@@ -219,7 +219,7 @@ SVF::LocationSet::LSRelation LocationSet::checkRelation(const LocationSet& LHS, 
 std::string LocationSet::dump() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
 
     rawstr << "LocationSet\tField_Index: " << accumulateConstantFieldIdx();
     rawstr << ",\tNum-Stride: {";

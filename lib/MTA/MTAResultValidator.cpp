@@ -158,7 +158,7 @@ bool MTAResultValidator::matchCxt(const CallStrCxt cxt1, const CallStrCxt cxt2) 
 void MTAResultValidator::dumpCxt(const CallStrCxt& cxt) const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "[:";
     for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it)
     {

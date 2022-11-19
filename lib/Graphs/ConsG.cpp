@@ -735,7 +735,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         bool briefDisplay = Options::BriefConsCGDotGraph;
         bool nameDisplay = true;
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
 
         if (briefDisplay)
         {

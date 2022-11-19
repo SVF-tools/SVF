@@ -235,7 +235,7 @@ void AndersenStat::statNullPtr()
             if(pts.empty())
             {
                 std::string str;
-                raw_string_ostream rawstr(str);
+                std::stringstream rawstr(str);
                 if (!SVFUtil::isa<DummyValVar>(pagNode) && !SVFUtil::isa<DummyObjVar>(pagNode) )
                 {
                     // if a pointer is in dead function, we do not care

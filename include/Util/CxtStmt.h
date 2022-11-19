@@ -96,7 +96,7 @@ public:
     inline std::string cxtToStr() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "[:";
         for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
         {
@@ -244,7 +244,7 @@ public:
     inline std::string cxtToStr() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "[:";
         for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
         {
@@ -365,7 +365,7 @@ public:
     inline std::string cxtToStr() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "[:";
         for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it)
         {

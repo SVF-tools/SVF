@@ -49,7 +49,7 @@ const NodeBS MRSVFGNode::getDefSVFVars() const
 const std::string MRSVFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream  rawstr(str);
     rawstr << "MRSVFGNode ID: " << getId();
     return rawstr.str();
 }
@@ -57,7 +57,7 @@ const std::string MRSVFGNode::toString() const
 const std::string FormalINSVFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "FormalINSVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     rawstr << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() <<
            " = ENCHI(MR_" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
@@ -68,7 +68,7 @@ const std::string FormalINSVFGNode::toString() const
 const std::string FormalOUTSVFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "FormalOUTSVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     rawstr << "RETMU(" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
     rawstr  << getMRVer()->getMR()->dumpStr() << "\n";
@@ -78,7 +78,7 @@ const std::string FormalOUTSVFGNode::toString() const
 const std::string ActualINSVFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "ActualINSVFGNode ID: " << getId() << " at callsite: " <<  value2String(getCallSite()->getCallSite()) << " {fun: " << getFun()->getName() << "}";
     rawstr << "CSMU(" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
     rawstr << getMRVer()->getMR()->dumpStr() << "\n";
@@ -89,7 +89,7 @@ const std::string ActualINSVFGNode::toString() const
 const std::string ActualOUTSVFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "ActualOUTSVFGNode ID: " << getId() << " at callsite: " <<  value2String(getCallSite()->getCallSite()) << " {fun: " << getFun()->getName() << "}";
     rawstr <<  getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() <<
            " = CSCHI(MR_" << getMRVer()->getMR()->getMRID() << "V_" << getMRVer()->getSSAVersion() << ")\n";
@@ -101,7 +101,7 @@ const std::string ActualOUTSVFGNode::toString() const
 const std::string MSSAPHISVFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "MSSAPHISVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     rawstr << "MR_" << getResVer()->getMR()->getMRID()
            << "V_" << getResVer()->getSSAVersion() << " = PHI(";
@@ -118,7 +118,7 @@ const std::string MSSAPHISVFGNode::toString() const
 const std::string IntraMSSAPHISVFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "IntraMSSAPHISVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     rawstr << MSSAPHISVFGNode::toString();
     return rawstr.str();
@@ -134,7 +134,7 @@ const NodeBS DummyVersionPropSVFGNode::getDefSVFVars() const
 const std::string InterMSSAPHISVFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     if(isFormalINPHI())
         rawstr << "FormalINPHISVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     else
@@ -146,7 +146,7 @@ const std::string InterMSSAPHISVFGNode::toString() const
 const std::string IndirectSVFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "IndirectSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
     return rawstr.str();
 }
@@ -154,7 +154,7 @@ const std::string IndirectSVFGEdge::toString() const
 const std::string IntraIndSVFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "IntraIndSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
     return rawstr.str();
 }
@@ -162,7 +162,7 @@ const std::string IntraIndSVFGEdge::toString() const
 const std::string CallIndSVFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "CallIndSVFGEdge CallSite ID: " << getCallSiteId() << " ";
     rawstr << getDstID() << "<--" << getSrcID() << "\n";
     return rawstr.str();
@@ -171,7 +171,7 @@ const std::string CallIndSVFGEdge::toString() const
 const std::string RetIndSVFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "RetIndSVFGEdge CallSite ID: " << getCallSiteId() << " ";
     rawstr << getDstID() << "<--" << getSrcID() << "\n";
     return rawstr.str();
@@ -181,7 +181,7 @@ const std::string RetIndSVFGEdge::toString() const
 const std::string ThreadMHPIndSVFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "ThreadMHPIndSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
     return rawstr.str();
 }
@@ -804,7 +804,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
     static std::string getSimpleNodeLabel(NodeType *node, SVFG*)
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         if(StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
         {
             rawstr << stmtNode->toString();
@@ -876,7 +876,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
     {
 
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         if(StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
         {
             rawstr << stmtNode->toString();
@@ -950,7 +950,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
     static std::string getNodeAttributes(NodeType *node, SVFG *graph)
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
 
         if(StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
         {
@@ -1102,7 +1102,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
         assert(edge && "No edge found!!");
 
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         if (CallDirSVFGEdge* dirCall = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
             rawstr << dirCall->getCallSiteId();
         else if (RetDirSVFGEdge* dirRet = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))

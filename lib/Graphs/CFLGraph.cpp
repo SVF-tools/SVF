@@ -101,7 +101,7 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
     static std::string getNodeLabel(CFLNode *node, CFLGraph*)
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "Node ID: " << node->getId() << " ";
         return rawstr.str();
     }
@@ -117,7 +117,7 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         CFLEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         if (edge->getEdgeKind() == ConstraintEdge::Addr)
         {
             rawstr << "color=green";
@@ -159,7 +159,7 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         CFLEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "Edge label: " << edge->getEdgeKind() << " ";
         return rawstr.str();
     }

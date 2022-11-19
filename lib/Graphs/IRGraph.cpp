@@ -153,7 +153,7 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
     static std::string getNodeLabel(SVFVar *node, IRGraph*)
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         // print function info
         if (node->getFunction())
             rawstr << "[" << node->getFunction()->getName() << "] ";

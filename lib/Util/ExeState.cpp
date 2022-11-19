@@ -42,7 +42,7 @@ using namespace SVFUtil;
 void ExeState::initValVar(const ValVar *valVar, Z3Expr &e)
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     SVFIR *svfir = PAG::getPAG();
 
     rawstr << "ValVar" << valVar->getId();
@@ -75,7 +75,7 @@ void ExeState::initValVar(const ValVar *valVar, Z3Expr &e)
 void ExeState::initObjVar(const ObjVar *objVar, Z3Expr &e)
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "ObjVar" << objVar->getId();
 
     if (objVar->hasValue())
@@ -128,7 +128,7 @@ Z3Expr &ExeState::getZ3Expr(u32_t varId)
     if (eq(e, Z3Expr::nullExpr()))
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream  rawstr(str);
         SVFIR *svfir = PAG::getPAG();
         SVFVar *svfVar = svfir->getGNode(varId);
         if (const ValVar *valVar = dyn_cast<ValVar>(svfVar))
