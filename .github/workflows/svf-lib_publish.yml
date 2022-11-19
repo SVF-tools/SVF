@@ -94,8 +94,11 @@ jobs:
             git pull
             cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf_history/perf-$(date +'%Y-%m-%dT%H:%M:%S').txt
             cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-latest.txt
-            cd $GITHUB_WORKSPACE/Test-Suite/diff_tests  
-            git add .     
+            cd $GITHUB_WORKSPACE/Test-Suite/diff_tests
+            python3 -m pip install --upgrade pip setuptools wheel
+            pip3 install -r ./requirements.txt
+            python3 perf_compare.py -d ./perf_history/ --tablefmt grid --exit-on-error --only-show-changed --threshold-percentage 10
+            git add .
             if [ -n "$(git status -s)" ]; then git commit -m"update latest SVF performance data"       ; fi
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/Test-Suite.git   HEAD:master   
 
