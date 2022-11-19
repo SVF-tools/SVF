@@ -769,5 +769,5 @@ u32_t SymbolTableBuilder::getNumOfFlattenElements(const Type* T)
 
 StInfo* SymbolTableBuilder::getOrAddSVFTypeInfo(const Type* T)
 {
-    return LLVMModuleSet::getLLVMModuleSet()->getSVFTypeInfo(T);
+    return LLVMModuleSet::getLLVMModuleSet()->getSVFType(T)->getTypeInfo();
 }

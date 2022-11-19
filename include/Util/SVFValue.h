@@ -30,7 +30,7 @@
 #ifndef BASICTYPES_H_
 #define BASICTYPES_H_
 
-#include "Util/SVFTypes.h"
+#include "Util/SVFType.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
 
@@ -185,7 +185,7 @@ public:
 
 private:
     const Value* value;
-    const Type* type;   ///< Type of this SVFValue
+    const SVFType* type;   ///< Type of this SVFValue
     GNodeK kind;	///< used for classof 
     bool ptrInUncalledFun;  ///< true if this pointer is in an uncalled function
     bool has_name;          ///< true if this value has a name
@@ -195,7 +195,7 @@ protected:
     std::string name;
     std::string sourceLoc;
     /// Constructor
-    SVFValue(const Value* val, SVFValKind k): value(val), type(val->getType()), kind(k),
+    SVFValue(const Value* val, const SVFType* ty, SVFValKind k): value(val), type(ty), kind(k),
         ptrInUncalledFun(false), has_name(false), constDataOrAggData(SVFConstData==k), 
         name(val->getName()), sourceLoc("No source code Info")
     {
@@ -249,9 +249,14 @@ public:
         return name;
     }
 
-    inline virtual const Type* getType() const
+    inline virtual const SVFType* getSVFType() const
     {
         return type;
+    }
+
+    inline virtual const Type* getType() const
+    {
+        return getLLVMValue()->getType();
     }
 
     inline const Value* getLLVMValue() const
@@ -357,7 +362,7 @@ protected:
     /// @}
 
 public:
-    SVFFunction(const Value* f, bool declare, bool intricsic, bool addrTaken, bool varg, const FunctionType* ft, SVFLoopAndDomInfo* ld);
+    SVFFunction(const Value* f, const SVFType* ty, bool declare, bool intricsic, bool addrTaken, bool varg, const FunctionType* ft, SVFLoopAndDomInfo* ld);
     SVFFunction(const Value* f) = delete;
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
@@ -550,7 +555,7 @@ protected:
     /// @}
 
 public:
-    SVFBasicBlock(const Value* b, const SVFFunction* f);
+    SVFBasicBlock(const Value* b, const SVFType* ty, const SVFFunction* f);
     SVFBasicBlock(void) = delete;
     virtual ~SVFBasicBlock();
 
@@ -630,7 +635,7 @@ private:
     InstVec predInsts;  /// predecessor Instructions
 
 public:
-    SVFInstruction(const Value* i, const SVFBasicBlock* b, bool tm, bool isRet, SVFValKind k = SVFInst);
+    SVFInstruction(const Value* i, const SVFType* ty, const SVFBasicBlock* b, bool tm, bool isRet, SVFValKind k = SVFInst);
     SVFInstruction(const Value* i) = delete;
     SVFInstruction(void) = delete;
 
@@ -704,8 +709,8 @@ protected:
     /// @}
 
 public:
-    SVFCallInst(const Value* i, const SVFBasicBlock* b, const FunctionType* t, bool tm, SVFValKind k = SVFCall) : 
-        SVFInstruction(i,b,tm,false,k), calledFunType(t), calledVal(nullptr)
+    SVFCallInst(const Value* i, const SVFType* ty, const SVFBasicBlock* b, const FunctionType* t, bool tm, SVFValKind k = SVFCall) : 
+        SVFInstruction(i, ty, b, tm, false, k), calledFunType(t), calledVal(nullptr)
     {
     }
     SVFCallInst(const Value* i) = delete;
@@ -778,8 +783,8 @@ protected:
     }
 
 public:
-    SVFVirtualCallInst(const Value* i, const SVFBasicBlock* b, const FunctionType* t, bool tm) : 
-        SVFCallInst(i,b,t,tm, SVFVCall), vCallVtblPtr(nullptr), virtualFunIdx(-1), funNameOfVcall("")
+    SVFVirtualCallInst(const Value* i, const SVFType* ty, const SVFBasicBlock* b, const FunctionType* t, bool tm) : 
+        SVFCallInst(i,ty,b,t,tm, SVFVCall), vCallVtblPtr(nullptr), virtualFunIdx(-1), funNameOfVcall("")
     {
     }
     inline const SVFValue* getVtablePtr() const
@@ -813,7 +818,7 @@ public:
 class SVFConstant : public SVFValue
 {
 public:
-    SVFConstant(const Value* _const, SVFValKind k = SVFConst): SVFValue(_const, k)
+    SVFConstant(const Value* _const, const SVFType* ty, SVFValKind k = SVFConst): SVFValue(_const, ty, k)
     {
     }
     SVFConstant() = delete;
@@ -844,7 +849,7 @@ protected:
     }
 
 public:
-    SVFGlobalValue(const Value* _gv): SVFConstant(_gv, SVFValue::SVFGlob), realDefGlobal(nullptr)
+    SVFGlobalValue(const Value* _gv, const SVFType* ty): SVFConstant(_gv, ty, SVFValue::SVFGlob), realDefGlobal(nullptr)
     {
     }
     SVFGlobalValue() = delete;
@@ -873,7 +878,7 @@ private:
     u32_t argNo;
     bool uncalled;
 public:
-    SVFArgument(const Value* _arg, const SVFFunction* _fun, u32_t _argNo, bool _uncalled): SVFValue(_arg, SVFValue::SVFArg), fun(_fun), argNo(_argNo), uncalled(_uncalled)
+    SVFArgument(const Value* _arg, const SVFType* ty, const SVFFunction* _fun, u32_t _argNo, bool _uncalled): SVFValue(_arg, ty, SVFValue::SVFArg), fun(_fun), argNo(_argNo), uncalled(_uncalled)
     {
     }
     SVFArgument() = delete;
@@ -906,7 +911,7 @@ public:
 class SVFConstantData : public SVFConstant
 {
 public:
-    SVFConstantData(const Value* _const, SVFValKind k = SVFConstData): SVFConstant(_const, k)
+    SVFConstantData(const Value* _const, const SVFType* ty, SVFValKind k = SVFConstData): SVFConstant(_const, ty, k)
     {
     }
     SVFConstantData() = delete;
@@ -936,7 +941,7 @@ private:
     u64_t zval;
     s64_t sval;
 public:
-    SVFConstantInt(const Value* _const, u64_t z, s64_t s): SVFConstantData(_const, SVFValue::SVFConstInt), zval(z), sval(s)
+    SVFConstantInt(const Value* _const, const SVFType* ty, u64_t z, s64_t s): SVFConstantData(_const, ty, SVFValue::SVFConstInt), zval(z), sval(s)
     {
     }
     SVFConstantInt() = delete;
@@ -967,7 +972,7 @@ class SVFConstantFP : public SVFConstantData
 private:
     float dval;
 public:
-    SVFConstantFP(const Value* _const, double d): SVFConstantData(_const, SVFValue::SVFConstFP), dval(d)
+    SVFConstantFP(const Value* _const, const SVFType* ty, double d): SVFConstantData(_const, ty, SVFValue::SVFConstFP), dval(d)
     {
     }
     SVFConstantFP() = delete;
@@ -991,7 +996,7 @@ class SVFConstantNullPtr : public SVFConstantData
 {
 
 public:
-    SVFConstantNullPtr(const Value* _const): SVFConstantData(_const, SVFValue::SVFNullPtr)
+    SVFConstantNullPtr(const Value* _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFNullPtr)
     {
     }
     SVFConstantNullPtr() = delete;
@@ -1010,7 +1015,7 @@ class SVFBlackHoleValue : public SVFConstantData
 {
 
 public:
-    SVFBlackHoleValue(const Value* _const): SVFConstantData(_const, SVFValue::SVFBlackHole)
+    SVFBlackHoleValue(const Value* _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFBlackHole)
     {
     }
     SVFBlackHoleValue() = delete;
@@ -1028,7 +1033,7 @@ public:
 class SVFOtherValue : public SVFValue
 {
 public:
-    SVFOtherValue(const Value* other, SVFValKind k = SVFValue::SVFOther): SVFValue(other, k)
+    SVFOtherValue(const Value* other, const SVFType* ty, SVFValKind k = SVFValue::SVFOther): SVFValue(other, ty, k)
     {
     }
     SVFOtherValue() = delete;
@@ -1045,7 +1050,7 @@ public:
 class SVFMetadataAsValue : public SVFOtherValue
 {
 public:
-    SVFMetadataAsValue(const Value* other): SVFOtherValue(other, SVFValue::SVFMetaAsValue)
+    SVFMetadataAsValue(const Value* other, const SVFType* ty): SVFOtherValue(other, ty, SVFValue::SVFMetaAsValue)
     {
     }
     SVFMetadataAsValue() = delete;

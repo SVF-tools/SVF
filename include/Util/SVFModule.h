@@ -30,7 +30,7 @@
 #ifndef SVFMODULE_H_
 #define SVFMODULE_H_
 
-#include "Util/SVFValues.h"
+#include "Util/SVFValue.h"
 #include "Util/ExtAPI.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/ThreadAPI.h"

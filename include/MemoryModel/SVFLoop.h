@@ -30,7 +30,7 @@
 #ifndef SVF_SVFLOOP_H
 #define SVF_SVFLOOP_H
 
-#include "Util/SVFTypes.h"
+#include "Util/SVFType.h"
 
 namespace SVF
 {

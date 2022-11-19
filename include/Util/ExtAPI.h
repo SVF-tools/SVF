@@ -30,7 +30,7 @@
 #ifndef __ExtAPI_H
 #define __ExtAPI_H
 
-#include "Util/SVFValues.h"
+#include "Util/SVFValue.h"
 #include "Util/cJSON.h"
 #include "Util/config.h"
 #include <string>

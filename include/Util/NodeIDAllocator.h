@@ -4,7 +4,7 @@
 #define NODEIDALLOCATOR_H_
 
 #include "FastCluster/fastcluster.h"
-#include "Util/SVFTypes.h"
+#include "Util/SVFType.h"
 #include "MemoryModel/PointsTo.h"
 
 namespace SVF

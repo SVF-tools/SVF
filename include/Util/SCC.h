@@ -40,7 +40,7 @@
 #ifndef SCC_H_
 #define SCC_H_
 
-#include "Util/SVFValues.h"	// for NodeBS
+#include "Util/SVFValue.h"	// for NodeBS
 #include <limits.h>
 #include <stack>
 #include <map>

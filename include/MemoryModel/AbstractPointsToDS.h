@@ -53,7 +53,7 @@
 #ifndef ABSTRACT_POINTSTO_H_
 #define ABSTRACT_POINTSTO_H_
 
-#include "Util/SVFTypes.h"
+#include "Util/SVFType.h"
 
 namespace SVF
 {

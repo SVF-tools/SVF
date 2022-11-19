@@ -291,8 +291,9 @@ public:
     /// Get struct info
     //@{
     ///Get a reference to StructInfo.
+    SVFType* getSVFType(const Type* T);
     StInfo* getTypeInfo(const Type* T);
-    inline bool hasTypeInfo(const Type* T)
+    inline bool hasSVFType(const Type* T)
     {
         return typeToFieldInfo.find(T) != typeToFieldInfo.end();
     }
@@ -329,7 +330,7 @@ public:
 
     inline void addTypeInfo(const Type* ty, SVFType* info)
     {
-        assert(!hasTypeInfo(ty) && "this type info has been added before");
+        assert(!hasSVFType(ty) && "this type info has been added before");
         typeToFieldInfo[ty] = info;
     }
 

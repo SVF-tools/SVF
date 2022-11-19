@@ -1,4 +1,4 @@
-#include "Util/SVFValues.h"
+#include "Util/SVFValue.h"
 #include "Util/SVFUtil.h"
 #include <llvm/IR/Instructions.h>
 
@@ -123,8 +123,8 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
-SVFFunction::SVFFunction(const Value* f, bool declare, bool intric, bool adt, bool varg, const FunctionType* ft, SVFLoopAndDomInfo* ld): SVFValue(f,SVFValue::SVFFunc),
-    isDecl(declare), intricsic(intric), addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg), funType(ft), loopAndDom(ld), realDefFun(nullptr)
+SVFFunction::SVFFunction(const Value* f, const SVFType* ty, bool declare, bool intric, bool adt, bool varg, const FunctionType* ft, SVFLoopAndDomInfo* ld): 
+    SVFValue(f,ty,SVFValue::SVFFunc),isDecl(declare), intricsic(intric), addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg), funType(ft), loopAndDom(ld), realDefFun(nullptr)
 {
 }
 
@@ -153,8 +153,8 @@ bool SVFFunction::isVarArg() const
     return varArg;
 }
 
-SVFBasicBlock::SVFBasicBlock(const Value* b, const SVFFunction* f):
-    SVFValue(b,SVFValue::SVFBB), fun(f)
+SVFBasicBlock::SVFBasicBlock(const Value* b, const SVFType* ty, const SVFFunction* f):
+    SVFValue(b, ty, SVFValue::SVFBB), fun(f)
 {
     name = b->hasName() ? b->getName().str(): "";
 }
@@ -229,7 +229,7 @@ u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
     return pos;
 }
 
-SVFInstruction::SVFInstruction(const Value* i, const SVFBasicBlock* b,  bool tm, bool isRet, SVFValKind k):
-    SVFValue(i, k), bb(b), terminator(tm), ret(isRet)
+SVFInstruction::SVFInstruction(const Value* i, const SVFType* ty, const SVFBasicBlock* b,  bool tm, bool isRet, SVFValKind k):
+    SVFValue(i, ty, k), bb(b), terminator(tm), ret(isRet)
 {
 }

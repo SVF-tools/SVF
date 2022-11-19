@@ -32,7 +32,7 @@
 
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/CPPUtil.h"
-#include "Util/SVFValues.h"
+#include "Util/SVFValue.h"
 #include "Util/SVFModule.h"
 
 namespace SVF
@@ -307,11 +307,11 @@ public:
     }
 
     /// Get or create SVFType and typeinfo
-    StInfo* getSVFTypeInfo(const Type* T);
+    SVFType* getSVFType(const Type* T);
 
 private:
     /// Create SVFTypes
-    void addSVFTypeInfo(const Type* t, StInfo* stinfo);
+    SVFType* addSVFTypeInfo(const Type* t, StInfo* stinfo);
     /// Collect the struct info
     StInfo* collectStructInfo(const StructType *T);
     /// Collect the array info

@@ -146,14 +146,14 @@ void LLVMModuleSet::createSVFDataStructure()
         {
             const Function* func = &*it;
             SVFLoopAndDomInfo* ld = new SVFLoopAndDomInfo();
-            SVFFunction* svfFunc = new SVFFunction(func, func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), func->hasAddressTaken(), func->isVarArg(), func->getFunctionType(), ld);
+            SVFFunction* svfFunc = new SVFFunction(func, getSVFType(func->getType()), func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), func->hasAddressTaken(), func->isVarArg(), func->getFunctionType(), ld);
             svfModule->addFunctionSet(svfFunc);
             addFunctionMap(func,svfFunc);
 
             for (Function::const_arg_iterator I = func->arg_begin(), E = func->arg_end(); I != E; ++I)
             {
                 const Argument* arg = &*I;
-                SVFArgument* svfarg = new SVFArgument(arg,svfFunc, arg->getArgNo(), LLVMUtil::isArgOfUncalledFunction(arg));
+                SVFArgument* svfarg = new SVFArgument(arg, getSVFType(arg->getType()), svfFunc, arg->getArgNo(), LLVMUtil::isArgOfUncalledFunction(arg));
                 svfFunc->addArgument(svfarg);
                 addArgumentMap(arg,svfarg);
             }
@@ -161,7 +161,7 @@ void LLVMModuleSet::createSVFDataStructure()
             for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
             {
                 const BasicBlock* bb = &*bit;
-                SVFBasicBlock* svfBB = new SVFBasicBlock(bb, svfFunc);
+                SVFBasicBlock* svfBB = new SVFBasicBlock(bb, getSVFType(bb->getType()), svfFunc);
                 svfFunc->addBasicBlock(svfBB);
                 addBasicBlockMap(bb,svfBB);
                 for (BasicBlock::const_iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
@@ -171,13 +171,13 @@ void LLVMModuleSet::createSVFDataStructure()
                     if(const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
                     {
                         if(cppUtil::isVirtualCallSite(call))
-                            svfInst = new SVFVirtualCallInst(call,svfBB,call->getFunctionType(),inst->isTerminator());
+                            svfInst = new SVFVirtualCallInst(call, getSVFType(call->getType()), svfBB,call->getFunctionType(),inst->isTerminator());
                         else
-                            svfInst = new SVFCallInst(call,svfBB,call->getFunctionType(),inst->isTerminator());
+                            svfInst = new SVFCallInst(call, getSVFType(call->getType()), svfBB,call->getFunctionType(),inst->isTerminator());
                     }
                     else
                     {
-                        svfInst = new SVFInstruction(inst,svfBB, inst->isTerminator(), SVFUtil::isa<ReturnInst>(inst));
+                        svfInst = new SVFInstruction(inst,getSVFType(inst->getType()), svfBB, inst->isTerminator(), SVFUtil::isa<ReturnInst>(inst));
                     }
                     svfBB->addInstruction(svfInst);
                     addInstructionMap(inst,svfInst);
@@ -190,7 +190,7 @@ void LLVMModuleSet::createSVFDataStructure()
                 eit = mod.global_end(); it != eit; ++it)
         {
             const GlobalVariable* global = &*it;
-            SVFGlobalValue* svfglobal = new SVFGlobalValue(global);
+            SVFGlobalValue* svfglobal = new SVFGlobalValue(global, getSVFType(global->getType()));
             svfModule->addGlobalSet(svfglobal);
             addGlobalValueMap(global,svfglobal);
         }
@@ -200,7 +200,7 @@ void LLVMModuleSet::createSVFDataStructure()
                 eit = mod.alias_end(); it != eit; ++it)
         {
             const GlobalAlias *alias = &*it;
-            SVFGlobalValue* svfalias = new SVFGlobalValue(alias);
+            SVFGlobalValue* svfalias = new SVFGlobalValue(alias, getSVFType(alias->getType()));
             svfModule->addAliasSet(svfalias);
             addGlobalValueMap(alias,svfalias);
         }
@@ -861,20 +861,20 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
     {
         SVFConstantData* svfcd = nullptr;
         if(const ConstantInt* cint = SVFUtil::dyn_cast<ConstantInt>(cd))
-            svfcd = new SVFConstantInt(cd,cint->getZExtValue(),cint->getSExtValue());
+            svfcd = new SVFConstantInt(cd, getSVFType(cint->getType()), cint->getZExtValue(),cint->getSExtValue());
         else if(const ConstantFP* cfp = SVFUtil::dyn_cast<ConstantFP>(cd))
         {
             double dval = 0;
             if(cfp->isNormalFP() &&  (&cfp->getValueAPF().getSemantics()== &llvm::APFloatBase::IEEEdouble()))
                 dval =  cfp->getValueAPF().convertToDouble();
-            svfcd = new SVFConstantFP(cd, dval);
+            svfcd = new SVFConstantFP(cd, getSVFType(cd->getType()), dval);
         }
         else if(SVFUtil::isa<ConstantPointerNull>(cd))
-            svfcd = new SVFConstantNullPtr(cd);
+            svfcd = new SVFConstantNullPtr(cd, getSVFType(cd->getType()));
         else if (SVFUtil::isa<UndefValue>(cd))
-            svfcd = new SVFBlackHoleValue(cd);
+            svfcd = new SVFBlackHoleValue(cd, getSVFType(cd->getType()));
         else
-            svfcd = new SVFConstantData(cd);
+            svfcd = new SVFConstantData(cd, getSVFType(cd->getType()));
         svfModule->addConstant(svfcd);
         addConstantDataMap(cd,svfcd);
         return svfcd;
@@ -890,7 +890,7 @@ SVFConstant* LLVMModuleSet::getOtherSVFConstant(const Constant* oc)
     }
     else
     {
-        SVFConstant* svfoc = new SVFConstant(oc);
+        SVFConstant* svfoc = new SVFConstant(oc, getSVFType(oc->getType()));
         svfModule->addConstant(svfoc);
         addOtherConstantMap(oc,svfoc);
         return svfoc;
@@ -908,9 +908,9 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
     {
         SVFOtherValue* svfov = nullptr;
         if(SVFUtil::isa<MetadataAsValue>(ov))
-            svfov = new SVFMetadataAsValue(ov);
+            svfov = new SVFMetadataAsValue(ov, getSVFType(ov->getType()));
         else
-            svfov = new SVFOtherValue(ov);
+            svfov = new SVFOtherValue(ov, getSVFType(ov->getType()));
         svfModule->addOtherValue(svfov);
         addOtherValueMap(ov,svfov);
         return svfov;
@@ -943,11 +943,11 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
 /*!
  * Get or create SVFType and typeinfo
  */
-StInfo* LLVMModuleSet::getSVFTypeInfo(const Type* T)
+SVFType* LLVMModuleSet::getSVFType(const Type* T)
 {
     assert(T);
-    if (symInfo->hasTypeInfo(T))
-        return symInfo->getTypeInfo(T);
+    if (symInfo->hasSVFType(T))
+        return symInfo->getSVFType(T);
     else
     {
         StInfo* stinfo = nullptr;
@@ -958,13 +958,12 @@ StInfo* LLVMModuleSet::getSVFTypeInfo(const Type* T)
         else
             stinfo = collectSimpleTypeInfo(T);
 
-        addSVFTypeInfo(T, stinfo);
-        return stinfo;
+        return addSVFTypeInfo(T, stinfo);
     }
 }
 
 
-void LLVMModuleSet::addSVFTypeInfo(const Type* T, StInfo* stinfo)
+SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T, StInfo* stinfo)
 {
     SVFType* svftype = nullptr;
     if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
@@ -980,6 +979,7 @@ void LLVMModuleSet::addSVFTypeInfo(const Type* T, StInfo* stinfo)
     else
         svftype = new SVFOtherType(T,stinfo);
     symInfo->addTypeInfo(T, svftype);
+    return svftype;
 }
 
 /*!
@@ -1009,7 +1009,7 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
 
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
-    StInfo* elemStInfo = getSVFTypeInfo(elemTy);
+    StInfo* elemStInfo = getSVFType(elemTy)->getTypeInfo();
     u32_t nfE = elemStInfo->getNumOfFlattenFields();
     for (u32_t j = 0; j < nfE; j++)
     {
@@ -1060,7 +1060,7 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
 
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
         {
-            StInfo * subStinfo = getSVFTypeInfo(et);
+            StInfo * subStinfo = getSVFType(et)->getTypeInfo();
             u32_t nfE = subStinfo->getNumOfFlattenFields();
             //Copy ST's info, whose element 0 is the size of ST itself.
             for (u32_t j = 0; j < nfE; j++)
