@@ -29,7 +29,7 @@
  */
 
 #include "Util/SVFUtil.h"
-#include "SVF-FE/CallGraphBuilder.h"
+#include "Util/CallGraphBuilder.h"
 #include "Graphs/ICFG.h"
 
 using namespace SVF;

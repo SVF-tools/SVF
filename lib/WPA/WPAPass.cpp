@@ -43,7 +43,6 @@
 #include "WPA/VersionedFlowSensitive.h"
 #include "WPA/TypeAnalysis.h"
 #include "WPA/Steensgaard.h"
-#include "SVF-FE/SVFIRBuilder.h"
 
 using namespace SVF;
 
@@ -67,12 +66,12 @@ WPAPass::~WPAPass()
 /*!
  * We start from here
  */
-void WPAPass::runOnModule(SVFModule* svfModule)
+void WPAPass::runOnModule(SVFIR* pag)
 {
     for (u32_t i = 0; i<= PointerAnalysis::Default_PTA; i++)
     {
         if (Options::PASelected.isSet(i))
-            runPointerAnalysis(svfModule, i);
+            runPointerAnalysis(pag, i);
     }
     assert(!ptaVector.empty() && "No pointer analysis is specified.\n");
 }
@@ -80,11 +79,8 @@ void WPAPass::runOnModule(SVFModule* svfModule)
 /*!
  * Create pointer analysis according to a specified kind and then analyze the module.
  */
-void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
+void WPAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
 {
-    /// Build SVFIR
-    SVFIRBuilder builder(svfModule);
-    SVFIR* pag = builder.build();
     /// Initialize pointer analysis.
     switch (kind)
     {

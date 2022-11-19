@@ -30,6 +30,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/SymbolTableInfo.h"
 #include <sstream>
+#include <llvm/Support/raw_ostream.h>
 
 using namespace SVF;
 
@@ -588,7 +589,7 @@ const std::string LLVMUtil::getSourceLocOfFunction(const Function* F)
 const std::string LLVMUtil::value2String(const Value* value)
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    llvm::raw_string_ostream rawstr(str);
     if(value)
     {
         if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))

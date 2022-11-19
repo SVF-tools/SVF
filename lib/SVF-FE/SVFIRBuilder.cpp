@@ -1100,11 +1100,11 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
-const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vector<LocationSet> &fields, const Value* szValue)
+const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vector<LocationSet> &fields, const Value* szValue)
 {
     assert(V);
     const Value* value = getBaseValueForExtArg(V);
-    const Type *T = value->getType();
+    const Type* T = value->getType();
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
         T = getPtrElementType(ptype);
 
@@ -1143,8 +1143,8 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
     //Get the max possible size of the copy, unless it was provided.
     std::vector<LocationSet> srcFields;
     std::vector<LocationSet> dstFields;
-    const Type *stype = getBaseTypeAndFlattenedFields(S, srcFields, szValue);
-    const Type *dtype = getBaseTypeAndFlattenedFields(D, dstFields, szValue);
+    const Type* stype = getBaseTypeAndFlattenedFields(S, srcFields, szValue);
+    const Type* dtype = getBaseTypeAndFlattenedFields(D, dstFields, szValue);
     if(srcFields.size() > dstFields.size())
         fields = dstFields;
     else
@@ -1358,7 +1358,7 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         // this is for memset(void *str, int c, size_t n)
                         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
                         std::vector<LocationSet> dstFields;
-                        const Type *dtype = getBaseTypeAndFlattenedFields(cs->getArgOperand(0), dstFields, cs->getArgOperand(2));
+                        const Type* dtype = getBaseTypeAndFlattenedFields(cs->getArgOperand(0), dstFields, cs->getArgOperand(2));
                         u32_t sz = dstFields.size();
                         //For each field (i), add store edge *(arg0 + i) = arg1
                         for (u32_t index = 0; index < sz; index++)
@@ -1410,7 +1410,7 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
 
                         // We get all flattened fields of base
                         vector<LocationSet> fields;
-                        const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields, nullptr);
+                        const Type* type = getBaseTypeAndFlattenedFields(vArg3, fields, nullptr);
 
                         // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
                         // Note that arg0 is aligned with "offset".
@@ -1540,7 +1540,7 @@ void SVFIRBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const Type *elementType)
+NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const Type* elementType)
 {
     NodeID base = pag->getBaseValVar(getValueNode(val));
     NodeID gepval = pag->getGepValVar(curVal, base, ls);

@@ -42,9 +42,6 @@ namespace SVF
 typedef llvm::Type Type;
 typedef llvm::Value Value;
 
-/// LLVM outputs
-typedef llvm::raw_string_ostream raw_string_ostream;
-
 /// LLVM types
 typedef llvm::StructType StructType;
 typedef llvm::ArrayType ArrayType;

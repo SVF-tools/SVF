@@ -9,6 +9,7 @@
 #define MTARESULTVALIDATOR_H_
 
 #include "MTA/MHP.h"
+#include "SVF-FE/LLVMUtil.h"
 
 /*!
  * Validate the result of context-sensitive analysis, including context-sensitive

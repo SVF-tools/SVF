@@ -37,19 +37,11 @@
 #include "WPA/Andersen.h"
 #include "MTA/FSMPTA.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/SVFIRBuilder.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-static llvm::RegisterPass<MTA> RACEDETECOR("mta", "May-Happen-in-Parallel Analysis");
-
-
-char MTA::ID = 0;
-ModulePass* MTA::modulePass = nullptr;
-
-MTA::MTA() :
-    ModulePass(ID), tcg(nullptr), tct(nullptr)
+MTA::MTA() : tcg(nullptr), tct(nullptr)
 {
     stat = new MTAStat();
 }
@@ -62,22 +54,12 @@ MTA::~MTA()
     //    delete tct;
 }
 
-bool MTA::runOnModule(Module& module)
-{
-    SVFModule mm(module.getName().str());
-    return runOnModule(&mm);
-}
-
 /*!
  * Perform data race detection
  */
-bool MTA::runOnModule(SVFModule* module)
+bool MTA::runOnModule(SVFIR* pag)
 {
-
-
-    modulePass = this;
-
-    MHP* mhp = computeMHP(module);
+    MHP* mhp = computeMHP(pag->getModule());
     LockAnalysis* lsa = computeLocksets(mhp->getTCT());
 
 
@@ -141,8 +123,7 @@ MHP* MTA::computeMHP(SVFModule* module)
 
     DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
-    SVFIRBuilder builder(module);
-    SVFIR* pag = builder.build();
+    SVFIR* pag = PAG::getPAG();
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
     pta->getPTACallGraph()->dump("ptacg");
 

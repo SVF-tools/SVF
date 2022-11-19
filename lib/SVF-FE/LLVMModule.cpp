@@ -195,9 +195,6 @@ void LLVMModuleSet::initSVFFunction()
         {
             const Function* f = &*it;
             SVFFunction* svffun = getSVFFunction(f);
-            svffun->setIsNotRet(LLVMUtil::functionDoesNotRet(f));
-            svffun->setIsUncalledFunction(LLVMUtil::isUncalledFunction(f));
-            svffun->setDefFunForMultipleModule(getSVFFunction(LLVMUtil::getDefFunForMultipleModule(f)));
             initSVFBasicBlock(f);
 
             if (SVFUtil::isExtCall(svffun) == false)
@@ -558,8 +555,8 @@ void LLVMModuleSet::addSVFMain()
         assert(mainMod && "Module with main function not found.");
         Module & M = *mainMod;
         // char **
-        Type * i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
-        Type * i32 = IntegerType::getInt32Ty(M.getContext());
+        Type*  i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
+        Type*  i32 = IntegerType::getInt32Ty(M.getContext());
         // define void @svf.main(i32, i8**, i8**)
 #if (LLVM_VERSION_MAJOR >= 9)
         FunctionCallee svfmainFn = M.getOrInsertFunction(
@@ -817,6 +814,13 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
         const Value* llvmVal = LLVMUtil::getGlobalRep(val);
         assert(SVFUtil::isa<GlobalValue>(llvmVal) && "not a GlobalValue?");
         glob->setDefGlobalForMultipleModule(getSVFGlobalValue(SVFUtil::cast<GlobalValue>(llvmVal)));
+    }
+    if (SVFFunction* svffun = SVFUtil::dyn_cast<SVFFunction>(svfvalue))
+    {
+        const Function* func = SVFUtil::cast<Function>(val);
+        svffun->setIsNotRet(LLVMUtil::functionDoesNotRet(func));
+        svffun->setIsUncalledFunction(LLVMUtil::isUncalledFunction(func));
+        svffun->setDefFunForMultipleModule(getSVFFunction(LLVMUtil::getDefFunForMultipleModule(func)));
     }
     if (val->hasName())
         svfvalue->setHasName();

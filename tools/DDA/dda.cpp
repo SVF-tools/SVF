@@ -7,6 +7,7 @@
 //#include "AliasUtil/AliasAnalysisCounter.h"
 //#include "MemoryModel/ComTypeModel.h"
 #include "SVF-FE/LLVMUtil.h"
+#include "SVF-FE/SVFIRBuilder.h"
 #include "DDA/DDAPass.h"
 #include "Util/Options.h"
 
@@ -58,9 +59,11 @@ int main(int argc, char ** argv)
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     svfModule->buildSymbolTableInfo();
+    SVFIRBuilder builder(svfModule);
+    SVFIR* pag = builder.build();
 
     DDAPass *dda = new DDAPass();
-    dda->runOnModule(svfModule);
+    dda->runOnModule(pag);
 
     return 0;
 

@@ -229,8 +229,8 @@ struct cppUtil::DemangledName cppUtil::demangle(const string &name)
 bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
 {
     const Value* loadSrc = loadInst->getPointerOperand();
-    const Type *valTy = loadSrc->getType();
-    const Type *elemTy = valTy;
+    const Type* valTy = loadSrc->getType();
+    const Type* elemTy = valTy;
     for (u32_t i = 0; i < 3; ++i)
     {
         if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
@@ -240,7 +240,7 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
     }
     if (const FunctionType *functy = SVFUtil::dyn_cast<FunctionType>(elemTy))
     {
-        const Type *paramty = functy->getParamType(0);
+        const Type* paramty = functy->getParamType(0);
         string className = cppUtil::getClassNameFromType(paramty);
         if (className.size() > 0)
         {
@@ -410,12 +410,12 @@ s32_t cppUtil::getVCallIdx(const CallBase* cs)
     return idx_value;
 }
 
-string cppUtil::getClassNameFromType(const Type *ty)
+string cppUtil::getClassNameFromType(const Type* ty)
 {
     string className = "";
     if (const PointerType *ptrType = SVFUtil::dyn_cast<PointerType>(ty))
     {
-        const Type *elemType = LLVMUtil::getPtrElementType(ptrType);
+        const Type* elemType = LLVMUtil::getPtrElementType(ptrType);
         if (SVFUtil::isa<StructType>(elemType) &&
                 !((SVFUtil::cast<StructType>(elemType))->isLiteral()))
         {

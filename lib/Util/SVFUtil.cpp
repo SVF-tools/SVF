@@ -29,8 +29,8 @@
 
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
-
 #include "MemoryModel/PointsTo.h"
+#include <llvm/Support/raw_ostream.h>
 
 #include <sys/resource.h>		/// increase stack size
 
@@ -279,7 +279,7 @@ const std::string& SVFUtil::getSourceLoc(const SVFValue* v)
 const std::string SVFUtil::value2String(const SVFValue* value)
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    llvm::raw_string_ostream rawstr(str);
     if(value)
     {
         if(const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(value))

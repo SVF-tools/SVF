@@ -98,10 +98,10 @@ protected:
 
     ///Get a reference to the components of struct_info.
     /// Number of flattenned elements of an array or struct
-    u32_t getNumOfFlattenElements(const Type *T);
+    u32_t getNumOfFlattenElements(const Type* T);
     
     ///Get a reference to StructInfo.
-    StInfo* getOrAddSVFTypeInfo(const Type *T);
+    StInfo* getOrAddSVFTypeInfo(const Type* T);
     /// Create SVFTypes
     void addSVFTypeInfo(const Type* t, StInfo* stinfo);
     /// Collect type info

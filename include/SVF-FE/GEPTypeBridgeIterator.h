@@ -14,17 +14,17 @@ namespace llvm
 {
 
 template<typename ItTy = User::const_op_iterator>
-class generic_bridge_gep_type_iterator : public std::iterator<std::forward_iterator_tag, Type *, ptrdiff_t>
+class generic_bridge_gep_type_iterator : public std::iterator<std::forward_iterator_tag, Type* , ptrdiff_t>
 {
 
-    typedef std::iterator<std::forward_iterator_tag,Type *, ptrdiff_t> super;
+    typedef std::iterator<std::forward_iterator_tag,Type* , ptrdiff_t> super;
     ItTy OpIt;
-    PointerIntPair<Type *,1> CurTy;
+    PointerIntPair<Type* ,1> CurTy;
     unsigned AddrSpace;
     generic_bridge_gep_type_iterator() {}
 public:
 
-    static generic_bridge_gep_type_iterator begin(Type *Ty, ItTy It)
+    static generic_bridge_gep_type_iterator begin(Type* Ty, ItTy It)
     {
         generic_bridge_gep_type_iterator I;
         I.CurTy.setPointer(Ty);
@@ -32,7 +32,7 @@ public:
         return I;
     }
 
-    static generic_bridge_gep_type_iterator begin(Type *Ty, unsigned AddrSpace,
+    static generic_bridge_gep_type_iterator begin(Type* Ty, unsigned AddrSpace,
             ItTy It)
     {
         generic_bridge_gep_type_iterator I;
@@ -60,20 +60,20 @@ public:
         return !operator==(x);
     }
 
-    Type *operator*() const
+    Type* operator*() const
     {
         if ( CurTy.getInt() )
             return CurTy.getPointer()->getPointerTo(AddrSpace);
         return CurTy.getPointer();
     }
 
-    Type *getIndexedType() const
+    Type* getIndexedType() const
     {
         assert(false && "needs to be refactored");
         if ( CurTy.getInt() )
             return CurTy.getPointer();
 #if LLVM_VERSION_MAJOR >= 11
-        Type * CT = CurTy.getPointer();
+        Type*  CT = CurTy.getPointer();
         if (auto ST = dyn_cast<StructType>(CT))
             return ST->getTypeAtIndex(getOperand());
         else if (auto Array = dyn_cast<ArrayType>(CT))
@@ -90,7 +90,7 @@ public:
 
     // non-standard operators, these may not need be bridged but seems it's
     // predunt to do so...
-    Type *operator->() const
+    Type* operator->() const
     {
         return operator*();
     }
@@ -108,7 +108,7 @@ public:
             CurTy.setInt(false);
         }
 #if LLVM_VERSION_MAJOR >= 11
-        else if ( Type * CT = CurTy.getPointer() )
+        else if ( Type*  CT = CurTy.getPointer() )
         {
             if (auto ST = dyn_cast<StructType>(CT))
                 CurTy.setPointer(ST->getTypeAtIndex(getOperand()));
@@ -173,7 +173,7 @@ inline bridge_gep_iterator bridge_gep_end(const User &GEP)
 }
 
 template<typename T>
-inline generic_bridge_gep_type_iterator<const T*> bridge_gep_end( Type * /*Op0*/, ArrayRef<T> A )
+inline generic_bridge_gep_type_iterator<const T*> bridge_gep_end( Type*  /*Op0*/, ArrayRef<T> A )
 {
     return generic_bridge_gep_type_iterator<const T*>::end(A.end());
 }

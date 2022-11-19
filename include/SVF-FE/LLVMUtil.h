@@ -118,7 +118,7 @@ inline bool isNullPtrSym(const Value* val)
     return SVFUtil::dyn_cast<ConstantPointerNull>(val);
 }
 
-static inline Type *getPtrElementType(const PointerType* pty)
+static inline Type* getPtrElementType(const PointerType* pty)
 {
 #if (LLVM_VERSION_MAJOR < 14)
     return pty->getElementType();
@@ -217,7 +217,7 @@ const Value*  stripConstantCasts(const Value* val);
 const Value* stripAllCasts(const Value* val) ;
 
 /// Get the type of the heap allocation
-const Type *getTypeOfHeapAlloc(const Instruction* inst) ;
+const Type* getTypeOfHeapAlloc(const Instruction* inst) ;
 
 /// Return the bitcast instruction which is val's only use site, otherwise return nullptr
 const Value* getUniqueUseViaCastInst(const Value* val);
@@ -358,6 +358,7 @@ u32_t getTypeSizeInBytes(const StructType *sty, u32_t field_index);
 
 const std::string getSourceLoc(const Value* val);
 const std::string getSourceLocOfFunction(const Function* F);
+const std::string type2String(const Type* type);
 const std::string value2String(const Value* value);
 const std::string value2ShortString(const Value* value);
 

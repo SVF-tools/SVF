@@ -28,7 +28,6 @@
  */
 
 #include "Util/Options.h"
-#include "Util/ICFGBuilder.h"
 #include "Graphs/CHG.h"
 #include "WPA/TypeAnalysis.h"
 #include "Util/PTAStat.h"

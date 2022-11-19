@@ -53,17 +53,12 @@ class SVFModule;
 /*!
  * Base data race detector
  */
-class MTA: public ModulePass
+class MTA
 {
 
 public:
     typedef Set<const SVFInstruction*> LoadSet;
     typedef Set<const SVFInstruction*> StoreSet;
-
-    /// Pass ID
-    static char ID;
-
-    static ModulePass* modulePass;
 
     /// Constructor
     MTA();
@@ -73,22 +68,13 @@ public:
 
 
     /// We start the pass here
-
-    virtual bool runOnModule(Module& module);
-    /// We start the pass here
-    virtual bool runOnModule(SVFModule* module);
+    virtual bool runOnModule(SVFIR* module);
     /// Compute MHP
     virtual MHP* computeMHP(SVFModule* module);
     /// Compute locksets
     virtual LockAnalysis* computeLocksets(TCT* tct);
     /// Perform detection
     virtual void detect(SVFModule* module);
-
-    /// Pass name
-    virtual llvm::StringRef getPassName() const
-    {
-        return "Multi threaded program analysis pass";
-    }
 
     void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
 

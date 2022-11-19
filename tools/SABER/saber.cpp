@@ -27,6 +27,7 @@
  */
 
 #include "SVF-FE/LLVMUtil.h"
+#include "SVF-FE/SVFIRBuilder.h"
 #include "SABER/LeakChecker.h"
 #include "SABER/FileChecker.h"
 #include "SABER/DoubleFreeChecker.h"
@@ -66,6 +67,8 @@ int main(int argc, char ** argv)
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     svfModule->buildSymbolTableInfo();
+    SVFIRBuilder builder(svfModule);
+    SVFIR* pag = builder.build();
 
     LeakChecker *saber;
 
@@ -78,7 +81,7 @@ int main(int argc, char ** argv)
     else
         saber = new LeakChecker();  // if no checker is specified, we use leak checker as the default one.
 
-    saber->runOnModule(svfModule);
+    saber->runOnModule(pag);
 
     return 0;
 

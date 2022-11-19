@@ -1,4 +1,5 @@
 #include "SVF-FE/LLVMUtil.h"
+#include "SVF-FE/SVFIRBuilder.h"
 #include "MTA/MTA.h"
 #include "Util/Options.h"
 
@@ -26,9 +27,11 @@ int main(int argc, char ** argv)
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     svfModule->buildSymbolTableInfo();
+    SVFIRBuilder builder(svfModule);
+    SVFIR* pag = builder.build();
 
     MTA *mta = new MTA();
-    mta->runOnModule(svfModule);
+    mta->runOnModule(pag);
 
     return 0;
 }

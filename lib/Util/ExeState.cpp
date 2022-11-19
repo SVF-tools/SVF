@@ -46,7 +46,7 @@ void ExeState::initValVar(const ValVar *valVar, Z3Expr &e)
     SVFIR *svfir = PAG::getPAG();
 
     rawstr << "ValVar" << valVar->getId();
-    if (const Type *type = valVar->getType())
+    if (const Type* type = valVar->getType())
     {
         if (type->isIntegerTy() || type->isFloatingPointTy() || type->isPointerTy() || type->isFunctionTy()
                 || type->isStructTy() || type->isArrayTy() || type->isVoidTy() || type->isLabelTy() || type->isMetadataTy())

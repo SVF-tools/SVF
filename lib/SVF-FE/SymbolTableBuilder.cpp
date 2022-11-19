@@ -424,7 +424,7 @@ void SymbolTableBuilder::handleGlobalCE(const GlobalVariable *G)
     assert(G);
 
     //The type this global points to
-    const Type *T = G->getValueType();
+    const Type* T = G->getValueType();
     bool is_array = 0;
     //An array is considered a single variable of its type.
     while (const ArrayType *AT = SVFUtil::dyn_cast<ArrayType>(T))
@@ -537,7 +537,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
 
     if (refTy)
     {
-        Type *objTy = getPtrElementType(refTy);
+        Type* objTy = getPtrElementType(refTy);
         ObjTypeInfo* typeInfo = new ObjTypeInfo(objTy, Options::MaxFieldLimit);
         initTypeInfo(typeInfo,val);
         return typeInfo;
@@ -746,7 +746,7 @@ bool SymbolTableBuilder::isConstantObjSym(const Value* val)
             const std::vector<const Type*> &fields = stInfo->getFlattenFieldTypes();
             for (std::vector<const Type*>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
             {
-                const Type *elemTy = *it;
+                const Type* elemTy = *it;
                 assert(!SVFUtil::isa<FunctionType>(elemTy) && "Initializer of a global is a function?");
                 if (SVFUtil::isa<PointerType>(elemTy))
                     return false;
@@ -759,7 +759,7 @@ bool SymbolTableBuilder::isConstantObjSym(const Value* val)
 }
 
 /// Number of flattenned elements of an array or struct
-u32_t SymbolTableBuilder::getNumOfFlattenElements(const Type *T)
+u32_t SymbolTableBuilder::getNumOfFlattenElements(const Type* T)
 {
     if(Options::ModelArrays)
         return getOrAddSVFTypeInfo(T)->getNumOfFlattenElements();
@@ -768,7 +768,7 @@ u32_t SymbolTableBuilder::getNumOfFlattenElements(const Type *T)
 }
 
 
-StInfo* SymbolTableBuilder::getOrAddSVFTypeInfo(const Type *T)
+StInfo* SymbolTableBuilder::getOrAddSVFTypeInfo(const Type* T)
 {
     assert(T);
     if (symInfo->hasTypeInfo(T))
@@ -876,7 +876,7 @@ StInfo* SymbolTableBuilder::collectStructInfo(const StructType *sty)
     for (StructType::element_iterator it = sty->element_begin(), ie =
                 sty->element_end(); it != ie; ++it)
     {
-        const Type *et = *it;
+        const Type* et = *it;
         /// offset with int_32 (s32_t) is large enough and will not cause overflow
         stinfo->addFldWithType(nf, et, strideOffset);
 

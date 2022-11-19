@@ -36,7 +36,7 @@
 #include "Util/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
-#include "SVF-FE/CallGraphBuilder.h"
+#include "Util/CallGraphBuilder.h"
 
 #include <iomanip>
 #include <iostream>

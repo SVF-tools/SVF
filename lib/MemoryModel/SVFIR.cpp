@@ -29,7 +29,6 @@
 
 #include "Util/Options.h"
 #include "MemoryModel/SVFIR.h"
-#include "Util/ICFGBuilder.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -384,7 +383,7 @@ GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
  * Add a temp field value node, this method can only invoked by getGepValVar
  * due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
  */
-NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const LocationSet& ls, NodeID i, const Type *type)
+NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const LocationSet& ls, NodeID i, const Type* type)
 {
     NodeID base = getBaseValVar(getValueNode(gepVal));
     //assert(findPAGNode(i) == false && "this node should not be created before");

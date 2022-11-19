@@ -54,7 +54,7 @@ void ObjTypeInfo::resetTypeForHeapStaticObj(const Type* t)
 }
 
 
-StInfo* SymbolTableInfo::getTypeInfo(const Type *T)
+StInfo* SymbolTableInfo::getTypeInfo(const Type* T)
 {
     assert(T);
     TypeToFieldInfoMap::iterator it = typeToFieldInfo.find(T);
@@ -188,7 +188,7 @@ const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const Type* type)
 }
 
 /// Number of flattenned elements of an array or struct
-u32_t SymbolTableInfo::getNumOfFlattenElements(const Type *T)
+u32_t SymbolTableInfo::getNumOfFlattenElements(const Type* T)
 {
     if(Options::ModelArrays)
         return getTypeInfo(T)->getNumOfFlattenElements();
@@ -197,7 +197,7 @@ u32_t SymbolTableInfo::getNumOfFlattenElements(const Type *T)
 }
 
 /// Flatterned offset information of a struct or an array including its array fields
-u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, u32_t origId)
+u32_t SymbolTableInfo::getFlattenedElemIdx(const Type* T, u32_t origId)
 {
     if(Options::ModelArrays)
     {

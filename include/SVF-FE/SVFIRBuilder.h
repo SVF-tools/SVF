@@ -33,7 +33,7 @@
 #include "MemoryModel/SVFIR.h"
 #include "Util/ExtAPI.h"
 #include "SVF-FE/BasicTypes.h"
-#include "Util/ICFGBuilder.h"
+#include "SVF-FE/ICFGBuilder.h"
 
 namespace SVF
 {
@@ -221,7 +221,7 @@ protected:
     const Value* getBaseValueForExtArg(const Value* V);
 
     /// Get the base type and max offset
-    const Type *getBaseTypeAndFlattenedFields(const Value* V, std::vector<LocationSet> &fields, const Value* sz);
+    const Type* getBaseTypeAndFlattenedFields(const Value* V, std::vector<LocationSet> &fields, const Value* sz);
 
     /// Handle direct call
     void handleDirectCall(CallBase* cs, const Function *F);
@@ -277,7 +277,7 @@ protected:
         return nullPtr;
     }
 
-    NodeID getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType);
+    NodeID getGepValVar(const Value* val, const LocationSet& ls, const Type* baseType);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 

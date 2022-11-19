@@ -367,7 +367,7 @@ class GepValVar: public ValVar
 
 private:
     LocationSet ls;	// LocationSet
-    const Type *gepValType;
+    const Type* gepValType;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -391,7 +391,7 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(const SVFValue* val, NodeID i, const LocationSet& l, const Type *ty) :
+    GepValVar(const SVFValue* val, NodeID i, const LocationSet& l, const Type* ty) :
         ValVar(val, i, GepValNode), ls(l), gepValType(ty)
     {
     }
