@@ -212,11 +212,11 @@ std::string ExtAPI::get_opName(const std::string& s)
 const std::string& ExtAPI::extType_toString(extType type)
 {
     std::map<std::string, extType>::iterator it = type_pair.begin();
-	for(; it!=type_pair.end(); it++) 
-	{
-		if(it->second == type)
-			break;
-	} 
+    for(; it!=type_pair.end(); it++) 
+    {
+        if(it->second == type)
+        break;
+    } 
     assert(it != type_pair.end());
     return it->first;
 }
