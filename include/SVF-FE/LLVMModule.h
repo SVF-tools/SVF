@@ -56,6 +56,7 @@ public:
     typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
     typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
     typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
+    typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -78,7 +79,8 @@ private:
     LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
     LLVMConst2SVFConstMap LLVMConst2SVFConst;
     LLVMValue2SVFOtherValueMap LLVMValue2SVFOtherValue;
-
+    LLVMType2SVFTypeMap LLVMType2SVFType;
+    
     /// Constructor
     LLVMModuleSet();
     ~LLVMModuleSet();

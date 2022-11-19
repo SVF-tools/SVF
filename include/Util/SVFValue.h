@@ -249,14 +249,9 @@ public:
         return name;
     }
 
-    inline virtual const SVFType* getSVFType() const
-    {
-        return type;
-    }
-
     inline virtual const Type* getType() const
     {
-        return getLLVMValue()->getType();
+        return type->getLLVMType();
     }
 
     inline const Value* getLLVMValue() const

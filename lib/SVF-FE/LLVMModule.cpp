@@ -946,8 +946,9 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
 SVFType* LLVMModuleSet::getSVFType(const Type* T)
 {
     assert(T);
-    if (symInfo->hasSVFType(T))
-        return symInfo->getSVFType(T);
+    LLVMType2SVFTypeMap::const_iterator it = LLVMType2SVFType.find(T);
+    if (it!=LLVMType2SVFType.end())
+        return it->second;
     else
     {
         StInfo* stinfo = nullptr;
@@ -965,6 +966,8 @@ SVFType* LLVMModuleSet::getSVFType(const Type* T)
 
 SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T, StInfo* stinfo)
 {
+    assert(LLVMType2SVFType.find(T)==LLVMType2SVFType.end() && "SVFType has been added before");
+
     SVFType* svftype = nullptr;
     if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
         svftype = new SVFPointerType(pt,stinfo);
@@ -979,6 +982,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T, StInfo* stinfo)
     else
         svftype = new SVFOtherType(T,stinfo);
     symInfo->addTypeInfo(T, svftype);
+    LLVMType2SVFType[T] = svftype;
     return svftype;
 }
 
