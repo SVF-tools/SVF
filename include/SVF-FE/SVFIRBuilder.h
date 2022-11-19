@@ -205,7 +205,7 @@ protected:
     void visitGlobal(SVFModule* svfModule);
     void InitialGlobal(const GlobalVariable *gvar, Constant *C,
                        u32_t offset);
-    NodeID getGlobalVarField(const GlobalVariable *gvar, u32_t offset, Type* tpy);
+    NodeID getGlobalVarField(const GlobalVariable *gvar, u32_t offset, SVFType* tpy);
     //@}
 
     /// Process constant expression
@@ -277,7 +277,7 @@ protected:
         return nullPtr;
     }
 
-    NodeID getGepValVar(const Value* val, const LocationSet& ls, const Type* baseType);
+    NodeID getGepValVar(const Value* val, const LocationSet& ls, const SVFType* baseType);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 

@@ -185,18 +185,18 @@ public:
 
 private:
     const Value* value;
-    const SVFType* type;   ///< Type of this SVFValue
     GNodeK kind;	///< used for classof 
     bool ptrInUncalledFun;  ///< true if this pointer is in an uncalled function
     bool has_name;          ///< true if this value has a name
     bool constDataOrAggData;    ///< true if this value is a ConstantData (e.g., numbers, string, floats) or a constantAggregate
 
 protected:
+    const SVFType* type;   ///< Type of this SVFValue
     std::string name;
     std::string sourceLoc;
     /// Constructor
-    SVFValue(const Value* val, const SVFType* ty, SVFValKind k): value(val), type(ty), kind(k),
-        ptrInUncalledFun(false), has_name(false), constDataOrAggData(SVFConstData==k), 
+    SVFValue(const Value* val, const SVFType* ty, SVFValKind k): value(val), kind(k),
+        ptrInUncalledFun(false), has_name(false), constDataOrAggData(SVFConstData==k), type(ty),
         name(val->getName()), sourceLoc("No source code Info")
     {
     }
@@ -249,9 +249,9 @@ public:
         return name;
     }
 
-    inline virtual const Type* getType() const
+    inline virtual const SVFType* getType() const
     {
-        return type->getLLVMType();
+        return type;
     }
 
     inline const Value* getLLVMValue() const
@@ -321,7 +321,7 @@ private:
     bool isUncalled;    /// return true if this function is never called
     bool isNotRet;   /// return true if this function never returns
     bool varArg;    /// return true if this function supports variable arguments 
-    const FunctionType* funType;    /// the type of this function
+    const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVFFunction
     SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
@@ -340,14 +340,14 @@ protected:
         allArgs.push_back(arg);
     }
 
-    inline void setIsUncalledFunction(bool isUncalledFunction)
+    inline void setIsUncalledFunction(bool uncalledFunction)
     {
-        this->isUncalled = isUncalledFunction;
+        isUncalled = uncalledFunction;
     }
 
-    inline void setIsNotRet(bool doesNotRet)
+    inline void setIsNotRet(bool notRet)
     {
-        this->isNotRet = doesNotRet;
+        isNotRet = notRet;
     }
 
     inline void setDefFunForMultipleModule(const SVFFunction* deffun)
@@ -357,7 +357,7 @@ protected:
     /// @}
 
 public:
-    SVFFunction(const Value* f, const SVFType* ty, bool declare, bool intricsic, bool addrTaken, bool varg, const FunctionType* ft, SVFLoopAndDomInfo* ld);
+    SVFFunction(const Value* f, const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intricsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
     SVFFunction(const Value* f) = delete;
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
@@ -387,15 +387,15 @@ public:
     }
 
     /// Returns the FunctionType
-    inline const FunctionType* getFunctionType() const 
+    inline const SVFFunctionType* getFunctionType() const 
     {
-        return funType;
+        return funcType;
     }
 
     /// Returns the FunctionType
-    inline const Type* getReturnType() const 
+    inline const SVFType* getReturnType() const 
     {
-        return funType->getReturnType();
+        return funcType->getReturnType();
     }
 
     inline const SVFFunction* getDefFunForMultipleModule() const
@@ -1078,7 +1078,7 @@ public:
     {
         return CB->getArgOperand(ArgNo);
     }
-    const Type* getType() const
+    const SVFType* getType() const
     {
         return CB->getType();
     }

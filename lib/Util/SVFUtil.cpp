@@ -348,11 +348,11 @@ void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
     if (limitTimerSet) alarm(0);
 }
 
-const std::string SVFUtil::type2String(const Type* type)
+const std::string SVFUtil::type2String(const SVFType* type)
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
     assert(type != nullptr && "Given null type!");
-    rawstr << *type;
+    rawstr << *type->getLLVMType();
     return rawstr.str();
 }

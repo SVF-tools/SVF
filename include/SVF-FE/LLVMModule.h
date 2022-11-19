@@ -80,7 +80,7 @@ private:
     LLVMConst2SVFConstMap LLVMConst2SVFConst;
     LLVMValue2SVFOtherValueMap LLVMValue2SVFOtherValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
-    
+
     /// Constructor
     LLVMModuleSet();
     ~LLVMModuleSet();
@@ -313,7 +313,7 @@ public:
 
 private:
     /// Create SVFTypes
-    SVFType* addSVFTypeInfo(const Type* t, StInfo* stinfo);
+    SVFType* addSVFTypeInfo(const Type* t);
     /// Collect the struct info
     StInfo* collectStructInfo(const StructType *T);
     /// Collect the array info

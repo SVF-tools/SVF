@@ -128,6 +128,8 @@ typedef Set<Version> VersionSet;
 typedef std::pair<NodeID, Version> VersionedVar;
 typedef Set<VersionedVar> VersionedVarSet;
 
+class SVFType;
+
 /*!
  * Flatterned type information of StructType, ArrayType and SingleValueType
  */
@@ -140,9 +142,9 @@ private:
     /// flattened element indices including structs and arrays by considering strides
     std::vector<u32_t> elemIdxVec;
     /// Types of all fields of a struct
-    Map<u32_t, const Type*> fldIdx2TypeMap;
+    Map<u32_t, const SVFType*> fldIdx2TypeMap;
     /// All field infos after flattening a struct
-    std::vector<const Type*> finfo;
+    std::vector<const SVFType*> finfo;
     /// stride represents the number of repetitive elements if this StInfo represent an ArrayType. stride is 1 by default.
     u32_t stride;
     /// number of elements after flattenning (including array elements)
@@ -150,7 +152,7 @@ private:
     /// number of fields after flattenning (ignoring array elements)
     u32_t numOfFlattenFields;
     /// Type vector of fields
-    std::vector<const Type*> flattenElementTypes;
+    std::vector<const SVFType*> flattenElementTypes;
     /// Max field limit
 
     StInfo(); ///< place holder
@@ -171,7 +173,7 @@ public:
     ///  OriginalFieldType of b with field_idx 1 : Struct A
     ///  FlatternedFieldType of b with field_idx 1 : int
     //{@
-    const Type* getOriginalElemType(u32_t fldIdx);
+    const SVFType* getOriginalElemType(u32_t fldIdx) const;
 
     inline std::vector<u32_t>& getFlattenedFieldIdxVec()
     {
@@ -181,18 +183,34 @@ public:
     {
         return elemIdxVec;
     }
-    inline std::vector<const Type*>& getFlattenElementTypes()
+    inline std::vector<const SVFType*>& getFlattenElementTypes()
     {
         return flattenElementTypes;
     }
-    inline std::vector<const Type*>& getFlattenFieldTypes()
+    inline std::vector<const SVFType*>& getFlattenFieldTypes()
+    {
+        return finfo;
+    }
+    inline const std::vector<u32_t>& getFlattenedFieldIdxVec() const
+    {
+        return fldIdxVec;
+    }
+    inline const std::vector<u32_t>& getFlattenedElemIdxVec() const
+    {
+        return elemIdxVec;
+    }
+    inline const std::vector<const SVFType*>& getFlattenElementTypes() const
+    {
+        return flattenElementTypes;
+    }
+    inline const std::vector<const SVFType*>& getFlattenFieldTypes() const
     {
         return finfo;
     }
     //@}
 
     /// Add field index and element index and their corresponding type
-    void addFldWithType(u32_t fldIdx, const Type* type, u32_t elemIdx);
+    void addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx);
 
     /// Set number of fields and elements of an aggrate
     inline void setNumOfFieldsAndElems(u32_t nf, u32_t ne)
@@ -240,10 +258,10 @@ private:
     GNodeK kind;	///< used for classof 
     const Type* type;   ///< LLVM type
     StInfo* typeinfo; /// < SVF's TypeInfo
+    bool isSingleValTy; ///< The type represents a single value, not struct or array
     std::string toStr;  ///< string format of the type
-
 protected:
-    SVFType(const Type* ty, StInfo* ti, SVFTyKind k) : kind(k), type(ty), typeinfo(ti), toStr("")
+    SVFType(const Type* ty, bool svt, SVFTyKind k) : kind(k), type(ty), typeinfo(nullptr), isSingleValTy(svt), toStr("")
     {
     }
 
@@ -263,14 +281,20 @@ public:
     {
         return toStr;
     }
+    inline void setTypeInfo (StInfo* ti)  
+    {
+        typeinfo = ti;
+    }
 
     inline StInfo* getTypeInfo()
     {
+        assert(typeinfo && "set the type info first");
         return typeinfo;
     }
 
     inline const StInfo* getTypeInfo() const
     {
+        assert(typeinfo && "set the type info first");
         return typeinfo;
     }
 
@@ -278,24 +302,42 @@ public:
     {
         return type;
     }
+
+    inline bool isPointerTy() const
+    {
+        return kind==SVFPointerTy;
+    }
+
+    inline bool isSingleValueType() const
+    {
+        return isSingleValTy;
+    }
 };
 
 class SVFPointerType : public SVFType
 {
+
+private:
+const SVFType* ptrElementType;
+
 public:
-    SVFPointerType(const Type* ty, StInfo* ti) : SVFType(ty, ti, SVFPointerTy)
+    SVFPointerType(const Type* ty, const SVFType* pty) : SVFType(ty, true, SVFPointerTy), ptrElementType(pty)
     {
     }
     static inline bool classof(const SVFType *node)
     {
         return node->getKind() == SVFPointerTy;
     }
+    inline const SVFType* getPtrElementType() const
+    {
+        return ptrElementType;
+    }
 };
 
 class SVFIntergerType : public SVFType
 {
 public:
-    SVFIntergerType(const Type* ty, StInfo* ti) : SVFType(ty, ti, SVFIntergerTy)
+    SVFIntergerType(const Type* ty) : SVFType(ty, true, SVFIntergerTy)
     {
     }
     static inline bool classof(const SVFType *node)
@@ -306,20 +348,27 @@ public:
 
 class SVFFunctionType : public SVFType
 {
+private:
+    const SVFType* retTy;
+
 public:
-    SVFFunctionType(const Type* ty, StInfo* ti) : SVFType(ty, ti, SVFFunctionTy)
+    SVFFunctionType(const Type* ty, const SVFType* rt) : SVFType(ty,false, SVFFunctionTy), retTy(rt)
     {
     }
     static inline bool classof(const SVFType *node)
     {
         return node->getKind() == SVFFunctionTy;
     }
+    const SVFType* getReturnType() const
+    {
+        return retTy;
+    }
 };
 
 class SVFStructType : public SVFType
 {
 public:
-    SVFStructType(const Type* ty, StInfo* ti) : SVFType(ty, ti, SVFStructTy)
+    SVFStructType(const Type* ty) : SVFType(ty, false, SVFStructTy)
     {
     }
     static inline bool classof(const SVFType *node)
@@ -331,7 +380,7 @@ public:
 class SVFArrayType : public SVFType
 {
 public:
-    SVFArrayType(const Type* ty, StInfo* ti) : SVFType(ty, ti, SVFArrayTy)
+    SVFArrayType(const Type* ty) : SVFType(ty, false, SVFArrayTy)
     {
     }
     static inline bool classof(const SVFType *node)
@@ -343,7 +392,7 @@ public:
 class SVFOtherType : public SVFType
 {
 public:
-    SVFOtherType(const Type* ty, StInfo* ti) : SVFType(ty, ti, SVFOtherTy)
+    SVFOtherType(const Type* ty, bool isSingleValueTy) : SVFType(ty, isSingleValueTy, SVFOtherTy)
     {
     }
     static inline bool classof(const SVFType *node)

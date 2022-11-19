@@ -276,7 +276,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     {
         const Type* gepTy = *gi;
         const Value* offsetVal = gi.getOperand();
-        ls.addOffsetValue(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offsetVal), gepTy);
+        ls.addOffsetValue(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offsetVal), LLVMModuleSet::getLLVMModuleSet()->getSVFType(gepTy));
 
         //The int value of the current index operand
         const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
@@ -288,7 +288,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             if(!op || (arrTy->getArrayNumElements() <= (u32_t)op->getSExtValue()))
                 continue;
             s32_t idx = op->getSExtValue();
-            u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(arrTy, idx);
+            u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(arrTy), idx);
             ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);
         }
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
@@ -296,7 +296,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             assert(op && "non-const offset accessing a struct");
             //The actual index
             s32_t idx = op->getSExtValue();
-            u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(ST, idx);
+            u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(ST), idx);
             ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);
         }
         else if (gepTy->isSingleValueType())
@@ -444,7 +444,7 @@ void SVFIRBuilder::processCE(const Value* val)
  * FIXME:Here we only get the field that actually used in the program
  * We ignore the initialization of global variable field that not used in the program
  */
-NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, Type* tpy)
+NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, SVFType* tpy)
 {
 
     // if the global variable do not have any field needs to be initialized
@@ -480,7 +480,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         NodeID src = getValueNode(C);
         // get the field value if it is avaiable, otherwise we create a dummy field node.
         setCurrentLocation(gvar, nullptr);
-        NodeID field = getGlobalVarField(gvar, offset, C->getType());
+        NodeID field = getGlobalVarField(gvar, offset, LLVMModuleSet::getLLVMModuleSet()->getSVFType(C->getType()));
 
         if (SVFUtil::isa<GlobalVariable>(C) || SVFUtil::isa<Function>(C))
         {
@@ -517,7 +517,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             return;
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
-            u32_t off = pag->getSymbolInfo()->getFlattenedElemIdx(C->getType(), i);
+            u32_t off = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(C->getType()), i);
             InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset + off);
         }
     }
@@ -529,7 +529,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             {
                 for(u32_t i = 0; i < seq->getNumElements(); i++)
                 {
-                    u32_t off = pag->getSymbolInfo()->getFlattenedElemIdx(C->getType(), i);
+                    u32_t off = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(C->getType()), i);
                     Constant* ct = seq->getElementAsConstant(i);
                     InitialGlobal(gvar, ct, offset + off);
                 }
@@ -1108,7 +1108,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
         T = getPtrElementType(ptype);
 
-    u32_t numOfElems = pag->getSymbolInfo()->getNumOfFlattenElements(T);
+    u32_t numOfElems = pag->getSymbolInfo()->getNumOfFlattenElements(LLVMModuleSet::getLLVMModuleSet()->getSVFType(T));
     /// use user-specified size for this copy operation if the size is a constaint int
     if(szValue && SVFUtil::isa<ConstantInt>(szValue))
     {
@@ -1164,8 +1164,9 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
-        const Type* dElementType = pag->getSymbolInfo()->getFlatternedElemType(dtype, fields[index].accumulateConstantFieldIdx());
-        const Type* sElementType = pag->getSymbolInfo()->getFlatternedElemType(stype, fields[index].accumulateConstantFieldIdx());
+        LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
+        const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(dtype), fields[index].accumulateConstantFieldIdx());
+        const SVFType* sElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(stype), fields[index].accumulateConstantFieldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
         NodeID dummy = pag->addDummyValNode();
@@ -1263,7 +1264,7 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
             {
                 NodeID vnArg = getValueNode(arg);
                 NodeID dummy = pag->addDummyValNode();
-                NodeID obj = pag->addDummyObjNode(arg->getType());
+                NodeID obj = pag->addDummyObjNode(LLVMModuleSet::getLLVMModuleSet()->getSVFType(arg->getType()));
                 if (vnArg && dummy && obj)
                 {
                     addAddrEdge(obj, dummy);
@@ -1363,7 +1364,7 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         //For each field (i), add store edge *(arg0 + i) = arg1
                         for (u32_t index = 0; index < sz; index++)
                         {
-                            const Type* dElementType = pag->getSymbolInfo()->getFlatternedElemType(dtype, dstFields[index].accumulateConstantFieldIdx());
+                            const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(dtype), dstFields[index].accumulateConstantFieldIdx());
                             NodeID dField = getGepValVar(cs->getArgOperand(0), dstFields[index], dElementType);
                             addStoreEdge(getValueNode(cs->getArgOperand(1)),dField);
                         }
@@ -1418,7 +1419,7 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         {
                             if((u32_t)i >= fields.size())
                                 break;
-                            const Type* elementType = pag->getSymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
+                            const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(type), fields[i].accumulateConstantFieldIdx());
                             NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
                             NodeID vnS = getValueNode(vArg1);
                             if(vnD && vnS)
@@ -1540,7 +1541,7 @@ void SVFIRBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const Type* elementType)
+NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const SVFType* elementType)
 {
     NodeID base = pag->getBaseValVar(getValueNode(val));
     NodeID gepval = pag->getGepValVar(curVal, base, ls);
@@ -1562,7 +1563,8 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const
         const SVFValue* cval = getCurrentValue();
         const SVFBasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
-        NodeID gepNode= pag->addGepValNode(curVal, LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val),ls, NodeIDAllocator::get()->allocateValueId(),elementType->getPointerTo());
+        LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
+        NodeID gepNode= pag->addGepValNode(curVal, llvmmodule->getSVFValue(val),ls, NodeIDAllocator::get()->allocateValueId(),llvmmodule->getSVFType(elementType->getLLVMType()->getPointerTo()));
         addGepEdge(base, gepNode, ls, true);
         setCurrentLocation(cval, cbb);
         return gepNode;

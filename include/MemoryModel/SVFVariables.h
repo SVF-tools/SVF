@@ -97,7 +97,7 @@ public:
     }
 
     /// Return type of the value
-    inline virtual const Type* getType() const
+    inline virtual const SVFType* getType() const
     {
         if (value)
             return value->getType();
@@ -348,7 +348,7 @@ public:
         return "";
     }
     /// Return type of the value
-    inline virtual const llvm::Type* getType() const
+    inline virtual const SVFType* getType() const
     {
         return mem->getType();
     }
@@ -367,7 +367,7 @@ class GepValVar: public ValVar
 
 private:
     LocationSet ls;	// LocationSet
-    const Type* gepValType;
+    const SVFType* gepValType;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -391,7 +391,7 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(const SVFValue* val, NodeID i, const LocationSet& l, const Type* ty) :
+    GepValVar(const SVFValue* val, NodeID i, const LocationSet& l, const SVFType* ty) :
         ValVar(val, i, GepValNode), ls(l), gepValType(ty)
     {
     }
@@ -410,7 +410,7 @@ public:
         return "offset_" + std::to_string(getConstantFieldIdx());
     }
 
-    inline const Type* getType() const
+    inline const SVFType* getType() const
     {
         return gepValType;
     }
@@ -482,7 +482,7 @@ public:
     }
 
     /// Return the type of this gep object
-    inline virtual const Type* getType() const
+    inline virtual const SVFType* getType() const
     {
         return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(mem->getType(), ls.accumulateConstantFieldIdx());
     }

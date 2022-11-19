@@ -447,7 +447,7 @@ public:
     {
         return addDummyValNode(NodeIDAllocator::get()->allocateValueId());
     }
-    inline NodeID addDummyObjNode(const Type* type)
+    inline NodeID addDummyObjNode(const SVFType* type)
     {
         return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type);
     }
@@ -541,7 +541,7 @@ private:
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValVar
-    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const LocationSet& ls, NodeID i, const Type* type);
+    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const LocationSet& ls, NodeID i, const SVFType* type);
     /// Add a field obj node, this method can only invoked by getGepObjVar
     NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
@@ -554,12 +554,12 @@ private:
     {
         return addValNode(nullptr, new DummyValVar(i), i);
     }
-    inline NodeID addDummyObjNode(NodeID i, const Type* type)
+    inline NodeID addDummyObjNode(NodeID i, const SVFType* type)
     {
         const MemObj* mem = addDummyMemObj(i, type);
         return addObjNode(nullptr, new DummyObjVar(i,mem), i);
     }
-    inline const MemObj* addDummyMemObj(NodeID i, const Type* type)
+    inline const MemObj* addDummyMemObj(NodeID i, const SVFType* type)
     {
         return getSymbolInfo()->createDummyObj(i,type);
     }

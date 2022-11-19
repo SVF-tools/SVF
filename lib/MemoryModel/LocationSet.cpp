@@ -39,7 +39,7 @@ using namespace SVFUtil;
 /*!
  * Add offset value to vector offsetValues
  */
-bool LocationSet::addOffsetValue(const SVFValue* offsetVal, const Type* type)
+bool LocationSet::addOffsetValue(const SVFValue* offsetVal, const SVFType* type)
 {
     offsetValues.push_back(std::make_pair(offsetVal,type));
     return true;
@@ -60,22 +60,22 @@ bool LocationSet::isConstantOffset() const
 /// (1) StructType or Array, return flatterned number elements.
 /// (2) PointerType, return the element number of the pointee
 /// (3) non-pointer SingleValueType, return 1
-u32_t LocationSet::getElementNum(const Type* type) const
+u32_t LocationSet::getElementNum(const SVFType* type) const
 {
 
-    if(SVFUtil::isa<ArrayType>(type) || SVFUtil::isa<StructType>(type))
+    if(SVFUtil::isa<SVFArrayType>(type) || SVFUtil::isa<SVFStructType>(type))
     {
         return SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(type);
     }
     else if (type->isSingleValueType())
     {
         /// This is a pointer arithmic
-        if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type))
-            return getElementNum(SymbolTableInfo::getPtrElementType(pty));
+        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+            return getElementNum(pty->getPtrElementType());
         else
             return 1;
     }
-    else if (SVFUtil::isa<FunctionType>(type))
+    else if (SVFUtil::isa<SVFFunctionType>(type))
     {
         return 1;
     }
@@ -127,7 +127,7 @@ s32_t LocationSet::accumulateConstantOffset() const
     for(int i = offsetValues.size() - 1; i >= 0; i--)
     {
         const SVFValue* value = offsetValues[i].first;
-        const Type* type = offsetValues[i].second;
+        const SVFType* type = offsetValues[i].second;
         const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         assert(op && "not a constant offset?");
         if(type==nullptr)
@@ -136,8 +136,8 @@ s32_t LocationSet::accumulateConstantOffset() const
             continue;
         }
 
-        if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type))
-            totalConstOffset += op->getSExtValue() * getElementNum(SymbolTableInfo::getPtrElementType(pty));
+        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType());
         else
         {
             s32_t offset = op->getSExtValue();

@@ -41,30 +41,30 @@ using namespace SVFUtil;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
 
-ObjTypeInfo::ObjTypeInfo(const Type* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(max)
+ObjTypeInfo::ObjTypeInfo(const SVFType* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(max)
 {
     assert(t && "no type information for this object?");
 }
 
 
-void ObjTypeInfo::resetTypeForHeapStaticObj(const Type* t)
+void ObjTypeInfo::resetTypeForHeapStaticObj(const SVFType* t)
 {
     assert((isStaticObj() || isHeap()) && "can only reset the inferred type for heap and static objects!");
     type = t;
 }
 
-StInfo* SymbolTableInfo::getTypeInfo(const Type* T)
+const StInfo* SymbolTableInfo::getTypeInfo(const SVFType* T) const
 {
     assert(T);
-    TypeToSVFTyInfoMap::iterator it = typeToFieldInfo.find(T);
-    assert(it != typeToFieldInfo.end() && "type info not found? collect them first during SVFIR Building");
-    return it->second->getTypeInfo();
+    SVFTypeSet::const_iterator it = svfTypes.find(T);
+    assert(it != svfTypes.end() && "type info not found? collect them first during SVFIR Building");
+    return (*it)->getTypeInfo();
 }
 
 /*
  * Initial the memory object here (for a dummy object)
  */
-ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const Type* type)
+ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const SVFType* type)
 {
     ObjTypeInfo* typeInfo = new ObjTypeInfo(type, Options::MaxFieldLimit);
     if(type && type->isPointerTy())
@@ -127,11 +127,11 @@ void SymbolTableInfo::destroy()
         if (iter->second)
             delete iter->second;
     }
-    for (TypeToSVFTyInfoMap::iterator iter = typeToFieldInfo.begin();
-            iter != typeToFieldInfo.end(); ++iter)
+    for (SVFTypeSet::const_iterator iter = svfTypes.begin();
+            iter != svfTypes.end(); ++iter)
     {
-        if (iter->second)
-            delete iter->second;
+        if (*iter)
+            delete *iter;
     }
 
     if(mod)
@@ -141,44 +141,7 @@ void SymbolTableInfo::destroy()
     }
 }
 
-bool SymbolTableInfo::isArgOfUncalledFunction(const SVFValue* svfval)
-{
-    if(const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(svfval))
-        return arg->isArgOfUncalledFunction();
-    else
-        return false;
-}
-
-const Type* SymbolTableInfo::getPtrElementType(const PointerType* pty)
-{
-    Map<const PointerType*, const Type*>::const_iterator ptrElementTypeMapIter = symInfo->getModule()->getPtrElementTypeMap().find(pty);
-    if (ptrElementTypeMapIter != symInfo->getModule()->getPtrElementTypeMap().end())
-    {
-        return ptrElementTypeMapIter->second;
-    }
-    return nullptr;
-}
-
-
-MemObj* SymbolTableInfo::createBlkObj(SymID symId)
-{
-    assert(isBlkObj(symId));
-    assert(objMap.find(symId)==objMap.end());
-    MemObj* obj = new MemObj(symId, createObjTypeInfo(IntegerType::get(LLVMModuleSet::getLLVMModuleSet()->getContext(), 32)));
-    objMap[symId] = obj;
-    return obj;
-}
-
-MemObj* SymbolTableInfo::createConstantObj(SymID symId)
-{
-    assert(isConstantObj(symId));
-    assert(objMap.find(symId)==objMap.end());
-    MemObj* obj = new MemObj(symId, createObjTypeInfo(IntegerType::get(LLVMModuleSet::getLLVMModuleSet()->getContext(), 32)));
-    objMap[symId] = obj;
-    return obj;
-}
-
-const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const Type* type)
+const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const SVFType* type)
 {
     assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
     MemObj* memObj = new MemObj(symId, createObjTypeInfo(type));
@@ -187,7 +150,7 @@ const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const Type* type)
 }
 
 /// Number of flattenned elements of an array or struct
-u32_t SymbolTableInfo::getNumOfFlattenElements(const Type* T)
+u32_t SymbolTableInfo::getNumOfFlattenElements(const SVFType* T)
 {
     if(Options::ModelArrays)
         return getTypeInfo(T)->getNumOfFlattenElements();
@@ -196,55 +159,55 @@ u32_t SymbolTableInfo::getNumOfFlattenElements(const Type* T)
 }
 
 /// Flatterned offset information of a struct or an array including its array fields
-u32_t SymbolTableInfo::getFlattenedElemIdx(const Type* T, u32_t origId)
+u32_t SymbolTableInfo::getFlattenedElemIdx(const SVFType* T, u32_t origId)
 {
     if(Options::ModelArrays)
     {
-        std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedElemIdxVec();
+        const std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedElemIdxVec();
         assert ((unsigned)origId < so.size() && !so.empty() && "element index out of bounds, can't get flattened index!");
         return so[origId];
     }
     else
     {
-        if(SVFUtil::isa<StructType>(T))
+        if(SVFUtil::isa<SVFStructType>(T))
         {
-            std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedFieldIdxVec();
+            const std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedFieldIdxVec();
             assert ((unsigned)origId < so.size() && !so.empty() && "Struct index out of bounds, can't get flattened index!");
             return so[origId];
         }
         else
         {
             /// When Options::ModelArrays is disabled, any element index Array is modeled as the base
-            assert(SVFUtil::isa<ArrayType>(T) && "Only accept struct or array type if Options::ModelArrays is disabled!");
+            assert(SVFUtil::isa<SVFArrayType>(T) && "Only accept struct or array type if Options::ModelArrays is disabled!");
             return 0;
         }
     }
 }
 
-const Type* SymbolTableInfo::getOriginalElemType(const Type* baseType, u32_t origId)
+const SVFType* SymbolTableInfo::getOriginalElemType(const SVFType* baseType, u32_t origId) const
 {
     return getTypeInfo(baseType)->getOriginalElemType(origId);
 }
 
 /// Return the type of a flattened element given a flattened index
-const Type* SymbolTableInfo::getFlatternedElemType(const Type* baseType, u32_t flatten_idx)
+const SVFType* SymbolTableInfo::getFlatternedElemType(const SVFType* baseType, u32_t flatten_idx)
 {
     if(Options::ModelArrays)
     {
-        const std::vector<const Type*>& so = getTypeInfo(baseType)->getFlattenElementTypes();
+        const std::vector<const SVFType*>& so = getTypeInfo(baseType)->getFlattenElementTypes();
         assert (flatten_idx < so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
         return so[flatten_idx];
     }
     else
     {
-        const std::vector<const Type*>& so = getTypeInfo(baseType)->getFlattenFieldTypes();
+        const std::vector<const SVFType*>& so = getTypeInfo(baseType)->getFlattenFieldTypes();
         assert (flatten_idx < so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
         return so[flatten_idx];
     }
 }
 
 
-const std::vector<const Type*>& SymbolTableInfo::getFlattenFieldTypes(const StructType *T)
+const std::vector<const SVFType*>& SymbolTableInfo::getFlattenFieldTypes(const SVFStructType *T)
 {
     return getTypeInfo(T)->getFlattenFieldTypes();
 }
@@ -252,10 +215,10 @@ const std::vector<const Type*>& SymbolTableInfo::getFlattenFieldTypes(const Stru
 /*
  * Print out the composite type information
  */
-void SymbolTableInfo::printFlattenFields(const Type* type)
+void SymbolTableInfo::printFlattenFields(const SVFType* type)
 {
 
-    if(const ArrayType *at = SVFUtil::dyn_cast<ArrayType> (type))
+    if(const SVFArrayType *at = SVFUtil::dyn_cast<SVFArrayType> (type))
     {
         outs() <<"  {Type: ";
         outs() << type2String(at);
@@ -265,14 +228,14 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
         outs() << "\n";
     }
 
-    else if(const StructType *st = SVFUtil::dyn_cast<StructType> (type))
+    else if(const SVFStructType *st = SVFUtil::dyn_cast<SVFStructType> (type))
     {
         outs() <<"  {Type: ";
         outs() << type2String(st);
         outs() << "}\n";
-        std::vector<const Type*>& finfo = getTypeInfo(st)->getFlattenFieldTypes();
+        const std::vector<const SVFType*>& finfo = getTypeInfo(st)->getFlattenFieldTypes();
         int field_idx = 0;
-        for(std::vector<const Type*>::const_iterator it = finfo.begin(), eit = finfo.end();
+        for(std::vector<const SVFType*>::const_iterator it = finfo.begin(), eit = finfo.end();
                 it!=eit; ++it, field_idx++)
         {
             outs() << " \tField_idx = " << field_idx;
@@ -283,9 +246,9 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
         outs() << "\n";
     }
 
-    else if (const PointerType* pt= SVFUtil::dyn_cast<PointerType> (type))
+    else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType> (type))
     {
-        u32_t eSize = getNumOfFlattenElements(SymbolTableInfo::getPtrElementType(pt));
+        u32_t eSize = getNumOfFlattenElements(pt->getPtrElementType());
         outs() << "  {Type: ";
         outs() << type2String(pt);
         outs() << "}\n";
@@ -293,7 +256,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
         outs() << "\n";
     }
 
-    else if ( const FunctionType* fu= SVFUtil::dyn_cast<FunctionType> (type))
+    else if ( const SVFFunctionType* fu= SVFUtil::dyn_cast<SVFFunctionType> (type))
     {
         outs() << "  {Type: ";
         outs() << type2String(fu->getReturnType());
@@ -403,9 +366,9 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
     if (hasPtrObj() == false)
         return true;
 
-    const Type* ety = getType();
+    const SVFType* ety = getType();
 
-    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
+    if (SVFUtil::isa<SVFStructType>(ety) || SVFUtil::isa<SVFArrayType>(ety))
     {
         u32_t sz = 0;
         if(Options::ModelArrays)
@@ -419,7 +382,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
             return false;
         }
 
-        const Type* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.accumulateConstantFieldIdx());
+        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.accumulateConstantFieldIdx());
         return (elemTy->isPointerTy() == false);
     }
     else
@@ -466,7 +429,7 @@ void MemObj::setNumOfElements(u32_t num)
 }
 
 /// Get obj type info
-const Type* MemObj::getType() const
+const SVFType* MemObj::getType() const
 {
     return typeInfo->getType();
 }

@@ -245,10 +245,10 @@ void PointerAnalysis::dumpAllTypes()
         outs() << "Source Loc: " << getSourceLoc(node->getValue());
         outs() << "\nNodeID " << node->getId() << "\n";
 
-        const Type* type = node->getValue()->getType();
+        const SVFType* type = node->getValue()->getType();
         pag->getSymbolInfo()->printFlattenFields(type);
-        if (const PointerType* ptType = SVFUtil::dyn_cast<PointerType>(type))
-            pag->getSymbolInfo()->printFlattenFields(SymbolTableInfo::getPtrElementType(ptType));
+        if (const SVFPointerType* ptType = SVFUtil::dyn_cast<SVFPointerType>(type))
+            pag->getSymbolInfo()->printFlattenFields(ptType->getPtrElementType());
     }
 }
 

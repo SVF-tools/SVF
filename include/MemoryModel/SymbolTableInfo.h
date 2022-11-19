@@ -73,7 +73,7 @@ public:
     /// function to sym id map
     typedef OrderedMap<const SVFFunction*, SymID> FunToIDMapTy;
     /// struct type to struct info map
-    typedef OrderedMap<const Type*, SVFType*> TypeToSVFTyInfoMap;
+    typedef Set<const SVFType*> SVFTypeSet;
     //@}
 
 private:
@@ -147,9 +147,6 @@ public:
 
     /// special value
     // @{
-    static bool isArgOfUncalledFunction(const SVFValue* val);
-    static const Type* getPtrElementType(const PointerType* pty);
-
     static inline bool isBlkPtr(NodeID id)
     {
         return (id == BlkPtr);
@@ -170,10 +167,6 @@ public:
     {
         return (isBlkObj(id) || isConstantObj(id));
     }
-
-    MemObj* createBlkObj(SymID symId);
-
-    MemObj* createConstantObj(SymID symId);
 
     inline MemObj* getBlkObj() const
     {
@@ -205,7 +198,7 @@ public:
     }
 
     /// Can only be invoked by SVFIR::addDummyNode() when creaing SVFIR from file.
-    const MemObj* createDummyObj(SymID symId, const Type* type);
+    const MemObj* createDummyObj(SymID symId, const SVFType* type);
     // @}
 
     /// Get different kinds of syms
@@ -291,27 +284,27 @@ public:
     /// Get struct info
     //@{
     ///Get a reference to StructInfo.
-    StInfo* getTypeInfo(const Type* T);
-    inline bool hasSVFTypeInfo(const Type* T)
+    const StInfo* getTypeInfo(const SVFType* T) const;
+    inline bool hasSVFTypeInfo(const SVFType* T)
     {
-        return typeToFieldInfo.find(T) != typeToFieldInfo.end();
+        return svfTypes.find(T) != svfTypes.end();
     }
 
     ///Get a reference to the components of struct_info.
     /// Number of flattenned elements of an array or struct
-    u32_t getNumOfFlattenElements(const Type* T);
+    u32_t getNumOfFlattenElements(const SVFType* T);
     /// Flatterned element idx of an array or struct by considering stride
-    u32_t getFlattenedElemIdx(const Type* T, u32_t origId);
+    u32_t getFlattenedElemIdx(const SVFType* T, u32_t origId);
     /// Return the type of a flattened element given a flattened index
-    const Type* getFlatternedElemType(const Type* baseType, u32_t flatten_idx);
+    const SVFType* getFlatternedElemType(const SVFType* baseType, u32_t flatten_idx);
     ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
     ///  OriginalElemType of b with field_idx 1 : Struct A
     ///  FlatternedElemType of b with field_idx 1 : int
-    const Type* getOriginalElemType(const Type* baseType, u32_t origId);
+    const SVFType* getOriginalElemType(const SVFType* baseType, u32_t origId) const;
     //@}
 
     /// Debug method
-    void printFlattenFields(const Type* type);
+    void printFlattenFields(const SVFType* type);
 
     static std::string toString(SYMTYPE symtype);
 
@@ -322,30 +315,30 @@ public:
     virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
 
     ///The struct type with the most fields
-    const Type* maxStruct;
+    const SVFType* maxStruct;
 
     ///The number of fields in max_struct
     u32_t maxStSize;
 
-    inline void addTypeInfo(const Type* ty, SVFType* info)
+    inline void addTypeInfo(const SVFType* ty)
     {
         assert(!hasSVFTypeInfo(ty) && "this type info has been added before");
-        typeToFieldInfo[ty] = info;
+        svfTypes.insert(ty);
     }
 
 protected:
 
     /// Return the flattened field type for struct type only
-    const std::vector<const Type*>& getFlattenFieldTypes(const StructType *T);
+    const std::vector<const SVFType*>& getFlattenFieldTypes(const SVFStructType *T);
 
     /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
-    ObjTypeInfo* createObjTypeInfo(const Type* type);
+    ObjTypeInfo* createObjTypeInfo(const SVFType* type);
 
     /// Every type T is mapped to StInfo
     /// which contains size (fsize) , offset(foffset)
     /// fsize[i] is the number of fields in the largest such struct, else fsize[i] = 1.
     /// fsize[0] is always the size of the expanded struct.
-    TypeToSVFTyInfoMap typeToFieldInfo;
+    SVFTypeSet svfTypes;
 };
 
 
@@ -388,7 +381,7 @@ public:
     }
 
     /// Get obj type
-    const Type* getType() const;
+    const SVFType* getType() const;
 
     /// Get the number of elements of this object
     u32_t getNumOfElements() const;
@@ -466,8 +459,8 @@ public:
     } MEMTYPE;
 
 private:
-    /// LLVM type
-    const Type* type;
+    /// SVF type
+    const SVFType* type;
     /// Type flags
     u32_t flags;
     /// Max offset for flexible field sensitive analysis
@@ -477,11 +470,11 @@ private:
     /// Size of the object or number of elements
     u32_t elemNum;
 
-    void resetTypeForHeapStaticObj(const Type* type);
+    void resetTypeForHeapStaticObj(const SVFType* type);
 public:
 
     /// Constructors
-    ObjTypeInfo(const Type* t, u32_t max);
+    ObjTypeInfo(const SVFType* t, u32_t max);
 
     /// Destructor
     virtual ~ObjTypeInfo()
@@ -489,7 +482,7 @@ public:
     }
 
     /// Get LLVM type
-    inline const Type* getType() const
+    inline const SVFType* getType() const
     {
         return type;
     }

@@ -146,7 +146,7 @@ void LLVMModuleSet::createSVFDataStructure()
         {
             const Function* func = &*it;
             SVFLoopAndDomInfo* ld = new SVFLoopAndDomInfo();
-            SVFFunction* svfFunc = new SVFFunction(func, getSVFType(func->getType()), func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), func->hasAddressTaken(), func->isVarArg(), func->getFunctionType(), ld);
+            SVFFunction* svfFunc = new SVFFunction(func, getSVFType(func->getType()), SVFUtil::cast<SVFFunctionType>(getSVFType(func->getFunctionType())), func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), func->hasAddressTaken(), func->isVarArg(), ld);
             svfModule->addFunctionSet(svfFunc);
             addFunctionMap(func,svfFunc);
 
@@ -951,6 +951,8 @@ SVFType* LLVMModuleSet::getSVFType(const Type* T)
         return it->second;
     else
     {
+        SVFType* svfType = addSVFTypeInfo(T);
+
         StInfo* stinfo = nullptr;
         if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T))
             stinfo = collectArrayInfo(aty);
@@ -959,29 +961,30 @@ SVFType* LLVMModuleSet::getSVFType(const Type* T)
         else
             stinfo = collectSimpleTypeInfo(T);
 
-        return addSVFTypeInfo(T, stinfo);
+        svfType->setTypeInfo(stinfo);
+        return svfType;
     }
 }
 
 
-SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T, StInfo* stinfo)
+SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
 {
     assert(LLVMType2SVFType.find(T)==LLVMType2SVFType.end() && "SVFType has been added before");
 
     SVFType* svftype = nullptr;
     if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
-        svftype = new SVFPointerType(pt,stinfo);
+        svftype = new SVFPointerType(pt, getSVFType(LLVMUtil::getPtrElementType(pt)));
     else if (const IntegerType* it = SVFUtil::dyn_cast<IntegerType>(T))
-        svftype = new SVFIntergerType(it,stinfo);
+        svftype = new SVFIntergerType(it);
     else if (const FunctionType* ft = SVFUtil::dyn_cast<FunctionType>(T))
-        svftype = new SVFFunctionType(ft,stinfo);
+        svftype = new SVFFunctionType(ft,getSVFType(ft->getReturnType()));
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
-        svftype = new SVFStructType(st,stinfo);
+        svftype = new SVFStructType(st);
     else if (const ArrayType* at = SVFUtil::dyn_cast<ArrayType>(T))
-        svftype = new SVFArrayType(at,stinfo);    
+        svftype = new SVFArrayType(at);    
     else
-        svftype = new SVFOtherType(T,stinfo);
-    symInfo->addTypeInfo(T, svftype);
+        svftype = new SVFOtherType(T, T->isSingleValueType());
+    symInfo->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
     return svftype;
 }
@@ -1004,10 +1007,10 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
     /// array without any element (this is not true in C/C++ arrays) we assume there is an empty dummy element
     if(totalElemNum==0)
     {
-        stinfo->addFldWithType(0, elemTy, 0);
+        stinfo->addFldWithType(0, getSVFType(elemTy), 0);
         stinfo->setNumOfFieldsAndElems(1, 1);
-        stinfo->getFlattenFieldTypes().push_back(elemTy);
-        stinfo->getFlattenElementTypes().push_back(elemTy);
+        stinfo->getFlattenFieldTypes().push_back(getSVFType(elemTy));
+        stinfo->getFlattenElementTypes().push_back(getSVFType(elemTy));
         return stinfo;
     }
 
@@ -1017,7 +1020,7 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
     u32_t nfE = elemStInfo->getNumOfFlattenFields();
     for (u32_t j = 0; j < nfE; j++)
     {
-        const Type* fieldTy = elemStInfo->getFlattenFieldTypes()[j];
+        const SVFType* fieldTy = elemStInfo->getFlattenFieldTypes()[j];
         stinfo->getFlattenFieldTypes().push_back(fieldTy);
     }
 
@@ -1025,7 +1028,7 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
     /// nfE>1 if the array element is a struct with more than one field.
     u32_t outArrayElemNum = ty->getNumElements();
     for(u32_t i = 0; i < outArrayElemNum; i++)
-        stinfo->addFldWithType(0, elemTy, (i * nfE * totalElemNum)/outArrayElemNum);
+        stinfo->addFldWithType(0, getSVFType(elemTy), (i * nfE * totalElemNum)/outArrayElemNum);
 
     for(u32_t i = 0; i < totalElemNum; i++)
     {
@@ -1060,7 +1063,7 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
     {
         const Type* et = *it;
         /// offset with int_32 (s32_t) is large enough and will not cause overflow
-        stinfo->addFldWithType(nf, et, strideOffset);
+        stinfo->addFldWithType(nf, getSVFType(et), strideOffset);
 
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
         {
@@ -1069,7 +1072,7 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
             //Copy ST's info, whose element 0 is the size of ST itself.
             for (u32_t j = 0; j < nfE; j++)
             {
-                const Type* elemTy = subStinfo->getFlattenFieldTypes()[j];
+                const SVFType* elemTy = subStinfo->getFlattenFieldTypes()[j];
                 stinfo->getFlattenFieldTypes().push_back(elemTy);
             }
             nf += nfE;
@@ -1086,8 +1089,8 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
         {
             nf += 1;
             strideOffset += 1;
-            stinfo->getFlattenFieldTypes().push_back(et);
-            stinfo->getFlattenElementTypes().push_back(et);
+            stinfo->getFlattenFieldTypes().push_back(getSVFType(et));
+            stinfo->getFlattenElementTypes().push_back(getSVFType(et));
         }
     }
 
@@ -1097,7 +1100,7 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
     //Record the size of the complete struct and update max_struct.
     if (nf > symInfo->maxStSize)
     {
-        symInfo->maxStruct = sty;
+        symInfo->maxStruct = getSVFType(sty);
         symInfo->maxStSize = nf;
     }
 
@@ -1112,10 +1115,10 @@ StInfo* LLVMModuleSet::collectSimpleTypeInfo(const Type* ty)
 {
     StInfo* stinfo = new StInfo(1);
     /// Only one field
-    stinfo->addFldWithType(0, ty, 0);
+    stinfo->addFldWithType(0, getSVFType(ty), 0);
 
-    stinfo->getFlattenFieldTypes().push_back(ty);
-    stinfo->getFlattenElementTypes().push_back(ty);
+    stinfo->getFlattenFieldTypes().push_back(getSVFType(ty));
+    stinfo->getFlattenElementTypes().push_back(getSVFType(ty));
     stinfo->setNumOfFieldsAndElems(1,1);
 
     return stinfo;

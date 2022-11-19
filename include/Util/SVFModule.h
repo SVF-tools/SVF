@@ -68,8 +68,6 @@ private:
     ConstantType ConstantSet;        ///< The ConstantData in the module
     OtherValueType  OtherValueSet;   ///< All other values in the module
 
-    Map<const PointerType*, const Type*> ptrElementTypeMap;
-
 public:
     /// Constructors
     SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName)
@@ -228,17 +226,6 @@ public:
     {
         return OtherValueSet;
     }
-
-    inline const Map<const PointerType*, const Type*>& getPtrElementTypeMap()
-    {
-        return ptrElementTypeMap;
-    }
-
-    inline void addptrElementType(const PointerType* ptrType, const Type* type)
-    {
-        ptrElementTypeMap.insert({ptrType, type});
-    }
-
 };
 
 } // End namespace SVF

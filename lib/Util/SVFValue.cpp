@@ -6,7 +6,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 /// Add field (index and offset) with its corresponding type
-void StInfo::addFldWithType(u32_t fldIdx, const Type* type, u32_t elemIdx)
+void StInfo::addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx)
 {
     fldIdxVec.push_back(fldIdx);
     elemIdxVec.push_back(elemIdx);
@@ -17,9 +17,9 @@ void StInfo::addFldWithType(u32_t fldIdx, const Type* type, u32_t elemIdx)
 ///  OriginalFieldType of b with field_idx 1 : Struct A
 ///  FlatternedFieldType of b with field_idx 1 : int
 //{@
-const Type* StInfo::getOriginalElemType(u32_t fldIdx)
+const SVFType* StInfo::getOriginalElemType(u32_t fldIdx) const
 {
-    Map<u32_t, const Type*>::const_iterator it = fldIdx2TypeMap.find(fldIdx);
+    Map<u32_t, const SVFType*>::const_iterator it = fldIdx2TypeMap.find(fldIdx);
     if(it!=fldIdx2TypeMap.end())
         return it->second;
     return nullptr;
@@ -123,8 +123,8 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
-SVFFunction::SVFFunction(const Value* f, const SVFType* ty, bool declare, bool intric, bool adt, bool varg, const FunctionType* ft, SVFLoopAndDomInfo* ld): 
-    SVFValue(f,ty,SVFValue::SVFFunc),isDecl(declare), intricsic(intric), addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg), funType(ft), loopAndDom(ld), realDefFun(nullptr)
+SVFFunction::SVFFunction(const Value* f, const SVFType* ty, const SVFFunctionType* ft, bool declare, bool intric, bool adt, bool varg, SVFLoopAndDomInfo* ld): 
+    SVFValue(f,ty,SVFValue::SVFFunc),isDecl(declare), intricsic(intric), addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg), funcType(ft), loopAndDom(ld), realDefFun(nullptr)
 {
 }
 

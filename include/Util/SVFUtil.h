@@ -391,6 +391,15 @@ inline bool isProgExitFunction (const SVFFunction * fun)
                    fun->getName() == "__assert_fail" );
 }
 
+/// Return true if this argument belongs to an uncalled function
+inline bool isArgOfUncalledFunction(const SVFValue* svfval)
+{
+    if(const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(svfval))
+        return arg->isArgOfUncalledFunction();
+    else
+        return false;
+}
+
 /// Return thread fork function
 //@{
 inline const SVFValue* getForkedFun(const CallSite cs)
@@ -403,7 +412,7 @@ inline const SVFValue* getForkedFun(const SVFInstruction *inst)
 }
 //@}
 
-const std::string type2String(const Type* type);
+const std::string type2String(const SVFType* type);
 
 /// This function servers a allocation wrapper detector
 inline bool isAnAllocationWraper(const SVFInstruction*)

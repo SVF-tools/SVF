@@ -43,6 +43,27 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
 
+MemObj* SymbolTableBuilder::createBlkObj(SymID symId)
+{
+    assert(symInfo->isBlkObj(symId));
+    assert(symInfo->objMap.find(symId)==symInfo->objMap.end());
+    LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
+    MemObj* obj = new MemObj(symId, symInfo->createObjTypeInfo(llvmset->getSVFType(IntegerType::get(llvmset->getContext(), 32))));
+    symInfo->objMap[symId] = obj;
+    return obj;
+}
+
+MemObj* SymbolTableBuilder::createConstantObj(SymID symId)
+{
+    assert(symInfo->isConstantObj(symId));
+    assert(symInfo->objMap.find(symId)==symInfo->objMap.end());
+    LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
+    MemObj* obj = new MemObj(symId, symInfo->createObjTypeInfo(llvmset->getSVFType(IntegerType::get(llvmset->getContext(), 32))));
+    symInfo->objMap[symId] = obj;
+    return obj;
+}
+
+
 /*!
  *  This method identify which is value sym and which is object sym
  */
@@ -60,11 +81,11 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 
     // Object #2 is black hole the object that may point to any object
     assert(symInfo->totalSymNum++ == SymbolTableInfo::BlackHole && "Something changed!");
-    symInfo->createBlkObj(SymbolTableInfo::BlackHole);
+    createBlkObj(SymbolTableInfo::BlackHole);
 
     // Object #3 always represents the unique constant of a program (merging all constants if Options::ModelConsts is disabled)
     assert(symInfo->totalSymNum++ == SymbolTableInfo::ConstantObj && "Something changed!");
-    symInfo->createConstantObj(SymbolTableInfo::ConstantObj);
+    createConstantObj(SymbolTableInfo::ConstantObj);
 
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
@@ -204,7 +225,6 @@ void SymbolTableBuilder::collectSVFTypeInfo(const Value* val)
     if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
     {
         const Type* objtype = LLVMUtil::getPtrElementType(ptrType);
-        symInfo->getModule()->addptrElementType(ptrType, objtype);
         (void)getOrAddSVFTypeInfo(objtype);
     }
     if(isGepConstantExpr(val) || SVFUtil::isa<GetElementPtrInst>(val)){
@@ -528,8 +548,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
     // (1) A heap/static object from a callsite
     if (I && isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I)))
     {
-        const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
-        refTy = getRefTypeOfHeapAllocOrStatic(svfInst);
+        refTy = getRefTypeOfHeapAllocOrStatic(I);
     }
     // (2) Other objects (e.g., alloca, global, etc.)
     else
@@ -538,7 +557,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
     if (refTy)
     {
         Type* objTy = getPtrElementType(refTy);
-        ObjTypeInfo* typeInfo = new ObjTypeInfo(objTy, Options::MaxFieldLimit);
+        ObjTypeInfo* typeInfo = new ObjTypeInfo(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy), Options::MaxFieldLimit);
         initTypeInfo(typeInfo,val);
         return typeInfo;
     }
@@ -549,7 +568,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
         writeWrnMsg("(" + getSourceLoc(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)) + ")");
         if(isConstantObjSym(val))
         {
-            ObjTypeInfo* typeInfo = new ObjTypeInfo(val->getType(), 0);
+            ObjTypeInfo* typeInfo = new ObjTypeInfo(LLVMModuleSet::getLLVMModuleSet()->getSVFType(val->getType()), 0);
             initTypeInfo(typeInfo,val);
             return typeInfo;
         }
@@ -585,8 +604,8 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
     }
     if (const StructType *ST= SVFUtil::dyn_cast<StructType>(elemTy))
     {
-        const std::vector<const Type*>& flattenFields = getOrAddSVFTypeInfo(ST)->getFlattenFieldTypes();
-        for(std::vector<const Type*>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
+        const std::vector<const SVFType*>& flattenFields = getOrAddSVFTypeInfo(ST)->getFlattenFieldTypes();
+        for(std::vector<const SVFType*>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
                 it!=eit; ++it)
         {
             if((*it)->isPointerTy())
@@ -615,7 +634,7 @@ void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* 
     if(const Value* castUse = getUniqueUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeinfo->resetTypeForHeapStaticObj(castUse->getType());
+        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
         analyzeObjType(typeinfo,castUse);
     }
     else
@@ -633,7 +652,7 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
     if(const Value* castUse = getUniqueUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::STATIC_OBJ);
-        typeinfo->resetTypeForHeapStaticObj(castUse->getType());
+        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
         analyzeObjType(typeinfo,castUse);
     }
     else
@@ -655,7 +674,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
     {
         typeinfo->setFlag(ObjTypeInfo::FUNCTION_OBJ);
         analyzeObjType(typeinfo,val);
-        objSize = getObjSize(typeinfo->getType());
+        objSize = getObjSize(typeinfo->getType()->getLLVMType());
     }
     else if(const AllocaInst* allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
     {
@@ -664,9 +683,9 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
         /// This is for `alloca <ty> <NumElements>`. For example, `alloca i64 3` allocates 3 i64 on the stack (objSize=3)
         /// In most cases, `NumElements` is not specified in the instruction, which means there is only one element (objSize=1).
         if(const ConstantInt* sz = SVFUtil::dyn_cast<ConstantInt>(allocaInst->getArraySize()))
-            objSize = sz->getZExtValue() * getObjSize(typeinfo->getType());
+            objSize = sz->getZExtValue() * getObjSize(typeinfo->getType()->getLLVMType());
         else
-            objSize = getObjSize(typeinfo->getType());
+            objSize = getObjSize(typeinfo->getType()->getLLVMType());
     }
     else if(SVFUtil::isa<GlobalVariable>(val))
     {
@@ -674,7 +693,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
         if(isConstantObjSym(val))
             typeinfo->setFlag(ObjTypeInfo::CONST_GLOBAL_OBJ);
         analyzeObjType(typeinfo,val);
-        objSize = getObjSize(typeinfo->getType());
+        objSize = getObjSize(typeinfo->getType()->getLLVMType());
     }
     else if (SVFUtil::isa<Instruction>(val) && isHeapAllocExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
     {
@@ -743,12 +762,12 @@ bool SymbolTableBuilder::isConstantObjSym(const Value* val)
         else
         {
             StInfo *stInfo = getOrAddSVFTypeInfo(v->getInitializer()->getType());
-            const std::vector<const Type*> &fields = stInfo->getFlattenFieldTypes();
-            for (std::vector<const Type*>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
+            const std::vector<const SVFType*> &fields = stInfo->getFlattenFieldTypes();
+            for (std::vector<const SVFType*>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
             {
-                const Type* elemTy = *it;
-                assert(!SVFUtil::isa<FunctionType>(elemTy) && "Initializer of a global is a function?");
-                if (SVFUtil::isa<PointerType>(elemTy))
+                const SVFType* elemTy = *it;
+                assert(!SVFUtil::isa<SVFFunctionType>(elemTy) && "Initializer of a global is a function?");
+                if (SVFUtil::isa<SVFPointerType>(elemTy))
                     return false;
             }
 

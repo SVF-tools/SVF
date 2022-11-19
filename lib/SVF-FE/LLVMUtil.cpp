@@ -364,9 +364,9 @@ const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
     }
     else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
     {
-        CallSite cs = SVFUtil::getSVFCallSite(svfinst);
-        int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getCallee(cs));
-        const SVFValue* arg = cs.getArgument(arg_pos);
+        const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
+        int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getSVFCallSite(svfinst));
+        const Value* arg = cs->getArgOperand(arg_pos);
         type = SVFUtil::dyn_cast<PointerType>(arg->getType());
     }
     else
