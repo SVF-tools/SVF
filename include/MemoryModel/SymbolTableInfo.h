@@ -331,7 +331,7 @@ protected:
 
     inline void addTypeInfo(const Type* ty, StInfo* info)
     {
-        assert(typeToFieldInfo.find(ty) == typeToFieldInfo.end() && "this type info has been added before");
+        assert(!hasTypeInfo(ty) && "this type info has been added before");
         typeToFieldInfo[ty] = info;
     }
     /// Return the flattened field type for struct type only
@@ -440,98 +440,6 @@ public:
 };
 
 
-
-
-/*!
- * Flatterned type information of StructType, ArrayType and SingleValueType
- */
-class StInfo
-{
-
-private:
-    /// flattened field indices of a struct (ignoring arrays)
-    std::vector<u32_t> fldIdxVec;
-    /// flattened element indices including structs and arrays by considering strides
-    std::vector<u32_t> elemIdxVec;
-    /// Types of all fields of a struct
-    Map<u32_t, const Type*> fldIdx2TypeMap;
-    /// All field infos after flattening a struct
-    std::vector<const Type*> finfo;
-    /// stride represents the number of repetitive elements if this StInfo represent an ArrayType. stride is 1 by default.
-    u32_t stride;
-    /// number of elements after flattenning (including array elements)
-    u32_t numOfFlattenElements;
-    /// number of fields after flattenning (ignoring array elements)
-    u32_t numOfFlattenFields;
-    /// Type vector of fields
-    std::vector<const Type*> flattenElementTypes;
-    /// Max field limit
-
-    StInfo(); ///< place holder
-    StInfo(const StInfo& st); ///< place holder
-    void operator=(const StInfo&); ///< place holder
-
-public:
-    /// Constructor
-    StInfo(u32_t s) : stride(s), numOfFlattenElements(s), numOfFlattenFields(s)
-    {
-    }
-    /// Destructor
-    ~StInfo()
-    {
-    }
-
-    ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
-    ///  OriginalFieldType of b with field_idx 1 : Struct A
-    ///  FlatternedFieldType of b with field_idx 1 : int
-    //{@
-    const Type* getOriginalElemType(u32_t fldIdx);
-
-    inline std::vector<u32_t>& getFlattenedFieldIdxVec()
-    {
-        return fldIdxVec;
-    }
-    inline std::vector<u32_t>& getFlattenedElemIdxVec()
-    {
-        return elemIdxVec;
-    }
-    inline std::vector<const Type*>& getFlattenElementTypes()
-    {
-        return flattenElementTypes;
-    }
-    inline std::vector<const Type*>& getFlattenFieldTypes()
-    {
-        return finfo;
-    }
-    //@}
-
-    /// Add field index and element index and their corresponding type
-    void addFldWithType(u32_t fldIdx, const Type* type, u32_t elemIdx);
-
-    /// Set number of fields and elements of an aggrate
-    inline void setNumOfFieldsAndElems(u32_t nf, u32_t ne)
-    {
-        numOfFlattenFields = nf;
-        numOfFlattenElements = ne;
-    }
-
-    /// Return number of elements after flattenning (including array elements)
-    inline u32_t getNumOfFlattenElements() const
-    {
-        return numOfFlattenElements;
-    }
-
-    /// Return the number of fields after flattenning (ignoring array elements)
-    inline u32_t getNumOfFlattenFields() const
-    {
-        return numOfFlattenFields;
-    }
-    /// Return the stride
-    inline u32_t getStride() const
-    {
-        return stride;
-    }
-};
 
 /*!
  * Type Info of an abstract memory object

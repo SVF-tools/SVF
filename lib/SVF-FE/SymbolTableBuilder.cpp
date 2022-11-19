@@ -200,19 +200,19 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 
 void SymbolTableBuilder::collectSVFTypeInfo(const Value* val)
 {    
-    (void)getStructInfo(val->getType());
+    (void)getOrAddSVFTypeInfo(val->getType());
     if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
     {
         const Type* objtype = LLVMUtil::getPtrElementType(ptrType);
         symInfo->getModule()->addptrElementType(ptrType, objtype);
-        (void)getStructInfo(objtype);
+        (void)getOrAddSVFTypeInfo(objtype);
     }
     if(isGepConstantExpr(val) || SVFUtil::isa<GetElementPtrInst>(val)){
             for (bridge_gep_iterator gi = bridge_gep_begin(SVFUtil::cast<User>(val)), ge = bridge_gep_end(SVFUtil::cast<User>(val));
             gi != ge; ++gi)
         {
             const Type* gepTy = *gi;
-            (void)getStructInfo(gepTy);
+            (void)getOrAddSVFTypeInfo(gepTy);
         }
     }
 }
@@ -585,7 +585,7 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
     }
     if (const StructType *ST= SVFUtil::dyn_cast<StructType>(elemTy))
     {
-        const std::vector<const Type*>& flattenFields = getStructInfo(ST)->getFlattenFieldTypes();
+        const std::vector<const Type*>& flattenFields = getOrAddSVFTypeInfo(ST)->getFlattenFieldTypes();
         for(std::vector<const Type*>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
                 it!=eit; ++it)
         {
@@ -742,7 +742,7 @@ bool SymbolTableBuilder::isConstantObjSym(const Value* val)
         }
         else
         {
-            StInfo *stInfo = getStructInfo(v->getInitializer()->getType());
+            StInfo *stInfo = getOrAddSVFTypeInfo(v->getInitializer()->getType());
             const std::vector<const Type*> &fields = stInfo->getFlattenFieldTypes();
             for (std::vector<const Type*>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
             {
@@ -762,13 +762,13 @@ bool SymbolTableBuilder::isConstantObjSym(const Value* val)
 u32_t SymbolTableBuilder::getNumOfFlattenElements(const Type *T)
 {
     if(Options::ModelArrays)
-        return getStructInfo(T)->getNumOfFlattenElements();
+        return getOrAddSVFTypeInfo(T)->getNumOfFlattenElements();
     else
-        return getStructInfo(T)->getNumOfFlattenFields();
+        return getOrAddSVFTypeInfo(T)->getNumOfFlattenFields();
 }
 
 
-StInfo* SymbolTableBuilder::getStructInfo(const Type *T)
+StInfo* SymbolTableBuilder::getOrAddSVFTypeInfo(const Type *T)
 {
     assert(T);
     if (symInfo->hasTypeInfo(T))
@@ -787,19 +787,27 @@ void SymbolTableBuilder::collectTypeInfo(const Type* ty)
 {
     assert(!symInfo->hasTypeInfo(ty) && "this type has been collected before");
 
+    StInfo* stinfo = nullptr;
     if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(ty))
-        collectArrayInfo(aty);
+        stinfo = collectArrayInfo(aty);
     else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(ty))
-        collectStructInfo(sty);
+        stinfo = collectStructInfo(sty);
     else
-        collectSimpleTypeInfo(ty);
+        stinfo = collectSimpleTypeInfo(ty);
+
+    addSVFTypeInfo(ty, stinfo);
 }
 
+void SymbolTableBuilder::addSVFTypeInfo(const Type* ty, StInfo* stinfo)
+{
+    assert(ty && stinfo);
+    symInfo->addTypeInfo(ty, stinfo);
+}
 
 /*!
  * Fill in StInfo for an array type.
  */
-void SymbolTableBuilder::collectArrayInfo(const ArrayType* ty)
+StInfo* SymbolTableBuilder::collectArrayInfo(const ArrayType* ty)
 {
     u64_t totalElemNum = ty->getNumElements();
     const Type* elemTy = ty->getElementType();
@@ -810,7 +818,6 @@ void SymbolTableBuilder::collectArrayInfo(const ArrayType* ty)
     }
 
     StInfo* stinfo = new StInfo(totalElemNum);
-    symInfo->addTypeInfo(ty, stinfo);
 
     /// array without any element (this is not true in C/C++ arrays) we assume there is an empty dummy element
     if(totalElemNum==0)
@@ -819,12 +826,12 @@ void SymbolTableBuilder::collectArrayInfo(const ArrayType* ty)
         stinfo->setNumOfFieldsAndElems(1, 1);
         stinfo->getFlattenFieldTypes().push_back(elemTy);
         stinfo->getFlattenElementTypes().push_back(elemTy);
-        return;
+        return stinfo;
     }
 
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
-    StInfo* elemStInfo = getStructInfo(elemTy);
+    StInfo* elemStInfo = getOrAddSVFTypeInfo(elemTy);
     u32_t nfE = elemStInfo->getNumOfFlattenFields();
     for (u32_t j = 0; j < nfE; j++)
     {
@@ -848,6 +855,8 @@ void SymbolTableBuilder::collectArrayInfo(const ArrayType* ty)
 
     assert(stinfo->getFlattenElementTypes().size() == nfE * totalElemNum && "typeForArray size incorrect!!!");
     stinfo->setNumOfFieldsAndElems(nfE, nfE * totalElemNum);
+
+    return stinfo;
 }
 
 
@@ -855,11 +864,10 @@ void SymbolTableBuilder::collectArrayInfo(const ArrayType* ty)
  * Fill in struct_info for T.
  * Given a Struct type, we recursively extend and record its fields and types.
  */
-void SymbolTableBuilder::collectStructInfo(const StructType *sty)
+StInfo* SymbolTableBuilder::collectStructInfo(const StructType *sty)
 {
     /// The struct info should not be processed before
     StInfo* stinfo = new StInfo(1);
-    symInfo->addTypeInfo(sty, stinfo);
 
     // Number of fields after flattening the struct
     u32_t nf = 0;
@@ -874,7 +882,7 @@ void SymbolTableBuilder::collectStructInfo(const StructType *sty)
 
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
         {
-            StInfo * subStinfo = getStructInfo(et);
+            StInfo * subStinfo = getOrAddSVFTypeInfo(et);
             u32_t nfE = subStinfo->getNumOfFlattenFields();
             //Copy ST's info, whose element 0 is the size of ST itself.
             for (u32_t j = 0; j < nfE; j++)
@@ -910,21 +918,23 @@ void SymbolTableBuilder::collectStructInfo(const StructType *sty)
         symInfo->maxStruct = sty;
         symInfo->maxStSize = nf;
     }
+
+    return stinfo;
 }
 
 
 /*!
  * Collect simple type (non-aggregate) info
  */
-void SymbolTableBuilder::collectSimpleTypeInfo(const Type* ty)
+StInfo* SymbolTableBuilder::collectSimpleTypeInfo(const Type* ty)
 {
     StInfo* stinfo = new StInfo(1);
-    symInfo->addTypeInfo(ty, stinfo);
-
     /// Only one field
     stinfo->addFldWithType(0, ty, 0);
 
     stinfo->getFlattenFieldTypes().push_back(ty);
     stinfo->getFlattenElementTypes().push_back(ty);
     stinfo->setNumOfFieldsAndElems(1,1);
+
+    return stinfo;
 }

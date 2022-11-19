@@ -53,26 +53,6 @@ void ObjTypeInfo::resetTypeForHeapStaticObj(const Type* t)
     type = t;
 }
 
-/// Add field (index and offset) with its corresponding type
-void StInfo::addFldWithType(u32_t fldIdx, const Type* type, u32_t elemIdx)
-{
-    fldIdxVec.push_back(fldIdx);
-    elemIdxVec.push_back(elemIdx);
-    fldIdx2TypeMap[fldIdx] = type;
-}
-
-///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
-///  OriginalFieldType of b with field_idx 1 : Struct A
-///  FlatternedFieldType of b with field_idx 1 : int
-//{@
-const Type* StInfo::getOriginalElemType(u32_t fldIdx)
-{
-    Map<u32_t, const Type*>::const_iterator it = fldIdx2TypeMap.find(fldIdx);
-    if(it!=fldIdx2TypeMap.end())
-        return it->second;
-    return nullptr;
-}
-
 
 StInfo* SymbolTableInfo::getTypeInfo(const Type *T)
 {

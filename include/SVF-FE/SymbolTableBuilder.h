@@ -101,16 +101,17 @@ protected:
     u32_t getNumOfFlattenElements(const Type *T);
     
     ///Get a reference to StructInfo.
-    StInfo* getStructInfo(const Type *T);
-
+    StInfo* getOrAddSVFTypeInfo(const Type *T);
+    /// Create SVFTypes
+    void addSVFTypeInfo(const Type* t, StInfo* stinfo);
     /// Collect type info
     void collectTypeInfo(const Type* T);
     /// Collect the struct info
-    void collectStructInfo(const StructType *T);
+    StInfo* collectStructInfo(const StructType *T);
     /// Collect the array info
-    void collectArrayInfo(const ArrayType* T);
+    StInfo* collectArrayInfo(const ArrayType* T);
     /// Collect simple type (non-aggregate) info
-    void collectSimpleTypeInfo(const Type* T);
+    StInfo* collectSimpleTypeInfo(const Type* T);
 };
 
 } // End namespace SVF
