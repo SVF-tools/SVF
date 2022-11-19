@@ -70,6 +70,15 @@ using namespace SVF;
 LLVMModuleSet *LLVMModuleSet::llvmModuleSet = nullptr;
 std::string SVFModule::pagReadFromTxt = "";
 
+LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false) {
+    symInfo = SymbolTableInfo::SymbolInfo();
+}
+
+LLVMModuleSet::~LLVMModuleSet()
+{
+
+}
+
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     svfModule = new SVFModule(mod.getModuleIdentifier());
@@ -103,7 +112,6 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     {
         /// building symbol table
         DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableInfo *symInfo = SymbolTableInfo::SymbolInfo();
         SymbolTableBuilder builder(symInfo);
         builder.buildMemModel(svfModule);
     }

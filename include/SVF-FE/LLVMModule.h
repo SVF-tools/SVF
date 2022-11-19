@@ -38,6 +38,8 @@
 namespace SVF
 {
 
+class SymbolTableInfo;
+
 class LLVMModuleSet
 {
 
@@ -57,6 +59,7 @@ public:
 
 private:
     static LLVMModuleSet* llvmModuleSet;
+    SymbolTableInfo *symInfo;
     SVFModule* svfModule;
     std::unique_ptr<LLVMContext> cxts;
     std::vector<std::unique_ptr<Module>> owned_modules;
@@ -77,7 +80,8 @@ private:
     LLVMValue2SVFOtherValueMap LLVMValue2SVFOtherValue;
 
     /// Constructor
-    LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false) {}
+    LLVMModuleSet();
+    ~LLVMModuleSet();
 
     void build();
 

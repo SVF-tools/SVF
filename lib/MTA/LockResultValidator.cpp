@@ -8,9 +8,32 @@
 #include <string>
 #include <sstream>
 #include "MTA/LockResultValidator.h"
+#include "MTA/MTAResultValidator.h"
 
 using namespace SVF;
 using namespace SVFUtil;
+
+namespace SVF
+{
+
+// Subclassing RCResultValidator to define the abstract methods.
+class RaceValidator : public RaceResultValidator
+{
+public:
+    RaceValidator(LockAnalysis* ls) :lsa(ls)
+    {
+    }
+    bool protectedByCommonLocks(const Instruction* I1, const Instruction* I2)
+    {
+        const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I1);
+        const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I2);
+        return lsa->isProtectedByCommonLock(inst1, inst2);
+    }
+private:
+    LockAnalysis *lsa;
+};
+
+} // End namespace SVF
 
 Set<std::string> LockResultValidator::getStringArg(const Instruction* inst, unsigned int arg_num)
 {
@@ -183,5 +206,9 @@ void LockResultValidator::analyze()
     std::string errstring;
     errstring = getOutput("Validate Lock Analysis :", validateStmtInLock());
     outs() << "======" << errstring << "======\n";
+
+    RaceValidator validator(_la);
+    validator.init(_la->getTCT()->getSVFModule());
+    validator.analyze();
 }
 

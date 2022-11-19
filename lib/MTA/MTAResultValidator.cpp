@@ -14,9 +14,36 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+namespace SVF
+{
+
+// Subclassing RCResultValidator to define the abstract methods.
+class MHPValidator : public RaceResultValidator
+{
+public:
+    MHPValidator(MHP *mhp) :mhp(mhp)
+    {
+    }
+    bool mayHappenInParallel(const Instruction* I1, const Instruction* I2)
+    {
+        const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I1);
+        const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I2);
+        return mhp->mayHappenInParallel(inst1, inst2);
+    }
+private:
+    MHP *mhp;
+};
+
+} // End namespace SVF
 
 void MTAResultValidator::analyze()
 {
+
+    // Initialize the validator and perform validation.
+    MHPValidator validator(mhp);
+    validator.init(mhp->getTCT()->getSVFModule());
+    validator.analyze();
+
 
     std::string errstring;
     if (!collectCallsiteTargets())

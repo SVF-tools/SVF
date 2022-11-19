@@ -39,28 +39,6 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-namespace SVF
-{
-
-// Subclassing RCResultValidator to define the abstract methods.
-class MHPValidator : public RaceResultValidator
-{
-public:
-    MHPValidator(MHP *mhp) :mhp(mhp)
-    {
-    }
-    bool mayHappenInParallel(const Instruction* I1, const Instruction* I2)
-    {
-        const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I1);
-        const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I2);
-        return mhp->mayHappenInParallel(inst1, inst2);
-    }
-private:
-    MHP *mhp;
-};
-
-} // End namespace SVF
-
 /*!
  * Constructor
  */
@@ -672,11 +650,6 @@ bool MHP::executedByTheSameThread(const SVFInstruction* i1, const SVFInstruction
 
 void MHP::validateResults()
 {
-
-    // Initialize the validator and perform validation.
-    MHPValidator validator(this);
-    validator.init(getTCT()->getSVFModule());
-    validator.analyze();
 
     MTAResultValidator MTAValidator(this);
     MTAValidator.analyze();

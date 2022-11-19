@@ -30,7 +30,6 @@
 #include "Util/Options.h"
 #include "MTA/LockAnalysis.h"
 #include "MTA/MTA.h"
-#include "MTA/MTAResultValidator.h"
 #include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
 #include "MTA/LockResultValidator.h"
@@ -40,28 +39,6 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
 
-
-namespace SVF
-{
-
-// Subclassing RCResultValidator to define the abstract methods.
-class RaceValidator : public RaceResultValidator
-{
-public:
-    RaceValidator(LockAnalysis* ls) :lsa(ls)
-    {
-    }
-    bool protectedByCommonLocks(const Instruction* I1, const Instruction* I2)
-    {
-        const SVFInstruction* inst1 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I1);
-        const SVFInstruction* inst2 = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I2);
-        return lsa->isProtectedByCommonLock(inst1, inst2);
-    }
-private:
-    LockAnalysis *lsa;
-};
-
-} // End namespace SVF
 
 void LockAnalysis::analyze()
 {
@@ -738,8 +715,4 @@ void LockAnalysis::validateResults()
     // Initialize the validator and perform validation.
     LockResultValidator lockvalidator(this);
     lockvalidator.analyze();
-
-    RaceValidator validator(this);
-    validator.init(tct->getSVFModule());
-    validator.analyze();
 }
