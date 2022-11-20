@@ -31,6 +31,7 @@
 #define GENERICGRAPH_H_
 
 #include "SVFIR/SVFValue.h"
+#include "Util/iterator.h"
 
 namespace SVF
 {
@@ -452,6 +453,36 @@ public:
 namespace llvm
 {
 
+// mapped_iter - This is a simple iterator adapter that causes a function to
+// be applied whenever operator* is invoked on the iterator.
+
+template <typename ItTy, typename FuncTy,
+        typename FuncReturnTy =
+        decltype(std::declval<FuncTy>()(*std::declval<ItTy>()))>
+class mapped_iter
+        : public iterator_adaptor_base<
+                mapped_iter<ItTy, FuncTy>, ItTy,
+                typename std::iterator_traits<ItTy>::iterator_category,
+                typename std::remove_reference<FuncReturnTy>::type> {
+public:
+    mapped_iter(ItTy U, FuncTy F)
+            : mapped_iter::iterator_adaptor_base(std::move(U)), F(std::move(F)) {}
+
+    ItTy getCurrent() { return this->I; }
+
+    FuncReturnTy operator*() const { return F(*this->I); }
+
+private:
+    FuncTy F;
+};
+
+// map_iter - Provide a convenient way to create mapped_iters, just like
+// make_pair is useful for creating pairs...
+template <class ItTy, class FuncTy>
+inline mapped_iter<ItTy, FuncTy> map_iter(ItTy I, FuncTy F) {
+    return mapped_iter<ItTy, FuncTy>(std::move(I), std::move(F));
+}
+
 /*!
  * GraphTraits for nodes
  */
@@ -466,7 +497,7 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericNode<NodeTy,E
     }
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-    typedef mapped_iterator<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, decltype(&edge_dest)> ChildIteratorType;
+    typedef mapped_iter<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, decltype(&edge_dest)> ChildIteratorType;
 
     static NodeType* getEntryNode(NodeType* pagN)
     {
@@ -475,19 +506,19 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericNode<NodeTy,E
 
     static inline ChildIteratorType child_begin(const NodeType* N)
     {
-        return map_iterator(N->OutEdgeBegin(), &edge_dest);
+        return map_iter(N->OutEdgeBegin(), &edge_dest);
     }
     static inline ChildIteratorType child_end(const NodeType* N)
     {
-        return map_iterator(N->OutEdgeEnd(), &edge_dest);
+        return map_iter(N->OutEdgeEnd(), &edge_dest);
     }
     static inline ChildIteratorType direct_child_begin(const NodeType *N)
     {
-        return map_iterator(N->directOutEdgeBegin(), &edge_dest);
+        return map_iter(N->directOutEdgeBegin(), &edge_dest);
     }
     static inline ChildIteratorType direct_child_end(const NodeType *N)
     {
-        return map_iterator(N->directOutEdgeEnd(), &edge_dest);
+        return map_iter(N->directOutEdgeEnd(), &edge_dest);
     }
 };
 
@@ -506,7 +537,7 @@ struct GraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
     }
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-    typedef mapped_iterator<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, decltype(&edge_dest)> ChildIteratorType;
+    typedef mapped_iter<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, decltype(&edge_dest)> ChildIteratorType;
 
     static inline NodeType* getEntryNode(Inverse<NodeType* > G)
     {
@@ -515,11 +546,11 @@ struct GraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
 
     static inline ChildIteratorType child_begin(const NodeType* N)
     {
-        return map_iterator(N->InEdgeBegin(), &edge_dest);
+        return map_iter(N->InEdgeBegin(), &edge_dest);
     }
     static inline ChildIteratorType child_end(const NodeType* N)
     {
-        return map_iterator(N->InEdgeEnd(), &edge_dest);
+        return map_iter(N->InEdgeEnd(), &edge_dest);
     }
 
     static inline unsigned getNodeID(const NodeType* N)
@@ -549,15 +580,15 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericGraph<NodeTy,
     }
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-    typedef mapped_iterator<typename GenericGraphTy::iterator, decltype(&deref_val)> nodes_iterator;
+    typedef mapped_iter<typename GenericGraphTy::iterator, decltype(&deref_val)> nodes_iterator;
 
     static nodes_iterator nodes_begin(GenericGraphTy *G)
     {
-        return map_iterator(G->begin(), &deref_val);
+        return map_iter(G->begin(), &deref_val);
     }
     static nodes_iterator nodes_end(GenericGraphTy *G)
     {
-        return map_iterator(G->end(), &deref_val);
+        return map_iter(G->end(), &deref_val);
     }
 
     static unsigned graphSize(GenericGraphTy* G)
