@@ -32,7 +32,6 @@
 #define INCLUDE_UTIL_SVFBASICTYPES_H_
 
 #include <llvm/Support/CommandLine.h>	// for command line options
-#include <llvm/IR/Instructions.h>
 
 #include <Util/SparseBitVector.h>
 
@@ -49,10 +48,7 @@
 namespace SVF
 {
 
-typedef llvm::Type Type;
-
 typedef std::ostream OutStream;
-
 typedef unsigned u32_t;
 typedef signed s32_t;
 typedef unsigned long long u64_t;
@@ -257,12 +253,11 @@ public:
 
 private:
     GNodeK kind;	///< used for classof 
-    const Type* type;   ///< LLVM type
     const SVFPointerType* getPointerToTy; /// Return a pointer to the current type
     StInfo* typeinfo; /// < SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or array
 protected:
-    SVFType(const Type* ty, bool svt, SVFTyKind k) : kind(k), type(ty), getPointerToTy(nullptr), typeinfo(nullptr), isSingleValTy(svt)
+    SVFType(bool svt, SVFTyKind k) : kind(k), getPointerToTy(nullptr), typeinfo(nullptr), isSingleValTy(svt)
     {
     }
 
@@ -308,11 +303,6 @@ public:
         return typeinfo;
     }
 
-    inline const Type* getLLVMType() const
-    {
-        return type;
-    }
-
     inline bool isPointerTy() const
     {
         return kind==SVFPointerTy;
@@ -331,7 +321,7 @@ private:
 const SVFType* ptrElementType;
 
 public:
-    SVFPointerType(const Type* ty, const SVFType* pty) : SVFType(ty, true, SVFPointerTy), ptrElementType(pty)
+    SVFPointerType(const SVFType* pty) : SVFType(true, SVFPointerTy), ptrElementType(pty)
     {
     }
     static inline bool classof(const SVFType *node)
@@ -347,7 +337,7 @@ public:
 class SVFIntergerType : public SVFType
 {
 public:
-    SVFIntergerType(const Type* ty) : SVFType(ty, true, SVFIntergerTy)
+    SVFIntergerType() : SVFType(true, SVFIntergerTy)
     {
     }
     static inline bool classof(const SVFType *node)
@@ -362,7 +352,7 @@ private:
     const SVFType* retTy;
 
 public:
-    SVFFunctionType(const Type* ty, const SVFType* rt) : SVFType(ty,false, SVFFunctionTy), retTy(rt)
+    SVFFunctionType(const SVFType* rt) : SVFType(false, SVFFunctionTy), retTy(rt)
     {
     }
     static inline bool classof(const SVFType *node)
@@ -378,7 +368,7 @@ public:
 class SVFStructType : public SVFType
 {
 public:
-    SVFStructType(const Type* ty) : SVFType(ty, false, SVFStructTy)
+    SVFStructType() : SVFType(false, SVFStructTy)
     {
     }
     static inline bool classof(const SVFType *node)
@@ -390,7 +380,7 @@ public:
 class SVFArrayType : public SVFType
 {
 public:
-    SVFArrayType(const Type* ty) : SVFType(ty, false, SVFArrayTy)
+    SVFArrayType() : SVFType(false, SVFArrayTy)
     {
     }
     static inline bool classof(const SVFType *node)
@@ -402,7 +392,7 @@ public:
 class SVFOtherType : public SVFType
 {
 public:
-    SVFOtherType(const Type* ty, bool isSingleValueTy) : SVFType(ty, isSingleValueTy, SVFOtherTy)
+    SVFOtherType(bool isSingleValueTy) : SVFType(isSingleValueTy, SVFOtherTy)
     {
     }
     static inline bool classof(const SVFType *node)

@@ -37,13 +37,6 @@
 namespace SVF
 {
 
-/// LLVM Basic classes
-typedef llvm::Value Value;
-
-/// LLVM types
-typedef llvm::FunctionType FunctionType;
-
-
 /// LLVM Aliases and constants
 typedef llvm::GraphPrinter GraphPrinter;
 
@@ -53,8 +46,6 @@ class SVFBasicBlock;
 class SVFArgument;
 class SVFFunction;
 class SVFType;
-
-
 
 class SVFLoopAndDomInfo
 {
@@ -181,7 +172,6 @@ public:
     };
 
 private:
-    const Value* value;
     GNodeK kind;	///< used for classof 
     bool ptrInUncalledFun;  ///< true if this pointer is in an uncalled function
     bool has_name;          ///< true if this value has a name
@@ -192,9 +182,9 @@ protected:
     std::string name;       ///< Short name of this value for debugging
     std::string sourceLoc;  ///< Source code information of this value
     /// Constructor
-    SVFValue(const Value* val, const SVFType* ty, SVFValKind k): value(val), kind(k),
+    SVFValue(const std::string& val, const SVFType* ty, SVFValKind k): kind(k),
         ptrInUncalledFun(false), has_name(false), constDataOrAggData(SVFConstData==k), type(ty),
-        name(val->getName()), sourceLoc("No source code Info")
+        name(val), sourceLoc("No source code Info")
     {
     }
 
@@ -222,25 +212,6 @@ public:
         return kind;
     }
 
-    /// Add the hash function for std::set (we also can overload operator< to implement this)
-    //  and duplicated elements in the set are not inserted (binary tree comparison)
-    //@{
-    bool operator()(const SVFValue* lhs, const SVFValue* rhs) const
-    {
-        return lhs->value < rhs->value;
-    }
-
-    inline bool operator==(SVFValue* rhs) const
-    {
-        return value == rhs->value;
-    }
-
-    inline bool operator!=(SVFValue* rhs) const
-    {
-        return value != rhs->value;
-    }
-    //@}
-
     inline virtual const std::string getName() const
     {
         return name;
@@ -249,11 +220,6 @@ public:
     inline virtual const SVFType* getType() const
     {
         return type;
-    }
-
-    inline const Value* getLLVMValue() const
-    {
-        return value;
     }
     inline bool isConstDataOrAggData() const
     {
@@ -350,8 +316,8 @@ protected:
     /// @}
 
 public:
-    SVFFunction(const Value* f, const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intricsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
-    SVFFunction(const Value* f) = delete;
+    SVFFunction(const std::string& f, const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intricsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
+    SVFFunction(const std::string& f) = delete;
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
 
@@ -543,7 +509,7 @@ protected:
     /// @}
 
 public:
-    SVFBasicBlock(const Value* b, const SVFType* ty, const SVFFunction* f);
+    SVFBasicBlock(const std::string& b, const SVFType* ty, const SVFFunction* f);
     SVFBasicBlock(void) = delete;
     virtual ~SVFBasicBlock();
 
@@ -623,8 +589,8 @@ private:
     InstVec predInsts;  /// predecessor Instructions
 
 public:
-    SVFInstruction(const Value* i, const SVFType* ty, const SVFBasicBlock* b, bool tm, bool isRet, SVFValKind k = SVFInst);
-    SVFInstruction(const Value* i) = delete;
+    SVFInstruction(const std::string& i, const SVFType* ty, const SVFBasicBlock* b, bool tm, bool isRet, SVFValKind k = SVFInst);
+    SVFInstruction(const std::string& i) = delete;
     SVFInstruction(void) = delete;
 
     static inline bool classof(const SVFValue *node)
@@ -681,7 +647,7 @@ friend class LLVMModuleSet;
 
 private:
     std::vector<const SVFValue*> args;
-    const FunctionType* calledFunType;
+    bool varArg;
     const SVFValue* calledVal;
 
 protected:
@@ -697,11 +663,11 @@ protected:
     /// @}
 
 public:
-    SVFCallInst(const Value* i, const SVFType* ty, const SVFBasicBlock* b, const FunctionType* t, bool tm, SVFValKind k = SVFCall) : 
-        SVFInstruction(i, ty, b, tm, false, k), calledFunType(t), calledVal(nullptr)
+    SVFCallInst(const std::string& i, const SVFType* ty, const SVFBasicBlock* b, bool va, bool tm, SVFValKind k = SVFCall) : 
+        SVFInstruction(i, ty, b, tm, false, k), varArg(va), calledVal(nullptr)
     {
     }
-    SVFCallInst(const Value* i) = delete;
+    SVFCallInst(const std::string& i) = delete;
     SVFCallInst(void) = delete;
 
     static inline bool classof(const SVFValue *node)
@@ -733,9 +699,9 @@ public:
     {
         return calledVal;
     }
-    inline const FunctionType* getFunctionType() const
+    inline bool isVarArg() const
     {
-        return calledFunType;
+        return varArg;
     }
     inline const SVFFunction* getCalledFunction() const
     {
@@ -771,8 +737,8 @@ protected:
     }
 
 public:
-    SVFVirtualCallInst(const Value* i, const SVFType* ty, const SVFBasicBlock* b, const FunctionType* t, bool tm) : 
-        SVFCallInst(i,ty,b,t,tm, SVFVCall), vCallVtblPtr(nullptr), virtualFunIdx(-1), funNameOfVcall("")
+    SVFVirtualCallInst(const std::string& i, const SVFType* ty, const SVFBasicBlock* b, bool vararg, bool tm) : 
+        SVFCallInst(i,ty,b,vararg,tm, SVFVCall), vCallVtblPtr(nullptr), virtualFunIdx(-1), funNameOfVcall("")
     {
     }
     inline const SVFValue* getVtablePtr() const
@@ -806,7 +772,7 @@ public:
 class SVFConstant : public SVFValue
 {
 public:
-    SVFConstant(const Value* _const, const SVFType* ty, SVFValKind k = SVFConst): SVFValue(_const, ty, k)
+    SVFConstant(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConst): SVFValue(_const, ty, k)
     {
     }
     SVFConstant() = delete;
@@ -837,7 +803,7 @@ protected:
     }
 
 public:
-    SVFGlobalValue(const Value* _gv, const SVFType* ty): SVFConstant(_gv, ty, SVFValue::SVFGlob), realDefGlobal(nullptr)
+    SVFGlobalValue(const std::string& _gv, const SVFType* ty): SVFConstant(_gv, ty, SVFValue::SVFGlob), realDefGlobal(nullptr)
     {
     }
     SVFGlobalValue() = delete;
@@ -866,7 +832,7 @@ private:
     u32_t argNo;
     bool uncalled;
 public:
-    SVFArgument(const Value* _arg, const SVFType* ty, const SVFFunction* _fun, u32_t _argNo, bool _uncalled): SVFValue(_arg, ty, SVFValue::SVFArg), fun(_fun), argNo(_argNo), uncalled(_uncalled)
+    SVFArgument(const std::string& _arg, const SVFType* ty, const SVFFunction* _fun, u32_t _argNo, bool _uncalled): SVFValue(_arg, ty, SVFValue::SVFArg), fun(_fun), argNo(_argNo), uncalled(_uncalled)
     {
     }
     SVFArgument() = delete;
@@ -899,7 +865,7 @@ public:
 class SVFConstantData : public SVFConstant
 {
 public:
-    SVFConstantData(const Value* _const, const SVFType* ty, SVFValKind k = SVFConstData): SVFConstant(_const, ty, k)
+    SVFConstantData(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConstData): SVFConstant(_const, ty, k)
     {
     }
     SVFConstantData() = delete;
@@ -929,7 +895,7 @@ private:
     u64_t zval;
     s64_t sval;
 public:
-    SVFConstantInt(const Value* _const, const SVFType* ty, u64_t z, s64_t s): SVFConstantData(_const, ty, SVFValue::SVFConstInt), zval(z), sval(s)
+    SVFConstantInt(const std::string& _const, const SVFType* ty, u64_t z, s64_t s): SVFConstantData(_const, ty, SVFValue::SVFConstInt), zval(z), sval(s)
     {
     }
     SVFConstantInt() = delete;
@@ -960,7 +926,7 @@ class SVFConstantFP : public SVFConstantData
 private:
     float dval;
 public:
-    SVFConstantFP(const Value* _const, const SVFType* ty, double d): SVFConstantData(_const, ty, SVFValue::SVFConstFP), dval(d)
+    SVFConstantFP(const std::string& _const, const SVFType* ty, double d): SVFConstantData(_const, ty, SVFValue::SVFConstFP), dval(d)
     {
     }
     SVFConstantFP() = delete;
@@ -984,7 +950,7 @@ class SVFConstantNullPtr : public SVFConstantData
 {
 
 public:
-    SVFConstantNullPtr(const Value* _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFNullPtr)
+    SVFConstantNullPtr(const std::string& _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFNullPtr)
     {
     }
     SVFConstantNullPtr() = delete;
@@ -1003,7 +969,7 @@ class SVFBlackHoleValue : public SVFConstantData
 {
 
 public:
-    SVFBlackHoleValue(const Value* _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFBlackHole)
+    SVFBlackHoleValue(const std::string& _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFBlackHole)
     {
     }
     SVFBlackHoleValue() = delete;
@@ -1021,7 +987,7 @@ public:
 class SVFOtherValue : public SVFValue
 {
 public:
-    SVFOtherValue(const Value* other, const SVFType* ty, SVFValKind k = SVFValue::SVFOther): SVFValue(other, ty, k)
+    SVFOtherValue(const std::string& other, const SVFType* ty, SVFValKind k = SVFValue::SVFOther): SVFValue(other, ty, k)
     {
     }
     SVFOtherValue() = delete;
@@ -1038,7 +1004,7 @@ public:
 class SVFMetadataAsValue : public SVFOtherValue
 {
 public:
-    SVFMetadataAsValue(const Value* other, const SVFType* ty): SVFOtherValue(other, ty, SVFValue::SVFMetaAsValue)
+    SVFMetadataAsValue(const std::string& other, const SVFType* ty): SVFOtherValue(other, ty, SVFValue::SVFMetaAsValue)
     {
     }
     SVFMetadataAsValue() = delete;
@@ -1103,9 +1069,9 @@ public:
     {
         return CB->getCaller();
     }
-    const FunctionType* getFunctionType() const
+    bool isVarArg() const
     {
-        return CB->getFunctionType();
+        return CB->isVarArg();
     }
     const bool isVirtualCall() const
     {

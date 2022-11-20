@@ -601,7 +601,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
 
             const Function* callee = vfnV[idx];
             // Practically a copy of that in lib/MemoryModel/CHA.cpp
-            if (cs.arg_size() == callee->arg_size() || (cs.getFunctionType()->isVarArg() && callee->isVarArg()))
+            if (cs.arg_size() == callee->arg_size() || (cs.isVarArg() && callee->isVarArg()))
             {
                 cppUtil::DemangledName dname = cppUtil::demangle(callee->getName().str());
                 std::string calleeName = dname.funcName;

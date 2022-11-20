@@ -642,8 +642,6 @@ const std::string SVFValue::toString() const
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-    if(value)
-    {
         if(const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
             rawstr << "Function: " << fun->getName() << " ";
         else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
@@ -654,7 +652,6 @@ const std::string SVFValue::toString() const
             rawstr << " " << *val << " ";
         }
         rawstr << this->getSourceLoc();
-    }
     return rawstr.str();
 }
 

@@ -488,7 +488,7 @@ void PointerAnalysis::connectVCallToVFns(const CallICFGNode* cs, const VFunSet &
         if (getIndCallMap()[cs].count(callee) > 0)
             continue;
         if(SVFUtil::getSVFCallSite(cs->getCallSite()).arg_size() == callee->arg_size() ||
-                (SVFUtil::getSVFCallSite(cs->getCallSite()).getFunctionType()->isVarArg() && callee->isVarArg()))
+                (SVFUtil::getSVFCallSite(cs->getCallSite()).isVarArg() && callee->isVarArg()))
         {
             newEdges[cs].insert(callee);
             getIndCallMap()[cs].insert(callee);

@@ -115,7 +115,7 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
         {
             const SVFFunction* callee = *fit;
             if (cs.arg_size() == callee->arg_size() ||
-                    (cs.getFunctionType()->isVarArg() && callee->isVarArg()))
+                    (cs.isVarArg() && callee->isVarArg()))
             {
 
                 // if argument types do not match

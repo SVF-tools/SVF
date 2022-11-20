@@ -146,14 +146,14 @@ void LLVMModuleSet::createSVFDataStructure()
         {
             const Function* func = &*it;
             SVFLoopAndDomInfo* ld = new SVFLoopAndDomInfo();
-            SVFFunction* svfFunc = new SVFFunction(func, getSVFType(func->getType()), SVFUtil::cast<SVFFunctionType>(getSVFType(func->getFunctionType())), func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), func->hasAddressTaken(), func->isVarArg(), ld);
+            SVFFunction* svfFunc = new SVFFunction(func->getName().str(), getSVFType(func->getType()), SVFUtil::cast<SVFFunctionType>(getSVFType(func->getFunctionType())), func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), func->hasAddressTaken(), func->isVarArg(), ld);
             svfModule->addFunctionSet(svfFunc);
             addFunctionMap(func,svfFunc);
 
             for (Function::const_arg_iterator I = func->arg_begin(), E = func->arg_end(); I != E; ++I)
             {
                 const Argument* arg = &*I;
-                SVFArgument* svfarg = new SVFArgument(arg, getSVFType(arg->getType()), svfFunc, arg->getArgNo(), LLVMUtil::isArgOfUncalledFunction(arg));
+                SVFArgument* svfarg = new SVFArgument(arg->getName().str(), getSVFType(arg->getType()), svfFunc, arg->getArgNo(), LLVMUtil::isArgOfUncalledFunction(arg));
                 svfFunc->addArgument(svfarg);
                 addArgumentMap(arg,svfarg);
             }
@@ -161,7 +161,7 @@ void LLVMModuleSet::createSVFDataStructure()
             for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
             {
                 const BasicBlock* bb = &*bit;
-                SVFBasicBlock* svfBB = new SVFBasicBlock(bb, getSVFType(bb->getType()), svfFunc);
+                SVFBasicBlock* svfBB = new SVFBasicBlock(bb->getName().str(), getSVFType(bb->getType()), svfFunc);
                 svfFunc->addBasicBlock(svfBB);
                 addBasicBlockMap(bb,svfBB);
                 for (BasicBlock::const_iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
@@ -171,13 +171,13 @@ void LLVMModuleSet::createSVFDataStructure()
                     if(const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
                     {
                         if(cppUtil::isVirtualCallSite(call))
-                            svfInst = new SVFVirtualCallInst(call, getSVFType(call->getType()), svfBB,call->getFunctionType(),inst->isTerminator());
+                            svfInst = new SVFVirtualCallInst(call->getName().str(), getSVFType(call->getType()), svfBB,call->getFunctionType()->isVarArg(),inst->isTerminator());
                         else
-                            svfInst = new SVFCallInst(call, getSVFType(call->getType()), svfBB,call->getFunctionType(),inst->isTerminator());
+                            svfInst = new SVFCallInst(call->getName().str(), getSVFType(call->getType()), svfBB,call->getFunctionType()->isVarArg(),inst->isTerminator());
                     }
                     else
                     {
-                        svfInst = new SVFInstruction(inst,getSVFType(inst->getType()), svfBB, inst->isTerminator(), SVFUtil::isa<ReturnInst>(inst));
+                        svfInst = new SVFInstruction(inst->getName().str(),getSVFType(inst->getType()), svfBB, inst->isTerminator(), SVFUtil::isa<ReturnInst>(inst));
                     }
                     svfBB->addInstruction(svfInst);
                     addInstructionMap(inst,svfInst);
@@ -190,7 +190,7 @@ void LLVMModuleSet::createSVFDataStructure()
                 eit = mod.global_end(); it != eit; ++it)
         {
             const GlobalVariable* global = &*it;
-            SVFGlobalValue* svfglobal = new SVFGlobalValue(global, getSVFType(global->getType()));
+            SVFGlobalValue* svfglobal = new SVFGlobalValue(global->getName().str(), getSVFType(global->getType()));
             svfModule->addGlobalSet(svfglobal);
             addGlobalValueMap(global,svfglobal);
         }
@@ -200,7 +200,7 @@ void LLVMModuleSet::createSVFDataStructure()
                 eit = mod.alias_end(); it != eit; ++it)
         {
             const GlobalAlias *alias = &*it;
-            SVFGlobalValue* svfalias = new SVFGlobalValue(alias, getSVFType(alias->getType()));
+            SVFGlobalValue* svfalias = new SVFGlobalValue(alias->getName().str(), getSVFType(alias->getType()));
             svfModule->addAliasSet(svfalias);
             addGlobalValueMap(alias,svfalias);
         }
@@ -863,20 +863,20 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
     {
         SVFConstantData* svfcd = nullptr;
         if(const ConstantInt* cint = SVFUtil::dyn_cast<ConstantInt>(cd))
-            svfcd = new SVFConstantInt(cd, getSVFType(cint->getType()), cint->getZExtValue(),cint->getSExtValue());
+            svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), cint->getZExtValue(),cint->getSExtValue());
         else if(const ConstantFP* cfp = SVFUtil::dyn_cast<ConstantFP>(cd))
         {
             double dval = 0;
             if(cfp->isNormalFP() &&  (&cfp->getValueAPF().getSemantics()== &llvm::APFloatBase::IEEEdouble()))
                 dval =  cfp->getValueAPF().convertToDouble();
-            svfcd = new SVFConstantFP(cd, getSVFType(cd->getType()), dval);
+            svfcd = new SVFConstantFP(cd->getName().str(), getSVFType(cd->getType()), dval);
         }
         else if(SVFUtil::isa<ConstantPointerNull>(cd))
-            svfcd = new SVFConstantNullPtr(cd, getSVFType(cd->getType()));
+            svfcd = new SVFConstantNullPtr(cd->getName().str(), getSVFType(cd->getType()));
         else if (SVFUtil::isa<UndefValue>(cd))
-            svfcd = new SVFBlackHoleValue(cd, getSVFType(cd->getType()));
+            svfcd = new SVFBlackHoleValue(cd->getName().str(), getSVFType(cd->getType()));
         else
-            svfcd = new SVFConstantData(cd, getSVFType(cd->getType()));
+            svfcd = new SVFConstantData(cd->getName().str(), getSVFType(cd->getType()));
         svfModule->addConstant(svfcd);
         addConstantDataMap(cd,svfcd);
         return svfcd;
@@ -892,7 +892,7 @@ SVFConstant* LLVMModuleSet::getOtherSVFConstant(const Constant* oc)
     }
     else
     {
-        SVFConstant* svfoc = new SVFConstant(oc, getSVFType(oc->getType()));
+        SVFConstant* svfoc = new SVFConstant(oc->getName().str(), getSVFType(oc->getType()));
         svfModule->addConstant(svfoc);
         addOtherConstantMap(oc,svfoc);
         return svfoc;
@@ -910,9 +910,9 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
     {
         SVFOtherValue* svfov = nullptr;
         if(SVFUtil::isa<MetadataAsValue>(ov))
-            svfov = new SVFMetadataAsValue(ov, getSVFType(ov->getType()));
+            svfov = new SVFMetadataAsValue(ov->getName().str(), getSVFType(ov->getType()));
         else
-            svfov = new SVFOtherValue(ov, getSVFType(ov->getType()));
+            svfov = new SVFOtherValue(ov->getName().str(), getSVFType(ov->getType()));
         svfModule->addOtherValue(svfov);
         addOtherValueMap(ov,svfov);
         return svfov;
@@ -1004,17 +1004,17 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
 
     SVFType* svftype = nullptr;
     if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
-        svftype = new SVFPointerType(pt, getSVFType(LLVMUtil::getPtrElementType(pt)));
-    else if (const IntegerType* it = SVFUtil::dyn_cast<IntegerType>(T))
-        svftype = new SVFIntergerType(it);
+        svftype = new SVFPointerType(getSVFType(LLVMUtil::getPtrElementType(pt)));
+    else if (SVFUtil::isa<IntegerType>(T))
+        svftype = new SVFIntergerType();
     else if (const FunctionType* ft = SVFUtil::dyn_cast<FunctionType>(T))
-        svftype = new SVFFunctionType(ft,getSVFType(ft->getReturnType()));
-    else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
-        svftype = new SVFStructType(st);
-    else if (const ArrayType* at = SVFUtil::dyn_cast<ArrayType>(T))
-        svftype = new SVFArrayType(at);    
+        svftype = new SVFFunctionType(getSVFType(ft->getReturnType()));
+    else if (SVFUtil::isa<StructType>(T))
+        svftype = new SVFStructType();
+    else if (SVFUtil::isa<ArrayType>(T))
+        svftype = new SVFArrayType();    
     else
-        svftype = new SVFOtherType(T, T->isSingleValueType());
+        svftype = new SVFOtherType(T->isSingleValueType());
     symInfo->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
     return svftype;

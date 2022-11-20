@@ -52,6 +52,9 @@ typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
 typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
 #endif
 
+/// LLVM Basic classes
+typedef llvm::Value Value;
+typedef llvm::Type Type;
 typedef llvm::Module Module;
 typedef llvm::Function Function;
 typedef llvm::BasicBlock BasicBlock;
@@ -66,6 +69,7 @@ typedef llvm::StructType StructType;
 typedef llvm::ArrayType ArrayType;
 typedef llvm::PointerType PointerType;
 typedef llvm::IntegerType IntegerType;
+typedef llvm::FunctionType FunctionType;
 
 // LLVM Metadata
 typedef llvm::MDString MDString;
