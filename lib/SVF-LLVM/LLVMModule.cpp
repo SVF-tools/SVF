@@ -36,6 +36,7 @@
 #include "SVF-LLVM/BreakConstantExpr.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "MSSA/SVFGBuilder.h"
+#include "llvm/Support/FileSystem.h"
 
 using namespace std;
 using namespace SVF;
