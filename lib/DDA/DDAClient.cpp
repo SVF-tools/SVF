@@ -145,8 +145,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
-        outs() << SVFUtil::value2String((nIter->second)->getCallSite()) << "\n";
-        outs() << getSourceLoc((nIter->second)->getCallSite()) << "\n";
+        outs() << (nIter->second)->getCallSite()->toString() << "\n";
+        outs() << (nIter->second)->getCallSite()->getSourceLoc() << "\n";
         outs() << "\n";
         outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";
         outs() << "------DDA vfn num---(" << ander_vfns.size() << ")--\n";
@@ -218,8 +218,8 @@ void AliasDDAClient::performStat(PointerAnalysis* pta)
                 AliasResult result = pta->alias(node1->getId(),node2->getId());
 
                 outs() << "\n=================================================\n";
-                outs() << "Alias Query for (" << SVFUtil::value2String(node1->getValue()) << ",";
-                outs() << SVFUtil::value2String(node2->getValue()) << ") \n";
+                outs() << "Alias Query for (" << node1->getValue()->toString() << ",";
+                outs() << node2->getValue()->toString() << ") \n";
                 outs() << "[NodeID:" << node1->getId() <<  ", NodeID:" << node2->getId() << " " << result << "]\n";
                 outs() << "=================================================\n";
 

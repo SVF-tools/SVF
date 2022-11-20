@@ -127,7 +127,7 @@ const std::string CmpVFGNode::toString() const
     rawstr << ")]\n";
     if(res->hasValue())
     {
-        rawstr << " " << value2String(res->getValue());
+        rawstr << " " << res->getValue()->toString();
     }
     return rawstr.str();
 }
@@ -151,7 +151,7 @@ const std::string BinaryOPVFGNode::toString() const
     rawstr << ")]\t";
     if(res->hasValue())
     {
-        rawstr << " " << value2String(res->getValue());
+        rawstr << " " << res->getValue()->toString();
     }
     return rawstr.str();
 }
@@ -175,7 +175,7 @@ const std::string UnaryOPVFGNode::toString() const
     rawstr << ")]\t";
     if(res->hasValue())
     {
-        rawstr << " " << value2String(res->getValue());
+        rawstr << " " << res->getValue()->toString();
     }
     return rawstr.str();
 }
@@ -229,7 +229,7 @@ const std::string PHIVFGNode::toString() const
     rawstr << ")]\t";
     if(res->hasValue())
     {
-        rawstr << " " << value2String(res->getValue());
+        rawstr << " " << res->getValue()->toString();
     }
     return rawstr.str();
 }
@@ -247,7 +247,7 @@ const std::string IntraPHIVFGNode::toString() const
     rawstr << ")]\t";
     if(res->hasValue())
     {
-        rawstr << " " << value2String(res->getValue());
+        rawstr << " " << res->getValue()->toString();
     }
     return rawstr.str();
 }
@@ -290,7 +290,7 @@ const std::string ActualParmVFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ActualParmVFGNode ID: " << getId() << " ";
-    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]";
+    rawstr << "CS[" << getCallSite()->getCallSite()->getSourceLoc() << "]";
     rawstr << param->toString();
     return rawstr.str();
 }
@@ -324,7 +324,7 @@ const std::string ActualRetVFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "ActualRetVFGNode ID: " << getId() << " ";
-    rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]";
+    rawstr << "CS[" << getCallSite()->getCallSite()->getSourceLoc() << "]";
     rawstr << param->toString();
     return rawstr.str();
 }
@@ -353,9 +353,9 @@ const std::string InterPHIVFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     if(isFormalParmPHI())
-        rawstr << "FormalParmPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << value2String(res->getValue());
+        rawstr << "FormalParmPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << res->getValue()->toString();
     else
-        rawstr << "ActualRetPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << value2String(res->getValue());
+        rawstr << "ActualRetPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << res->getValue()->toString();
     return rawstr.str();
 }
 

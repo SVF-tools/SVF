@@ -583,40 +583,6 @@ const std::string LLVMUtil::getSourceLocOfFunction(const Function* F)
     return rawstr.str();
 }
 
-/*!
- * return string of an LLVM Value
- */
-const std::string LLVMUtil::value2String(const Value* value)
-{
-    std::string str;
-    llvm::raw_string_ostream rawstr(str);
-    if(value)
-    {
-        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
-            rawstr << "Function: " << fun->getName() << " ";
-        else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(value))
-            rawstr << "BasicBlock: " << bb->getName() << " ";
-        else
-            rawstr << " " << *value << " ";
-        rawstr << getSourceLoc(value);
-    }
-    return rawstr.str();
-}
-
-/*!
- * return string of an LLVM Value
- */
-const std::string LLVMUtil::value2ShortString(const Value* value)
-{
-    std::string str;
-    std::stringstream rawstr(str);
-    if(value && value->hasName())
-    {
-        rawstr << " " << value->getName().str() << " ";
-    }
-    return rawstr.str();
-}
-
 /// Get the next instructions following control flow
 void LLVMUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
 {

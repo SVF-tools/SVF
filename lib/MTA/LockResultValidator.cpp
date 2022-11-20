@@ -157,7 +157,7 @@ LockResultValidator::LOCK_FLAG LockResultValidator::validateStmtInLock()
         {
             if (Options::PrintValidRes)
             {
-                outs() << errMsg("\nValidate Stmt's Lock : Wrong at: ") << SVFUtil::value2String(inst) << "\n";
+                outs() << errMsg("\nValidate Stmt's Lock : Wrong at: ") << inst->toString() << "\n";
                 outs() << "Reason: The number of lock on current stmt is wrong\n";
                 outs() << "\n----Given locks:\n";
                 for (CxtLockSetStr::iterator it1 = LS.begin(),eit1 = LS.end(); it1 != eit1; it++)
@@ -169,7 +169,7 @@ LockResultValidator::LOCK_FLAG LockResultValidator::validateStmtInLock()
                         eit2 = (*it).second.end(); it2 != eit2; ++it)
                 {
                     const SVFInstruction* call = (*it2).getStmt();
-                    outs()<<"Lock  " << value2String(call) << " ";
+                    outs()<<"Lock  " << call->toString() << " ";
                 }
                 outs() << "\n";
             }
@@ -187,7 +187,7 @@ LockResultValidator::LOCK_FLAG LockResultValidator::validateStmtInLock()
             {
                 if(Options::PrintValidRes)
                 {
-                    outs() << "\nValidate Stmt's Lock : Wrong at (" << SVFUtil::value2String(inst) << ")\n";
+                    outs() << "\nValidate Stmt's Lock : Wrong at (" << inst->toString() << ")\n";
                     outs() << "Reason: The number of lock on current stmt is wrong\n";
                     outs() << "\n Lock " << lockName << " should not protect current instruction\n";
                     res = LockResultValidator::LOCK_IMPRECISE;

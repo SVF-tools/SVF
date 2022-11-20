@@ -242,7 +242,7 @@ void PointerAnalysis::dumpAllTypes()
             continue;
 
         outs() << "##<" << node->getValue()->getName() << "> ";
-        outs() << "Source Loc: " << getSourceLoc(node->getValue());
+        outs() << "Source Loc: " << node->getValue()->getSourceLoc();
         outs() << "\nNodeID " << node->getId() << "\n";
 
         const SVFType* type = node->getValue()->getType();
@@ -269,7 +269,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
         if (node->hasValue())
         {
             outs() << "##<" << node->getValue()->getName() << "> ";
-            outs() << "Source Loc: " << getSourceLoc(node->getValue());
+            outs() << "Source Loc: " << node->getValue()->getSourceLoc();
         }
     }
     outs() << "\nPtr " << node->getId() << " ";
@@ -309,7 +309,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
                 {
                     outs() << "<" << pagNode->getValue()->getName() << "> ";
                     outs() << "Source Loc: "
-                           << getSourceLoc(pagNode->getValue()) << "] \n";
+                           << pagNode->getValue()->getSourceLoc() << "] \n";
                 }
             }
         }
@@ -323,8 +323,8 @@ void PointerAnalysis::printIndCSTargets(const CallICFGNode* cs, const FunctionSe
 {
     outs() << "\nNodeID: " << getFunPtr(cs);
     outs() << "\nCallSite: ";
-    outs() << SVFUtil::value2String(cs->getCallSite());
-    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
+    outs() << cs->getCallSite()->toString();
+    outs() << "\tLocation: " << cs->getCallSite()->getSourceLoc();
     outs() << "\t with Targets: ";
 
     if (!targets.empty())
@@ -371,8 +371,8 @@ void PointerAnalysis::printIndCSTargets()
         {
             outs() << "\nNodeID: " << csIt->second;
             outs() << "\nCallSite: ";
-            outs() << SVFUtil::value2String(cs->getCallSite());
-            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
+            outs() << cs->getCallSite()->toString();
+            outs() << "\tLocation: " << cs->getCallSite()->getSourceLoc();
             outs() << "\n\t!!!has no targets!!!\n";
         }
     }
@@ -567,12 +567,12 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 
                 if (checkSuccessful)
                     outs() << sucMsg("\t SUCCESS :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                           << getSourceLoc(svfInst) << ")\n";
+                           << svfInst->getSourceLoc() << ")\n";
                 else
                 {
                     SVFUtil::errs() << errMsg("\t FAILURE :") << fun
                                     << " check <id:" << id1 << ", id:" << id2
-                                    << "> at (" << getSourceLoc(svfInst) << ")\n";
+                                    << "> at (" << svfInst->getSourceLoc() << ")\n";
                     assert(false && "test case failed!");
                 }
             }
@@ -624,11 +624,11 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
 
                 if (expectedFailure)
                     outs() << sucMsg("\t EXPECTED-FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                           << getSourceLoc(call.getInstruction()) << ")\n";
+                           << call.getInstruction()->getSourceLoc() << ")\n";
                 else
                 {
                     SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                                    << getSourceLoc(call.getInstruction()) << ")\n";
+                                    << call.getInstruction()->getSourceLoc() << ")\n";
                     assert(false && "test case failed!");
                 }
             }

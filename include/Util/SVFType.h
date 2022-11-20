@@ -261,9 +261,8 @@ private:
     const SVFPointerType* getPointerToTy; /// Return a pointer to the current type
     StInfo* typeinfo; /// < SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or array
-    std::string toStr;  ///< string format of the type
 protected:
-    SVFType(const Type* ty, bool svt, SVFTyKind k) : kind(k), type(ty), getPointerToTy(nullptr), typeinfo(nullptr), isSingleValTy(svt), toStr("")
+    SVFType(const Type* ty, bool svt, SVFTyKind k) : kind(k), type(ty), getPointerToTy(nullptr), typeinfo(nullptr), isSingleValTy(svt)
     {
     }
 
@@ -278,10 +277,7 @@ public:
         return kind;
     }
 
-    inline virtual const std::string toString() const
-    {
-        return toStr;
-    }
+    virtual const std::string toString() const;
 
     inline void setPointerTo(const SVFPointerType* ty)  
     {

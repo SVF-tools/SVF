@@ -327,7 +327,7 @@ void SVFIRBuilder::processCE(const Value* val)
     {
         if (const ConstantExpr* gepce = isGepConstantExpr(ref))
         {
-            DBOUT(DPAGBuild, outs() << "handle gep constant expression " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)) << "\n");
+            DBOUT(DPAGBuild, outs() << "handle gep constant expression " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)->toString() << "\n");
             const Constant* opnd = gepce->getOperand(0);
             // handle recursive constant express case (gep (bitcast (gep X 1)) 1)
             processCE(opnd);
@@ -346,7 +346,7 @@ void SVFIRBuilder::processCE(const Value* val)
         }
         else if (const ConstantExpr* castce = isCastConstantExpr(ref))
         {
-            DBOUT(DPAGBuild, outs() << "handle cast constant expression " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)) << "\n");
+            DBOUT(DPAGBuild, outs() << "handle cast constant expression " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)->toString() << "\n");
             const Constant* opnd = castce->getOperand(0);
             processCE(opnd);
             const SVFValue* cval = getCurrentValue();
@@ -357,7 +357,7 @@ void SVFIRBuilder::processCE(const Value* val)
         }
         else if (const ConstantExpr* selectce = isSelectConstantExpr(ref))
         {
-            DBOUT(DPAGBuild, outs() << "handle select constant expression " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)) << "\n");
+            DBOUT(DPAGBuild, outs() << "handle select constant expression " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)->toString() << "\n");
             const Constant* src1 = selectce->getOperand(1);
             const Constant* src2 = selectce->getOperand(2);
             processCE(src1);
@@ -474,7 +474,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset,
 void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                                  u32_t offset)
 {
-    DBOUT(DPAGBuild, outs() << "global " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(gvar)) << " constant initializer: " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(C)) << "\n");
+    DBOUT(DPAGBuild, outs() << "global " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(gvar)->toString() << " constant initializer: " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(C)->toString() << "\n");
     if (C->getType()->isSingleValueType())
     {
         NodeID src = getValueNode(C);
@@ -567,7 +567,7 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
             if (gvar->hasInitializer())
             {
                 Constant *C = gvar->getInitializer();
-                DBOUT(DPAGBuild, outs() << "add global var node " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(gvar)) << "\n");
+                DBOUT(DPAGBuild, outs() << "add global var node " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(gvar)->toString() << "\n");
                 InitialGlobal(gvar, C, 0);
             }
         }
@@ -608,7 +608,7 @@ void SVFIRBuilder::visitAllocaInst(AllocaInst &inst)
     // AllocaInst should always be a pointer type
     assert(SVFUtil::isa<PointerType>(inst.getType()));
 
-    DBOUT(DPAGBuild, outs() << "process alloca  " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)) << " \n");
+    DBOUT(DPAGBuild, outs() << "process alloca  " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)->toString() << " \n");
     NodeID dst = getValueNode(&inst);
 
     NodeID src = getObjectNode(&inst);
@@ -623,7 +623,7 @@ void SVFIRBuilder::visitAllocaInst(AllocaInst &inst)
 void SVFIRBuilder::visitPHINode(PHINode &inst)
 {
 
-    DBOUT(DPAGBuild, outs() << "process phi " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)) << "  \n");
+    DBOUT(DPAGBuild, outs() << "process phi " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)->toString() << "  \n");
 
     NodeID dst = getValueNode(&inst);
 
@@ -648,7 +648,7 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
  */
 void SVFIRBuilder::visitLoadInst(LoadInst &inst)
 {
-    DBOUT(DPAGBuild, outs() << "process load  " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)) << " \n");
+    DBOUT(DPAGBuild, outs() << "process load  " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)->toString() << " \n");
 
     NodeID dst = getValueNode(&inst);
 
@@ -665,7 +665,7 @@ void SVFIRBuilder::visitStoreInst(StoreInst &inst)
     // StoreInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
 
-    DBOUT(DPAGBuild, outs() << "process store " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)) << " \n");
+    DBOUT(DPAGBuild, outs() << "process store " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)->toString() << " \n");
 
     NodeID dst = getValueNode(inst.getPointerOperand());
 
@@ -692,7 +692,7 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 
     assert(SVFUtil::isa<PointerType>(inst.getType()));
 
-    DBOUT(DPAGBuild, outs() << "process gep  " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)) << " \n");
+    DBOUT(DPAGBuild, outs() << "process gep  " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)->toString() << " \n");
 
     NodeID src = getValueNode(inst.getPointerOperand());
 
@@ -707,7 +707,7 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 void SVFIRBuilder::visitCastInst(CastInst &inst)
 {
 
-    DBOUT(DPAGBuild, outs() << "process cast  " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)) << " \n");
+    DBOUT(DPAGBuild, outs() << "process cast  " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)->toString() << " \n");
     NodeID dst = getValueNode(&inst);
 
     if (SVFUtil::isa<IntToPtrInst>(&inst))
@@ -775,7 +775,7 @@ void SVFIRBuilder::visitCmpInst(CmpInst &inst)
 void SVFIRBuilder::visitSelectInst(SelectInst &inst)
 {
 
-    DBOUT(DPAGBuild, outs() << "process select  " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)) << " \n");
+    DBOUT(DPAGBuild, outs() << "process select  " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)->toString() << " \n");
 
     NodeID dst = getValueNode(&inst);
     NodeID src1 = getValueNode(inst.getTrueValue());
@@ -813,7 +813,7 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
 
     DBOUT(DPAGBuild,
-          outs() << "process callsite " << SVFUtil::value2String(svfcall) << "\n");
+          outs() << "process callsite " << svfcall->toString() << "\n");
 
     CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(svfcall);
     RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(svfcall);
@@ -856,7 +856,7 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
     // ReturnInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
 
-    DBOUT(DPAGBuild, outs() << "process return  " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)) << " \n");
+    DBOUT(DPAGBuild, outs() << "process return  " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)->toString() << " \n");
 
     if(Value* src = inst.getReturnValue())
     {
@@ -984,7 +984,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
     const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(F);
     DBOUT(DPAGBuild,
-          outs() << "handle direct call " << SVFUtil::value2String(svfcall) << " callee " << F->getName().str() << "\n");
+          outs() << "handle direct call " << svfcall->toString() << " callee " << F->getName().str() << "\n");
 
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs);
@@ -1011,7 +1011,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
         }
         const Value* AA = cs->getArgOperand(itA), *FA = &*itF; //current actual/formal arg
 
-        DBOUT(DPAGBuild, outs() << "process actual parm  " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(AA)) << " \n");
+        DBOUT(DPAGBuild, outs() << "process actual parm  " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(AA)->toString() << " \n");
 
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);
@@ -1038,7 +1038,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
         /// FIXME: this assertion should be placed for correct checking except
         /// bug program like 188.ammp, 300.twolf
         writeWrnMsg("too many args to non-vararg func.");
-        writeWrnMsg("(" + getSourceLoc(svfcall) + ")");
+        writeWrnMsg("(" + svfcall->getSourceLoc() + ")");
 
     }
 }

@@ -77,7 +77,7 @@ const std::string AddrStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -90,7 +90,7 @@ const std::string CopyStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -106,7 +106,7 @@ const std::string PhiStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -122,7 +122,7 @@ const std::string SelectStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -135,7 +135,7 @@ const std::string CmpStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -148,7 +148,7 @@ const std::string BinaryOPStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -161,7 +161,7 @@ const std::string UnaryOPStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -181,7 +181,7 @@ const std::string BranchStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -195,7 +195,7 @@ const std::string LoadStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -208,7 +208,7 @@ const std::string StoreStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -221,7 +221,7 @@ const std::string GepStmt::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -234,7 +234,7 @@ const std::string CallPE::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -247,7 +247,7 @@ const std::string RetPE::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -260,7 +260,7 @@ const std::string TDForkPE::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }
@@ -273,7 +273,7 @@ const std::string TDJoinPE::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(getValue());
+        rawstr << getValue()->toString();
     }
     return rawstr.str();
 }

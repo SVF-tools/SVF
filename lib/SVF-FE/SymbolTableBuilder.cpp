@@ -245,7 +245,7 @@ void SymbolTableBuilder::collectSym(const Value *val)
 
     //TODO: filter the non-pointer type // if (!SVFUtil::isa<PointerType>(val->getType()))  return;
 
-    DBOUT(DMemModel, outs() << "collect sym from ##" << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)) << " \n");
+    DBOUT(DMemModel, outs() << "collect sym from ##" << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->toString() << " \n");
 
     //TODO handle constant expression value here??
     handleCE(val);
@@ -367,7 +367,7 @@ void SymbolTableBuilder::handleCE(const Value *val)
         if (const ConstantExpr* ce = isGepConstantExpr(ref))
         {
             DBOUT(DMemModelCE,
-                  outs() << "handle constant expression " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)) << "\n");
+                  outs() << "handle constant expression " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)->toString() << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             // handle the recursive constant express case
@@ -377,7 +377,7 @@ void SymbolTableBuilder::handleCE(const Value *val)
         else if (const ConstantExpr* ce = isCastConstantExpr(ref))
         {
             DBOUT(DMemModelCE,
-                  outs() << "handle constant expression " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)) << "\n");
+                  outs() << "handle constant expression " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)->toString() << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             // handle the recursive constant express case
@@ -387,7 +387,7 @@ void SymbolTableBuilder::handleCE(const Value *val)
         else if (const ConstantExpr* ce = isSelectConstantExpr(ref))
         {
             DBOUT(DMemModelCE,
-                  outs() << "handle constant expression " << SVFUtil::value2String(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)) << "\n");
+                  outs() << "handle constant expression " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)->toString() << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             collectVal(ce->getOperand(1));
@@ -565,7 +565,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
     {
         writeWrnMsg("try to create an object with a non-pointer type.");
         writeWrnMsg(val->getName().str());
-        writeWrnMsg("(" + getSourceLoc(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)) + ")");
+        writeWrnMsg("(" + LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->getSourceLoc() + ")");
         if(isConstantObjSym(val))
         {
             ObjTypeInfo* typeInfo = new ObjTypeInfo(LLVMModuleSet::getLLVMModuleSet()->getSVFType(val->getType()), 0);

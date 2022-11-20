@@ -192,8 +192,8 @@ private:
 
 protected:
     const SVFType* type;   ///< Type of this SVFValue
-    std::string name;
-    std::string sourceLoc;
+    std::string name;       ///< Short name of this value for debugging
+    std::string sourceLoc;  ///< Source code information of this value
     /// Constructor
     SVFValue(const Value* val, const SVFType* ty, SVFValKind k): value(val), kind(k),
         ptrInUncalledFun(false), has_name(false), constDataOrAggData(SVFConstData==k), type(ty),
@@ -282,18 +282,12 @@ public:
     {
         sourceLoc = sourceCodeInfo;
     }
-    inline virtual const std::string& getSourceLoc() const
+    inline virtual const std::string getSourceLoc() const
     {
         return sourceLoc;
     }
-    inline void setToString(const std::string& ts)
-    {
-        name = ts;
-    }
-    inline virtual const std::string& toString() const
-    {
-        return name;
-    }
+    virtual const std::string toString() const;
+
     /// Overloading operator << for dumping ICFG node ID
     //@{
     friend OutStream& operator<< (OutStream &o, const SVFValue &node)

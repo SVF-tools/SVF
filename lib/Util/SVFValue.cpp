@@ -123,6 +123,35 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
+const std::string SVFType::toString() const
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    const Type* ty = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(this);
+    rawstr << *ty;
+    return rawstr.str();
+}
+
+const std::string SVFValue::toString() const
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    if(value)
+    {
+        if(const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
+            rawstr << "Function: " << fun->getName() << " ";
+        else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
+            rawstr << "BasicBlock: " << bb->getName() << " ";
+        else
+        {
+            const Value* val = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+            rawstr << " " << *val << " ";
+        }
+        rawstr << this->getSourceLoc();
+    }
+    return rawstr.str();
+}
+
 SVFFunction::SVFFunction(const Value* f, const SVFType* ty, const SVFFunctionType* ft, bool declare, bool intric, bool adt, bool varg, SVFLoopAndDomInfo* ld): 
     SVFValue(f,ty,SVFValue::SVFFunc),isDecl(declare), intricsic(intric), addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg), funcType(ft), loopAndDom(ld), realDefFun(nullptr)
 {

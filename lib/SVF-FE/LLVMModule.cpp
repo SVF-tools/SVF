@@ -825,6 +825,8 @@ void LLVMModuleSet::dumpModulesToFile(const std::string suffix)
 
 void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
 {
+    SVFValue2LLVMValue[svfvalue] = val;
+
     if (LLVMUtil::isPtrInUncalledFunction(val))
         svfvalue->setPtrInUncalledFunction();
     if (LLVMUtil::isConstDataOrAggData(val))
@@ -938,6 +940,17 @@ SVFValue* LLVMModuleSet::getSVFValue(const Value* value)
     }
     else
         return getSVFOtherValue(value);
+}
+
+const Type* LLVMModuleSet::getLLVMType(const SVFType* T) const
+{
+    for(LLVMType2SVFTypeMap::const_iterator it = LLVMType2SVFType.begin(), eit = LLVMType2SVFType.end(); it!=eit; ++it)
+    {
+        if (it->second == T)
+            return it->first;
+    }
+    assert(false && "can't find the corresponding LLVM Type");
+    abort();
 }
 
 /*!

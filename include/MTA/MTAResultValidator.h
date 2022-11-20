@@ -340,8 +340,8 @@ protected:
             bool racy = mayHaveDataRace(I1, I2);
 
             SVFUtil::outs() << "For the memory access pair at ("
-                            << SVFUtil::getSourceLoc(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(I1)) << ", "
-                            << SVFUtil::getSourceLoc(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(I2)) << ")\n";
+                            << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(I1)->getSourceLoc() << ", "
+                            << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(I2)->getSourceLoc() << ")\n";
             if (selectedValidationScenarios & RC_ALIASES)
             {
                 SVFUtil::outs() << "\t"

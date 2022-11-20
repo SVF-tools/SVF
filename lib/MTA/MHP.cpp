@@ -265,7 +265,7 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
         else
         {
             rmInterleavingThread(cts,joinedTids,call);
-            DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call) <<  " for thread " << rootTid << "\n");
+            DBOUT(DMTA,outs() << "\n\t match join site " << call->toString() <<  " for thread " << rootTid << "\n");
         }
     }
     /// for the join site in a loop loop which does not join the current thread
@@ -662,7 +662,7 @@ void MHP::printInterleaving()
 {
     for(ThreadStmtToThreadInterleav::const_iterator it = threadStmtToTheadInterLeav.begin(), eit = threadStmtToTheadInterLeav.end(); it!=eit; ++it)
     {
-        outs() << "( t" << it->first.getTid() << " , $" << SVFUtil::getSourceLoc(it->first.getStmt()) << "$" << SVFUtil::value2String(it->first.getStmt()) << " ) ==> [";
+        outs() << "( t" << it->first.getTid() << " , $" << it->first.getStmt()->getSourceLoc() << "$" << it->first.getStmt()->toString() << " ) ==> [";
         for (NodeBS::iterator ii = it->second.begin(), ie = it->second.end();
                 ii != ie; ii++)
         {
@@ -859,7 +859,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
             {
                 markCxtStmtFlag(cts,TDDead);
                 addDirectlyJoinTID(cts,rootTid);
-                DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call) <<  "for thread " << rootTid << "\n");
+                DBOUT(DMTA,outs() << "\n\t match join site " << call->toString() <<  "for thread " << rootTid << "\n");
             }
         }
         /// for the join site in a loop loop which does not join the current thread

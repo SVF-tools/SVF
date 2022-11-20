@@ -151,7 +151,7 @@ void LeakChecker::reportNeverFree(const SVFGNode* src)
 {
     const CallICFGNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
-                    << getSourceLoc(cs->getCallSite()) << ")\n";
+                    << cs->getCallSite()->getSourceLoc() << ")\n";
 }
 
 void LeakChecker::reportPartialLeak(const SVFGNode* src)
@@ -159,7 +159,7 @@ void LeakChecker::reportPartialLeak(const SVFGNode* src)
 
     const CallICFGNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
-                    << getSourceLoc(cs->getCallSite()) << ")\n";
+                    << cs->getCallSite()->getSourceLoc() << ")\n";
 }
 
 void LeakChecker::reportBug(ProgSlice* slice)
@@ -239,14 +239,14 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
     if (success)
     {
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
-               << getSourceLoc(cs->getCallSite()) << ")\n";
+               << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
+               << cs->getCallSite()->getSourceLoc() << ")\n";
     }
     else
     {
         SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-                        << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
-                        << getSourceLoc(cs->getCallSite()) << ")\n";
+                        << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
+                        << cs->getCallSite()->getSourceLoc() << ")\n";
         assert(false && "test case failed!");
     }
 }
@@ -289,15 +289,15 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
     if (expectedFailure)
     {
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
-               << getSourceLoc(cs->getCallSite()) << ")\n";
+               << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
+               << cs->getCallSite()->getSourceLoc() << ")\n";
     }
     else
     {
         SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
                         << " check <src id:" << source->getId()
-                        << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
-                        << getSourceLoc(cs->getCallSite()) << ")\n";
+                        << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
+                        << cs->getCallSite()->getSourceLoc() << ")\n";
         assert(false && "test case failed!");
     }
 }

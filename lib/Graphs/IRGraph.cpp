@@ -279,12 +279,12 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge))
         {
             const SVFInstruction* callInst= calledge->getCallSite()->getCallSite();
-            return SVFUtil::getSourceLoc(callInst);
+            return callInst->getSourceLoc();
         }
         else if(const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge))
         {
             const SVFInstruction* callInst= retedge->getCallSite()->getCallSite();
-            return SVFUtil::getSourceLoc(callInst);
+            return callInst->getSourceLoc();
         }
         return "";
     }

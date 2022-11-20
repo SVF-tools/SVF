@@ -226,7 +226,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
     if(const SVFArrayType *at = SVFUtil::dyn_cast<SVFArrayType> (type))
     {
         outs() <<"  {Type: ";
-        outs() << type2String(at);
+        outs() << at->toString();
         outs() << "}\n";
         outs() << "\tarray type ";
         outs() << "\t [element size = " << getNumOfFlattenElements(at) << "]\n";
@@ -236,7 +236,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
     else if(const SVFStructType *st = SVFUtil::dyn_cast<SVFStructType> (type))
     {
         outs() <<"  {Type: ";
-        outs() << type2String(st);
+        outs() << st->toString();
         outs() << "}\n";
         const std::vector<const SVFType*>& finfo = getTypeInfo(st)->getFlattenFieldTypes();
         int field_idx = 0;
@@ -245,7 +245,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
         {
             outs() << " \tField_idx = " << field_idx;
             outs() << ", field type: ";
-            outs() << type2String(*it);
+            outs() << (*it)->toString();
             outs() << "\n";
         }
         outs() << "\n";
@@ -255,7 +255,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
     {
         u32_t eSize = getNumOfFlattenElements(pt->getPtrElementType());
         outs() << "  {Type: ";
-        outs() << type2String(pt);
+        outs() << pt->toString();
         outs() << "}\n";
         outs() <<"\t [target size = " << eSize << "]\n";
         outs() << "\n";
@@ -264,7 +264,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
     else if ( const SVFFunctionType* fu= SVFUtil::dyn_cast<SVFFunctionType> (type))
     {
         outs() << "  {Type: ";
-        outs() << type2String(fu->getReturnType());
+        outs() << fu->getReturnType()->toString();
         outs() << "(Function)}\n\n";
     }
 
@@ -274,7 +274,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
         /// All rest types are scalar type?
         u32_t eSize = getNumOfFlattenElements(type);
         outs() <<"  {Type: ";
-        outs() << type2String(type);
+        outs() << type->toString();
         outs() << "}\n";
         outs() <<"\t [object size = " << eSize << "]\n";
         outs() << "\n";
@@ -358,7 +358,7 @@ void SymbolTableInfo::dump()
     outs() << "{SymbolTableInfo \n";
     for (auto iter : idmap)
     {
-        outs() << iter.first << " " << value2String(iter.second) << "\n";
+        outs() << iter.first << " " << iter.second->toString() << "\n";
     }
     outs() << "}\n";
 }
@@ -544,7 +544,7 @@ const std::string MemObj::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "MemObj : " << getId() << SVFUtil::value2String(getValue())<< "\n";
+    rawstr << "MemObj : " << getId() << getValue()->toString() << "\n";
     return rawstr.str();
 }
 

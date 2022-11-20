@@ -88,11 +88,11 @@ const std::string IntraICFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "IntraICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getInst()) << "}";
+    rawstr << " {fun: " << getFun()->getName() << getInst()->getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     if(getSVFStmts().empty())
-        rawstr << "\n" << value2String(getInst());
+        rawstr << "\n" << getInst()->toString();
     return rawstr.str();
 }
 
@@ -104,7 +104,7 @@ const std::string FunEntryICFGNode::toString() const
     rawstr << "FunEntryICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
-        rawstr << getSourceLoc(getFun());
+        rawstr << getFun()->getSourceLoc();
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -118,7 +118,7 @@ const std::string FunExitICFGNode::toString() const
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
-        rawstr << getSourceLoc(getFun()->getExitBB()->front());
+        rawstr << getFun()->getExitBB()->front()->getSourceLoc();
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -131,7 +131,7 @@ const std::string CallICFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "CallICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()) << "}";
+    rawstr << " {fun: " << getFun()->getName() << getCallSite()->getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     return rawstr.str();
@@ -142,7 +142,7 @@ const std::string RetICFGNode::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "RetICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()) << "}";
+    rawstr << " {fun: " << getFun()->getName() << getCallSite()->getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     return rawstr.str();
@@ -163,7 +163,7 @@ const std::string IntraCFGEdge::toString() const
     if(getCondition() == nullptr)
         rawstr << "IntraCFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t";
     else
-        rawstr << "IntraCFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "] (branchCondition:" << value2String(getCondition()) << ") (succCondValue: " << getSuccessorCondValue() << ") \t";
+        rawstr << "IntraCFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "] (branchCondition:" << getCondition()->toString() << ") (succCondValue: " << getSuccessorCondValue() << ") \t";
 
     return rawstr.str();
 }
@@ -173,7 +173,7 @@ const std::string CallCFGEdge::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "CallCFGEdge " << " [ICFGNode";
-    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << value2String(cs) << "\t";
+    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << cs->toString() << "\t";
     return rawstr.str();
 }
 
@@ -182,7 +182,7 @@ const std::string RetCFGEdge::toString() const
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "RetCFGEdge " << " [ICFGNode";
-    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << value2String(cs) << "\t";
+    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << cs->toString() << "\t";
     return rawstr.str();
 }
 
@@ -236,7 +236,7 @@ ICFGNode* ICFG::getICFGNode(const SVFInstruction* inst)
 CallICFGNode* ICFG::getCallICFGNode(const SVFInstruction* inst)
 {
     if(SVFUtil::isCallSite(inst) ==false)
-        outs() << SVFUtil::value2String(inst) << "\n";
+        outs() << inst->toString() << "\n";
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     CallICFGNode* node = getCallBlock(inst);

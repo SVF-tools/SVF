@@ -81,7 +81,7 @@ u32_t LocationSet::getElementNum(const SVFType* type) const
     }
     else
     {
-        SVFUtil::outs() << "GepIter Type" << type2String(type) << "\n";
+        SVFUtil::outs() << "GepIter Type" << type->toString() << "\n";
         assert(false && "What other types for this gep?");
         abort();
     }
@@ -228,7 +228,7 @@ std::string LocationSet::dump() const
     OffsetValueVec::const_iterator eit = vec.end();
     for (; it != eit; ++it)
     {
-        rawstr << " (value: " << value2String(it->first) << " type: " << it->second << ")";
+        rawstr << " (value: " << it->first->toString() << " type: " << it->second << ")";
     }
     rawstr << " }\n";
     return rawstr.str();

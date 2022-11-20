@@ -190,7 +190,7 @@ void MTAResultValidator::dumpCxt(const CallStrCxt& cxt) const
     for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it)
     {
         rawstr << " ' " << *it << " ' ";
-        rawstr << value2String(tcg->getCallSite(*it)->getCallSite());
+        rawstr << tcg->getCallSite(*it)->getCallSite()->toString();
         rawstr << "  call  " << tcg->getCallSite(*it)->getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";
@@ -507,7 +507,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
         {
             if (Options::PrintValidRes)
             {
-                outs() << errMsg("\n Validate Interleaving: Wrong at : ") << SVFUtil::getSourceLoc(inst) << "\n";
+                outs() << errMsg("\n Validate Interleaving: Wrong at : ") << inst->getSourceLoc() << "\n";
                 outs() << "Reason: The number of thread running on stmt is wrong\n";
                 outs() << "\n----Given threads:\n";
                 for (MHP::CxtThreadStmtSet::iterator thdlevi = (*seti).second.begin(), ethdlevi = (*seti).second.end(); thdlevi != ethdlevi;
@@ -544,7 +544,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
                     {
                         if (Options::PrintValidRes)
                         {
-                            outs() << errMsg("\nValidate Interleaving: Wrong at: ") << SVFUtil::getSourceLoc(inst) << "\n";
+                            outs() << errMsg("\nValidate Interleaving: Wrong at: ") << inst->getSourceLoc() << "\n";
                             outs() << "Reason: thread interleaving on stmt is wrong\n";
                             dumpCxt(ts.getContext());
                             outs() << "Given result:    \tTID " << rthdTovthd[ts.getTid()];

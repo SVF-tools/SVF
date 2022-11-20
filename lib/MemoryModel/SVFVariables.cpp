@@ -110,7 +110,7 @@ const std::string ValVar::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(value);
+        rawstr << value->toString();
     }
     return rawstr.str();
 }
@@ -123,7 +123,7 @@ const std::string ObjVar::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(value);
+        rawstr << value->toString();
     }
     return rawstr.str();
 }
@@ -136,7 +136,7 @@ const std::string GepValVar::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(value);
+        rawstr << value->toString();
     }
     return rawstr.str();
 }
@@ -149,7 +149,7 @@ const std::string GepObjVar::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(value);
+        rawstr << value->toString();
     }
     return rawstr.str();
 }
@@ -162,7 +162,7 @@ const std::string FIObjVar::toString() const
     if (Options::ShowSVFIRValue)
     {
         rawstr << "\n";
-        rawstr << value2String(value);
+        rawstr << value->toString();
     }
     return rawstr.str();
 }

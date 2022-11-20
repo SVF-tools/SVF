@@ -240,9 +240,8 @@ inline const SVFFunction* getCallee(const SVFInstruction *inst)
 
 /// Return source code including line number and file name from debug information
 //@{
-const std::string& getSourceLoc(const SVFValue* val);
-const std::string& getSourceLocOfFunction(const SVFFunction* F);
-const std::string value2String(const SVFValue* value);
+const std::string getSourceLoc(const SVFValue* val);
+const std::string getSourceLocOfFunction(const SVFFunction* F);
 //@}
 
 /// Given a map mapping points-to sets to a count, adds from into to.
@@ -411,8 +410,6 @@ inline const SVFValue* getForkedFun(const SVFInstruction *inst)
     return ThreadAPI::getThreadAPI()->getForkedFun(inst);
 }
 //@}
-
-const std::string type2String(const SVFType* type);
 
 /// This function servers a allocation wrapper detector
 inline bool isAnAllocationWraper(const SVFInstruction*)

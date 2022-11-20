@@ -360,9 +360,6 @@ u32_t getTypeSizeInBytes(const StructType *sty, u32_t field_index);
 
 const std::string getSourceLoc(const Value* val);
 const std::string getSourceLocOfFunction(const Function* F);
-const std::string type2String(const Type* type);
-const std::string value2String(const Value* value);
-const std::string value2ShortString(const Value* value);
 
 bool isIntrinsicInst(const Instruction* inst);
 bool isIntrinsicFun(const Function* func);

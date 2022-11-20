@@ -108,7 +108,7 @@ void PCG::initFromThreadAPI(SVFModule* module)
                     else
                     {
                         writeWrnMsg("pthread create");
-                        outs() << SVFUtil::value2String(inst) << "\n";
+                        outs() << inst->toString() << "\n";
                         writeWrnMsg("invoke spawnee indirectly");
                     }
                 }

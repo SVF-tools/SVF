@@ -753,7 +753,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         {
             // print the whole value
             if (!SVFUtil::isa<DummyValVar>(node) && !SVFUtil::isa<DummyObjVar>(node))
-                rawstr << node->getId() << ":" << value2String(node->getValue());
+                rawstr << node->getId() << ":" << node->getValue()->toString();
             else
                 rawstr << node->getId() << ":";
 

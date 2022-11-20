@@ -56,6 +56,7 @@ public:
     typedef Map<const Argument*, SVFArgument*> LLVMArgument2SVFArgumentMap;
     typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
     typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
+    typedef Map<const SVFValue*, const Value*> SVFValue2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
     typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
 
@@ -80,6 +81,7 @@ private:
     LLVMArgument2SVFArgumentMap LLVMArgument2SVFArgument;
     LLVMConst2SVFConstMap LLVMConst2SVFConst;
     LLVMValue2SVFOtherValueMap LLVMValue2SVFOtherValue;
+    SVFValue2LLVMValueMap SVFValue2LLVMValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
 
@@ -181,6 +183,13 @@ public:
     }
 
     SVFValue* getSVFValue(const Value* value);
+
+    const Value* getLLVMValue(const SVFValue* value) const
+    {
+        SVFValue2LLVMValueMap::const_iterator it = SVFValue2LLVMValue.find(value);
+        assert(it!=SVFValue2LLVMValue.end() && "can't find corresponding llvm value!");
+        return it->second;
+    }
 
     inline SVFFunction* getSVFFunction(const Function* fun) const
     {
@@ -312,6 +321,8 @@ public:
 
     /// Get or create SVFType and typeinfo
     SVFType* getSVFType(const Type* T);
+    /// Get LLVM Type
+    const Type* getLLVMType(const SVFType* T) const;
 
 private:
     /// Create SVFTypes

@@ -166,9 +166,9 @@ std::string ProgSlice::evalFinalCond() const
     {
         const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
         if(pathAllocator->isNegCond(*it))
-            locations.insert(getSourceLoc(tinst)+"|False");
+            locations.insert(tinst->getSourceLoc()+"|False");
         else
-            locations.insert(getSourceLoc(tinst)+"|True");
+            locations.insert(tinst->getSourceLoc()+"|True");
     }
     /// print leak path after eliminating duplicated element
     for(Set<std::string>::iterator iter = locations.begin(), eiter = locations.end();

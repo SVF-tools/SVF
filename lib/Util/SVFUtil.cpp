@@ -260,7 +260,7 @@ bool SVFUtil::isIntrinsicInst(const SVFInstruction* inst)
 /*!
  * Get source code line number of a function according to debug info
  */
-const std::string& SVFUtil::getSourceLocOfFunction(const SVFFunction* F)
+const std::string SVFUtil::getSourceLocOfFunction(const SVFFunction* F)
 {
     return F->getSourceLoc();
 }
@@ -268,29 +268,9 @@ const std::string& SVFUtil::getSourceLocOfFunction(const SVFFunction* F)
 /*!
  * Get the meta data (line number and file name) info of a LLVM value
  */
-const std::string& SVFUtil::getSourceLoc(const SVFValue* v)
+const std::string SVFUtil::getSourceLoc(const SVFValue* v)
 {
     return v->getSourceLoc();
-}
-
-/*!
- * return string of an LLVM Value
- */
-const std::string SVFUtil::value2String(const SVFValue* value)
-{
-    std::string str;
-    llvm::raw_string_ostream rawstr(str);
-    if(value)
-    {
-        if(const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(value))
-            rawstr << "Function: " << fun->getName() << " ";
-        else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(value))
-            rawstr << "BasicBlock: " << bb->getName() << " ";
-        else
-            rawstr << " " << *value->getLLVMValue() << " ";
-        rawstr << getSourceLoc(value);
-    }
-    return rawstr.str();
 }
 
 std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
@@ -346,13 +326,4 @@ bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
 void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 {
     if (limitTimerSet) alarm(0);
-}
-
-const std::string SVFUtil::type2String(const SVFType* type)
-{
-    std::string str;
-    llvm::raw_string_ostream rawstr(str);
-    assert(type != nullptr && "Given null type!");
-    rawstr << *type->getLLVMType();
-    return rawstr.str();
 }
