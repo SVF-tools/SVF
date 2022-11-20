@@ -111,7 +111,7 @@ const std::string MSSAPHISVFGNode::toString() const
     rawstr << ")\n";
 
     rawstr << getResVer()->getMR()->dumpStr();
-    rawstr << getSourceLoc(getICFGNode()->getBB()->back());
+    rawstr << getICFGNode()->getBB()->back()->getSourceLoc();
     return rawstr.str();
 }
 

@@ -257,22 +257,6 @@ bool SVFUtil::isIntrinsicInst(const SVFInstruction* inst)
     return false;
 }
 
-/*!
- * Get source code line number of a function according to debug info
- */
-const std::string SVFUtil::getSourceLocOfFunction(const SVFFunction* F)
-{
-    return F->getSourceLoc();
-}
-
-/*!
- * Get the meta data (line number and file name) info of a LLVM value
- */
-const std::string SVFUtil::getSourceLoc(const SVFValue* v)
-{
-    return v->getSourceLoc();
-}
-
 std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
 {
     switch (method)

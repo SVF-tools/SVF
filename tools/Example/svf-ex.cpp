@@ -65,7 +65,7 @@ std::string printPts(PointerAnalysis* pta, SVFValue* val)
         PAGNode* targetObj = pta->getPAG()->getGNode(*ii);
         if(targetObj->hasValue())
         {
-            rawstr << "(" << SVFUtil::value2String(targetObj->getValue()) << ")\t ";
+            rawstr << "(" << targetObj->getValue()->toString() << ")\t ";
         }
     }
 

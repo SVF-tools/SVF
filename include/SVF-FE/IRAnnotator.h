@@ -50,7 +50,8 @@ public:
             }
             else if (pagNode->hasValue())
             {
-                processPAGNode(pagNode->getValue()->getLLVMValue(), nodeId, writeFlag);
+                const Value* val = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(pagNode->getValue());
+                processPAGNode(val, nodeId, writeFlag);
             }
         }
 

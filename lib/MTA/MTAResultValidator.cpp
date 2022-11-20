@@ -580,7 +580,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
             {
                 if (Options::PrintValidRes)
                 {
-                    outs() << errMsg("\nValidate Interleaving: Wrong at:") << SVFUtil::getSourceLoc(inst) << "\n";
+                    outs() << errMsg("\nValidate Interleaving: Wrong at:") << inst->getSourceLoc() << "\n";
                     outs() << "Reason: analysis thread cxt is not matched by given thread cxt\n";
                     dumpCxt(ts.getContext());
                     NodeBS lev = mhp->getInterleavingThreads(ts);

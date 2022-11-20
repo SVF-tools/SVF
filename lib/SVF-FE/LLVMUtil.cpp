@@ -635,3 +635,35 @@ void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instru
         }
     }
 }
+
+namespace SVF
+{
+const std::string SVFValue::toString() const
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    if(value)
+    {
+        if(const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
+            rawstr << "Function: " << fun->getName() << " ";
+        else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
+            rawstr << "BasicBlock: " << bb->getName() << " ";
+        else
+        {
+            const Value* val = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+            rawstr << " " << *val << " ";
+        }
+        rawstr << this->getSourceLoc();
+    }
+    return rawstr.str();
+}
+
+const std::string SVFType::toString() const
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    const Type* ty = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(this);
+    rawstr << *ty;
+    return rawstr.str();
+}
+}
