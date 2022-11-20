@@ -28,11 +28,11 @@
  */
 
 #include "Util/Options.h"
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 
 #include "MemoryModel/PointerAnalysisImpl.h"
-#include "MemoryModel/PAGBuilderFromFile.h"
+#include "SVFIR/PAGBuilderFromFile.h"
 #include "Util/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"

@@ -39,10 +39,10 @@
 #include "SVF-FE/CHGBuilder.h"
 #include "Util/Options.h"
 #include "SVF-FE/CPPUtil.h"
-#include "MemoryModel/SymbolTableInfo.h"
+#include "SVFIR/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 #include "Util/PTAStat.h"
 
 using namespace SVF;

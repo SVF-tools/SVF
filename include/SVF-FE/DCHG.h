@@ -17,7 +17,7 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/CHG.h"
 #include "SVF-FE/CPPUtil.h"
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "Util/WorkList.h"
 

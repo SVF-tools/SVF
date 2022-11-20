@@ -13,6 +13,7 @@ file (GLOB SOURCES
         SVF-FE/*.cpp
         Graphs/*.cpp
         Util/*.cpp
+        SVFIR/*.cpp
         MemoryModel/*.cpp
         MSSA/*.cpp
         WPA/*.cpp

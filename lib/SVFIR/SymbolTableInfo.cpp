@@ -30,9 +30,9 @@
 
 #include <memory>
 
-#include "MemoryModel/SymbolTableInfo.h"
+#include "SVFIR/SymbolTableInfo.h"
 #include "Util/Options.h"
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 
 using namespace std;
 using namespace SVF;

@@ -33,7 +33,7 @@
 
 #include "Util/SVFUtil.h"
 #include "MemoryModel/LocationSet.h"
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 namespace SVF
 {
 

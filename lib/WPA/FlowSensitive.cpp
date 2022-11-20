@@ -28,7 +28,7 @@
  */
 
 #include "Util/Options.h"
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"

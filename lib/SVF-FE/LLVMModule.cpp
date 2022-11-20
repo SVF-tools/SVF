@@ -29,7 +29,7 @@
 
 #include "Util/Options.h"
 #include <queue>
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/LLVMUtil.h"

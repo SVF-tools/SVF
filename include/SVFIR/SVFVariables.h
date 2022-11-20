@@ -31,8 +31,8 @@
 #define OBJECTANDSYMBOL_H_
 
 #include "Graphs/GenericGraph.h"
-#include "MemoryModel/SymbolTableInfo.h"
-#include "MemoryModel/SVFStatements.h"
+#include "SVFIR/SymbolTableInfo.h"
+#include "SVFIR/SVFStatements.h"
 
 namespace SVF
 {

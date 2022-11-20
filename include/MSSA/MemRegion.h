@@ -34,7 +34,7 @@
 #ifndef MEMORYREGION_H_
 #define MEMORYREGION_H_
 
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "Graphs/PTACallGraph.h"
 #include "Util/SCC.h"
 #include "Util/WorkList.h"

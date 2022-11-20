@@ -28,13 +28,13 @@
  */
 
 #include "SVF-FE/SVFIRBuilder.h"
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
-#include "Util/SVFValue.h"
-#include "MemoryModel/PAGBuilderFromFile.h"
+#include "SVFIR/SVFValue.h"
+#include "SVFIR/PAGBuilderFromFile.h"
 #include "SVF-FE/LLVMLoopAnalysis.h"
 #include "Util/Options.h"
 #include "SVF-FE/CHGBuilder.h"

@@ -59,8 +59,13 @@ typedef llvm::Instruction Instruction;
 typedef llvm::GlobalValue GlobalValue;
 
 typedef llvm::SMDiagnostic SMDiagnostic;
-
 typedef llvm::BlockAddress BlockAddress;
+
+/// LLVM types
+typedef llvm::StructType StructType;
+typedef llvm::ArrayType ArrayType;
+typedef llvm::PointerType PointerType;
+typedef llvm::IntegerType IntegerType;
 
 // LLVM Metadata
 typedef llvm::MDString MDString;

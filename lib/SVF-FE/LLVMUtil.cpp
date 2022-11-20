@@ -28,7 +28,7 @@
  */
 
 #include "SVF-FE/LLVMUtil.h"
-#include "MemoryModel/SymbolTableInfo.h"
+#include "SVFIR/SymbolTableInfo.h"
 #include <sstream>
 #include <llvm/Support/raw_ostream.h>
 

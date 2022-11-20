@@ -32,8 +32,8 @@
 
 #include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/CPPUtil.h"
-#include "Util/SVFValue.h"
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFValue.h"
+#include "SVFIR/SVFModule.h"
 
 namespace SVF
 {

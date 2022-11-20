@@ -36,7 +36,7 @@
 #ifndef WORKLIST_H_
 #define WORKLIST_H_
 
-#include "Util/SVFValue.h"
+#include "SVFIR/SVFValue.h"
 
 #include <assert.h>
 #include <cstdlib>

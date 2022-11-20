@@ -21,8 +21,8 @@
 //===----------------------------------------------------------------------===//
 
 
-#include "Util/SVFModule.h"
-#include "MemoryModel/SymbolTableInfo.h"
+#include "SVFIR/SVFModule.h"
+#include "SVFIR/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
 

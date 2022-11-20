@@ -31,8 +31,8 @@
 #ifndef IRGRAPH_H_
 #define IRGRAPH_H_
 
-#include "MemoryModel/SVFStatements.h"
-#include "MemoryModel/SVFVariables.h"
+#include "SVFIR/SVFStatements.h"
+#include "SVFIR/SVFVariables.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"

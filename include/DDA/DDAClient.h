@@ -34,10 +34,10 @@
 #ifndef DDACLIENT_H_
 #define DDACLIENT_H_
 
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
-#include "Util/SVFValue.h"
+#include "SVFIR/SVFValue.h"
 
 namespace SVF
 {

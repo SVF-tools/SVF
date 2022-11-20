@@ -30,7 +30,7 @@
 #ifndef SVF_LLVMLOOPANALYSIS_H
 #define SVF_LLVMLOOPANALYSIS_H
 
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "MemoryModel/SVFLoop.h"
 
 namespace SVF

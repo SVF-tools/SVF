@@ -32,7 +32,7 @@
 
 #include "Util/ThreadAPI.h"
 #include "Util/SVFUtil.h"
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 
 #include <iostream>		/// std output
 #include <stdio.h>

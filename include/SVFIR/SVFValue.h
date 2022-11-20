@@ -30,7 +30,7 @@
 #ifndef BASICTYPES_H_
 #define BASICTYPES_H_
 
-#include "Util/SVFType.h"
+#include "SVFIR/SVFType.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
 
@@ -41,11 +41,8 @@ namespace SVF
 typedef llvm::Value Value;
 
 /// LLVM types
-typedef llvm::StructType StructType;
-typedef llvm::ArrayType ArrayType;
-typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
-typedef llvm::IntegerType IntegerType;
+
 
 /// LLVM Aliases and constants
 typedef llvm::GraphPrinter GraphPrinter;

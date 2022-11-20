@@ -33,7 +33,7 @@
 #include "SVF-FE/BasicTypes.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/BasicTypes.h"
-#include "Util/SVFValue.h"
+#include "SVFIR/SVFValue.h"
 #include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
 

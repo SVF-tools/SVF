@@ -33,7 +33,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "MemoryModel/ConditionalPT.h"
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/MutablePointsToDS.h"

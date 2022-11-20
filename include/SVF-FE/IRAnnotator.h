@@ -8,7 +8,7 @@
 #ifndef IRANNOTATOR_H_
 #define IRANNOTATOR_H_
 
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/SVFUtil.h"
 #include "llvm/IR/Metadata.h"

@@ -27,8 +27,8 @@
  *      Author: Yulei Sui
  */
 
-#include "MemoryModel/SVFStatements.h"
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFStatements.h"
+#include "SVFIR/SVFIR.h"
 #include "Util/Options.h"
 
 using namespace SVF;
