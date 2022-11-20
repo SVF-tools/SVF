@@ -7,8 +7,8 @@
 #include "Util/Options.h"
 #include <string>
 #include <sstream>
-#include "MTA/LockResultValidator.h"
-#include "MTA/MTAResultValidator.h"
+#include "LockResultValidator.h"
+#include "MTAResultValidator.h"
 
 using namespace SVF;
 using namespace SVFUtil;

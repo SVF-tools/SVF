@@ -32,12 +32,10 @@
 #include "MTA/MTA.h"
 #include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
-#include "MTA/LockResultValidator.h"
 
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
 
 
 void LockAnalysis::analyze()
@@ -62,8 +60,6 @@ void LockAnalysis::analyze()
 
     DOTIMESTAT(double lockEnd = PTAStat::getClk(true));
     DOTIMESTAT(lockTime += (lockEnd - lockStart) / TIMEINTERVAL);
-    if(Options::LockValid)
-        validateResults();
 }
 
 
@@ -707,12 +703,4 @@ bool LockAnalysis::isInSameCSSpan(const SVFInstruction *I1, const SVFInstruction
         }
     }
     return true;
-}
-
-void LockAnalysis::validateResults()
-{
-
-    // Initialize the validator and perform validation.
-    LockResultValidator lockvalidator(this);
-    lockvalidator.analyze();
 }

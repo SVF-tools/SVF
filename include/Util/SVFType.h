@@ -277,6 +277,7 @@ public:
         return kind;
     }
 
+    /// Needs to be implemented by a specific SVF front end (e.g., the implementation in LLVMUtil)
     virtual const std::string toString() const;
 
     inline void setPointerTo(const SVFPointerType* ty)  

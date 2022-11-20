@@ -2,7 +2,8 @@
 #include "SVF-FE/SVFIRBuilder.h"
 #include "MTA/MTA.h"
 #include "Util/Options.h"
-
+#include "MTAResultValidator.h"
+#include "LockResultValidator.h"
 using namespace llvm;
 using namespace std;
 using namespace SVF;
@@ -31,6 +32,13 @@ int main(int argc, char ** argv)
 
     MTA *mta = new MTA();
     mta->runOnModule(pag);
+
+    MTAResultValidator MTAValidator(mta->getMHP());
+    MTAValidator.analyze();
+
+    // Initialize the validator and perform validation.
+    LockResultValidator lockvalidator(mta->getLockAnalysis());
+    lockvalidator.analyze();
 
     return 0;
 }

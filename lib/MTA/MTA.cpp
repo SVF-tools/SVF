@@ -41,7 +41,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-MTA::MTA() : tcg(nullptr), tct(nullptr)
+MTA::MTA() : tcg(nullptr), tct(nullptr), mhp(nullptr), lsa(nullptr)
 {
     stat = new MTAStat();
 }
@@ -52,6 +52,8 @@ MTA::~MTA()
         delete tcg;
     //if (tct)
     //    delete tct;
+    delete mhp;
+    delete lsa;
 }
 
 /*!
@@ -59,8 +61,8 @@ MTA::~MTA()
  */
 bool MTA::runOnModule(SVFIR* pag)
 {
-    MHP* mhp = computeMHP(pag->getModule());
-    LockAnalysis* lsa = computeLocksets(mhp->getTCT());
+    mhp = computeMHP(pag->getModule());
+    lsa = computeLocksets(mhp->getTCT());
 
 
 
@@ -101,9 +103,6 @@ bool MTA::runOnModule(SVFIR* pag)
             PrintStatistics();
     }
     */
-
-    delete mhp;
-    delete lsa;
 
     return false;
 }

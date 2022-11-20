@@ -6,7 +6,7 @@
  */
 
 #include "Util/Options.h"
-#include "MTA/MTAAnnotator.h"
+#include "MTAAnnotator.h"
 #include "MTA/LockAnalysis.h"
 #include "MemoryModel/PointsTo.h"
 #include <sstream>

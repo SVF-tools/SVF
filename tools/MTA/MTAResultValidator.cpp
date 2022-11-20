@@ -9,7 +9,7 @@
 #include <string>
 #include <sstream>
 
-#include "MTA/MTAResultValidator.h"
+#include "MTAResultValidator.h"
 
 using namespace SVF;
 using namespace SVFUtil;

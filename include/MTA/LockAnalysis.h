@@ -436,8 +436,6 @@ private:
     /// Match context
     bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee);
 
-    void validateResults();
-
     /// Whether it is a lock site
     inline bool isTDFork(const SVFInstruction* call)
     {

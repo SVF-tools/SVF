@@ -78,10 +78,21 @@ public:
 
     void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
 
+    MHP* getMHP()
+    {
+        return mhp;
+    }
+
+    LockAnalysis* getLockAnalysis()
+    {
+        return lsa;
+    }
 private:
     ThreadCallGraph* tcg;
     TCT* tct;
     MTAStat* stat;
+    MHP* mhp;
+    LockAnalysis* lsa;
 };
 
 } // End namespace SVF

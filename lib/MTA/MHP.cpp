@@ -31,7 +31,6 @@
 #include "MTA/MHP.h"
 #include "MTA/MTA.h"
 #include "MTA/LockAnalysis.h"
-#include "MTA/MTAResultValidator.h"
 #include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
 
@@ -140,8 +139,6 @@ void MHP::analyzeInterleaving()
 
     if(Options::PrintInterLev)
         printInterleaving();
-
-    validateResults();
 }
 
 /*!
@@ -648,12 +645,6 @@ bool MHP::executedByTheSameThread(const SVFInstruction* i1, const SVFInstruction
     return true;
 }
 
-void MHP::validateResults()
-{
-
-    MTAResultValidator MTAValidator(this);
-    MTAValidator.analyze();
-}
 
 /*!
  * Print interleaving results

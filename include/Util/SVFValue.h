@@ -286,6 +286,8 @@ public:
     {
         return sourceLoc;
     }
+
+    /// Needs to be implemented by a specific SVF front end (e.g., the implementation in LLVMUtil)
     virtual const std::string toString() const;
 
     /// Overloading operator << for dumping ICFG node ID

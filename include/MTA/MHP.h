@@ -167,9 +167,6 @@ private:
     /// Handle intra
     void handleIntra(const CxtThreadStmt& cts);
 
-    /// Use RCResultValidator to validate mhp results
-    void validateResults();
-
     /// Add/Remove interleaving thread for statement inst
     //@{
     inline void addInterleavingThread(const CxtThreadStmt& tgr, NodeID tid)

@@ -33,7 +33,6 @@
 #include "MTA/MHP.h"
 #include "MTA/LockAnalysis.h"
 #include "MTA/FSMPTA.h"
-#include "MTA/MTAAnnotator.h"
 #include "Graphs/ThreadCallGraph.h"
 
 using namespace SVF;
@@ -181,24 +180,24 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
     PTAStat::printStat();
 }
 
-void MTAStat::performAnnotationStat(MTAAnnotator* anno)
-{
+// void MTAStat::performAnnotationStat(MTAAnnotator* anno)
+// {
 
-    PTNumStatMap.clear();
-    timeStatMap.clear();
-    PTNumStatMap["TotalNumOfStore"] = anno->numOfAllSt;
-    PTNumStatMap["TotalNumOfLoad"] = anno->numOfAllLd;
-    PTNumStatMap["NumOfNonLocalStore"] = anno->numOfNonLocalSt;
-    PTNumStatMap["NumOfNonLocalLoad"] = anno->numOfNonLocalLd;
-    PTNumStatMap["NumOfAliasStore"] = anno->numOfAliasSt;
-    PTNumStatMap["NumOfAliasLoad"] = anno->numOfAliasLd;
-    PTNumStatMap["NumOfMHPStore"] = anno->numOfMHPSt;
-    PTNumStatMap["NumOfMHPLoad"] = anno->numOfMHPLd;
-    PTNumStatMap["NumOfAnnotatedStore"] = anno->numOfAnnotatedSt;
-    PTNumStatMap["NumOfAnnotatedLoad"] = anno->numOfAnnotatedLd;
-    timeStatMap["AnnotationTime"] = AnnotationTime;
+//     PTNumStatMap.clear();
+//     timeStatMap.clear();
+//     PTNumStatMap["TotalNumOfStore"] = anno->numOfAllSt;
+//     PTNumStatMap["TotalNumOfLoad"] = anno->numOfAllLd;
+//     PTNumStatMap["NumOfNonLocalStore"] = anno->numOfNonLocalSt;
+//     PTNumStatMap["NumOfNonLocalLoad"] = anno->numOfNonLocalLd;
+//     PTNumStatMap["NumOfAliasStore"] = anno->numOfAliasSt;
+//     PTNumStatMap["NumOfAliasLoad"] = anno->numOfAliasLd;
+//     PTNumStatMap["NumOfMHPStore"] = anno->numOfMHPSt;
+//     PTNumStatMap["NumOfMHPLoad"] = anno->numOfMHPLd;
+//     PTNumStatMap["NumOfAnnotatedStore"] = anno->numOfAnnotatedSt;
+//     PTNumStatMap["NumOfAnnotatedLoad"] = anno->numOfAnnotatedLd;
+//     timeStatMap["AnnotationTime"] = AnnotationTime;
 
-    SVFUtil::outs() << "\n****Annotation Statistics****\n";
-    PTAStat::printStat();
-}
+//     SVFUtil::outs() << "\n****Annotation Statistics****\n";
+//     PTAStat::printStat();
+// }
 
