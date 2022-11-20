@@ -34,17 +34,21 @@
 #include <sstream>
 #include <iostream>
 
-namespace llvm {
+namespace llvm
+{
 
-namespace DOT {  // Private functions...
+namespace DOT    // Private functions...
+{
 
 std::string EscapeStr(const std::string &Label);
 
 } // end namespace DOT
 
-namespace GraphProgram {
+namespace GraphProgram
+{
 
-enum Name {
+enum Name
+{
     DOT,
     FDP,
     NEATO,
@@ -55,7 +59,8 @@ enum Name {
 } // end namespace GraphProgram
 
 template<typename GraphType>
-class GraphWriter {
+class GraphWriter
+{
     std::ofstream &O;
     const GraphType &G;
 
@@ -73,12 +78,14 @@ class GraphWriter {
 
     // Writes the edge labels of the node to O and returns true if there are any
     // edge labels not equal to the empty string "".
-    bool getEdgeSourceLabels(std::stringstream &O2, NodeRef Node) {
+    bool getEdgeSourceLabels(std::stringstream &O2, NodeRef Node)
+    {
         child_iterator EI = GTraits::child_begin(Node);
         child_iterator EE = GTraits::child_end(Node);
         bool hasEdgeSourceLabels = false;
 
-        for (unsigned i = 0; EI != EE && i != 64; ++EI, ++i) {
+        for (unsigned i = 0; EI != EE && i != 64; ++EI, ++i)
+        {
             std::string label = DTraits.getEdgeSourceLabel(Node, EI);
 
             if (label.empty())
@@ -99,11 +106,13 @@ class GraphWriter {
     }
 
 public:
-    GraphWriter(std::ofstream &o, const GraphType &g, bool SN) : O(o), G(g) {
+    GraphWriter(std::ofstream &o, const GraphType &g, bool SN) : O(o), G(g)
+    {
         DTraits = DOTTraits(SN);
     }
 
-    void writeGraph(const std::string &Title = "") {
+    void writeGraph(const std::string &Title = "")
+    {
         // Output the header for the graph...
         writeHeader(Title);
 
@@ -117,7 +126,8 @@ public:
         writeFooter();
     }
 
-    void writeHeader(const std::string &Title) {
+    void writeHeader(const std::string &Title)
+    {
         std::string GraphName(DTraits.getGraphName(G));
 
         if (!Title.empty())
@@ -138,28 +148,35 @@ public:
         O << "\n";
     }
 
-    void writeFooter() {
+    void writeFooter()
+    {
         // Finish off the graph
         O << "}\n";
     }
 
-    void writeNodes() {
+    void writeNodes()
+    {
         // Loop over the graph, printing it out...
         for (const auto Node : nodes<GraphType>(G))
             if (!isNodeHidden(Node))
                 writeNode(Node);
     }
 
-    bool isNodeHidden(NodeRef Node) { return DTraits.isNodeHidden(Node, G); }
+    bool isNodeHidden(NodeRef Node)
+    {
+        return DTraits.isNodeHidden(Node, G);
+    }
 
-    void writeNode(NodeRef Node) {
+    void writeNode(NodeRef Node)
+    {
         std::string NodeAttributes = DTraits.getNodeAttributes(Node, G);
 
         O << "\tNode" << static_cast<const void*>(Node) << " [shape=record,";
         if (!NodeAttributes.empty()) O << NodeAttributes << ",";
         O << "label=\"{";
 
-        if (!DTraits.renderGraphFromBottomUp()) {
+        if (!DTraits.renderGraphFromBottomUp())
+        {
             O << DOT::EscapeStr(DTraits.getNodeLabel(Node, G));
 
             // If we should include the address of the node in the label, do so now.
@@ -176,7 +193,8 @@ public:
         std::stringstream EdgeSourceLabels(edgeSourceLabels);
         bool hasEdgeSourceLabels = getEdgeSourceLabels(EdgeSourceLabels, Node);
 
-        if (hasEdgeSourceLabels) {
+        if (hasEdgeSourceLabels)
+        {
             if (!DTraits.renderGraphFromBottomUp()) O << "|";
 
             O << "{" << EdgeSourceLabels.str() << "}";
@@ -184,7 +202,8 @@ public:
             if (DTraits.renderGraphFromBottomUp()) O << "|";
         }
 
-        if (DTraits.renderGraphFromBottomUp()) {
+        if (DTraits.renderGraphFromBottomUp())
+        {
             O << DOT::EscapeStr(DTraits.getNodeLabel(Node, G));
 
             // If we should include the address of the node in the label, do so now.
@@ -197,11 +216,13 @@ public:
                 O << "|" << DOT::EscapeStr(NodeDesc);
         }
 
-        if (DTraits.hasEdgeDestLabels()) {
+        if (DTraits.hasEdgeDestLabels())
+        {
             O << "|{";
 
             unsigned i = 0, e = DTraits.numEdgeDestLabels(Node);
-            for (; i != e && i != 64; ++i) {
+            for (; i != e && i != 64; ++i)
+            {
                 if (i) O << "|";
                 O << "<d" << i << ">"
                   << DOT::EscapeStr(DTraits.getEdgeDestLabel(Node, i));
@@ -225,15 +246,18 @@ public:
                 writeEdge(Node, 64, EI);
     }
 
-    void writeEdge(NodeRef Node, unsigned edgeidx, child_iterator EI) {
-        if (NodeRef TargetNode = *EI) {
+    void writeEdge(NodeRef Node, unsigned edgeidx, child_iterator EI)
+    {
+        if (NodeRef TargetNode = *EI)
+        {
             int DestPort = -1;
-            if (DTraits.edgeTargetsEdgeSource(Node, EI)) {
+            if (DTraits.edgeTargetsEdgeSource(Node, EI))
+            {
                 child_iterator TargetIt = DTraits.getEdgeTarget(Node, EI);
 
                 // Figure out which edge this targets...
                 unsigned Offset =
-                        (unsigned)std::distance(GTraits::child_begin(TargetNode), TargetIt);
+                    (unsigned)std::distance(GTraits::child_begin(TargetNode), TargetIt);
                 DestPort = static_cast<int>(Offset);
             }
 
@@ -249,17 +273,20 @@ public:
     /// emitSimpleNode - Outputs a simple (non-record) node
     void emitSimpleNode(const void *ID, const std::string &Attr,
                         const std::string &Label, unsigned NumEdgeSources = 0,
-                        const std::vector<std::string> *EdgeSourceLabels = nullptr) {
+                        const std::vector<std::string> *EdgeSourceLabels = nullptr)
+    {
         O << "\tNode" << ID << "[ ";
         if (!Attr.empty())
             O << Attr << ",";
         O << " label =\"";
         if (NumEdgeSources) O << "{";
         O << DOT::EscapeStr(Label);
-        if (NumEdgeSources) {
+        if (NumEdgeSources)
+        {
             O << "|{";
 
-            for (unsigned i = 0; i != NumEdgeSources; ++i) {
+            for (unsigned i = 0; i != NumEdgeSources; ++i)
+            {
                 if (i) O << "|";
                 O << "<s" << i << ">";
                 if (EdgeSourceLabels) O << DOT::EscapeStr((*EdgeSourceLabels)[i]);
@@ -272,7 +299,8 @@ public:
     /// emitEdge - Output an edge from a simple node into the graph...
     void emitEdge(const void *SrcNodeID, int SrcNodePort,
                   const void *DestNodeID, int DestNodePort,
-                  const std::string &Attrs) {
+                  const std::string &Attrs)
+    {
         if (SrcNodePort  > 64) return;             // Eminating from truncated part?
         if (DestNodePort > 64) DestNodePort = 64;  // Targeting the truncated part?
 
@@ -290,14 +318,16 @@ public:
 
     /// getOStream - Get the raw output stream into the graph file. Useful to
     /// write fancy things using addCustomGraphFeatures().
-    std::ofstream &getOStream() {
+    std::ofstream &getOStream()
+    {
         return O;
     }
 };
 
 template<typename GraphType>
 std::ofstream &WriteGraph(std::ofstream &O, const GraphType &G,
-                        bool ShortNames = false) {
+                          bool ShortNames = false)
+{
     // Start the graph emission process...
     GraphWriter<GraphType> W(O, G, ShortNames);
 
@@ -314,11 +344,13 @@ std::ofstream &WriteGraph(std::ofstream &O, const GraphType &G,
 template <typename GraphType>
 std::string WriteGraph(const GraphType &G,
                        bool ShortNames = false,
-                       std::string Filename = "") {
+                       std::string Filename = "")
+{
 
     std::ofstream O(Filename);
 
-    if (O.fail()) {
+    if (O.fail())
+    {
         std::cerr << "error opening file '" << Filename << "' for writing!\n";
         O.close();
         return "";
@@ -338,7 +370,8 @@ std::string WriteGraph(const GraphType &G,
 template<typename GraphType>
 void ViewGraph(const GraphType &G,const std::string& name,
                bool ShortNames = false,
-               GraphProgram::Name Program = GraphProgram::DOT) {
+               GraphProgram::Name Program = GraphProgram::DOT)
+{
     llvm::WriteGraph(G, ShortNames);
 }
 

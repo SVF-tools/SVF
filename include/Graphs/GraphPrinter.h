@@ -59,7 +59,8 @@ public:
         // Filename of the output dot file
         std::string Filename = GraphName + ".dot";
         std::ofstream outFile(Filename);
-        if (outFile.fail()) {
+        if (outFile.fail())
+        {
             O << "  error opening file for writing!\n";
             outFile.close();
             return;

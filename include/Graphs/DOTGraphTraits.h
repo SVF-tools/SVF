@@ -18,19 +18,22 @@
 
 #include <string>
 
-namespace llvm {
+namespace llvm
+{
 
 /// DefaultDOTGraphTraits - This class provides the default implementations of
 /// all of the DOTGraphTraits methods.  If a specialization does not need to
 /// override all methods here it should inherit so that it can get the default
 /// implementations.
 ///
-struct DefaultDOTGraphTraits {
+struct DefaultDOTGraphTraits
+{
 private:
     bool IsSimple;
 
 protected:
-    bool isSimple() {
+    bool isSimple()
+    {
         return IsSimple;
     }
 
@@ -41,34 +44,41 @@ public:
     /// top of the graph.
     ///
     template<typename GraphType>
-    static std::string getGraphName(const GraphType &) { return ""; }
+    static std::string getGraphName(const GraphType &)
+    {
+        return "";
+    }
 
     /// getGraphProperties - Return any custom properties that should be included
     /// in the top level graph structure for dot.
     ///
     template<typename GraphType>
-    static std::string getGraphProperties(const GraphType &) {
+    static std::string getGraphProperties(const GraphType &)
+    {
         return "";
     }
 
     /// renderGraphFromBottomUp - If this function returns true, the graph is
     /// emitted bottom-up instead of top-down.  This requires graphviz 2.0 to work
     /// though.
-    static bool renderGraphFromBottomUp() {
+    static bool renderGraphFromBottomUp()
+    {
         return false;
     }
 
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph.
     template <typename GraphType>
-    static bool isNodeHidden(const void *, const GraphType &) {
+    static bool isNodeHidden(const void *, const GraphType &)
+    {
         return false;
     }
 
     /// getNodeLabel - Given a node and a pointer to the top level graph, return
     /// the label to print in the node.
     template<typename GraphType>
-    std::string getNodeLabel(const void *, const GraphType &) {
+    std::string getNodeLabel(const void *, const GraphType &)
+    {
         return "";
     }
 
@@ -76,12 +86,14 @@ public:
     // address or other unique identifier of the node. (Only used if
     // non-empty.)
     template <typename GraphType>
-    static std::string getNodeIdentifierLabel(const void *, const GraphType &) {
+    static std::string getNodeIdentifierLabel(const void *, const GraphType &)
+    {
         return "";
     }
 
     template<typename GraphType>
-    static std::string getNodeDescription(const void *, const GraphType &) {
+    static std::string getNodeDescription(const void *, const GraphType &)
+    {
         return "";
     }
 
@@ -89,7 +101,8 @@ public:
     ///
     template<typename GraphType>
     static std::string getNodeAttributes(const void *,
-                                         const GraphType &) {
+                                         const GraphType &)
+    {
         return "";
     }
 
@@ -97,14 +110,16 @@ public:
     /// override this method.
     template<typename EdgeIter, typename GraphType>
     static std::string getEdgeAttributes(const void *, EdgeIter,
-                                         const GraphType &) {
+                                         const GraphType &)
+    {
         return "";
     }
 
     /// getEdgeSourceLabel - If you want to label the edge source itself,
     /// implement this method.
     template<typename EdgeIter>
-    static std::string getEdgeSourceLabel(const void *, EdgeIter) {
+    static std::string getEdgeSourceLabel(const void *, EdgeIter)
+    {
         return "";
     }
 
@@ -112,7 +127,8 @@ public:
     /// should actually target another edge source, not a node.  If this method is
     /// implemented, getEdgeTarget should be implemented.
     template<typename EdgeIter>
-    static bool edgeTargetsEdgeSource(const void *, EdgeIter) {
+    static bool edgeTargetsEdgeSource(const void *, EdgeIter)
+    {
         return false;
     }
 
@@ -120,25 +136,29 @@ public:
     /// called to determine which outgoing edge of Node is the target of this
     /// edge.
     template<typename EdgeIter>
-    static EdgeIter getEdgeTarget(const void *, EdgeIter I) {
+    static EdgeIter getEdgeTarget(const void *, EdgeIter I)
+    {
         return I;
     }
 
     /// hasEdgeDestLabels - If this function returns true, the graph is able
     /// to provide labels for edge destinations.
-    static bool hasEdgeDestLabels() {
+    static bool hasEdgeDestLabels()
+    {
         return false;
     }
 
     /// numEdgeDestLabels - If hasEdgeDestLabels, this function returns the
     /// number of incoming edge labels the given node has.
-    static unsigned numEdgeDestLabels(const void *) {
+    static unsigned numEdgeDestLabels(const void *)
+    {
         return 0;
     }
 
     /// getEdgeDestLabel - If hasEdgeDestLabels, this function returns the
     /// incoming edge label with the given index in the given node.
-    static std::string getEdgeDestLabel(const void *, unsigned) {
+    static std::string getEdgeDestLabel(const void *, unsigned)
+    {
         return "";
     }
 
@@ -158,7 +178,8 @@ public:
 /// from DefaultDOTGraphTraits if you don't need to override everything.
 ///
 template <typename Ty>
-struct DOTGraphTraits : public DefaultDOTGraphTraits {
+struct DOTGraphTraits : public DefaultDOTGraphTraits
+{
     DOTGraphTraits (bool simple=false) : DefaultDOTGraphTraits (simple) {}
 };
 

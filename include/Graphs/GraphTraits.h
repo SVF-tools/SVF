@@ -19,7 +19,8 @@
 
 #include "Util/iterator_range.h"
 
-namespace llvm {
+namespace llvm
+{
 
 // GraphTraits - This class should be specialized by different graph types...
 // which is why the default version is empty.
@@ -32,50 +33,51 @@ namespace llvm {
 // be achieved by carrying more data in NodeRef. See LoopBodyTraits for one
 // example.
 template<class GraphType>
-struct GraphTraits {
-  // Elements to provide:
+struct GraphTraits
+{
+    // Elements to provide:
 
-  // typedef NodeRef           - Type of Node token in the graph, which should
-  //                             be cheap to copy.
-  // typedef ChildIteratorType - Type used to iterate over children in graph,
-  //                             dereference to a NodeRef.
+    // typedef NodeRef           - Type of Node token in the graph, which should
+    //                             be cheap to copy.
+    // typedef ChildIteratorType - Type used to iterate over children in graph,
+    //                             dereference to a NodeRef.
 
-  // static NodeRef getEntryNode(const GraphType &)
-  //    Return the entry node of the graph
+    // static NodeRef getEntryNode(const GraphType &)
+    //    Return the entry node of the graph
 
-  // static ChildIteratorType child_begin(NodeRef)
-  // static ChildIteratorType child_end  (NodeRef)
-  //    Return iterators that point to the beginning and ending of the child
-  //    node list for the specified node.
+    // static ChildIteratorType child_begin(NodeRef)
+    // static ChildIteratorType child_end  (NodeRef)
+    //    Return iterators that point to the beginning and ending of the child
+    //    node list for the specified node.
 
-  // typedef  ...iterator nodes_iterator; - dereference to a NodeRef
-  // static nodes_iterator nodes_begin(GraphType *G)
-  // static nodes_iterator nodes_end  (GraphType *G)
-  //    nodes_iterator/begin/end - Allow iteration over all nodes in the graph
+    // typedef  ...iterator nodes_iterator; - dereference to a NodeRef
+    // static nodes_iterator nodes_begin(GraphType *G)
+    // static nodes_iterator nodes_end  (GraphType *G)
+    //    nodes_iterator/begin/end - Allow iteration over all nodes in the graph
 
-  // typedef EdgeRef           - Type of Edge token in the graph, which should
-  //                             be cheap to copy.
-  // typedef ChildEdgeIteratorType - Type used to iterate over children edges in
-  //                             graph, dereference to a EdgeRef.
+    // typedef EdgeRef           - Type of Edge token in the graph, which should
+    //                             be cheap to copy.
+    // typedef ChildEdgeIteratorType - Type used to iterate over children edges in
+    //                             graph, dereference to a EdgeRef.
 
-  // static ChildEdgeIteratorType child_edge_begin(NodeRef)
-  // static ChildEdgeIteratorType child_edge_end(NodeRef)
-  //     Return iterators that point to the beginning and ending of the
-  //     edge list for the given callgraph node.
-  //
-  // static NodeRef edge_dest(EdgeRef)
-  //     Return the destination node of an edge.
+    // static ChildEdgeIteratorType child_edge_begin(NodeRef)
+    // static ChildEdgeIteratorType child_edge_end(NodeRef)
+    //     Return iterators that point to the beginning and ending of the
+    //     edge list for the given callgraph node.
+    //
+    // static NodeRef edge_dest(EdgeRef)
+    //     Return the destination node of an edge.
 
-  // static unsigned       size       (GraphType *G)
-  //    Return total number of nodes in the graph
+    // static unsigned       size       (GraphType *G)
+    //    Return total number of nodes in the graph
 
-  // If anyone tries to use this class without having an appropriate
-  // specialization, make an error.  If you get this error, it's because you
-  // need to include the appropriate specialization of GraphTraits<> for your
-  // graph, or you need to define it for a new graph type. Either that or
-  // your argument to XXX_begin(...) is unknown or needs to have the proper .h
-  // file #include'd.
-  using NodeRef = typename GraphType::UnknownGraphTypeError;
+    // If anyone tries to use this class without having an appropriate
+    // specialization, make an error.  If you get this error, it's because you
+    // need to include the appropriate specialization of GraphTraits<> for your
+    // graph, or you need to define it for a new graph type. Either that or
+    // your argument to XXX_begin(...) is unknown or needs to have the proper .h
+    // file #include'd.
+    using NodeRef = typename GraphType::UnknownGraphTypeError;
 };
 
 // Inverse - This class is used as a little marker class to tell the graph
@@ -92,10 +94,11 @@ struct GraphTraits {
 // for (; I != E; ++I) { ... }
 //
 template <class GraphType>
-struct Inverse {
-  const GraphType &Graph;
+struct Inverse
+{
+    const GraphType &Graph;
 
-  inline Inverse(const GraphType &G) : Graph(G) {}
+    inline Inverse(const GraphType &G) : Graph(G) {}
 };
 
 // Provide a partial specialization of GraphTraits so that the inverse of an
@@ -105,36 +108,41 @@ template <class T> struct GraphTraits<Inverse<Inverse<T>>> : GraphTraits<T> {};
 // Provide iterator ranges for the graph traits nodes and children
 template <class GraphType>
 iterator_range<typename GraphTraits<GraphType>::nodes_iterator>
-nodes(const GraphType &G) {
-  return make_range(GraphTraits<GraphType>::nodes_begin(G),
-                    GraphTraits<GraphType>::nodes_end(G));
+nodes(const GraphType &G)
+{
+    return make_range(GraphTraits<GraphType>::nodes_begin(G),
+                      GraphTraits<GraphType>::nodes_end(G));
 }
 template <class GraphType>
 iterator_range<typename GraphTraits<Inverse<GraphType>>::nodes_iterator>
-inverse_nodes(const GraphType &G) {
-  return make_range(GraphTraits<Inverse<GraphType>>::nodes_begin(G),
-                    GraphTraits<Inverse<GraphType>>::nodes_end(G));
+        inverse_nodes(const GraphType &G)
+{
+    return make_range(GraphTraits<Inverse<GraphType>>::nodes_begin(G),
+                      GraphTraits<Inverse<GraphType>>::nodes_end(G));
 }
 
 template <class GraphType>
 iterator_range<typename GraphTraits<GraphType>::ChildIteratorType>
-children(const typename GraphTraits<GraphType>::NodeRef &G) {
-  return make_range(GraphTraits<GraphType>::child_begin(G),
-                    GraphTraits<GraphType>::child_end(G));
+children(const typename GraphTraits<GraphType>::NodeRef &G)
+{
+    return make_range(GraphTraits<GraphType>::child_begin(G),
+                      GraphTraits<GraphType>::child_end(G));
 }
 
 template <class GraphType>
 iterator_range<typename GraphTraits<Inverse<GraphType>>::ChildIteratorType>
-inverse_children(const typename GraphTraits<GraphType>::NodeRef &G) {
-  return make_range(GraphTraits<Inverse<GraphType>>::child_begin(G),
-                    GraphTraits<Inverse<GraphType>>::child_end(G));
+        inverse_children(const typename GraphTraits<GraphType>::NodeRef &G)
+{
+    return make_range(GraphTraits<Inverse<GraphType>>::child_begin(G),
+                      GraphTraits<Inverse<GraphType>>::child_end(G));
 }
 
 template <class GraphType>
 iterator_range<typename GraphTraits<GraphType>::ChildEdgeIteratorType>
-children_edges(const typename GraphTraits<GraphType>::NodeRef &G) {
-  return make_range(GraphTraits<GraphType>::child_edge_begin(G),
-                    GraphTraits<GraphType>::child_edge_end(G));
+children_edges(const typename GraphTraits<GraphType>::NodeRef &G)
+{
+    return make_range(GraphTraits<GraphType>::child_edge_begin(G),
+                      GraphTraits<GraphType>::child_edge_end(G));
 }
 
 } // end namespace llvm
