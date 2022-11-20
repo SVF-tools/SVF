@@ -31,8 +31,6 @@
 #ifndef INCLUDE_UTIL_SVFBASICTYPES_H_
 #define INCLUDE_UTIL_SVFBASICTYPES_H_
 
-#include <llvm/Support/CommandLine.h>	// for command line options
-
 #include <Util/SparseBitVector.h>
 
 #include <iostream>

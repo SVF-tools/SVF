@@ -1,6 +1,5 @@
 #include "SVFIR/SVFValue.h"
 #include "Util/SVFUtil.h"
-#include <llvm/IR/Instructions.h>
 
 using namespace SVF;
 using namespace SVFUtil;

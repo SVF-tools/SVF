@@ -23,12 +23,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <llvm/Support/Compiler.h>
-#include <llvm/Support/type_traits.h>
 #include <cassert>
 #include <memory>
 #include <type_traits>
-#include <llvm/IR/BasicBlock.h>
+#include <llvm/Support/Casting.h>
 
 namespace SVF
 {
