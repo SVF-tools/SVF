@@ -28,8 +28,6 @@
  */
 
 #include "Util/Options.h"
-#include "SVF-FE/CPPUtil.h"
-#include "SVF-FE/ICFGBuilder.h"
 #include "Graphs/CHG.h"
 #include "WPA/TypeAnalysis.h"
 #include "Util/PTAStat.h"
@@ -80,11 +78,10 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
     {
         const CallICFGNode* cbn = iter->first;
-        CallSite cs = SVFUtil::getLLVMCallSite(cbn->getCallSite());
-        if (isVirtualCallSite(cs))
+        CallSite cs = SVFUtil::getSVFCallSite(cbn->getCallSite());
+        if (cs.isVirtualCall())
         {
-            virtualCallSites.insert(cs);
-            const Value *vtbl = getVCallVtblPtr(cs);
+            const SVFValue* vtbl = cs.getVtablePtr();
             (void)vtbl; // Suppress warning of unused variable under release build
             assert(pag->hasValueNode(vtbl));
             VFunSet vfns;

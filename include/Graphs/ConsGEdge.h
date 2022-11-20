@@ -30,7 +30,7 @@
 #ifndef CONSGEDGE_H_
 #define CONSGEDGE_H_
 
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "Util/WorkList.h"
 
 #include <map>

@@ -33,7 +33,6 @@
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include "MemoryModel/PointsTo.h"
-#include "SVF-FE/CPPUtil.h"
 
 #include "DDA/DDAClient.h"
 #include "DDA/FlowDDA.h"
@@ -82,9 +81,9 @@ OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(SVFIR* p)
     for(SVFIR::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
             eit = pag->getIndirectCallsites().end(); it!=eit; ++it)
     {
-        if (cppUtil::isVirtualCallSite(SVFUtil::getLLVMCallSite(it->first->getCallSite())))
+        if (SVFUtil::getSVFCallSite(it->first->getCallSite()).isVirtualCall())
         {
-            const Value* vtblPtr = cppUtil::getVCallVtblPtr(SVFUtil::getLLVMCallSite(it->first->getCallSite()));
+            const SVFValue* vtblPtr = SVFUtil::getSVFCallSite(it->first->getCallSite()).getVtablePtr();
             assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
             NodeID vtblId = pag->getValueNode(vtblPtr);
             addCandidate(vtblId);
@@ -146,8 +145,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
-        outs() << SVFUtil::value2String((nIter->second)->getCallSite()->getLLVMInstruction()) << "\n";
-        outs() << getSourceLoc((nIter->second)->getCallSite()->getLLVMInstruction()) << "\n";
+        outs() << (nIter->second)->getCallSite()->toString() << "\n";
+        outs() << (nIter->second)->getCallSite()->getSourceLoc() << "\n";
         outs() << "\n";
         outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";
         outs() << "------DDA vfn num---(" << ander_vfns.size() << ")--\n";
@@ -219,8 +218,8 @@ void AliasDDAClient::performStat(PointerAnalysis* pta)
                 AliasResult result = pta->alias(node1->getId(),node2->getId());
 
                 outs() << "\n=================================================\n";
-                outs() << "Alias Query for (" << SVFUtil::value2String(node1->getValue()) << ",";
-                outs() << SVFUtil::value2String(node2->getValue()) << ") \n";
+                outs() << "Alias Query for (" << node1->getValue()->toString() << ",";
+                outs() << node2->getValue()->toString() << ") \n";
                 outs() << "[NodeID:" << node1->getId() <<  ", NodeID:" << node2->getId() << " " << result << "]\n";
                 outs() << "=================================================\n";
 

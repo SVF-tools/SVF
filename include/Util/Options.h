@@ -10,6 +10,7 @@
 #include "Util/NodeIDAllocator.h"
 #include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
+#include <llvm/Support/CommandLine.h>	// for command line options
 
 namespace SVF
 {

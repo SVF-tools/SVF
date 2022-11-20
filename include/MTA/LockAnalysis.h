@@ -34,7 +34,6 @@
  *
  */
 #include "MTA/TCT.h"
-#include "SVF-FE/DataFlowUtil.h"
 
 namespace SVF
 {
@@ -437,8 +436,6 @@ private:
     /// Match context
     bool matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee);
 
-    void validateResults();
-
     /// Whether it is a lock site
     inline bool isTDFork(const SVFInstruction* call)
     {
@@ -455,7 +452,7 @@ private:
         return getTCG()->getThreadAPI()->isTDRelease(call);
     }
     /// Get lock value
-    inline const Value* getLockVal(const SVFInstruction* call)
+    inline const SVFValue* getLockVal(const SVFInstruction* call)
     {
         return getTCG()->getThreadAPI()->getLockVal(call);
     }

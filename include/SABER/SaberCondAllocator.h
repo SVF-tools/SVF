@@ -30,9 +30,8 @@
 #ifndef PATHALLOCATOR_H_
 #define PATHALLOCATOR_H_
 
-#include "Util/SVFModule.h"
-#include "SVF-FE/DataFlowUtil.h"
-#include "SVF-FE/BasicTypes.h"
+#include "SVFIR/SVFModule.h"
+#include "SVFIR/SVFValue.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
 #include "Util/Z3Expr.h"
@@ -272,15 +271,15 @@ private:
     /// Evaluate test null/not null like expressions
     //@{
     /// Return true if the predicate of this compare instruction is equal
-    bool isEQCmp(const CmpInst* cmp) const;
+    bool isEQCmp(const CmpStmt* cmp) const;
     /// Return true if the predicate of this compare instruction is not equal
-    bool isNECmp(const CmpInst* cmp) const;
+    bool isNECmp(const CmpStmt* cmp) const;
     /// Return true if this is a test null expression
-    bool isTestNullExpr(const Value* test) const;
+    bool isTestNullExpr(const SVFValue* test) const;
     /// Return true if this is a test not null expression
-    bool isTestNotNullExpr(const Value* test) const;
+    bool isTestNotNullExpr(const SVFValue* test) const;
     /// Return true if two values on the predicate are what we want
-    bool isTestContainsNullAndTheValue(const CmpInst* cmp) const;
+    bool isTestContainsNullAndTheValue(const CmpStmt* cmp) const;
     //@}
 
     /// Release memory
@@ -293,7 +292,6 @@ private:
     void extractSubConds(const Condition &condition, NodeBS &support) const;
 
 
-    PTACFInfoBuilder cfInfoBuilder;		    ///< map a function to its loop info
     FunToExitBBsMap funToExitBBsMap;		///< map a function to all its basic blocks calling program exit
     BBToCondMap bbToCondMap;				///< map a basic block to its path condition starting from root
     const SVFGNode* curEvalSVFGNode{};			///< current llvm value to evaluate branch condition when computing guards

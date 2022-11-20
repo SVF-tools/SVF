@@ -30,7 +30,6 @@
 #include "Util/Options.h"
 #include "MTA/PCG.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/BasicTypes.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -98,10 +97,9 @@ void PCG::initFromThreadAPI(SVFModule* module)
             {
                 if (tdAPI->isTDFork(inst))
                 {
-                    const Value* forkVal = tdAPI->getForkedFun(inst);
-                    if (const Function* forkFun = getLLVMFunction(forkVal))
+                    const SVFValue* forkVal = tdAPI->getForkedFun(inst);
+                    if (const SVFFunction* svForkfun = SVFUtil::dyn_cast<SVFFunction>(forkVal))
                     {
-                        const SVFFunction* svForkfun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(forkFun);
                         addSpawnsite(inst);
                         spawners.insert(fun);
                         spawnees.insert(svForkfun);
@@ -110,7 +108,7 @@ void PCG::initFromThreadAPI(SVFModule* module)
                     else
                     {
                         writeWrnMsg("pthread create");
-                        outs() << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
+                        outs() << inst->toString() << "\n";
                         writeWrnMsg("invoke spawnee indirectly");
                     }
                 }

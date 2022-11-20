@@ -54,10 +54,10 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module) override
+    virtual bool runOnModule(SVFIR* pag) override
     {
         /// start analysis
-        analyze(module);
+        analyze(pag->getModule());
         return false;
     }
 

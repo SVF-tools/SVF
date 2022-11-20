@@ -37,14 +37,14 @@ void FileChecker::reportNeverClose(const SVFGNode* src)
 {
     const CallICFGNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg1("\t FileNeverClose :") <<  " file open location at : ("
-                    << getSourceLoc(cs->getCallSite()->getLLVMInstruction()) << ")\n";
+                    << cs->getCallSite()->getSourceLoc() << ")\n";
 }
 
 void FileChecker::reportPartialClose(const SVFGNode* src)
 {
     const CallICFGNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg2("\t PartialFileClose :") <<  " file open location at : ("
-                    << getSourceLoc(cs->getCallSite()->getLLVMInstruction()) << ")\n";
+                    << cs->getCallSite()->getSourceLoc() << ")\n";
 }
 
 void FileChecker::reportBug(ProgSlice* slice)
@@ -58,7 +58,6 @@ void FileChecker::reportBug(ProgSlice* slice)
     {
         reportPartialClose(slice->getSource());
         SVFUtil::errs() << "\t\t conditional file close path: \n" << slice->evalFinalCond() << "\n";
-        slice->annotatePaths();
     }
 
 }

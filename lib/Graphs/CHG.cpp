@@ -29,7 +29,6 @@
 
 #include "Graphs/CHG.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/CPPUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -101,12 +100,12 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
 {
 
     /// get target virtual functions
-    size_t idx = cppUtil::getVCallIdx(cs);
+    size_t idx = cs.getFunIdxInVtable();
     /// get the function name of the virtual callsite
-    string funName = cppUtil::getFunNameOfVCallSite(cs);
-    for (const GlobalValue *vt : vtbls)
+    string funName = cs.getFunNameOfVirtualCall();
+    for (const SVFGlobalValue *vt : vtbls)
     {
-        const CHNode *child = getNode(cppUtil::getClassNameFromVtblObj(vt));
+        const CHNode *child = getNode(cppUtil::getClassNameFromVtblObj(vt->getName()));
         if (child == nullptr)
             continue;
         CHNode::FuncVector vfns;
@@ -116,7 +115,7 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
         {
             const SVFFunction* callee = *fit;
             if (cs.arg_size() == callee->arg_size() ||
-                    (cs.getFunctionType()->isVarArg() && callee->isVarArg()))
+                    (cs.isVarArg() && callee->isVarArg()))
             {
 
                 // if argument types do not match

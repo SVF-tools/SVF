@@ -28,7 +28,7 @@
  */
 
 #include "Util/Options.h"
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
 
@@ -181,15 +181,14 @@ void MRGenerator::collectModRefForLoadStore()
         if (Options::IgnoreDeadFun && fun.isUncalledFunction())
             continue;
 
-        for (Function::const_iterator iter = fun.getLLVMFun()->begin(), eiter = fun.getLLVMFun()->end();
+        for (SVFFunction::const_iterator iter = fun.begin(), eiter = fun.end();
                 iter != eiter; ++iter)
         {
-            const BasicBlock& bb = *iter;
-            for (BasicBlock::const_iterator bit = bb.begin(), ebit = bb.end();
+            const SVFBasicBlock* bb = *iter;
+            for (SVFBasicBlock::const_iterator bit = bb->begin(), ebit = bb->end();
                     bit != ebit; ++bit)
             {
-                const Instruction& i = *bit;
-                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&i);
+                const SVFInstruction* svfInst = *bit;
                 SVFStmtList& pagEdgeList = getPAGEdgesFromInst(svfInst);
                 for (SVFStmtList::iterator bit = pagEdgeList.begin(), ebit =
                             pagEdgeList.end(); bit != ebit; ++bit)
@@ -257,9 +256,8 @@ void MRGenerator::collectModRefForCall()
 
     DBOUT(DGENERAL, outs() << pasMsg("\t\tAdd PointsTo to Callsites \n"));
 
-    for (CallSite cs : SymbolTableInfo::SymbolInfo()->getCallSiteSet())
+    for (const CallICFGNode* callBlockNode : pta->getPAG()->getCallSiteSet())
     {
-        const CallICFGNode* callBlockNode = pta->getPAG()->getICFG()->getCallICFGNode(cs.getInstruction());
         if(hasRefSideEffectOfCallSite(callBlockNode))
         {
             NodeBS refs = getRefSideEffectOfCallSite(callBlockNode);
@@ -735,7 +733,7 @@ ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs)
  * Determine whether a const CallICFGNode* instruction can mod or ref
  * a specific memory location pointed by V
  */
-ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs, const Value* V)
+ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs, const SVFValue* V)
 {
     bool ref = false;
     bool mod = false;

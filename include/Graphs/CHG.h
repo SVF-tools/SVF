@@ -33,7 +33,7 @@
 #ifndef CHA_H_
 #define CHA_H_
 
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 #include "Graphs/GenericGraph.h"
 #include "Util/WorkList.h"
 
@@ -43,7 +43,7 @@ namespace SVF
 class SVFModule;
 class CHNode;
 
-typedef Set<const GlobalValue*> VTableSet;
+typedef Set<const SVFGlobalValue*> VTableSet;
 typedef Set<const SVFFunction*> VFunSet;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
@@ -174,18 +174,18 @@ public:
     }
     void getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const;
 
-    const GlobalValue *getVTable() const
+    const SVFGlobalValue *getVTable() const
     {
         return vtable;
     }
 
-    void setVTable(const GlobalValue *vtbl)
+    void setVTable(const SVFGlobalValue *vtbl)
     {
         vtable = vtbl;
     }
 
 private:
-    const GlobalValue* vtable;
+    const SVFGlobalValue* vtable;
     std::string className;
     size_t flags;
     /*

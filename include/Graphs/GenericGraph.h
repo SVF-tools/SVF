@@ -30,7 +30,7 @@
 #ifndef GENERICGRAPH_H_
 #define GENERICGRAPH_H_
 
-#include "Util/BasicTypes.h"
+#include "SVFIR/SVFValue.h"
 
 namespace SVF
 {

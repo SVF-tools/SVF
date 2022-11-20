@@ -66,7 +66,7 @@ double SVFStat::getClk(bool mark)
 void SVFStat::printStat(string statname)
 {
 
-    std::string moduleName(SymbolTableInfo::SymbolInfo()->getModule()->getModuleIdentifier());
+    std::string moduleName(SVFIR::getPAG()->getModule()->getModuleIdentifier());
     std::vector<std::string> names = SVFUtil::split(moduleName,'/');
     if (names.size() > 1)
     {

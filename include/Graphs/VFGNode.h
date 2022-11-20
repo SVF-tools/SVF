@@ -33,7 +33,7 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/SVFGEdge.h"
 #include "Graphs/ICFGNode.h"
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 
 namespace SVF
 {
@@ -87,7 +87,7 @@ public:
     }
 
     /// Return the corresponding LLVM value, if possible, nullptr otherwise.
-    virtual const Value* getValue() const
+    virtual const SVFValue* getValue() const
     {
         return nullptr;
     }
@@ -189,7 +189,7 @@ public:
     }
     //@}
 
-    const Value* getValue() const override;
+    const SVFValue* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -384,7 +384,7 @@ public:
 
     const NodeBS getDefSVFVars() const override;
 
-    const Value* getValue() const override;
+    const SVFValue* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -455,7 +455,7 @@ public:
 
     const NodeBS getDefSVFVars() const override;
 
-    const Value* getValue() const override;
+    const SVFValue* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -699,7 +699,7 @@ public:
 
     const NodeBS getDefSVFVars() const override;
 
-    const Value* getValue() const override;
+    const SVFValue* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -836,7 +836,7 @@ public:
     }
     //@}
 
-    const Value* getValue() const override;
+    const SVFValue* getValue() const override;
     const std::string toString() const override;
 };
 

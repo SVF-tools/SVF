@@ -37,21 +37,11 @@
 #include "WPA/Andersen.h"
 #include "MTA/FSMPTA.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/SVFIRBuilder.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-static llvm::RegisterPass<MTA> RACEDETECOR("mta", "May-Happen-in-Parallel Analysis");
-
-
-char MTA::ID = 0;
-ModulePass* MTA::modulePass = nullptr;
-MTA::FunToSEMap MTA::func2ScevMap;
-MTA::FunToLoopInfoMap MTA::func2LoopInfoMap;
-
-MTA::MTA() :
-    ModulePass(ID), tcg(nullptr), tct(nullptr)
+MTA::MTA() : tcg(nullptr), tct(nullptr), mhp(nullptr), lsa(nullptr)
 {
     stat = new MTAStat();
 }
@@ -62,25 +52,17 @@ MTA::~MTA()
         delete tcg;
     //if (tct)
     //    delete tct;
-}
-
-bool MTA::runOnModule(Module& module)
-{
-    SVFModule mm(module.getName().str());
-    return runOnModule(&mm);
+    delete mhp;
+    delete lsa;
 }
 
 /*!
  * Perform data race detection
  */
-bool MTA::runOnModule(SVFModule* module)
+bool MTA::runOnModule(SVFIR* pag)
 {
-
-
-    modulePass = this;
-
-    MHP* mhp = computeMHP(module);
-    LockAnalysis* lsa = computeLocksets(mhp->getTCT());
+    mhp = computeMHP(pag->getModule());
+    lsa = computeLocksets(mhp->getTCT());
 
 
 
@@ -122,9 +104,6 @@ bool MTA::runOnModule(SVFModule* module)
     }
     */
 
-    delete mhp;
-    delete lsa;
-
     return false;
 }
 
@@ -143,8 +122,7 @@ MHP* MTA::computeMHP(SVFModule* module)
 
     DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
-    SVFIRBuilder builder(module);
-    SVFIR* pag = builder.build();
+    SVFIR* pag = PAG::getPAG();
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
     pta->getPTACallGraph()->dump("ptacg");
 
@@ -192,8 +170,9 @@ void MTA::detect(SVFModule* module)
 
     LoadSet loads;
     StoreSet stores;
+    SVFIR* pag = SVFIR::getPAG();
 
-    Set<const Instruction*> needcheckinst;
+    Set<const SVFInstruction*> needcheckinst;
     // Add symbols for all of the functions and the instructions in them.
     for (const SVFFunction* F : module->getFunctionSet())
     {
@@ -202,14 +181,17 @@ void MTA::detect(SVFModule* module)
         {
             for (const SVFInstruction* svfInst : svfbb->getInstructionList())
             {
-                const Instruction* inst = svfInst->getLLVMInstruction();
-                if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(inst))
+
+                for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(svfInst)))
                 {
-                    loads.insert(load);
+                if (SVFUtil::isa<LoadStmt>(stmt))
+                {
+                    loads.insert(svfInst);
                 }
-                else if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(inst))
+                else if (SVFUtil::isa<StoreStmt>(stmt))
                 {
-                    stores.insert(store);
+                    stores.insert(svfInst);
+                }
                 }
             }
         }
@@ -217,11 +199,11 @@ void MTA::detect(SVFModule* module)
 
     for (LoadSet::const_iterator lit = loads.begin(), elit = loads.end(); lit != elit; ++lit)
     {
-        const LoadInst* load = *lit;
+        const SVFInstruction* load = *lit;
         bool loadneedcheck = false;
         for (StoreSet::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit)
         {
-            const StoreInst* store = *sit;
+            const SVFInstruction* store = *sit;
 
             loadneedcheck = true;
             needcheckinst.insert(store);

@@ -74,7 +74,7 @@ protected:
 
     /// Wappers used internally, not expose to Andernsen Pass
     //@{
-    inline NodeID getValueNode(const Value* value) const
+    inline NodeID getValueNode(const SVFValue* value) const
     {
         return sccRepNode(pag->getValueNode(value));
     }

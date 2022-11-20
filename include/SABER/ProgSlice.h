@@ -203,9 +203,6 @@ public:
     std::string evalFinalCond() const;
     //@}
 
-    /// Annotate program according to final condition
-    void annotatePaths();
-
 protected:
     inline const SVFG* getSVFG() const
     {

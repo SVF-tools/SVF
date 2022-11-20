@@ -28,7 +28,8 @@
  *      Author: Yulei Sui
  */
 
-#include "Util/SVFModule.h"
+#include <sstream>
+#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/PTACallGraph.h"
 
@@ -50,7 +51,7 @@ void PTACallGraphEdge::addDirectCallSite(const CallICFGNode* call)
 
 void PTACallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
 {
-    assert((nullptr == SVFUtil::getCallee(call->getCallSite()) || nullptr == SVFUtil::dyn_cast<Function> (SVFUtil::getForkedFun(call->getCallSite()))) && "not an indirect callsite??");
+    assert((nullptr == SVFUtil::getCallee(call->getCallSite()) || nullptr == SVFUtil::dyn_cast<SVFFunction> (SVFUtil::getForkedFun(call->getCallSite()))) && "not an indirect callsite??");
     indirectCalls.insert(call);
 }
 //@}
@@ -58,7 +59,7 @@ void PTACallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
 const std::string PTACallGraphEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream  rawstr(str);
     rawstr << "CallSite ID: " << getCallSiteID();
     if(isDirectCallEdge())
         rawstr << "direct call";
@@ -71,7 +72,7 @@ const std::string PTACallGraphEdge::toString() const
 const std::string PTACallGraphNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream  rawstr(str);
     rawstr << "CallGraphNode ID: " << getId() << " {fun: " << fun->getName() << "}";
     return rawstr.str();
 }
@@ -398,7 +399,7 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
 
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << edge->getCallSiteID();
 
         return rawstr.str();

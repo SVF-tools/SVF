@@ -31,7 +31,7 @@
 #define INCLUDE_UTIL_VFG_H_
 
 
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "Graphs/PTACallGraph.h"
 #include "Graphs/VFGNode.h"
 #include "Graphs/VFGEdge.h"

@@ -293,11 +293,11 @@ void FlowSensitiveStat::statNullPtr()
             if(pts.empty())
             {
                 std::string str;
-                raw_string_ostream rawstr(str);
+                std::stringstream  rawstr(str);
                 if (!SVFUtil::isa<DummyValVar>(pagNode) && !SVFUtil::isa<DummyObjVar>(pagNode))
                 {
                     // if a pointer is in dead function, we do not care
-                    if(SymbolTableInfo::isPtrInUncalledFunction(pagNode->getValue()) == false)
+                    if(pagNode->getValue()->ptrInUncalledFunction() == false)
                     {
                         _NumOfNullPtr++;
                         rawstr << "##Null Pointer : (NodeID " << pagNode->getId()

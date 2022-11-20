@@ -303,11 +303,11 @@ private:
     //@{
     inline bool formalInOfAddressTakenFunc(const FormalINSVFGNode* fi) const
     {
-        return (fi->getFun()->getLLVMFun()->hasAddressTaken());
+        return (fi->getFun()->hasAddressTaken());
     }
     inline bool formalOutOfAddressTakenFunc(const FormalOUTSVFGNode* fo) const
     {
-        return (fo->getFun()->getLLVMFun()->hasAddressTaken());
+        return (fo->getFun()->hasAddressTaken());
     }
     //@}
 

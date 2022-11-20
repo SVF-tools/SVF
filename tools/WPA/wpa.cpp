@@ -26,7 +26,8 @@
  // Author: Yulei Sui,
  */
 
-#include "SVF-FE/LLVMUtil.h"
+#include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/SVFIRBuilder.h"
 #include "WPA/WPAPass.h"
 #include "Util/Options.h"
 
@@ -53,10 +54,12 @@ int main(int argc, char ** argv)
     }
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-    svfModule->buildSymbolTableInfo();
+    /// Build SVFIR
+    SVFIRBuilder builder(svfModule);
+    SVFIR* pag = builder.build();
 
     WPAPass *wpa = new WPAPass();
-    wpa->runOnModule(svfModule);
+    wpa->runOnModule(pag);
 
     return 0;
 }

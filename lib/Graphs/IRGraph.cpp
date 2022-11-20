@@ -153,7 +153,7 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
     static std::string getNodeLabel(SVFVar *node, IRGraph*)
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         // print function info
         if (node->getFunction())
             rawstr << "[" << node->getFunction()->getName() << "] ";
@@ -278,13 +278,13 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
         if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge))
         {
-            const Instruction* callInst= calledge->getCallSite()->getCallSite()->getLLVMInstruction();
-            return SVFUtil::getSourceLoc(callInst);
+            const SVFInstruction* callInst= calledge->getCallSite()->getCallSite();
+            return callInst->getSourceLoc();
         }
         else if(const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge))
         {
-            const Instruction* callInst= retedge->getCallSite()->getCallSite()->getLLVMInstruction();
-            return SVFUtil::getSourceLoc(callInst);
+            const SVFInstruction* callInst= retedge->getCallSite()->getCallSite();
+            return callInst->getSourceLoc();
         }
         return "";
     }

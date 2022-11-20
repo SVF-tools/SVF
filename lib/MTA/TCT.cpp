@@ -31,9 +31,6 @@
 #include "Util/Options.h"
 #include "MTA/TCT.h"
 #include "MTA/MTA.h"
-#include "SVF-FE/DataFlowUtil.h"
-#include "SVF-FE/BasicTypes.h"
-#include "SVF-FE/LLVMUtil.h"
 
 #include <string>
 
@@ -78,7 +75,7 @@ bool TCT::isInLoopInstruction(const SVFInstruction* inst)
     for(InstSet::const_iterator it = insts.begin(), eit = insts.end(); it!=eit; ++it)
     {
         const SVFInstruction* i = *it;
-        if(getLoop(i))
+        if(i->getFunction()->hasLoopInfo(i->getParent()))
             return true;
     }
 
@@ -289,18 +286,19 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge,
  * Return true if a join instruction must be executed inside a loop
  * joinbb should post dominate the successive basic block of a loop header
  */
-bool TCT::isJoinMustExecutedInLoop(const Loop* lp,const SVFInstruction* join)
+bool TCT::isJoinMustExecutedInLoop(const LoopBBs& lp,const SVFInstruction* join)
 {
-    const SVFBasicBlock* loopheadbb = LLVMModuleSet::getLLVMModuleSet()->getSVFBasicBlock(lp->getHeader());
+    assert(!lp.empty() && "this is not a loop, empty basic block");
+    const SVFFunction* svffun = join->getFunction();
+    const SVFBasicBlock* loopheadbb = svffun->getLoopHeader(lp);
     const SVFBasicBlock* joinbb = join->getParent();
     assert(loopheadbb->getParent()==joinbb->getParent() && "should inside same function");
 
-    const PostDominatorTree* pdt = getPostDT(loopheadbb->getParent()->getLLVMFun());
     for (const SVFBasicBlock* svf_scc_bb : loopheadbb->getSuccessors())
     {
-        if(lp->contains(svf_scc_bb->getLLVMBasicBlock()))
+        if(svffun->loopContainsBB(lp,svf_scc_bb))
         {
-            if(pdt->dominates(joinbb->getLLVMBasicBlock(),svf_scc_bb->getLLVMBasicBlock())==false)
+            if(svffun->dominate(joinbb,svf_scc_bb)==false)
                 return false;
         }
     }
@@ -317,10 +315,16 @@ void TCT::collectLoopInfoForJoin()
     for(ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it!=eit; ++it)
     {
         const SVFInstruction* join = (*it)->getCallSite();
-        const Loop* lp = getLoop(join);
-        if(lp && isJoinMustExecutedInLoop(lp,join))
+        const SVFFunction* svffun = join->getFunction();
+        const SVFBasicBlock* svfbb = join->getParent();
+
+        if(svffun->hasLoopInfo(svfbb))
         {
-            joinSiteToLoopMap[join] = lp;
+            const LoopBBs& lp = svffun->getLoopInfo(svfbb);
+            if(!lp.empty() && isJoinMustExecutedInLoop(lp,join))
+            {
+                joinSiteToLoopMap[join] = lp;
+            }
         }
 
         if(isInRecursion(join))
@@ -335,7 +339,7 @@ bool TCT::isLoopHeaderOfJoinLoop(const SVFBasicBlock* bb)
 {
     for(InstToLoopMap::const_iterator it = joinSiteToLoopMap.begin(), eit = joinSiteToLoopMap.end(); it!=eit; ++it)
     {
-        if(it->second->getHeader() == bb->getLLVMBasicBlock())
+        if(bb->getParent()->getLoopHeader(it->second) == bb)
             return true;
     }
 
@@ -349,12 +353,13 @@ bool TCT::isLoopExitOfJoinLoop(const SVFBasicBlock* bb)
 {
     for(InstToLoopMap::const_iterator it = joinSiteToLoopMap.begin(), eit = joinSiteToLoopMap.end(); it!=eit; ++it)
     {
-        llvm::SmallVector<llvm::BasicBlock*, 8>  exitbbs;
-        it->second->getExitBlocks(exitbbs);
+        std::vector<const SVFBasicBlock*> exitbbs;
+        it->first->getFunction()->getExitBlocksOfLoop(it->first->getParent(),exitbbs);
         while(!exitbbs.empty())
         {
-            BasicBlock* eb = exitbbs.pop_back_val();
-            if(eb == bb->getLLVMBasicBlock())
+            const SVFBasicBlock* eb = exitbbs.back();
+            exitbbs.pop_back();
+            if(eb == bb)
                 return true;
         }
     }
@@ -365,38 +370,10 @@ bool TCT::isLoopExitOfJoinLoop(const SVFBasicBlock* bb)
 /*!
  * Get loop for fork/join site
  */
-const Loop* TCT::getLoop(const SVFInstruction* inst)
-{
-    const Function* fun = inst->getFunction()->getLLVMFun();
-    return loopInfoBuilder.getLoopInfo(fun)->getLoopFor(inst->getParent()->getLLVMBasicBlock());
-}
-
-/// Get dominator for a function
-const DominatorTree* TCT::getDT(const Function* fun)
-{
-    return loopInfoBuilder.getDT(fun);
-}
-
-/// Get dominator for a function
-const PostDominatorTree* TCT::getPostDT(const Function* fun)
-{
-    return loopInfoBuilder.getPostDT(fun);
-}
-/*!
- * Get loop for fork/join site
- */
-const Loop* TCT::getLoop(const SVFBasicBlock* bb)
+const TCT::LoopBBs& TCT::getLoop(const SVFBasicBlock* bb)
 {
     const SVFFunction* fun = bb->getParent();
-    return loopInfoBuilder.getLoopInfo(fun->getLLVMFun())->getLoopFor(bb->getLLVMBasicBlock());
-}
-
-/*!
- * Get SE for function
- */
-ScalarEvolution* TCT::getSE(const SVFInstruction* inst)
-{
-    return MTA::getSE(inst->getFunction());
+    return fun->getLoopInfo(bb);
 }
 
 /*!
@@ -439,13 +416,13 @@ void TCT::build()
                     ecit = cgEdge->directCallsEnd(); cit!=ecit; ++cit)
             {
                 DBOUT(DMTA,outs() << "\nTCT handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
-                handleCallRelation(ctp,cgEdge,getLLVMCallSite((*cit)->getCallSite()));
+                handleCallRelation(ctp,cgEdge,getSVFCallSite((*cit)->getCallSite()));
             }
             for(PTACallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(),
                     eind = cgEdge->indirectCallsEnd(); ind!=eind; ++ind)
             {
                 DBOUT(DMTA,outs() << "\nTCT handling indirect call:" << **ind << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
-                handleCallRelation(ctp,cgEdge,getLLVMCallSite((*ind)->getCallSite()));
+                handleCallRelation(ctp,cgEdge,getSVFCallSite((*ind)->getCallSite()));
             }
         }
     }
@@ -458,34 +435,6 @@ void TCT::build()
         dump("tct");
     }
 
-}
-
-/*!
- *  Get the next instructions following control flow
- */
-void TCT::getNextInsts(const SVFInstruction* curInst, InstVec& instList)
-{
-    /// traverse to successive statements
-    if (!curInst->isTerminator())
-    {
-        const SVFInstruction* svfNextInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(curInst->getLLVMInstruction()->getNextNode());
-        instList.push_back(svfNextInst);
-    }
-    else
-    {
-        const SVFBasicBlock* BB = curInst->getParent();
-        // Visit all successors of BB in the CFG
-        for (const SVFBasicBlock* svf_scc_bb : BB->getSuccessors())
-        {
-            /// if we are sitting at the loop header, then go inside the loop but ignore loop exit
-            if(isLoopHeaderOfJoinLoop(BB) && !getLoop(BB)->contains(svf_scc_bb->getLLVMBasicBlock()))
-            {
-                continue;
-            }
-            const SVFInstruction* svfSuccInst = svf_scc_bb->front();
-            instList.push_back(svfSuccInst);
-        }
-    }
 }
 
 /*!
@@ -545,12 +494,12 @@ bool TCT::matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunctio
 void TCT::dumpCxt(CallStrCxt& cxt)
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "[:";
     for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
     {
         rawstr << " ' "<< *it << " ' ";
-        rawstr << *(tcg->getCallSite(*it)->getCallSite()->getLLVMInstruction());
+        rawstr << tcg->getCallSite(*it)->getCallSite()->toString();
         rawstr << "  call  " << tcg->getCallSite(*it)->getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";

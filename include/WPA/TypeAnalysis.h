@@ -76,9 +76,6 @@ public:
         return (pta->getAnalysisTy() == TypeCPP_WPA);
     }
     //@}
-
-private:
-    Set<CallSite> virtualCallSites;
 };
 
 } // End namespace SVF

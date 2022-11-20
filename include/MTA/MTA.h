@@ -36,8 +36,7 @@
 
 #include <set>
 #include <vector>
-#include "Util/BasicTypes.h"
-#include "SVF-FE/BasicTypes.h"
+#include "SVFIR/SVFValue.h"
 
 namespace SVF
 {
@@ -54,19 +53,12 @@ class SVFModule;
 /*!
  * Base data race detector
  */
-class MTA: public ModulePass
+class MTA
 {
 
 public:
-    typedef Set<const LoadInst*> LoadSet;
-    typedef Set<const StoreInst*> StoreSet;
-    typedef Map<const SVFFunction*, ScalarEvolution*> FunToSEMap;
-    typedef Map<const SVFFunction*, LoopInfo*> FunToLoopInfoMap;
-
-    /// Pass ID
-    static char ID;
-
-    static ModulePass* modulePass;
+    typedef Set<const SVFInstruction*> LoadSet;
+    typedef Set<const SVFInstruction*> StoreSet;
 
     /// Constructor
     MTA();
@@ -76,10 +68,7 @@ public:
 
 
     /// We start the pass here
-
-    virtual bool runOnModule(Module& module);
-    /// We start the pass here
-    virtual bool runOnModule(SVFModule* module);
+    virtual bool runOnModule(SVFIR* module);
     /// Compute MHP
     virtual MHP* computeMHP(SVFModule* module);
     /// Compute locksets
@@ -87,31 +76,23 @@ public:
     /// Perform detection
     virtual void detect(SVFModule* module);
 
-    /// Pass name
-    virtual llvm::StringRef getPassName() const
-    {
-        return "Multi threaded program analysis pass";
-    }
-
     void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
 
-    // Get ScalarEvolution for Function F.
-    static inline ScalarEvolution* getSE(const SVFFunction* F)
+    MHP* getMHP()
     {
-        FunToSEMap::iterator it = func2ScevMap.find(F);
-        if (it != func2ScevMap.end())
-            return it->second;
-        ScalarEvolutionWrapperPass *scev = &modulePass->getAnalysis<ScalarEvolutionWrapperPass>(*const_cast<Function*>(F->getLLVMFun()));
-        func2ScevMap[F] = &scev->getSE();
-        return &scev->getSE();
+        return mhp;
     }
 
+    LockAnalysis* getLockAnalysis()
+    {
+        return lsa;
+    }
 private:
     ThreadCallGraph* tcg;
     TCT* tct;
     MTAStat* stat;
-    static FunToSEMap func2ScevMap;
-    static FunToLoopInfoMap func2LoopInfoMap;
+    MHP* mhp;
+    LockAnalysis* lsa;
 };
 
 } // End namespace SVF

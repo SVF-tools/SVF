@@ -28,9 +28,9 @@
  */
 
 #include <Util/Options.h>
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 #include "Graphs/ICFG.h"
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "Graphs/PTACallGraph.h"
 
 using namespace SVF;
@@ -41,7 +41,7 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGN
 {
     fun = f;
     // if function is implemented
-    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end())
+    if (f->begin() != f->end())
     {
         bb = f->getEntryBlock();
     }
@@ -51,7 +51,7 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNod
 {
     fun = f;
     // if function is implemented
-    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end())
+    if (f->begin() != f->end())
     {
         bb = f->getExitBB();
     }
@@ -62,7 +62,7 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNod
 const std::string ICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "ICFGNode" << getId();
     return rawstr.str();
 }
@@ -75,7 +75,7 @@ void ICFGNode::dump() const
 const std::string GlobalICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "GlobalICFGNode" << getId();
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -86,13 +86,13 @@ const std::string GlobalICFGNode::toString() const
 const std::string IntraICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "IntraICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getInst()->getLLVMInstruction()) << "}";
+    rawstr << " {fun: " << getFun()->getName() << getInst()->getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     if(getSVFStmts().empty())
-        rawstr << "\n" << value2String(getInst()->getLLVMInstruction());
+        rawstr << "\n" << getInst()->toString();
     return rawstr.str();
 }
 
@@ -100,11 +100,11 @@ const std::string IntraICFGNode::toString() const
 const std::string FunEntryICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "FunEntryICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
-        rawstr << getSourceLoc(getFun()->getLLVMFun());
+        rawstr << getFun()->getSourceLoc();
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -114,11 +114,11 @@ const std::string FunEntryICFGNode::toString() const
 const std::string FunExitICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
-        rawstr << getSourceLoc(getFun()->getExitBB()->front()->getLLVMInstruction());
+        rawstr << getFun()->getExitBB()->front()->getSourceLoc();
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -129,9 +129,9 @@ const std::string FunExitICFGNode::toString() const
 const std::string CallICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "CallICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()->getLLVMInstruction()) << "}";
+    rawstr << " {fun: " << getFun()->getName() << getCallSite()->getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     return rawstr.str();
@@ -140,9 +140,9 @@ const std::string CallICFGNode::toString() const
 const std::string RetICFGNode::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "RetICFGNode" << getId();
-    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()->getLLVMInstruction()) << "}";
+    rawstr << " {fun: " << getFun()->getName() << getCallSite()->getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     return rawstr.str();
@@ -151,7 +151,7 @@ const std::string RetICFGNode::toString() const
 const std::string ICFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "ICFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t";
     return rawstr.str();
 }
@@ -159,11 +159,11 @@ const std::string ICFGEdge::toString() const
 const std::string IntraCFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     if(getCondition() == nullptr)
         rawstr << "IntraCFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t";
     else
-        rawstr << "IntraCFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "] (branchCondition:" << *getCondition() << ") (succCondValue: " << getSuccessorCondValue() << ") \t";
+        rawstr << "IntraCFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "] (branchCondition:" << getCondition()->toString() << ") (succCondValue: " << getSuccessorCondValue() << ") \t";
 
     return rawstr.str();
 }
@@ -171,18 +171,18 @@ const std::string IntraCFGEdge::toString() const
 const std::string CallCFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "CallCFGEdge " << " [ICFGNode";
-    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << *cs->getLLVMInstruction() << "\t";
+    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << cs->toString() << "\t";
     return rawstr.str();
 }
 
 const std::string RetCFGEdge::toString() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     rawstr << "RetCFGEdge " << " [ICFGNode";
-    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << *cs->getLLVMInstruction() << "\t";
+    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << cs->toString() << "\t";
     return rawstr.str();
 }
 
@@ -236,7 +236,7 @@ ICFGNode* ICFG::getICFGNode(const SVFInstruction* inst)
 CallICFGNode* ICFG::getCallICFGNode(const SVFInstruction* inst)
 {
     if(SVFUtil::isCallSite(inst) ==false)
-        outs() << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
+        outs() << inst->toString() << "\n";
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     CallICFGNode* node = getCallBlock(inst);
@@ -380,7 +380,7 @@ ICFGEdge* ICFG::addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode)
 /*!
  * Add conditional intraprocedural edges between two nodes
  */
-ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Value* condition, s32_t branchCondVal)
+ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFValue* condition, s32_t branchCondVal)
 {
 
     checkIntraEdgeParents(srcNode, dstNode);
@@ -549,7 +549,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
     static std::string getNodeAttributes(NodeType *node, ICFG*)
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
 
         if(SVFUtil::isa<IntraICFGNode>(node))
         {
@@ -604,7 +604,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
         assert(edge && "No edge found!!");
 
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         if (CallCFGEdge* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge))
             rawstr << dirCall->getCallSite();
         else if (RetCFGEdge* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge))

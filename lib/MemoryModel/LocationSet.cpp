@@ -39,7 +39,7 @@ using namespace SVFUtil;
 /*!
  * Add offset value to vector offsetValues
  */
-bool LocationSet::addOffsetValue(const Value* offsetVal, const Type* type)
+bool LocationSet::addOffsetValue(const SVFValue* offsetVal, const SVFType* type)
 {
     offsetValues.push_back(std::make_pair(offsetVal,type));
     return true;
@@ -50,7 +50,7 @@ bool LocationSet::isConstantOffset() const
 {
     for(auto it : offsetValues)
     {
-        if(SVFUtil::isa<ConstantInt>(it.first) == false)
+        if(SVFUtil::isa<SVFConstantInt>(it.first) == false)
             return false;
     }
     return true;
@@ -60,28 +60,28 @@ bool LocationSet::isConstantOffset() const
 /// (1) StructType or Array, return flatterned number elements.
 /// (2) PointerType, return the element number of the pointee
 /// (3) non-pointer SingleValueType, return 1
-u32_t LocationSet::getElementNum(const Type* type) const
+u32_t LocationSet::getElementNum(const SVFType* type) const
 {
 
-    if(SVFUtil::isa<ArrayType>(type) || SVFUtil::isa<StructType>(type))
+    if(SVFUtil::isa<SVFArrayType>(type) || SVFUtil::isa<SVFStructType>(type))
     {
         return SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(type);
     }
     else if (type->isSingleValueType())
     {
         /// This is a pointer arithmic
-        if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type))
-            return getElementNum(SymbolTableInfo::getPtrElementType(pty));
+        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+            return getElementNum(pty->getPtrElementType());
         else
             return 1;
     }
-    else if (SVFUtil::isa<FunctionType>(type))
+    else if (SVFUtil::isa<SVFFunctionType>(type))
     {
         return 1;
     }
     else
     {
-        SVFUtil::outs() << "GepIter Type" << type2String(type) << "\n";
+        SVFUtil::outs() << "GepIter Type" << type->toString() << "\n";
         assert(false && "What other types for this gep?");
         abort();
     }
@@ -126,9 +126,9 @@ s32_t LocationSet::accumulateConstantOffset() const
     s32_t totalConstOffset = 0;
     for(int i = offsetValues.size() - 1; i >= 0; i--)
     {
-        const Value* value = offsetValues[i].first;
-        const Type* type = offsetValues[i].second;
-        const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(value);
+        const SVFValue* value = offsetValues[i].first;
+        const SVFType* type = offsetValues[i].second;
+        const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         assert(op && "not a constant offset?");
         if(type==nullptr)
         {
@@ -136,8 +136,8 @@ s32_t LocationSet::accumulateConstantOffset() const
             continue;
         }
 
-        if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type))
-            totalConstOffset += op->getSExtValue() * getElementNum(SymbolTableInfo::getPtrElementType(pty));
+        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType());
         else
         {
             s32_t offset = op->getSExtValue();
@@ -219,7 +219,7 @@ SVF::LocationSet::LSRelation LocationSet::checkRelation(const LocationSet& LHS, 
 std::string LocationSet::dump() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
 
     rawstr << "LocationSet\tField_Index: " << accumulateConstantFieldIdx();
     rawstr << ",\tNum-Stride: {";
@@ -228,7 +228,7 @@ std::string LocationSet::dump() const
     OffsetValueVec::const_iterator eit = vec.end();
     for (; it != eit; ++it)
     {
-        rawstr << " (value: " << value2String(it->first) << " type: " << it->second << ")";
+        rawstr << " (value: " << it->first->toString() << " type: " << it->second << ")";
     }
     rawstr << " }\n";
     return rawstr.str();
