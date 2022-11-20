@@ -124,27 +124,27 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
                 continue;
             if(!mhp->isConnectedfromMain(fun))
                 continue;
-        for (SVFFunction::const_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
-        {
-            const SVFBasicBlock* bb = *bit;
-            for (SVFBasicBlock::const_iterator ii = bb->begin(), eii = bb->end(); ii != eii; ++ii)
+            for (SVFFunction::const_iterator bit =  fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
             {
-                const SVFInstruction* inst = *ii;
-                for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(inst)))
+                const SVFBasicBlock* bb = *bit;
+                for (SVFBasicBlock::const_iterator ii = bb->begin(), eii = bb->end(); ii != eii; ++ii)
                 {
-                if(SVFUtil::isa<LoadStmt>(stmt))
-                {
-                    instSet1.insert(inst);
+                    const SVFInstruction* inst = *ii;
+                    for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(inst)))
+                    {
+                        if(SVFUtil::isa<LoadStmt>(stmt))
+                        {
+                            instSet1.insert(inst);
+                        }
+                        else if(SVFUtil::isa<StoreStmt>(stmt))
+                        {
+                            instSet1.insert(inst);
+                            instSet2.insert(inst);
+                        }
+                    }
+
                 }
-                else if(SVFUtil::isa<StoreStmt>(stmt))
-                {
-                    instSet1.insert(inst);
-                    instSet2.insert(inst);
-                }
-                }
-            
             }
-        }
         }
 
 

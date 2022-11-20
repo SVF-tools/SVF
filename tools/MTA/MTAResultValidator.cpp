@@ -214,26 +214,26 @@ bool MTAResultValidator::collectCallsiteTargets()
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
-        for (Function::const_iterator bi = (*F).begin(), ebi = (*F).end(); bi != ebi; ++bi)
-        {
-            const BasicBlock* bb = &*bi;
-            if (!bb->getName().str().compare(0, 2, "cs"))
+            for (Function::const_iterator bi = (*F).begin(), ebi = (*F).end(); bi != ebi; ++bi)
             {
-                NodeID csnum = atoi(bb->getName().str().substr(2).c_str());
-                const Instruction* inst = &bb->front();
-                while (1)
+                const BasicBlock* bb = &*bi;
+                if (!bb->getName().str().compare(0, 2, "cs"))
                 {
-                    if (SVFUtil::isa<CallInst>(inst))
+                    NodeID csnum = atoi(bb->getName().str().substr(2).c_str());
+                    const Instruction* inst = &bb->front();
+                    while (1)
                     {
-                        break;
+                        if (SVFUtil::isa<CallInst>(inst))
+                        {
+                            break;
+                        }
+                        inst = inst->getNextNode();
+                        assert(inst && "Wrong cs label, cannot find callsite");
                     }
-                    inst = inst->getNextNode();
-                    assert(inst && "Wrong cs label, cannot find callsite");
+                    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+                    csnumToInstMap[csnum] = svfInst;
                 }
-                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
-                csnumToInstMap[csnum] = svfInst;
             }
-        }
         }
     }
     if (csnumToInstMap.empty())

@@ -96,39 +96,39 @@ using Set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 template<typename Key, typename Value, typename Hash = Hash<Key>,
          typename KeyEqual = std::equal_to<Key>,
          typename Allocator = std::allocator<std::pair<const Key, Value>>>
-using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
+                 using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
 
-template<typename Key, typename Compare = std::less<Key>, typename Allocator = std::allocator<Key>>
-using OrderedSet = std::set<Key, Compare, Allocator>;
+         template<typename Key, typename Compare = std::less<Key>, typename Allocator = std::allocator<Key>>
+         using OrderedSet = std::set<Key, Compare, Allocator>;
 
-template<typename Key, typename Value, typename Compare = std::less<Key>,
-typename Allocator = std::allocator<std::pair<const Key, Value>>>
-using OrderedMap = std::map<Key, Value, Compare, Allocator>;
+         template<typename Key, typename Value, typename Compare = std::less<Key>,
+                  typename Allocator = std::allocator<std::pair<const Key, Value>>>
+                          using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 
-typedef std::pair<NodeID, NodeID> NodePair;
-typedef OrderedSet<NodeID> OrderedNodeSet;
-typedef Set<NodeID> NodeSet;
-typedef Set<NodePair> NodePairSet;
-typedef Map<NodePair,NodeID> NodePairMap;
-typedef std::vector<NodeID> NodeVector;
-typedef std::vector<EdgeID> EdgeVector;
-typedef std::stack<NodeID> NodeStack;
-typedef std::list<NodeID> NodeList;
-typedef std::deque<NodeID> NodeDeque;
-typedef NodeSet EdgeSet;
-typedef std::vector<u32_t> CallStrCxt;
-typedef unsigned Version;
-typedef Set<Version> VersionSet;
-typedef std::pair<NodeID, Version> VersionedVar;
-typedef Set<VersionedVar> VersionedVarSet;
+                  typedef std::pair<NodeID, NodeID> NodePair;
+                  typedef OrderedSet<NodeID> OrderedNodeSet;
+                  typedef Set<NodeID> NodeSet;
+                  typedef Set<NodePair> NodePairSet;
+                  typedef Map<NodePair,NodeID> NodePairMap;
+                  typedef std::vector<NodeID> NodeVector;
+                  typedef std::vector<EdgeID> EdgeVector;
+                  typedef std::stack<NodeID> NodeStack;
+                  typedef std::list<NodeID> NodeList;
+                  typedef std::deque<NodeID> NodeDeque;
+                  typedef NodeSet EdgeSet;
+                  typedef std::vector<u32_t> CallStrCxt;
+                  typedef unsigned Version;
+                  typedef Set<Version> VersionSet;
+                  typedef std::pair<NodeID, Version> VersionedVar;
+                  typedef Set<VersionedVar> VersionedVarSet;
 
-class SVFType;
-class SVFPointerType;
+                  class SVFType;
+                  class SVFPointerType;
 
-/*!
- * Flatterned type information of StructType, ArrayType and SingleValueType
- */
-class StInfo
+                  /*!
+                   * Flatterned type information of StructType, ArrayType and SingleValueType
+                   */
+                  class StInfo
 {
 
 private:
@@ -250,7 +250,7 @@ public:
     };
 
 private:
-    GNodeK kind;	///< used for classof 
+    GNodeK kind;	///< used for classof
     const SVFPointerType* getPointerToTy; /// Return a pointer to the current type
     StInfo* typeinfo; /// < SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or array
@@ -273,7 +273,7 @@ public:
     /// Needs to be implemented by a specific SVF front end (e.g., the implementation in LLVMUtil)
     virtual const std::string toString() const;
 
-    inline void setPointerTo(const SVFPointerType* ty)  
+    inline void setPointerTo(const SVFPointerType* ty)
     {
         getPointerToTy = ty;
     }
@@ -284,7 +284,7 @@ public:
         return getPointerToTy;
     }
 
-    inline void setTypeInfo (StInfo* ti)  
+    inline void setTypeInfo (StInfo* ti)
     {
         typeinfo = ti;
     }
@@ -316,7 +316,7 @@ class SVFPointerType : public SVFType
 {
 
 private:
-const SVFType* ptrElementType;
+    const SVFType* ptrElementType;
 
 public:
     SVFPointerType(const SVFType* pty) : SVFType(true, SVFPointerTy), ptrElementType(pty)

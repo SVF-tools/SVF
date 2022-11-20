@@ -71,7 +71,8 @@ using namespace SVF;
 LLVMModuleSet *LLVMModuleSet::llvmModuleSet = nullptr;
 std::string SVFModule::pagReadFromTxt = "";
 
-LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false) {
+LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false)
+{
     symInfo = SymbolTableInfo::SymbolInfo();
 }
 
@@ -258,7 +259,8 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                     virtualCall->setFunIdxInVtable(cppUtil::getVCallIdx(call));
                     virtualCall->setFunNameOfVirtualCall(cppUtil::getFunNameOfVCallSite(call));
                 }
-                for(u32_t i = 0; i < call->arg_size(); i++){
+                for(u32_t i = 0; i < call->arg_size(); i++)
+                {
                     SVFValue* svfval = getSVFValue(call->getArgOperand(i));
                     svfcall->addArgument(svfval);
                 }
@@ -832,7 +834,7 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
         svfvalue->setPtrInUncalledFunction();
     if (LLVMUtil::isConstDataOrAggData(val))
         svfvalue->setConstDataOrAggData();
-        
+
     if (SVFGlobalValue* glob = SVFUtil::dyn_cast<SVFGlobalValue>(svfvalue))
     {
         const Value* llvmVal = LLVMUtil::getGlobalRep(val);
@@ -993,7 +995,7 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
             stinfo = collectStructInfo(sty);
         else
             stinfo = collectSimpleTypeInfo(T);
-            
+
         Type2TypeInfo[T] = stinfo;
     }
     return stinfo;
@@ -1013,7 +1015,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     else if (SVFUtil::isa<StructType>(T))
         svftype = new SVFStructType();
     else if (SVFUtil::isa<ArrayType>(T))
-        svftype = new SVFArrayType();    
+        svftype = new SVFArrayType();
     else
         svftype = new SVFOtherType(T->isSingleValueType());
     symInfo->addTypeInfo(svftype);

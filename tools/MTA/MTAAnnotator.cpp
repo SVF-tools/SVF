@@ -41,29 +41,29 @@ void MTAAnnotator::collectLoadStoreInst(SVFModule* mod)
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
-        if (SVFUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(&*F)))
-            continue;
-        for (const_inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II)
-        {
-            const Instruction* inst = &*II;
-            if (SVFUtil::isa<LoadInst>(inst))
+            if (SVFUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(&*F)))
+                continue;
+            for (const_inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II)
             {
-                loadset.insert(inst);
+                const Instruction* inst = &*II;
+                if (SVFUtil::isa<LoadInst>(inst))
+                {
+                    loadset.insert(inst);
+                }
+                else if (SVFUtil::isa<StoreInst>(inst))
+                {
+                    storeset.insert(inst);
+                }
+                else if (isMemset(inst))
+                {
+                    storeset.insert(inst);
+                }
+                else if (isMemcpy(inst))
+                {
+                    storeset.insert(inst);
+                    loadset.insert(inst);
+                }
             }
-            else if (SVFUtil::isa<StoreInst>(inst))
-            {
-                storeset.insert(inst);
-            }
-            else if (isMemset(inst))
-            {
-                storeset.insert(inst);
-            }
-            else if (isMemcpy(inst))
-            {
-                storeset.insert(inst);
-                loadset.insert(inst);
-            }
-        }
         }
     }
 

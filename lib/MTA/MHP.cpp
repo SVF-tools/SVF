@@ -1055,7 +1055,7 @@ bool ForkJoinAnalysis::isSameSCEV(const SVFInstruction* forkSite, const SVFInstr
     //     return false;
     // else
     //     return true;
-    
+
     return false;
 }
 

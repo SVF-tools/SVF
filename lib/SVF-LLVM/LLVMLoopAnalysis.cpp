@@ -50,32 +50,32 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> 
     std::vector<const Loop *> loop_stack;
     for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-    for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
-    {
-        const Function* func = &*F;
-        const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(func);
-        // do not analyze external call
-        if (SVFUtil::isExtCall(svffun)) continue;
-        DT.recalculate(const_cast<Function&>(*func));
-        auto loopInfo = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
-        loopInfo->releaseMemory();
-        loopInfo->analyze(DT);
-        for (const auto &loop: *loopInfo)
+        for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
-            loop_stack.push_back(loop);
-        }
-        // pre-order traversal on loop-subloop tree
-        while (!loop_stack.empty())
-        {
-            const Loop *loop = loop_stack.back();
-            loop_stack.pop_back();
-            llvmLoops.push_back(loop);
-            for (const auto &subloop: loop->getSubLoops())
+            const Function* func = &*F;
+            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(func);
+            // do not analyze external call
+            if (SVFUtil::isExtCall(svffun)) continue;
+            DT.recalculate(const_cast<Function&>(*func));
+            auto loopInfo = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
+            loopInfo->releaseMemory();
+            loopInfo->analyze(DT);
+            for (const auto &loop: *loopInfo)
             {
-                loop_stack.push_back(subloop);
+                loop_stack.push_back(loop);
+            }
+            // pre-order traversal on loop-subloop tree
+            while (!loop_stack.empty())
+            {
+                const Loop *loop = loop_stack.back();
+                loop_stack.pop_back();
+                llvmLoops.push_back(loop);
+                for (const auto &subloop: loop->getSubLoops())
+                {
+                    loop_stack.push_back(subloop);
+                }
             }
         }
-    }
     }
 }
 

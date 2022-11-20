@@ -220,16 +220,17 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 }
 
 void SymbolTableBuilder::collectSVFTypeInfo(const Value* val)
-{    
+{
     (void)getOrAddSVFTypeInfo(val->getType());
     if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
     {
         const Type* objtype = LLVMUtil::getPtrElementType(ptrType);
         (void)getOrAddSVFTypeInfo(objtype);
     }
-    if(isGepConstantExpr(val) || SVFUtil::isa<GetElementPtrInst>(val)){
-            for (bridge_gep_iterator gi = bridge_gep_begin(SVFUtil::cast<User>(val)), ge = bridge_gep_end(SVFUtil::cast<User>(val));
-            gi != ge; ++gi)
+    if(isGepConstantExpr(val) || SVFUtil::isa<GetElementPtrInst>(val))
+    {
+        for (bridge_gep_iterator gi = bridge_gep_begin(SVFUtil::cast<User>(val)), ge = bridge_gep_end(SVFUtil::cast<User>(val));
+                gi != ge; ++gi)
         {
             const Type* gepTy = *gi;
             (void)getOrAddSVFTypeInfo(gepTy);
