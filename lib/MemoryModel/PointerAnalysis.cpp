@@ -105,7 +105,7 @@ void PointerAnalysis::destroy()
 void PointerAnalysis::initialize()
 {
     assert(pag && "SVFIR has not been built!");
-    
+
     svfMod = pag->getModule();
     chgraph = pag->getCHG();
 

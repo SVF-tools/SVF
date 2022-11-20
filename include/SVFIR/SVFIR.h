@@ -92,7 +92,7 @@ private:
     OrderedNodeSet candidatePointers;
     SVFModule* svfModule; /// SVF Module
     ICFG* icfg; // ICFG
-    CommonCHGraph* chgraph; // class hierarchy graph 
+    CommonCHGraph* chgraph; // class hierarchy graph
     CallSiteSet callSiteSet; /// all the callsites of a program
     /// Constructor
     SVFIR(bool buildFromFile);

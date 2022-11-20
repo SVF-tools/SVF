@@ -466,7 +466,7 @@ u32_t LLVMUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
 const std::string LLVMUtil::getSourceLoc(const Value* val )
 {
     if(val==nullptr)  return "{ empty val }";
-    
+
     std::string str;
     std::stringstream rawstr(str);
     rawstr << "{ ";
@@ -642,16 +642,16 @@ const std::string SVFValue::toString() const
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-        if(const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
-            rawstr << "Function: " << fun->getName() << " ";
-        else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
-            rawstr << "BasicBlock: " << bb->getName() << " ";
-        else
-        {
-            const Value* val = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
-            rawstr << " " << *val << " ";
-        }
-        rawstr << this->getSourceLoc();
+    if(const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
+        rawstr << "Function: " << fun->getName() << " ";
+    else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
+        rawstr << "BasicBlock: " << bb->getName() << " ";
+    else
+    {
+        const Value* val = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+        rawstr << " " << *val << " ";
+    }
+    rawstr << this->getSourceLoc();
     return rawstr.str();
 }
 

@@ -122,7 +122,7 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
-SVFFunction::SVFFunction(const std::string& f, const SVFType* ty, const SVFFunctionType* ft, bool declare, bool intric, bool adt, bool varg, SVFLoopAndDomInfo* ld): 
+SVFFunction::SVFFunction(const std::string& f, const SVFType* ty, const SVFFunctionType* ft, bool declare, bool intric, bool adt, bool varg, SVFLoopAndDomInfo* ld):
     SVFValue(f,ty,SVFValue::SVFFunc),isDecl(declare), intricsic(intric), addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg), funcType(ft), loopAndDom(ld), realDefFun(nullptr)
 {
 }

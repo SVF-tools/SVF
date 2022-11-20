@@ -634,38 +634,38 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
 
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-    for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
-    {
-    for (const_inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II)
-    {
-        if(const CallBase* callInst = SVFUtil::dyn_cast<CallBase>(&*II))
+        for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
-        if (cppUtil::isVirtualCallSite(callInst) == false)
-            continue;
-
-        VTableSet vtbls;
-        const CHNodeSetTy& chClasses = getCSClasses(callInst);
-        for (CHNodeSetTy::const_iterator it = chClasses.begin(), eit = chClasses.end(); it != eit; ++it)
-        {
-            const CHNode *child = *it;
-            const SVFGlobalValue *vtbl = child->getVTable();
-            if (vtbl != nullptr)
+            for (const_inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II)
             {
-                vtbls.insert(vtbl);
+                if(const CallBase* callInst = SVFUtil::dyn_cast<CallBase>(&*II))
+                {
+                    if (cppUtil::isVirtualCallSite(callInst) == false)
+                        continue;
+
+                    VTableSet vtbls;
+                    const CHNodeSetTy& chClasses = getCSClasses(callInst);
+                    for (CHNodeSetTy::const_iterator it = chClasses.begin(), eit = chClasses.end(); it != eit; ++it)
+                    {
+                        const CHNode *child = *it;
+                        const SVFGlobalValue *vtbl = child->getVTable();
+                        if (vtbl != nullptr)
+                        {
+                            vtbls.insert(vtbl);
+                        }
+                    }
+                    if (vtbls.size() > 0)
+                    {
+                        CallSite cs = SVFUtil::getSVFCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst));
+                        chg->csToCHAVtblsMap[cs] = vtbls;
+                        VFunSet virtualFunctions;
+                        chg->getVFnsFromVtbls(cs, vtbls, virtualFunctions);
+                        if (virtualFunctions.size() > 0)
+                            chg->csToCHAVFnsMap[cs] = virtualFunctions;
+                    }
+                }
             }
         }
-        if (vtbls.size() > 0)
-        {
-            CallSite cs = SVFUtil::getSVFCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callInst));
-            chg->csToCHAVtblsMap[cs] = vtbls;
-            VFunSet virtualFunctions;
-            chg->getVFnsFromVtbls(cs, vtbls, virtualFunctions);
-            if (virtualFunctions.size() > 0)
-                chg->csToCHAVFnsMap[cs] = virtualFunctions;
-        }
-        }
-    }
-    }
     }
 }
 

@@ -56,10 +56,10 @@ public:
 
 private:
     BBList reachableBBs;    ///< reachable BasicBlocks from the function entry.
-    Map<const SVFBasicBlock*,BBSet> dtBBsMap;   ///< map a BasicBlock to BasicBlocks it Dominates 
-    Map<const SVFBasicBlock*,BBSet> pdtBBsMap;   ///< map a BasicBlock to BasicBlocks it PostDominates 
+    Map<const SVFBasicBlock*,BBSet> dtBBsMap;   ///< map a BasicBlock to BasicBlocks it Dominates
+    Map<const SVFBasicBlock*,BBSet> pdtBBsMap;   ///< map a BasicBlock to BasicBlocks it PostDominates
     Map<const SVFBasicBlock*,BBSet> dfBBsMap;    ///< map a BasicBlock to its Dominate Frontier BasicBlocks
-    Map<const SVFBasicBlock*, LoopBBs> bb2LoopMap;  ///< map a BasicBlock (if it is in a loop) to all the BasicBlocks in this loop 
+    Map<const SVFBasicBlock*, LoopBBs> bb2LoopMap;  ///< map a BasicBlock (if it is in a loop) to all the BasicBlocks in this loop
 public:
     SVFLoopAndDomInfo()
     {
@@ -84,7 +84,7 @@ public:
 
     const LoopBBs& getLoopInfo(const SVFBasicBlock* bb) const;
 
-    inline const SVFBasicBlock* getLoopHeader(const LoopBBs& lp) const 
+    inline const SVFBasicBlock* getLoopHeader(const LoopBBs& lp) const
     {
         assert(!lp.empty() && "this is not a loop, empty basic block");
         return lp.front();
@@ -124,7 +124,7 @@ public:
     {
         return std::find(reachableBBs.begin(), reachableBBs.end(), bb)==reachableBBs.end();
     }
-    
+
     inline const BBList& getReachableBBs() const
     {
         return reachableBBs;
@@ -134,7 +134,7 @@ public:
     {
         reachableBBs = bbs;
     }
-    
+
     void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const;
 
     bool isLoopHeader(const SVFBasicBlock* bb) const;
@@ -146,7 +146,7 @@ public:
 
 class SVFValue
 {
-friend class LLVMModuleSet;
+    friend class LLVMModuleSet;
 
 public:
     typedef s64_t GNodeK;
@@ -172,7 +172,7 @@ public:
     };
 
 private:
-    GNodeK kind;	///< used for classof 
+    GNodeK kind;	///< used for classof
     bool ptrInUncalledFun;  ///< true if this pointer is in an uncalled function
     bool has_name;          ///< true if this value has a name
     bool constDataOrAggData;    ///< true if this value is a ConstantData (e.g., numbers, string, floats) or a constantAggregate
@@ -265,7 +265,7 @@ public:
 
 class SVFFunction : public SVFValue
 {
-friend class LLVMModuleSet;
+    friend class LLVMModuleSet;
 
 public:
     typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
@@ -279,7 +279,7 @@ private:
     bool addrTaken; /// return true if this function is address-taken (for indirect call purposes)
     bool isUncalled;    /// return true if this function is never called
     bool isNotRet;   /// return true if this function never returns
-    bool varArg;    /// return true if this function supports variable arguments 
+    bool varArg;    /// return true if this function supports variable arguments
     const SVFFunctionType* funcType; /// FunctionType, which is different from the type (PointerType) of this SVFFunction
     SVFLoopAndDomInfo* loopAndDom;  /// the loop and dominate information
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
@@ -346,13 +346,13 @@ public:
     }
 
     /// Returns the FunctionType
-    inline const SVFFunctionType* getFunctionType() const 
+    inline const SVFFunctionType* getFunctionType() const
     {
         return funcType;
     }
 
     /// Returns the FunctionType
-    inline const SVFType* getReturnType() const 
+    inline const SVFType* getReturnType() const
     {
         return funcType->getReturnType();
     }
@@ -389,7 +389,7 @@ public:
     {
         return getEntryBlock();
     }
-    
+
     inline const SVFBasicBlock* back() const
     {
         return getExitBB();
@@ -440,7 +440,7 @@ public:
         return loopAndDom->getLoopInfo(bb);
     }
 
-    inline const SVFBasicBlock* getLoopHeader(const BBList& lp) const 
+    inline const SVFBasicBlock* getLoopHeader(const BBList& lp) const
     {
         return loopAndDom->getLoopHeader(lp);
     }
@@ -479,7 +479,7 @@ public:
 
 class SVFBasicBlock : public SVFValue
 {
-friend class LLVMModuleSet;
+    friend class LLVMModuleSet;
 
 public:
     typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
@@ -595,8 +595,8 @@ public:
 
     static inline bool classof(const SVFValue *node)
     {
-        return node->getKind() == SVFInst || 
-               node->getKind() == SVFCall || 
+        return node->getKind() == SVFInst ||
+               node->getKind() == SVFCall ||
                node->getKind() == SVFVCall;
     }
 
@@ -604,7 +604,7 @@ public:
     {
         return bb;
     }
-    
+
     inline InstVec& getSuccInstructions()
     {
         return succInsts;
@@ -643,7 +643,7 @@ public:
 
 class SVFCallInst : public SVFInstruction
 {
-friend class LLVMModuleSet;
+    friend class LLVMModuleSet;
 
 private:
     std::vector<const SVFValue*> args;
@@ -663,7 +663,7 @@ protected:
     /// @}
 
 public:
-    SVFCallInst(const std::string& i, const SVFType* ty, const SVFBasicBlock* b, bool va, bool tm, SVFValKind k = SVFCall) : 
+    SVFCallInst(const std::string& i, const SVFType* ty, const SVFBasicBlock* b, bool va, bool tm, SVFValKind k = SVFCall) :
         SVFInstruction(i, ty, b, tm, false, k), varArg(va), calledVal(nullptr)
     {
     }
@@ -715,7 +715,7 @@ public:
 
 class SVFVirtualCallInst : public SVFCallInst
 {
-friend class LLVMModuleSet;
+    friend class LLVMModuleSet;
 
 private:
     const SVFValue* vCallVtblPtr;   /// virtual table pointer
@@ -737,7 +737,7 @@ protected:
     }
 
 public:
-    SVFVirtualCallInst(const std::string& i, const SVFType* ty, const SVFBasicBlock* b, bool vararg, bool tm) : 
+    SVFVirtualCallInst(const std::string& i, const SVFType* ty, const SVFBasicBlock* b, bool vararg, bool tm) :
         SVFCallInst(i,ty,b,vararg,tm, SVFVCall), vCallVtblPtr(nullptr), virtualFunIdx(-1), funNameOfVcall("")
     {
     }
@@ -779,10 +779,10 @@ public:
 
     static inline bool classof(const SVFValue *node)
     {
-        return node->getKind() == SVFConst || 
+        return node->getKind() == SVFConst ||
                node->getKind() == SVFGlob ||
-               node->getKind() == SVFConstData || 
-               node->getKind() == SVFConstInt || 
+               node->getKind() == SVFConstData ||
+               node->getKind() == SVFConstInt ||
                node->getKind() == SVFConstFP ||
                node->getKind() == SVFNullPtr ||
                node->getKind() == SVFBlackHole;
@@ -791,7 +791,7 @@ public:
 
 class SVFGlobalValue : public SVFConstant
 {
-friend class LLVMModuleSet;
+    friend class LLVMModuleSet;
 
 private:
     const SVFValue* realDefGlobal;  /// the definition of a function across multiple modules
@@ -872,16 +872,16 @@ public:
 
     static inline bool classof(const SVFValue *node)
     {
-        return node->getKind() == SVFConstData || 
-               node->getKind() == SVFConstInt || 
+        return node->getKind() == SVFConstData ||
+               node->getKind() == SVFConstInt ||
                node->getKind() == SVFConstFP ||
                node->getKind() == SVFNullPtr ||
                node->getKind() == SVFBlackHole;
     }
     static inline bool classof(const SVFConstantData *node)
     {
-        return node->getKind() == SVFConstData || 
-               node->getKind() == SVFConstInt || 
+        return node->getKind() == SVFConstData ||
+               node->getKind() == SVFConstInt ||
                node->getKind() == SVFConstFP ||
                node->getKind() == SVFNullPtr ||
                node->getKind() == SVFBlackHole;

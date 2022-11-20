@@ -78,7 +78,7 @@ inline const Function* getCallee(const CallBase* cs)
 {
     // FIXME: do we need to strip-off the casts here to discover more library functions
     const Function* callee = SVFUtil::dyn_cast<Function>(cs->getCalledOperand()->stripPointerCasts());
-    if(callee) 
+    if(callee)
         return getDefFunForMultipleModule(callee);
     else
         return nullptr;
@@ -372,11 +372,11 @@ inline const SVFFunction* getFunction(std::string name)
 
 /// Return true if the value refers to constant data, e.g., i32 0
 inline bool isConstDataOrAggData(const Value* val)
-{ 
+{
     bool constDataOrConstAggregate = SVFUtil::isa<ConstantData>(val)
-           || SVFUtil::isa<ConstantAggregate>(val)
-           || SVFUtil::isa<MetadataAsValue>(val)
-           || SVFUtil::isa<BlockAddress>(val);
+                                     || SVFUtil::isa<ConstantAggregate>(val)
+                                     || SVFUtil::isa<MetadataAsValue>(val)
+                                     || SVFUtil::isa<BlockAddress>(val);
     return constDataOrConstAggregate;
 }
 

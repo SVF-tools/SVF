@@ -93,7 +93,7 @@ public:
         else
             return true;
     }
-    
+
     const SVFFunction* getSVFFunction(const std::string name);
 
     ///@{

@@ -232,26 +232,26 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
         {
             for(const SVFStmt* svfstmt : pta->getPAG()->getSVFStmtList(stmtNode->getICFGNode()))
             {
-            if(SVFUtil::isa<StoreStmt>(svfstmt))
-            {
-                NodeID singleton;
-                if(isStrongUpdate(node, singleton, pta))
+                if(SVFUtil::isa<StoreStmt>(svfstmt))
                 {
-                    Set<SVFGEdge*> toRemove;
-                    for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2)
+                    NodeID singleton;
+                    if(isStrongUpdate(node, singleton, pta))
                     {
-                        if ((*it2)->isIndirectVFGEdge())
+                        Set<SVFGEdge*> toRemove;
+                        for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2)
                         {
-                            toRemove.insert(*it2);
+                            if ((*it2)->isIndirectVFGEdge())
+                            {
+                                toRemove.insert(*it2);
+                            }
+                        }
+                        for (SVFGEdge* edge: toRemove)
+                        {
+                            svfg->removeSVFGEdge(edge);
                         }
                     }
-                    for (SVFGEdge* edge: toRemove)
-                    {
-                        svfg->removeSVFGEdge(edge);
-                    }
-                }
 
-            }
+                }
             }
         }
     }

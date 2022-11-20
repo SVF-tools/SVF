@@ -90,51 +90,51 @@ SVFIR* SVFIRBuilder::build()
     /// handle functions
     for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-    for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
-    {
-        const Function& fun = *F;
-        const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(&fun);
-        /// collect return node of function fun
-        if(!fun.isDeclaration())
+        for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
-            /// Return SVFIR node will not be created for function which can not
-            /// reach the return instruction due to call to abort(), exit(),
-            /// etc. In 176.gcc of SPEC 2000, function build_objc_string() from
-            /// c-lang.c shows an example when fun.doesNotReturn() evaluates
-            /// to TRUE because of abort().
-            if(fun.doesNotReturn() == false && fun.getReturnType()->isVoidTy() == false)
-                pag->addFunRet(svffun,pag->getGNode(pag->getReturnNode(svffun)));
+            const Function& fun = *F;
+            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(&fun);
+            /// collect return node of function fun
+            if(!fun.isDeclaration())
+            {
+                /// Return SVFIR node will not be created for function which can not
+                /// reach the return instruction due to call to abort(), exit(),
+                /// etc. In 176.gcc of SPEC 2000, function build_objc_string() from
+                /// c-lang.c shows an example when fun.doesNotReturn() evaluates
+                /// to TRUE because of abort().
+                if(fun.doesNotReturn() == false && fun.getReturnType()->isVoidTy() == false)
+                    pag->addFunRet(svffun,pag->getGNode(pag->getReturnNode(svffun)));
 
-            /// To be noted, we do not record arguments which are in declared function without body
-            /// TODO: what about external functions with SVFIR imported by commandline?
-            for (Function::const_arg_iterator I = fun.arg_begin(), E = fun.arg_end();
-                    I != E; ++I)
+                /// To be noted, we do not record arguments which are in declared function without body
+                /// TODO: what about external functions with SVFIR imported by commandline?
+                for (Function::const_arg_iterator I = fun.arg_begin(), E = fun.arg_end();
+                        I != E; ++I)
+                {
+                    setCurrentLocation(&*I,&fun.getEntryBlock());
+                    NodeID argValNodeId = pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&*I));
+                    // if this is the function does not have caller (e.g. main)
+                    // or a dead function, shall we create a black hole address edge for it?
+                    // it is (1) too conservative, and (2) make FormalParmVFGNode defined at blackhole address PAGEdge.
+                    // if(SVFUtil::ArgInNoCallerFunction(&*I)) {
+                    //    if(I->getType()->isPointerTy())
+                    //        addBlackHoleAddrEdge(argValNodeId);
+                    //}
+                    pag->addFunArgs(svffun,pag->getGNode(argValNodeId));
+                }
+            }
+            for (Function::const_iterator bit = fun.begin(), ebit = fun.end();
+                    bit != ebit; ++bit)
             {
-                setCurrentLocation(&*I,&fun.getEntryBlock());
-                NodeID argValNodeId = pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&*I));
-                // if this is the function does not have caller (e.g. main)
-                // or a dead function, shall we create a black hole address edge for it?
-                // it is (1) too conservative, and (2) make FormalParmVFGNode defined at blackhole address PAGEdge.
-                // if(SVFUtil::ArgInNoCallerFunction(&*I)) {
-                //    if(I->getType()->isPointerTy())
-                //        addBlackHoleAddrEdge(argValNodeId);
-                //}
-                pag->addFunArgs(svffun,pag->getGNode(argValNodeId));
+                const BasicBlock& bb = *bit;
+                for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
+                        it != eit; ++it)
+                {
+                    const Instruction& inst = *it;
+                    setCurrentLocation(&inst,&bb);
+                    visit(const_cast<Instruction&>(inst));
+                }
             }
         }
-        for (Function::const_iterator bit = fun.begin(), ebit = fun.end();
-                bit != ebit; ++bit)
-        {
-            const BasicBlock& bb = *bit;
-            for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
-                    it != eit; ++it)
-            {
-                const Instruction& inst = *it;
-                setCurrentLocation(&inst,&bb);
-                visit(const_cast<Instruction&>(inst));
-            }
-        }
-    }
     }
 
     sanityCheck();

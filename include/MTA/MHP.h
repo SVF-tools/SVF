@@ -257,7 +257,7 @@ private:
 
     /// Whether a context-sensitive join satisfies symmetric loop pattern
     bool hasJoinInSymmetricLoop(const CallStrCxt& cxt, const SVFInstruction* call) const;
-    
+
     /// Whether a context-sensitive join satisfies symmetric loop pattern
     const LoopBBs& getJoinInSymmetricLoop(const CallStrCxt& cxt, const SVFInstruction* call) const;
 
