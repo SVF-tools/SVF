@@ -954,7 +954,8 @@ SVFType* LLVMModuleSet::getSVFType(const Type* T)
         SVFType* svfType = addSVFTypeInfo(T);
         StInfo* stinfo = collectTypeInfo(T);
         svfType->setTypeInfo(stinfo);
-        /// TODO: set the void* to every elementtyp for now
+        /// TODO: set the void* to every element for now (imprecise)
+        /// For example, [getPointerTo(): char ----> i8*] [getPointerTo(): int ----> i8*] [getPointerTo(): struct ----> i8*]
         PointerType* ptrTy = PointerType::getInt8PtrTy(getContext())->getPointerTo();
         svfType->setPointerTo(SVFUtil::cast<SVFPointerType>(getSVFType(ptrTy)));
         return svfType;
