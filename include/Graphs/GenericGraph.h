@@ -31,6 +31,7 @@
 #define GENERICGRAPH_H_
 
 #include "SVFIR/SVFValue.h"
+#include "Util/STLExtras.h"
 
 namespace SVF
 {

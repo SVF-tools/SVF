@@ -4,11 +4,10 @@
 // with LLVM Exceptions. See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
+
 #include "Graphs/GraphWriter.h"
 
 #include <string>
-
-using namespace llvm;
 
 std::string llvm::DOT::EscapeStr(const std::string &Label) {
     std::string Str(Label);
@@ -32,7 +31,6 @@ std::string llvm::DOT::EscapeStr(const std::string &Label) {
                             Str.erase(Str.begin()+i); continue;
                         default: break;
                     }
-                LLVM_FALLTHROUGH;
             case '{': case '}':
             case '<': case '>':
             case '|': case '"':
