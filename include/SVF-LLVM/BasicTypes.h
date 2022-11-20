@@ -1,7 +1,7 @@
 #ifndef SVF_FE_BASIC_TYPES_H
 #define SVF_FE_BASIC_TYPES_H
 
-#include "SVF-FE/GEPTypeBridgeIterator.h"
+#include "SVF-LLVM/GEPTypeBridgeIterator.h"
 
 #include <llvm/Pass.h>
 

@@ -30,7 +30,7 @@
 #ifndef SymbolTableBuilder_H_
 #define SymbolTableBuilder_H_
 
-#include "SVF-FE/LLVMModule.h"
+#include "SVF-LLVM/LLVMModule.h"
 #include "SVFIR/SymbolTableInfo.h"
 
 /*

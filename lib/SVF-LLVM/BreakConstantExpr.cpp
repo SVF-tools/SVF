@@ -49,8 +49,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/InstIterator.h"
 
-#include "SVF-FE/BasicTypes.h"
-#include "SVF-FE/BreakConstantExpr.h"
+#include "SVF-LLVM/BasicTypes.h"
+#include "SVF-LLVM/BreakConstantExpr.h"
 
 #include <iostream>
 #include <map>

@@ -6,8 +6,8 @@
 
 //#include "AliasUtil/AliasAnalysisCounter.h"
 //#include "MemoryModel/ComTypeModel.h"
-#include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/SVFIRBuilder.h"
+#include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/SVFIRBuilder.h"
 #include "DDA/DDAPass.h"
 #include "Util/Options.h"
 

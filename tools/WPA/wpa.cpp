@@ -26,8 +26,8 @@
  // Author: Yulei Sui,
  */
 
-#include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/SVFIRBuilder.h"
+#include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/SVFIRBuilder.h"
 #include "WPA/WPAPass.h"
 #include "Util/Options.h"
 

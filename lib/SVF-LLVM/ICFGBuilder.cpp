@@ -28,8 +28,8 @@
  *      Author: yulei
  */
 
-#include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/ICFGBuilder.h"
+#include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/ICFGBuilder.h"
 #include "SVFIR/SVFIR.h"
 
 using namespace SVF;

@@ -28,9 +28,9 @@
  *      Author: Jiawei Wang, Xiao Cheng
  */
 
-#include "SVF-FE/LLVMLoopAnalysis.h"
+#include "SVF-LLVM/LLVMLoopAnalysis.h"
 #include "Util/Options.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "SVF-LLVM/LLVMUtil.h"
 #include "llvm/Analysis/LoopInfo.h"
 
 #include "llvm/Transforms/Utils/Mem2Reg.h"

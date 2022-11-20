@@ -31,7 +31,7 @@
 #define AnalysisUtil_H_
 
 #include "FastCluster/fastcluster.h"
-#include "SVF-FE/LLVMModule.h"
+#include "SVF-LLVM/LLVMModule.h"
 #include "SVFIR/SVFValue.h"
 #include "MemoryModel/PointsTo.h"
 #include <time.h>

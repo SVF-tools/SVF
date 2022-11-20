@@ -30,8 +30,8 @@
 #ifndef INCLUDE_SVF_FE_LLVMMODULE_H_
 #define INCLUDE_SVF_FE_LLVMMODULE_H_
 
-#include "SVF-FE/BasicTypes.h"
-#include "SVF-FE/CPPUtil.h"
+#include "SVF-LLVM/BasicTypes.h"
+#include "SVF-LLVM/CPPUtil.h"
 #include "SVFIR/SVFValue.h"
 #include "SVFIR/SVFModule.h"
 

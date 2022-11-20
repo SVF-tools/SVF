@@ -1,5 +1,5 @@
-#include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/SVFIRBuilder.h"
+#include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/SVFIRBuilder.h"
 #include "MTA/MTA.h"
 #include "Util/Options.h"
 #include "MTAResultValidator.h"

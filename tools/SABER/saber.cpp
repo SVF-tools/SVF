@@ -26,8 +26,8 @@
  // Author: Yulei Sui,
  */
 
-#include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/SVFIRBuilder.h"
+#include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/SVFIRBuilder.h"
 #include "SABER/LeakChecker.h"
 #include "SABER/FileChecker.h"
 #include "SABER/DoubleFreeChecker.h"

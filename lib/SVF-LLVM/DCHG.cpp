@@ -10,10 +10,10 @@
 #include <sstream>
 
 #include "Util/Options.h"
-#include "SVF-FE/DCHG.h"
-#include "SVF-FE/CPPUtil.h"
+#include "SVF-LLVM/DCHG.h"
+#include "SVF-LLVM/CPPUtil.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "SVF-LLVM/LLVMUtil.h"
 
 using namespace SVF;
 

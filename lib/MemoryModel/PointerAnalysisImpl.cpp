@@ -31,7 +31,7 @@
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/Options.h"
-#include "SVF-FE/IRAnnotator.h"
+#include "SVF-LLVM/IRAnnotator.h"
 #include <fstream>
 #include <sstream>
 

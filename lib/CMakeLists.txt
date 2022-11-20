@@ -10,7 +10,7 @@ else()
 endif()
 
 file (GLOB SOURCES
-        SVF-FE/*.cpp
+        SVF-LLVM/*.cpp
         Graphs/*.cpp
         Util/*.cpp
         SVFIR/*.cpp

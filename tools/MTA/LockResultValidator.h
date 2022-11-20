@@ -10,7 +10,7 @@
 #define LOCKRESULTVALIDATOR_H_
 
 #include "MTA/LockAnalysis.h"
-#include "SVF-FE/LLVMUtil.h"
+#include "SVF-LLVM/LLVMUtil.h"
 
 /* Validate the result of lock analysis */
 

@@ -27,7 +27,7 @@
  *      Author: Yulei Sui
  */
 
-#include "SVF-FE/LLVMUtil.h"
+#include "SVF-LLVM/LLVMUtil.h"
 #include "SVFIR/SymbolTableInfo.h"
 #include <sstream>
 #include <llvm/Support/raw_ostream.h>

@@ -31,10 +31,10 @@
 #include <queue>
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/BasicTypes.h"
-#include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/BreakConstantExpr.h"
-#include "SVF-FE/SymbolTableBuilder.h"
+#include "SVF-LLVM/BasicTypes.h"
+#include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/BreakConstantExpr.h"
+#include "SVF-LLVM/SymbolTableBuilder.h"
 #include "MSSA/SVFGBuilder.h"
 
 using namespace std;
