@@ -952,20 +952,37 @@ SVFType* LLVMModuleSet::getSVFType(const Type* T)
     else
     {
         SVFType* svfType = addSVFTypeInfo(T);
+        StInfo* stinfo = collectTypeInfo(T);
+        svfType->setTypeInfo(stinfo);
+        /// TODO: set the void* to every elementtyp for now
+        PointerType* ptrTy = PointerType::getInt8PtrTy(getContext())->getPointerTo();
+        svfType->setPointerTo(SVFUtil::cast<SVFPointerType>(getSVFType(ptrTy)));
+        return svfType;
+    }
+}
 
-        StInfo* stinfo = nullptr;
+StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
+{
+    StInfo* stinfo = nullptr;
+
+    Type2TypeInfoMap::iterator tit = Type2TypeInfo.find(T);
+    if(tit!=Type2TypeInfo.end())
+    {
+        stinfo = tit->second;
+    }
+    else
+    {
         if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T))
             stinfo = collectArrayInfo(aty);
         else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T))
             stinfo = collectStructInfo(sty);
         else
             stinfo = collectSimpleTypeInfo(T);
-
-        svfType->setTypeInfo(stinfo);
-        return svfType;
+            
+        Type2TypeInfo[T] = stinfo;
     }
+    return stinfo;
 }
-
 
 SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
 {
@@ -1016,7 +1033,7 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
 
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
-    StInfo* elemStInfo = getSVFType(elemTy)->getTypeInfo();
+    StInfo* elemStInfo = collectTypeInfo(elemTy);
     u32_t nfE = elemStInfo->getNumOfFlattenFields();
     for (u32_t j = 0; j < nfE; j++)
     {
@@ -1067,7 +1084,7 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
 
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
         {
-            StInfo * subStinfo = getSVFType(et)->getTypeInfo();
+            StInfo * subStinfo = collectTypeInfo(et);
             u32_t nfE = subStinfo->getNumOfFlattenFields();
             //Copy ST's info, whose element 0 is the size of ST itself.
             for (u32_t j = 0; j < nfE; j++)

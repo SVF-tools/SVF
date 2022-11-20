@@ -558,7 +558,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
     {
         Type* objTy = getPtrElementType(refTy);
         ObjTypeInfo* typeInfo = new ObjTypeInfo(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy), Options::MaxFieldLimit);
-        initTypeInfo(typeInfo,val);
+        initTypeInfo(typeInfo,val, objTy);
         return typeInfo;
     }
     else
@@ -569,7 +569,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
         if(isConstantObjSym(val))
         {
             ObjTypeInfo* typeInfo = new ObjTypeInfo(LLVMModuleSet::getLLVMModuleSet()->getSVFType(val->getType()), 0);
-            initTypeInfo(typeInfo,val);
+            initTypeInfo(typeInfo,val, val->getType());
             return typeInfo;
         }
         else
@@ -665,7 +665,7 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
 /*!
  * Initialize the type info of an object
  */
-void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
+void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val, const Type* objTy)
 {
 
     u32_t objSize = 1;
@@ -674,7 +674,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
     {
         typeinfo->setFlag(ObjTypeInfo::FUNCTION_OBJ);
         analyzeObjType(typeinfo,val);
-        objSize = getObjSize(typeinfo->getType()->getLLVMType());
+        objSize = getObjSize(objTy);
     }
     else if(const AllocaInst* allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
     {
@@ -683,9 +683,9 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
         /// This is for `alloca <ty> <NumElements>`. For example, `alloca i64 3` allocates 3 i64 on the stack (objSize=3)
         /// In most cases, `NumElements` is not specified in the instruction, which means there is only one element (objSize=1).
         if(const ConstantInt* sz = SVFUtil::dyn_cast<ConstantInt>(allocaInst->getArraySize()))
-            objSize = sz->getZExtValue() * getObjSize(typeinfo->getType()->getLLVMType());
+            objSize = sz->getZExtValue() * getObjSize(objTy);
         else
-            objSize = getObjSize(typeinfo->getType()->getLLVMType());
+            objSize = getObjSize(objTy);
     }
     else if(SVFUtil::isa<GlobalVariable>(val))
     {
@@ -693,7 +693,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val)
         if(isConstantObjSym(val))
             typeinfo->setFlag(ObjTypeInfo::CONST_GLOBAL_OBJ);
         analyzeObjType(typeinfo,val);
-        objSize = getObjSize(typeinfo->getType()->getLLVMType());
+        objSize = getObjSize(objTy);
     }
     else if (SVFUtil::isa<Instruction>(val) && isHeapAllocExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
     {

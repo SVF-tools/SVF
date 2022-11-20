@@ -57,6 +57,7 @@ public:
     typedef Map<const Constant*, SVFConstant*> LLVMConst2SVFConstMap;
     typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
+    typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -80,6 +81,7 @@ private:
     LLVMConst2SVFConstMap LLVMConst2SVFConst;
     LLVMValue2SVFOtherValueMap LLVMValue2SVFOtherValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
+    Type2TypeInfoMap Type2TypeInfo;
 
     /// Constructor
     LLVMModuleSet();
@@ -314,6 +316,8 @@ public:
 private:
     /// Create SVFTypes
     SVFType* addSVFTypeInfo(const Type* t);
+    /// Collect a type info
+    StInfo* collectTypeInfo(const Type* ty);
     /// Collect the struct info
     StInfo* collectStructInfo(const StructType *T);
     /// Collect the array info

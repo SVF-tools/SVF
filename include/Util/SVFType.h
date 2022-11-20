@@ -129,6 +129,7 @@ typedef std::pair<NodeID, Version> VersionedVar;
 typedef Set<VersionedVar> VersionedVarSet;
 
 class SVFType;
+class SVFPointerType;
 
 /*!
  * Flatterned type information of StructType, ArrayType and SingleValueType
@@ -257,11 +258,12 @@ public:
 private:
     GNodeK kind;	///< used for classof 
     const Type* type;   ///< LLVM type
+    const SVFPointerType* getPointerToTy; /// Return a pointer to the current type
     StInfo* typeinfo; /// < SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or array
     std::string toStr;  ///< string format of the type
 protected:
-    SVFType(const Type* ty, bool svt, SVFTyKind k) : kind(k), type(ty), typeinfo(nullptr), isSingleValTy(svt), toStr("")
+    SVFType(const Type* ty, bool svt, SVFTyKind k) : kind(k), type(ty), getPointerToTy(nullptr), typeinfo(nullptr), isSingleValTy(svt), toStr("")
     {
     }
 
@@ -269,7 +271,6 @@ public:
     SVFType(void) = delete;
     virtual ~SVFType()
     {
-        delete typeinfo;
     }
 
     inline GNodeK getKind() const
@@ -281,6 +282,18 @@ public:
     {
         return toStr;
     }
+
+    inline void setPointerTo(const SVFPointerType* ty)  
+    {
+        getPointerToTy = ty;
+    }
+
+    inline const SVFPointerType* getPointerTo () const
+    {
+        assert(getPointerToTy && "set the getPointerToTy first");
+        return getPointerToTy;
+    }
+
     inline void setTypeInfo (StInfo* ti)  
     {
         typeinfo = ti;
