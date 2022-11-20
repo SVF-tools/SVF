@@ -97,7 +97,7 @@ jobs:
             cd $GITHUB_WORKSPACE/Test-Suite/diff_tests
             time python3 -m pip install --upgrade pip setuptools wheel
             time pip3 install -r ./requirements.txt
-            time python3 perf_compare.py -d ./perf_history/ --tablefmt grid --exit-on-error --only-show-changed --threshold-percentage 10
+            time python3 perf_compare.py -d ./perf_history/ --tablefmt grid --exit-on-error --only-show-changed --threshold-percentage 50
             git add .
             if [ -n "$(git status -s)" ]; then git commit -m"update latest SVF performance data"       ; fi
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/Test-Suite.git   HEAD:master   
