@@ -1512,6 +1512,38 @@ void SVFIRBuilder::handleIndCall(CallBase* cs)
     pag->addIndirectCallsites(cbn,pag->getValueNode(svfcalledval));
 }
 
+void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
+{
+    PTACallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
+    PTACallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
+    for (; iter != eiter; iter++)
+    {
+        const CallICFGNode* callBlock = iter->first;
+        const CallBase* callbase = SVFUtil::cast<CallBase>(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(callBlock->getCallSite()));
+        assert(callBlock->isIndirectCall() && "this is not an indirect call?");
+        const PTACallGraph::FunctionSet & functions = iter->second;
+        for (PTACallGraph::FunctionSet::iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+        {
+            const Function* callee = SVFUtil::cast<Function>(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(*func_iter));
+
+            if (isExtCall(*func_iter))
+            {
+                setCurrentLocation(callee, &callee->getEntryBlock());
+                handleExtCall(const_cast<CallBase*>(callbase), callee);
+            }
+            else
+            {
+                setCurrentLocation(callBlock->getCallSite(), callBlock->getCallSite()->getParent());
+                handleDirectCall(const_cast<CallBase*>(callbase), callee);
+            }
+        }
+    }
+
+    // dump SVFIR
+    if (Options::PAGDotGraph)
+        pag->dump("svfir_final");
+}
+
 /*
  * TODO: more sanity checks might be needed here
  */

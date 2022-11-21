@@ -229,6 +229,9 @@ protected:
     /// Handle indirect call
     void handleIndCall(CallBase* cs);
 
+    /// connect PAG edges based on callgraph
+    void updateCallGraph(PTACallGraph* callgraph);
+
     /// Handle external call
     //@{
     virtual void parseOperations(std::vector<ExtAPI::Operation>  &operations, CallBase* cs);
