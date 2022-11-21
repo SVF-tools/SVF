@@ -557,7 +557,7 @@ TCTEdge* TCT::getGraphEdge(TCTNode* src, TCTNode* dst, TCTEdge::CEDGEK kind)
     }
     return nullptr;
 }
-namespace llvm
+namespace SVF
 {
 
 /*!

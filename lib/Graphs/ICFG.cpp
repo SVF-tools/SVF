@@ -449,7 +449,7 @@ void ICFG::dump(const std::string& file, bool simple)
  */
 void ICFG::view()
 {
-    llvm::ViewGraph(this, "Interprocedural Control-Flow Graph");
+    SVF::ViewGraph(this, "Interprocedural Control-Flow Graph");
 }
 
 /*!
@@ -517,7 +517,7 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
 /*!
  * GraphTraits specialization
  */
-namespace llvm
+namespace SVF
 {
 template<>
 struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>

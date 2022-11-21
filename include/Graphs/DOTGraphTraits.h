@@ -18,7 +18,7 @@
 
 #include <string>
 
-namespace llvm
+namespace SVF
 {
 
 /// DefaultDOTGraphTraits - This class provides the default implementations of

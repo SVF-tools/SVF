@@ -35,7 +35,7 @@
 #include "Graphs/GraphWriter.h"	// for graph write
 #include <fstream>
 
-namespace llvm
+namespace SVF
 {
 
 /*
@@ -80,7 +80,7 @@ public:
                            const GraphType &GT)
     {
         ///Define the GTraits and node iterator for printing
-        typedef llvm::GraphTraits<GraphType> GTraits;
+        typedef GraphTraits<GraphType> GTraits;
 
         typedef typename GTraits::NodeRef NodeRef;
         typedef typename GTraits::nodes_iterator node_iterator;

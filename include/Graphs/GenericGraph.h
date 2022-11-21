@@ -450,7 +450,7 @@ public:
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for tranversing from a node using standard graph traversals.
  */
-namespace llvm
+namespace SVF
 {
 
 // mapped_iter - This is a simple iterator adapter that causes a function to

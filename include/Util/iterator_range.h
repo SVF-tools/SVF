@@ -20,7 +20,7 @@
 
 #include <utility>
 
-namespace llvm
+namespace SVF
 {
 
 /// A range adaptor for a pair of iterators.

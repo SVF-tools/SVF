@@ -34,7 +34,7 @@
 #include <sstream>
 #include <iostream>
 
-namespace llvm
+namespace SVF
 {
 
 namespace DOT    // Private functions...
@@ -356,7 +356,7 @@ std::string WriteGraph(const GraphType &G,
         return "";
     }
 
-    llvm::WriteGraph(O, G, ShortNames);
+    SVF::WriteGraph(O, G, ShortNames);
     O.close();
 
     std::cerr << " done. \n";
@@ -372,7 +372,7 @@ void ViewGraph(const GraphType &G,const std::string& name,
                bool ShortNames = false,
                GraphProgram::Name Program = GraphProgram::DOT)
 {
-    llvm::WriteGraph(G, ShortNames);
+    SVF::WriteGraph(G, ShortNames);
 }
 
 } // end namespace llvm

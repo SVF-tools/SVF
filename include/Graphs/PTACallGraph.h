@@ -445,7 +445,7 @@ public:
 
 } // End namespace SVF
 
-namespace llvm
+namespace SVF
 {
 /* !
  * GraphTraits specializations for generic graph algorithms.

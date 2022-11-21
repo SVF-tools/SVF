@@ -625,7 +625,7 @@ void ConstraintGraph::print()
  */
 void ConstraintGraph::view()
 {
-    llvm::ViewGraph(this, "Constraint Graph");
+    SVF::ViewGraph(this, "Constraint Graph");
 }
 
 /// Iterators of direct edges for ConsGNode
@@ -698,7 +698,7 @@ ConstraintNode::const_iterator ConstraintNode::directInEdgeEnd() const
 /*!
  * GraphTraits specialization for constraint graph
  */
-namespace llvm
+namespace SVF
 {
 template<>
 struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>

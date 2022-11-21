@@ -461,7 +461,7 @@ protected:
 
 } // End namespace SVF
 
-namespace llvm
+namespace SVF
 {
 /* !
  * GraphTraits specializations for SVFG to be used for generic graph algorithms.

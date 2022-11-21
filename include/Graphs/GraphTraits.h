@@ -19,7 +19,7 @@
 
 #include "Util/iterator_range.h"
 
-namespace llvm
+namespace SVF
 {
 
 // GraphTraits - This class should be specialized by different graph types...

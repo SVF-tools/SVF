@@ -45,7 +45,7 @@ class WPASolver
 
 public:
     ///Define the GTraits and node iterator for printing
-    typedef llvm::GraphTraits<GraphType> GTraits;
+    typedef SVF::GraphTraits<GraphType> GTraits;
     typedef typename GTraits::NodeRef           GNODE;
     typedef typename GTraits::EdgeType          GEDGE;
     typedef typename GTraits::ChildIteratorType child_iterator;

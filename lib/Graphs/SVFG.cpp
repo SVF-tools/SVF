@@ -761,7 +761,7 @@ void SVFG::performStat()
 /*!
  * GraphTraits specialization
  */
-namespace llvm
+namespace SVF
 {
 template<>
 struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>

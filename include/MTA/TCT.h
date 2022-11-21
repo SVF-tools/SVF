@@ -572,7 +572,7 @@ private:
 
 } // End namespace SVF
 
-namespace llvm
+namespace SVF
 {
 /* !
  * GraphTraits specializations for constraint graph so that they can be treated as
