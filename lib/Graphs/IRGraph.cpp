@@ -109,11 +109,11 @@ void IRGraph::dump(std::string name)
  */
 void IRGraph::view()
 {
-    llvm::ViewGraph(this, "ProgramAssignmentGraph");
+    SVF::ViewGraph(this, "ProgramAssignmentGraph");
 }
 
 
-namespace llvm
+namespace SVF
 {
 /*!
  * Write value flow graph into dot file for debugging

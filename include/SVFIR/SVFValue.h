@@ -38,7 +38,7 @@ namespace SVF
 {
 
 /// LLVM Aliases and constants
-typedef llvm::GraphPrinter GraphPrinter;
+typedef SVF::GraphPrinter GraphPrinter;
 
 
 class SVFInstruction;

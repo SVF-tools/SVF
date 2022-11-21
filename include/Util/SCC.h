@@ -56,7 +56,7 @@ class SCCDetection
 
 private:
     ///Define the GTraits and node iterator for printing
-    typedef llvm::GraphTraits<GraphType> GTraits;
+    typedef SVF::GenericGraphTraits<GraphType> GTraits;
     typedef typename GTraits::NodeRef          GNODE;
     typedef typename GTraits::nodes_iterator node_iterator;
     typedef typename GTraits::ChildIteratorType child_iterator;

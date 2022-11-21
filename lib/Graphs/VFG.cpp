@@ -935,7 +935,7 @@ void VFG::dump(const std::string& file, bool simple)
  */
 void VFG::view()
 {
-    llvm::ViewGraph(this, "Value Flow Graph");
+    SVF::ViewGraph(this, "Value Flow Graph");
 }
 
 
@@ -1091,7 +1091,7 @@ const SVFValue* ArgumentVFGNode::getValue() const
 /*!
  * GraphTraits specialization
  */
-namespace llvm
+namespace SVF
 {
 template<>
 struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>

@@ -19,8 +19,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_SUPPORT_GRAPHWRITER_H
-#define LLVM_SUPPORT_GRAPHWRITER_H
+#ifndef GRAPHS_GRAPHWRITER_H
+#define GRAPHS_GRAPHWRITER_H
 
 #include "Graphs/GraphTraits.h"
 #include "Graphs/DOTGraphTraits.h"
@@ -34,7 +34,7 @@
 #include <sstream>
 #include <iostream>
 
-namespace llvm
+namespace SVF
 {
 
 namespace DOT    // Private functions...
@@ -65,7 +65,7 @@ class GraphWriter
     const GraphType &G;
 
     using DOTTraits = DOTGraphTraits<GraphType>;
-    using GTraits = GraphTraits<GraphType>;
+    using GTraits = GenericGraphTraits<GraphType>;
     using NodeRef = typename GTraits::NodeRef;
     using node_iterator = typename GTraits::nodes_iterator;
     using child_iterator = typename GTraits::ChildIteratorType;
@@ -356,7 +356,7 @@ std::string WriteGraph(const GraphType &G,
         return "";
     }
 
-    llvm::WriteGraph(O, G, ShortNames);
+    SVF::WriteGraph(O, G, ShortNames);
     O.close();
 
     std::cerr << " done. \n";
@@ -372,7 +372,7 @@ void ViewGraph(const GraphType &G,const std::string& name,
                bool ShortNames = false,
                GraphProgram::Name Program = GraphProgram::DOT)
 {
-    llvm::WriteGraph(G, ShortNames);
+    SVF::WriteGraph(G, ShortNames);
 }
 
 } // end namespace llvm

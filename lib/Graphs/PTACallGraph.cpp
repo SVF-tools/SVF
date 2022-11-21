@@ -321,10 +321,10 @@ void PTACallGraph::dump(const std::string& filename)
 
 void PTACallGraph::view()
 {
-    llvm::ViewGraph(this, "Call Graph");
+    SVF::ViewGraph(this, "Call Graph");
 }
 
-namespace llvm
+namespace SVF
 {
 
 /*!

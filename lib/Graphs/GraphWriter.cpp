@@ -9,7 +9,7 @@
 
 #include <string>
 
-std::string llvm::DOT::EscapeStr(const std::string &Label)
+std::string SVF::DOT::EscapeStr(const std::string &Label)
 {
     std::string Str(Label);
     for (unsigned i = 0; i != Str.length(); ++i)

@@ -46,14 +46,14 @@ class GraphReachSolver
 
 public:
     ///Define the GTraits and node iterator
-    typedef llvm::GraphTraits<GraphType> GTraits;
+    typedef SVF::GenericGraphTraits<GraphType> GTraits;
     typedef typename GTraits::NodeType          GNODE;
     typedef typename GTraits::EdgeType          GEDGE;
     typedef typename GTraits::nodes_iterator node_iterator;
     typedef typename GTraits::ChildIteratorType child_iterator;
 
     /// Define inverse GTraits and note iterator
-    typedef llvm::GraphTraits<llvm::Inverse<GNODE *> > InvGTraits;
+    typedef SVF::GenericGraphTraits<SVF::Inverse<GNODE *> > InvGTraits;
     typedef typename InvGTraits::ChildIteratorType inv_child_iterator;
 
     /// Define worklist
