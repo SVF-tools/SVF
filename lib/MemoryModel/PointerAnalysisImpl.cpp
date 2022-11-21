@@ -215,16 +215,20 @@ void BVDataPTAImpl::writeToFile(const string& filename)
 
     f << "------\n";
     // Write GepPAGNodes to file
+    string gepPAGNodesStr;
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
     {
         PAGNode* pagNode = it->second;
+        string gepPAGNodeStr;
         if (GepObjVar *gepObjPN = SVFUtil::dyn_cast<GepObjVar>(pagNode))
         {
-            f << it->first << " ";
-            f << pag->getBaseObjVar(it->first) << " ";
-            f << gepObjPN->getConstantFieldIdx() << "\n";
+            gepPAGNodeStr += std::to_string(it->first) + " ";
+            gepPAGNodeStr += std::to_string(pag->getBaseObjVar(it->first)) + " ";
+            gepPAGNodeStr += std::to_string(gepObjPN->getConstantFieldIdx()) + "\n";
         }
+        gepPAGNodesStr = gepPAGNodeStr + gepPAGNodesStr;
     }
+    f << gepPAGNodesStr;
 
     // Job finish and close file
     f.close();
