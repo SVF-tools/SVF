@@ -224,10 +224,10 @@ void CHGraph::dump(const std::string& filename)
 
 void CHGraph::view()
 {
-    llvm::ViewGraph(this, "Class Hierarchy Graph");
+    SVF::ViewGraph(this, "Class Hierarchy Graph");
 }
 
-namespace llvm
+namespace SVF
 {
 
 /*!

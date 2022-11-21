@@ -636,6 +636,46 @@ void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instru
     }
 }
 
+/// Check whether this value points-to a constant object
+bool LLVMUtil::isConstantObjSym(const SVFValue* val)
+{
+    return isConstantObjSym(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(val));
+}
+
+/*!
+ * Check whether this value points-to a constant object
+ */
+bool LLVMUtil::isConstantObjSym(const Value* val)
+{
+    if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
+    {
+        if (cppUtil::isValVtbl(v))
+            return false;
+        else if (!v->hasInitializer())
+        {
+            if(v->isExternalLinkage(v->getLinkage()))
+                return false;
+            else
+                return true;
+        }
+        else
+        {
+            StInfo *stInfo = LLVMModuleSet::getLLVMModuleSet()->getSVFType(v->getInitializer()->getType())->getTypeInfo();
+            const std::vector<const SVFType*> &fields = stInfo->getFlattenFieldTypes();
+            for (std::vector<const SVFType*>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
+            {
+                const SVFType* elemTy = *it;
+                assert(!SVFUtil::isa<SVFFunctionType>(elemTy) && "Initializer of a global is a function?");
+                if (SVFUtil::isa<SVFPointerType>(elemTy))
+                    return false;
+            }
+
+            return v->isConstant();
+        }
+    }
+    return LLVMUtil::isConstDataOrAggData(val);
+}
+
 namespace SVF
 {
 const std::string SVFValue::toString() const

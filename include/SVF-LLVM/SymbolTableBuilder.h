@@ -57,9 +57,6 @@ public:
     /// Return size of this object based on LLVM value
     u32_t getObjSize(const Type* type);
 
-    /// Check whether this value points-to a constant object
-    bool isConstantObjSym(const Value* val);
-
 protected:
 
     /// collect the syms

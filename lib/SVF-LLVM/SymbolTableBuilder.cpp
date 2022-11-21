@@ -744,40 +744,6 @@ u32_t SymbolTableBuilder::getObjSize(const Type* ety)
     return numOfFields;
 }
 
-/*!
- * Check whether this value points-to a constant object
- */
-bool SymbolTableBuilder::isConstantObjSym(const Value* val)
-{
-    if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
-    {
-        if (cppUtil::isValVtbl(v))
-            return false;
-        else if (!v->hasInitializer())
-        {
-            if(v->isExternalLinkage(v->getLinkage()))
-                return false;
-            else
-                return true;
-        }
-        else
-        {
-            StInfo *stInfo = getOrAddSVFTypeInfo(v->getInitializer()->getType());
-            const std::vector<const SVFType*> &fields = stInfo->getFlattenFieldTypes();
-            for (std::vector<const SVFType*>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
-            {
-                const SVFType* elemTy = *it;
-                assert(!SVFUtil::isa<SVFFunctionType>(elemTy) && "Initializer of a global is a function?");
-                if (SVFUtil::isa<SVFPointerType>(elemTy))
-                    return false;
-            }
-
-            return v->isConstant();
-        }
-    }
-    return LLVMUtil::isConstDataOrAggData(val);
-}
-
 /// Number of flattenned elements of an array or struct
 u32_t SymbolTableBuilder::getNumOfFlattenElements(const Type* T)
 {

@@ -74,10 +74,10 @@ void CFLGraph::dump(const std::string& filename)
 
 void CFLGraph::view()
 {
-    llvm::ViewGraph(this, "CFL Graph");
+    SVF::ViewGraph(this, "CFL Graph");
 }
 
-namespace llvm
+namespace SVF
 {
 /*!
  * Write CFL graph into dot file for debugging
