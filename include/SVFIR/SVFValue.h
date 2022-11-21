@@ -174,7 +174,6 @@ public:
 private:
     GNodeK kind;	///< used for classof
     bool ptrInUncalledFun;  ///< true if this pointer is in an uncalled function
-    bool has_name;          ///< true if this value has a name
     bool constDataOrAggData;    ///< true if this value is a ConstantData (e.g., numbers, string, floats) or a constantAggregate
 
 protected:
@@ -183,7 +182,7 @@ protected:
     std::string sourceLoc;  ///< Source code information of this value
     /// Constructor
     SVFValue(const std::string& val, const SVFType* ty, SVFValKind k): kind(k),
-        ptrInUncalledFun(false), has_name(false), constDataOrAggData(SVFConstData==k), type(ty),
+        ptrInUncalledFun(false), constDataOrAggData(SVFConstData==k), type(ty),
         name(val), sourceLoc("No source code Info")
     {
     }
@@ -196,10 +195,6 @@ protected:
     inline void setPtrInUncalledFunction()
     {
         ptrInUncalledFun = true;
-    }
-    inline void setHasName()
-    {
-        has_name = true;
     }
     ///@}
 public:
@@ -236,10 +231,6 @@ public:
     inline bool isNullPtr() const
     {
         return getKind() == SVFNullPtr;
-    }
-    inline bool hasName() const
-    {
-        return has_name;
     }
     inline virtual void setSourceLoc(const std::string& sourceCodeInfo)
     {

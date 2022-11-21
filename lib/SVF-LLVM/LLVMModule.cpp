@@ -848,8 +848,6 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
         svffun->setIsUncalledFunction(LLVMUtil::isUncalledFunction(func));
         svffun->setDefFunForMultipleModule(getSVFFunction(LLVMUtil::getDefFunForMultipleModule(func)));
     }
-    if (val->hasName())
-        svfvalue->setHasName();
 
     svfvalue->setSourceLoc(LLVMUtil::getSourceLoc(val));
 }

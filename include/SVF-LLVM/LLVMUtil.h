@@ -391,6 +391,11 @@ inline const Value* getGlobalRep(const Value* val)
     return val;
 }
 
+/// Check whether this value points-to a constant object
+bool isConstantObjSym(const SVFValue* val);
+
+/// Check whether this value points-to a constant object
+bool isConstantObjSym(const Value* val);
 
 // Dump Control Flow Graph of llvm function, with instructions
 void viewCFG(const Function* fun);

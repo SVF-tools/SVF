@@ -289,7 +289,7 @@ public:
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
-        if (value && value->hasName())
+        if (value)
             return value->getName();
         return "";
     }
@@ -343,7 +343,7 @@ public:
     /// Return name of a LLVM value
     virtual const std::string getValueName() const
     {
-        if (value && value->hasName())
+        if (value)
             return value->getName();
         return "";
     }
@@ -405,7 +405,7 @@ public:
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
-        if (value && value->hasName())
+        if (value)
             return value->getName() + "_" + std::to_string(getConstantFieldIdx());
         return "offset_" + std::to_string(getConstantFieldIdx());
     }
@@ -490,7 +490,7 @@ public:
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
-        if (value && value->hasName())
+        if (value)
             return value->getName() + "_" + std::to_string(ls.accumulateConstantFieldIdx());
         return "offset_" + std::to_string(ls.accumulateConstantFieldIdx());
     }
@@ -535,7 +535,7 @@ public:
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
-        if (value && value->hasName())
+        if (value)
             return value->getName() + " (base object)";
         return " (base object)";
     }

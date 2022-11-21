@@ -155,7 +155,6 @@ bool SVFFunction::isVarArg() const
 SVFBasicBlock::SVFBasicBlock(const std::string& b, const SVFType* ty, const SVFFunction* f):
     SVFValue(b, ty, SVFValue::SVFBB), fun(f)
 {
-    name = hasName() ? getName(): "";
 }
 
 SVFBasicBlock::~SVFBasicBlock()
