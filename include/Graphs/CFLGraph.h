@@ -192,20 +192,20 @@ private:
 namespace SVF
 {
 /* !
- * GraphTraits specializations for generic graph algorithms.
+ * GenericGraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<SVF::CFLNode*> : public GraphTraits<SVF::GenericNode<SVF::CFLNode,SVF::CFLEdge>*  >
+template<> struct GenericGraphTraits<SVF::CFLNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::CFLNode,SVF::CFLEdge>*  >
 {
 };
 
-/// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
+/// Inverse GenericGraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<SVF::CFLNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::CFLNode,SVF::CFLEdge>* > >
+struct GenericGraphTraits<Inverse<SVF::CFLNode *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::CFLNode,SVF::CFLEdge>* > >
 {
 };
 
-template<> struct GraphTraits<SVF::CFLGraph*> : public GraphTraits<SVF::GenericGraph<SVF::CFLNode,SVF::CFLEdge>* >
+template<> struct GenericGraphTraits<SVF::CFLGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CFLNode,SVF::CFLEdge>* >
 {
     typedef SVF::CFLNode *NodeRef;
 };

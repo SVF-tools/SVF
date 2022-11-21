@@ -65,7 +65,7 @@ class GraphWriter
     const GraphType &G;
 
     using DOTTraits = DOTGraphTraits<GraphType>;
-    using GTraits = GraphTraits<GraphType>;
+    using GTraits = GenericGraphTraits<GraphType>;
     using NodeRef = typename GTraits::NodeRef;
     using node_iterator = typename GTraits::nodes_iterator;
     using child_iterator = typename GTraits::ChildIteratorType;

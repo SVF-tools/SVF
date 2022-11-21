@@ -464,18 +464,18 @@ protected:
 namespace SVF
 {
 /* !
- * GraphTraits specializations for SVFG to be used for generic graph algorithms.
+ * GenericGraphTraits specializations for SVFG to be used for generic graph algorithms.
  * Provide graph traits for traversing from a SVFG node using standard graph traversals.
  */
-//template<> struct GraphTraits<SVF::SVFGNode*>: public GraphTraits<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>*  > {
+//template<> struct GenericGraphTraits<SVF::SVFGNode*>: public GenericGraphTraits<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>*  > {
 //};
 //
-///// Inverse GraphTraits specializations for Value flow node, it is used for inverse traversal.
+///// Inverse GenericGraphTraits specializations for Value flow node, it is used for inverse traversal.
 //template<>
-//struct GraphTraits<Inverse<SVF::SVFGNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>* > > {
+//struct GenericGraphTraits<Inverse<SVF::SVFGNode *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>* > > {
 //};
 
-template<> struct GraphTraits<SVF::SVFG*> : public GraphTraits<SVF::GenericGraph<SVF::SVFGNode,SVF::SVFGEdge>* >
+template<> struct GenericGraphTraits<SVF::SVFG*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFGNode,SVF::SVFGEdge>* >
 {
     typedef SVF::SVFGNode *NodeRef;
 };

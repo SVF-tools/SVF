@@ -385,20 +385,20 @@ public:
 namespace SVF
 {
 /* !
- * GraphTraits specializations for the generic graph algorithms.
+ * GenericGraphTraits specializations for the generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<SVF::ConstraintNode*> : public GraphTraits<SVF::GenericNode<SVF::ConstraintNode,SVF::ConstraintEdge>*  >
+template<> struct GenericGraphTraits<SVF::ConstraintNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::ConstraintNode,SVF::ConstraintEdge>*  >
 {
 };
 
-/// Inverse GraphTraits specializations for Value flow node, it is used for inverse traversal.
+/// Inverse GenericGraphTraits specializations for Value flow node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<SVF::ConstraintNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::ConstraintNode,SVF::ConstraintEdge>* > >
+struct GenericGraphTraits<Inverse<SVF::ConstraintNode *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::ConstraintNode,SVF::ConstraintEdge>* > >
 {
 };
 
-template<> struct GraphTraits<SVF::ConstraintGraph*> : public GraphTraits<SVF::GenericGraph<SVF::ConstraintNode,SVF::ConstraintEdge>* >
+template<> struct GenericGraphTraits<SVF::ConstraintGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::ConstraintNode,SVF::ConstraintEdge>* >
 {
     typedef SVF::ConstraintNode *NodeRef;
 };

@@ -222,19 +222,19 @@ namespace SVF
 {
 
 /* !
- * GraphTraits specializations of SVFIR to be used for the generic graph algorithms.
+ * GenericGraphTraits specializations of SVFIR to be used for the generic graph algorithms.
  * Provide graph traits for tranversing from a SVFIR node using standard graph traversals.
  */
-template<> struct GraphTraits<SVF::SVFVar*> : public GraphTraits<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>*  >
+template<> struct GenericGraphTraits<SVF::SVFVar*> : public GenericGraphTraits<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>*  >
 {
 };
 
-/// Inverse GraphTraits specializations for SVFIR node, it is used for inverse traversal.
-template<> struct GraphTraits<Inverse<SVF::SVFVar *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>* > >
+/// Inverse GenericGraphTraits specializations for SVFIR node, it is used for inverse traversal.
+template<> struct GenericGraphTraits<Inverse<SVF::SVFVar *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>* > >
 {
 };
 
-template<> struct GraphTraits<SVF::IRGraph*> : public GraphTraits<SVF::GenericGraph<SVF::SVFVar,SVF::SVFStmt>* >
+template<> struct GenericGraphTraits<SVF::IRGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFVar,SVF::SVFStmt>* >
 {
     typedef SVF::SVFVar *NodeRef;
 };

@@ -1,4 +1,4 @@
-//===- iterator_range.h - A range adaptor for iterators ---------*- C++ -*-===//
+//===- iter_range.h - A range adaptor for iterators ---------*- C++ -*-===//
 //
 // From the LLVM Project with some modifications, under the Apache License v2.0
 // with LLVM Exceptions. See https://llvm.org/LICENSE.txt for license information.
@@ -28,7 +28,7 @@ namespace SVF
 /// This just wraps two iterators into a range-compatible interface. Nothing
 /// fancy at all.
 template <typename IteratorT>
-class iterator_range
+class iter_range
 {
     IteratorT begin_iterator, end_iterator;
 
@@ -36,10 +36,10 @@ public:
     //TODO: Add SFINAE to test that the Container's iterators match the range's
     //      iterators.
     template <typename Container>
-    iterator_range(Container &&c)
+    iter_range(Container &&c)
     //TODO: Consider ADL/non-member begin/end calls.
         : begin_iterator(c.begin()), end_iterator(c.end()) {}
-    iterator_range(IteratorT begin_iterator, IteratorT end_iterator)
+    iter_range(IteratorT begin_iterator, IteratorT end_iterator)
         : begin_iterator(std::move(begin_iterator)),
           end_iterator(std::move(end_iterator)) {}
 
@@ -61,14 +61,14 @@ public:
 ///
 /// This provides a bit of syntactic sugar to make using sub-ranges
 /// in for loops a bit easier. Analogous to std::make_pair().
-template <class T> iterator_range<T> make_range(T x, T y)
+template <class T> iter_range<T> make_range(T x, T y)
 {
-    return iterator_range<T>(std::move(x), std::move(y));
+    return iter_range<T>(std::move(x), std::move(y));
 }
 
-template <typename T> iterator_range<T> make_range(std::pair<T, T> p)
+template <typename T> iter_range<T> make_range(std::pair<T, T> p)
 {
-    return iterator_range<T>(std::move(p.first), std::move(p.second));
+    return iter_range<T>(std::move(p.first), std::move(p.second));
 }
 
 }

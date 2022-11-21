@@ -447,7 +447,7 @@ public:
 } // End namespace SVF
 
 /* !
- * GraphTraits specializations for generic graph algorithms.
+ * GenericGraphTraits specializations for generic graph algorithms.
  * Provide graph traits for tranversing from a node using standard graph traversals.
  */
 namespace SVF
@@ -460,14 +460,14 @@ template <typename ItTy, typename FuncTy,
           typename FuncReturnTy =
           decltype(std::declval<FuncTy>()(*std::declval<ItTy>()))>
 class mapped_iter
-    : public iterator_adaptor_base<
+    : public iter_adaptor_base<
       mapped_iter<ItTy, FuncTy>, ItTy,
       typename std::iterator_traits<ItTy>::iterator_category,
       typename std::remove_reference<FuncReturnTy>::type>
 {
 public:
     mapped_iter(ItTy U, FuncTy F)
-        : mapped_iter::iterator_adaptor_base(std::move(U)), F(std::move(F)) {}
+        : mapped_iter::iter_adaptor_base(std::move(U)), F(std::move(F)) {}
 
     ItTy getCurrent()
     {
@@ -492,9 +492,9 @@ inline mapped_iter<ItTy, FuncTy> map_iter(ItTy I, FuncTy F)
 }
 
 /*!
- * GraphTraits for nodes
+ * GenericGraphTraits for nodes
  */
-template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericNode<NodeTy,EdgeTy>*  >
+template<class NodeTy,class EdgeTy> struct GenericGraphTraits<SVF::GenericNode<NodeTy,EdgeTy>*  >
 {
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
@@ -531,10 +531,10 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericNode<NodeTy,E
 };
 
 /*!
- * Inverse GraphTraits for node which is used for inverse traversal.
+ * Inverse GenericGraphTraits for node which is used for inverse traversal.
  */
 template<class NodeTy,class EdgeTy>
-struct GraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
+struct GenericGraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
 {
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
@@ -570,7 +570,7 @@ struct GraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
 /*!
  * GraphTraints
  */
-template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericGraph<NodeTy,EdgeTy>* > : public GraphTraits<SVF::GenericNode<NodeTy,EdgeTy>*  >
+template<class NodeTy,class EdgeTy> struct GenericGraphTraits<SVF::GenericGraph<NodeTy,EdgeTy>* > : public GenericGraphTraits<SVF::GenericNode<NodeTy,EdgeTy>*  >
 {
     typedef SVF::GenericGraph<NodeTy,EdgeTy> GenericGraphTy;
     typedef NodeTy NodeType;

@@ -80,7 +80,7 @@ public:
                            const GraphType &GT)
     {
         ///Define the GTraits and node iterator for printing
-        typedef GraphTraits<GraphType> GTraits;
+        typedef GenericGraphTraits<GraphType> GTraits;
 
         typedef typename GTraits::NodeRef NodeRef;
         typedef typename GTraits::nodes_iterator node_iterator;
