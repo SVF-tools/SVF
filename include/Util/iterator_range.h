@@ -15,8 +15,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_ADT_ITERATOR_RANGE_H
-#define LLVM_ADT_ITERATOR_RANGE_H
+#ifndef UTIL_ITERATOR_RANGE_H
+#define UTIL_ITERATOR_RANGE_H
 
 #include <utility>
 

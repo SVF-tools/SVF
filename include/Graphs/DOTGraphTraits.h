@@ -13,8 +13,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_SUPPORT_DOTGRAPHTRAITS_H
-#define LLVM_SUPPORT_DOTGRAPHTRAITS_H
+#ifndef GRAPHS_DOTGRAPHTRAITS_H
+#define GRAPHS_DOTGRAPHTRAITS_H
 
 #include <string>
 

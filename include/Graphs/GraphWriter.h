@@ -19,8 +19,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_SUPPORT_GRAPHWRITER_H
-#define LLVM_SUPPORT_GRAPHWRITER_H
+#ifndef GRAPHS_GRAPHWRITER_H
+#define GRAPHS_GRAPHWRITER_H
 
 #include "Graphs/GraphTraits.h"
 #include "Graphs/DOTGraphTraits.h"

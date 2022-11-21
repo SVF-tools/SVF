@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_ADT_ITERATOR_H
-#define LLVM_ADT_ITERATOR_H
+#ifndef UTIL_ITERATOR_H
+#define UTIL_ITERATOR_H
 
 #include "Util/iterator_range.h"
 #include <cstddef>

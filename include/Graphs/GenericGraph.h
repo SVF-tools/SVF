@@ -32,6 +32,7 @@
 
 #include "SVFIR/SVFValue.h"
 #include "Util/iterator.h"
+#include "Graphs/GraphTraits.h"
 
 namespace SVF
 {

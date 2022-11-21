@@ -14,8 +14,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_ADT_GRAPHTRAITS_H
-#define LLVM_ADT_GRAPHTRAITS_H
+#ifndef GRAPHS_GRAPHTRAITS_H
+#define GRAPHS_GRAPHTRAITS_H
 
 #include "Util/iterator_range.h"
 
