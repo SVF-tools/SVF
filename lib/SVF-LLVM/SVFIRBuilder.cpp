@@ -1521,8 +1521,8 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
         const CallICFGNode* callBlock = iter->first;
         const CallBase* callbase = SVFUtil::cast<CallBase>(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(callBlock->getCallSite()));
         assert(callBlock->isIndirectCall() && "this is not an indirect call?");
-        const PTACallGraph::FunctionSet & functions = iter->second;
-        for (PTACallGraph::FunctionSet::iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+        const PTACallGraph::FunctionSet& functions = iter->second;
+        for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const Function* callee = SVFUtil::cast<Function>(LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(*func_iter));
 

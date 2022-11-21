@@ -199,6 +199,9 @@ public:
     }
     //}@
 
+    /// connect PAG edges based on callgraph
+    void updateCallGraph(PTACallGraph* callgraph);
+
 protected:
     /// Handle globals including (global variable and functions)
     //@{
@@ -228,9 +231,6 @@ protected:
 
     /// Handle indirect call
     void handleIndCall(CallBase* cs);
-
-    /// connect PAG edges based on callgraph
-    void updateCallGraph(PTACallGraph* callgraph);
 
     /// Handle external call
     //@{
