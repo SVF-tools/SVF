@@ -226,8 +226,8 @@ void CHGBuilder::readInheritanceMetadataFromModule(const Module &M)
                 opeit = md->op_end(); opit != opeit; ++opit)
         {
             const MDNode *N = *opit;
-            const MDString &mdstr = SVFUtil::cast<MDString>(N->getOperand(0));
-            string baseName = mdstr.getString().str();
+            const MDString* mdstr = SVFUtil::cast<MDString>(N->getOperand(0).get());
+            string baseName = mdstr->getString().str();
             chg->addEdge(className, baseName, CHEdge::INHERITANCE);
         }
     }
