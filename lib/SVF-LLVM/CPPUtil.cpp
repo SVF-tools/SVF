@@ -27,10 +27,9 @@
  *      Author: Xiaokang Fan
  */
 
-#include "SVF-LLVM/CPPUtil.h"
-#include "Util/SVFUtil.h"
-#include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMUtil.h"
+#include "Util/SVFUtil.h"
+#include "SVF-LLVM/CPPUtil.h"
 
 
 #include <cxxabi.h>   // for demangling
@@ -398,7 +397,7 @@ s32_t cppUtil::getVCallIdx(const CallBase* cs)
     const GetElementPtrInst *vfuncptrgepinst =
         SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
-    const ConstantInt* idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
+    const ConstantInt* idx = SVFUtil::dyn_cast<ConstantInt>(oi->get());
     s32_t idx_value;
     if (idx == nullptr)
     {
@@ -523,8 +522,8 @@ string cppUtil::getClassNameOfThisPtr(const CallBase* inst)
     string thisPtrClassName;
     if (const MDNode *N = inst->getMetadata("VCallPtrType"))
     {
-        const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
-        thisPtrClassName = mdstr.getString().str();
+        const MDString* mdstr = SVFUtil::cast<MDString>(N->getOperand(0).get());
+        thisPtrClassName = mdstr->getString().str();
     }
     if (thisPtrClassName.size() == 0)
     {
@@ -549,8 +548,8 @@ string cppUtil::getFunNameOfVCallSite(const CallBase* inst)
     string funName;
     if (const MDNode *N = inst->getMetadata("VCallFunName"))
     {
-        const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
-        funName = mdstr.getString().str();
+        const MDString* mdstr = SVFUtil::cast<MDString>(N->getOperand(0).get());
+        funName = mdstr->getString().str();
     }
     return funName;
 }
