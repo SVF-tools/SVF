@@ -74,10 +74,10 @@ void MHP::analyze()
  */
 void MHP::analyzeInterleaving()
 {
-    for (TCT::const_iterator it = tct->begin(), eit = tct->end(); it != eit; ++it)
+    for (const std::pair<const NodeID, TCTNode*>& tpair : *tct)
     {
-        const CxtThread& ct = it->second->getCxtThread();
-        NodeID rootTid = it->first;
+        const CxtThread& ct = tpair.second->getCxtThread();
+        NodeID rootTid = tpair.first;
         const SVFFunction* routine = tct->getStartRoutineOfCxtThread(ct);
         const SVFInstruction* svfInst = routine->getEntryBlock()->front();
         CxtThreadStmt rootcts(rootTid, ct.getContext(), svfInst);
@@ -154,9 +154,8 @@ void MHP::updateNonCandidateFunInterleaving()
 
             const CxtThreadStmtSet& tsSet = getThreadStmtSet(entryinst);
 
-            for (CxtThreadStmtSet::const_iterator it1 = tsSet.begin(), eit1 = tsSet.end(); it1 != eit1; ++it1)
+            for (const CxtThreadStmt& cts : tsSet)
             {
-                const CxtThreadStmt& cts = *it1;
                 const CallStrCxt& curCxt = cts.getContext();
 
                 for (const SVFBasicBlock* svfbb : fun->getBasicBlockList())
@@ -380,16 +379,16 @@ void MHP::updateAncestorThreads(NodeID curTid)
     DBOUT(DMTA, outs() << "\n");
     tds.set(curTid);
 
-    for (NodeBS::iterator it = tds.begin(), eit = tds.end(); it != eit; ++it)
+    for (const unsigned i : tds)
     {
-        const CxtThread& ct = tct->getTCTNode(*it)->getCxtThread();
+        const CxtThread& ct = tct->getTCTNode(i)->getCxtThread();
         if (const SVFInstruction* forkInst = ct.getThread())
         {
             CallStrCxt forkSiteCxt = tct->getCxtOfCxtThread(ct);
             const InstVec& nextInsts = forkInst->getSuccInstructions();
             for (const auto& ni: nextInsts)
             {
-                CxtThreadStmt cts(tct->getParentThread(*it), forkSiteCxt, ni);
+                CxtThreadStmt cts(tct->getParentThread(i), forkSiteCxt, ni);
                 addInterleavingThread(cts, curTid);
             }
         }
@@ -410,19 +409,18 @@ void MHP::updateSiblingThreads(NodeID curTid)
 {
     NodeBS tds = tct->getAncestorThread(curTid);
     tds.set(curTid);
-    for (NodeBS::iterator cit = tds.begin(), ecit = tds.end(); cit != ecit; ++cit)
+    for (const unsigned tid : tds)
     {
-        NodeBS siblingTds = tct->getSiblingThread(*cit);
-        for (NodeBS::iterator it = siblingTds.begin(), eit = siblingTds.end(); it != eit; ++it)
+        NodeBS siblingTds = tct->getSiblingThread(tid);
+        for (const unsigned stid : siblingTds)
         {
-
-            if ((isHBPair(*cit, *it) && isRecurFullJoin(*cit, curTid)) || isHBPair(*it, *cit))
+            if ((isHBPair(tid, stid) && isRecurFullJoin(tid, curTid)) || isHBPair(stid, tid))
                 continue;
 
-            const CxtThread& ct = tct->getTCTNode(*it)->getCxtThread();
+            const CxtThread& ct = tct->getTCTNode(stid)->getCxtThread();
             const SVFFunction* routine = tct->getStartRoutineOfCxtThread(ct);
             const SVFInstruction* stmt = routine->getEntryBlock()->front();
-            CxtThreadStmt cts(*it, ct.getContext(), stmt);
+            CxtThreadStmt cts(stid, ct.getContext(), stmt);
             addInterleavingThread(cts, curTid);
         }
 
@@ -641,11 +639,10 @@ void MHP::printInterleaving()
     {
         outs() << "( t" << pair.first.getTid()
                << " , $" << pair.first.getStmt()->getSourceLoc()
-               << "$" << it->first.getStmt()->toString() << " ) ==> [";
-        for (NodeBS::iterator ii = it->second.begin(), ie = it->second.end();
-             ii != ie; ii++)
+               << "$" << pair.first.getStmt()->toString() << " ) ==> [";
+        for (unsigned i : pair.second)
         {
-            outs() << " " << *ii << " ";
+            outs() << " " << i << " ";
         }
         outs() << "]\n";
     }
@@ -713,10 +710,10 @@ void ForkJoinAnalysis::collectSCEVInfo()
  */
 void ForkJoinAnalysis::analyzeForkJoinPair()
 {
-    for (TCT::const_iterator it = tct->begin(), eit = tct->end(); it != eit; ++it)
+    for (const std::pair<const NodeID, TCTNode*>& tpair : *tct)
     {
-        const CxtThread& ct = it->second->getCxtThread();
-        const NodeID rootTid = it->first;
+        const CxtThread& ct = tpair.second->getCxtThread();
+        const NodeID rootTid = tpair.first;
         clearFlagMap();
         if (const SVFInstruction* forkInst = ct.getThread())
         {
@@ -724,9 +721,9 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
             const SVFInstruction* exitInst = getExitInstOfParentRoutineFun(rootTid);
 
             const InstVec& nextInsts = forkInst->getSuccInstructions();
-            for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit)
+            for (const SVFInstruction* ni : nextInsts)
             {
-                CxtStmt cs(forkSiteCxt, *nit);
+                CxtStmt cs(forkSiteCxt, ni);
                 markCxtStmtFlag(cs, TDAlive);
             }
 
@@ -734,7 +731,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
             {
                 CxtStmt cts = popFromCTSWorkList();
                 const SVFInstruction* curInst = cts.getStmt();
-                DBOUT(DMTA, outs() << "-----\nForkJoinAnalysis root thread: " << it->first << " ");
+                DBOUT(DMTA, outs() << "-----\nForkJoinAnalysis root thread: " << tpair.first << " ");
                 DBOUT(DMTA, cts.dump());
                 DBOUT(DMTA, outs() << "-----\n");
                 PTACallGraph::FunctionSet callees;
@@ -965,9 +962,9 @@ NodeBS ForkJoinAnalysis::getDirAndIndJoinedTid(const CxtStmt& cs)
     NodeBS allJoinTids = directJoinTids;
 
     FIFOWorkList<NodeID> worklist;
-    for (NodeBS::iterator it = directJoinTids.begin(), eit = directJoinTids.end(); it != eit; ++it)
+    for (unsigned id : directJoinTids)
     {
-        worklist.push(*it);
+        worklist.push(id);
     }
 
     while (!worklist.empty())
