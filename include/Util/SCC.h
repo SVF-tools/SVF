@@ -40,7 +40,7 @@
 #ifndef SCC_H_
 #define SCC_H_
 
-#include "Util/BasicTypes.h"	// for NodeBS
+#include "SVFIR/SVFValue.h"	// for NodeBS
 #include <limits.h>
 #include <stack>
 #include <map>
@@ -56,7 +56,7 @@ class SCCDetection
 
 private:
     ///Define the GTraits and node iterator for printing
-    typedef llvm::GraphTraits<GraphType> GTraits;
+    typedef SVF::GenericGraphTraits<GraphType> GTraits;
     typedef typename GTraits::NodeRef          GNODE;
     typedef typename GTraits::nodes_iterator node_iterator;
     typedef typename GTraits::ChildIteratorType child_iterator;

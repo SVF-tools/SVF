@@ -360,7 +360,7 @@ public:
     inline std::string toString() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "[:";
         for(CallStrCxt::const_iterator it = context.begin(), eit = context.end(); it!=eit; ++it)
         {

@@ -218,8 +218,8 @@ private:
 
 public:
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const Value* V1,
-                              const Value* V2);
+    virtual AliasResult alias(const SVFValue* V1,
+                              const SVFValue* V2);
 
     /// Interface expose to users of our pointer analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2);
@@ -504,7 +504,7 @@ public:
     }
 
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual inline AliasResult alias(const Value* V1, const Value* V2)
+    virtual inline AliasResult alias(const SVFValue* V1, const SVFValue* V2)
     {
         return  alias(pag->getValueNode(V1),pag->getValueNode(V2));
     }
@@ -573,7 +573,7 @@ public:
                 }
                 else if (!SVFUtil::isa<DummyValVar>(node))
                 {
-                    SVFUtil::outs() << "##<" << node->getValue()->getName().str() << "> ";
+                    SVFUtil::outs() << "##<" << node->getValue()->getName() << "> ";
                     //SVFUtil::outs() << "Source Loc: " << SVFUtil::getSourceLoc(node->getValue());
                 }
 

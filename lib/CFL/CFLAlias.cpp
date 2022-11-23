@@ -44,9 +44,9 @@ void CFLAlias::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, Call
     {
         const CallICFGNode* cs = iter->first;
 
-        if (isVirtualCallSite(SVFUtil::getLLVMCallSite(cs->getCallSite())))
+        if (SVFUtil::getSVFCallSite(cs->getCallSite()).isVirtualCall())
         {
-            const Value* vtbl = getVCallVtblPtr(SVFUtil::getLLVMCallSite(cs->getCallSite()));
+            const SVFValue* vtbl = SVFUtil::getSVFCallSite(cs->getCallSite()).getVtablePtr();
             assert(pag->hasValueNode(vtbl));
             NodeID vtblId = pag->getValueNode(vtbl);
             resolveCPPIndCalls(cs, getCFLPts(vtblId), newEdges);
@@ -64,7 +64,7 @@ void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
 {
     assert(F);
 
-    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << SVFUtil::value2String(cs.getInstruction()->getLLVMInstruction()) << " to callee " << *F << "\n");
+    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << cs.getInstruction()->toString() << " to callee " << *F << "\n");
 
     CallICFGNode* callBlockNode = svfir->getICFG()->getCallICFGNode(cs.getInstruction());
     RetICFGNode* retBlockNode = svfir->getICFG()->getRetICFGNode(cs.getInstruction());
@@ -138,7 +138,7 @@ void CFLAlias::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F)
         if(csArgIt != csArgEit)
         {
             writeWrnMsg("too many args to non-vararg func.");
-            writeWrnMsg("(" + getSourceLoc(cs.getInstruction()->getLLVMInstruction()) + ")");
+            writeWrnMsg("(" + cs.getInstruction()->getSourceLoc() + ")");
         }
     }
 }
@@ -177,7 +177,7 @@ bool CFLAlias::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     onTheFlyCallGraphSolve(callsites,newEdges);
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
     {
-        CallSite cs = SVFUtil::getLLVMCallSite(it->first->getCallSite());
+        CallSite cs = SVFUtil::getSVFCallSite(it->first->getCallSite());
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
             connectCaller2CalleeParams(cs,*cit);

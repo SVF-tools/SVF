@@ -31,7 +31,6 @@
 #include "Util/Options.h"
 #include "SABER/SrcSnkDDA.h"
 #include "Graphs/SVFGStat.h"
-#include "SVF-FE/SVFIRBuilder.h"
 #include "Util/Options.h"
 #include "WPA/Andersen.h"
 
@@ -41,8 +40,7 @@ using namespace SVFUtil;
 /// Initialize analysis
 void SrcSnkDDA::initialize(SVFModule* module)
 {
-    SVFIRBuilder builder(module);
-    SVFIR* pag = builder.build();
+    SVFIR* pag = PAG::getPAG();
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
     if(Options::SABERFULLSVFG)
@@ -162,9 +160,9 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet)
                 const SVFGNode* succ = edge->getDstNode();
                 if(SVFUtil::isa<IntraDirSVFGEdge>(edge))
                 {
-                    if (SVFUtil::isa<CopySVFGNode>(succ) || SVFUtil::isa<GepSVFGNode>(succ)
-                            || SVFUtil::isa<PHISVFGNode>(succ) || SVFUtil::isa<FormalRetSVFGNode>(succ)
-                            || SVFUtil::isa<ActualRetSVFGNode>(succ) || SVFUtil::isa<StoreSVFGNode>(succ))
+                    if (SVFUtil::isa<CopySVFGNode, GepSVFGNode, PHISVFGNode,
+                            FormalRetSVFGNode, ActualRetSVFGNode,
+                            StoreSVFGNode>(succ))
                     {
                         worklist.push(succ);
                     }

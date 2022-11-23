@@ -194,7 +194,7 @@ bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* c
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
-        if(pts.test(getPAG()->getObjectNode(callee->getLLVMFun())))
+        if(pts.test(getPAG()->getObjectNode(callee)))
             return true;
         else
             return false;
@@ -348,14 +348,13 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
             }
             else
             {
-                assert((SVFUtil::isa<DummyObjVar>(pnode) || SVFUtil::isa<DummyValVar>(pnode))
+                assert((SVFUtil::isa<DummyObjVar, DummyValVar>(pnode))
                        && "empty refVal in non-dummy object");
             }
             return true;
         }
-        else if(const Instruction* i = SVFUtil::dyn_cast<Instruction>(mem->getValue()))
+        else if(const SVFInstruction* mallocSite = SVFUtil::dyn_cast<SVFInstruction>(mem->getValue()))
         {
-            const SVFInstruction* mallocSite = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(i);
             const SVFFunction* svfFun = mallocSite->getFunction();
             if(_ander->isInRecursion(svfFun))
                 return true;

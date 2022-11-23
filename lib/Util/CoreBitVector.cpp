@@ -13,7 +13,7 @@
 
 #include "Util/SparseBitVector.h"  // For LLVM's countPopulation.
 #include "Util/CoreBitVector.h"
-#include "Util/SVFBasicTypes.h"
+#include "SVFIR/SVFType.h"
 #include "Util/SVFUtil.h"
 
 namespace SVF

@@ -15,7 +15,7 @@
 #include <assert.h>
 #include <vector>
 
-#include "Util/SVFBasicTypes.h"
+#include "SVFIR/SVFType.h"
 
 namespace SVF
 {

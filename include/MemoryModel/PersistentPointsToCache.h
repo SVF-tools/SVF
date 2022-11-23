@@ -18,7 +18,7 @@
 #include <iostream>
 #include <vector>
 
-#include "Util/SVFBasicTypes.h"
+#include "SVFIR/SVFType.h"
 
 namespace SVF
 {

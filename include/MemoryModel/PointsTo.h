@@ -14,7 +14,7 @@
 
 #include <vector>
 
-#include "Util/SVFBasicTypes.h"
+#include "SVFIR/SVFType.h"
 #include "Util/BitVector.h"
 #include "Util/CoreBitVector.h"
 #include "Util/SparseBitVector.h"

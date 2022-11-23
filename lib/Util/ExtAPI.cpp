@@ -211,7 +211,7 @@ std::string ExtAPI::get_opName(const std::string& s)
 
 const std::string& ExtAPI::extType_toString(extType type)
 {
-    auto it = llvm::find_if(type_pair, [&](const auto& pair)
+    auto it = std::find_if(type_pair.begin(), type_pair.end(), [&](const auto& pair)
     {
         return pair.second == type;
     });
@@ -548,7 +548,7 @@ bool ExtAPI::is_sameSignature(const SVFFunction *F)
     if (F->arg_size() != argNum) // The number of arguments is different
         return false;
     // Is the return type the same?
-    return F->getLLVMFun()->getReturnType()->isPointerTy() == isPointer;
+    return F->getReturnType()->isPointerTy() == isPointer;
 }
 
 // Should (F) be considered "external" (either not defined in the program

@@ -79,7 +79,7 @@ void CFLStat::CFLSolverStat()
  */
 void CFLStat::performStat()
 {
-    assert((SVFUtil::isa<CFLAlias>(pta)||SVFUtil::isa<CFLVF>(pta)) && "not an CFLAlias pass!! what else??");
+    assert((SVFUtil::isa<CFLAlias, CFLVF>(pta)) && "not an CFLAlias pass!! what else??");
     endClk();
 
     // Grammar stat

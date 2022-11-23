@@ -5,12 +5,12 @@ coverage:
   status:
     project:
       default:
-        target: 63.4% # If auto, it will compare with the last commit. This could be set to an exact number such as 70% or higher.
+        target: 63.6% # If auto, it will compare with the last commit. This could be set to an exact number such as 70% or higher.
         threshold: 0.01% # Allow the coverage to drop by 0.01%, and posting a success status.
         base: auto
     patch:
       default:
-        target: auto # If auto, it will compare with the last commit. This could be set to an exact number such as 70% or higher.
+        target: 0% # If auto, it will compare with the last commit. This could be set to an exact number such as 70% or higher.
         threshold: 0.01% # Allow the coverage to drop by 0.01%, and posting a success status.
         base: auto
 

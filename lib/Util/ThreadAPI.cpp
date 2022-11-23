@@ -32,7 +32,7 @@
 
 #include "Util/ThreadAPI.h"
 #include "Util/SVFUtil.h"
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 
 #include <iostream>		/// std output
 #include <stdio.h>
@@ -148,23 +148,23 @@ const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const
 /*!
  *
  */
-const CallSite ThreadAPI::getLLVMCallSite(const SVFInstruction *inst) const
+const CallSite ThreadAPI::getSVFCallSite(const SVFInstruction *inst) const
 {
-    return SVFUtil::getLLVMCallSite(inst);
+    return SVFUtil::getSVFCallSite(inst);
 }
 
-const Value* ThreadAPI::getJoinedThread(const SVFInstruction *inst) const
+const SVFValue* ThreadAPI::getJoinedThread(const SVFInstruction *inst) const
 {
     assert(isTDJoin(inst) && "not a thread join function!");
-    CallSite cs = getLLVMCallSite(inst);
-    const Value* join = cs.getArgument(0);
+    CallSite cs = getSVFCallSite(inst);
+    const SVFValue* join = cs.getArgument(0);
     const SVFVar* var = PAG::getPAG()->getGNode(PAG::getPAG()->getValueNode(join));
     for(const SVFStmt* stmt : var->getInEdges())
     {
         if(SVFUtil::isa<LoadStmt>(stmt))
             return stmt->getSrcNode()->getValue();
     }
-    if(SVFUtil::isa<Argument>(join))
+    if(SVFUtil::isa<SVFArgument>(join))
         return join;
 
     assert(false && "the value of the first argument at join is not a load instruction?");

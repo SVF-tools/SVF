@@ -31,7 +31,7 @@
 #include "Graphs/PTACallGraph.h"
 #include "Util/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 
 using namespace SVF;
 using namespace std;

@@ -9,6 +9,7 @@
 #define MTARESULTVALIDATOR_H_
 
 #include "MTA/MHP.h"
+#include "SVF-LLVM/LLVMUtil.h"
 
 /*!
  * Validate the result of context-sensitive analysis, including context-sensitive
@@ -52,9 +53,9 @@ protected:
     std::vector<std::string> split(const std::string &s, char delim);
 
     // Get special arguments of given call sites
-    NodeID getIntArg(const SVFInstruction* inst, unsigned int arg_num);
-    std::vector<std::string> getStringArg(const SVFInstruction* inst, unsigned int arg_num);
-    CallStrCxt getCxtArg(const SVFInstruction* inst, unsigned int arg_num);
+    NodeID getIntArg(const Instruction* inst, unsigned int arg_num);
+    std::vector<std::string> getStringArg(const Instruction* inst, unsigned int arg_num);
+    CallStrCxt getCxtArg(const Instruction* inst, unsigned int arg_num);
 
     /*
      * Get the previous LoadInst or StoreInst from Instruction "I" in the
@@ -274,7 +275,7 @@ protected:
     void collectValidationTargets()
     {
         // Collect call sites of all RC_ACCESS function calls.
-        std::vector<CallSite> csInsts;
+        std::vector<const CallBase*> csInsts;
         const Function* F = nullptr;
         for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
         {
@@ -295,9 +296,9 @@ protected:
         {
             const Use *u = &*it;
             const Value *user = u->getUser();
-            if(SVFUtil::isCallSite(user))
+            if(LLVMUtil::isCallSite(user))
             {
-                CallSite csInst = SVFUtil::getLLVMCallSite(user);
+                const CallBase* csInst = LLVMUtil::getLLVMCallSite(user);
                 csInsts.push_back(csInst);
             }
         }
@@ -309,12 +310,12 @@ protected:
         // Generate access pairs.
         for (int i = 0, e = csInsts.size(); i != e;)
         {
-            CallSite CI1 = csInsts[i++];
-            CallSite CI2 = csInsts[i++];
-            const ConstantInt* C = SVFUtil::dyn_cast<ConstantInt>(CI1.getArgOperand(1));
+            const CallBase* CI1 = csInsts[i++];
+            const CallBase* CI2 = csInsts[i++];
+            const ConstantInt* C = SVFUtil::dyn_cast<ConstantInt>(CI1->getArgOperand(1));
             assert(C);
-            const Instruction* I1 = getPreviousMemoryAccessInst(CI1.getInstruction()->getLLVMInstruction());
-            const Instruction* I2 = getPreviousMemoryAccessInst(CI2.getInstruction()->getLLVMInstruction());
+            const Instruction* I1 = getPreviousMemoryAccessInst(CI1);
+            const Instruction* I2 = getPreviousMemoryAccessInst(CI2);
             assert(I1 && I2 && "RC_ACCESS should be placed immediately after the target memory access.");
             RC_FLAG flags = C->getZExtValue();
             accessPairs.push_back(AccessPair(I1, I2, flags));
@@ -339,8 +340,8 @@ protected:
             bool racy = mayHaveDataRace(I1, I2);
 
             SVFUtil::outs() << "For the memory access pair at ("
-                            << SVFUtil::getSourceLoc(I1) << ", "
-                            << SVFUtil::getSourceLoc(I2) << ")\n";
+                            << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(I1)->getSourceLoc() << ", "
+                            << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(I2)->getSourceLoc() << ")\n";
             if (selectedValidationScenarios & RC_ALIASES)
             {
                 SVFUtil::outs() << "\t"
@@ -395,10 +396,10 @@ private:
      * Comparison function to sort the validation targets in ascending order of
      * the validation id (i.e., the 1st argument of RC_ACCESS function call).
      */
-    static bool compare(CallSite CI1, CallSite CI2)
+    static bool compare(const CallBase* CI1, const CallBase* CI2)
     {
-        const Value *V1 = CI1.getArgOperand(0);
-        const Value *V2 = CI2.getArgOperand(0);
+        const Value *V1 = CI1->getArgOperand(0);
+        const Value *V2 = CI2->getArgOperand(0);
         const ConstantInt* C1 = SVFUtil::dyn_cast<ConstantInt>(V1);
         const ConstantInt* C2 = SVFUtil::dyn_cast<ConstantInt>(V2);
         assert(0 != C1 && 0 != C2);
@@ -416,7 +417,7 @@ private:
         I = I->getPrevNode();
         while (I)
         {
-            if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
+            if (SVFUtil::isa<LoadInst, StoreInst>(I))
                 return I;
 
             const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);

@@ -29,7 +29,7 @@
 
 #include "CFL/CFLGraphBuilder.h"
 #include "Util/Options.h"
-#include "Util/BasicTypes.h"
+#include "SVFIR/SVFValue.h"
 
 namespace SVF
 {

@@ -70,7 +70,7 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
     for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         PAGNode* pagNode = it->second;
-        if(SVFUtil::isa<DummyValVar>(pagNode) || SVFUtil::isa<DummyObjVar>(pagNode))
+        if (SVFUtil::isa<DummyValVar, DummyObjVar>(pagNode))
             continue;
 
         if(GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pagNode))
@@ -78,9 +78,9 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
             if(SVFUtil::isa<DummyObjVar>(pag->getGNode(gepobj->getBaseNode())))
                 continue;
         }
-        if(const Value* val = pagNode->getValue())
+        if(const SVFValue* val = pagNode->getValue())
         {
-            if(SVFUtil::isa<GlobalVariable>(val))
+            if(SVFUtil::isa<SVFGlobalValue>(val))
                 worklist.push_back(it->first);
         }
     }
@@ -230,25 +230,28 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 
         if(const StoreSVFGNode* stmtNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            if(SVFUtil::isa<StoreInst>(stmtNode->getValue()))
+            for(const SVFStmt* svfstmt : pta->getPAG()->getSVFStmtList(stmtNode->getICFGNode()))
             {
-                NodeID singleton;
-                if(isStrongUpdate(node, singleton, pta))
+                if(SVFUtil::isa<StoreStmt>(svfstmt))
                 {
-                    Set<SVFGEdge*> toRemove;
-                    for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2)
+                    NodeID singleton;
+                    if(isStrongUpdate(node, singleton, pta))
                     {
-                        if ((*it2)->isIndirectVFGEdge())
+                        Set<SVFGEdge*> toRemove;
+                        for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2)
                         {
-                            toRemove.insert(*it2);
+                            if ((*it2)->isIndirectVFGEdge())
+                            {
+                                toRemove.insert(*it2);
+                            }
+                        }
+                        for (SVFGEdge* edge: toRemove)
+                        {
+                            svfg->removeSVFGEdge(edge);
                         }
                     }
-                    for (SVFGEdge* edge: toRemove)
-                    {
-                        svfg->removeSVFGEdge(edge);
-                    }
-                }
 
+                }
             }
         }
     }

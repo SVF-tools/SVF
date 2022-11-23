@@ -42,9 +42,8 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
         const SVFGNode* src = slice->getSource();
         const CallICFGNode* cs = getSrcCSID(src);
         SVFUtil::errs() << bugMsg2("\t Double Free :") <<  " memory allocation at : ("
-                        << getSourceLoc(cs->getCallSite()->getLLVMInstruction()) << ")\n";
+                        << cs->getCallSite()->getSourceLoc() << ")\n";
         SVFUtil::errs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
-        slice->annotatePaths();
     }
     if(Options::ValidateTests)
         testsValidation(slice);
@@ -95,15 +94,15 @@ void DoubleFreeChecker::validateSuccessTests(ProgSlice *slice, const SVFFunction
     if (success)
     {
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()->getLLVMInstruction()) << "> at ("
-               << getSourceLoc(cs->getCallSite()->getLLVMInstruction()) << ")\n";
+               << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
+               << cs->getCallSite()->getSourceLoc() << ")\n";
         outs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
     }
     else
     {
         SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-                        << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()->getLLVMInstruction()) << "> at ("
-                        << getSourceLoc(cs->getCallSite()->getLLVMInstruction()) << ")\n";
+                        << ", cs id:" <<getSrcCSID(source)->getCallSite()->toString() << "> at ("
+                        << cs->getCallSite()->getSourceLoc() << ")\n";
         SVFUtil::errs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
         assert(false && "test case failed!");
     }
@@ -141,16 +140,16 @@ void DoubleFreeChecker::validateExpectedFailureTests(ProgSlice *slice, const SVF
     if (expectedFailure)
     {
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()->getLLVMInstruction()) << "> at ("
-               << getSourceLoc(cs->getCallSite()->getLLVMInstruction()) << ")\n";
+               << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
+               << cs->getCallSite()->getSourceLoc() << ")\n";
         outs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
     }
     else
     {
         SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
                         << " check <src id:" << source->getId()
-                        << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()->getLLVMInstruction()) << "> at ("
-                        << getSourceLoc(cs->getCallSite()->getLLVMInstruction()) << ")\n";
+                        << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
+                        << cs->getCallSite()->getSourceLoc() << ")\n";
         SVFUtil::errs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
         assert(false && "test case failed!");
     }

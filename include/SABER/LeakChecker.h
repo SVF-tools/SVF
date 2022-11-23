@@ -65,10 +65,10 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module)
+    virtual bool runOnModule(SVFIR* pag)
     {
         /// start analysis
-        analyze(module);
+        analyze(pag->getModule());
         return false;
     }
 

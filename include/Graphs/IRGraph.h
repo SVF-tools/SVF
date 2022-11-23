@@ -31,8 +31,8 @@
 #ifndef IRGRAPH_H_
 #define IRGRAPH_H_
 
-#include "MemoryModel/SVFStatements.h"
-#include "MemoryModel/SVFVariables.h"
+#include "SVFIR/SVFStatements.h"
+#include "SVFIR/SVFVariables.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"
@@ -49,7 +49,7 @@ class IRGraph : public GenericGraph<SVFVar,SVFStmt>
 {
 public:
     typedef Set<const SVFStmt*> SVFStmtSet;
-    typedef Map<const Value*,SVFStmtSet> ValueToEdgeMap;
+    typedef Map<const SVFValue*,SVFStmtSet> ValueToEdgeMap;
 
 protected:
     SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap;  // < SVFIR edge map containing all PAGEdges
@@ -78,7 +78,7 @@ protected:
     SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind, const SVFVar* op2);
 
     /// Map a value to a set of edges
-    inline void mapValueToEdge(const Value* V, SVFStmt *edge)
+    inline void mapValueToEdge(const SVFValue* V, SVFStmt *edge)
     {
         auto inserted = valueToEdgeMap.emplace(V, SVFStmtSet{edge});
         if (!inserted.second)
@@ -87,7 +87,7 @@ protected:
         }
     }
     /// get MemObj according to LLVM value
-    inline const MemObj* getMemObj(const Value* val) const
+    inline const MemObj* getMemObj(const SVFValue* val) const
     {
         return symInfo->getObj(symInfo->getObjSym(val));
     }
@@ -102,13 +102,17 @@ public:
 
     virtual ~IRGraph();
 
+    inline SymbolTableInfo* getSymbolInfo() const
+    {
+        return symInfo;
+    }
     /// Whether this SVFIR built from a txt file
     inline bool isBuiltFromFile()
     {
         return fromFile;
     }
     /// Get all SVFIR Edges that corresponds to an LLVM value
-    inline const SVFStmtSet& getValueEdges(const Value* V)
+    inline const SVFStmtSet& getValueEdges(const SVFValue* V)
     {
         auto it = valueToEdgeMap.find(V);
         if (it == valueToEdgeMap.end())
@@ -121,17 +125,17 @@ public:
 
     /// Get SVFIR Node according to LLVM value
     ///getNode - Return the node corresponding to the specified pointer.
-    inline NodeID getValueNode(const Value* V)
+    inline NodeID getValueNode(const SVFValue* V)
     {
         return symInfo->getValSym(V);
     }
-    inline bool hasValueNode(const Value* V)
+    inline bool hasValueNode(const SVFValue* V)
     {
         return symInfo->hasValSym(V);
     }
     /// getObject - Return the obj node id refer to the memory object for the
     /// specified global, heap or alloca instruction according to llvm value.
-    inline NodeID getObjectNode(const Value* V)
+    inline NodeID getObjectNode(const SVFValue* V)
     {
         return symInfo->getObjSym(V);
     }
@@ -214,24 +218,23 @@ public:
 
 }
 
-
-namespace llvm
+namespace SVF
 {
 
 /* !
- * GraphTraits specializations of SVFIR to be used for the generic graph algorithms.
+ * GenericGraphTraits specializations of SVFIR to be used for the generic graph algorithms.
  * Provide graph traits for tranversing from a SVFIR node using standard graph traversals.
  */
-template<> struct GraphTraits<SVF::SVFVar*> : public GraphTraits<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>*  >
+template<> struct GenericGraphTraits<SVF::SVFVar*> : public GenericGraphTraits<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>*  >
 {
 };
 
-/// Inverse GraphTraits specializations for SVFIR node, it is used for inverse traversal.
-template<> struct GraphTraits<Inverse<SVF::SVFVar *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>* > >
+/// Inverse GenericGraphTraits specializations for SVFIR node, it is used for inverse traversal.
+template<> struct GenericGraphTraits<Inverse<SVF::SVFVar *> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>* > >
 {
 };
 
-template<> struct GraphTraits<SVF::IRGraph*> : public GraphTraits<SVF::GenericGraph<SVF::SVFVar,SVF::SVFStmt>* >
+template<> struct GenericGraphTraits<SVF::IRGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFVar,SVF::SVFStmt>* >
 {
     typedef SVF::SVFVar *NodeRef;
 };
