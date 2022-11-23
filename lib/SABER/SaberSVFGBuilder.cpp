@@ -70,7 +70,7 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
     for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         PAGNode* pagNode = it->second;
-        if(SVFUtil::isa<DummyValVar>(pagNode) || SVFUtil::isa<DummyObjVar>(pagNode))
+        if (SVFUtil::isa<DummyValVar, DummyObjVar>(pagNode))
             continue;
 
         if(GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pagNode))

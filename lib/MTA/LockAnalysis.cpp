@@ -456,7 +456,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
     for (PTACallGraphNode::const_iterator it = curFunNode->getInEdges().begin(), eit = curFunNode->getInEdges().end(); it != eit; ++it)
     {
         PTACallGraphEdge* edge = *it;
-        if (SVFUtil::isa<ThreadForkEdge>(edge) || SVFUtil::isa<ThreadJoinEdge>(edge))
+        if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))
             continue;
         for (PTACallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(), ecit = (edge)->directCallsEnd(); cit != ecit;
                 ++cit)

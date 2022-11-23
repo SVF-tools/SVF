@@ -94,10 +94,9 @@ void SVFGOPT::handleInterValueFlow()
             it!=eit; ++it)
     {
         SVFGNode* node = it->second;
-        if (SVFUtil::isa<ActualParmSVFGNode>(node) || SVFUtil::isa<ActualRetSVFGNode>(node)
-                || SVFUtil::isa<FormalParmSVFGNode>(node) || SVFUtil::isa<FormalRetSVFGNode>(node)
-                || SVFUtil::isa<ActualINSVFGNode>(node) || SVFUtil::isa<ActualOUTSVFGNode>(node)
-                || SVFUtil::isa<FormalINSVFGNode>(node) || SVFUtil::isa<FormalOUTSVFGNode>(node))
+        if (SVFUtil::isa<ActualParmSVFGNode, ActualRetSVFGNode, FormalParmSVFGNode,
+                         FormalRetSVFGNode, ActualINSVFGNode, ActualOUTSVFGNode,
+                         FormalINSVFGNode, FormalOUTSVFGNode>(node))
             candidates.insert(node);
     }
 
@@ -116,16 +115,16 @@ void SVFGOPT::handleInterValueFlow()
             replaceFParamARetWithPHI(addInterPHIForAR(ar), ar);
             nodesToBeDeleted.insert(ar);
         }
-        else if (SVFUtil::isa<ActualParmSVFGNode>(node) || SVFUtil::isa<FormalRetSVFGNode>(node))
+        else if (SVFUtil::isa<ActualParmSVFGNode, FormalRetSVFGNode>(node))
         {
             nodesToBeDeleted.insert(node);
         }
-        else if (SVFUtil::isa<ActualINSVFGNode>(node) || SVFUtil::isa<FormalOUTSVFGNode>(node))
+        else if (SVFUtil::isa<ActualINSVFGNode, FormalOUTSVFGNode>(node))
         {
             retargetEdgesOfAInFOut(node);
             nodesToBeDeleted.insert(node);
         }
-        else if (SVFUtil::isa<ActualOUTSVFGNode>(node) || SVFUtil::isa<FormalINSVFGNode>(node))
+        else if (SVFUtil::isa<ActualOUTSVFGNode, FormalINSVFGNode>(node))
         {
             if(keepActualOutFormalIn == false)
                 nodesToBeDeleted.insert(node);
@@ -137,7 +136,7 @@ void SVFGOPT::handleInterValueFlow()
         SVFGNode* node = *it;
         if (canBeRemoved(node))
         {
-            if (SVFUtil::isa<ActualOUTSVFGNode>(node) || SVFUtil::isa<FormalINSVFGNode>(node))
+            if (SVFUtil::isa<ActualOUTSVFGNode, FormalINSVFGNode>(node))
                 retargetEdgesOfAOutFIn(node);	/// reset def of address-taken variable
 
             removeAllEdges(node);
@@ -151,7 +150,7 @@ void SVFGOPT::handleInterValueFlow()
  */
 void SVFGOPT::replaceFParamARetWithPHI(PHISVFGNode* phi, SVFGNode* svfgNode)
 {
-    assert((SVFUtil::isa<FormalParmSVFGNode>(svfgNode) || SVFUtil::isa<ActualRetSVFGNode>(svfgNode))
+    assert((SVFUtil::isa<FormalParmSVFGNode, ActualRetSVFGNode>(svfgNode))
            && "expecting a formal param or actual ret svfg node");
 
     /// create a new PHISVFGNode.
@@ -299,7 +298,7 @@ bool SVFGOPT::isConnectingTwoCallSites(const SVFGNode* node) const
     SVFGNode::const_iterator edgeEit = node->InEdgeEnd();
     for (; edgeIt != edgeEit; ++edgeIt)
     {
-        if (SVFUtil::isa<CallIndSVFGEdge>(*edgeIt) || SVFUtil::isa<RetIndSVFGEdge>(*edgeIt))
+        if (SVFUtil::isa<CallIndSVFGEdge, RetIndSVFGEdge>(*edgeIt))
         {
             hasInCallRet = true;
             break;
@@ -310,7 +309,7 @@ bool SVFGOPT::isConnectingTwoCallSites(const SVFGNode* node) const
     edgeEit = node->OutEdgeEnd();
     for (; edgeIt != edgeEit; ++edgeIt)
     {
-        if (SVFUtil::isa<CallIndSVFGEdge>(*edgeIt) || SVFUtil::isa<RetIndSVFGEdge>(*edgeIt))
+        if (SVFUtil::isa<CallIndSVFGEdge, RetIndSVFGEdge>(*edgeIt))
         {
             hasOutCallRet = true;
             break;
@@ -334,12 +333,11 @@ bool SVFGOPT::isConnectingTwoCallSites(const SVFGNode* node) const
 /// 5. FormalOUT if it doesn't reside at the exit of address-taken function
 bool SVFGOPT::canBeRemoved(const SVFGNode * node)
 {
-    if (SVFUtil::isa<ActualParmSVFGNode>(node) || SVFUtil::isa<FormalParmSVFGNode>(node)
-            || SVFUtil::isa<ActualRetSVFGNode>(node) || SVFUtil::isa<FormalRetSVFGNode>(node))
+    if (SVFUtil::isa<ActualParmSVFGNode, FormalParmSVFGNode,
+                     ActualRetSVFGNode, FormalRetSVFGNode>(node))
         return true;
-    else if (SVFUtil::isa<ActualINSVFGNode>(node) || SVFUtil::isa<ActualOUTSVFGNode>(node)
-             || SVFUtil::isa<FormalINSVFGNode>(node) || SVFUtil::isa<FormalOUTSVFGNode>(node)
-             || SVFUtil::isa<MSSAPHISVFGNode>(node))
+    else if (SVFUtil::isa<ActualINSVFGNode, ActualOUTSVFGNode, FormalINSVFGNode,
+                          FormalOUTSVFGNode, MSSAPHISVFGNode>(node))
     {
         /// Now each SVFG edge can only be associated with one call site id,
         /// so if this node has both incoming call/ret and outgoting call/ret
@@ -460,7 +458,7 @@ bool SVFGOPT::checkSelfCycleEdges(const MSSAPHISVFGNode* node)
                 break;	/// There's no need to check other edge if we do not remove self cycle
             }
             else if (keepContextSelfCycle &&
-                     (SVFUtil::isa<CallIndSVFGEdge>(preEdge) || SVFUtil::isa<RetIndSVFGEdge>(preEdge)))
+                     SVFUtil::isa<CallIndSVFGEdge, RetIndSVFGEdge>(preEdge))
             {
                 hasSelfCycle = true;
                 continue;	/// Continue checking and remove other self cycle which are NOT context-related
