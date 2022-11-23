@@ -160,9 +160,9 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet)
                 const SVFGNode* succ = edge->getDstNode();
                 if(SVFUtil::isa<IntraDirSVFGEdge>(edge))
                 {
-                    if (SVFUtil::isa<CopySVFGNode>(succ) || SVFUtil::isa<GepSVFGNode>(succ)
-                            || SVFUtil::isa<PHISVFGNode>(succ) || SVFUtil::isa<FormalRetSVFGNode>(succ)
-                            || SVFUtil::isa<ActualRetSVFGNode>(succ) || SVFUtil::isa<StoreSVFGNode>(succ))
+                    if (SVFUtil::isa<CopySVFGNode, GepSVFGNode, PHISVFGNode,
+                                     FormalRetSVFGNode, ActualRetSVFGNode,
+                                     StoreSVFGNode>(succ)) 
                     {
                         worklist.push(succ);
                     }

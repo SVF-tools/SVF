@@ -417,7 +417,7 @@ private:
         I = I->getPrevNode();
         while (I)
         {
-            if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
+            if (SVFUtil::isa<LoadInst, StoreInst>(I))
                 return I;
 
             const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);

@@ -67,21 +67,27 @@ namespace SVFUtil
 /// If T is a pointer to X, return a pointer to const X. If it is not,
 /// return const T.
 template<typename T, typename Enable = void>
-struct add_const_past_pointer { using type = const T; };
+struct add_const_past_pointer
+{
+    using type = const T;
+};
 
 template <typename T>
-struct add_const_past_pointer<T, std::enable_if_t<std::is_pointer<T>::value>> 
+struct add_const_past_pointer<T, std::enable_if_t<std::is_pointer<T>::value>>
 {
-  using type = const std::remove_pointer_t<T> *;
+    using type = const std::remove_pointer_t<T> *;
 };
 
 /// If T is a pointer, just return it. If it is not, return T&.
 template<typename T, typename Enable = void>
-struct add_lvalue_reference_if_not_pointer { using type = T &; };
+struct add_lvalue_reference_if_not_pointer
+{
+    using type = T &;
+};
 
 template <typename T>
 struct add_lvalue_reference_if_not_pointer<
-    T, std::enable_if_t<std::is_pointer<T>::value>> 
+    T, std::enable_if_t<std::is_pointer<T>::value>>
 {
     using type = T;
 };
@@ -230,11 +236,18 @@ struct isa_impl_wrap<To, FromTy, FromTy>
 // template type argument.  Used like this:
 //
 //  if (SVFUtil::isa<Type>(myVal)) { ... }
+//  if (SVFUtil::isa<Type0, Type1, Type2>(myVal)) { ... }
 //
 template <class X, class Y> LLVM_NODISCARD inline bool isa(const Y &Val)
 {
     return isa_impl_wrap<X, const Y,
            typename simplify_type<const Y>::SimpleType>::doit(Val);
+}
+
+template <typename First, typename Second, typename... Rest, typename Y>
+LLVM_NODISCARD inline bool isa(const Y &Val) 
+{
+    return SVFUtil::isa<First>(Val) || SVFUtil::isa<Second, Rest...>(Val);
 }
 
 //===----------------------------------------------------------------------===//
@@ -343,8 +356,9 @@ template <class X> struct is_simple_type
 //
 template <class X, class Y>
 inline std::enable_if_t<!is_simple_type<Y>::value,
-                        typename cast_retty<X, const Y>::ret_type>
-cast(const Y &Val) {
+       typename cast_retty<X, const Y>::ret_type>
+       cast(const Y &Val)
+{
     assert(SVFUtil::isa<X>(Val) && "cast<Ty>() argument of incompatible type!");
     return cast_convert_val<
            X, const Y, typename simplify_type<const Y>::SimpleType>::doit(Val);
@@ -387,8 +401,8 @@ inline typename cast_retty<X, std::unique_ptr<Y>>::ret_type
 
 template <class X, class Y>
 LLVM_NODISCARD inline std::enable_if_t<
-    !is_simple_type<Y>::value, typename cast_retty<X, const Y>::ret_type>
-dyn_cast(const Y &Val) 
+!is_simple_type<Y>::value, typename cast_retty<X, const Y>::ret_type>
+dyn_cast(const Y &Val)
 {
     return SVFUtil::isa<X>(Val) ? SVFUtil::cast<X>(Val) : nullptr;
 }

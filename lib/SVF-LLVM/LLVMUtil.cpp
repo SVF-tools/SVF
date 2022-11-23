@@ -50,7 +50,7 @@ bool LLVMUtil::isObject(const Value*  ref)
         createobj = true;
     if (SVFUtil::isa<GlobalVariable>(ref))
         createobj = true;
-    if (SVFUtil::isa<Function>(ref) || SVFUtil::isa<AllocaInst>(ref) )
+    if (SVFUtil::isa<Function, AllocaInst>(ref))
         createobj = true;
 
     return createobj;
