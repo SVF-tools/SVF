@@ -15,14 +15,10 @@ if(NOT COMMAND add_llvm_library)
         # add -std=gnu++14
         set(CMAKE_CXX_EXTENSIONS ON)
 
-        if(CMAKE_BUILD_TYPE MATCHES "Debug")
-	    add_compile_options("-fPIC" "-Werror" "-Wall" "-O0" "-fno-rtti")
-        else()
-	    add_compile_options("-fPIC" "-Werror" "-Wall" "-O3" "-fno-rtti")
-        endif()
+        # Treat compiler warnings as errors
+        add_compile_options("-Werror" "-Wall")
 
-        find_package(LLVM REQUIRED CONFIG
-          HINTS "${LLVM_DIR}")
+        find_package(LLVM REQUIRED CONFIG HINTS "${LLVM_DIR}")
 
         message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
         message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
