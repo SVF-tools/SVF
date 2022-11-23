@@ -271,6 +271,7 @@ public:
     virtual bool csHasVtblsBasedonCHA(CallSite cs) override
     {
         assert(false && "not supported!");
+        abort();
     }
 
     virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override;
@@ -422,6 +423,7 @@ private:
     const DIType *getCSStaticType(CallSite cs) const
     {
         assert(false && "not supported!");
+        abort();
     }
 
     /// Checks if a node exists for type.
