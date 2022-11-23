@@ -178,8 +178,8 @@ protected:
             handleAddr(pts,dpm,SVFUtil::cast<AddrSVFGNode>(node));
         }
         else if (SVFUtil::isa<CopySVFGNode, PHISVFGNode, ActualParmSVFGNode,
-                              FormalParmSVFGNode, ActualRetSVFGNode,
-                              FormalRetSVFGNode, NullPtrSVFGNode>(node))
+                 FormalParmSVFGNode, ActualRetSVFGNode,
+                 FormalRetSVFGNode, NullPtrSVFGNode>(node))
         {
             backtraceAlongDirectVF(pts,dpm);
         }

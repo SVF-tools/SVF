@@ -227,21 +227,23 @@ bool FlowSensitive::processSVFGNode(SVFGNode* node)
         numOfProcessedPhi++;
         if (processPhi(phi))
             changed = true;
-    } else if (SVFUtil::isa<MSSAPHISVFGNode, FormalINSVFGNode,
-                            FormalOUTSVFGNode, ActualINSVFGNode,
-                            ActualOUTSVFGNode>(node)) 
+    }
+    else if (SVFUtil::isa<MSSAPHISVFGNode, FormalINSVFGNode,
+             FormalOUTSVFGNode, ActualINSVFGNode,
+             ActualOUTSVFGNode>(node))
     {
         numOfProcessedMSSANode++;
         changed = true;
-    } 
+    }
     else if (SVFUtil::isa<ActualParmSVFGNode, FormalParmSVFGNode,
-                            ActualRetSVFGNode, FormalRetSVFGNode,
-                            NullPtrSVFGNode>(node)) 
+             ActualRetSVFGNode, FormalRetSVFGNode,
+             NullPtrSVFGNode>(node))
     {
         changed = true;
-    } 
+    }
     else if (SVFUtil::isa<CmpVFGNode, BinaryOPVFGNode>(node) ||
-               SVFUtil::dyn_cast<UnaryOPVFGNode>(node)) {
+             SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+    {
     }
     else
     {
