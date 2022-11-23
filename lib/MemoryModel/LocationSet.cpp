@@ -63,7 +63,7 @@ bool LocationSet::isConstantOffset() const
 u32_t LocationSet::getElementNum(const SVFType* type) const
 {
 
-    if(SVFUtil::isa<SVFArrayType>(type) || SVFUtil::isa<SVFStructType>(type))
+    if (SVFUtil::isa<SVFArrayType, SVFStructType>(type))
     {
         return SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(type);
     }

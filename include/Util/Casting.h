@@ -236,11 +236,18 @@ struct isa_impl_wrap<To, FromTy, FromTy>
 // template type argument.  Used like this:
 //
 //  if (SVFUtil::isa<Type>(myVal)) { ... }
+//  if (SVFUtil::isa<Type0, Type1, Type2>(myVal)) { ... }
 //
 template <class X, class Y> LLVM_NODISCARD inline bool isa(const Y &Val)
 {
     return isa_impl_wrap<X, const Y,
            typename simplify_type<const Y>::SimpleType>::doit(Val);
+}
+
+template <typename First, typename Second, typename... Rest, typename Y>
+LLVM_NODISCARD inline bool isa(const Y &Val) 
+{
+    return SVFUtil::isa<First>(Val) || SVFUtil::isa<Second, Rest...>(Val);
 }
 
 //===----------------------------------------------------------------------===//
