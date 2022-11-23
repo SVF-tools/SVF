@@ -578,7 +578,7 @@ protected:
     /// Whether this is a top-level pointer statement
     inline bool isTopLevelPtrStmt(const SVFGNode* stmt)
     {
-        return SVFUtil::isa<StoreSVFGNode, MRSVFGNode>(stmt);
+        return !SVFUtil::isa<StoreSVFGNode, MRSVFGNode>(stmt);
     }
     /// Return dpm with old context and path conditions
     virtual inline DPIm getDPImWithOldCond(const DPIm& oldDpm,const CVar& var, const SVFGNode* loc)
