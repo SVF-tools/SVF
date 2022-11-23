@@ -230,8 +230,8 @@ private:
     /// Return TRUE if both edges are indirect call/ret edges.
     inline bool bothInterEdges(const SVFGEdge* edge1, const SVFGEdge* edge2) const
     {
-        bool inter1 = (SVFUtil::isa<CallIndSVFGEdge>(edge1) || SVFUtil::isa<RetIndSVFGEdge>(edge1));
-        bool inter2 = (SVFUtil::isa<CallIndSVFGEdge>(edge2) || SVFUtil::isa<RetIndSVFGEdge>(edge2));
+        bool inter1 = SVFUtil::isa<CallIndSVFGEdge, RetIndSVFGEdge>(edge1);
+        bool inter2 = SVFUtil::isa<CallIndSVFGEdge, RetIndSVFGEdge>(edge2);
         return (inter1 && inter2);
     }
 

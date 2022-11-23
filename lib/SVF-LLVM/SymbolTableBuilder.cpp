@@ -526,7 +526,8 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C)
             }
             else
             {
-                assert((SVFUtil::isa<ConstantAggregateZero>(data) || SVFUtil::isa<UndefValue>(data)) && "Single value type data should have been handled!");
+                assert((SVFUtil::isa<ConstantAggregateZero, UndefValue>(data)) &&
+                       "Single value type data should have been handled!");
             }
         }
     }
@@ -737,7 +738,7 @@ u32_t SymbolTableBuilder::getObjSize(const Type* ety)
 {
     assert(ety && "type is null?");
     u32_t numOfFields = 1;
-    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
+    if (SVFUtil::isa<StructType, ArrayType>(ety))
     {
         numOfFields = getNumOfFlattenElements(ety);
     }
