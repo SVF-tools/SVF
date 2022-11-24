@@ -18,6 +18,12 @@ if(NOT COMMAND add_llvm_library)
         # Treat compiler warnings as errors
         add_compile_options("-Werror" "-Wall")
 
+        # Keep assertions enabled if requested
+        option(SVF_ENABLE_ASSERTIONS "Always enable assertions")
+        if(SVF_ENABLE_ASSERTIONS)
+          add_compile_options("-UNDEBUG")
+        endif()
+
         find_package(LLVM REQUIRED CONFIG HINTS "${LLVM_DIR}")
 
         message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
