@@ -101,6 +101,8 @@ jobs:
           lcov --remove coverage.info '${{github.workspace}}/llvm-13.0.0.obj/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/include/FastCluster/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/lib/FastCluster/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/include/AbstractExecution/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/lib/AbstractExecution/*' --output-file coverage.info
       
       - name: upload-coverage
         if: runner.os == 'Linux'
