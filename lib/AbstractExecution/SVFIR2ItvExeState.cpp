@@ -128,7 +128,7 @@ std::pair<s32_t, s32_t> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep) {
             totalOffsetUb += offsetUb * gep->getLocationSet().getElementNum(pty->getPtrElementType());
         } else {
             const std::vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
-            if(so.empty() || offsetUb >= so.size() || offsetLb >= so.size()) return std::make_pair(-1, -1);
+            if(so.empty() || (u32_t)offsetUb >= so.size() || (u32_t)offsetLb >= so.size()) return std::make_pair(-1, -1);
             totalOffsetLb += SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, offsetLb);
             totalOffsetUb += SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, offsetUb);
         }
