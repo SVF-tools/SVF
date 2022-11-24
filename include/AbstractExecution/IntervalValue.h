@@ -34,12 +34,14 @@
 #include "AbstractExecution/NumericLiteral.h"
 #include "AbstractExecution/AbstractValue.h"
 
-namespace SVF {
+namespace SVF
+{
 
 /// IntervalValue abstract value
 ///
 /// Implemented as a pair of bounds
-class IntervalValue final : public AbstractValue {
+class IntervalValue final : public AbstractValue
+{
 private:
     // Lower bound
     NumericLiteral _lb;
@@ -50,27 +52,44 @@ private:
     // Invariant: isBottom() <=> _lb = 1 && _ub = 0
 public:
 
-    bool isTop() const override {
+    bool isTop() const override
+    {
         return this->_lb.is_minus_infinity() && this->_ub.is_plus_infinity();
     }
 
-    bool isBottom() const override {
+    bool isBottom() const override
+    {
         return !_ub.geq(_lb);
     }
 
     /// Get minus infinity -oo
-    static NumericLiteral minus_infinity() { return NumericLiteral::minus_infinity(); }
+    static NumericLiteral minus_infinity()
+    {
+        return NumericLiteral::minus_infinity();
+    }
 
     /// Get plus infinity +oo
-    static NumericLiteral plus_infinity() { return NumericLiteral::plus_infinity(); }
+    static NumericLiteral plus_infinity()
+    {
+        return NumericLiteral::plus_infinity();
+    }
 
-    static bool is_infinite(const NumericLiteral &e) { return e.is_infinity(); }
+    static bool is_infinite(const NumericLiteral &e)
+    {
+        return e.is_infinity();
+    }
 
     /// Create the IntervalValue [-oo, +oo]
-    static IntervalValue top() { return IntervalValue(INT_MIN, INT_MAX);}
+    static IntervalValue top()
+    {
+        return IntervalValue(INT_MIN, INT_MAX);
+    }
 
     /// Create the bottom IntervalValue
-    static IntervalValue bottom() { return IntervalValue(1, 0); }
+    static IntervalValue bottom()
+    {
+        return IntervalValue(1, 0);
+    }
 
     /// Create default IntervalValue
     explicit IntervalValue() : AbstractValue(AbstractValue::IntervalK), _lb(INT_MIN), _ub(INT_MAX) {}
@@ -84,7 +103,7 @@ public:
 
     /// Create the IntervalValue [lb, ub]
     explicit IntervalValue(NumericLiteral lb, NumericLiteral ub) : AbstractValue(AbstractValue::IntervalK),
-                                                                    _lb(std::move(lb)), _ub(std::move(ub)) {}
+        _lb(std::move(lb)), _ub(std::move(ub)) {}
 
     explicit IntervalValue(double lb, double ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
 
@@ -109,21 +128,33 @@ public:
     IntervalValue &operator=(IntervalValue &&) = default;
 
     /// Equality comparison
-    IntervalValue operator==(const IntervalValue &other) const {
-        if (this->isBottom() || other.isBottom()) {
+    IntervalValue operator==(const IntervalValue &other) const
+    {
+        if (this->isBottom() || other.isBottom())
+        {
             return bottom();
-        } else if (this->isTop() || other.isTop()) {
+        }
+        else if (this->isTop() || other.isTop())
+        {
             return top();
-        } else {
-            if (this->is_numeral() && other.is_numeral()) {
+        }
+        else
+        {
+            if (this->is_numeral() && other.is_numeral())
+            {
                 return eq(this->_lb, other._lb) ? IntervalValue(1, 1) : IntervalValue(0, 0);
-            } else {
+            }
+            else
+            {
                 IntervalValue value = *this;
                 value.meet_with(other);
-                if (value.isBottom()) {
+                if (value.isBottom())
+                {
                     return IntervalValue(0, 0);
-                } else {
-                   // return top();
+                }
+                else
+                {
+                    // return top();
                     return IntervalValue(0, 1);
                 }
             }
@@ -131,20 +162,32 @@ public:
     }
 
     /// Equality comparison
-    IntervalValue operator!=(const IntervalValue &other) const {
-        if (this->isBottom() || other.isBottom()) {
+    IntervalValue operator!=(const IntervalValue &other) const
+    {
+        if (this->isBottom() || other.isBottom())
+        {
             return bottom();
-        } else if (this->isTop() || other.isTop()) {
+        }
+        else if (this->isTop() || other.isTop())
+        {
             return top();
-        } else {
-            if (this->is_numeral() && other.is_numeral()) {
+        }
+        else
+        {
+            if (this->is_numeral() && other.is_numeral())
+            {
                 return eq(this->_lb, other._lb) ? IntervalValue(0, 0) : IntervalValue(1, 1);
-            } else {
+            }
+            else
+            {
                 IntervalValue value = *this;
                 value.meet_with(other);
-                if (!value.isBottom()) {
+                if (!value.isBottom())
+                {
                     return IntervalValue(0, 1);
-                } else {
+                }
+                else
+                {
                     return IntervalValue(1, 1);
                 }
             }
@@ -156,107 +199,138 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const IntervalValue *) {
+    static inline bool classof(const IntervalValue *)
+    {
         return true;
     }
 
-    static inline bool classof(const AbstractValue *v) {
+    static inline bool classof(const AbstractValue *v)
+    {
         return v->getAbstractValueKind() == AbstractValue::IntervalK;
     }
     //@}
 
     /// Return the lower bound
-    const NumericLiteral &lb() const {
+    const NumericLiteral &lb() const
+    {
         assert(!this->isBottom());
         return this->_lb;
     }
 
     /// Return the upper bound
-    const NumericLiteral &ub() const {
+    const NumericLiteral &ub() const
+    {
         assert(!this->isBottom());
         return this->_ub;
     }
 
     /// Set the lower bound
-    void setLb(const NumericLiteral &lb) {
+    void setLb(const NumericLiteral &lb)
+    {
         this->_lb = lb;
     }
 
     /// Set the upper bound
-    void setUb(const NumericLiteral &ub) {
+    void setUb(const NumericLiteral &ub)
+    {
         this->_ub = ub;
     }
 
     /// Set the lower bound
-    void setValue(const NumericLiteral &lb, const NumericLiteral &ub) {
+    void setValue(const NumericLiteral &lb, const NumericLiteral &ub)
+    {
         this->_lb = lb;
         this->_ub = ub;
     }
 
     /// Return true if the IntervalValue is [0, 0]
-    bool is_zero() const {
+    bool is_zero() const
+    {
         return _lb.is_zero() && _ub.is_zero();
     }
 
     /// Return true if the IntervalValue is infinite IntervalValue
-    bool is_infinite() const {
+    bool is_infinite() const
+    {
         return _lb.is_infinity() || _ub.is_infinity();
     }
 
     /// Return
-    double getNumeral() const {
+    double getNumeral() const
+    {
         assert(is_numeral() && "this IntervalValue is not numeral");
         return _lb.getNumeral();
     }
 
     /// Return true if the IntervalValue is a number [num, num]
-    bool is_numeral() const {
+    bool is_numeral() const
+    {
         return eq(_lb, _ub);
     }
 
     /// Set current IntervalValue as bottom
-    void set_to_bottom() {
+    void set_to_bottom()
+    {
         this->_lb = 1;
         this->_ub = 0;
     }
 
     /// Set current IntervalValue as top
-    void set_to_top() {
+    void set_to_top()
+    {
         this->_lb = minus_infinity();
         this->_ub = plus_infinity();
     }
 
     /// Check current IntervalValue is smaller than or equal to the other
-    bool leq(const IntervalValue &other) const {
-        if (this->isBottom()) {
+    bool leq(const IntervalValue &other) const
+    {
+        if (this->isBottom())
+        {
             return true;
-        } else if (other.isBottom()) {
+        }
+        else if (other.isBottom())
+        {
             return false;
-        } else {
+        }
+        else
+        {
             return this->_lb.leq(other._lb) && this->_ub.leq(other._ub);
         }
 
     }
 
     /// Check current IntervalValue is greater than or equal to the other
-    bool geq(const IntervalValue &other) const {
-        if (this->isBottom()) {
+    bool geq(const IntervalValue &other) const
+    {
+        if (this->isBottom())
+        {
             return true;
-        } else if (other.isBottom()) {
+        }
+        else if (other.isBottom())
+        {
             return false;
-        } else {
+        }
+        else
+        {
             return this->_lb.geq(other._lb) && this->_ub.geq(other._ub);
         }
     }
 
 
     /// Equality comparison
-    bool equals(const IntervalValue &other) const {
-        if (this->isBottom()) {
+    bool equals(const IntervalValue &other) const
+    {
+        if (this->isBottom())
+        {
             return other.isBottom();
-        } else if (other.isBottom()) {
+        }
+        else if (other.isBottom())
+        {
             return false;
-        } else {
+        }
+        else
+        {
             return this->_lb.equal(other._lb) && this->_ub.equal(other._ub);
             // TODO: IntervalValueZ3Expr equals
             // TODO: shall we consider expr and solve.
@@ -264,52 +338,77 @@ public:
     }
 
     /// Current IntervalValue joins with another IntervalValue
-    void join_with(const IntervalValue &other) {
-        if (this->isBottom()) {
-            if (other.isBottom()) {
+    void join_with(const IntervalValue &other)
+    {
+        if (this->isBottom())
+        {
+            if (other.isBottom())
+            {
                 return;
-            } else {
+            }
+            else
+            {
                 this->_lb = other.lb();
                 this->_ub = other.ub();
             }
-        } else if (other.isBottom()) {
+        }
+        else if (other.isBottom())
+        {
             return;
-        } else {
+        }
+        else
+        {
             this->_lb = min(this->lb(), other.lb());
             this->_ub = max(this->ub(), other.ub());
         }
     }
 
     /// Current IntervalValue widen with another IntervalValue
-    void widen_with(const IntervalValue &other) {
-        if (this->isBottom()) {
+    void widen_with(const IntervalValue &other)
+    {
+        if (this->isBottom())
+        {
             this->_lb = other._lb;
             this->_ub = other._ub;
-        } else if (other.isBottom()) {
+        }
+        else if (other.isBottom())
+        {
             return;
-        } else {
+        }
+        else
+        {
             this->_lb = !lb().leq(other.lb()) ? minus_infinity() : this->lb();
             this->_ub = !ub().geq(other.ub()) ? plus_infinity() : this->ub();
         }
     }
 
     /// Current IntervalValue narrow with another IntervalValue
-    void narrow_with(const IntervalValue &other) {
-        if (this->isBottom() || other.isBottom()) {
+    void narrow_with(const IntervalValue &other)
+    {
+        if (this->isBottom() || other.isBottom())
+        {
             this->set_to_bottom();
-        } else if (other.isBottom()) {
+        }
+        else if (other.isBottom())
+        {
             return;
-        } else {
+        }
+        else
+        {
             this->_lb = is_infinite(this->_lb) ? other._lb : this->_lb;
             this->_ub = is_infinite(this->_ub) ? other._ub : this->_ub;
         }
     }
 
     /// Return a intersected IntervalValue
-    void meet_with(const IntervalValue &other) {
-        if (this->isBottom() || other.isBottom()) {
+    void meet_with(const IntervalValue &other)
+    {
+        if (this->isBottom() || other.isBottom())
+        {
             this->set_to_bottom();
-        } else {
+        }
+        else
+        {
             this->_lb = max(this->_lb, other.lb());
             this->_ub = min(this->_ub, other.ub());
             if (this->isBottom())
@@ -318,14 +417,19 @@ public:
     }
 
     /// Return true if the IntervalValue contains n
-    bool contains(int n) const {
+    bool contains(int n) const
+    {
         return this->_lb.getNumeral() <= n && this->_ub.getNumeral() >= n;
     }
 
-    void dump(std::ostream &o) const {
-        if (this->isBottom()) {
+    void dump(std::ostream &o) const
+    {
+        if (this->isBottom())
+        {
             o << "⊥";
-        } else {
+        }
+        else
+        {
             o << "[" << this->_lb << ", " << this->_ub << "]";
         }
     }
@@ -334,34 +438,50 @@ public:
 
 /// Add IntervalValues
 inline IntervalValue operator+(const IntervalValue &lhs,
-                               const IntervalValue &rhs) {
-    if (lhs.isBottom() || rhs.isBottom()) {
+                               const IntervalValue &rhs)
+{
+    if (lhs.isBottom() || rhs.isBottom())
+    {
         return IntervalValue::bottom();
-    } else if (lhs.isTop() || rhs.isTop()) {
+    }
+    else if (lhs.isTop() || rhs.isTop())
+    {
         return IntervalValue::top();
-    } else {
+    }
+    else
+    {
         return IntervalValue(lhs.lb() + rhs.lb(), lhs.ub() + rhs.ub());
     }
 }
 
 /// Substract IntervalValues
 inline IntervalValue operator-(const IntervalValue &lhs,
-                               const IntervalValue &rhs) {
-    if (lhs.isBottom() || rhs.isBottom()) {
+                               const IntervalValue &rhs)
+{
+    if (lhs.isBottom() || rhs.isBottom())
+    {
         return IntervalValue::bottom();
-    } else if (lhs.isTop() || rhs.isTop()) {
+    }
+    else if (lhs.isTop() || rhs.isTop())
+    {
         return IntervalValue::top();
-    } else {
+    }
+    else
+    {
         return IntervalValue(lhs.lb() - rhs.ub(), lhs.ub() - rhs.lb());
     }
 }
 
 /// Multiply IntervalValues
 inline IntervalValue operator*(const IntervalValue &lhs,
-                               const IntervalValue &rhs) {
-    if (lhs.isBottom() || rhs.isBottom()) {
+                               const IntervalValue &rhs)
+{
+    if (lhs.isBottom() || rhs.isBottom())
+    {
         return IntervalValue::bottom();
-    } else {
+    }
+    else
+    {
         NumericLiteral ll = lhs.lb() * rhs.lb();
         NumericLiteral lu = lhs.lb() * rhs.ub();
         NumericLiteral ul = lhs.ub() * rhs.lb();
@@ -373,12 +493,18 @@ inline IntervalValue operator*(const IntervalValue &lhs,
 
 /// Divide IntervalValues
 inline IntervalValue operator/(const IntervalValue &lhs,
-                               const IntervalValue &rhs) {
-    if (lhs.isBottom() || rhs.isBottom()) {
+                               const IntervalValue &rhs)
+{
+    if (lhs.isBottom() || rhs.isBottom())
+    {
         return IntervalValue::bottom();
-    } else if (rhs.contains(0)) {
+    }
+    else if (rhs.contains(0))
+    {
         return lhs.is_zero() ? IntervalValue(0, 0) : IntervalValue::top();
-    } else {
+    }
+    else
+    {
         // Neither the dividend nor the divisor contains 0
         NumericLiteral ll = lhs.lb() / rhs.lb();
         NumericLiteral lu = lhs.lb() / rhs.ub();
@@ -391,47 +517,75 @@ inline IntervalValue operator/(const IntervalValue &lhs,
 
 /// Divide IntervalValues
 inline IntervalValue operator%(const IntervalValue &lhs,
-                               const IntervalValue &rhs) {
-    if (lhs.isBottom() || rhs.isBottom()) {
+                               const IntervalValue &rhs)
+{
+    if (lhs.isBottom() || rhs.isBottom())
+    {
         return IntervalValue::bottom();
-    } else if (rhs.contains(0)) {
+    }
+    else if (rhs.contains(0))
+    {
         return lhs.is_zero() ? IntervalValue(0, 0) : IntervalValue::top();
-    } else if (lhs.is_numeral() && rhs.is_numeral()) {
+    }
+    else if (lhs.is_numeral() && rhs.is_numeral())
+    {
         return IntervalValue(lhs.lb() % rhs.lb(), lhs.lb() % rhs.lb());
-    } else {
+    }
+    else
+    {
         double n_ub = std::max(std::abs(lhs.lb().getNumeral()), std::abs(lhs.ub().getNumeral()));
         double d_ub = std::max(std::abs(rhs.lb().getNumeral()), std::abs(rhs.ub().getNumeral())) - 1;
         double ub = std::min(n_ub, d_ub);
 
-        if (lhs.lb().getNumeral() < 0) {
-            if (lhs.ub().getNumeral() > 0) {
+        if (lhs.lb().getNumeral() < 0)
+        {
+            if (lhs.ub().getNumeral() > 0)
+            {
                 return IntervalValue(-ub, ub);
-            } else {
+            }
+            else
+            {
                 return IntervalValue(-ub, double(0));
             }
-        } else {
+        }
+        else
+        {
             return IntervalValue(double(0), ub);
         }
     }
 }
 
 /// Greater than IntervalValues
-inline IntervalValue operator>(const IntervalValue &lhs, const IntervalValue &rhs) {
-    if (lhs.isBottom() || rhs.isBottom()) {
+inline IntervalValue operator>(const IntervalValue &lhs, const IntervalValue &rhs)
+{
+    if (lhs.isBottom() || rhs.isBottom())
+    {
         return IntervalValue::bottom();
-    } else if (lhs.isTop() || lhs.isTop()) {
+    }
+    else if (lhs.isTop() || lhs.isTop())
+    {
         return IntervalValue::top();
-    } else {
-        if (lhs.is_numeral() && rhs.is_numeral()) {
+    }
+    else
+    {
+        if (lhs.is_numeral() && rhs.is_numeral())
+        {
             return lhs.lb().leq(rhs.lb()) ? IntervalValue(0, 0) : IntervalValue(1, 1);
-        } else {
+        }
+        else
+        {
             // lhs[3,4] rhs[1,2]
-            if (lhs.lb().getNumeral() > rhs.ub().getNumeral()) {
+            if (lhs.lb().getNumeral() > rhs.ub().getNumeral())
+            {
                 return IntervalValue(1, 1);
                 // lhs[1,2] rhs[3,4]
-            } else if (lhs.ub().getNumeral() < rhs.lb().getNumeral()) {
+            }
+            else if (lhs.ub().getNumeral() < rhs.lb().getNumeral())
+            {
                 return IntervalValue(0, 0);
-            } else {
+            }
+            else
+            {
                 // lhs[1,3] rhs[2,4]
                 return IntervalValue(0, 1);
             }
@@ -440,23 +594,37 @@ inline IntervalValue operator>(const IntervalValue &lhs, const IntervalValue &rh
 }
 
 /// Greater than IntervalValues
-inline IntervalValue operator<(const IntervalValue &lhs, const IntervalValue &rhs) {
-    if (lhs.isBottom() || rhs.isBottom()) {
+inline IntervalValue operator<(const IntervalValue &lhs, const IntervalValue &rhs)
+{
+    if (lhs.isBottom() || rhs.isBottom())
+    {
         return IntervalValue::bottom();
-    } else if (lhs.isTop() || lhs.isTop()) {
+    }
+    else if (lhs.isTop() || lhs.isTop())
+    {
         return IntervalValue::top();
-    } else {
-        if (lhs.is_numeral() && rhs.is_numeral()) {
+    }
+    else
+    {
+        if (lhs.is_numeral() && rhs.is_numeral())
+        {
             return lhs.lb().geq(rhs.lb()) ? IntervalValue(0, 0) : IntervalValue(1, 1);
-        } else {
+        }
+        else
+        {
             // lhs [1,2] rhs [3,4]
-            if (lhs.ub().getNumeral() < rhs.lb().getNumeral()) {
+            if (lhs.ub().getNumeral() < rhs.lb().getNumeral())
+            {
                 return IntervalValue(1, 1);
                 // lhs [3,4] rhs [1,2]
-            } else if (lhs.lb().getNumeral() > rhs.ub().getNumeral()) {
+            }
+            else if (lhs.lb().getNumeral() > rhs.ub().getNumeral())
+            {
                 return IntervalValue(0, 0);
                 // lhs [1,3] rhs [2,4]
-            } else {
+            }
+            else
+            {
                 return IntervalValue(0, 1);
             }
         }
@@ -465,23 +633,37 @@ inline IntervalValue operator<(const IntervalValue &lhs, const IntervalValue &rh
 
 
 /// Greater than IntervalValues
-inline IntervalValue operator>=(const IntervalValue &lhs, const IntervalValue &rhs) {
-    if (lhs.isBottom() || rhs.isBottom()) {
+inline IntervalValue operator>=(const IntervalValue &lhs, const IntervalValue &rhs)
+{
+    if (lhs.isBottom() || rhs.isBottom())
+    {
         return IntervalValue::bottom();
-    } else if (lhs.isTop() || lhs.isTop()) {
+    }
+    else if (lhs.isTop() || lhs.isTop())
+    {
         return IntervalValue::top();
-    } else {
-        if (lhs.is_numeral() && rhs.is_numeral()) {
+    }
+    else
+    {
+        if (lhs.is_numeral() && rhs.is_numeral())
+        {
             return lhs.lb().geq(rhs.lb()) ? IntervalValue(1, 1) : IntervalValue(0, 0);
-        } else {
+        }
+        else
+        {
             // lhs [2,3] rhs [1,2]
-            if (lhs.lb().getNumeral() >= rhs.ub().getNumeral()) {
+            if (lhs.lb().getNumeral() >= rhs.ub().getNumeral())
+            {
                 return IntervalValue(1, 1);
                 // lhs [1,2] rhs[3,4]
-            } else if (lhs.ub().getNumeral() < rhs.lb().getNumeral()) {
+            }
+            else if (lhs.ub().getNumeral() < rhs.lb().getNumeral())
+            {
                 return IntervalValue(0, 0);
                 // lhs [1,3] rhs [2,4]
-            } else {
+            }
+            else
+            {
                 if (lhs.equals(rhs)) return IntervalValue(1, 1);
                 else return IntervalValue(0, 1);
             }
@@ -490,23 +672,37 @@ inline IntervalValue operator>=(const IntervalValue &lhs, const IntervalValue &r
 }
 
 /// Greater than IntervalValues
-inline IntervalValue operator<=(const IntervalValue &lhs, const IntervalValue &rhs) {
-    if (lhs.isBottom() || rhs.isBottom()) {
+inline IntervalValue operator<=(const IntervalValue &lhs, const IntervalValue &rhs)
+{
+    if (lhs.isBottom() || rhs.isBottom())
+    {
         return IntervalValue::bottom();
-    } else if (lhs.isTop() || lhs.isTop()) {
+    }
+    else if (lhs.isTop() || lhs.isTop())
+    {
         return IntervalValue::top();
-    } else {
-        if (lhs.is_numeral() && rhs.is_numeral()) {
+    }
+    else
+    {
+        if (lhs.is_numeral() && rhs.is_numeral())
+        {
             return lhs.lb().leq(rhs.lb()) ? IntervalValue(1, 1) : IntervalValue(0, 0);
-        } else {
+        }
+        else
+        {
             // lhs [1,2] rhs [2,3]
-            if (lhs.ub().getNumeral() <= rhs.lb().getNumeral()) {
+            if (lhs.ub().getNumeral() <= rhs.lb().getNumeral())
+            {
                 return IntervalValue(1, 1);
                 // lhs [3,4] rhs[1,2]
-            } else if (lhs.lb().getNumeral() > rhs.ub().getNumeral()) {
+            }
+            else if (lhs.lb().getNumeral() > rhs.ub().getNumeral())
+            {
                 return IntervalValue(0, 0);
                 // lhs [1,3] rhs [2,4]
-            } else {
+            }
+            else
+            {
                 if (lhs.equals(rhs)) return IntervalValue(1, 1);
                 else return IntervalValue(0, 1);
             }
@@ -515,44 +711,51 @@ inline IntervalValue operator<=(const IntervalValue &lhs, const IntervalValue &r
 }
 
 /// Left binary shift of IntervalValues
-inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &rhs) {
+inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &rhs)
+{
     //TODO: implement <<
     if (lhs.isBottom() || rhs.isBottom())
         return IntervalValue::bottom();
     if (lhs.isTop() && rhs.isTop())
         return IntervalValue::top();
-    else {
+    else
+    {
         IntervalValue shift = rhs;
         shift.meet_with(IntervalValue(0, IntervalValue::plus_infinity()));
         if (shift.isBottom())
             return IntervalValue::bottom();
         IntervalValue coeff(1 << (s32_t) shift.lb().getNumeral(),
                             shift.ub().is_infinity() ? IntervalValue::plus_infinity() : 1
-                                    << (s32_t) shift.ub().getNumeral());
+                            << (s32_t) shift.ub().getNumeral());
         return lhs * coeff;
     }
 }
 
 /// Left binary shift of IntervalValues
-inline IntervalValue operator>>(const IntervalValue &lhs, const IntervalValue &rhs) {
+inline IntervalValue operator>>(const IntervalValue &lhs, const IntervalValue &rhs)
+{
     //TODO: implement >>
     if (lhs.isBottom() || rhs.isBottom())
         return IntervalValue::bottom();
     else if (lhs.isTop() && rhs.isTop())
         return IntervalValue::top();
-    else {
+    else
+    {
         IntervalValue shift = rhs;
         shift.meet_with(IntervalValue(0, IntervalValue::plus_infinity()));
         if (shift.isBottom())
             return IntervalValue::bottom();
-        if (lhs.contains(0)) {
+        if (lhs.contains(0))
+        {
             IntervalValue l(lhs.lb(), -1);
             IntervalValue u(1, lhs.ub());
             IntervalValue tmp = l >> rhs;
             tmp.join_with(u >> rhs);
             tmp.join_with(IntervalValue(0));
             return tmp;
-        } else {
+        }
+        else
+        {
             NumericLiteral ll = lhs.lb() >> shift.lb();
             NumericLiteral lu = lhs.lb() >> shift.ub();
             NumericLiteral ul = lhs.ub() >> shift.lb();
@@ -564,27 +767,40 @@ inline IntervalValue operator>>(const IntervalValue &lhs, const IntervalValue &r
 }
 
 /// Bitwise AND of IntervalValues
-inline IntervalValue operator&(const IntervalValue &lhs, const IntervalValue &rhs) {
+inline IntervalValue operator&(const IntervalValue &lhs, const IntervalValue &rhs)
+{
     if (lhs.isBottom() || rhs.isBottom())
         return IntervalValue::bottom();
-    else if (lhs.is_numeral() && rhs.is_numeral()) {
+    else if (lhs.is_numeral() && rhs.is_numeral())
+    {
         return IntervalValue((s32_t)lhs.getNumeral() & (s32_t)rhs.getNumeral());
-    } else if (lhs.lb().getNumeral() >= 0 && rhs.lb().getNumeral() >= 0) {
+    }
+    else if (lhs.lb().getNumeral() >= 0 && rhs.lb().getNumeral() >= 0)
+    {
         return IntervalValue(0.0, std::min(lhs.ub().getNumeral(), rhs.ub().getNumeral()));
-    } else if (lhs.lb().getNumeral() >= 0) {
+    }
+    else if (lhs.lb().getNumeral() >= 0)
+    {
         return IntervalValue(0.0, lhs.ub().getNumeral());
-    } else if (rhs.lb().getNumeral() >= 0) {
+    }
+    else if (rhs.lb().getNumeral() >= 0)
+    {
         return IntervalValue(0.0, rhs.ub().getNumeral());
-    } else {
+    }
+    else
+    {
         return IntervalValue::top();
     }
 }
 
 /// Bitwise OR of IntervalValues
-inline IntervalValue operator|(const IntervalValue &lhs, const IntervalValue &rhs) {
-    auto next_power_of_2 = [](s64_t num) {
+inline IntervalValue operator|(const IntervalValue &lhs, const IntervalValue &rhs)
+{
+    auto next_power_of_2 = [](s64_t num)
+    {
         int i = 1;
-        while ((num >> i) != 0) {
+        while ((num >> i) != 0)
+        {
             ++i;
         }
         return 1 << i;
@@ -594,20 +810,26 @@ inline IntervalValue operator|(const IntervalValue &lhs, const IntervalValue &rh
     else if (lhs.is_numeral() && rhs.is_numeral())
         return IntervalValue((s32_t)lhs.getNumeral() | (s32_t)rhs.getNumeral());
     else if (lhs.lb().getNumeral() >= 0 && !lhs.ub().is_infinity() &&
-        rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity()) {
+             rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity())
+    {
         double m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
         double ub = next_power_of_2(s64_t(m+1));
         return IntervalValue(0.0, ub);
-    } else {
+    }
+    else
+    {
         return IntervalValue::top();
     }
 }
 
 /// Bitwise XOR of IntervalValues
-inline IntervalValue operator^(const IntervalValue &lhs, const IntervalValue &rhs) {
-    auto next_power_of_2 = [](s64_t num) {
+inline IntervalValue operator^(const IntervalValue &lhs, const IntervalValue &rhs)
+{
+    auto next_power_of_2 = [](s64_t num)
+    {
         int i = 1;
-        while ((num >> i) != 0) {
+        while ((num >> i) != 0)
+        {
             ++i;
         }
         return 1 << i;
@@ -617,18 +839,22 @@ inline IntervalValue operator^(const IntervalValue &lhs, const IntervalValue &rh
     else if (lhs.is_numeral() && rhs.is_numeral())
         return IntervalValue((s32_t)lhs.getNumeral() ^ (s32_t)rhs.getNumeral());
     else if (lhs.lb().getNumeral() >= 0 && !lhs.ub().is_infinity() &&
-             rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity()) {
+             rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity())
+    {
         double m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
         double ub = next_power_of_2(s64_t(m+1));
         return IntervalValue(0.0, ub);
-    } else {
+    }
+    else
+    {
         return IntervalValue::top();
     }
 }
 
 /// Write an IntervalValue on a stream
 inline std::ostream &operator<<(std::ostream &o,
-                                const IntervalValue &IntervalValue) {
+                                const IntervalValue &IntervalValue)
+{
     IntervalValue.dump(o);
     return o;
 }

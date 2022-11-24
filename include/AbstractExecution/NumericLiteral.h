@@ -32,8 +32,10 @@
 
 #include "SVFIR/SVFType.h"
 
-namespace SVF {
-class NumericLiteral {
+namespace SVF
+{
+class NumericLiteral
+{
 private:
     double _n;
 
@@ -71,39 +73,64 @@ public:
     inline NumericLiteral &operator=(NumericLiteral &&) noexcept = default;
 
     /// Get minus infinity -oo
-    static NumericLiteral minus_infinity() { return NumericLiteral(INT_MIN); }
+    static NumericLiteral minus_infinity()
+    {
+        return NumericLiteral(INT_MIN);
+    }
 
     /// Get plus infinity +oo
-    static NumericLiteral plus_infinity() { return NumericLiteral(INT_MAX); }
+    static NumericLiteral plus_infinity()
+    {
+        return NumericLiteral(INT_MAX);
+    }
 
     /// Check if this is minus infinity
-    inline bool is_minus_infinity() const { return _n == INT_MIN; }
+    inline bool is_minus_infinity() const
+    {
+        return _n == INT_MIN;
+    }
 
     /// Check if this is plus infinity
-    inline bool is_plus_infinity() const { return _n == INT_MAX; }
+    inline bool is_plus_infinity() const
+    {
+        return _n == INT_MAX;
+    }
 
     /// Check if this is infinity (either of plus/minus)
-    inline bool is_infinity() const { return is_minus_infinity() || is_plus_infinity(); }
+    inline bool is_infinity() const
+    {
+        return is_minus_infinity() || is_plus_infinity();
+    }
 
     /// Check if this is zero
-    inline bool is_zero() const { return _n == 0; }
+    inline bool is_zero() const
+    {
+        return _n == 0;
+    }
 
     /// Return Numeral
-    inline double getNumeral() const {
+    inline double getNumeral() const
+    {
         return _n;
     }
 
     /// Check two object is equal
-    bool equal(const NumericLiteral &rhs) const {
+    bool equal(const NumericLiteral &rhs) const
+    {
         return eq(*this, rhs);
     }
 
     /// Less then or equal
-    bool leq(const NumericLiteral &rhs) const {
-        if (is_infinity() ^ rhs.is_infinity()) {
-            if (is_infinity()) {
+    bool leq(const NumericLiteral &rhs) const
+    {
+        if (is_infinity() ^ rhs.is_infinity())
+        {
+            if (is_infinity())
+            {
                 return is_minus_infinity();
-            } else {
+            }
+            else
+            {
                 return rhs.is_plus_infinity();
             }
         }
@@ -111,11 +138,16 @@ public:
     }
 
     // Greater than or equal
-    bool geq(const NumericLiteral &rhs) const {
-        if (is_infinity() ^ rhs.is_infinity()) {
-            if (is_infinity()) {
+    bool geq(const NumericLiteral &rhs) const
+    {
+        if (is_infinity() ^ rhs.is_infinity())
+        {
+            if (is_infinity())
+            {
                 return is_plus_infinity();
-            } else {
+            }
+            else
+            {
                 return rhs.is_minus_infinity();
             }
         }
@@ -125,31 +157,38 @@ public:
 
     /// Reload operator
     //{%
-    friend NumericLiteral operator==(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator==(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return eq(lhs, rhs);
     }
 
-    friend NumericLiteral operator!=(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator!=(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return !eq(lhs, rhs);
     }
 
-    friend NumericLiteral operator>(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator>(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return !lhs.leq(rhs);
     }
 
-    friend NumericLiteral operator<(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator<(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return !lhs.geq(rhs);
     }
 
-    friend NumericLiteral operator<=(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator<=(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return lhs.leq(rhs);
     }
 
-    friend NumericLiteral operator>=(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator>=(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return lhs.geq(rhs);
     }
 
-    friend NumericLiteral operator+(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator+(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         if (!lhs.is_infinity() && !rhs.is_infinity())
             return lhs.getNumeral() + rhs.getNumeral();
         else if (!lhs.is_infinity() && rhs.is_infinity())
@@ -162,7 +201,8 @@ public:
             assert(false && "undefined operation +oo + -oo");
     }
 
-    friend NumericLiteral operator-(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator-(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         if (!lhs.is_infinity() && !rhs.is_infinity())
             return lhs.getNumeral() - rhs.getNumeral();
         else if (!lhs.is_infinity() && rhs.is_infinity())
@@ -175,7 +215,8 @@ public:
             assert(false && "undefined operation +oo - +oo");
     }
 
-    friend NumericLiteral operator*(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator*(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         if (lhs.is_zero() || rhs.is_zero()) return 0;
         else if (lhs.is_infinity() && rhs.is_infinity())
             return eq(lhs, rhs) ? plus_infinity() : minus_infinity();
@@ -187,7 +228,8 @@ public:
             return lhs.getNumeral() * rhs.getNumeral();
     }
 
-    friend NumericLiteral operator/(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator/(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         if (rhs.is_zero()) assert(false && "divide by zero");
         else if (!lhs.is_infinity() && !rhs.is_infinity())
             return lhs.getNumeral() / rhs.getNumeral();
@@ -200,13 +242,14 @@ public:
             return eq(lhs, rhs) ? plus_infinity() : minus_infinity();
     }
 
-    friend NumericLiteral operator%(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator%(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         if (rhs.is_zero()) assert(false && "divide by zero");
         else if (!lhs.is_infinity() && !rhs.is_infinity())
             return (s32_t) lhs.getNumeral() % (s32_t) rhs.getNumeral();
         else if (!lhs.is_infinity() && rhs.is_infinity())
             return 0;
-            // TODO: not sure
+        // TODO: not sure
         else if (lhs.is_infinity() && !rhs.is_infinity())
             return rhs.getNumeral() > 0 ? lhs : -lhs;
         else
@@ -215,19 +258,23 @@ public:
     }
 
     // TODO: logic operation for infinity?
-    friend NumericLiteral operator^(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator^(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return (s32_t) lhs.getNumeral() ^ (s32_t) rhs.getNumeral();
     }
 
-    friend NumericLiteral operator&(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator&(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return (s32_t) lhs.getNumeral() & (s32_t) rhs.getNumeral();
     }
 
-    friend NumericLiteral operator|(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator|(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return (s32_t) lhs.getNumeral() | (s32_t) rhs.getNumeral();
     }
 
-    friend NumericLiteral operator>>(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator>>(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         assert(rhs.geq(0) && "rhs should be greater or equal than 0");
         if (lhs.is_zero())
             return lhs;
@@ -239,7 +286,8 @@ public:
             return (s32_t) lhs.getNumeral() >> (s32_t) rhs.getNumeral();
     }
 
-    friend NumericLiteral operator<<(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator<<(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         assert(rhs.geq(0) && "rhs should be greater or equal than 0");
         if (lhs.is_zero())
             return lhs;
@@ -251,28 +299,34 @@ public:
             return (s32_t) lhs.getNumeral() << (s32_t) rhs.getNumeral();
     }
 
-    friend NumericLiteral operator&&(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator&&(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return lhs.getNumeral() && rhs.getNumeral();
     }
 
-    friend NumericLiteral operator||(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral operator||(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return lhs.getNumeral() || rhs.getNumeral();
     }
 
-    friend NumericLiteral operator!(const NumericLiteral &lhs) {
+    friend NumericLiteral operator!(const NumericLiteral &lhs)
+    {
         return !lhs.getNumeral();
     }
 
-    friend NumericLiteral operator-(const NumericLiteral &lhs) {
+    friend NumericLiteral operator-(const NumericLiteral &lhs)
+    {
         return -lhs.getNumeral();
     }
 
     /// Return ite? lhs : rhs
-    friend NumericLiteral ite(const NumericLiteral &cond, const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral ite(const NumericLiteral &cond, const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return cond.getNumeral() ? lhs.getNumeral() : rhs.getNumeral();
     }
 
-    friend std::ostream &operator<<(std::ostream &out, const NumericLiteral &expr) {
+    friend std::ostream &operator<<(std::ostream &out, const NumericLiteral &expr)
+    {
         if (expr.is_plus_infinity())
             out << "+INF";
         else if (expr.is_minus_infinity())
@@ -282,37 +336,46 @@ public:
         return out;
     }
 
-    friend bool eq(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend bool eq(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return lhs._n == rhs._n;
     }
 
-    friend NumericLiteral min(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral min(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return std::min(lhs.getNumeral(), rhs.getNumeral());
     }
 
-    friend NumericLiteral max(const NumericLiteral &lhs, const NumericLiteral &rhs) {
+    friend NumericLiteral max(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    {
         return std::max(lhs.getNumeral(), rhs.getNumeral());
     }
 
     // TODO: how to use initializer_list as argument?
-    friend NumericLiteral min(std::initializer_list<NumericLiteral> _l) {
+    friend NumericLiteral min(std::initializer_list<NumericLiteral> _l)
+    {
         NumericLiteral ret(INT_MAX);
-        for (const auto &it: _l) {
+        for (const auto &it: _l)
+        {
             if (it.is_minus_infinity())
                 return minus_infinity();
-            else if (!it.geq(ret)) {
+            else if (!it.geq(ret))
+            {
                 ret = it;
             }
         }
         return ret;
     }
 
-    friend NumericLiteral max(std::initializer_list<NumericLiteral> _l) {
+    friend NumericLiteral max(std::initializer_list<NumericLiteral> _l)
+    {
         NumericLiteral ret(INT_MIN);
-        for (const auto &it: _l) {
+        for (const auto &it: _l)
+        {
             if (it.is_plus_infinity())
                 return plus_infinity();
-            else if (!it.leq(ret)) {
+            else if (!it.leq(ret))
+            {
                 ret = it;
             }
         }
