@@ -528,7 +528,7 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep) {
         return;
     } else {
         VAddrs gepAddrs;
-        for (u32_t i = offsetPair.first; i <= offsetPair.second; i++) {
+        for (s32_t i = offsetPair.first; i <= offsetPair.second; i++) {
             gepAddrs.join_with(getGepObjAddress(rhs, i));
         }
         getVAddrs(lhs) = gepAddrs;
