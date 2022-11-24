@@ -458,7 +458,7 @@ CFLGraph* VFCFLGraphBuilder::buildBigraph(SVFG *graph, Kind startKind, GrammarBa
                 addAttribute(edgeLabel, attr);
                 edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                std::string key = kind2LabelMap[edgeLabel];
                 key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
                 addAttribute(label2KindMap[key], attr);
@@ -472,7 +472,7 @@ CFLGraph* VFCFLGraphBuilder::buildBigraph(SVFG *graph, Kind startKind, GrammarBa
                 addAttribute(edgeLabel, attr);
                 edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                std::string key = kind2LabelMap[edgeLabel];
                 key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
                 addAttribute(label2KindMap[key], attr);
@@ -486,7 +486,7 @@ CFLGraph* VFCFLGraphBuilder::buildBigraph(SVFG *graph, Kind startKind, GrammarBa
                 addAttribute(edgeLabel, attr);
                 edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                std::string key = kind2LabelMap[edgeLabel];
                 key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
                 addAttribute(label2KindMap[key], attr);
@@ -500,7 +500,7 @@ CFLGraph* VFCFLGraphBuilder::buildBigraph(SVFG *graph, Kind startKind, GrammarBa
                 addAttribute(edgeLabel, attr);
                 edgeLabel = CFLGrammar::getAttributedKind(attr, edgeLabel);
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                std::string key = kind2LabelMap[edgeLabel];
                 key.append("bar");   // for example Gep_i should be Gepbar_i, not Gep_ibar
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), CFLGrammar::getAttributedKind(attr, label2KindMap[key]));
                 addAttribute(label2KindMap[key], attr);
