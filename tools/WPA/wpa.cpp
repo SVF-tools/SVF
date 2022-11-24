@@ -58,8 +58,8 @@ int main(int argc, char ** argv)
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
 
-    WPAPass *wpa = new WPAPass();
-    wpa->runOnModule(pag);
+    WPAPass wpa;
+    wpa.runOnModule(pag);
 
     return 0;
 }
