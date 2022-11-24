@@ -245,7 +245,7 @@ template <class X, class Y> LLVM_NODISCARD inline bool isa(const Y &Val)
 }
 
 template <typename First, typename Second, typename... Rest, typename Y>
-LLVM_NODISCARD inline bool isa(const Y &Val) 
+LLVM_NODISCARD inline bool isa(const Y &Val)
 {
     return SVFUtil::isa<First>(Val) || SVFUtil::isa<Second, Rest...>(Val);
 }

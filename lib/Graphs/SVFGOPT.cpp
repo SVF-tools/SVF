@@ -95,8 +95,8 @@ void SVFGOPT::handleInterValueFlow()
     {
         SVFGNode* node = it->second;
         if (SVFUtil::isa<ActualParmSVFGNode, ActualRetSVFGNode, FormalParmSVFGNode,
-                         FormalRetSVFGNode, ActualINSVFGNode, ActualOUTSVFGNode,
-                         FormalINSVFGNode, FormalOUTSVFGNode>(node))
+                FormalRetSVFGNode, ActualINSVFGNode, ActualOUTSVFGNode,
+                FormalINSVFGNode, FormalOUTSVFGNode>(node))
             candidates.insert(node);
     }
 
@@ -334,10 +334,10 @@ bool SVFGOPT::isConnectingTwoCallSites(const SVFGNode* node) const
 bool SVFGOPT::canBeRemoved(const SVFGNode * node)
 {
     if (SVFUtil::isa<ActualParmSVFGNode, FormalParmSVFGNode,
-                     ActualRetSVFGNode, FormalRetSVFGNode>(node))
+            ActualRetSVFGNode, FormalRetSVFGNode>(node))
         return true;
     else if (SVFUtil::isa<ActualINSVFGNode, ActualOUTSVFGNode, FormalINSVFGNode,
-                          FormalOUTSVFGNode, MSSAPHISVFGNode>(node))
+             FormalOUTSVFGNode, MSSAPHISVFGNode>(node))
     {
         /// Now each SVFG edge can only be associated with one call site id,
         /// so if this node has both incoming call/ret and outgoting call/ret
