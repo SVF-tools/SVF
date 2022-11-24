@@ -121,7 +121,7 @@ public:
         for (u32_t id: sl) {
             inv._varToItvVal[id] = _varToItvVal[id];
         }
-        return std::move(inv);
+        return inv;
     }
 
     VAddrs &getVAddrs(u32_t id) override {

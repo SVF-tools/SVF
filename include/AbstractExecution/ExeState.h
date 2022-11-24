@@ -89,13 +89,13 @@ public:
         return !(*this == rhs);
     }
 
-    virtual bool equals(const ExeState *other) const { return false; }
+    bool equals(const ExeState *other) const { return false; }
 
     /// Make all value join with the other
-    virtual void joinWith(const ExeState &other);
+    void joinWith(const ExeState &other);
 
     /// Make all value meet with the other
-    virtual void meetWith(const ExeState &other);
+    void meetWith(const ExeState &other);
 
     virtual u32_t hash() const;
 
