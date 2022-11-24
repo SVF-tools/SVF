@@ -43,7 +43,7 @@ using namespace SVFUtil;
 
 MTA::MTA() : tcg(nullptr), tct(nullptr), mhp(nullptr), lsa(nullptr)
 {
-    stat = new MTAStat();
+    stat = std::make_unique<MTAStat>();
 }
 
 MTA::~MTA()
@@ -129,7 +129,7 @@ MHP* MTA::computeMHP(SVFModule* module)
     DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
     DBOUT(DMTA, outs() << pasMsg("Build TCT\n"));
     DOTIMESTAT(double tctStart = stat->getClk());
-    tct = new TCT(pta);
+    tct = std::make_unique<TCT>(pta);
     tcg = tct->getThreadCallGraph();
     DOTIMESTAT(double tctEnd = stat->getClk());
     DOTIMESTAT(stat->TCTTime += (tctEnd - tctStart) / TIMEINTERVAL);
@@ -137,7 +137,7 @@ MHP* MTA::computeMHP(SVFModule* module)
     if (pta->printStat())
     {
         stat->performThreadCallGraphStat(tcg);
-        stat->performTCTStat(tct);
+        stat->performTCTStat(tct.get());
     }
 
     tcg->dump("tcg");
@@ -146,7 +146,7 @@ MHP* MTA::computeMHP(SVFModule* module)
     DBOUT(DMTA, outs() << pasMsg("MHP analysis\n"));
 
     DOTIMESTAT(double mhpStart = stat->getClk());
-    MHP* mhp = new MHP(tct);
+    MHP* mhp = new MHP(tct.get());
     mhp->analyze();
     DOTIMESTAT(double mhpEnd = stat->getClk());
     DOTIMESTAT(stat->MHPTime += (mhpEnd - mhpStart) / TIMEINTERVAL);

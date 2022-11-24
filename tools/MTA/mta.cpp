@@ -30,14 +30,14 @@ int main(int argc, char ** argv)
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
 
-    MTA *mta = new MTA();
-    mta->runOnModule(pag);
+    MTA mta;
+    mta.runOnModule(pag);
 
-    MTAResultValidator MTAValidator(mta->getMHP());
+    MTAResultValidator MTAValidator(mta.getMHP());
     MTAValidator.analyze();
 
     // Initialize the validator and perform validation.
-    LockResultValidator lockvalidator(mta->getLockAnalysis());
+    LockResultValidator lockvalidator(mta.getLockAnalysis());
     lockvalidator.analyze();
 
     return 0;
