@@ -15,6 +15,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04, macos-11]
+        include:
+          - os: [ubuntu-18.04]
+            sanitizer: address
     steps:
       # checkout the repo
       - uses: actions/checkout@v2
@@ -40,11 +43,11 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo $(pwd)
-          if [ "$RUNNER_OS" == "Linux" ]; then export SVF_COVERAGE=1; fi
+          if [ "${{matrix.sanitizer}}" != "" ]; then export SVF_SANITIZER="${{matrix.sanitizer}}"; fi
+          if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ]; then export SVF_COVERAGE=1; fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
-      # run ctest
-      # run ctest
+
       - name: ctest wpa
         working-directory: ${{github.workspace}}/Release-build
         run: 
