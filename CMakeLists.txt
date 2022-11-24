@@ -46,6 +46,13 @@ if(NOT COMMAND add_llvm_library)
           message(STATUS "Enable coverage")
         endif()
 
+        option(SVF_SANITIZE "Create sanitizer build (address)")
+        if (SVF_SANITIZE STREQUAL "address")
+          add_compile_options("-fno-omit-frame-pointer" "-fsanitize=address")
+          add_link_options("-fsanitize=address")
+          message(STATUS "Sanitizer build: ${SVF_SANITIZE}")
+        endif()
+
         list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
         include(AddLLVM)
 
