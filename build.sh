@@ -229,7 +229,7 @@ else
     rm -rf ./'Release-build'
     mkdir ./'Release-build'
     cd ./'Release-build'
-    cmake ../
+    cmake -D CMAKE_BUILD_TYPE:STRING=Release -DSVF_ENABLE_ASSERTIONS:BOOL=true ../
     fi
 make -j ${jobs}
 

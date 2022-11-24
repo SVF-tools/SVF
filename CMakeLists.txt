@@ -15,14 +15,16 @@ if(NOT COMMAND add_llvm_library)
         # add -std=gnu++14
         set(CMAKE_CXX_EXTENSIONS ON)
 
-        if(CMAKE_BUILD_TYPE MATCHES "Debug")
-	    add_compile_options("-fPIC" "-Werror" "-Wall" "-O0" "-fno-rtti")
-        else()
-	    add_compile_options("-fPIC" "-Werror" "-Wall" "-O3" "-fno-rtti")
+        # Treat compiler warnings as errors
+        add_compile_options("-Werror" "-Wall")
+
+        # Keep assertions enabled if requested
+        option(SVF_ENABLE_ASSERTIONS "Always enable assertions")
+        if(SVF_ENABLE_ASSERTIONS)
+          add_compile_options("-UNDEBUG")
         endif()
 
-        find_package(LLVM REQUIRED CONFIG
-          HINTS "${LLVM_DIR}")
+        find_package(LLVM REQUIRED CONFIG HINTS "${LLVM_DIR}")
 
         message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
         message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -37,6 +39,7 @@ if(NOT COMMAND add_llvm_library)
           message(STATUS "Disable exceptions")
         endif()
 
+        option(SVF_COVERAGE "Create coverage build")
         if (SVF_COVERAGE OR DEFINED ENV{SVF_COVERAGE})
           add_compile_options("-fprofile-arcs" "-ftest-coverage")
           add_link_options("-fprofile-arcs" "-ftest-coverage")
