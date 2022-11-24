@@ -89,7 +89,7 @@ private:
     void collectCxtInsenEdgeForRecur(PointerAnalysis* pta, const SVFG* svfg,SVFGEdgeSet& insensitveEdges);
     void collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* svfg,const SVFGSCC* svfgSCC, SVFGEdgeSet& insensitveEdges);
 
-    PointerAnalysis* _pta;	///<  pointer analysis to be executed.
+    std::unique_ptr<PointerAnalysis> _pta;	///<  pointer analysis to be executed.
     DDAClient* _client;		///<  DDA client used
 
 };
