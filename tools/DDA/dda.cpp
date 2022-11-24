@@ -61,9 +61,10 @@ int main(int argc, char ** argv)
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
 
-    DDAPass *dda = new DDAPass();
-    dda->runOnModule(pag);
+    DDAPass dda;
+    dda.runOnModule(pag);
 
+    delete[] arg_value;
     return 0;
 
 }
