@@ -33,6 +33,7 @@ if(NOT COMMAND add_llvm_library)
           message(STATUS "Disable exceptions")
         endif()
 
+        option(SVF_COVERAGE "Create coverage build")
         if (SVF_COVERAGE OR DEFINED ENV{SVF_COVERAGE})
           add_compile_options("-fprofile-arcs" "-ftest-coverage")
           add_link_options("-fprofile-arcs" "-ftest-coverage")
