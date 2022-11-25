@@ -96,7 +96,7 @@ jobs:
 
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.sanitizer == ''
         run: | 
           lcov --capture --directory ./ --output-file coverage.info
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
