@@ -619,7 +619,7 @@ class SparseBitVector
         }
 
     public:
-        SparseBitVectorIterator() = default;
+        SparseBitVectorIterator() = delete;
 
         SparseBitVectorIterator(const SparseBitVector<ElementSize> *RHS,
                                 bool end = false):BitVector(RHS)
