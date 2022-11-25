@@ -64,14 +64,13 @@ int main(int argc, char ** argv)
         svfir = builder.build();
     }  // if no dot form CFLGraph is specified, we use svfir from .bc.
 
-    CFLBase* cfl;
+    std::unique_ptr<CFLBase> cfl;
     if (Options::CFLSVFG)
-        cfl = new CFLVF(svfir);
+        cfl = std::make_unique<CFLVF>(svfir);
     else
-        cfl = new CFLAlias(svfir); // if no svfg is specified, we use CFLAlias as the default one.
+        cfl = std::make_unique<CFLAlias>(svfir); // if no svfg is specified, we use CFLAlias as the default one.
     cfl->analyze();
 
-    delete cfl;
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
