@@ -52,23 +52,15 @@ public:
     explicit SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
 
     /// Destructor
-    static SVFG* globalSvfg;
     virtual ~SVFGBuilder() = default;
 
     SVFG* buildPTROnlySVFG(BVDataPTAImpl* pta);
     SVFG* buildFullSVFG(BVDataPTAImpl* pta);
 
-    /// Clean up
-    static void releaseSVFG()
-    {
-        if (globalSvfg)
-            delete globalSvfg;
-        globalSvfg = nullptr;
-    }
     /// Get SVFG instance
     inline SVFG* getSVFG() const
     {
-        return svfg;
+        return svfg.get();
     }
 
     /// Mark feasible VF edge by removing it from set vfEdgesAtIndCallSite
@@ -96,7 +88,7 @@ protected:
 
     /// SVFG Edges connected at indirect call/ret sites
     SVFGEdgeSet vfEdgesAtIndCallSite;
-    SVFG* svfg;
+    std::unique_ptr<SVFG> svfg;
     /// SVFG with precomputed indirect call edges
     bool SVFGWithIndCall;
 };

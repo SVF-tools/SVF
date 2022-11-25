@@ -458,12 +458,6 @@ const llvm::cl::opt<bool> Options::SVFGWithIndirectCall(
     llvm::cl::desc("Update Indirect Calls for SVFG using pre-analysis")
 );
 
-const llvm::cl::opt<bool> Options::SingleVFG(
-    "single-vfg",
-    llvm::cl::init(false),
-    llvm::cl::desc("Create a single VFG shared by multiple analysis")
-);
-
 llvm::cl::opt<bool> Options::OPTSVFG(
     "opt-svfg",
     llvm::cl::init(false),

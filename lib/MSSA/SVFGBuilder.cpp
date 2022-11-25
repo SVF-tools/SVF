@@ -38,9 +38,6 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-SVFG* SVFGBuilder::globalSvfg = nullptr;
-
-
 SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta)
 {
     if(Options::OPTSVFG)
@@ -67,41 +64,26 @@ void SVFGBuilder::buildSVFG()
 SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
 {
 
-    MemSSA* mssa = buildMSSA(pta, (VFG::PTRONLYSVFG==kind || VFG::PTRONLYSVFG_OPT==kind));
+    auto mssa = buildMSSA(pta, (VFG::PTRONLYSVFG==kind || VFG::PTRONLYSVFG_OPT==kind));
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
-    if(Options::SingleVFG)
-    {
-        if(globalSvfg==nullptr)
-        {
-            /// Note that we use callgraph from andersen analysis here
-            if(kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
-                svfg = globalSvfg = new SVFGOPT(mssa, kind);
-            else
-                svfg = globalSvfg = new SVFG(mssa, kind);
-            buildSVFG();
-        }
-    }
+    if(kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
+        svfg = std::make_unique<SVFGOPT>(std::move(mssa), kind);
     else
-    {
-        if(kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
-            svfg = new SVFGOPT(mssa, kind);
-        else
-            svfg = new SVFG(mssa,kind);
-        buildSVFG();
-    }
+        svfg = std::unique_ptr<SVFG>(new SVFG(std::move(mssa),kind));
+    buildSVFG();
 
     /// Update call graph using pre-analysis results
     if(Options::SVFGWithIndirectCall || SVFGWithIndCall)
         svfg->updateCallGraph(pta);
 
-    if(mssa->getPTA()->printStat())
+    if(svfg->getMSSA()->getPTA()->printStat())
         svfg->performStat();
 
     if(Options::DumpVFG)
         svfg->dump("svfg_final");
 
-    return svfg;
+    return svfg.get();
 }
 
 /*!
