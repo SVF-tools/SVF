@@ -1003,8 +1003,11 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
           }
         }
         else {
-          stinfo = collectSimpleTypeInfo(T);
-          Type2TypeInfo[T] = std::unique_ptr<StInfo>(stinfo);
+          /// The simple type info should not be processed before
+          auto stinfo_own = std::make_unique<StInfo>(1);
+          stinfo = stinfo_own.get();
+          Type2TypeInfo[T] = std::move(stinfo_own);
+          collectSimpleTypeInfo(stinfo, T);
         }
 
 
@@ -1149,9 +1152,8 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty, u32_t &nf)
 /*!
  * Collect simple type (non-aggregate) info
  */
-StInfo* LLVMModuleSet::collectSimpleTypeInfo(const Type* ty)
+StInfo* LLVMModuleSet::collectSimpleTypeInfo(StInfo * stinfo, const Type* ty)
 {
-    StInfo* stinfo = new StInfo(1);
     /// Only one field
     stinfo->addFldWithType(0, getSVFType(ty), 0);
 

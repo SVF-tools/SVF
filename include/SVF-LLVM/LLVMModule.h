@@ -334,7 +334,7 @@ private:
     /// Collect the array info
     StInfo* collectArrayInfo(const ArrayType* T);
     /// Collect simple type (non-aggregate) info
-    StInfo* collectSimpleTypeInfo(const Type* T);
+    StInfo* collectSimpleTypeInfo(StInfo * info, const Type* T);
 
     std::vector<const Function*> getLLVMGlobalFunctions(const GlobalVariable* global);
 
