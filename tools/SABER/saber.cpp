@@ -69,16 +69,16 @@ int main(int argc, char ** argv)
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
 
-    LeakChecker *saber;
+    std::unique_ptr<LeakChecker> saber;
 
     if(LEAKCHECKER)
-        saber = new LeakChecker();
+        saber = std::make_unique<LeakChecker>();
     else if(FILECHECKER)
-        saber = new FileChecker();
+        saber = std::make_unique<FileChecker>();
     else if(DFREECHECKER)
-        saber = new DoubleFreeChecker();
+        saber = std::make_unique<DoubleFreeChecker>();
     else
-        saber = new LeakChecker();  // if no checker is specified, we use leak checker as the default one.
+        saber = std::make_unique<LeakChecker>();  // if no checker is specified, we use leak checker as the default one.
 
     saber->runOnModule(pag);
 
