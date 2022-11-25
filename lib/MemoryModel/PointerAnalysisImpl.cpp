@@ -53,36 +53,36 @@ BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_c
         // Only maintain reverse points-to when the analysis is field-sensitive, as objects turning
         // field-insensitive is all it is used for.
         bool maintainRevPts = Options::MaxFieldLimit != 0;
-        if (Options::ptDataBacking == PTBackingType::Mutable) ptD = new MutDiffPTDataTy(maintainRevPts);
-        else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersDiffPTDataTy(getPtCache(), maintainRevPts);
+        if (Options::ptDataBacking == PTBackingType::Mutable) ptD = std::make_unique<MutDiffPTDataTy>(maintainRevPts);
+        else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = std::make_unique<PersDiffPTDataTy>(getPtCache(), maintainRevPts);
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
     else if (type == Steensgaard_WPA)
     {
         // Steensgaard is only field-insensitive (for now?), so no reverse points-to.
-        if (Options::ptDataBacking == PTBackingType::Mutable) ptD = new MutDiffPTDataTy(false);
-        else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersDiffPTDataTy(getPtCache(), false);
+        if (Options::ptDataBacking == PTBackingType::Mutable) ptD = std::make_unique<MutDiffPTDataTy>(false);
+        else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = std::make_unique<PersDiffPTDataTy>(getPtCache(), false);
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
     else if (type == FSSPARSE_WPA)
     {
         if (Options::INCDFPTData)
         {
-            if (Options::ptDataBacking == PTBackingType::Mutable) ptD = new MutIncDFPTDataTy(false);
-            else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersIncDFPTDataTy(getPtCache(), false);
+            if (Options::ptDataBacking == PTBackingType::Mutable) ptD = std::make_unique<MutIncDFPTDataTy>(false);
+            else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = std::make_unique<PersIncDFPTDataTy>(getPtCache(), false);
             else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
         }
         else
         {
-            if (Options::ptDataBacking == PTBackingType::Mutable) ptD = new MutDFPTDataTy(false);
-            else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersDFPTDataTy(getPtCache(), false);
+            if (Options::ptDataBacking == PTBackingType::Mutable) ptD = std::make_unique<MutDFPTDataTy>(false);
+            else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = std::make_unique<PersDFPTDataTy>(getPtCache(), false);
             else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
         }
     }
     else if (type == VFS_WPA)
     {
-        if (Options::ptDataBacking == PTBackingType::Mutable) ptD = new MutVersionedPTDataTy(false);
-        else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersVersionedPTDataTy(getPtCache(), false);
+        if (Options::ptDataBacking == PTBackingType::Mutable) ptD = std::make_unique<MutVersionedPTDataTy>(false);
+        else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = std::make_unique<PersVersionedPTDataTy>(getPtCache(), false);
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
     else assert(false && "no points-to data available");

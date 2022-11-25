@@ -71,10 +71,7 @@ public:
     BVDataPTAImpl(SVFIR* pag, PointerAnalysis::PTATY type, bool alias_check = true);
 
     /// Destructor
-    virtual ~BVDataPTAImpl()
-    {
-        destroy();
-    }
+    ~BVDataPTAImpl() override = default;
 
     inline PersistentPointsToCache<PointsTo> &getPtCache()
     {
@@ -84,14 +81,6 @@ public:
     static inline bool classof(const PointerAnalysis *pta)
     {
         return pta->getImplTy() == BVDataImpl;
-    }
-
-    /// Release memory
-    inline void destroy()
-    {
-        delete ptD;
-        ptD = nullptr;
-        ptCache.clear();
     }
 
     /// Get points-to and reverse points-to
@@ -161,7 +150,7 @@ protected:
     /// Get points-to data structure
     inline PTDataTy* getPTDataTy() const
     {
-        return ptD;
+        return ptD.get();
     }
 
 
@@ -177,28 +166,28 @@ protected:
 
     inline DiffPTDataTy* getDiffPTDataTy() const
     {
-        DiffPTDataTy* diff = SVFUtil::dyn_cast<DiffPTDataTy>(ptD);
+        DiffPTDataTy* diff = SVFUtil::dyn_cast<DiffPTDataTy>(ptD.get());
         assert(diff && "BVDataPTAImpl::getDiffPTDataTy: not a DiffPTDataTy!");
         return diff;
     }
 
     inline DFPTDataTy* getDFPTDataTy() const
     {
-        DFPTDataTy* df = SVFUtil::dyn_cast<DFPTDataTy>(ptD);
+        DFPTDataTy* df = SVFUtil::dyn_cast<DFPTDataTy>(ptD.get());
         assert(df && "BVDataPTAImpl::getDFPTDataTy: not a DFPTDataTy!");
         return df;
     }
 
     inline MutDFPTDataTy* getMutDFPTDataTy() const
     {
-        MutDFPTDataTy* mdf = SVFUtil::dyn_cast<MutDFPTDataTy>(ptD);
+        MutDFPTDataTy* mdf = SVFUtil::dyn_cast<MutDFPTDataTy>(ptD.get());
         assert(mdf && "BVDataPTAImpl::getMutDFPTDataTy: not a MutDFPTDataTy!");
         return mdf;
     }
 
     inline VersionedPTDataTy* getVersionedPTDataTy() const
     {
-        VersionedPTDataTy* v = SVFUtil::dyn_cast<VersionedPTDataTy>(ptD);
+        VersionedPTDataTy* v = SVFUtil::dyn_cast<VersionedPTDataTy>(ptD.get());
         assert(v && "BVDataPTAImpl::getVersionedPTDataTy: not a VersionedPTDataTy!");
         return v;
     }
@@ -212,7 +201,7 @@ protected:
 
 private:
     /// Points-to data
-    PTDataTy* ptD;
+    std::unique_ptr<PTDataTy> ptD;
 
     PersistentPointsToCache<PointsTo> ptCache;
 
