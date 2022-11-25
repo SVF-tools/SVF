@@ -64,6 +64,8 @@ PointsTo::~PointsTo()
 
 PointsTo &PointsTo::operator=(const PointsTo &rhs)
 {
+    if (this == &rhs)
+      return *this;
     this->type = rhs.type;
     this->nodeMapping = rhs.nodeMapping;
     this->reverseNodeMapping = rhs.reverseNodeMapping;
