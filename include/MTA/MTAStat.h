@@ -60,7 +60,7 @@ public:
     /// Statistics for MHP statement pairs
     void performMHPPairStat(MHP* mhp, LockAnalysis* lsa);
     /// Statistics for annotation
-    void performAnnotationStat(MTAAnnotator* anno);
+    //void performAnnotationStat(MTAAnnotator* anno);
 
     double TCTTime;
     double MHPTime;

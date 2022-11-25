@@ -11,7 +11,7 @@
 * <b>We thank [bsauce](https://github.com/bsauce) for writing a user manual of SVF ([link1](https://www.jianshu.com/p/068a08ec749c) and [link2](https://www.jianshu.com/p/777c30d4240e)) in Chinese </b>
 * <b>SVF now supports LLVM-9.0.0 (Thank [Byoungyoung Lee](https://github.com/SVF-tools/SVF/issues/142) for his help!). </b>
 * <b>SVF now supports a set of [field-sensitive pointer analyses](https://yuleisui.github.io/publications/sas2019a.pdf). </b>
-* <b>[Use SVF as an external lib](https://github.com/SVF-tools/SVF/wiki/Using-SVF-as-a-lib-in-your-own-tool) for your own project (Contributed by [Hongxu Chen](https://github.com/HongxuChen)). </b>
+* <b>[Use SVF as an external lib](https://github.com/SVF-tools/SVF-example) for your own project (Contributed by [Hongxu Chen](https://github.com/HongxuChen)). </b>
 * <b>SVF now supports LLVM-7.0.0. </b>
 * <b>SVF now supports Docker. [Try SVF in Docker](https://github.com/SVF-tools/SVF/wiki/Try-SVF-in-Docker)! </b>
 * <b>SVF now supports [LLVM-6.0.0](https://github.com/svf-tools/SVF/pull/38) (Contributed by [Jack Anthony](https://github.com/jackanth)). </b>
@@ -28,7 +28,7 @@
 * [SABER](https://github.com/SVF-tools/SVF/tree/master/include/SABER) (<b>memory error checking</b>): memory leaks and double-frees ([ISSTA'12](https://yuleisui.github.io/publications/issta12.pdf), [TSE'14](https://yuleisui.github.io/publications/tse14.pdf), [ICSE'18](https://yuleisui.github.io/publications/icse18a.pdf));
 * [MTA](https://github.com/SVF-tools/SVF/tree/master/include/MTA) (<b>analysis of mutithreaded programs</b>): value-flows for multithreaded programs ([CGO'16](https://yuleisui.github.io/publications/cgo16.pdf));
 * [CFL](https://github.com/SVF-tools/SVF/tree/master/include/CFL) (<b>context-free-reachability analysis</b>): standard CFL solver, graph and grammar ([OOPSLA'22](https://yuleisui.github.io/publications/oopsla22.pdf));
-* [MemoryModel](https://github.com/SVF-tools/SVF/tree/master/include/MemoryModel) (<b>memory abstraction</b>): SVFIR and points-to data structures ([SAS'21](https://yuleisui.github.io/publications/sas21.pdf));
+* [SVFIR](https://github.com/SVF-tools/SVF/tree/master/include/SVFIR) and [MemoryModel](https://github.com/SVF-tools/SVF/tree/master/include/MemoryModel) (<b>SVFIR</b>): SVFIR, memory abstraction and points-to data structure ([SAS'21](https://yuleisui.github.io/publications/sas21.pdf));
 * [Graphs](https://github.com/SVF-tools/SVF/tree/master/include/Graphs): <b> generating a variety of graphs</b>, including call graph, ICFG, class hirachary graph, constraint graph, value-flow graph for static analyses and code embedding ([OOPSLA'20](https://yuleisui.github.io/publications/oopsla20.pdf), [TOSEM'21](https://yuleisui.github.io/publications/tosem21.pdf))
 
 <b>SVF</b>'s doxygen document is available [here](https://svf-tools.github.io/SVF-doxygen/html).

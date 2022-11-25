@@ -34,7 +34,7 @@
 #ifndef MEMORYREGION_H_
 #define MEMORYREGION_H_
 
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "Graphs/PTACallGraph.h"
 #include "Util/SCC.h"
 #include "Util/WorkList.h"
@@ -98,7 +98,7 @@ public:
                 ii != ie; ii++)
         {
             char int2str[16];
-            sprintf(int2str, "%d", *ii);
+            snprintf(int2str, sizeof(int2str), "%d", *ii);
             str += int2str;
             str += " ";
         }
@@ -480,7 +480,7 @@ public:
     NodeBS getModInfoForCall(const CallICFGNode* cs);
     NodeBS getRefInfoForCall(const CallICFGNode* cs);
     ModRefInfo getModRefInfo(const CallICFGNode* cs);
-    ModRefInfo getModRefInfo(const CallICFGNode* cs, const Value* V);
+    ModRefInfo getModRefInfo(const CallICFGNode* cs, const SVFValue* V);
     ModRefInfo getModRefInfo(const CallICFGNode* cs1, const CallICFGNode* cs2);
     //@}
 

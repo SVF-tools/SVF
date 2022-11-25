@@ -33,7 +33,7 @@
 #ifndef CHA_H_
 #define CHA_H_
 
-#include "Util/SVFModule.h"
+#include "SVFIR/SVFModule.h"
 #include "Graphs/GenericGraph.h"
 #include "Util/WorkList.h"
 
@@ -43,7 +43,7 @@ namespace SVF
 class SVFModule;
 class CHNode;
 
-typedef Set<const GlobalValue*> VTableSet;
+typedef Set<const SVFGlobalValue*> VTableSet;
 typedef Set<const SVFFunction*> VFunSet;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
@@ -174,18 +174,18 @@ public:
     }
     void getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const;
 
-    const GlobalValue *getVTable() const
+    const SVFGlobalValue *getVTable() const
     {
         return vtable;
     }
 
-    void setVTable(const GlobalValue *vtbl)
+    void setVTable(const SVFGlobalValue *vtbl)
     {
         vtable = vtbl;
     }
 
 private:
-    const GlobalValue* vtable;
+    const SVFGlobalValue* vtable;
     std::string className;
     size_t flags;
     /*
@@ -325,23 +325,23 @@ private:
 
 } // End namespace SVF
 
-namespace llvm
+namespace SVF
 {
 /* !
- * GraphTraits specializations for generic graph algorithms.
+ * GenericGraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<SVF::CHNode*> : public GraphTraits<SVF::GenericNode<SVF::CHNode,SVF::CHEdge>*  >
+template<> struct GenericGraphTraits<SVF::CHNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::CHNode,SVF::CHEdge>*  >
 {
 };
 
-/// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
+/// Inverse GenericGraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<SVF::CHNode*> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::CHNode,SVF::CHEdge>* > >
+struct GenericGraphTraits<Inverse<SVF::CHNode*> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::CHNode,SVF::CHEdge>* > >
 {
 };
 
-template<> struct GraphTraits<SVF::CHGraph*> : public GraphTraits<SVF::GenericGraph<SVF::CHNode,SVF::CHEdge>* >
+template<> struct GenericGraphTraits<SVF::CHGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CHNode,SVF::CHEdge>* >
 {
     typedef SVF::CHNode *NodeRef;
 };

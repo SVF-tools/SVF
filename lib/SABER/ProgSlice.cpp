@@ -28,7 +28,6 @@
  */
 
 #include "SABER/ProgSlice.h"
-#include "SABER/SaberAnnotator.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -160,16 +159,16 @@ const CallICFGNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
 std::string ProgSlice::evalFinalCond() const
 {
     std::string str;
-    raw_string_ostream rawstr(str);
+    std::stringstream rawstr(str);
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
     Set<std::string> locations;
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
         const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
         if(pathAllocator->isNegCond(*it))
-            locations.insert(getSourceLoc(tinst->getLLVMInstruction())+"|False");
+            locations.insert(tinst->getSourceLoc()+"|False");
         else
-            locations.insert(getSourceLoc(tinst->getLLVMInstruction())+"|True");
+            locations.insert(tinst->getSourceLoc()+"|True");
     }
     /// print leak path after eliminating duplicated element
     for(Set<std::string>::iterator iter = locations.begin(), eiter = locations.end();
@@ -180,35 +179,6 @@ std::string ProgSlice::evalFinalCond() const
 
     return rawstr.str();
 }
-
-/*!
- * Annotate program paths according to the final path condition computed
- */
-void ProgSlice::annotatePaths()
-{
-
-    SaberAnnotator annotator(this);
-    annotator.annotateSource();
-    annotator.annotateSinks();
-
-    NodeBS elems = pathAllocator->exactCondElem(finalCond);
-    for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
-    {
-        const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
-        if (ICFGNode *icfgNode = pathAllocator->getICFG()->getICFGNode(tinst))
-        {
-            for (const auto &svfStmt: icfgNode->getSVFStmts())
-            {
-                if (const BranchStmt *branchStmt = SVFUtil::dyn_cast<BranchStmt>(svfStmt))
-                {
-                    annotator.annotateFeasibleBranch(branchStmt,0);
-                    annotator.annotateFeasibleBranch(branchStmt,1);
-                }
-            }
-        }
-    }
-}
-
 
 void ProgSlice::destroy()
 {

@@ -70,7 +70,7 @@ public:
     virtual const std::string toString() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "ThreadForkEdge ";
         rawstr << "CallSite ID: " << getCallSiteID();
         rawstr << " srcNode ID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";
@@ -110,7 +110,7 @@ public:
     virtual const std::string toString() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "ThreadJoinEdge ";
         rawstr << "CallSite ID: " << getCallSiteID();
         rawstr << " srcNode ID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";

@@ -630,7 +630,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
                         }
                     }
 
-                    Out << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
+                    Out << inst->toString() << "\n";
 
                     if(hasCHI(cs))
                     {
@@ -668,7 +668,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
                         }
                     }
 
-                    Out << SVFUtil::value2String(inst->getLLVMInstruction()) << "\n";
+                    Out << inst->toString() << "\n";
 
                     bool has_chi = false;
                     for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();

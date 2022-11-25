@@ -32,6 +32,7 @@
 
 #include "Util/SVFUtil.h"
 #include "MemoryModel/PointsTo.h"
+#include <sstream>
 
 namespace SVF
 {
@@ -108,7 +109,7 @@ public:
     inline std::string toString() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "<" << m_id << " " << m_cond.toString() << "> ";
         return rawstr.str();
     }
@@ -273,7 +274,7 @@ public:
     inline std::string toString() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "{ ";
         for (const_iterator i = elements.begin(); i != elements.end(); ++i)
         {
@@ -732,7 +733,7 @@ public:
                     ii != ie; ii++)
             {
                 char int2str[16];
-                sprintf(int2str, "%d", *ii);
+                snprintf(int2str, sizeof(int2str), "%d", *ii);
                 str += int2str;
                 str += " ";
             }

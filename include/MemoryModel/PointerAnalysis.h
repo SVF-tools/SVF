@@ -33,12 +33,13 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "MemoryModel/ConditionalPT.h"
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/MutablePointsToDS.h"
 #include "MemoryModel/PersistentPointsToDS.h"
 #include "Graphs/PTACallGraph.h"
+#include "Graphs/CHG.h"
 #include "Util/SCC.h"
 #include "MemoryModel/PointsTo.h"
 
@@ -104,7 +105,7 @@ public:
     typedef Set<const SVFFunction*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef Set<const GlobalValue*> VTableSet;
+    typedef Set<const SVFGlobalValue*> VTableSet;
     typedef Set<const SVFFunction*> VFunSet;
     //@}
 
@@ -235,8 +236,8 @@ public:
     virtual void computeDDAPts(NodeID) {}
 
     /// Interface exposed to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const Value* V1,
-                              const Value* V2) = 0;
+    virtual AliasResult alias(const SVFValue* V1,
+                              const SVFValue* V2) = 0;
 
     /// Interface exposed to users of our pointer analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2) = 0;

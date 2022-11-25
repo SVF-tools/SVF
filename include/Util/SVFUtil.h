@@ -31,8 +31,8 @@
 #define AnalysisUtil_H_
 
 #include "FastCluster/fastcluster.h"
-#include "SVF-FE/LLVMModule.h"
-#include "Util/BasicTypes.h"
+#include "SVF-LLVM/LLVMModule.h"
+#include "SVFIR/SVFValue.h"
 #include "MemoryModel/PointsTo.h"
 #include <time.h>
 
@@ -164,47 +164,24 @@ inline NodeBS ptsToNodeBS(const PointsTo &pts)
 typedef OrderedSet<PointsTo, equalPointsTo> PointsToList;
 void dumpPointsToList(const PointsToList& ptl);
 
-inline bool isIntrinsicFun(const Function* func)
-{
-    if (func && (func->getIntrinsicID() == llvm::Intrinsic::donothing ||
-                 func->getIntrinsicID() == llvm::Intrinsic::dbg_addr ||
-                 func->getIntrinsicID() == llvm::Intrinsic::dbg_declare ||
-                 func->getIntrinsicID() == llvm::Intrinsic::dbg_label ||
-                 func->getIntrinsicID() == llvm::Intrinsic::dbg_value))
-    {
-        return true;
-    }
-    return false;
-}
-
-/// Return true if it is an intrinsic instruction
-inline bool isIntrinsicInst(const SVFInstruction* inst)
-{
-    if (const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(inst->getLLVMInstruction()))
-    {
-        const Function* func = call->getCalledFunction();
-        if (isIntrinsicFun(func))
-        {
-            return true;
-        }
-    }
-    return false;
-}
+/// Return true if it is an llvm intrinsic instruction
+bool isIntrinsicInst(const SVFInstruction* inst);
 //@}
 
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const SVFInstruction* inst)
 {
-    return SVFUtil::isa<CallBase>(inst->getLLVMInstruction());
+    return SVFUtil::isa<SVFCallInst>(inst);
 }
 /// Whether an instruction is a call or invoke instruction
-inline bool isCallSite(const Value* val)
+inline bool isCallSite(const SVFValue* val)
 {
-    if(SVFUtil::isa<CallBase>(val))
+    if(SVFUtil::isa<SVFCallInst>(val))
         return true;
     else
         return false;
 }
+
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 inline bool isNonInstricCallSite(const SVFInstruction* inst)
 {
@@ -214,7 +191,7 @@ inline bool isNonInstricCallSite(const SVFInstruction* inst)
 }
 
 /// Return LLVM callsite given an instruction
-inline CallSite getLLVMCallSite(const SVFInstruction* inst)
+inline CallSite getSVFCallSite(const SVFInstruction* inst)
 {
     assert(isCallSite(inst) && "not a callsite?");
     CallSite cs(inst);
@@ -222,18 +199,12 @@ inline CallSite getLLVMCallSite(const SVFInstruction* inst)
 }
 
 /// Return LLVM callsite given a value
-inline CallSite getLLVMCallSite(const Value* value)
+inline CallSite getSVFCallSite(const SVFValue* value)
 {
     assert(isCallSite(value) && "not a callsite?");
-    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<CallBase>(value));
+    const SVFCallInst* svfInst = SVFUtil::cast<SVFCallInst>(value);
     CallSite cs(svfInst);
     return cs;
-}
-
-/// Get the corresponding Function based on its name
-inline const SVFFunction* getFunction(std::string name)
-{
-    return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(name);
 }
 
 /// Split into two substrings around the first occurrence of a separator string.
@@ -251,35 +222,11 @@ inline std::vector<std::string> split(const std::string& s, char seperator)
     return output;
 }
 
-/// find the unique defined global across multiple modules
-inline const Value* getGlobalRep(const Value* val)
-{
-    if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
-    {
-        if (LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(gvar))
-            val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
-    }
-    return val;
-}
-
-/// Get the definition of a function across multiple modules
-inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
-{
-    if(fun == nullptr) return nullptr;
-    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
-    const SVFFunction* svfFun = llvmModuleset->getSVFFunction(fun);
-    if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
-        svfFun = llvmModuleset->getSVFFunction(LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun));
-    return svfFun;
-}
-
 /// Return callee of a callsite. Return null if this is an indirect call
 //@{
 inline const SVFFunction* getCallee(const CallSite cs)
 {
-    // FIXME: do we need to strip-off the casts here to discover more library functions
-    const Function* callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
-    return getDefFunForMultipleModule(callee);
+    return cs.getCalledFunction();
 }
 
 inline const SVFFunction* getCallee(const SVFInstruction *inst)
@@ -289,13 +236,6 @@ inline const SVFFunction* getCallee(const SVFInstruction *inst)
     CallSite cs(inst);
     return getCallee(cs);
 }
-//@}
-
-/// Return source code including line number and file name from debug information
-//@{
-std::string  getSourceLoc(const Value* val);
-std::string  getSourceLocOfFunction(const Function* F);
-const std::string value2String(const Value* value);
 //@}
 
 /// Given a map mapping points-to sets to a count, adds from into to.
@@ -444,40 +384,31 @@ inline bool isProgExitFunction (const SVFFunction * fun)
                    fun->getName() == "__assert_fail" );
 }
 
-/// Return true if the value refers to constant data, e.g., i32 0
-inline bool isConstantData(const Value* val)
+/// Return true if this argument belongs to an uncalled function
+inline bool isArgOfUncalledFunction(const SVFValue* svfval)
 {
-    return SVFUtil::isa<ConstantData>(val)
-           || SVFUtil::isa<ConstantAggregate>(val)
-           || SVFUtil::isa<MetadataAsValue>(val)
-           || SVFUtil::isa<BlockAddress>(val);
+    if(const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(svfval))
+        return arg->isArgOfUncalledFunction();
+    else
+        return false;
 }
 
 /// Return thread fork function
 //@{
-inline const Value* getForkedFun(const CallSite cs)
+inline const SVFValue* getForkedFun(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(cs);
 }
-inline const Value* getForkedFun(const SVFInstruction *inst)
+inline const SVFValue* getForkedFun(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getForkedFun(inst);
 }
 //@}
 
-const std::string type2String(const Type* type);
-
 /// This function servers a allocation wrapper detector
 inline bool isAnAllocationWraper(const SVFInstruction*)
 {
     return false;
-}
-
-/// Return LLVM function if this value is
-inline const Function* getLLVMFunction(const Value* val)
-{
-    const Function* fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
-    return fun;
 }
 
 inline bool isExtCall(const CallSite cs)
@@ -671,11 +602,11 @@ inline bool isBarrierWaitCall(const SVFInstruction *inst)
 
 /// Return sole argument of the thread routine
 //@{
-inline const Value* getActualParmAtForkSite(const CallSite cs)
+inline const SVFValue* getActualParmAtForkSite(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
 }
-inline const Value* getActualParmAtForkSite(const SVFInstruction *inst)
+inline const SVFValue* getActualParmAtForkSite(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(inst);
 }
@@ -683,11 +614,11 @@ inline const Value* getActualParmAtForkSite(const SVFInstruction *inst)
 
 /// Return the task function of the parallel_for routine
 //@{
-inline const Value* getTaskFuncAtHareParForSite(const CallSite cs)
+inline const SVFValue* getTaskFuncAtHareParForSite(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(cs);
 }
-inline const Value* getTaskFuncAtHareParForSite(const SVFInstruction *inst)
+inline const SVFValue* getTaskFuncAtHareParForSite(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(inst);
 }
@@ -695,11 +626,11 @@ inline const Value* getTaskFuncAtHareParForSite(const SVFInstruction *inst)
 
 /// Return the task data argument of the parallel_for rountine
 //@{
-inline const Value* getTaskDataAtHareParForSite(const CallSite cs)
+inline const SVFValue* getTaskDataAtHareParForSite(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(cs);
 }
-inline const Value* getTaskDataAtHareParForSite(const SVFInstruction *inst)
+inline const SVFValue* getTaskDataAtHareParForSite(const SVFInstruction *inst)
 {
     return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(inst);
 }

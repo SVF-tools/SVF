@@ -177,10 +177,9 @@ protected:
         {
             handleAddr(pts,dpm,SVFUtil::cast<AddrSVFGNode>(node));
         }
-        else if(SVFUtil::isa<CopySVFGNode>(node) || SVFUtil::isa<PHISVFGNode>(node)
-                || SVFUtil::isa<ActualParmSVFGNode>(node) || SVFUtil::isa<FormalParmSVFGNode>(node)
-                || SVFUtil::isa<ActualRetSVFGNode>(node) || SVFUtil::isa<FormalRetSVFGNode>(node)
-                || SVFUtil::isa<NullPtrSVFGNode>(node))
+        else if (SVFUtil::isa<CopySVFGNode, PHISVFGNode, ActualParmSVFGNode,
+                 FormalParmSVFGNode, ActualRetSVFGNode,
+                 FormalRetSVFGNode, NullPtrSVFGNode>(node))
         {
             backtraceAlongDirectVF(pts,dpm);
         }
@@ -579,10 +578,7 @@ protected:
     /// Whether this is a top-level pointer statement
     inline bool isTopLevelPtrStmt(const SVFGNode* stmt)
     {
-        if (SVFUtil::isa<StoreSVFGNode>(stmt) || SVFUtil::isa<MRSVFGNode>(stmt))
-            return false;
-        else
-            return true;
+        return !SVFUtil::isa<StoreSVFGNode, MRSVFGNode>(stmt);
     }
     /// Return dpm with old context and path conditions
     virtual inline DPIm getDPImWithOldCond(const DPIm& oldDpm,const CVar& var, const SVFGNode* loc)

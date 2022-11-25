@@ -34,7 +34,6 @@
 #include "DDA/FlowDDA.h"
 #include "DDA/ContextDDA.h"
 #include "DDA/DDAClient.h"
-#include "SVF-FE/SVFIRBuilder.h"
 
 #include <sstream>
 #include <limits.h>
@@ -53,18 +52,18 @@ DDAPass::~DDAPass()
 }
 
 
-void DDAPass::runOnModule(SVFModule* module)
+void DDAPass::runOnModule(SVFIR* pag)
 {
     /// initialization for llvm alias analyzer
     //InitializeAliasAnalysis(this, getDataLayout(&module));
 
-    selectClient(module);
+    selectClient(pag->getModule());
 
     for (u32_t i = PointerAnalysis::FlowS_DDA;
             i < PointerAnalysis::Default_PTA; i++)
     {
         if (Options::DDASelected.isSet(i))
-            runPointerAnalysis(module, i);
+            runPointerAnalysis(pag, i);
     }
 }
 
@@ -105,11 +104,8 @@ void DDAPass::selectClient(SVFModule* module)
 }
 
 /// Create pointer analysis according to specified kind and analyze the module.
-void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
+void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
 {
-
-    SVFIRBuilder builder(module);
-    SVFIR* pag = builder.build();
 
     ContextCond::setMaxPathLen(Options::MaxPathLen);
     ContextCond::setMaxCxtLen(Options::MaxContextLen);
@@ -134,7 +130,7 @@ void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
 
     if(Options::WPANum)
     {
-        _client->collectWPANum(module);
+        _client->collectWPANum(pag->getModule());
     }
     else
     {
@@ -297,7 +293,7 @@ AliasResult DDAPass::alias(NodeID node1, NodeID node2)
  * Return alias results based on our points-to/alias analysis
  * TODO: Need to handle PartialAlias and MustAlias here.
  */
-AliasResult DDAPass::alias(const Value* V1, const Value* V2)
+AliasResult DDAPass::alias(const SVFValue* V1, const SVFValue* V2)
 {
     SVFIR* pag = _pta->getPAG();
 

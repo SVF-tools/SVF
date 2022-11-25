@@ -97,7 +97,7 @@ void SaberCondAllocator::allocateForBB(const SVFBasicBlock &bb)
         std::vector<Condition> condVec;
         for (u32_t i = 0; i < bit_num; i++)
         {
-            const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(bb.getLLVMBasicBlock()->getTerminator());
+            const SVFInstruction* svfInst = bb.getTerminator();
             condVec.push_back(newCond(svfInst));
         }
 
@@ -260,7 +260,7 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateLoopExitBranch(const S
     if (svffun->isLoopHeader(bb))
     {
         Set<const SVFBasicBlock* > filteredbbs;
-        Set<const SVFBasicBlock*> exitbbs;
+        std::vector<const SVFBasicBlock*> exitbbs;
         svffun->getExitBlocksOfLoop(bb,exitbbs);
         /// exclude exit bb which calls program exit
         for(const SVFBasicBlock* eb : exitbbs)
@@ -292,12 +292,10 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBa
 {
     if(bb->getNumSuccessors() == 1)
     {
-        assert(bb->getLLVMBasicBlock()->getTerminator()->getSuccessor(0) == succ->getLLVMBasicBlock() && "not the unique successor?");
         return getTrueCond();
     }
 
-    const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(bb->getLLVMBasicBlock()->getTerminator());
-
+    const SVFInstruction* svfInst = bb->getTerminator();
     if (ICFGNode *icfgNode = getICFG()->getICFGNode(svfInst))
     {
         for (const auto &svfStmt: icfgNode->getSVFStmts())
@@ -331,30 +329,42 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBa
     return getBranchCond(bb, succ);
 }
 
-bool SaberCondAllocator::isEQCmp(const CmpInst *cmp) const
+bool SaberCondAllocator::isEQCmp(const CmpStmt *cmp) const
 {
     return (cmp->getPredicate() == CmpInst::ICMP_EQ);
 }
 
-bool SaberCondAllocator::isNECmp(const CmpInst *cmp) const
+bool SaberCondAllocator::isNECmp(const CmpStmt *cmp) const
 {
     return (cmp->getPredicate() == CmpInst::ICMP_NE);
 }
 
-bool SaberCondAllocator::isTestNullExpr(const Value* test) const
+bool SaberCondAllocator::isTestNullExpr(const SVFValue* test) const
 {
-    if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(test))
+    if(const SVFInstruction* svfInst = SVFUtil::dyn_cast<SVFInstruction>(test))
     {
-        return isTestContainsNullAndTheValue(cmp) && isEQCmp(cmp);
+        for(const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(getICFG()->getICFGNode(svfInst)))
+        {
+            if(const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+            {
+                return isTestContainsNullAndTheValue(cmp) && isEQCmp(cmp);
+            }
+        }
     }
     return false;
 }
 
-bool SaberCondAllocator::isTestNotNullExpr(const Value* test) const
+bool SaberCondAllocator::isTestNotNullExpr(const SVFValue* test) const
 {
-    if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(test))
+    if(const SVFInstruction* svfInst = SVFUtil::dyn_cast<SVFInstruction>(test))
     {
-        return isTestContainsNullAndTheValue(cmp) && isNECmp(cmp);
+        for(const SVFStmt* stmt : PAG::getPAG()->getSVFStmtList(getICFG()->getICFGNode(svfInst)))
+        {
+            if(const CmpStmt* cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+            {
+                return isTestContainsNullAndTheValue(cmp) && isNECmp(cmp);
+            }
+        }
     }
     return false;
 }
@@ -371,14 +381,14 @@ bool SaberCondAllocator::isTestNotNullExpr(const Value* test) const
  *                       4. br i1 %tobool, label %if.end, label %if.then, !dbg !161
  *     There is an indirect edge 1->2 with value %0
  */
-bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpInst *cmp) const
+bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
 {
 
-    const Value* op0 = cmp->getOperand(0);
-    const Value* op1 = cmp->getOperand(1);
-    if (SVFUtil::isa<ConstantPointerNull>(op1))
+    const SVFValue* op0 = cmp->getOpVar(0)->getValue();
+    const SVFValue* op1 = cmp->getOpVar(1)->getValue();
+    if (SVFUtil::isa<SVFConstantNullPtr>(op1))
     {
-        Set<const Value* > inDirVal;
+        Set<const SVFValue* > inDirVal;
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
         {
             if (it->isIndirectVFGEdge())
@@ -388,9 +398,9 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpInst *cmp) const
         }
         return inDirVal.find(op0) != inDirVal.end();
     }
-    else if (SVFUtil::isa<ConstantPointerNull>(op0))
+    else if (SVFUtil::isa<SVFConstantNullPtr>(op0))
     {
-        Set<const Value* > inDirVal;
+        Set<const SVFValue* > inDirVal;
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
         {
             if (it->isIndirectVFGEdge())
@@ -563,12 +573,12 @@ void SaberCondAllocator::printPathCond()
         for (const auto &cit: bbCond.second)
         {
             u32_t i = 0;
-            for (const BasicBlock* succ: successors(bb->getLLVMBasicBlock()))
+            for (const SVFBasicBlock* succ: bb->getSuccessors())
             {
                 if (i == cit.first)
                 {
                     Condition cond = cit.second;
-                    outs() << bb->getName() << "-->" << succ->getName().str() << ":";
+                    outs() << bb->getName() << "-->" << succ->getName() << ":";
                     outs() << dumpCond(cond) << "\n";
                     break;
                 }

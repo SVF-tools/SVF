@@ -201,6 +201,11 @@ then
             echo "Unzipping z3 package..."
             unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
             rm z3.zip
+            if [ "$sysOS" = "Darwin" ]
+            then
+              # Fix missing rpath information in libz3
+              install_name_tool -id @rpath/libz3.dylib "$Z3Home/bin/libz3.dylib"
+            fi
         fi
     fi
 
@@ -224,7 +229,7 @@ else
     rm -rf ./'Release-build'
     mkdir ./'Release-build'
     cd ./'Release-build'
-    cmake ../
+    cmake -D CMAKE_BUILD_TYPE:STRING=Release -DSVF_ENABLE_ASSERTIONS:BOOL=true ../
     fi
 make -j ${jobs}
 

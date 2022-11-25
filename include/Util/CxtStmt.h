@@ -30,7 +30,7 @@
 #ifndef INCLUDE_UTIL_CXTSTMT_H_
 #define INCLUDE_UTIL_CXTSTMT_H_
 
-#include "Util/BasicTypes.h"
+#include "SVFIR/SVFValue.h"
 
 namespace SVF
 {
@@ -96,7 +96,7 @@ public:
     inline std::string cxtToStr() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "[:";
         for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
         {
@@ -108,7 +108,7 @@ public:
     /// Dump CxtStmt
     inline void dump() const
     {
-        SVFUtil::outs() << "[ Current Stmt: " << SVFUtil::getSourceLoc(inst->getLLVMInstruction()) << " " << SVFUtil::value2String(inst->getLLVMInstruction()) << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Stmt: " << inst->getSourceLoc() << " " << inst->toString() << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 protected:
@@ -174,7 +174,7 @@ public:
     /// Dump CxtThreadStmt
     inline void dump() const
     {
-        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << SVFUtil::getSourceLoc(inst->getLLVMInstruction()) << " " << SVFUtil::value2String(inst->getLLVMInstruction()) << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << inst->getSourceLoc() << " " << inst->toString() << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 private:
@@ -244,7 +244,7 @@ public:
     inline std::string cxtToStr() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "[:";
         for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it)
         {
@@ -282,8 +282,8 @@ public:
 
         if(forksite)
         {
-            SVFUtil::outs() << "[ Thread: $" << SVFUtil::getSourceLoc(forksite->getLLVMInstruction()) << "$ "
-                            << SVFUtil::value2String(forksite->getLLVMInstruction())  << "\t Contexts: " << cxtToStr()
+            SVFUtil::outs() << "[ Thread: $" << forksite->getSourceLoc() << "$ "
+                            << forksite->toString()  << "\t Contexts: " << cxtToStr()
                             << loop << cycle <<"  ]\n";
         }
         else
@@ -365,7 +365,7 @@ public:
     inline std::string cxtToStr() const
     {
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
         rawstr << "[:";
         for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it)
         {

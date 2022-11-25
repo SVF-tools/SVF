@@ -76,7 +76,7 @@ public:
     virtual ~WPAPass();
 
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const Value* V1,	const Value* V2);
+    virtual AliasResult alias(const SVFValue* V1,	const SVFValue* V2);
 
     /// Print all alias pairs
     virtual void PrintAliasPairs(PointerAnalysis* pta);
@@ -85,19 +85,19 @@ public:
     virtual ModRefInfo getModRefInfo(const CallSite callInst);
 
     /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Location infos
-    virtual inline ModRefInfo getModRefInfo(const CallSite callInst, const MemoryLocation& Loc)
-    {
-        return getModRefInfo(callInst, Loc.Ptr);
-    }
+    // virtual inline ModRefInfo getModRefInfo(const CallSite callInst, const MemoryLocation& Loc)
+    // {
+    //     return getModRefInfo(callInst, Loc.Ptr);
+    // }
 
     /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Value infos
-    virtual ModRefInfo getModRefInfo(const CallSite callInst, const Value* V);
+    virtual ModRefInfo getModRefInfo(const CallSite callInst, const SVFValue* V);
 
     /// Interface of mod-ref analysis between two CallSite instructions
     virtual ModRefInfo getModRefInfo(const CallSite callInst1, const CallSite callInst2);
 
     /// Run pointer analysis on SVFModule
-    virtual void runOnModule(SVFModule* svfModule);
+    virtual void runOnModule(SVFIR* svfModule);
 
     /// PTA name
     virtual inline std::string getPassName() const
@@ -107,7 +107,7 @@ public:
 
 private:
     /// Create pointer analysis according to specified kind and analyze the module.
-    void runPointerAnalysis(SVFModule* svfModule, u32_t kind);
+    void runPointerAnalysis(SVFIR* pag, u32_t kind);
 
     PTAVector ptaVector;	///< all pointer analysis to be executed.
     PointerAnalysis* _pta;	///<  pointer analysis to be executed.

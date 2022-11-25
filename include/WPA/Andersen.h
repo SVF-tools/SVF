@@ -38,7 +38,7 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
-#include "MemoryModel/SVFIR.h"
+#include "SVFIR/SVFIR.h"
 #include "Graphs/ConsG.h"
 #include "Util/Options.h"
 

@@ -480,7 +480,7 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
             }
             removeDirectEdge(edge);
         }
-        else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
+        else if(SVFUtil::isa<LoadCGEdge, StoreCGEdge>(edge))
             reTargetDstOfEdge(edge,rep);
         else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge))
         {
@@ -539,7 +539,7 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
             }
             removeDirectEdge(edge);
         }
-        else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
+        else if(SVFUtil::isa<LoadCGEdge, StoreCGEdge>(edge))
             reTargetSrcOfEdge(edge,rep);
         else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge))
         {
@@ -625,7 +625,7 @@ void ConstraintGraph::print()
  */
 void ConstraintGraph::view()
 {
-    llvm::ViewGraph(this, "Constraint Graph");
+    SVF::ViewGraph(this, "Constraint Graph");
 }
 
 /// Iterators of direct edges for ConsGNode
@@ -698,7 +698,7 @@ ConstraintNode::const_iterator ConstraintNode::directInEdgeEnd() const
 /*!
  * GraphTraits specialization for constraint graph
  */
-namespace llvm
+namespace SVF
 {
 template<>
 struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
@@ -735,7 +735,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         bool briefDisplay = Options::BriefConsCGDotGraph;
         bool nameDisplay = true;
         std::string str;
-        raw_string_ostream rawstr(str);
+        std::stringstream rawstr(str);
 
         if (briefDisplay)
         {
@@ -753,7 +753,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         {
             // print the whole value
             if (!SVFUtil::isa<DummyValVar>(node) && !SVFUtil::isa<DummyObjVar>(node))
-                rawstr << node->getId() << ":" << value2String(node->getValue());
+                rawstr << node->getId() << ":" << node->getValue()->toString();
             else
                 rawstr << node->getId() << ":";
 

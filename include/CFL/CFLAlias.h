@@ -58,7 +58,7 @@ public:
     virtual void solve();
 
     /// Interface exposed to users of our Alias analysis, given Value infos
-    virtual AliasResult alias(const Value* v1, const Value* v2)
+    virtual AliasResult alias(const SVFValue* v1, const SVFValue* v2)
     {
         NodeID n1 = svfir->getValueNode(v1);
         NodeID n2 = svfir->getValueNode(v2);

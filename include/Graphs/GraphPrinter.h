@@ -32,12 +32,10 @@
 #define INCLUDE_GRAPHS_GRAPHPRINTER_H_
 
 #include <system_error>
-#include <llvm/Support/ToolOutputFile.h>
-#include <llvm/Support/GraphWriter.h>		// for graph write
-#include <llvm/Support/FileSystem.h>		// for file open flag
-#include <llvm/ADT/GraphTraits.h>
+#include "Graphs/GraphWriter.h"	// for graph write
+#include <fstream>
 
-namespace llvm
+namespace SVF
 {
 
 /*
@@ -60,24 +58,18 @@ public:
     {
         // Filename of the output dot file
         std::string Filename = GraphName + ".dot";
-        O << "Writing '" << Filename << "'...";
-        std::error_code ErrInfo;
-        llvm::ToolOutputFile F(Filename.c_str(), ErrInfo, llvm::sys::fs::OF_None);
-
-        if (!ErrInfo)
+        std::ofstream outFile(Filename);
+        if (outFile.fail())
         {
-            // dump the ValueFlowGraph here
-            WriteGraph(F.os(), GT, simple);
-            F.os().close();
-            if (!F.os().has_error())
-            {
-                O << "\n";
-                F.keep();
-                return;
-            }
+            O << "  error opening file for writing!\n";
+            outFile.close();
+            return;
         }
-        O << "  error opening file for writing!\n";
-        F.os().clear_error();
+
+        O << "Writing '" << Filename << "'...";
+
+        WriteGraph(outFile, GT, simple);
+        outFile.close();
     }
 
     /*!
@@ -88,7 +80,7 @@ public:
                            const GraphType &GT)
     {
         ///Define the GTraits and node iterator for printing
-        typedef llvm::GraphTraits<GraphType> GTraits;
+        typedef GenericGraphTraits<GraphType> GTraits;
 
         typedef typename GTraits::NodeRef NodeRef;
         typedef typename GTraits::nodes_iterator node_iterator;
