@@ -69,7 +69,7 @@ private:
     ProgSlice* _curSlice;		/// current program slice
     SVFGNodeSet sources;		/// source nodes
     SVFGNodeSet sinks;		/// source nodes
-    SaberCondAllocator* saberCondAllocator;
+    std::unique_ptr<SaberCondAllocator> saberCondAllocator;
     SVFGNodeToDPItemsMap nodeToDPItemsMap;	///<  record forward visited dpitems
     SVFGNodeSet visitedSet;	///<  record backward visited nodes
 
@@ -83,7 +83,7 @@ public:
     /// Constructor
     SrcSnkDDA() : _curSlice(nullptr), svfg(nullptr), ptaCallGraph(nullptr)
     {
-        saberCondAllocator = new SaberCondAllocator();
+        saberCondAllocator = std::make_unique<SaberCondAllocator>();
     }
     /// Destructor
     ~SrcSnkDDA() override
@@ -239,12 +239,12 @@ public:
     /// Get saber condition allocator
     SaberCondAllocator* getSaberCondAllocator() const
     {
-        return saberCondAllocator;
+        return saberCondAllocator.get();
     }
 
 protected:
     /// Forward traverse
-    virtual inline void FWProcessCurNode(const DPIm& item)
+    inline void FWProcessCurNode(const DPIm& item) override
     {
         const SVFGNode* node = getNode(item.getCurNodeID());
         if(isSink(node))
