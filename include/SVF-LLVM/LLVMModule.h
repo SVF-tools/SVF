@@ -58,12 +58,12 @@ public:
     typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
     typedef Map<const SVFValue*, const Value*> SVFValue2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
-    typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
+    typedef Map<const Type*, std::unique_ptr<StInfo>> Type2TypeInfoMap;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
     SymbolTableInfo *symInfo;
-    SVFModule* svfModule;
+    std::unique_ptr<SVFModule> svfModule;
     std::unique_ptr<LLVMContext> cxts;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
@@ -112,7 +112,7 @@ public:
     inline SVFModule* getSVFModule()
     {
         assert(svfModule && "svfModule has not been built yet!");
-        return svfModule;
+        return svfModule.get();
     }
 
     void preProcessBCs(std::vector<std::string>& moduleNameVec);
@@ -329,8 +329,8 @@ private:
     SVFType* addSVFTypeInfo(const Type* t);
     /// Collect a type info
     StInfo* collectTypeInfo(const Type* ty);
-    /// Collect the struct info
-    StInfo* collectStructInfo(const StructType *T);
+    /// Collect the struct info; nf contains the number of fields after flattening
+    StInfo* collectStructInfo(const StructType *T, u32_t& nf);
     /// Collect the array info
     StInfo* collectArrayInfo(const ArrayType* T);
     /// Collect simple type (non-aggregate) info
