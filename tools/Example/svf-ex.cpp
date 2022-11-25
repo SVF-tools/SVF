@@ -202,6 +202,7 @@ int main(int argc, char ** argv)
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
     llvm::llvm_shutdown();
+    delete[] arg_value;
     return 0;
 }
 
