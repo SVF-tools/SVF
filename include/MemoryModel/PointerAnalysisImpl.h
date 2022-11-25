@@ -76,7 +76,7 @@ public:
         destroy();
     }
 
-    inline PersistentPointsToCache<PointsTo> &getPtCache(void)
+    inline PersistentPointsToCache<PointsTo> &getPtCache()
     {
         return ptCache;
     }
@@ -96,11 +96,11 @@ public:
 
     /// Get points-to and reverse points-to
     ///@{
-    virtual inline const PointsTo& getPts(NodeID id)
+    inline const PointsTo& getPts(NodeID id) override
     {
         return ptD->getPts(id);
     }
-    virtual inline const NodeSet& getRevPts(NodeID nodeId)
+    inline const NodeSet& getRevPts(NodeID nodeId) override
     {
         return ptD->getRevPts(nodeId);
     }
@@ -166,7 +166,7 @@ protected:
 
 
     /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
-    virtual void finalize();
+    void finalize() override;
 
     /// Update callgraph. This should be implemented by its subclass.
     virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
@@ -218,25 +218,25 @@ private:
 
 public:
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const SVFValue* V1,
-                              const SVFValue* V2);
+    AliasResult alias(const SVFValue* V1,
+                              const SVFValue* V2) override;
 
     /// Interface expose to users of our pointer analysis, given PAGNodeID
-    virtual AliasResult alias(NodeID node1, NodeID node2);
+    AliasResult alias(NodeID node1, NodeID node2) override;
 
     /// Interface expose to users of our pointer analysis, given two pts
     virtual AliasResult alias(const PointsTo& pts1, const PointsTo& pts2);
 
     /// dump and debug, print out conditional pts
     //@{
-    virtual void dumpCPts()
+    void dumpCPts() override
     {
         ptD->dumpPTData();
     }
 
-    virtual void dumpTopLevelPtsTo();
+    void dumpTopLevelPtsTo() override;
 
-    virtual void dumpAllPts();
+    void dumpAllPts() override;
     //@}
 };
 

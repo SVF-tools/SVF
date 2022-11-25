@@ -66,7 +66,7 @@ public:
         keepAllSelfCycle = keepContextSelfCycle = keepActualOutFormalIn = false;
     }
     /// Destructor
-    virtual ~SVFGOPT() {}
+    ~SVFGOPT() override = default;
 
     inline void setTokeepActualOutFormalIn()
     {
@@ -82,11 +82,11 @@ public:
     }
 
 protected:
-    virtual void buildSVFG();
+    void buildSVFG() override;
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
+    inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeID phiId = getDef(fun_arg);
         SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);
@@ -98,7 +98,7 @@ protected:
         }
     }
     /// Connect formal-ret and actual ret
-    virtual inline void connectFRetAndARet(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges)
+    inline void connectFRetAndARet(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeID phiId = getDef(cs_ret);
         NodeID retdef = getDef(fun_ret);
@@ -117,7 +117,7 @@ protected:
         }
     }
     /// Connect actual-in and formal-in
-    virtual inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn, CallSiteID csId, SVFGEdgeSetTy& edges)
+    inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeBS intersection = actualIn->getPointsTo();
         intersection &= formalIn->getPointsTo();
@@ -130,7 +130,7 @@ protected:
         }
     }
     /// Connect formal-out and actual-out
-    virtual inline void connectFOutAndAOut(const FormalOUTSVFGNode* formalOut, const ActualOUTSVFGNode* actualOut, CallSiteID csId, SVFGEdgeSetTy& edges)
+    inline void connectFOutAndAOut(const FormalOUTSVFGNode* formalOut, const ActualOUTSVFGNode* actualOut, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeBS intersection = formalOut->getPointsTo();
         intersection &= actualOut->getPointsTo();

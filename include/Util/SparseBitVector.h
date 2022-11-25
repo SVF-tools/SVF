@@ -679,7 +679,7 @@ public:
     SparseBitVector(const SparseBitVector &RHS)
         : Elements(RHS.Elements), CurrElementIter(Elements.begin()) {}
     SparseBitVector(SparseBitVector &&RHS)
-        : Elements(std::move(RHS.Elements)), CurrElementIter(Elements.begin()) {}
+ noexcept         : Elements(std::move(RHS.Elements)), CurrElementIter(Elements.begin()) {}
 
     // Clear.
     void clear()

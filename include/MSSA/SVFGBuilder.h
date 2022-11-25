@@ -49,12 +49,11 @@ public:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
 
     /// Constructor
-    SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
+    explicit SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
 
     /// Destructor
-    virtual ~SVFGBuilder() {}
-
     static SVFG* globalSvfg;
+    virtual ~SVFGBuilder() = default;
 
     SVFG* buildPTROnlySVFG(BVDataPTAImpl* pta);
     SVFG* buildFullSVFG(BVDataPTAImpl* pta);

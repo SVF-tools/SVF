@@ -256,7 +256,7 @@ protected:
             addToCurForwardSlice(node);
     }
     /// Backward traverse
-    virtual inline void BWProcessCurNode(const DPIm& item)
+    inline void BWProcessCurNode(const DPIm& item) override
     {
         const SVFGNode* node = getNode(item.getCurNodeID());
         if(isInCurForwardSlice(node))
@@ -265,9 +265,9 @@ protected:
         }
     }
     /// Propagate information forward by matching context
-    virtual void FWProcessOutgoingEdge(const DPIm& item, SVFGEdge* edge);
+    void FWProcessOutgoingEdge(const DPIm& item, SVFGEdge* edge) override;
     /// Propagate information backward without matching context, as forward analysis already did it
-    virtual void BWProcessIncomingEdge(const DPIm& item, SVFGEdge* edge);
+    void BWProcessIncomingEdge(const DPIm& item, SVFGEdge* edge) override;
     /// Whether has been visited or not, in order to avoid recursion on SVFG
     //@{
     inline bool forwardVisited(const SVFGNode* node, const DPIm& item)
@@ -318,4 +318,4 @@ protected:
 
 } // End namespace SVF
 
-#endif /* SRCSNKDDA_H_ */
+#endif /* SRCSNKANALYSIS_H_ */

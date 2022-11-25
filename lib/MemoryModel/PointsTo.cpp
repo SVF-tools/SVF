@@ -21,7 +21,7 @@ namespace SVF
 PointsTo::MappingPtr PointsTo::currentBestNodeMapping = nullptr;
 PointsTo::MappingPtr PointsTo::currentBestReverseNodeMapping = nullptr;
 
-PointsTo::PointsTo(void)
+PointsTo::PointsTo()
     : type(Options::PtType), nodeMapping(currentBestNodeMapping),
       reverseNodeMapping(currentBestReverseNodeMapping)
 {
@@ -42,8 +42,8 @@ PointsTo::PointsTo(const PointsTo &pt)
 }
 
 PointsTo::PointsTo(PointsTo &&pt)
-    : type(pt.type), nodeMapping(pt.nodeMapping),
-      reverseNodeMapping(pt.reverseNodeMapping)
+ noexcept     : type(pt.type), nodeMapping(std::move(pt.nodeMapping)),
+      reverseNodeMapping(std::move(pt.reverseNodeMapping))
 {
     if (type == SBV) new (&sbv) SparseBitVector<>(std::move(pt.sbv));
     else if (type == CBV) new (&cbv) CoreBitVector(std::move(pt.cbv));
@@ -51,7 +51,7 @@ PointsTo::PointsTo(PointsTo &&pt)
     else assert(false && "PointsTo::PointsTo&&: unknown type");
 }
 
-PointsTo::~PointsTo(void)
+PointsTo::~PointsTo()
 {
     if (type == SBV) sbv.~SparseBitVector<>();
     else if (type == CBV) cbv.~CoreBitVector();
@@ -78,7 +78,7 @@ PointsTo &PointsTo::operator=(const PointsTo &rhs)
 }
 
 PointsTo &PointsTo::operator=(PointsTo &&rhs)
-{
+ noexcept {
     this->type = rhs.type;
     this->nodeMapping = rhs.nodeMapping;
     this->reverseNodeMapping = rhs.reverseNodeMapping;
@@ -91,7 +91,7 @@ PointsTo &PointsTo::operator=(PointsTo &&rhs)
     return *this;
 }
 
-bool PointsTo::empty(void) const
+bool PointsTo::empty() const
 {
     if (type == CBV) return cbv.empty();
     else if (type == SBV) return sbv.empty();
@@ -116,7 +116,7 @@ u32_t PointsTo::count(void) const
     }
 }
 
-void PointsTo::clear(void)
+void PointsTo::clear()
 {
     if (type == CBV) cbv.clear();
     else if (type == SBV) sbv.clear();
@@ -196,7 +196,7 @@ bool PointsTo::intersects(const PointsTo &rhs) const
     }
 }
 
-int PointsTo::find_first(void)
+int PointsTo::find_first()
 {
     if (count() == 0) return -1;
     return *begin();
@@ -306,14 +306,14 @@ void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)
     }
 }
 
-NodeBS PointsTo::toNodeBS(void) const
+NodeBS PointsTo::toNodeBS() const
 {
     NodeBS nbs;
     for (const NodeID o : *this) nbs.set(o);
     return nbs;
 }
 
-size_t PointsTo::hash(void) const
+size_t PointsTo::hash() const
 {
     if (type == CBV) return cbv.hash();
     else if (type == SBV)
@@ -330,7 +330,7 @@ size_t PointsTo::hash(void) const
     }
 }
 
-PointsTo::MappingPtr PointsTo::getNodeMapping(void) const
+PointsTo::MappingPtr PointsTo::getNodeMapping() const
 {
     return nodeMapping;
 }
@@ -354,12 +354,12 @@ bool PointsTo::metaSame(const PointsTo &pt) const
     return nodeMapping == pt.nodeMapping && reverseNodeMapping == pt.reverseNodeMapping;
 }
 
-PointsTo::MappingPtr PointsTo::getCurrentBestNodeMapping(void)
+PointsTo::MappingPtr PointsTo::getCurrentBestNodeMapping()
 {
     return currentBestNodeMapping;
 }
 
-PointsTo::MappingPtr PointsTo::getCurrentBestReverseNodeMapping(void)
+PointsTo::MappingPtr PointsTo::getCurrentBestReverseNodeMapping()
 {
     return currentBestReverseNodeMapping;
 }
@@ -371,7 +371,7 @@ void PointsTo::setCurrentBestNodeMapping(MappingPtr newCurrentBestNodeMapping,
     currentBestReverseNodeMapping = newCurrentBestReverseNodeMapping;
 }
 
-void PointsTo::checkAndRemap(void)
+void PointsTo::checkAndRemap()
 {
     if (nodeMapping != currentBestNodeMapping)
     {
@@ -427,7 +427,7 @@ PointsTo::PointsToIterator::PointsToIterator(const PointsToIterator &pt)
 }
 
 PointsTo::PointsToIterator::PointsToIterator(PointsToIterator &&pt)
-    : pt(pt.pt)
+ noexcept     : pt(pt.pt)
 {
     if (this->pt->type == PointsTo::Type::SBV)
     {
@@ -490,7 +490,7 @@ PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(PointsToIterat
     return *this;
 }
 
-const PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator++(void)
+const PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator++()
 {
     assert(!atEnd() && "PointsToIterator::++(pre): incrementing past end!");
     if (pt->type == Type::CBV) ++cbvIt;
@@ -509,7 +509,7 @@ const PointsTo::PointsToIterator PointsTo::PointsToIterator::operator++(int)
     return old;
 }
 
-NodeID PointsTo::PointsToIterator::operator*(void) const
+NodeID PointsTo::PointsToIterator::operator*() const
 {
     assert(!atEnd() && "PointsToIterator: dereferencing end!");
     if (pt->type == Type::CBV) return pt->getExternalNode(*cbvIt);
@@ -545,7 +545,7 @@ bool PointsTo::PointsToIterator::operator!=(const PointsToIterator &rhs) const
     return !(*this == rhs);
 }
 
-bool PointsTo::PointsToIterator::atEnd(void) const
+bool PointsTo::PointsToIterator::atEnd() const
 {
     assert(pt != nullptr && "PointsToIterator::atEnd: iterator iterating over nothing!");
     if (pt->type == Type::CBV) return cbvIt == pt->cbv.end();
