@@ -73,12 +73,7 @@ public:
     }
 
     /// Destructor
-    virtual ~FlowSensitive()
-    {
-        if (svfg != nullptr)
-            delete svfg;
-        svfg = nullptr;
-    }
+    ~FlowSensitive() override = default;
 
     /// Create signle instance of flow-sensitive pointer analysis
     static FlowSensitive* createFSWPA(SVFIR* _pag)
