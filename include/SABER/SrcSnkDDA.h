@@ -86,14 +86,11 @@ public:
         saberCondAllocator = new SaberCondAllocator();
     }
     /// Destructor
-    virtual ~SrcSnkDDA()
+    ~SrcSnkDDA() override
     {
-        if (svfg != nullptr)
-            delete svfg;
         svfg = nullptr;
 
-        if (_curSlice != nullptr)
-            delete _curSlice;
+        delete _curSlice;
         _curSlice = nullptr;
 
         /// the following shared by multiple checkers, thus can not be released.
