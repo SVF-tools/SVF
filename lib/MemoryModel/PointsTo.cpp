@@ -10,6 +10,7 @@
  */
 
 #include <new>
+#include <utility>
 
 #include "Util/Options.h"
 #include "MemoryModel/PointsTo.h"
@@ -369,8 +370,8 @@ PointsTo::MappingPtr PointsTo::getCurrentBestReverseNodeMapping()
 void PointsTo::setCurrentBestNodeMapping(MappingPtr newCurrentBestNodeMapping,
         MappingPtr newCurrentBestReverseNodeMapping)
 {
-    currentBestNodeMapping = newCurrentBestNodeMapping;
-    currentBestReverseNodeMapping = newCurrentBestReverseNodeMapping;
+    currentBestNodeMapping = std::move(newCurrentBestNodeMapping);
+    currentBestReverseNodeMapping = std::move(newCurrentBestReverseNodeMapping);
 }
 
 void PointsTo::checkAndRemap()
