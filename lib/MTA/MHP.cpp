@@ -181,8 +181,7 @@ void MHP::handleNonCandidateFun(const CxtThreadStmt& cts)
 {
     const SVFInstruction* curInst = cts.getStmt();
     const SVFFunction* curfun = curInst->getParent()->getParent();
-    const SVFInstruction* svfInst = curfun->getEntryBlock()->front();
-    assert((curInst == svfInst) && "curInst is not the entry of non candidate function.");
+    assert((curInst == curfun->getEntryBlock()->front()) && "curInst is not the entry of non candidate function.");
     const CallStrCxt& curCxt = cts.getContext();
     PTACallGraphNode* node = tcg->getCallGraphNode(curfun);
     for (PTACallGraphNode::const_iterator nit = node->OutEdgeBegin(), neit = node->OutEdgeEnd(); nit != neit; nit++)
