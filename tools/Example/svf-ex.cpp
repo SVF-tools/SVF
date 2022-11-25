@@ -184,7 +184,8 @@ int main(int argc, char ** argv)
 
     /// Sparse value-flow graph (SVFG)
     SVFGBuilder svfBuilder(true);
-    SVFG* svfg = svfBuilder.buildFullSVFG(ander);
+    //SVFG* svfg =
+        svfBuilder.buildFullSVFG(ander);
 
     /// Collect uses of an LLVM Value
     /// traverseOnVFG(svfg, value);
@@ -194,7 +195,6 @@ int main(int argc, char ** argv)
 
     // clean up memory
     delete vfg;
-    delete svfg;
     AndersenWaveDiff::releaseAndersenWaveDiff();
     SVFIR::releaseSVFIR();
 
