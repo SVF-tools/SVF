@@ -127,17 +127,10 @@ void SymbolTableInfo::destroy()
         if (iter->second)
             delete iter->second;
     }
-    Set<const StInfo*> stinfos;
-    for (SVFTypeSet::const_iterator iter = svfTypes.begin();
-            iter != svfTypes.end(); ++iter)
-    {
-        const SVFType* type = *iter;
-        stinfos.insert(type->getTypeInfo());
-        delete type;
-    }
 
-    for (const StInfo* si : stinfos)
-        delete si;
+    for (auto * type: svfTypes)
+        delete type;
+    svfTypes.clear();
 
     mod = nullptr;
 }
