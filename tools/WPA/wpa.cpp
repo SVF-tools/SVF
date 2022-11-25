@@ -61,5 +61,6 @@ int main(int argc, char ** argv)
     WPAPass wpa;
     wpa.runOnModule(pag);
 
+    delete[] arg_value;
     return 0;
 }

@@ -82,6 +82,8 @@ int main(int argc, char ** argv)
 
     saber->runOnModule(pag);
 
+    delete[] arg_value;
+
     return 0;
 
 }

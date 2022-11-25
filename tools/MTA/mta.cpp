@@ -40,5 +40,7 @@ int main(int argc, char ** argv)
     LockResultValidator lockvalidator(mta.getLockAnalysis());
     lockvalidator.analyze();
 
+    delete[] arg_value;
+
     return 0;
 }
