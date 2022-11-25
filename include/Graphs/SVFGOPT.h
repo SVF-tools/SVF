@@ -61,7 +61,7 @@ class SVFGOPT : public SVFG
 
 public:
     /// Constructor
-    SVFGOPT(MemSSA* _mssa, VFGK kind) : SVFG(_mssa, kind)
+    SVFGOPT(std::unique_ptr<MemSSA> mssa, VFGK kind) : SVFG(std::move(mssa), kind)
     {
         keepAllSelfCycle = keepContextSelfCycle = keepActualOutFormalIn = false;
     }

@@ -102,14 +102,14 @@ protected:
     FunctionToFormalINsMapTy funToFormalINMap;
     FunctionToFormalOUTsMapTy funToFormalOUTMap;
     SVFGStat * stat;
-    MemSSA* mssa;
+    std::unique_ptr<MemSSA> mssa;
     PointerAnalysis* pta;
 
     /// Clean up memory
     void destroy();
 
     /// Constructor
-    SVFG(MemSSA* mssa, VFGK k);
+    SVFG(std::unique_ptr<MemSSA> mssa, VFGK k);
 
     /// Start building SVFG
     virtual void buildSVFG();
@@ -130,14 +130,13 @@ public:
     /// Clear MSSA
     inline void clearMSSA()
     {
-        delete mssa;
         mssa = nullptr;
     }
 
     /// Get SVFG memory SSA
     inline MemSSA* getMSSA() const
     {
-        return mssa;
+        return mssa.get();
     }
 
     /// Get Pointer Analysis

@@ -112,12 +112,12 @@ void SVFGBuilder::releaseMemory()
     svfg->clearMSSA();
 }
 
-MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
+std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
 {
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
 
-    MemSSA* mssa = new MemSSA(pta, ptrOnlyMSSA);
+    auto mssa = std::make_unique<MemSSA>(pta, ptrOnlyMSSA);
 
     SVFModule* svfModule = mssa->getPTA()->getModule();
     for (SVFModule::const_iterator iter = svfModule->begin(), eiter = svfModule->end();
