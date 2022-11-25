@@ -228,21 +228,13 @@ public:
 
 private:
     // Index of Element in terms of where first bit starts.
-    unsigned ElementIndex;
-    BitWord Bits[BITWORDS_PER_ELEMENT];
+    unsigned ElementIndex = 0;
+    BitWord Bits[BITWORDS_PER_ELEMENT] = {0};
 
-    SparseBitVectorElement()
-    {
-        ElementIndex = ~0U;
-        memset(&Bits[0], 0, sizeof (BitWord) * BITWORDS_PER_ELEMENT);
-    }
+    SparseBitVectorElement() = default;
 
 public:
-    explicit SparseBitVectorElement(unsigned Idx)
-    {
-        ElementIndex = Idx;
-        memset(&Bits[0], 0, sizeof (BitWord) * BITWORDS_PER_ELEMENT);
-    }
+    explicit SparseBitVectorElement(unsigned Idx) :  ElementIndex(Idx) {}
 
     // Comparison.
     bool operator==(const SparseBitVectorElement &RHS) const
