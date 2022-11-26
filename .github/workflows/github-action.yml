@@ -90,8 +90,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           ctest -R diff-perf-cruxbc -VV
-          git config pull.rebase false
-          git pull || git pull -s ours origin master
+          git pull || git pull --rebase -s recursive -X ours
           cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf_history/perf-$(date +'%Y-%m-%dT%H:%M:%S').txt
           cp -r ${{github.workspace}}/Release-build/Testing/Temporary/LastTest.log $GITHUB_WORKSPACE/Test-Suite/diff_tests/perf-latest.txt
           cd $GITHUB_WORKSPACE/Test-Suite/diff_tests
