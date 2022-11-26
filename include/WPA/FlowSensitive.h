@@ -80,17 +80,15 @@ public:
     {
         if (fspta == nullptr)
         {
-            fspta = new FlowSensitive(_pag);
+            fspta = std::unique_ptr<FlowSensitive>(new FlowSensitive(_pag));
             fspta->analyze();
         }
-        return fspta;
+        return fspta.get();
     }
 
     /// Release flow-sensitive pointer analysis
     static void releaseFSWPA()
     {
-        if (fspta)
-            delete fspta;
         fspta = nullptr;
     }
 
@@ -270,7 +268,7 @@ protected:
     /// Sets the global best mapping as a plain mapping, i.e. n -> n.
     virtual void plainMap(void) const;
 
-    static FlowSensitive* fspta;
+    static std::unique_ptr<FlowSensitive> fspta;
     SVFGBuilder memSSA;
     AndersenWaveDiff *ander;
 
