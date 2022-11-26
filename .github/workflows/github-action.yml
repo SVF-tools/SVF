@@ -90,8 +90,8 @@ jobs:
           
       - name: ctest performance tests on cruxbc
         working-directory: ${{github.workspace}}/Release-build
-        if: runner.os == 'Linux'
-        run: 
+        if: runner.os == 'Linux' && matrix.sanitizer != 'address'
+        run:
           ctest -R diff-perf-cruxbc -VV
 
       - name: create-coverage-report-and-remove-system-files
