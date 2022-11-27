@@ -546,6 +546,7 @@ private:
     NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
     NodeID addFIObjNode(const MemObj* obj);
+    NodeID addFIObjNode(const MemObj* obj, const LocationSet& ls);
     //@}
 
     ///  Add a dummy value/object node according to node ID (llvm value is null)

@@ -51,7 +51,7 @@ class ICFG : public GenericICFGTy
 
 public:
 
-    typedef Map<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
+    typedef OrderedMap<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
     typedef ICFGEdge::ICFGEdgeSetTy ICFGEdgeSetTy;
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;

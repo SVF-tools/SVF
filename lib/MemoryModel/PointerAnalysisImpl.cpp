@@ -31,7 +31,6 @@
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/Options.h"
-#include "SVF-LLVM/IRAnnotator.h"
 #include <fstream>
 #include <sstream>
 
@@ -166,7 +165,6 @@ void BVDataPTAImpl::remapPointsToSets(void)
  */
 void BVDataPTAImpl::writeToFile(const string& filename)
 {
-    writeToModule();
 
     outs() << "Storing pointer analysis results to '" << filename << "'...";
 
@@ -207,7 +205,7 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         PAGNode* pagNode = it->second;
         if (!isa<ObjVar>(pagNode)) continue;
         NodeID n = pag->getBaseObjVar(it->first);
-        if (NodeIDs.test(n)) continue;
+        // if (NodeIDs.test(n)) continue;
         f << n << " ";
         f << isFieldInsensitive(n) << "\n";
         NodeIDs.set(n);
@@ -215,20 +213,16 @@ void BVDataPTAImpl::writeToFile(const string& filename)
 
     f << "------\n";
     // Write GepPAGNodes to file
-    string gepPAGNodesStr;
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
     {
         PAGNode* pagNode = it->second;
-        string gepPAGNodeStr;
         if (GepObjVar *gepObjPN = SVFUtil::dyn_cast<GepObjVar>(pagNode))
         {
-            gepPAGNodeStr += std::to_string(it->first) + " ";
-            gepPAGNodeStr += std::to_string(pag->getBaseObjVar(it->first)) + " ";
-            gepPAGNodeStr += std::to_string(gepObjPN->getConstantFieldIdx()) + "\n";
+            f << it->first << " ";
+            f << pag->getBaseObjVar(it->first) << " ";
+            f << gepObjPN->getConstantFieldIdx() << "\n";
         }
-        gepPAGNodesStr = gepPAGNodeStr + gepPAGNodesStr;
     }
-    f << gepPAGNodesStr;
 
     // Job finish and close file
     f.close();
@@ -246,12 +240,6 @@ void BVDataPTAImpl::writeToFile(const string& filename)
  */
 bool BVDataPTAImpl::readFromFile(const string& filename)
 {
-    // If the module annotations are available, read from there instead
-    auto mainModule = SVF::LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
-    if (mainModule->getNamedMetadata("SVFIR-Annotated") != nullptr)
-    {
-        return readFromModule();
-    }
 
     outs() << "Loading pointer analysis results from '" << filename << "'...";
 
@@ -331,6 +319,8 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     while (F.good())
     {
         getline(F, line);
+        if (line.empty())
+            break;
         // Parse a single line in the form of "ID baseNodeID offset"
         istringstream ss(line);
         NodeID id;
@@ -349,30 +339,6 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     F.close();
     outs() << "\n";
 
-    return true;
-}
-
-/*!
- * Store pointer analysis result into the current LLVM module as metadata.
- * It includes the points-to relations, and all SVFIR nodes including those
- * created when solving Andersen's constraints.
- */
-void BVDataPTAImpl::writeToModule()
-{
-    auto irAnnotator = std::make_unique<IRAnnotator>();
-
-    irAnnotator->processAndersenResults(pag, this, true);
-}
-
-/*!
- * Load pointer analysis result from the metadata in the module.
- * It populates BVDataPTAImpl with the points-to data, and updates SVFIR with
- * the SVFIR offset nodes created during Andersen's solving stage.
- */
-bool BVDataPTAImpl::readFromModule()
-{
-    auto irAnnotator = std::make_unique<IRAnnotator>();
-    irAnnotator->processAndersenResults(pag, this, false);
     return true;
 }
 

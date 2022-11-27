@@ -425,7 +425,7 @@ NodeID SVFIR::getGepObjVar(const MemObj* obj, const LocationSet& ls)
 
     /// if this obj is field-insensitive, just return the field-insensitive node.
     if (obj->isFieldInsensitive())
-        return getFIObjVar(obj);
+        return addFIObjNode(obj,ls);
 
     LocationSet newLS = pag->getSymbolInfo()->getModulusOffset(obj,ls);
 
@@ -467,6 +467,19 @@ NodeID SVFIR::addFIObjNode(const MemObj* obj)
     memToFieldsMap[base].set(obj->getId());
     FIObjVar *node = new FIObjVar(obj->getValue(), obj->getId(), obj);
     return addObjNode(obj->getValue(), node, obj->getId());
+}
+
+/*!
+ * Add a field-insensitive node when read from file
+ */
+NodeID SVFIR::addFIObjNode(const MemObj* obj, const LocationSet& ls)
+{
+    //assert(findPAGNode(i) == false && "this node should not be created before");
+    NodeID base = obj->getId();
+    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.accumulateConstantFieldIdx(), Options::MaxFieldLimit);
+    memToFieldsMap[base].set(gepId);
+    FIObjVar *node = new FIObjVar(obj->getValue(), obj->getId(), obj);
+    return addObjNode(obj->getValue(), node, gepId);
 }
 
 /*!

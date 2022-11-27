@@ -142,12 +142,14 @@ void AndersenBase::analyze()
 
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
-        // Finalize the analysis
-        finalize();
     }
 
     if (!Options::WriteAnder.empty())
         this->writeToFile(Options::WriteAnder);
+    
+    if (!readResultsFromFile)
+        // Finalize the analysis
+        finalize();
 }
 
 void AndersenBase::cleanConsCG(NodeID id)
