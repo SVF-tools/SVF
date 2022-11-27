@@ -482,7 +482,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         setCurrentLocation(gvar, nullptr);
         NodeID field = getGlobalVarField(gvar, offset, LLVMModuleSet::getLLVMModuleSet()->getSVFType(C->getType()));
 
-        if (SVFUtil::isa<GlobalVariable>(C) || SVFUtil::isa<Function>(C))
+        if (SVFUtil::isa<GlobalVariable, Function>(C))
         {
             setCurrentLocation(C, nullptr);
             addStoreEdge(src, field);
@@ -511,7 +511,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                 addCopyEdge(pag->getNullPtr(), src);
         }
     }
-    else if (SVFUtil::isa<ConstantArray>(C) || SVFUtil::isa<ConstantStruct>(C))
+    else if (SVFUtil::isa<ConstantArray, ConstantStruct>(C))
     {
         if(cppUtil::isValVtbl(gvar) && !Options::VtableInSVFIR)
             return;
@@ -536,7 +536,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             }
             else
             {
-                assert((SVFUtil::isa<ConstantAggregateZero>(data) || SVFUtil::isa<UndefValue>(data)) && "Single value type data should have been handled!");
+                assert((SVFUtil::isa<ConstantAggregateZero, UndefValue>(data)) && "Single value type data should have been handled!");
             }
         }
     }
@@ -1588,7 +1588,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const
          * 1. Instruction
          * 2. GlobalVariable
          */
-        assert((SVFUtil::isa<SVFInstruction>(curVal) || SVFUtil::isa<SVFGlobalValue>(curVal)) && "curVal not an instruction or a globalvariable?");
+        assert((SVFUtil::isa<SVFInstruction, SVFGlobalValue>(curVal)) && "curVal not an instruction or a globalvariable?");
 
         // We assume every GepValNode and its GepEdge to the baseNode are unique across the whole program
         // We preserve the current BB information to restore it after creating the gepNode

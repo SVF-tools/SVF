@@ -10,6 +10,7 @@ else()
 endif()
 
 file (GLOB SOURCES
+        AbstractExecution/*.cpp
         SVF-LLVM/*.cpp
         Graphs/*.cpp
         Util/*.cpp

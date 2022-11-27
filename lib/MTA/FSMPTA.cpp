@@ -270,7 +270,8 @@ bool MTASVFGBuilder::isTailofSpan(const StmtSVFGNode* n, InstSet mergespan)
 
     for (SVFGNodeIDSet::iterator it = succ.begin(), eit = succ.end(); it != eit; ++it)
     {
-        assert ((SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(*it)) || SVFUtil::isa<LoadSVFGNode>(svfg->getSVFGNode(*it))) && "succ is not a store/load node");
+        assert((SVFUtil::isa<StoreSVFGNode, LoadSVFGNode>(svfg->getSVFGNode(*it))) &&
+               "succ is not a store/load node");
         const StmtSVFGNode* succNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(*it));
         const SVFInstruction* succIns = succNode->getInst();
 
@@ -292,7 +293,8 @@ bool MTASVFGBuilder::isTailofSpan(const StmtSVFGNode* n, LockAnalysis::LockSpan 
     SVFGNodeIDSet succ = getSuccNodes(n);
     for (SVFGNodeIDSet::iterator it = succ.begin(), eit = succ.end(); it != eit; ++it)
     {
-        assert ((SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(*it)) || SVFUtil::isa<LoadSVFGNode>(svfg->getSVFGNode(*it))) && "succ is not a store/load node");
+        assert((SVFUtil::isa<StoreSVFGNode, LoadSVFGNode>(svfg->getSVFGNode(*it))) &&
+               "succ is not a store/load node");
         if (SVFUtil::isa<LoadSVFGNode>(svfg->getSVFGNode(*it)))
             continue;
         const StmtSVFGNode* succNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(*it));
@@ -322,8 +324,7 @@ bool MTASVFGBuilder::isTailofSpan(const StmtSVFGNode* n)
 
     for (SVFGNodeIDSet::iterator it = succ.begin(), eit = succ.end(); it != eit; ++it)
     {
-        assert((SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(*it)) || SVFUtil::isa<LoadSVFGNode>(svfg->getSVFGNode(*it)))
-               && "succ is not a store/load node");
+        assert((SVFUtil::isa<StoreSVFGNode, LoadSVFGNode>(svfg->getSVFGNode(*it))) && "succ is not a store/load node");
         if (SVFUtil::isa<LoadSVFGNode>(svfg->getSVFGNode(*it)))
             continue;
 
@@ -401,7 +402,7 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccNodes(const StmtSVFGNode* n
         const SVFGNode* node = *worklist.begin();
         worklist.erase(worklist.begin());
         visited.insert(node);
-        if (SVFUtil::isa<StoreSVFGNode>(node) || SVFUtil::isa<LoadSVFGNode>(node))
+        if (SVFUtil::isa<StoreSVFGNode, LoadSVFGNode>(node))
             succ.set(node->getId());
         else
         {
@@ -440,7 +441,7 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccNodes(const StmtSVFGNode* n
         const SVFGNode* node = *worklist.begin();
         worklist.erase(worklist.begin());
         visited.insert(node);
-        if (SVFUtil::isa<StoreSVFGNode>(node) || SVFUtil::isa<LoadSVFGNode>(node))
+        if (SVFUtil::isa<StoreSVFGNode, LoadSVFGNode>(node))
             succ.set(node->getId());
         else
         {

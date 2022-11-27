@@ -50,7 +50,7 @@ bool LLVMUtil::isObject(const Value*  ref)
         createobj = true;
     if (SVFUtil::isa<GlobalVariable>(ref))
         createobj = true;
-    if (SVFUtil::isa<Function>(ref) || SVFUtil::isa<AllocaInst>(ref) )
+    if (SVFUtil::isa<Function, AllocaInst>(ref))
         createobj = true;
 
     return createobj;
@@ -61,8 +61,7 @@ bool LLVMUtil::isObject(const Value*  ref)
  */
 void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBasicBlock*> &reachableBBs)
 {
-    const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-    assert(!SVFUtil::isExtCall(svfFun) && "The calling function cannot be an external function.");
+    assert(!SVFUtil::isExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)) && "The calling function cannot be an external function.");
     //initial DominatorTree
     DominatorTree dt;
     dt.recalculate(const_cast<Function&>(*fun));

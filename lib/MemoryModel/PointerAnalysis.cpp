@@ -238,7 +238,7 @@ void PointerAnalysis::dumpAllTypes()
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
         const PAGNode* node = getPAG()->getGNode(*nIter);
-        if (SVFUtil::isa<DummyObjVar>(node) || SVFUtil::isa<DummyValVar>(node))
+        if (SVFUtil::isa<DummyObjVar, DummyValVar>(node))
             continue;
 
         outs() << "##<" << node->getValue()->getName() << "> ";

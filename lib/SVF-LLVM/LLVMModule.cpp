@@ -1097,7 +1097,7 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
         /// offset with int_32 (s32_t) is large enough and will not cause overflow
         stinfo->addFldWithType(nf, getSVFType(et), strideOffset);
 
-        if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
+        if (SVFUtil::isa<StructType, ArrayType>(et))
         {
             StInfo * subStinfo = collectTypeInfo(et);
             u32_t nfE = subStinfo->getNumOfFlattenFields();

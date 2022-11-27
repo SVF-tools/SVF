@@ -18,7 +18,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file defines the llvm::isa<X>(), cast<X>(), dyn_cast<X>(), cast_or_null<X>(),
+// This file defines the SVFUtil::isa<X>(), cast<X>(), dyn_cast<X>(), cast_or_null<X>(),
 // and dyn_cast_or_null<X>() templates.
 //
 //===----------------------------------------------------------------------===//
@@ -26,7 +26,35 @@
 #include <cassert>
 #include <memory>
 #include <type_traits>
-#include <llvm/Support/Casting.h>
+
+//===-- Part of llvm/Support/Compiler.h - Compiler abstraction support --*- C++ -*-===//
+
+// Only use __has_cpp_attribute in C++ mode. GCC defines __has_cpp_attribute in
+// C mode, but the :: in __has_cpp_attribute(scoped::attribute) is invalid.
+#ifndef LLVM_HAS_CPP_ATTRIBUTE
+#if defined(__cplusplus) && defined(__has_cpp_attribute)
+# define LLVM_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
+#else
+# define LLVM_HAS_CPP_ATTRIBUTE(x) 0
+#endif
+#endif
+
+/// LLVM_NODISCARD - Warn if a type or return value is discarded.
+
+// Use the 'nodiscard' attribute in C++17 or newer mode.
+#if defined(__cplusplus) && __cplusplus > 201402L && LLVM_HAS_CPP_ATTRIBUTE(nodiscard)
+#define LLVM_NODISCARD [[nodiscard]]
+#elif LLVM_HAS_CPP_ATTRIBUTE(clang::warn_unused_result)
+#define LLVM_NODISCARD [[clang::warn_unused_result]]
+// Clang in C++14 mode claims that it has the 'nodiscard' attribute, but also
+// warns in the pedantic mode that 'nodiscard' is a C++17 extension (PR33518).
+// Use the 'nodiscard' attribute in C++14 mode only with GCC.
+// TODO: remove this workaround when PR33518 is resolved.
+#elif defined(__GNUC__) && LLVM_HAS_CPP_ATTRIBUTE(nodiscard)
+#define LLVM_NODISCARD [[nodiscard]]
+#else
+#define LLVM_NODISCARD
+#endif
 
 namespace SVF
 {
@@ -34,8 +62,38 @@ namespace SVF
 namespace SVFUtil
 {
 
+//===- Part of llvm/Support/type_traits.h - Simplfied type traits -------*- C++ -*-===//
+
+/// If T is a pointer to X, return a pointer to const X. If it is not,
+/// return const T.
+template<typename T, typename Enable = void>
+struct add_const_past_pointer
+{
+    using type = const T;
+};
+
+template <typename T>
+struct add_const_past_pointer<T, std::enable_if_t<std::is_pointer<T>::value>>
+{
+    using type = const std::remove_pointer_t<T> *;
+};
+
+/// If T is a pointer, just return it. If it is not, return T&.
+template<typename T, typename Enable = void>
+struct add_lvalue_reference_if_not_pointer
+{
+    using type = T &;
+};
+
+template <typename T>
+struct add_lvalue_reference_if_not_pointer<
+    T, std::enable_if_t<std::is_pointer<T>::value>>
+{
+    using type = T;
+};
+
 //===----------------------------------------------------------------------===//
-//                          llvm::isa<x> Support Templates
+//                          SVFUtil::isa<x> Support Templates
 //===----------------------------------------------------------------------===//
 
 // Define a template that can be specialized by smart pointers to reflect the
@@ -57,9 +115,9 @@ template<typename From> struct simplify_type<const From>
 {
     using NonConstSimpleType = typename simplify_type<From>::SimpleType;
     using SimpleType =
-        typename llvm::add_const_past_pointer<NonConstSimpleType>::type;
+        typename SVFUtil::add_const_past_pointer<NonConstSimpleType>::type;
     using RetType =
-        typename llvm::add_lvalue_reference_if_not_pointer<SimpleType>::type;
+        typename SVFUtil::add_lvalue_reference_if_not_pointer<SimpleType>::type;
 
     static RetType getSimplifiedValue(const From& Val)
     {
@@ -67,9 +125,9 @@ template<typename From> struct simplify_type<const From>
     }
 };
 
-// The core of the implementation of llvm::isa<X> is here; To and From should be
+// The core of the implementation of SVFUtil::isa<X> is here; To and From should be
 // the names of classes.  This template can be specialized to customize the
-// implementation of llvm::isa<> without rewriting it from scratch.
+// implementation of SVFUtil::isa<> without rewriting it from scratch.
 template <typename To, typename From, typename Enabler = void>
 struct isa_impl
 {
@@ -81,8 +139,7 @@ struct isa_impl
 
 /// \brief Always allow upcasts, and perform no dynamic check for them.
 template <typename To, typename From>
-struct isa_impl<
-    To, From, typename std::enable_if<std::is_base_of<To, From>::value>::type>
+struct isa_impl<To, From, std::enable_if_t<std::is_base_of<To, From>::value>>
 {
     static inline bool doit(const From &)
     {
@@ -111,7 +168,7 @@ struct isa_impl_cl<To, const std::unique_ptr<From>>
 {
     static inline bool doit(const std::unique_ptr<From> &Val)
     {
-        assert(Val && "llvm::isa<> used on a null pointer");
+        assert(Val && "SVFUtil::isa<> used on a null pointer");
         return isa_impl_cl<To, From>::doit(*Val);
     }
 };
@@ -120,7 +177,7 @@ template <typename To, typename From> struct isa_impl_cl<To, From*>
 {
     static inline bool doit(const From *Val)
     {
-        assert(Val && "llvm::isa<> used on a null pointer");
+        assert(Val && "SVFUtil::isa<> used on a null pointer");
         return isa_impl<To, From>::doit(*Val);
     }
 };
@@ -129,7 +186,7 @@ template <typename To, typename From> struct isa_impl_cl<To, From*const>
 {
     static inline bool doit(const From *Val)
     {
-        assert(Val && "llvm::isa<> used on a null pointer");
+        assert(Val && "SVFUtil::isa<> used on a null pointer");
         return isa_impl<To, From>::doit(*Val);
     }
 };
@@ -138,7 +195,7 @@ template <typename To, typename From> struct isa_impl_cl<To, const From*>
 {
     static inline bool doit(const From *Val)
     {
-        assert(Val && "llvm::isa<> used on a null pointer");
+        assert(Val && "SVFUtil::isa<> used on a null pointer");
         return isa_impl<To, From>::doit(*Val);
     }
 };
@@ -147,7 +204,7 @@ template <typename To, typename From> struct isa_impl_cl<To, const From*const>
 {
     static inline bool doit(const From *Val)
     {
-        assert(Val && "llvm::isa<> used on a null pointer");
+        assert(Val && "SVFUtil::isa<> used on a null pointer");
         return isa_impl<To, From>::doit(*Val);
     }
 };
@@ -175,15 +232,22 @@ struct isa_impl_wrap<To, FromTy, FromTy>
     }
 };
 
-// llvm::isa<X> - Return true if the parameter to the template is an instance of the
+// SVFUtil::isa<X> - Return true if the parameter to the template is an instance of the
 // template type argument.  Used like this:
 //
-//  if (llvm::isa<Type>(myVal)) { ... }
+//  if (SVFUtil::isa<Type>(myVal)) { ... }
+//  if (SVFUtil::isa<Type0, Type1, Type2>(myVal)) { ... }
 //
 template <class X, class Y> LLVM_NODISCARD inline bool isa(const Y &Val)
 {
     return isa_impl_wrap<X, const Y,
            typename simplify_type<const Y>::SimpleType>::doit(Val);
+}
+
+template <typename First, typename Second, typename... Rest, typename Y>
+LLVM_NODISCARD inline bool isa(const Y &Val)
+{
+    return SVFUtil::isa<First>(Val) || SVFUtil::isa<Second, Rest...>(Val);
 }
 
 //===----------------------------------------------------------------------===//
@@ -291,11 +355,11 @@ template <class X> struct is_simple_type
 //  cast<Instruction>(myVal)->getParent()
 //
 template <class X, class Y>
-inline typename std::enable_if<!is_simple_type<Y>::value,
-       typename cast_retty<X, const Y>::ret_type>::type
+inline std::enable_if_t<!is_simple_type<Y>::value,
+       typename cast_retty<X, const Y>::ret_type>
        cast(const Y &Val)
 {
-    assert(llvm::isa<X>(Val) && "cast<Ty>() argument of incompatible type!");
+    assert(SVFUtil::isa<X>(Val) && "cast<Ty>() argument of incompatible type!");
     return cast_convert_val<
            X, const Y, typename simplify_type<const Y>::SimpleType>::doit(Val);
 }
@@ -303,7 +367,7 @@ inline typename std::enable_if<!is_simple_type<Y>::value,
 template <class X, class Y>
 inline typename cast_retty<X, Y>::ret_type cast(Y &Val)
 {
-    assert(llvm::isa<X>(Val) && "cast<Ty>() argument of incompatible type!");
+    assert(SVFUtil::isa<X>(Val) && "cast<Ty>() argument of incompatible type!");
     return cast_convert_val<X, Y,
            typename simplify_type<Y>::SimpleType>::doit(Val);
 }
@@ -311,7 +375,7 @@ inline typename cast_retty<X, Y>::ret_type cast(Y &Val)
 template <class X, class Y>
 inline typename cast_retty<X, Y *>::ret_type cast(Y *Val)
 {
-    assert(llvm::isa<X>(Val) && "cast<Ty>() argument of incompatible type!");
+    assert(SVFUtil::isa<X>(Val) && "cast<Ty>() argument of incompatible type!");
     return cast_convert_val<X, Y*,
            typename simplify_type<Y*>::SimpleType>::doit(Val);
 }
@@ -320,7 +384,7 @@ template <class X, class Y>
 inline typename cast_retty<X, std::unique_ptr<Y>>::ret_type
         cast(std::unique_ptr<Y> &&Val)
 {
-    assert(llvm::isa<X>(Val.get()) && "cast<Ty>() argument of incompatible type!");
+    assert(SVFUtil::isa<X>(Val.get()) && "cast<Ty>() argument of incompatible type!");
     using ret_type = typename cast_retty<X, std::unique_ptr<Y>>::ret_type;
     return ret_type(
                cast_convert_val<X, Y *, typename simplify_type<Y *>::SimpleType>::doit(
@@ -336,24 +400,23 @@ inline typename cast_retty<X, std::unique_ptr<Y>>::ret_type
 //
 
 template <class X, class Y>
-LLVM_NODISCARD inline
-typename std::enable_if<!is_simple_type<Y>::value,
-         typename cast_retty<X, const Y>::ret_type>::type
-         dyn_cast(const Y &Val)
+LLVM_NODISCARD inline std::enable_if_t<
+!is_simple_type<Y>::value, typename cast_retty<X, const Y>::ret_type>
+dyn_cast(const Y &Val)
 {
-    return llvm::isa<X>(Val) ? llvm::cast<X>(Val) : nullptr;
+    return SVFUtil::isa<X>(Val) ? SVFUtil::cast<X>(Val) : nullptr;
 }
 
 template <class X, class Y>
 LLVM_NODISCARD inline typename cast_retty<X, Y>::ret_type dyn_cast(Y &Val)
 {
-    return llvm::isa<X>(Val) ? llvm::cast<X>(Val) : nullptr;
+    return SVFUtil::isa<X>(Val) ? SVFUtil::cast<X>(Val) : nullptr;
 }
 
 template <class X, class Y>
 LLVM_NODISCARD inline typename cast_retty<X, Y *>::ret_type dyn_cast(Y *Val)
 {
-    return llvm::isa<X>(Val) ? llvm::cast<X>(Val) : nullptr;
+    return SVFUtil::isa<X>(Val) ? SVFUtil::cast<X>(Val) : nullptr;
 }
 
 } // End namespace SVFUtil

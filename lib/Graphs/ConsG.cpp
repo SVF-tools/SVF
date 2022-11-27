@@ -480,7 +480,7 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
             }
             removeDirectEdge(edge);
         }
-        else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
+        else if(SVFUtil::isa<LoadCGEdge, StoreCGEdge>(edge))
             reTargetDstOfEdge(edge,rep);
         else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge))
         {
@@ -539,7 +539,7 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
             }
             removeDirectEdge(edge);
         }
-        else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
+        else if(SVFUtil::isa<LoadCGEdge, StoreCGEdge>(edge))
             reTargetSrcOfEdge(edge,rep);
         else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge))
         {

@@ -40,7 +40,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo $(pwd)
-          if [ "$RUNNER_OS" == "Linux" ]; then sed -i "s/-fno-rtti/-fno-rtti -fprofile-arcs -ftest-coverage/g" CMakeLists.txt; fi
+          if [ "$RUNNER_OS" == "Linux" ]; then export SVF_COVERAGE=1; fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
       # run ctest
@@ -101,6 +101,8 @@ jobs:
           lcov --remove coverage.info '${{github.workspace}}/llvm-13.0.0.obj/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/include/FastCluster/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/lib/FastCluster/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/include/AbstractExecution/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/lib/AbstractExecution/*' --output-file coverage.info
       
       - name: upload-coverage
         if: runner.os == 'Linux'

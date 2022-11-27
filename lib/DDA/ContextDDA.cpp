@@ -348,7 +348,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
             }
             else
             {
-                assert((SVFUtil::isa<DummyObjVar>(pnode) || SVFUtil::isa<DummyValVar>(pnode))
+                assert((SVFUtil::isa<DummyObjVar, DummyValVar>(pnode))
                        && "empty refVal in non-dummy object");
             }
             return true;
