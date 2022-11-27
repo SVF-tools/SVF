@@ -205,7 +205,7 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         PAGNode* pagNode = it->second;
         if (!isa<ObjVar>(pagNode)) continue;
         NodeID n = pag->getBaseObjVar(it->first);
-        // if (NodeIDs.test(n)) continue;
+        if (NodeIDs.test(n)) continue;
         f << n << " ";
         f << isFieldInsensitive(n) << "\n";
         NodeIDs.set(n);
