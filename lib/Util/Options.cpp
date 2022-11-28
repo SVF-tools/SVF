@@ -828,4 +828,9 @@ const llvm::cl::opt<unsigned> Options::LoopBound(
     llvm::cl::init(1),
     llvm::cl::desc("Maximum number of loop"));
 
+const llvm::cl::opt<unsigned> Options::MaxGep(
+        "max-gep",
+        llvm::cl::init(20),
+        llvm::cl::desc("Maximum number of element in array"));
+
 } // namespace SVF.

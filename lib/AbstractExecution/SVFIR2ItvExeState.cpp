@@ -28,6 +28,7 @@
  */
 
 #include "AbstractExecution/SVFIR2ItvExeState.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -528,7 +529,11 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep) {
         return;
     } else {
         VAddrs gepAddrs;
-        for (s32_t i = offsetPair.first; i <= offsetPair.second; i++) {
+        s32_t ub = offsetPair.second;
+        if (offsetPair.second - offsetPair.first > Options::MaxGep - 1) {
+            ub = offsetPair.first + Options::MaxGep - 1;
+        }
+        for (s32_t i = offsetPair.first; i <= ub; i++) {
             gepAddrs.join_with(getGepObjAddress(rhs, i));
         }
         getVAddrs(lhs) = gepAddrs;
