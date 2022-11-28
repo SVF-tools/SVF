@@ -34,17 +34,20 @@
 #include <string>
 #include "SVFIR/SVFValue.h"
 
-namespace SVF {
+namespace SVF
+{
 
 class IntervalValue;
 
 /*!
  * Base class of abstract value
  */
-class AbstractValue {
+class AbstractValue
+{
 public:
     /// Abstract value kind
-    enum AbstractValueK {
+    enum AbstractValueK
+    {
         IntervalK, ConcreteK, AddressK
     };
 private:
@@ -63,7 +66,8 @@ public:
 
     AbstractValue &operator=(AbstractValue &&) noexcept = default;
 
-    inline AbstractValueK getAbstractValueKind() const {
+    inline AbstractValueK getAbstractValueKind() const
+    {
         return _kind;
     }
 

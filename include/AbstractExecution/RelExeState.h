@@ -33,9 +33,11 @@
 #include "Util/Z3Expr.h"
 #include "AbstractExecution/AddressValue.h"
 
-namespace SVF {
+namespace SVF
+{
 
-class RelExeState {
+class RelExeState
+{
     friend class SVFIR2ItvExeState;
 
 public:
@@ -50,9 +52,10 @@ public:
     RelExeState() = default;
 
     RelExeState(VarToValMap &varToVal, LocToValMap &locToVal) : _varToVal(varToVal),
-                                                                _locToVal(locToVal) {}
+        _locToVal(locToVal) {}
 
-    RelExeState(const RelExeState &rhs) : _varToVal(rhs.getVarToVal()), _locToVal(rhs.getLocToVal()) {
+    RelExeState(const RelExeState &rhs) : _varToVal(rhs.getVarToVal()), _locToVal(rhs.getLocToVal())
+    {
 
     }
 
@@ -61,12 +64,15 @@ public:
     RelExeState &operator=(const RelExeState &rhs);
 
     RelExeState(RelExeState &&rhs) noexcept: _varToVal(std::move(rhs._varToVal)),
-                                             _locToVal(std::move(rhs._locToVal)) {
+        _locToVal(std::move(rhs._locToVal))
+    {
 
     }
 
-    RelExeState &operator=(RelExeState &&rhs) noexcept {
-        if (&rhs != this) {
+    RelExeState &operator=(RelExeState &&rhs) noexcept
+    {
+        if (&rhs != this)
+        {
             _varToVal = std::move(rhs._varToVal);
             _locToVal = std::move(rhs._locToVal);
         }
@@ -77,7 +83,8 @@ public:
     bool operator==(const RelExeState &rhs) const;
 
     /// Overloading Operator!=
-    inline bool operator!=(const RelExeState &rhs) const {
+    inline bool operator!=(const RelExeState &rhs) const
+    {
         return !(*this == rhs);
     }
 
@@ -85,33 +92,40 @@ public:
     bool operator<(const RelExeState &rhs) const;
 
 
-    static z3::context &getContext() {
+    static z3::context &getContext()
+    {
         return Z3Expr::getContext();
     }
 
-    const VarToValMap &getVarToVal() const {
+    const VarToValMap &getVarToVal() const
+    {
         return _varToVal;
     }
 
-    const LocToValMap &getLocToVal() const {
+    const LocToValMap &getLocToVal() const
+    {
         return _locToVal;
     }
 
-    inline Z3Expr &operator[](u32_t varId) {
+    inline Z3Expr &operator[](u32_t varId)
+    {
         return getZ3Expr(varId);
     }
 
-    u32_t hash() const {
+    u32_t hash() const
+    {
         size_t h = getVarToVal().size() * 2;
         SVF::Hash<SVF::u32_t> hf;
-        for (const auto &t: getVarToVal()) {
+        for (const auto &t: getVarToVal())
+        {
             h ^= hf(t.first) + 0x9e3779b9 + (h << 6) + (h >> 2);
             h ^= hf(t.second.id()) + 0x9e3779b9 + (h << 6) + (h >> 2);
         }
 
         size_t h2 = getVarToVal().size() * 2;
 
-        for (const auto &t: getLocToVal()) {
+        for (const auto &t: getLocToVal())
+        {
             h2 ^= hf(t.first) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
             h2 ^= hf(t.second.id()) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
         }
@@ -121,17 +135,20 @@ public:
     }
 
     /// Return true if map has varId
-    inline bool existsVar(u32_t varId) const {
+    inline bool existsVar(u32_t varId) const
+    {
         return _varToVal.count(varId);
     }
 
     /// Return Z3 expression eagerly based on SVFVar ID
-    virtual inline Z3Expr &getZ3Expr(u32_t varId) {
+    virtual inline Z3Expr &getZ3Expr(u32_t varId)
+    {
         return _varToVal[varId];
     }
 
     /// Return Z3 expression lazily based on SVFVar ID
-    virtual inline Z3Expr toZ3Expr(u32_t varId) const {
+    virtual inline Z3Expr toZ3Expr(u32_t varId) const
+    {
         return getContext().int_const(std::to_string(varId).c_str());
     }
 
@@ -151,22 +168,26 @@ public:
     Z3Expr &load(const Z3Expr &loc);
 
     /// The physical address starts with 0x7f...... + idx
-    static inline u32_t getVirtualMemAddress(u32_t idx) {
+    static inline u32_t getVirtualMemAddress(u32_t idx)
+    {
         return AddressValue::getVirtualMemAddress(idx);
     }
 
     /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
-    static inline bool isVirtualMemAddress(u32_t val) {
+    static inline bool isVirtualMemAddress(u32_t val)
+    {
         return AddressValue::isVirtualMemAddress(val);
     }
 
     /// Return the internal index if idx is an address otherwise return the value of idx
-    static inline u32_t getInternalID(u32_t idx) {
+    static inline u32_t getInternalID(u32_t idx)
+    {
         return AddressValue::getInternalID(idx);
     }
 
     /// Return int value from an expression if it is a numeral, otherwise return an approximate value
-    static inline s32_t z3Expr2NumValue(const Z3Expr &e) {
+    static inline s32_t z3Expr2NumValue(const Z3Expr &e)
+    {
         assert(e.is_numeral() && "not numeral?");
         return e.get_numeral_int64();
     }
@@ -180,19 +201,23 @@ private:
     bool lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const;
 
 protected:
-    inline void store(u32_t objId, const Z3Expr &z3Expr) {
+    inline void store(u32_t objId, const Z3Expr &z3Expr)
+    {
         _locToVal[objId] = z3Expr.simplify();
     }
 
-    inline Z3Expr &load(u32_t objId) {
+    inline Z3Expr &load(u32_t objId)
+    {
         return _locToVal[objId];
     }
 }; // end class RelExeState
 } // end namespace SVF
 
 template<>
-struct std::hash<SVF::RelExeState> {
-    size_t operator()(const SVF::RelExeState &exeState) const {
+struct std::hash<SVF::RelExeState>
+{
+    size_t operator()(const SVF::RelExeState &exeState) const
+    {
         return exeState.hash();
     }
 };

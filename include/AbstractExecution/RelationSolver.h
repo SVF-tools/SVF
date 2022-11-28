@@ -33,34 +33,36 @@
 #include "AbstractExecution/IntervalExeState.h"
 #include "Util/Z3Expr.h"
 
-namespace SVF {
-    class RelationSolver {
-    public:
-        RelationSolver() = default;
+namespace SVF
+{
+class RelationSolver
+{
+public:
+    RelationSolver() = default;
 
-        /* gamma_hat, beta and abstract_consequence works on
-        IntervalExeState (the last element of inputs) for RSY or bilateral solver */
+    /* gamma_hat, beta and abstract_consequence works on
+    IntervalExeState (the last element of inputs) for RSY or bilateral solver */
 
-        /// Return Z3Expr according to valToValMap
-        Z3Expr gamma_hat(IntervalExeState &exeState);
+    /// Return Z3Expr according to valToValMap
+    Z3Expr gamma_hat(IntervalExeState &exeState);
 
-        /// Return Z3Expr according to another valToValMap
-        Z3Expr gamma_hat(IntervalExeState &alpha, IntervalExeState &exeState);
+    /// Return Z3Expr according to another valToValMap
+    Z3Expr gamma_hat(IntervalExeState &alpha, IntervalExeState &exeState);
 
-        /// Return Z3Expr from a NodeID
-        Z3Expr gamma_hat(u32_t id, IntervalExeState &exeState);
+    /// Return Z3Expr from a NodeID
+    Z3Expr gamma_hat(u32_t id, IntervalExeState &exeState);
 
-        IntervalExeState abstract_consequence(IntervalExeState &lower, IntervalExeState &upper, IntervalExeState &domain);
+    IntervalExeState abstract_consequence(IntervalExeState &lower, IntervalExeState &upper, IntervalExeState &domain);
 
-        IntervalExeState beta(Map<u32_t, double> &sigma, IntervalExeState &exeState);
+    IntervalExeState beta(Map<u32_t, double> &sigma, IntervalExeState &exeState);
 
-        /* two optional solvers: RSY and bilateral */
+    /* two optional solvers: RSY and bilateral */
 
-        IntervalExeState bilateral(IntervalExeState domain, Z3Expr phi, u32_t descend_check = 0);
+    IntervalExeState bilateral(IntervalExeState domain, Z3Expr phi, u32_t descend_check = 0);
 
-        IntervalExeState RSY(IntervalExeState domain, const Z3Expr &phi);
+    IntervalExeState RSY(IntervalExeState domain, const Z3Expr &phi);
 
-    };
+};
 }
 
 #endif //Z3_EXAMPLE_RELATIONSOLVER_H

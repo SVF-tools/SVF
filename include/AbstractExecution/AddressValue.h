@@ -36,8 +36,10 @@
 #include "AbstractExecution/AbstractValue.h"
 #include "SVFIR/SVFIR.h"
 
-namespace SVF {
-class AddressValue : public AbstractValue {
+namespace SVF
+{
+class AddressValue : public AbstractValue
+{
 public:
     typedef Set<u32_t> AddrSet;
 private:
@@ -61,8 +63,10 @@ public:
     AddressValue(AddressValue &&other) noexcept: AbstractValue(AddressK), _addrs(std::move(other._addrs)) {}
 
     /// Copy operator=
-    AddressValue &operator=(const AddressValue &other) {
-        if (!this->equals(other)) {
+    AddressValue &operator=(const AddressValue &other)
+    {
+        if (!this->equals(other))
+        {
             _addrs = other._addrs;
             AbstractValue::operator=(other);
         }
@@ -70,65 +74,81 @@ public:
     }
 
     /// Move operator=
-    AddressValue &operator=(AddressValue &&other) noexcept {
-        if (this != &other) {
+    AddressValue &operator=(AddressValue &&other) noexcept
+    {
+        if (this != &other)
+        {
             _addrs = std::move(other._addrs);
             AbstractValue::operator=(std::move(other));
         }
         return *this;
     }
 
-    bool equals(const AddressValue &rhs) const {
+    bool equals(const AddressValue &rhs) const
+    {
         return _addrs == rhs._addrs;
     }
 
-    bool operator==(const AddressValue &rhs) const {
+    bool operator==(const AddressValue &rhs) const
+    {
         return _addrs == rhs._addrs;
     }
 
     /// Operator !=
-    bool operator!=(const AddressValue &rhs) const {
+    bool operator!=(const AddressValue &rhs) const
+    {
         return _addrs != rhs._addrs;
     }
 
-    AddrSet::const_iterator begin() const {
+    AddrSet::const_iterator begin() const
+    {
         return _addrs.cbegin();
     }
 
-    AddrSet::const_iterator end() const {
+    AddrSet::const_iterator end() const
+    {
         return _addrs.cend();
     }
 
-    bool empty() const {
+    bool empty() const
+    {
         return _addrs.empty();
     }
 
-    u32_t size() const {
+    u32_t size() const
+    {
         return _addrs.size();
     }
 
-    std::pair<AddressValue::AddrSet::iterator, bool> insert(u32_t id) {
+    std::pair<AddressValue::AddrSet::iterator, bool> insert(u32_t id)
+    {
         return _addrs.insert(id);
     }
 
-    const AddrSet &getVals() const {
+    const AddrSet &getVals() const
+    {
         return _addrs;
     }
 
-    void setVals(const AddrSet &vals) {
+    void setVals(const AddrSet &vals)
+    {
         _addrs = vals;
     }
 
     /// Current AddressValue joins with another AddressValue
-    void join_with(const AddressValue &other) {
+    void join_with(const AddressValue &other)
+    {
         _addrs.insert(other.begin(), other.end());
     }
 
     /// Return a intersected AddressValue
-    void meet_with(const AddressValue &other) {
+    void meet_with(const AddressValue &other)
+    {
         AddrSet s;
-        for (const auto &id: other._addrs) {
-            if (_addrs.find(id) != _addrs.end()) {
+        for (const auto &id: other._addrs)
+        {
+            if (_addrs.find(id) != _addrs.end())
+            {
                 s.insert(id);
             }
         }
@@ -136,44 +156,53 @@ public:
     }
 
     /// Return true if the AddressValue contains n
-    bool contains(u32_t id) const {
+    bool contains(u32_t id) const
+    {
         return _addrs.count(id);
     }
 
-    bool hasIntersect(const AddressValue &other) {
+    bool hasIntersect(const AddressValue &other)
+    {
         AddressValue v = *this;
         v.meet_with(other);
         return !v.empty();
     }
 
-    inline bool isTop() const override {
+    inline bool isTop() const override
+    {
         return *this == getVirtualMemAddress(PAG::getPAG()->getBlackHoleObj()->getId());
     }
 
-    inline bool isBottom() const override {
+    inline bool isBottom() const override
+    {
         return empty();
     }
 
-    inline void setTop() {
+    inline void setTop()
+    {
         *this = getVirtualMemAddress(PAG::getPAG()->getBlackHoleObj()->getId());
     }
 
-    inline void setBottom() {
+    inline void setBottom()
+    {
         _addrs.clear();
     }
 
     /// The physical address starts with 0x7f...... + idx
-    static inline u32_t getVirtualMemAddress(u32_t idx) {
+    static inline u32_t getVirtualMemAddress(u32_t idx)
+    {
         return AddressMask + idx;
     }
 
     /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
-    static inline bool isVirtualMemAddress(u32_t val) {
+    static inline bool isVirtualMemAddress(u32_t val)
+    {
         return (val & 0xff000000) == AddressMask;
     }
 
     /// Return the internal index if idx is an address otherwise return the value of idx
-    static inline u32_t getInternalID(u32_t idx) {
+    static inline u32_t getInternalID(u32_t idx)
+    {
         return (idx & FlippedAddressMask);
     }
 };

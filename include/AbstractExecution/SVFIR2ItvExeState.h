@@ -36,20 +36,34 @@
 #include "AbstractExecution/IntervalValue.h"
 #include "AbstractExecution/RelExeState.h"
 
-namespace SVF {
-class SVFIR2ItvExeState {
+namespace SVF
+{
+class SVFIR2ItvExeState
+{
 public:
     typedef ExeState::VAddrs VAddrs;
 public:
     SVFIR2ItvExeState(SVFIR *ir) : _svfir(ir) {}
 
-    void setEs(const IntervalExeState &es) { _es = es; }
+    void setEs(const IntervalExeState &es)
+    {
+        _es = es;
+    }
 
-    IntervalExeState &getEs() { return _es; }
+    IntervalExeState &getEs()
+    {
+        return _es;
+    }
 
-    void setRelEs(const RelExeState &relEs) { _relEs = relEs; }
+    void setRelEs(const RelExeState &relEs)
+    {
+        _relEs = relEs;
+    }
 
-    RelExeState &getRelEs() { return _relEs; }
+    RelExeState &getRelEs()
+    {
+        return _relEs;
+    }
 
     /// Return the field address given a pointer points to a struct object and an offset
     VAddrs getGepObjAddress(u32_t pointer, u32_t offset);
@@ -57,7 +71,8 @@ public:
     /// Return the offset expression of a GepStmt
     std::pair<s32_t, s32_t> getGepOffset(const GepStmt *gep);
 
-    static z3::context &getContext() {
+    static z3::context &getContext()
+    {
         return Z3Expr::getContext();
     }
 
@@ -72,23 +87,28 @@ public:
     /// Init SVFVar
     void initSVFVar(u32_t varId);
 
-    inline VAddrs &getVAddrs(u32_t id) {
+    inline VAddrs &getVAddrs(u32_t id)
+    {
         return _es.getVAddrs(id);
     }
 
-    inline bool inVarToIValTable(u32_t id) const {
+    inline bool inVarToIValTable(u32_t id) const
+    {
         return _es.inVarToIValTable(id);
     }
 
-    inline bool inLocToIValTable(u32_t id) const {
+    inline bool inLocToIValTable(u32_t id) const
+    {
         return _es.inLocToIValTable(id);
     }
 
-    inline bool inVarToAddrsTable(u32_t id) const {
+    inline bool inVarToAddrsTable(u32_t id) const
+    {
         return _es.inVarToAddrsTable(id);
     }
 
-    inline bool inLocToAddrsTable(u32_t id) const {
+    inline bool inLocToAddrsTable(u32_t id) const
+    {
         return _es.inLocToAddrsTable(id);
     }
 
@@ -117,17 +137,20 @@ public:
     void translatePhi(const PhiStmt *phi);
 
     /// Return the internal index if idx is an address otherwise return the value of idx
-    static inline u32_t getInternalID(u32_t idx) {
+    static inline u32_t getInternalID(u32_t idx)
+    {
         return ExeState::getInternalID(idx);
     }
 
     /// The physical address starts with 0x7f...... + idx
-    static inline u32_t getVirtualMemAddress(u32_t idx) {
+    static inline u32_t getVirtualMemAddress(u32_t idx)
+    {
         return ExeState::getVirtualMemAddress(idx);
     }
 
     /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
-    static inline bool isVirtualMemAddress(u32_t val) {
+    static inline bool isVirtualMemAddress(u32_t val)
+    {
         return ExeState::isVirtualMemAddress(val);
     }
 
