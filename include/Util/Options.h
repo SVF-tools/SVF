@@ -260,7 +260,6 @@ public:
     // Loop Analysis
     static const llvm::cl::opt<bool> LoopAnalysis;
     static const llvm::cl::opt<unsigned> LoopBound;
-    static const llvm::cl::opt<unsigned> MaxGep;
 };
 }  // namespace SVF
 

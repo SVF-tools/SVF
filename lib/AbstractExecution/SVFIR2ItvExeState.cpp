@@ -530,8 +530,8 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep) {
     } else {
         VAddrs gepAddrs;
         s32_t ub = offsetPair.second;
-        if (offsetPair.second - offsetPair.first > Options::MaxGep - 1) {
-            ub = offsetPair.first + Options::MaxGep - 1;
+        if (offsetPair.second - offsetPair.first > Options::MaxFieldLimit - 1) {
+            ub = offsetPair.first + Options::MaxFieldLimit - 1;
         }
         for (s32_t i = offsetPair.first; i <= ub; i++) {
             gepAddrs.join_with(getGepObjAddress(rhs, i));
