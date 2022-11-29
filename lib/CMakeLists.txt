@@ -23,8 +23,11 @@ file (GLOB SOURCES
         FastCluster/*.cpp
 )
 
-add_llvm_library(Svf STATIC ${SOURCES} LINK_LIBS ${Z3_LIBRARIES})
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+add_llvm_library(Svf STATIC ${SOURCES} LINK_LIBS ${Z3_LIBRARIES} Threads::Threads)
 
 
 if(DEFINED IN_SOURCE_BUILD)
