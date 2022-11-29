@@ -158,6 +158,42 @@ void BVDataPTAImpl::remapPointsToSets(void)
     getPTDataTy()->remapAllPts();
 }
 
+void BVDataPTAImpl::writeObjVarToFile(const string& filename)
+{
+    outs() << "Storing ObjVar to '" << filename << "'...";
+    error_code err;
+    std::fstream f(filename.c_str(), std::ios_base::out);
+    if (!f.good())
+    {
+        outs() << "  error opening file for writing!\n";
+        return;
+    }
+
+    // Write BaseNodes insensitivity to file
+    NodeBS NodeIDs;
+    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
+    {
+        PAGNode* pagNode = it->second;
+        if (!isa<ObjVar>(pagNode)) continue;
+        NodeID n = pag->getBaseObjVar(it->first);
+        if (NodeIDs.test(n)) continue;
+        f << n << " ";
+        f << isFieldInsensitive(n) << "\n";
+        NodeIDs.set(n);
+    }
+
+    f << "------\n";
+
+    // Job finish and close file
+    f.close();
+    if (f.good())
+    {
+        outs() << "\n";
+        return;
+    }
+    
+}
+
 /*!
  * Store pointer analysis result into a file.
  * It includes the points-to relations, and all SVFIR nodes including those
@@ -169,7 +205,7 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     outs() << "Storing pointer analysis results to '" << filename << "'...";
 
     error_code err;
-    std::fstream f(filename.c_str(), std::ios_base::out);
+    std::fstream f(filename.c_str(), std::ios_base::app);
     if (!f.good())
     {
         outs() << "  error opening file for writing!\n";
@@ -198,20 +234,8 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         f << "}\n";
     }
 
-    // Write BaseNodes insensitivity to file
-    NodeBS NodeIDs;
-    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
-    {
-        PAGNode* pagNode = it->second;
-        if (!isa<ObjVar>(pagNode)) continue;
-        NodeID n = pag->getBaseObjVar(it->first);
-        if (NodeIDs.test(n)) continue;
-        f << n << " ";
-        f << isFieldInsensitive(n) << "\n";
-        NodeIDs.set(n);
-    }
-
     f << "------\n";
+
     // Write GepPAGNodes to file
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
     {
@@ -250,9 +274,24 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
         return false;
     }
 
+    // Read ObjVar
+    string line;
+    while (F.good())
+    {
+        getline(F, line);
+        if (line == "------")     break;
+        // Parse a single line in the form of "baseNodeID insensitive"
+        istringstream ss(line);
+        NodeID base;
+        bool insensitive;
+        ss >> base >> insensitive;
+
+        if (insensitive)
+            setObjFieldInsensitive(base);
+    }
+
     // Read analysis results from file
     PTDataTy *ptD = getPTDataTy();
-    string line;
 
     // Read points-to sets
     string delimiter1 = " -> { ";
@@ -264,6 +303,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     {
         // Parse a single line in the form of "var -> { obj1 obj2 obj3 }"
         getline(F, line);
+        if (line == "------")     break;
         size_t pos = line.find(delimiter1);
         if (pos == string::npos)    break;
         if (line.back() != '}')     break;
@@ -298,22 +338,6 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     // map the variable ID to its pointer set
     for (auto t: nodePtsMap)
         ptD->unionPts(t.first, strPtsMap[t.second]);
-
-    // Read SVFIR offset nodes
-    while (F.good())
-    {
-        if (line == "------")     break;
-        // Parse a single line in the form of "baseNodeID insensitive"
-        istringstream ss(line);
-        NodeID base;
-        bool insensitive;
-        ss >> base >> insensitive;
-
-        if (insensitive)
-            setObjFieldInsensitive(base);
-
-        getline(F, line);
-    }
 
     // Read BaseNode insensitivity
     while (F.good())

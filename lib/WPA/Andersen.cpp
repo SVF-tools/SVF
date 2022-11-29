@@ -112,6 +112,9 @@ void AndersenBase::analyze()
         // Finalize the analysis
         PointerAnalysis::finalize();
     }
+    
+    if (!Options::WriteAnder.empty())
+        this->writeObjVarToFile(Options::WriteAnder);
 
     if(!readResultsFromFile)
     {
