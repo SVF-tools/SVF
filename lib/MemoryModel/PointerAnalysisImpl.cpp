@@ -162,7 +162,7 @@ void BVDataPTAImpl::writeObjVarToFile(const string& filename)
 {
     outs() << "Storing ObjVar to '" << filename << "'...";
     error_code err;
-    std::fstream f(filename.c_str(), std::ios_base::out);
+    std::fstream f(filename.c_str(), std::ios_base::app);
     if (!f.good())
     {
         outs() << "  error opening file for writing!\n";
@@ -247,6 +247,8 @@ void BVDataPTAImpl::writeToFile(const string& filename)
             f << gepObjPN->getConstantFieldIdx() << "\n";
         }
     }
+
+    f << "------\n";
 
     // Job finish and close file
     f.close();
@@ -343,8 +345,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     while (F.good())
     {
         getline(F, line);
-        if (line.empty())
-            break;
+        if (line == "------")     break;
         // Parse a single line in the form of "ID baseNodeID offset"
         istringstream ss(line);
         NodeID id;
@@ -355,6 +356,22 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
         bool matched = (id == n);
         (void)matched;
         assert(matched && "Error adding GepObjNode into SVFIR!");
+    }
+
+    // //update ObjVar status
+    while (F.good())
+    {
+        getline(F, line);
+        if (line.empty() || line == "------")
+            break;
+        // Parse a single line in the form of "baseNodeID insensitive"
+        istringstream ss(line);
+        NodeID base;
+        bool insensitive;
+        ss >> base >> insensitive;
+
+        if (insensitive)
+            setObjFieldInsensitive(base);
     }
 
     // Update callgraph
