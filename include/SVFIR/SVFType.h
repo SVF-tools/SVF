@@ -150,19 +150,17 @@ private:
     std::vector<const SVFType*> flattenElementTypes;
     /// Max field limit
 
-    StInfo(); ///< place holder
-    StInfo(const StInfo& st); ///< place holder
-    void operator=(const StInfo&); ///< place holder
-
 public:
+    StInfo() = delete;
+    StInfo(const StInfo& st) = delete;
+    void operator=(const StInfo&) = delete;
+
     /// Constructor
-    StInfo(u32_t s) : stride(s), numOfFlattenElements(s), numOfFlattenFields(s)
+    explicit StInfo(u32_t s) : stride(s), numOfFlattenElements(s), numOfFlattenFields(s)
     {
     }
     /// Destructor
-    ~StInfo()
-    {
-    }
+    ~StInfo() = default;
 
     ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
     ///  OriginalFieldType of b with field_idx 1 : Struct A

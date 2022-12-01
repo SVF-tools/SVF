@@ -53,8 +53,10 @@ const CFLEdge* CFLGraph::addCFLEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFl
         dst->addIngoingEdge(edge);
         return edge;
     }
-    else
-        return nullptr;
+    else {
+      delete edge;
+      return nullptr;
+    }
 }
 
 const CFLEdge* CFLGraph::hasEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFlag label)

@@ -228,21 +228,13 @@ public:
 
 private:
     // Index of Element in terms of where first bit starts.
-    unsigned ElementIndex;
-    BitWord Bits[BITWORDS_PER_ELEMENT];
+    unsigned ElementIndex = 0;
+    BitWord Bits[BITWORDS_PER_ELEMENT] = {0};
 
-    SparseBitVectorElement()
-    {
-        ElementIndex = ~0U;
-        memset(&Bits[0], 0, sizeof (BitWord) * BITWORDS_PER_ELEMENT);
-    }
+    SparseBitVectorElement() = default;
 
 public:
-    explicit SparseBitVectorElement(unsigned Idx)
-    {
-        ElementIndex = Idx;
-        memset(&Bits[0], 0, sizeof (BitWord) * BITWORDS_PER_ELEMENT);
-    }
+    explicit SparseBitVectorElement(unsigned Idx) :  ElementIndex(Idx) {}
 
     // Comparison.
     bool operator==(const SparseBitVectorElement &RHS) const
@@ -619,7 +611,7 @@ class SparseBitVector
         }
 
     public:
-        SparseBitVectorIterator() = default;
+        SparseBitVectorIterator() = delete;
 
         SparseBitVectorIterator(const SparseBitVector<ElementSize> *RHS,
                                 bool end = false):BitVector(RHS)
@@ -679,7 +671,7 @@ public:
     SparseBitVector(const SparseBitVector &RHS)
         : Elements(RHS.Elements), CurrElementIter(Elements.begin()) {}
     SparseBitVector(SparseBitVector &&RHS)
-        : Elements(std::move(RHS.Elements)), CurrElementIter(Elements.begin()) {}
+ noexcept         : Elements(std::move(RHS.Elements)), CurrElementIter(Elements.begin()) {}
 
     // Clear.
     void clear()

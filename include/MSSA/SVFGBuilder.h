@@ -49,27 +49,18 @@ public:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
 
     /// Constructor
-    SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
+    explicit SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
 
     /// Destructor
-    virtual ~SVFGBuilder() {}
-
-    static SVFG* globalSvfg;
+    virtual ~SVFGBuilder() = default;
 
     SVFG* buildPTROnlySVFG(BVDataPTAImpl* pta);
     SVFG* buildFullSVFG(BVDataPTAImpl* pta);
 
-    /// Clean up
-    static void releaseSVFG()
-    {
-        if (globalSvfg)
-            delete globalSvfg;
-        globalSvfg = nullptr;
-    }
     /// Get SVFG instance
     inline SVFG* getSVFG() const
     {
-        return svfg;
+        return svfg.get();
     }
 
     /// Mark feasible VF edge by removing it from set vfEdgesAtIndCallSite
@@ -85,7 +76,7 @@ public:
     }
 
     /// Build Memory SSA
-    virtual MemSSA* buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA);
+    virtual std::unique_ptr<MemSSA> buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA);
 
 protected:
     /// Create a DDA SVFG. By default actualOut and FormalIN are removed, unless withAOFI is set true.
@@ -97,7 +88,7 @@ protected:
 
     /// SVFG Edges connected at indirect call/ret sites
     SVFGEdgeSet vfEdgesAtIndCallSite;
-    SVFG* svfg;
+    std::unique_ptr<SVFG> svfg;
     /// SVFG with precomputed indirect call edges
     bool SVFGWithIndCall;
 };

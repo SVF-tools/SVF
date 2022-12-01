@@ -58,7 +58,7 @@ public:
     typedef BVDataPTAImpl::MutDFPTDataTy::PtsMap PtsMap;
 
     /// Constructor
-    FlowSensitive(SVFIR* _pag, PTATY type = FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(_pag, type)
+    explicit FlowSensitive(SVFIR* _pag, PTATY type = FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(_pag, type)
     {
         svfg = nullptr;
         solveTime = sccTime = processTime = propagationTime = updateTime = 0;
@@ -73,29 +73,22 @@ public:
     }
 
     /// Destructor
-    virtual ~FlowSensitive()
-    {
-        if (svfg != nullptr)
-            delete svfg;
-        svfg = nullptr;
-    }
+    ~FlowSensitive() override = default;
 
     /// Create signle instance of flow-sensitive pointer analysis
     static FlowSensitive* createFSWPA(SVFIR* _pag)
     {
         if (fspta == nullptr)
         {
-            fspta = new FlowSensitive(_pag);
+            fspta = std::unique_ptr<FlowSensitive>(new FlowSensitive(_pag));
             fspta->analyze();
         }
-        return fspta;
+        return fspta.get();
     }
 
     /// Release flow-sensitive pointer analysis
     static void releaseFSWPA()
     {
-        if (fspta)
-            delete fspta;
         fspta = nullptr;
     }
 
@@ -106,16 +99,16 @@ public:
     }
 
     /// Flow sensitive analysis
-    virtual void analyze();
+    void analyze() override;
 
     /// Initialize analysis
-    virtual void initialize();
+    void initialize() override;
 
     /// Finalize analysis
-    virtual void finalize();
+    void finalize() override;
 
     /// Get PTA name
-    virtual const std::string PTAName() const
+    const std::string PTAName() const override
     {
         return "FlowSensitive";
     }
@@ -140,12 +133,12 @@ public:
 
 protected:
     /// SCC detection
-    virtual NodeStack& SCCDetect();
+    NodeStack& SCCDetect() override;
 
     /// Propagation
     //@{
     /// Propagate points-to information from an edge's src node to its dst node.
-    virtual bool propFromSrcToDst(SVFGEdge* edge);
+    bool propFromSrcToDst(SVFGEdge* edge) override;
     /// Propagate points-to information along a DIRECT SVFG edge.
     virtual bool propAlongDirectEdge(const DirectSVFGEdge* edge);
     /// Propagate points-to information along an INDIRECT SVFG edge.
@@ -217,7 +210,7 @@ protected:
 
     /// Handle various constraints
     //@{
-    virtual void processNode(NodeID nodeId);
+    void processNode(NodeID nodeId) override;
     bool processSVFGNode(SVFGNode* node);
     virtual bool processAddr(const AddrSVFGNode* addr);
     virtual bool processCopy(const CopySVFGNode* copy);
@@ -230,7 +223,7 @@ protected:
     /// Update call graph
     //@{
     /// Update call graph.
-    bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
+    bool updateCallGraph(const CallSiteToFunPtrMap& callsites) override;
     /// Connect nodes in SVFG.
     void connectCallerAndCallee(const CallEdgeMap& newEdges, SVFGEdgeSetTy& edges);
     /// Update nodes connected during updating call graph.
@@ -275,7 +268,7 @@ protected:
     /// Sets the global best mapping as a plain mapping, i.e. n -> n.
     virtual void plainMap(void) const;
 
-    static FlowSensitive* fspta;
+    static std::unique_ptr<FlowSensitive> fspta;
     SVFGBuilder memSSA;
     AndersenWaveDiff *ander;
 

@@ -83,12 +83,12 @@ LLVMModuleSet::~LLVMModuleSet()
 
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
-    svfModule = new SVFModule(mod.getModuleIdentifier());
+    svfModule = std::make_unique<SVFModule>(mod.getModuleIdentifier());
     modules.emplace_back(mod);
 
     build();
 
-    return svfModule;
+    return svfModule.get();
 }
 
 SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec)
@@ -100,9 +100,9 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     loadModules(moduleNameVec);
 
     if(!moduleNameVec.empty())
-        svfModule = new SVFModule(*moduleNameVec.begin());
+        svfModule = std::make_unique<SVFModule>(*moduleNameVec.begin());
     else
-        svfModule = new SVFModule();
+        svfModule = std::make_unique<SVFModule>();
 
     build();
 
@@ -115,12 +115,12 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
         /// building symbol table
         DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
         SymbolTableBuilder builder(symInfo);
-        builder.buildMemModel(svfModule);
+        builder.buildMemModel(svfModule.get());
     }
     double endSymInfoTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingSymbolTable = (endSymInfoTime - startSymInfoTime)/TIMEINTERVAL;
 
-    return svfModule;
+    return svfModule.get();
 }
 
 void LLVMModuleSet::build()
@@ -983,18 +983,34 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
     Type2TypeInfoMap::iterator tit = Type2TypeInfo.find(T);
     if(tit!=Type2TypeInfo.end())
     {
-        stinfo = tit->second;
+        stinfo = tit->second.get();
     }
     else
     {
-        if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T))
-            stinfo = collectArrayInfo(aty);
-        else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T))
-            stinfo = collectStructInfo(sty);
-        else
-            stinfo = collectSimpleTypeInfo(T);
+        if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T)) {
+          stinfo = collectArrayInfo(aty);
+          Type2TypeInfo[T] = std::unique_ptr<StInfo>(stinfo);
+        }
+        else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T)) {
+          u32_t nf;
+          stinfo = collectStructInfo(sty, nf);
+          Type2TypeInfo[T] = std::unique_ptr<StInfo>(stinfo);
+          //Record the size of the complete struct and update max_struct.
+          if (nf > symInfo->maxStSize)
+          {
+            symInfo->maxStruct = getSVFType(sty);
+            symInfo->maxStSize = nf;
+          }
+        }
+        else {
+          /// The simple type info should not be processed before
+          auto stinfo_own = std::make_unique<StInfo>(1);
+          stinfo = stinfo_own.get();
+          Type2TypeInfo[T] = std::move(stinfo_own);
+          collectSimpleTypeInfo(stinfo, T);
+        }
 
-        Type2TypeInfo[T] = stinfo;
+
     }
     return stinfo;
 }
@@ -1081,13 +1097,13 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
  * Fill in struct_info for T.
  * Given a Struct type, we recursively extend and record its fields and types.
  */
-StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
+StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty, u32_t &nf)
 {
     /// The struct info should not be processed before
     StInfo* stinfo = new StInfo(1);
 
     // Number of fields after flattening the struct
-    u32_t nf = 0;
+    nf = 0;
     // The offset when considering array stride info
     u32_t strideOffset = 0;
     for (StructType::element_iterator it = sty->element_begin(), ie =
@@ -1129,13 +1145,6 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
     assert(stinfo->getFlattenElementTypes().size() == strideOffset && "typeForStruct size incorrect!");
     stinfo->setNumOfFieldsAndElems(nf,strideOffset);
 
-    //Record the size of the complete struct and update max_struct.
-    if (nf > symInfo->maxStSize)
-    {
-        symInfo->maxStruct = getSVFType(sty);
-        symInfo->maxStSize = nf;
-    }
-
     return stinfo;
 }
 
@@ -1143,9 +1152,8 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty)
 /*!
  * Collect simple type (non-aggregate) info
  */
-StInfo* LLVMModuleSet::collectSimpleTypeInfo(const Type* ty)
+StInfo* LLVMModuleSet::collectSimpleTypeInfo(StInfo * stinfo, const Type* ty)
 {
-    StInfo* stinfo = new StInfo(1);
     /// Only one field
     stinfo->addFldWithType(0, getSVFType(ty), 0);
 

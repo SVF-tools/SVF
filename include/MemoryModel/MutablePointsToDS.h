@@ -234,16 +234,16 @@ public:
     typedef typename MutablePTData<Key, KeySet, Data, DataSet>::PtsMap PtsMap;
 
     /// Constructor
-    MutableDiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BaseDiffPTData(reversePT, ty), mutPTData(reversePT) { }
+    explicit MutableDiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BaseDiffPTData(reversePT, ty), mutPTData(reversePT) { }
 
-    virtual ~MutableDiffPTData() { }
+    ~MutableDiffPTData() override = default;
 
     virtual inline const PtsMap& getPtsMap() const
     {
         return mutPTData.getPtsMap();
     }
 
-    virtual inline void clear() override
+    inline void clear() override
     {
         mutPTData.clear();
     }

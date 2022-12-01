@@ -46,7 +46,8 @@ public:
     virtual ~LLVMLoopAnalysis() = default;
 
     /// Build llvm loops based on LoopInfo analysis
-    virtual void buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> &llvmLoops);
+    virtual void buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> &llvmLoops,
+                                llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop> * loopInfo);
 
     /// Start from here
     virtual void build(ICFG *icfg);

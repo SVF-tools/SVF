@@ -71,12 +71,9 @@ public:
     BVDataPTAImpl(SVFIR* pag, PointerAnalysis::PTATY type, bool alias_check = true);
 
     /// Destructor
-    virtual ~BVDataPTAImpl()
-    {
-        destroy();
-    }
+    ~BVDataPTAImpl() override = default;
 
-    inline PersistentPointsToCache<PointsTo> &getPtCache(void)
+    inline PersistentPointsToCache<PointsTo> &getPtCache()
     {
         return ptCache;
     }
@@ -86,21 +83,13 @@ public:
         return pta->getImplTy() == BVDataImpl;
     }
 
-    /// Release memory
-    inline void destroy()
-    {
-        delete ptD;
-        ptD = nullptr;
-        ptCache.clear();
-    }
-
     /// Get points-to and reverse points-to
     ///@{
-    virtual inline const PointsTo& getPts(NodeID id)
+    inline const PointsTo& getPts(NodeID id) override
     {
         return ptD->getPts(id);
     }
-    virtual inline const NodeSet& getRevPts(NodeID nodeId)
+    inline const NodeSet& getRevPts(NodeID nodeId) override
     {
         return ptD->getRevPts(nodeId);
     }
@@ -161,12 +150,12 @@ protected:
     /// Get points-to data structure
     inline PTDataTy* getPTDataTy() const
     {
-        return ptD;
+        return ptD.get();
     }
 
 
     /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
-    virtual void finalize();
+    void finalize() override;
 
     /// Update callgraph. This should be implemented by its subclass.
     virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
@@ -177,28 +166,28 @@ protected:
 
     inline DiffPTDataTy* getDiffPTDataTy() const
     {
-        DiffPTDataTy* diff = SVFUtil::dyn_cast<DiffPTDataTy>(ptD);
+        DiffPTDataTy* diff = SVFUtil::dyn_cast<DiffPTDataTy>(ptD.get());
         assert(diff && "BVDataPTAImpl::getDiffPTDataTy: not a DiffPTDataTy!");
         return diff;
     }
 
     inline DFPTDataTy* getDFPTDataTy() const
     {
-        DFPTDataTy* df = SVFUtil::dyn_cast<DFPTDataTy>(ptD);
+        DFPTDataTy* df = SVFUtil::dyn_cast<DFPTDataTy>(ptD.get());
         assert(df && "BVDataPTAImpl::getDFPTDataTy: not a DFPTDataTy!");
         return df;
     }
 
     inline MutDFPTDataTy* getMutDFPTDataTy() const
     {
-        MutDFPTDataTy* mdf = SVFUtil::dyn_cast<MutDFPTDataTy>(ptD);
+        MutDFPTDataTy* mdf = SVFUtil::dyn_cast<MutDFPTDataTy>(ptD.get());
         assert(mdf && "BVDataPTAImpl::getMutDFPTDataTy: not a MutDFPTDataTy!");
         return mdf;
     }
 
     inline VersionedPTDataTy* getVersionedPTDataTy() const
     {
-        VersionedPTDataTy* v = SVFUtil::dyn_cast<VersionedPTDataTy>(ptD);
+        VersionedPTDataTy* v = SVFUtil::dyn_cast<VersionedPTDataTy>(ptD.get());
         assert(v && "BVDataPTAImpl::getVersionedPTDataTy: not a VersionedPTDataTy!");
         return v;
     }
@@ -212,31 +201,31 @@ protected:
 
 private:
     /// Points-to data
-    PTDataTy* ptD;
+    std::unique_ptr<PTDataTy> ptD;
 
     PersistentPointsToCache<PointsTo> ptCache;
 
 public:
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const SVFValue* V1,
-                              const SVFValue* V2);
+    AliasResult alias(const SVFValue* V1,
+                              const SVFValue* V2) override;
 
     /// Interface expose to users of our pointer analysis, given PAGNodeID
-    virtual AliasResult alias(NodeID node1, NodeID node2);
+    AliasResult alias(NodeID node1, NodeID node2) override;
 
     /// Interface expose to users of our pointer analysis, given two pts
     virtual AliasResult alias(const PointsTo& pts1, const PointsTo& pts2);
 
     /// dump and debug, print out conditional pts
     //@{
-    virtual void dumpCPts()
+    void dumpCPts() override
     {
         ptD->dumpPTData();
     }
 
-    virtual void dumpTopLevelPtsTo();
+    void dumpTopLevelPtsTo() override;
 
-    virtual void dumpAllPts();
+    void dumpAllPts() override;
     //@}
 };
 

@@ -43,28 +43,28 @@ public:
 
 public:
     /// Construct empty points-to set.
-    PointsTo(void);
-    /// Copy costructor.
+    PointsTo();
+    /// Copy constructor.
     PointsTo(const PointsTo &pt);
     /// Move constructor.
-    PointsTo(PointsTo &&pt);
+    PointsTo(PointsTo &&pt) noexcept ;
 
-    ~PointsTo(void);
+    ~PointsTo();
 
     /// Copy assignment.
     PointsTo &operator=(const PointsTo &rhs);
 
     /// Move assignment.
-    PointsTo &operator=(PointsTo &&rhs);
+    PointsTo &operator=(PointsTo &&rhs) noexcept ;
 
     /// Returns true if set is empty.
-    bool empty(void) const;
+    bool empty() const;
 
     /// Returns number of elements.
-    u32_t count(void) const;
+    u32_t count() const;
 
     /// Empty the set.
-    void clear(void);
+    void clear();
 
     /// Returns true if n is in this set.
     bool test(u32_t n) const;
@@ -87,7 +87,7 @@ public:
 
     /// Returns the first element the set. Returns -1 when the set is empty.
     /// TODO: should we diverge from LLVM about the int return?
-    int find_first(void);
+    int find_first();
 
     /// Returns true if this set and rhs contain exactly the same elements.
     bool operator==(const PointsTo &rhs) const;
@@ -116,28 +116,28 @@ public:
     void intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs);
 
     /// Returns this points-to set as a NodeBS.
-    NodeBS toNodeBS(void) const;
+    NodeBS toNodeBS() const;
 
     /// Return a hash of this set.
-    size_t hash(void) const;
+    size_t hash() const;
 
     /// Checks if this points-to set is using the current best mapping.
     /// If not, remaps.
-    void checkAndRemap(void);
+    void checkAndRemap();
 
-    const_iterator begin(void) const
+    const_iterator begin() const
     {
         return PointsToIterator(this);
     }
-    const_iterator end(void) const
+    const_iterator end() const
     {
         return PointsToIterator(this, true);
     }
 
-    MappingPtr getNodeMapping(void) const;
+    MappingPtr getNodeMapping() const;
 
-    static MappingPtr getCurrentBestNodeMapping(void);
-    static MappingPtr getCurrentBestReverseNodeMapping(void);
+    static MappingPtr getCurrentBestNodeMapping();
+    static MappingPtr getCurrentBestReverseNodeMapping();
     static void setCurrentBestNodeMapping(MappingPtr newCurrentBestNodeMapping,
                                           MappingPtr newCurrentBestReverseNodeMapping);
 
@@ -188,25 +188,25 @@ public:
         using reference = u32_t &;
 
         /// Deleted because we don't want iterators with null pt.
-        PointsToIterator(void) = delete;
+        PointsToIterator() = delete;
         PointsToIterator(const PointsToIterator &pt);
-        PointsToIterator(PointsToIterator &&pt);
+        PointsToIterator(PointsToIterator &&pt) noexcept ;
 
         /// Returns an iterator to the beginning of pt if end is false, and to
         /// the end of pt if end is true.
-        PointsToIterator(const PointsTo *pt, bool end=false);
+        explicit PointsToIterator(const PointsTo *pt, bool end=false);
 
         PointsToIterator &operator=(const PointsToIterator &rhs);
-        PointsToIterator &operator=(PointsToIterator &&rhs);
+        PointsToIterator &operator=(PointsToIterator &&rhs) noexcept ;
 
         /// Pre-increment: ++it.
-        const PointsToIterator &operator++(void);
+        const PointsToIterator &operator++();
 
         /// Post-increment: it++.
         const PointsToIterator operator++(int);
 
         /// Dereference: *it.
-        u32_t operator*(void) const;
+        u32_t operator*() const;
 
         /// Equality: *this == rhs.
         bool operator==(const PointsToIterator &rhs) const;
@@ -215,7 +215,7 @@ public:
         bool operator!=(const PointsToIterator &rhs) const;
 
     private:
-        bool atEnd(void) const;
+        bool atEnd() const;
 
     private:
         /// PointsTo we are iterating over.

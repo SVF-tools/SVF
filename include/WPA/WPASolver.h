@@ -57,20 +57,16 @@ public:
 protected:
 
     /// Constructor
-    WPASolver(): reanalyze(false), iterationForPrintStat(1000), _graph(nullptr), scc(nullptr), numOfIteration(0)
+    WPASolver(): reanalyze(false), iterationForPrintStat(1000), _graph(nullptr), numOfIteration(0)
     {
     }
     /// Destructor
-    virtual ~WPASolver()
-    {
-        delete scc;
-        scc = nullptr;
-    }
+    virtual ~WPASolver() = default;
 
     /// Get SCC detector
     inline SCC* getSCCDetector() const
     {
-        return scc;
+        return scc.get();
     }
 
     /// Get/Set graph methods
@@ -82,7 +78,7 @@ protected:
     inline void setGraph(GraphType g)
     {
         _graph = g;
-        scc = new SCC(_graph);
+        scc = std::make_unique<SCC>(_graph);
     }
     //@}
 
@@ -194,7 +190,7 @@ protected:
     GraphType _graph;
 
     /// SCC
-    SCC* scc;
+    std::unique_ptr<SCC> scc;
 
     /// Worklist for resolution
     WorkList worklist;

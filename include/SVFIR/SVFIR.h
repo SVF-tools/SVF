@@ -84,7 +84,7 @@ private:
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
     FunToRetMap funRetMap;	///< Map a function to its unique function return PAGNodes
-    static SVFIR* pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
+    static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
     CallSiteToFunPtrMap indCallSiteToFunPtrMap; ///< Map an indirect callsite to its function pointer
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
     /// Valid pointers for pointer analysis resolution connected by SVFIR edges (constraints)
@@ -108,14 +108,12 @@ public:
     {
         if (pag == nullptr)
         {
-            pag = new SVFIR(buildFromFile);
+            pag = std::unique_ptr<SVFIR>(new SVFIR(buildFromFile));
         }
-        return pag;
+        return pag.get();
     }
     static void releaseSVFIR()
     {
-        if (pag)
-            delete pag;
         pag = nullptr;
     }
     //@}

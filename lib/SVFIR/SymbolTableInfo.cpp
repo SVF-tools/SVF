@@ -127,23 +127,12 @@ void SymbolTableInfo::destroy()
         if (iter->second)
             delete iter->second;
     }
-    Set<const StInfo*> stinfos;
-    for (SVFTypeSet::const_iterator iter = svfTypes.begin();
-            iter != svfTypes.end(); ++iter)
-    {
-        const SVFType* type = *iter;
-        stinfos.insert(type->getTypeInfo());
+
+    for (auto * type: svfTypes)
         delete type;
-    }
+    svfTypes.clear();
 
-    for (const StInfo* si : stinfos)
-        delete si;
-
-    if(mod)
-    {
-        delete mod;
-        mod = nullptr;
-    }
+    mod = nullptr;
 }
 
 const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const SVFType* type)

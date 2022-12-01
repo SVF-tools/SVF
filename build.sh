@@ -224,12 +224,12 @@ then
     rm -rf ./'Debug-build'
     mkdir ./'Debug-build'
     cd ./'Debug-build'
-    cmake -D CMAKE_BUILD_TYPE:STRING=Debug ../
+    cmake -D CMAKE_BUILD_TYPE:STRING=Debug -DSVF_SANITIZE="${SVF_SANITIZER}" ../
 else
     rm -rf ./'Release-build'
     mkdir ./'Release-build'
     cd ./'Release-build'
-    cmake -D CMAKE_BUILD_TYPE:STRING=Release -DSVF_ENABLE_ASSERTIONS:BOOL=true ../
+    cmake -D CMAKE_BUILD_TYPE:STRING=Release -DSVF_ENABLE_ASSERTIONS:BOOL=true -DSVF_SANITIZE="${SVF_SANITIZER}" ../
     fi
 make -j ${jobs}
 

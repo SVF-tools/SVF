@@ -44,7 +44,7 @@ public:
 public:
     PersistentPointsToCache(void) : idCounter(1)
     {
-        idToPts.push_back(new Data());
+        idToPts.push_back(std::make_unique<Data>());
         ptsToId[Data()] = emptyPointsToId();
 
         initStats();
@@ -53,7 +53,6 @@ public:
     /// Clear the cache.
     void clear()
     {
-        for (const Data *d : idToPts) delete d;
         idToPts.clear();
         ptsToId.clear();
 
@@ -69,7 +68,7 @@ public:
 
         // Put the empty data back in.
         ptsToId[Data()] = emptyPointsToId();
-        idToPts.push_back(new Data());
+        idToPts.push_back(std::make_unique<Data>());
 
         idCounter = 1;
         // Cache is empty...
@@ -79,7 +78,7 @@ public:
     /// Remaps all points-to sets stored in the cache to the current mapping.
     void remapAllPts(void)
     {
-        for (Data *d : idToPts) d->checkAndRemap();
+        for (auto &d : idToPts) d->checkAndRemap();
 
         // Rebuild ptsToId from idToPts.
         ptsToId.clear();
@@ -96,7 +95,7 @@ public:
 
         // Otherwise, insert it.
         PointsToID id = newPointsToId();
-        idToPts.push_back(new Data(pts));
+        idToPts.push_back(std::make_unique<Data>(pts));
         ptsToId[pts] = id;
 
         return id;
@@ -345,7 +344,7 @@ public:
     Map<Data, unsigned> getAllPts(void)
     {
         Map<Data, unsigned> allPts;
-        for (const Data *d : idToPts) allPts[*d] = 1;
+        for (const auto &d : idToPts) allPts[*d] = 1;
         return allPts;
     }
 
@@ -389,7 +388,7 @@ private:
         else
         {
             resultId = newPointsToId();
-            idToPts.push_back(new Data(result));
+            idToPts.push_back(std::make_unique<Data>(result));
             ptsToId[result] = resultId;
         }
 
@@ -426,7 +425,7 @@ private:
     /// Elements are only added through push_back, so the number of elements
     /// stored is the size of the vector.
     /// Not const so we can remap.
-    std::vector<Data *> idToPts;
+    std::vector<std::unique_ptr<Data>> idToPts;
     /// Maps points-to sets to their corresponding ID.
     PTSToIDMap ptsToId;
 

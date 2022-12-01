@@ -197,7 +197,7 @@ FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MRVer* mrVer, const FunExi
 /*!
  * Constructor
  */
-SVFG::SVFG(MemSSA* _mssa, VFGK k): VFG(_mssa->getPTA()->getPTACallGraph(),k),mssa(_mssa), pta(mssa->getPTA())
+SVFG::SVFG(std::unique_ptr<MemSSA> mssa, VFGK k): VFG(mssa->getPTA()->getPTACallGraph(),k),mssa(std::move(mssa)), pta(this->mssa->getPTA())
 {
     stat = new SVFGStat(this);
 }

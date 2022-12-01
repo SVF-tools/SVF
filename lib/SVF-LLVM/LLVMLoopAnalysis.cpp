@@ -44,7 +44,7 @@ using namespace SVFUtil;
  * @param mod SVF module
  * @param llvmLoops output llvm loops
  */
-void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> &llvmLoops)
+void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> &llvmLoops, llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop> * loopInfo)
 {
     llvm::DominatorTree DT = llvm::DominatorTree();
     std::vector<const Loop *> loop_stack;
@@ -57,8 +57,6 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> 
             // do not analyze external call
             if (SVFUtil::isExtCall(svffun)) continue;
             DT.recalculate(const_cast<Function&>(*func));
-            auto loopInfo = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
-            loopInfo->releaseMemory();
             loopInfo->analyze(DT);
             for (const auto &loop: *loopInfo)
             {
@@ -86,7 +84,8 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, std::vector<const Loop *> 
 void LLVMLoopAnalysis::build(ICFG *icfg)
 {
     std::vector<const Loop *> llvmLoops;
-    buildLLVMLoops(PAG::getPAG()->getModule(), llvmLoops);
+    llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop> loopInfo;
+    buildLLVMLoops(PAG::getPAG()->getModule(), llvmLoops, &loopInfo);
     buildSVFLoops(icfg, llvmLoops);
 }
 

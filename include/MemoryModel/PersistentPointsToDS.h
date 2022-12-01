@@ -45,30 +45,30 @@ public:
     typedef Map<Data, KeySet> RevPtsMap;
 
     /// Constructor
-    PersistentPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersBase)
+    explicit PersistentPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersBase)
         : BasePTData(reversePT, ty), ptCache(cache) { }
 
-    virtual ~PersistentPTData() { }
+    ~PersistentPTData() override = default;
 
-    virtual inline void clear() override
+    inline void clear() override
     {
         ptsMap.clear();
         revPtsMap.clear();
     }
 
-    virtual inline const DataSet& getPts(const Key &var) override
+    inline const DataSet& getPts(const Key &var) override
     {
         PointsToID id = ptsMap[var];
         return ptCache.getActualPts(id);
     }
 
-    virtual inline const KeySet& getRevPts(const Data &data) override
+    inline const KeySet& getRevPts(const Data &data) override
     {
         assert(this->rev && "PersistentPTData::getRevPts: constructed without reverse PT support!");
         return revPtsMap[data];
     }
 
-    virtual inline bool addPts(const Key &dstKey, const Data &element) override
+    inline bool addPts(const Key &dstKey, const Data &element) override
     {
         DataSet srcPts;
         srcPts.set(element);
@@ -76,23 +76,23 @@ public:
         return unionPtsFromId(dstKey, srcId);
     }
 
-    virtual inline bool unionPts(const Key& dstKey, const Key& srcKey) override
+    inline bool unionPts(const Key& dstKey, const Key& srcKey) override
     {
         PointsToID srcId = ptsMap[srcKey];
         return unionPtsFromId(dstKey, srcId);
     }
 
-    virtual inline bool unionPts(const Key& dstKey, const DataSet& srcData) override
+    inline bool unionPts(const Key& dstKey, const DataSet& srcData) override
     {
         PointsToID srcId = ptCache.emplacePts(srcData);
         return unionPtsFromId(dstKey, srcId);
     }
 
-    virtual inline void dumpPTData() override
+    inline void dumpPTData() override
     {
     }
 
-    virtual void clearPts(const Key &var, const Data &element) override
+    void clearPts(const Key &var, const Data &element) override
     {
         DataSet toRemoveData;
         toRemoveData.set(element);
@@ -106,18 +106,18 @@ public:
         }
     }
 
-    virtual void clearFullPts(const Key& var) override
+    void clearFullPts(const Key& var) override
     {
         clearRevPts(getPts(var), var);
         ptsMap[var] = PersistentPointsToCache<DataSet>::emptyPointsToId();
     }
 
-    virtual void remapAllPts(void) override
+    void remapAllPts() override
     {
         ptCache.remapAllPts();
     }
 
-    virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
     {
         Map<DataSet, unsigned> allPts;
         if (liveOnly)
@@ -209,71 +209,71 @@ public:
     typedef typename BasePersPTData::RevPtsMap RevPtsMap;
 
     /// Constructor
-    PersistentDiffPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersDiff)
+    explicit PersistentDiffPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersDiff)
         : BaseDiffPTData(reversePT, ty), ptCache(cache), persPTData(cache, reversePT) { }
 
-    virtual ~PersistentDiffPTData() { }
+    ~PersistentDiffPTData() override = default;
 
-    virtual inline void clear() override
+    void clear() override
     {
         persPTData.clear();
         diffPtsMap.clear();
         propaPtsMap.clear();
     }
 
-    virtual inline const DataSet &getPts(const Key& var) override
+    inline const DataSet &getPts(const Key& var) override
     {
         return persPTData.getPts(var);
     }
 
-    virtual inline const KeySet& getRevPts(const Data &data) override
+    inline const KeySet& getRevPts(const Data &data) override
     {
         assert(this->rev && "PersistentDiffPTData::getRevPts: constructed without reverse PT support!");
         return persPTData.getRevPts(data);
     }
 
-    virtual inline bool addPts(const Key &dstKey, const Data &element) override
+    inline bool addPts(const Key &dstKey, const Data &element) override
     {
         return persPTData.addPts(dstKey, element);
     }
 
-    virtual inline bool unionPts(const Key& dstKey, const Key& srcKey) override
+    inline bool unionPts(const Key& dstKey, const Key& srcKey) override
     {
         return persPTData.unionPts(dstKey, srcKey);
     }
 
-    virtual inline bool unionPts(const Key &dstKey, const DataSet &srcDataSet) override
+    inline bool unionPts(const Key &dstKey, const DataSet &srcDataSet) override
     {
         return persPTData.unionPts(dstKey, srcDataSet);
     }
 
-    virtual void clearPts(const Key &var, const Data &element) override
+    void clearPts(const Key &var, const Data &element) override
     {
         return persPTData.clearPts(var, element);
     }
 
-    virtual void clearFullPts(const Key &var) override
+    void clearFullPts(const Key &var) override
     {
         return persPTData.clearFullPts(var);
     }
 
-    virtual void remapAllPts(void) override
+    void remapAllPts() override
     {
         ptCache.remapAllPts();
     }
 
-    virtual inline void dumpPTData() override
+    inline void dumpPTData() override
     {
         // TODO.
     }
 
-    virtual inline const DataSet &getDiffPts(Key &var) override
+    inline const DataSet &getDiffPts(Key &var) override
     {
         PointsToID id = diffPtsMap[var];
         return ptCache.getActualPts(id);
     }
 
-    virtual inline bool computeDiffPts(Key &var, const DataSet &all) override
+    inline bool computeDiffPts(Key &var, const DataSet &all) override
     {
         PointsToID propaId = propaPtsMap[var];
         PointsToID allId = ptCache.emplacePts(all);
@@ -289,19 +289,19 @@ public:
         return diffId != ptCache.emptyPointsToId();
     }
 
-    virtual inline void updatePropaPtsMap(Key &src, Key &dst) override
+    inline void updatePropaPtsMap(Key &src, Key &dst) override
     {
         PointsToID dstId = propaPtsMap[dst];
         PointsToID srcId = propaPtsMap[src];
         propaPtsMap[dst] = ptCache.intersectPts(dstId, srcId);
     }
 
-    virtual inline void clearPropaPts(Key &var) override
+    inline void clearPropaPts(Key &var) override
     {
         propaPtsMap[var] = ptCache.emptyPointsToId();
     }
 
-    virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
     {
         return persPTData.getAllPts(liveOnly);
     }
@@ -343,75 +343,75 @@ public:
     typedef typename BasePersPTData::KeyToIDMap KeyToIDMap;
     typedef Map<LocID, KeyToIDMap> DFKeyToIDMap;
 
-    PersistentDFPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersDataFlow)
+    explicit PersistentDFPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersDataFlow)
         : BaseDFPTData(reversePT, ty), ptCache(cache), persPTData(cache, reversePT) { }
 
-    virtual ~PersistentDFPTData() { }
+    ~PersistentDFPTData() override = default;
 
-    virtual inline void clear() override
+    inline void clear() override
     {
         dfInPtsMap.clear();
         dfOutPtsMap.clear();
         persPTData.clear();
     }
 
-    virtual inline const DataSet &getPts(const Key& var) override
+    inline const DataSet &getPts(const Key& var) override
     {
         return persPTData.getPts(var);
     }
 
-    virtual inline const KeySet& getRevPts(const Data&) override
+    inline const KeySet& getRevPts(const Data&) override
     {
         assert(false && "PersistentDFPTData::getRevPts: not supported yet!");
         abort();
     }
 
-    virtual inline bool unionPts(const Key& dstKey, const Key& srcKey) override
+    inline bool unionPts(const Key& dstKey, const Key& srcKey) override
     {
         return persPTData.unionPts(dstKey, srcKey);
     }
 
-    virtual inline bool unionPts(const Key& dstKey, const DataSet &srcDataSet) override
+    inline bool unionPts(const Key& dstKey, const DataSet &srcDataSet) override
     {
         return persPTData.unionPts(dstKey, srcDataSet);
     }
 
-    virtual inline bool addPts(const Key &dstKey, const Data &element) override
+    inline bool addPts(const Key &dstKey, const Data &element) override
     {
         return persPTData.addPts(dstKey, element);
     }
 
-    virtual void clearPts(const Key& var, const Data &element) override
+    void clearPts(const Key& var, const Data &element) override
     {
         persPTData.clearPts(var, element);
     }
 
-    virtual void clearFullPts(const Key& var) override
+    void clearFullPts(const Key& var) override
     {
         persPTData.clearFullPts(var);
     }
 
-    virtual void remapAllPts(void) override
+    void remapAllPts() override
     {
         ptCache.remapAllPts();
     }
 
-    virtual inline void dumpPTData() override
+    inline void dumpPTData() override
     {
         persPTData.dumpPTData();
     }
 
-    virtual bool hasDFInSet(LocID loc) const override
+    bool hasDFInSet(LocID loc) const override
     {
         return dfInPtsMap.find(loc) != dfInPtsMap.end();
     }
 
-    virtual bool hasDFOutSet(LocID loc) const override
+    bool hasDFOutSet(LocID loc) const override
     {
         return dfOutPtsMap.find(loc) != dfOutPtsMap.end();
     }
 
-    virtual bool hasDFInSet(LocID loc, const Key& var) const override
+    bool hasDFInSet(LocID loc, const Key& var) const override
     {
         typename DFKeyToIDMap::const_iterator foundInKeyToId = dfInPtsMap.find(loc);
         if (foundInKeyToId == dfInPtsMap.end()) return false;
@@ -419,7 +419,7 @@ public:
         return (inKeyToId.find(var) != inKeyToId.end());
     }
 
-    virtual bool hasDFOutSet(LocID loc, const Key& var) const override
+    bool hasDFOutSet(LocID loc, const Key& var) const override
     {
         typename DFKeyToIDMap::const_iterator foundOutKeyToId = dfOutPtsMap.find(loc);
         if (foundOutKeyToId == dfOutPtsMap.end()) return false;
@@ -427,44 +427,44 @@ public:
         return (outKeyToId.find(var) != outKeyToId.end());
     }
 
-    virtual const DataSet &getDFInPtsSet(LocID loc, const Key& var) override
+    const DataSet &getDFInPtsSet(LocID loc, const Key& var) override
     {
         PointsToID id = dfInPtsMap[loc][var];
         return ptCache.getActualPts(id);
     }
 
-    virtual const DataSet &getDFOutPtsSet(LocID loc, const Key& var) override
+    const DataSet &getDFOutPtsSet(LocID loc, const Key& var) override
     {
         PointsToID id = dfOutPtsMap[loc][var];
         return ptCache.getActualPts(id);
     }
 
-    virtual bool updateDFInFromIn(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
+    bool updateDFInFromIn(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
     {
         return unionPtsThroughIds(getDFInPtIdRef(dstLoc, dstVar), getDFInPtIdRef(srcLoc, srcVar));
     }
 
-    virtual bool updateAllDFInFromIn(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
+    bool updateAllDFInFromIn(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
     {
         return updateDFInFromIn(srcLoc, srcVar, dstLoc, dstVar);
     }
 
-    virtual bool updateDFInFromOut(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
+    bool updateDFInFromOut(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
     {
         return unionPtsThroughIds(getDFInPtIdRef(dstLoc, dstVar), getDFOutPtIdRef(srcLoc, srcVar));
     }
 
-    virtual bool updateAllDFInFromOut(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
+    bool updateAllDFInFromOut(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
     {
         return updateDFInFromOut(srcLoc, srcVar, dstLoc, dstVar);
     }
 
-    virtual bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return unionPtsThroughIds(getDFOutPtIdRef(dstLoc, dstVar), getDFInPtIdRef(srcLoc, srcVar));
     }
 
-    virtual bool updateAllDFOutFromIn(LocID loc, const Key &singleton, bool strongUpdates) override
+    bool updateAllDFOutFromIn(LocID loc, const Key &singleton, bool strongUpdates) override
     {
         bool changed = false;
         if (this->hasDFInSet(loc))
@@ -483,22 +483,22 @@ public:
         return changed;
     }
 
-    virtual void clearAllDFOutUpdatedVar(LocID) override
+    void clearAllDFOutUpdatedVar(LocID) override
     {
     }
 
     /// Update points-to set of top-level pointers with IN[srcLoc:srcVar].
-    virtual bool updateTLVPts(LocID srcLoc, const Key &srcVar, const Key &dstVar) override
+    bool updateTLVPts(LocID srcLoc, const Key &srcVar, const Key &dstVar) override
     {
         return unionPtsThroughIds(persPTData.ptsMap[dstVar], getDFInPtIdRef(srcLoc, srcVar));
     }
 
-    virtual bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return unionPtsThroughIds(getDFOutPtIdRef(dstLoc, dstVar), persPTData.ptsMap[srcVar]);
     }
 
-    virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
     {
         Map<DataSet, unsigned> allPts = persPTData.getAllPts(liveOnly);
         for (const typename DFKeyToIDMap::value_type &lki : dfInPtsMap)
@@ -591,12 +591,12 @@ public:
 
 public:
     /// Constructor
-    PersistentIncDFPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = BasePTData::PersIncDataFlow)
+    explicit PersistentIncDFPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = BasePTData::PersIncDataFlow)
         : BasePersDFPTData(cache, reversePT, ty) { }
 
-    virtual ~PersistentIncDFPTData() { }
+    ~PersistentIncDFPTData() override = default;
 
-    virtual inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if (varHasNewDFInPts(srcLoc, srcVar)
                 && this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFInPtIdRef(srcLoc, srcVar)))
@@ -608,7 +608,7 @@ public:
         return false;
     }
 
-    virtual inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if (varHasNewDFOutPts(srcLoc, srcVar)
                 && this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFOutPtIdRef(srcLoc, srcVar)))
@@ -620,7 +620,7 @@ public:
         return false;
     }
 
-    virtual inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if (varHasNewDFInPts(srcLoc, srcVar))
         {
@@ -635,7 +635,7 @@ public:
         return false;
     }
 
-    virtual inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if (this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFOutPtIdRef(srcLoc, srcVar)))
         {
@@ -646,7 +646,7 @@ public:
         return false;
     }
 
-    virtual inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if (this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFInPtIdRef(srcLoc, srcVar)))
         {
@@ -657,7 +657,7 @@ public:
         return false;
     }
 
-    virtual inline bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates) override
+    inline bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates) override
     {
         bool changed = false;
         if (this->hasDFInSet(loc))
@@ -675,7 +675,7 @@ public:
         return changed;
     }
 
-    virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar) override
+    inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar) override
     {
         if (varHasNewDFInPts(srcLoc, srcVar))
         {
@@ -686,7 +686,7 @@ public:
         return false;
     }
 
-    virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if (this->unionPtsThroughIds(this->getDFOutPtIdRef(dstLoc, dstVar), this->persPTData.ptsMap[srcVar]))
         {
@@ -697,7 +697,7 @@ public:
         return false;
     }
 
-    virtual inline void clearAllDFOutUpdatedVar(LocID loc) override
+    inline void clearAllDFOutUpdatedVar(LocID loc) override
     {
         if (this->hasDFOutSet(loc))
         {
@@ -709,7 +709,7 @@ public:
         }
     }
 
-    virtual inline void clear() override
+    inline void clear() override
     {
         outUpdatedVarMap.clear();
         inUpdatedVarMap.clear();
@@ -812,96 +812,96 @@ public:
     typedef typename PersistentPTData<Key, KeySet, Data, DataSet>::KeyToIDMap KeyToIDMap;
     typedef typename PersistentPTData<VersionedKey, VersionedKeySet, Data, DataSet>::KeyToIDMap VersionedKeyToIDMap;
 
-    PersistentVersionedPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersVersioned)
+    explicit PersistentVersionedPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersVersioned)
         : BaseVersionedPTData(reversePT, ty), tlPTData(cache, reversePT), atPTData(cache, reversePT) { }
 
-    virtual ~PersistentVersionedPTData() { }
+    ~PersistentVersionedPTData() override = default;
 
-    virtual inline void clear() override
+    inline void clear() override
     {
         tlPTData.clear();
         atPTData.clear();
     }
 
-    virtual const DataSet &getPts(const Key& vk) override
+    const DataSet &getPts(const Key& vk) override
     {
         return tlPTData.getPts(vk);
     }
-    virtual const DataSet &getPts(const VersionedKey& vk) override
+    const DataSet &getPts(const VersionedKey& vk) override
     {
         return atPTData.getPts(vk);
     }
 
-    virtual const KeySet& getRevPts(const Data &data) override
+    const KeySet& getRevPts(const Data &data) override
     {
         assert(this->rev && "PersistentVersionedPTData::getRevPts: constructed without reverse PT support!");
         return tlPTData.getRevPts(data);
     }
-    virtual const VersionedKeySet& getVersionedKeyRevPts(const Data &data) override
+    const VersionedKeySet& getVersionedKeyRevPts(const Data &data) override
     {
         assert(this->rev && "PersistentVersionedPTData::getVersionedKeyRevPts: constructed without reverse PT support!");
         return atPTData.getRevPts(data);
     }
 
-    virtual bool addPts(const Key& k, const Data &element) override
+    bool addPts(const Key& k, const Data &element) override
     {
         return tlPTData.addPts(k, element);
     }
-    virtual bool addPts(const VersionedKey& vk, const Data &element) override
+    bool addPts(const VersionedKey& vk, const Data &element) override
     {
         return atPTData.addPts(vk, element);
     }
 
-    virtual bool unionPts(const Key& dstVar, const Key& srcVar) override
+    bool unionPts(const Key& dstVar, const Key& srcVar) override
     {
         return tlPTData.unionPts(dstVar, srcVar);
     }
-    virtual bool unionPts(const VersionedKey& dstVar, const VersionedKey& srcVar) override
+    bool unionPts(const VersionedKey& dstVar, const VersionedKey& srcVar) override
     {
         return atPTData.unionPts(dstVar, srcVar);
     }
-    virtual bool unionPts(const VersionedKey& dstVar, const Key& srcVar) override
+    bool unionPts(const VersionedKey& dstVar, const Key& srcVar) override
     {
         return atPTData.unionPtsFromId(dstVar, tlPTData.ptsMap[srcVar]);
     }
-    virtual bool unionPts(const Key& dstVar, const VersionedKey& srcVar) override
+    bool unionPts(const Key& dstVar, const VersionedKey& srcVar) override
     {
         return tlPTData.unionPtsFromId(dstVar, atPTData.ptsMap[srcVar]);
     }
-    virtual bool unionPts(const Key &dstVar, const DataSet &srcDataSet) override
+    bool unionPts(const Key &dstVar, const DataSet &srcDataSet) override
     {
         return tlPTData.unionPts(dstVar, srcDataSet);
     }
-    virtual bool unionPts(const VersionedKey &dstVar, const DataSet &srcDataSet) override
+    bool unionPts(const VersionedKey &dstVar, const DataSet &srcDataSet) override
     {
         return atPTData.unionPts(dstVar, srcDataSet);
     }
 
-    virtual void clearPts(const Key& k, const Data &element) override
+    void clearPts(const Key& k, const Data &element) override
     {
         tlPTData.clearPts(k, element);
     }
-    virtual void clearPts(const VersionedKey& vk, const Data &element) override
+    void clearPts(const VersionedKey& vk, const Data &element) override
     {
         atPTData.clearPts(vk, element);
     }
 
-    virtual void clearFullPts(const Key& k) override
+    void clearFullPts(const Key& k) override
     {
         tlPTData.clearFullPts(k);
     }
-    virtual void clearFullPts(const VersionedKey& vk) override
+    void clearFullPts(const VersionedKey& vk) override
     {
         atPTData.clearFullPts(vk);
     }
 
-    virtual void remapAllPts(void) override
+    void remapAllPts() override
     {
         // tlPTData and atPTData use the same cache.
         tlPTData.remapAllPts();
     }
 
-    virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
     {
         // Explicitly pass in true because if we call it with false,
         // we will double up on the cache, since it is shared with atPTData.
@@ -923,7 +923,7 @@ public:
         return allPts;
     }
 
-    virtual inline void dumpPTData() override
+    inline void dumpPTData() override
     {
         SVFUtil::outs() << "== Top-level points-to information\n";
         tlPTData.dumpPTData();
@@ -952,4 +952,4 @@ private:
 };
 
 } // End namespace SVF
-#endif  // MUTABLE_POINTSTO_H_
+#endif  // PERSISTENT_POINTSTO_H_
