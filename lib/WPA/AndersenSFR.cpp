@@ -45,7 +45,7 @@ void AndersenSFR::initialize()
     setDetectPWC(false);   // SCC will detect only copy edges
 
     if (!csc)
-        csc = new CSC(_graph, scc);
+        csc = new CSC(_graph, scc.get());
 
     /// Detect and collapse cycles consisting of only copy edges
     getSCCDetector()->find();

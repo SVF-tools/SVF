@@ -154,6 +154,8 @@ private:
     MRSet varKills;
     //@}
 
+    std::vector<std::unique_ptr<MRVer>> usedMRVers;
+
     /// Release the memory
     void destroy();
 

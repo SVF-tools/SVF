@@ -69,7 +69,7 @@ private:
     ProgSlice* _curSlice;		/// current program slice
     SVFGNodeSet sources;		/// source nodes
     SVFGNodeSet sinks;		/// source nodes
-    SaberCondAllocator* saberCondAllocator;
+    std::unique_ptr<SaberCondAllocator> saberCondAllocator;
     SVFGNodeToDPItemsMap nodeToDPItemsMap;	///<  record forward visited dpitems
     SVFGNodeSet visitedSet;	///<  record backward visited nodes
 
@@ -83,17 +83,14 @@ public:
     /// Constructor
     SrcSnkDDA() : _curSlice(nullptr), svfg(nullptr), ptaCallGraph(nullptr)
     {
-        saberCondAllocator = new SaberCondAllocator();
+        saberCondAllocator = std::make_unique<SaberCondAllocator>();
     }
     /// Destructor
-    virtual ~SrcSnkDDA()
+    ~SrcSnkDDA() override
     {
-        if (svfg != nullptr)
-            delete svfg;
         svfg = nullptr;
 
-        if (_curSlice != nullptr)
-            delete _curSlice;
+        delete _curSlice;
         _curSlice = nullptr;
 
         /// the following shared by multiple checkers, thus can not be released.
@@ -242,12 +239,12 @@ public:
     /// Get saber condition allocator
     SaberCondAllocator* getSaberCondAllocator() const
     {
-        return saberCondAllocator;
+        return saberCondAllocator.get();
     }
 
 protected:
     /// Forward traverse
-    virtual inline void FWProcessCurNode(const DPIm& item)
+    inline void FWProcessCurNode(const DPIm& item) override
     {
         const SVFGNode* node = getNode(item.getCurNodeID());
         if(isSink(node))
@@ -259,7 +256,7 @@ protected:
             addToCurForwardSlice(node);
     }
     /// Backward traverse
-    virtual inline void BWProcessCurNode(const DPIm& item)
+    inline void BWProcessCurNode(const DPIm& item) override
     {
         const SVFGNode* node = getNode(item.getCurNodeID());
         if(isInCurForwardSlice(node))
@@ -268,9 +265,9 @@ protected:
         }
     }
     /// Propagate information forward by matching context
-    virtual void FWProcessOutgoingEdge(const DPIm& item, SVFGEdge* edge);
+    void FWProcessOutgoingEdge(const DPIm& item, SVFGEdge* edge) override;
     /// Propagate information backward without matching context, as forward analysis already did it
-    virtual void BWProcessIncomingEdge(const DPIm& item, SVFGEdge* edge);
+    void BWProcessIncomingEdge(const DPIm& item, SVFGEdge* edge) override;
     /// Whether has been visited or not, in order to avoid recursion on SVFG
     //@{
     inline bool forwardVisited(const SVFGNode* node, const DPIm& item)
@@ -321,4 +318,4 @@ protected:
 
 } // End namespace SVF
 
-#endif /* SRCSNKDDA_H_ */
+#endif /* SRCSNKANALYSIS_H_ */

@@ -34,7 +34,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-SVFIR* SVFIR::pag = nullptr;
+std::unique_ptr<SVFIR> SVFIR::pag;
 
 SVFIR::SVFIR(bool buildFromFile) : IRGraph(buildFromFile), svfModule(nullptr), icfg(nullptr), chgraph(nullptr)
 {

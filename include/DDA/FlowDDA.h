@@ -158,7 +158,7 @@ public:
     //@}
 
     /// Union pts
-    virtual bool unionDDAPts(LocDPItem dpm, const PointsTo& targetPts) override
+    bool unionDDAPts(LocDPItem dpm, const PointsTo& targetPts) override
     {
         if (isTopLevelPtrStmt(dpm.getLoc())) return unionPts(dpm.getCurNodeID(), targetPts);
         else return dpmToADCPtSetMap[dpm] |= targetPts;

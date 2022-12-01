@@ -357,9 +357,11 @@ MRVer* MemSSA::newSSAName(const MemRegion* mr, MSSADEF* def)
 
     MRVERSION version = mr2CounterMap[mr];
     mr2CounterMap[mr] = version + 1;
-    MRVer* mrVer = new MRVer(mr, version, def);
-    mr2VerStackMap[mr].push_back(mrVer);
-    return mrVer;
+    auto mrVer = std::make_unique<MRVer>(mr, version, def);
+    auto mrVerPtr = mrVer.get();
+    mr2VerStackMap[mr].push_back(mrVerPtr);
+    usedMRVers.push_back(std::move(mrVer));
+    return mrVerPtr;
 }
 
 /*!

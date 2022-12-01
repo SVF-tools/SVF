@@ -115,12 +115,12 @@ void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
     {
     case PointerAnalysis::Cxt_DDA:
     {
-        _pta = new ContextDDA(pag, _client);
+        _pta = std::make_unique<ContextDDA>(pag, _client);
         break;
     }
     case PointerAnalysis::FlowS_DDA:
     {
-        _pta = new FlowDDA(pag, _client);
+        _pta = std::make_unique<FlowDDA>(pag, _client);
         break;
     }
     default:
@@ -137,14 +137,14 @@ void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
         ///initialize
         _pta->initialize();
         ///compute points-to
-        _client->answerQueries(_pta);
+        _client->answerQueries(_pta.get());
         ///finalize
         _pta->finalize();
         if(Options::PrintCPts)
             _pta->dumpCPts();
 
         if (_pta->printStat())
-            _client->performStat(_pta);
+            _client->performStat(_pta.get());
 
         if (Options::PrintQueryPts)
             printQueryPTS();

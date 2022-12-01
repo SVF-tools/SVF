@@ -89,8 +89,8 @@ public:
     }
 private:
     ThreadCallGraph* tcg;
-    TCT* tct;
-    MTAStat* stat;
+    std::unique_ptr<TCT> tct;
+    std::unique_ptr<MTAStat> stat;
     MHP* mhp;
     LockAnalysis* lsa;
 };

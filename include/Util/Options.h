@@ -156,7 +156,6 @@ public:
 
     // SVFG builder (SVFGBuilder.cpp)
     static const llvm::cl::opt<bool> SVFGWithIndirectCall;
-    static const llvm::cl::opt<bool> SingleVFG;
     static llvm::cl::opt<bool> OPTSVFG;
 
     static const llvm::cl::opt<std :: string> WriteSVFG;

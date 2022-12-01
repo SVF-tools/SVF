@@ -81,7 +81,7 @@ public:
     ICFG();
 
     /// Destructor
-    virtual ~ICFG();
+    ~ICFG() override;
 
     /// Get a ICFG node
     inline ICFGNode* getICFGNode(NodeID id) const

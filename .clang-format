@@ -1,0 +1,5 @@
+BasedOnStyle: Microsoft
+PointerAlignment: Left
+IndentPPDirectives: AfterHash
+AllowShortFunctionsOnASingleLine: Empty
+ColumnLimit: 120

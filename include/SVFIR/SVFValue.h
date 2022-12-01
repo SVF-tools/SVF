@@ -130,7 +130,7 @@ public:
         return reachableBBs;
     }
 
-    inline const void setReachableBBs(BBList& bbs)
+    inline void setReachableBBs(BBList& bbs)
     {
         reachableBBs = bbs;
     }
@@ -198,7 +198,7 @@ protected:
     }
     ///@}
 public:
-    SVFValue(void) = delete;
+    SVFValue() = delete;
     virtual ~SVFValue() = default;
 
     /// Get the type of this SVFValue
@@ -501,8 +501,8 @@ protected:
 
 public:
     SVFBasicBlock(const std::string& b, const SVFType* ty, const SVFFunction* f);
-    SVFBasicBlock(void) = delete;
-    virtual ~SVFBasicBlock();
+    SVFBasicBlock() = delete;
+    ~SVFBasicBlock() override;
 
     static inline bool classof(const SVFValue *node)
     {
@@ -1064,7 +1064,7 @@ public:
     {
         return CB->isVarArg();
     }
-    const bool isVirtualCall() const
+    bool isVirtualCall() const
     {
         return SVFUtil::isa<SVFVirtualCallInst>(CB);
     }

@@ -37,7 +37,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-FlowSensitive* FlowSensitive::fspta = nullptr;
+std::unique_ptr<FlowSensitive> FlowSensitive::fspta;
 
 /*!
  * Initialize analysis

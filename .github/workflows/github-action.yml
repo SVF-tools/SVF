@@ -15,6 +15,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04, macos-11]
+        include:
+          - os: [ubuntu-18.04]
+            sanitizer: address
     steps:
       # checkout the repo
       - uses: actions/checkout@v2
@@ -40,11 +43,11 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo $(pwd)
-          if [ "$RUNNER_OS" == "Linux" ]; then export SVF_COVERAGE=1; fi
+          if [ "${{matrix.sanitizer}}" != "" ]; then export SVF_SANITIZER="${{matrix.sanitizer}}"; fi
+          if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ]; then export SVF_COVERAGE=1; fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
-      # run ctest
-      # run ctest
+
       - name: ctest wpa
         working-directory: ${{github.workspace}}/Release-build
         run: 
@@ -87,7 +90,7 @@ jobs:
           
       - name: ctest performance tests on cruxbc
         working-directory: ${{github.workspace}}/Release-build
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.sanitizer != 'address'
         run: |
           ctest -R diff-perf-cruxbc -VV
           git pull || echo "Skipping git pull." # Git pull fails on pull request
@@ -98,9 +101,15 @@ jobs:
           time pip3 install -r ./requirements.txt
           time python3 perf_compare.py -d ./perf_history/ --tablefmt grid --exit-on-error --only-show-changed --threshold-percentage 80
 
-      - name: create-coverage-report-and-remove-system-files
+      - name: ctest performance tests on cruxbc (small)
         working-directory: ${{github.workspace}}/Release-build
         if: runner.os == 'Linux'
+        run:
+          ctest -R diff-perf-cruxbc-small -VV
+
+      - name: create-coverage-report-and-remove-system-files
+        working-directory: ${{github.workspace}}/Release-build
+        if: runner.os == 'Linux' && matrix.sanitizer == ''
         run: | 
           lcov --capture --directory ./ --output-file coverage.info
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
