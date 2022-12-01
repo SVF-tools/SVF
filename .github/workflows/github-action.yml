@@ -26,7 +26,7 @@ jobs:
         if: runner.os == 'macOS'
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: 12.5.1
+          xcode-version: 14.1.0
       - name: mac-setup-workaround
         if: runner.os == 'macOS'
         run: ln -sfn /Applications/Xcode_14.1.app /Applications/Xcode.app
