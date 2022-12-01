@@ -162,7 +162,7 @@ void BVDataPTAImpl::writeObjVarToFile(const string& filename)
 {
     outs() << "Storing ObjVar to '" << filename << "'...";
     error_code err;
-    std::fstream f(filename.c_str(), std::ios_base::app);
+    std::fstream f(filename.c_str(), std::ios_base::out);
     if (!f.good())
     {
         outs() << "  error opening file for writing!\n";
@@ -249,6 +249,19 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     }
 
     f << "------\n";
+
+    // Write BaseNodes insensitivity to file
+    NodeBS NodeIDs;
+    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
+    {
+        PAGNode* pagNode = it->second;
+        if (!isa<ObjVar>(pagNode)) continue;
+        NodeID n = pag->getBaseObjVar(it->first);
+        if (NodeIDs.test(n)) continue;
+        f << n << " ";
+        f << isFieldInsensitive(n) << "\n";
+        NodeIDs.set(n);
+    }
 
     // Job finish and close file
     f.close();
@@ -362,7 +375,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     while (F.good())
     {
         getline(F, line);
-        if (line.empty() || line == "------")
+        if (line.empty())
             break;
         // Parse a single line in the form of "baseNodeID insensitive"
         istringstream ss(line);

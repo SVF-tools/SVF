@@ -150,7 +150,6 @@ void AndersenBase::analyze()
     if (!Options::WriteAnder.empty())
     {
         this->writeToFile(Options::WriteAnder);
-        this->writeObjVarToFile(Options::WriteAnder);
     }
     
     if (!readResultsFromFile)
