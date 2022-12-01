@@ -191,7 +191,7 @@ void BVDataPTAImpl::writeObjVarToFile(const string& filename)
         outs() << "\n";
         return;
     }
-    
+
 }
 
 /*!
