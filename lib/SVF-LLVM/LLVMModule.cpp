@@ -83,10 +83,15 @@ LLVMModuleSet::~LLVMModuleSet()
 
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
+    double startSVFModuleTime = SVFStat::getClk(true);
     svfModule = std::make_unique<SVFModule>(mod.getModuleIdentifier());
     modules.emplace_back(mod);
 
     build();
+    double endSVFModuleTime = SVFStat::getClk(true);
+    SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
+
+    build_symbol_table();
 
     return svfModule.get();
 }
@@ -109,18 +114,21 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     double endSVFModuleTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
 
-    double startSymInfoTime = SVFStat::getClk(true);
-    if (!SVFModule::pagReadFromTXT())
-    {
-        /// building symbol table
-        DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableBuilder builder(symInfo);
-        builder.buildMemModel(svfModule.get());
-    }
-    double endSymInfoTime = SVFStat::getClk(true);
-    SVFStat::timeOfBuildingSymbolTable = (endSymInfoTime - startSymInfoTime)/TIMEINTERVAL;
+    build_symbol_table();
 
     return svfModule.get();
+}
+void LLVMModuleSet::build_symbol_table() const {
+  double startSymInfoTime = SVFStat::getClk(true);
+  if (!SVFModule::pagReadFromTXT())
+  {
+      /// building symbol table
+      DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
+      SymbolTableBuilder builder(symInfo);
+      builder.buildMemModel(svfModule.get());
+  }
+  double endSymInfoTime = SVFStat::getClk(true);
+  SVFStat::timeOfBuildingSymbolTable = (endSymInfoTime - startSymInfoTime)/TIMEINTERVAL;
 }
 
 void LLVMModuleSet::build()
