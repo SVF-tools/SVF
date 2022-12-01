@@ -208,7 +208,7 @@ private:
 public:
     /// Interface expose to users of our pointer analysis, given Value infos
     AliasResult alias(const SVFValue* V1,
-                              const SVFValue* V2) override;
+                      const SVFValue* V2) override;
 
     /// Interface expose to users of our pointer analysis, given PAGNodeID
     AliasResult alias(NodeID node1, NodeID node2) override;

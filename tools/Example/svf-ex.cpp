@@ -185,7 +185,7 @@ int main(int argc, char ** argv)
     /// Sparse value-flow graph (SVFG)
     SVFGBuilder svfBuilder(true);
     //SVFG* svfg =
-        svfBuilder.buildFullSVFG(ander);
+    svfBuilder.buildFullSVFG(ander);
 
     /// Collect uses of an LLVM Value
     /// traverseOnVFG(svfg, value);

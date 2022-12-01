@@ -43,8 +43,8 @@ PointsTo::PointsTo(const PointsTo &pt)
 }
 
 PointsTo::PointsTo(PointsTo &&pt)
- noexcept     : type(pt.type), nodeMapping(std::move(pt.nodeMapping)),
-      reverseNodeMapping(std::move(pt.reverseNodeMapping))
+noexcept     : type(pt.type), nodeMapping(std::move(pt.nodeMapping)),
+    reverseNodeMapping(std::move(pt.reverseNodeMapping))
 {
     if (type == SBV) new (&sbv) SparseBitVector<>(std::move(pt.sbv));
     else if (type == CBV) new (&cbv) CoreBitVector(std::move(pt.cbv));
@@ -66,7 +66,7 @@ PointsTo::~PointsTo()
 PointsTo &PointsTo::operator=(const PointsTo &rhs)
 {
     if (this == &rhs)
-      return *this;
+        return *this;
     this->type = rhs.type;
     this->nodeMapping = rhs.nodeMapping;
     this->reverseNodeMapping = rhs.reverseNodeMapping;
@@ -81,7 +81,8 @@ PointsTo &PointsTo::operator=(const PointsTo &rhs)
 }
 
 PointsTo &PointsTo::operator=(PointsTo &&rhs)
- noexcept {
+noexcept
+{
     this->type = rhs.type;
     this->nodeMapping = rhs.nodeMapping;
     this->reverseNodeMapping = rhs.reverseNodeMapping;
@@ -430,7 +431,7 @@ PointsTo::PointsToIterator::PointsToIterator(const PointsToIterator &pt)
 }
 
 PointsTo::PointsToIterator::PointsToIterator(PointsToIterator &&pt)
- noexcept     : pt(pt.pt)
+noexcept     : pt(pt.pt)
 {
     if (this->pt->type == PointsTo::Type::SBV)
     {

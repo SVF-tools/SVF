@@ -987,27 +987,30 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
     }
     else
     {
-        if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T)) {
-          stinfo = collectArrayInfo(aty);
-          Type2TypeInfo[T] = std::unique_ptr<StInfo>(stinfo);
+        if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T))
+        {
+            stinfo = collectArrayInfo(aty);
+            Type2TypeInfo[T] = std::unique_ptr<StInfo>(stinfo);
         }
-        else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T)) {
-          u32_t nf;
-          stinfo = collectStructInfo(sty, nf);
-          Type2TypeInfo[T] = std::unique_ptr<StInfo>(stinfo);
-          //Record the size of the complete struct and update max_struct.
-          if (nf > symInfo->maxStSize)
-          {
-            symInfo->maxStruct = getSVFType(sty);
-            symInfo->maxStSize = nf;
-          }
+        else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T))
+        {
+            u32_t nf;
+            stinfo = collectStructInfo(sty, nf);
+            Type2TypeInfo[T] = std::unique_ptr<StInfo>(stinfo);
+            //Record the size of the complete struct and update max_struct.
+            if (nf > symInfo->maxStSize)
+            {
+                symInfo->maxStruct = getSVFType(sty);
+                symInfo->maxStSize = nf;
+            }
         }
-        else {
-          /// The simple type info should not be processed before
-          auto stinfo_own = std::make_unique<StInfo>(1);
-          stinfo = stinfo_own.get();
-          Type2TypeInfo[T] = std::move(stinfo_own);
-          collectSimpleTypeInfo(stinfo, T);
+        else
+        {
+            /// The simple type info should not be processed before
+            auto stinfo_own = std::make_unique<StInfo>(1);
+            stinfo = stinfo_own.get();
+            Type2TypeInfo[T] = std::move(stinfo_own);
+            collectSimpleTypeInfo(stinfo, T);
         }
 
 

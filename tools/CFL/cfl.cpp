@@ -75,7 +75,7 @@ int main(int argc, char ** argv)
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
     delete[] arg_value;
-    
+
     return 0;
 
 }
