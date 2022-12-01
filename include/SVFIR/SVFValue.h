@@ -130,7 +130,7 @@ public:
         return reachableBBs;
     }
 
-    inline const void setReachableBBs(BBList& bbs)
+    inline void setReachableBBs(BBList& bbs)
     {
         reachableBBs = bbs;
     }
@@ -1064,7 +1064,7 @@ public:
     {
         return CB->isVarArg();
     }
-    const bool isVirtualCall() const
+    bool isVirtualCall() const
     {
         return SVFUtil::isa<SVFVirtualCallInst>(CB);
     }
