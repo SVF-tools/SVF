@@ -141,9 +141,8 @@ public:
     /// Interface for analysis result storage on filesystem.
     //@{
     virtual void writeToFile(const std::string& filename);
+    virtual void writeObjVarToFile(const std::string& filename);
     virtual bool readFromFile(const std::string& filename);
-    virtual void writeToModule();
-    virtual bool readFromModule();
     //@}
 
 protected:
