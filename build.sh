@@ -7,11 +7,6 @@
 set -e # exit on first error
 
 jobs=4
-#if [[ -z CMAKE_BUILD_PARALLEL_LEVEL ]]; then
-#    jobs=4
-#else
-#    jobs=${CMAKE_BUILD_PARALLEL_LEVEL}
-#fi
 
 #########
 # VARs and Links
