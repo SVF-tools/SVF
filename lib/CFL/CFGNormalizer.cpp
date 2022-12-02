@@ -104,9 +104,8 @@ void CFGNormalizer::ebnf_bin(CFLGrammar *grammar)
         {
             if (rule.size() < 3) continue;
 
-            GrammarBase::Production long_run = rule;
-            GrammarBase::Symbol first = long_run[0];
-            long_run.erase(long_run.begin());
+            GrammarBase::Symbol first = rule[0];
+            GrammarBase::Production long_run(rule.begin() + 1, rule.end());
             auto it = grammar->getRawProductions()[head.first].find(rule);
             grammar->getRawProductions()[head.first].erase(it);
             GrammarBase::Symbol X = check_head(new_grammar, long_run);
