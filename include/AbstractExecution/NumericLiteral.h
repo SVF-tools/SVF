@@ -187,7 +187,7 @@ public:
         return lhs.geq(rhs);
     }
 
-    friend NumericLiteral operator+(const NumericLiteral &lhs, const NumericLiteral &rhs)
+    friend NumericLiteral operator+(const NumericLiteral& lhs, const NumericLiteral& rhs)
     {
         if (!lhs.is_infinity() && !rhs.is_infinity())
             return lhs.getNumeral() + rhs.getNumeral();
@@ -198,7 +198,10 @@ public:
         else if (eq(lhs, rhs))
             return lhs;
         else
+        {
             assert(false && "undefined operation +oo + -oo");
+            abort();
+        }
     }
 
     friend NumericLiteral operator-(const NumericLiteral &lhs, const NumericLiteral &rhs)
@@ -212,12 +215,16 @@ public:
         else if (!eq(lhs, rhs))
             return lhs;
         else
+        {
             assert(false && "undefined operation +oo - +oo");
+            abort();
+        }
     }
 
     friend NumericLiteral operator*(const NumericLiteral &lhs, const NumericLiteral &rhs)
     {
-        if (lhs.is_zero() || rhs.is_zero()) return 0;
+        if (lhs.is_zero() || rhs.is_zero())
+            return 0;
         else if (lhs.is_infinity() && rhs.is_infinity())
             return eq(lhs, rhs) ? plus_infinity() : minus_infinity();
         else if (lhs.is_infinity())
@@ -230,7 +237,12 @@ public:
 
     friend NumericLiteral operator/(const NumericLiteral &lhs, const NumericLiteral &rhs)
     {
-        if (rhs.is_zero()) assert(false && "divide by zero");
+        if (rhs.is_zero())
+        {
+
+            assert(false && "divide by zero");
+            abort();
+        }
         else if (!lhs.is_infinity() && !rhs.is_infinity())
             return lhs.getNumeral() / rhs.getNumeral();
         else if (!lhs.is_infinity() && rhs.is_infinity())
@@ -244,7 +256,11 @@ public:
 
     friend NumericLiteral operator%(const NumericLiteral &lhs, const NumericLiteral &rhs)
     {
-        if (rhs.is_zero()) assert(false && "divide by zero");
+        if (rhs.is_zero())
+        {
+            assert(false && "divide by zero");
+            abort();
+        }
         else if (!lhs.is_infinity() && !rhs.is_infinity())
             return (s32_t) lhs.getNumeral() % (s32_t) rhs.getNumeral();
         else if (!lhs.is_infinity() && rhs.is_infinity())
