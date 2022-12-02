@@ -6,11 +6,12 @@
 # Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
 set -e # exit on first error
 
-if [[ -z CMAKE_BUILD_PARALLEL_LEVEL ]]; then
-    jobs=4
-else
-    jobs=${CMAKE_BUILD_PARALLEL_LEVEL}
-fi
+jobs=4
+#if [[ -z CMAKE_BUILD_PARALLEL_LEVEL ]]; then
+#    jobs=4
+#else
+#    jobs=${CMAKE_BUILD_PARALLEL_LEVEL}
+#fi
 
 #########
 # VARs and Links
