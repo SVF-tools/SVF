@@ -21,9 +21,4 @@ file (GLOB SOURCES
 add_library(SvfCore STATIC ${SOURCES})
 target_link_libraries(SvfCore ${Z3_LIBRARIES})
 
-
-if(DEFINED IN_SOURCE_BUILD)
-    add_dependencies(SvfCore intrinsics_gen)
-endif()
-
 add_subdirectory(SVF-LLVM)
