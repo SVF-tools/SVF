@@ -18,8 +18,11 @@ file (GLOB CORE_LIB_SOURCES
         FastCluster/*.cpp
 )
 
-add_library(SvfCore STATIC ${CORE_LIB_SOURCES})
-target_link_libraries(SvfCore ${Z3_LIBRARIES})
+# This is a workaround. Refer to this link for detail:
+# https://stackoverflow.com/questions/68864536/cmake-linking-static-libraries-in-different-subdirectories-into-one-single-stati
+add_library(SvfCoreObj OBJECT ${CORE_LIB_SOURCES})
+add_library(SvfCore STATIC)
+target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES} SvfCoreObj)
 
 # Svf containes LLVM Libs
 
@@ -44,7 +47,8 @@ endif()
 
 file (GLOB LLVM_FE_SOURCES ./SVF-LLVM/*.cpp)
 
-add_llvm_library(Svf STATIC ${LLVM_FE_SOURCES} LINK_LIBS SvfCore)
+add_llvm_library(Svf STATIC ${LLVM_FE_SOURCES})
+target_link_libraries(Svf PUBLIC ${Z3_LIBRARIES} SvfCoreObj)
 
 if(DEFINED IN_SOURCE_BUILD)
     add_dependencies(Svf intrinsics_gen)
