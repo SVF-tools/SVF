@@ -15,11 +15,11 @@ echo "SVF_DIR=$SVF_DIR"
 
 function set_llvm {
     # LLVM_DIR already set
-    [ -n "$LLVM_DIR" ] && return 0
+    [[ -n "$LLVM_DIR" ]] && return 0
 
     # use local download directory
     LLVM_DIR="$SVF_DIR/llvm-13.0.0.obj"
-    [ -d "$LLVM_DIR" ] && return 0
+    [[ -d "$LLVM_DIR" ]] && return 0
 
     # ... otherwise don't set LLVM_DIR
     return 1
@@ -36,11 +36,11 @@ fi
 
 function set_z3 {
     # Z3_DIR already set
-    [ -n "$Z3_DIR" ] && return 0
+    [[ -n "$Z3_DIR" ]] && return 0
 
     # use local download directory
     Z3_DIR="$SVF_DIR/z3.obj"
-    [ -d "$Z3_DIR" ] && return 0
+    [[ -d "$Z3_DIR" ]] && return 0
 
     # ... otherwise don't set Z3_DIR
     return 1
@@ -57,13 +57,13 @@ fi
 #########
 #export PATH FOR SVF and LLVM executables
 #########
-if [[ $1 == 'debug' ]]
-then
-PTAOBJTY='Debug'
+if [[ $1 =~ ^[Dd]ebug$ ]]; then
+    PTAOBJTY='Debug'
 else
-PTAOBJTY='Release'
+    PTAOBJTY='Release'
 fi
-Build=$PTAOBJTY'-build'
+
+Build="${PTAOBJTY}-build"
 
 export PATH=$LLVM_DIR/bin:$PATH
 PTABIN=$SVF_DIR/$Build/bin

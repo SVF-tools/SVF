@@ -83,10 +83,15 @@ LLVMModuleSet::~LLVMModuleSet()
 
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
+    double startSVFModuleTime = SVFStat::getClk(true);
     svfModule = std::make_unique<SVFModule>(mod.getModuleIdentifier());
     modules.emplace_back(mod);
 
     build();
+    double endSVFModuleTime = SVFStat::getClk(true);
+    SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
+
+    build_symbol_table();
 
     return svfModule.get();
 }
@@ -109,6 +114,12 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     double endSVFModuleTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
 
+    build_symbol_table();
+
+    return svfModule.get();
+}
+void LLVMModuleSet::build_symbol_table() const
+{
     double startSymInfoTime = SVFStat::getClk(true);
     if (!SVFModule::pagReadFromTXT())
     {
@@ -119,8 +130,6 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     }
     double endSymInfoTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingSymbolTable = (endSymInfoTime - startSymInfoTime)/TIMEINTERVAL;
-
-    return svfModule.get();
 }
 
 void LLVMModuleSet::build()

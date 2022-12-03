@@ -45,7 +45,7 @@ class ConstraintGraph :  public GenericGraph<ConstraintNode,ConstraintEdge>
 {
 
 public:
-    typedef Map<NodeID, ConstraintNode *> ConstraintNodeIDToNodeMapTy;
+    typedef OrderedMap<NodeID, ConstraintNode *> ConstraintNodeIDToNodeMapTy;
     typedef ConstraintEdge::ConstraintEdgeSetTy::iterator ConstraintNodeIter;
     typedef Map<NodeID, NodeID> NodeToRepMap;
     typedef Map<NodeID, NodeBS> NodeToSubsMap;

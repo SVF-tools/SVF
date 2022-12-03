@@ -57,7 +57,7 @@ public:
         FULLSVFG, PTRONLYSVFG, FULLSVFG_OPT, PTRONLYSVFG_OPT
     };
 
-    typedef Map<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
+    typedef OrderedMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
     typedef Set<VFGNode*> VFGNodeSet;
     typedef Map<const PAGNode*, NodeID> PAGNodeToDefMapTy;
     typedef Map<std::pair<NodeID,const CallICFGNode*>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
