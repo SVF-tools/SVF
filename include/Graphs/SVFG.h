@@ -173,6 +173,12 @@ public:
         return getSVFGNode(getDef(pagNode));
     }
 
+    /// Given a pagNode, return whether it has definition site
+    inline bool hasDefSVFGNode(const PAGNode* pagNode) const
+    {
+        return hasDef(pagNode) && hasSVFGNode(getDef(pagNode));
+    }
+
     /// Perform statistics
     void performStat();
 
