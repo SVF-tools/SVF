@@ -26,7 +26,7 @@ protected:
     template <typename T>
     using OptionPossibility = std::tuple<T, std::string, std::string>;
 
-public:
+protected:
     OptionBase(std::string name, std::string description)
         : OptionBase(name, description, {})
     {
@@ -66,6 +66,7 @@ public:
     /// Can this option be set?
     virtual bool canSet(void) const = 0;
 
+public:
     /// Parse all constructed OptionBase children, returning positional arguments
     /// in the order they appeared.
     static std::vector<std::string> parseOptions(int argc, char *argv[], std::string description, std::string callFormat)
