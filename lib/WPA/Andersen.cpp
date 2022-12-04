@@ -79,7 +79,7 @@ void AndersenBase::initialize()
     setGraph(consCG);
     /// Create statistic class
     stat = new AndersenStat(this);
-    if (Options::ConsCGDotGraph)
+    if (Options::ConsCGDotGraph())
         consCG->dump("consCG_initial");
 }
 
@@ -89,10 +89,10 @@ void AndersenBase::initialize()
 void AndersenBase::finalize()
 {
     /// dump constraint graph if PAGDotGraph flag is enabled
-    if (Options::ConsCGDotGraph)
+    if (Options::ConsCGDotGraph())
         consCG->dump("consCG_final");
 
-    if (Options::PrintCGGraph)
+    if (Options::PrintCGGraph())
         consCG->print();
     BVDataPTAImpl::finalize();
 }
@@ -106,22 +106,22 @@ void AndersenBase::analyze()
     initialize();
 
     bool readResultsFromFile = false;
-    if(!Options::ReadAnder.empty())
+    if(!Options::ReadAnder().empty())
     {
-        readResultsFromFile = this->readFromFile(Options::ReadAnder);
+        readResultsFromFile = this->readFromFile(Options::ReadAnder());
         // Finalize the analysis
         PointerAnalysis::finalize();
     }
 
-    if (!Options::WriteAnder.empty())
-        this->writeObjVarToFile(Options::WriteAnder);
+    if (!Options::WriteAnder().empty())
+        this->writeObjVarToFile(Options::WriteAnder());
 
     if(!readResultsFromFile)
     {
         // Start solving constraints
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
-        bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit);
+        bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
 
         initWorklist();
         do
@@ -147,9 +147,9 @@ void AndersenBase::analyze()
 
     }
 
-    if (!Options::WriteAnder.empty())
+    if (!Options::WriteAnder().empty())
     {
-        this->writeToFile(Options::WriteAnder);
+        this->writeToFile(Options::WriteAnder());
     }
 
     if (!readResultsFromFile)
@@ -196,7 +196,7 @@ void Andersen::initialize()
     resetData();
     AndersenBase::initialize();
 
-    if (Options::ClusterAnder) cluster();
+    if (Options::ClusterAnder()) cluster();
 
     /// Initialize worklist
     processAllAddr();
@@ -209,7 +209,7 @@ void Andersen::finalize()
 {
     // TODO: check -stat too.
     // TODO: broken
-    if (Options::ClusterAnder)
+    if (Options::ClusterAnder())
     {
         Map<std::string, std::string> stats;
         const PTDataTy *ptd = getPTDataTy();
@@ -844,7 +844,7 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
 
 void Andersen::cluster(void) const
 {
-    assert(Options::MaxFieldLimit == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insesnsitive analysis");
+    assert(Options::MaxFieldLimit() == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insesnsitive analysis");
     Steensgaard *steens = Steensgaard::createSteensgaard(pag);
     std::vector<std::pair<unsigned, unsigned>> keys;
     for (SVFIR::iterator pit = pag->begin(); pit != pag->end(); ++pit)

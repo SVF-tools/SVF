@@ -835,7 +835,7 @@ void VFG::connectDirectVFGEdges()
     }
 
     /// connect direct value-flow edges (parameter passing) for thread fork/join
-    if(Options::EnableThreadCallGraph)
+    if(Options::EnableThreadCallGraph())
     {
         /// add fork edge
         SVFStmt::SVFStmtSetTy& forks = getPAGEdgeSet(SVFStmt::ThreadFork);

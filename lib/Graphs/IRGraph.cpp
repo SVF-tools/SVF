@@ -144,7 +144,7 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
     static bool isNodeHidden(SVFVar *node)
     {
 #endif
-        if (Options::ShowHiddenNode) return false;
+        if (Options::ShowHiddenNode()) return false;
         else return node->isIsolatedNode();
     }
 

@@ -49,11 +49,11 @@ MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA)
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
            && "please specify a pointer analysis");
 
-    if (Options::MemPar == MemPartition::Distinct)
+    if (Options::MemPar() == MemPartition::Distinct)
         mrGen = new DistinctMRG(pta, ptrOnlyMSSA);
-    else if (Options::MemPar == MemPartition::IntraDisjoint)
+    else if (Options::MemPar() == MemPartition::IntraDisjoint)
         mrGen = new IntraDisjointMRG(pta, ptrOnlyMSSA);
-    else if (Options::MemPar == MemPartition::InterDisjoint)
+    else if (Options::MemPar() == MemPartition::InterDisjoint)
         mrGen = new InterDisjointMRG(pta, ptrOnlyMSSA);
     else
         assert(false && "unrecognised memory partition strategy");
@@ -585,7 +585,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
             fit != efit; ++fit)
     {
         const SVFFunction* fun = *fit;
-        if(Options::MSSAFun!="" && Options::MSSAFun!=fun->getName())
+        if(Options::MSSAFun()!="" && Options::MSSAFun()!=fun->getName())
             continue;
 
         Out << "==========FUNCTION: " << fun->getName() << "==========\n";

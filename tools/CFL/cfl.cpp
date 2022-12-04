@@ -35,29 +35,21 @@
 using namespace llvm;
 using namespace SVF;
 
-static cl::opt<bool>
-StandardCompileOpts("std-compile-opts",
-                    cl::desc("Include the standard compile time optimizations"));
-
-static llvm::cl::opt<std::string> InputFilename(llvm::cl::Positional,
-        llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
-
 int main(int argc, char ** argv)
 {
-    int arg_num = 0;
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
-    LLVMUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
-    cl::ParseCommandLineOptions(arg_num, arg_value,
-                                "CFL Reachability Analysis\n");
+    moduleNameVec = OptionBase::parseOptions(
+        argc, argv, "CFL Reachability Analysis", "[options] <input-bitcode...>"
+    );
 
-    if (Options::WriteAnder == "ir_annotator")
+    if (Options::WriteAnder() == "ir_annotator")
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
 
     SVFIR* svfir = nullptr;
-    if (Options::CFLGraph.empty())
+    if (Options::CFLGraph().empty())
     {
         SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
         SVFIRBuilder builder(svfModule);
@@ -65,7 +57,7 @@ int main(int argc, char ** argv)
     }  // if no dot form CFLGraph is specified, we use svfir from .bc.
 
     std::unique_ptr<CFLBase> cfl;
-    if (Options::CFLSVFG)
+    if (Options::CFLSVFG())
         cfl = std::make_unique<CFLVF>(svfir);
     else
         cfl = std::make_unique<CFLAlias>(svfir); // if no svfg is specified, we use CFLAlias as the default one.

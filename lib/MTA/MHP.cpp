@@ -134,7 +134,7 @@ void MHP::analyzeInterleaving()
     /// update non-candidate functions' interleaving
     updateNonCandidateFunInterleaving();
 
-    if (Options::PrintInterLev)
+    if (Options::PrintInterLev())
         printInterleaving();
 }
 

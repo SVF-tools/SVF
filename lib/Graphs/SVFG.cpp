@@ -226,9 +226,9 @@ void SVFG::buildSVFG()
     DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
 
     stat->startClk();
-    if (!Options::ReadSVFG.empty())
+    if (!Options::ReadSVFG().empty())
     {
-        readFile(Options::ReadSVFG);
+        readFile(Options::ReadSVFG());
     }
     else
     {
@@ -240,8 +240,8 @@ void SVFG::buildSVFG()
         stat->indVFEdgeStart();
         connectIndirectSVFGEdges();
         stat->indVFEdgeEnd();
-        if (!Options::WriteSVFG.empty())
-            writeToFile(Options::WriteSVFG);
+        if (!Options::WriteSVFG().empty())
+            writeToFile(Options::WriteSVFG());
     }
 }
 
@@ -788,7 +788,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
     static bool isNodeHidden(SVFGNode *node)
     {
 #endif
-        if (Options::ShowHiddenNode) return false;
+        if (Options::ShowHiddenNode()) return false;
         else return node->getInEdges().empty() && node->getOutEdges().empty();
     }
 

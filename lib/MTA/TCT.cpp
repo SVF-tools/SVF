@@ -429,7 +429,7 @@ void TCT::build()
 
     collectMultiForkedThreads();
 
-    if (Options::TCTDotGraph)
+    if (Options::TCTDotGraph())
     {
         print();
         dump("tct");
@@ -511,7 +511,7 @@ void TCT::dumpCxt(CallStrCxt& cxt)
  */
 void TCT::dump(const std::string& filename)
 {
-    if (Options::TCTDotGraph)
+    if (Options::TCTDotGraph())
         GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 

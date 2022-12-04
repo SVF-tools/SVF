@@ -51,7 +51,7 @@ void CFLBase::buildCFLGrammar()
     // Start building grammar
     double start = stat->getClk(true);
 
-    GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename);
+    GrammarBuilder grammarBuilder = GrammarBuilder(Options::GrammarFilename());
     grammarBase = grammarBuilder.build();
 
     // Get time of build grammar
@@ -65,18 +65,18 @@ void CFLBase::buildCFLGraph()
     double start = stat->getClk(true);
 
     AliasCFLGraphBuilder cflGraphBuilder = AliasCFLGraphBuilder();
-    if (Options::CFLGraph.empty()) // built from svfir
+    if (Options::CFLGraph().empty()) // built from svfir
     {
         PointerAnalysis::initialize();
         ConstraintGraph *consCG = new ConstraintGraph(svfir);
-        if (Options::PEGTransfer)
+        if (Options::PEGTransfer())
             graph = cflGraphBuilder.buildBiPEGgraph(consCG, grammarBase->getStartKind(), grammarBase, svfir);
         else
             graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
         delete consCG;
     }
     else
-        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph, grammarBase);
+        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph(), grammarBase);
 
     // Check CFL Graph and Grammar are accordance with grammar
     CFLGramGraphChecker cflChecker = CFLGramGraphChecker();

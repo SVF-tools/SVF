@@ -40,7 +40,7 @@ using namespace SVFUtil;
 
 SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta)
 {
-    if(Options::OPTSVFG)
+    if(Options::OPTSVFG())
         return build(pta, VFG::PTRONLYSVFG_OPT);
     else
         return build(pta, VFG::PTRONLYSVFG);
@@ -74,13 +74,13 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
     buildSVFG();
 
     /// Update call graph using pre-analysis results
-    if(Options::SVFGWithIndirectCall || SVFGWithIndCall)
+    if(Options::SVFGWithIndirectCall() || SVFGWithIndCall)
         svfg->updateCallGraph(pta);
 
     if(svfg->getMSSA()->getPTA()->printStat())
         svfg->performStat();
 
-    if(Options::DumpVFG)
+    if(Options::DumpVFG())
         svfg->dump("svfg_final");
 
     return svfg.get();
@@ -114,7 +114,7 @@ std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyM
     }
 
     mssa->performStat();
-    if (Options::DumpMSSA)
+    if (Options::DumpMSSA())
     {
         mssa->dumpMSSA();
     }
