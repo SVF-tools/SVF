@@ -1,6 +1,8 @@
 #ifndef COMMANDLINE_H_
 #define COMMANDLINE_H_
 
+#include <algorithm>
+#include <assert>
 #include <string>
 #include <tuple>
 #include <type_traits>
