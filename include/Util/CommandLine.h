@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
+#include <limits>
 #include <map>
 #include <vector>
 #include <cstdlib>
