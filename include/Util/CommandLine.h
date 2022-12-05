@@ -40,13 +40,13 @@ protected:
     {
         assert(name[0] != '-' && "OptionBase: name starts with '-'");
         assert(!isHelpName(name) && "OptionBase: reserved help name");
-        assert(options.find(name) == options.end() && "OptionBase: duplicate option");
+        assert(getOptionsMap().find(name) == getOptionsMap().end() && "OptionBase: duplicate option");
 
         // Types with empty names (i.e., OptionMultiple) can handle things themselves.
         if (!name.empty())
         {
             // Standard name=value option.
-            options[name] = this;
+            getOptionsMap()[name] = this;
         }
     }
 
@@ -177,7 +177,7 @@ private:
     {
         // Determine longest option to split into two columns: options and descriptions.
         unsigned longest = 0;
-        for (const std::pair<std::string, OptionBase *> nopt : options)
+        for (const std::pair<std::string, OptionBase *> nopt : getOptionsMap())
         {
             const std::string name = std::get<0>(nopt);
             const OptionBase *option = std::get<1>(nopt);
@@ -210,7 +210,7 @@ private:
 
         // Required as we have OptionMultiples doing a many-to-one in options.
         std::unordered_set<const OptionBase *> handled;
-        for (const std::pair<std::string, OptionBase *> nopt : options)
+        for (const std::pair<std::string, OptionBase *> nopt : getOptionsMap())
         {
             const std::string name = std::get<0>(nopt);
             const OptionBase *option = std::get<1>(nopt);
@@ -268,8 +268,8 @@ private:
     /// Find option based on name in options map. Returns nullptr if not found.
     static OptionBase *getOption(const std::string optName)
     {
-        auto optIt = options.find(optName);
-        if (optIt == options.end()) return nullptr;
+        auto optIt = getOptionsMap().find(optName);
+        if (optIt == getOptionsMap().end()) return nullptr;
         else return optIt->second;
     }
 
@@ -284,6 +284,7 @@ private:
     /// Returns whether name is one of the reserved help options.
     static bool isHelpName(const std::string name)
     {
+        static std::vector<std::string> helpNames = {"help", "h", "-help"};
         return std::find(helpNames.begin(), helpNames.end(), name) != helpNames.end();
     }
 
@@ -301,20 +302,21 @@ protected:
         return possibilityDescriptions;
     }
 
+    /// Not unordered map so we can have sorted names when building the usage string.
+    /// Map of option names to their object.
+    static std::map<std::string, OptionBase *> &getOptionsMap(void)
+    {
+        // Not static member to avoid initialisation order problems.
+        static std::map<std::string, OptionBase *> options;
+        return options;
+    }
+
 
 protected:
     std::string name;
     std::string description;
     /// For when we have possibilities like in an OptionMap.
     PossibilityDescriptions possibilityDescriptions;
-
-    /// Not unordered map so we can have sorted names when building the usage string.
-    /// Map of option names to their object.
-    static std::map<std::string, OptionBase *> options;
-
-private:
-    /// Names of the help options. They are reserved.
-    static std::vector<std::string> helpNames;
 };
 
 /// General -name=value options.
@@ -465,7 +467,7 @@ public:
         for (const OptionPossibility<T> &op : possibilities)
         {
             std::string possibilityName = std::get<1>(op);
-            options[possibilityName] = this;
+            getOptionsMap()[possibilityName] = this;
         }
     }
 
