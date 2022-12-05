@@ -2,7 +2,7 @@
 #define COMMANDLINE_H_
 
 #include <algorithm>
-#include <assert>
+#include <cassert>
 #include <string>
 #include <tuple>
 #include <type_traits>
