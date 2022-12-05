@@ -63,8 +63,8 @@ int main(int argc, char ** argv)
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
-        argc, argv, "Source-Sink Bug Detector", "[options] <input-bitcode...>"
-    );
+                        argc, argv, "Source-Sink Bug Detector", "[options] <input-bitcode...>"
+                    );
 
     if (Options::WriteAnder() == "ir_annotator")
     {

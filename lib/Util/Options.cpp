@@ -9,10 +9,10 @@ const OptionMap<enum PTAStat::ClockType> Options::ClockType(
     "clock-type",
     "how time should be measured",
     PTAStat::ClockType::CPU,
-    {
-        {PTAStat::ClockType::Wall, "wall", "use wall time"},
-        {PTAStat::ClockType::CPU, "cpu", "use CPU time"},
-    }
+{
+    {PTAStat::ClockType::Wall, "wall", "use wall time"},
+    {PTAStat::ClockType::CPU, "cpu", "use CPU time"},
+}
 );
 
 const Option<bool> Options::MarkedClocksOnly(
@@ -25,12 +25,12 @@ const OptionMap<NodeIDAllocator::Strategy> Options::NodeAllocStrat(
     "node-alloc-strat",
     "Method of allocating (LLVM) values and memory objects as node IDs",
     NodeIDAllocator::Strategy::SEQ,
-    {
-        {NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together [0-n] and values together [m-MAX], separately"},
-        {NodeIDAllocator::Strategy::REVERSE_DENSE, "reverse-dense", "like dense but flipped, objects are [m-MAX], values are [0-n]"},
-        {NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed (default)"},
-        {NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets"},
-    }
+{
+    {NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together [0-n] and values together [m-MAX], separately"},
+    {NodeIDAllocator::Strategy::REVERSE_DENSE, "reverse-dense", "like dense but flipped, objects are [m-MAX], values are [0-n]"},
+    {NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed (default)"},
+    {NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets"},
+}
 );
 
 const Option<u32_t> Options::MaxFieldLimit(
@@ -43,10 +43,10 @@ const OptionMap<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
     "ptd",
     "Overarching points-to data structure",
     BVDataPTAImpl::PTBackingType::Persistent,
-    {
-        {BVDataPTAImpl::PTBackingType::Mutable, "mutable", "points-to set per pointer"},
-        {BVDataPTAImpl::PTBackingType::Persistent, "persistent", "points-to set ID per pointer, operations hash-consed"},
-    }
+{
+    {BVDataPTAImpl::PTBackingType::Mutable, "mutable", "points-to set per pointer"},
+    {BVDataPTAImpl::PTBackingType::Persistent, "persistent", "points-to set ID per pointer, operations hash-consed"},
+}
 );
 
 const Option<u32_t> Options::FsTimeLimit(
@@ -189,10 +189,10 @@ const Option<bool> Options::WPANum(
 //static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(DDAPA);
 OptionMultiple<PointerAnalysis::PTATY> Options::DDASelected(
     "Select pointer analysis",
-    {
-        {PointerAnalysis::FlowS_DDA, "dfs", "Demand-driven flow sensitive analysis"},
-        {PointerAnalysis::Cxt_DDA, "cxt", "Demand-driven context- flow- sensitive analysis"},
-    }
+{
+    {PointerAnalysis::FlowS_DDA, "dfs", "Demand-driven flow sensitive analysis"},
+    {PointerAnalysis::Cxt_DDA, "cxt", "Demand-driven context- flow- sensitive analysis"},
+}
 );
 
 // FlowDDA.cpp
@@ -388,23 +388,23 @@ const OptionMap<PointsTo::Type> Options::PtType(
     "pt-type",
     "points-to set data structure to use in all analyses",
     PointsTo::Type::SBV,
-    {
-        {PointsTo::Type::SBV, "sbv", "sparse bit-vector"},
-        {PointsTo::Type::CBV, "cbv", "core bit-vector (dynamic bit-vector without leading and trailing 0s)"},
-        {PointsTo::Type::BV, "bv", "bit-vector (dynamic bit-vector without trailing 0s)"},
-    }
+{
+    {PointsTo::Type::SBV, "sbv", "sparse bit-vector"},
+    {PointsTo::Type::CBV, "cbv", "core bit-vector (dynamic bit-vector without leading and trailing 0s)"},
+    {PointsTo::Type::BV, "bv", "bit-vector (dynamic bit-vector without trailing 0s)"},
+}
 );
 
 const OptionMap<enum hclust_fast_methods> Options::ClusterMethod(
     "cluster-method",
     "hierarchical clustering method for objects",
     HCLUST_METHOD_SVF_BEST,
-    {
-        {HCLUST_METHOD_SINGLE,     "single", "single linkage; minimum spanning tree algorithm"},
-        {HCLUST_METHOD_COMPLETE, "complete", "complete linkage; nearest-neighbour-chain algorithm"},
-        {HCLUST_METHOD_AVERAGE,   "average", "unweighted average linkage; nearest-neighbour-chain algorithm"},
-        {HCLUST_METHOD_SVF_BEST,     "best", "try all linkage criteria; choose best"},
-    }
+{
+    {HCLUST_METHOD_SINGLE,     "single", "single linkage; minimum spanning tree algorithm"},
+    {HCLUST_METHOD_COMPLETE, "complete", "complete linkage; nearest-neighbour-chain algorithm"},
+    {HCLUST_METHOD_AVERAGE,   "average", "unweighted average linkage; nearest-neighbour-chain algorithm"},
+    {HCLUST_METHOD_SVF_BEST,     "best", "try all linkage criteria; choose best"},
+}
 );
 
 const Option<bool> Options::RegionedClustering(
@@ -451,11 +451,11 @@ const OptionMap<MemSSA::MemPartition> Options::MemPar(
     "mem-par",
     "Memory region partiion strategies (e.g., for SVFG construction)",
     MemSSA::MemPartition::IntraDisjoint,
-    {
-        {MemSSA::MemPartition::Distinct, "distinct", "memory region per each object"},
-        {MemSSA::MemPartition::IntraDisjoint, "intra-disjoint", "memory regions partioned based on each function"},
-        {MemSSA::MemPartition::InterDisjoint, "inter-disjoint", "memory regions partioned across functions"},
-    }
+{
+    {MemSSA::MemPartition::Distinct, "distinct", "memory region per each object"},
+    {MemSSA::MemPartition::IntraDisjoint, "intra-disjoint", "memory regions partioned based on each function"},
+    {MemSSA::MemPartition::InterDisjoint, "inter-disjoint", "memory regions partioned across functions"},
+}
 );
 
 
@@ -759,26 +759,26 @@ const Option<bool> Options::PrintAliases(
 
 OptionMultiple<PointerAnalysis::PTATY> Options::PASelected(
     "Select pointer analysis",
-    {
-        {PointerAnalysis::Andersen_WPA, "nander", "Standard inclusion-based analysis"},
-        {PointerAnalysis::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"},
-        {PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation includion-based analysis"},
-        {PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"},
-        {PointerAnalysis::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"},
-        // Disabled till further work is done.
-        {PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"},
-        {PointerAnalysis::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"},
-        {PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, SVFIR and CHA"},
-    }
+{
+    {PointerAnalysis::Andersen_WPA, "nander", "Standard inclusion-based analysis"},
+    {PointerAnalysis::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"},
+    {PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation includion-based analysis"},
+    {PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"},
+    {PointerAnalysis::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"},
+    // Disabled till further work is done.
+    {PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"},
+    {PointerAnalysis::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"},
+    {PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, SVFIR and CHA"},
+}
 );
 
 
 OptionMultiple<WPAPass::AliasCheckRule> Options::AliasRule(
     "Select alias check rule",
-    {
-        {WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"},
-        {WPAPass::Veto, "veto", "return NoAlias if any pta says no alias"},
-    }
+{
+    {WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"},
+    {WPAPass::Veto, "veto", "return NoAlias if any pta says no alias"},
+}
 );
 
 const Option<bool> Options::ShowHiddenNode(

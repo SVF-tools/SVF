@@ -42,8 +42,8 @@ int main(int argc, char ** argv)
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
-        argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>"
-    );
+                        argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>"
+                    );
 
     if (Options::WriteAnder() == "ir_annotator")
     {
