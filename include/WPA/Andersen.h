@@ -231,7 +231,7 @@ public:
 
     void setDetectPWC(bool flag)
     {
-        Options::DetectPWC = flag;
+        Options::DetectPWC.setValue(flag);
     }
 
 protected:
@@ -242,7 +242,7 @@ protected:
     /// Handle diff points-to set.
     virtual inline void computeDiffPts(NodeID id)
     {
-        if (Options::DiffPts)
+        if (Options::DiffPts())
         {
             NodeID rep = sccRepNode(id);
             getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
@@ -251,7 +251,7 @@ protected:
     virtual inline const PointsTo& getDiffPts(NodeID id)
     {
         NodeID rep = sccRepNode(id);
-        if (Options::DiffPts)
+        if (Options::DiffPts())
             return getDiffPTDataTy()->getDiffPts(rep);
         else
             return getPTDataTy()->getPts(rep);
@@ -260,7 +260,7 @@ protected:
     /// Handle propagated points-to set.
     inline void updatePropaPts(NodeID dstId, NodeID srcId)
     {
-        if (!Options::DiffPts)
+        if (!Options::DiffPts())
             return;
         NodeID srcRep = sccRepNode(srcId);
         NodeID dstRep = sccRepNode(dstId);
@@ -268,7 +268,7 @@ protected:
     }
     inline void clearPropaPts(NodeID src)
     {
-        if (Options::DiffPts)
+        if (Options::DiffPts())
         {
             NodeID rep = sccRepNode(src);
             getDiffPTDataTy()->clearPropaPts(rep);

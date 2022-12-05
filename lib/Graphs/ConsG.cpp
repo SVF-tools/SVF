@@ -632,7 +632,7 @@ void ConstraintGraph::view()
 //@{
 ConstraintNode::iterator ConstraintNode::directOutEdgeBegin()
 {
-    if (Options::DetectPWC)
+    if (Options::DetectPWC())
         return directOutEdges.begin();
     else
         return copyOutEdges.begin();
@@ -640,7 +640,7 @@ ConstraintNode::iterator ConstraintNode::directOutEdgeBegin()
 
 ConstraintNode::iterator ConstraintNode::directOutEdgeEnd()
 {
-    if (Options::DetectPWC)
+    if (Options::DetectPWC())
         return directOutEdges.end();
     else
         return copyOutEdges.end();
@@ -648,7 +648,7 @@ ConstraintNode::iterator ConstraintNode::directOutEdgeEnd()
 
 ConstraintNode::iterator ConstraintNode::directInEdgeBegin()
 {
-    if (Options::DetectPWC)
+    if (Options::DetectPWC())
         return directInEdges.begin();
     else
         return copyInEdges.begin();
@@ -656,7 +656,7 @@ ConstraintNode::iterator ConstraintNode::directInEdgeBegin()
 
 ConstraintNode::iterator ConstraintNode::directInEdgeEnd()
 {
-    if (Options::DetectPWC)
+    if (Options::DetectPWC())
         return directInEdges.end();
     else
         return copyInEdges.end();
@@ -664,7 +664,7 @@ ConstraintNode::iterator ConstraintNode::directInEdgeEnd()
 
 ConstraintNode::const_iterator ConstraintNode::directOutEdgeBegin() const
 {
-    if (Options::DetectPWC)
+    if (Options::DetectPWC())
         return directOutEdges.begin();
     else
         return copyOutEdges.begin();
@@ -672,7 +672,7 @@ ConstraintNode::const_iterator ConstraintNode::directOutEdgeBegin() const
 
 ConstraintNode::const_iterator ConstraintNode::directOutEdgeEnd() const
 {
-    if (Options::DetectPWC)
+    if (Options::DetectPWC())
         return directOutEdges.end();
     else
         return copyOutEdges.end();
@@ -680,7 +680,7 @@ ConstraintNode::const_iterator ConstraintNode::directOutEdgeEnd() const
 
 ConstraintNode::const_iterator ConstraintNode::directInEdgeBegin() const
 {
-    if (Options::DetectPWC)
+    if (Options::DetectPWC())
         return directInEdges.begin();
     else
         return copyInEdges.begin();
@@ -688,7 +688,7 @@ ConstraintNode::const_iterator ConstraintNode::directInEdgeBegin() const
 
 ConstraintNode::const_iterator ConstraintNode::directInEdgeEnd() const
 {
-    if (Options::DetectPWC)
+    if (Options::DetectPWC())
         return directInEdges.end();
     else
         return copyInEdges.end();
@@ -723,7 +723,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
     static bool isNodeHidden(NodeType *n)
     {
 #endif
-        if (Options::ShowHiddenNode) return false;
+        if (Options::ShowHiddenNode()) return false;
         else return (n->getInEdges().empty() && n->getOutEdges().empty());
     }
 
@@ -732,7 +732,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
     static std::string getNodeLabel(NodeType *n, ConstraintGraph*)
     {
         PAGNode* node = SVFIR::getPAG()->getGNode(n->getId());
-        bool briefDisplay = Options::BriefConsCGDotGraph;
+        bool briefDisplay = Options::BriefConsCGDotGraph();
         bool nameDisplay = true;
         std::string str;
         std::stringstream rawstr(str);

@@ -45,7 +45,7 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
                         << cs->getCallSite()->getSourceLoc() << ")\n";
         SVFUtil::errs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
     }
-    if(Options::ValidateTests)
+    if(Options::ValidateTests())
         testsValidation(slice);
 }
 

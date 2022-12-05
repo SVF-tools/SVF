@@ -276,7 +276,7 @@ RetPE* SVFIR::addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs, const Fun
  */
 SVFStmt* SVFIR::addBlackHoleAddrStmt(NodeID node)
 {
-    if(Options::HandBlackHole)
+    if(Options::HandBlackHole())
         return pag->addAddrStmt(pag->getBlackHoleNode(), node);
     else
         return pag->addCopyStmt(pag->getNullPtr(), node);
@@ -430,7 +430,7 @@ NodeID SVFIR::getGepObjVar(const MemObj* obj, const LocationSet& ls)
     LocationSet newLS = pag->getSymbolInfo()->getModulusOffset(obj,ls);
 
     // Base and first field are the same memory location.
-    if (Options::FirstFieldEqBase && newLS.accumulateConstantFieldIdx() == 0) return base;
+    if (Options::FirstFieldEqBase() && newLS.accumulateConstantFieldIdx() == 0) return base;
 
     NodeLocationSetMap::iterator iter = GepObjVarMap.find(std::make_pair(base, newLS));
     if (iter == GepObjVarMap.end())
@@ -450,7 +450,7 @@ NodeID SVFIR::addGepObjNode(const MemObj* obj, const LocationSet& ls)
     assert(0==GepObjVarMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
 
-    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.accumulateConstantFieldIdx(), Options::MaxFieldLimit);
+    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.accumulateConstantFieldIdx(), Options::MaxFieldLimit());
     GepObjVarMap[std::make_pair(base, ls)] = gepId;
     GepObjVar *node = new GepObjVar(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);
@@ -719,7 +719,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
  */
 void SVFIR::handleBlackHole(bool b)
 {
-    Options::HandBlackHole = b;
+    Options::HandBlackHole.setValue(b);
 }
 
 

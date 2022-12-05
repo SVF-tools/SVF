@@ -5,12 +5,12 @@
 
 #include <sstream>
 #include "FastCluster/fastcluster.h"
+#include "Util/CommandLine.h"
 #include "Util/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/NodeIDAllocator.h"
 #include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
-#include <llvm/Support/CommandLine.h>	// for command line options
 
 namespace SVF
 {
@@ -21,245 +21,245 @@ class Options
 public:
     Options(void) = delete;
 
-    static const llvm::cl::opt<enum PTAStat::ClockType> ClockType;
+    static const OptionMap<enum PTAStat::ClockType> ClockType;
 
     /// If set, only return the clock when getClk is called as getClk(true).
     /// Retrieving the clock is slow but it should be fine for a few calls.
     /// This is good for benchmarking when we don't need to know how long processLoad
     /// takes, for example (many calls), but want to know things like total solve time.
     /// Should be used only to affect getClk, not CLOCK_IN_MS.
-    static const llvm::cl::opt<bool> MarkedClocksOnly;
+    static const Option<bool> MarkedClocksOnly;
 
     /// Allocation strategy to be used by the node ID allocator.
     /// Currently dense, seq, or debug.
-    static const llvm::cl::opt<SVF::NodeIDAllocator::Strategy> NodeAllocStrat;
+    static const OptionMap<SVF::NodeIDAllocator::Strategy> NodeAllocStrat;
 
     /// Maximum number of field derivations for an object.
-    static const llvm::cl::opt<unsigned> MaxFieldLimit;
+    static const Option<u32_t> MaxFieldLimit;
 
     /// Whether to stage Andersen's with Steensgaard and cluster based on that data.
-    static const llvm::cl::opt<bool> ClusterAnder;
+    static const Option<bool> ClusterAnder;
 
     /// Whether to cluster FS or VFS with the auxiliary Andersen's.
-    static const llvm::cl::opt<bool> ClusterFs;
+    static const Option<bool> ClusterFs;
 
     /// Use an explicitly plain mapping with flow-sensitive (not null).
-    static const llvm::cl::opt<bool> PlainMappingFs;
+    static const Option<bool> PlainMappingFs;
 
     /// Type of points-to set to use for all analyses.
-    static const llvm::cl::opt<PointsTo::Type> PtType;
+    static const OptionMap<PointsTo::Type> PtType;
 
     /// Clustering method for ClusterFs/ClusterAnder.
     /// TODO: we can separate it into two options, and make Clusterer::cluster take in a method
     ///       argument rather than plugging Options::ClusterMethod *inside* Clusterer::cluster
     ///       directly, but it seems we will always want single anyway, and this is for testing.
-    static const llvm::cl::opt<enum hclust_fast_methods> ClusterMethod;
+    static const OptionMap<enum hclust_fast_methods> ClusterMethod;
 
     /// Cluster partitions separately.
-    static const llvm::cl::opt<bool> RegionedClustering;
+    static const Option<bool> RegionedClustering;
 
     /// Align identifiers in each region to a word.
-    static const llvm::cl::opt<bool> RegionAlign;
+    static const Option<bool> RegionAlign;
 
     /// Predict occurences of points-to sets in the staged points-to set to
     /// weigh more common points-to sets as more important.
-    static const llvm::cl::opt<bool> PredictPtOcc;
+    static const Option<bool> PredictPtOcc;
 
     /// PTData type.
-    static const llvm::cl::opt<BVDataPTAImpl::PTBackingType> ptDataBacking;
+    static const OptionMap<BVDataPTAImpl::PTBackingType> ptDataBacking;
 
     /// Time limit for the main phase (i.e., the actual solving) of FS analyses.
-    static const llvm::cl::opt<unsigned> FsTimeLimit;
+    static const Option<u32_t> FsTimeLimit;
 
     /// Time limit for the Andersen's analyses.
-    static const llvm::cl::opt<unsigned> AnderTimeLimit;
+    static const Option<u32_t> AnderTimeLimit;
 
     /// Number of threads for the versioning phase.
-    static const llvm::cl::opt<unsigned> VersioningThreads;
+    static const Option<u32_t> VersioningThreads;
 
     // ContextDDA.cpp
-    static const llvm::cl::opt<unsigned long long> CxtBudget;
+    static const Option<u32_t> CxtBudget;
 
     // DDAClient.cpp
-    static const llvm::cl::opt<bool> SingleLoad;
-    static const llvm::cl::opt<bool> DumpFree;
-    static const llvm::cl::opt<bool> DumpUninitVar;
-    static const llvm::cl::opt<bool> DumpUninitPtr;
-    static const llvm::cl::opt<bool> DumpSUPts;
-    static const llvm::cl::opt<bool> DumpSUStore;
-    static const llvm::cl::opt<bool> MallocOnly;
-    static const llvm::cl::opt<bool> TaintUninitHeap;
-    static const llvm::cl::opt<bool> TaintUninitStack;
+    static const Option<bool> SingleLoad;
+    static const Option<bool> DumpFree;
+    static const Option<bool> DumpUninitVar;
+    static const Option<bool> DumpUninitPtr;
+    static const Option<bool> DumpSUPts;
+    static const Option<bool> DumpSUStore;
+    static const Option<bool> MallocOnly;
+    static const Option<bool> TaintUninitHeap;
+    static const Option<bool> TaintUninitStack;
 
     // DDAPass.cpp
-    static const llvm::cl::opt<unsigned> MaxPathLen;
-    static const llvm::cl::opt<unsigned> MaxContextLen;
-    static const llvm::cl::opt<unsigned> MaxStepInWrapper;
-    static const llvm::cl::opt<std :: string> UserInputQuery;
-    static const llvm::cl::opt<bool> InsenRecur;
-    static const llvm::cl::opt<bool> InsenCycle;
-    static const llvm::cl::opt<bool> PrintCPts;
-    static const llvm::cl::opt<bool> PrintQueryPts;
-    static const llvm::cl::opt<bool> WPANum;
-    static llvm::cl::bits<PointerAnalysis::PTATY> DDASelected;
+    static const Option<u32_t> MaxPathLen;
+    static const Option<u32_t> MaxContextLen;
+    static const Option<u32_t> MaxStepInWrapper;
+    static const Option<std::string> UserInputQuery;
+    static const Option<bool> InsenRecur;
+    static const Option<bool> InsenCycle;
+    static const Option<bool> PrintCPts;
+    static const Option<bool> PrintQueryPts;
+    static const Option<bool> WPANum;
+    static OptionMultiple<PointerAnalysis::PTATY> DDASelected;
 
     // FlowDDA.cpp
-    static const llvm::cl::opt<unsigned long long> FlowBudget;
+    static const Option<u32_t> FlowBudget;
 
     // Offline constraint graph (OfflineConsG.cpp)
-    static const llvm::cl::opt<bool> OCGDotGraph;
+    static const Option<bool> OCGDotGraph;
 
     // Program Assignment Graph for pointer analysis (SVFIR.cpp)
-    static llvm::cl::opt<bool> HandBlackHole;
-    static const llvm::cl::opt<bool> FirstFieldEqBase;
+    static Option<bool> HandBlackHole;
+    static const Option<bool> FirstFieldEqBase;
 
     // SVFG optimizer (SVFGOPT.cpp)
-    static const llvm::cl::opt<bool> ContextInsensitive;
-    static const llvm::cl::opt<bool> KeepAOFI;
-    static const llvm::cl::opt<std::string> SelfCycle;
+    static const Option<bool> ContextInsensitive;
+    static const Option<bool> KeepAOFI;
+    static const Option<std::string> SelfCycle;
 
     // Sparse value-flow graph (VFG.cpp)
-    static const llvm::cl::opt<bool> DumpVFG;
+    static const Option<bool> DumpVFG;
 
     // Location set for modeling abstract memory object (LocationSet.cpp)
-    static const llvm::cl::opt<bool> SingleStride;
+    static const Option<bool> SingleStride;
 
     // Base class of pointer analyses (PointerAnalysis.cpp)
-    static const llvm::cl::opt<bool> TypePrint;
-    static const llvm::cl::opt<bool> FuncPointerPrint;
-    static const llvm::cl::opt<bool> PTSPrint;
-    static const llvm::cl::opt<bool> PTSAllPrint;
-    static const llvm::cl::opt<bool> PStat;
-    static const llvm::cl::opt<unsigned> StatBudget;
-    static const llvm::cl::opt<bool> PAGDotGraph;
-    static const llvm::cl::opt<bool> ShowSVFIRValue;
-    static const llvm::cl::opt<bool> DumpICFG;
-    static const llvm::cl::opt<bool> CallGraphDotGraph;
-    static const llvm::cl::opt<bool> PAGPrint;
-    static const llvm::cl::opt<unsigned> IndirectCallLimit;
-    static const llvm::cl::opt<bool> UsePreCompFieldSensitive;
-    static const llvm::cl::opt<bool> EnableAliasCheck;
-    static const llvm::cl::opt<bool> EnableThreadCallGraph;
-    static const llvm::cl::opt<bool> ConnectVCallOnCHA;
+    static const Option<bool> TypePrint;
+    static const Option<bool> FuncPointerPrint;
+    static const Option<bool> PTSPrint;
+    static const Option<bool> PTSAllPrint;
+    static const Option<bool> PStat;
+    static const Option<u32_t> StatBudget;
+    static const Option<bool> PAGDotGraph;
+    static const Option<bool> ShowSVFIRValue;
+    static const Option<bool> DumpICFG;
+    static const Option<bool> CallGraphDotGraph;
+    static const Option<bool> PAGPrint;
+    static const Option<u32_t> IndirectCallLimit;
+    static const Option<bool> UsePreCompFieldSensitive;
+    static const Option<bool> EnableAliasCheck;
+    static const Option<bool> EnableThreadCallGraph;
+    static const Option<bool> ConnectVCallOnCHA;
 
     // PointerAnalysisImpl.cpp
-    static const llvm::cl::opt<bool> INCDFPTData;
+    static const Option<bool> INCDFPTData;
 
     // Memory region (MemRegion.cpp)
-    static const llvm::cl::opt<bool> IgnoreDeadFun;
+    static const Option<bool> IgnoreDeadFun;
 
     // Base class of pointer analyses (MemSSA.cpp)
-    static const llvm::cl::opt<bool> DumpMSSA;
-    static const llvm::cl::opt<std :: string> MSSAFun;
+    static const Option<bool> DumpMSSA;
+    static const Option<std::string> MSSAFun;
     // static const llvm::cl::opt<string> MSSAFun;
-    static const llvm::cl::opt<MemSSA::MemPartition> MemPar;
+    static const OptionMap<MemSSA::MemPartition> MemPar;
 
     // SVFG builder (SVFGBuilder.cpp)
-    static const llvm::cl::opt<bool> SVFGWithIndirectCall;
-    static llvm::cl::opt<bool> OPTSVFG;
+    static const Option<bool> SVFGWithIndirectCall;
+    static Option<bool> OPTSVFG;
 
-    static const llvm::cl::opt<std :: string> WriteSVFG;
-    static const llvm::cl::opt<std :: string> ReadSVFG;
+    static const Option<std::string> WriteSVFG;
+    static const Option<std::string> ReadSVFG;
 
     // FSMPTA.cpp
-    static const llvm::cl::opt<bool> UsePCG;
-    static const llvm::cl::opt<bool> IntraLock;
-    static const llvm::cl::opt<bool> ReadPrecisionTDEdge;
-    static const llvm::cl::opt<u32_t> AddModelFlag;
+    static const Option<bool> UsePCG;
+    static const Option<bool> IntraLock;
+    static const Option<bool> ReadPrecisionTDEdge;
+    static const Option<u32_t> AddModelFlag;
 
     // LockAnalysis.cpp
-    static const llvm::cl::opt<bool> PrintLockSpan;
+    static const Option<bool> PrintLockSpan;
 
     // MHP.cpp
-    static const llvm::cl::opt<bool> PrintInterLev;
-    static const llvm::cl::opt<bool> DoLockAnalysis;
+    static const Option<bool> PrintInterLev;
+    static const Option<bool> DoLockAnalysis;
 
     // MTA.cpp
-    static const llvm::cl::opt<bool> AndersenAnno;
-    static const llvm::cl::opt<bool> FSAnno;
+    static const Option<bool> AndersenAnno;
+    static const Option<bool> FSAnno;
 
     // MTAAnnotator.cpp
-    static const llvm::cl::opt<u32_t> AnnoFlag;
+    static const Option<u32_t> AnnoFlag;
 
     // MTAResultValidator.cpp
-    static const llvm::cl::opt<bool> PrintValidRes;
+    static const Option<bool> PrintValidRes;
 
-    static const llvm::cl::opt<bool> LockValid;
+    static const Option<bool> LockValid;
     //MTAStat.cpp
-    static const llvm::cl::opt<bool> AllPairMHP;
+    static const Option<bool> AllPairMHP;
 
     // PCG.cpp
-    //const llvm::cl::opt<bool> TDPrint
+    //const Option<bool> TDPrint
 
     // TCT.cpp
-    static const llvm::cl::opt<bool> TCTDotGraph;
+    static const Option<bool> TCTDotGraph;
 
     // LeakChecker.cpp
-    static const llvm::cl::opt<bool> ValidateTests;
+    static const Option<bool> ValidateTests;
 
     // Source-sink analyzer (SrcSnkDDA.cpp)
-    static const llvm::cl::opt<bool> DumpSlice;
-    static const llvm::cl::opt<unsigned> CxtLimit;
+    static const Option<bool> DumpSlice;
+    static const Option<u32_t> CxtLimit;
 
     // CHG.cpp
-    static const llvm::cl::opt<bool> DumpCHA;
+    static const Option<bool> DumpCHA;
 
     // DCHG.cpp
-    static const llvm::cl::opt<bool> PrintDCHG;
+    static const Option<bool> PrintDCHG;
 
     // LLVMModule.cpp
-    static const llvm::cl::opt<std::string> Graphtxt;
-    static const llvm::cl::opt<bool> SVFMain;
+    static const Option<std::string> Graphtxt;
+    static const Option<bool> SVFMain;
 
     // SymbolTableInfo.cpp
-    static const llvm::cl::opt<bool> LocMemModel;
-    static const llvm::cl::opt<bool> ModelConsts;
-    static const llvm::cl::opt<bool> ModelArrays;
-    static const llvm::cl::opt<bool> SymTabPrint;
+    static const Option<bool> LocMemModel;
+    static const Option<bool> ModelConsts;
+    static const Option<bool> ModelArrays;
+    static const Option<bool> SymTabPrint;
 
     // Conditions.cpp
-    static const llvm::cl::opt<unsigned> MaxZ3Size;
+    static const Option<u32_t> MaxZ3Size;
 
     // SaberCondAllocator.cpp
-    static const llvm::cl::opt<bool> PrintPathCond;
+    static const Option<bool> PrintPathCond;
 
     // SVFUtil.cpp
-    static const llvm::cl::opt<bool> DisableWarn;
+    static const Option<bool> DisableWarn;
 
     // Andersen.cpp
-    static const llvm::cl::opt<bool> ConsCGDotGraph;
-    static const llvm::cl::opt<bool> BriefConsCGDotGraph;
-    static const llvm::cl::opt<bool> PrintCGGraph;
-    // static const llvm::cl::opt<string> WriteAnder;
-    static const llvm::cl::opt<std :: string> WriteAnder;
-    // static const llvm::cl::opt<string> ReadAnder;
-    static const llvm::cl::opt<std :: string> ReadAnder;
-    static const llvm::cl::opt<bool> DiffPts;
-    static llvm::cl::opt<bool> DetectPWC;
-    static const llvm::cl::opt<bool> VtableInSVFIR;
+    static const Option<bool> ConsCGDotGraph;
+    static const Option<bool> BriefConsCGDotGraph;
+    static const Option<bool> PrintCGGraph;
+    // static const Option<string> WriteAnder;
+    static const Option<std::string> WriteAnder;
+    // static const Option<string> ReadAnder;
+    static const Option<std::string> ReadAnder;
+    static const Option<bool> DiffPts;
+    static Option<bool> DetectPWC;
+    static const Option<bool> VtableInSVFIR;
 
     // WPAPass.cpp
-    static const llvm::cl::opt<bool> AnderSVFG;
-    static const llvm::cl::opt<bool> SABERFULLSVFG;
-    static const llvm::cl::opt<bool> PrintAliases;
-    static llvm::cl::bits<PointerAnalysis::PTATY> PASelected;
-    static llvm::cl::bits<WPAPass::AliasCheckRule> AliasRule;
+    static const Option<bool> AnderSVFG;
+    static const Option<bool> SABERFULLSVFG;
+    static const Option<bool> PrintAliases;
+    static OptionMultiple<PointerAnalysis::PTATY> PASelected;
+    static OptionMultiple<WPAPass::AliasCheckRule> AliasRule;
 
     // DOTGraphTraits
-    static const llvm::cl::opt<bool> ShowHiddenNode;
+    static const Option<bool> ShowHiddenNode;
 
     // CFL option
-    static const llvm::cl::opt<std::string> GrammarFilename;
-    static const llvm::cl::opt<std::string> CFLGraph;
-    static const llvm::cl::opt<bool> PrintCFL;
-    static const llvm::cl::opt<bool> FlexSymMap;
-    static const llvm::cl::opt<bool>  PEGTransfer;
-    static const llvm::cl::opt<bool>  CFLSVFG;
-    static const llvm::cl::opt<bool> CFLData;
+    static const Option<std::string> GrammarFilename;
+    static const Option<std::string> CFLGraph;
+    static const Option<bool> PrintCFL;
+    static const Option<bool> FlexSymMap;
+    static const Option<bool>  PEGTransfer;
+    static const Option<bool>  CFLSVFG;
+    static const Option<bool> CFLData;
 
     // Loop Analysis
-    static const llvm::cl::opt<bool> LoopAnalysis;
-    static const llvm::cl::opt<unsigned> LoopBound;
+    static const Option<bool> LoopAnalysis;
+    static const Option<u32_t> LoopBound;
 };
 }  // namespace SVF
 

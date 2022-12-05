@@ -40,21 +40,21 @@ double SVFStat::timeOfBuildingSymbolTable = 0;
 
 SVFStat::SVFStat() : startTime(0), endTime(0)
 {
-    assert((Options::ClockType == ClockType::Wall || Options::ClockType == ClockType::CPU)
+    assert((Options::ClockType() == ClockType::Wall || Options::ClockType() == ClockType::CPU)
            && "PTAStat: unknown clock type!");
 }
 
 double SVFStat::getClk(bool mark)
 {
-    if (Options::MarkedClocksOnly && !mark) return 0.0;
+    if (Options::MarkedClocksOnly() && !mark) return 0.0;
 
-    if (Options::ClockType == ClockType::Wall)
+    if (Options::ClockType() == ClockType::Wall)
     {
         struct timespec time;
         clock_gettime(CLOCK_MONOTONIC, &time);
         return (double)(time.tv_nsec + time.tv_sec * 1000000000) / 1000000.0;
     }
-    else if (Options::ClockType == ClockType::CPU)
+    else if (Options::ClockType() == ClockType::CPU)
     {
         return CLOCK_IN_MS();
     }

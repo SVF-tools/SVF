@@ -70,10 +70,10 @@ PointerAnalysis::PointerAnalysis(SVFIR* p, PTATY ty, bool alias_check) :
     svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),chgraph(nullptr),typeSystem(nullptr)
 {
     pag = p;
-    OnTheFlyIterBudgetForStat = Options::StatBudget;
-    print_stat = Options::PStat;
+    OnTheFlyIterBudgetForStat = Options::StatBudget();
+    print_stat = Options::PStat();
     ptaImplTy = BaseImpl;
-    alias_validation = (alias_check && Options::EnableAliasCheck);
+    alias_validation = (alias_check && Options::EnableAliasCheck());
 }
 
 /*!
@@ -110,7 +110,7 @@ void PointerAnalysis::initialize()
     chgraph = pag->getCHG();
 
     /// initialise pta call graph for every pointer analysis instance
-    if(Options::EnableThreadCallGraph)
+    if(Options::EnableThreadCallGraph())
     {
         ThreadCallGraph* cg = new ThreadCallGraph();
         ThreadCallGraphBuilder bd(cg, pag->getICFG());
@@ -125,7 +125,7 @@ void PointerAnalysis::initialize()
     callGraphSCCDetection();
 
     // dump callgraph
-    if (Options::CallGraphDotGraph)
+    if (Options::CallGraphDotGraph())
         getPTACallGraph()->dump("callgraph_initial");
 }
 
@@ -183,31 +183,31 @@ void PointerAnalysis::finalize()
     dumpStat();
 
     /// Dump results
-    if (Options::PTSPrint)
+    if (Options::PTSPrint())
     {
         dumpTopLevelPtsTo();
         //dumpAllPts();
         //dumpCPts();
     }
 
-    if (Options::TypePrint)
+    if (Options::TypePrint())
         dumpAllTypes();
 
-    if(Options::PTSAllPrint)
+    if(Options::PTSAllPrint())
         dumpAllPts();
 
-    if (Options::FuncPointerPrint)
+    if (Options::FuncPointerPrint())
         printIndCSTargets();
 
     getPTACallGraph()->verifyCallGraph();
 
-    if (Options::CallGraphDotGraph)
+    if (Options::CallGraphDotGraph())
         getPTACallGraph()->dump("callgraph_final");
 
     if(!pag->isBuiltFromFile() && alias_validation)
         validateTests();
 
-    if (!Options::UsePreCompFieldSensitive)
+    if (!Options::UsePreCompFieldSensitive())
         resetObjFieldSensitive();
 }
 
@@ -392,7 +392,7 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
             ii != ie; ii++)
     {
 
-        if(getNumOfResolvedIndCallEdge() >= Options::IndirectCallLimit)
+        if(getNumOfResolvedIndCallEdge() >= Options::IndirectCallLimit())
         {
             wrnMsg("Resolved Indirect Call Edges are Out-Of-Budget, please increase the limit");
             return;
@@ -504,7 +504,7 @@ void PointerAnalysis::resolveCPPIndCalls(const CallICFGNode* cs, const PointsTo&
     assert(SVFUtil::getSVFCallSite(cs->getCallSite()).isVirtualCall() && "not cpp virtual call");
 
     VFunSet vfns;
-    if (Options::ConnectVCallOnCHA)
+    if (Options::ConnectVCallOnCHA())
         getVFnsFromCHA(cs, vfns);
     else
         getVFnsFromPts(cs, target, vfns);

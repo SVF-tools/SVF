@@ -155,7 +155,7 @@ LockResultValidator::LOCK_FLAG LockResultValidator::validateStmtInLock()
         CxtLockSetStr LS = instToCxtLockSet[inst];
         if(LS.size() != (*it).second.size())
         {
-            if (Options::PrintValidRes)
+            if (Options::PrintValidRes())
             {
                 outs() << errMsg("\nValidate Stmt's Lock : Wrong at: ") << inst->toString() << "\n";
                 outs() << "Reason: The number of lock on current stmt is wrong\n";
@@ -185,7 +185,7 @@ LockResultValidator::LOCK_FLAG LockResultValidator::validateStmtInLock()
             std::string lockName = SVFUtil::getSVFCallSite(call).getArgOperand(0)->getName();
             if(!match(lockName, LS))
             {
-                if(Options::PrintValidRes)
+                if(Options::PrintValidRes())
                 {
                     outs() << "\nValidate Stmt's Lock : Wrong at (" << inst->toString() << ")\n";
                     outs() << "Reason: The number of lock on current stmt is wrong\n";

@@ -144,18 +144,18 @@ SVFIR* SVFIRBuilder::build()
     pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
 
     // dump SVFIR
-    if (Options::PAGDotGraph)
+    if (Options::PAGDotGraph())
         pag->dump("svfir_initial");
 
     // print to command line of the SVFIR graph
-    if (Options::PAGPrint)
+    if (Options::PAGPrint())
         pag->print();
 
     // dump ICFG
-    if (Options::DumpICFG)
+    if (Options::DumpICFG())
         pag->getICFG()->dump("icfg_initial");
 
-    if (Options::LoopAnalysis)
+    if (Options::LoopAnalysis())
     {
         LLVMLoopAnalysis loopAnalysis;
         loopAnalysis.build(pag->getICFG());
@@ -281,7 +281,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         //The int value of the current index operand
         const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
 
-        // if Options::ModelConsts is disabled. We will treat whole array as one,
+        // if Options::ModelConsts() is disabled. We will treat whole array as one,
         // but we can distinguish different field of an array of struct, e.g. s[1].f1 is differet from s[0].f2
         if(const ArrayType* arrTy = SVFUtil::dyn_cast<ArrayType>(gepTy))
         {
@@ -513,7 +513,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     }
     else if (SVFUtil::isa<ConstantArray, ConstantStruct>(C))
     {
-        if(cppUtil::isValVtbl(gvar) && !Options::VtableInSVFIR)
+        if(cppUtil::isValVtbl(gvar) && !Options::VtableInSVFIR())
             return;
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
@@ -523,7 +523,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     }
     else if(ConstantData* data = SVFUtil::dyn_cast<ConstantData>(C))
     {
-        if(Options::ModelConsts)
+        if(Options::ModelConsts())
         {
             if(ConstantDataSequential* seq = SVFUtil::dyn_cast<ConstantDataSequential>(data))
             {
@@ -1540,7 +1540,7 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
     }
 
     // dump SVFIR
-    if (Options::PAGDotGraph)
+    if (Options::PAGDotGraph())
         pag->dump("svfir_final");
 }
 

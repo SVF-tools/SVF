@@ -108,7 +108,7 @@ NodeStack& AndersenSCD::SCCDetect()
     double mergeEnd = stat->getClk();
     timeOfSCCMerges +=  (mergeEnd - mergeStart)/TIMEINTERVAL;
 
-    if (Options::DetectPWC)
+    if (Options::DetectPWC())
     {
         sccStart = stat->getClk();
         PWCDetect();
@@ -133,7 +133,7 @@ void AndersenSCD::PWCDetect()
     tmpSccCandidates.clear();
 
     // set scc edge type as direct edge
-    bool pwcFlag = Options::DetectPWC;
+    bool pwcFlag = Options::DetectPWC();
     setDetectPWC(true);
 
     getSCCDetector()->find(sccCandidates);
@@ -150,7 +150,7 @@ void AndersenSCD::handleCopyGep(ConstraintNode* node)
 {
     NodeID nodeId = node->getId();
 
-    if (!Options::DetectPWC && getSCCDetector()->subNodes(nodeId).count() > 1)
+    if (!Options::DetectPWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
         processPWC(node);
     else if(isInWorklist(nodeId))
         Andersen::handleCopyGep(node);

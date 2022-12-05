@@ -27,6 +27,7 @@
  *      Author: Yulei Sui, Peng Di
  */
 
+#include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "MTA/PCG.h"
 #include "Util/SVFUtil.h"
@@ -39,7 +40,12 @@ using namespace SVFUtil;
  * Whether two functions may happen in parallel
  */
 
-//static llvm::cl::opt<bool> TDPrint("print-td", llvm::cl::init(true), llvm::cl::desc("Print Thread Analysis Results"));
+//static Option<bool> TDPrint(
+//    "print-td",
+//    true,
+//    "Print Thread Analysis Results"
+//);
+
 bool PCG::analyze()
 {
 
@@ -53,7 +59,7 @@ bool PCG::analyze()
 
     //interferenceAnalysis();
 
-    //if (Options::TDPrint) {
+    //if (Options::TDPrint()) {
     //printResults();
     //tdAPI->performAPIStat(mod);
     //}

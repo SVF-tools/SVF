@@ -111,7 +111,7 @@ void LLVMLoopAnalysis::buildSVFLoops(ICFG *icfg, std::vector<const Loop *> &llvm
                 nodes.insert(icfg->getICFGNode(svfInst));
             }
         }
-        SVFLoop *svf_loop = new SVFLoop(nodes, Options::LoopBound);
+        SVFLoop *svf_loop = new SVFLoop(nodes, Options::LoopBound());
         for (const auto &node: nodes)
         {
             icfg->addNodeToSVFLoop(node, svf_loop);

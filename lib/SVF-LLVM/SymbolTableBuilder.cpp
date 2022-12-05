@@ -213,7 +213,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     }
 
     symInfo->totalSymNum = NodeIDAllocator::get()->endSymbolAllocation();
-    if (Options::SymTabPrint)
+    if (Options::SymTabPrint())
     {
         symInfo->dump();
     }
@@ -514,7 +514,7 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C)
     }
     else if(const ConstantData* data = SVFUtil::dyn_cast<ConstantData>(C))
     {
-        if(Options::ModelConsts)
+        if(Options::ModelConsts())
         {
             if(const ConstantDataSequential* seq = SVFUtil::dyn_cast<ConstantDataSequential>(data))
             {
@@ -559,7 +559,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
     if (refTy)
     {
         Type* objTy = getPtrElementType(refTy);
-        ObjTypeInfo* typeInfo = new ObjTypeInfo(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy), Options::MaxFieldLimit);
+        ObjTypeInfo* typeInfo = new ObjTypeInfo(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy), Options::MaxFieldLimit());
         initTypeInfo(typeInfo,val, objTy);
         return typeInfo;
     }
@@ -748,7 +748,7 @@ u32_t SymbolTableBuilder::getObjSize(const Type* ety)
 /// Number of flattenned elements of an array or struct
 u32_t SymbolTableBuilder::getNumOfFlattenElements(const Type* T)
 {
-    if(Options::ModelArrays)
+    if(Options::ModelArrays())
         return getOrAddSVFTypeInfo(T)->getNumOfFlattenElements();
     else
         return getOrAddSVFTypeInfo(T)->getNumOfFlattenFields();

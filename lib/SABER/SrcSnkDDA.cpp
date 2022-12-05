@@ -43,7 +43,7 @@ void SrcSnkDDA::initialize(SVFModule* module)
     SVFIR* pag = PAG::getPAG();
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
-    if(Options::SABERFULLSVFG)
+    if(Options::SABERFULLSVFG())
         svfg =  memSSA.buildFullSVFG(ander);
     else
         svfg =  memSSA.buildPTROnlySVFG(ander);
@@ -62,7 +62,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
 
     initialize(module);
 
-    ContextCond::setMaxCxtLen(Options::CxtLimit);
+    ContextCond::setMaxCxtLen(Options::CxtLimit());
 
     for (SVFGNodeSetIter iter = sourcesBegin(), eiter = sourcesEnd();
             iter != eiter; ++iter)
@@ -94,7 +94,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
 
             DBOUT(DSaber, outs() << "Backward process for slice:" << (*iter)->getId() << " (size = " << getCurSlice()->getBackwardSliceSize() << ")\n");
 
-            if(Options::DumpSlice)
+            if(Options::DumpSlice())
                 annotateSlice(_curSlice);
 
             if(_curSlice->AllPathReachableSolve())
@@ -133,7 +133,7 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet)
         else
             continue;
         // reaching maximum steps when traversing on SVFG to identify a memory allocation wrapper
-        if (step++ > Options::MaxStepInWrapper)
+        if (step++ > Options::MaxStepInWrapper())
             return false;
 
         for (SVFGNode::const_iterator it = node->OutEdgeBegin(), eit =
@@ -295,7 +295,7 @@ void SrcSnkDDA::annotateSlice(ProgSlice* slice)
 void SrcSnkDDA::dumpSlices()
 {
 
-    if(Options::DumpSlice)
+    if(Options::DumpSlice())
         const_cast<SVFG*>(getSVFG())->dump("Slice",true);
 }
 
