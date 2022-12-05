@@ -810,6 +810,11 @@ const llvm::cl::opt<bool> Options::CFLSVFG(
     llvm::cl::desc("When explicit to true, cfl graph builder will transfer SVFG to CFL Reachability.")
 );
 
+const llvm::cl::opt<bool> Options::CFLData(
+    "cfldata",
+    llvm::cl::init(false),
+    llvm::cl::desc("When explicit to true, cfl data builder will transfer CFL graph to CFLData.")
+);
 
 const llvm::cl::opt<bool> Options::LoopAnalysis(
     "loop-analysis",

@@ -33,6 +33,7 @@
 #include "Graphs/CFLGraph.h"
 #include "CFL/CFLGrammar.h"
 #include "Util/WorkList.h"
+#include "CFL/CFLData.h"
 
 
 namespace SVF
@@ -110,6 +111,26 @@ private:
 
 };
 
+/// Solver Utilize CFLData
+class POCRSolver : public CFLSolver
+{
+    /// Destructor
+    virtual ~POCRSolver()
+    {
+        delete _cflData;
+    }
+
+    CFLData* cflData()
+    {
+        return _cflData;
+    }
+
+   //virtual void initialize();
+
+private:
+    CFLData* _cflData;
+
+};
 }
 
 #endif /* INCLUDE_CFL_CFLSolver_H_*/
