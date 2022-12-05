@@ -49,20 +49,20 @@ void FlowSensitive::initialize()
     stat = new FlowSensitiveStat(this);
 
     // TODO: support clustered aux. Andersen's.
-    assert(!Options::ClusterAnder && "FlowSensitive::initialize: clustering auxiliary Andersen's unsupported.");
+    assert(!Options::ClusterAnder() && "FlowSensitive::initialize: clustering auxiliary Andersen's unsupported.");
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
 
     // If cluster option is not set, it will give us a no-mapping points-to set.
-    assert(!(Options::ClusterFs && Options::PlainMappingFs)
+    assert(!(Options::ClusterFs() && Options::PlainMappingFs())
            && "FS::init: plain-mapping and cluster-fs are mutually exclusive.");
-    if (Options::ClusterFs)
+    if (Options::ClusterFs())
     {
         cluster();
         // Reset the points-to cache although empty so the new mapping could
         // be applied to the inserted empty set.
         getPtCache().reset();
     }
-    else if (Options::PlainMappingFs)
+    else if (Options::PlainMappingFs())
     {
         plainMap();
         // As above.
@@ -80,7 +80,7 @@ void FlowSensitive::initialize()
  */
 void FlowSensitive::analyze()
 {
-    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit);
+    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
 
     /// Initialization for the Solver
     initialize();
@@ -120,7 +120,7 @@ void FlowSensitive::analyze()
  */
 void FlowSensitive::finalize()
 {
-    if(Options::DumpVFG)
+    if(Options::DumpVFG())
         svfg->dump("fs_solved", true);
 
     NodeStack& nodeStack = WPASolver<SVFG*>::SCCDetect();
@@ -139,7 +139,7 @@ void FlowSensitive::finalize()
     }
 
     // TODO: check -stat too.
-    if (Options::ClusterFs)
+    if (Options::ClusterFs())
     {
         Map<std::string, std::string> stats;
         const PTDataTy *ptd = getPTDataTy();
@@ -791,7 +791,7 @@ void FlowSensitive::cluster(void)
 
 void FlowSensitive::plainMap(void) const
 {
-    assert(Options::NodeAllocStrat == NodeIDAllocator::Strategy::DENSE
+    assert(Options::NodeAllocStrat() == NodeIDAllocator::Strategy::DENSE
            && "FS::cluster: plain mapping requires dense allocation strategy.");
 
     const size_t numObjects = NodeIDAllocator::get()->getNumObjects();

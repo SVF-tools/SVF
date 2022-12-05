@@ -108,14 +108,14 @@ void MTAAnnotator::initialize(MHP* m, LockAnalysis* la)
 {
     mhp = m;
     lsa = la;
-    if (!Options::AnnoFlag)
+    if (!Options::AnnoFlag())
         return;
     collectLoadStoreInst(mhp->getTCT()->getPTA()->getModule());
 }
 
 void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
 {
-    bool AnnoLocal = Options::AnnoFlag & ANNO_LOCAL;
+    bool AnnoLocal = Options::AnnoFlag() & ANNO_LOCAL;
     if (!AnnoLocal)
         return;
 
@@ -202,8 +202,8 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
 void MTAAnnotator::pruneAliasMHP(PointerAnalysis* pta)
 {
 
-    bool AnnoMHP = Options::AnnoFlag & ANNO_MHP;
-    bool AnnoAlias = Options::AnnoFlag & ANNO_ALIAS;
+    bool AnnoMHP = Options::AnnoFlag() & ANNO_MHP;
+    bool AnnoAlias = Options::AnnoFlag() & ANNO_ALIAS;
 
     if (!AnnoMHP && !AnnoAlias)
         return;
@@ -280,7 +280,7 @@ void MTAAnnotator::pruneAliasMHP(PointerAnalysis* pta)
 }
 void MTAAnnotator::performAnnotate()
 {
-    if (!Options::AnnoFlag)
+    if (!Options::AnnoFlag())
         return;
     for (InstSet::iterator it = storeset.begin(), eit = storeset.end(); it != eit; ++it)
     {

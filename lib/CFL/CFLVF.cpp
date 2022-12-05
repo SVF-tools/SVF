@@ -37,7 +37,7 @@ void CFLVF::buildCFLGraph()
 {
     // Build CFL Graph
     VFCFLGraphBuilder cflGraphBuilder = VFCFLGraphBuilder();
-    if (Options::CFLGraph.empty()) // built from svfir
+    if (Options::CFLGraph().empty()) // built from svfir
     {
         PointerAnalysis::initialize();
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
@@ -45,7 +45,7 @@ void CFLVF::buildCFLGraph()
         graph = cflGraphBuilder.buildBigraph(svfg, grammarBase->getStartKind(), grammarBase);
     }
     else
-        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph, grammarBase);
+        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph(), grammarBase);
 
     // Check CFL Graph and Grammar are accordance with grammar
     CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
@@ -69,9 +69,9 @@ void CFLVF::initialize()
 
 void CFLVF::finalize()
 {
-    if(Options::PrintCFL == true)
+    if(Options::PrintCFL())
     {
-        if (Options::CFLGraph.empty())
+        if (Options::CFLGraph().empty())
             svfir->dump("IR");
         grammar->dump("Grammar");
         graph->dump("CFLGraph");

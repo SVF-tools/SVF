@@ -375,7 +375,7 @@ bool MTAResultValidator::validateCxtThread()
     if (tct->getTCTNodeNum() != vthdToCxt.size())
     {
         res = false;
-        if (Options::PrintValidRes)
+        if (Options::PrintValidRes())
         {
             outs() << errMsg("\nValidate CxtThread: The number of CxtThread is different from given result!!!\n");
             outs() << "Given threads:\t" << vthdToCxt.size() << "\nAnalysis result:\t" << tct->getTCTNodeNum() << "\n";
@@ -397,7 +397,7 @@ bool MTAResultValidator::validateCxtThread()
                 if (visitedvthd.find(vthdid) != visitedvthd.end())
                 {
                     res = false;
-                    if (Options::PrintValidRes)
+                    if (Options::PrintValidRes())
                     {
                         outs() << "\nValidate CxtThread: Repeat real CxtThread !!!\n";
                         rthd.dump();
@@ -414,7 +414,7 @@ bool MTAResultValidator::validateCxtThread()
         if (!matched)
         {
             res = false;
-            if (Options::PrintValidRes)
+            if (Options::PrintValidRes())
             {
                 SVFUtil::errs() << errMsg("\nValidate CxtThread: Cannot match real CxtThread !!!\n");
                 rthd.dump();
@@ -425,7 +425,7 @@ bool MTAResultValidator::validateCxtThread()
     if (visitedvthd.size() != vthdToCxt.size())
     {
         res = false;
-        if (Options::PrintValidRes)
+        if (Options::PrintValidRes())
         {
             SVFUtil::errs() << errMsg("\nValidate CxtThread: Some given CxtThreads cannot be found !!!\n");
             assert(false && "test case failed!");
@@ -471,7 +471,7 @@ bool MTAResultValidator::validateTCT()
                 res_node = false;
             }
         }
-        if ((!res_node) && Options::PrintValidRes)
+        if ((!res_node) && Options::PrintValidRes())
         {
             outs() << errMsg("\nValidate TCT: Wrong at TID ") << rthdTovthd[i] << "\n";
             outs() << "Given children: \t";
@@ -505,7 +505,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
 
         if ((*seti).second.size() != tsSet.size())
         {
-            if (Options::PrintValidRes)
+            if (Options::PrintValidRes())
             {
                 outs() << errMsg("\n Validate Interleaving: Wrong at : ") << inst->getSourceLoc() << "\n";
                 outs() << "Reason: The number of thread running on stmt is wrong\n";
@@ -542,7 +542,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
                     NodeBS lev2 = threadStmtToInterLeaving[ts2];
                     if (lev != lev2)
                     {
-                        if (Options::PrintValidRes)
+                        if (Options::PrintValidRes())
                         {
                             outs() << errMsg("\nValidate Interleaving: Wrong at: ") << inst->getSourceLoc() << "\n";
                             outs() << "Reason: thread interleaving on stmt is wrong\n";
@@ -578,7 +578,7 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
 
             if (!matched)
             {
-                if (Options::PrintValidRes)
+                if (Options::PrintValidRes())
                 {
                     outs() << errMsg("\nValidate Interleaving: Wrong at:") << inst->getSourceLoc() << "\n";
                     outs() << "Reason: analysis thread cxt is not matched by given thread cxt\n";

@@ -508,7 +508,7 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
         }
     }
     // dump ICFG
-    if (Options::DumpICFG)
+    if (Options::DumpICFG())
     {
         dump("icfg_final");
     }

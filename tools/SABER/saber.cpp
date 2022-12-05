@@ -31,6 +31,7 @@
 #include "SABER/LeakChecker.h"
 #include "SABER/FileChecker.h"
 #include "SABER/DoubleFreeChecker.h"
+#include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "Util/Z3Expr.h"
 
@@ -38,29 +39,34 @@
 using namespace llvm;
 using namespace SVF;
 
-static llvm::cl::opt<std::string> InputFilename(cl::Positional,
-        llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
+static Option<bool> LEAKCHECKER(
+    "leak",
+    "Memory Leak Detection",
+    false
+);
 
-static llvm::cl::opt<bool> LEAKCHECKER("leak", llvm::cl::init(false),
-                                       llvm::cl::desc("Memory Leak Detection"));
+static Option<bool> FILECHECKER(
+    "fileck",
+    "File Open/Close Detection",
+    false
+);
 
-static llvm::cl::opt<bool> FILECHECKER("fileck", llvm::cl::init(false),
-                                       llvm::cl::desc("File Open/Close Detection"));
-
-static llvm::cl::opt<bool> DFREECHECKER("dfree", llvm::cl::init(false),
-                                        llvm::cl::desc("Double Free Detection"));
+static Option<bool> DFREECHECKER(
+    "dfree",
+    "Double Free Detection",
+    false
+);
 
 int main(int argc, char ** argv)
 {
 
-    int arg_num = 0;
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
-    LLVMUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
-    cl::ParseCommandLineOptions(arg_num, arg_value,
-                                "Source-Sink Bug Detector\n");
+    moduleNameVec = OptionBase::parseOptions(
+        argc, argv, "Source-Sink Bug Detector", "[options] <input-bitcode...>"
+    );
 
-    if (Options::WriteAnder == "ir_annotator")
+    if (Options::WriteAnder() == "ir_annotator")
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
@@ -71,11 +77,11 @@ int main(int argc, char ** argv)
 
     std::unique_ptr<LeakChecker> saber;
 
-    if(LEAKCHECKER)
+    if(LEAKCHECKER())
         saber = std::make_unique<LeakChecker>();
-    else if(FILECHECKER)
+    else if(FILECHECKER())
         saber = std::make_unique<FileChecker>();
-    else if(DFREECHECKER)
+    else if(DFREECHECKER())
         saber = std::make_unique<DoubleFreeChecker>();
     else
         saber = std::make_unique<LeakChecker>();  // if no checker is specified, we use leak checker as the default one.

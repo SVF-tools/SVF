@@ -43,7 +43,7 @@ void NodeIDAllocator::unset(void)
 
 // Initialise counts to 4 because that's how many special nodes we have.
 NodeIDAllocator::NodeIDAllocator(void)
-    : numObjects(4), numValues(4), numSymbols(4), numNodes(4), strategy(Options::NodeAllocStrat)
+    : numObjects(4), numValues(4), numSymbols(4), numNodes(4), strategy(Options::NodeAllocStrat())
 { }
 
 NodeID NodeIDAllocator::allocateObjectId(void)
@@ -188,7 +188,7 @@ const std::string NodeIDAllocator::Clusterer::NumNonTrivialRegionObjects = "NumN
 std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates, std::string evalSubtitle)
 {
     assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
-    assert(Options::NodeAllocStrat == Strategy::DENSE && "Clusterer::cluster: only dense allocation clustering currently supported");
+    assert(Options::NodeAllocStrat() == Strategy::DENSE && "Clusterer::cluster: only dense allocation clustering currently supported");
 
     Map<std::string, std::string> overallStats;
     double fastClusterTime = 0.0;
@@ -235,7 +235,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
 
     size_t numRegions = 0;
     std::vector<unsigned> objectsRegion;
-    if (Options::RegionedClustering)
+    if (Options::RegionedClustering())
     {
         objectsRegion = regionObjects(coPointeeGraph, numObjects, numRegions);
     }
@@ -307,7 +307,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
     overallStats[NumRegions] = std::to_string(numRegions);
 
     std::vector<hclust_fast_methods> methods;
-    if (Options::ClusterMethod == HCLUST_METHOD_SVF_BEST)
+    if (Options::ClusterMethod() == HCLUST_METHOD_SVF_BEST)
     {
         methods.push_back(HCLUST_METHOD_SINGLE);
         methods.push_back(HCLUST_METHOD_COMPLETE);
@@ -315,7 +315,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
     }
     else
     {
-        methods.push_back(Options::ClusterMethod);
+        methods.push_back(Options::ClusterMethod());
     }
 
     for (const hclust_fast_methods method : methods)
@@ -331,7 +331,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
             const size_t regionNumObjects = regionsObjects[region].size();
             // Round up to next Word: ceiling of current allocation to get how
             // many words and multiply to get the number of bits; if we're aligning.
-            if (Options::RegionAlign)
+            if (Options::RegionAlign())
             {
                 allocCounter =
                     ((allocCounter + NATIVE_INT_SIZE - 1) / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
@@ -656,7 +656,7 @@ std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::
     std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping = candidates[0];
     // Number of bits required for the best candidate.
     size_t bestWords = std::numeric_limits<size_t>::max();
-    if (evalSubtitle != "" || Options::ClusterMethod == HCLUST_METHOD_SVF_BEST)
+    if (evalSubtitle != "" || Options::ClusterMethod() == HCLUST_METHOD_SVF_BEST)
     {
         for (const std::pair<hclust_fast_methods, std::vector<NodeID>> &candidate : candidates)
         {
@@ -673,8 +673,8 @@ std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::
             printStats(evalSubtitle + ": candidate " + candidateMethodName, candidateStats);
 
             size_t candidateWords = 0;
-            if (Options::PtType == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);
-            else if (Options::PtType == PointsTo::CBV) candidateWords = std::stoull(candidateStats[NewBvNumWords]);
+            if (Options::PtType() == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);
+            else if (Options::PtType() == PointsTo::CBV) candidateWords = std::stoull(candidateStats[NewBvNumWords]);
             else assert(false && "Clusterer::cluster: unsupported BV type for clustering.");
 
             if (candidateWords < bestWords)

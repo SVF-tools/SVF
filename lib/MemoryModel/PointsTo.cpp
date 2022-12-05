@@ -23,7 +23,7 @@ PointsTo::MappingPtr PointsTo::currentBestNodeMapping = nullptr;
 PointsTo::MappingPtr PointsTo::currentBestReverseNodeMapping = nullptr;
 
 PointsTo::PointsTo()
-    : type(Options::PtType), nodeMapping(currentBestNodeMapping),
+    : type(Options::PtType()), nodeMapping(currentBestNodeMapping),
       reverseNodeMapping(currentBestReverseNodeMapping)
 {
     if (type == SBV) new (&sbv) SparseBitVector<>();

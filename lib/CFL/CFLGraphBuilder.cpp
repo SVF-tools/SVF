@@ -139,7 +139,7 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
                 }
                 else
                 {
-                    if(Options::FlexSymMap == true)
+                    if(Options::FlexSymMap() == true)
                     {
                         label2KindMap.insert({matches.str(3), current++});
                         cflGraph->addCFLEdge(src, dst, label2KindMap[matches.str(3)]);
