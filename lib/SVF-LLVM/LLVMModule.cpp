@@ -439,6 +439,12 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 
     for (const std::string& moduleName : moduleNameVec)
     {
+        if (!LLVMUtil::isIRFile(moduleName))
+        {
+            SVFUtil::errs() << "not an IR file: " << moduleName << std::endl;
+            abort();
+        }
+
         SMDiagnostic Err;
         std::unique_ptr<Module> mod = parseIRFile(moduleName, Err, *cxts);
         if (mod == nullptr)
