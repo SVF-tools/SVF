@@ -113,7 +113,7 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
 {
 
     SVFIR* pag = SVFIR::getPAG();
-    if(Options::AllPairMHP)
+    if(Options::AllPairMHP())
     {
         Set<const SVFInstruction*> instSet1;
         Set<const SVFInstruction*> instSet2;

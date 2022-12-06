@@ -14,45 +14,55 @@
 using namespace llvm;
 using namespace SVF;
 
-static cl::opt<bool>
-StandardCompileOpts("std-compile-opts",
-                    cl::desc("Include the standard compile time optimizations"));
-
-static llvm::cl::opt<std::string> InputFilename(llvm::cl::Positional,
-        llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
-
 //static cl::list<const PassInfo*, bool, PassNameParser>
 //PassList(cl::desc("Optimizations available:"));
 
-static cl::opt<bool> DAA("daa", cl::init(false),
-                         cl::desc("Demand-Driven Alias Analysis Pass"));
+static Option<bool> DAA(
+    "daa",
+    "Demand-Driven Alias Analysis Pass",
+    false
+);
 
-static cl::opt<bool> REGPT("dreg", cl::init(false),
-                           cl::desc("Demand-driven regular points-to analysis"));
+static Option<bool> REGPT(
+    "dreg",
+    "Demand-driven regular points-to analysis",
+    false
+);
 
-static cl::opt<bool> RFINEPT("dref", cl::init(false),
-                             cl::desc("Demand-driven refinement points-to analysis"));
+static Option<bool> RFINEPT(
+    "dref",
+    "Demand-driven refinement points-to analysis",
+    false
+);
 
-static cl::opt<bool> ENABLEFIELD("fdaa", cl::init(false),
-                                 cl::desc("enable field-sensitivity for demand-driven analysis"));
+static Option<bool> ENABLEFIELD(
+    "fdaa",
+    "enable field-sensitivity for demand-driven analysis",
+    false
+);
 
-static cl::opt<bool> ENABLECONTEXT("cdaa", cl::init(false),
-                                   cl::desc("enable context-sensitivity for demand-driven analysis"));
+static Option<bool> ENABLECONTEXT(
+    "cdaa",
+    "enable context-sensitivity for demand-driven analysis",
+    false
+);
 
-static cl::opt<bool> ENABLEFLOW("ldaa", cl::init(false),
-                                cl::desc("enable flow-sensitivity for demand-driven analysis"));
+static Option<bool> ENABLEFLOW(
+    "ldaa",
+    "enable flow-sensitivity for demand-driven analysis",
+    false
+);
 
 int main(int argc, char ** argv)
 {
 
-    int arg_num = 0;
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
-    LLVMUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
-    cl::ParseCommandLineOptions(arg_num, arg_value,
-                                "Demand-Driven Points-to Analysis\n");
+    moduleNameVec = OptionBase::parseOptions(
+                        argc, argv, "Demand-Driven Points-to Analysis", "[options] <input-bitcode...>"
+                    );
 
-    if (Options::WriteAnder == "ir_annotator")
+    if (Options::WriteAnder() == "ir_annotator")
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }

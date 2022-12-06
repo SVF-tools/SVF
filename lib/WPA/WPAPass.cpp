@@ -70,7 +70,8 @@ void WPAPass::runOnModule(SVFIR* pag)
 {
     for (u32_t i = 0; i<= PointerAnalysis::Default_PTA; i++)
     {
-        if (Options::PASelected.isSet(i))
+        PointerAnalysis::PTATY iPtaTy = static_cast<PointerAnalysis::PTATY>(i);
+        if (Options::PASelected(iPtaTy))
             runPointerAnalysis(pag, i);
     }
     assert(!ptaVector.empty() && "No pointer analysis is specified.\n");
@@ -115,17 +116,17 @@ void WPAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
 
     ptaVector.push_back(_pta);
     _pta->analyze();
-    if (Options::AnderSVFG)
+    if (Options::AnderSVFG())
     {
         SVFGBuilder memSSA(true);
         assert(SVFUtil::isa<AndersenBase>(_pta) && "supports only andersen/steensgaard for pre-computed SVFG");
         SVFG *svfg = memSSA.buildFullSVFG((BVDataPTAImpl*)_pta);
         /// support mod-ref queries only for -ander
-        if (Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA))
+        if (Options::PASelected(PointerAnalysis::AndersenWaveDiff_WPA))
             _svfg = svfg;
     }
 
-    if (Options::PrintAliases)
+    if (Options::PrintAliases())
         PrintAliasPairs(_pta);
 }
 
@@ -172,7 +173,7 @@ AliasResult WPAPass::alias(const SVFValue* V1, const SVFValue* V2)
     if (pag->hasValueNode(V1) && pag->hasValueNode(V2))
     {
         /// Veto is used by default
-        if (Options::AliasRule.getBits() == 0 || Options::AliasRule.isSet(Veto))
+        if (Options::AliasRule.nothingSet() || Options::AliasRule(Veto))
         {
             /// Return NoAlias if any PTA gives NoAlias result
             result = AliasResult::MayAlias;
@@ -184,7 +185,7 @@ AliasResult WPAPass::alias(const SVFValue* V1, const SVFValue* V2)
                     result = AliasResult::NoAlias;
             }
         }
-        else if (Options::AliasRule.isSet(Conservative))
+        else if (Options::AliasRule(Conservative))
         {
             /// Return MayAlias if any PTA gives MayAlias result
             result = AliasResult::NoAlias;
@@ -206,7 +207,7 @@ AliasResult WPAPass::alias(const SVFValue* V1, const SVFValue* V2)
  */
 ModRefInfo WPAPass::getModRefInfo(const CallSite callInst)
 {
-    assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
+    assert(Options::PASelected(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG() && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
     const CallICFGNode* cbn = icfg->getCallICFGNode(callInst.getInstruction());
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn);
@@ -217,7 +218,7 @@ ModRefInfo WPAPass::getModRefInfo(const CallSite callInst)
  */
 ModRefInfo WPAPass::getModRefInfo(const CallSite callInst, const SVFValue* V)
 {
-    assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
+    assert(Options::PASelected(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG() && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
     const CallICFGNode* cbn = icfg->getCallICFGNode(callInst.getInstruction());
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn, V);
@@ -228,7 +229,7 @@ ModRefInfo WPAPass::getModRefInfo(const CallSite callInst, const SVFValue* V)
  */
 ModRefInfo WPAPass::getModRefInfo(const CallSite callInst1, const CallSite callInst2)
 {
-    assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
+    assert(Options::PASelected(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG() && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
     const CallICFGNode* cbn1 = icfg->getCallICFGNode(callInst1.getInstruction());
     const CallICFGNode* cbn2 = icfg->getCallICFGNode(callInst2.getInstruction());

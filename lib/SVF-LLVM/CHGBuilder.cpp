@@ -82,7 +82,7 @@ void CHGBuilder::buildCHG()
     timeEnd = PTAStat::getClk(true);
     chg->buildingCHGTime = (timeEnd - timeStart) / TIMEINTERVAL;
 
-    if (Options::DumpCHA)
+    if (Options::DumpCHA())
         chg->dump("cha");
 }
 

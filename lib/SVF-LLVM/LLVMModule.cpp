@@ -140,7 +140,7 @@ void LLVMModuleSet::build()
     buildFunToFunMap();
     buildGlobalDefToRepMap();
 
-    if (Options::SVFMain)
+    if (Options::SVFMain())
         addSVFMain();
 
     createSVFDataStructure();
@@ -407,7 +407,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 {
 
     // We read SVFIR from LLVM IR
-    if(Options::Graphtxt.getValue().empty())
+    if(Options::Graphtxt().empty())
     {
         if(moduleNameVec.empty())
         {
@@ -418,7 +418,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     }
     // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
     else
-        SVFModule::setPagFromTXT(Options::Graphtxt.getValue());
+        SVFModule::setPagFromTXT(Options::Graphtxt());
 
     //
     // To avoid the following type bugs (t1 != t3) when parsing multiple modules,
@@ -439,6 +439,12 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 
     for (const std::string& moduleName : moduleNameVec)
     {
+        if (!LLVMUtil::isIRFile(moduleName))
+        {
+            SVFUtil::errs() << "not an IR file: " << moduleName << std::endl;
+            abort();
+        }
+
         SMDiagnostic Err;
         std::unique_ptr<Module> mod = parseIRFile(moduleName, Err, *cxts);
         if (mod == nullptr)

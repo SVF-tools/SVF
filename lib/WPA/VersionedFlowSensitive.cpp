@@ -39,7 +39,7 @@ VersionedFlowSensitive::VersionedFlowSensitive(SVFIR *_pag, PTATY type)
         if (SVFUtil::isa<ObjVar>(it->second)) equivalentObject[it->first] = it->first;
     }
 
-    assert(!Options::OPTSVFG && "VFS: -opt-svfg not currently supported with VFS.");
+    assert(!Options::OPTSVFG() && "VFS: -opt-svfg not currently supported with VFS.");
 }
 
 void VersionedFlowSensitive::initialize()
@@ -121,7 +121,7 @@ void VersionedFlowSensitive::meldLabel(void)
 {
     double start = stat->getClk(true);
 
-    assert(Options::VersioningThreads > 0 && "VFS::meldLabel: number of versioning threads must be > 0!");
+    assert(Options::VersioningThreads() > 0 && "VFS::meldLabel: number of versioning threads must be > 0!");
 
     // Nodes which have at least one object on them given a prelabel + the Andersen's points-to
     // set of interest so we don't keep calling getPts. For Store nodes, we'll fill that in, for
@@ -414,7 +414,7 @@ void VersionedFlowSensitive::meldLabel(void)
     };
 
     std::vector<std::thread> workers;
-    for (unsigned i = 0; i < Options::VersioningThreads; ++i) workers.push_back(std::thread(meldVersionWorker, i));
+    for (unsigned i = 0; i < Options::VersioningThreads(); ++i) workers.push_back(std::thread(meldVersionWorker, i));
     for (std::thread &worker : workers) worker.join();
 
     delete[] versionMutexes;
@@ -777,7 +777,7 @@ void VersionedFlowSensitive::cluster(void)
     {
         unsigned occ = 1;
         unsigned v = pit->first;
-        if (Options::PredictPtOcc && pag->getObject(v) != nullptr) occ = stmtReliance[v].size() + 1;
+        if (Options::PredictPtOcc() && pag->getObject(v) != nullptr) occ = stmtReliance[v].size() + 1;
         assert(occ != 0);
         keys.push_back(std::make_pair(v, occ));
     }

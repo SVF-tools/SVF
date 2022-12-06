@@ -66,7 +66,7 @@ const StInfo* SymbolTableInfo::getTypeInfo(const SVFType* T) const
  */
 ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const SVFType* type)
 {
-    ObjTypeInfo* typeInfo = new ObjTypeInfo(type, Options::MaxFieldLimit);
+    ObjTypeInfo* typeInfo = new ObjTypeInfo(type, Options::MaxFieldLimit());
     if(type && type->isPointerTy())
     {
         typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
@@ -83,7 +83,7 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
     if (symInfo == nullptr)
     {
         symInfo = new SymbolTableInfo();
-        symInfo->setModelConstants(Options::ModelConsts);
+        symInfo->setModelConstants(Options::ModelConsts());
     }
     return symInfo;
 }
@@ -146,7 +146,7 @@ const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const SVFType* type)
 /// Number of flattenned elements of an array or struct
 u32_t SymbolTableInfo::getNumOfFlattenElements(const SVFType* T)
 {
-    if(Options::ModelArrays)
+    if(Options::ModelArrays())
         return getTypeInfo(T)->getNumOfFlattenElements();
     else
         return getTypeInfo(T)->getNumOfFlattenFields();
@@ -155,7 +155,7 @@ u32_t SymbolTableInfo::getNumOfFlattenElements(const SVFType* T)
 /// Flatterned offset information of a struct or an array including its array fields
 u32_t SymbolTableInfo::getFlattenedElemIdx(const SVFType* T, u32_t origId)
 {
-    if(Options::ModelArrays)
+    if(Options::ModelArrays())
     {
         const std::vector<u32_t>& so = getTypeInfo(T)->getFlattenedElemIdxVec();
         assert ((unsigned)origId < so.size() && !so.empty() && "element index out of bounds, can't get flattened index!");
@@ -186,7 +186,7 @@ const SVFType* SymbolTableInfo::getOriginalElemType(const SVFType* baseType, u32
 /// Return the type of a flattened element given a flattened index
 const SVFType* SymbolTableInfo::getFlatternedElemType(const SVFType* baseType, u32_t flatten_idx)
 {
-    if(Options::ModelArrays)
+    if(Options::ModelArrays())
     {
         const std::vector<const SVFType*>& so = getTypeInfo(baseType)->getFlattenElementTypes();
         assert (flatten_idx < so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
@@ -365,7 +365,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
     if (SVFUtil::isa<SVFStructType, SVFArrayType>(ety))
     {
         u32_t sz = 0;
-        if(Options::ModelArrays)
+        if(Options::ModelArrays())
             sz = SymbolTableInfo::SymbolInfo()->getTypeInfo(ety)->getFlattenElementTypes().size();
         else
             sz = SymbolTableInfo::SymbolInfo()->getTypeInfo(ety)->getFlattenFieldTypes().size();
