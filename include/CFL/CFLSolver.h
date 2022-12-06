@@ -125,7 +125,7 @@ class POCRSolver : public CFLSolver
         return _cflData;
     }
 
-   //virtual void initialize();
+    //virtual void initialize();
 
 private:
     CFLData* _cflData;

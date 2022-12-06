@@ -65,7 +65,7 @@ public:
         return _cflData;
     }
 
-        //CFL data operations
+    //CFL data operations
     //@{
     virtual bool addEdge(const NodeID srcId, const NodeID dstId, const Label ty)
     {
@@ -82,7 +82,7 @@ public:
         for (CFLEdge* edge: _graph->getCFLEdges())
             addEdge(edge->getSrcID(), edge->getDstID(), edge->getEdgeKind());
         return  cflData();
-    }   
+    }
 
 
 };

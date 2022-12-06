@@ -25,9 +25,9 @@
  *
  *  Created on: Nov 22, 2019
  *      Author: Yuxiang Lei
- *  
+ *
  * The implementation is based on
- * Yuxiang Lei, Yulei Sui, Shuo Ding, and Qirun Zhang. 
+ * Yuxiang Lei, Yulei Sui, Shuo Ding, and Qirun Zhang.
  * Taming Transitive Redundancy for Context-Free Language Reachability.
  * ACM SIGPLAN Conference on Object-Oriented Programming, Systems, Languages, and Applications
  */
@@ -53,7 +53,7 @@ public:
     typedef typename DataMap::const_iterator const_iterator;        // const iterator
 
 protected:
-    DataMap succMap;                                                // succ map for nodes contains Label: Edgeset     
+    DataMap succMap;                                                // succ map for nodes contains Label: Edgeset
     DataMap predMap;                                                // pred map for nodes contains Label: edgeset
     const NodeBS emptyData;                                         // ??
     NodeBS diff;                                                    // ??
@@ -162,7 +162,8 @@ public:
     inline NodeBS addEdges(const NodeID src, const NodeBS& dstData, const Label ty)
     {
         NodeBS newDsts;
-        if (addSuccs(src, dstData, ty)) {
+        if (addSuccs(src, dstData, ty))
+        {
             for (const NodeID datum: dstData)
                 if (addPred(datum, src, ty))
                     newDsts.set(datum);
@@ -174,7 +175,8 @@ public:
     inline NodeBS addEdges(const NodeBS& srcData, const NodeID dst, const Label ty)
     {
         NodeBS newSrcs;
-        if (addPreds(dst, srcData, ty)) {
+        if (addPreds(dst, srcData, ty))
+        {
             for (const NodeID datum: srcData)
                 if (addSucc(datum, dst, ty))
                     newSrcs.set(datum);
@@ -244,8 +246,10 @@ public:
 
     ~HybridData()
     {
-        for (auto iter1: indMap) {
-            for (auto iter2: iter1.second) {
+        for (auto iter1: indMap)
+        {
+            for (auto iter2: iter1.second)
+            {
                 delete iter2.second;
                 iter2.second = NULL;
             }
@@ -283,8 +287,10 @@ public:
 
     void addArc(NodeID src, NodeID dst)
     {
-        if (!hasInd(src, dst)) {
-            for (auto iter: indMap[src]) {
+        if (!hasInd(src, dst))
+        {
+            for (auto iter: indMap[src])
+            {
                 meld(iter.first, getNode(iter.first, src), getNode(dst, dst));
             }
         }
@@ -297,7 +303,8 @@ public:
             return;
 
         insertEdge(uNode, newVNode);
-        for (TreeNode* vChild: vNode->children) {
+        for (TreeNode* vChild: vNode->children)
+        {
             meld(x, newVNode, vChild);
         }
     }

@@ -59,7 +59,7 @@ int main(int argc, char ** argv)
     std::unique_ptr<CFLBase> cfl;
     if (Options::CFLSVFG())
         cfl = std::make_unique<CFLVF>(svfir);
-    else if (Options::POCRAlias()) 
+    else if (Options::POCRAlias())
         cfl = std::make_unique<POCRAlias>(svfir);
     else
         cfl = std::make_unique<CFLAlias>(svfir); // if no svfg is specified, we use CFLAlias as the default one.

@@ -167,10 +167,10 @@ public:
     /// Init CFLData
     virtual void buildCFLData();
 
-    private:
-        /// Graph dataset
-        CFLData* _cflData;
-    };
+private:
+    /// Graph dataset
+    CFLData* _cflData;
+};
 } // End namespace SVF
 
 #endif /* INCLUDE_CFL_CFLALIAS_H_*/

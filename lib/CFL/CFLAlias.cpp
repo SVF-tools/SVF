@@ -263,7 +263,7 @@ void POCRAlias::initialize()
 
 void POCRAlias::buildCFLData()
 {
-     // Start building CFLGraph
+    // Start building CFLGraph
     double start = stat->getClk(true);
 
     CFLDataBuilder cflDataBuilder = CFLDataBuilder(graph);
