@@ -473,7 +473,7 @@ PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(const PointsTo
     return *this;
 }
 
-PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(PointsToIterator &&rhs)
+PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(PointsToIterator &&rhs) noexcept
 {
     this->pt = rhs.pt;
 
