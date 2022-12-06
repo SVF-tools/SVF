@@ -255,7 +255,7 @@ public:
     static const Option<bool> FlexSymMap;
     static const Option<bool>  PEGTransfer;
     static const Option<bool>  CFLSVFG;
-    static const Option<bool> CFLData;
+    static const Option<bool> POCRAlias;
 
     // Loop Analysis
     static const Option<bool> LoopAnalysis;

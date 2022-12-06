@@ -823,8 +823,8 @@ const Option<bool> Options::CFLSVFG(
     false
 );
 
-const Option<bool> Options::CFLData(
-    "cfldata",
+const Option<bool> Options::POCRAlias(
+    "pocr-alias",
     "When explicit to true, cfl data builder will transfer CFL graph to CFLData.",
     false
 );
