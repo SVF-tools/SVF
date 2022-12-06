@@ -47,56 +47,81 @@ namespace SVF
 
 ** Specifications in ExtAPI.json
 
-*** [1] Overview of the Specification Language
+****  Overview of the Specification Language
 The specification language of external functions is based on the JSON format. And every function defined by the Specification Language is an object that represents the specification rules. These Specification Language objects for functions contain four parts:
-1. the name of the function,
-2. the switch that controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code,
-3. the type of the function,
-4. the operations conducted by the function.
+1. the signature of the function, (Mandatory)
+2. the type of the function, (Mandatory)
+3. the switch that controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code, (Mandatory)
+4. the side-effect of the function. (Optional)
 
-*** [2] Overwriting the user-defined functions
-The switch *overwrite_app_function* controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code (e.g., CPP files). When the switch *overwrite_app_function* is set to a value of 1, SVF will use the specification rules in ExtAPI.json to conduct the analysis and ignore the user-defined functions in the input CPP/bc files.
-overwrite_app_function = 0: Analyze the user-defined functions.
-overwrite_app_function = 1: Use specifications in ExtAPI.json to overwrite the user-defined functions.
+*** [1] the signature of the function (Mandatory)
+"return": return value type (Only care about whether the return value is a pointer during analysis)
+"argument": argument types (Only care about the number of arguments during analysis)
 
-*** [3] Function types
+
+*** [2] the type of the function (Mandatory)
 Function type represents the properties of the function.
 For example,
 "EFT_ALLOC" represents if this external function allocates a new object and assigns it to one of its arguments,
 For the selection of function type and a more detailed explanation, please refer to the definition of enum *extType* in ExtAPI.h.
 
-*** [4] Function operations
-Function operations indicate the relationships between input and output,
+
+*** [3] the switch that controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code (Mandatory)
+The switch *overwrite_app_function* controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code (e.g., CPP files). When the switch *overwrite_app_function* is set to a value of 1, SVF will use the specification rules in ExtAPI.json to conduct the analysis and ignore the user-defined functions in the input CPP/bc files.
+overwrite_app_function = 0: Analyze the user-defined functions.
+overwrite_app_function = 1: Use specifications in ExtAPI.json to overwrite the user-defined functions.
+
+For example, The following is the code to be analyzed, which has a foo() function,
+--------------------------------------------------------
+char* foo(char* arg)
+{
+    return arg;
+}
+
+int main()
+{
+    char* ret = foo("abc");
+    return 0;
+}
+--------------------------------------------------------
+function foo() has a definition, but you want SVF not to use this definition when analyzing, and you think foo () should do nothing, Then you can add a new entry in ExtAPI.json, and set *"overwrite_app_function": 1*
+ "foo": {
+        "return":  "char*",
+        "arguments":  "(char*)",
+        "type": "EFT_NOOP",
+        "overwrite_app_function": 1
+ }
+When SVF is analyzing foo(), SVF will use the entry you defined in ExtAPI.json, and ignore the actual definition of foo() in the program.
+
+Most of the time, overwrite_app_function is 0, unless you want to redefine a function.
+
+
+*** [4] the side-effect of the function (Optional, if there is no side-effect of that function)
+Function side-effect indicate the relationships between input and output,
 mainly between function parameters or between parameters and return values after the execution.
 For example,
-"copy": ["A2", "L"] indicates that after this external function is executed, the value of the 2nd parameter is copied into the return value.
-For the selection of function type and a more detailed explanation, please refer to the definition of enum *extf_t* in ExtAPI.h.
+"CopyStmt": ["Arg2", "Ret"] indicates that after this external function is executed, the value of the 2nd parameter is copied into the return value.
 
-For operands of function operation, e.g., "A2", "L", there are the following options:
-"A": represents a parameter;
-"N": represents a number;
-"R": represents a reference;
-"L": represents a return value;
-"V": represents a dummy node;
+For operators of function operation, there are the following options:
+"AddrStmt",
+"CopyStmt",
+"LoadStmt"
+"StoreStmt",
+"GepStmt",
+"BinaryOPStmt",
+"UnaryOPStmt",
+"CmpStmt",
+"memset_like": the function has similar side-effect to function "void *memset(void *str, int c, size_t n)",
+"memcpy_like": the function has similar side-effect to function "void *memcpy(void *dest, const void * src, size_t n)",
+"funptr_ops": the function has similar side-effect to function "void *dlsym(void *handle, const char *symbol)",
+"Rb_tree_ops: the function has similar side-effect to function "_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_".
 
-Among them, a parameter may have multiple forms because there may be various parameters, and the parameter may be a reference or complex structure,
+For operands of function operation,, there are the following options:
+"Arg": represents a parameter,
+"Obj": represents a object,
+"Ret": represents a return value,
+"Dummy": represents a dummy node.
 
-Here we use regular expressions "(AN)(R|RN)^*" to represent parameters, for example,
-"A0": represents the 1st parameter;
-"A2R": represents that the 3rd parameter is a reference;
-"A1R2": represents the 3rd substructure of the 2nd parameter "A1R", where "A1R" is a complex structure;
-"A2R3R": represents the 4th substructure of the 3rd parameter "A2R" is a reference, where "A2R" is a complex structure;
-
-
-** Specification format:
-"functionName": {
-"type": "functional type",
-"overwrite_app_function:" 0/1,
-"function operation_1": [ operand_1, operand_2, ... , operand_n],
-"function operation_2": [ operand_1, operand_2, ... , operand_n],
-...
-"function operation_n": [ operand_1, operand_2, ... , operand_n]
-}
 */
 
 class ExtAPI
