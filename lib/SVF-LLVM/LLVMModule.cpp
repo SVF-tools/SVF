@@ -879,6 +879,7 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
     {
         SVFConstantData* svfcd = nullptr;
         if(const ConstantInt* cint = SVFUtil::dyn_cast<ConstantInt>(cd)) {
+            /// bool true will be translated to -1 with getSExtValue, so call getZExtValue() if bitwidth = 1
             svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), cint->getZExtValue(),
                                        cint->getBitWidth() == 1? cint->getZExtValue(): cint->getSExtValue());
         }
