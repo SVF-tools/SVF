@@ -878,8 +878,10 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
     else
     {
         SVFConstantData* svfcd = nullptr;
-        if(const ConstantInt* cint = SVFUtil::dyn_cast<ConstantInt>(cd))
-            svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), cint->getZExtValue(),cint->getSExtValue());
+        if(const ConstantInt* cint = SVFUtil::dyn_cast<ConstantInt>(cd)) {
+            svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), cint->getZExtValue(),
+                                       cint->getBitWidth() == 1? cint->getZExtValue(): cint->getSExtValue());
+        }
         else if(const ConstantFP* cfp = SVFUtil::dyn_cast<ConstantFP>(cd))
         {
             double dval = 0;

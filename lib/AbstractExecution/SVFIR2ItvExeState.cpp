@@ -214,19 +214,8 @@ void SVFIR2ItvExeState::initObjVar(const ObjVar *objVar, u32_t varId)
         {
             if (const SVFConstantInt *consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue()))
             {
-                if (LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(consInt) ==
-                        llvm::ConstantInt::getTrue(LLVMModuleSet::getLLVMModuleSet()->getContext()))
-                {
-                    IntervalExeState::globalES[varId] = IntervalValue(1, 1);
-                }
-                else if (LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(consInt) ==
-                         llvm::ConstantInt::getFalse(LLVMModuleSet::getLLVMModuleSet()->getContext()))
-                    IntervalExeState::globalES[varId] = IntervalValue(0, 0);
-                else
-                {
-                    double numeral = (double)consInt->getSExtValue();
-                    IntervalExeState::globalES[varId] = IntervalValue(numeral, numeral);
-                }
+                double numeral = (double)consInt->getSExtValue();
+                IntervalExeState::globalES[varId] = IntervalValue(numeral, numeral);
             }
             else if (const SVFConstantFP* consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue()))
             {
