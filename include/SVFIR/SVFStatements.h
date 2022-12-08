@@ -802,7 +802,8 @@ private:
 public:
 
     /// OpCode for CmpStmt, enum value is same to llvm CmpInst
-    enum Predicate : unsigned {
+    enum Predicate : unsigned
+    {
         // Opcode            U L G E    Intuitive operation
         FCMP_FALSE = 0, ///< 0 0 0 0    Always false (always folded)
         FCMP_OEQ = 1,   ///< 0 0 0 1    True if ordered and equal
