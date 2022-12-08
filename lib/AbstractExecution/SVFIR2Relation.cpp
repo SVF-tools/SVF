@@ -17,37 +17,37 @@ void SVFIR2ItvExeState::translateBinaryRel(const BinaryOPStmt *binary)
     const Z3Expr &rel_value1 = _relEs.toZ3Expr(op1);
     switch (binary->getOpcode())
     {
-    case BinaryOperator::Add:
+    case BinaryOPStmt::Add:
     {
         rel_res = rel_value0 + rel_value1;
         break;
     }
-    case BinaryOperator::Sub:
+    case BinaryOPStmt::Sub:
     {
         rel_res = rel_value0 - rel_value1;
         break;
     }
-    case BinaryOperator::Mul:
+    case BinaryOPStmt::Mul:
     {
         rel_res = rel_value0 * rel_value1;
         break;
     }
-    case BinaryOperator::SDiv:
+    case BinaryOPStmt::SDiv:
     {
         rel_res = rel_value0 / rel_value1;
         break;
     }
-    case BinaryOperator::SRem:
+    case BinaryOPStmt::SRem:
         break;
-    case BinaryOperator::Xor:
+    case BinaryOPStmt::Xor:
         break;
-    case BinaryOperator::And:
+    case BinaryOPStmt::And:
         break;
-    case BinaryOperator::Or:
+    case BinaryOPStmt::Or:
         break;
-    case BinaryOperator::AShr:
+    case BinaryOPStmt::AShr:
         break;
-    case BinaryOperator::Shl:
+    case BinaryOPStmt::Shl:
         break;
     default:
     {
@@ -68,36 +68,36 @@ void SVFIR2ItvExeState::translateCmpRel(const CmpStmt *cmp)
     const Z3Expr &rel_value1 = _relEs.toZ3Expr(op1);
     switch (predicate)
     {
-    case CmpInst::ICMP_EQ:
+    case CmpStmt::ICMP_EQ:
     {
         rel_res = ite(rel_value0 == rel_value1, 1, 0);
         break;
     }
-    case CmpInst::ICMP_NE:
+    case CmpStmt::ICMP_NE:
     {
         rel_res = ite(rel_value0 != rel_value1, 1, 0);
         break;
     }
-    case CmpInst::ICMP_UGT:
-    case CmpInst::ICMP_SGT:
+    case CmpStmt::ICMP_UGT:
+    case CmpStmt::ICMP_SGT:
     {
         rel_res = ite(rel_value0 > rel_value1, 1, 0);
         break;
     }
-    case CmpInst::ICMP_UGE:
-    case CmpInst::ICMP_SGE:
+    case CmpStmt::ICMP_UGE:
+    case CmpStmt::ICMP_SGE:
     {
         rel_res = ite(rel_value0 >= rel_value1, 1, 0);
         break;
     }
-    case CmpInst::ICMP_ULT:
-    case CmpInst::ICMP_SLT:
+    case CmpStmt::ICMP_ULT:
+    case CmpStmt::ICMP_SLT:
     {
         rel_res = ite(rel_value0 < rel_value1, 1, 0);
         break;
     }
-    case CmpInst::ICMP_ULE:
-    case CmpInst::ICMP_SLE:
+    case CmpStmt::ICMP_ULE:
+    case CmpStmt::ICMP_SLE:
     {
         rel_res = ite(rel_value0 <= rel_value1, 1, 0);
         break;

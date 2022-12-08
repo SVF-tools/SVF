@@ -305,44 +305,44 @@ void SVFIR2ItvExeState::translateBinary(const BinaryOPStmt *binary)
         IntervalValue resVal;
         switch (binary->getOpcode())
         {
-        case BinaryOperator::Add:
-        case BinaryOperator::FAdd:
+        case BinaryOPStmt::Add:
+        case BinaryOPStmt::FAdd:
             resVal = (lhs + rhs);
             break;
-        case BinaryOperator::Sub:
-        case BinaryOperator::FSub:
+        case BinaryOPStmt::Sub:
+        case BinaryOPStmt::FSub:
             resVal = (lhs - rhs);
             break;
-        case BinaryOperator::Mul:
-        case BinaryOperator::FMul:
+        case BinaryOPStmt::Mul:
+        case BinaryOPStmt::FMul:
             resVal = (lhs * rhs);
             break;
-        case BinaryOperator::SDiv:
-        case BinaryOperator::FDiv:
-        case BinaryOperator::UDiv:
+        case BinaryOPStmt::SDiv:
+        case BinaryOPStmt::FDiv:
+        case BinaryOPStmt::UDiv:
             resVal = (lhs / rhs);
             break;
-        case BinaryOperator::SRem:
-        case BinaryOperator::FRem:
-        case BinaryOperator::URem:
+        case BinaryOPStmt::SRem:
+        case BinaryOPStmt::FRem:
+        case BinaryOPStmt::URem:
             resVal = (lhs % rhs);
             break;
-        case BinaryOperator::Xor:
+        case BinaryOPStmt::Xor:
             resVal = (lhs ^ rhs);
             break;
-        case BinaryOperator::And:
+        case BinaryOPStmt::And:
             resVal = (lhs & rhs);
             break;
-        case BinaryOperator::Or:
+        case BinaryOPStmt::Or:
             resVal = (lhs | rhs);
             break;
-        case BinaryOperator::AShr:
+        case BinaryOPStmt::AShr:
             resVal = (lhs >> rhs);
             break;
-        case BinaryOperator::Shl:
+        case BinaryOPStmt::Shl:
             resVal = (lhs << rhs);
             break;
-        case BinaryOperator::LShr:
+        case BinaryOPStmt::LShr:
             resVal = (lhs >> rhs);
             break;
         default:
@@ -366,44 +366,44 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
         auto predicate = cmp->getPredicate();
         switch (predicate)
         {
-        case CmpInst::ICMP_EQ:
-        case CmpInst::FCMP_OEQ:
-        case CmpInst::FCMP_UEQ:
+        case CmpStmt::ICMP_EQ:
+        case CmpStmt::FCMP_OEQ:
+        case CmpStmt::FCMP_UEQ:
             resVal = (lhs == rhs);
             break;
-        case CmpInst::ICMP_NE:
-        case CmpInst::FCMP_ONE:
-        case CmpInst::FCMP_UNE:
+        case CmpStmt::ICMP_NE:
+        case CmpStmt::FCMP_ONE:
+        case CmpStmt::FCMP_UNE:
             resVal = (lhs != rhs);
             break;
-        case CmpInst::ICMP_UGT:
-        case CmpInst::ICMP_SGT:
-        case CmpInst::FCMP_OGT:
-        case CmpInst::FCMP_UGT:
+        case CmpStmt::ICMP_UGT:
+        case CmpStmt::ICMP_SGT:
+        case CmpStmt::FCMP_OGT:
+        case CmpStmt::FCMP_UGT:
             resVal = (lhs > rhs);
             break;
-        case CmpInst::ICMP_UGE:
-        case CmpInst::ICMP_SGE:
-        case CmpInst::FCMP_OGE:
-        case CmpInst::FCMP_UGE:
+        case CmpStmt::ICMP_UGE:
+        case CmpStmt::ICMP_SGE:
+        case CmpStmt::FCMP_OGE:
+        case CmpStmt::FCMP_UGE:
             resVal = (lhs >= rhs);
             break;
-        case CmpInst::ICMP_ULT:
-        case CmpInst::ICMP_SLT:
-        case CmpInst::FCMP_OLT:
-        case CmpInst::FCMP_ULT:
+        case CmpStmt::ICMP_ULT:
+        case CmpStmt::ICMP_SLT:
+        case CmpStmt::FCMP_OLT:
+        case CmpStmt::FCMP_ULT:
             resVal = (lhs < rhs);
             break;
-        case CmpInst::ICMP_ULE:
-        case CmpInst::ICMP_SLE:
-        case CmpInst::FCMP_OLE:
-        case CmpInst::FCMP_ULE:
+        case CmpStmt::ICMP_ULE:
+        case CmpStmt::ICMP_SLE:
+        case CmpStmt::FCMP_OLE:
+        case CmpStmt::FCMP_ULE:
             resVal = (lhs <= rhs);
             break;
-        case CmpInst::FCMP_FALSE:
+        case CmpStmt::FCMP_FALSE:
             resVal = IntervalValue(0, 0);
             break;
-        case CmpInst::FCMP_TRUE:
+        case CmpStmt::FCMP_TRUE:
             resVal = IntervalValue(1, 1);
             break;
         default:
@@ -425,9 +425,9 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
         auto predicate = cmp->getPredicate();
         switch (predicate)
         {
-        case CmpInst::ICMP_EQ:
-        case CmpInst::FCMP_OEQ:
-        case CmpInst::FCMP_UEQ:
+        case CmpStmt::ICMP_EQ:
+        case CmpStmt::FCMP_OEQ:
+        case CmpStmt::FCMP_UEQ:
         {
             if (lhs.size() == 1 && rhs.size() == 1)
             {
@@ -446,9 +446,9 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
             }
             break;
         }
-        case CmpInst::ICMP_NE:
-        case CmpInst::FCMP_ONE:
-        case CmpInst::FCMP_UNE:
+        case CmpStmt::ICMP_NE:
+        case CmpStmt::FCMP_ONE:
+        case CmpStmt::FCMP_UNE:
         {
             if (lhs.size() == 1 && rhs.size() == 1)
             {
@@ -467,10 +467,10 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
             }
             break;
         }
-        case CmpInst::ICMP_UGT:
-        case CmpInst::ICMP_SGT:
-        case CmpInst::FCMP_OGT:
-        case CmpInst::FCMP_UGT:
+        case CmpStmt::ICMP_UGT:
+        case CmpStmt::ICMP_SGT:
+        case CmpStmt::FCMP_OGT:
+        case CmpStmt::FCMP_UGT:
         {
             if (lhs.size() == 1 && rhs.size() == 1)
             {
@@ -482,10 +482,10 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
             }
             break;
         }
-        case CmpInst::ICMP_UGE:
-        case CmpInst::ICMP_SGE:
-        case CmpInst::FCMP_OGE:
-        case CmpInst::FCMP_UGE:
+        case CmpStmt::ICMP_UGE:
+        case CmpStmt::ICMP_SGE:
+        case CmpStmt::FCMP_OGE:
+        case CmpStmt::FCMP_UGE:
         {
             if (lhs.size() == 1 && rhs.size() == 1)
             {
@@ -497,10 +497,10 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
             }
             break;
         }
-        case CmpInst::ICMP_ULT:
-        case CmpInst::ICMP_SLT:
-        case CmpInst::FCMP_OLT:
-        case CmpInst::FCMP_ULT:
+        case CmpStmt::ICMP_ULT:
+        case CmpStmt::ICMP_SLT:
+        case CmpStmt::FCMP_OLT:
+        case CmpStmt::FCMP_ULT:
         {
             if (lhs.size() == 1 && rhs.size() == 1)
             {
@@ -512,10 +512,10 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
             }
             break;
         }
-        case CmpInst::ICMP_ULE:
-        case CmpInst::ICMP_SLE:
-        case CmpInst::FCMP_OLE:
-        case CmpInst::FCMP_ULE:
+        case CmpStmt::ICMP_ULE:
+        case CmpStmt::ICMP_SLE:
+        case CmpStmt::FCMP_OLE:
+        case CmpStmt::FCMP_ULE:
         {
             if (lhs.size() == 1 && rhs.size() == 1)
             {
@@ -527,10 +527,10 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
             }
             break;
         }
-        case CmpInst::FCMP_FALSE:
+        case CmpStmt::FCMP_FALSE:
             resVal = IntervalValue(0, 0);
             break;
-        case CmpInst::FCMP_TRUE:
+        case CmpStmt::FCMP_TRUE:
             resVal = IntervalValue(1, 1);
             break;
         default:
