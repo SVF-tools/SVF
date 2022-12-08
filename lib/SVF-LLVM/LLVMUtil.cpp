@@ -139,7 +139,8 @@ bool LLVMUtil::isUncalledFunction (const Function*  fun)
 {
     if(fun->hasAddressTaken())
         return false;
-    if(SVFUtil::isProgEntryFunction(fun))
+    if (SVFUtil::isProgEntryFunction(
+            LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)))
         return false;
     for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i)
     {

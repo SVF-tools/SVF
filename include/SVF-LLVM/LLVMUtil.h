@@ -179,10 +179,12 @@ inline bool ArgInDeadFunction (const Value*  val)
 //@}
 
 /// Return true if this is an argument of a program entry function (e.g. main)
-inline bool ArgInProgEntryFunction (const Value*  val)
+inline bool ArgInProgEntryFunction(const Value* val)
 {
-    return SVFUtil::isa<Argument>(val)
-           && SVFUtil::isProgEntryFunction(SVFUtil::cast<Argument>(val)->getParent());
+    return SVFUtil::isa<Argument>(val) &&
+           SVFUtil::isProgEntryFunction(
+               LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(
+                   SVFUtil::cast<Argument>(val)->getParent()));
 }
 /// Return true if this is value in a dead function (function without any caller)
 bool isPtrInUncalledFunction (const Value*  value);
@@ -193,9 +195,11 @@ bool isPtrInUncalledFunction (const Value*  value);
 /// Function does not have any possible caller in the call graph
 //@{
 /// Return true if the function does not have a caller (either it is a main function or a dead function)
-inline bool isNoCallerFunction (const Function*  fun)
+inline bool isNoCallerFunction(const Function* fun)
 {
-    return isUncalledFunction(fun) || SVFUtil::isProgEntryFunction(fun);
+    return isUncalledFunction(fun) ||
+           SVFUtil::isProgEntryFunction(
+               LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun));
 }
 
 /// Return true if the argument in a function does not have a caller
@@ -365,7 +369,7 @@ bool isIntrinsicInst(const Instruction* inst);
 bool isIntrinsicFun(const Function* func);
 
 /// Get the corresponding Function based on its name
-inline const SVFFunction* getFunction(std::string name)
+inline const SVFFunction* getFunction(const std::string& name)
 {
     return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(name);
 }

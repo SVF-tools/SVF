@@ -233,7 +233,7 @@ public:
     SVFOtherValue* getSVFOtherValue(const Value* ov);
 
     /// Get the corresponding Function based on its name
-    inline const SVFFunction* getSVFFunction(std::string name)
+    inline const SVFFunction* getSVFFunction(const std::string& name)
     {
         Function* fun = nullptr;
 
