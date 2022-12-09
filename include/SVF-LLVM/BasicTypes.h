@@ -36,6 +36,8 @@
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
 #include <llvm/IR/InstIterator.h>	// for inst iteration
 
+#include <llvm/BinaryFormat/Dwarf.h> // for dwarf tags
+
 #include <llvm/Analysis/LoopInfo.h>
 
 namespace SVF
