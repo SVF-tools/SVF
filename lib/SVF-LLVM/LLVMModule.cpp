@@ -78,11 +78,12 @@ LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(
 
 LLVMModuleSet::~LLVMModuleSet()
 {
+    Set<StInfo*> infoSet;
     for (auto it = Type2TypeInfo.begin(); it != Type2TypeInfo.end(); ++it) {
-        if (it->second)
-            delete(it->second);
-        else
-            it->second = nullptr;
+        infoSet.insert(it->second);
+    }
+    for (auto *it: infoSet) {
+        delete(it);
     }
 }
 
