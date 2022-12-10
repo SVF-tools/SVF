@@ -27,23 +27,20 @@
  *      Author: Yulei Sui
  */
 
+#ifndef INCLUDE_SVFIR_SVFTYPE_H_
+#define INCLUDE_SVFIR_SVFTYPE_H_
 
-#ifndef INCLUDE_UTIL_SVFBASICTYPES_H_
-#define INCLUDE_UTIL_SVFBASICTYPES_H_
+#include "Util/SparseBitVector.h"
 
-#include <llvm/Support/Debug.h> // TODO: Remove LLVM Header
-
-#include <Util/SparseBitVector.h>
-
-#include <iostream>
-#include <vector>
-#include <list>
-#include <set>
-#include <unordered_set>
-#include <map>
-#include <unordered_map>
-#include <stack>
 #include <deque>
+#include <iostream>
+#include <list>
+#include <map>
+#include <set>
+#include <stack>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace SVF
 {
@@ -74,7 +71,7 @@ template <class S, class T> struct Hash<std::pair<S, T>>
         return a > b ? b * b + a : a * a + a + b;
     }
 
-    size_t operator()(const std::pair<S, T> &t) const
+    size_t operator()(const std::pair<S, T>& t) const
     {
         Hash<decltype(t.first)> first;
         Hash<decltype(t.second)> second;
@@ -84,65 +81,68 @@ template <class S, class T> struct Hash<std::pair<S, T>>
 
 template <class T> struct Hash
 {
-    size_t operator()(const T &t) const
+    size_t operator()(const T& t) const
     {
         std::hash<T> h;
         return h(t);
     }
 };
 
-template <typename Key, typename Hash = Hash<Key>, typename KeyEqual = std::equal_to<Key>,
+template <typename Key, typename Hash = Hash<Key>,
+          typename KeyEqual = std::equal_to<Key>,
           typename Allocator = std::allocator<Key>>
 using Set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 
-template<typename Key, typename Value, typename Hash = Hash<Key>,
-         typename KeyEqual = std::equal_to<Key>,
-         typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                 using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
+template <typename Key, typename Value, typename Hash = Hash<Key>,
+          typename KeyEqual = std::equal_to<Key>,
+          typename Allocator = std::allocator<std::pair<const Key, Value>>>
+using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
 
-         template<typename Key, typename Compare = std::less<Key>, typename Allocator = std::allocator<Key>>
-         using OrderedSet = std::set<Key, Compare, Allocator>;
+template <typename Key, typename Compare = std::less<Key>,
+          typename Allocator = std::allocator<Key>>
+using OrderedSet = std::set<Key, Compare, Allocator>;
 
-         template<typename Key, typename Value, typename Compare = std::less<Key>,
-                  typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                          using OrderedMap = std::map<Key, Value, Compare, Allocator>;
+template <typename Key, typename Value, typename Compare = std::less<Key>,
+          typename Allocator = std::allocator<std::pair<const Key, Value>>>
+using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 
-                  typedef std::pair<NodeID, NodeID> NodePair;
-                  typedef OrderedSet<NodeID> OrderedNodeSet;
-                  typedef Set<NodeID> NodeSet;
-                  typedef Set<NodePair> NodePairSet;
-                  typedef Map<NodePair,NodeID> NodePairMap;
-                  typedef std::vector<NodeID> NodeVector;
-                  typedef std::vector<EdgeID> EdgeVector;
-                  typedef std::stack<NodeID> NodeStack;
-                  typedef std::list<NodeID> NodeList;
-                  typedef std::deque<NodeID> NodeDeque;
-                  typedef NodeSet EdgeSet;
-                  typedef std::vector<u32_t> CallStrCxt;
-                  typedef unsigned Version;
-                  typedef Set<Version> VersionSet;
-                  typedef std::pair<NodeID, Version> VersionedVar;
-                  typedef Set<VersionedVar> VersionedVarSet;
+typedef std::pair<NodeID, NodeID> NodePair;
+typedef OrderedSet<NodeID> OrderedNodeSet;
+typedef Set<NodeID> NodeSet;
+typedef Set<NodePair> NodePairSet;
+typedef Map<NodePair, NodeID> NodePairMap;
+typedef std::vector<NodeID> NodeVector;
+typedef std::vector<EdgeID> EdgeVector;
+typedef std::stack<NodeID> NodeStack;
+typedef std::list<NodeID> NodeList;
+typedef std::deque<NodeID> NodeDeque;
+typedef NodeSet EdgeSet;
+typedef std::vector<u32_t> CallStrCxt;
+typedef unsigned Version;
+typedef Set<Version> VersionSet;
+typedef std::pair<NodeID, Version> VersionedVar;
+typedef Set<VersionedVar> VersionedVarSet;
 
-                  class SVFType;
-                  class SVFPointerType;
+class SVFType;
+class SVFPointerType;
 
-                  /*!
-                   * Flatterned type information of StructType, ArrayType and SingleValueType
-                   */
-                  class StInfo
+/*!
+ * Flatterned type information of StructType, ArrayType and SingleValueType
+ */
+class StInfo
 {
-
 private:
     /// flattened field indices of a struct (ignoring arrays)
     std::vector<u32_t> fldIdxVec;
-    /// flattened element indices including structs and arrays by considering strides
+    /// flattened element indices including structs and arrays by considering
+    /// strides
     std::vector<u32_t> elemIdxVec;
     /// Types of all fields of a struct
     Map<u32_t, const SVFType*> fldIdx2TypeMap;
     /// All field infos after flattening a struct
     std::vector<const SVFType*> finfo;
-    /// stride represents the number of repetitive elements if this StInfo represent an ArrayType. stride is 1 by default.
+    /// stride represents the number of repetitive elements if this StInfo
+    /// represent an ArrayType. stride is 1 by default.
     u32_t stride;
     /// number of elements after flattenning (including array elements)
     u32_t numOfFlattenElements;
@@ -158,14 +158,15 @@ public:
     void operator=(const StInfo&) = delete;
 
     /// Constructor
-    explicit StInfo(u32_t s) : stride(s), numOfFlattenElements(s), numOfFlattenFields(s)
+    explicit StInfo(u32_t s)
+        : stride(s), numOfFlattenElements(s), numOfFlattenFields(s)
     {
     }
     /// Destructor
     ~StInfo() = default;
 
-    ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
-    ///  OriginalFieldType of b with field_idx 1 : Struct A
+    ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}  B b; 
+    // OriginalFieldType of b with field_idx 1 : Struct A
     ///  FlatternedFieldType of b with field_idx 1 : int
     //{@
     const SVFType* getOriginalElemType(u32_t fldIdx) const;
@@ -250,27 +251,30 @@ public:
     };
 
 private:
-    GNodeK kind;	///< used for classof
-    const SVFPointerType* getPointerToTy; /// Return a pointer to the current type
-    StInfo* typeinfo; /// < SVF's TypeInfo
-    bool isSingleValTy; ///< The type represents a single value, not struct or array
+    GNodeK kind; ///< used for classof
+    const SVFPointerType*
+        getPointerToTy; /// Return a pointer to the current type
+    StInfo* typeinfo;   /// < SVF's TypeInfo
+    bool isSingleValTy; ///< The type represents a single value, not struct or
+                        ///< array
 protected:
-    SVFType(bool svt, SVFTyKind k) : kind(k), getPointerToTy(nullptr), typeinfo(nullptr), isSingleValTy(svt)
+    SVFType(bool svt, SVFTyKind k)
+        : kind(k), getPointerToTy(nullptr), typeinfo(nullptr),
+          isSingleValTy(svt)
     {
     }
 
 public:
     SVFType(void) = delete;
-    virtual ~SVFType()
-    {
-    }
+    virtual ~SVFType() {}
 
     inline GNodeK getKind() const
     {
         return kind;
     }
 
-    /// Needs to be implemented by a specific SVF front end (e.g., the implementation in LLVMUtil)
+    /// Needs to be implemented by a specific SVF front end (e.g., the
+    /// implementation in LLVMUtil)
     virtual const std::string toString() const;
 
     inline void setPointerTo(const SVFPointerType* ty)
@@ -278,13 +282,13 @@ public:
         getPointerToTy = ty;
     }
 
-    inline const SVFPointerType* getPointerTo () const
+    inline const SVFPointerType* getPointerTo() const
     {
         assert(getPointerToTy && "set the getPointerToTy first");
         return getPointerToTy;
     }
 
-    inline void setTypeInfo (StInfo* ti)
+    inline void setTypeInfo(StInfo* ti)
     {
         typeinfo = ti;
     }
@@ -303,7 +307,7 @@ public:
 
     inline bool isPointerTy() const
     {
-        return kind==SVFPointerTy;
+        return kind == SVFPointerTy;
     }
 
     inline bool isSingleValueType() const
@@ -319,10 +323,11 @@ private:
     const SVFType* ptrElementType;
 
 public:
-    SVFPointerType(const SVFType* pty) : SVFType(true, SVFPointerTy), ptrElementType(pty)
+    SVFPointerType(const SVFType* pty)
+        : SVFType(true, SVFPointerTy), ptrElementType(pty)
     {
     }
-    static inline bool classof(const SVFType *node)
+    static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFPointerTy;
     }
@@ -335,10 +340,8 @@ public:
 class SVFIntergerType : public SVFType
 {
 public:
-    SVFIntergerType() : SVFType(true, SVFIntergerTy)
-    {
-    }
-    static inline bool classof(const SVFType *node)
+    SVFIntergerType() : SVFType(true, SVFIntergerTy) {}
+    static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFIntergerTy;
     }
@@ -350,10 +353,11 @@ private:
     const SVFType* retTy;
 
 public:
-    SVFFunctionType(const SVFType* rt) : SVFType(false, SVFFunctionTy), retTy(rt)
+    SVFFunctionType(const SVFType* rt)
+        : SVFType(false, SVFFunctionTy), retTy(rt)
     {
     }
-    static inline bool classof(const SVFType *node)
+    static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFFunctionTy;
     }
@@ -366,10 +370,8 @@ public:
 class SVFStructType : public SVFType
 {
 public:
-    SVFStructType() : SVFType(false, SVFStructTy)
-    {
-    }
-    static inline bool classof(const SVFType *node)
+    SVFStructType() : SVFType(false, SVFStructTy) {}
+    static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFStructTy;
     }
@@ -378,10 +380,8 @@ public:
 class SVFArrayType : public SVFType
 {
 public:
-    SVFArrayType() : SVFType(false, SVFArrayTy)
-    {
-    }
-    static inline bool classof(const SVFType *node)
+    SVFArrayType() : SVFType(false, SVFArrayTy) {}
+    static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFArrayTy;
     }
@@ -390,20 +390,17 @@ public:
 class SVFOtherType : public SVFType
 {
 public:
-    SVFOtherType(bool isSingleValueTy) : SVFType(isSingleValueTy, SVFOtherTy)
-    {
-    }
-    static inline bool classof(const SVFType *node)
+    SVFOtherType(bool isSingleValueTy) : SVFType(isSingleValueTy, SVFOtherTy) {}
+    static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFOtherTy;
     }
 };
 
-
 // TODO: be explicit that this is a pair of 32-bit unsigneds?
 template <> struct Hash<NodePair>
 {
-    size_t operator()(const NodePair &p) const
+    size_t operator()(const NodePair& p) const
     {
         // Make sure our assumptions are sound: use u32_t
         // and u64_t. If NodeID is not actually u32_t or size_t
@@ -415,12 +412,32 @@ template <> struct Hash<NodePair>
     }
 };
 
-/// LLVM debug macros, define type of your DEBUG model of each pass
-#define DBOUT(TYPE, X) 	DEBUG_WITH_TYPE(TYPE, X)
-#define DOSTAT(X) 	X
-#define DOTIMESTAT(X) 	X
+#ifndef DEBUG_WITH_TYPE
+#    ifndef NDBUG
+// TODO: This comes from the following link
+// https://github.com/llvm/llvm-project/blob/75e33f71c2dae584b13a7d1186ae0a038ba98838/llvm/include/llvm/Support/Debug.h#L64
+// The original LLVM implementation makes use of type. But we can get that info,
+// so we can't simulate the full behaviour for now.
+#        define DEBUG_WITH_TYPE(TYPE, X)                                       \
+            do                                                                 \
+            {                                                                  \
+                X;                                                             \
+            } while (false)
+#    else
+#        define DEBUG_WITH_TYPE(TYPE, X)                                       \
+            do                                                                 \
+            {                                                                  \
+            } while (false)
+#    endif
+#endif
 
-/// General debug flag is for each phase of a pass, it is often in a colorful output format
+/// LLVM debug macros, define type of your DEBUG model of each pass
+#define DBOUT(TYPE, X) DEBUG_WITH_TYPE(TYPE, X)
+#define DOSTAT(X) X
+#define DOTIMESTAT(X) X
+
+/// General debug flag is for each phase of a pass, it is often in a colorful
+/// output format
 #define DGENERAL "general"
 
 #define DPAGBuild "pag"
@@ -467,10 +484,9 @@ enum AliasResult
 
 } // End namespace SVF
 
-
 template <> struct std::hash<SVF::NodePair>
 {
-    size_t operator()(const SVF::NodePair &p) const
+    size_t operator()(const SVF::NodePair& p) const
     {
         // Make sure our assumptions are sound: use u32_t
         // and u64_t. If NodeID is not actually u32_t or size_t
@@ -483,26 +499,25 @@ template <> struct std::hash<SVF::NodePair>
 };
 
 /// Specialise hash for SparseBitVectors.
-template <unsigned N>
-struct std::hash<SVF::SparseBitVector<N>>
+template <unsigned N> struct std::hash<SVF::SparseBitVector<N>>
 {
-    size_t operator()(const SVF::SparseBitVector<N> &sbv) const
+    size_t operator()(const SVF::SparseBitVector<N>& sbv) const
     {
         SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
-        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));
+        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()),
+                                sbv.find_last()));
     }
 };
 
-template <typename T>
-struct std::hash<std::vector<T>>
+template <typename T> struct std::hash<std::vector<T>>
 {
-    size_t operator()(const std::vector<T> &v) const
+    size_t operator()(const std::vector<T>& v) const
     {
         // TODO: repetition with CBV.
         size_t h = v.size();
 
         SVF::Hash<T> hf;
-        for (const T &t : v)
+        for (const T& t : v)
         {
             h ^= hf(t) + 0x9e3779b9 + (h << 6) + (h >> 2);
         }
@@ -511,4 +526,4 @@ struct std::hash<std::vector<T>>
     }
 };
 
-#endif /* INCLUDE_UTIL_SVFBASICTYPES_H_ */
+#endif /* INCLUDE_SVFIR_SVFTYPE_H_ */
