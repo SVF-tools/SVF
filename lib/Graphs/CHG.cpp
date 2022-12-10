@@ -27,6 +27,7 @@
  *      Author: Xiaokang Fan
  */
 
+#include "SVF-LLVM/CPPUtil.h" // WHSTODO: Remove em
 #include "Graphs/CHG.h"
 #include "Util/SVFUtil.h"
 

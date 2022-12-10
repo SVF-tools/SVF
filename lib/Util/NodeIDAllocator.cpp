@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 #include <queue>
+#include <cmath>
 
 #include "FastCluster/fastcluster.h"
 #include "MemoryModel/PointerAnalysisImpl.h"

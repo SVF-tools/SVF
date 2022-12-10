@@ -31,6 +31,7 @@
 #define MTASTAT_H_
 
 #include "Util/PTAStat.h"
+#include "SVF-LLVM/BasicTypes.h"
 
 namespace SVF
 {

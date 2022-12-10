@@ -30,6 +30,7 @@
 #include "Util/ExtAPI.h"
 #include "Util/SVFUtil.h"
 #include "Util/cJSON.h"
+#include "SVF-LLVM/BasicTypes.h"//WHSTODO: Remove me
 #include <string.h>
 #include <sys/stat.h>
 #include <stdlib.h>

@@ -8,6 +8,8 @@
 #ifndef MTAANNOTATOR_H_
 #define MTAANNOTATOR_H_
 
+#include "SVF-LLVM/BasicTypes.h"
+#include "SVF-LLVM/LLVMModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/Annotator.h"
 #include "MTA/MHP.h"
