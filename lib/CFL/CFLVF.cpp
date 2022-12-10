@@ -28,7 +28,7 @@
  */
 
 #include "CFL/CFLVF.h"
-#include "SVF-LLVM/CPPUtil.h"//WHSTODO: remove
+#include "Util/CppUtil.h"
 
 using namespace SVF;
 using namespace cppUtil;

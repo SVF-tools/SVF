@@ -31,7 +31,6 @@
 #define CPPUtil_H_
 
 #include "SVFIR/SVFValue.h"
-#include "SVF-LLVM/BasicTypes.h"
 
 namespace SVF
 {
@@ -51,58 +50,10 @@ struct DemangledName
     bool isThunkFunc;
 };
 
-struct DemangledName demangle(const std::string &name);
+struct DemangledName demangle(const std::string& name);
 
-std::string getBeforeBrackets(const std::string &name);
-bool isValVtbl(const Value* val);
-bool isLoadVtblInst(const LoadInst *loadInst);
-bool isVirtualCallSite(const CallBase* cs);
-bool isConstructor(const Function* F);
-bool isDestructor(const Function* F);
-bool isCPPThunkFunction(const Function* F);
-const Function* getThunkTarget(const Function* F);
-
-/*
- * VtableA = {&A::foo}
- * A::A(this){
- *   *this = &VtableA;
- * }
- *
- *
- * A* p = new A;
- * cs: p->foo(...)
- * ==>
- *  vtptr = *p;
- *  vfn = &vtptr[i]
- *  %funp = *vfn
- *  call %funp(p,...)
- * getConstructorThisPtr(A) return "this" pointer
- * getVCallThisPtr(cs) return p (this pointer)
- * getVCallVtblPtr(cs) return vtptr
- * getVCallIdx(cs) return i
- * getClassNameFromVtblObj(VtableA) return
- * getClassNameFromType(type of p) return type A
- */
-const Argument* getConstructorThisPtr(const Function* fun);
-const Value* getVCallThisPtr(const CallBase* cs);
-const Value* getVCallVtblPtr(const CallBase* cs);
-s32_t getVCallIdx(const CallBase* cs);
+std::string getBeforeBrackets(const std::string& name);
 std::string getClassNameFromVtblObj(const std::string& vtblName);
-std::string getClassNameFromType(const Type* ty);
-std::string getClassNameOfThisPtr(const CallBase* cs);
-std::string getFunNameOfVCallSite(const CallBase* cs);
-bool VCallInCtorOrDtor(const CallBase* cs);
-
-/*
- *  A(A* this){
- *      store this this.addr;
- *      tmp = load this.addr;
- *      this1 = bitcast(tmp);
- *      B(this1);
- *  }
- *  this and this1 are the same thisPtr in the constructor
- */
-bool isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2);
 
 /// Constants pertaining to CTir, for C and C++.
 /// TODO: move helper functions here too?
@@ -111,17 +62,17 @@ namespace ctir
 /// On loads, stores, GEPs representing dereferences, and calls
 /// representing virtual calls.
 /// (The static type.)
-const std::string derefMDName  = "ctir";
+const std::string derefMDName = "ctir";
 /// On the (global) virtual table itself.
 /// (The class it corresponds to.)
-const std::string vtMDName     = "ctir.vt";
+const std::string vtMDName = "ctir.vt";
 /// On the bitcast of `this` to i8*.
 /// (The class the constructor it corresponds to.)
 const std::string vtInitMDName = "ctir.vt.init";
 
 /// Value we expect a ctir-annotated module to have.
 const uint32_t moduleFlagValue = 1;
-}
+} // namespace ctir
 
 } // End namespace cppUtil
 

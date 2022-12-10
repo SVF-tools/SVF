@@ -33,7 +33,7 @@
 #include "Util/PTAStat.h"
 #include "Graphs/ICFGStat.h"
 #include "Graphs/VFG.h"
-#include "SVF-LLVM/CPPUtil.h"//WHSTODO: remove
+#include "Util/CppUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;

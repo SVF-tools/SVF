@@ -31,7 +31,7 @@
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/Options.h"
-#include "SVF-LLVM/CPPUtil.h" // WHSTODO: remove
+#include "Util/CppUtil.h"
 #include <fstream>
 #include <sstream>
 

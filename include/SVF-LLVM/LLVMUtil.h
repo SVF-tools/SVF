@@ -51,10 +51,7 @@ inline bool isCallSite(const Instruction* inst)
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Value* val)
 {
-    if(SVFUtil::isa<CallBase>(val))
-        return true;
-    else
-        return false;
+    return SVFUtil::isa<CallBase>(val);
 }
 
 /// Get the definition of a function across multiple modules
@@ -406,6 +403,55 @@ void viewCFG(const Function* fun);
 
 // Dump Control Flow Graph of llvm function, without instructions
 void viewCFGOnly(const Function* fun);
+
+bool isValVtbl(const Value* val);
+bool isLoadVtblInst(const LoadInst *loadInst);
+bool isVirtualCallSite(const CallBase* cs);
+bool isConstructor(const Function* F);
+bool isDestructor(const Function* F);
+bool isCPPThunkFunction(const Function* F);
+const Function* getThunkTarget(const Function* F);
+
+/*
+ * VtableA = {&A::foo}
+ * A::A(this){
+ *   *this = &VtableA;
+ * }
+ *
+ *
+ * A* p = new A;
+ * cs: p->foo(...)
+ * ==>
+ *  vtptr = *p;
+ *  vfn = &vtptr[i]
+ *  %funp = *vfn
+ *  call %funp(p,...)
+ * getConstructorThisPtr(A) return "this" pointer
+ * getVCallThisPtr(cs) return p (this pointer)
+ * getVCallVtblPtr(cs) return vtptr
+ * getVCallIdx(cs) return i
+ * getClassNameFromVtblObj(VtableA) return
+ * getClassNameFromType(type of p) return type A
+ */
+const Argument* getConstructorThisPtr(const Function* fun);
+const Value* getVCallThisPtr(const CallBase* cs);
+const Value* getVCallVtblPtr(const CallBase* cs);
+s32_t getVCallIdx(const CallBase* cs);
+std::string getClassNameFromType(const Type* ty);
+std::string getClassNameOfThisPtr(const CallBase* cs);
+std::string getFunNameOfVCallSite(const CallBase* cs);
+bool VCallInCtorOrDtor(const CallBase* cs);
+
+/*
+ *  A(A* this){
+ *      store this this.addr;
+ *      tmp = load this.addr;
+ *      this1 = bitcast(tmp);
+ *      B(this1);
+ *  }
+ *  this and this1 are the same thisPtr in the constructor
+ */
+bool isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2);
 
 } // End namespace LLVMUtil
 

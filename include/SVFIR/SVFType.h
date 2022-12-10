@@ -31,7 +31,7 @@
 #ifndef INCLUDE_UTIL_SVFBASICTYPES_H_
 #define INCLUDE_UTIL_SVFBASICTYPES_H_
 
-#include <llvm/Support/Debug.h> // WHSTODO: Remove this
+#include <llvm/Support/Debug.h> // TODO: Remove LLVM Header
 
 #include <Util/SparseBitVector.h>
 

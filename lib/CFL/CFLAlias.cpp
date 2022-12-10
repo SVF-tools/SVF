@@ -28,8 +28,7 @@
  */
 
 #include "CFL/CFLAlias.h"
-#include "SVF-LLVM/CPPUtil.h"//WHSTODO: Remove me
-
+#include "Util/CppUtil.h"
 using namespace SVF;
 using namespace cppUtil;
 using namespace SVFUtil;
