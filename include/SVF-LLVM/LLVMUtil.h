@@ -30,9 +30,9 @@
 #ifndef INCLUDE_SVF_FE_LLVMUTIL_H_
 #define INCLUDE_SVF_FE_LLVMUTIL_H_
 
-#include "SVF-LLVM/BasicTypes.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
+#include "SVF-LLVM/LLVMModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"

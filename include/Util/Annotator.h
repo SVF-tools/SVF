@@ -8,6 +8,7 @@
 #ifndef ANNOTATOR_H_
 #define ANNOTATOR_H_
 
+#include <SVF-LLVM/BasicTypes.h> // WHSTODO: remove me
 #include "SVFIR/SVFValue.h"
 #include <vector>
 

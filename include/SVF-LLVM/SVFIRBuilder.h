@@ -34,6 +34,7 @@
 #include "Util/ExtAPI.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/ICFGBuilder.h"
+#include "SVF-LLVM/LLVMModule.h"
 
 namespace SVF
 {

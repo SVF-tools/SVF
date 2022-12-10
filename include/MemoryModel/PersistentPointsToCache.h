@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include <functional>
 
 #include "SVFIR/SVFType.h"
 

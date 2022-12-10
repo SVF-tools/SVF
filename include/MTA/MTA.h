@@ -36,6 +36,7 @@
 
 #include <set>
 #include <vector>
+#include "SVF-LLVM/BasicTypes.h"
 #include "SVFIR/SVFValue.h"
 
 namespace SVF
