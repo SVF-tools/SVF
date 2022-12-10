@@ -27,8 +27,8 @@
  *      Author: Yulei Sui
  */
 
-#ifndef SVFIR_H_
-#define SVFIR_H_
+#ifndef INCLUDE_SVFIR_H_
+#define INCLUDE_SVFIR_H_
 
 #include "Graphs/IRGraph.h"
 
@@ -656,4 +656,4 @@ typedef SVFIR PAG;
 
 
 
-#endif /* SVFIR_H_ */
+#endif /* INCLUDE_SVFIR_H_ */

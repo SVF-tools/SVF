@@ -142,7 +142,6 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
-        perror(("1 Failed: " + jsonFilePath).c_str()); // TODO: Remove me
 
         jsonFilePath = PROJECT_PATH + std::string(EXTAPI_JSON_PATH);
         if (!stat(jsonFilePath.c_str(), &statbuf))
@@ -150,7 +149,6 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
-        perror(("2 Failed: " + jsonFilePath).c_str()); // TODO: Remove me
 
         jsonFilePath = getJsonFile("echo $SVF_DIR");
         if (!stat(jsonFilePath.c_str(), &statbuf))
@@ -158,7 +156,6 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
-        perror(("3 Failed: " + jsonFilePath).c_str()); // TODO: Remove me
 
         jsonFilePath = getJsonFile("npm root");
         if (!stat(jsonFilePath.c_str(), &statbuf))
@@ -166,8 +163,6 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
-        perror(("4 Failed: " + jsonFilePath).c_str()); // TODO: Remove me
-
         assert(false && "Open ExtAPI.json file fails!");
     }
     return extOp;
