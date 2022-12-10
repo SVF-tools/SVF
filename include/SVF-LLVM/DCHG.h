@@ -16,8 +16,9 @@
 
 #include "Graphs/GenericGraph.h"
 #include "Graphs/CHG.h"
-#include "SVF-LLVM/CPPUtil.h"
+#include "SVF-LLVM/BasicTypes.h"
 #include "SVFIR/SVFModule.h"
+#include "Util/CPPUtil.h"
 #include "Util/SVFUtil.h"
 #include "Util/WorkList.h"
 

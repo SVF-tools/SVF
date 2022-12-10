@@ -38,7 +38,7 @@
 
 #include "SVF-LLVM/CHGBuilder.h"
 #include "Util/Options.h"
-#include "SVF-LLVM/CPPUtil.h"
+#include "Util/CPPUtil.h"
 #include "SVFIR/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMUtil.h"
@@ -632,7 +632,7 @@ void CHGBuilder::buildVirtualFunctionToIDMap()
 void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
 {
 
-    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
+    for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
@@ -640,7 +640,7 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
             {
                 if(const CallBase* callInst = SVFUtil::dyn_cast<CallBase>(&*II))
                 {
-                    if (cppUtil::isVirtualCallSite(callInst) == false)
+                    if (LLVMUtil::isVirtualCallSite(callInst) == false)
                         continue;
 
                     VTableSet vtbls;
