@@ -136,9 +136,6 @@ bool LLVMUtil::functionDoesNotRet (const Function*  fun)
             bbVec.push_back(succbb);
         }
     }
-//    if(isProgEntryFunction(fun)==false) {
-//        writeWrnMsg(fun->getName().str() + " does not have return");
-//    }
     return true;
 }
 
@@ -149,8 +146,7 @@ bool LLVMUtil::isUncalledFunction (const Function*  fun)
 {
     if(fun->hasAddressTaken())
         return false;
-    if (SVFUtil::isProgEntryFunction(
-            LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)))
+    if (LLVMUtil::isProgEntryFunction(fun))
         return false;
     for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i)
     {
