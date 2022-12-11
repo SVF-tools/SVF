@@ -387,10 +387,8 @@ public:
     bool operator<(const IntervalExeState &rhs) const
     {
         // judge from path constraint
-        if (lessThanVarToValMap(_varToItvVal, rhs.getVarToVal()) ||
-                lessThanVarToValMap(_locToItvVal, rhs.getLocToVal()))
-            return true;
-        return false;
+        return (lessThanVarToValMap(_varToItvVal, rhs.getVarToVal()) ||
+                lessThanVarToValMap(_locToItvVal, rhs.getLocToVal()));
     }
 
 

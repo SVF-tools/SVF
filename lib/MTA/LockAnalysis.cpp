@@ -598,10 +598,7 @@ bool LockAnalysis::isProtectedByCommonCxtLock(const CxtStmt& cxtStmt1, const Cxt
         return true;
     const CxtLockSet& lockset1 = getCxtLockfromCxtStmt(cxtStmt1);
     const CxtLockSet& lockset2 = getCxtLockfromCxtStmt(cxtStmt2);
-    if (alias(lockset1,lockset2))
-        return true;
-
-    return false;
+    return alias(lockset1,lockset2);
 }
 
 /*!
@@ -676,10 +673,7 @@ bool LockAnalysis::isInSameCSSpan(const CxtStmt& cxtStmt1, const CxtStmt& cxtStm
         return true;
     const CxtLockSet& lockset1 = getCxtLockfromCxtStmt(cxtStmt1);
     const CxtLockSet& lockset2 = getCxtLockfromCxtStmt(cxtStmt2);
-    if (intersects(lockset1,lockset2))
-        return true;
-
-    return false;
+    return intersects(lockset1,lockset2);
 }
 /*!
  * Return true if two instructions are inside at least one common contex-sensitive lock span

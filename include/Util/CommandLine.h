@@ -360,11 +360,14 @@ public:
 
 private:
     // Convert string to boolean, returning whether we succeeded.
-    static bool fromString(const std::string s, bool &value)
+    static bool fromString(const std::string& s, bool& value)
     {
-        if (s == "true") value = true;
-        else if (s == "false") value = false;
-        else return false;
+        if (s == "true")
+            value = true;
+        else if (s == "false")
+            value = false;
+        else
+            return false;
         return true;
     }
 

@@ -342,18 +342,14 @@ public:
     {
         bool nonhp = HBPair.find(std::make_pair(tid1,tid2))!=HBPair.end();
         bool hp = HPPair.find(std::make_pair(tid1,tid2))!=HPPair.end();
-        if(nonhp && !hp)
-            return true;
-        return false;
+        return nonhp && !hp;
     }
     /// Whether t1 fully joins t2
     inline bool isFullJoin(NodeID tid1, NodeID tid2)
     {
         bool full = fullJoin.find(std::make_pair(tid1,tid2))!=fullJoin.end();
         bool partial = partialJoin.find(std::make_pair(tid1,tid2))!=partialJoin.end();
-        if(full && !partial)
-            return true;
-        return false;
+        return full && !partial;
     }
 
     /// Get exit instruction of the start routine function of tid's parent thread

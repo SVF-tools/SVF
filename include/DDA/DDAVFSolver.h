@@ -480,9 +480,7 @@ protected:
     /// If the points-to contain the object obj, we could move forward along indirect value-flow edge
     virtual inline bool propagateViaObj(const CVar& storeObj, const CVar& loadObj)
     {
-        if(getPtrNodeID(storeObj) == getPtrNodeID(loadObj))
-            return true;
-        return false;
+        return getPtrNodeID(storeObj) == getPtrNodeID(loadObj);
     }
     /// resolve function pointer
     void resolveFunPtr(const DPIm& dpm)
