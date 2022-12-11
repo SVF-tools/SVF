@@ -434,7 +434,8 @@ public:
         }
     }
 
-    std::string toString() const {
+    std::string toString() const
+    {
         return "[" + std::to_string(lb().getNumeral()) + ", " + std::to_string(ub().getNumeral()) + "]";
     }
 

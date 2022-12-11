@@ -78,7 +78,8 @@ LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(
 
 LLVMModuleSet::~LLVMModuleSet()
 {
-    for (auto *it: StInfos) {
+    for (auto *it: StInfos)
+    {
         delete(it);
     }
 }
@@ -1010,10 +1011,12 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
     {
         if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T))
             stinfo = collectArrayInfo(aty);
-        else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T)) {
+        else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T))
+        {
             u32_t nf;
             stinfo = collectStructInfo(sty, nf);
-            if (nf > symInfo->maxStSize) {
+            if (nf > symInfo->maxStSize)
+            {
                 symInfo->maxStruct = getSVFType(sty);
                 symInfo->maxStSize = nf;
             }
