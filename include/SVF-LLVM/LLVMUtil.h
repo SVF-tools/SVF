@@ -90,7 +90,8 @@ inline const Function* getProgFunction(const std::string& funName)
 {
     for (const Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
-        for (const Function& fun : M) {
+        for (const Function& fun : M)
+        {
             if (fun.getName() == funName)
                 return &fun;
         }
@@ -283,10 +284,10 @@ inline const ConstantExpr* isTruncConstantExpr(const Value* val)
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if (constExpr->getOpcode() == Instruction::Trunc ||
-            constExpr->getOpcode() == Instruction::FPTrunc ||
-            constExpr->getOpcode() == Instruction::ZExt ||
-            constExpr->getOpcode() == Instruction::SExt ||
-            constExpr->getOpcode() == Instruction::FPExt)
+                constExpr->getOpcode() == Instruction::FPTrunc ||
+                constExpr->getOpcode() == Instruction::ZExt ||
+                constExpr->getOpcode() == Instruction::SExt ||
+                constExpr->getOpcode() == Instruction::FPExt)
             return constExpr;
     }
     return nullptr;
@@ -297,7 +298,7 @@ inline const ConstantExpr* isCmpConstantExpr(const Value* val)
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if (constExpr->getOpcode() == Instruction::ICmp ||
-            constExpr->getOpcode() == Instruction::FCmp)
+                constExpr->getOpcode() == Instruction::FCmp)
             return constExpr;
     }
     return nullptr;
@@ -308,7 +309,7 @@ inline const ConstantExpr* isBinaryConstantExpr(const Value* val)
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if ((constExpr->getOpcode() >= Instruction::BinaryOpsBegin) &&
-            (constExpr->getOpcode() <= Instruction::BinaryOpsEnd))
+                (constExpr->getOpcode() <= Instruction::BinaryOpsEnd))
             return constExpr;
     }
     return nullptr;
@@ -319,7 +320,7 @@ inline const ConstantExpr* isUnaryConstantExpr(const Value* val)
     if (const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if ((constExpr->getOpcode() >= Instruction::UnaryOpsBegin) &&
-            (constExpr->getOpcode() <= Instruction::UnaryOpsEnd))
+                (constExpr->getOpcode() <= Instruction::UnaryOpsEnd))
             return constExpr;
     }
     return nullptr;
@@ -381,8 +382,8 @@ inline const SVFFunction* getFunction(const std::string& name)
 /// Return true if the value refers to constant data, e.g., i32 0
 inline bool isConstDataOrAggData(const Value* val)
 {
-    return SVFUtil::isa<ConstantData, ConstantAggregate, 
-                        MetadataAsValue, BlockAddress>(val);
+    return SVFUtil::isa<ConstantData, ConstantAggregate,
+           MetadataAsValue, BlockAddress>(val);
 }
 
 /// find the unique defined global across multiple modules

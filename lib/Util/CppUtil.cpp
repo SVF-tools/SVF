@@ -114,12 +114,13 @@ static void handleThunkFunction(cppUtil::DemangledName& dname)
     // to get the real class name
 
     static std::vector<std::string> thunkPrefixes = {VThunkFuncLabel,
-                                                     NVThunkFunLabel};
+                                                     NVThunkFunLabel
+                                                    };
     for (unsigned i = 0; i < thunkPrefixes.size(); i++)
     {
         auto prefix = thunkPrefixes[i];
         if (dname.className.size() > prefix.size() &&
-            dname.className.compare(0, prefix.size(), prefix) == 0)
+                dname.className.compare(0, prefix.size(), prefix) == 0)
         {
             dname.className = dname.className.substr(prefix.size());
             dname.isThunkFunc = true;
@@ -166,7 +167,7 @@ struct cppUtil::DemangledName cppUtil::demangle(const std::string& name)
         std::string realnameStr = std::string(realname);
         std::string beforeParenthesis = getBeforeParenthesis(realnameStr);
         if (beforeParenthesis.find("::") == std::string::npos ||
-            isOperOverload(beforeParenthesis))
+                isOperOverload(beforeParenthesis))
         {
             dname.className = "";
             dname.funcName = "";

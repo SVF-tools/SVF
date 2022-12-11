@@ -150,7 +150,7 @@ bool LLVMUtil::isUncalledFunction (const Function*  fun)
     if(fun->hasAddressTaken())
         return false;
     if (SVFUtil::isProgEntryFunction(
-            LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)))
+                LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)))
         return false;
     for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i)
     {
@@ -743,7 +743,7 @@ bool LLVMUtil::isVirtualCallSite(const CallBase* cs)
     {
         const Value* vfuncptr = vfuncloadinst->getPointerOperand();
         if (const GetElementPtrInst* vfuncptrgepinst =
-                SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
+                    SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
         {
             if (vfuncptrgepinst->getNumIndices() != 1)
                 return false;
@@ -803,16 +803,16 @@ const Value* LLVMUtil::getVCallThisPtr(const CallBase* cs)
  * In the following code thisPtr1 is "%class.B1* %this" and thisPtr2 is
  * "%class.A* %0".
  *
- * 
- * define linkonce_odr dso_local void @B1::B1()(%class.B1* %this) unnamed_addr #6 comdat 
- *   %this.addr = alloca %class.B1*, align 8 
- *   store %class.B1* %this, %class.B1** %this.addr, align 8 
- *   %this1 = load %class.B1*, %class.B1** %this.addr, align 8 
- *   %0 = bitcast %class.B1* %this1 to %class.A* 
+ *
+ * define linkonce_odr dso_local void @B1::B1()(%class.B1* %this) unnamed_addr #6 comdat
+ *   %this.addr = alloca %class.B1*, align 8
+ *   store %class.B1* %this, %class.B1** %this.addr, align 8
+ *   %this1 = load %class.B1*, %class.B1** %this.addr, align 8
+ *   %0 = bitcast %class.B1* %this1 to %class.A*
  *   call void @A::A()(%class.A* %0)
  */
 bool LLVMUtil::isSameThisPtrInConstructor(const Argument* thisPtr1,
-                                          const Value* thisPtr2)
+        const Value* thisPtr2)
 {
     if (thisPtr1 == thisPtr2)
         return true;
@@ -825,7 +825,7 @@ bool LLVMUtil::isSameThisPtrInConstructor(const Argument* thisPtr1,
                 if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(storeU))
                 {
                     if (load->getNextNode() &&
-                        SVFUtil::isa<CastInst>(load->getNextNode()))
+                            SVFUtil::isa<CastInst>(load->getNextNode()))
                         return SVFUtil::cast<CastInst>(load->getNextNode()) ==
                                (thisPtr2->stripPointerCasts());
                 }
@@ -950,7 +950,7 @@ std::string LLVMUtil::getClassNameFromType(const Type* ty)
     {
         const Type* elemType = LLVMUtil::getPtrElementType(ptrType);
         if (SVFUtil::isa<StructType>(elemType) &&
-            !((SVFUtil::cast<StructType>(elemType))->isLiteral()))
+                !((SVFUtil::cast<StructType>(elemType))->isLiteral()))
         {
             std::string elemTypeName = elemType->getStructName().str();
             if (elemTypeName.compare(0, clsName.size(), clsName) == 0)
@@ -985,7 +985,7 @@ std::string LLVMUtil::getClassNameOfThisPtr(const CallBase* inst)
     if (found != std::string::npos)
     {
         if (found != thisPtrClassName.size() - 1 &&
-            thisPtrClassName[found] == '.')
+                thisPtrClassName[found] == '.')
         {
             return thisPtrClassName.substr(0, found);
         }
