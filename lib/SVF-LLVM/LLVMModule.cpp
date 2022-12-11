@@ -78,7 +78,9 @@ LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(
 
 LLVMModuleSet::~LLVMModuleSet()
 {
-
+    for (auto *it: StInfos) {
+        delete(it);
+    }
 }
 
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
@@ -1000,39 +1002,26 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
     StInfo* stinfo = nullptr;
 
     Type2TypeInfoMap::iterator tit = Type2TypeInfo.find(T);
-    if(tit!=Type2TypeInfo.end())
+    if(tit != Type2TypeInfo.end())
     {
-        stinfo = tit->second.get();
+        stinfo = tit->second;
     }
     else
     {
         if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T))
-        {
             stinfo = collectArrayInfo(aty);
-            Type2TypeInfo[T] = std::unique_ptr<StInfo>(stinfo);
-        }
-        else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T))
-        {
+        else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T)) {
             u32_t nf;
             stinfo = collectStructInfo(sty, nf);
-            Type2TypeInfo[T] = std::unique_ptr<StInfo>(stinfo);
-            //Record the size of the complete struct and update max_struct.
-            if (nf > symInfo->maxStSize)
-            {
+            if (nf > symInfo->maxStSize) {
                 symInfo->maxStruct = getSVFType(sty);
                 symInfo->maxStSize = nf;
             }
         }
         else
-        {
-            /// The simple type info should not be processed before
-            auto stinfo_own = std::make_unique<StInfo>(1);
-            stinfo = stinfo_own.get();
-            Type2TypeInfo[T] = std::move(stinfo_own);
-            collectSimpleTypeInfo(stinfo, T);
-        }
-
-
+            stinfo = collectSimpleTypeInfo(T);
+        StInfos.insert(stinfo);
+        Type2TypeInfo[T] = stinfo;
     }
     return stinfo;
 }
@@ -1174,9 +1163,10 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty, u32_t &nf)
 /*!
  * Collect simple type (non-aggregate) info
  */
-StInfo* LLVMModuleSet::collectSimpleTypeInfo(StInfo * stinfo, const Type* ty)
+StInfo* LLVMModuleSet::collectSimpleTypeInfo(const Type* ty)
 {
     /// Only one field
+    StInfo* stinfo = new StInfo(1);
     stinfo->addFldWithType(0, getSVFType(ty), 0);
 
     stinfo->getFlattenFieldTypes().push_back(getSVFType(ty));

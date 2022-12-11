@@ -58,7 +58,7 @@ public:
     typedef Map<const Value*, SVFOtherValue*> LLVMValue2SVFOtherValueMap;
     typedef Map<const SVFValue*, const Value*> SVFValue2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
-    typedef Map<const Type*, std::unique_ptr<StInfo>> Type2TypeInfoMap;
+    typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -84,6 +84,7 @@ private:
     SVFValue2LLVMValueMap SVFValue2LLVMValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
+    Set<const StInfo*> StInfos;
 
     /// Constructor
     LLVMModuleSet();
@@ -334,7 +335,7 @@ private:
     /// Collect the array info
     StInfo* collectArrayInfo(const ArrayType* T);
     /// Collect simple type (non-aggregate) info
-    StInfo* collectSimpleTypeInfo(StInfo * info, const Type* T);
+    StInfo* collectSimpleTypeInfo(const Type* T);
 
     std::vector<const Function*> getLLVMGlobalFunctions(const GlobalVariable* global);
 
