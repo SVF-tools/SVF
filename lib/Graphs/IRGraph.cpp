@@ -137,13 +137,8 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
 
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph
-#if LLVM_VERSION_MAJOR >= 12
     static bool isNodeHidden(SVFVar *node, IRGraph *)
     {
-#else
-    static bool isNodeHidden(SVFVar *node)
-    {
-#endif
         if (Options::ShowHiddenNode()) return false;
         else return node->isIsolatedNode();
     }

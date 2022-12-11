@@ -28,8 +28,8 @@
  *      Author: Yulei Sui
  */
 
-#ifndef PAGEDGE_H_
-#define PAGEDGE_H_
+#ifndef INCLUDE_SVFIR_SVFSTATEMENT_H_
+#define INCLUDE_SVFIR_SVFSTATEMENT_H_
 
 #include "Graphs/GenericGraph.h"
 #include "MemoryModel/LocationSet.h"
@@ -1144,4 +1144,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* PAGEDGE_H_ */
+#endif /* INCLUDE_SVFIR_SVFSTATEMENT_H_ */

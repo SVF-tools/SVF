@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/CppUtil.h"
 #include "Util/Options.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"

@@ -27,8 +27,8 @@
  *      Author: Yulei Sui
  */
 
-#ifndef BASICTYPES_H_
-#define BASICTYPES_H_
+#ifndef INCLUDE_SVFIR_SVFVALUE_H_
+#define INCLUDE_SVFIR_SVFVALUE_H_
 
 #include "SVFIR/SVFType.h"
 #include "Graphs/GraphPrinter.h"
@@ -1117,4 +1117,4 @@ template <> struct std::hash<SVF::CallSite>
     }
 };
 
-#endif /* BASICTYPES_H_ */
+#endif /* INCLUDE_SVFIR_SVFVALUE_H_ */

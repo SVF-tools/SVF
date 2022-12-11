@@ -8,6 +8,7 @@
 #ifndef ANNOTATOR_H_
 #define ANNOTATOR_H_
 
+#include <SVF-LLVM/BasicTypes.h> // TODO: Remove LLVM Header
 #include "SVFIR/SVFValue.h"
 #include <vector>
 
@@ -36,7 +37,6 @@ public:
     /// Destructor
     virtual ~Annotator()
     {
-
     }
 
     /// SB Has flag methods
@@ -46,6 +46,7 @@ public:
         std::vector<Value* > values;
         return evalMDTag(inst, inst, SB_SLICESOURCE, values);
     }
+
     inline bool hasSBSinkFlag(Instruction* inst) const
     {
         std::vector<Value* > values;
@@ -59,38 +60,28 @@ public:
     {
         //std::vector<Value* > values;
         //return evalMDTag(inst, inst, DR_NOT_CHECK, values);
-        if (inst->getMetadata(DR_NOT_CHECK))
-            return true;
-        else
-            return false;
+        return inst->getMetadata(DR_NOT_CHECK);
     }
+
     inline bool hasDRNotCheckFlag(const Instruction* inst) const
     {
         //std::vector<Value* > values;
         //return evalMDTag(inst, inst, DR_NOT_CHECK, values);
-        if (inst->getMetadata(DR_NOT_CHECK))
-            return true;
-        else
-            return false;
+        return inst->getMetadata(DR_NOT_CHECK);
     }
 
     inline bool hasDRCheckFlag(Instruction* inst) const
     {
         //std::vector<Value* > values;
         //return evalMDTag(inst, inst, DR_CHECK, values);
-        if (inst->getMetadata(DR_CHECK))
-            return true;
-        else
-            return false;
+        return inst->getMetadata(DR_CHECK);
     }
+
     inline bool hasDRCheckFlag(const Instruction* inst) const
     {
         //std::vector<Value* > values;
         //return evalMDTag(inst, inst, DR_CHECK, values);
-        if (inst->getMetadata(DR_CHECK))
-            return true;
-        else
-            return false;
+        return inst->getMetadata(DR_CHECK);
     }
     //@}
 

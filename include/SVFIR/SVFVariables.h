@@ -27,8 +27,8 @@
  *      Author: Yulei Sui
  */
 
-#ifndef OBJECTANDSYMBOL_H_
-#define OBJECTANDSYMBOL_H_
+#ifndef INCLUDE_SVFIR_SVFVARIABLE_H_
+#define INCLUDE_SVFIR_SVFVARIABLE_H_
 
 #include "Graphs/GenericGraph.h"
 #include "SVFIR/SymbolTableInfo.h"
@@ -718,4 +718,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* OBJECTANDSYMBOL_H_ */
+#endif /* INCLUDE_SVFIR_SVFVARIABLE_H_ */

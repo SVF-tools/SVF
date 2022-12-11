@@ -31,6 +31,7 @@
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/Options.h"
+#include "Util/CppUtil.h"
 #include <fstream>
 #include <sstream>
 

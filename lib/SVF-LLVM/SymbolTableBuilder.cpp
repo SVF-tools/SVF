@@ -36,7 +36,7 @@
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVF-LLVM/CPPUtil.h"
+#include "Util/CppUtil.h"
 #include "SVF-LLVM/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 
 using namespace SVF;

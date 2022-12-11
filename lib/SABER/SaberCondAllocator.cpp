@@ -33,6 +33,8 @@
 #include "Util/DPItem.h"
 #include "Graphs/SVFG.h"
 #include <climits>
+#include <cmath>
+#include "SVF-LLVM/BasicTypes.h" // TODO: Remove LLVM Header
 
 using namespace SVF;
 using namespace SVFUtil;

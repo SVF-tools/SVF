@@ -2,4 +2,5 @@ BasedOnStyle: Microsoft
 PointerAlignment: Left
 IndentPPDirectives: AfterHash
 AllowShortFunctionsOnASingleLine: Empty
-ColumnLimit: 120
+ColumnLimit: 80
+AccessModifierOffset: -4

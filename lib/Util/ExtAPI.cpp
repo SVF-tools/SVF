@@ -30,6 +30,7 @@
 #include "Util/ExtAPI.h"
 #include "Util/SVFUtil.h"
 #include "Util/cJSON.h"
+#include "SVF-LLVM/BasicTypes.h" //TODO: Remove LLVM Header
 #include <string.h>
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -162,7 +163,6 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
-
         assert(false && "Open ExtAPI.json file fails!");
     }
     return extOp;

@@ -27,8 +27,8 @@
  *      Author: Xiaokang Fan
  */
 
-#ifndef SVFMODULE_H_
-#define SVFMODULE_H_
+#ifndef INCLUDE_SVFMODULE_H_
+#define INCLUDE_SVFMODULE_H_
 
 #include "SVFIR/SVFValue.h"
 #include "Util/ExtAPI.h"
@@ -230,4 +230,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* SVFMODULE_H_ */
+#endif /* INCLUDE_SVFMODULE_H_ */

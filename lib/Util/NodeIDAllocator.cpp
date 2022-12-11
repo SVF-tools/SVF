@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 #include <queue>
+#include <cmath>
 
 #include "FastCluster/fastcluster.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
@@ -691,7 +692,7 @@ std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::
 void NodeIDAllocator::Clusterer::printStats(std::string subtitle, Map<std::string, std::string> &stats)
 {
     // When not in order, it is too hard to compare original/new SBV/BV words, so this array forces an order.
-    const static std::array<std::string, 17> statKeys =
+    static const std::string statKeys[] =
     {
         NumObjects, TheoreticalNumWords, OriginalSbvNumWords, OriginalBvNumWords,
         NewSbvNumWords, NewBvNumWords, NumRegions, NumGtIntRegions,
@@ -703,7 +704,7 @@ void NodeIDAllocator::Clusterer::printStats(std::string subtitle, Map<std::strin
     const unsigned fieldWidth = 20;
     SVFUtil::outs().flags(std::ios::left);
     SVFUtil::outs() << "****Clusterer Statistics: " << subtitle << "****\n";
-    for (const std::string &statKey : statKeys)
+    for (const std::string& statKey : statKeys)
     {
         Map<std::string, std::string>::const_iterator stat = stats.find(statKey);
         if (stat != stats.end())

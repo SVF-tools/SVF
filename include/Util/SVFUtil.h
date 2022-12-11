@@ -31,8 +31,9 @@
 #define AnalysisUtil_H_
 
 #include "FastCluster/fastcluster.h"
-#include "SVF-LLVM/LLVMModule.h"
 #include "SVFIR/SVFValue.h"
+#include "SVFIR/SVFModule.h"
+#include "Util/ExtAPI.h"
 #include "MemoryModel/PointsTo.h"
 #include <time.h>
 
@@ -345,11 +346,10 @@ inline bool isStaticExtFun(const SVFFunction* fun)
 /// Program entry function e.g. main
 //@{
 /// Return true if this is a program entry function (e.g. main)
-inline bool isProgEntryFunction (const SVFFunction * fun)
+inline bool isProgEntryFunction(const SVFFunction* fun)
 {
     return fun && fun->getName() == "main";
 }
-
 
 /// Get program entry function from module.
 inline const SVFFunction* getProgFunction(SVFModule* svfModule, const std::string& funName)
@@ -635,12 +635,6 @@ inline const SVFValue* getTaskDataAtHareParForSite(const SVFInstruction *inst)
     return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(inst);
 }
 //@}
-
-inline bool isProgEntryFunction (const Function*  fun)
-{
-    return fun && fun->getName() == "main";
-}
-
 
 inline bool isProgExitCall(const CallSite cs)
 {

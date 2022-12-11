@@ -33,6 +33,7 @@
 #include "Util/PTAStat.h"
 #include "Graphs/ICFGStat.h"
 #include "Graphs/VFG.h"
+#include "Util/CppUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;

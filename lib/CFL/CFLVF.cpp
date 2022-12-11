@@ -28,6 +28,7 @@
  */
 
 #include "CFL/CFLVF.h"
+#include "Util/CppUtil.h"
 
 using namespace SVF;
 using namespace cppUtil;

@@ -716,13 +716,8 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         return "ConstraintG";
     }
 
-#if LLVM_VERSION_MAJOR >= 12
     static bool isNodeHidden(NodeType *n, ConstraintGraph *)
     {
-#else
-    static bool isNodeHidden(NodeType *n)
-    {
-#endif
         if (Options::ShowHiddenNode()) return false;
         else return (n->getInEdges().empty() && n->getOutEdges().empty());
     }

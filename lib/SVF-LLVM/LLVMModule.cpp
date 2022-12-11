@@ -184,7 +184,7 @@ void LLVMModuleSet::createSVFDataStructure()
                     SVFInstruction* svfInst = nullptr;
                     if(const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
                     {
-                        if(cppUtil::isVirtualCallSite(call))
+                        if(LLVMUtil::isVirtualCallSite(call))
                             svfInst = new SVFVirtualCallInst(call->getName().str(), getSVFType(call->getType()), svfBB,call->getFunctionType()->isVarArg(),inst->isTerminator());
                         else
                             svfInst = new SVFCallInst(call->getName().str(), getSVFType(call->getType()), svfBB,call->getFunctionType()->isVarArg(),inst->isTerminator());
@@ -267,9 +267,9 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                 svfcall->setCalledOperand(callee);
                 if(SVFVirtualCallInst* virtualCall = SVFUtil::dyn_cast<SVFVirtualCallInst>(svfcall))
                 {
-                    virtualCall->setVtablePtr(getSVFValue(cppUtil::getVCallVtblPtr(call)));
-                    virtualCall->setFunIdxInVtable(cppUtil::getVCallIdx(call));
-                    virtualCall->setFunNameOfVirtualCall(cppUtil::getFunNameOfVCallSite(call));
+                    virtualCall->setVtablePtr(getSVFValue(LLVMUtil::getVCallVtblPtr(call)));
+                    virtualCall->setFunIdxInVtable(LLVMUtil::getVCallIdx(call));
+                    virtualCall->setFunNameOfVirtualCall(LLVMUtil::getFunNameOfVCallSite(call));
                 }
                 for(u32_t i = 0; i < call->arg_size(); i++)
                 {

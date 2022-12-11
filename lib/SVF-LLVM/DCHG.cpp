@@ -11,7 +11,7 @@
 
 #include "Util/Options.h"
 #include "SVF-LLVM/DCHG.h"
-#include "SVF-LLVM/CPPUtil.h"
+#include "Util/CppUtil.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMUtil.h"
 

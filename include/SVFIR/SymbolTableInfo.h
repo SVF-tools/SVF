@@ -27,8 +27,8 @@
  *      Author: Yulei Sui
  */
 
-#ifndef INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_
-#define INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_
+#ifndef INCLUDE_SVFIR_SYMBOLTABLEINFO_H_
+#define INCLUDE_SVFIR_SYMBOLTABLEINFO_H_
 
 
 #include "Util/SVFUtil.h"
@@ -594,4 +594,4 @@ public:
 
 } // End namespace SVF
 
-#endif /* INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_ */
+#endif /* INCLUDE_SVFIR_SYMBOLTABLEINFO_H_ */

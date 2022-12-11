@@ -781,13 +781,8 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
 
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph
-#if LLVM_VERSION_MAJOR >= 12
     static bool isNodeHidden(SVFGNode *node, SVFG *)
     {
-#else
-    static bool isNodeHidden(SVFGNode *node)
-    {
-#endif
         if (Options::ShowHiddenNode()) return false;
         else return node->getInEdges().empty() && node->getOutEdges().empty();
     }

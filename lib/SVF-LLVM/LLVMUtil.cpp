@@ -34,6 +34,16 @@
 
 using namespace SVF;
 
+// label for global vtbl value before demangle
+const std::string vtblLabelBeforeDemangle = "_ZTV";
+
+// label for virtual functions
+const std::string vfunPreLabel = "_Z";
+
+const std::string clsName = "class.";
+const std::string structName = "struct.";
+
+
 /*!
  * A value represents an object if it is
  * 1) function,
@@ -139,7 +149,8 @@ bool LLVMUtil::isUncalledFunction (const Function*  fun)
 {
     if(fun->hasAddressTaken())
         return false;
-    if(SVFUtil::isProgEntryFunction(fun))
+    if (SVFUtil::isProgEntryFunction(
+            LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun)))
         return false;
     for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i)
     {
@@ -648,7 +659,7 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
 {
     if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
     {
-        if (cppUtil::isValVtbl(v))
+        if (LLVMUtil::isValVtbl(v))
             return false;
         else if (!v->hasInitializer())
         {
@@ -675,19 +686,366 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
     return LLVMUtil::isConstDataOrAggData(val);
 }
 
+bool LLVMUtil::isValVtbl(const Value* val)
+{
+    if (!SVFUtil::isa<GlobalVariable>(val))
+        return false;
+    std::string valName = val->getName().str();
+    return valName.compare(0, vtblLabelBeforeDemangle.size(),
+                           vtblLabelBeforeDemangle) == 0;
+}
+
+bool LLVMUtil::isLoadVtblInst(const LoadInst* loadInst)
+{
+    const Value* loadSrc = loadInst->getPointerOperand();
+    const Type* valTy = loadSrc->getType();
+    const Type* elemTy = valTy;
+    for (u32_t i = 0; i < 3; ++i)
+    {
+        if (const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
+            elemTy = LLVMUtil::getPtrElementType(ptrTy);
+        else
+            return false;
+    }
+    if (const FunctionType* functy = SVFUtil::dyn_cast<FunctionType>(elemTy))
+    {
+        const Type* paramty = functy->getParamType(0);
+        std::string className = LLVMUtil::getClassNameFromType(paramty);
+        if (className.size() > 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+/*
+ * a virtual callsite follows the following instruction sequence pattern:
+ * %vtable = load this
+ * %vfn = getelementptr %vtable, idx
+ * %x = load %vfn
+ * call %x (this)
+ */
+bool LLVMUtil::isVirtualCallSite(const CallBase* cs)
+{
+    // the callsite must be an indirect one with at least one argument (this
+    // ptr)
+    if (cs->getCalledFunction() != nullptr || cs->arg_empty())
+        return false;
+
+    // the first argument (this pointer) must be a pointer type and must be a
+    // class name
+    if (cs->getArgOperand(0)->getType()->isPointerTy() == false)
+        return false;
+
+    const Value* vfunc = cs->getCalledOperand();
+    if (const LoadInst* vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
+    {
+        const Value* vfuncptr = vfuncloadinst->getPointerOperand();
+        if (const GetElementPtrInst* vfuncptrgepinst =
+                SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
+        {
+            if (vfuncptrgepinst->getNumIndices() != 1)
+                return false;
+            const Value* vtbl = vfuncptrgepinst->getPointerOperand();
+            if (SVFUtil::isa<LoadInst>(vtbl))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool LLVMUtil::isCPPThunkFunction(const Function* F)
+{
+    cppUtil::DemangledName dname = cppUtil::demangle(F->getName().str());
+    return dname.isThunkFunc;
+}
+
+const Function* LLVMUtil::getThunkTarget(const Function* F)
+{
+    const Function* ret = nullptr;
+
+    for (auto& bb : *F)
+    {
+        for (auto& inst : bb)
+        {
+            if (const CallBase* callbase = SVFUtil::dyn_cast<CallBase>(&inst))
+            {
+                // assert(cs.getCalledFunction() &&
+                //        "Indirect call detected in thunk func");
+                // assert(ret == nullptr && "multiple callsites in thunk func");
+
+                ret = callbase->getCalledFunction();
+            }
+        }
+    }
+
+    return ret;
+}
+
+const Value* LLVMUtil::getVCallThisPtr(const CallBase* cs)
+{
+    if (cs->paramHasAttr(0, llvm::Attribute::StructRet))
+    {
+        return cs->getArgOperand(1);
+    }
+    else
+    {
+        return cs->getArgOperand(0);
+    }
+}
+
+/*!
+ * Given a inheritance relation B is a child of A
+ * We assume B::B(thisPtr1){ A::A(thisPtr2) } such that thisPtr1 == thisPtr2
+ * In the following code thisPtr1 is "%class.B1* %this" and thisPtr2 is
+ * "%class.A* %0".
+ *
+ * 
+ * define linkonce_odr dso_local void @B1::B1()(%class.B1* %this) unnamed_addr #6 comdat 
+ *   %this.addr = alloca %class.B1*, align 8 
+ *   store %class.B1* %this, %class.B1** %this.addr, align 8 
+ *   %this1 = load %class.B1*, %class.B1** %this.addr, align 8 
+ *   %0 = bitcast %class.B1* %this1 to %class.A* 
+ *   call void @A::A()(%class.A* %0)
+ */
+bool LLVMUtil::isSameThisPtrInConstructor(const Argument* thisPtr1,
+                                          const Value* thisPtr2)
+{
+    if (thisPtr1 == thisPtr2)
+        return true;
+    for (const Value* thisU : thisPtr1->users())
+    {
+        if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(thisU))
+        {
+            for (const Value* storeU : store->getPointerOperand()->users())
+            {
+                if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(storeU))
+                {
+                    if (load->getNextNode() &&
+                        SVFUtil::isa<CastInst>(load->getNextNode()))
+                        return SVFUtil::cast<CastInst>(load->getNextNode()) ==
+                               (thisPtr2->stripPointerCasts());
+                }
+            }
+        }
+    }
+    return false;
+}
+
+const Argument* LLVMUtil::getConstructorThisPtr(const Function* fun)
+{
+    assert((LLVMUtil::isConstructor(fun) || LLVMUtil::isDestructor(fun)) &&
+           "not a constructor?");
+    assert(fun->arg_size() >= 1 && "argument size >= 1?");
+    const Argument* thisPtr = &*(fun->arg_begin());
+    return thisPtr;
+}
+
+bool LLVMUtil::isConstructor(const Function* F)
+{
+    if (F->isDeclaration())
+        return false;
+    std::string funcName = F->getName().str();
+    if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0)
+    {
+        return false;
+    }
+    struct cppUtil::DemangledName dname = cppUtil::demangle(funcName.c_str());
+    if (dname.className.size() == 0)
+    {
+        return false;
+    }
+    dname.funcName = cppUtil::getBeforeBrackets(dname.funcName);
+    dname.className = cppUtil::getBeforeBrackets(dname.className);
+    size_t colon = dname.className.rfind("::");
+    if (colon == std::string::npos)
+    {
+        dname.className = cppUtil::getBeforeBrackets(dname.className);
+    }
+    else
+    {
+        dname.className =
+            cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
+    }
+    /// TODO: on mac os function name is an empty string after demangling
+    return dname.className.size() > 0 &&
+           dname.className.compare(dname.funcName) == 0;
+}
+
+bool LLVMUtil::isDestructor(const Function* F)
+{
+    if (F->isDeclaration())
+        return false;
+    std::string funcName = F->getName().str();
+    if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0)
+    {
+        return false;
+    }
+    struct cppUtil::DemangledName dname = cppUtil::demangle(funcName.c_str());
+    if (dname.className.size() == 0)
+    {
+        return false;
+    }
+    dname.funcName = cppUtil::getBeforeBrackets(dname.funcName);
+    dname.className = cppUtil::getBeforeBrackets(dname.className);
+    size_t colon = dname.className.rfind("::");
+    if (colon == std::string::npos)
+    {
+        dname.className = cppUtil::getBeforeBrackets(dname.className);
+    }
+    else
+    {
+        dname.className =
+            cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
+    }
+    return (dname.className.size() > 0 && dname.funcName.size() > 0 &&
+            dname.className.size() + 1 == dname.funcName.size() &&
+            dname.funcName.compare(0, 1, "~") == 0 &&
+            dname.className.compare(dname.funcName.substr(1)) == 0);
+}
+
+/*
+ * get the ptr "vtable" for a given virtual callsite:
+ * %vtable = load ...
+ * %vfn = getelementptr %vtable, idx
+ * %x = load %vfn
+ * call %x (...)
+ */
+const Value* LLVMUtil::getVCallVtblPtr(const CallBase* cs)
+{
+    const LoadInst* loadInst =
+        SVFUtil::dyn_cast<LoadInst>(cs->getCalledOperand());
+    assert(loadInst != nullptr);
+    const Value* vfuncptr = loadInst->getPointerOperand();
+    const GetElementPtrInst* gepInst =
+        SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
+    assert(gepInst != nullptr);
+    const Value* vtbl = gepInst->getPointerOperand();
+    return vtbl;
+}
+
+/*
+ * Is this virtual call inside its own constructor or destructor?
+ */
+bool LLVMUtil::VCallInCtorOrDtor(const CallBase* cs)
+{
+    std::string classNameOfThisPtr = LLVMUtil::getClassNameOfThisPtr(cs);
+    const Function* func = cs->getCaller();
+    if (LLVMUtil::isConstructor(func) || LLVMUtil::isDestructor(func))
+    {
+        cppUtil::DemangledName dname = cppUtil::demangle(func->getName().str());
+        if (classNameOfThisPtr.compare(dname.className) == 0)
+            return true;
+    }
+    return false;
+}
+
+std::string LLVMUtil::getClassNameFromType(const Type* ty)
+{
+    std::string className = "";
+    if (const PointerType* ptrType = SVFUtil::dyn_cast<PointerType>(ty))
+    {
+        const Type* elemType = LLVMUtil::getPtrElementType(ptrType);
+        if (SVFUtil::isa<StructType>(elemType) &&
+            !((SVFUtil::cast<StructType>(elemType))->isLiteral()))
+        {
+            std::string elemTypeName = elemType->getStructName().str();
+            if (elemTypeName.compare(0, clsName.size(), clsName) == 0)
+            {
+                className = elemTypeName.substr(clsName.size());
+            }
+            else if (elemTypeName.compare(0, structName.size(), structName) ==
+                     0)
+            {
+                className = elemTypeName.substr(structName.size());
+            }
+        }
+    }
+    return className;
+}
+
+std::string LLVMUtil::getClassNameOfThisPtr(const CallBase* inst)
+{
+    std::string thisPtrClassName;
+    if (const MDNode* N = inst->getMetadata("VCallPtrType"))
+    {
+        const MDString* mdstr = SVFUtil::cast<MDString>(N->getOperand(0).get());
+        thisPtrClassName = mdstr->getString().str();
+    }
+    if (thisPtrClassName.size() == 0)
+    {
+        const Value* thisPtr = LLVMUtil::getVCallThisPtr(inst);
+        thisPtrClassName = getClassNameFromType(thisPtr->getType());
+    }
+
+    size_t found = thisPtrClassName.find_last_not_of("0123456789");
+    if (found != std::string::npos)
+    {
+        if (found != thisPtrClassName.size() - 1 &&
+            thisPtrClassName[found] == '.')
+        {
+            return thisPtrClassName.substr(0, found);
+        }
+    }
+
+    return thisPtrClassName;
+}
+
+std::string LLVMUtil::getFunNameOfVCallSite(const CallBase* inst)
+{
+    std::string funName;
+    if (const MDNode* N = inst->getMetadata("VCallFunName"))
+    {
+        const MDString* mdstr = SVFUtil::cast<MDString>(N->getOperand(0).get());
+        funName = mdstr->getString().str();
+    }
+    return funName;
+}
+
+s32_t LLVMUtil::getVCallIdx(const CallBase* cs)
+{
+    const LoadInst* vfuncloadinst =
+        SVFUtil::dyn_cast<LoadInst>(cs->getCalledOperand());
+    assert(vfuncloadinst != nullptr);
+    const Value* vfuncptr = vfuncloadinst->getPointerOperand();
+    const GetElementPtrInst* vfuncptrgepinst =
+        SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
+    User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
+    const ConstantInt* idx = SVFUtil::dyn_cast<ConstantInt>(oi->get());
+    s32_t idx_value;
+    if (idx == nullptr)
+    {
+        SVFUtil::errs() << "vcall gep idx not constantint\n";
+        idx_value = 0;
+    }
+    else
+    {
+        idx_value = (s32_t)idx->getSExtValue();
+    }
+    return idx_value;
+}
+
 namespace SVF
 {
 const std::string SVFValue::toString() const
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-    if(const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
+    if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
+    {
         rawstr << "Function: " << fun->getName() << " ";
+    }
     else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
+    {
         rawstr << "BasicBlock: " << bb->getName() << " ";
+    }
     else
     {
-        const Value* val = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+        const Value* val =
+            LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
         rawstr << " " << *val << " ";
     }
     rawstr << this->getSourceLoc();

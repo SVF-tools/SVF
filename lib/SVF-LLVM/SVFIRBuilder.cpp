@@ -32,7 +32,7 @@
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMUtil.h"
-#include "SVF-LLVM/CPPUtil.h"
+#include "Util/CppUtil.h"
 #include "SVFIR/SVFValue.h"
 #include "SVFIR/PAGBuilderFromFile.h"
 #include "SVF-LLVM/LLVMLoopAnalysis.h"
@@ -513,7 +513,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     }
     else if (SVFUtil::isa<ConstantArray, ConstantStruct>(C))
     {
-        if(cppUtil::isValVtbl(gvar) && !Options::VtableInSVFIR())
+        if(LLVMUtil::isValVtbl(gvar) && !Options::VtableInSVFIR())
             return;
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {

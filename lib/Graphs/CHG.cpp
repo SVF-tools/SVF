@@ -27,6 +27,7 @@
  *      Author: Xiaokang Fan
  */
 
+#include "Util/CppUtil.h"
 #include "Graphs/CHG.h"
 #include "Util/SVFUtil.h"
 
