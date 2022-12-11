@@ -78,11 +78,7 @@ LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(
 
 LLVMModuleSet::~LLVMModuleSet()
 {
-    Set<StInfo*> infoSet;
-    for (auto it = Type2TypeInfo.begin(); it != Type2TypeInfo.end(); ++it) {
-        infoSet.insert(it->second);
-    }
-    for (auto *it: infoSet) {
+    for (auto *it: StInfos) {
         delete(it);
     }
 }
@@ -1023,7 +1019,7 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
         }
         else
             stinfo = collectSimpleTypeInfo(T);
-
+        StInfos.insert(stinfo);
         Type2TypeInfo[T] = stinfo;
     }
     return stinfo;
