@@ -89,7 +89,7 @@ void IntervalExeState::joinWith(const IntervalExeState& other)
     {
         auto key = it->first;
         auto oit = _varToItvVal.find(key);
-        if (oit != other._varToItvVal.end())
+        if (oit != _varToItvVal.end())
         {
             oit->second.join_with(it->second);
         }
@@ -102,7 +102,7 @@ void IntervalExeState::joinWith(const IntervalExeState& other)
     {
         auto key = it->first;
         auto oit = _locToItvVal.find(key);
-        if (oit != other._locToItvVal.end())
+        if (oit != _locToItvVal.end())
         {
             oit->second.join_with(it->second);
         }
