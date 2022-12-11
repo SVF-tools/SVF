@@ -128,9 +128,8 @@ bool RelExeState::operator==(const RelExeState &rhs) const
  */
 bool RelExeState::operator<(const RelExeState &rhs) const
 {
-    if (lessThanVarToValMap(_varToVal, rhs.getVarToVal()) || lessThanVarToValMap(_locToVal, rhs.getLocToVal()))
-        return true;
-    return false;
+    return lessThanVarToValMap(_varToVal, rhs.getVarToVal()) ||
+           lessThanVarToValMap(_locToVal, rhs.getLocToVal());
 }
 
 bool RelExeState::eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const

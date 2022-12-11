@@ -384,9 +384,7 @@ private:
         {
             tgrlockset.erase(*it);
         }
-        if(!toBeDeleted.empty())
-            return true;
-        return false;
+        return !toBeDeleted.empty();
     }
 
     /// Clear flags

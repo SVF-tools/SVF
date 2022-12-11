@@ -706,9 +706,7 @@ bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
     {
         if (isValidPointer(node->getId()) && node->hasValue())
         {
-            if (SVFUtil::isArgOfUncalledFunction(node->getValue()))
-                return false;
-            return true;
+            return !SVFUtil::isArgOfUncalledFunction(node->getValue());
         }
     }
     return false;
