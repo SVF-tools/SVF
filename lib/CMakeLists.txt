@@ -11,21 +11,30 @@ file (GLOB CORE_LIB_SOURCES
         MemoryModel/*.cpp
         MSSA/*.cpp
         WPA/*.cpp
-        MTA/*.cpp
-        SABER/*.cpp
+        #MTA/*.cpp
         DDA/*.cpp
         CFL/*.cpp
         FastCluster/*.cpp
+        SABER/*.cpp
 )
 
-# This is a workaround. Refer to this link for detail:
+file (GLOB CORE_LIB_LLVM_SOURCES
+        MTA/*.cpp
+)
+
+# Refer to this link for detail:
 # https://stackoverflow.com/questions/68864536/cmake-linking-static-libraries-in-different-subdirectories-into-one-single-stati
+
 add_library(SvfCoreObj OBJECT ${CORE_LIB_SOURCES})
+
+add_library(SvfCoreLLVMObj OBJECT ${CORE_LIB_LLVM_SOURCES})
+target_include_directories(SvfCoreLLVMObj SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
+
 add_library(SvfCore STATIC)
-target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES} SvfCoreObj)
+target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES} SvfCoreObj SvfCoreLLVMObj)
+# target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES} SvfCoreObj)
 
 # Svf containes LLVM Libs
-
 if (LLVM_LINK_LLVM_DYLIB)
     set(llvm_libs LLVM)
 else()
@@ -48,7 +57,8 @@ endif()
 file (GLOB LLVM_FE_SOURCES ./SVF-LLVM/*.cpp)
 
 add_llvm_library(Svf STATIC ${LLVM_FE_SOURCES})
-target_link_libraries(Svf PUBLIC ${Z3_LIBRARIES} SvfCoreObj)
+target_include_directories(Svf SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
+target_link_libraries(Svf PUBLIC ${Z3_LIBRARIES} SvfCoreObj SvfCoreLLVMObj)
 
 if(DEFINED IN_SOURCE_BUILD)
     add_dependencies(Svf intrinsics_gen)

@@ -60,9 +60,8 @@ private:
 
 public:
     /// Constructor
-    GenericEdge(NodeTy* s, NodeTy* d, GEdgeFlag k): src(s),dst(d), edgeFlag(k)
+    GenericEdge(NodeTy* s, NodeTy* d, GEdgeFlag k) : src(s), dst(d), edgeFlag(k)
     {
-
     }
 
     /// Destructor
@@ -116,8 +115,9 @@ public:
 
     virtual inline bool operator==(const GenericEdge<NodeType>* rhs) const
     {
-        return (rhs->edgeFlag == this->edgeFlag && rhs->getSrcID() == this->getSrcID()
-                && rhs->getDstID() == this->getDstID());
+        return (rhs->edgeFlag == this->edgeFlag &&
+                rhs->getSrcID() == this->getSrcID() &&
+                rhs->getDstID() == this->getDstID());
     }
     //@}
 

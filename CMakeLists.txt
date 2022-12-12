@@ -63,7 +63,7 @@ if(NOT COMMAND add_llvm_library)
         include(AddLLVM)
 
         add_definitions(${LLVM_DEFINITIONS})
-        include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
+        #include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 
         if (LLVM_LINK_LLVM_DYLIB)
             set(llvm_libs LLVM)

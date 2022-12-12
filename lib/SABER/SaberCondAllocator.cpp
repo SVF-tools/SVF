@@ -34,7 +34,7 @@
 #include "Graphs/SVFG.h"
 #include <climits>
 #include <cmath>
-#include "SVF-LLVM/BasicTypes.h" // TODO: Remove LLVM Header
+#include "SVFIR/SVFStatements.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -333,12 +333,12 @@ SaberCondAllocator::Condition SaberCondAllocator::evaluateBranchCond(const SVFBa
 
 bool SaberCondAllocator::isEQCmp(const CmpStmt *cmp) const
 {
-    return (cmp->getPredicate() == CmpInst::ICMP_EQ);
+    return (cmp->getPredicate() == CmpStmt::ICMP_EQ);
 }
 
 bool SaberCondAllocator::isNECmp(const CmpStmt *cmp) const
 {
-    return (cmp->getPredicate() == CmpInst::ICMP_NE);
+    return (cmp->getPredicate() == CmpStmt::ICMP_NE);
 }
 
 bool SaberCondAllocator::isTestNullExpr(const SVFValue* test) const
