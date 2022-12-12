@@ -395,8 +395,8 @@ public:
         }
         else
         {
-            this->_lb = is_infinite(this->_lb) ? other._lb : this->_lb;
-            this->_ub = is_infinite(this->_ub) ? other._ub : this->_ub;
+            this->_lb = is_infinite(this->_lb) ? other._lb : max(this->lb(), other.lb());
+            this->_ub = is_infinite(this->_ub) ? other._ub : min(this->ub(), other.ub());
         }
     }
 
