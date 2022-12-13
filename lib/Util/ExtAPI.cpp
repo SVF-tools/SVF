@@ -261,7 +261,8 @@ s32_t ExtAPI::getNodeIDType(const std::string& s)
         return argPos;
     }
 
-    static const Map<std::string, s32_t> argStrToBinOp = {
+    static const Map<std::string, s32_t> argStrToBinOp =
+    {
         {"Ret", -1},
         {"Dummy", -2},
         {"Obj", -3},
