@@ -31,11 +31,11 @@
 #define MTASTAT_H_
 
 #include "Util/PTAStat.h"
-#include "SVF-LLVM/BasicTypes.h"
 
 namespace SVF
 {
 
+class Instruction;
 class ThreadCallGraph;
 class TCT;
 class MHP;
