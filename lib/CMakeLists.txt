@@ -25,25 +25,6 @@ add_library(SvfCore STATIC)
 target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES} SvfCoreObj)
 
 # Svf containes LLVM Libs
-if (LLVM_LINK_LLVM_DYLIB)
-    set(llvm_libs LLVM)
-else()
-    llvm_map_components_to_libnames(
-        llvm_libs
-        bitwriter
-        core
-        ipo
-        irreader
-        instcombine
-        instrumentation
-        target
-        linker
-        analysis
-        scalaropts
-        support
-        transformutils)
-endif()
-
 file (GLOB LLVM_FE_SOURCES SVF-LLVM/*.cpp)
 
 add_llvm_library(Svf STATIC ${LLVM_FE_SOURCES})

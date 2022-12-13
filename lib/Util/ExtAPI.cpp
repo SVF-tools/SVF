@@ -37,11 +37,11 @@
 
 using namespace SVF;
 
-ExtAPI *ExtAPI::extOp = nullptr;
-cJSON *ExtAPI::root = nullptr;
+ExtAPI* ExtAPI::extOp = nullptr;
+cJSON* ExtAPI::root = nullptr;
 
 // Get environment variables $SVF_DIR and "npm root" through popen() method
-static std::string GetStdoutFromCommand(const std::string &command)
+static std::string GetStdoutFromCommand(const std::string& command)
 {
     char buffer[128];
     std::string result = "";

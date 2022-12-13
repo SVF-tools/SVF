@@ -68,7 +68,20 @@ if(NOT COMMAND add_llvm_library)
         if (LLVM_LINK_LLVM_DYLIB)
             set(llvm_libs LLVM)
         else()
-            llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support transformutils)
+            llvm_map_components_to_libnames(llvm_libs
+                analysis
+                bitwriter
+                core
+                instcombine
+                instrumentation
+                ipo
+                irreader
+                linker
+                scalaropts
+                support
+                target
+                transformutils
+            )
         endif()
 else()
         set(IN_SOURCE_BUILD 1)
