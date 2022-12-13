@@ -36,7 +36,6 @@
 
 #include <set>
 #include <vector>
-#include "SVF-LLVM/BasicTypes.h"
 #include "SVFIR/SVFValue.h"
 
 namespace SVF
@@ -77,7 +76,8 @@ public:
     /// Perform detection
     virtual void detect(SVFModule* module);
 
-    void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
+    // Not implemented for now
+    // void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
 
     MHP* getMHP()
     {

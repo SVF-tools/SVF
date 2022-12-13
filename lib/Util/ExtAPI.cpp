@@ -30,7 +30,7 @@
 #include "Util/ExtAPI.h"
 #include "Util/SVFUtil.h"
 #include "Util/cJSON.h"
-#include "SVF-LLVM/BasicTypes.h" //TODO: Remove LLVM Header
+#include "SVFIR/SVFVariables.h"
 #include <string.h>
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -220,7 +220,7 @@ const std::string& ExtAPI::extType_toString(extType type)
 }
 
 // Get numeric index of the argument in external function
-u32_t ExtAPI::getArgPos(std::string s)
+u32_t ExtAPI::getArgPos(const std::string& s)
 {
     u32_t start = 0;
     while (start < s.size() && isalpha(s[start]))
@@ -241,7 +241,7 @@ u32_t ExtAPI::getArgPos(std::string s)
 // return value = -3 is an object node
 // return value = -4 is an offset
 // return value = -5 is an illegal operand format
-s32_t ExtAPI::getNodeIDType(std::string s)
+s32_t ExtAPI::getNodeIDType(const std::string& s)
 {
     u32_t argPos = -1;
     // 'A' represents an argument
@@ -260,62 +260,44 @@ s32_t ExtAPI::getNodeIDType(std::string s)
         argPos = atoi(digitStr.c_str());
         return argPos;
     }
-    else if(argStr == "Ret")
-        return -1;
-    else if(argStr == "Dummy")
-        return -2;
-    else if(argStr == "Obj")
-        return -3;
-    else if(argStr == "Add")
-        return BinaryOperator::Add;
-    else if(argStr == "Sub")
-        return BinaryOperator::Sub;
-    else if(argStr == "Mul")
-        return BinaryOperator::Mul;
-    else if(argStr == "SDiv")
-        return BinaryOperator::SDiv;
-    else if(argStr == "SRem")
-        return BinaryOperator::SRem;
-    else if(argStr == "Xor")
-        return BinaryOperator::Xor;
-    else if(argStr == "And")
-        return BinaryOperator::And;
-    else if(argStr == "Or")
-        return BinaryOperator::Or;
-    else if(argStr == "AShr")
-        return BinaryOperator::AShr;
-    else if(argStr == "Shl")
-        return BinaryOperator::Shl;
-    else if(argStr == "ICMP_EQ")
-        return CmpInst::ICMP_EQ;
-    else if(argStr == "ICMP_NE")
-        return CmpInst::ICMP_NE;
-    else if(argStr == "ICMP_UGT")
-        return CmpInst::ICMP_UGT;
-    else if(argStr == "ICMP_SGT")
-        return CmpInst::ICMP_SGT;
-    else if(argStr == "ICMP_UGE")
-        return CmpInst::ICMP_UGE;
-    else if(argStr == "ICMP_SGE")
-        return CmpInst::ICMP_SGE;
-    else if(argStr == "ICMP_ULT")
-        return CmpInst::ICMP_ULT;
-    else if(argStr == "ICMP_SLT")
-        return CmpInst::ICMP_SLT;
-    else if(argStr == "ICMP_ULE")
-        return CmpInst::ICMP_ULE;
-    else if(argStr == "ICMP_SLE")
-        return CmpInst::ICMP_SLE;
-    else if(argStr == "FNeg")
-        return UnaryOperator::FNeg;
-    else // offset
-    {
-        u32_t i=0;
-        while(i < s.size() && isdigit(s[i])) i++;
-        if (i == s.size())
-            return -4;
-    }
 
+    static const Map<std::string, s32_t> argStrToBinOp = {
+        {"Ret", -1},
+        {"Dummy", -2},
+        {"Obj", -3},
+        {"Add", BinaryOPStmt::Add},
+        {"Sub", BinaryOPStmt::Sub},
+        {"Mul", BinaryOPStmt::Mul},
+        {"SDiv", BinaryOPStmt::SDiv},
+        {"SRem", BinaryOPStmt::SRem},
+        {"Xor", BinaryOPStmt::Xor},
+        {"And", BinaryOPStmt::And},
+        {"Or", BinaryOPStmt::Or},
+        {"AShr", BinaryOPStmt::AShr},
+        {"Shl", BinaryOPStmt::Shl},
+        {"ICMP_EQ", CmpStmt::ICMP_EQ},
+        {"ICMP_NE", CmpStmt::ICMP_NE},
+        {"ICMP_UGT", CmpStmt::ICMP_UGT},
+        {"ICMP_SGT", CmpStmt::ICMP_SGT},
+        {"ICMP_UGE", CmpStmt::ICMP_UGE},
+        {"ICMP_SGE", CmpStmt::ICMP_SGE},
+        {"ICMP_ULT", CmpStmt::ICMP_ULT},
+        {"ICMP_SLT", CmpStmt::ICMP_SLT},
+        {"ICMP_ULE", CmpStmt::ICMP_ULE},
+        {"ICMP_SLE", CmpStmt::ICMP_SLE},
+        {"FNeg", UnaryOPStmt::FNeg},
+    };
+
+    auto it = argStrToBinOp.find(argStr);
+    if (it != argStrToBinOp.cend())
+        return it->second;
+    // offset
+    u32_t i = 0;
+    while (i < s.size() && isdigit(s[i]))
+        i++;
+    if (i == s.size())
+        return -4;
+    // illegal operand format
     return -5;
 }
 

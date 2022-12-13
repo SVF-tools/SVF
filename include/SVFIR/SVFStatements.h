@@ -33,12 +33,16 @@
 
 #include "Graphs/GenericGraph.h"
 #include "MemoryModel/LocationSet.h"
-#include "Graphs/ICFGNode.h"
 
 namespace SVF
 {
 
 class SVFVar;
+class ICFGNode;
+class IntraICFGNode;
+class CallICFGNode;
+class FunEntryICFGNode;
+class FunExitICFGNode;
 
 /*
  * SVFIR program statements (PAGEdges)
@@ -106,12 +110,9 @@ public:
     //@{
     inline const SVFInstruction* getInst() const
     {
-        if(const SVFInstruction* i = SVFUtil::dyn_cast<SVFInstruction>(value))
-        {
+        if (const SVFInstruction* i = SVFUtil::dyn_cast<SVFInstruction>(value))
             return i;
-        }
-        else
-            return nullptr;
+        return nullptr;
     }
     inline void setValue(const SVFValue* val)
     {
@@ -172,7 +173,7 @@ public:
     //@}
     /// Overloading operator << for dumping SVFVar value
     //@{
-    friend OutStream& operator<< (OutStream &o, const SVFStmt &edge)
+    friend OutStream& operator<<(OutStream& o, const SVFStmt& edge)
     {
         o << edge.toString();
         return o;
@@ -368,10 +369,7 @@ public:
     //@}
 
     /// constructor
-    StoreStmt(SVFVar* s, SVFVar* d, const IntraICFGNode* st) :
-        AssignStmt(s, d, makeEdgeFlagWithStoreInst(SVFStmt::Store, st))
-    {
-    }
+    StoreStmt(SVFVar* s, SVFVar* d, const IntraICFGNode* st);
 
     virtual const std::string toString() const override;
 };
@@ -514,10 +512,8 @@ public:
     //@}
 
     /// constructor
-    CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, const FunEntryICFGNode* e, GEdgeKind k = SVFStmt::Call) :
-        AssignStmt(s,d,makeEdgeFlagWithCallInst(k,i)), call(i), entry(e)
-    {
-    }
+    CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
+           const FunEntryICFGNode* e, GEdgeKind k = SVFStmt::Call);
 
     /// Get method for the call instruction
     //@{
@@ -571,10 +567,8 @@ public:
     //@}
 
     /// constructor
-    RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, const FunExitICFGNode* e, GEdgeKind k = SVFStmt::Ret) :
-        AssignStmt(s,d,makeEdgeFlagWithCallInst(k,i)), call(i), exit(e)
-    {
-    }
+    RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, const FunExitICFGNode* e,
+          GEdgeKind k = SVFStmt::Ret);
 
     /// Get method for call instruction at caller
     //@{
@@ -614,9 +608,7 @@ private:
 protected:
     OPVars opVars;
     /// Constructor, only used by subclassess but not external users
-    MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k): SVFStmt(opnds.at(0), r, k), opVars(opnds)
-    {
-    }
+    MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k);
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -768,10 +760,7 @@ public:
     //@}
 
     /// constructor
-    SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond) : MultiOpndStmt(s,opnds,makeEdgeFlagWithAddionalOpnd(SVFStmt::Select,opnds.at(1))), condition(cond)
-    {
-        assert(opnds.size()==2 && "SelectStmt can only have two operands!");
-    }
+    SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond);
     virtual const std::string toString() const override;
 
     inline const SVFVar* getCondition() const
@@ -860,10 +849,7 @@ public:
     //@}
 
     /// constructor
-    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre) : MultiOpndStmt(s,opnds,makeEdgeFlagWithAddionalOpnd(SVFStmt::Cmp,opnds.at(1))), predicate(pre)
-    {
-        assert(opnds.size()==2 && "CmpStmt can only have two operands!");
-    }
+    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre);
 
     u32_t getPredicate() const
     {
@@ -914,10 +900,7 @@ public:
     //@}
 
     /// constructor
-    BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,makeEdgeFlagWithAddionalOpnd(SVFStmt::BinaryOp,opnds.at(1))), opcode(oc)
-    {
-        assert(opnds.size()==2 && "BinaryOPStmt can only have two operands!");
-    }
+    BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc);
 
     u32_t getOpcode() const
     {
@@ -943,6 +926,12 @@ private:
 
     u32_t opcode;
 public:
+    /// OpCode for UnaryOPStmt, enum value is same to llvm::UnaryOperator
+    enum OpCode : unsigned
+    {
+        FNeg = 12
+    };
+
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const UnaryOPStmt *)

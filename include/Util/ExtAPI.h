@@ -256,7 +256,7 @@ public:
         std::vector<std::string> operandStr;
         std::vector<NodeID> operands;
     };
-    static ExtAPI *getExtAPI(const std::string & = "");
+    static ExtAPI *getExtAPI(const std::string& = "");
 
     static void destory();
 
@@ -264,7 +264,7 @@ public:
     void add_entry(const char* funName, extType type, bool overwrite_app_function);
 
     // Get numeric index of the argument in external function
-    u32_t getArgPos(std::string s);
+    u32_t getArgPos(const std::string& s);
 
     // return value >= 0 is an argument node
     // return value = -1 is an inst node
@@ -272,7 +272,7 @@ public:
     // return value = -3 is an object node
     // return value = -4 is an offset
     // return value = -5 is an illegal operand format
-    s32_t getNodeIDType(std::string s);
+    s32_t getNodeIDType(const std::string& s);
 
     // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
     std::string get_opName(const std::string& s);

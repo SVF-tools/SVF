@@ -40,6 +40,8 @@ u64_t SVFStmt::storeEdgeLabelCounter = 0;
 u64_t SVFStmt::multiOpndLabelCounter = 0;
 SVFStmt::Inst2LabelMap SVFStmt::inst2LabelMap;
 SVFStmt::Var2LabelMap SVFStmt::var2LabelMap;
+
+
 /*!
  * SVFStmt constructor
  */
@@ -321,4 +323,51 @@ const SVFVar* BranchStmt::getCondition() const
 {
     //assert(isConditional() && "this is a unconditional branch");
     return cond;
+}
+
+StoreStmt::StoreStmt(SVFVar* s, SVFVar* d, const IntraICFGNode* st)
+    : AssignStmt(s, d, makeEdgeFlagWithStoreInst(SVFStmt::Store, st))
+{
+}
+
+CallPE::CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
+               const FunEntryICFGNode* e, GEdgeKind k)
+    : AssignStmt(s, d, makeEdgeFlagWithCallInst(k, i)), call(i), entry(e)
+{
+}
+
+RetPE::RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i,
+             const FunExitICFGNode* e, GEdgeKind k)
+    : AssignStmt(s, d, makeEdgeFlagWithCallInst(k, i)), call(i), exit(e)
+{
+}
+
+MultiOpndStmt::MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k)
+    : SVFStmt(opnds.at(0), r, k), opVars(opnds)
+{
+}
+
+CmpStmt::CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre)
+    : MultiOpndStmt(s, opnds,
+                    makeEdgeFlagWithAddionalOpnd(SVFStmt::Cmp, opnds.at(1))),
+      predicate(pre)
+{
+    assert(opnds.size() == 2 && "CmpStmt can only have two operands!");
+}
+
+SelectStmt::SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond)
+    : MultiOpndStmt(s, opnds,
+                    makeEdgeFlagWithAddionalOpnd(SVFStmt::Select, opnds.at(1))),
+      condition(cond)
+{
+    assert(opnds.size() == 2 && "SelectStmt can only have two operands!");
+}
+
+BinaryOPStmt::BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc)
+    : MultiOpndStmt(
+          s, opnds,
+          makeEdgeFlagWithAddionalOpnd(SVFStmt::BinaryOp, opnds.at(1))),
+      opcode(oc)
+{
+    assert(opnds.size() == 2 && "BinaryOPStmt can only have two operands!");
 }
