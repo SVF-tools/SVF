@@ -36,7 +36,7 @@
 #include <string>
 #include <map>
 
-#define EXTAPI_JSON_PATH "/include/Util/ExtAPI.json"
+#define EXTAPI_JSON_PATH "svf/include/Util/ExtAPI.json"
 #define JSON_OPT_OVERWRITE "overwrite_app_function"
 #define JSON_OPT_FUNCTIONTYPE "type"
 

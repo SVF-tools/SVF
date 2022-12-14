@@ -143,7 +143,7 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             return extOp;
         }
 
-        jsonFilePath = PROJECT_PATH + std::string(EXTAPI_JSON_PATH);
+        jsonFilePath = std::string(PROJECT_PATH) + '/' + EXTAPI_JSON_PATH;
         if (!stat(jsonFilePath.c_str(), &statbuf))
         {
             root = parseJson(jsonFilePath, statbuf.st_size);

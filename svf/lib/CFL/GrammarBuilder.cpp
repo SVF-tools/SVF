@@ -39,6 +39,11 @@ namespace SVF
 const inline std::string GrammarBuilder::parseProductionsString() const
 {
     std::ifstream textFile(fileName);
+    if (!textFile.is_open())
+    {
+        std::cerr << "Can't open CFL grammar file `" << fileName << "`" << std::endl;
+        abort();
+    }
     std::string lineString;
     std::string lines = "";
     std::string startString;

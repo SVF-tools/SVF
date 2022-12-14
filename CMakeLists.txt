@@ -99,7 +99,7 @@ endif()
 message(STATUS "Found Z3: ${Z3_LIBRARIES}")
 message(STATUS "Z3 include dir: ${Z3_INCLUDES}")
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/svf/include
                     ${CMAKE_BINARY_DIR}/include
                     ${Z3_INCLUDES})
 
@@ -111,11 +111,12 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite")
     include(CTest)
 endif()
 
-add_subdirectory(lib)
+add_subdirectory(svf)
+add_subdirectory(svf-llvm)
 add_subdirectory(tools)
 
 INSTALL(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/svf/include/
     COMPONENT devel
     DESTINATION include/svf
     FILES_MATCHING
