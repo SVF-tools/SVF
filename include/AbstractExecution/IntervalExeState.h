@@ -212,6 +212,12 @@ public:
         }
     }
 
+    /// domain widen with other, and return the widened domain
+    IntervalExeState widening(const IntervalExeState &other);
+
+    /// domain narrow with other, and return the narrowed domain
+    IntervalExeState narrowing(const IntervalExeState &other);
+
     /// domain widen with other, important! other widen this.
     void widenWith(const IntervalExeState &other);
 
@@ -357,13 +363,13 @@ public:
 
     static bool lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs)
     {
-        if (lhs.size() != rhs.size()) return lhs.size() < rhs.size();
+        //if (lhs.size() != rhs.size()) return lhs.size() < rhs.size();
         for (const auto &item: lhs)
         {
             auto it = rhs.find(item.first);
             // lhs > rhs if SVFVar not exists in rhs
-            if (it == rhs.end())
-                return false;
+//            if (it == rhs.end())
+//                return false;
             // judge from expr id
             if (!item.second.equals(it->second))
             {

@@ -56,6 +56,41 @@ u32_t IntervalExeState::hash() const
     return pairH(std::make_pair(std::make_pair(h, h2), (u32_t) ExeState::hash()));
 }
 
+IntervalExeState IntervalExeState::widening(const IntervalExeState& other) {
+    IntervalExeState es = *this;
+    for (auto it = es._varToItvVal.begin(); it != es._varToItvVal.end(); ++it)
+    {
+        auto key = it->first;
+        if (other._varToItvVal.find(key) != other._varToItvVal.end())
+            it->second.widen_with(other._varToItvVal.at(key));
+    }
+    for (auto it = es._locToItvVal.begin(); it != es._locToItvVal.end(); ++it)
+    {
+        auto key = it->first;
+        if (other._locToItvVal.find(key) != other._locToItvVal.end())
+            it->second.widen_with(other._locToItvVal.at(key));
+    }
+    return es;
+}
+
+IntervalExeState IntervalExeState::narrowing(const IntervalExeState& other) {
+    IntervalExeState es = *this;
+    for (auto it = es._varToItvVal.begin(); it != es._varToItvVal.end(); ++it)
+    {
+        auto key = it->first;
+        if (other._varToItvVal.find(key) != other._varToItvVal.end())
+            it->second.narrow_with(other._varToItvVal.at(key));
+    }
+    for (auto it = es._locToItvVal.begin(); it != es._locToItvVal.end(); ++it)
+    {
+        auto key = it->first;
+        if (other._locToItvVal.find(key) != other._locToItvVal.end())
+            it->second.narrow_with(other._locToItvVal.at(key));
+    }
+    return es;
+
+}
+
 /// domain widen with other, important! other widen this.
 void IntervalExeState::widenWith(const IntervalExeState& other)
 {
@@ -63,21 +98,13 @@ void IntervalExeState::widenWith(const IntervalExeState& other)
     {
         auto key = it->first;
         if (other.getVarToVal().find(key) != other.getVarToVal().end())
-        {
-            auto lhs = other.getVarToVal().at(key);
-            lhs.widen_with(it->second);
-            it->second = lhs;
-        }
+            it->second.widen_with(other._varToItvVal.at(key));
     }
     for (auto it = _locToItvVal.begin(); it != _locToItvVal.end(); ++it)
     {
         auto key = it->first;
         if (other._locToItvVal.find(key) != other._locToItvVal.end())
-        {
-            auto lhs = other._locToItvVal.at(key);
-            lhs.widen_with(it->second);
-            it->second = lhs;
-        }
+            it->second.widen_with(other._locToItvVal.at(key));
     }
 }
 
@@ -121,18 +148,14 @@ void IntervalExeState::narrowWith(const IntervalExeState& other)
         auto key = it->first;
         auto oit = other.getVarToVal().find(key);
         if (oit != other.getVarToVal().end())
-        {
             it->second.narrow_with(oit->second);
-        }
     }
     for (auto it = _locToItvVal.begin(); it != _locToItvVal.end(); ++it)
     {
         auto key = it->first;
         auto oit = other._locToItvVal.find(key);
         if (oit != other._locToItvVal.end())
-        {
             it->second.narrow_with(oit->second);
-        }
     }
 }
 
