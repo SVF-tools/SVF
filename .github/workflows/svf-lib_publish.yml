@@ -116,7 +116,7 @@ jobs:
             git rebase origin/master
             cp -rf $GITHUB_WORKSPACE/svf/include SVF-${osVersion}/
             cp -rf $GITHUB_WORKSPACE/svf-llvm/include/SVF-LLVM SVF-${osVersion}/include/
-            cp -r $GITHUB_WORKSPACE/Release-build/svf-llvm/libSvfLLVM.a SVF-${osVersion}/Release-build/lib/libSvf.a
+            cp -f $GITHUB_WORKSPACE/Release-build/svf-llvm/libSvfLLVM.a SVF-${osVersion}/Release-build/lib/libSvf.a
             git add .      
             if [ -n "$(git status -s)" ]; then git commit -m'Update svflib' ; fi
             npm version patch     
