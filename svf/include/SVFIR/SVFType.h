@@ -417,13 +417,13 @@ template <> struct Hash<NodePair>
 // https://github.com/llvm/llvm-project/blob/75e33f71c2dae584b13a7d1186ae0a038ba98838/llvm/include/llvm/Support/Debug.h#L64
 // The original LLVM implementation makes use of type. But we can get that info,
 // so we can't simulate the full behaviour for now.
-#    define SVF_DEBUG_WITH_TYPE(TYPE, X)                                           \
+#    define SVF_DEBUG_WITH_TYPE(TYPE, X)                                       \
         do                                                                     \
         {                                                                      \
             X;                                                                 \
         } while (false)
 #else
-#    define SVF_DEBUG_WITH_TYPE(TYPE, X)                                           \
+#    define SVF_DEBUG_WITH_TYPE(TYPE, X)                                       \
         do                                                                     \
         {                                                                      \
         } while (false)
