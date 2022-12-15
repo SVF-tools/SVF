@@ -106,8 +106,7 @@ jobs:
             github.repository == 'SVF-tools/SVF' && 
             github.ref == 'refs/heads/master'
         run: |
-            cd $GITHUB_WORKSPACE        
-            cd ..     
+            cd $GITHUB_WORKSPACE/..
             git clone https://github.com/SVF-tools/SVF-npm.git
             if [ "$RUNNER_OS" == "Linux" ]; then export osVersion="linux"; fi
             if [ "$RUNNER_OS" == "macOS" ]; then export osVersion="osx"; fi
@@ -115,10 +114,12 @@ jobs:
             cd ./SVF-npm
             git fetch origin
             git rebase origin/master
-            cp -rf $GITHUB_WORKSPACE/include ./SVF-${osVersion}/       
-            cp $GITHUB_WORKSPACE/Release-build/lib/libSvf.a ./SVF-${osVersion}/Release-build/lib        
+            cmake --install $GITHUB_WORKSPACE/Release-build --prefix SVF-${osVersion}
+            # Backward compatibility
+            ln -sf SVF-${osVersion}/lib/libSvfLLVM.a SVF-${osVersion}/Release-build/lib/libSvfLLVM.a
+            ln -sf SVF-${osVersion}/include/svf/* SVF-${osVersion}/include
             git add .      
-            if [ -n "$(git status -s)" ]; then git commit -m'update svflib' ; fi
+            if [ -n "$(git status -s)" ]; then git commit -m'Update svflib' ; fi
             npm version patch     
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-npm.git   HEAD:master
             cd $GITHUB_WORKSPACE      
