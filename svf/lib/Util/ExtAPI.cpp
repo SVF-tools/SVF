@@ -216,7 +216,10 @@ const std::string& ExtAPI::extType_toString(extType type)
 {
     auto it =
         std::find_if(type_pair.begin(), type_pair.end(),
-                     [&](const auto& pair) { return pair.second == type; });
+                     [&](const auto& pair)
+    {
+        return pair.second == type;
+    });
     assert(it != type_pair.end());
     return it->first;
 }
