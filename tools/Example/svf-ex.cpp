@@ -33,7 +33,6 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
-using namespace llvm;
 using namespace std;
 using namespace SVF;
 
