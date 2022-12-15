@@ -28,25 +28,25 @@
  */
 
 #include "Util/ExtAPI.h"
+#include "SVFIR/SVFVariables.h"
 #include "Util/SVFUtil.h"
 #include "Util/cJSON.h"
-#include "SVFIR/SVFVariables.h"
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <stdlib.h>
 
 using namespace SVF;
 
-ExtAPI *ExtAPI::extOp = nullptr;
-cJSON *ExtAPI::root = nullptr;
+ExtAPI* ExtAPI::extOp = nullptr;
+cJSON* ExtAPI::root = nullptr;
 
 // Get environment variables $SVF_DIR and "npm root" through popen() method
-static std::string GetStdoutFromCommand(const std::string &command)
+static std::string GetStdoutFromCommand(const std::string& command)
 {
     char buffer[128];
     std::string result = "";
     // Open pipe to file
-    FILE *pipe = popen(command.c_str(), "r");
+    FILE* pipe = popen(command.c_str(), "r");
     if (!pipe)
     {
         return "popen failed!";
@@ -65,16 +65,16 @@ static std::string GetStdoutFromCommand(const std::string &command)
 }
 
 // Get ExtAPI.json file
-static std::string getJsonFile(const std::string &path)
+static std::string getJsonFile(const std::string& path)
 {
     std::string jsonFilePath = GetStdoutFromCommand(path);
     if (path.compare("npm root") == 0)
     {
         int os_flag = 1;
-        // SVF installed via npm needs to determine the type of operating system,
-        // otherwise the ExtAPI.json path may not be found
-        // Linux os
+        // SVF installed via npm needs to determine the type of operating
+        // system, otherwise the ExtAPI.json path may not be found.
 #ifdef linux
+        // Linux os
         os_flag = 0;
         jsonFilePath.append("/svf-lib/SVF-linux");
 #endif
@@ -88,29 +88,30 @@ static std::string getJsonFile(const std::string &path)
     return jsonFilePath;
 }
 
-static cJSON *parseJson(const std::string &path, off_t fileSize)
+static cJSON* parseJson(const std::string& path, off_t fileSize)
 {
-    FILE *file = fopen(path.c_str(), "r");
+    FILE* file = fopen(path.c_str(), "r");
     if (!file)
     {
         return nullptr;
     }
 
     // allocate memory size matched with file size
-    char *jsonStr = (char *)calloc(fileSize + 1, sizeof(char));
+    char* jsonStr = (char*)calloc(fileSize + 1, sizeof(char));
 
     // read json string from file
     u32_t size = fread(jsonStr, sizeof(char), fileSize, file);
     if (size == 0)
     {
-        SVFUtil::errs() << SVFUtil::errMsg("\t Wrong ExtAPI.json path!! ") << "The current ExtAPI.json path is: " << path << "\n";
+        SVFUtil::errs() << SVFUtil::errMsg("\t Wrong ExtAPI.json path!! ")
+                        << "The current ExtAPI.json path is: " << path << "\n";
         assert(false && "Read ExtAPI.json file fails!");
         return nullptr;
     }
     fclose(file);
 
     // convert json string to json pointer variable
-    cJSON *root = cJSON_Parse(jsonStr);
+    cJSON* root = cJSON_Parse(jsonStr);
     if (!root)
     {
         free(jsonStr);
@@ -120,7 +121,7 @@ static cJSON *parseJson(const std::string &path, off_t fileSize)
     return root;
 }
 
-ExtAPI *ExtAPI::getExtAPI(const std::string &path)
+ExtAPI* ExtAPI::getExtAPI(const std::string& path)
 {
     if (extOp == nullptr)
     {
@@ -143,7 +144,7 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             return extOp;
         }
 
-        jsonFilePath = PROJECT_PATH + std::string(EXTAPI_JSON_PATH);
+        jsonFilePath = std::string(PROJECT_PATH) + '/' + EXTAPI_JSON_PATH;
         if (!stat(jsonFilePath.c_str(), &statbuf))
         {
             root = parseJson(jsonFilePath, statbuf.st_size);
@@ -163,7 +164,8 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
-        assert(false && "Open ExtAPI.json file fails!");
+        SVFUtil::errs() << "Failed to open any JsonFile for getExtAPI()\n";
+        abort();
     }
     return extOp;
 }
@@ -182,7 +184,8 @@ void ExtAPI::destory()
     }
 }
 
-void ExtAPI::add_entry(const char* funName, extType type, bool overwrite_app_function)
+void ExtAPI::add_entry(const char* funName, extType type,
+                       bool overwrite_app_function)
 {
     assert(root);
     assert(get_type(funName) == EFT_NULL);
@@ -204,17 +207,16 @@ void ExtAPI::add_entry(const char* funName, extType type, bool overwrite_app_fun
 std::string ExtAPI::get_opName(const std::string& s)
 {
     u32_t end = 0;
-    while(end < s.size() && !isdigit(s[end]))
+    while (end < s.size() && !isdigit(s[end]))
         end++;
     return s.substr(0, end);
 }
 
 const std::string& ExtAPI::extType_toString(extType type)
 {
-    auto it = std::find_if(type_pair.begin(), type_pair.end(), [&](const auto& pair)
-    {
-        return pair.second == type;
-    });
+    auto it =
+        std::find_if(type_pair.begin(), type_pair.end(),
+                     [&](const auto& pair) { return pair.second == type; });
     assert(it != type_pair.end());
     return it->first;
 }
@@ -254,7 +256,7 @@ s32_t ExtAPI::getNodeIDType(const std::string& s)
     if (argStr == "Arg")
     {
         u32_t end = start + 1;
-        while(end < s.size() && isdigit(s[end]))
+        while (end < s.size() && isdigit(s[end]))
             end++;
         std::string digitStr = s.substr(start, end - start);
         argPos = atoi(digitStr.c_str());
@@ -303,7 +305,7 @@ s32_t ExtAPI::getNodeIDType(const std::string& s)
 }
 
 // Get external function name, e.g "memcpy"
-std::string ExtAPI::get_name(const SVFFunction *F)
+std::string ExtAPI::get_name(const SVFFunction* F)
 {
     assert(F);
     std::string funName = F->getName();
@@ -317,7 +319,7 @@ std::string ExtAPI::get_name(const SVFFunction *F)
 }
 
 // Get specifications of external functions in ExtAPI.json file
-cJSON *ExtAPI::get_FunJson(const std::string &funName)
+cJSON* ExtAPI::get_FunJson(const std::string& funName)
 {
     assert(root && "JSON not loaded");
     return cJSON_GetObjectItemCaseSensitive(root, funName.c_str());
@@ -327,13 +329,13 @@ cJSON *ExtAPI::get_FunJson(const std::string &funName)
 std::vector<ExtAPI::Operation> ExtAPI::getAllOperations(std::string funName)
 {
     std::vector<ExtAPI::Operation> allOperations;
-    cJSON *item = get_FunJson(funName);
+    cJSON* item = get_FunJson(funName);
     if (item != nullptr)
     {
-        cJSON *obj = item->child;
+        cJSON* obj = item->child;
         //  Get the first operation of the function
-        obj = obj -> next -> next -> next -> next;
-        std::vector<ExtAPI::Operation *> operations;
+        obj = obj->next->next->next->next;
+        std::vector<ExtAPI::Operation*> operations;
         while (obj)
         {
             std::string op;
@@ -341,8 +343,8 @@ std::vector<ExtAPI::Operation> ExtAPI::getAllOperations(std::string funName)
             std::map<std::string, NodeID> opMap;
             if (obj->type == cJSON_Object || obj->type == cJSON_Array)
             {
-                op = get_opName(obj -> string);
-                cJSON *value = obj->child;
+                op = get_opName(obj->string);
+                cJSON* value = obj->child;
                 std::vector<std::string> args;
                 while (value)
                 {
@@ -357,14 +359,14 @@ std::vector<ExtAPI::Operation> ExtAPI::getAllOperations(std::string funName)
             allOperations.push_back(operation);
             operations.clear();
 
-            obj = obj -> next;
+            obj = obj->next;
         }
     }
     return allOperations;
 }
 
 // Get arguments of the operation, e.g. ["A1R", "A0", "A2"]
-std::vector<std::string> ExtAPI::get_opArgs(const cJSON *value)
+std::vector<std::string> ExtAPI::get_opArgs(const cJSON* value)
 {
     std::vector<std::string> args;
     while (value)
@@ -378,12 +380,12 @@ std::vector<std::string> ExtAPI::get_opArgs(const cJSON *value)
 
 ExtAPI::extType ExtAPI::get_type(const std::string& funName)
 {
-    cJSON *item = get_FunJson(funName);
+    cJSON* item = get_FunJson(funName);
     std::string type = "";
     if (item != nullptr)
     {
         //  Get the first operation of the function
-        cJSON *obj = item->child->next->next;
+        cJSON* obj = item->child->next->next;
         if (strcmp(obj->string, JSON_OPT_FUNCTIONTYPE) == 0)
             type = obj->valuestring;
         else
@@ -397,7 +399,7 @@ ExtAPI::extType ExtAPI::get_type(const std::string& funName)
 }
 
 // Get property of the operation, e.g. "EFT_A1R_A0R"
-ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
+ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction* F)
 {
     return get_type(get_name(F));
 }
@@ -405,13 +407,13 @@ ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction *F)
 // Get priority of he function, return value
 // 0: Apply user-defined functions
 // 1: Apply function specification in ExtAPI.json
-u32_t ExtAPI::isOverwrittenAppFunction(const SVF::SVFFunction *callee)
+u32_t ExtAPI::isOverwrittenAppFunction(const SVF::SVFFunction* callee)
 {
     std::string funName = get_name(callee);
-    cJSON *item = get_FunJson(funName);
+    cJSON* item = get_FunJson(funName);
     if (item != nullptr)
     {
-        cJSON *obj = item->child;
+        cJSON* obj = item->child;
         obj = obj->next->next->next;
         if (strcmp(obj->string, JSON_OPT_OVERWRITE) == 0)
             return obj->valueint;
@@ -422,34 +424,35 @@ u32_t ExtAPI::isOverwrittenAppFunction(const SVF::SVFFunction *callee)
 }
 
 // Does (F) have a static var X (unavailable to us) that its return points to?
-bool ExtAPI::has_static(const SVFFunction *F)
+bool ExtAPI::has_static(const SVFFunction* F)
 {
     ExtAPI::extType t = get_type(F);
     return t == EFT_STAT || t == EFT_STAT2;
 }
 
 // Assuming hasStatic(F), does (F) have a second static Y where X -> Y?
-bool ExtAPI::has_static2(const SVFFunction *F)
+bool ExtAPI::has_static2(const SVFFunction* F)
 {
     ExtAPI::extType t = get_type(F);
     return t == EFT_STAT2;
 }
 
-bool ExtAPI::is_alloc(const SVFFunction *F)
+bool ExtAPI::is_alloc(const SVFFunction* F)
 {
     ExtAPI::extType t = get_type(F);
     return t == EFT_ALLOC || t == EFT_NOSTRUCT_ALLOC;
 }
 
 // Does (F) allocate a new object and assign it to one of its arguments?
-bool ExtAPI::is_arg_alloc(const SVFFunction *F)
+bool ExtAPI::is_arg_alloc(const SVFFunction* F)
 {
     ExtAPI::extType t = get_type(F);
-    return t == EFT_A0R_NEW || t == EFT_A1R_NEW || t == EFT_A2R_NEW || t == EFT_A4R_NEW || t == EFT_A11R_NEW;
+    return t == EFT_A0R_NEW || t == EFT_A1R_NEW || t == EFT_A2R_NEW ||
+           t == EFT_A4R_NEW || t == EFT_A11R_NEW;
 }
 
 // Get the position of argument which holds the new object
-s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
+s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction* F)
 {
     ExtAPI::extType t = get_type(F);
     switch (t)
@@ -471,37 +474,38 @@ s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction *F)
 }
 
 // Does (F) allocate only non-struct objects?
-bool ExtAPI::no_struct_alloc(const SVFFunction *F)
+bool ExtAPI::no_struct_alloc(const SVFFunction* F)
 {
     ExtAPI::extType t = get_type(F);
     return t == EFT_NOSTRUCT_ALLOC;
 }
 
 // Does (F) not free/release any memory?
-bool ExtAPI::is_dealloc(const SVFFunction *F)
+bool ExtAPI::is_dealloc(const SVFFunction* F)
 {
     ExtAPI::extType t = get_type(F);
     return t == EFT_FREE;
 }
 
 // Does (F) not do anything with the known pointers?
-bool ExtAPI::is_noop(const SVFFunction *F)
+bool ExtAPI::is_noop(const SVFFunction* F)
 {
     ExtAPI::extType t = get_type(F);
     return t == EFT_NOOP || t == EFT_FREE;
 }
 
 // Does (F) reallocate a new object?
-bool ExtAPI::is_realloc(const SVFFunction *F)
+bool ExtAPI::is_realloc(const SVFFunction* F)
 {
     ExtAPI::extType t = get_type(F);
     return t == EFT_REALLOC;
 }
 
-// Does (F) have the same return type(pointer or nonpointer) and same number of arguments
-bool ExtAPI::is_sameSignature(const SVFFunction *F)
+// Does (F) have the same return type(pointer or nonpointer) and same number of
+// arguments
+bool ExtAPI::is_sameSignature(const SVFFunction* F)
 {
-    cJSON *item = get_FunJson(F->getName());
+    cJSON* item = get_FunJson(F->getName());
     // If return type is pointer
     bool isPointer = false;
     // The number of arguments
@@ -509,14 +513,14 @@ bool ExtAPI::is_sameSignature(const SVFFunction *F)
     if (item != nullptr)
     {
         // Get the "return" attribute
-        cJSON *obj = item->child;
+        cJSON* obj = item->child;
         if (strlen(obj->valuestring) == 0) // e.g. "return":  ""
             assert(false && "'return' should not be empty!");
         // If "return": "..." includes "*", the return type of extern function is a pointer
         if (strstr(obj->valuestring, "*") != NULL)
             isPointer = true;
         // Get the "arguments" attribute
-        obj = obj -> next;
+        obj = obj->next;
         if (strlen(obj->valuestring) == 0) // e.g. "arguments":  "",
             assert(false && "'arguments' should not be empty!");
         // If "arguments":  "()", the number of arguments is 0, otherwise, number >= 1;
@@ -536,9 +540,9 @@ bool ExtAPI::is_sameSignature(const SVFFunction *F)
 
 // Should (F) be considered "external" (either not defined in the program
 //   or a user-defined version of a known alloc or no-op)?
-bool ExtAPI::is_ext(const SVFFunction *F)
+bool ExtAPI::is_ext(const SVFFunction* F)
 {
-    assert(F);
+    assert(F && "Null SVFFunction* pointer");
     bool res;
     if (F->isDeclaration() || F->isIntrinsic())
     {
@@ -552,8 +556,8 @@ bool ExtAPI::is_ext(const SVFFunction *F)
             u32_t overwrittenAppFunction = isOverwrittenAppFunction(F);
             if (!is_sameSignature(F))
                 res = 0;
-            // overwrittenAppFunction = 1: Execute function specification in ExtAPI.json
-            // F is considered as external function
+            // overwrittenAppFunction = 1: Execute function specification in
+            // ExtAPI.json F is considered as external function
             else if (overwrittenAppFunction == 1)
                 res = 1;
             // overwrittenAppFunction = 0: Execute user-defined functions
@@ -566,4 +570,3 @@ bool ExtAPI::is_ext(const SVFFunction *F)
     }
     return res;
 }
-
