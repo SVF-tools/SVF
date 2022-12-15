@@ -116,7 +116,7 @@ jobs:
             git rebase origin/master
             cmake --install $GITHUB_WORKSPACE/Release-build --prefix SVF-${osVersion}
             # Backward compatibility
-            ln -sf SVF-${osVersion}/lib/libSvfLLVM.a SVF-${osVersion}/Release-build/lib/libSvfLLVM.a
+            ln -sf SVF-${osVersion}/lib/libSvfLLVM.a SVF-${osVersion}/Release-build/lib/libSvf.a
             ln -sf SVF-${osVersion}/include/svf/* SVF-${osVersion}/include
             git add .      
             if [ -n "$(git status -s)" ]; then git commit -m'Update svflib' ; fi
