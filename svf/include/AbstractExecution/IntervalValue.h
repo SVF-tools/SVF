@@ -377,7 +377,7 @@ public:
         }
         else
         {
-            this->_lb = !lb().leq(other.lb()) ? minus_infinity() : this->lb();
+            this->_lb = !lb().geq(other.lb()) ? minus_infinity() : this->lb();
             this->_ub = !ub().geq(other.ub()) ? plus_infinity() : this->ub();
         }
     }
@@ -395,8 +395,8 @@ public:
         }
         else
         {
-            this->_lb = is_infinite(this->_lb) ? other._lb : this->_lb;
-            this->_ub = is_infinite(this->_ub) ? other._ub : this->_ub;
+            this->_lb = is_infinite(this->lb()) ? other._lb : this->_lb;
+            this->_ub = is_infinite(this->ub()) ? other._ub : this->_ub;
         }
     }
 
