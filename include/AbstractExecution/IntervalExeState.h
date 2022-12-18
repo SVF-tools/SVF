@@ -258,6 +258,13 @@ public:
                 return true;
             }
         }
+        for (auto it = _locToItvVal.begin(); it != _locToItvVal.end(); ++it)
+        {
+            if (it->second.isBottom())
+            {
+                return true;
+            }
+        }
         return false;
     }
 
