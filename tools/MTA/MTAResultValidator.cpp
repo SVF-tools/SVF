@@ -236,9 +236,7 @@ bool MTAResultValidator::collectCallsiteTargets()
             }
         }
     }
-    if (csnumToInstMap.empty())
-        return false;
-    return true;
+    return !csnumToInstMap.empty();
 }
 
 bool MTAResultValidator::collectCxtThreadTargets()

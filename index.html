@@ -2,7 +2,7 @@
 <html lang="en-us">
   <head>
     <meta charset="UTF-8">
-    <title>SVF:Pointer Analysis for C and C++  </title>
+    <title>SVF: Static Value-Flow Analysis Framework for Source Code </title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="docs/stylesheets/normalize.css" media="screen">
     <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
@@ -23,7 +23,7 @@
       <h2>
 <a id="what-is-svf" class="anchor" href="#what-is-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is SVF?</h2>
 
-<p><a href="https://github.com/svf-tools/SVF">SVF</a> is a static tool that enables scalable and precise interprocedural dependence analysis for C and C++ programs. SVF allows value-flow construction and pointer analysis to be performed iteratively, thereby providing increasingly improved precision for both. </p>
+<p><a href="https://github.com/svf-tools/SVF">SVF</a> is a static tool that enables scalable and precise value-flow analysis for source code. SVF allows value-flow construction and pointer analysis to be performed iteratively, thereby providing increasingly improved precision for both. </p>
 
 For a pointer analysis framework that works for Java, we refer to <a href="https://qilinpta.github.io/"> Qilin</a>.
 
@@ -31,11 +31,13 @@ For a pointer analysis framework that works for Java, we refer to <a href="https
 <a id="what-kind-of-analyses-does-svf-provide" class="anchor" href="#what-kind-of-analyses-does-svf-provide" aria-hidden="true"><span class="octicon octicon-link"></span></a>What kind of analyses does SVF provide?</h2>
 
 <ul>
-<li>Call graph construction for C and C++ programs</li>
-<li>Field-sensitive Andersen's pointer analysis</li>
-<li>Sparse flow-sensitive pointer analysis</li>
+<li>SVF IR: language-independent intermediate representation</li>
+<li>Code graphs, including call graph and interprocedural control-flow graph, constraint graph and value-flow graph</li>
+<li>A set of pointer analyses including field-sensitive, flow-sensitive, context-sensitive analyses</li>
 <li>Value-flow dependence analysis</li>
 <li>Interprocedural memory SSA</li>
+<li>Context-free-language reachability analysis</li>
+<li>Abstract execution</li>
 <li>Detecting source-sink related bugs, such as memory leaks and incorrect file-open close errors.</li>
 <li>An <a href= "https://github.com/svf-tools/SVF-EclipsePlugin">Eclipse plugin </a> for visualizing bugs </li>
 </ul>
@@ -63,6 +65,8 @@ GPLv3
 
 <p> Please make a <b>pull request</b> or <b>email us</b> if you have a paper for this list.</p>
 
+<p> Yuxiang Lei, Yulei Sui, Shuo Ding, and Qirun Zhang. <a href ="https://yuleisui.github.io/publications/oopsla22.pdf"> Taming Transitive Redundancy for Context-Free Language Reachability</a>. ACM SIGPLAN Conference on Object-Oriented Programming, Systems, Languages, and Applications (OOPSLA'22) </p>
+      
 <p>Yaohui Chen, Peng Li, Jun Xu, Shengjian Guo,Rundong Zhou, Yulong Zhang, Tao Wei, and Long Lu. <a href ="https://arxiv.org/pdf/1906.07327.pdf">SAVIOR: Towards Bug-Driven Hybrid Testing</a>, 41st IEEE Symposium on Security and Privacy (S&ampP'20)</p>
 
 <p>Dae R. Jeong, Kyungtae Kim, Basavesh Shivakumar, Byoungyoung Lee, and Insik Shin. <a href ="https://lifeasageek.github.io/papers/jeong:razzer.pdf">RAZZER: Finding Kernel Race Bugs through Fuzzing</a>, 40th IEEE Symposium on Security and Privacy (S&ampP'19) </p>
