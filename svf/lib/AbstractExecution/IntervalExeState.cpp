@@ -56,7 +56,8 @@ u32_t IntervalExeState::hash() const
     return pairH(std::make_pair(std::make_pair(h, h2), (u32_t) ExeState::hash()));
 }
 
-IntervalExeState IntervalExeState::widening(const IntervalExeState& other) {
+IntervalExeState IntervalExeState::widening(const IntervalExeState& other)
+{
     IntervalExeState es = *this;
     for (auto it = es._varToItvVal.begin(); it != es._varToItvVal.end(); ++it)
     {
@@ -73,7 +74,8 @@ IntervalExeState IntervalExeState::widening(const IntervalExeState& other) {
     return es;
 }
 
-IntervalExeState IntervalExeState::narrowing(const IntervalExeState& other) {
+IntervalExeState IntervalExeState::narrowing(const IntervalExeState& other)
+{
     IntervalExeState es = *this;
     for (auto it = es._varToItvVal.begin(); it != es._varToItvVal.end(); ++it)
     {
