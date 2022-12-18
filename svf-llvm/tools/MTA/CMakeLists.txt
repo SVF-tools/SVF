@@ -1,18 +1,4 @@
 if(DEFINED IN_SOURCE_BUILD)
-  set(LLVM_LINK_COMPONENTS
-      BitWriter
-      Core
-      IPO
-      IrReader
-      InstCombine
-      Instrumentation
-      Target
-      Linker
-      Analysis
-      ScalarOpts
-      Support
-      SvfLLVM
-      Cudd)
   add_llvm_tool(mta mta.cpp LockResultValidator.cpp MTAResultValidator.cpp
                 MTAAnnotator.cpp)
 else()

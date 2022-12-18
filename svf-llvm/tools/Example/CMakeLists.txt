@@ -1,17 +1,4 @@
 if(DEFINED IN_SOURCE_BUILD)
-  set(LLVM_LINK_COMPONENTS
-      BitWriter
-      Core
-      IPO
-      IrReader
-      InstCombine
-      Instrumentation
-      Target
-      Linker
-      Analysis
-      ScalarOpts
-      Support
-      SvfLLVM)
   add_llvm_tool(svf-ex svf-ex.cpp)
 else()
   add_executable(svf-ex svf-ex.cpp)

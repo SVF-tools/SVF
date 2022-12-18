@@ -2,19 +2,6 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 if(DEFINED IN_SOURCE_BUILD)
-  set(LLVM_LINK_COMPONENTS
-      BitWriter
-      Core
-      IPO
-      IrReader
-      InstCombine
-      Instrumentation
-      Target
-      Linker
-      Analysis
-      ScalarOpts
-      Support
-      SvfLLVM)
   add_llvm_tool(wpa wpa.cpp)
 else()
   add_executable(wpa wpa.cpp)
