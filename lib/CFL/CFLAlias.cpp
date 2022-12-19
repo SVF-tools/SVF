@@ -257,7 +257,7 @@ void POCRAlias::initialize()
     normalizeCFLGrammar();
 
     // Initialize sovler
-    solver = new CFLSolver(graph, grammar);
+    solver = new POCRSolver(_cflData ,graph, grammar);
 }
 
 

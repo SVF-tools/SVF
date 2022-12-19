@@ -167,6 +167,15 @@ public:
     /// Init CFLData
     virtual void buildCFLData();
 
+    /// Interface exposed to users of our Alias analysis, given PAGNodeID
+    virtual AliasResult alias(NodeID node1, NodeID node2)
+    {
+        if(_cflData->hasEdge(node1, node2, graph->startKind))
+            return AliasResult::MayAlias;
+        else
+            return AliasResult::NoAlias;
+    }
+
 private:
     /// Graph dataset
     CFLData* _cflData;

@@ -128,3 +128,86 @@ void CFLSolver::solve()
         processCFLEdge(Y_edge);
     }
 }
+
+void POCRSolver::processCFLItem(CFLItem item)
+{
+    NodeID i = item.src();
+    NodeID j = item.dst();
+
+    /// For each production X -> Y
+    ///     add X(i,j) if not exist to E and to worklist
+    Symbol Y = item.type();
+    if (grammar->hasProdsFromSingleRHS(Y))
+        for(const Production& prod : grammar->getProdsFromSingleRHS(Y))
+        {
+            Symbol X = grammar->getLHSSymbol(prod);
+            numOfChecks++;
+            if (addEdge(i, j, X)) 
+                pushIntoWorklist(i, j, X);
+        }
+
+    /// For each production X -> Y Z
+    /// Foreach outgoing edge Z(j,k) from node j do
+    ///     add X(i,k) if not exist to E and to worklist
+    if (grammar->hasProdsFromFirstRHS(Y))
+        for(const Production& prod : grammar->getProdsFromFirstRHS(Y))
+        {
+            Symbol X = grammar->getLHSSymbol(prod);
+            NodeBS diffDsts = addEdges(item.src(), cflData->getSuccMap(j)[grammar->getSecondRHSSymbol(prod)], X);
+            numOfChecks += cflData->getSuccMap(j)[grammar->getSecondRHSSymbol(prod)].count();
+            for (NodeID diffDst: diffDsts)
+                pushIntoWorklist(i, diffDst, X);
+        }
+
+    /// For each production X -> Z Y
+    /// Foreach incoming edge Z(k,i) to node i do
+    ///     add X(k,j) if not exist to E and to worklist
+    if(grammar->hasProdsFromSecondRHS(Y))
+        for(const Production& prod : grammar->getProdsFromSecondRHS(Y))
+        {
+            Symbol X = grammar->getLHSSymbol(prod);
+            NodeBS diffSrcs = addEdges(cflData->getPredMap(i)[grammar->getFirstRHSSymbol(prod)], item.dst(), X);
+            numOfChecks += cflData->getPredMap(i)[grammar->getFirstRHSSymbol(prod)].count();
+            for (NodeID diffSrc: diffSrcs)
+                pushIntoWorklist(diffSrc, item.dst(), X);
+        }
+}
+
+void POCRSolver::initialize()
+{
+    for(auto it = graph->begin(); it!= graph->end(); it++)
+    {
+        for(const CFLEdge* edge : (*it).second->getOutEdges())
+        {
+            pushIntoWorklist(edge);
+        }
+    }
+
+    /// Foreach production X -> epsilon
+    ///     add X(i,i) if not exist to E and to worklist
+    for(const Production& prod : grammar->getEpsilonProds())
+    {
+        for(auto it = graph->begin(); it!= graph->end(); it++)
+        {
+            Symbol X = grammar->getLHSSymbol(prod);
+            CFLNode* i = (*it).second;
+            if(const CFLEdge* edge = graph->addCFLEdge(i, i, X))
+            {
+                pushIntoWorklist(edge);
+            }
+        }
+    }
+}
+
+void POCRSolver::solve()
+{
+    /// initial worklist
+    initialize();
+
+    while(!isWorklistEmpty())
+    {
+        const CFLItem item = popFromWorklist();
+        processCFLItem(item);
+    }
+    rebuildCFLGraph();
+}
