@@ -883,9 +883,15 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
         SVFConstantData* svfcd = nullptr;
         if(const ConstantInt* cint = SVFUtil::dyn_cast<ConstantInt>(cd))
         {
-            /// bool true will be translated to -1 with getSExtValue, so call getZExtValue() if bitwidth = 1
-            svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), cint->getZExtValue(),
-                                       cint->getBitWidth() == 1? cint->getZExtValue(): cint->getSExtValue());
+            /// bitwidth == 1 : cint has value from getZExtValue() because `bool true` will be translated to -1 using sign extension (i.e., getSExtValue).
+            /// bitwidth <=64 1 : cint has value from getSExtValue()
+            /// bitwidth >64 1 : cint has value 0 because it represents an invalid int
+            if(cint->getBitWidth() == 1)
+                svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), cint->getZExtValue(), cint->getZExtValue());
+            else if(cint->getBitWidth() <= 64 && cint->getBitWidth() > 1)
+                svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), cint->getZExtValue(), cint->getSExtValue());
+            else
+                svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), 0, 0);
         }
         else if(const ConstantFP* cfp = SVFUtil::dyn_cast<ConstantFP>(cd))
         {
