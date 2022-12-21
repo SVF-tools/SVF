@@ -175,11 +175,12 @@ void POCRSolver::processCFLItem(CFLItem item)
 
 void POCRSolver::initialize()
 {
-    for(auto it = graph->begin(); it!= graph->end(); it++)
+    for(auto iter : cflData->getSuccMap())
     {
-        for(const CFLEdge* edge : (*it).second->getOutEdges())
+        for( auto iter1 : iter.second)
         {
-            pushIntoWorklist(edge);
+            for( auto iter2: iter1.second)
+                pushIntoWorklist(iter.first, iter2, iter1.first);
         }
     }
 
@@ -187,14 +188,11 @@ void POCRSolver::initialize()
     ///     add X(i,i) if not exist to E and to worklist
     for(const Production& prod : grammar->getEpsilonProds())
     {
-        for(auto it = graph->begin(); it!= graph->end(); it++)
+        for(auto IDMap : cflData->getSuccMap())
         {
             Symbol X = grammar->getLHSSymbol(prod);
-            CFLNode* i = (*it).second;
-            if(const CFLEdge* edge = graph->addCFLEdge(i, i, X))
-            {
-                pushIntoWorklist(edge);
-            }
+            if (cflData->addEdge(IDMap.first, IDMap.first, X))
+                pushIntoWorklist(IDMap.first, IDMap.first, X);
         }
     }
 }
