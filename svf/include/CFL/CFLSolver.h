@@ -312,90 +312,6 @@ public:
     }
 };
 
-
-
-class CFLItem
-{
-public:
-    NodeID _src;
-    NodeID _dst;
-    Label _type;
-
-    //Constructor
-    CFLItem(NodeID e1, NodeID e2, Label e3) :
-            _src(e1), _dst(e2), _type(e3)
-    {
-    }
-
-
-    //Destructor
-    ~CFLItem()
-    {}
-
-    inline bool operator<(const CFLItem& rhs) const
-    {
-        if (_src < rhs._src)
-            return true;
-        else if (_src == rhs._src) {
-            if (_dst < rhs._dst)
-                return true;
-            else if ((_dst == rhs._dst) && (_type < rhs._type))
-                return true;
-        }
-        return false;
-    }
-
-    inline bool operator==(const CFLItem& rhs) const
-    {
-        return (_src == rhs._src) && (_dst == rhs._dst) && (_type == rhs._type);
-    }
-
-    NodeID src()
-    {
-        return _src;
-    }
-
-    NodeID dst()
-    {
-        return _dst;
-    }
-
-    const NodeID src() const
-    {
-        return _src;
-    }
-
-    const NodeID dst() const
-    {
-        return _dst;
-    }
-
-    Label type()
-    {
-        return _type;
-    }
-};
-}
-namespace std {
-    template<>
-    struct hash<SVF::CFLItem> {
-        inline size_t operator()(const SVF::CFLItem& x) const {
-            size_t s = 3;
-            std::hash<SVF::u32_t> h;
-            s ^= h(x._src) + 0x9e3779b9 + (s << 6) + (s >> 2);
-            s ^= h(x._dst) + 0x9e3779b9 + (s << 6) + (s >> 2);
-            s ^= h(SVF::u32_t(x._type)) + 0x9e3779b9 + (s << 6) + (s >> 2);
-            return s;
-        }
-    };
-}
-
-
-namespace SVF
-{
-
-
-
 class CFLSolver
 {
 
@@ -487,6 +403,9 @@ public:
         delete cflData;
     }
 
+    /// Process CFLEdge
+    virtual void processCFLEdge(const CFLEdge* Y_edge);
+
     /// Init CFLData
     virtual void buildCFLData();
 
@@ -500,56 +419,7 @@ public:
         return cflData->addEdge(srcId, dstId, ty);
     }
 
-    /// Process CFLEdge
-    virtual void processCFLItem(CFLItem item);
-    
     virtual void initialize();
-
-     // worklist operations
-    //@{
-    virtual inline CFLItem popFromWorklist()
-    {
-        return worklist.pop();
-    }
-
-    virtual inline bool pushIntoWorklist(CFLItem item)
-    {
-        return worklist.push(item);
-    }
-
-    virtual inline bool pushIntoWorklist(NodeID src, NodeID dst, Label ty)
-    {
-        return pushIntoWorklist(CFLItem(src, dst, ty));
-    }
-
-    virtual inline bool pushIntoWorklist(const CFLEdge* item)
-    {
-        return worklist.push(CFLItem(item->getSrcID(), item->getDstID(), item->getEdgeKind()));
-    }
-
-    virtual inline bool pushIntoWorklist(CFLNode* src, CFLNode* dst, Label ty)
-    {
-        return pushIntoWorklist(CFLItem(src->getId(), dst->getId(), ty));
-    }
-
-    virtual inline bool isInWorklist(CFLItem item)
-    {
-        return worklist.find(item);
-    }
-
-    virtual inline bool isInWorklist(NodeID src, NodeID dst, Label ty)
-    {
-        return isInWorklist(CFLItem(src, dst, ty));
-    }
-
-    virtual inline bool isWorklistEmpty()
-    {
-        return worklist.empty();
-    }
-    //@}
-    
-    /// Start solving
-    virtual void solve();
 
     virtual NodeBS addEdges(const NodeID srcId, const NodeBS& dstData, const Label ty)
     {
@@ -561,26 +431,8 @@ public:
     {
         return cflData->addEdges(srcData, dstId, ty);
     }
-
-    void rebuildCFLGraph()
-    {
-        for(auto iter : cflData->getSuccMap())
-        {
-            for( auto iter1 : iter.second)
-            {
-                for( auto iter2: iter1.second)
-                    graph->addCFLEdge(graph->getGNode(iter.first), graph->getGNode(iter2), iter1.first);
-            }
-        }
-    }
-
 private:
     CFLData* cflData;
-public:
-    typedef FIFOWorkList<CFLItem> CFLItemWorkList;
-    /// Worklist for resolution
-    CFLItemWorkList worklist;
-
 };
 }
 

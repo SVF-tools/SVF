@@ -135,21 +135,25 @@ void POCRSolver::buildCFLData()
         addEdge(edge->getSrcID(), edge->getDstID(), edge->getEdgeKind());
 }
 
-void POCRSolver::processCFLItem(CFLItem item)
+void POCRSolver::processCFLEdge(const CFLEdge* Y_edge)
 {
-    NodeID i = item.src();
-    NodeID j = item.dst();
+    CFLNode* i = Y_edge->getSrcNode();
+    CFLNode* j = Y_edge->getDstNode();
 
     /// For each production X -> Y
     ///     add X(i,j) if not exist to E and to worklist
-    Symbol Y = item.type();
+    Symbol Y = Y_edge->getEdgeKind();
     if (grammar->hasProdsFromSingleRHS(Y))
         for(const Production& prod : grammar->getProdsFromSingleRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
             numOfChecks++;
-            if (addEdge(i, j, X)) 
-                pushIntoWorklist(i, j, X);
+            if (addEdge(i->getId(), j->getId(), X)) 
+            {
+                const CFLEdge* newEdge = graph->addCFLEdge(Y_edge->getSrcNode(), Y_edge->getDstNode(), X);
+                pushIntoWorklist(newEdge);
+            }
+                
         }
 
     /// For each production X -> Y Z
@@ -159,10 +163,13 @@ void POCRSolver::processCFLItem(CFLItem item)
         for(const Production& prod : grammar->getProdsFromFirstRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
-            NodeBS diffDsts = addEdges(item.src(), cflData->getSuccMap(j)[grammar->getSecondRHSSymbol(prod)], X);
-            numOfChecks += cflData->getSuccMap(j)[grammar->getSecondRHSSymbol(prod)].count();
+            NodeBS diffDsts = addEdges(i->getId(), cflData->getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)], X);
+            numOfChecks += cflData->getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)].count();
             for (NodeID diffDst: diffDsts)
-                pushIntoWorklist(i, diffDst, X);
+            {
+                const CFLEdge* newEdge = graph->addCFLEdge(i, graph->getGNode(diffDst), X);
+                pushIntoWorklist(newEdge);
+            }
         }
 
     /// For each production X -> Z Y
@@ -172,21 +179,23 @@ void POCRSolver::processCFLItem(CFLItem item)
         for(const Production& prod : grammar->getProdsFromSecondRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
-            NodeBS diffSrcs = addEdges(cflData->getPredMap(i)[grammar->getFirstRHSSymbol(prod)], item.dst(), X);
-            numOfChecks += cflData->getPredMap(i)[grammar->getFirstRHSSymbol(prod)].count();
+            NodeBS diffSrcs = addEdges(cflData->getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)], j->getId(), X);
+            numOfChecks += cflData->getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)].count();
             for (NodeID diffSrc: diffSrcs)
-                pushIntoWorklist(diffSrc, item.dst(), X);
+            {
+                const CFLEdge* newEdge = graph->addCFLEdge(graph->getGNode(diffSrc), j, X);
+                pushIntoWorklist(newEdge);
+            }
         }
 }
 
 void POCRSolver::initialize()
 {
-    for(auto iter : cflData->getSuccMap())
+    for(auto it = graph->begin(); it!= graph->end(); it++)
     {
-        for( auto iter1 : iter.second)
+        for(const CFLEdge* edge : (*it).second->getOutEdges())
         {
-            for( auto iter2: iter1.second)
-                pushIntoWorklist(iter.first, iter2, iter1.first);
+            pushIntoWorklist(edge);
         }
     }
 
@@ -198,20 +207,12 @@ void POCRSolver::initialize()
         {
             Symbol X = grammar->getLHSSymbol(prod);
             if (cflData->addEdge(IDMap.first, IDMap.first, X))
-                pushIntoWorklist(IDMap.first, IDMap.first, X);
+            {
+                CFLNode* i = graph->getGNode(IDMap.first);
+                const CFLEdge* newEdge = graph->addCFLEdge(i, i, X);
+                pushIntoWorklist(newEdge);
+            }
+                
         }
     }
-}
-
-void POCRSolver::solve()
-{
-    /// initial worklist
-    initialize();
-
-    while(!isWorklistEmpty())
-    {
-        const CFLItem item = popFromWorklist();
-        processCFLItem(item);
-    }
-    rebuildCFLGraph();
 }
