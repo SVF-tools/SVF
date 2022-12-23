@@ -387,11 +387,6 @@ public:
     /// Init CFLData
     virtual void buildCFLData();
 
-    virtual bool addEdge(const CFLNode* src, const CFLNode* dst, const Label ty)
-    {
-        return addEdge(src->getId(), dst->getId(), ty);
-    }
-
     virtual void initialize();
 };
 }
