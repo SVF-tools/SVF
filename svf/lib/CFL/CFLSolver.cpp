@@ -148,12 +148,12 @@ void POCRSolver::processCFLEdge(const CFLEdge* Y_edge)
         {
             Symbol X = grammar->getLHSSymbol(prod);
             numOfChecks++;
-            if (addEdge(i->getId(), j->getId(), X)) 
+            if (addEdge(i->getId(), j->getId(), X))
             {
                 const CFLEdge* newEdge = graph->addCFLEdge(Y_edge->getSrcNode(), Y_edge->getDstNode(), X);
                 pushIntoWorklist(newEdge);
             }
-                
+
         }
 
     /// For each production X -> Y Z
