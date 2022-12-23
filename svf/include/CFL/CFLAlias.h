@@ -32,8 +32,6 @@
 
 #include "CFL/CFLBase.h"
 #include "CFL/CFLStat.h"
-#include "CFL/CFLData.h"
-#include "CFL/CFLDataBuilder.h"
 
 namespace SVF
 {
@@ -142,34 +140,12 @@ private:
 class POCRAlias : public CFLAlias
 {
 public:
-    static double timeOfBuildCFLData;            // Time of building CFLData from CFLGraph
-
     POCRAlias(SVFIR* ir) : CFLAlias(ir)
     {
-        if (!_cflData)
-            _cflData = new CFLData();
-    }
-
-    /// Destructor
-    virtual ~POCRAlias()
-    {
-        delete _cflData;
-    }
-
-    CFLData* cflData()
-    {
-        return _cflData;
     }
 
     /// Initialize the grammar, graph, CFLData, solver
     virtual void initialize();
-
-    /// Init CFLData
-    virtual void buildCFLData();
-
-private:
-    /// Graph dataset
-    CFLData* _cflData;
 };
 } // End namespace SVF
 
