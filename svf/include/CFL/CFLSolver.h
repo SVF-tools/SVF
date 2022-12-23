@@ -225,13 +225,13 @@ public:
     typedef std::map<const Label, NodeBS> TypeMap;                  // Label with SparseBitVector of NodeID
     typedef std::unordered_map<NodeID, TypeMap> DataMap;            // Each Node has a TypeMap
     typedef typename DataMap::iterator iterator;                    // iterator for each node
-    typedef typename DataMap::const_iterator const_iterator; 
+    typedef typename DataMap::const_iterator const_iterator;
 
 protected:
     DataMap succMap;                                                // succ map for nodes contains Label: Edgeset
     DataMap predMap;                                                // pred map for nodes contains Label: edgeset
     const NodeBS emptyData;                                         // ??
-    NodeBS diff; 
+    NodeBS diff;
     // union/add data
     //@{
     inline bool addPred(const NodeID key, const NodeID src, const Label ty)
@@ -257,7 +257,7 @@ protected:
             return false;
         return succMap[key][ty] |= data;                            // // union of sparsebitvector (add to LHS)
     }
-    //@}   
+    //@}
 public:
 
     virtual void clear()
@@ -370,7 +370,7 @@ public:
         succMap[key].clear();
         predMap[key].clear();
     }
-    //@}                       
+    //@}
 
     POCRSolver(CFLGraph* _graph, CFLGrammar* _grammar) : CFLSolver(_graph, _grammar)
     {
