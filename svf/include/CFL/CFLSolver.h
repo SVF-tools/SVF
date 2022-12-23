@@ -484,6 +484,7 @@ public:
     /// Destructor
     virtual ~POCRSolver()
     {
+        delete cflData;
     }
 
     /// Init CFLData
