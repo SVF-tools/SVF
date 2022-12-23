@@ -163,8 +163,8 @@ void POCRSolver::processCFLEdge(const CFLEdge* Y_edge)
         for(const Production& prod : grammar->getProdsFromFirstRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
-            NodeBS diffDsts = addEdges(i->getId(), cflData->getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)], X);
-            numOfChecks += cflData->getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)].count();
+            NodeBS diffDsts = addEdges(i->getId(), getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)], X);
+            numOfChecks += getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)].count();
             for (NodeID diffDst: diffDsts)
             {
                 const CFLEdge* newEdge = graph->addCFLEdge(i, graph->getGNode(diffDst), X);
@@ -179,8 +179,8 @@ void POCRSolver::processCFLEdge(const CFLEdge* Y_edge)
         for(const Production& prod : grammar->getProdsFromSecondRHS(Y))
         {
             Symbol X = grammar->getLHSSymbol(prod);
-            NodeBS diffSrcs = addEdges(cflData->getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)], j->getId(), X);
-            numOfChecks += cflData->getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)].count();
+            NodeBS diffSrcs = addEdges(getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)], j->getId(), X);
+            numOfChecks += getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)].count();
             for (NodeID diffSrc: diffSrcs)
             {
                 const CFLEdge* newEdge = graph->addCFLEdge(graph->getGNode(diffSrc), j, X);
@@ -203,16 +203,15 @@ void POCRSolver::initialize()
     ///     add X(i,i) if not exist to E and to worklist
     for(const Production& prod : grammar->getEpsilonProds())
     {
-        for(auto IDMap : cflData->getSuccMap())
+        for(auto IDMap : getSuccMap())
         {
             Symbol X = grammar->getLHSSymbol(prod);
-            if (cflData->addEdge(IDMap.first, IDMap.first, X))
+            if (addEdge(IDMap.first, IDMap.first, X))
             {
                 CFLNode* i = graph->getGNode(IDMap.first);
                 const CFLEdge* newEdge = graph->addCFLEdge(i, i, X);
                 pushIntoWorklist(newEdge);
             }
-
         }
     }
 }
