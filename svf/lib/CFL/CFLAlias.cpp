@@ -238,8 +238,6 @@ void CFLAlias::solve()
     timeOfSolving += (end - start) / TIMEINTERVAL;
 }
 
-double POCRAlias::timeOfBuildCFLData = 0;            // Time of building CFLData from CFLGraph
-
 void POCRAlias::initialize()
 {
     stat = new CFLStat(this);
@@ -250,26 +248,9 @@ void POCRAlias::initialize()
     // Build CFL Graph
     buildCFLGraph();
 
-    // Build CFL Data
-    buildCFLData();
-
     // Normalize CFL Grammar
     normalizeCFLGrammar();
 
-    // Initialize sovler
-    solver = new POCRSolver(_cflData ,graph, grammar);
-}
-
-
-void POCRAlias::buildCFLData()
-{
-    // Start building CFLGraph
-    double start = stat->getClk(true);
-
-    CFLDataBuilder cflDataBuilder = CFLDataBuilder(graph);
-    _cflData = cflDataBuilder.build();
-
-    // Get time of build graph
-    double end = stat->getClk(true);
-    timeOfBuildCFLData += (end - start) / TIMEINTERVAL;
+    // Initialize POCRSolver
+    solver = new POCRSolver(graph, grammar);
 }

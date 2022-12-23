@@ -129,6 +129,12 @@ void CFLSolver::solve()
     }
 }
 
+void POCRSolver::buildCFLData()
+{
+    for (CFLEdge* edge: graph->getCFLEdges())
+        addEdge(edge->getSrcID(), edge->getDstID(), edge->getEdgeKind());
+}
+
 void POCRSolver::processCFLItem(CFLItem item)
 {
     NodeID i = item.src();
