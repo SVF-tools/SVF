@@ -39,16 +39,5 @@ CFBasicBlockNode::CFBasicBlockNode(u32_t id, const SVFBasicBlock *svfBasicBlock)
             _icfgNodes.push_back(icfgNode);
         }
 }
-
-
-inline void CFBasicBlockNode::setSVFBasicBlock(const SVFBasicBlock *svfBasicBlock) {
-    _icfgNodes.clear();
-    _svfBasicBlock = svfBasicBlock;
-    for (auto it = svfBasicBlock->begin(); it != svfBasicBlock->end(); ++it) {
-        const SVFInstruction *ins = *it;
-        ICFGNode *icfgNode = PAG::getPAG()->getICFG()->getICFGNode(ins);
-        _icfgNodes.push_back(icfgNode);
-    }
-}
 }
 

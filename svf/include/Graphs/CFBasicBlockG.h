@@ -98,8 +98,6 @@ public:
     inline std::vector<const ICFGNode *>::const_iterator end() const {
         return _icfgNodes.cend();
     }
-
-    inline void setSVFBasicBlock(const SVFBasicBlock *svfBasicBlock);
 };
 
 typedef GenericGraph<CFBasicBlockNode, CFBasicBlockEdge> GenericCFBasicBlockGTy;

@@ -134,10 +134,6 @@ SVFIR* SVFIRBuilder::build()
                     visit(const_cast<Instruction&>(inst));
                 }
             }
-
-            CFBasicBlockGBuilder cfbg_builder(svffun);
-            cfbg_builder.build();
-            pag->funCFBasicBlockGMap[svffun] = cfbg_builder.getCFBasicBlockGraph();
         }
     }
 
