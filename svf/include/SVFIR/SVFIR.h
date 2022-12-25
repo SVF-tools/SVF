@@ -300,6 +300,24 @@ public:
     }
     //@}
 
+    /// Get function return list
+    //@{
+    inline FunToCFBasicBlockGMap & getCFBasicBlockGraphs()
+    {
+        return funCFBasicBlockGMap;
+    }
+    inline const CFBasicBlockGraph* getCFBasicBlockGraph(const SVFFunction*  func) const
+    {
+        FunToCFBasicBlockGMap::const_iterator it = funCFBasicBlockGMap.find(func);
+        assert(it != funCFBasicBlockGMap.end() && "this function doesn't have return");
+        return it->second;
+    }
+    inline bool funHasCFBasicBlockGraph(const SVFFunction* func) const
+    {
+        return funCFBasicBlockGMap.find(func) != funCFBasicBlockGMap.end();
+    }
+    //@}
+
     /// Node and edge statistics
     //@{
     inline u32_t getFieldValNodeNum() const
