@@ -1,4 +1,4 @@
-//===- CFBG.cpp ----------------------------------------------------------------//
+//===- CFBasicBlockG.cpp ----------------------------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,18 +21,18 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CFBG.cpp
+ * CFBasicBlockG.cpp
  *
  *  Created on: 24 Dec. 2022
  *      Author: Xiao, Jiawei
  */
 
-#include "Graphs/CFBG.h"
+#include "Graphs/CFBasicBlockG.h"
 #include "SVFIR/SVFIR.h"
 
 namespace SVF{
-CFBGNode::CFBGNode(u32_t id, const SVFBasicBlock *svfBasicBlock) : GenericCFBGNodeTy(id, 0),
-_svfBasicBlock(svfBasicBlock) {
+CFBasicBlockNode::CFBasicBlockNode(u32_t id, const SVFBasicBlock *svfBasicBlock) : GenericCFBasicBlockNodeTy(id, 0),
+                                                                                   _svfBasicBlock(svfBasicBlock) {
         for (auto it = svfBasicBlock->begin(); it != svfBasicBlock->end(); ++it) {
             const SVFInstruction *ins = *it;
             ICFGNode *icfgNode = PAG::getPAG()->getICFG()->getICFGNode(ins);
@@ -41,7 +41,7 @@ _svfBasicBlock(svfBasicBlock) {
 }
 
 
-inline void CFBGNode::setSVFBasicBlock(const SVFBasicBlock *svfBasicBlock) {
+inline void CFBasicBlockNode::setSVFBasicBlock(const SVFBasicBlock *svfBasicBlock) {
     _icfgNodes.clear();
     _svfBasicBlock = svfBasicBlock;
     for (auto it = svfBasicBlock->begin(); it != svfBasicBlock->end(); ++it) {

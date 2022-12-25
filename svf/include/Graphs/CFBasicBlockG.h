@@ -1,4 +1,4 @@
-//===- CFBG.h ----------------------------------------------------------------//
+//===- CFBasicBlockG.h ----------------------------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,30 +21,30 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CFBG.h
+ * CFBasicBlockG.h
  *
  *  Created on: 24 Dec. 2022
  *      Author: Xiao, Jiawei
  */
 
-#ifndef SVF_CFBG_H
-#define SVF_CFBG_H
+#ifndef SVF_CFBASICBLOCKG_H
+#define SVF_CFBASICBLOCKG_H
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFGNode.h"
 #include "Graphs/GenericGraph.h"
 
 namespace SVF {
-class CFBGNode;
+class CFBasicBlockNode;
 class SVFIR;
 
-typedef GenericEdge<CFBGNode> GenericCFBGEdgeTy;
+typedef GenericEdge<CFBasicBlockNode> GenericCFBasicBlockEdgeTy;
 
-class CFBGEdge : public GenericCFBGEdgeTy {
+class CFBasicBlockEdge : public GenericCFBasicBlockEdgeTy {
 public:
-    CFBGEdge(CFBGNode *src, CFBGNode *dst) : GenericCFBGEdgeTy(src, dst, 0) {}
+    CFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst) : GenericCFBasicBlockEdgeTy(src, dst, 0) {}
 
 
-    friend std::ostream &operator<<(std::ostream &o, const CFBGEdge &edge) {
+    friend std::ostream &operator<<(std::ostream &o, const CFBasicBlockEdge &edge) {
         o << edge.toString();
         return o;
     }
@@ -54,17 +54,17 @@ public:
     }
 };
 
-typedef GenericNode<CFBGNode, CFBGEdge> GenericCFBGNodeTy;
+typedef GenericNode<CFBasicBlockNode, CFBasicBlockEdge> GenericCFBasicBlockNodeTy;
 
-class CFBGNode : public GenericCFBGNodeTy {
+class CFBasicBlockNode : public GenericCFBasicBlockNodeTy {
 private:
-    const SVFBasicBlock *_svfBasicBlock; /// Every CFBGNode holds a SVFBasicBlock
+    const SVFBasicBlock *_svfBasicBlock; /// Every CFBasicBlockNode holds a SVFBasicBlock
     std::vector<const ICFGNode *> _icfgNodes; /// Every CBFGNode holds a vector of ICFGNodes
 
 public:
-    CFBGNode(u32_t id, const SVFBasicBlock *svfBasicBlock);
+    CFBasicBlockNode(u32_t id, const SVFBasicBlock *svfBasicBlock);
 
-    friend std::ostream &operator<<(std::ostream &o, const CFBGNode &node) {
+    friend std::ostream &operator<<(std::ostream &o, const CFBasicBlockNode &node) {
         o << node.toString();
         return o;
     }
@@ -102,48 +102,48 @@ public:
     inline void setSVFBasicBlock(const SVFBasicBlock *svfBasicBlock);
 };
 
-typedef GenericGraph<CFBGNode, CFBGEdge> GenericCFBGTy;
+typedef GenericGraph<CFBasicBlockNode, CFBasicBlockEdge> GenericCFBasicBlockGTy;
 
-class CFBG : public GenericCFBGTy {
-    friend class CFBGBuilder;
+class CFBasicBlockGraph : public GenericCFBasicBlockGTy {
+    friend class CFBasicBlockGBuilder;
 
 public:
-    typedef Map<const SVFBasicBlock *, CFBGNode *> SVFBasicBlockToCFBGNodeMap;
+    typedef Map<const SVFBasicBlock *, CFBasicBlockNode *> SVFBasicBlockToCFBasicBlockNodeMap;
 
 private:
-    SVFBasicBlockToCFBGNodeMap _bbToNode;
+    SVFBasicBlockToCFBasicBlockNodeMap _bbToNode;
     const SVFFunction *_svfFunction;
-    u32_t _totalCFBGNode{0};
-    u32_t _totalCFBGEdge{0};
+    u32_t _totalCFBasicBlockNode{0};
+    u32_t _totalCFBasicBlockEdge{0};
 
 public:
 
-    CFBG(const SVFFunction *svfFunction) : _svfFunction(svfFunction) {
+    CFBasicBlockGraph(const SVFFunction *svfFunction) : _svfFunction(svfFunction) {
 
     }
 
-    ~CFBG() override = default;
+    ~CFBasicBlockGraph() override = default;
 
     /// Dump graph into dot file
     void dump(const std::string &filename) {
         GraphPrinter::WriteGraphToFile(SVFUtil::outs(), filename, this);
     }
 
-    inline CFBGNode *getCFBGNode(u32_t id) const {
+    inline CFBasicBlockNode *getCFBasicBlockNode(u32_t id) const {
         if (!hasGNode(id)) return nullptr;
         return getGNode(id);
     }
 
-    inline CFBGNode *getCFBGNode(const SVFBasicBlock *bb) const {
+    inline CFBasicBlockNode *getCFBasicBlockNode(const SVFBasicBlock *bb) const {
         auto it = _bbToNode.find(bb);
         if (it == _bbToNode.end()) return nullptr;
         return it->second;
     }
 
-    inline bool hasCFBGEdge(CFBGNode *src, CFBGNode *dst) {
-        CFBGEdge edge(src, dst);
-        CFBGEdge *outEdge = src->hasOutgoingEdge(&edge);
-        CFBGEdge *inEdge = dst->hasIncomingEdge(&edge);
+    inline bool hasCFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst) {
+        CFBasicBlockEdge edge(src, dst);
+        CFBasicBlockEdge *outEdge = src->hasOutgoingEdge(&edge);
+        CFBasicBlockEdge *inEdge = dst->hasIncomingEdge(&edge);
         if (outEdge && inEdge) {
             assert(outEdge == inEdge && "edges not match");
             return true;
@@ -151,8 +151,8 @@ public:
             return false;
     }
 
-    CFBGEdge* getCFBGEdge(const CFBGNode *src, const CFBGNode *dst) {
-        CFBGEdge *edge = nullptr;
+    CFBasicBlockEdge* getCFBasicBlockEdge(const CFBasicBlockNode *src, const CFBasicBlockNode *dst) {
+        CFBasicBlockEdge *edge = nullptr;
         size_t counter = 0;
         for (auto iter = src->OutEdgeBegin();
              iter != src->OutEdgeEnd(); ++iter) {
@@ -165,57 +165,57 @@ public:
         return edge;
     }
 
-    CFBGEdge* getCFBGEdge(const SVFBasicBlock *src, const SVFBasicBlock *dst) {
-        return getCFBGEdge(getCFBGNode(src), getCFBGNode(dst));
+    CFBasicBlockEdge* getCFBasicBlockEdge(const SVFBasicBlock *src, const SVFBasicBlock *dst) {
+        return getCFBasicBlockEdge(getCFBasicBlockNode(src), getCFBasicBlockNode(dst));
     }
 
 
 private:
 
-    /// Add a CFBGNode
-    virtual inline const CFBGNode *getOrAddCFBGNode(const SVFBasicBlock *bb) {
+    /// Add a CFBasicBlockNode
+    virtual inline const CFBasicBlockNode *getOrAddCFBasicBlockNode(const SVFBasicBlock *bb) {
         auto it = _bbToNode.find(bb);
         if (it != _bbToNode.end()) return it->second;
-        CFBGNode *node = new CFBGNode(_totalCFBGNode++, bb);
+        CFBasicBlockNode *node = new CFBasicBlockNode(_totalCFBasicBlockNode++, bb);
         _bbToNode[bb] = node;
         addGNode(node->getId(), node);
         return node;
     }
 
-    inline const CFBGEdge *getOrAddCFBGEdge(CFBGNode *src, CFBGNode *dst) {
-        if (const CFBGEdge *edge = getCFBGEdge(src, dst)) return edge;
-        CFBGEdge *edge = new CFBGEdge(src, dst);
+    inline const CFBasicBlockEdge *getOrAddCFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst) {
+        if (const CFBasicBlockEdge *edge = getCFBasicBlockEdge(src, dst)) return edge;
+        CFBasicBlockEdge *edge = new CFBasicBlockEdge(src, dst);
         bool added1 = edge->getDstNode()->addIncomingEdge(edge);
         bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
         assert(added1 && added2 && "edge not added??");
-        _totalCFBGEdge++;
+        _totalCFBasicBlockEdge++;
         return edge;
     }
 
 };
 
-class CFBGBuilder {
+class CFBasicBlockGBuilder {
 
 private:
-    std::unique_ptr<CFBG> _CFBG;
+    CFBasicBlockGraph* _CFBasicBlockG;
 
 public:
-    CFBGBuilder(const SVFFunction *func) : _CFBG(std::make_unique<CFBG>(func)) {}
+    CFBasicBlockGBuilder(const SVFFunction *func) : _CFBasicBlockG(new CFBasicBlockGraph(func)) {}
 
     void build() {
-        for (const auto &bb: *_CFBG->_svfFunction) {
-            _CFBG->getOrAddCFBGNode(bb);
+        for (const auto &bb: *_CFBasicBlockG->_svfFunction) {
+            _CFBasicBlockG->getOrAddCFBasicBlockNode(bb);
         }
-        for (const auto &bb: *_CFBG->_svfFunction) {
+        for (const auto &bb: *_CFBasicBlockG->_svfFunction) {
             for (const auto &succ: bb->getSuccessors()) {
-                _CFBG->getOrAddCFBGEdge(_CFBG->getCFBGNode(bb),
-                                               _CFBG->getCFBGNode(succ));
+                _CFBasicBlockG->getOrAddCFBasicBlockEdge(_CFBasicBlockG->getCFBasicBlockNode(bb),
+                                               _CFBasicBlockG->getCFBasicBlockNode(succ));
             }
         }
     }
 
-    inline std::unique_ptr<CFBG> &getCFBG() {
-        return _CFBG;
+    inline CFBasicBlockGraph* getCFBasicBlockGraph() {
+        return _CFBasicBlockG;
     }
 };
 }
@@ -227,42 +227,42 @@ namespace SVF {
  * Provide graph traits for traversing from a constraint node using standard graph ICFGTraversals.
  */
 template<>
-struct GenericGraphTraits<SVF::CFBGNode *>
-        : public GenericGraphTraits<SVF::GenericNode<SVF::CFBGNode, SVF::CFBGEdge> *> {
+struct GenericGraphTraits<SVF::CFBasicBlockNode *>
+        : public GenericGraphTraits<SVF::GenericNode<SVF::CFBasicBlockNode, SVF::CFBasicBlockEdge> *> {
 };
 
 /// Inverse GenericGraphTraits specializations for call graph node, it is used for inverse ICFGTraversal.
 template<>
-struct GenericGraphTraits<Inverse<SVF::CFBGNode *> > : public GenericGraphTraits<
-        Inverse<SVF::GenericNode<SVF::CFBGNode, SVF::CFBGEdge> *> > {
+struct GenericGraphTraits<Inverse< SVF::CFBasicBlockNode *> > : public GenericGraphTraits<
+        Inverse<SVF::GenericNode<SVF::CFBasicBlockNode, SVF::CFBasicBlockEdge> *> > {
 };
 
 template<>
-struct GenericGraphTraits<SVF::CFBG *>
-        : public GenericGraphTraits<SVF::GenericGraph<SVF::CFBGNode, SVF::CFBGEdge> *> {
-    typedef SVF::CFBGNode *NodeRef;
+struct GenericGraphTraits<SVF::CFBasicBlockGraph *>
+        : public GenericGraphTraits<SVF::GenericGraph<SVF::CFBasicBlockNode, SVF::CFBasicBlockEdge> *> {
+    typedef SVF::CFBasicBlockNode *NodeRef;
 };
 
 template<>
-struct DOTGraphTraits<SVF::CFBG *> : public DOTGraphTraits<SVF::SVFIR *> {
+struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVFIR *> {
 
-    typedef SVF::CFBGNode NodeType;
+    typedef SVF::CFBasicBlockNode NodeType;
 
     DOTGraphTraits(bool isSimple = false) :
             DOTGraphTraits<SVF::SVFIR *>(isSimple) {
     }
 
     /// Return name of the graph
-    static std::string getGraphName(SVF::CFBG *) {
-        return "CFBG";
+    static std::string getGraphName(SVF::CFBasicBlockGraph *) {
+        return "CFBasicBlockGraph";
     }
 
-    std::string getNodeLabel(NodeType *node, SVF::CFBG *graph) {
+    std::string getNodeLabel(NodeType *node, SVF::CFBasicBlockGraph *graph) {
         return getSimpleNodeLabel(node, graph);
     }
 
     /// Return the label of an ICFG node
-    static std::string getSimpleNodeLabel(NodeType *node, SVF::CFBG *) {
+    static std::string getSimpleNodeLabel(NodeType *node, SVF::CFBasicBlockGraph *) {
         std::string str;
         std::stringstream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
@@ -271,7 +271,7 @@ struct DOTGraphTraits<SVF::CFBG *> : public DOTGraphTraits<SVF::SVFIR *> {
         return rawstr.str();
     }
 
-    static std::string getNodeAttributes(NodeType *node, SVF::CFBG *) {
+    static std::string getNodeAttributes(NodeType *node, SVF::CFBasicBlockGraph *) {
         std::string str;
         std::stringstream rawstr(str);
         rawstr << "color=black";
@@ -279,7 +279,7 @@ struct DOTGraphTraits<SVF::CFBG *> : public DOTGraphTraits<SVF::SVFIR *> {
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(NodeType *, EdgeIter EI, SVF::CFBG *) {
+    static std::string getEdgeAttributes(NodeType *, EdgeIter EI, SVF::CFBasicBlockGraph *) {
         return "style=solid";
     }
 
@@ -290,4 +290,4 @@ struct DOTGraphTraits<SVF::CFBG *> : public DOTGraphTraits<SVF::SVFIR *> {
 };
 
 } // End namespace SVF
-#endif //SVF_CFBG_H
+#endif //SVF_CFBASICBLOCKG_H
