@@ -60,7 +60,6 @@ public:
     typedef Map<const CallICFGNode*,SVFVarList> CSToArgsListMap;
     typedef Map<const RetICFGNode*,const SVFVar*> CSToRetMap;
     typedef Map<const SVFFunction*,const SVFVar*> FunToRetMap;
-    typedef Map<const SVFFunction*, CFBasicBlockGraph*> FunToCFBasicBlockGMap;
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
@@ -85,7 +84,6 @@ private:
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
     FunToRetMap funRetMap;	///< Map a function to its unique function return PAGNodes
-    FunToCFBasicBlockGMap funCFBasicBlockGMap; ///< Map a function to CFBasicBlockG (Control Flow Block Graph) Builder
     static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
     CallSiteToFunPtrMap indCallSiteToFunPtrMap; ///< Map an indirect callsite to its function pointer
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
@@ -297,24 +295,6 @@ public:
     inline bool funHasRet(const SVFFunction* func) const
     {
         return funRetMap.find(func) != funRetMap.end();
-    }
-    //@}
-
-    /// Get function return list
-    //@{
-    inline FunToCFBasicBlockGMap & getCFBasicBlockGraphs()
-    {
-        return funCFBasicBlockGMap;
-    }
-    inline const CFBasicBlockGraph* getCFBasicBlockGraph(const SVFFunction*  func) const
-    {
-        FunToCFBasicBlockGMap::const_iterator it = funCFBasicBlockGMap.find(func);
-        assert(it != funCFBasicBlockGMap.end() && "this function doesn't have return");
-        return it->second;
-    }
-    inline bool funHasCFBasicBlockGraph(const SVFFunction* func) const
-    {
-        return funCFBasicBlockGMap.find(func) != funCFBasicBlockGMap.end();
     }
     //@}
 
