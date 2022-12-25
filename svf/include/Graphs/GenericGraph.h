@@ -30,7 +30,7 @@
 #ifndef GENERICGRAPH_H_
 #define GENERICGRAPH_H_
 
-#include "SVFIR/SVFValue.h"
+#include "SVFIR/SVFType.h"
 #include "Util/iterator.h"
 #include "Graphs/GraphTraits.h"
 
