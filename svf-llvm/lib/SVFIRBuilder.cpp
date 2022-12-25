@@ -134,6 +134,10 @@ SVFIR* SVFIRBuilder::build()
                     visit(const_cast<Instruction&>(inst));
                 }
             }
+
+            CFBGBuilder *cfbg_builder = new CFBGBuilder(svffun);
+            pag->funCFBGMap[svffun] = cfbg_builder;
+            cfbg_builder->build();
         }
     }
 

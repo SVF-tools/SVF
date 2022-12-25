@@ -36,6 +36,7 @@
 #include "Util/NodeIDAllocator.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"
+#include "Graphs/CFBG.h"
 
 namespace SVF
 {
