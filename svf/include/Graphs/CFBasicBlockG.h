@@ -69,27 +69,13 @@ public:
         return o;
     }
 
-    virtual const std::string toString() const {
-        std::string rawStr;
-        std::stringstream stringstream(rawStr);
-        stringstream << "Block Name: " << _svfBasicBlock->getName() << "\n";
-        for (const auto &icfgNode: _icfgNodes) {
-            stringstream << icfgNode->toString() << "\n";
-        }
-        return stringstream.str();
-    }
+    virtual const std::string toString() const;
 
-    inline std::string getName() const {
-        return _svfBasicBlock->getName();
-    }
+    inline std::string getName() const;
 
-    inline const SVFBasicBlock *getSVFBasicBlock() const {
-        return _svfBasicBlock;
-    }
+    inline const SVFBasicBlock *getSVFBasicBlock() const;
 
-    inline const SVFFunction *getFunction() const {
-        return _svfBasicBlock->getFunction();
-    }
+    inline const SVFFunction *getFunction() const;
 
     inline std::vector<const ICFGNode *>::const_iterator begin() const {
         return _icfgNodes.cbegin();
@@ -127,68 +113,22 @@ public:
         GraphPrinter::WriteGraphToFile(SVFUtil::outs(), filename, this);
     }
 
-    inline CFBasicBlockNode *getCFBasicBlockNode(u32_t id) const {
-        if (!hasGNode(id)) return nullptr;
-        return getGNode(id);
-    }
+    inline CFBasicBlockNode *getCFBasicBlockNode(u32_t id) const;
 
-    inline CFBasicBlockNode *getCFBasicBlockNode(const SVFBasicBlock *bb) const {
-        auto it = _bbToNode.find(bb);
-        if (it == _bbToNode.end()) return nullptr;
-        return it->second;
-    }
+    inline CFBasicBlockNode *getCFBasicBlockNode(const SVFBasicBlock *bb) const;
 
-    inline bool hasCFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst) {
-        CFBasicBlockEdge edge(src, dst);
-        CFBasicBlockEdge *outEdge = src->hasOutgoingEdge(&edge);
-        CFBasicBlockEdge *inEdge = dst->hasIncomingEdge(&edge);
-        if (outEdge && inEdge) {
-            assert(outEdge == inEdge && "edges not match");
-            return true;
-        } else
-            return false;
-    }
+    inline bool hasCFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst);
 
-    CFBasicBlockEdge* getCFBasicBlockEdge(const CFBasicBlockNode *src, const CFBasicBlockNode *dst) {
-        CFBasicBlockEdge *edge = nullptr;
-        size_t counter = 0;
-        for (auto iter = src->OutEdgeBegin();
-             iter != src->OutEdgeEnd(); ++iter) {
-            if ((*iter)->getDstID() == dst->getId()) {
-                counter++;
-                edge = (*iter);
-            }
-        }
-        assert(counter <= 1 && "there's more than one edge between two nodes");
-        return edge;
-    }
+    CFBasicBlockEdge* getCFBasicBlockEdge(const CFBasicBlockNode *src, const CFBasicBlockNode *dst);
 
-    CFBasicBlockEdge* getCFBasicBlockEdge(const SVFBasicBlock *src, const SVFBasicBlock *dst) {
-        return getCFBasicBlockEdge(getCFBasicBlockNode(src), getCFBasicBlockNode(dst));
-    }
-
+    CFBasicBlockEdge* getCFBasicBlockEdge(const SVFBasicBlock *src, const SVFBasicBlock *dst);
 
 private:
 
     /// Add a CFBasicBlockNode
-    virtual inline const CFBasicBlockNode *getOrAddCFBasicBlockNode(const SVFBasicBlock *bb) {
-        auto it = _bbToNode.find(bb);
-        if (it != _bbToNode.end()) return it->second;
-        CFBasicBlockNode *node = new CFBasicBlockNode(_totalCFBasicBlockNode++, bb);
-        _bbToNode[bb] = node;
-        addGNode(node->getId(), node);
-        return node;
-    }
+    inline const CFBasicBlockNode* getOrAddCFBasicBlockNode(const SVFBasicBlock *bb);
 
-    inline const CFBasicBlockEdge *getOrAddCFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst) {
-        if (const CFBasicBlockEdge *edge = getCFBasicBlockEdge(src, dst)) return edge;
-        CFBasicBlockEdge *edge = new CFBasicBlockEdge(src, dst);
-        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
-        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
-        assert(added1 && added2 && "edge not added??");
-        _totalCFBasicBlockEdge++;
-        return edge;
-    }
+    inline const CFBasicBlockEdge *getOrAddCFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst);
 
 };
 
@@ -200,17 +140,7 @@ private:
 public:
     CFBasicBlockGBuilder(const SVFFunction *func) : _CFBasicBlockG(new CFBasicBlockGraph(func)) {}
 
-    void build() {
-        for (const auto &bb: *_CFBasicBlockG->_svfFunction) {
-            _CFBasicBlockG->getOrAddCFBasicBlockNode(bb);
-        }
-        for (const auto &bb: *_CFBasicBlockG->_svfFunction) {
-            for (const auto &succ: bb->getSuccessors()) {
-                _CFBasicBlockG->getOrAddCFBasicBlockEdge(_CFBasicBlockG->getCFBasicBlockNode(bb),
-                                               _CFBasicBlockG->getCFBasicBlockNode(succ));
-            }
-        }
-    }
+    void build();
 
     inline CFBasicBlockGraph* getCFBasicBlockGraph() {
         return _CFBasicBlockG;
