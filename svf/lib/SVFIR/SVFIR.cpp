@@ -562,8 +562,6 @@ void SVFIR::destroy()
     icfg = nullptr;
     delete chgraph;
     chgraph = nullptr;
-    for (auto& it: funCFBasicBlockGMap)
-        delete(it.second);
 }
 
 /*!
