@@ -32,10 +32,13 @@ licenses, and/or restrictions:
 
 Program                        Directory/File
 -------                        --------------
-fastcluster/hclust-cpp         include/FastCluster/
-                               lib/FastCluster/
-LLVM's SparseBitVector         include/Util/SparseBitVector.h
-                               (no LICENSE.TXT; see comment)
+fastcluster/hclust-cpp         svf/include/FastCluster/
+                               svf/lib/FastCluster/
+                               (License under the folder)
+LLVM's SparseBitVector         svf/include/Util/SparseBitVector.h
+                               (Apache License v2.0)
+cJSON                          svf/include/Util/cJSON.h
+                               (MIT License)
                                
 
 ==============================================================================
