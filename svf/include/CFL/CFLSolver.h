@@ -530,7 +530,8 @@ public:
 
     POCRHybirdSolver(CFLGraph* _graph, CFLGrammar* _grammar) : CFLSolver(_graph, _grammar)
     {
-        buildCFLData();
+        /// Build Hybrid Data
+        buildHybridData();
     }
     /// Destructor
     virtual ~POCRHybirdSolver()
@@ -548,8 +549,8 @@ public:
     /// Process CFLEdge
     virtual void processCFLEdge(const CFLEdge* Y_edge);
 
-    /// Init CFLData
-    virtual void buildCFLData();
+    /// Init Hybrid Data
+    virtual void buildHybridData();
 
     virtual void initialize();
 };

@@ -216,7 +216,7 @@ void POCRSolver::initialize()
     }
 }
 
-void POCRHybirdSolver::buildCFLData()
+void POCRHybirdSolver::buildHybridData()
 {
     for (CFLEdge* edge: graph->getCFLEdges())
         addEdge(edge->getSrcID(), edge->getDstID(), edge->getEdgeKind());
