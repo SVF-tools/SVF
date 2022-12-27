@@ -2,26 +2,30 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2022>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
 
 /*
  * WTO.h
+ *
+ * The implementation is based on F. Bourdoncle's paper:
+ * "Efficient chaotic iteration strategies with widenings", Formal
+ * Methods in Programming and Their Applications, 1993, pages 128-141.
  *
  *  Created on: Jul 3, 2022
  *      Author: Xiao Cheng, Jiawei Wang
@@ -31,200 +35,96 @@
 #ifndef WTO_H_
 #define WTO_H_
 
-#include <memory>
-#include <sstream>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
 #include "SVFIR/SVFType.h"
 #include "SVFIR/SVFValue.h"
+#include "Graphs/CFBasicBlockG.h"
 
 
 namespace SVF
 {
 
-class Wto;
+class CFBasicBlockGWTO;
 
-class WtoVertex;
+class CFBasicBlockGWTONode;
 
-class WtoCycle;
+class CFBasicBlockGWTOCycle;
 
-/// \brief Weak topological order visitor
-class WtoComponentVisitor
+/*!
+ * Cycle depth of a WTO Component
+ *
+ * The cycle depth is represented as **a list of cycle's heads**,
+ * **from the outermost to the innermost**.
+ *
+ * e.g., consider the following nested cycle:
+ *
+ * -->1 --> 2 --> 3 --> 4
+ *    \                /
+ *     <-- 6 <-- 5 <--
+ *         \    /
+ *          >7>
+ *
+ *  where C1: (1 2 3 4 5 6 7) is the outer cycle, where 1 is the head,
+ *  and C2: (5 6 7) is the inner cycle, where 5 is the head.
+ *
+ *  The cycle depth is as following:
+ *  ---------------------------------
+ *  |     Node NO.    | Cycle Depth |
+ *  --------------------------------
+ *  | 1 (head of C1)  |     [ ]     |
+ *  --------------------------------
+ *  |     2, 3, 4     |    [1]      |
+ *  --------------------------------
+ *  | 5 (head of C2)  |    [1]      |
+ *  --------------------------------
+ *  |       6, 7      |    [1, 5]   |
+ *  --------------------------------
+ */
+template <typename NodeRef>
+class WTOCycleDepth
 {
 public:
-    typedef WtoVertex WtoVertexT;
-    typedef WtoCycle WtoCycleT;
-
-public:
-    /// \brief Default constructor
-    WtoComponentVisitor() = default;
-
-    /// \brief Copy constructor
-    WtoComponentVisitor(const WtoComponentVisitor &) noexcept = default;
-
-    /// \brief Move constructor
-    WtoComponentVisitor(WtoComponentVisitor &&) noexcept = default;
-
-    /// \brief Copy assignment operator
-    WtoComponentVisitor &operator=(const WtoComponentVisitor &) noexcept = default;
-
-    /// \brief Move assignment operator
-    WtoComponentVisitor &operator=(WtoComponentVisitor &&) noexcept = default;
-
-    /// \brief Visit the given vertex
-    virtual void visit(const WtoVertexT &) = 0;
-
-    /// \brief Visit the given cycle
-    virtual void visit(const WtoCycleT &) = 0;
-
-    /// \brief Destructor
-    virtual ~WtoComponentVisitor() = default;
-
-}; // end class WtoComponentVisitor
-
-
-
-
-
-/// \brief Represents the nesting of a node
-///
-/// The nesting of a node is the list of cycles containing the node, from
-/// the outermost to the innermost.
-class WtoNesting
-{
-public:
-private:
-    typedef std::vector<const SVFBasicBlock*> NodeRefList;
-
-public:
+    typedef std::vector<NodeRef> NodeRefList;
     typedef typename NodeRefList::const_iterator Iterator;
 
 private:
-    NodeRefList _nodes;
+    NodeRefList _heads;
 
 public:
-    /// \brief Constructor
-    WtoNesting() = default;
+    /// Default Constructor
+    WTOCycleDepth() = default;
 
-    /// \brief Copy constructor
-    WtoNesting(const WtoNesting &) = default;
+    /// Default Copy Constructor
+    WTOCycleDepth(const WTOCycleDepth &) = default;
 
-    /// \brief Move constructor
-    WtoNesting(WtoNesting &&) = default;
+    /// Default Move Constructor
+    WTOCycleDepth(WTOCycleDepth &&) = default;
 
-    /// \brief Copy assignment operator
-    WtoNesting &operator=(const WtoNesting &) = default;
+    /// Default Copy Operator=
+    WTOCycleDepth &operator=(const WTOCycleDepth &) = default;
 
-    /// \brief Move assignment operator
-    WtoNesting &operator=(WtoNesting &&) = default;
+    /// Default Move Operator=
+    WTOCycleDepth &operator=(WTOCycleDepth &&) = default;
 
-    /// \brief Destructor
-    ~WtoNesting() = default;
+    /// Default Destructor
+    ~WTOCycleDepth() = default;
 
-    /// \brief Add a cycle head in the nesting
-    void add(const SVFBasicBlock *head)
+    /// Add a cycle head to the end of the head list
+    void push_back(NodeRef head)
     {
-        _nodes.push_back(head);
+        _heads.push_back(head);
     }
 
-    /// \brief Begin iterator over the head of cycles
     Iterator begin() const
     {
-        return _nodes.cbegin();
+        return _heads.cbegin();
     }
 
-    /// \brief End iterator over the head of cycles
     Iterator end() const
     {
-        return _nodes.cend();
+        return _heads.cend();
     }
 
-    /// \brief Return the common prefix of the given nestings
-    WtoNesting operator^(const WtoNesting &other) const
-    {
-        WtoNesting res;
-        for (auto this_it = begin(), other_it = other.begin();
-                this_it != end() && other_it != other.end();
-                ++this_it, ++other_it)
-        {
-            if (*this_it == *other_it)
-            {
-                res.add(*this_it);
-            }
-            else
-            {
-                break;
-            }
-        }
-        return res;
-    }
-
-private:
-    /// \brief Compare the given nestings
-    int compare(const WtoNesting &other) const
-    {
-        if (this == &other)
-        {
-            return 0; // equals
-        }
-
-        auto this_it = begin();
-        auto other_it = other.begin();
-        while (this_it != end())
-        {
-            if (other_it == other.end())
-            {
-                return 1; // `this` is nested within `other`
-            }
-            else if (*this_it == *other_it)
-            {
-                ++this_it;
-                ++other_it;
-            }
-            else
-            {
-                return 2; // not comparable
-            }
-        }
-        if (other_it == other.end())
-        {
-            return 0; // equals
-        }
-        else
-        {
-            return -1; // `other` is nested within `this`
-        }
-    }
-
-public:
-    bool operator<(const WtoNesting &other) const
-    {
-        return compare(other) == -1;
-    }
-
-    bool operator<=(const WtoNesting &other) const
-    {
-        return compare(other) <= 0;
-    }
-
-    bool operator==(const WtoNesting &other) const
-    {
-        return compare(other) == 0;
-    }
-
-    bool operator>=(const WtoNesting &other) const
-    {
-        return operator<=(other);
-    }
-
-    bool operator>(const WtoNesting &other) const
-    {
-        return compare(other) == 1;
-    }
-
-    /// \brief Dump the nesting, for debugging purpose
+    /// Convert the wto-cycle-depth to a string
     std::string toString() const
     {
         std::string str;
@@ -243,97 +143,222 @@ public:
         return rawstr.str();
     }
 
-    /// Overloading operator << for dumping ICFG node ID
-    //@{
-    friend std::ostream &operator<<(std::ostream &o, const WtoNesting &wto)
+private:
+    /// Compare the given wto-cycle-depth
+    int compare(const WTOCycleDepth &other) const
     {
-        o << wto.toString();
+        if (this == &other)
+        {
+            return 0; // 0 - equals
+        }
+
+        auto this_it = begin();
+        auto other_it = other.begin();
+        while (this_it != end())
+        {
+            if (other_it == other.end())
+            {
+                return 1; // `this` is inside `other`
+            }
+            else if (*this_it == *other_it)
+            {
+                ++this_it;
+                ++other_it;
+            }
+            else
+            {
+                return 2; // not comparable
+            }
+        }
+        if (other_it == other.end())
+        {
+            return 0; // equals
+        }
+        else
+        {
+            return -1; // `other` is inside `this`
+        }
+    }
+
+public:
+
+    /// Overloading operators
+    //@{
+    /// Return the common prefix of the given wto-cycle-depth
+    WTOCycleDepth operator^(const WTOCycleDepth &other) const
+    {
+        WTOCycleDepth res;
+        for (auto this_it = begin(), other_it = other.begin();
+             this_it != end() && other_it != other.end();
+             ++this_it, ++other_it)
+        {
+            if (*this_it == *other_it)
+            {
+                res.push_back(*this_it);
+            }
+            else
+            {
+                break;
+            }
+        }
+        return res;
+    }
+
+    /// Less than other's depth - `other` is inside `this`
+    bool operator<(const WTOCycleDepth &other) const
+    {
+        return compare(other) == -1;
+    }
+
+    /// Less than or Equal with other's depth
+    bool operator<=(const WTOCycleDepth &other) const
+    {
+        return compare(other) <= 0;
+    }
+
+    /// Equal with other's depth
+    bool operator==(const WTOCycleDepth &other) const
+    {
+        return compare(other) == 0;
+    }
+
+    /// Greater than other's depth - `this` is inside `other`
+    bool operator>(const WTOCycleDepth &other) const
+    {
+        return compare(other) == 1;
+    }
+
+    /// Greater than or Equal with other's depth
+    bool operator>=(const WTOCycleDepth &other) const
+    {
+        return operator<=(other);
+    }
+
+    /// Dump into CMD
+    friend std::ostream &operator<<(std::ostream &o, const WTOCycleDepth &CFBasicBlockGWTO)
+    {
+        o << CFBasicBlockGWTO.toString();
         return o;
     }
     //@}
 
-}; // end class WtoNesting
+}; // end class WTOCycleDepth
 
-
-/// \brief Base class for components of a weak topological order
-///
-/// This is either a vertex or a cycle.
-class WtoComponent
+/*!
+ * Weak topological order (WTO) visitor
+ */
+class WTOVisitor
 {
+
 public:
-    /// Types of SVFIR statements
-    /// Gep represents (base + offset) for field sensitivity
-    /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
+    /// Default Constructor
+    WTOVisitor() = default;
+
+    /// Default Copy Constructor
+    WTOVisitor(const WTOVisitor &) noexcept = default;
+
+    /// Default Move Constructor
+    WTOVisitor(WTOVisitor &&) noexcept = default;
+
+    /// Default Copy Operator=
+    WTOVisitor &operator=(const WTOVisitor &) noexcept = default;
+
+    /// Default Move Operator=
+    WTOVisitor &operator=(WTOVisitor &&) noexcept = default;
+
+    /// Default Destructor
+    virtual ~WTOVisitor() = default;
+
+    /// Visit WTO Node
+    virtual void visit(const CFBasicBlockGWTONode &) = 0;
+
+    /// Visit WTO Cycle
+    virtual void visit(const CFBasicBlockGWTOCycle &) = 0;
+
+}; // end class WTOVisitor
+
+/*!
+ * Base class for a WTO component for CFBasicBlockG
+ *
+ * A WTO component can be either a node or cycle
+ */
+class CFBasicBlockGWTOComp
+{
+
+public:
     enum WtoCT
     {
         Node, Cycle
     };
 
-    /// \brief Default constructor
-    WtoComponent(WtoCT k) : type(k) {};
+public:
+    /// Default Constructor
+    CFBasicBlockGWTOComp(WtoCT k) : _type(k) {};
 
-    /// \brief Copy constructor
-    WtoComponent(const WtoComponent &) noexcept = default;
+    /// Copy Constructor
+    CFBasicBlockGWTOComp(const CFBasicBlockGWTOComp &) noexcept = default;
 
-    /// \brief Move constructor
-    WtoComponent(WtoComponent &&) noexcept = default;
+    /// Move Constructor
+    CFBasicBlockGWTOComp(CFBasicBlockGWTOComp &&) noexcept = default;
 
-    /// \brief Copy assignment operator
-    WtoComponent &operator=(const WtoComponent &) noexcept = default;
+    /// Copy Operator=
+    CFBasicBlockGWTOComp &operator=(const CFBasicBlockGWTOComp &) noexcept = default;
 
-    /// \brief Move assignment operator
-    WtoComponent &operator=(WtoComponent &&) noexcept = default;
+    /// Move Operator=
+    CFBasicBlockGWTOComp &operator=(CFBasicBlockGWTOComp &&) noexcept = default;
 
-    /// \brief Accept the given visitor
-    virtual void accept(WtoComponentVisitor *) const = 0;
+    /// Default Destructor
+    virtual ~CFBasicBlockGWTOComp() = default;
 
-    /// \brief Destructor
-    virtual ~WtoComponent() = default;
+    /// Accept a visitor
+    virtual void accept(WTOVisitor *) const = 0;
 
+    /// Return the WTO Kind (node or cycle)
     inline WtoCT getKind() const
     {
-        return type;
+        return _type;
     }
 
     virtual std::string toString() const = 0;
 
-    /// Overloading operator << for dumping ICFG node ID
-    //@{
-    friend std::ostream &operator<<(std::ostream &o, const WtoComponent &wto)
+    friend std::ostream &operator<<(std::ostream &o, const CFBasicBlockGWTOComp &CFBasicBlockGWTO)
     {
-        o << wto.toString();
+        o << CFBasicBlockGWTO.toString();
         return o;
     }
-    //@}
 
-    WtoCT type;
-    WtoComponent* next{nullptr};
-}; // end class WtoComponent
+private:
+
+    WtoCT _type;
+
+}; // end class CFBasicBlockGWTOComp
 
 
-/// \brief Represents a vertex
-class WtoVertex final : public WtoComponent
+/*!
+ * WTO node for CFBasicBlockG
+ */
+class CFBasicBlockGWTONode final : public CFBasicBlockGWTOComp
 {
 private:
-    const SVFBasicBlock *_node;
+    const CFBasicBlockNode *_node;
 
 public:
-    /// \brief Constructor
-    explicit WtoVertex(const SVFBasicBlock *node) : WtoComponent(WtoComponent::Node), _node(node) {}
+    /// Constructor
+    explicit CFBasicBlockGWTONode(const CFBasicBlockNode *node) : CFBasicBlockGWTOComp(CFBasicBlockGWTOComp::Node), _node(node) {}
 
-    /// \brief Return the graph node
-    const SVFBasicBlock *node() const
+    /// Return the graph node
+    const CFBasicBlockNode *node() const
     {
         return _node;
     }
 
-    /// \brief Accept the given visitor
-    void accept(WtoComponentVisitor *v) const override
+    /// Accept a visitor
+    void accept(WTOVisitor *v) const override
     {
         v->visit(*this);
     }
 
-    /// \brief Dump the vertex, for debugging purpose
+    /// Convert the node to string
     std::string toString() const override
     {
         return std::string(_node->getName().data());
@@ -341,84 +366,76 @@ public:
 
     /// ClassOf
     //@{
-    static inline bool classof(const WtoVertex *)
+    static inline bool classof(const CFBasicBlockGWTONode *)
     {
         return true;
     }
 
-    static inline bool classof(const WtoComponent *c)
+    static inline bool classof(const CFBasicBlockGWTOComp *c)
     {
-        return c->getKind() == WtoComponent::Node;
+        return c->getKind() == CFBasicBlockGWTOComp::Node;
     }
     ///@}
 
-}; // end class WtoVertex
+}; // end class CFBasicBlockGWTONode
 
 
-/// \brief Represents a cycle
-class WtoCycle final : public WtoComponent
+/*!
+ * WTO cycle for CFBasicBlockG
+ */
+class CFBasicBlockGWTOCycle final : public CFBasicBlockGWTOComp
 {
-public:
-    typedef WtoComponent WtoComponentT;
+private:
+    typedef std::list<const CFBasicBlockGWTOComp *> WtoComponentRefList;
+    typedef WtoComponentRefList::const_iterator Iterator;
 
 private:
-    typedef const WtoComponentT *WtoComponentPtr;
-    typedef std::list<WtoComponentPtr> WtoComponentRefList;
+    /// Head of the cycle
+    const CFBasicBlockNode *_head;
 
-public:
-    /// \brief Iterator over the components
-    typedef typename WtoComponentRefList::const_iterator Iterator;
-
-private:
-    /// \brief Head of the cycle
-    const SVFBasicBlock *_head;
-
-    /// \brief List of components
+    /// List of components
     WtoComponentRefList _components;
 
 public:
-    /// \brief Constructor
-    WtoCycle(const SVFBasicBlock *head, WtoComponentRefList components)
-        : WtoComponent(WtoComponent::Cycle), _head(head), _components(std::move(components)) {}
+    /// Constructor
+    CFBasicBlockGWTOCycle(const CFBasicBlockNode *head, WtoComponentRefList components)
+            : CFBasicBlockGWTOComp(CFBasicBlockGWTOComp::Cycle), _head(head), _components(std::move(components)) {}
 
-    /// \brief Return the head of the cycle
-    const SVFBasicBlock *head() const
+    /// Return the head of the cycle
+    const CFBasicBlockNode *head() const
     {
         return _head;
     }
 
-    /// \brief Begin iterator over the components
     Iterator begin() const
     {
         return _components.cbegin();
     }
 
-    /// \brief End iterator over the components
     Iterator end() const
     {
         return _components.cend();
     }
 
-    /// \brief Accept the given visitor
-    void accept(WtoComponentVisitor *v) const override
+    /// Accept a visitor
+    void accept(WTOVisitor *v) const override
     {
         v->visit(*this);
     }
 
     /// ClassOf
     //@{
-    static inline bool classof(const WtoCycle *)
+    static inline bool classof(const CFBasicBlockGWTOCycle *)
     {
         return true;
     }
 
-    static inline bool classof(const WtoComponent *c)
+    static inline bool classof(const CFBasicBlockGWTOComp *c)
     {
-        return c->getKind() == WtoComponent::Cycle;
+        return c->getKind() == CFBasicBlockGWTOComp::Cycle;
     }
     ///@}
 
-    /// \brief Dump the cycle, for debugging purpose
     std::string toString() const override
     {
         std::string str;
@@ -438,76 +455,61 @@ public:
         return rawstr.str();
     }
 
-}; // end class WtoCycle
+}; // end class CFBasicBlockGWTOCycle
 
 
-/// \brief Weak Topological Ordering
-class Wto
+/*!
+ * Weak topological order for CFBasicBlockG
+ */
+class CFBasicBlockGWTO
 {
 
 public:
-    typedef WtoNesting WtoNestingT;
-    typedef WtoComponent WtoComponentT;
-    typedef WtoVertex WtoVertexT;
-    typedef WtoCycle WtoCycleT;
-    typedef Set<const SVFBasicBlock *> NodeRefList;
+    typedef WTOCycleDepth<const CFBasicBlockNode*> CFBasicBlockGWTOCycleDepth;
+    typedef Set<const CFBasicBlockNode *> NodeRefSet;
 
 protected:
-    typedef const WtoComponentT *WtoComponentPtr;
-    typedef std::list<WtoComponentPtr> WtoComponentRefList;
-    typedef Set <WtoComponentPtr> WtoComponentRefSet;
-    typedef Map<const SVFBasicBlock *, const WtoCycleT *> NodeRefToWtoCycleMap;
-    typedef Map<const SVFBasicBlock *, NodeRefList> NodeRefTONodeRefListMap;
+    typedef std::list<const CFBasicBlockGWTOComp *> WTOCompRefList;
+    typedef Set <const CFBasicBlockGWTOComp *> WTOCompRefSet;
+    typedef Map<const CFBasicBlockNode *, const CFBasicBlockGWTOCycle *> NodeRefToWTOCycleMap;
+    typedef Map<const CFBasicBlockNode *, NodeRefSet> NodeRefToNodeRefSetMap;
 
-    typedef u32_t Dfn;
-    typedef Map<const SVFBasicBlock *, Dfn> DfnTable;
-    typedef std::vector<const SVFBasicBlock *> Stack;
-    typedef std::shared_ptr<WtoNestingT> WtoNestingPtr;
-    typedef Map<const SVFBasicBlock *, WtoNestingPtr> NestingTable;
+    typedef u32_t CycleDepthNumber;
+    typedef Map<const CFBasicBlockNode *, CycleDepthNumber> NodeRefToCycleDepthNumber;
+    typedef std::vector<const CFBasicBlockNode *> CFBasicBlockNodes;
+    typedef std::shared_ptr<CFBasicBlockGWTOCycleDepth> CFBasicBlockGWTOCycleDepthPtr;
+    typedef Map<const CFBasicBlockNode *, CFBasicBlockGWTOCycleDepthPtr> NodeRefToWTOCycleDepthPtr;
 
 public:
-    /// \brief Iterator over the components
-    typedef typename WtoComponentRefList::const_iterator Iterator;
+    typedef typename WTOCompRefList::const_iterator Iterator;
 
 protected:
-    WtoComponentRefList _components;
-    WtoComponentRefSet _allComponents;
-    NodeRefToWtoCycleMap headRefToCycle;
-    NodeRefTONodeRefListMap headRefToTails;
-    NestingTable _nesting_table;
-    DfnTable _dfn_table;
-    Dfn _num;
-    Stack _stack;
+    WTOCompRefList _components;
+    WTOCompRefSet _allComponents;
+    NodeRefToWTOCycleMap _headToCycle;
+    NodeRefToNodeRefSetMap _headToTails;
+    NodeRefToWTOCycleDepthPtr _nodeToDepth;
+    NodeRefToCycleDepthNumber _nodeToCDN;
+    CycleDepthNumber _num;
+    CFBasicBlockNodes _stack;
 
 public:
-    /// \brief Compute the weak topological order of the given graph
-    explicit Wto() : _num(0) {}
+    explicit CFBasicBlockGWTO() : _num(0) {}
 
-    /// \brief Compute the weak topological order of the given graph
-    explicit Wto(const SVFBasicBlock *entry) : _num(0)
+    explicit CFBasicBlockGWTO(const CFBasicBlockNode *entry) : _num(0)
     {
-        visit(entry, _components);
-        //link_components(_components);
-        _dfn_table.clear();
-        _stack.clear();
-        build_nesting();
-        build_tails();
+        build(entry);
     }
 
-    /// \brief No copy constructor
-    Wto(const Wto &other) = default;
+    CFBasicBlockGWTO(const CFBasicBlockGWTO &other) = default;
 
-    /// \brief Move constructor
-    Wto(Wto &&other) = default;
+    CFBasicBlockGWTO(CFBasicBlockGWTO &&other) = default;
 
-    /// \brief No copy assignment operator
-    Wto &operator=(const Wto &other) = default;
+    CFBasicBlockGWTO &operator=(const CFBasicBlockGWTO &other) = default;
 
-    /// \brief Move assignment operator
-    Wto &operator=(Wto &&other) = default;
+    CFBasicBlockGWTO &operator=(CFBasicBlockGWTO &&other) = default;
 
-    /// \brief Destructor
-    ~Wto()
+    ~CFBasicBlockGWTO()
     {
         for (const auto &component: _allComponents)
         {
@@ -515,60 +517,56 @@ public:
         }
     }
 
-    /// \brief Begin iterator over the components
-    /// \brief Begin iterator over the components
     Iterator begin() const
     {
         return _components.cbegin();
     }
 
-    /// \brief End iterator over the components
     Iterator end() const
     {
         return _components.cend();
     }
 
-    bool isHead(const SVFBasicBlock *node) const
+    bool isHead(const CFBasicBlockNode *node) const
     {
-        return headRefToCycle.find(node) != headRefToCycle.end();
+        return _headToCycle.find(node) != _headToCycle.end();
     }
 
-    typename NodeRefToWtoCycleMap::const_iterator headBegin() const
+    typename NodeRefToWTOCycleMap::const_iterator headBegin() const
     {
-        return headRefToCycle.cbegin();
+        return _headToCycle.cbegin();
     }
 
-    /// \brief End iterator over the components
-    typename NodeRefToWtoCycleMap::const_iterator headEnd() const
+    typename NodeRefToWTOCycleMap::const_iterator headEnd() const
     {
-        return headRefToCycle.cend();
+        return _headToCycle.cend();
     }
 
-    const NodeRefList &getTails(const SVFBasicBlock *node) const
+    const NodeRefSet &getTails(const CFBasicBlockNode *node) const
     {
-        auto it = headRefToTails.find(node);
-        assert(it != headRefToTails.end() && "node not found");
+        auto it = _headToTails.find(node);
+        assert(it != _headToTails.end() && "node not found");
         return it->second;
     }
 
 
-    /// \brief Return the nesting of the given node
-    const WtoNestingT &nesting(const SVFBasicBlock *n) const
+    /// Get the wto-cycle-depth of the given node
+    const CFBasicBlockGWTOCycleDepth &getWTOCycleDepth(const CFBasicBlockNode *n) const
     {
-        auto it = _nesting_table.find(n);
-        assert(it != _nesting_table.end() && "node not found");
+        auto it = _nodeToDepth.find(n);
+        assert(it != _nodeToDepth.end() && "node not found");
         return *(it->second);
     }
 
-    /// \brief Return the nesting of the given node
-    inline bool in_nesting_table(const SVFBasicBlock *n) const
+    /// Whether the given node is in the node to cycle getCDN
+    inline bool inNodeToCycleDepth(const CFBasicBlockNode *n) const
     {
-        auto it = _nesting_table.find(n);
-        return it != _nesting_table.end();
+        auto it = _nodeToDepth.find(n);
+        return it != _nodeToDepth.end();
     }
 
-    /// \brief Accept the given visitor
-    void accept(WtoComponentVisitor* v)
+    /// Accept the given visitor
+    void accept(WTOVisitor* v)
     {
         for (const auto &c: _components)
         {
@@ -576,7 +574,6 @@ public:
         }
     }
 
-    /// \brief Dump the order, for debugging purpose
     std::string toString() const
     {
         std::string str;
@@ -595,69 +592,75 @@ public:
         return rawstr.str();
     }
 
-    /// Overloading operator << for dumping ICFG node ID
-    //@{
-    friend std::ostream &operator<<(std::ostream &o, const Wto &wto)
+    friend std::ostream &operator<<(std::ostream &o, const CFBasicBlockGWTO &CFBasicBlockGWTO)
     {
-        o << wto.toString();
+        o << CFBasicBlockGWTO.toString();
         return o;
     }
-    //@}
 
 protected:
-    /// \brief Visitor to build the nestings of each node
-    class NestingBuilder final
-        : public WtoComponentVisitor
+
+    inline void build(const CFBasicBlockNode *entry) {
+        visit(entry, _components);
+        _nodeToCDN.clear();
+        _stack.clear();
+        buildNodeToWTOCycleDepth();
+        build_tails();
+    }
+
+    /// Visitor to build the WTO cycle getCDN of each node
+    class WTOCycleDepthBuilder final
+            : public WTOVisitor
     {
     private:
-        WtoNestingPtr _nesting;
-        NestingTable &_nesting_table;
+        CFBasicBlockGWTOCycleDepthPtr _wtoCycleDepth;
+        NodeRefToWTOCycleDepthPtr &_nodeToWTOCycleDepth;
 
     public:
-        explicit NestingBuilder(NestingTable &nesting_table)
-            : _nesting(std::make_shared<WtoNestingT>()),
-              _nesting_table(nesting_table) {}
+        explicit WTOCycleDepthBuilder(NodeRefToWTOCycleDepthPtr &nodeToWTOCycleDepth)
+                : _wtoCycleDepth(std::make_shared<CFBasicBlockGWTOCycleDepth>()),
+                  _nodeToWTOCycleDepth(nodeToWTOCycleDepth) {}
 
-        void visit(const WtoCycleT &cycle) override
+        void visit(const CFBasicBlockGWTOCycle &cycle) override
         {
-            const SVFBasicBlock *head = cycle.head();
-            WtoNestingPtr previous_nesting = _nesting;
-            _nesting_table.insert(std::make_pair(head, _nesting));
-            _nesting = std::make_shared<WtoNestingT>(*_nesting);
-            _nesting->add(head);
+            const CFBasicBlockNode *head = cycle.head();
+            CFBasicBlockGWTOCycleDepthPtr previous_nesting = _wtoCycleDepth;
+            _nodeToWTOCycleDepth.insert(std::make_pair(head, _wtoCycleDepth));
+            _wtoCycleDepth = std::make_shared<CFBasicBlockGWTOCycleDepth>(*_wtoCycleDepth);
+            _wtoCycleDepth->push_back(head);
             for (auto it = cycle.begin(), et = cycle.end(); it != et; ++it)
             {
                 (*it)->accept(this);
             }
-            _nesting = previous_nesting;
+            _wtoCycleDepth = previous_nesting;
         }
 
-        void visit(const WtoVertexT &vertex) override
+        void visit(const CFBasicBlockGWTONode &node) override
         {
-            _nesting_table.insert(
-                std::make_pair(vertex.node(), _nesting));
+            _nodeToWTOCycleDepth.insert(
+                    std::make_pair(node.node(), _wtoCycleDepth));
         }
 
-    }; // end class NestingBuilder
+    }; // end class WTOCycleDepthBuilder
 
-    /// \brief Visitor to build the tails of each head/loop
-    class TailBuilder : public WtoComponentVisitor
+    /// Visitor to build the tails of each head/loop
+    class TailBuilder : public WTOVisitor
     {
     protected:
-        NodeRefList &_tails;
-        const WtoNestingT &_headNesting;
-        const SVFBasicBlock *_head;
-        NestingTable &_nesting_table;
+        NodeRefSet &_tails;
+        const CFBasicBlockGWTOCycleDepth &_headWTOCycleDepth;
+        const CFBasicBlockNode *_head;
+        NodeRefToWTOCycleDepthPtr &_nodeToWTOCycleDepth;
 
     public:
 
-        explicit TailBuilder(NestingTable &nesting_table, NodeRefList &tails, const SVFBasicBlock *head,
-                             const WtoNestingT &headNesting) : _nesting_table(
-                                     nesting_table), _head(head), _tails(tails), _headNesting(headNesting)
+        explicit TailBuilder(NodeRefToWTOCycleDepthPtr &nodeToWTOCycleDepth, NodeRefSet &tails, const CFBasicBlockNode *head,
+                             const CFBasicBlockGWTOCycleDepth &headWTOCycleDepth) : _tails(tails), _headWTOCycleDepth(headWTOCycleDepth), _head(head), _nodeToWTOCycleDepth(
+                nodeToWTOCycleDepth)
         {
         }
 
-        void visit(const WtoCycleT &cycle) override
+        void visit(const CFBasicBlockGWTOCycle &cycle) override
         {
             for (auto it = cycle.begin(), et = cycle.end(); it != et; ++it)
             {
@@ -665,36 +668,36 @@ protected:
             }
         }
 
-        virtual void visit(const WtoVertexT &vertex) override
+        virtual void visit(const CFBasicBlockGWTONode &node) override
         {
-            for (const auto &next_block: vertex.node()->getSuccessors())
+            for (const auto &edge: node.node()->getOutEdges())
             {
-                const SVFBasicBlock *succ = next_block;
-                const WtoNestingT &succNesting = nesting(succ);
-                if (succ != _head && succNesting <= _headNesting)
+                const CFBasicBlockNode *succ = edge->getDstNode();
+                const CFBasicBlockGWTOCycleDepth &succNesting = getWTOCycleDepth(succ);
+                if (succ != _head && succNesting <= _headWTOCycleDepth)
                 {
-                    _tails.insert(vertex.node());
+                    _tails.insert(node.node());
                 }
             }
         }
 
     protected:
-        /// \brief Return the nesting of the given node
-        const WtoNestingT &nesting(const SVFBasicBlock *n) const
+        /// Get the wto-cycle-depth of the given node
+        const CFBasicBlockGWTOCycleDepth &getWTOCycleDepth(const CFBasicBlockNode *n) const
         {
-            auto it = _nesting_table.find(n);
-            assert(it != _nesting_table.end() && "node not found");
+            auto it = _nodeToWTOCycleDepth.find(n);
+            assert(it != _nodeToWTOCycleDepth.end() && "node not found");
             return *(it->second);
         }
 
     };
 
 protected:
-    /// \brief Return the depth-first number of the given node
-    Dfn dfn(const SVFBasicBlock *n) const
+    /// Get the cycle depth number of the given node
+    CycleDepthNumber getCDN(const CFBasicBlockNode *n) const
     {
-        auto it = _dfn_table.find(n);
-        if (it != _dfn_table.end())
+        auto it = _nodeToCDN.find(n);
+        if (it != _nodeToCDN.end())
         {
             return it->second;
         }
@@ -704,81 +707,79 @@ protected:
         }
     }
 
-    /// \brief Set the depth-first number of the given node
-    void set_dfn(const SVFBasicBlock *n, const Dfn &dfn)
+    /// Set the cycle depth number of the given node
+    void setCDN(const CFBasicBlockNode *n, const CycleDepthNumber &Depth)
     {
-        auto res = _dfn_table.insert(std::make_pair(n, dfn));
+        auto res = _nodeToCDN.insert(std::make_pair(n, Depth));
         if (!res.second)
         {
-            (res.first)->second = dfn;
+            (res.first)->second = Depth;
         }
     }
 
-    /// \brief Pop a node from the stack
-    const SVFBasicBlock *pop()
+    /// Pop a node from the stack
+    const CFBasicBlockNode *pop()
     {
         assert(!_stack.empty() && "empty stack");
-        const SVFBasicBlock *top = _stack.back();
+        const CFBasicBlockNode *top = _stack.back();
         _stack.pop_back();
         return top;
     }
 
-    /// \brief Push a node on the stack
-    void push(const SVFBasicBlock *n)
+    /// Push a node on the stack
+    void push(const CFBasicBlockNode *n)
     {
         _stack.push_back(n);
     }
 
-    const WtoVertexT *newVertex(const SVFBasicBlock *node)
+    const CFBasicBlockGWTONode *newNode(const CFBasicBlockNode *node)
     {
-        const WtoVertexT *ptr = new WtoVertexT(node);
+        const CFBasicBlockGWTONode *ptr = new CFBasicBlockGWTONode(node);
         _allComponents.insert(ptr);
         return ptr;
     }
 
-    const WtoCycleT *newCycle(const SVFBasicBlock *node, const WtoComponentRefList &partition)
+    const CFBasicBlockGWTOCycle *newCycle(const CFBasicBlockNode *node, const WTOCompRefList &partition)
     {
-        const WtoCycleT *ptr = new WtoCycleT(node, std::move(partition));
+        const CFBasicBlockGWTOCycle *ptr = new CFBasicBlockGWTOCycle(node, std::move(partition));
         _allComponents.insert(ptr);
         return ptr;
     }
 
-    /// \brief Create the cycle component for the given vertex
-    const WtoCycleT *component(const SVFBasicBlock *vertex)
+    /// Create the cycle component for the given node
+    const CFBasicBlockGWTOCycle *component(const CFBasicBlockNode *node)
     {
-        WtoComponentRefList partition;
-        for (auto it = vertex->getSuccessors().begin(), et = vertex->getSuccessors().end(); it != et; ++it)
+        WTOCompRefList partition;
+        for (auto it = node->getOutEdges().begin(), et = node->getOutEdges().end(); it != et; ++it)
         {
-            const SVFBasicBlock *succ = *it;
-            if (dfn(succ) == 0)
+            const CFBasicBlockNode *succ = (*it)->getDstNode();
+            if (getCDN(succ) == 0)
             {
                 visit(succ, partition);
             }
         }
-        const WtoCycleT *ptr = newCycle(vertex, partition);
-        headRefToCycle.emplace(vertex, ptr);
+        const CFBasicBlockGWTOCycle *ptr = newCycle(node, partition);
+        _headToCycle.emplace(node, ptr);
         return ptr;
     }
 
-    /// \brief Visit the given node
-    ///
-    /// Algorithm to build a weak topological order of a graph
-    virtual Dfn visit(const SVFBasicBlock *vertex, WtoComponentRefList &partition)
+    /// Main algorithm to build WTO
+    virtual CycleDepthNumber visit(const CFBasicBlockNode *node, WTOCompRefList &partition)
     {
-        Dfn head(0);
-        Dfn min(0);
+        CycleDepthNumber head(0);
+        CycleDepthNumber min(0);
         bool loop;
 
-        push(vertex);
-        _num += Dfn(1);
+        push(node);
+        _num += CycleDepthNumber(1);
         head = _num;
-        set_dfn(vertex, head);
+        setCDN(node, head);
         loop = false;
-        for (auto it = vertex->getSuccessors().begin(), et = vertex->getSuccessors().end(); it != et; ++it)
+        for (auto it = node->getOutEdges().begin(), et = node->getOutEdges().end(); it != et; ++it)
         {
-            const SVFBasicBlock *succ = *it;
-            Dfn succ_dfn = dfn(succ);
-            if (succ_dfn == Dfn(0))
+            const CFBasicBlockNode *succ = (*it)->getDstNode();
+            CycleDepthNumber succ_dfn = getCDN(succ);
+            if (succ_dfn == CycleDepthNumber(0))
             {
                 min = visit(succ, partition);
             }
@@ -792,54 +793,53 @@ protected:
                 loop = true;
             }
         }
-        if (head == dfn(vertex))
+        if (head == getCDN(node))
         {
-            set_dfn(vertex, UINT_MAX);
-            const SVFBasicBlock *element = pop();
+            setCDN(node, UINT_MAX);
+            const CFBasicBlockNode *element = pop();
             if (loop)
             {
-                while (element != vertex)
+                while (element != node)
                 {
-                    set_dfn(element, 0);
+                    setCDN(element, 0);
                     element = pop();
                 }
-                partition.push_front(component(vertex));
+                partition.push_front(component(node));
             }
             else
             {
-                partition.push_front(newVertex(vertex));
+                partition.push_front(newNode(node));
             }
         }
         return head;
     }
 
-    /// \brief Build the nesting table
-    void build_nesting()
+    /// Build the node to WTO cycle depth table
+    void buildNodeToWTOCycleDepth()
     {
-        NestingBuilder builder(_nesting_table);
+        WTOCycleDepthBuilder builder(_nodeToDepth);
         for (auto it = begin(), et = end(); it != et; ++it)
         {
             (*it)->accept(&builder);
         }
     }
 
-    /// \brief Build the tails for each loop
+    /// Build the tails for each cycle
     virtual void build_tails()
     {
-        for (const auto &head: headRefToCycle)
+        for (const auto &head: _headToCycle)
         {
-            NodeRefList tails;
-            TailBuilder builder(_nesting_table, tails, head.first, nesting(head.first));
+            NodeRefSet tails;
+            TailBuilder builder(_nodeToDepth, tails, head.first, getWTOCycleDepth(head.first));
             for (auto it = head.second->begin(), eit = head.second->end(); it != eit; ++it)
             {
                 (*it)->accept(&builder);
             }
-            headRefToTails.emplace(head.first, tails);
+            _headToTails.emplace(head.first, tails);
         }
     }
 
-}; // end class Wto
+}; // end class CFBasicBlockGWTO
 
-}
-
-#endif  /* WTO_H_ */
+} // end namespace SVF
+#endif /* WTO_H_ */

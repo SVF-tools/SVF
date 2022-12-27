@@ -2,7 +2,7 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2018>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@
 namespace SVF
 {
 CFBasicBlockNode::CFBasicBlockNode(u32_t id, const SVFBasicBlock *svfBasicBlock) : GenericCFBasicBlockNodeTy(id, 0),
-    _svfBasicBlock(svfBasicBlock)
+                                                                                   _svfBasicBlock(svfBasicBlock)
 {
     for (auto it = svfBasicBlock->begin(); it != svfBasicBlock->end(); ++it)
     {
@@ -55,50 +55,7 @@ const std::string CFBasicBlockNode::toString() const
     return stringstream.str();
 }
 
-std::string CFBasicBlockNode::getName() const
-{
-    return _svfBasicBlock->getName();
-}
-
-const SVFBasicBlock* CFBasicBlockNode::getSVFBasicBlock() const
-{
-    return _svfBasicBlock;
-}
-
-const SVFFunction* CFBasicBlockNode::getFunction() const
-{
-    return _svfBasicBlock->getFunction();
-}
-
-bool CFBasicBlockGraph::hasCFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst)
-{
-    CFBasicBlockEdge edge(src, dst);
-    CFBasicBlockEdge *outEdge = src->hasOutgoingEdge(&edge);
-    CFBasicBlockEdge *inEdge = dst->hasIncomingEdge(&edge);
-    if (outEdge && inEdge)
-    {
-        assert(outEdge == inEdge && "edges not match");
-        return true;
-    }
-    else
-        return false;
-}
-
-CFBasicBlockNode* CFBasicBlockGraph::getCFBasicBlockNode(u32_t id) const
-{
-    if (!hasGNode(id)) return nullptr;
-    return getGNode(id);
-}
-
-CFBasicBlockNode* CFBasicBlockGraph::getCFBasicBlockNode(const SVFBasicBlock *bb) const
-{
-    auto it = _bbToNode.find(bb);
-    if (it == _bbToNode.end()) return nullptr;
-    return it->second;
-}
-
-CFBasicBlockEdge* CFBasicBlockGraph::getCFBasicBlockEdge(const SVFBasicBlock *src, const SVFBasicBlock *dst)
-{
+CFBasicBlockEdge* CFBasicBlockGraph::getCFBasicBlockEdge(const SVFBasicBlock *src, const SVFBasicBlock *dst) {
     return getCFBasicBlockEdge(getCFBasicBlockNode(src), getCFBasicBlockNode(dst));
 }
 
@@ -107,7 +64,7 @@ CFBasicBlockEdge* CFBasicBlockGraph::getCFBasicBlockEdge(const CFBasicBlockNode 
     CFBasicBlockEdge *edge = nullptr;
     size_t counter = 0;
     for (auto iter = src->OutEdgeBegin();
-            iter != src->OutEdgeEnd(); ++iter)
+         iter != src->OutEdgeEnd(); ++iter)
     {
         if ((*iter)->getDstID() == dst->getId())
         {
@@ -151,9 +108,8 @@ void CFBasicBlockGBuilder::build()
         for (const auto &succ: bb->getSuccessors())
         {
             _CFBasicBlockG->getOrAddCFBasicBlockEdge(_CFBasicBlockG->getCFBasicBlockNode(bb),
-                    _CFBasicBlockG->getCFBasicBlockNode(succ));
+                                                     _CFBasicBlockG->getCFBasicBlockNode(succ));
         }
     }
 }
 }
-
