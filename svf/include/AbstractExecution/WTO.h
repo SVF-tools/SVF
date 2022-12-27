@@ -189,8 +189,8 @@ public:
     {
         WTOCycleDepth res;
         for (auto this_it = begin(), other_it = other.begin();
-             this_it != end() && other_it != other.end();
-             ++this_it, ++other_it)
+                this_it != end() && other_it != other.end();
+                ++this_it, ++other_it)
         {
             if (*this_it == *other_it)
             {
@@ -399,7 +399,7 @@ private:
 public:
     /// Constructor
     CFBasicBlockGWTOCycle(const CFBasicBlockNode *head, WtoComponentRefList components)
-            : CFBasicBlockGWTOComp(CFBasicBlockGWTOComp::Cycle), _head(head), _components(std::move(components)) {}
+        : CFBasicBlockGWTOComp(CFBasicBlockGWTOComp::Cycle), _head(head), _components(std::move(components)) {}
 
     /// Return the head of the cycle
     const CFBasicBlockNode *head() const
@@ -600,7 +600,8 @@ public:
 
 protected:
 
-    inline void build(const CFBasicBlockNode *entry) {
+    inline void build(const CFBasicBlockNode *entry)
+    {
         visit(entry, _components);
         _nodeToCDN.clear();
         _stack.clear();
@@ -610,7 +611,7 @@ protected:
 
     /// Visitor to build the WTO cycle getCDN of each node
     class WTOCycleDepthBuilder final
-            : public WTOVisitor
+        : public WTOVisitor
     {
     private:
         CFBasicBlockGWTOCycleDepthPtr _wtoCycleDepth;
@@ -618,8 +619,8 @@ protected:
 
     public:
         explicit WTOCycleDepthBuilder(NodeRefToWTOCycleDepthPtr &nodeToWTOCycleDepth)
-                : _wtoCycleDepth(std::make_shared<CFBasicBlockGWTOCycleDepth>()),
-                  _nodeToWTOCycleDepth(nodeToWTOCycleDepth) {}
+            : _wtoCycleDepth(std::make_shared<CFBasicBlockGWTOCycleDepth>()),
+              _nodeToWTOCycleDepth(nodeToWTOCycleDepth) {}
 
         void visit(const CFBasicBlockGWTOCycle &cycle) override
         {
@@ -638,7 +639,7 @@ protected:
         void visit(const CFBasicBlockGWTONode &node) override
         {
             _nodeToWTOCycleDepth.insert(
-                    std::make_pair(node.node(), _wtoCycleDepth));
+                std::make_pair(node.node(), _wtoCycleDepth));
         }
 
     }; // end class WTOCycleDepthBuilder
@@ -656,7 +657,7 @@ protected:
 
         explicit TailBuilder(NodeRefToWTOCycleDepthPtr &nodeToWTOCycleDepth, NodeRefSet &tails, const CFBasicBlockNode *head,
                              const CFBasicBlockGWTOCycleDepth &headWTOCycleDepth) : _tails(tails), _headWTOCycleDepth(headWTOCycleDepth), _head(head), _nodeToWTOCycleDepth(
-                nodeToWTOCycleDepth)
+                                     nodeToWTOCycleDepth)
         {
         }
 
