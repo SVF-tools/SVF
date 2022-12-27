@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// GNU Affero General Public License for more details.
 
-// You should have received a copy of the GNU General Public License
+// You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -32,8 +32,6 @@
 
 #include "CFL/CFLBase.h"
 #include "CFL/CFLStat.h"
-#include "CFL/CFLData.h"
-#include "CFL/CFLDataBuilder.h"
 
 namespace SVF
 {
@@ -142,34 +140,12 @@ private:
 class POCRAlias : public CFLAlias
 {
 public:
-    static double timeOfBuildCFLData;            // Time of building CFLData from CFLGraph
-
     POCRAlias(SVFIR* ir) : CFLAlias(ir)
     {
-        if (!_cflData)
-            _cflData = new CFLData();
-    }
-
-    /// Destructor
-    virtual ~POCRAlias()
-    {
-        delete _cflData;
-    }
-
-    CFLData* cflData()
-    {
-        return _cflData;
     }
 
     /// Initialize the grammar, graph, CFLData, solver
     virtual void initialize();
-
-    /// Init CFLData
-    virtual void buildCFLData();
-
-private:
-    /// Graph dataset
-    CFLData* _cflData;
 };
 } // End namespace SVF
 
