@@ -51,6 +51,9 @@ public:
     /// Initialize the grammar, graph, solver
     virtual void initialize();
 
+    /// Initialize Solver
+    virtual void initializeSolver();
+
     /// Print grammar and graph
     virtual void finalize();
 
@@ -143,9 +146,19 @@ public:
     POCRAlias(SVFIR* ir) : CFLAlias(ir)
     {
     }
+    /// Initialize POCR Solver
+    virtual void initializeSolver();
+};
 
-    /// Initialize the grammar, graph, CFLData, solver
-    virtual void initialize();
+class POCRHybird : public CFLAlias
+{
+public:
+    POCRHybird(SVFIR* ir) : CFLAlias(ir)
+    {
+    }
+
+    /// Initialize POCRHybird Solver
+    virtual void initializeSolver();
 };
 } // End namespace SVF
 

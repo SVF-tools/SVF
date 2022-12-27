@@ -829,6 +829,12 @@ const Option<bool> Options::POCRAlias(
     false
 );
 
+const Option<bool> Options::POCRHybird(
+    "pocr-hybird",
+    "When explicit to true, POCRHybirdSolver transfer CFL graph to internal hybird graph representation.",
+    false
+);
+
 const Option<bool> Options::LoopAnalysis(
     "loop-analysis",
     "Analyze every func and get loop info and loop bounds.",
