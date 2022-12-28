@@ -778,6 +778,8 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
             if (global->hasPrivateLinkage())
                 continue;
             string name = global->getName().str();
+            if (name.empty())
+                continue;
             NameToGlobalsMapTy::iterator mit = nameToGlobalsMap.find(name);
             if (mit == nameToGlobalsMap.end())
             {
