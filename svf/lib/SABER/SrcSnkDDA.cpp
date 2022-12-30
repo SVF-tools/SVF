@@ -169,7 +169,7 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet)
                 }
                 else if(SVFUtil::isa<IntraIndSVFGEdge>(edge))
                 {
-                    if(SVFUtil::isa<LoadSVFGNode>(succ))
+                    if(SVFUtil::isa<LoadSVFGNode, IntraMSSAPHISVFGNode>(succ))
                     {
                         worklist.push(succ);
                     }
