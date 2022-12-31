@@ -388,7 +388,7 @@ bool SaberCondAllocator::isTestNotNullExpr(const SVFValue* test) const
  *      cur svfg node -> 1. %3 = tail call i8* @malloc(i64 16), !dbg !22
  *      (cmp operand)    2. %4 = icmp eq i8* %3, null, !dbg !28
  *                       3. br i1 %4, label %7, label %5, !dbg !30
- *     There is an direct edge 1->1 with value %3
+ *     There is an direct edge 1->2 with value %3
  * 
  */
 bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
