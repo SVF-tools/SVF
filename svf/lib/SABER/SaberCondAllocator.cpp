@@ -393,10 +393,7 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
         Set<const SVFValue* > inDirVal;
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
         {
-            if (it->isIndirectVFGEdge())
-            {
-                inDirVal.insert(it->getDstNode()->getValue());
-            }
+            inDirVal.insert(it->getDstNode()->getValue());
         }
         return inDirVal.find(op0) != inDirVal.end();
     }
@@ -405,10 +402,7 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
         Set<const SVFValue* > inDirVal;
         for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
         {
-            if (it->isIndirectVFGEdge())
-            {
-                inDirVal.insert(it->getDstNode()->getValue());
-            }
+            inDirVal.insert(it->getDstNode()->getValue());
         }
         return inDirVal.find(op1) != inDirVal.end();
     }
