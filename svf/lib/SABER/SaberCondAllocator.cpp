@@ -374,14 +374,22 @@ bool SaberCondAllocator::isTestNotNullExpr(const SVFValue* test) const
 /*!
  * Return true if:
  * (1) cmp contains a null value
- * (2) there is an indirect edge from cur evaluated SVFG node to cmp operand
+ * (2) there is an indirect/direct edge from cur evaluated SVFG node to cmp operand
  *
  * e.g.,
+ * indirect edge:
  *      cur svfg node -> 1. store i32* %0, i32** %p, align 8, !dbg !157
  *      cmp operand   -> 2. %1 = load i32*, i32** %p, align 8, !dbg !159
  *                       3. %tobool = icmp ne i32* %1, null, !dbg !159
  *                       4. br i1 %tobool, label %if.end, label %if.then, !dbg !161
  *     There is an indirect edge 1->2 with value %0
+ * 
+ * direct edge:
+ *      cur svfg node -> 1. %3 = tail call i8* @malloc(i64 16), !dbg !22
+ *      (cmp operand)    2. %4 = icmp eq i8* %3, null, !dbg !28
+ *                       3. br i1 %4, label %7, label %5, !dbg !30
+ *     There is an direct edge 1->1 with value %3
+ * 
  */
 bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
 {
@@ -407,7 +415,6 @@ bool SaberCondAllocator::isTestContainsNullAndTheValue(const CmpStmt *cmp) const
         return inDirVal.find(op1) != inDirVal.end();
     }
     return false;
-
 }
 
 /*!
