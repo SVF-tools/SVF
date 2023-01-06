@@ -550,6 +550,8 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
     {
         VAddrs &addrs = getVAddrs(rhs);
         assert(!getVAddrs(rhs).empty());
+        _es[lhs] = IntervalValue::bottom();
+        getVAddrs(lhs).setBottom();
         for (const auto &addr: addrs)
         {
             u32_t objId = getInternalID(addr);
