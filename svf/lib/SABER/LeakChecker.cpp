@@ -86,8 +86,8 @@ void LeakChecker::initSrcs()
                     // otherwise, this is the source we are interested
                     else
                     {
-                        // exclude sources in dead functions
-                        if (cs->getCallSite()->ptrInUncalledFunction() == false)
+                        // exclude sources in dead functions or sources in functions that have summary
+                        if (!cs->getCallSite()->ptrInUncalledFunction() && !isExtCall(cs->getCallSite()->getParent()->getParent()))
                         {
                             addToSources(node);
                             addSrcToCSID(node, cs);
