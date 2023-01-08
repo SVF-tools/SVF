@@ -139,13 +139,13 @@ public:
         return conditionVar;
     }
 
-    s32_t getSuccessorCondValue() const
+    s64_t getSuccessorCondValue() const
     {
         assert(getCondition() && "this is not a conditional branch edge");
         return branchCondVal;
     }
 
-    void setBranchCondition(const SVFValue* c, s32_t bVal)
+    void setBranchCondition(const SVFValue* c, s64_t bVal)
     {
         conditionVar = c;
         branchCondVal = bVal;
@@ -159,7 +159,7 @@ private:
     /// e.g., Inst1: br %cmp label 0, label 1,  Inst2 is label 0 and Inst 3 is label 1;
     /// for edge between Inst1 and Inst 2, the first element is %cmp and second element is 0
     const SVFValue* conditionVar;
-    s32_t branchCondVal;
+    s64_t branchCondVal;
 };
 
 /*!

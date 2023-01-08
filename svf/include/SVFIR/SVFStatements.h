@@ -1048,7 +1048,7 @@ public:
     {
         return successors.at(i).first;
     }
-    s32_t getSuccessorCondValue (u32_t i) const
+    s64_t getSuccessorCondValue (u32_t i) const
     {
         return successors.at(i).second;
     }
