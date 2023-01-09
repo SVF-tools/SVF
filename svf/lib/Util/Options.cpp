@@ -830,7 +830,7 @@ const Option<bool> Options::POCRAlias(
 );
 
 const Option<bool> Options::POCRHybrid(
-    "pocr-hybird",
+    "pocr-hybrid",
     "When explicit to true, POCRHybridSolver transfer CFL graph to internal hybird graph representation.",
     false
 );
