@@ -292,7 +292,6 @@ void POCRHybridSolver::initialize()
         addInd_h(nId, nId);
     }
 
-    /// Foreach production X -> epsilon
     ///     add X(i,i) if not exist to E and to worklist
     for(const Production& prod : grammar->getEpsilonProds())
     {
