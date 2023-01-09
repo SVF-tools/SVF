@@ -160,6 +160,7 @@ public:
 
     /// Initialize POCRHybrid Solver
     virtual void initializeSolver();
+};
 } // End namespace SVF
 
 #endif /* INCLUDE_CFL_CFLALIAS_H_*/
