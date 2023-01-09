@@ -322,24 +322,10 @@ public:
 public:
     Map<NodeID, std::unordered_map<NodeID, TreeNode*>> indMap;   // indMap[v][u] points to node v in tree(u)
 
-    bool hasInd_h(NodeID src, NodeID dst)
-    {
-        auto it = indMap.find(dst);
-        if (it == indMap.end())
-            return false;
-        return (it->second.find(src) != it->second.end());
-    }
+    bool hasInd_h(NodeID src, NodeID dst);
 
     /// Add a node dst to tree(src)
-    TreeNode* addInd_h(NodeID src, NodeID dst)
-    {
-        TreeNode* newNode = new TreeNode(dst);
-        auto resIns = indMap[dst].insert(std::make_pair(src, newNode));
-        if (resIns.second)
-            return resIns.first->second;
-        delete newNode;
-        return nullptr;
-    }
+    TreeNode* addInd_h(NodeID src, NodeID dst);
 
     /// Get the node dst in tree(src)
     TreeNode* getNode_h(NodeID src, NodeID dst)
@@ -353,29 +339,9 @@ public:
         u->children.insert(v);
     }
 
-    void addArc_h(NodeID src, NodeID dst)
-    {
-        if (!hasInd_h(src, dst))
-        {
-            for (auto iter: indMap[src])
-            {
-                meld_h(iter.first, getNode_h(iter.first, src), getNode_h(dst, dst));
-            }
-        }
-    }
+    void addArc_h(NodeID src, NodeID dst);
 
-    void meld_h(NodeID x, TreeNode* uNode, TreeNode* vNode)
-    {
-        TreeNode* newVNode = addInd_h(x, vNode->id);
-        if (!newVNode)
-            return;
-
-        insertEdge_h(uNode, newVNode);
-        for (TreeNode* vChild: vNode->children)
-        {
-            meld_h(x, newVNode, vChild);
-        }
-    }
+    void meld_h(NodeID x, TreeNode* uNode, TreeNode* vNode);
 //@}
 public:
     POCRHybridSolver(CFLGraph* _graph, CFLGrammar* _grammar) : POCRSolver(_graph, _grammar)

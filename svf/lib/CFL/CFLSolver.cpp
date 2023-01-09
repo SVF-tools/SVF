@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// GNU Affero General Public License for more details.
 
-// You should have received a copy of the GNU General Public License
+// You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -329,6 +329,48 @@ void POCRHybridSolver::meld(NodeID x, TreeNode* uNode, TreeNode* vNode)
 
     insertEdge_h(uNode, newVNode);
     for (TreeNode* vChild: vNode->children) {
+        meld_h(x, newVNode, vChild);
+    }
+}
+
+bool POCRHybridSolver::hasInd_h(NodeID src, NodeID dst)
+{
+    auto it = indMap.find(dst);
+    if (it == indMap.end())
+        return false;
+    return (it->second.find(src) != it->second.end());
+}
+
+POCRHybridSolver::TreeNode* POCRHybridSolver::addInd_h(NodeID src, NodeID dst)
+{
+    TreeNode* newNode = new TreeNode(dst);
+    auto resIns = indMap[dst].insert(std::make_pair(src, newNode));
+    if (resIns.second)
+        return resIns.first->second;
+    delete newNode;
+    return nullptr;
+}
+
+void POCRHybridSolver::addArc_h(NodeID src, NodeID dst)
+{
+    if (!hasInd_h(src, dst))
+    {
+        for (auto iter: indMap[src])
+        {
+            meld_h(iter.first, getNode_h(iter.first, src), getNode_h(dst, dst));
+        }
+    }
+}
+
+void POCRHybridSolver::meld_h(NodeID x, TreeNode* uNode, TreeNode* vNode)
+{
+    TreeNode* newVNode = addInd_h(x, vNode->id);
+    if (!newVNode)
+        return;
+
+    insertEdge_h(uNode, newVNode);
+    for (TreeNode* vChild: vNode->children)
+    {
         meld_h(x, newVNode, vChild);
     }
 }
