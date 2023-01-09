@@ -201,6 +201,11 @@ void CFLAlias::initialize()
     normalizeCFLGrammar();
 
     // Initialize sovler
+    initializeSolver();  
+}
+
+void CFLAlias::initializeSolver()
+{
     solver = new CFLSolver(graph, grammar);
 }
 
@@ -238,19 +243,12 @@ void CFLAlias::solve()
     timeOfSolving += (end - start) / TIMEINTERVAL;
 }
 
-void POCRAlias::initialize()
+void POCRAlias::initializeSolver()
 {
-    stat = new CFLStat(this);
-
-    // Build CFL Grammar
-    buildCFLGrammar();
-
-    // Build CFL Graph
-    buildCFLGraph();
-
-    // Normalize CFL Grammar
-    normalizeCFLGrammar();
-
-    // Initialize POCRSolver
     solver = new POCRSolver(graph, grammar);
+}
+
+void POCRHybrid::initializeSolver()
+{
+    solver = new POCRHybridSolver(graph, grammar);
 }

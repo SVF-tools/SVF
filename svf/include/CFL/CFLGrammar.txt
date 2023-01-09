@@ -3,7 +3,7 @@ Start:
 Terminal:
    addr copy store load gep vgep 
 Productions:
-   F -> epsilon | F copy | addr Memflow | F store V load | store Memflow load;
+   F -> epsilon | F copy | addr Memflow | F store V load | store Memflow load | F F;
    Fbar -> epsilon | copybar Fbar | Memflowbar addrbar | loadbar V storebar Fbar | loadbar Memflowbar storebar;
    V -> Fbar V F | addrbar addr | gepbar_i V gep_i | gepbarpath V gep_0 | gepbar_i F gep_i | gepbar_i Fbar gep_i;
    copy -> vgep;
