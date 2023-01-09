@@ -40,112 +40,6 @@ namespace SVF
 {
 typedef GrammarBase::Symbol Label;
 
-/*!
- * Hybrid graph representation for transitive relations
- * The implementation is based on
- * Yuxiang Lei, Yulei Sui, Shuo Ding, and Qirun Zhang.
- * Taming Transitive Redundancy for Context-Free Language Reachability.
- * ACM SIGPLAN Conference on Object-Oriented Programming, Systems, Languages, and Applications
- */
-class HybridData
-{
-public:
-    struct TreeNode
-    {
-        NodeID id;
-        std::unordered_set<TreeNode*> children;
-
-        TreeNode(NodeID nId) : id(nId)
-        {}
-
-        ~TreeNode()
-        {
-        }
-
-        inline bool operator==(const TreeNode& rhs) const
-        {
-            return id == rhs.id;
-        }
-
-        inline bool operator<(const TreeNode& rhs) const
-        {
-            return id < rhs.id;
-        }
-    };
-
-
-public:
-    Map<NodeID, std::unordered_map<NodeID, TreeNode*>> indMap;   // indMap[v][u] points to node v in tree(u)
-
-    HybridData()
-    {}
-
-    ~HybridData()
-    {
-        for (auto iter1: indMap)
-        {
-            for (auto iter2: iter1.second)
-            {
-                delete iter2.second;
-                iter2.second = NULL;
-            }
-        }
-    }
-
-    bool hasInd(NodeID src, NodeID dst)
-    {
-        auto it = indMap.find(dst);
-        if (it == indMap.end())
-            return false;
-        return (it->second.find(src) != it->second.end());
-    }
-
-    /// Add a node dst to tree(src)
-    TreeNode* addInd(NodeID src, NodeID dst)
-    {
-        auto resIns = indMap[dst].insert(std::make_pair(src, new TreeNode(dst)));
-        if (resIns.second)
-            return resIns.first->second;
-        return nullptr;
-    }
-
-    /// Get the node dst in tree(src)
-    TreeNode* getNode(NodeID src, NodeID dst)
-    {
-        return indMap[dst][src];
-    }
-
-    /// add v into desc(x) as a child of u
-    void insertEdge(TreeNode* u, TreeNode* v)
-    {
-        u->children.insert(v);
-    }
-
-    void addArc(NodeID src, NodeID dst)
-    {
-        if (!hasInd(src, dst))
-        {
-            for (auto iter: indMap[src])
-            {
-                meld(iter.first, getNode(iter.first, src), getNode(dst, dst));
-            }
-        }
-    }
-
-    void meld(NodeID x, TreeNode* uNode, TreeNode* vNode)
-    {
-        TreeNode* newVNode = addInd(x, vNode->id);
-        if (!newVNode)
-            return;
-
-        insertEdge(uNode, newVNode);
-        for (TreeNode* vChild: vNode->children)
-        {
-            meld(x, newVNode, vChild);
-        }
-    }
-};
-
 class CFLSolver
 {
 
@@ -388,6 +282,92 @@ public:
     virtual void buildCFLData();
 
     virtual void initialize();
+};
+/*!
+ * Hybrid graph representation for transitive relations
+ * The implementation is based on
+ * Yuxiang Lei, Yulei Sui, Shuo Ding, and Qirun Zhang.
+ * Taming Transitive Redundancy for Context-Free Language Reachability.
+ * ACM SIGPLAN Conference on Object-Oriented Programming, Systems, Languages, and Applications
+ */
+/// Solver Utilize Hybrid Representation of Graph
+class POCRHybridSolver : public POCRSolver
+{
+//Hybrid
+//{@
+public:
+    struct TreeNode
+    {
+        NodeID id;
+        std::unordered_set<TreeNode*> children;
+
+        TreeNode(NodeID nId) : id(nId)
+        {}
+
+        ~TreeNode()
+        {
+        }
+
+        inline bool operator==(const TreeNode& rhs) const
+        {
+            return id == rhs.id;
+        }
+
+        inline bool operator<(const TreeNode& rhs) const
+        {
+            return id < rhs.id;
+        }
+    };
+
+public:
+    Map<NodeID, std::unordered_map<NodeID, TreeNode*>> indMap;   // indMap[v][u] points to node v in tree(u)
+
+    bool hasInd_h(NodeID src, NodeID dst);
+
+    /// Add a node dst to tree(src)
+    TreeNode* addInd_h(NodeID src, NodeID dst);
+
+    /// Get the node dst in tree(src)
+    TreeNode* getNode_h(NodeID src, NodeID dst)
+    {
+        return indMap[dst][src];
+    }
+
+    /// add v into desc(x) as a child of u
+    void insertEdge_h(TreeNode* u, TreeNode* v)
+    {
+        u->children.insert(v);
+    }
+
+    void addArc_h(NodeID src, NodeID dst);
+
+    void meld_h(NodeID x, TreeNode* uNode, TreeNode* vNode);
+//@}
+public:
+    POCRHybridSolver(CFLGraph* _graph, CFLGrammar* _grammar) : POCRSolver(_graph, _grammar)
+    {
+    }
+    /// Destructor
+    virtual ~POCRHybridSolver()
+    {
+        for (auto iter1: indMap)
+        {
+            for (auto iter2: iter1.second)
+            {
+                delete iter2.second;
+                iter2.second = NULL;
+            }
+        }
+    }
+
+    /// Process CFLEdge
+    virtual void processCFLEdge(const CFLEdge* Y_edge);
+
+    virtual void initialize();
+
+public:
+    void addArc(NodeID src, NodeID dst);
+    void meld(NodeID x, TreeNode* uNode, TreeNode* vNode);
 };
 }
 

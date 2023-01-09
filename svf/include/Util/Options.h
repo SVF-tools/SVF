@@ -256,6 +256,7 @@ public:
     static const Option<bool>  PEGTransfer;
     static const Option<bool>  CFLSVFG;
     static const Option<bool> POCRAlias;
+    static const Option<bool> POCRHybrid;
 
     // Loop Analysis
     static const Option<bool> LoopAnalysis;
