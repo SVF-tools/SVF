@@ -59,8 +59,8 @@ int main(int argc, char ** argv)
     std::unique_ptr<CFLBase> cfl;
     if (Options::CFLSVFG())
         cfl = std::make_unique<CFLVF>(svfir);
-    else if (Options::POCRHybird())
-        cfl = std::make_unique<POCRHybird>(svfir);
+    else if (Options::POCRHybrid())
+        cfl = std::make_unique<POCRHybrid>(svfir);
     else if (Options::POCRAlias())
         cfl = std::make_unique<POCRAlias>(svfir);
     else

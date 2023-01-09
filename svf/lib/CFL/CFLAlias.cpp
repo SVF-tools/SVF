@@ -248,7 +248,7 @@ void POCRAlias::initializeSolver()
     solver = new POCRSolver(graph, grammar);
 }
 
-void POCRHybird::initializeSolver()
+void POCRHybrid::initializeSolver()
 {
-    solver = new POCRHybirdSolver(graph, grammar);
+    solver = new POCRHybridSolver(graph, grammar);
 }

@@ -150,14 +150,14 @@ public:
     virtual void initializeSolver();
 };
 
-class POCRHybird : public CFLAlias
+class POCRHybrid : public CFLAlias
 {
 public:
-    POCRHybird(SVFIR* ir) : CFLAlias(ir)
+    POCRHybrid(SVFIR* ir) : CFLAlias(ir)
     {
     }
 
-    /// Initialize POCRHybird Solver
+    /// Initialize POCRHybrid Solver
     virtual void initializeSolver();
 };
 } // End namespace SVF
