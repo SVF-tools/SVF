@@ -244,7 +244,8 @@ void POCRHybridSolver::processCFLEdge(const CFLEdge* Y_edge)
             {
                 addArc(i->getId(), j->getId());
             }
-            else {
+            else
+            {
                 Symbol X = grammar->getLHSSymbol(prod);
                 NodeBS diffDsts = addEdges(i->getId(), getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)], X);
                 numOfChecks += getSuccMap(j->getId())[grammar->getSecondRHSSymbol(prod)].count();
@@ -266,7 +267,8 @@ void POCRHybridSolver::processCFLEdge(const CFLEdge* Y_edge)
             {
                 addArc(i->getId(), j->getId());
             }
-            else{
+            else
+            {
                 Symbol X = grammar->getLHSSymbol(prod);
                 NodeBS diffSrcs = addEdges(getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)], j->getId(), X);
                 numOfChecks += getPredMap(i->getId())[grammar->getFirstRHSSymbol(prod)].count();
@@ -287,7 +289,8 @@ void POCRHybridSolver::initialize()
     }
 
     // init hybrid dataset
-    for (auto it = graph->begin(); it != graph->end(); ++it) {
+    for (auto it = graph->begin(); it != graph->end(); ++it)
+    {
         NodeID nId = it->first;
         addInd_h(nId, nId);
     }
@@ -313,7 +316,8 @@ void POCRHybridSolver::addArc(NodeID src, NodeID dst)
     if(hasEdge(src, dst, grammar->str2Symbol("F")))
         return;
 
-    for (auto& iter: indMap[src]) {
+    for (auto& iter: indMap[src])
+    {
         meld(iter.first, getNode_h(iter.first, src), getNode_h(dst, dst));
     }
 }
@@ -328,7 +332,8 @@ void POCRHybridSolver::meld(NodeID x, TreeNode* uNode, TreeNode* vNode)
         return;
 
     insertEdge_h(uNode, newVNode);
-    for (TreeNode* vChild: vNode->children) {
+    for (TreeNode* vChild: vNode->children)
+    {
         meld_h(x, newVNode, vChild);
     }
 }

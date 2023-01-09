@@ -201,7 +201,7 @@ void CFLAlias::initialize()
     normalizeCFLGrammar();
 
     // Initialize sovler
-    initializeSolver();  
+    initializeSolver();
 }
 
 void CFLAlias::initializeSolver()

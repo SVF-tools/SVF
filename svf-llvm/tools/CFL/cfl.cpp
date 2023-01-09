@@ -55,7 +55,7 @@ int main(int argc, char ** argv)
         SVFIRBuilder builder(svfModule);
         svfir = builder.build();
     }  // if no dot form CFLGraph is specified, we use svfir from .bc.
-    
+
     std::unique_ptr<CFLBase> cfl;
     if (Options::CFLSVFG())
         cfl = std::make_unique<CFLVF>(svfir);
