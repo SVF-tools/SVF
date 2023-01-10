@@ -99,7 +99,7 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
     }
 }
 
-PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPTSSMap& cachedPtsMap)
+PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeToPTSSMap& cachedPtsMap)
 {
     SVFIR* pag = svfg->getPAG();
 
@@ -110,6 +110,21 @@ PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeTo
     else
     {
         PointsTo& pts = cachedPtsMap[baseId];
+        // base object
+        if (Options::IgnoreExtFun())
+        {
+            if (pta->isFIObjNode(baseId))
+            {
+                PAGNode* pn = pag->getGNode(baseId);
+                const SVFValue* value = pn->getValue();
+                const SVFCallInst* inst = SVFUtil::dyn_cast<SVFCallInst>(value);
+                if(inst && SVFUtil::isExtCall(inst))
+                {
+                    return pts;
+                }
+            }            
+        }
+
         pts |= pag->getFieldsAfterCollapse(baseId);
 
         WorkList worklist;

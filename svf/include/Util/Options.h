@@ -223,6 +223,9 @@ public:
     // SaberCondAllocator.cpp
     static const Option<bool> PrintPathCond;
 
+    // SaberSVFGBuilder.cpp
+    static const Option<bool> IgnoreExtFun;
+
     // SVFUtil.cpp
     static const Option<bool> DisableWarn;
 
