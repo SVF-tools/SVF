@@ -224,7 +224,7 @@ public:
     static const Option<bool> PrintPathCond;
 
     // SaberSVFGBuilder.cpp
-    static const Option<bool> IgnoreExtFun;
+    static const Option<bool> CollectExtRetGlobals;
 
     // SVFUtil.cpp
     static const Option<bool> DisableWarn;

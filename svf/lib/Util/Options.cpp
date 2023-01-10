@@ -680,10 +680,10 @@ const Option<bool> Options::PrintPathCond(
 
 
 // SaberSVFGBuilder.cpp
-const Option<bool> Options::IgnoreExtFun(
-    "saber-ignore-ext-fun",
+const Option<bool> Options::CollectExtRetGlobals(
+    "saber-collect-extret-globals",
     "Don't include pointers returned by external function during collecting globals",
-    false
+    true
 );
 
 

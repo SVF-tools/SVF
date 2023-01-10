@@ -107,23 +107,23 @@ PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeT
     NodeID baseId = pag->getBaseObjVar(id);
     NodeToPTSSMap::iterator it = cachedPtsMap.find(baseId);
     if(it!=cachedPtsMap.end())
+    {
         return it->second;
+    }
     else
     {
         PointsTo& pts = cachedPtsMap[baseId];
         // base object
-        if (Options::IgnoreExtFun())
+        if (!Options::CollectExtRetGlobals())
         {
-            if (pta->isFIObjNode(baseId))
+            if(pta->isFIObjNode(baseId) && pag->getGNode(baseId)->hasValue())
             {
-                PAGNode* pn = pag->getGNode(baseId);
-                const SVFValue* value = pn->getValue();
-                const SVFCallInst* inst = SVFUtil::dyn_cast<SVFCallInst>(value);
+                const SVFCallInst* inst = SVFUtil::dyn_cast(pag->getGNode(baseId)->getValue());
                 if(inst && SVFUtil::isExtCall(inst))
                 {
                     return pts;
                 }
-            }            
+            }       
         }
 
         pts |= pag->getFieldsAfterCollapse(baseId);
@@ -143,7 +143,6 @@ PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeT
         }
         return pts;
     }
-
 }
 
 /*!
