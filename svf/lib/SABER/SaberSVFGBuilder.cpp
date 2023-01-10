@@ -31,6 +31,7 @@
 #include "SABER/SaberCheckerAPI.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -99,17 +100,48 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
     }
 }
 
-PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPTSSMap& cachedPtsMap)
+
+/*
+ * https://github.com/SVF-tools/SVF/issues/991
+ * 
+ * Originally, this function will collect all base pointers with all their fields 
+ * inside the points-to set of global variables. But if a global variable points 
+ * to the pointer returned by malloc() at some program points, then all pointers 
+ * returned by malloc() will be included in the global set because of the 
+ * context-insensitive pointer analysis results. This will make saber abandon 
+ * too many slicing thus miss potential bugs.
+ * 
+ * We add an option "saber-collect-extret-globals" to control whether this function
+ * will collect external functions' returned pointers. This option is true by default, 
+ * making it to be false will let saber analyze more slicing but cause performance downgrade.
+ *
+ */
+PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeToPTSSMap& cachedPtsMap)
 {
     SVFIR* pag = svfg->getPAG();
 
     NodeID baseId = pag->getBaseObjVar(id);
     NodeToPTSSMap::iterator it = cachedPtsMap.find(baseId);
     if(it!=cachedPtsMap.end())
+    {
         return it->second;
+    }
     else
     {
         PointsTo& pts = cachedPtsMap[baseId];
+        // base object
+        if (!Options::CollectExtRetGlobals())
+        {
+            if(pta->isFIObjNode(baseId) && pag->getGNode(baseId)->hasValue())
+            {
+                const SVFCallInst* inst = SVFUtil::dyn_cast<SVFCallInst>(pag->getGNode(baseId)->getValue());
+                if(inst && SVFUtil::isExtCall(inst))
+                {
+                    return pts;
+                }
+            }       
+        }
+
         pts |= pag->getFieldsAfterCollapse(baseId);
 
         WorkList worklist;
@@ -127,7 +159,6 @@ PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeTo
         }
         return pts;
     }
-
 }
 
 /*!
