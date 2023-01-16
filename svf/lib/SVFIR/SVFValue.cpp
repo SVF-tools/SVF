@@ -4,6 +4,183 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+cJSON* SVFValue::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = cJSON_CreateObject();
+    JSON_DUMP_NUMBER_FIELD(root, kind);
+    JSON_DUMP_BOOL_FIELD(root, ptrInUncalledFun);
+    JSON_DUMP_BOOL_FIELD(root, constDataOrAggData);
+    JSON_DUMP_TYPE_FIELD(dumpInfo, root, type);
+    JSON_DUMP_STRING_FIELD(root, name);
+    JSON_DUMP_STRING_FIELD(root, sourceLoc);
+    return root;
+}
+
+cJSON* SVFLoopAndDomInfo::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = cJSON_CreateObject();
+
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, reachableBBs);
+
+#define JSON_DUMP_BB_MAP_FIELD(_field)                                         \
+    do                                                                         \
+    {                                                                          \
+        cJSON* node##_field = cJSON_CreateObject();                            \
+        for (const auto& BB2BBs : this->_field)                                \
+        {                                                                      \
+            cJSON* nodeBBs = cJSON_CreateArray();                              \
+            for (const SVFBasicBlock* bb : BB2BBs.second)                      \
+                cJSON_AddItemToArray(nodeBBs,                                  \
+                                     cJSON_CreateStringReference(              \
+                                         dumpInfo.getStrValueIndex(bb)));      \
+            cJSON_AddItemToObjectCS(node##_field,                              \
+                                    dumpInfo.getStrValueIndex(BB2BBs.first),   \
+                                    nodeBBs);                                  \
+        }                                                                      \
+        cJSON_AddItemToObjectCS(root, #_field, node##_field);                  \
+    } while (0)
+
+    JSON_DUMP_BB_MAP_FIELD(dtBBsMap);
+    JSON_DUMP_BB_MAP_FIELD(pdtBBsMap);
+    JSON_DUMP_BB_MAP_FIELD(dfBBsMap);
+    JSON_DUMP_BB_MAP_FIELD(bb2LoopMap);
+
+#undef BB_MAP_FIELD_TO_JSON
+
+    return root;
+}
+
+cJSON* SVFFunction::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = this->SVFValue::toJson(dumpInfo);
+
+    // isDecl
+    JSON_DUMP_BOOL_FIELD(root, isDecl);
+    // intrinsic
+    JSON_DUMP_BOOL_FIELD(root, intrinsic);
+    // addrTaken
+    JSON_DUMP_BOOL_FIELD(root, addrTaken);
+    // isUncalled
+    JSON_DUMP_BOOL_FIELD(root, isUncalled);
+    // isNotRet
+    JSON_DUMP_BOOL_FIELD(root, isNotRet);
+    // varArg
+    JSON_DUMP_BOOL_FIELD(root, varArg);
+    // funcType
+    JSON_DUMP_TYPE_FIELD(dumpInfo, root, funcType);
+    // loopAndDom
+    cJSON* nodeLD = loopAndDom->toJson(dumpInfo);
+    cJSON_AddItemToObjectCS(root, "loopAndDom", nodeLD);
+    // realDefFun
+    JSON_DUMP_VALUE_FIELD(dumpInfo, root, realDefFun);
+    // allBBs
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, allBBs);
+    // owns allArgs
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, allArgs);
+
+    return root;
+}
+
+cJSON* SVFBasicBlock::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = this->SVFValue::toJson(dumpInfo);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, allInsts);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, succBBs);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, predBBs);
+    JSON_DUMP_VALUE_FIELD(dumpInfo, root, fun);
+    return root;
+}
+
+cJSON* SVFInstruction::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = this->SVFValue::toJson(dumpInfo);
+    JSON_DUMP_VALUE_FIELD(dumpInfo, root, bb);
+    JSON_DUMP_BOOL_FIELD(root, terminator);
+    JSON_DUMP_BOOL_FIELD(root, ret);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, succInsts);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, predInsts);
+    return root;
+}
+
+cJSON* SVFCallInst::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = this->SVFInstruction::toJson(dumpInfo);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, args);
+    JSON_DUMP_BOOL_FIELD(root, varArg);
+    JSON_DUMP_VALUE_FIELD(dumpInfo, root, calledVal);
+    return root;
+}
+
+cJSON* SVFVirtualCallInst::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = this->SVFCallInst::toJson(dumpInfo);
+    JSON_DUMP_VALUE_FIELD(dumpInfo, root, vCallVtblPtr);
+    JSON_DUMP_NUMBER_FIELD(root, virtualFunIdx);
+    JSON_DUMP_STRING_FIELD(root, funNameOfVcall);
+    return root;
+}
+
+cJSON* SVFConstant::toJson(DumpInfo& dumpInfo) const
+{
+    return this->SVFValue::toJson(dumpInfo);
+}
+
+cJSON* SVFGlobalValue::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = this->SVFConstant::toJson(dumpInfo);
+    JSON_DUMP_VALUE_FIELD(dumpInfo, root, realDefGlobal);
+    return root;
+}
+
+cJSON* SVFArgument::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = this->SVFValue::toJson(dumpInfo);
+    JSON_DUMP_VALUE_FIELD(dumpInfo, root, fun);
+    JSON_DUMP_NUMBER_FIELD(root, argNo);
+    JSON_DUMP_BOOL_FIELD(root, uncalled);
+    return root;
+}
+
+cJSON* SVFConstantData::toJson(DumpInfo& dumpInfo) const
+{
+    return this->SVFConstant::toJson(dumpInfo);
+}
+
+cJSON* SVFConstantInt::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = this->SVFConstantData::toJson(dumpInfo);
+    JSON_DUMP_NUMBER_FIELD(root, zval);
+    JSON_DUMP_NUMBER_FIELD(root, sval);
+    return root;
+}
+
+cJSON* SVFConstantFP::toJson(DumpInfo& dumpInfo) const
+{
+    cJSON* root = this->SVFConstantData::toJson(dumpInfo);
+    JSON_DUMP_NUMBER_FIELD(root, dval);
+    return root;
+}
+
+cJSON* SVFConstantNullPtr::toJson(DumpInfo& dumpInfo) const
+{
+   return this->SVFConstantData::toJson(dumpInfo);
+}
+
+cJSON* SVFBlackHoleValue::toJson(DumpInfo& dumpInfo) const
+{
+   return this->SVFConstantData::toJson(dumpInfo);
+}
+
+cJSON* SVFOtherValue::toJson(DumpInfo& dumpInfo) const
+{
+   return this->SVFValue::toJson(dumpInfo);
+}
+
+cJSON* SVFMetadataAsValue::toJson(DumpInfo& dumpInfo) const
+{
+   return this->SVFOtherValue::toJson(dumpInfo);
+}
+
 /// Add field (index and offset) with its corresponding type
 void StInfo::addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx)
 {
@@ -42,7 +219,7 @@ void SVFLoopAndDomInfo::getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exi
             {
                 for (const SVFBasicBlock* succ : block->getSuccessors())
                 {
-                    if ((std::find(blocks.begin(), blocks.end(), succ)==blocks.end()))
+                    if (std::find(blocks.begin(), blocks.end(), succ)==blocks.end())
                         exitbbs.push_back(succ);
                 }
             }
@@ -122,8 +299,12 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
-SVFFunction::SVFFunction(const std::string& f, const SVFType* ty, const SVFFunctionType* ft, bool declare, bool intric, bool adt, bool varg, SVFLoopAndDomInfo* ld):
-    SVFValue(f,ty,SVFValue::SVFFunc),isDecl(declare), intricsic(intric), addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg), funcType(ft), loopAndDom(ld), realDefFun(nullptr)
+SVFFunction::SVFFunction(const std::string& f, const SVFType* ty,
+                         const SVFFunctionType* ft, bool declare, bool intrin,
+                         bool adt, bool varg, SVFLoopAndDomInfo* ld)
+    : SVFValue(f, ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrin),
+      addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
+      funcType(ft), loopAndDom(ld), realDefFun(nullptr)
 {
 }
 

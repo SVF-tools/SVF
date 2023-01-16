@@ -31,6 +31,8 @@
 #define INCLUDE_SVFIR_SVFTYPE_H_
 
 #include "Util/SparseBitVector.h"
+#include "Util/cJSON.h"
+#include "SVFIR/DumpHelper.h"
 
 #include <deque>
 #include <iostream>
@@ -68,7 +70,7 @@ template <class S, class T> struct Hash<std::pair<S, T>>
     // Pairing function from: http://szudzik.com/ElegantPairing.pdf
     static size_t szudzik(size_t a, size_t b)
     {
-        return a > b ? b * b + a : a * a + a + b;
+        return a > b ? (b * b + a) : (a * a + a + b);
     }
 
     size_t operator()(const std::pair<S, T>& t) const
@@ -231,6 +233,8 @@ public:
     {
         return stride;
     }
+
+    cJSON* toJson(DumpInfo& dumpInfo) const;
 };
 
 class SVFType
@@ -272,6 +276,8 @@ public:
     {
         return kind;
     }
+
+    virtual cJSON* toJson(DumpInfo& dumpInfo) const;
 
     /// Needs to be implemented by a specific SVF front end (e.g., the
     /// implementation in LLVMUtil)
@@ -335,16 +341,19 @@ public:
     {
         return ptrElementType;
     }
+
+    virtual cJSON* toJson(DumpInfo& dumpInfo) const;
 };
 
-class SVFIntergerType : public SVFType
+class SVFIntegerType : public SVFType
 {
 public:
-    SVFIntergerType() : SVFType(true, SVFIntergerTy) {}
+    SVFIntegerType() : SVFType(true, SVFIntergerTy) {}
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFIntergerTy;
     }
+    virtual cJSON* toJson(DumpInfo& dumpInfo) const;
 };
 
 class SVFFunctionType : public SVFType
@@ -365,6 +374,7 @@ public:
     {
         return retTy;
     }
+    virtual cJSON* toJson(DumpInfo& dumpInfo) const;
 };
 
 class SVFStructType : public SVFType
@@ -375,6 +385,7 @@ public:
     {
         return node->getKind() == SVFStructTy;
     }
+    virtual cJSON* toJson(DumpInfo& dumpInfo) const;
 };
 
 class SVFArrayType : public SVFType
@@ -385,6 +396,7 @@ public:
     {
         return node->getKind() == SVFArrayTy;
     }
+    virtual cJSON* toJson(DumpInfo& dumpInfo) const;
 };
 
 class SVFOtherType : public SVFType
@@ -395,6 +407,7 @@ public:
     {
         return node->getKind() == SVFOtherTy;
     }
+    virtual cJSON* toJson(DumpInfo& dumpInfo) const;
 };
 
 // TODO: be explicit that this is a pair of 32-bit unsigneds?

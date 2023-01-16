@@ -30,10 +30,12 @@
 #ifndef INCLUDE_SVFMODULE_H_
 #define INCLUDE_SVFMODULE_H_
 
+#include "SVFIR/DumpHelper.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/ExtAPI.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/ThreadAPI.h"
+#include "Util/cJSON.h"
 
 namespace SVF
 {
@@ -75,6 +77,8 @@ public:
     }
 
     ~SVFModule();
+
+    cJSON* toJson(DumpInfo& dumpInfo) const;
 
     static inline void setPagFromTXT(std::string txt)
     {

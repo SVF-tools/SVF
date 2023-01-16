@@ -33,6 +33,8 @@
 #include "SVFIR/SVFType.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
+#include "Util/cJSON.h"
+#include "SVFIR/DumpHelper.h"
 
 namespace SVF
 {
@@ -66,6 +68,8 @@ public:
     }
 
     virtual ~SVFLoopAndDomInfo() {}
+
+    cJSON* toJson(DumpInfo& dumpInfo) const;
 
     inline const Map<const SVFBasicBlock*,BBSet>& getDomFrontierMap() const
     {
@@ -252,6 +256,8 @@ public:
         return o;
     }
     //@}
+
+    virtual cJSON* toJson(DumpInfo& dumpInfo) const;
 };
 
 class SVFFunction : public SVFValue
@@ -266,7 +272,7 @@ public:
 
 private:
     bool isDecl;   /// return true if this function does not have a body
-    bool intricsic; /// return true if this function is an intricsic function (e.g., llvm.dbg), which does not reside in the application code
+    bool intrinsic; /// return true if this function is an intrinsic function (e.g., llvm.dbg), which does not reside in the application code
     bool addrTaken; /// return true if this function is address-taken (for indirect call purposes)
     bool isUncalled;    /// return true if this function is never called
     bool isNotRet;   /// return true if this function never returns
@@ -307,10 +313,12 @@ protected:
     /// @}
 
 public:
-    SVFFunction(const std::string& f, const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intricsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
+    SVFFunction(const std::string& f, const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
     SVFFunction(const std::string& f) = delete;
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
+
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 
     static inline bool classof(const SVFValue *node)
     {
@@ -328,7 +336,7 @@ public:
 
     inline bool isIntrinsic() const
     {
-        return intricsic;
+        return intrinsic;
     }
 
     inline bool hasAddressTaken() const
@@ -509,6 +517,8 @@ public:
         return node->getKind() == SVFBB;
     }
 
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
+
     inline const std::vector<const SVFInstruction*>& getInstructionList() const
     {
         return allInsts;
@@ -591,6 +601,8 @@ public:
                node->getKind() == SVFVCall;
     }
 
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
+
     inline const SVFBasicBlock* getParent() const
     {
         return bb;
@@ -669,6 +681,9 @@ public:
     {
         return node->getKind() == SVFCall || node->getKind() == SVFVCall;
     }
+
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
+
     inline u32_t arg_size() const
     {
         return args.size();
@@ -758,6 +773,8 @@ public:
     {
         return node->getKind() == SVFVCall;
     }
+
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 };
 
 class SVFConstant : public SVFValue
@@ -778,6 +795,8 @@ public:
                node->getKind() == SVFNullPtr ||
                node->getKind() == SVFBlackHole;
     }
+
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 };
 
 class SVFGlobalValue : public SVFConstant
@@ -799,6 +818,7 @@ public:
     }
     SVFGlobalValue() = delete;
 
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 
     inline const SVFValue* getDefGlobalForMultipleModule() const
     {
@@ -849,6 +869,8 @@ public:
     {
         return node->getKind() == SVFArg;
     }
+
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 };
 
 
@@ -877,6 +899,8 @@ public:
                node->getKind() == SVFNullPtr ||
                node->getKind() == SVFBlackHole;
     }
+
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 };
 
 
@@ -909,6 +933,8 @@ public:
     {
         return sval;
     }
+
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 };
 
 
@@ -934,6 +960,7 @@ public:
     {
         return node->getKind() == SVFConstFP;
     }
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 };
 
 
@@ -954,6 +981,7 @@ public:
     {
         return node->getKind() == SVFNullPtr;
     }
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 };
 
 class SVFBlackHoleValue : public SVFConstantData
@@ -973,6 +1001,7 @@ public:
     {
         return node->getKind() == SVFBlackHole;
     }
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 };
 
 class SVFOtherValue : public SVFValue
@@ -987,6 +1016,7 @@ public:
     {
         return node->getKind() == SVFOther;
     }
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 };
 
 /*
@@ -1008,6 +1038,7 @@ public:
     {
         return node->getKind() == SVFMetaAsValue;
     }
+    cJSON* toJson(DumpInfo& dumpInfo) const override;
 };
 
 

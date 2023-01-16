@@ -25,6 +25,7 @@
 #include "SVFIR/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
+#include "Util/cJSON.h"
 
 using namespace SVF;
 
@@ -51,4 +52,35 @@ const SVFFunction* SVFModule::getSVFFunction(std::string name)
         }
     }
     return nullptr;
+}
+
+cJSON* SVFModule::toJson(DumpInfo& dumpInfo) const
+{
+    // Top json creation
+    cJSON* root = cJSON_CreateObject();
+
+    cJSON* nodeAllTypes = cJSON_CreateArray();
+    cJSON_AddItemToObjectCS(root, "allTypes", nodeAllTypes);
+    cJSON* nodeAllValues = cJSON_CreateArray();
+    cJSON_AddItemToObjectCS(root, "allValues", nodeAllValues);
+
+    JSON_DUMP_STRING_FIELD(root, pagReadFromTxt);
+    JSON_DUMP_STRING_FIELD(root, moduleIdentifier);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, FunctionSet);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, GlobalSet);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, AliasSet);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, ConstantSet);
+    JSON_DUMP_VALUE_LIST_FIELD(dumpInfo, root, OtherValueSet);
+
+    for (size_t i = 0; i < dumpInfo.allValues.size(); ++i) {
+        cJSON* nodeVal = dumpInfo.allValues[i]->toJson(dumpInfo);
+        cJSON_AddItemToArray(nodeAllValues, nodeVal);
+    }
+
+    for (size_t i = 0; i < dumpInfo.allTypes.size(); ++i) {
+        cJSON* nodeType = dumpInfo.allTypes[i]->toJson(dumpInfo);
+        cJSON_AddItemToArray(nodeAllTypes, nodeType);
+    }
+
+    return root;
 }
