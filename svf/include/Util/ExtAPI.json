@@ -4974,35 +4974,35 @@
         "arguments":  "(i8*, i8, i32, i32, i1)",
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "memset_like": ["0", "1", "2"]
+        "memset_like": ["Arg0", "Arg1", "Arg2"]
     },
     "llvm.memset.p0i8.i32": {
         "return":  "void",
         "arguments":  "(i8*, i8, i32, i32, i1)",
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "memset_like": ["0", "1", "2"]
+        "memset_like": ["Arg0", "Arg1", "Arg2"]
     },
     "llvm.memset.p0i8.i64": {
         "return":  "void",
         "arguments":  "(i8*, i8, i64, i32, i1)",
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "memset_like": ["0", "1", "2"]
+        "memset_like": ["Arg0", "Arg1", "Arg2"]
     },
     "__memset_chk": {
         "return":  "void *",
         "arguments":  "(void *, int, size_t, size_t)",
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
-        "memset_like": ["0", "1", "2"]
+        "memset_like": ["Arg0", "Arg1", "Arg2"]
     },
     "llvm.memcpy":  {
         "return":  "void",
         "arguments":  "(i8*, i8*, i32, i32, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5013,7 +5013,7 @@
         "arguments":  "(i8*, i8*, i32, i32, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5024,7 +5024,7 @@
         "arguments":  "(i8*, *i8, i64, i32, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5035,7 +5035,7 @@
         "arguments":  "(i8*, i8*, i32, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5046,7 +5046,7 @@
         "arguments":  "(i8*, i8*, i32, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5057,7 +5057,7 @@
         "arguments":  "(i8*, i8*, i64, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5068,7 +5068,7 @@
         "arguments":  "(void *restrict, const void *restrict, int, size_t)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5079,7 +5079,7 @@
         "arguments":  "(void *, const void *, size_t)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5090,7 +5090,7 @@
         "arguments":  "(void *, const void *, size_t)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5108,14 +5108,14 @@
         "arguments":  "(const void *, void *, size_t)",
         "type": "EFT_A1R_A0R",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["1", "0", "2"]
+        "memcpy_like":  ["Arg1", "Arg0", "Arg2"]
     },
     "iconv":    {
         "return":  "size_t",
         "arguments":  "(iconv_t, char **restrict, size_t *restrict, char **restrict, size_t *restrict)",
         "type": "EFT_A3R_A1R_NS",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["3", "1"]
+        "memcpy_like":  ["Arg3", "Arg1"]
     },
     "strtod":   {
         "return":  "double",
@@ -5192,7 +5192,7 @@
         "arguments":  "(char *, const char *, size_t)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5203,7 +5203,7 @@
         "arguments":  "(char *, const char *, size_t)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5214,7 +5214,7 @@
         "arguments":  "(char *restrict, const char *restrict)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1"],
+        "memcpy_like":  ["Arg0", "Arg1"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5225,7 +5225,7 @@
         "arguments":  "(char *, char *)", 
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1"],
+        "memcpy_like":  ["Arg0", "Arg1"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5236,7 +5236,7 @@
         "arguments":  "(char *, const char *)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1"],
+        "memcpy_like":  ["Arg0", "Arg1"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5247,7 +5247,7 @@
         "arguments":  "(char *, const char *, size_t)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5258,7 +5258,7 @@
         "arguments":  "(char *, const char *, size_t)",
         "type": "EFT_L_A0__A1_A0",
         "overwrite_app_function": 0,
-        "memcpy_like":  ["0", "1", "2"],
+        "memcpy_like":  ["Arg0", "Arg1", "Arg2"],
         "CopyStmt": {
 			"src": "Arg0",
 			"dst": "Ret"
@@ -5702,6 +5702,20 @@
             "src": "Dummy",
             "dst": "Ret",
             "offset": "0"
+        }
+    },
+    "my_multi_free":{
+        "return":  "void",
+        "arguments":  "(int id, void** ptr)",
+        "type": "EFT_FREE_MULTILEVEL",
+        "overwrite_app_function": 1,
+        "LoadStmt": {
+            "src": "Arg1",
+            "dst": "Dummy"
+        },
+        "StoreStmt": {
+            "src": "NullPtr",
+            "dst": "Dummy"
         }
     }
 }

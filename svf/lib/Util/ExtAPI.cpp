@@ -244,8 +244,9 @@ u32_t ExtAPI::getArgPos(const std::string& s)
 // return value = -1 is an inst node
 // return value = -2 is a Dummy node
 // return value = -3 is an object node
-// return value = -4 is an offset
-// return value = -5 is an illegal operand format
+// return value = -4 is a nullptr node
+// return value = -5 is an offset
+// return value = -6 is an illegal operand format
 s32_t ExtAPI::getNodeIDType(const std::string& s)
 {
     u32_t argPos = -1;
@@ -271,6 +272,7 @@ s32_t ExtAPI::getNodeIDType(const std::string& s)
         {"Ret", -1},
         {"Dummy", -2},
         {"Obj", -3},
+        {"NullPtr", -4},
         {"Add", BinaryOPStmt::Add},
         {"Sub", BinaryOPStmt::Sub},
         {"Mul", BinaryOPStmt::Mul},
@@ -302,9 +304,9 @@ s32_t ExtAPI::getNodeIDType(const std::string& s)
     while (i < s.size() && isdigit(s[i]))
         i++;
     if (i == s.size())
-        return -4;
+        return -5;
     // illegal operand format
-    return -5;
+    return -6;
 }
 
 // Get external function name, e.g "memcpy"
