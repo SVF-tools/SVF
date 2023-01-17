@@ -176,9 +176,12 @@ void SVFIR2ItvExeState::initValVar(const ValVar *valVar, u32_t varId)
 
     if (const SVFType *type = valVar->getType())
     {
-        //TODO:miss floatpointerty, voidty, labelty, matadataty
-        if (type->getKind() == SVFType::SVFIntergerTy || type->getKind() == SVFType::SVFPointerTy || type->getKind() == SVFType::SVFFunctionTy
-                || type->getKind()== SVFType::SVFStructTy || type->getKind()==SVFType::SVFArrayTy)
+        // TODO:miss floatpointerty, voidty, labelty, matadataty
+        if (type->getKind() == SVFType::SVFIntegerTy ||
+            type->getKind() == SVFType::SVFPointerTy ||
+            type->getKind() == SVFType::SVFFunctionTy ||
+            type->getKind() == SVFType::SVFStructTy ||
+            type->getKind() == SVFType::SVFArrayTy)
             // continue with null expression
             _es[varId] = IntervalValue::top();
         else
