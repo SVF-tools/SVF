@@ -243,7 +243,7 @@ public:
     {
         SVFTy,
         SVFPointerTy,
-        SVFIntergerTy,
+        SVFIntegerTy,
         SVFFunctionTy,
         SVFStructTy,
         SVFArrayTy,
@@ -337,13 +337,13 @@ public:
     }
 };
 
-class SVFIntergerType : public SVFType
+class SVFIntegerType : public SVFType
 {
 public:
-    SVFIntergerType() : SVFType(true, SVFIntergerTy) {}
+    SVFIntegerType() : SVFType(true, SVFIntegerTy) {}
     static inline bool classof(const SVFType* node)
     {
-        return node->getKind() == SVFIntergerTy;
+        return node->getKind() == SVFIntegerTy;
     }
 };
 

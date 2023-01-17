@@ -1045,7 +1045,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
         svftype = new SVFPointerType(getSVFType(LLVMUtil::getPtrElementType(pt)));
     else if (SVFUtil::isa<IntegerType>(T))
-        svftype = new SVFIntergerType();
+        svftype = new SVFIntegerType();
     else if (const FunctionType* ft = SVFUtil::dyn_cast<FunctionType>(T))
         svftype = new SVFFunctionType(getSVFType(ft->getReturnType()));
     else if (SVFUtil::isa<StructType>(T))

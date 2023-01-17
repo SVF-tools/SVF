@@ -266,7 +266,7 @@ public:
 
 private:
     bool isDecl;   /// return true if this function does not have a body
-    bool intricsic; /// return true if this function is an intricsic function (e.g., llvm.dbg), which does not reside in the application code
+    bool intrinsic; /// return true if this function is an intrinsic function (e.g., llvm.dbg), which does not reside in the application code
     bool addrTaken; /// return true if this function is address-taken (for indirect call purposes)
     bool isUncalled;    /// return true if this function is never called
     bool isNotRet;   /// return true if this function never returns
@@ -307,7 +307,7 @@ protected:
     /// @}
 
 public:
-    SVFFunction(const std::string& f, const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intricsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
+    SVFFunction(const std::string& f, const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
     SVFFunction(const std::string& f) = delete;
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
@@ -328,7 +328,7 @@ public:
 
     inline bool isIntrinsic() const
     {
-        return intricsic;
+        return intrinsic;
     }
 
     inline bool hasAddressTaken() const
