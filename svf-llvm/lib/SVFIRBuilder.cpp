@@ -1198,6 +1198,11 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                 {
                     if( cs->arg_size() <= (u32_t) nodeIDType)
                         assert(false && "Argument out of bounds!");
+                    else if (operation.getOperator() == "memcpy_like" || operation.getOperator() == "memset_like")
+                    {
+                        operands.push_back(nodeIDType);
+                        nodeIDMap[s] = nodeIDType;
+                    }
                     else
                     {
                         operands.push_back(getValueNode(cs->getArgOperand(nodeIDType)));
@@ -1223,6 +1228,11 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     }
                 }
                 else if (nodeIDType == -4)
+                {
+                    operands.push_back(pag->getNullPtr());
+                    nodeIDMap[s] = operands[operands.size() - 1];
+                }
+                else if (nodeIDType == -5)
                 {
                     for (char const &c : s)
                     {
@@ -1361,17 +1371,17 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         // this is for memset(void *str, int c, size_t n)
                         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
                         std::vector<LocationSet> dstFields;
-                        const Type* dtype = getBaseTypeAndFlattenedFields(cs->getArgOperand(0), dstFields, cs->getArgOperand(2));
+                        const Type* dtype = getBaseTypeAndFlattenedFields(cs->getArgOperand(op.getOperands()[0]), dstFields, cs->getArgOperand(op.getOperands()[2]));
                         u32_t sz = dstFields.size();
                         //For each field (i), add store edge *(arg0 + i) = arg1
                         for (u32_t index = 0; index < sz; index++)
                         {
                             const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(dtype), dstFields[index].accumulateConstantFieldIdx());
-                            NodeID dField = getGepValVar(cs->getArgOperand(0), dstFields[index], dElementType);
-                            addStoreEdge(getValueNode(cs->getArgOperand(1)),dField);
+                            NodeID dField = getGepValVar(cs->getArgOperand(op.getOperands()[0]), dstFields[index], dElementType);
+                            addStoreEdge(getValueNode(cs->getArgOperand(op.getOperands()[1])),dField);
                         }
                         if(SVFUtil::isa<PointerType>(cs->getType()))
-                            addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs));
+                            addCopyEdge(getValueNode(cs->getArgOperand(op.getOperands()[0])), getValueNode(cs));
                     }
                     else if (op.getOperator() == "memcpy_like")
                     {
