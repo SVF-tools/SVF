@@ -690,13 +690,11 @@ bool SVFIR::isNonPointerObj(NodeID id) const
     }
 }
 /*
- * If this is a dummy node or node does not have incoming edges we assume it is not a pointer here
+ * If this is a dummy node we assume it is not a pointer here
  */
 bool SVFIR::isValidPointer(NodeID nodeId) const
 {
     SVFVar* node = pag->getGNode(nodeId);
-    if ((node->getInEdges().empty() && node->getOutEdges().empty()))
-        return false;
     return node->isPointer();
 }
 
