@@ -690,11 +690,24 @@ bool SVFIR::isNonPointerObj(NodeID id) const
     }
 }
 /*
- * If this is a dummy node we assume it is not a pointer here
+ * If this is a dummy node or node does not have incoming edges and outcoming edges we assume it is not a pointer here.
+ * However, if it is a pointer and it is an argument of a function definition, we assume it is a pointer here.
  */
 bool SVFIR::isValidPointer(NodeID nodeId) const
 {
     SVFVar* node = pag->getGNode(nodeId);
+
+    if (node->hasValue() && node->isPointer())
+    {
+        if(const SVFArgument* arg = SVFUtil::dyn_cast<SVFArgument>(node->getValue()))
+        {
+            if (!(arg->getParent()->isDeclaration()))
+                return true;
+        }
+    }
+
+    if ((node->getInEdges().empty() && node->getOutEdges().empty()))
+        return false;
     return node->isPointer();
 }
 
