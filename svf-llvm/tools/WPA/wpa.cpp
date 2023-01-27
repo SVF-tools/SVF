@@ -29,6 +29,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "WPA/WPAPass.h"
+#include "SVFIR/SVFModuleJsonDumper.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
@@ -36,21 +37,30 @@ using namespace llvm;
 using namespace std;
 using namespace SVF;
 
-int main(int argc, char ** argv)
+static Option<std::string> dumpToJsonFile("dump-json",
+                                          "Dump SVFModule to JSON file", "");
+
+int main(int argc, char** argv)
 {
 
-    char **arg_value = new char*[argc];
+    char** arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
-    moduleNameVec = OptionBase::parseOptions(
-                        argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>"
-                    );
+    moduleNameVec =
+        OptionBase::parseOptions(argc, argv, "Whole Program Points-to Analysis",
+                                 "[options] <input-bitcode...>");
 
     if (Options::WriteAnder() == "ir_annotator")
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    SVFModule* svfModule =
+        LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+
+    std::string jsonPath = dumpToJsonFile();
+    if (!jsonPath.empty())
+        SVFModuleJsonDumper(svfModule, jsonPath);
+
     /// Build SVFIR
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();

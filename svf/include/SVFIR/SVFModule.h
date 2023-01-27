@@ -40,6 +40,7 @@ namespace SVF
 
 class SVFModule
 {
+    friend class SVFModuleJsonDumper;
 public:
     typedef std::vector<const SVFFunction*> FunctionSetType;
     typedef std::vector<SVFGlobalValue*> GlobalSetType;
