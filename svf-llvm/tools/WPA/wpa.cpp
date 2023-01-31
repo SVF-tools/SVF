@@ -29,7 +29,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "WPA/WPAPass.h"
-#include "SVFIR/SVFModuleJsonDumper.h"
+#include "SVFIR/SVFModuleRW.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 
     std::string jsonPath = dumpToJsonFile();
     if (!jsonPath.empty())
-        SVFModuleJsonDumper(svfModule, jsonPath);
+        SVFModuleWrite(svfModule, jsonPath);
 
     /// Build SVFIR
     SVFIRBuilder builder(svfModule);

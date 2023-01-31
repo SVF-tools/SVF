@@ -1,4 +1,4 @@
-#include "SVFIR/SVFModuleJsonDumper.h"
+#include "SVFIR/SVFModuleRW.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "Util/cJSON.h"
@@ -96,7 +96,7 @@ SVFValue* createValue(SVFValue::SVFValKind kind);
         cJSON_AddItemToObjectCS((root), #field, node_##field);                 \
     } while (0)
 
-SVFModuleJsonDumper::SVFModuleJsonDumper(const SVFModule* module)
+SVFModuleWrite::SVFModuleWrite(const SVFModule* module)
     : module(module), jsonStr(nullptr)
 {
     const std::size_t reserveSize =
@@ -111,14 +111,14 @@ SVFModuleJsonDumper::SVFModuleJsonDumper(const SVFModule* module)
     getStrOfIndex(0);
 }
 
-SVFModuleJsonDumper::SVFModuleJsonDumper(const SVFModule* module,
+SVFModuleWrite::SVFModuleWrite(const SVFModule* module,
                                          const std::string& path)
-    : SVFModuleJsonDumper(module)
+    : SVFModuleWrite(module)
 {
     dumpJsonToPath(path);
 }
 
-SVFModuleJsonDumper::~SVFModuleJsonDumper()
+SVFModuleWrite::~SVFModuleWrite()
 {
     if (jsonStr)
     {
@@ -126,7 +126,7 @@ SVFModuleJsonDumper::~SVFModuleJsonDumper()
     }
 }
 
-void SVFModuleJsonDumper::dumpJsonToPath(const std::string& path)
+void SVFModuleWrite::dumpJsonToPath(const std::string& path)
 {
     std::ofstream jsonFile(path);
     if (jsonFile.is_open())
@@ -141,7 +141,7 @@ void SVFModuleJsonDumper::dumpJsonToPath(const std::string& path)
     }
 }
 
-void SVFModuleJsonDumper::dumpJsonToOstream(std::ostream& os)
+void SVFModuleWrite::dumpJsonToOstream(std::ostream& os)
 {
     if (!jsonStr)
     {
@@ -152,7 +152,7 @@ void SVFModuleJsonDumper::dumpJsonToOstream(std::ostream& os)
     os << jsonStr << std::endl;
 }
 
-TypeIndex SVFModuleJsonDumper::getTypeIndex(const SVFType* type)
+TypeIndex SVFModuleWrite::getTypeIndex(const SVFType* type)
 {
     if (type == nullptr)
         return 0;
@@ -165,7 +165,7 @@ TypeIndex SVFModuleJsonDumper::getTypeIndex(const SVFType* type)
     return pair.first->second;
 }
 
-ValueIndex SVFModuleJsonDumper::getValueIndex(const SVFValue* value)
+ValueIndex SVFModuleWrite::getValueIndex(const SVFValue* value)
 {
     if (value == nullptr)
         return 0;
@@ -178,7 +178,7 @@ ValueIndex SVFModuleJsonDumper::getValueIndex(const SVFValue* value)
     return pair.first->second;
 }
 
-const char* SVFModuleJsonDumper::getStrOfIndex(std::size_t index)
+const char* SVFModuleWrite::getStrOfIndex(std::size_t index)
 {
     // Invariant: forall i: allIndices[i] == hex(i) /\ len(allIndices) == N
     for (std::size_t i = allIndices.size(); i <= index; ++i)
@@ -191,17 +191,17 @@ const char* SVFModuleJsonDumper::getStrOfIndex(std::size_t index)
     // Postcondition: ensures len(allIndices) >= index + 1
 }
 
-const char* SVFModuleJsonDumper::getStrValueIndex(const SVFValue* value)
+const char* SVFModuleWrite::getStrValueIndex(const SVFValue* value)
 {
     return getStrOfIndex(getValueIndex(value));
 }
 
-const char* SVFModuleJsonDumper::getStrTypeIndex(const SVFType* type)
+const char* SVFModuleWrite::getStrTypeIndex(const SVFType* type)
 {
     return getStrOfIndex(getTypeIndex(type));
 }
 
-cJSON* SVFModuleJsonDumper::moduleToJson(const SVFModule* module)
+cJSON* SVFModuleWrite::moduleToJson(const SVFModule* module)
 {
     // Top-level json creation
     cJSON* root = cJSON_CreateObject();
@@ -238,7 +238,7 @@ cJSON* SVFModuleJsonDumper::moduleToJson(const SVFModule* module)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const StInfo* stInfo)
+cJSON* SVFModuleWrite::toJson(const StInfo* stInfo)
 {
     cJSON* root = cJSON_CreateObject();
 
@@ -246,7 +246,7 @@ cJSON* SVFModuleJsonDumper::toJson(const StInfo* stInfo)
 
     JSON_DUMP_CONTAINER_OF_NUMBER(root, stInfo, elemIdxVec);
 
-    cJSON* nodeFldMap = cJSON_CreateArray();
+    cJSON* nodeFldMap = cJSON_CreateObject();
     for (const auto& pair : stInfo->fldIdx2TypeMap)
     {
         const char* key = getStrOfIndex(pair.first);
@@ -268,7 +268,7 @@ cJSON* SVFModuleJsonDumper::toJson(const StInfo* stInfo)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFType* type)
+cJSON* SVFModuleWrite::toJson(const SVFType* type)
 {
     cJSON* root = cJSON_CreateObject();
 
@@ -284,41 +284,41 @@ cJSON* SVFModuleJsonDumper::toJson(const SVFType* type)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFPointerType* type)
+cJSON* SVFModuleWrite::toJson(const SVFPointerType* type)
 {
     cJSON* root = toJson(static_cast<const SVFType*>(type));
     JSON_DUMP_SVFTYPE(root, type, ptrElementType);
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFIntegerType* type)
+cJSON* SVFModuleWrite::toJson(const SVFIntegerType* type)
 {
     return toJson(static_cast<const SVFType*>(type));
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFFunctionType* type)
+cJSON* SVFModuleWrite::toJson(const SVFFunctionType* type)
 {
     cJSON* root = toJson(static_cast<const SVFType*>(type));
     JSON_DUMP_SVFTYPE(root, type, retTy);
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFStructType* type)
+cJSON* SVFModuleWrite::toJson(const SVFStructType* type)
 {
     return toJson(static_cast<const SVFType*>(type));
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFArrayType* type)
+cJSON* SVFModuleWrite::toJson(const SVFArrayType* type)
 {
     return toJson(static_cast<const SVFType*>(type));
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFOtherType* type)
+cJSON* SVFModuleWrite::toJson(const SVFOtherType* type)
 {
     return toJson(static_cast<const SVFType*>(type));
 }
 
-cJSON* SVFModuleJsonDumper::typeToJson(const SVFType* type)
+cJSON* SVFModuleWrite::typeToJson(const SVFType* type)
 {
     using SVFUtil::dyn_cast;
 
@@ -343,7 +343,7 @@ cJSON* SVFModuleJsonDumper::typeToJson(const SVFType* type)
     }
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFLoopAndDomInfo* ldInfo)
+cJSON* SVFModuleWrite::toJson(const SVFLoopAndDomInfo* ldInfo)
 {
     cJSON* root = cJSON_CreateObject();
 
@@ -373,7 +373,7 @@ cJSON* SVFModuleJsonDumper::toJson(const SVFLoopAndDomInfo* ldInfo)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFValue* value)
+cJSON* SVFModuleWrite::toJson(const SVFValue* value)
 {
     cJSON* root = cJSON_CreateObject();
     JSON_DUMP_NUMBER(root, value, kind);
@@ -385,7 +385,7 @@ cJSON* SVFModuleJsonDumper::toJson(const SVFValue* value)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFFunction* value)
+cJSON* SVFModuleWrite::toJson(const SVFFunction* value)
 {
     cJSON* root = toJson(static_cast<const SVFValue*>(value));
 
@@ -416,7 +416,7 @@ cJSON* SVFModuleJsonDumper::toJson(const SVFFunction* value)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFBasicBlock* value)
+cJSON* SVFModuleWrite::toJson(const SVFBasicBlock* value)
 {
     cJSON* root = toJson(static_cast<const SVFValue*>(value));
     JSON_DUMP_CONTAINER_OF_SVFVALUE(root, value, allInsts);
@@ -426,7 +426,7 @@ cJSON* SVFModuleJsonDumper::toJson(const SVFBasicBlock* value)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFInstruction* value)
+cJSON* SVFModuleWrite::toJson(const SVFInstruction* value)
 {
     cJSON* root = toJson(static_cast<const SVFValue*>(value));
     JSON_DUMP_SVFVALUE(root, value, bb);
@@ -437,7 +437,7 @@ cJSON* SVFModuleJsonDumper::toJson(const SVFInstruction* value)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFCallInst* value)
+cJSON* SVFModuleWrite::toJson(const SVFCallInst* value)
 {
     cJSON* root = toJson(static_cast<const SVFInstruction*>(value));
     JSON_DUMP_CONTAINER_OF_SVFVALUE(root, value, args);
@@ -446,7 +446,7 @@ cJSON* SVFModuleJsonDumper::toJson(const SVFCallInst* value)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFVirtualCallInst* value)
+cJSON* SVFModuleWrite::toJson(const SVFVirtualCallInst* value)
 {
     cJSON* root = toJson(static_cast<const SVFCallInst*>(value));
     JSON_DUMP_SVFVALUE(root, value, vCallVtblPtr);
@@ -455,19 +455,19 @@ cJSON* SVFModuleJsonDumper::toJson(const SVFVirtualCallInst* value)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFConstant* value)
+cJSON* SVFModuleWrite::toJson(const SVFConstant* value)
 {
     return toJson(static_cast<const SVFValue*>(value));
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFGlobalValue* value)
+cJSON* SVFModuleWrite::toJson(const SVFGlobalValue* value)
 {
     cJSON* root = toJson(static_cast<const SVFConstant*>(value));
     JSON_DUMP_SVFVALUE(root, value, realDefGlobal);
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFArgument* value)
+cJSON* SVFModuleWrite::toJson(const SVFArgument* value)
 {
     cJSON* root = toJson(static_cast<const SVFValue*>(value));
     JSON_DUMP_SVFVALUE(root, value, fun);
@@ -476,12 +476,12 @@ cJSON* SVFModuleJsonDumper::toJson(const SVFArgument* value)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFConstantData* value)
+cJSON* SVFModuleWrite::toJson(const SVFConstantData* value)
 {
     return toJson(static_cast<const SVFConstant*>(value));
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFConstantInt* value)
+cJSON* SVFModuleWrite::toJson(const SVFConstantInt* value)
 {
     cJSON* root = toJson(static_cast<const SVFConstantData*>(value));
     JSON_DUMP_NUMBER(root, value, zval);
@@ -489,34 +489,34 @@ cJSON* SVFModuleJsonDumper::toJson(const SVFConstantInt* value)
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFConstantFP* value)
+cJSON* SVFModuleWrite::toJson(const SVFConstantFP* value)
 {
     cJSON* root = toJson(static_cast<const SVFConstantData*>(value));
     JSON_DUMP_NUMBER(root, value, dval);
     return root;
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFConstantNullPtr* value)
+cJSON* SVFModuleWrite::toJson(const SVFConstantNullPtr* value)
 {
     return toJson(static_cast<const SVFConstantData*>(value));
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFBlackHoleValue* value)
+cJSON* SVFModuleWrite::toJson(const SVFBlackHoleValue* value)
 {
     return toJson(static_cast<const SVFConstantData*>(value));
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFOtherValue* value)
+cJSON* SVFModuleWrite::toJson(const SVFOtherValue* value)
 {
     return toJson(static_cast<const SVFValue*>(value));
 }
 
-cJSON* SVFModuleJsonDumper::toJson(const SVFMetadataAsValue* value)
+cJSON* SVFModuleWrite::toJson(const SVFMetadataAsValue* value)
 {
     return toJson(static_cast<const SVFOtherValue*>(value));
 }
 
-cJSON* SVFModuleJsonDumper::valueToJson(const SVFValue* value)
+cJSON* SVFModuleWrite::valueToJson(const SVFValue* value)
 {
     using SVFUtil::dyn_cast;
 
@@ -623,8 +623,8 @@ cJSON* SVFModuleJsonDumper::valueToJson(const SVFValue* value)
     {                                                                          \
         iter = (iter)->next;                                                   \
         assert(cJSON_IsString(iter) && !std::strcmp(#field, (iter)->string) && \
-               "TODO");                                                        \
-        (obj)->field = (iter)->valuestring);                                   \
+               "Expect a " #field " string");                                  \
+        (obj)->field = (iter)->valuestring;                                    \
     } while (0)
 
 #define JSON_READ_NUMBER(iter, obj, field)                                     \
@@ -632,7 +632,7 @@ cJSON* SVFModuleJsonDumper::valueToJson(const SVFValue* value)
     {                                                                          \
         iter = (iter)->next;                                                   \
         assert(cJSON_IsNumber(iter) && !std::strcmp(#field, (iter)->string) && \
-               "TODO");                                                        \
+               "Expect be a " #field " number");                               \
         (obj)->field =                                                         \
             static_cast<decltype((obj)->field)>((iter)->valuedouble);          \
     } while (0)
@@ -642,7 +642,7 @@ cJSON* SVFModuleJsonDumper::valueToJson(const SVFValue* value)
     {                                                                          \
         iter = (iter)->next;                                                   \
         assert(cJSON_IsBool(iter) && !std::strcmp(#field, (iter)->string) &&   \
-               "TODO should be bool");                                         \
+               "Expect a " #field " bool");                                    \
         (obj)->field = static_cast<bool>(cJSON_IsTrue(iter));                  \
     } while (0)
 
@@ -655,24 +655,22 @@ SVFType* createType(SVFType::SVFTyKind kind)
     case SVFType::SVFTy:
         assert(false && "Construction of RAW SVFType isn't allowed");
     case SVFType::SVFPointerTy:
-        return new SVFPointerType(nullptr);
+        return new SVFPointerType({});
     case SVFType::SVFIntegerTy:
         return new SVFIntegerType();
     case SVFType::SVFFunctionTy:
-        return new SVFFunctionType(nullptr);
+        return new SVFFunctionType({});
     case SVFType::SVFStructTy:
         return new SVFStructType();
     case SVFType::SVFArrayTy:
         return new SVFArrayType();
     case SVFType::SVFOtherTy:
-        return new SVFOtherType(false);
+        return new SVFOtherType({});
     }
 }
 
 SVFValue* createValue(SVFValue::SVFValKind kind)
 {
-    constexpr auto n = nullptr;
-    constexpr auto f = false;
     switch (kind)
     {
     default:
@@ -680,39 +678,39 @@ SVFValue* createValue(SVFValue::SVFValKind kind)
     case SVFValue::SVFVal:
         assert(false && "Creation of RAW SVFValue isn't allowed");
     case SVFValue::SVFFunc:
-        return new SVFFunction({}, n, n, f, f, f, f, n);
+        return new SVFFunction({}, {}, {}, {}, {}, {}, {}, {});
     case SVFValue::SVFBB:
-        return new SVFBasicBlock({}, n, n);
+        return new SVFBasicBlock({}, {}, {});
     case SVFValue::SVFInst:
-        return new SVFInstruction({}, n, n, f, f);
+        return new SVFInstruction({}, {}, {}, {}, {});
     case SVFValue::SVFCall:
-        return new SVFCallInst({}, n, n, f, f);
+        return new SVFCallInst({}, {}, {}, {}, {});
     case SVFValue::SVFVCall:
-        return new SVFVirtualCallInst({}, n, n, f, f);
+        return new SVFVirtualCallInst({}, {}, {}, {}, {});
     case SVFValue::SVFGlob:
-        return new SVFGlobalValue({}, n);
+        return new SVFGlobalValue({}, {});
     case SVFValue::SVFArg:
-        return new SVFArgument({}, n, n, 0, f);
+        return new SVFArgument({}, {}, {}, {}, {});
     case SVFValue::SVFConst:
-        return new SVFConstant({}, n);
+        return new SVFConstant({}, {});
     case SVFValue::SVFConstData:
-        return new SVFConstantData({}, n);
+        return new SVFConstantData({}, {});
     case SVFValue::SVFConstInt:
-        return new SVFConstantInt({}, n, 0, 0);
+        return new SVFConstantInt({}, {}, {}, {});
     case SVFValue::SVFConstFP:
-        return new SVFConstantFP({}, n, {});
+        return new SVFConstantFP({}, {}, {});
     case SVFValue::SVFNullPtr:
-        return new SVFConstantNullPtr({}, n);
+        return new SVFConstantNullPtr({}, {});
     case SVFValue::SVFBlackHole:
-        return new SVFBlackHoleValue({}, n);
+        return new SVFBlackHoleValue({}, {});
     case SVFValue::SVFMetaAsValue:
-        return new SVFMetadataAsValue({}, n);
+        return new SVFMetadataAsValue({}, {});
     case SVFValue::SVFOther:
-        return new SVFOtherValue({}, n);
+        return new SVFOtherValue({}, {});
     }
 }
 
-const SVFModule* SVFModuleJsonReader::readSvfModule(cJSON* node)
+const SVFModule* SVFModuleRead::readSvfModule(cJSON* node)
 {
     cJSON* element;
     cJSON* child = node ? node->child : nullptr;
@@ -781,13 +779,14 @@ const SVFModule* SVFModuleJsonReader::readSvfModule(cJSON* node)
 
     // Fill incomplete values in valuePool and typePool
     for (size_t i = 0; i < typePool.size(); ++i)
-    {
-    }
+        fillSvfTypeAt(i);
+    for (size_t i = 0; i < valuePool.size(); ++i)
+        fillSvfValueAt(i);
 
     return svfModule;
 }
 
-void SVFModuleJsonReader::fillSvfTypeAt(TypeIndex i)
+void SVFModuleRead::fillSvfTypeAt(TypeIndex i)
 {
     cJSON* childIter = typeArray[i]->child;
     SVFType* type = typePool[i];
@@ -797,11 +796,11 @@ void SVFModuleJsonReader::fillSvfTypeAt(TypeIndex i)
     default:
         assert(false && "Impossible SVFType kind");
 
-#define CASE(K)                                                                \
-    case SVFType::K: {                                                         \
-        auto _iter = readJson(childIter, SVFUtil::dyn_cast<K##pe>(type));      \
+#define CASE(Kind)                                                             \
+    case SVFType::Kind: {                                                      \
+        auto _iter = readJson(childIter, SVFUtil::dyn_cast<Kind##pe>(type));   \
         (void)_iter;                                                           \
-        assert(_iter->next == nullptr && "Elements left unread");              \
+        assert(_iter->next == nullptr && "SVFType elements left unread");      \
         break;                                                                 \
     }
         CASE(SVFTy);
@@ -814,38 +813,74 @@ void SVFModuleJsonReader::fillSvfTypeAt(TypeIndex i)
     }
 }
 
-void SVFModuleJsonReader::fillSvfValueAt(ValueIndex i)
+void SVFModuleRead::fillSvfValueAt(ValueIndex i)
 {
     cJSON* childIter = valueArray[i]->child;
     SVFValue* value = valuePool[i];
     switch (value->getKind())
     {
     default:
-        assert(false && "Impossible SVFValue kind");
-        // TODO
-        (void) childIter;
+        assert(false && "Impossible SVFValKind");
+
+#define CASE(kind, type)                                                       \
+    case SVFValue::kind: {                                                     \
+        auto _iter = readJson(childIter, SVFUtil::dyn_cast<type>(value));      \
+        (void)_iter;                                                           \
+        assert(_iter->next == nullptr && "SVFValue elements left unread");     \
+        break;                                                                 \
+    }
+        CASE(SVFVal, SVFValue);
+        CASE(SVFBB, SVFBasicBlock);
+        CASE(SVFInst, SVFInstruction);
+        CASE(SVFCall, SVFCallInst);
+        CASE(SVFVCall, SVFVirtualCallInst);
+        CASE(SVFGlob, SVFGlobalValue);
+        CASE(SVFArg, SVFArgument);
+        CASE(SVFConst, SVFConstant);
+        CASE(SVFConstData, SVFConstantData);
+        CASE(SVFConstInt, SVFConstantInt);
+        CASE(SVFConstFP, SVFConstantFP);
+        CASE(SVFNullPtr, SVFConstantNullPtr);
+        CASE(SVFBlackHole, SVFBlackHoleValue);
+        CASE(SVFMetaAsValue, SVFMetadataAsValue);
+        CASE(SVFOther, SVFOtherValue);
+#undef CASE
     }
 }
 
-SVFType* SVFModuleJsonReader::indexToType(TypeIndex i)
+SVFType* SVFModuleRead::indexToType(TypeIndex i)
 {
     assert(i < typePool.size() && "TypeIndex too large");
     return typePool[i];
 }
 
-SVFValue* SVFModuleJsonReader::indexToValue(ValueIndex i)
+SVFValue* SVFModuleRead::indexToValue(ValueIndex i)
 {
     assert(i < valuePool.size() && "ValueIndex too large");
     return valuePool[i];
 }
 
-StInfo* SVFModuleJsonReader::readStInfo(cJSON* iter)
+StInfo* SVFModuleRead::readStInfo(cJSON* iter)
 {
     StInfo* info = new StInfo({});
 
     JSON_READ_VECTOR_OF_NUMBER(iter, info, fldIdxVec);
     JSON_READ_VECTOR_OF_NUMBER(iter, info, elemIdxVec);
-    // TODO: read map
+
+    // Read map of StInfo::fldIdx2TypeMap (u32_t -> SVFType*)
+    iter = iter->next;
+    assert(cJSON_IsObject(iter) &&
+           !std::strcmp("fldIdx2TypeMap", iter->string) &&
+           "Expect a `fldIdx2TypeMap' array");
+    cJSON* element;
+    cJSON_ArrayForEach(element, iter) {
+        assert(cJSON_IsString(element) &&
+               "Expect fldIdx2TypeMap val to be an TypeIndex string");
+        info->fldIdx2TypeMap.emplace(
+            std::atoi(element->string),
+            indexToType(std::atoi(element->valuestring)));
+    }
+
     JSON_READ_VECTOR_OF_SVFTYPE(iter, info, finfo);
     JSON_READ_NUMBER(iter, info, stride);
     JSON_READ_NUMBER(iter, info, numOfFlattenElements);
@@ -854,7 +889,7 @@ StInfo* SVFModuleJsonReader::readStInfo(cJSON* iter)
     return info;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFType* type)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFType* type)
 {
     JSON_READ_SVFTYPE(iter, type, getPointerToTy);
 
@@ -869,120 +904,211 @@ cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFType* type)
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFPointerType* type)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFPointerType* type)
 {
     iter = readJson(iter, static_cast<SVFType*>(type));
     JSON_READ_SVFTYPE(iter, type, ptrElementType);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFIntegerType* type)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFIntegerType* type)
 {
     return readJson(iter, static_cast<SVFType*>(type));
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFFunctionType* type)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFFunctionType* type)
 {
     iter = readJson(iter, static_cast<SVFType*>(type));
     JSON_READ_SVFTYPE(iter, type, retTy);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFStructType* type)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFStructType* type)
 {
     return readJson(iter, static_cast<SVFType*>(type));
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFArrayType* type)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFArrayType* type)
 {
     return readJson(iter, static_cast<SVFType*>(type));
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFOtherType* type)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFOtherType* type)
 {
     return readJson(iter, static_cast<SVFType*>(type));
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFValue* value)
+SVFLoopAndDomInfo* SVF::SVFModuleRead::readSvfLoopAndDomInfo(cJSON* iter)
+{
+    auto ldInfo = new SVFLoopAndDomInfo;
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, ldInfo, reachableBBs);
+
+#define JSON_READ_BB_MAP(field)                                                \
+    do                                                                         \
+    {                                                                          \
+        iter = iter->next;                                                     \
+        assert(cJSON_IsObject(iter) && !std::strcmp(#field, iter->string) &&   \
+               "Expect a `" #field "' json object");                           \
+        cJSON *_kvJson, *_vJson;                                               \
+        cJSON_ArrayForEach(_kvJson, iter)                                      \
+        {                                                                      \
+            assert(cJSON_IsArray(_kvJson) && "Elements in " #field             \
+                                             " should be BB index array");     \
+            SVFValue* _key = indexToValue(std::atoi(_kvJson->string));         \
+            SVFBasicBlock* _bbKey = SVFUtil::dyn_cast<SVFBasicBlock>(_key);    \
+            assert(_bbKey && "Key in " #field " is not a BasicBlock*");        \
+            auto& _fieldRef = ldInfo->field[_bbKey];                           \
+            cJSON_ArrayForEach(_vJson, _kvJson)                                \
+            {                                                                  \
+                assert(cJSON_IsString(_vJson) &&                               \
+                       "Elements in " #field                                   \
+                       " array should be a ValueIndex string");                \
+                SVFValue* _val = indexToValue(std::atoi(_vJson->valuestring)); \
+                SVFBasicBlock* _bb = SVFUtil::dyn_cast<SVFBasicBlock>(_val);   \
+                assert(_bb && "Value* in " #field                              \
+                              " array is not a BasicBlock*");                  \
+                _fieldRef.insert(_fieldRef.end(), _bb);                        \
+            }                                                                  \
+        }                                                                      \
+    } while (0);
+
+    JSON_READ_BB_MAP(dtBBsMap);
+    JSON_READ_BB_MAP(pdtBBsMap);
+    JSON_READ_BB_MAP(dfBBsMap);
+    JSON_READ_BB_MAP(bb2LoopMap);
+
+#undef JSON_READ_BB_MAP
+    return ldInfo;
+}
+
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFValue* value)
 {
     JSON_READ_BOOL(iter, value, ptrInUncalledFun);
     JSON_READ_BOOL(iter, value, constDataOrAggData);
     JSON_READ_SVFTYPE(iter, value, type);
-    // TODO
+    JSON_READ_STRING(iter, value, name);
+    JSON_READ_STRING(iter, value, sourceLoc);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFFunction* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFFunction* value)
 {
+    iter = readJson(iter, static_cast<SVFValue*>(value));
+    JSON_READ_BOOL(iter, value, isDecl);
+    JSON_READ_BOOL(iter, value, intrinsic);
+    JSON_READ_BOOL(iter, value, addrTaken);
+    JSON_READ_BOOL(iter, value, isUncalled);
+    JSON_READ_BOOL(iter, value, isNotRet);
+    JSON_READ_BOOL(iter, value, varArg);
+    JSON_READ_SVFTYPE(iter, value, funcType);
+    // Read Loop and Dom
+    iter = iter->next;
+    assert(cJSON_IsObject(iter) && !std::strcmp("loopAndDom", iter->string) &&
+           "Expect a `loopAndDom' json object");
+    value->loopAndDom = readSvfLoopAndDomInfo(iter->child);
+    // Others
+    JSON_READ_SVFVALUE(iter, value, realDefFun);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, value, allBBs);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, value, allArgs);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFBasicBlock* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFBasicBlock* value)
 {
+    iter = readJson(iter, static_cast<SVFValue*>(value));
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, value, allInsts);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, value, succBBs);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, value, predBBs);
+    JSON_READ_SVFVALUE(iter, value, fun);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFInstruction* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFInstruction* value)
 {
+    iter = readJson(iter, static_cast<SVFValue*>(value));
+    JSON_READ_SVFVALUE(iter, value, bb);
+    JSON_READ_BOOL(iter, value, terminator);
+    JSON_READ_BOOL(iter, value, ret);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, value, succInsts);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, value, predInsts);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFCallInst* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFCallInst* value)
 {
+    iter = readJson(iter, static_cast<SVFInstruction*>(value));
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, value, args);
+    JSON_READ_BOOL(iter, value, varArg);
+    JSON_READ_SVFVALUE(iter, value, calledVal);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFVirtualCallInst* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFVirtualCallInst* value)
 {
+    iter = readJson(iter, static_cast<SVFCallInst*>(value));
+    JSON_READ_SVFVALUE(iter, value, vCallVtblPtr);
+    JSON_READ_NUMBER(iter, value, virtualFunIdx);
+    JSON_READ_STRING(iter, value, funNameOfVcall);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFConstant* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFConstant* value)
 {
+    return readJson(iter, static_cast<SVFValue*>(value));
+}
+
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFGlobalValue* value)
+{
+    iter = readJson(iter, static_cast<SVFConstant*>(value));
+    JSON_READ_SVFVALUE(iter, value, realDefGlobal);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFGlobalValue* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFArgument* value)
 {
+    iter = readJson(iter, static_cast<SVFValue*>(value));
+    JSON_READ_SVFVALUE(iter, value, fun);
+    JSON_READ_NUMBER(iter, value, argNo);
+    JSON_READ_BOOL(iter, value, uncalled);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFArgument* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFConstantData* value)
 {
+    return readJson(iter, static_cast<SVFConstant*>(value));
+}
+
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFConstantInt* value)
+{
+    iter = readJson(iter, static_cast<SVFConstantData*>(value));
+    JSON_READ_NUMBER(iter, value, zval);
+    JSON_READ_NUMBER(iter, value, sval);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFConstantData* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFConstantFP* value)
 {
+    iter = readJson(iter, static_cast<SVFConstantData*>(value));
+    JSON_READ_NUMBER(iter, value, dval);
     return iter;
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFConstantInt* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFConstantNullPtr* value)
 {
-    return iter;
+    return readJson(iter, static_cast<SVFConstantData*>(value));
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFConstantFP* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFBlackHoleValue* value)
 {
-    return iter;
+    return readJson(iter, static_cast<SVFConstantData*>(value));
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFConstantNullPtr* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFOtherValue* value)
 {
-    return iter;
+    return readJson(iter, static_cast<SVFValue*>(value));
 }
 
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFBlackHoleValue* value)
+cJSON* SVFModuleRead::readJson(cJSON* iter, SVFMetadataAsValue* value)
 {
-    return iter;
-}
-
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFOtherValue* value)
-{
-    return iter;
-}
-
-cJSON* SVFModuleJsonReader::readJson(cJSON* iter, SVFMetadataAsValue* value)
-{
-    return iter;
+    return readJson(iter, static_cast<SVFOtherValue*>(value));
 }

@@ -49,8 +49,8 @@ class SVFType;
 
 class SVFLoopAndDomInfo
 {
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 public:
     typedef Set<const SVFBasicBlock*> BBSet;
     typedef std::vector<const SVFBasicBlock*> BBList;
@@ -149,8 +149,8 @@ public:
 
 class SVFValue
 {
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
     friend class LLVMModuleSet;
 
 public:
@@ -262,8 +262,8 @@ public:
 class SVFFunction : public SVFValue
 {
     friend class LLVMModuleSet;
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 
 public:
     typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
@@ -478,8 +478,8 @@ public:
 class SVFBasicBlock : public SVFValue
 {
     friend class LLVMModuleSet;
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 
 public:
     typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
@@ -578,8 +578,8 @@ public:
 
 class SVFInstruction : public SVFValue
 {
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 public:
     typedef std::vector<const SVFInstruction*> InstVec;
 
@@ -645,8 +645,8 @@ public:
 
 class SVFCallInst : public SVFInstruction
 {
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
     friend class LLVMModuleSet;
 
 private:
@@ -719,8 +719,8 @@ public:
 
 class SVFVirtualCallInst : public SVFCallInst
 {
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
     friend class LLVMModuleSet;
 
 private:
@@ -777,8 +777,8 @@ public:
 
 class SVFConstant : public SVFValue
 {
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 public:
     SVFConstant(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConst): SVFValue(_const, ty, k)
     {
@@ -799,7 +799,8 @@ public:
 
 class SVFGlobalValue : public SVFConstant
 {
-    friend class SVFModuleJsonDumper;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
     friend class LLVMModuleSet;
 
 private:
@@ -836,7 +837,8 @@ public:
 
 class SVFArgument : public SVFValue
 {
-    friend class SVFModuleJsonDumper;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 private:
     const SVFFunction* fun;
     u32_t argNo;
@@ -874,7 +876,8 @@ public:
 
 class SVFConstantData : public SVFConstant
 {
-    friend class SVFModuleJsonDumper;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 public:
     SVFConstantData(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConstData): SVFConstant(_const, ty, k)
     {
@@ -902,7 +905,8 @@ public:
 
 class SVFConstantInt : public SVFConstantData
 {
-    friend class SVFModuleJsonDumper;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 private:
     u64_t zval;
     s64_t sval;
@@ -935,7 +939,8 @@ public:
 
 class SVFConstantFP : public SVFConstantData
 {
-    friend class SVFModuleJsonDumper;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 private:
     float dval;
 public:
@@ -961,7 +966,8 @@ public:
 
 class SVFConstantNullPtr : public SVFConstantData
 {
-    friend class SVFModuleJsonDumper;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 
 public:
     SVFConstantNullPtr(const std::string& _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFNullPtr)
@@ -981,7 +987,8 @@ public:
 
 class SVFBlackHoleValue : public SVFConstantData
 {
-    friend class SVFModuleJsonDumper;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 
 public:
     SVFBlackHoleValue(const std::string& _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFBlackHole)
@@ -1001,7 +1008,8 @@ public:
 
 class SVFOtherValue : public SVFValue
 {
-    friend class SVFModuleJsonDumper;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 public:
     SVFOtherValue(const std::string& other, const SVFType* ty, SVFValKind k = SVFValue::SVFOther): SVFValue(other, ty, k)
     {
@@ -1019,7 +1027,8 @@ public:
 */
 class SVFMetadataAsValue : public SVFOtherValue
 {
-    friend class SVFModuleJsonDumper;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 public:
     SVFMetadataAsValue(const std::string& other, const SVFType* ty): SVFOtherValue(other, ty, SVFValue::SVFMetaAsValue)
     {

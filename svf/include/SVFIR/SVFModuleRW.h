@@ -1,5 +1,5 @@
 /*
- * SVFModuleJsonDumper.h
+ * SVFModuleRW.h
  *
  *  Created on: 27 Jan 2023
  *      Author: Xudong Wang
@@ -50,7 +50,7 @@ class SVFMetadataAsValue;
 using TypeIndex = std::size_t;
 using ValueIndex = std::size_t;
 
-class SVFModuleJsonDumper
+class SVFModuleWrite
 {
 private:
     const SVFModule* module;
@@ -72,11 +72,11 @@ private:
     const char* getStrOfIndex(std::size_t index);
 
 public:
-    SVFModuleJsonDumper(const SVFModule* module);
-    SVFModuleJsonDumper(const SVFModule* module, const std::string& path);
+    SVFModuleWrite(const SVFModule* module);
+    SVFModuleWrite(const SVFModule* module, const std::string& path);
     void dumpJsonToPath(const std::string& path);
     void dumpJsonToOstream(std::ostream& os);
-    ~SVFModuleJsonDumper();
+    ~SVFModuleWrite();
 
 private:
     cJSON* moduleToJson(const SVFModule* module);
@@ -113,7 +113,7 @@ private:
     cJSON* toJson(const SVFMetadataAsValue* value);
 };
 
-class SVFModuleJsonReader
+class SVFModuleRead
 {
 private:
     const SVFModule* module;
@@ -145,6 +145,7 @@ private:
     cJSON* readJson(cJSON* iter, SVFArrayType* type);
     cJSON* readJson(cJSON* iter, SVFOtherType* type);
 
+    SVFLoopAndDomInfo* readSvfLoopAndDomInfo(cJSON* iter);
     cJSON* readJson(cJSON* iter, SVFValue* value);
     cJSON* readJson(cJSON* iter, SVFFunction* value);
     cJSON* readJson(cJSON* iter, SVFBasicBlock* value);

@@ -132,8 +132,8 @@ class SVFPointerType;
  */
 class StInfo
 {
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 
 private:
     /// flattened field indices of a struct (ignoring arrays)
@@ -239,8 +239,8 @@ public:
 
 class SVFType
 {
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 
 public:
     typedef s64_t GNodeK;
@@ -324,8 +324,8 @@ public:
 
 class SVFPointerType : public SVFType
 {
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 
 private:
     const SVFType* ptrElementType;
@@ -357,8 +357,8 @@ public:
 
 class SVFFunctionType : public SVFType
 {
-    friend class SVFModuleJsonDumper;
-    friend class SVFModuleJsonReader;
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 private:
     const SVFType* retTy;
 
