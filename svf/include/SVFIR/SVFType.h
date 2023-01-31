@@ -133,6 +133,7 @@ class SVFPointerType;
 class StInfo
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
 
 private:
     /// flattened field indices of a struct (ignoring arrays)
@@ -239,6 +240,7 @@ public:
 class SVFType
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
 
 public:
     typedef s64_t GNodeK;
@@ -257,10 +259,10 @@ public:
 private:
     GNodeK kind; ///< used for classof
     const SVFPointerType*
-    getPointerToTy; /// Return a pointer to the current type
+        getPointerToTy; /// Return a pointer to the current type
     StInfo* typeinfo;   /// < SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or
-    ///< array
+                        ///< array
 protected:
     SVFType(bool svt, SVFTyKind k)
         : kind(k), getPointerToTy(nullptr), typeinfo(nullptr),
@@ -323,6 +325,7 @@ public:
 class SVFPointerType : public SVFType
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
 
 private:
     const SVFType* ptrElementType;
@@ -355,6 +358,7 @@ public:
 class SVFFunctionType : public SVFType
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
 private:
     const SVFType* retTy;
 

@@ -1,3 +1,10 @@
+/*
+ * SVFModuleJsonDumper.h
+ *
+ *  Created on: 27 Jan 2023
+ *      Author: Xudong Wang
+ */
+
 #ifndef INCLUDE_SVFMODULE_JSON_DUMPER_H_
 #define INCLUDE_SVFMODULE_JSON_DUMPER_H_
 
@@ -7,7 +14,7 @@
 #include <ostream>
 #include <memory>
 
-class cJSON;
+struct cJSON;
 
 namespace SVF
 {
@@ -104,6 +111,56 @@ private:
     cJSON* toJson(const SVFBlackHoleValue* value);
     cJSON* toJson(const SVFOtherValue* value);
     cJSON* toJson(const SVFMetadataAsValue* value);
+};
+
+class SVFModuleJsonReader
+{
+private:
+    const SVFModule* module;
+
+    std::vector<SVFType*>
+        typePool; /// < A pool of all SVFTypes in the SVFModule
+    std::vector<cJSON*> typeArray;
+
+    std::vector<SVFValue*>
+        valuePool; /// < A pool of all SVFValues in the SVFModule
+    std::vector<cJSON*> valueArray;
+
+public:
+    const SVFModule* readSvfModule(cJSON* node);
+
+private:
+    SVFType* indexToType(TypeIndex i);
+    SVFValue* indexToValue(ValueIndex i);
+
+    void fillSvfTypeAt(TypeIndex i);
+    void fillSvfValueAt(ValueIndex i);
+
+    StInfo* readStInfo(cJSON* iter);
+    cJSON* readJson(cJSON* iter, SVFType* type);
+    cJSON* readJson(cJSON* iter, SVFPointerType* type);
+    cJSON* readJson(cJSON* iter, SVFIntegerType* type);
+    cJSON* readJson(cJSON* iter, SVFFunctionType* type);
+    cJSON* readJson(cJSON* iter, SVFStructType* type);
+    cJSON* readJson(cJSON* iter, SVFArrayType* type);
+    cJSON* readJson(cJSON* iter, SVFOtherType* type);
+
+    cJSON* readJson(cJSON* iter, SVFValue* value);
+    cJSON* readJson(cJSON* iter, SVFFunction* value);
+    cJSON* readJson(cJSON* iter, SVFBasicBlock* value);
+    cJSON* readJson(cJSON* iter, SVFInstruction* value);
+    cJSON* readJson(cJSON* iter, SVFCallInst* value);
+    cJSON* readJson(cJSON* iter, SVFVirtualCallInst* value);
+    cJSON* readJson(cJSON* iter, SVFConstant* value);
+    cJSON* readJson(cJSON* iter, SVFGlobalValue* value);
+    cJSON* readJson(cJSON* iter, SVFArgument* value);
+    cJSON* readJson(cJSON* iter, SVFConstantData* value);
+    cJSON* readJson(cJSON* iter, SVFConstantInt* value);
+    cJSON* readJson(cJSON* iter, SVFConstantFP* value);
+    cJSON* readJson(cJSON* iter, SVFConstantNullPtr* value);
+    cJSON* readJson(cJSON* iter, SVFBlackHoleValue* value);
+    cJSON* readJson(cJSON* iter, SVFOtherValue* value);
+    cJSON* readJson(cJSON* iter, SVFMetadataAsValue* value);
 };
 
 } // namespace SVF

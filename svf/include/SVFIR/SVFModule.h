@@ -41,6 +41,7 @@ namespace SVF
 class SVFModule
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
 public:
     typedef std::vector<const SVFFunction*> FunctionSetType;
     typedef std::vector<SVFGlobalValue*> GlobalSetType;
@@ -77,7 +78,7 @@ public:
 
     ~SVFModule();
 
-    static inline void setPagFromTXT(std::string txt)
+    static inline void setPagFromTXT(const std::string& txt)
     {
         pagReadFromTxt = txt;
     }
@@ -89,13 +90,10 @@ public:
 
     static inline bool pagReadFromTXT()
     {
-        if(pagReadFromTxt.empty())
-            return false;
-        else
-            return true;
+        return !pagReadFromTxt.empty();
     }
 
-    const SVFFunction* getSVFFunction(const std::string name);
+    const SVFFunction* getSVFFunction(const std::string& name);
 
     ///@{
     inline void addFunctionSet(SVFFunction* svfFunc)
@@ -198,7 +196,8 @@ public:
     {
         if (pagReadFromTxt.empty())
         {
-            assert(moduleIdentifier.empty()==false && "No module found! Are you reading from a file other than LLVM-IR?");
+            assert(!moduleIdentifier.empty() &&
+                   "No module found! Reading from a file other than LLVM-IR?");
             return moduleIdentifier;
         }
         else

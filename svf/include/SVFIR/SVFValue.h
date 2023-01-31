@@ -50,6 +50,7 @@ class SVFType;
 class SVFLoopAndDomInfo
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
 public:
     typedef Set<const SVFBasicBlock*> BBSet;
     typedef std::vector<const SVFBasicBlock*> BBList;
@@ -80,7 +81,7 @@ public:
 
     inline bool hasLoopInfo(const SVFBasicBlock* bb) const
     {
-        return bb2LoopMap.find(bb)!=bb2LoopMap.end();
+        return bb2LoopMap.find(bb) != bb2LoopMap.end();
     }
 
     const LoopBBs& getLoopInfo(const SVFBasicBlock* bb) const;
@@ -93,7 +94,7 @@ public:
 
     inline bool loopContainsBB(const LoopBBs& lp, const SVFBasicBlock* bb) const
     {
-        return std::find(lp.begin(), lp.end(), bb)!=lp.end();
+        return std::find(lp.begin(), lp.end(), bb) != lp.end();
     }
 
     inline void addToBB2LoopMap(const SVFBasicBlock* bb, const SVFBasicBlock* loopBB)
@@ -123,7 +124,8 @@ public:
 
     inline bool isUnreachable(const SVFBasicBlock* bb) const
     {
-        return std::find(reachableBBs.begin(), reachableBBs.end(), bb)==reachableBBs.end();
+        return std::find(reachableBBs.begin(), reachableBBs.end(), bb) ==
+               reachableBBs.end();
     }
 
     inline const BBList& getReachableBBs() const
@@ -148,6 +150,7 @@ public:
 class SVFValue
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
     friend class LLVMModuleSet;
 
 public:
@@ -260,6 +263,7 @@ class SVFFunction : public SVFValue
 {
     friend class LLVMModuleSet;
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
 
 public:
     typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
@@ -475,6 +479,7 @@ class SVFBasicBlock : public SVFValue
 {
     friend class LLVMModuleSet;
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
 
 public:
     typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
@@ -574,6 +579,7 @@ public:
 class SVFInstruction : public SVFValue
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
 public:
     typedef std::vector<const SVFInstruction*> InstVec;
 
@@ -640,6 +646,7 @@ public:
 class SVFCallInst : public SVFInstruction
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
     friend class LLVMModuleSet;
 
 private:
@@ -713,6 +720,7 @@ public:
 class SVFVirtualCallInst : public SVFCallInst
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
     friend class LLVMModuleSet;
 
 private:
@@ -770,6 +778,7 @@ public:
 class SVFConstant : public SVFValue
 {
     friend class SVFModuleJsonDumper;
+    friend class SVFModuleJsonReader;
 public:
     SVFConstant(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConst): SVFValue(_const, ty, k)
     {

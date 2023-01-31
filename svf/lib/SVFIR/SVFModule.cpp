@@ -41,7 +41,7 @@ SVFModule::~SVFModule()
     ExtAPI::destory();
 }
 
-const SVFFunction* SVFModule::getSVFFunction(std::string name)
+const SVFFunction* SVFModule::getSVFFunction(const std::string& name)
 {
     for (const SVFFunction* fun : getFunctionSet())
     {
