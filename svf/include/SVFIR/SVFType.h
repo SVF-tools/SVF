@@ -44,6 +44,8 @@
 
 namespace SVF
 {
+class SVFType;
+class SVFPointerType;
 
 typedef std::ostream OutStream;
 typedef unsigned u32_t;
@@ -96,7 +98,7 @@ using Set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 template <typename Key, typename Value, typename Hash = Hash<Key>,
           typename KeyEqual = std::equal_to<Key>,
           typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                  using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
+using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
 
 template <typename Key, typename Compare = std::less<Key>,
           typename Allocator = std::allocator<Key>>
@@ -122,9 +124,6 @@ typedef unsigned Version;
 typedef Set<Version> VersionSet;
 typedef std::pair<NodeID, Version> VersionedVar;
 typedef Set<VersionedVar> VersionedVarSet;
-
-class SVFType;
-class SVFPointerType;
 
 /*!
  * Flatterned type information of StructType, ArrayType and
@@ -260,7 +259,7 @@ private:
     GNodeK kind; ///< used for classof
     const SVFPointerType*
         getPointerToTy; /// Return a pointer to the current type
-    StInfo* typeinfo;   /// < SVF's TypeInfo
+    StInfo* typeinfo;   ///< SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or
                         ///< array
 protected:
@@ -359,6 +358,7 @@ class SVFFunctionType : public SVFType
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+
 private:
     const SVFType* retTy;
 

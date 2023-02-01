@@ -3,11 +3,29 @@
 #include "Util/SVFUtil.h"
 #include "Util/cJSON.h"
 #include <fstream>
+#include <sys/fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/unistd.h>
 
 using namespace SVF;
 
-SVFType* createType(SVFType::SVFTyKind kind);
-SVFValue* createValue(SVFValue::SVFValKind kind);
+/// @brief Helper function to create a new empty SVFType instance
+static SVFType* createType(SVFType::SVFTyKind kind);
+/// @brief Helper function to create a new empty SVFValue instance
+static SVFValue* createValue(SVFValue::SVFValKind kind);
+
+#define ABORT_IFNOT(condition, reason)                                         \
+    do                                                                         \
+    {                                                                          \
+        if (!(condition))                                                      \
+        {                                                                      \
+            SVFUtil::errs()                                                    \
+                << __FILE__ << ":" << __LINE__ << ": " << reason << "\n";      \
+            abort();                                                           \
+        }                                                                      \
+    } while (0)
 
 /// Create a bool cJSON node, with bool value `objptr->field` and string name
 /// #field, then attach it to the root cJSON node.
@@ -111,8 +129,7 @@ SVFModuleWrite::SVFModuleWrite(const SVFModule* module)
     getStrOfIndex(0);
 }
 
-SVFModuleWrite::SVFModuleWrite(const SVFModule* module,
-                                         const std::string& path)
+SVFModuleWrite::SVFModuleWrite(const SVFModule* module, const std::string& path)
     : SVFModuleWrite(module)
 {
     dumpJsonToPath(path);
@@ -146,7 +163,7 @@ void SVFModuleWrite::dumpJsonToOstream(std::ostream& os)
     if (!jsonStr)
     {
         cJSON* json = moduleToJson(module);
-        jsonStr = cJSON_Print(json);
+        jsonStr = cJSON_PrintUnformatted(json);
         cJSON_Delete(json);
     }
     os << jsonStr << std::endl;
@@ -243,7 +260,6 @@ cJSON* SVFModuleWrite::toJson(const StInfo* stInfo)
     cJSON* root = cJSON_CreateObject();
 
     JSON_DUMP_CONTAINER_OF_NUMBER(root, stInfo, fldIdxVec);
-
     JSON_DUMP_CONTAINER_OF_NUMBER(root, stInfo, elemIdxVec);
 
     cJSON* nodeFldMap = cJSON_CreateObject();
@@ -256,13 +272,9 @@ cJSON* SVFModuleWrite::toJson(const StInfo* stInfo)
     cJSON_AddItemToObjectCS(root, "fldIdx2TypeMap", nodeFldMap);
 
     JSON_DUMP_CONTAINER_OF_SVFTYPE(root, stInfo, finfo);
-
     JSON_DUMP_NUMBER(root, stInfo, stride);
-
     JSON_DUMP_NUMBER(root, stInfo, numOfFlattenElements);
-
     JSON_DUMP_NUMBER(root, stInfo, numOfFlattenFields);
-
     JSON_DUMP_CONTAINER_OF_SVFTYPE(root, stInfo, flattenElementTypes);
 
     return root;
@@ -273,7 +285,6 @@ cJSON* SVFModuleWrite::toJson(const SVFType* type)
     cJSON* root = cJSON_CreateObject();
 
     JSON_DUMP_NUMBER(root, type, kind);
-
     JSON_DUMP_SVFTYPE(root, type, getPointerToTy);
 
     cJSON* nodeTypeInfo = toJson(type->typeinfo);
@@ -321,25 +332,27 @@ cJSON* SVFModuleWrite::toJson(const SVFOtherType* type)
 cJSON* SVFModuleWrite::typeToJson(const SVFType* type)
 {
     using SVFUtil::dyn_cast;
+    auto kind = type->getKind();
 
-    switch (type->getKind())
+    switch (kind)
     {
     default:
-        assert(false && "Impossible SVFType kind");
-    case SVFType::SVFTy:
-        return toJson(type);
-    case SVFType::SVFPointerTy:
-        return toJson(dyn_cast<SVFPointerType>(type));
-    case SVFType::SVFIntegerTy:
-        return toJson(dyn_cast<SVFIntegerType>(type));
-    case SVFType::SVFFunctionTy:
-        return toJson(dyn_cast<SVFFunctionType>(type));
-    case SVFType::SVFStructTy:
-        return toJson(dyn_cast<SVFStructType>(type));
-    case SVFType::SVFArrayTy:
-        return toJson(dyn_cast<SVFArrayType>(type));
-    case SVFType::SVFOtherTy:
-        return toJson(dyn_cast<SVFOtherType>(type));
+        SVFUtil::errs() << "Impossible SVFType kind " << kind
+                        << " in typeToJson()\n";
+        abort();
+
+#define CASE(Kind)                                                             \
+    case SVFType::Kind:                                                        \
+        return toJson(SVFUtil::dyn_cast<Kind##pe>(type));
+
+        CASE(SVFTy);
+        CASE(SVFPointerTy);
+        CASE(SVFIntegerTy);
+        CASE(SVFFunctionTy);
+        CASE(SVFStructTy);
+        CASE(SVFArrayTy);
+        CASE(SVFOtherTy);
+#undef CASE
     }
 }
 
@@ -519,78 +532,75 @@ cJSON* SVFModuleWrite::toJson(const SVFMetadataAsValue* value)
 cJSON* SVFModuleWrite::valueToJson(const SVFValue* value)
 {
     using SVFUtil::dyn_cast;
+    auto kind = value->getKind();
 
-    switch (value->getKind())
+    switch (kind)
     {
     default:
-        assert(false && "Impossible SVFValue kind");
-    case SVFValue::SVFVal:
-        return toJson(value);
-    case SVFValue::SVFFunc:
-        return toJson(dyn_cast<SVFFunction>(value));
-    case SVFValue::SVFBB:
-        return toJson(dyn_cast<SVFBasicBlock>(value));
-    case SVFValue::SVFInst:
-        return toJson(dyn_cast<SVFInstruction>(value));
-    case SVFValue::SVFCall:
-        return toJson(dyn_cast<SVFCallInst>(value));
-    case SVFValue::SVFVCall:
-        return toJson(dyn_cast<SVFVirtualCallInst>(value));
-    case SVFValue::SVFGlob:
-        return toJson(dyn_cast<SVFGlobalValue>(value));
-    case SVFValue::SVFArg:
-        return toJson(dyn_cast<SVFArgument>(value));
-    case SVFValue::SVFConst:
-        return toJson(dyn_cast<SVFConstant>(value));
-    case SVFValue::SVFConstData:
-        return toJson(dyn_cast<SVFConstantData>(value));
-    case SVFValue::SVFConstInt:
-        return toJson(dyn_cast<SVFConstantInt>(value));
-    case SVFValue::SVFConstFP:
-        return toJson(dyn_cast<SVFConstantFP>(value));
-    case SVFValue::SVFNullPtr:
-        return toJson(dyn_cast<SVFConstantNullPtr>(value));
-    case SVFValue::SVFBlackHole:
-        return toJson(dyn_cast<SVFBlackHoleValue>(value));
-    case SVFValue::SVFMetaAsValue:
-        return toJson(dyn_cast<SVFMetadataAsValue>(value));
-    case SVFValue::SVFOther:
-        return toJson(dyn_cast<SVFOtherValue>(value));
+        SVFUtil::errs() << "Impossible SVFValue kind in" << kind
+                        << " in typeToJson()\n";
+        abort();
+
+#define CASE(kind, type)                                                       \
+    case SVFValue::kind:                                                       \
+        return toJson(SVFUtil::dyn_cast<type>(value));
+        CASE(SVFVal, SVFValue);
+        CASE(SVFFunc, SVFFunction);
+        CASE(SVFBB, SVFBasicBlock);
+        CASE(SVFInst, SVFInstruction);
+        CASE(SVFCall, SVFCallInst);
+        CASE(SVFVCall, SVFVirtualCallInst);
+        CASE(SVFGlob, SVFGlobalValue);
+        CASE(SVFArg, SVFArgument);
+        CASE(SVFConst, SVFConstant);
+        CASE(SVFConstData, SVFConstantData);
+        CASE(SVFConstInt, SVFConstantInt);
+        CASE(SVFConstFP, SVFConstantFP);
+        CASE(SVFNullPtr, SVFConstantNullPtr);
+        CASE(SVFBlackHole, SVFBlackHoleValue);
+        CASE(SVFMetaAsValue, SVFMetadataAsValue);
+        CASE(SVFOther, SVFOtherValue);
+#undef CASE
     }
 }
 
 #define JSON_READ_VECTOR_OF_NUMBER(iter, obj, field)                           \
     do                                                                         \
     {                                                                          \
-        iter = (iter)->next;                                                   \
-        assert(cJSON_IsArray(iter) && !std::strcmp(#field, (iter)->string) &&  \
-               #iter " should be " #field " array");                           \
+        ABORT_IFNOT(                                                           \
+            (cJSON_IsArray(iter) && !std::strcmp(#field, (iter)->string)),     \
+            #field " expects `" #iter "` to be an array");                     \
         cJSON* _element;                                                       \
         cJSON_ArrayForEach(_element, (iter))                                   \
         {                                                                      \
-            assert(cJSON_IsNumber(_element) && "Element should be number");    \
-            (obj)->field =                                                     \
-                static_cast<decltype((obj)->field)>(_element->valuedouble);    \
+            ABORT_IFNOT(cJSON_IsNumber(_element),                              \
+                        #field " expects numbers in object `" #iter "`");      \
+            using _T = decltype(obj->field)::value_type;                       \
+            (obj)->field.push_back(static_cast<_T>(_element->valuedouble));    \
         }                                                                      \
+        iter = (iter)->next;                                                   \
     } while (0)
 
 #define JSON_READ_VECTOR_OF_SVFREF(iter, obj, field, type)                     \
     do                                                                         \
     {                                                                          \
-        iter = (iter)->next;                                                   \
-        assert(cJSON_IsArray(iter) && !std::strcmp(#field, (iter)->string) &&  \
-               #iter " should be " #field " array");                           \
+        ABORT_IFNOT(                                                           \
+            (cJSON_IsArray(iter) && !std::strcmp(#field, (iter)->string)),     \
+            #field " expects `" #field "` to be an array");                    \
         cJSON* _element;                                                       \
         cJSON_ArrayForEach(_element, (iter))                                   \
         {                                                                      \
-            assert(cJSON_IsString(_element) &&                                 \
-                   "Element should be a string of number");                    \
+            ABORT_IFNOT(cJSON_IsString(_element),                              \
+                        #field " expects string indices in `" #iter "`");      \
             SVF##type* _v = indexTo##type(std::atoi(_element->valuestring));   \
+            ABORT_IFNOT(_v, "Some index in `" #iter "` refers to NULL");       \
             using _T = std::decay_t<decltype(*(obj)->field[0])>;               \
             _T* _t = SVFUtil::dyn_cast<_T>(_v);                                \
-            assert(_t && "dyn_cast from SVF##type* for " #field " failed");    \
+            ABORT_IFNOT(_t,                                                    \
+                        "dyn_cast from SVF" #type "* for " #field " failed");  \
             (obj)->field.push_back(_t);                                        \
         }                                                                      \
+        iter = (iter)->next;                                                   \
     } while (0)
 
 #define JSON_READ_VECTOR_OF_SVFVALUE(iter, obj, field)                         \
@@ -602,15 +612,17 @@ cJSON* SVFModuleWrite::valueToJson(const SVFValue* value)
 #define JSON_READ_SVFREF(iter, obj, field, type)                               \
     do                                                                         \
     {                                                                          \
-        iter = (iter)->next;                                                   \
-        assert(cJSON_IsString(iter) && !std::strcmp(#field, (iter)->string) && \
-               "should be " #field " string");                                 \
-        SVF##type* _p = indexTo##type(std::atoi((iter)->string));              \
+        ABORT_IFNOT(                                                           \
+            (cJSON_IsString(iter) && !std::strcmp(#field, (iter)->string)),    \
+            #field " expects `" #iter "` to be a " #type "Index JSON string"); \
+        SVF##type* _p = indexTo##type(std::atoi((iter)->valuestring));         \
         using _T = std::decay_t<decltype(*(obj)->field)>;                      \
+        ABORT_IFNOT(_p, "Some index in `" #iter "` refers to NULL");           \
         _T* _t = SVFUtil::dyn_cast<_T>(_p);                                    \
-        assert(_t && "dyn_cast from SVF" #type "* for " #field " failed ");    \
+        ABORT_IFNOT(_t, "dyn_cast from SVF" #type "* for " #field " failed");  \
         (obj)->field = _t;                                                     \
-    } while (0);
+        iter = (iter)->next;                                                   \
+    } while (0)
 
 #define JSON_READ_SVFTYPE(iter, obj, field)                                    \
     JSON_READ_SVFREF(iter, obj, field, Type)
@@ -621,29 +633,32 @@ cJSON* SVFModuleWrite::valueToJson(const SVFValue* value)
 #define JSON_READ_STRING(iter, obj, field)                                     \
     do                                                                         \
     {                                                                          \
-        iter = (iter)->next;                                                   \
-        assert(cJSON_IsString(iter) && !std::strcmp(#field, (iter)->string) && \
-               "Expect a " #field " string");                                  \
+        ABORT_IFNOT(                                                           \
+            (cJSON_IsString(iter) && !std::strcmp(#field, (iter)->string)),    \
+            #field " expects  `" #iter "` to be a JSON string");               \
         (obj)->field = (iter)->valuestring;                                    \
+        iter = (iter)->next;                                                   \
     } while (0)
 
 #define JSON_READ_NUMBER(iter, obj, field)                                     \
     do                                                                         \
     {                                                                          \
-        iter = (iter)->next;                                                   \
-        assert(cJSON_IsNumber(iter) && !std::strcmp(#field, (iter)->string) && \
-               "Expect be a " #field " number");                               \
+        ABORT_IFNOT(                                                           \
+            (cJSON_IsNumber(iter) && !std::strcmp(#field, (iter)->string)),    \
+            #field " expects `" #iter "` to be a JSON number");                \
         (obj)->field =                                                         \
             static_cast<decltype((obj)->field)>((iter)->valuedouble);          \
+        iter = (iter)->next;                                                   \
     } while (0)
 
 #define JSON_READ_BOOL(iter, obj, field)                                       \
     do                                                                         \
     {                                                                          \
-        iter = (iter)->next;                                                   \
-        assert(cJSON_IsBool(iter) && !std::strcmp(#field, (iter)->string) &&   \
-               "Expect a " #field " bool");                                    \
+        ABORT_IFNOT(                                                           \
+            (cJSON_IsBool(iter) && !std::strcmp(#field, (iter)->string)),      \
+            #field " expects `" #field "` to be a JSON bool");                 \
         (obj)->field = static_cast<bool>(cJSON_IsTrue(iter));                  \
+        iter = (iter)->next;                                                   \
     } while (0)
 
 SVFType* createType(SVFType::SVFTyKind kind)
@@ -651,9 +666,12 @@ SVFType* createType(SVFType::SVFTyKind kind)
     switch (kind)
     {
     default:
-        assert(false && "Impossible SVFTyKind");
+        SVFUtil::errs() << "Impossible SVFTyKind " << kind
+                        << " in createType()\n";
+        abort();
     case SVFType::SVFTy:
-        assert(false && "Construction of RAW SVFType isn't allowed");
+        SVFUtil::errs() << "Construction of RAW SVFType isn't allowed\n";
+        abort();
     case SVFType::SVFPointerTy:
         return new SVFPointerType({});
     case SVFType::SVFIntegerTy:
@@ -674,9 +692,12 @@ SVFValue* createValue(SVFValue::SVFValKind kind)
     switch (kind)
     {
     default:
-        assert(false && "Impossible SVFValKind");
+        SVFUtil::errs() << "Impossible SVFValue kind " << kind
+                        << " in createValue()\n";
+        abort();
     case SVFValue::SVFVal:
-        assert(false && "Creation of RAW SVFValue isn't allowed");
+        SVFUtil::errs() << "Creation of RAW SVFValue isn't allowed\n";
+        abort();
     case SVFValue::SVFFunc:
         return new SVFFunction({}, {}, {}, {}, {}, {}, {}, {});
     case SVFValue::SVFBB:
@@ -710,72 +731,88 @@ SVFValue* createValue(SVFValue::SVFValKind kind)
     }
 }
 
-const SVFModule* SVFModuleRead::readSvfModule(cJSON* node)
+SVFModule* SVFModuleRead::get()
+{
+    if (!svfModule)
+    {
+        ABORT_IFNOT(cJSON_IsObject(moduleJson), "Invalid moduleJson");
+        svfModule = readSvfModule(moduleJson->child);
+    }
+    return svfModule;
+}
+
+SVFModule* SVFModuleRead::readSvfModule(cJSON* iter)
 {
     cJSON* element;
-    cJSON* child = node ? node->child : nullptr;
 
     // Read typePool
-    assert(cJSON_IsArray(child) && !std::strcmp("typePool", child->string) &&
-           "Module's first child should be a typePool array");
-    cJSON_ArrayForEach(element, child)
+    ABORT_IFNOT((cJSON_IsArray(iter) && !std::strcmp("typePool", iter->string)),
+                "Module's first child should be a typePool array");
+    cJSON_ArrayForEach(element, iter)
     {
-        assert(cJSON_IsObject(element) &&
-               "Element in typePool is not json object");
+        ABORT_IFNOT(cJSON_IsObject(element),
+                    "Element in typePool is not a json object");
         typeArray.push_back(element);
     }
     typePool.reserve(typeArray.size());
     for (const cJSON* typeElement : typeArray)
     {
         cJSON* elementChild = typeElement->child;
-        assert(cJSON_IsNumber(elementChild) &&
-               !std::strcmp("kind", elementChild->string));
+        ABORT_IFNOT((cJSON_IsNumber(elementChild) &&
+                     !std::strcmp("kind", elementChild->string)),
+                    "Type JSON's 1st element is not kind number");
         auto kind = static_cast<SVFType::SVFTyKind>(elementChild->valuedouble);
         typePool.push_back(createType(kind));
     }
+    iter = iter->next;
 
     // Read valuePool
-    child = child->next;
-    assert(cJSON_IsArray(child) && !std::strcmp("valuePool", child->string) &&
-           "Module's 2nd child should be valuePool array");
-    cJSON_ArrayForEach(element, child)
+    ABORT_IFNOT(
+        (cJSON_IsArray(iter) && !std::strcmp("valuePool", iter->string)),
+        "Module's 2nd child should be valuePool array");
+    cJSON_ArrayForEach(element, iter)
     {
-        assert(cJSON_IsObject(element) &&
-               "Element in valuePool is not json object");
+        ABORT_IFNOT(cJSON_IsObject(element),
+                    "Element in valuePool is not json object");
         valueArray.push_back(element);
     }
     valuePool.reserve(valueArray.size());
     for (const cJSON* valueElement : valueArray)
     {
         cJSON* elementChild = valueElement->child;
-        assert(cJSON_IsNumber(elementChild) &&
-               !std::strcmp("kind", elementChild->string));
+        ABORT_IFNOT((cJSON_IsNumber(elementChild) &&
+                     !std::strcmp("kind", elementChild->string)),
+                    "Value JSON's 1st element is not kind number");
         auto kind =
             static_cast<SVFValue::SVFValKind>(elementChild->valuedouble);
         valuePool.push_back(createValue(kind));
     }
+    iter = iter->next;
 
     // Read pagReadFromTxt
-    child = child->next;
-    assert(cJSON_IsString(child) &&
-           !std::strcmp("pagReadFromTxt", child->string) &&
-           "Module's 3rd child should be pagReadFromTxt string");
-    const char* pagReadFromTxt = child->valuestring;
+    ABORT_IFNOT(
+        (cJSON_IsString(iter) && !std::strcmp("pagReadFromTxt", iter->string)),
+        "Module's 3rd child should be pagReadFromTxt string");
+    const char* pagReadFromTxt = iter->valuestring;
+    iter = iter->next;
 
     // Read moduleIdentifier
-    child = child->next;
-    assert(cJSON_IsString(child) &&
-           !std::strcmp("pagReadFromTxt", child->string) &&
-           "Module's 3rd child should be pagReadFromTxt string");
+    ABORT_IFNOT((cJSON_IsString(iter) &&
+                 !std::strcmp("moduleIdentifier", iter->string)),
+                "Module's 3rd child should be moduleIdentifier string");
 
-    SVFModule* svfModule = new SVFModule(child->valuestring);
+    SVFModule* svfModule = new SVFModule(iter->valuestring);
     svfModule->setPagFromTXT(pagReadFromTxt);
+    iter = iter->next;
+
     // Read other stuff
-    JSON_READ_VECTOR_OF_SVFVALUE(child, svfModule, FunctionSet);
-    JSON_READ_VECTOR_OF_SVFVALUE(child, svfModule, GlobalSet);
-    JSON_READ_VECTOR_OF_SVFVALUE(child, svfModule, AliasSet);
-    JSON_READ_VECTOR_OF_SVFVALUE(child, svfModule, ConstantSet);
-    JSON_READ_VECTOR_OF_SVFVALUE(child, svfModule, OtherValueSet);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, svfModule, FunctionSet);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, svfModule, GlobalSet);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, svfModule, AliasSet);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, svfModule, ConstantSet);
+    JSON_READ_VECTOR_OF_SVFVALUE(iter, svfModule, OtherValueSet);
+
+    ABORT_IFNOT(iter == nullptr, "Module has more children than expected");
 
     // Fill incomplete values in valuePool and typePool
     for (size_t i = 0; i < typePool.size(); ++i)
@@ -786,26 +823,30 @@ const SVFModule* SVFModuleRead::readSvfModule(cJSON* node)
     return svfModule;
 }
 
-void SVFModuleRead::fillSvfTypeAt(TypeIndex i)
+void SVFModuleRead::fillSvfTypeAt(size_t i)
 {
     cJSON* childIter = typeArray[i]->child;
     SVFType* type = typePool[i];
+    auto kind = type->getKind();
 
-    switch (type->getKind())
+    switch (kind)
     {
     default:
-        assert(false && "Impossible SVFType kind");
+        SVFUtil::errs() << "Impossible SVFType kind " << kind
+                        << " in fillSvfTypeAt()\n";
+        abort();
 
 #define CASE(Kind)                                                             \
     case SVFType::Kind: {                                                      \
-        auto _iter = readJson(childIter, SVFUtil::dyn_cast<Kind##pe>(type));   \
-        (void)_iter;                                                           \
-        assert(_iter->next == nullptr && "SVFType elements left unread");      \
+        auto _iter =                                                           \
+            readJson(childIter->next, SVFUtil::dyn_cast<Kind##pe>(type));      \
+        ABORT_IFNOT(_iter == nullptr, #Kind " elements left unread");          \
         break;                                                                 \
     }
         CASE(SVFTy);
         CASE(SVFPointerTy);
         CASE(SVFIntegerTy);
+        CASE(SVFFunctionTy);
         CASE(SVFStructTy);
         CASE(SVFArrayTy);
         CASE(SVFOtherTy);
@@ -813,23 +854,27 @@ void SVFModuleRead::fillSvfTypeAt(TypeIndex i)
     }
 }
 
-void SVFModuleRead::fillSvfValueAt(ValueIndex i)
+void SVFModuleRead::fillSvfValueAt(size_t i)
 {
     cJSON* childIter = valueArray[i]->child;
     SVFValue* value = valuePool[i];
-    switch (value->getKind())
+    auto kind = value->getKind();
+    switch (kind)
     {
     default:
-        assert(false && "Impossible SVFValKind");
+        SVFUtil::errs() << "Impossible SVFValue kind " << kind
+                        << " in fillSvfValueAt()\n";
+        abort();
 
 #define CASE(kind, type)                                                       \
     case SVFValue::kind: {                                                     \
-        auto _iter = readJson(childIter, SVFUtil::dyn_cast<type>(value));      \
-        (void)_iter;                                                           \
-        assert(_iter->next == nullptr && "SVFValue elements left unread");     \
+        auto _iter =                                                           \
+            readJson(childIter->next, SVFUtil::dyn_cast<type>(value));         \
+        ABORT_IFNOT(_iter == nullptr, #type " elements left unread");          \
         break;                                                                 \
     }
         CASE(SVFVal, SVFValue);
+        CASE(SVFFunc, SVFFunction);
         CASE(SVFBB, SVFBasicBlock);
         CASE(SVFInst, SVFInstruction);
         CASE(SVFCall, SVFCallInst);
@@ -850,14 +895,14 @@ void SVFModuleRead::fillSvfValueAt(ValueIndex i)
 
 SVFType* SVFModuleRead::indexToType(TypeIndex i)
 {
-    assert(i < typePool.size() && "TypeIndex too large");
-    return typePool[i];
+    ABORT_IFNOT(i <= typePool.size(), "TypeIndex too large");
+    return i ? typePool[i - 1] : nullptr;
 }
 
 SVFValue* SVFModuleRead::indexToValue(ValueIndex i)
 {
-    assert(i < valuePool.size() && "ValueIndex too large");
-    return valuePool[i];
+    ABORT_IFNOT(i <= valuePool.size(), "ValueIndex too large");
+    return i ? valuePool[i - 1] : nullptr;
 }
 
 StInfo* SVFModuleRead::readStInfo(cJSON* iter)
@@ -868,18 +913,19 @@ StInfo* SVFModuleRead::readStInfo(cJSON* iter)
     JSON_READ_VECTOR_OF_NUMBER(iter, info, elemIdxVec);
 
     // Read map of StInfo::fldIdx2TypeMap (u32_t -> SVFType*)
-    iter = iter->next;
-    assert(cJSON_IsObject(iter) &&
-           !std::strcmp("fldIdx2TypeMap", iter->string) &&
-           "Expect a `fldIdx2TypeMap' array");
+    ABORT_IFNOT(
+        (cJSON_IsObject(iter) && !std::strcmp("fldIdx2TypeMap", iter->string)),
+        "fldIdx2TypeMap expects an array");
     cJSON* element;
-    cJSON_ArrayForEach(element, iter) {
-        assert(cJSON_IsString(element) &&
-               "Expect fldIdx2TypeMap val to be an TypeIndex string");
+    cJSON_ArrayForEach(element, iter)
+    {
+        ABORT_IFNOT(cJSON_IsString(element),
+                    "fldIdx2TypeMap expects TypeIndex strings in array");
         info->fldIdx2TypeMap.emplace(
             std::atoi(element->string),
             indexToType(std::atoi(element->valuestring)));
     }
+    iter = iter->next;
 
     JSON_READ_VECTOR_OF_SVFTYPE(iter, info, finfo);
     JSON_READ_NUMBER(iter, info, stride);
@@ -891,13 +937,15 @@ StInfo* SVFModuleRead::readStInfo(cJSON* iter)
 
 cJSON* SVFModuleRead::readJson(cJSON* iter, SVFType* type)
 {
-    JSON_READ_SVFTYPE(iter, type, getPointerToTy);
+
+    JSON_READ_SVFREF(iter, type, getPointerToTy, Type);
 
     // Read typeinfo
-    iter = iter->next;
-    assert(cJSON_IsObject(iter) && !std::strcmp("typeinfo", iter->string) &&
-           "Field should be a typeinfo object");
+    ABORT_IFNOT(
+        (cJSON_IsObject(iter) && !std::strcmp("typeinfo", iter->string)),
+        "Field should be a typeinfo JSON object");
     type->typeinfo = readStInfo(iter->child);
+    iter = iter->next;
 
     JSON_READ_BOOL(iter, type, isSingleValTy);
 
@@ -946,30 +994,34 @@ SVFLoopAndDomInfo* SVF::SVFModuleRead::readSvfLoopAndDomInfo(cJSON* iter)
 #define JSON_READ_BB_MAP(field)                                                \
     do                                                                         \
     {                                                                          \
-        iter = iter->next;                                                     \
-        assert(cJSON_IsObject(iter) && !std::strcmp(#field, iter->string) &&   \
-               "Expect a `" #field "' json object");                           \
+        ABORT_IFNOT(                                                           \
+            (cJSON_IsObject(iter) && !std::strcmp(#field, iter->string)),      \
+            #field " expects a JSON object to represent mapping");             \
         cJSON *_kvJson, *_vJson;                                               \
         cJSON_ArrayForEach(_kvJson, iter)                                      \
         {                                                                      \
-            assert(cJSON_IsArray(_kvJson) && "Elements in " #field             \
-                                             " should be BB index array");     \
+            ABORT_IFNOT(cJSON_IsArray(_kvJson),                                \
+                        "Elements in " #field " should be BB index array");    \
             SVFValue* _key = indexToValue(std::atoi(_kvJson->string));         \
+            ABORT_IFNOT(_key, "Some key BB index refers to NULL");             \
             SVFBasicBlock* _bbKey = SVFUtil::dyn_cast<SVFBasicBlock>(_key);    \
-            assert(_bbKey && "Key in " #field " is not a BasicBlock*");        \
+            ABORT_IFNOT(_bbKey,                                                \
+                        "Some key index in " #field " is not a BasicBlock*");  \
             auto& _fieldRef = ldInfo->field[_bbKey];                           \
             cJSON_ArrayForEach(_vJson, _kvJson)                                \
             {                                                                  \
-                assert(cJSON_IsString(_vJson) &&                               \
-                       "Elements in " #field                                   \
-                       " array should be a ValueIndex string");                \
+                ABORT_IFNOT(cJSON_IsString(_vJson),                            \
+                            "Elements in " #field                              \
+                            " array should be a ValueIndex string");           \
                 SVFValue* _val = indexToValue(std::atoi(_vJson->valuestring)); \
+                ABORT_IFNOT(_val, "Some val BB index refers to NULL");         \
                 SVFBasicBlock* _bb = SVFUtil::dyn_cast<SVFBasicBlock>(_val);   \
-                assert(_bb && "Value* in " #field                              \
-                              " array is not a BasicBlock*");                  \
+                ABORT_IFNOT(_bb, "Some Value* in " #field                      \
+                                 " array is not a BasicBlock*");               \
                 _fieldRef.insert(_fieldRef.end(), _bb);                        \
             }                                                                  \
         }                                                                      \
+        iter = iter->next;                                                     \
     } while (0);
 
     JSON_READ_BB_MAP(dtBBsMap);
@@ -1002,10 +1054,11 @@ cJSON* SVFModuleRead::readJson(cJSON* iter, SVFFunction* value)
     JSON_READ_BOOL(iter, value, varArg);
     JSON_READ_SVFTYPE(iter, value, funcType);
     // Read Loop and Dom
-    iter = iter->next;
-    assert(cJSON_IsObject(iter) && !std::strcmp("loopAndDom", iter->string) &&
-           "Expect a `loopAndDom' json object");
+    ABORT_IFNOT(
+        (cJSON_IsObject(iter) && !std::strcmp("loopAndDom", iter->string)),
+        "Expect a `loopAndDom' json object");
     value->loopAndDom = readSvfLoopAndDomInfo(iter->child);
+    iter = iter->next;
     // Others
     JSON_READ_SVFVALUE(iter, value, realDefFun);
     JSON_READ_VECTOR_OF_SVFVALUE(iter, value, allBBs);
@@ -1111,4 +1164,43 @@ cJSON* SVFModuleRead::readJson(cJSON* iter, SVFOtherValue* value)
 cJSON* SVFModuleRead::readJson(cJSON* iter, SVFMetadataAsValue* value)
 {
     return readJson(iter, static_cast<SVFOtherValue*>(value));
+}
+
+SVFModuleRead::SVFModuleRead(const std::string& path) : svfModule(nullptr)
+{
+    struct stat buf;
+    int fd = open(path.c_str(), O_RDONLY);
+    if (fd == -1)
+    {
+        std::string info = "open(\"" + path + "\")";
+        perror(info.c_str());
+        abort();
+    }
+    if (fstat(fd, &buf) == -1)
+    {
+        std::string info = "fstate(\"" + path + "\")";
+        perror(info.c_str());
+        abort();
+    }
+    auto addr =
+        (char*)mmap(nullptr, buf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (addr == MAP_FAILED)
+    {
+        std::string info = "mmap(content of \"" + path + "\")";
+        perror(info.c_str());
+        abort();
+    }
+
+    moduleJson = cJSON_ParseWithLength(addr, buf.st_size);
+
+    if (munmap(addr, buf.st_size) == -1)
+        perror("munmap()");
+
+    if (close(fd) < 0)
+        perror("close()");
+}
+
+SVFModuleRead::~SVFModuleRead()
+{
+    cJSON_Delete(moduleJson);
 }

@@ -53,18 +53,19 @@ using ValueIndex = std::size_t;
 class SVFModuleWrite
 {
 private:
-    const SVFModule* module;
-    const char* jsonStr;
+    const SVFModule* module; ///< Borrowed pointer to the SVFModule.
+    const char* jsonStr; ///< Json string of the SVFModule. It gets freed by
+                         /// `cJSON_free()` in destructor.
 
     std::unordered_map<const SVFType*, TypeIndex> typeToIndex;
     std::vector<const SVFType*>
-        typePool; /// < A pool of all SVFTypes in the SVFModule
+        typePool; ///< A pool of all SVFTypes in the SVFModule
     TypeIndex getTypeIndex(const SVFType* type);
     const char* getStrTypeIndex(const SVFType* type);
 
     std::unordered_map<const SVFValue*, ValueIndex> valueToIndex;
     std::vector<const SVFValue*>
-        valuePool; /// < A pool of all SVFValues in the SVFModule
+        valuePool; ///< A pool of all SVFValues in the SVFModule
     ValueIndex getValueIndex(const SVFValue* value);
     const char* getStrValueIndex(const SVFValue* value);
 
@@ -73,6 +74,7 @@ private:
 
 public:
     SVFModuleWrite(const SVFModule* module);
+    /// @brief  Dump the SVFModule to a file in JSON format at the given path.
     SVFModuleWrite(const SVFModule* module, const std::string& path);
     void dumpJsonToPath(const std::string& path);
     void dumpJsonToOstream(std::ostream& os);
@@ -116,25 +118,32 @@ private:
 class SVFModuleRead
 {
 private:
-    const SVFModule* module;
+    cJSON* moduleJson; ///< Owned pointer to the root object of the SVFModule. Be
+                      ///< sure to delete it with `cJSON_Delete()` it in
+                      ///< destructor.
 
-    std::vector<SVFType*>
-        typePool; /// < A pool of all SVFTypes in the SVFModule
+    SVFModule* svfModule;
+
+    std::vector<SVFType*> typePool; ///< A pool of all SVFTypes in the SVFModule
     std::vector<cJSON*> typeArray;
 
     std::vector<SVFValue*>
-        valuePool; /// < A pool of all SVFValues in the SVFModule
+        valuePool; ///< A pool of all SVFValues in the SVFModule
     std::vector<cJSON*> valueArray;
 
 public:
-    const SVFModule* readSvfModule(cJSON* node);
+    SVFModule* get();
+    SVFModuleRead(const std::string& path);
+    ~SVFModuleRead();
 
 private:
+    SVFModule* readSvfModule(cJSON* iter);
+
     SVFType* indexToType(TypeIndex i);
     SVFValue* indexToValue(ValueIndex i);
 
-    void fillSvfTypeAt(TypeIndex i);
-    void fillSvfValueAt(ValueIndex i);
+    void fillSvfTypeAt(size_t i);
+    void fillSvfValueAt(size_t i);
 
     StInfo* readStInfo(cJSON* iter);
     cJSON* readJson(cJSON* iter, SVFType* type);
