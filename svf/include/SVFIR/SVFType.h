@@ -429,7 +429,7 @@ template <> struct Hash<NodePair>
         } while (false)
 #endif
 
-/// LLVM debug macros, define type of your DEBUG model of each pass
+/// LLVM debug macros, define type of your DBUG model of each pass
 #define DBOUT(TYPE, X) SVF_DEBUG_WITH_TYPE(TYPE, X)
 #define DOSTAT(X) X
 #define DOTIMESTAT(X) X

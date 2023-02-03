@@ -29,7 +29,7 @@ const OptionMap<NodeIDAllocator::Strategy> Options::NodeAllocStrat(
     {NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together [0-n] and values together [m-MAX], separately"},
     {NodeIDAllocator::Strategy::REVERSE_DENSE, "reverse-dense", "like dense but flipped, objects are [m-MAX], values are [0-n]"},
     {NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed (default)"},
-    {NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets"},
+    {NodeIDAllocator::Strategy::DBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets"},
 }
 );
 
