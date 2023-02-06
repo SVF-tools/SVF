@@ -29,16 +29,12 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "WPA/WPAPass.h"
-#include "SVFIR/SVFModuleRW.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
 using namespace llvm;
 using namespace std;
 using namespace SVF;
-
-static Option<std::string> dumpToJsonFile("dump-json",
-                                          "Dump SVFModule to JSON file", "");
 
 int main(int argc, char** argv)
 {
@@ -56,10 +52,6 @@ int main(int argc, char** argv)
 
     SVFModule* svfModule =
         LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-
-    std::string jsonPath = dumpToJsonFile();
-    if (!jsonPath.empty())
-        SVFModuleWrite(svfModule, jsonPath);
 
     /// Build SVFIR
     SVFIRBuilder builder(svfModule);
