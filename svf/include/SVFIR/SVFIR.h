@@ -578,13 +578,13 @@ private:
     /// Add a value (pointer) node
     inline NodeID addValNode(const SVFValue*, SVFVar *node, NodeID i)
     {
-        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DEBUG to SEQ or DENSE");
+        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DBUG to SEQ or DENSE");
         return addNode(node,i);
     }
     /// Add a memory obj node
     inline NodeID addObjNode(const SVFValue*, SVFVar *node, NodeID i)
     {
-        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DEBUG to SEQ or DENSE");
+        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DBUG to SEQ or DENSE");
         return addNode(node,i);
     }
     /// Add a unique return node for a procedure
