@@ -36,7 +36,7 @@ public:
         /// GEP objects are allocated as an offset from their base (see implementation
         /// of allocateGepObjectId). The purpose of this allocation strategy
         /// is human readability.
-        DEBUG,
+        DBUG,
     };
 
     /// These nodes, and any nodes before them are assumed allocated
@@ -61,8 +61,8 @@ public:
 
     /// Allocate a GEP object ID as determined by the strategy.
     /// allocateObjectId is still fine for GEP objects, but
-    /// for some strategies (DEBUG, namely), GEP objects can
-    /// be allocated differently (more readable, for DEBUG).
+    /// for some strategies (DBUG, namely), GEP objects can
+    /// be allocated differently (more readable, for DBUG).
     /// Regardless, numObjects is shared; there is no special
     /// numGepObjects.
     NodeID allocateGepObjectId(NodeID base, u32_t offset, u32_t maxFieldLimit);

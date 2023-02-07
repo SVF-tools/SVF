@@ -64,7 +64,7 @@ NodeID NodeIDAllocator::allocateObjectId(void)
         // Everything is sequential and intermixed.
         id = numNodes;
     }
-    else if (strategy == Strategy::DEBUG)
+    else if (strategy == Strategy::DBUG)
     {
         // Non-GEPs just grab the next available ID.
         // We may have "holes" because GEPs increment the total
@@ -101,7 +101,7 @@ NodeID NodeIDAllocator::allocateGepObjectId(NodeID base, u32_t offset, u32_t max
         // Everything is sequential and intermixed.
         id = numNodes;
     }
-    else if (strategy == Strategy::DEBUG)
+    else if (strategy == Strategy::DBUG)
     {
         // For a gep id, base id is set at lower bits, and offset is set at higher bits
         // e.g., 1100050 denotes base=50 and offset=10
@@ -146,7 +146,7 @@ NodeID NodeIDAllocator::allocateValueId(void)
         // Everything is sequential and intermixed.
         id = numNodes;
     }
-    else if (strategy == Strategy::DEBUG)
+    else if (strategy == Strategy::DBUG)
     {
         id = numNodes;
     }
