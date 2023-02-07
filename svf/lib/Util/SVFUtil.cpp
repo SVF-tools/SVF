@@ -50,7 +50,7 @@ using namespace SVF;
 /*!
  * print successful message by converting a string into green string output
  */
-std::string SVFUtil::sucMsg(std::string msg)
+std::string SVFUtil::sucMsg(const std::string& msg)
 {
     return KGRN + msg + KNRM;
 }
@@ -58,36 +58,37 @@ std::string SVFUtil::sucMsg(std::string msg)
 /*!
  * print warning message by converting a string into yellow string output
  */
-std::string SVFUtil::wrnMsg(std::string msg)
+std::string SVFUtil::wrnMsg(const std::string& msg)
 {
     return KYEL + msg + KNRM;
 }
 
-void SVFUtil::writeWrnMsg(std::string msg)
+void SVFUtil::writeWrnMsg(const std::string& msg)
 {
-    if(Options::DisableWarn()) return;
+    if (Options::DisableWarn())
+        return;
     outs() << wrnMsg(msg) << "\n";
 }
 
 /*!
  * print error message by converting a string into red string output
  */
-std::string SVFUtil::errMsg(std::string msg)
+std::string SVFUtil::errMsg(const std::string& msg)
 {
     return KRED + msg + KNRM;
 }
 
-std::string SVFUtil::bugMsg1(std::string msg)
+std::string SVFUtil::bugMsg1(const std::string& msg)
 {
     return KYEL + msg + KNRM;
 }
 
-std::string SVFUtil::bugMsg2(std::string msg)
+std::string SVFUtil::bugMsg2(const std::string& msg)
 {
     return KPUR + msg + KNRM;
 }
 
-std::string SVFUtil::bugMsg3(std::string msg)
+std::string SVFUtil::bugMsg3(const std::string& msg)
 {
     return KCYA + msg + KNRM;
 }
@@ -95,7 +96,7 @@ std::string SVFUtil::bugMsg3(std::string msg)
 /*!
  * print each pass/phase message by converting a string into blue string output
  */
-std::string SVFUtil::pasMsg(std::string msg)
+std::string SVFUtil::pasMsg(const std::string& msg)
 {
     return KBLU + msg + KNRM;
 }

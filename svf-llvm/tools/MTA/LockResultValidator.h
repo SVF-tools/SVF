@@ -80,12 +80,12 @@ private:
         return nullptr;
     }
 
-    inline bool inFilter(std::string name)
+    inline bool inFilter(const std::string& name)
     {
         return filterFun.find(name) != filterFun.end();
     }
 
-    inline bool match(std::string lockName, CxtLockSetStr LS)
+    inline bool match(const std::string& lockName, CxtLockSetStr LS)
     {
         return LS.find(lockName) != LS.end();
     }
