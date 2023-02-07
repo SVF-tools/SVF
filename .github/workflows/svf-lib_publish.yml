@@ -53,7 +53,10 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo $(pwd)
-          clang-format -i $( git diff-tree --name-only -r HEAD | grep -iE '\.(cpp|h)$' )
+          LAST_FORMATTER_HASH=$(git rev-list -n 1 HEAD --grep='^SVF code format')
+          FILES_CHANGED=$(git diff-tree --no-commit-id --name-only -r $LAST_FORMATTER_HASH HEAD | grep -iE '\.(cpp|h)$')
+          echo "Formatting files ${FILES_CHANGED} since ${LAST_FORMATTER_HASH}..."
+          if [ ! -z $FILES_CHANGED ]; then clang-format -i $FILES_CHANGED; fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
 
