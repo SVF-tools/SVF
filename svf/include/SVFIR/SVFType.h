@@ -1,4 +1,4 @@
-//===- SVFBasicTypes.h -- Basic types used in SVF-------------------------------//
+//===- SVFBasicTypes.h -- Basic types used in SVF-----------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -168,8 +168,11 @@ public:
     /// Destructor
     ~StInfo() = default;
 
-    ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}  B b;
-    // OriginalFieldType of b with field_idx 1 : Struct A
+    ///  struct A { int id; int salary; };
+    ///  struct B { char name[20]; struct A a;}
+    ///  B b;
+    ///
+    ///  OriginalFieldType of b with field_idx 1 : Struct A
     ///  FlatternedFieldType of b with field_idx 1 : int
     //{@
     const SVFType* getOriginalElemType(u32_t fldIdx) const;

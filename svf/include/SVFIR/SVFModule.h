@@ -1,4 +1,4 @@
-//===- SVFModule.h -- SVFModule* class-----------------------------------------//
+//===- SVFModule.h -- SVFModule* class----------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -42,6 +42,7 @@ class SVFModule
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+
 public:
     typedef std::vector<const SVFFunction*> FunctionSetType;
     typedef std::vector<SVFGlobalValue*> GlobalSetType;
@@ -67,14 +68,12 @@ private:
     FunctionSetType FunctionSet;  ///< The Functions in the module
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
-    ConstantType ConstantSet;        ///< The ConstantData in the module
-    OtherValueType  OtherValueSet;   ///< All other values in the module
+    ConstantType ConstantSet;     ///< The ConstantData in the module
+    OtherValueType OtherValueSet; ///< All other values in the module
 
 public:
     /// Constructors
-    SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName)
-    {
-    }
+    SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName) {}
 
     ~SVFModule();
 

@@ -1186,7 +1186,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
         std::vector<NodeID>& operands = operation.getOperands();
         if (operation.getOperator() == "funptr_ops" || operation.getOperator() == "Rb_tree_ops")
             continue;
-        for (std::string s: operation.getOperandStr())
+        for (const std::string& s : operation.getOperandStr())
         {
             // There is already a NodeID in nodeIDMap
             if (nodeIDMap.find(s) != nodeIDMap.end())

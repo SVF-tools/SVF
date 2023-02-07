@@ -70,27 +70,28 @@ void dumpSparseSet(const NodeBS& To);
 void dumpAliasSet(unsigned node, NodeBS To) ;
 
 /// Returns successful message by converting a string into green string output
-std::string sucMsg(std::string msg);
+std::string sucMsg(const std::string& msg);
 
 /// Returns warning message by converting a string into yellow string output
-std::string wrnMsg(std::string msg);
+std::string wrnMsg(const std::string& msg);
 
 /// Writes a message run through wrnMsg.
-void writeWrnMsg(std::string msg);
+void writeWrnMsg(const std::string& msg);
 
 /// Print error message by converting a string into red string output
 //@{
-std::string  errMsg(std::string msg);
-std::string  bugMsg1(std::string msg);
-std::string  bugMsg2(std::string msg);
-std::string  bugMsg3(std::string msg);
+std::string  errMsg(const std::string& msg);
+std::string  bugMsg1(const std::string& msg);
+std::string  bugMsg2(const std::string& msg);
+std::string  bugMsg3(const std::string& msg);
 //@}
 
 /// Print each pass/phase message by converting a string into blue string output
-std::string  pasMsg(std::string msg);
+std::string  pasMsg(const std::string& msg);
 
 /// Print memory usage in KB.
-void reportMemoryUsageKB(const std::string& infor, OutStream & O = SVFUtil::outs());
+void reportMemoryUsageKB(const std::string& infor,
+                         OutStream& O = SVFUtil::outs());
 
 /// Get memory usage from system file. Return TRUE if succeed.
 bool getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb);
