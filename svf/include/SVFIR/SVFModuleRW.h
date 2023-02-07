@@ -55,17 +55,17 @@ class SVFModuleWrite
 private:
     const SVFModule* module; ///< Borrowed pointer to the SVFModule.
     const char* jsonStr; ///< Json string of the SVFModule. It gets freed by
-                         /// `cJSON_free()` in destructor.
+    /// `cJSON_free()` in destructor.
 
     std::unordered_map<const SVFType*, TypeIndex> typeToIndex;
     std::vector<const SVFType*>
-        typePool; ///< A pool of all SVFTypes in the SVFModule
+    typePool; ///< A pool of all SVFTypes in the SVFModule
     TypeIndex getTypeIndex(const SVFType* type);
     const char* getStrTypeIndex(const SVFType* type);
 
     std::unordered_map<const SVFValue*, ValueIndex> valueToIndex;
     std::vector<const SVFValue*>
-        valuePool; ///< A pool of all SVFValues in the SVFModule
+    valuePool; ///< A pool of all SVFValues in the SVFModule
     ValueIndex getValueIndex(const SVFValue* value);
     const char* getStrValueIndex(const SVFValue* value);
 
@@ -119,8 +119,8 @@ class SVFModuleRead
 {
 private:
     cJSON* moduleJson; ///< Owned pointer to the root object of the SVFModule. Be
-                      ///< sure to delete it with `cJSON_Delete()` it in
-                      ///< destructor.
+    ///< sure to delete it with `cJSON_Delete()` it in
+    ///< destructor.
 
     SVFModule* svfModule;
 
@@ -128,7 +128,7 @@ private:
     std::vector<cJSON*> typeArray;
 
     std::vector<SVFValue*>
-        valuePool; ///< A pool of all SVFValues in the SVFModule
+    valuePool; ///< A pool of all SVFValues in the SVFModule
     std::vector<cJSON*> valueArray;
 
 public:
