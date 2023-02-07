@@ -31,7 +31,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           ln -sfn /Applications/Xcode_12.5.1.app /Applications/Xcode.app
-          brew install astyle
+          brew install clang-format
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
@@ -40,7 +40,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install cmake gcc g++ nodejs doxygen graphviz
           sudo apt-get update
-          sudo apt-get install -y astyle
+          sudo apt-get install -y clang-format
       - name: env-setup
         if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
         run: |
@@ -53,8 +53,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo $(pwd)
-          astyle --style=allman -n -r "*.h" "*.cpp"
-          echo $(pwd)
+          clang-format -i $( git diff-tree --name-only -r HEAD | grep -iE '\.(cpp|h)$' )
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
 
@@ -71,7 +70,7 @@ jobs:
             git status
             git pull
             git add .
-            if [ -n "$(git status -s)" ]; then git commit -m"SVF code formatter"; fi
+            if [ -n "$(git status -s)" ]; then git commit -m"SVF code formatting (by clang-format)"; fi
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF.git   HEAD:master
             cd $GITHUB_WORKSPACE/docs && doxygen doxygen.config
             cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git       
