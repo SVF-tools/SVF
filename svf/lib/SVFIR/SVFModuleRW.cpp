@@ -7,7 +7,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/unistd.h>
+#include <unistd.h>
 
 using namespace SVF;
 
@@ -339,7 +339,7 @@ cJSON* SVFModuleWrite::typeToJson(const SVFType* type)
     default:
         SVFUtil::errs() << "Impossible SVFType kind " << kind
                         << " in typeToJson()\n";
-        abort();
+        assert(false);
 
 #define CASE(Kind)                                                             \
     case SVFType::Kind:                                                        \
@@ -539,7 +539,7 @@ cJSON* SVFModuleWrite::valueToJson(const SVFValue* value)
     default:
         SVFUtil::errs() << "Impossible SVFValue kind in" << kind
                         << " in typeToJson()\n";
-        abort();
+        assert(false);
 
 #define CASE(kind, type)                                                       \
     case SVFValue::kind:                                                       \
@@ -668,10 +668,10 @@ SVFType* createType(SVFType::SVFTyKind kind)
     default:
         SVFUtil::errs() << "Impossible SVFTyKind " << kind
                         << " in createType()\n";
-        abort();
+        assert(false);
     case SVFType::SVFTy:
         SVFUtil::errs() << "Construction of RAW SVFType isn't allowed\n";
-        abort();
+        assert(false);
     case SVFType::SVFPointerTy:
         return new SVFPointerType({});
     case SVFType::SVFIntegerTy:
@@ -694,10 +694,10 @@ SVFValue* createValue(SVFValue::SVFValKind kind)
     default:
         SVFUtil::errs() << "Impossible SVFValue kind " << kind
                         << " in createValue()\n";
-        abort();
+        assert(false);
     case SVFValue::SVFVal:
         SVFUtil::errs() << "Creation of RAW SVFValue isn't allowed\n";
-        abort();
+        assert(false);
     case SVFValue::SVFFunc:
         return new SVFFunction({}, {}, {}, {}, {}, {}, {}, {});
     case SVFValue::SVFBB:
@@ -834,7 +834,7 @@ void SVFModuleRead::fillSvfTypeAt(size_t i)
     default:
         SVFUtil::errs() << "Impossible SVFType kind " << kind
                         << " in fillSvfTypeAt()\n";
-        abort();
+        assert(false);
 
 #define CASE(Kind)                                                             \
     case SVFType::Kind: {                                                      \
@@ -864,7 +864,7 @@ void SVFModuleRead::fillSvfValueAt(size_t i)
     default:
         SVFUtil::errs() << "Impossible SVFValue kind " << kind
                         << " in fillSvfValueAt()\n";
-        abort();
+        assert(false);
 
 #define CASE(kind, type)                                                       \
     case SVFValue::kind: {                                                     \

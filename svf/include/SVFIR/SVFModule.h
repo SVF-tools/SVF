@@ -78,6 +78,8 @@ public:
 
     ~SVFModule();
 
+    void writeToJson(const std::string& filePath);
+
     static inline void setPagFromTXT(const std::string& txt)
     {
         pagReadFromTxt = txt;

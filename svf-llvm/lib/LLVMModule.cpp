@@ -123,13 +123,9 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 
     build_symbol_table();
 
-    auto* rawSvfModule = svfModule.get();
+    svfModule->writeToJson(dumpJson());
 
-    std::string jsonPath = dumpJson();
-    if (!jsonPath.empty())
-        SVFModuleWrite(rawSvfModule, jsonPath);
-
-    return rawSvfModule;
+    return svfModule.get();
 }
 
 void LLVMModuleSet::build_symbol_table() const
