@@ -36,21 +36,23 @@ using namespace llvm;
 using namespace std;
 using namespace SVF;
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
 
-    char **arg_value = new char*[argc];
+    char** arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
-    moduleNameVec = OptionBase::parseOptions(
-                        argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>"
-                    );
+    moduleNameVec =
+        OptionBase::parseOptions(argc, argv, "Whole Program Points-to Analysis",
+                                 "[options] <input-bitcode...>");
 
     if (Options::WriteAnder() == "ir_annotator")
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    SVFModule* svfModule =
+        LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+
     /// Build SVFIR
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();

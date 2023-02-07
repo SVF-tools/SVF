@@ -93,6 +93,8 @@ const CFBasicBlockEdge* CFBasicBlockGraph::getOrAddCFBasicBlockEdge(CFBasicBlock
     CFBasicBlockEdge *edge = new CFBasicBlockEdge(src, dst);
     bool added1 = edge->getDstNode()->addIncomingEdge(edge);
     bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
+    (void) added1;
+    (void) added2;
     assert(added1 && added2 && "edge not added??");
     _totalCFBasicBlockEdge++;
     return edge;

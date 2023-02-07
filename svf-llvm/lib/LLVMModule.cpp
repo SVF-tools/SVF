@@ -30,6 +30,7 @@
 #include "Util/Options.h"
 #include <queue>
 #include "SVFIR/SVFModule.h"
+#include "SVFIR/SVFModuleRW.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMUtil.h"
@@ -67,6 +68,9 @@ using namespace SVF;
 #define SVF_MAIN_FUNC_NAME           "svf.main"
 #define SVF_GLOBAL_CTORS             "llvm.global_ctors"
 #define SVF_GLOBAL_DTORS             "llvm.global_dtors"
+
+static Option<std::string> dumpJson("dump-json",
+                                    "Dump the SVFModule to JSON file", "");
 
 LLVMModuleSet *LLVMModuleSet::llvmModuleSet = nullptr;
 std::string SVFModule::pagReadFromTxt = "";
@@ -119,8 +123,11 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 
     build_symbol_table();
 
+    svfModule->writeToJson(dumpJson());
+
     return svfModule.get();
 }
+
 void LLVMModuleSet::build_symbol_table() const
 {
     double startSymInfoTime = SVFStat::getClk(true);

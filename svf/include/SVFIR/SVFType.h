@@ -44,6 +44,8 @@
 
 namespace SVF
 {
+class SVFType;
+class SVFPointerType;
 
 typedef std::ostream OutStream;
 typedef unsigned u32_t;
@@ -96,41 +98,42 @@ using Set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 template <typename Key, typename Value, typename Hash = Hash<Key>,
           typename KeyEqual = std::equal_to<Key>,
           typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                  using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
+using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
 
-          template <typename Key, typename Compare = std::less<Key>,
-                    typename Allocator = std::allocator<Key>>
-          using OrderedSet = std::set<Key, Compare, Allocator>;
+template <typename Key, typename Compare = std::less<Key>,
+          typename Allocator = std::allocator<Key>>
+using OrderedSet = std::set<Key, Compare, Allocator>;
 
-          template <typename Key, typename Value, typename Compare = std::less<Key>,
-                    typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                            using OrderedMap = std::map<Key, Value, Compare, Allocator>;
+template <typename Key, typename Value, typename Compare = std::less<Key>,
+          typename Allocator = std::allocator<std::pair<const Key, Value>>>
+using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 
-                    typedef std::pair<NodeID, NodeID> NodePair;
-                    typedef OrderedSet<NodeID> OrderedNodeSet;
-                    typedef Set<NodeID> NodeSet;
-                    typedef Set<NodePair> NodePairSet;
-                    typedef Map<NodePair, NodeID> NodePairMap;
-                    typedef std::vector<NodeID> NodeVector;
-                    typedef std::vector<EdgeID> EdgeVector;
-                    typedef std::stack<NodeID> NodeStack;
-                    typedef std::list<NodeID> NodeList;
-                    typedef std::deque<NodeID> NodeDeque;
-                    typedef NodeSet EdgeSet;
-                    typedef std::vector<u32_t> CallStrCxt;
-                    typedef unsigned Version;
-                    typedef Set<Version> VersionSet;
-                    typedef std::pair<NodeID, Version> VersionedVar;
-                    typedef Set<VersionedVar> VersionedVarSet;
+typedef std::pair<NodeID, NodeID> NodePair;
+typedef OrderedSet<NodeID> OrderedNodeSet;
+typedef Set<NodeID> NodeSet;
+typedef Set<NodePair> NodePairSet;
+typedef Map<NodePair, NodeID> NodePairMap;
+typedef std::vector<NodeID> NodeVector;
+typedef std::vector<EdgeID> EdgeVector;
+typedef std::stack<NodeID> NodeStack;
+typedef std::list<NodeID> NodeList;
+typedef std::deque<NodeID> NodeDeque;
+typedef NodeSet EdgeSet;
+typedef std::vector<u32_t> CallStrCxt;
+typedef unsigned Version;
+typedef Set<Version> VersionSet;
+typedef std::pair<NodeID, Version> VersionedVar;
+typedef Set<VersionedVar> VersionedVarSet;
 
-                    class SVFType;
-                    class SVFPointerType;
-
-                    /*!
-                     * Flatterned type information of StructType, ArrayType and SingleValueType
-                     */
-                    class StInfo
+/*!
+ * Flatterned type information of StructType, ArrayType and
+ * SingleValueType
+ */
+class StInfo
 {
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
+
 private:
     /// flattened field indices of a struct (ignoring arrays)
     std::vector<u32_t> fldIdxVec;
@@ -235,6 +238,8 @@ public:
 
 class SVFType
 {
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 
 public:
     typedef s64_t GNodeK;
@@ -253,10 +258,10 @@ public:
 private:
     GNodeK kind; ///< used for classof
     const SVFPointerType*
-    getPointerToTy; /// Return a pointer to the current type
-    StInfo* typeinfo;   /// < SVF's TypeInfo
+        getPointerToTy; /// Return a pointer to the current type
+    StInfo* typeinfo;   ///< SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or
-    ///< array
+                        ///< array
 protected:
     SVFType(bool svt, SVFTyKind k)
         : kind(k), getPointerToTy(nullptr), typeinfo(nullptr),
@@ -318,6 +323,8 @@ public:
 
 class SVFPointerType : public SVFType
 {
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
 
 private:
     const SVFType* ptrElementType;
@@ -349,6 +356,9 @@ public:
 
 class SVFFunctionType : public SVFType
 {
+    friend class SVFModuleWrite;
+    friend class SVFModuleRead;
+
 private:
     const SVFType* retTy;
 
