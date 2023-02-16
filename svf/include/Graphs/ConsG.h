@@ -56,6 +56,7 @@ protected:
     NodeToRepMap nodeToRepMap;
     NodeToSubsMap nodeToSubsMap;
     WorkList nodesToBeCollapsed;
+    WorkList newVGepTargets;
     EdgeID edgeIndex;
 
     ConstraintEdge::ConstraintEdgeSetTy AddrCGEdgeSet;
@@ -325,14 +326,7 @@ public:
         return (mem->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object
-    inline NodeID getGepObjVar(NodeID id, const LocationSet& ls)
-    {
-        NodeID gep =  pag->getGepObjVar(id,ls);
-        /// Create a node when it is (1) not exist on graph and (2) not merged
-        if(sccRepNode(gep)==gep && hasConstraintNode(gep)==false)
-            addConstraintNode(new ConstraintNode(gep),gep);
-        return gep;
-    }
+    NodeID getGepObjVar(NodeID id, const LocationSet& ls);
     /// Get a field-insensitive node of a memory object
     inline NodeID getFIObjVar(NodeID id)
     {
@@ -368,6 +362,27 @@ public:
     inline NodeID getNextCollapseNode()
     {
         return nodesToBeCollapsed.pop();
+    }
+    //@}
+
+    /// Add/get new vGep targets
+    //@{
+    inline bool isVGepTarget(NodeID id) const
+    {
+        auto mem = pag->getBaseObj(id);
+        return mem->isVGepTarget();
+    }
+    inline bool hasNewVGepTarget() const
+    {
+        return !newVGepTargets.empty();
+    }
+    inline void addVGepTarget(NodeID id)
+    {
+        newVGepTargets.push(id);
+    }
+    inline NodeID getNextVGepTarget()
+    {
+        return newVGepTargets.pop();
     }
     //@}
 

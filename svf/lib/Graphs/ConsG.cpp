@@ -552,6 +552,23 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
 }
 
 
+NodeID ConstraintGraph::getGepObjVar(NodeID id, const LocationSet& ls)
+{
+    NodeID gep = pag->getGepObjVar(id, ls);
+    /// Create a node when it is (1) not exist on graph and (2) not merged
+    if (sccRepNode(gep) == gep && !hasConstraintNode(gep))
+    {
+        addConstraintNode(new ConstraintNode(gep), gep);
+        /// If the base is a vGep target, link the field to its base
+        if (!Options::CollapseFields && isVGepTarget(getBaseObjVar(gep)))
+            /// No matter whether any new copy edge is added, gep is no need to be added to worklist
+            /// as a newly created gep node always has an empty pts
+            addCopyCGEdge(gep, getBaseObjVar(gep));
+    }
+    return gep;
+}
+]
+
 /*!
  * Dump constraint graph
  */
@@ -808,10 +825,13 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         {
             return "color=black";
         }
-        else if (edge->getEdgeKind() == ConstraintEdge::NormalGep
-                 || edge->getEdgeKind() == ConstraintEdge::VariantGep)
+        else if (edge->getEdgeKind() == ConstraintEdge::NormalGep)
         {
             return "color=purple";
+        }
+        else if (edge->getEdgeKind() == ConstraintEdge::VariantGep)
+        {
+            return "color=yellow";
         }
         else if (edge->getEdgeKind() == ConstraintEdge::Store)
         {
