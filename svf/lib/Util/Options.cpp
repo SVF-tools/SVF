@@ -655,6 +655,12 @@ const Option<bool> Options::ModelArrays(
     false
 );
 
+const Option<bool> Options::ModelStructs(
+    "model-structs",
+    "Modeling Gep offsets for struct fields",
+    false
+);
+
 const Option<bool> Options::SymTabPrint(
     "print-symbol-table",
     "Print Symbol Table to command line",
