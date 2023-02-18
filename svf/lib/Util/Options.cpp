@@ -655,10 +655,10 @@ const Option<bool> Options::ModelArrays(
     false
 );
 
-const Option<bool> Options::ModelStructs(
-    "model-structs",
-    "Modeling Gep offsets for struct fields",
-    true
+const Option<bool> Options::CyclicFldIdx(
+    "cyclic-field-index",
+    "Activate cyclic field index annotation",
+    false
 );
 
 const Option<bool> Options::SymTabPrint(
