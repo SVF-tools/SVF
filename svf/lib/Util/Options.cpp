@@ -658,7 +658,7 @@ const Option<bool> Options::ModelArrays(
 const Option<bool> Options::ModelStructs(
     "model-structs",
     "Modeling Gep offsets for struct fields",
-    false
+    true
 );
 
 const Option<bool> Options::SymTabPrint(
