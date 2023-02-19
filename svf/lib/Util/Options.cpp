@@ -657,7 +657,7 @@ const Option<bool> Options::ModelArrays(
 
 const Option<bool> Options::CyclicFldIdx(
     "cyclic-field-index",
-    "Activate cyclic field index annotation",
+    "Enable cyclic field index when generating field objects using modulus offset",
     false
 );
 
