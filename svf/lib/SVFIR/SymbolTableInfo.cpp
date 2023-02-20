@@ -106,13 +106,13 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     }
     u32_t maxOffset = obj->getMaxFieldOffsetLimit();
 
-    if (maxOffset == 0)
-        offset = 0;
     /*!
      * @offset: the index allocated to the newly generated field node;
      * @Options::MaxFieldLimit(): preset upper bound of field number;
      * @maxOffset: the max field number of the base object;
      */
+    if (maxOffset == 0)
+        offset = 0;
     else if (Options::MaxFieldLimit() < maxOffset)
         /*!
          * E.g., offset == 260, maxOffset == 270, Options::MaxFieldLimit() == 256 ==> offset = 4
