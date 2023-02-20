@@ -106,29 +106,30 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     }
     u32_t maxOffset = obj->getMaxFieldOffsetLimit();
 
+    if (maxOffset == 0)
+        offset = 0;
     /*!
-     * We provide two field index arrangement strategies via the option CyclicFldIdx.\n
-     * When CyclicFldIdx == true, the field indices of any type of base object are cyclic allocated via mod operation. \n
-     * Otherwise, the cyclic allocation of field indices works only for objects whose maxOffset is very large, i.e., larger than the preset Options::MaxFieldLimit(). \n
-     * For an objects with smaller maxOffset, any field whose index is larger than maxOffset will be aligned to the (maxOffset - 1)'th field. \n
-     * E.g., given Options::MaxFieldLimit() == 256, for an object o_1 whose maxOffset is 100 and p --Gep_3--> q where p points to o_1.f_98, q points to o_1.f_99; \n
-     * for an object o_2 whose maxOffset is 300 and p --Gep_3--> q where p points to o_2.f_254, q points to o_2.f_1.
+     * @offset: the index allocated to the newly generated field node;
+     * @Options::MaxFieldLimit(): preset upper bound of field number;
+     * @maxOffset: the max field number of the base object;
      */
-    if (Options::CyclicFldIdx())
+    else if (Options::MaxFieldLimit() < maxOffset)
+        /*!
+         * E.g., offset == 260, maxOffset == 270, Options::MaxFieldLimit() == 256 ==> offset = 4
+         */
+        offset = offset % maxOffset;
+    else if ((u32_t)offset > maxOffset - 1)
     {
-        if (maxOffset != 0)
+        if (Options::CyclicFldIdx())
+            /*!
+             * E.g., offset == 100, maxOffset == 98, Options::MaxFieldLimit() == 256 ==> offset = 2
+             */
             offset = offset % maxOffset;
         else
-            offset = 0;
-    }
-    else
-    {
-        if (maxOffset == 0)
-            offset = 0;
-        else if (maxOffset < Options::MaxFieldLimit() && (u32_t)offset > maxOffset - 1)
+            /*!
+             * E.g., offset == 100, maxOffset == 98, Options::MaxFieldLimit() == 256 ==> offset = 97
+             */
             offset = maxOffset - 1;
-        else
-            offset = offset % Options::MaxFieldLimit();
     }
 
     return LocationSet(offset);
