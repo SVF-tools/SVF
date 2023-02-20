@@ -36,6 +36,10 @@
 
 namespace SVF
 {
+/// Forward declaration of some friend classes
+///@{
+template <typename, typename> class GenericGraphWriter;
+///@}
 
 /*!
  * Generic edge on the graph as base class
@@ -100,7 +104,7 @@ public:
     /// Add the hash function for std::set (we also can overload operator< to implement this)
     //  and duplicated elements in the set are not inserted (binary tree comparison)
     //@{
-    typedef struct equalGEdge
+    typedef struct
     {
         bool operator()(const GenericEdge<NodeType>* lhs, const GenericEdge<NodeType>* rhs) const
         {
@@ -331,9 +335,10 @@ public:
  * Generic graph for program representation
  * It is base class and needs to be instantiated
  */
-template<class NodeTy,class EdgeTy>
+template<class NodeTy, class EdgeTy>
 class GenericGraph
 {
+    friend class GenericGraphWriter<NodeTy, EdgeTy>;
 
 public:
     typedef NodeTy NodeType;

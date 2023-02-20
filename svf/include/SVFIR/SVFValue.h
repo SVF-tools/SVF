@@ -51,6 +51,7 @@ class SVFLoopAndDomInfo
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 public:
     typedef Set<const SVFBasicBlock*> BBSet;
     typedef std::vector<const SVFBasicBlock*> BBList;
@@ -151,6 +152,7 @@ class SVFValue
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
     friend class LLVMModuleSet;
 
 public:
@@ -264,6 +266,7 @@ class SVFFunction : public SVFValue
     friend class LLVMModuleSet;
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 
 public:
     typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
@@ -480,6 +483,7 @@ class SVFBasicBlock : public SVFValue
     friend class LLVMModuleSet;
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 
 public:
     typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
@@ -580,6 +584,7 @@ class SVFInstruction : public SVFValue
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 public:
     typedef std::vector<const SVFInstruction*> InstVec;
 
@@ -647,6 +652,7 @@ class SVFCallInst : public SVFInstruction
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
     friend class LLVMModuleSet;
 
 private:
@@ -721,6 +727,7 @@ class SVFVirtualCallInst : public SVFCallInst
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
     friend class LLVMModuleSet;
 
 private:
@@ -779,6 +786,7 @@ class SVFConstant : public SVFValue
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 public:
     SVFConstant(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConst): SVFValue(_const, ty, k)
     {
@@ -801,6 +809,7 @@ class SVFGlobalValue : public SVFConstant
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
     friend class LLVMModuleSet;
 
 private:
@@ -839,6 +848,7 @@ class SVFArgument : public SVFValue
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 private:
     const SVFFunction* fun;
     u32_t argNo;
@@ -878,6 +888,7 @@ class SVFConstantData : public SVFConstant
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 public:
     SVFConstantData(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConstData): SVFConstant(_const, ty, k)
     {
@@ -907,6 +918,7 @@ class SVFConstantInt : public SVFConstantData
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 private:
     u64_t zval;
     s64_t sval;
@@ -941,6 +953,7 @@ class SVFConstantFP : public SVFConstantData
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 private:
     float dval;
 public:
@@ -968,6 +981,7 @@ class SVFConstantNullPtr : public SVFConstantData
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 
 public:
     SVFConstantNullPtr(const std::string& _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFNullPtr)
@@ -989,6 +1003,7 @@ class SVFBlackHoleValue : public SVFConstantData
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 
 public:
     SVFBlackHoleValue(const std::string& _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFBlackHole)
@@ -1010,6 +1025,7 @@ class SVFOtherValue : public SVFValue
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 public:
     SVFOtherValue(const std::string& other, const SVFType* ty, SVFValKind k = SVFValue::SVFOther): SVFValue(other, ty, k)
     {
@@ -1029,6 +1045,7 @@ class SVFMetadataAsValue : public SVFOtherValue
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+friend class SVFIRWriter;
 public:
     SVFMetadataAsValue(const std::string& other, const SVFType* ty): SVFOtherValue(other, ty, SVFValue::SVFMetaAsValue)
     {

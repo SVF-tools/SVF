@@ -42,6 +42,7 @@ class SVFModule
 {
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
+    friend class SVFIRWriter;
 
 public:
     typedef std::vector<const SVFFunction*> FunctionSetType;

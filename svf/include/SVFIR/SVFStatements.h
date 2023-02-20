@@ -57,7 +57,21 @@ public:
     /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
     enum PEDGEK
     {
-        Addr, Copy, Store, Load, Call, Ret, Gep, Phi, Select, Cmp, BinaryOp, UnaryOp, Branch, ThreadFork, ThreadJoin
+        Addr,
+        Copy,
+        Store,
+        Load,
+        Call,
+        Ret,
+        Gep,
+        Phi,
+        Select,
+        Cmp,
+        BinaryOp,
+        UnaryOp,
+        Branch,
+        ThreadFork,
+        ThreadJoin
     };
 
 private:

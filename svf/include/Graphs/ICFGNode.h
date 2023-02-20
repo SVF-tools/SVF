@@ -59,7 +59,12 @@ public:
     /// Gep represents offset edge for field sensitivity
     enum ICFGNodeK
     {
-        IntraBlock, FunEntryBlock, FunExitBlock, FunCallBlock, FunRetBlock, GlobalBlock
+        IntraBlock,
+        FunEntryBlock,
+        FunExitBlock,
+        FunCallBlock,
+        FunRetBlock,
+        GlobalBlock
     };
 
     typedef ICFGEdge::ICFGEdgeSetTy::iterator iterator;
@@ -370,7 +375,8 @@ private:
     const RetICFGNode* ret;
     ActualParmNodeVec APNodes;
 public:
-    CallICFGNode(NodeID id, const SVFInstruction* c) : InterICFGNode(id, FunCallBlock), cs(c), ret(nullptr)
+    CallICFGNode(NodeID id, const SVFInstruction* c)
+        : InterICFGNode(id, FunCallBlock), cs(c), ret(nullptr)
     {
         fun = cs->getFunction();
         bb = cs->getParent();

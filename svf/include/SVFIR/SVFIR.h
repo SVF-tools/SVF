@@ -47,6 +47,7 @@ class SVFIR : public IRGraph
     friend class ExternalPAG;
     friend class PAGBuilderFromFile;
     friend class TypeBasedHeapCloning;
+    friend class SVFIRWriter;
 
 public:
     typedef Set<const CallICFGNode*> CallSiteSet;
@@ -160,7 +161,7 @@ public:
     {
         icfg = i;
     }
-    inline ICFG* getICFG()
+    inline ICFG* getICFG() const
     {
         assert(icfg->totalICFGNode>0 && "empty ICFG! Build SVF IR first!");
         return icfg;
