@@ -655,6 +655,12 @@ const Option<bool> Options::ModelArrays(
     false
 );
 
+const Option<bool> Options::CyclicFldIdx(
+    "cyclic-field-index",
+    "Enable cyclic field index when generating field objects using modulus offset",
+    false
+);
+
 const Option<bool> Options::SymTabPrint(
     "print-symbol-table",
     "Print Symbol Table to command line",

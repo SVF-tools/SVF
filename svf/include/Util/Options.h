@@ -215,6 +215,7 @@ public:
     static const Option<bool> LocMemModel;
     static const Option<bool> ModelConsts;
     static const Option<bool> ModelArrays;
+    static const Option<bool> CyclicFldIdx;
     static const Option<bool> SymTabPrint;
 
     // Conditions.cpp
