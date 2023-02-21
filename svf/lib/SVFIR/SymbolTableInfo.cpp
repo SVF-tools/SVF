@@ -105,10 +105,32 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
         offset = abs(offset);
     }
     u32_t maxOffset = obj->getMaxFieldOffsetLimit();
-    if (maxOffset != 0)
-        offset = offset % maxOffset;
-    else
+
+    /*!
+     * @offset: the index allocated to the newly generated field node;
+     * @Options::MaxFieldLimit(): preset upper bound of field number;
+     * @maxOffset: the max field number of the base object;
+     */
+    if (maxOffset == 0)
         offset = 0;
+    else if (Options::MaxFieldLimit() < maxOffset)
+        /*!
+         * E.g., offset == 260, maxOffset == 270, Options::MaxFieldLimit() == 256 ==> offset = 4
+         */
+        offset = offset % maxOffset;
+    else if ((u32_t)offset > maxOffset - 1)
+    {
+        if (Options::CyclicFldIdx())
+            /*!
+             * E.g., offset == 100, maxOffset == 98, Options::MaxFieldLimit() == 256 ==> offset = 2
+             */
+            offset = offset % maxOffset;
+        else
+            /*!
+             * E.g., offset == 100, maxOffset == 98, Options::MaxFieldLimit() == 256 ==> offset = 97
+             */
+            offset = maxOffset - 1;
+    }
 
     return LocationSet(offset);
 }
