@@ -8,6 +8,12 @@ static const Option<bool> humanReadableOption(
 namespace SVF
 {
 
+cJSON* SVFIRWriter::toJson(const LocationSet& ls)
+{
+    // TODO: JSON
+    return jsonCreateString("TODO: LocationSet");
+}
+
 bool jsonAddNumberToObject(cJSON* obj, const char* name, double number)
 {
     cJSON* node = cJSON_CreateNumber(number);
@@ -47,6 +53,11 @@ cJSON* jsonCreateString(const char* str)
     return cJSON_CreateStringReference(str);
 }
 
+cJSON* jsonCreateIndex(size_t index)
+{
+    return cJSON_CreateNumber(index);
+}
+
 bool jsonAddPairToMap(cJSON* mapObj, cJSON* key, cJSON* value)
 {
     cJSON* pair = cJSON_CreateArray();
@@ -83,6 +94,7 @@ const char* SVFIRWriter::numToStr(size_t n)
     return numToStrMap.emplace_hint(it, n, std::to_string(n))->second.c_str();
 }
 
+// Main logic
 cJSON* SVFIRWriter::toJson()
 {
     cJSON* root = jsonCreateObject();
@@ -92,22 +104,70 @@ cJSON* SVFIRWriter::toJson()
     cJSON* nodeAllValues = cJSON_CreateArray();
     jsonAddItemToObject(root, "valuePool", nodeAllValues);
 
-    JSON_WRITE_TOJSONABLE_FIELD(root, svfIR, svfModule);
+#define F(field) JSON_WRITE_FIELD(root, svfIR, field)
+    F(svfModule);
+
+    F(icfgNode2SVFStmtsMap);
+    F(icfgNode2PTASVFStmtsMap);
+    F(GepValObjMap);
+    F(GepObjVarMap);
+    F(memToFieldsMap);
+    F(globSVFStmtSet);
+    F(phiNodeMap);
+    F(funArgsListMap);
+    F(callSiteArgsListMap);
+    F(callSiteRetMap);
+    F(funRetMap);
+    F(indCallSiteToFunPtrMap);
+    F(funPtrToCallSitesMap);
+    F(candidatePointers);
+    //F(svfModule);
+    //F(icfg);
+    //F(chgraph);
+    F(callSiteSet);
+#undef F
 
     return root;
+}
+
+cJSON* SVFIRWriter::toJson(const SVFType* type)
+{
+    return jsonCreateIndex(svfTypePool.getID(type));
+}
+
+cJSON* SVFIRWriter::toJson(const SVFValue* value)
+{
+    return jsonCreateIndex(svfValuePool.getID(value));
+}
+
+cJSON* SVFIRWriter::toJson(const SVFStmt* stmt)
+{
+    return jsonCreateIndex(irGraphWriter.getEdgeID(stmt));
+}
+
+cJSON* SVFIRWriter::toJson(const SVFVar* var) {
+    return jsonCreateIndex(irGraphWriter.getNodeID(var));
+}
+
+cJSON* SVFIRWriter::toJson(const ICFGNode* node) {
+    return jsonCreateIndex(icfgWriter.getNodeID(node));
+}
+
+cJSON* SVFIRWriter::toJson(const ICFGEdge* edge) {
+    return jsonCreateIndex(icfgWriter.getEdgeID(edge));
 }
 
 cJSON *SVFIRWriter::toJson(const SVFModule* module)
 {
     cJSON* root = jsonCreateObject();
-    JSON_WRITE_STDSTRING_FIELD(root, module, pagReadFromTxt);
-    JSON_WRITE_STDSTRING_FIELD(root, module, moduleIdentifier);
+    // JSON_WRITE_STRING_FIELD(root, module, pagReadFromTxt);
+    // JSON_WRITE_STRING_FIELD(root, module, moduleIdentifier);
 
-    JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, FunctionSet);
-    JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, GlobalSet);
-    JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, AliasSet);
-    JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, ConstantSet);
-    JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, OtherValueSet);
+    // JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, FunctionSet);
+    // JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, GlobalSet);
+    // JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, AliasSet);
+    // JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, ConstantSet);
+    // JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, OtherValueSet);
 
     return root;
 }

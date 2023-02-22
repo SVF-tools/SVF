@@ -6,6 +6,7 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/ICFG.h"
 #include "Graphs/IRGraph.h"
+#include <type_traits>
 
 #define ABORT_IFNOT(condition, reason)                                         \
     do                                                                         \
@@ -18,6 +19,22 @@
         }                                                                      \
     } while (0)
 
+/// @brief Type trait to check if a type is iterable.
+///@{
+template <typename T, typename = void> struct is_iterable : std::false_type
+{
+};
+
+// this gets used only when we can call std::begin() and std::end() on that type
+template <typename T>
+struct is_iterable<T, std::void_t<decltype(std::begin(std::declval<T&>())),
+                                  decltype(std::end(std::declval<T&>()))>>
+    : std::true_type
+{
+};
+template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
+///@}
+
 namespace SVF
 {
 
@@ -25,6 +42,7 @@ cJSON* jsonCreateObject();
 cJSON* jsonCreateArray();
 cJSON* jsonCreateMap();
 cJSON* jsonCreateString(const char* str);
+cJSON* jsonCreateIndex(size_t index);
 bool jsonAddPairToMap(cJSON* obj, cJSON* key, cJSON* value);
 bool jsonAddItemToObject(cJSON* obj, const char* name, cJSON* item);
 bool jsonAddItemToArray(cJSON* array, cJSON* item);
@@ -36,8 +54,11 @@ bool jsonAddStringToObject(cJSON* obj, const char* name,
 
 #define JSON_WRITE_NUMBER_FIELD(root, objptr, field)                           \
     jsonAddNumberToObject(root, #field, (objptr)->field)
-#define JSON_WRITE_STDSTRING_FIELD(root, objptr, field)                        \
+#define JSON_WRITE_STRING_FIELD(root, objptr, field)                           \
     jsonAddStringToObject(root, #field, (objptr)->field)
+#define JSON_WRITE_FIELD(root, objptr, field)                                  \
+    jsonAddJsonableToObject(root, #field, (objptr)->field)
+
 
 class SVFIR;
 class SVFIRWriter;
@@ -50,7 +71,7 @@ private:
     std::vector<const T*> ptrPool;
 
 public:
-    size_t getID(const T* ptr)
+    inline size_t getID(const T* ptr)
     {
         if (!ptr)
             return 0;
@@ -60,27 +81,55 @@ public:
         return it_inserted.first->second;
     }
 
-    const std::vector<const T*>& getPool() const
+    inline const T* getPtr(size_t id) const
+    {
+        assert(id >= 0 && id <= ptrPool.size() && "Invalid ID.");
+        return id ? ptrPool[id - 1] : nullptr;
+    }
+
+    inline const std::vector<const T*>& getPool() const
     {
         return ptrPool;
     }
 };
 
-template <typename NodeType, typename EdgeType> 
+template <typename NodeType, typename EdgeType>
 class GenericGraphWriter
 {
+    friend class SVFIRWriter;
 private:
     using GraphType = GenericGraph<NodeType, EdgeType>;
 
     const GraphType* graph;
     OrderedMap<const NodeType*, NodeID> nodeToID;
+    PtrPool<EdgeType> edgePool;
 
 public:
-    GenericGraphWriter(const GraphType* g) : graph(g) {
+    GenericGraphWriter(const GraphType* g) : graph(g)
+    {
         for (const auto& entry : graph->IDToNodeMap)
         {
-            nodeToID[entry.second] = entry.first;
+            const NodeID id = entry.first;
+            const NodeType* node = entry.second;
+
+            nodeToID.emplace(node, id);
+            for (const EdgeType* edge : node->getOutEdges())
+            {
+                edgePool.getID(edge);
+            }
         }
+    }
+
+    inline size_t getEdgeID(const EdgeType* edge)
+    {
+        return edgePool.getID(edge);
+    }
+
+    inline NodeID getNodeID(const NodeType* node) const
+    {
+        auto it = nodeToID.find(node);
+        assert(it != nodeToID.end() && "Node not found in the graph.");
+        return it->second;
     }
 
     cJSON* toJson() {
@@ -126,19 +175,11 @@ class SVFIRWriter
 
     PtrPool<SVFType> svfTypePool;
     PtrPool<SVFValue> svfValuePool;
-    // Map<const SVFType*, size_t> svfTypeToId;
-    // std::vector<const SVFType*> svfTypePool;
-    // size_t getSvfTypeId(const SVFType* type);
-    // const char* getSvfTypeIdStr(const SVFType* type);
 
-    // Map<const SVFValue*, size_t> valueToId;
-    // std::vector<const SVFValue*> valuePool;
-    // size_t getSvfValueId(const SVFValue* value);
-    // const char* getSvfValueIdStr(const SVFValue* value);
-
-    OrderedMap<size_t, std::string> numToStrMap;
     IRGraphWriter irGraphWriter;
     ICFGWriter icfgWriter;
+
+    OrderedMap<size_t, std::string> numToStrMap;
 
 public:
     SVFIRWriter(const SVFIR* svfir);
@@ -147,9 +188,63 @@ public:
 
     /// @brief Main logic to dump a SVFIR to a JSON object.
     cJSON* toJson();
-private:
+//private:
     const char* numToStr(size_t n);
 
+    cJSON* toJson(const SVFType* type);
+    cJSON* toJson(const SVFValue* value);
+    cJSON* toJson(const SVFStmt* stmt);  // IRGraph Node
+    cJSON* toJson(const SVFVar* var);    // IRGraph Edge
+    cJSON* toJson(const ICFGNode* node); // ICFG Node
+    cJSON* toJson(const ICFGEdge* edge); // ICFG Edge
+    static cJSON* toJson(const LocationSet& ls);
+
+    template <unsigned ElementSize>
+    static cJSON* toJson(const SparseBitVector<ElementSize>& bv)
+    {
+        //cJSON* array = jsonCreateArray();
+        //for (size_t i = 0; i < bv.size(); ++i)
+        //{
+        //    if (bv.test(i))
+        //    {
+        //        cJSON* item = cJSON_CreateNumber(i);
+        //        jsonAddItemToArray(array, item);
+        //    }
+        //}
+        //return array;
+        return cJSON_CreateString("TODO: JSON BitVector");
+    }
+
+    template <typename T, typename U>
+    cJSON* toJson(const std::pair<T, U>& pair)
+    {
+        cJSON* obj = jsonCreateObject();
+        const auto* p = &pair;
+        JSON_WRITE_FIELD(obj, p, first);
+        JSON_WRITE_FIELD(obj, p, second);
+        return obj;
+    }
+
+    template <typename T, typename = std::enable_if_t<is_iterable_v<T>>>
+    cJSON* toJson(const T& container)
+    {
+        cJSON* array = jsonCreateArray();
+        for (const auto& item : container)
+        {
+            cJSON* itemObj = toJson(item);
+            jsonAddItemToArray(array, itemObj);
+        }
+        return array;
+    }
+
+    template <typename T>
+    bool jsonAddJsonableToObject(cJSON* obj, const char* name, const T& item)
+    {
+        cJSON* itemObj = toJson(item);
+        return jsonAddItemToObject(obj, name, itemObj);
+    }
+
+    // TODO: deprecated
     template <typename T>
     bool jsonAddSvfTypePtrContainerToObject(cJSON* obj, const char* name,
                                             const T& container)
@@ -164,36 +259,28 @@ private:
         return jsonAddItemToObject(obj, name, array);
     }
 
-    template <typename T>
-    bool jsonAddSvfValuePtrContainerToObject(cJSON* obj, const char* name,
-                                             const T& container)
-    {
-        cJSON* array = jsonCreateArray();
-        for (const auto& item : container)
-        {
-            const char* strIdx = numToStr(svfValuePool.getID(item));
-            cJSON* itemObj = jsonCreateString(strIdx);
-            jsonAddItemToArray(array, itemObj);
-        }
-        return jsonAddItemToObject(obj, name, array);
-    }
+    // TODO: deprecated
+    // template <typename T>
+    // bool jsonAddSvfValuePtrContainerToObject(cJSON* obj, const char* name,
+    //                                          const T& container)
+    // {
+    //     cJSON* array = jsonCreateArray();
+    //     for (const auto& item : container)
+    //     {
+    //         const char* strIdx = numToStr(svfValuePool.getID(item));
+    //         cJSON* itemObj = jsonCreateString(strIdx);
+    //         jsonAddItemToArray(array, itemObj);
+    //     }
+    //     return jsonAddItemToObject(obj, name, array);
+    // }
 
-    template <typename T>
-    bool jsonAddToJsonableToObject(cJSON* obj, const char* name, const T* item)
-    {
-        cJSON* itemObj = toJson(item);
-        return jsonAddItemToObject(obj, name, itemObj);
-    }
 };
 
-#define JSON_WRITE_SVFTYPE_CONTAINER_FILED(root, objptr, field)                \
-    jsonAddSvfTypePtrContainerToObject(root, #field, (objptr)->field)
+// #define JSON_WRITE_SVFTYPE_CONTAINER_FILED(root, objptr, field)                
+//     jsonAddSvfTypePtrContainerToObject(root, #field, (objptr)->field)
 
-#define JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, objptr, field)               \
-    jsonAddSvfValuePtrContainerToObject(root, #field, (objptr)->field)
-
-#define JSON_WRITE_TOJSONABLE_FIELD(root, objptr, field)                       \
-    jsonAddToJsonableToObject(root, #field, (objptr)->field)
+// #define JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, objptr, field)               
+//     jsonAddSvfValuePtrContainerToObject(root, #field, (objptr)->field)
 
 } // namespace SVF
 

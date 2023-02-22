@@ -316,6 +316,12 @@ const Option<bool> Options::DumpICFG(
     false
 );
 
+const Option<std::string> Options::DumpJson(
+    "dump-json",
+    "Dump the SVFIR in JSON format",
+    ""
+);
+
 const Option<bool> Options::CallGraphDotGraph(
     "dump-callgraph",
     "Dump dot graph of Call Graph",
