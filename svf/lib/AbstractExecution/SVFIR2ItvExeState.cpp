@@ -127,7 +127,7 @@ std::pair<s32_t, s32_t> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep)
             u32_t idx = _svfir->getValueNode(value);
             if (!inVarToIValTable(idx)) return std::make_pair(-1, -1);
             IntervalValue &idxVal = _es[idx];
-            if(idxVal.isBottom() || idxVal.isTop()) return std::make_pair(-1, -1);
+            if(idxVal.isBottom() || idxVal.isTop()) return std::make_pair(0, (s32_t)Options::MaxFieldLimit());
             if (idxVal.is_numeral())
             {
                 offsetLb = offsetUb = idxVal.lb().getNumeral();
@@ -552,7 +552,7 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
     if (inVarToAddrsTable(rhs))
     {
         VAddrs &addrs = getVAddrs(rhs);
-        assert(!getVAddrs(rhs).empty());
+        assert(!addrs.empty());
         for (const auto &addr: addrs)
         {
             u32_t objId = getInternalID(addr);
@@ -634,10 +634,9 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
         {
             _es[lhs] = _es[rhs];
         }
-        else if (inVarToAddrsTable(rhs))
-        {
+        else if (inVarToAddrsTable(rhs)){
             assert(!getVAddrs(rhs).empty());
-            getVAddrs(lhs) = getVAddrs(rhs);
+            getEs().getVAddrs(lhs) = getVAddrs(rhs);
         }
     }
 }
@@ -646,8 +645,6 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
 {
     u32_t rhs = gep->getRHSVarID();
     u32_t lhs = gep->getLHSVarID();
-    if (!inVarToAddrsTable(rhs)) return;
-    assert(!getVAddrs(rhs).empty());
     VAddrs &rhsVal = getVAddrs(rhs);
     if (rhsVal.empty()) return;
     std::pair<s32_t, s32_t> offsetPair = getGepOffset(gep);
@@ -668,7 +665,7 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
         {
             gepAddrs.join_with(getGepObjAddress(rhs, i));
         }
-        getVAddrs(lhs) = gepAddrs;
+        getEs().getVAddrs(lhs) = gepAddrs;
         return;
     }
 }
@@ -696,7 +693,7 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
         {
             assert(!getVAddrs(fval).empty());
             assert(!getVAddrs(tval).empty());
-            getVAddrs(res) = _es[cond].is_zero() ? getVAddrs(fval) : getVAddrs(tval);
+            getEs().getVAddrs(res) = _es[cond].is_zero() ? getVAddrs(fval) : getVAddrs(tval);
         }
     }
 }
@@ -725,7 +722,7 @@ void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
             const VAddrs &cur = getVAddrs(curId);
             if (!inVarToAddrsTable(res))
             {
-                getVAddrs(res) = cur;
+                getEs().getVAddrs(res) = cur;
             }
             else
             {
@@ -747,7 +744,7 @@ void SVFIR2ItvExeState::translateCall(const CallPE *callPE)
     else if (inVarToAddrsTable(rhs))
     {
         assert(!getVAddrs(rhs).empty());
-        getVAddrs(lhs) = getVAddrs(rhs);
+        getEs().getVAddrs(lhs) = getVAddrs(rhs);
     }
 }
 
@@ -762,6 +759,6 @@ void SVFIR2ItvExeState::translateRet(const RetPE *retPE)
     else if (inVarToAddrsTable(rhs))
     {
         assert(!getVAddrs(rhs).empty());
-        getVAddrs(lhs) = getVAddrs(rhs);
+        getEs().getVAddrs(lhs) = getVAddrs(rhs);
     }
 }
