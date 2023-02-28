@@ -634,7 +634,8 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
         {
             _es[lhs] = _es[rhs];
         }
-        else if (inVarToAddrsTable(rhs)){
+        else if (inVarToAddrsTable(rhs))
+        {
             assert(!getVAddrs(rhs).empty());
             getEs().getVAddrs(lhs) = getVAddrs(rhs);
         }
