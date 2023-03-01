@@ -127,7 +127,8 @@ std::pair<s32_t, s32_t> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep)
             u32_t idx = _svfir->getValueNode(value);
             if (!inVarToIValTable(idx)) return std::make_pair(-1, -1);
             IntervalValue &idxVal = _es[idx];
-            if(idxVal.isBottom() || idxVal.isTop()) return std::make_pair(0, (s32_t)Options::MaxFieldLimit());
+            //if(idxVal.isBottom() || idxVal.isTop()) return std::make_pair(0, (s32_t)Options::MaxFieldLimit());
+            if(idxVal.isBottom() || idxVal.isTop()) return std::make_pair(-1,-1);
             if (idxVal.is_numeral())
             {
                 offsetLb = offsetUb = idxVal.lb().getNumeral();
@@ -580,7 +581,7 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
             {
                 if (!inVarToAddrsTable(lhs))
                 {
-                    getVAddrs(lhs) = _es.loadVAddrs(addr);
+                    getEs().getVAddrs(lhs) = _es.loadVAddrs(addr);
                 }
                 else
                 {
