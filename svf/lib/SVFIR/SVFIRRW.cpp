@@ -94,8 +94,15 @@ const char* SVFIRWriter::numToStr(size_t n)
     return numToStrMap.emplace_hint(it, n, std::to_string(n))->second.c_str();
 }
 
+const char* SVFIRWriter::generateJsonString()
+{
+    cJSON* object = this->generateJson();
+    return humanReadableOption() ? cJSON_Print(object)
+                                 : cJSON_PrintUnformatted(object);
+}
+
 // Main logic
-cJSON* SVFIRWriter::toJson()
+cJSON* SVFIRWriter::generateJson()
 {
     cJSON* root = jsonCreateObject();
 

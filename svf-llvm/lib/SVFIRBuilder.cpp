@@ -38,6 +38,7 @@
 #include "SVF-LLVM/LLVMLoopAnalysis.h"
 #include "Util/Options.h"
 #include "SVF-LLVM/CHGBuilder.h"
+#include "SVFIR/SVFIRRW.h"
 
 using namespace std;
 using namespace SVF;
@@ -164,7 +165,9 @@ SVFIR* SVFIRBuilder::build()
     // dump SVFIR as JSON
     if (!Options::DumpJson().empty())
     {
-        // TODO: JSON
+        SVFIRWriter writer(pag);
+        auto s = writer.generateJsonString();
+        SVFUtil::errs() << s << "\n";
     }
 
     double endTime = SVFStat::getClk(true);
