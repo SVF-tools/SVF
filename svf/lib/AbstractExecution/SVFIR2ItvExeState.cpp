@@ -580,7 +580,7 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
             {
                 if (!inVarToAddrsTable(lhs))
                 {
-                    getVAddrs(lhs) = _es.loadVAddrs(addr);
+                    getEs().getVAddrs(lhs) = _es.loadVAddrs(addr);
                 }
                 else
                 {
