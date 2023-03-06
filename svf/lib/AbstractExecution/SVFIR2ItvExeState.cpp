@@ -104,15 +104,15 @@ SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, u32
 
 std::pair<s32_t, s32_t> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep)
 {
-    if (gep->getOffsetValueVec().empty())
+    if (gep->getOffsetVarVec().empty())
         return std::make_pair(gep->getConstantFieldIdx(), gep->getConstantFieldIdx());
 
     s32_t totalOffsetLb = 0;
     s32_t totalOffsetUb = 0;
-    for (int i = gep->getOffsetValueVec().size() - 1; i >= 0; i--)
+    for (int i = gep->getOffsetVarVec().size() - 1; i >= 0; i--)
     {
-        const SVFValue *value = gep->getOffsetValueVec()[i].first;
-        const SVFType *type = gep->getOffsetValueVec()[i].second;
+        const SVFValue *value = gep->getOffsetVarVec()[i]->getValue();
+        const SVFType *type = gep->getOffsetVarVec()[i]->getType();
         const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         s32_t offsetLb = 0;
         s32_t offsetUb = 0;
@@ -127,7 +127,7 @@ std::pair<s32_t, s32_t> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep)
             u32_t idx = _svfir->getValueNode(value);
             if (!inVarToIValTable(idx)) return std::make_pair(-1, -1);
             IntervalValue &idxVal = _es[idx];
-            if(idxVal.isBottom() || idxVal.isTop()) return std::make_pair(0, (s32_t)Options::MaxFieldLimit());
+            if(idxVal.isBottom() || idxVal.isTop()) return std::make_pair(-1, -1);
             if (idxVal.is_numeral())
             {
                 offsetLb = offsetUb = idxVal.lb().getNumeral();
@@ -552,7 +552,7 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
     if (inVarToAddrsTable(rhs))
     {
         VAddrs &addrs = getVAddrs(rhs);
-        assert(!addrs.empty());
+        assert(!getVAddrs(rhs).empty());
         for (const auto &addr: addrs)
         {
             u32_t objId = getInternalID(addr);
@@ -637,7 +637,7 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
         else if (inVarToAddrsTable(rhs))
         {
             assert(!getVAddrs(rhs).empty());
-            getEs().getVAddrs(lhs) = getVAddrs(rhs);
+            getVAddrs(lhs) = getVAddrs(rhs);
         }
     }
 }
@@ -646,6 +646,8 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
 {
     u32_t rhs = gep->getRHSVarID();
     u32_t lhs = gep->getLHSVarID();
+    if (!inVarToAddrsTable(rhs)) return;
+    assert(!getVAddrs(rhs).empty());
     VAddrs &rhsVal = getVAddrs(rhs);
     if (rhsVal.empty()) return;
     std::pair<s32_t, s32_t> offsetPair = getGepOffset(gep);
@@ -666,7 +668,7 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
         {
             gepAddrs.join_with(getGepObjAddress(rhs, i));
         }
-        getEs().getVAddrs(lhs) = gepAddrs;
+        getVAddrs(lhs) = gepAddrs;
         return;
     }
 }
@@ -694,7 +696,7 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
         {
             assert(!getVAddrs(fval).empty());
             assert(!getVAddrs(tval).empty());
-            getEs().getVAddrs(res) = _es[cond].is_zero() ? getVAddrs(fval) : getVAddrs(tval);
+            getVAddrs(res) = _es[cond].is_zero() ? getVAddrs(fval) : getVAddrs(tval);
         }
     }
 }
@@ -723,7 +725,7 @@ void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
             const VAddrs &cur = getVAddrs(curId);
             if (!inVarToAddrsTable(res))
             {
-                getEs().getVAddrs(res) = cur;
+                getVAddrs(res) = cur;
             }
             else
             {
@@ -745,7 +747,7 @@ void SVFIR2ItvExeState::translateCall(const CallPE *callPE)
     else if (inVarToAddrsTable(rhs))
     {
         assert(!getVAddrs(rhs).empty());
-        getEs().getVAddrs(lhs) = getVAddrs(rhs);
+        getVAddrs(lhs) = getVAddrs(rhs);
     }
 }
 
@@ -760,6 +762,6 @@ void SVFIR2ItvExeState::translateRet(const RetPE *retPE)
     else if (inVarToAddrsTable(rhs))
     {
         assert(!getVAddrs(rhs).empty());
-        getEs().getVAddrs(lhs) = getVAddrs(rhs);
+        getVAddrs(lhs) = getVAddrs(rhs);
     }
 }

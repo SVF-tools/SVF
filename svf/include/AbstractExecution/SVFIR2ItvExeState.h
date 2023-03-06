@@ -42,7 +42,6 @@ class SVFIR2ItvExeState
 {
 public:
     typedef ExeState::VAddrs VAddrs;
-    static VAddrs globalNullVaddrs;
 public:
     SVFIR2ItvExeState(SVFIR *ir) : _svfir(ir) {}
 
@@ -90,10 +89,7 @@ public:
 
     inline VAddrs &getVAddrs(u32_t id)
     {
-        if (inVarToAddrsTable(id))
-            return _es.getVAddrs(id);
-        else
-            return globalNullVaddrs;
+        return _es.getVAddrs(id);
     }
 
     inline bool inVarToIValTable(u32_t id) const

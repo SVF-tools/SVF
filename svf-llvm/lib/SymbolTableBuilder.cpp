@@ -150,6 +150,9 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                         inst))
                 {
                     collectSym(gep->getPointerOperand());
+                    for (u32_t i = 0; i < gep->getNumOperands(); ++i) {
+                        collectSym(gep->getOperand(i));
+                    }
                 }
                 else if (const SelectInst *sel = SVFUtil::dyn_cast<SelectInst>(inst))
                 {
@@ -247,7 +250,6 @@ void SymbolTableBuilder::collectSym(const Value *val)
     //TODO: filter the non-pointer type // if (!SVFUtil::isa<PointerType>(val->getType()))  return;
 
     DBOUT(DMemModel, outs() << "collect sym from ##" << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->toString() << " \n");
-
     //TODO handle constant expression value here??
     handleCE(val);
 
@@ -370,10 +372,13 @@ void SymbolTableBuilder::handleCE(const Value *val)
             DBOUT(DMemModelCE,
                   outs() << "handle constant expression " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ref)->toString() << "\n");
             collectVal(ce);
-            collectVal(ce->getOperand(0));
+
             // handle the recursive constant express case
             // like (gep (bitcast (gep X 1)) 1); the inner gep is ce->getOperand(0)
-            handleCE(ce->getOperand(0));
+            for (u32_t i = 0; i < ce->getNumOperands(); ++i) {
+                collectVal(ce->getOperand(i));
+                handleCE(ce->getOperand(i));
+            }
         }
         else if (const ConstantExpr* ce = isCastConstantExpr(ref))
         {
