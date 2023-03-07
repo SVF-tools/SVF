@@ -41,7 +41,7 @@ namespace SVF
 
 class SymbolTableBuilder
 {
-
+    friend class SVFIRBuilder;
 private:
     SymbolTableInfo* symInfo;
 

@@ -755,7 +755,15 @@ void VFG::connectDirectVFGEdges()
             /// for all other cases, like copy/gep/load/ret, connect the RHS pointer to its def
             if (stmtNode->getPAGSrcNode()->isConstDataOrAggDataButNotNullPtr() == false)
                 addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()), nodeId);
-
+            if (const GepStmt* gepStmt = SVFUtil::dyn_cast<GepStmt>(stmtNode->getPAGEdge()))
+            {
+                for (const auto &varType: gepStmt->getOffsetVarAndGepTypePairVec())
+                {
+                    if(varType.first->isConstDataOrAggDataButNotNullPtr() || isInterestedPAGNode(varType.first) == false)
+                        continue;
+                    addIntraDirectVFEdge(getDef(varType.first), nodeId);
+                }
+            }
             /// for store, connect the RHS/LHS pointer to its def
             if(SVFUtil::isa<StoreVFGNode>(stmtNode) && (stmtNode->getPAGDstNode()->isConstDataOrAggDataButNotNullPtr() == false))
             {

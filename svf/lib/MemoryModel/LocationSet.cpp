@@ -37,20 +37,20 @@ using namespace SVF;
 using namespace SVFUtil;
 
 /*!
- * Add offset value to vector offsetValues
+ * Add offset value to vector offsetVarAndGepTypePairs
  */
-bool LocationSet::addOffsetValue(const SVFValue* offsetVal, const SVFType* type)
+bool LocationSet::addOffsetVarAndGepTypePair(const SVFVar* var, const SVFType* gepIterType)
 {
-    offsetValues.push_back(std::make_pair(offsetVal,type));
+    offsetVarAndGepTypePairs.emplace_back(var, gepIterType);
     return true;
 }
 
 /// Return true if all offset values are constants
 bool LocationSet::isConstantOffset() const
 {
-    for(auto it : offsetValues)
+    for(auto it : offsetVarAndGepTypePairs)
     {
-        if(SVFUtil::isa<SVFConstantInt>(it.first) == false)
+        if(SVFUtil::isa<SVFConstantInt>(it.first->getValue()) == false)
             return false;
     }
     return true;
@@ -120,14 +120,14 @@ s32_t LocationSet::accumulateConstantOffset() const
 
     assert(isConstantOffset() && "not a constant offset");
 
-    if(offsetValues.empty())
+    if(offsetVarAndGepTypePairs.empty())
         return accumulateConstantFieldIdx();
 
     s32_t totalConstOffset = 0;
-    for(int i = offsetValues.size() - 1; i >= 0; i--)
+    for(int i = offsetVarAndGepTypePairs.size() - 1; i >= 0; i--)
     {
-        const SVFValue* value = offsetValues[i].first;
-        const SVFType* type = offsetValues[i].second;
+        const SVFValue* value = offsetVarAndGepTypePairs[i].first->getValue();
+        const SVFType* type = offsetVarAndGepTypePairs[i].second;
         const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         assert(op && "not a constant offset?");
         if(type==nullptr)
@@ -161,10 +161,10 @@ LocationSet LocationSet::operator+ (const LocationSet& rhs) const
 {
     LocationSet ls(rhs);
     ls.fldIdx += accumulateConstantFieldIdx();
-    OffsetValueVec::const_iterator it = getOffsetValueVec().begin();
-    OffsetValueVec::const_iterator eit = getOffsetValueVec().end();
+    OffsetVarAndGepTypePairs::const_iterator it = getOffsetVarAndGepTypePairVec().begin();
+    OffsetVarAndGepTypePairs::const_iterator eit = getOffsetVarAndGepTypePairVec().end();
     for (; it != eit; ++it)
-        ls.addOffsetValue(it->first, it->second);
+        ls.addOffsetVarAndGepTypePair(it->first, it->second);
 
     return ls;
 }
@@ -176,14 +176,14 @@ bool LocationSet::operator< (const LocationSet& rhs) const
         return (fldIdx < rhs.fldIdx);
     else
     {
-        const OffsetValueVec& pairVec = getOffsetValueVec();
-        const OffsetValueVec& rhsPairVec = rhs.getOffsetValueVec();
+        const OffsetVarAndGepTypePairs& pairVec = getOffsetVarAndGepTypePairVec();
+        const OffsetVarAndGepTypePairs& rhsPairVec = rhs.getOffsetVarAndGepTypePairVec();
         if (pairVec.size() != rhsPairVec.size())
             return (pairVec.size() < rhsPairVec.size());
         else
         {
-            OffsetValueVec::const_iterator it = pairVec.begin();
-            OffsetValueVec::const_iterator rhsIt = rhsPairVec.begin();
+            OffsetVarAndGepTypePairs::const_iterator it = pairVec.begin();
+            OffsetVarAndGepTypePairs::const_iterator rhsIt = rhsPairVec.begin();
             for (; it != pairVec.end() && rhsIt != rhsPairVec.end(); ++it, ++rhsIt)
             {
                 return (*it) < (*rhsIt);
@@ -223,12 +223,12 @@ std::string LocationSet::dump() const
 
     rawstr << "LocationSet\tField_Index: " << accumulateConstantFieldIdx();
     rawstr << ",\tNum-Stride: {";
-    const OffsetValueVec& vec = getOffsetValueVec();
-    OffsetValueVec::const_iterator it = vec.begin();
-    OffsetValueVec::const_iterator eit = vec.end();
+    const OffsetVarAndGepTypePairs& vec = getOffsetVarAndGepTypePairVec();
+    OffsetVarAndGepTypePairs::const_iterator it = vec.begin();
+    OffsetVarAndGepTypePairs::const_iterator eit = vec.end();
     for (; it != eit; ++it)
     {
-        rawstr << " (value: " << it->first->toString() << " type: " << it->second << ")";
+        rawstr << " (Svf var: " << it->first->toString() << ", Iter type: " << it->second->toString() << ")";
     }
     rawstr << " }\n";
     return rawstr.str();
