@@ -25,6 +25,12 @@ cJSON* SVFIRWriter::toJson(int number)
     return jsonCreateNumber(number);
 }
 
+cJSON* SVFIRWriter::toJson(long unsigned number)
+{
+    // TODO: check number range?
+    return jsonCreateNumber(number);
+}
+
 cJSON* SVFIRWriter::toJson(long long number)
 {
     // TODO: check number range?
@@ -81,6 +87,69 @@ cJSON* SVFIRWriter::virtToJson(const CHNode* node)
 cJSON* SVFIRWriter::virtToJson(const CHEdge* edge)
 {
     return nullptr;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFVar* var)
+{
+    cJSON* root = genericNodeToJson(var);
+    JSON_WRITE_FIELD(root, var, value);
+    JSON_WRITE_FIELD(root, var, InEdgeKindToSetMap);
+    JSON_WRITE_FIELD(root, var, OutEdgeKindToSetMap);
+    JSON_WRITE_FIELD(root, var, isPtr);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const ValVar* var)
+{
+    return contentToJson(static_cast<const SVFVar*>(var));
+}
+
+cJSON* SVFIRWriter::contentToJson(const ObjVar* var)
+{
+    cJSON* root = contentToJson(static_cast<const SVFVar*>(var));
+    JSON_WRITE_FIELD(root, var, mem);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const GepValVar* var)
+{
+    cJSON* root = contentToJson(static_cast<const ValVar*>(var));
+    JSON_WRITE_FIELD(root, var, ls);
+    JSON_WRITE_FIELD(root, var, gepValType);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const GepObjVar* var)
+{
+    cJSON* root = contentToJson(static_cast<const ObjVar*>(var));
+    JSON_WRITE_FIELD(root, var, ls);
+    JSON_WRITE_FIELD(root, var, base);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const FIObjVar* var)
+{
+    return contentToJson(static_cast<const ObjVar*>(var));
+}
+
+cJSON* SVFIRWriter::contentToJson(const RetPN* var)
+{
+    return contentToJson(static_cast<const ValVar*>(var));
+}
+
+cJSON* SVFIRWriter::contentToJson(const VarArgPN* var)
+{
+    return contentToJson(static_cast<const ValVar*>(var));
+}
+
+cJSON* SVFIRWriter::contentToJson(const DummyValVar* var)
+{
+    return contentToJson(static_cast<const ValVar*>(var));
+}
+
+cJSON* SVFIRWriter::contentToJson(const DummyObjVar* var)
+{
+    return contentToJson(static_cast<const ObjVar*>(var));
 }
 
 cJSON* SVFIRWriter::contentToJson(const ICFGNode* node)
@@ -140,6 +209,51 @@ cJSON* SVFIRWriter::contentToJson(const RetICFGNode* node)
     JSON_WRITE_FIELD(root, node, cs);
     JSON_WRITE_FIELD(root, node, actualRet);
     JSON_WRITE_FIELD(root, node, callBlockNode);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const ICFGEdge* edge)
+{
+    return genericEdgeToJson(edge);
+}
+
+cJSON* SVFIRWriter::contentToJson(const IntraCFGEdge* edge)
+{
+    cJSON* root = contentToJson(static_cast<const ICFGEdge*>(edge));
+    JSON_WRITE_FIELD(root, edge, conditionVar);
+    JSON_WRITE_FIELD(root, edge, branchCondVal);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const CallCFGEdge* edge)
+{
+    cJSON* root = contentToJson(static_cast<const ICFGEdge*>(edge));
+    JSON_WRITE_FIELD(root, edge, cs);
+    JSON_WRITE_FIELD(root, edge, callPEs);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const RetCFGEdge* edge)
+{
+    cJSON* root = contentToJson(static_cast<const ICFGEdge*>(edge));
+    JSON_WRITE_FIELD(root, edge, cs);
+    JSON_WRITE_FIELD(root, edge, retPE);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const CHNode* node) 
+{
+    cJSON* root = genericNodeToJson(node);
+    JSON_WRITE_FIELD(root, node, vtable);
+    JSON_WRITE_FIELD(root, node, className);
+    JSON_WRITE_FIELD(root, node, flags);
+    JSON_WRITE_FIELD(root, node, virtualFunctionVectors);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const CHEdge* edge) {
+    cJSON* root = genericEdgeToJson(edge);
+    JSON_WRITE_FIELD(root, edge, edgeType);
     return root;
 }
 
@@ -435,7 +549,17 @@ cJSON* SVFIRWriter::toJson(const SVFValue* value)
 
 cJSON* SVFIRWriter::toJson(const IRGraph* graph)
 {
-    return jsonCreateString("TODO: IRGraph");
+    cJSON* root = genericGraphToJson(graph, irGraphWriter.edgePool.getPool());
+#define F(field) JSON_WRITE_FIELD(root, graph, field)
+    F(KindToSVFStmtSetMap);
+    F(KindToPTASVFStmtSetMap);
+    F(fromFile);
+    F(nodeNumAfterPAGBuild);
+    F(totalPTAPAGEdge);
+    F(valueToEdgeMap); ///< Map llvm::Values to all corresponding PAGEdges
+    //symInfo;
+#undef F
+    return root;
 }
 
 cJSON* SVFIRWriter::toJson(const SVFVar* var) {
@@ -449,7 +573,7 @@ cJSON* SVFIRWriter::toJson(const SVFStmt* stmt)
 
 cJSON* SVFIRWriter::toJson(const ICFG* icfg)
 {
-    cJSON* root = genericGraphToJson(icfg, this->icfgWriter.edgePool.getPool());
+    cJSON* root = genericGraphToJson(icfg, icfgWriter.edgePool.getPool());
 
 #define F(field) JSON_WRITE_FIELD(root, icfg, field)
     F(FunToFunEntryNodeMap);
@@ -503,6 +627,20 @@ cJSON* SVFIRWriter::toJson(const SVFLoop* loop)
     F(icfgNodes);
     F(loopBound);
 #undef F
+    return root;
+}
+
+cJSON* SVFIRWriter::toJson(const SymbolTableInfo* symTable)
+{
+    cJSON* root = jsonCreateObject();
+    // TODO
+    return root;
+}
+
+cJSON* SVFIRWriter::toJson(const MemObj* memObj)
+{
+    cJSON* root = jsonCreateObject();
+    // TODO
     return root;
 }
 

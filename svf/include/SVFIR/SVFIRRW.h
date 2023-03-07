@@ -4,8 +4,6 @@
 #include "Util/SVFUtil.h"
 #include "Util/cJSON.h"
 #include "Graphs/GenericGraph.h"
-//#include "Graphs/ICFG.h"
-//#include "Graphs/IRGraph.h"
 #include <type_traits>
 
 #define ABORT_IFNOT(condition, reason)                                         \
@@ -36,19 +34,8 @@ using is_iterable = decltype(is_iterable_impl<T>(0));
 template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
 ///@}
 
-/// @brief Type trait to check if a type is a generic graph writer.
-/// @{
-template <typename T>
-using is_generic_graph_writer =
-    std::is_same<typename T::GenericGraphWriterTraitType, void>;
-template <typename T>
-constexpr bool is_generic_graph_writer_v = is_generic_graph_writer<T>::value;
-/// @}
-
-
 namespace SVF
 {
-
 cJSON* jsonCreateObject();
 cJSON* jsonCreateArray();
 cJSON* jsonCreateMap();
@@ -71,15 +58,13 @@ bool jsonAddStringToObject(cJSON* obj, const char* name,
 #define JSON_WRITE_FIELD(root, objptr, field)                                  \
     jsonAddJsonableToObject(root, #field, (objptr)->field)
 
-
 class SVFIR;
 class SVFIRWriter;
 class CHNode;
 class CHEdge;
 class CHGraph;
 
-template <typename T>
-class PtrPool
+template <typename T> class PtrPool
 {
 private:
     Map<const T*, size_t> ptrToId;
@@ -113,12 +98,11 @@ public:
     }
 };
 
-template <typename NodeTy, typename EdgeTy>
-class GenericGraphWriter
+template <typename NodeTy, typename EdgeTy> class GenericGraphWriter
 {
     friend class SVFIRWriter;
+
 private:
-    using GenericGraphWriterTraitType = void;
     using NodeType = NodeTy;
     using EdgeType = EdgeTy;
     using GraphType = GenericGraph<NodeType, EdgeType>;
@@ -172,7 +156,7 @@ using CHGraphWriter = GenericGraphWriter<CHNode, CHEdge>;
 
 struct CommonCHGraphWriter
 {
-    CommonCHGraphWriter(const CommonCHGraph *chg);
+    CommonCHGraphWriter(const CommonCHGraph* chg);
     ~CommonCHGraphWriter();
 
     const CHGraphWriter* chGraphWriter;
@@ -194,7 +178,7 @@ class SVFIRWriter
 public:
     SVFIRWriter(const SVFIR* svfir);
 
-    cJSON *toJson(const SVFModule* module);
+    cJSON* toJson(const SVFModule* module);
 
     const char* generateJsonString();
 
@@ -212,13 +196,17 @@ private:
     cJSON* toJson(const ICFGNode* node); // ICFG Node
     cJSON* toJson(const ICFGEdge* edge); // ICFG Edge
     cJSON* toJson(const CHGraph* graph); // CHGraph Graph
-    cJSON* toJson(const CHNode* node); // CHGraph Node
-    cJSON* toJson(const CHEdge* edge); // CHGraph Edge
-    cJSON* toJson(const SVFLoop* loop); // TODO
+    cJSON* toJson(const CHNode* node);   // CHGraph Node
+    cJSON* toJson(const CHEdge* edge);   // CHGraph Edge
+
+    cJSON* toJson(const SVFLoop* loop);             // TODO
+    cJSON* toJson(const SymbolTableInfo* symTable); // TODO
+    cJSON* toJson(const MemObj* memObj);            // TODO
 
     static cJSON* toJson(const LocationSet& ls);
     static cJSON* toJson(unsigned number);
     static cJSON* toJson(int number);
+    static cJSON* toJson(long unsigned number);
     static cJSON* toJson(long long number);
     static cJSON* toJson(long long unsigned number);
 
@@ -233,16 +221,19 @@ private:
     cJSON* virtToJson(const CHNode* node);
     cJSON* virtToJson(const CHEdge* edge);
 
-    cJSON* contentToJson(const ICFGNode* node);
-    cJSON* contentToJson(const GlobalICFGNode* node);
-    cJSON* contentToJson(const IntraICFGNode* node);
-    cJSON* contentToJson(const InterICFGNode* node);
-    cJSON* contentToJson(const FunEntryICFGNode* node);
-    cJSON* contentToJson(const FunExitICFGNode* node);
-    cJSON* contentToJson(const CallICFGNode* node);
-    cJSON* contentToJson(const RetICFGNode* node);
+    // Classes inherited from SVFVar
+    cJSON* contentToJson(const SVFVar* var);
+    cJSON* contentToJson(const ValVar* var);
+    cJSON* contentToJson(const ObjVar* var);
+    cJSON* contentToJson(const GepValVar* var);
+    cJSON* contentToJson(const GepObjVar* var);
+    cJSON* contentToJson(const FIObjVar* var);
+    cJSON* contentToJson(const RetPN* var);
+    cJSON* contentToJson(const VarArgPN* var);
+    cJSON* contentToJson(const DummyValVar* var);
+    cJSON* contentToJson(const DummyObjVar* var);
 
-
+    // Classes inherited from SVFStmt
     cJSON* contentToJson(const SVFStmt* edge);
     cJSON* contentToJson(const AssignStmt* edge);
     cJSON* contentToJson(const AddrStmt* edge);
@@ -261,6 +252,29 @@ private:
     cJSON* contentToJson(const BranchStmt* edge);
     cJSON* contentToJson(const TDForkPE* edge);
     cJSON* contentToJson(const TDJoinPE* edge);
+
+    // Classes inherited from ICFGNode
+    cJSON* contentToJson(const ICFGNode* node);
+    cJSON* contentToJson(const GlobalICFGNode* node);
+    cJSON* contentToJson(const IntraICFGNode* node);
+    cJSON* contentToJson(const InterICFGNode* node);
+    cJSON* contentToJson(const FunEntryICFGNode* node);
+    cJSON* contentToJson(const FunExitICFGNode* node);
+    cJSON* contentToJson(const CallICFGNode* node);
+    cJSON* contentToJson(const RetICFGNode* node);
+
+    // Classes inherited from ICFGEdge
+    cJSON* contentToJson(const ICFGEdge* edge);
+    cJSON* contentToJson(const IntraCFGEdge* edge);
+    cJSON* contentToJson(const CallCFGEdge* edge);
+    cJSON* contentToJson(const RetCFGEdge* edge);
+
+    // CHNode & CHEdge
+    cJSON* contentToJson(const CHNode* node);
+    cJSON* contentToJson(const CHEdge* edge);
+
+    //
+
     ///@}
 
     template <typename NodeTy, typename EdgeTy>
@@ -321,8 +335,7 @@ private:
         return cJSON_CreateString("TODO: JSON BitVector");
     }
 
-    template <typename T, typename U>
-    cJSON* toJson(const std::pair<T, U>& pair)
+    template <typename T, typename U> cJSON* toJson(const std::pair<T, U>& pair)
     {
         cJSON* obj = jsonCreateObject();
         const auto* p = &pair;

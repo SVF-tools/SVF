@@ -69,7 +69,7 @@ public:
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
     typedef OrderedMap<const SVFValue*, SymID> ValueToIDMapTy;
     /// sym id to memory object map
-    typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
+    typedef OrderedMap<SymID, MemObj*> IDToMemMapTy;
     /// function to sym id map
     typedef OrderedMap<const SVFFunction*, SymID> FunToIDMapTy;
     /// struct type to struct info map
@@ -77,11 +77,11 @@ public:
     //@}
 
 private:
-    ValueToIDMapTy valSymMap;	///< map a value to its sym id
-    ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
-    FunToIDMapTy returnSymMap;		///< return  map
-    FunToIDMapTy varargSymMap;	    ///< vararg map
-    IDToMemMapTy		objMap;		///< map a memory sym id to its obj
+    ValueToIDMapTy valSymMap;  ///< map a value to its sym id
+    ValueToIDMapTy objSymMap;  ///< map a obj reference to its sym id
+    FunToIDMapTy returnSymMap; ///< return map
+    FunToIDMapTy varargSymMap; ///< vararg map
+    IDToMemMapTy objMap;       ///< map a memory sym id to its obj
 
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
     static SymbolTableInfo* symInfo;

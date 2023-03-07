@@ -188,9 +188,10 @@ protected:
     std::string name;       ///< Short name of this value for debugging
     std::string sourceLoc;  ///< Source code information of this value
     /// Constructor
-    SVFValue(const std::string& val, const SVFType* ty, SVFValKind k): kind(k),
-        ptrInUncalledFun(false), constDataOrAggData(SVFConstData==k), type(ty),
-        name(val), sourceLoc("No source code Info")
+    SVFValue(const std::string& val, const SVFType* ty, SVFValKind k)
+        : kind(k), ptrInUncalledFun(false),
+          constDataOrAggData(SVFConstData == k), type(ty), name(val),
+          sourceLoc("No source code Info")
     {
     }
 
@@ -214,6 +215,7 @@ public:
         return kind;
     }
 
+    // TODO: (Optimization) Returns `const std::string&`?
     inline virtual const std::string getName() const
     {
         return name;

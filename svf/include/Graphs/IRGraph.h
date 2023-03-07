@@ -49,6 +49,8 @@ typedef SVFStmt PAGEdge;
  */
 class IRGraph : public GenericGraph<SVFVar, SVFStmt>
 {
+    friend class SVFIRWriter;
+
 public:
     typedef Set<const SVFStmt*> SVFStmtSet;
     typedef Map<const SVFValue*,SVFStmtSet> ValueToEdgeMap;

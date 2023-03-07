@@ -150,7 +150,7 @@ void SymbolTableInfo::destroy()
             delete iter->second;
     }
 
-    for (auto * type: svfTypes)
+    for (const SVFType* type : svfTypes)
         delete type;
     svfTypes.clear();
 
