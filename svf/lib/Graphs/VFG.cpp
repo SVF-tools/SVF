@@ -757,11 +757,11 @@ void VFG::connectDirectVFGEdges()
                 addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()), nodeId);
             if (const GepStmt* gepStmt = SVFUtil::dyn_cast<GepStmt>(stmtNode->getPAGEdge()))
             {
-                for (const auto &var: gepStmt->getOffsetVarVec())
+                for (const auto &varType: gepStmt->getOffsetVarAndGepTypePairVec())
                 {
-                    if(var->isConstDataOrAggDataButNotNullPtr() || isInterestedPAGNode(var) == false)
+                    if(varType.first->isConstDataOrAggDataButNotNullPtr() || isInterestedPAGNode(varType.first) == false)
                         continue;
-                    addIntraDirectVFEdge(getDef(var), nodeId);
+                    addIntraDirectVFEdge(getDef(varType.first), nodeId);
                 }
             }
             /// for store, connect the RHS/LHS pointer to its def
