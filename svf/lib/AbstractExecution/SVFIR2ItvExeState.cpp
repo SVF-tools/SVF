@@ -104,15 +104,15 @@ SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, u32
 
 std::pair<s32_t, s32_t> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep)
 {
-    if (gep->getOffsetVarVec().empty())
+    if (gep->getOffsetVarIterTypePairVec().empty())
         return std::make_pair(gep->getConstantFieldIdx(), gep->getConstantFieldIdx());
 
     s32_t totalOffsetLb = 0;
     s32_t totalOffsetUb = 0;
-    for (int i = gep->getOffsetVarVec().size() - 1; i >= 0; i--)
+    for (int i = gep->getOffsetVarIterTypePairVec().size() - 1; i >= 0; i--)
     {
-        const SVFValue *value = gep->getOffsetVarVec()[i]->getValue();
-        const SVFType *type = gep->getOffsetVarVec()[i]->getType();
+        const SVFValue *value = gep->getOffsetVarIterTypePairVec()[i].first->getValue();
+        const SVFType *type = gep->getOffsetVarIterTypePairVec()[i].second;
         const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         s32_t offsetLb = 0;
         s32_t offsetUb = 0;

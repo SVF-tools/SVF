@@ -37,20 +37,20 @@ using namespace SVF;
 using namespace SVFUtil;
 
 /*!
- * Add offset value to vector offsetVars
+ * Add offset value to vector offsetVarIterTypePairs
  */
-bool LocationSet::addOffsetVar(const SVFVar* var)
+bool LocationSet::addOffsetVarIterTypePair(const SVFVar* var, const SVFType* iterType)
 {
-    offsetVars.push_back(var);
+    offsetVarIterTypePairs.emplace_back(var, iterType);
     return true;
 }
 
 /// Return true if all offset values are constants
 bool LocationSet::isConstantOffset() const
 {
-    for(auto it : offsetVars)
+    for(auto it : offsetVarIterTypePairs)
     {
-        if(SVFUtil::isa<SVFConstantInt>(it->getValue()) == false)
+        if(SVFUtil::isa<SVFConstantInt>(it.first->getValue()) == false)
             return false;
     }
     return true;
@@ -120,14 +120,14 @@ s32_t LocationSet::accumulateConstantOffset() const
 
     assert(isConstantOffset() && "not a constant offset");
 
-    if(offsetVars.empty())
+    if(offsetVarIterTypePairs.empty())
         return accumulateConstantFieldIdx();
 
     s32_t totalConstOffset = 0;
-    for(int i = offsetVars.size() - 1; i >= 0; i--)
+    for(int i = offsetVarIterTypePairs.size() - 1; i >= 0; i--)
     {
-        const SVFValue* value = offsetVars[i]->getValue();
-        const SVFType* type = offsetVars[i]->getType();
+        const SVFValue* value = offsetVarIterTypePairs[i].first->getValue();
+        const SVFType* type = offsetVarIterTypePairs[i].second;
         const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         assert(op && "not a constant offset?");
         if(type==nullptr)
@@ -161,10 +161,10 @@ LocationSet LocationSet::operator+ (const LocationSet& rhs) const
 {
     LocationSet ls(rhs);
     ls.fldIdx += accumulateConstantFieldIdx();
-    OffsetVarVec::const_iterator it = getOffsetVarVec().begin();
-    OffsetVarVec::const_iterator eit = getOffsetVarVec().end();
+    OffsetVarIterTypePairVec::const_iterator it = getOffsetVarIterTypePairVec().begin();
+    OffsetVarIterTypePairVec::const_iterator eit = getOffsetVarIterTypePairVec().end();
     for (; it != eit; ++it)
-        ls.addOffsetVar(*it);
+        ls.addOffsetVarIterTypePair(it->first, it->second);
 
     return ls;
 }
@@ -176,14 +176,14 @@ bool LocationSet::operator< (const LocationSet& rhs) const
         return (fldIdx < rhs.fldIdx);
     else
     {
-        const OffsetVarVec& pairVec = getOffsetVarVec();
-        const OffsetVarVec& rhsPairVec = rhs.getOffsetVarVec();
+        const OffsetVarIterTypePairVec& pairVec = getOffsetVarIterTypePairVec();
+        const OffsetVarIterTypePairVec& rhsPairVec = rhs.getOffsetVarIterTypePairVec();
         if (pairVec.size() != rhsPairVec.size())
             return (pairVec.size() < rhsPairVec.size());
         else
         {
-            OffsetVarVec::const_iterator it = pairVec.begin();
-            OffsetVarVec::const_iterator rhsIt = rhsPairVec.begin();
+            OffsetVarIterTypePairVec::const_iterator it = pairVec.begin();
+            OffsetVarIterTypePairVec::const_iterator rhsIt = rhsPairVec.begin();
             for (; it != pairVec.end() && rhsIt != rhsPairVec.end(); ++it, ++rhsIt)
             {
                 return (*it) < (*rhsIt);
@@ -223,12 +223,12 @@ std::string LocationSet::dump() const
 
     rawstr << "LocationSet\tField_Index: " << accumulateConstantFieldIdx();
     rawstr << ",\tNum-Stride: {";
-    const OffsetVarVec& vec = getOffsetVarVec();
-    OffsetVarVec::const_iterator it = vec.begin();
-    OffsetVarVec::const_iterator eit = vec.end();
+    const OffsetVarIterTypePairVec& vec = getOffsetVarIterTypePairVec();
+    OffsetVarIterTypePairVec::const_iterator it = vec.begin();
+    OffsetVarIterTypePairVec::const_iterator eit = vec.end();
     for (; it != eit; ++it)
     {
-        rawstr << " (var: " << (*it)->toString() << ")";
+        rawstr << " (Svf var: " << it->first->toString() << ", Iter type: " << it->second->toString() << ")";
     }
     rawstr << " }\n";
     return rawstr.str();
