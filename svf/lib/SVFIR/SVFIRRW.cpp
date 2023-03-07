@@ -1,6 +1,7 @@
 #include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFIRRW.h"
 #include "Util/CommandLine.h"
+#include "Graphs/CHG.h"
 
 static const Option<bool> humanReadableOption(
     "human-readable", "Whether to output human-readable JSON", true);
@@ -79,8 +80,28 @@ bool jsonAddItemToArray(cJSON* array, cJSON* item)
     return cJSON_AddItemToArray(array, item);
 }
 
+CommonCHGraphWriter::CommonCHGraphWriter(const CommonCHGraph* cchg)
+{
+    if (auto chg = SVFUtil::dyn_cast<CHGraph>(cchg))
+    {
+        chGraphWriter = new CHGraphWriter(chg);
+    }
+    else
+    {
+        assert(false && "For now only support CHGraph");
+        abort();
+    }
+}
+
+CommonCHGraphWriter::~CommonCHGraphWriter()
+{
+    if (chGraphWriter)
+        delete chGraphWriter;
+}
+
 SVFIRWriter::SVFIRWriter(const SVFIR* svfir)
-    : svfIR(svfir), irGraphWriter(svfir), icfgWriter(svfir->getICFG())
+    : svfIR(svfir), irGraphWriter(svfir), icfgWriter(svfir->icfg),
+      commonCHGraphWriter(svfir->chgraph)
 {
 }
 
@@ -129,7 +150,7 @@ cJSON* SVFIRWriter::generateJson()
     F(funPtrToCallSitesMap);
     F(candidatePointers);
     //F(svfModule);
-    //F(icfg);
+    F(icfg);
     //F(chgraph);
     F(callSiteSet);
 #undef F
@@ -147,13 +168,36 @@ cJSON* SVFIRWriter::toJson(const SVFValue* value)
     return jsonCreateIndex(svfValuePool.getID(value));
 }
 
+cJSON* SVFIRWriter::toJson(const IRGraph* graph)
+{
+    return jsonCreateString("TODO: IRGraph");
+}
+
+cJSON* SVFIRWriter::toJson(const SVFVar* var) {
+    return jsonCreateIndex(irGraphWriter.getNodeID(var));
+}
+
 cJSON* SVFIRWriter::toJson(const SVFStmt* stmt)
 {
     return jsonCreateIndex(irGraphWriter.getEdgeID(stmt));
 }
 
-cJSON* SVFIRWriter::toJson(const SVFVar* var) {
-    return jsonCreateIndex(irGraphWriter.getNodeID(var));
+cJSON* SVFIRWriter::toJson(const ICFG* icfg)
+{
+    cJSON* root = jsonCreateObject();
+
+
+
+#define F(field) JSON_WRITE_FIELD(root, icfg, field)
+    F(FunToFunEntryNodeMap);
+    F(FunToFunExitNodeMap);
+    F(CSToCallNodeMap);
+    F(CSToRetNodeMap);
+    F(InstToBlockNodeMap);
+    F(globalBlockNode);
+    F(icfgNodeToSVFLoopVec);
+#undef F
+    return root;
 }
 
 cJSON* SVFIRWriter::toJson(const ICFGNode* node) {
@@ -162,6 +206,41 @@ cJSON* SVFIRWriter::toJson(const ICFGNode* node) {
 
 cJSON* SVFIRWriter::toJson(const ICFGEdge* edge) {
     return jsonCreateIndex(icfgWriter.getEdgeID(edge));
+}
+
+cJSON* SVFIRWriter::toJson(const CHGraph* graph)
+{
+    cJSON* root = jsonCreateObject();
+    // TODO
+    return root;
+}
+
+cJSON* SVFIRWriter::toJson(const CHNode* node)
+{
+    cJSON* root = jsonCreateObject();
+    // TODO
+    return root;
+}
+
+cJSON* SVFIRWriter::toJson(const CHEdge* edge)
+{
+    cJSON* root = jsonCreateObject();
+    // TODO
+    return root;
+}
+
+cJSON* SVFIRWriter::toJson(const SVFLoop* loop)
+{
+    cJSON* root = jsonCreateObject();
+#define F(field) JSON_WRITE_FIELD(root, loop, field)
+    F(entryICFGEdges);
+    F(backICFGEdges);
+    F(inICFGEdges);
+    F(outICFGEdges);
+    F(icfgNodes);
+    F(loopBound);
+#undef F
+    return root;
 }
 
 cJSON *SVFIRWriter::toJson(const SVFModule* module)

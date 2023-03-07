@@ -4,8 +4,8 @@
 #include "Util/SVFUtil.h"
 #include "Util/cJSON.h"
 #include "Graphs/GenericGraph.h"
-#include "Graphs/ICFG.h"
-#include "Graphs/IRGraph.h"
+//#include "Graphs/ICFG.h"
+//#include "Graphs/IRGraph.h"
 #include <type_traits>
 
 #define ABORT_IFNOT(condition, reason)                                         \
@@ -63,6 +63,9 @@ bool jsonAddStringToObject(cJSON* obj, const char* name,
 
 class SVFIR;
 class SVFIRWriter;
+class CHNode;
+class CHEdge;
+class CHGraph;
 
 template <typename T>
 class PtrPool
@@ -133,7 +136,9 @@ public:
         return it->second;
     }
 
-    cJSON* toJson() {
+    template <typename N, typename E>
+    cJSON* toJson(N&& nodeHandler, E&& EdgeHandler)
+    {
         cJSON* root = jsonCreateObject();
 
         JSON_WRITE_NUMBER_FIELD(root, graph, edgeNum);
@@ -146,7 +151,7 @@ public:
             NodeType* node = pair.second;
 
             cJSON *jsonID = jsonCreateIndex(id);
-            cJSON *jsonNode = jsonCreateObject();
+            cJSON *jsonNode = nodeHandler(node);
             jsonAddPairToMap(map, jsonID, jsonNode);
         }
         jsonAddItemToObject(root, "IDToNodeMap", map);
@@ -165,6 +170,22 @@ public:
 
 using ICFGWriter = GenericGraphWriter<ICFGNode, ICFGEdge>;
 using IRGraphWriter = GenericGraphWriter<SVFVar, SVFStmt>;
+using CHGraphWriter = GenericGraphWriter<CHNode, CHEdge>;
+
+struct CommonCHGraphWriter
+{
+    CommonCHGraphWriter(const CommonCHGraph *chg);
+    ~CommonCHGraphWriter();
+
+    const CHGraphWriter* chGraphWriter;
+
+    template <typename N, typename E>
+    cJSON* toJson(N&& nodeHandler, E&& EdgeHandler)
+    {
+        return chGraphWriter->toJson(std::forward(nodeHandler),
+                                     std::forward(EdgeHandler));
+    }
+};
 
 class SVFIRWriter
 {
@@ -175,6 +196,7 @@ class SVFIRWriter
 
     IRGraphWriter irGraphWriter;
     ICFGWriter icfgWriter;
+    CommonCHGraphWriter commonCHGraphWriter;
 
     OrderedMap<size_t, std::string> numToStrMap;
 
@@ -192,10 +214,16 @@ private:
 
     cJSON* toJson(const SVFType* type);
     cJSON* toJson(const SVFValue* value);
+    cJSON* toJson(const IRGraph* graph); // IRGraph Graph
     cJSON* toJson(const SVFVar* var);    // IRGraph Node
     cJSON* toJson(const SVFStmt* stmt);  // IRGraph Edge
+    cJSON* toJson(const ICFG* icfg);     // ICFG Graph
     cJSON* toJson(const ICFGNode* node); // ICFG Node
     cJSON* toJson(const ICFGEdge* edge); // ICFG Edge
+    cJSON* toJson(const CHGraph* graph); // CHGraph Graph
+    cJSON* toJson(const CHNode* node); // CHGraph Node
+    cJSON* toJson(const CHEdge* edge); // CHGraph Edge
+    cJSON* toJson(const SVFLoop* loop); // TODO
     static cJSON* toJson(const LocationSet& ls);
 
     /// These functions will dump the actual content
@@ -204,11 +232,14 @@ private:
     cJSON* svfStmtToJson(const SVFStmt* stmt);
     cJSON* icfgNodeToJson(const ICFGNode* node);
     cJSON* icfgEdgeToJson(const ICFGEdge* edge);
+    cJSON* chNodeToJson(const CHNode* node);
+    cJSON* chEdgeToJson(const CHEdge* edge);
     ///@}
 
     template <typename NodeTy, typename EdgeTy>
     cJSON* genericGraphToJson(const GenericNode<NodeTy, EdgeTy>* node)
     {
+        return nullptr;
     }
 
     template <unsigned ElementSize>
