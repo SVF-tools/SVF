@@ -150,7 +150,8 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                         inst))
                 {
                     collectSym(gep->getPointerOperand());
-                    for (u32_t i = 0; i < gep->getNumOperands(); ++i) {
+                    for (u32_t i = 0; i < gep->getNumOperands(); ++i)
+                    {
                         collectSym(gep->getOperand(i));
                     }
                 }
@@ -375,7 +376,8 @@ void SymbolTableBuilder::handleCE(const Value *val)
 
             // handle the recursive constant express case
             // like (gep (bitcast (gep X 1)) 1); the inner gep is ce->getOperand(0)
-            for (u32_t i = 0; i < ce->getNumOperands(); ++i) {
+            for (u32_t i = 0; i < ce->getNumOperands(); ++i)
+            {
                 collectVal(ce->getOperand(i));
                 handleCE(ce->getOperand(i));
             }

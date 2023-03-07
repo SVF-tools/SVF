@@ -43,12 +43,12 @@ namespace SVF
 class SVFVar;
 
 
-    /*
- * Location set represents a set of locations in a memory block with following offsets:
- *     { offset + \sum_{i=0}^N (stride_i * j_i) | 0 \leq j_i < M_i }
- * where N is the size of number-stride pair vector, M_i (stride_i) is i-th number (stride)
- * in the number-stride pair vector.
- */
+/*
+* Location set represents a set of locations in a memory block with following offsets:
+*     { offset + \sum_{i=0}^N (stride_i * j_i) | 0 \leq j_i < M_i }
+* where N is the size of number-stride pair vector, M_i (stride_i) is i-th number (stride)
+* in the number-stride pair vector.
+*/
 class LocationSet
 {
     friend class SymbolTableInfo;
@@ -99,7 +99,8 @@ public:
     {
         fldIdx = idx;
     }
-    inline const OffsetVarVec& getOffsetVarVec() const {
+    inline const OffsetVarVec& getOffsetVarVec() const
+    {
         return offsetVars;
     }
     //@}

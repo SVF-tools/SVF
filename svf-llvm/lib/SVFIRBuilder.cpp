@@ -1126,7 +1126,8 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         // make a ConstantInt and create char for the content type due to byte-wise copy
         const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, ei));
         const SVFValue* svfOffset = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offset);
-        if (!pag->getSymbolInfo()->hasValSym(svfOffset)) {
+        if (!pag->getSymbolInfo()->hasValSym(svfOffset))
+        {
             SymbolTableBuilder builder(pag->getSymbolInfo());
             builder.collectSym(offset);
             pag->addValNode(svfOffset, pag->getSymbolInfo()->getValSym(svfOffset));
