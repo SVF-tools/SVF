@@ -137,6 +137,7 @@ protected:
 template<class NodeTy,class EdgeTy>
 class GenericNode
 {
+    friend class SVFIRWriter;
 
 public:
     typedef NodeTy NodeType;
@@ -338,6 +339,7 @@ public:
 template<class NodeTy, class EdgeTy>
 class GenericGraph
 {
+    friend class SVFIRWriter;
     friend class GenericGraphWriter<NodeTy, EdgeTy>;
 
 public:

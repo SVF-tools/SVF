@@ -36,6 +36,16 @@ using is_iterable = decltype(is_iterable_impl<T>(0));
 template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
 ///@}
 
+/// @brief Type trait to check if a type is a generic graph writer.
+/// @{
+template <typename T>
+using is_generic_graph_writer =
+    std::is_same<typename T::GenericGraphWriterTraitType, void>;
+template <typename T>
+constexpr bool is_generic_graph_writer_v = is_generic_graph_writer<T>::value;
+/// @}
+
+
 namespace SVF
 {
 
@@ -44,6 +54,7 @@ cJSON* jsonCreateArray();
 cJSON* jsonCreateMap();
 cJSON* jsonCreateString(const char* str);
 cJSON* jsonCreateIndex(size_t index);
+cJSON* jsonCreateNumber(double num);
 bool jsonAddPairToMap(cJSON* obj, cJSON* key, cJSON* value);
 bool jsonAddItemToObject(cJSON* obj, const char* name, cJSON* item);
 bool jsonAddItemToArray(cJSON* array, cJSON* item);
@@ -77,12 +88,17 @@ private:
 public:
     inline size_t getID(const T* ptr)
     {
-        if (!ptr)
+        if (ptr == nullptr)
             return 0;
         auto it_inserted = ptrToId.emplace(ptr, 1 + ptrPool.size());
         if (it_inserted.second)
             ptrPool.push_back(ptr);
         return it_inserted.first->second;
+    }
+
+    inline void saveID(const T* ptr)
+    {
+        getID(ptr);
     }
 
     inline const T* getPtr(size_t id) const
@@ -97,11 +113,14 @@ public:
     }
 };
 
-template <typename NodeType, typename EdgeType>
+template <typename NodeTy, typename EdgeTy>
 class GenericGraphWriter
 {
     friend class SVFIRWriter;
 private:
+    using GenericGraphWriterTraitType = void;
+    using NodeType = NodeTy;
+    using EdgeType = EdgeTy;
     using GraphType = GenericGraph<NodeType, EdgeType>;
 
     const GraphType* graph;
@@ -119,7 +138,7 @@ public:
             nodeToID.emplace(node, id);
             for (const EdgeType* edge : node->getOutEdges())
             {
-                edgePool.getID(edge);
+                edgePool.saveID(edge);
             }
         }
     }
@@ -135,40 +154,19 @@ public:
         assert(it != nodeToID.end() && "Node not found in the graph.");
         return it->second;
     }
-
-    template <typename N, typename E>
-    cJSON* toJson(N&& nodeHandler, E&& EdgeHandler)
-    {
-        cJSON* root = jsonCreateObject();
-
-        JSON_WRITE_NUMBER_FIELD(root, graph, edgeNum);
-        JSON_WRITE_NUMBER_FIELD(root, graph, nodeNum);
-
-        cJSON* map = jsonCreateMap();
-        for (const auto& pair : graph->IDToNodeMap)
-        {
-            NodeID id = pair.first;
-            NodeType* node = pair.second;
-
-            cJSON *jsonID = jsonCreateIndex(id);
-            cJSON *jsonNode = nodeHandler(node);
-            jsonAddPairToMap(map, jsonID, jsonNode);
-        }
-        jsonAddItemToObject(root, "IDToNodeMap", map);
-
-        cJSON* edgesJson = jsonCreateArray();
-        for (const EdgeType* edge : edgePool.getPool())
-        {
-            cJSON* edgeJson = jsonCreateObject();
-            jsonAddItemToArray(edgesJson, edgeJson);
-        }
-        jsonAddItemToObject(root, "edges", edgesJson);
-
-        return root;
-    }
 };
 
-using ICFGWriter = GenericGraphWriter<ICFGNode, ICFGEdge>;
+using GenericICFGWriter = GenericGraphWriter<ICFGNode, ICFGEdge>;
+
+class ICFGWriter : public GenericICFGWriter
+{
+private:
+    PtrPool<SVFLoop> svfLoopPool;
+
+public:
+    ICFGWriter(const ICFG* icfg);
+};
+
 using IRGraphWriter = GenericGraphWriter<SVFVar, SVFStmt>;
 using CHGraphWriter = GenericGraphWriter<CHNode, CHEdge>;
 
@@ -178,13 +176,6 @@ struct CommonCHGraphWriter
     ~CommonCHGraphWriter();
 
     const CHGraphWriter* chGraphWriter;
-
-    template <typename N, typename E>
-    cJSON* toJson(N&& nodeHandler, E&& EdgeHandler)
-    {
-        return chGraphWriter->toJson(std::forward(nodeHandler),
-                                     std::forward(EdgeHandler));
-    }
 };
 
 class SVFIRWriter
@@ -224,22 +215,73 @@ private:
     cJSON* toJson(const CHNode* node); // CHGraph Node
     cJSON* toJson(const CHEdge* edge); // CHGraph Edge
     cJSON* toJson(const SVFLoop* loop); // TODO
-    static cJSON* toJson(const LocationSet& ls);
 
-    /// These functions will dump the actual content
+    static cJSON* toJson(const LocationSet& ls);
+    static cJSON* toJson(unsigned number);
+    static cJSON* toJson(int number);
+    static cJSON* toJson(long long number);
+
+    /// \brief Parameter types of these functions are all pointers.
+    /// When they are used as arguments of toJson(), they will be
+    /// dumped as an index. `contentToJson()` will dump the actual content.
     ///@{
-    cJSON* svfVarToJson(const SVFVar* var);
-    cJSON* svfStmtToJson(const SVFStmt* stmt);
-    cJSON* icfgNodeToJson(const ICFGNode* node);
-    cJSON* icfgEdgeToJson(const ICFGEdge* edge);
-    cJSON* chNodeToJson(const CHNode* node);
-    cJSON* chEdgeToJson(const CHEdge* edge);
+    cJSON* virtToJson(const SVFVar* var);
+    cJSON* virtToJson(const SVFStmt* stmt);
+    cJSON* virtToJson(const ICFGNode* node);
+    cJSON* virtToJson(const ICFGEdge* edge);
+    cJSON* virtToJson(const CHNode* node);
+    cJSON* virtToJson(const CHEdge* edge);
+
+    cJSON* contentToJson(const ICFGNode* node);
+    cJSON* contentToJson(const GlobalICFGNode* node);
+    cJSON* contentToJson(const IntraICFGNode* node);
+    cJSON* contentToJson(const InterICFGNode* node);
+    cJSON* contentToJson(const FunEntryICFGNode* node);
+    cJSON* contentToJson(const FunExitICFGNode* node);
+    cJSON* contentToJson(const CallICFGNode* node);
+    cJSON* contentToJson(const RetICFGNode* node);
     ///@}
 
     template <typename NodeTy, typename EdgeTy>
-    cJSON* genericGraphToJson(const GenericNode<NodeTy, EdgeTy>* node)
+    cJSON* genericNodeToJson(const GenericNode<NodeTy, EdgeTy>* node)
     {
-        return nullptr;
+        cJSON* root = jsonCreateObject();
+        JSON_WRITE_FIELD(root, node, id);
+        JSON_WRITE_FIELD(root, node, nodeKind);
+        JSON_WRITE_FIELD(root, node, InEdges);
+        JSON_WRITE_FIELD(root, node, OutEdges);
+        return root;
+    }
+
+    template <typename NodeTy, typename EdgeTy>
+    cJSON* genericGraphToJson(const GenericGraph<NodeTy, EdgeTy>* graph,
+                              const std::vector<const EdgeTy*>& edgePool)
+    {
+        cJSON* root = jsonCreateObject();
+
+        JSON_WRITE_FIELD(root, graph, edgeNum);
+        JSON_WRITE_FIELD(root, graph, nodeNum);
+
+        cJSON* map = jsonCreateMap();
+        for (const auto& pair : graph->IDToNodeMap)
+        {
+            NodeID id = pair.first;
+            NodeTy* node = pair.second;
+
+            cJSON* jsonID = jsonCreateIndex(id);
+            cJSON* jsonNode = virtToJson(node);
+            jsonAddPairToMap(map, jsonID, jsonNode);
+        }
+
+        cJSON* edgesJson = jsonCreateArray();
+        for (const EdgeTy* edge : edgePool)
+        {
+            cJSON* edgeJson = virtToJson(edge);
+            jsonAddItemToArray(edgesJson, edgeJson);
+        }
+        jsonAddItemToObject(root, "edges", edgesJson);
+
+        return root;
     }
 
     template <unsigned ElementSize>
@@ -276,44 +318,7 @@ private:
         cJSON* itemObj = toJson(item);
         return jsonAddItemToObject(obj, name, itemObj);
     }
-
-    // TODO: deprecated
-    template <typename T>
-    bool jsonAddSvfTypePtrContainerToObject(cJSON* obj, const char* name,
-                                            const T& container)
-    {
-        cJSON* array = jsonCreateArray();
-        for (const auto& item : container)
-        {
-            const char* strIdx = numToStr(svfTypePool.getID(item));
-            cJSON* itemObj = jsonCreateString(strIdx);
-            jsonAddItemToArray(array, itemObj);
-        }
-        return jsonAddItemToObject(obj, name, array);
-    }
-
-    // TODO: deprecated
-    // template <typename T>
-    // bool jsonAddSvfValuePtrContainerToObject(cJSON* obj, const char* name,
-    //                                          const T& container)
-    // {
-    //     cJSON* array = jsonCreateArray();
-    //     for (const auto& item : container)
-    //     {
-    //         const char* strIdx = numToStr(svfValuePool.getID(item));
-    //         cJSON* itemObj = jsonCreateString(strIdx);
-    //         jsonAddItemToArray(array, itemObj);
-    //     }
-    //     return jsonAddItemToObject(obj, name, array);
-    // }
-
 };
-
-// #define JSON_WRITE_SVFTYPE_CONTAINER_FILED(root, objptr, field)
-//     jsonAddSvfTypePtrContainerToObject(root, #field, (objptr)->field)
-
-// #define JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, objptr, field)
-//     jsonAddSvfValuePtrContainerToObject(root, #field, (objptr)->field)
 
 } // namespace SVF
 

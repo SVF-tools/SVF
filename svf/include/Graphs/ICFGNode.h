@@ -53,6 +53,7 @@ typedef GenericNode<ICFGNode, ICFGEdge> GenericICFGNodeTy;
 
 class ICFGNode : public GenericICFGNodeTy
 {
+    friend class SVFIRWriter;
 
 public:
     /// 22 kinds of ICFG node
@@ -179,6 +180,7 @@ public:
  */
 class IntraICFGNode : public ICFGNode
 {
+    friend class SVFIRWriter;
 private:
     const SVFInstruction *inst;
 
@@ -255,6 +257,7 @@ public:
  */
 class FunEntryICFGNode : public InterICFGNode
 {
+    friend class SVFIRWriter;
 
 public:
     typedef std::vector<const SVFVar *> FormalParmNodeVec;
@@ -312,6 +315,7 @@ public:
  */
 class FunExitICFGNode : public InterICFGNode
 {
+    friend class SVFIRWriter;
 
 private:
     const SVFVar *formalRet;
@@ -367,6 +371,7 @@ public:
  */
 class CallICFGNode : public InterICFGNode
 {
+    friend class SVFIRWriter;
 
 public:
     typedef std::vector<const SVFVar *> ActualParmNodeVec;
@@ -463,6 +468,7 @@ public:
  */
 class RetICFGNode : public InterICFGNode
 {
+    friend class SVFIRWriter;
 
 private:
     const SVFInstruction* cs;
