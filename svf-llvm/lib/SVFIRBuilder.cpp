@@ -38,6 +38,7 @@
 #include "SVF-LLVM/LLVMLoopAnalysis.h"
 #include "Util/Options.h"
 #include "SVF-LLVM/CHGBuilder.h"
+#include "SVF-LLVM/SymbolTableBuilder.h"
 
 using namespace std;
 using namespace SVF;
@@ -276,7 +277,8 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     {
         const Type* gepTy = *gi;
         const Value* offsetVal = gi.getOperand();
-        ls.addOffsetValue(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offsetVal), LLVMModuleSet::getLLVMModuleSet()->getSVFType(gepTy));
+        const SVFValue* offsetSvfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offsetVal);
+        ls.addOffsetVar(getPAG()->getGNode(getPAG()->getValueNode(offsetSvfVal)));
 
         //The int value of the current index operand
         const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
@@ -1123,7 +1125,13 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         LocationSet ls(ei);
         // make a ConstantInt and create char for the content type due to byte-wise copy
         const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, ei));
-        ls.addOffsetValue(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offset), nullptr);
+        const SVFValue* svfOffset = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offset);
+        if (!pag->getSymbolInfo()->hasValSym(svfOffset)) {
+            SymbolTableBuilder builder(pag->getSymbolInfo());
+            builder.collectSym(offset);
+            pag->addValNode(svfOffset, pag->getSymbolInfo()->getValSym(svfOffset));
+        }
+        ls.addOffsetVar(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)));
         fields.push_back(ls);
     }
     return T;
