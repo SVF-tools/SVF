@@ -31,6 +31,12 @@ cJSON* SVFIRWriter::toJson(long long number)
     return jsonCreateNumber(number);
 }
 
+cJSON* SVFIRWriter::toJson(long long unsigned number)
+{
+    // TODO: check number range?
+    return jsonCreateNumber(number);
+}
+
 cJSON* SVFIRWriter::virtToJson(const SVFVar* var)
 {
     return nullptr;
@@ -137,6 +143,127 @@ cJSON* SVFIRWriter::contentToJson(const RetICFGNode* node)
     return root;
 }
 
+cJSON* SVFIRWriter::contentToJson(const SVFStmt* edge)
+{
+    cJSON* root = genericEdgeToJson(edge);
+    JSON_WRITE_FIELD(root, edge, value);
+    JSON_WRITE_FIELD(root, edge, basicBlock);
+    JSON_WRITE_FIELD(root, edge, icfgNode);
+    JSON_WRITE_FIELD(root, edge, edgeId);
+    return root;
+}
+
+
+cJSON* SVFIRWriter::contentToJson(const AssignStmt* edge)
+{
+    return contentToJson(static_cast<const SVFStmt*>(edge));
+}
+
+cJSON* SVFIRWriter::contentToJson(const AddrStmt* edge)
+{
+    return contentToJson(static_cast<const AssignStmt*>(edge));
+}
+
+cJSON* SVFIRWriter::contentToJson(const CopyStmt* edge)
+{
+    return contentToJson(static_cast<const AssignStmt*>(edge));
+}
+
+cJSON* SVFIRWriter::contentToJson(const StoreStmt* edge)
+{
+    return contentToJson(static_cast<const AssignStmt*>(edge));
+}
+
+cJSON* SVFIRWriter::contentToJson(const LoadStmt* edge)
+{
+    return contentToJson(static_cast<const AssignStmt*>(edge));
+}
+
+cJSON* SVFIRWriter::contentToJson(const GepStmt* edge)
+{
+    cJSON* root = contentToJson(static_cast<const AssignStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, ls);
+    JSON_WRITE_FIELD(root, edge, variantField);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const CallPE* edge)
+{
+    cJSON* root = contentToJson(static_cast<const AssignStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, call);
+    JSON_WRITE_FIELD(root, edge, entry);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const RetPE* edge)
+{
+    cJSON* root = contentToJson(static_cast<const AssignStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, call);
+    JSON_WRITE_FIELD(root, edge, exit);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const MultiOpndStmt* edge)
+{
+    cJSON* root = contentToJson(static_cast<const SVFStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, opVars);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const PhiStmt* edge)
+{
+    cJSON* root = contentToJson(static_cast<const MultiOpndStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, opICFGNodes);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SelectStmt* edge)
+{
+    cJSON* root = contentToJson(static_cast<const MultiOpndStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, condition);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const CmpStmt* edge)
+{
+    cJSON* root = contentToJson(static_cast<const MultiOpndStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, predicate);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const BinaryOPStmt* edge)
+{
+    cJSON* root = contentToJson(static_cast<const MultiOpndStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, opcode);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const UnaryOPStmt* edge)
+{
+    cJSON* root = contentToJson(static_cast<const SVFStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, opcode);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const BranchStmt* edge)
+{
+    cJSON* root = contentToJson(static_cast<const SVFStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, successors);
+    JSON_WRITE_FIELD(root, edge, cond);
+    JSON_WRITE_FIELD(root, edge, brInst);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const TDForkPE* edge)
+{
+    return contentToJson(static_cast<const CallPE*>(edge));
+}
+
+cJSON* SVFIRWriter::contentToJson(const TDJoinPE* edge)
+{
+    return contentToJson(static_cast<const RetPE*>(edge));
+}
+
 bool jsonAddNumberToObject(cJSON* obj, const char* name, double number)
 {
     cJSON* node = cJSON_CreateNumber(number);
@@ -209,7 +336,7 @@ bool jsonAddItemToArray(cJSON* array, cJSON* item)
 
 ICFGWriter::ICFGWriter(const ICFG* icfg) : GenericICFGWriter(icfg)
 {
-    for (const auto& pair : icfg->icfgNodeToSVFLoopVec)
+    for (const auto& pair : icfg->getIcfgNodeToSVFLoopVec())
     {
         for (const SVFLoop* loop : pair.second)
         {

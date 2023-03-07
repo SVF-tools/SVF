@@ -47,6 +47,7 @@ template <typename, typename> class GenericGraphWriter;
 template<class NodeTy>
 class GenericEdge
 {
+    friend class SVFIRWriter;
 
 public:
     /// Node type

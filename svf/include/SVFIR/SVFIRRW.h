@@ -220,6 +220,7 @@ private:
     static cJSON* toJson(unsigned number);
     static cJSON* toJson(int number);
     static cJSON* toJson(long long number);
+    static cJSON* toJson(long long unsigned number);
 
     /// \brief Parameter types of these functions are all pointers.
     /// When they are used as arguments of toJson(), they will be
@@ -240,6 +241,26 @@ private:
     cJSON* contentToJson(const FunExitICFGNode* node);
     cJSON* contentToJson(const CallICFGNode* node);
     cJSON* contentToJson(const RetICFGNode* node);
+
+
+    cJSON* contentToJson(const SVFStmt* edge);
+    cJSON* contentToJson(const AssignStmt* edge);
+    cJSON* contentToJson(const AddrStmt* edge);
+    cJSON* contentToJson(const CopyStmt* edge);
+    cJSON* contentToJson(const StoreStmt* edge);
+    cJSON* contentToJson(const LoadStmt* edge);
+    cJSON* contentToJson(const GepStmt* edge);
+    cJSON* contentToJson(const CallPE* edge);
+    cJSON* contentToJson(const RetPE* edge);
+    cJSON* contentToJson(const MultiOpndStmt* edge);
+    cJSON* contentToJson(const PhiStmt* edge);
+    cJSON* contentToJson(const SelectStmt* edge);
+    cJSON* contentToJson(const CmpStmt* edge);
+    cJSON* contentToJson(const BinaryOPStmt* edge);
+    cJSON* contentToJson(const UnaryOPStmt* edge);
+    cJSON* contentToJson(const BranchStmt* edge);
+    cJSON* contentToJson(const TDForkPE* edge);
+    cJSON* contentToJson(const TDJoinPE* edge);
     ///@}
 
     template <typename NodeTy, typename EdgeTy>
@@ -250,6 +271,16 @@ private:
         JSON_WRITE_FIELD(root, node, nodeKind);
         JSON_WRITE_FIELD(root, node, InEdges);
         JSON_WRITE_FIELD(root, node, OutEdges);
+        return root;
+    }
+
+    template <typename NodeTy>
+    cJSON* genericEdgeToJson(const GenericEdge<NodeTy>* edge)
+    {
+        cJSON* root = jsonCreateObject();
+        JSON_WRITE_FIELD(root, edge, src);
+        JSON_WRITE_FIELD(root, edge, dst);
+        JSON_WRITE_FIELD(root, edge, edgeFlag);
         return root;
     }
 
