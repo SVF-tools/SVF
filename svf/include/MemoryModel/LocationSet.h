@@ -36,10 +36,14 @@
 
 #include "SVFIR/SVFValue.h"
 
+
 namespace SVF
 {
 
-/*
+class SVFVar;
+
+
+    /*
  * Location set represents a set of locations in a memory block with following offsets:
  *     { offset + \sum_{i=0}^N (stride_i * j_i) | 0 \leq j_i < M_i }
  * where N is the size of number-stride pair vector, M_i (stride_i) is i-th number (stride)
@@ -54,7 +58,7 @@ public:
         NonOverlap, Overlap, Subset, Superset, Same
     };
 
-    typedef std::vector<std::pair<const SVFValue*, const SVFType*> > OffsetValueVec;
+    typedef std::vector<const SVFVar*> OffsetVarVec;
 
     /// Constructor
     LocationSet(s32_t o = 0) : fldIdx(o)
@@ -62,7 +66,7 @@ public:
 
     /// Copy Constructor
     LocationSet(const LocationSet& ls)
-        : fldIdx(ls.fldIdx), offsetValues(ls.getOffsetValueVec())
+        : fldIdx(ls.fldIdx), offsetVars(ls.getOffsetVarVec())
     {
     }
 
@@ -75,13 +79,13 @@ public:
     inline const LocationSet& operator= (const LocationSet& rhs)
     {
         fldIdx = rhs.fldIdx;
-        offsetValues = rhs.getOffsetValueVec();
+        offsetVars = rhs.getOffsetVarVec();
         return *this;
     }
     inline bool operator==(const LocationSet& rhs) const
     {
         return this->fldIdx == rhs.fldIdx
-               && this->offsetValues == rhs.offsetValues;
+               && this->offsetVars == rhs.offsetVars;
     }
     //@}
 
@@ -95,19 +99,19 @@ public:
     {
         fldIdx = idx;
     }
-    inline const OffsetValueVec& getOffsetValueVec() const
-    {
-        return offsetValues;
+    inline const OffsetVarVec& getOffsetVarVec() const {
+        return offsetVars;
     }
     //@}
 
-    /// Return accumulated constant offset given OffsetValueVec
+    /// Return accumulated constant offset given OffsetVarVec
     s32_t accumulateConstantOffset() const;
 
     /// Return element number of a type.
     u32_t getElementNum(const SVFType* type) const;
 
-    bool addOffsetValue(const SVFValue* offsetValue, const SVFType* type);
+
+    bool addOffsetVar(const SVFVar* var);
 
     /// Return TRUE if this is a constant location set.
     bool isConstantOffset() const;
@@ -130,7 +134,7 @@ private:
     NodeBS computeAllLocations() const;
 
     s32_t fldIdx;	///< Accumulated Constant Offsets
-    OffsetValueVec offsetValues;	///< a vector of actual offset in the form of Values
+    OffsetVarVec offsetVars;	///< a vector of actual offset in the form of SVF Vars
 };
 
 } // End namespace SVF
@@ -140,8 +144,8 @@ template <> struct std::hash<SVF::LocationSet>
     size_t operator()(const SVF::LocationSet &ls) const
     {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
-        std::hash<SVF::LocationSet::OffsetValueVec> v;
-        return h(std::make_pair(ls.accumulateConstantFieldIdx(), v(ls.getOffsetValueVec())));
+        std::hash<SVF::LocationSet::OffsetVarVec> v;
+        return h(std::make_pair(ls.accumulateConstantFieldIdx(), v(ls.getOffsetVarVec())));
     }
 };
 
