@@ -280,7 +280,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         const Value* offsetVal = gi.getOperand();
         const SVFValue* offsetSvfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offsetVal);
         assert(gepTy != offsetVal->getType() && "iteration and operand have the same type?");
-        ls.addOffsetVarIterTypePair(getPAG()->getGNode(getPAG()->getValueNode(offsetSvfVal)), svfGepTy);
+        ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(offsetSvfVal)), svfGepTy);
 
         //The int value of the current index operand
         const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
@@ -1134,7 +1134,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
             builder.collectSym(offset);
             pag->addValNode(svfOffset, pag->getSymbolInfo()->getValSym(svfOffset));
         }
-        ls.addOffsetVarIterTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
+        ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
         fields.push_back(ls);
     }
     return T;

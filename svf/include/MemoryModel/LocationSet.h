@@ -58,8 +58,8 @@ public:
         NonOverlap, Overlap, Subset, Superset, Same
     };
 
-    typedef std::pair<const SVFVar*, const SVFType*> SVFVarIterTypePair;
-    typedef std::vector<SVFVarIterTypePair> OffsetVarIterTypePairVec;
+    typedef std::pair<const SVFVar*, const SVFType*> VarAndGepTypePair;
+    typedef std::vector<VarAndGepTypePair> OffsetVarAndGepTypePairs;
 
     /// Constructor
     LocationSet(s32_t o = 0) : fldIdx(o)
@@ -67,7 +67,7 @@ public:
 
     /// Copy Constructor
     LocationSet(const LocationSet& ls)
-        : fldIdx(ls.fldIdx), offsetVarIterTypePairs(ls.getOffsetVarIterTypePairVec())
+        : fldIdx(ls.fldIdx), offsetVarAndGepTypePairs(ls.getOffsetVarAndGepTypePairVec())
     {
     }
 
@@ -80,13 +80,13 @@ public:
     inline const LocationSet& operator= (const LocationSet& rhs)
     {
         fldIdx = rhs.fldIdx;
-        offsetVarIterTypePairs = rhs.getOffsetVarIterTypePairVec();
+        offsetVarAndGepTypePairs = rhs.getOffsetVarAndGepTypePairVec();
         return *this;
     }
     inline bool operator==(const LocationSet& rhs) const
     {
         return this->fldIdx == rhs.fldIdx
-               && this->offsetVarIterTypePairs == rhs.offsetVarIterTypePairs;
+               && this->offsetVarAndGepTypePairs == rhs.offsetVarAndGepTypePairs;
     }
     //@}
 
@@ -100,9 +100,9 @@ public:
     {
         fldIdx = idx;
     }
-    inline const OffsetVarIterTypePairVec& getOffsetVarIterTypePairVec() const
+    inline const OffsetVarAndGepTypePairs& getOffsetVarAndGepTypePairVec() const
     {
-        return offsetVarIterTypePairs;
+        return offsetVarAndGepTypePairs;
     }
     //@}
 
@@ -113,7 +113,7 @@ public:
     u32_t getElementNum(const SVFType* type) const;
 
 
-    bool addOffsetVarIterTypePair(const SVFVar* var, const SVFType* iterType);
+    bool addOffsetVarAndGepTypePair(const SVFVar* var, const SVFType* gepIterType);
 
     /// Return TRUE if this is a constant location set.
     bool isConstantOffset() const;
@@ -136,7 +136,7 @@ private:
     NodeBS computeAllLocations() const;
 
     s32_t fldIdx;	///< Accumulated Constant Offsets
-    OffsetVarIterTypePairVec offsetVarIterTypePairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>s
+    OffsetVarAndGepTypePairs offsetVarAndGepTypePairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>s
 };
 
 } // End namespace SVF
@@ -146,8 +146,8 @@ template <> struct std::hash<SVF::LocationSet>
     size_t operator()(const SVF::LocationSet &ls) const
     {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
-        std::hash<SVF::LocationSet::OffsetVarIterTypePairVec> v;
-        return h(std::make_pair(ls.accumulateConstantFieldIdx(), v(ls.getOffsetVarIterTypePairVec())));
+        std::hash<SVF::LocationSet::OffsetVarAndGepTypePairs> v;
+        return h(std::make_pair(ls.accumulateConstantFieldIdx(), v(ls.getOffsetVarAndGepTypePairVec())));
     }
 };
 

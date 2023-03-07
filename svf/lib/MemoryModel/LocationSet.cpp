@@ -37,18 +37,18 @@ using namespace SVF;
 using namespace SVFUtil;
 
 /*!
- * Add offset value to vector offsetVarIterTypePairs
+ * Add offset value to vector offsetVarAndGepTypePairs
  */
-bool LocationSet::addOffsetVarIterTypePair(const SVFVar* var, const SVFType* iterType)
+bool LocationSet::addOffsetVarAndGepTypePair(const SVFVar* var, const SVFType* gepIterType)
 {
-    offsetVarIterTypePairs.emplace_back(var, iterType);
+    offsetVarAndGepTypePairs.emplace_back(var, gepIterType);
     return true;
 }
 
 /// Return true if all offset values are constants
 bool LocationSet::isConstantOffset() const
 {
-    for(auto it : offsetVarIterTypePairs)
+    for(auto it : offsetVarAndGepTypePairs)
     {
         if(SVFUtil::isa<SVFConstantInt>(it.first->getValue()) == false)
             return false;
@@ -120,14 +120,14 @@ s32_t LocationSet::accumulateConstantOffset() const
 
     assert(isConstantOffset() && "not a constant offset");
 
-    if(offsetVarIterTypePairs.empty())
+    if(offsetVarAndGepTypePairs.empty())
         return accumulateConstantFieldIdx();
 
     s32_t totalConstOffset = 0;
-    for(int i = offsetVarIterTypePairs.size() - 1; i >= 0; i--)
+    for(int i = offsetVarAndGepTypePairs.size() - 1; i >= 0; i--)
     {
-        const SVFValue* value = offsetVarIterTypePairs[i].first->getValue();
-        const SVFType* type = offsetVarIterTypePairs[i].second;
+        const SVFValue* value = offsetVarAndGepTypePairs[i].first->getValue();
+        const SVFType* type = offsetVarAndGepTypePairs[i].second;
         const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         assert(op && "not a constant offset?");
         if(type==nullptr)
@@ -161,10 +161,10 @@ LocationSet LocationSet::operator+ (const LocationSet& rhs) const
 {
     LocationSet ls(rhs);
     ls.fldIdx += accumulateConstantFieldIdx();
-    OffsetVarIterTypePairVec::const_iterator it = getOffsetVarIterTypePairVec().begin();
-    OffsetVarIterTypePairVec::const_iterator eit = getOffsetVarIterTypePairVec().end();
+    OffsetVarAndGepTypePairs::const_iterator it = getOffsetVarAndGepTypePairVec().begin();
+    OffsetVarAndGepTypePairs::const_iterator eit = getOffsetVarAndGepTypePairVec().end();
     for (; it != eit; ++it)
-        ls.addOffsetVarIterTypePair(it->first, it->second);
+        ls.addOffsetVarAndGepTypePair(it->first, it->second);
 
     return ls;
 }
@@ -176,14 +176,14 @@ bool LocationSet::operator< (const LocationSet& rhs) const
         return (fldIdx < rhs.fldIdx);
     else
     {
-        const OffsetVarIterTypePairVec& pairVec = getOffsetVarIterTypePairVec();
-        const OffsetVarIterTypePairVec& rhsPairVec = rhs.getOffsetVarIterTypePairVec();
+        const OffsetVarAndGepTypePairs& pairVec = getOffsetVarAndGepTypePairVec();
+        const OffsetVarAndGepTypePairs& rhsPairVec = rhs.getOffsetVarAndGepTypePairVec();
         if (pairVec.size() != rhsPairVec.size())
             return (pairVec.size() < rhsPairVec.size());
         else
         {
-            OffsetVarIterTypePairVec::const_iterator it = pairVec.begin();
-            OffsetVarIterTypePairVec::const_iterator rhsIt = rhsPairVec.begin();
+            OffsetVarAndGepTypePairs::const_iterator it = pairVec.begin();
+            OffsetVarAndGepTypePairs::const_iterator rhsIt = rhsPairVec.begin();
             for (; it != pairVec.end() && rhsIt != rhsPairVec.end(); ++it, ++rhsIt)
             {
                 return (*it) < (*rhsIt);
@@ -223,9 +223,9 @@ std::string LocationSet::dump() const
 
     rawstr << "LocationSet\tField_Index: " << accumulateConstantFieldIdx();
     rawstr << ",\tNum-Stride: {";
-    const OffsetVarIterTypePairVec& vec = getOffsetVarIterTypePairVec();
-    OffsetVarIterTypePairVec::const_iterator it = vec.begin();
-    OffsetVarIterTypePairVec::const_iterator eit = vec.end();
+    const OffsetVarAndGepTypePairs& vec = getOffsetVarAndGepTypePairVec();
+    OffsetVarAndGepTypePairs::const_iterator it = vec.begin();
+    OffsetVarAndGepTypePairs::const_iterator eit = vec.end();
     for (; it != eit; ++it)
     {
         rawstr << " (Svf var: " << it->first->toString() << ", Iter type: " << it->second->toString() << ")";

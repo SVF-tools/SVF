@@ -444,9 +444,9 @@ public:
     {
         return ls;
     }
-    inline const LocationSet::OffsetVarIterTypePairVec getOffsetVarIterTypePairVec() const
+    inline const LocationSet::OffsetVarAndGepTypePairs getOffsetVarAndGepTypePairVec() const
     {
-        return getLocationSet().getOffsetVarIterTypePairVec();
+        return getLocationSet().getOffsetVarAndGepTypePairVec();
     }
     /// Return TRUE if this is a constant location set.
     inline bool isConstantOffset() const
