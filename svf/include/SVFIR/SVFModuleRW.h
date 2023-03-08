@@ -192,15 +192,6 @@ private:
     cJSON* readJson(cJSON* iter, SVFMetadataAsValue* value);
 };
 
-// class SVFIRWriter
-// {
-//     template <typename NodeTy, typename EdgeTy>
-//     cJSON* toJson(const GenericGraph<NodeTy, EdgeTy>* graph)
-//     {
-
-//     }
-// };
-
 } // namespace SVF
 
 #endif // !INCLUDE_SVFMODULE_JSON_DUMPER_H_

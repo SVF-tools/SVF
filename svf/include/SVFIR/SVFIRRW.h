@@ -114,6 +114,8 @@ private:
 public:
     GenericGraphWriter(const GraphType* g) : graph(g)
     {
+        assert(g && "Graph should never be null");
+
         for (const auto& entry : graph->IDToNodeMap)
         {
             const NodeID id = entry.first;
@@ -154,14 +156,6 @@ public:
 using IRGraphWriter = GenericGraphWriter<SVFVar, SVFStmt>;
 using CHGraphWriter = GenericGraphWriter<CHNode, CHEdge>;
 
-struct CommonCHGraphWriter
-{
-    CommonCHGraphWriter(const CommonCHGraph* chg);
-    ~CommonCHGraphWriter();
-
-    const CHGraphWriter* chGraphWriter;
-};
-
 class SVFIRWriter
 {
     const SVFIR* svfIR;
@@ -171,7 +165,7 @@ class SVFIRWriter
 
     IRGraphWriter irGraphWriter;
     ICFGWriter icfgWriter;
-    CommonCHGraphWriter commonCHGraphWriter;
+    CHGraphWriter chgWriter;
 
     OrderedMap<size_t, std::string> numToStrMap;
 
@@ -199,6 +193,7 @@ private:
     cJSON* toJson(const CHNode* node);   // CHGraph Node
     cJSON* toJson(const CHEdge* edge);   // CHGraph Edge
 
+    cJSON* toJson(const CallSite& cs);              // TODO
     cJSON* toJson(const SVFLoop* loop);             // TODO
     cJSON* toJson(const SymbolTableInfo* symTable); // TODO
     cJSON* toJson(const MemObj* memObj);            // TODO
@@ -272,8 +267,6 @@ private:
     // CHNode & CHEdge
     cJSON* contentToJson(const CHNode* node);
     cJSON* contentToJson(const CHEdge* edge);
-
-    //
 
     ///@}
 

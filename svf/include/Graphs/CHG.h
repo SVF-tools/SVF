@@ -211,6 +211,7 @@ private:
 typedef GenericGraph<CHNode, CHEdge> GenericCHGraphTy;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
+    friend class SVFIRWriter;
     friend class CHGBuilder;
 
 public:

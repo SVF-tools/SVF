@@ -1068,9 +1068,10 @@ public:
 class CallSite
 {
 private:
-    const SVFCallInst *CB;
+    const SVFCallInst* CB;
+
 public:
-    CallSite(const SVFInstruction *I) : CB(SVFUtil::dyn_cast<SVFCallInst>(I))
+    CallSite(const SVFInstruction* I) : CB(SVFUtil::dyn_cast<SVFCallInst>(I))
     {
         assert(CB && "not a callsite?");
     }
@@ -1137,19 +1138,18 @@ public:
         assert(isVirtualCall() && "not a virtual call?");
         return SVFUtil::cast<SVFVirtualCallInst>(CB)->getFunNameOfVirtualCall();
     }
-    bool operator==(const CallSite &CS) const
+    bool operator==(const CallSite& CS) const
     {
         return CB == CS.CB;
     }
-    bool operator!=(const CallSite &CS) const
+    bool operator!=(const CallSite& CS) const
     {
         return CB != CS.CB;
     }
-    bool operator<(const CallSite &CS) const
+    bool operator<(const CallSite& CS) const
     {
         return getInstruction() < CS.getInstruction();
     }
-
 };
 
 template <typename F, typename S>

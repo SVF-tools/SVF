@@ -45,48 +45,104 @@ cJSON* SVFIRWriter::toJson(long long unsigned number)
 
 cJSON* SVFIRWriter::virtToJson(const SVFVar* var)
 {
-    return nullptr;
+    switch (var->getNodeKind())
+    {
+    default:
+        assert(false && "Unknown SVFVar kind");
+    case SVFVar::ValNode:
+        return contentToJson(static_cast<const ValVar*>(var));
+    case SVFVar::ObjNode:
+        return contentToJson(static_cast<const ObjVar*>(var));
+    case SVFVar::RetNode:
+        return contentToJson(static_cast<const RetPN*>(var));
+    case SVFVar::VarargNode:
+        return contentToJson(static_cast<const VarArgPN*>(var));
+    case SVFVar::GepValNode:
+        return contentToJson(static_cast<const GepValVar*>(var));
+    case SVFVar::GepObjNode:
+        return contentToJson(static_cast<const GepObjVar*>(var));
+    case SVFVar::FIObjNode:
+        return contentToJson(static_cast<const FIObjVar*>(var));
+    case SVFVar::DummyValNode:
+        return contentToJson(static_cast<const DummyValVar*>(var));
+    case SVFVar::DummyObjNode:
+        return contentToJson(static_cast<const DummyObjVar*>(var));
+    }
 }
 
 cJSON* SVFIRWriter::virtToJson(const SVFStmt* stmt)
 {
-    return nullptr;
+    switch (stmt->getEdgeKind())
+    {
+    default:
+        assert(false && "Unknown SVFStmt kind");
+#define CASE(EdgeKind, EdgeType)                                               \
+    case SVFStmt::EdgeKind: {                                                  \
+        return contentToJson(static_cast<const EdgeType*>(stmt));              \
+    }
+        CASE(Addr, AddrStmt);
+        CASE(Copy, CopyStmt);
+        CASE(Store, StoreStmt);
+        CASE(Load, LoadStmt);
+        CASE(Call, CallPE);
+        CASE(Ret, RetPE);
+        CASE(Gep, GepStmt);
+        CASE(Phi, PhiStmt);
+        CASE(Select, SelectStmt);
+        CASE(Cmp, CmpStmt);
+        CASE(BinaryOp, BinaryOPStmt);
+        CASE(UnaryOp, UnaryOPStmt);
+        CASE(Branch, BranchStmt);
+        CASE(ThreadFork, TDForkPE);
+        CASE(ThreadJoin, TDJoinPE);
+#undef CASE
+    }
 }
 
 cJSON* SVFIRWriter::virtToJson(const ICFGNode* node)
 {
     switch (node->getNodeKind())
     {
-        default:
-            assert(false && "Unknown ICFGNode kind");
-        case ICFGNode::IntraBlock:
-            return contentToJson(static_cast<const IntraICFGNode*>(node));
-        case ICFGNode::FunEntryBlock:
-            return contentToJson(static_cast<const FunEntryICFGNode*>(node));
-        case ICFGNode::FunExitBlock:
-            return contentToJson(static_cast<const FunExitICFGNode*>(node));
-        case ICFGNode::FunCallBlock:
-            return contentToJson(static_cast<const CallICFGNode*>(node));
-        case ICFGNode::FunRetBlock:
-            return contentToJson(static_cast<const RetICFGNode*>(node));
-        case ICFGNode::GlobalBlock:
-            return contentToJson(static_cast<const GlobalICFGNode*>(node));
+    default:
+        assert(false && "Unknown ICFGNode kind");
+    case ICFGNode::IntraBlock:
+        return contentToJson(static_cast<const IntraICFGNode*>(node));
+    case ICFGNode::FunEntryBlock:
+        return contentToJson(static_cast<const FunEntryICFGNode*>(node));
+    case ICFGNode::FunExitBlock:
+        return contentToJson(static_cast<const FunExitICFGNode*>(node));
+    case ICFGNode::FunCallBlock:
+        return contentToJson(static_cast<const CallICFGNode*>(node));
+    case ICFGNode::FunRetBlock:
+        return contentToJson(static_cast<const RetICFGNode*>(node));
+    case ICFGNode::GlobalBlock:
+        return contentToJson(static_cast<const GlobalICFGNode*>(node));
     }
 }
 
 cJSON* SVFIRWriter::virtToJson(const ICFGEdge* edge)
 {
-    return nullptr;
+    switch (edge->getEdgeKind())
+    {
+    default:
+        assert(false && "Unknown ICFGEdge kind");
+    case ICFGEdge::IntraCF:
+        return contentToJson(static_cast<const IntraCFGEdge*>(edge));
+    case ICFGEdge::CallCF:
+        return contentToJson(static_cast<const CallCFGEdge*>(edge));
+    case ICFGEdge::RetCF:
+        return contentToJson(static_cast<const RetCFGEdge*>(edge));
+    }
 }
 
 cJSON* SVFIRWriter::virtToJson(const CHNode* node)
 {
-    return nullptr;
+    return contentToJson(node);
 }
 
 cJSON* SVFIRWriter::virtToJson(const CHEdge* edge)
 {
-    return nullptr;
+    return contentToJson(edge);
 }
 
 cJSON* SVFIRWriter::contentToJson(const SVFVar* var)
@@ -241,7 +297,7 @@ cJSON* SVFIRWriter::contentToJson(const RetCFGEdge* edge)
     return root;
 }
 
-cJSON* SVFIRWriter::contentToJson(const CHNode* node) 
+cJSON* SVFIRWriter::contentToJson(const CHNode* node)
 {
     cJSON* root = genericNodeToJson(node);
     JSON_WRITE_FIELD(root, node, vtable);
@@ -459,28 +515,9 @@ ICFGWriter::ICFGWriter(const ICFG* icfg) : GenericICFGWriter(icfg)
     }
 }
 
-CommonCHGraphWriter::CommonCHGraphWriter(const CommonCHGraph* cchg)
-{
-    if (auto chg = SVFUtil::dyn_cast<CHGraph>(cchg))
-    {
-        chGraphWriter = new CHGraphWriter(chg);
-    }
-    else
-    {
-        assert(false && "For now only support CHGraph");
-        abort();
-    }
-}
-
-CommonCHGraphWriter::~CommonCHGraphWriter()
-{
-    if (chGraphWriter)
-        delete chGraphWriter;
-}
-
 SVFIRWriter::SVFIRWriter(const SVFIR* svfir)
     : svfIR(svfir), irGraphWriter(svfir), icfgWriter(svfir->icfg),
-      commonCHGraphWriter(svfir->chgraph)
+      chgWriter(SVFUtil::dyn_cast<CHGraph>(svfir->chgraph))
 {
 }
 
@@ -528,7 +565,6 @@ cJSON* SVFIRWriter::generateJson()
     F(indCallSiteToFunPtrMap);
     F(funPtrToCallSitesMap);
     F(candidatePointers);
-    //F(svfModule);
     F(icfg);
     //F(chgraph);
     F(callSiteSet);
@@ -556,8 +592,8 @@ cJSON* SVFIRWriter::toJson(const IRGraph* graph)
     F(fromFile);
     F(nodeNumAfterPAGBuild);
     F(totalPTAPAGEdge);
-    F(valueToEdgeMap); ///< Map llvm::Values to all corresponding PAGEdges
-    //symInfo;
+    F(valueToEdgeMap);
+    //symInfo; TODO
 #undef F
     return root;
 }
@@ -597,8 +633,22 @@ cJSON* SVFIRWriter::toJson(const ICFGEdge* edge) {
 
 cJSON* SVFIRWriter::toJson(const CHGraph* graph)
 {
-    cJSON* root = jsonCreateObject();
-    // TODO
+    cJSON* root = genericGraphToJson(graph, chgWriter.edgePool.getPool());
+#define F(field) JSON_WRITE_FIELD(root, graph, field)
+    // TODO: SVFModule is the same as the SVFIR's?
+    F(classNum);
+    F(vfID);
+    // F(buildingCHGTime);
+    F(classNameToNodeMap);
+    F(classNameToDescendantsMap);
+    F(classNameToAncestorsMap);
+    F(classNameToInstAndDescsMap);
+    F(templateNameToInstancesMap);
+    F(csToClassesMap);
+    F(virtualFunctionToIDMap);
+    //F(csToCHAVtblsMap);
+    //F(csToCHAVFnsMap);
+#undef F
     return root;
 }
 
@@ -614,6 +664,11 @@ cJSON* SVFIRWriter::toJson(const CHEdge* edge)
     cJSON* root = jsonCreateObject();
     // TODO
     return root;
+}
+
+cJSON* SVFIRWriter::toJson(const CallSite& cs)
+{
+    return toJson(cs.getInstruction());
 }
 
 cJSON* SVFIRWriter::toJson(const SVFLoop* loop)

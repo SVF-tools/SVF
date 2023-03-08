@@ -193,11 +193,12 @@ public:
     /// Whether this instruction has SVFIR Edge
     inline bool hasSVFStmtList(const ICFGNode* inst) const
     {
-        return icfgNode2SVFStmtsMap.find(inst)!=icfgNode2SVFStmtsMap.end();
+        return icfgNode2SVFStmtsMap.find(inst) != icfgNode2SVFStmtsMap.end();
     }
     inline bool hasPTASVFStmtList(const ICFGNode* inst) const
     {
-        return icfgNode2PTASVFStmtsMap.find(inst)!=icfgNode2PTASVFStmtsMap.end();
+        return icfgNode2PTASVFStmtsMap.find(inst) !=
+               icfgNode2PTASVFStmtsMap.end();
     }
     /// Given an instruction, get all its PAGEdges
     inline SVFStmtList& getSVFStmtList(const ICFGNode* inst)
@@ -351,7 +352,7 @@ public:
     }
     inline SVFStmt* getIntraPAGEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind)
     {
-        SVFStmt edge(src,dst,kind, false);
+        SVFStmt edge(src, dst, kind, false);
         const SVFStmt::SVFStmtSetTy& edgeSet = getSVFStmtSet(kind);
         SVFStmt::SVFStmtSetTy::const_iterator it = edgeSet.find(&edge);
         assert(it != edgeSet.end() && "can not find pag edge");
@@ -366,7 +367,7 @@ public:
     inline const MemObj*getObject(NodeID id) const
     {
         const SVFVar* node = getGNode(id);
-        if(const ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(node))
+        if (const ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(node))
             return getObject(objPN);
         else
             return nullptr;
@@ -415,7 +416,8 @@ public:
     {
         const MemObj* obj = getObject(id);
         assert(obj && "not an object node?");
-        return SymbolTableInfo::isConstantObj(id) || obj->isConstDataOrConstGlobal();
+        return SymbolTableInfo::isConstantObj(id) ||
+               obj->isConstDataOrConstGlobal();
     }
     /// Whether an object can point to any other object or any of its fields is a pointer type.
     bool isNonPointerObj(NodeID id) const;
@@ -525,7 +527,7 @@ private:
     inline NodeID addObjNode(const SVFValue* val, NodeID i)
     {
         const MemObj* mem = getMemObj(val);
-        assert(((mem->getId() == i)) && "not same object id?");
+        assert(mem->getId() == i && "not same object id?");
         return addFIObjNode(mem);
     }
     /// Add a unique return node for a procedure
@@ -566,11 +568,15 @@ private:
     }
     inline NodeID addBlackholeObjNode()
     {
-        return addObjNode(nullptr, new DummyObjVar(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
+        return addObjNode(
+            nullptr, new DummyObjVar(getBlackHoleNode(), getBlackHoleObj()),
+            getBlackHoleNode());
     }
     inline NodeID addConstantObjNode()
     {
-        return addObjNode(nullptr, new DummyObjVar(getConstantNode(),getConstantObj()), getConstantNode());
+        return addObjNode(nullptr,
+                          new DummyObjVar(getConstantNode(), getConstantObj()),
+                          getConstantNode());
     }
     inline NodeID addBlackholePtrNode()
     {
@@ -581,14 +587,18 @@ private:
     /// Add a value (pointer) node
     inline NodeID addValNode(const SVFValue*, SVFVar *node, NodeID i)
     {
-        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DBUG to SEQ or DENSE");
-        return addNode(node,i);
+        assert(hasGNode(i) == false &&
+               "This NodeID clashes here. Please check NodeIDAllocator. Switch "
+               "Strategy::DBUG to SEQ or DENSE");
+        return addNode(node, i);
     }
     /// Add a memory obj node
     inline NodeID addObjNode(const SVFValue*, SVFVar *node, NodeID i)
     {
-        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DBUG to SEQ or DENSE");
-        return addNode(node,i);
+        assert(hasGNode(i) == false &&
+               "This NodeID clashes here. Please check NodeIDAllocator. Switch "
+               "Strategy::DBUG to SEQ or DENSE");
+        return addNode(node, i);
     }
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const SVFFunction*, SVFVar *node, NodeID i)
@@ -624,29 +634,36 @@ private:
     /// Add Copy edge
     CmpStmt* addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t predict);
     /// Add Copy edge
-    BinaryOPStmt* addBinaryOPStmt(NodeID op1, NodeID op2, NodeID dst, u32_t opcode);
+    BinaryOPStmt* addBinaryOPStmt(NodeID op1, NodeID op2, NodeID dst,
+                                  u32_t opcode);
     /// Add Unary edge
     UnaryOPStmt* addUnaryOPStmt(NodeID src, NodeID dst, u32_t opcode);
     /// Add BranchStmt
-    BranchStmt* addBranchStmt(NodeID br, NodeID cond, const BranchStmt::SuccAndCondPairVec& succs);
+    BranchStmt* addBranchStmt(NodeID br, NodeID cond,
+                              const BranchStmt::SuccAndCondPairVec& succs);
     /// Add Load edge
     LoadStmt* addLoadStmt(NodeID src, NodeID dst);
     /// Add Store edge
     StoreStmt* addStoreStmt(NodeID src, NodeID dst, const IntraICFGNode* val);
     /// Add Call edge
-    CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry);
+    CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs,
+                      const FunEntryICFGNode* entry);
     /// Add Return edge
-    RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit);
+    RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs,
+                    const FunExitICFGNode* exit);
     /// Add Gep edge
-    GepStmt* addGepStmt(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
+    GepStmt* addGepStmt(NodeID src, NodeID dst, const LocationSet& ls,
+                        bool constGep);
     /// Add Offset(Gep) edge
     GepStmt* addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls);
     /// Add Variant(Gep) edge
     GepStmt* addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls);
     /// Add Thread fork edge for parameter passing
-    TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry);
+    TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs,
+                              const FunEntryICFGNode* entry);
     /// Add Thread join edge for parameter passing
-    TDJoinPE* addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit);
+    TDJoinPE* addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs,
+                              const FunExitICFGNode* exit);
     //@}
 
     /// Set a pointer points-to black hole (e.g. int2ptr)
