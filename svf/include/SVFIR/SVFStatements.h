@@ -456,13 +456,13 @@ public:
     /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
     inline s32_t accumulateConstantOffset() const
     {
-        return getLocationSet().accumulateConstantOffset();
+        return getLocationSet().computeConstantOffset();
     }
     /// Field index of the gep statement if it access the field of a struct
     inline s32_t getConstantFieldIdx() const
     {
         assert(isVariantFieldGep()==false && "Can't retrieve the LocationSet if using a variable field index (pointer arithmetic) for struct field access ");
-        return getLocationSet().accumulateConstantFieldIdx();
+        return getLocationSet().getConstantFieldIdx();
     }
     /// Gep statement with a variant field index (pointer arithmetic) for struct field access
     inline bool isVariantFieldGep() const

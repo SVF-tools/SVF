@@ -92,7 +92,7 @@ public:
 
     /// Get methods
     //@{
-    inline s32_t accumulateConstantFieldIdx() const
+    inline s32_t getConstantFieldIdx() const
     {
         return fldIdx;
     }
@@ -107,7 +107,7 @@ public:
     //@}
 
     /// Return accumulated constant offset given OffsetVarVec
-    s32_t accumulateConstantOffset() const;
+    s32_t computeConstantOffset() const;
 
     /// Return element number of a type.
     u32_t getElementNum(const SVFType* type) const;
@@ -147,7 +147,7 @@ template <> struct std::hash<SVF::LocationSet>
     {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
         std::hash<SVF::LocationSet::OffsetVarAndGepTypePairs> v;
-        return h(std::make_pair(ls.accumulateConstantFieldIdx(), v(ls.getOffsetVarAndGepTypePairVec())));
+        return h(std::make_pair(ls.getConstantFieldIdx(), v(ls.getOffsetVarAndGepTypePairVec())));
     }
 };
 
