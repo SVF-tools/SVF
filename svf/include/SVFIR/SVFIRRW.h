@@ -220,9 +220,9 @@ private:
 
     static cJSON* toJson(unsigned number);
     static cJSON* toJson(int number);
-    static cJSON* toJson(long unsigned number);
-    static cJSON* toJson(long long number);
-    static cJSON* toJson(long long unsigned number);
+    cJSON* toJson(unsigned long number);
+    cJSON* toJson(long long number);
+    cJSON* toJson(unsigned long long number);
 
     /// \brief Parameter types of these functions are all pointers.
     /// When they are used as arguments of toJson(), they will be
@@ -346,9 +346,20 @@ private:
     }
 
     template <unsigned ElementSize>
-    static cJSON* toJson(const SparseBitVector<ElementSize>& bv)
+    cJSON* toJson(const SparseBitVectorElement<ElementSize> &element)
     {
-        return cJSON_CreateString("TODO: JSON BitVector");
+        cJSON* array = jsonCreateArray();
+        for (const auto v : element.Bits)
+        {
+            jsonAddItemToArray(array, toJson(v));
+        }
+        return array;
+    }
+
+    template <unsigned ElementSize>
+    cJSON* toJson(const SparseBitVector<ElementSize>& bv)
+    {
+        return toJson(bv.Elements);
     }
 
     template <typename T, typename U> cJSON* toJson(const std::pair<T, U>& pair)

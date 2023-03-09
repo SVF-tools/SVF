@@ -11,30 +11,30 @@ namespace SVF
 
 cJSON* SVFIRWriter::toJson(unsigned number)
 {
+    // OK, double precision enough
     return jsonCreateNumber(number);
 }
 
 cJSON* SVFIRWriter::toJson(int number)
 {
+    // OK, double precision enough
     return jsonCreateNumber(number);
 }
 
-cJSON* SVFIRWriter::toJson(long unsigned number)
+cJSON* SVFIRWriter::toJson(unsigned long number)
 {
-    // TODO: check number range?
-    return jsonCreateNumber(number);
+    // unsigned long is subset of unsigned long long
+    return toJson(static_cast<unsigned long long>(number));
 }
 
 cJSON* SVFIRWriter::toJson(long long number)
 {
-    // TODO: check number range?
-    return jsonCreateNumber(number);
+    return toJson(static_cast<unsigned long long>(number));
 }
 
-cJSON* SVFIRWriter::toJson(long long unsigned number)
+cJSON* SVFIRWriter::toJson(unsigned long long number)
 {
-    // TODO: check number range?
-    return jsonCreateNumber(number);
+    return jsonCreateString(numToStr(number));
 }
 
 cJSON* SVFIRWriter::virtToJson(const SVFVar* var)
@@ -516,6 +516,7 @@ cJSON* jsonCreateString(const char* str)
 
 cJSON* jsonCreateIndex(size_t index)
 {
+    // size_t is 8 bytes on 64-bit systems, might overflow double's capacity.
     return cJSON_CreateNumber(index);
 }
 

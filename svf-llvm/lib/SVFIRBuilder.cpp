@@ -169,7 +169,7 @@ SVFIR* SVFIRBuilder::build()
     {
         SVFIRWriter writer(pag);
         auto s = writer.generateJsonString();
-        SVFUtil::errs() << s << "\n";
+        SVFUtil::outs() << s << "\n";
     }
 
     double endTime = SVFStat::getClk(true);

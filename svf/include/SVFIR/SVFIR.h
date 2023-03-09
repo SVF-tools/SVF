@@ -42,7 +42,6 @@ class CommonCHGraph;
  */
 class SVFIR : public IRGraph
 {
-
     friend class SVFIRBuilder;
     friend class ExternalPAG;
     friend class PAGBuilderFromFile;
