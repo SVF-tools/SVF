@@ -102,26 +102,26 @@ u32_t LocationSet::getElementNum(const SVFType* type) const
 
 /// %5 = getelementptr inbounds %struct.Student, %struct.Student* %4, i64 1
 ///     value1: i64 1 type1: %struct.Student*
-///     accumulateConstantOffset = 32
+///     computeConstantOffset = 32
 /// %6 = getelementptr inbounds %struct.Student, %struct.Student* %5, i32 0, i32 1
 ///     value1: i32 0  type1: %struct.Student*
 ///     value2: i32 1  type2: %struct.Student = type { %struct.inner, [10 x [3 x i8]] }
-///     accumulateConstantOffset = 2
+///     computeConstantOffset = 2
 /// %7 = getelementptr inbounds [10 x [3 x i8]], [10 x [3 x i8]]* %6, i64 0, i64 3
 ///     value1: i64 0  type1: [10 x [3 x i8]]*
 ///     value2: i64 3  type2: [10 x [3 x i8]]
-///     accumulateConstantOffset = 9
+///     computeConstantOffset = 9
 /// %8 = getelementptr inbounds [3 x i8], [3 x i8]* %7, i64 0, i64 2
 ///     value1: i64 0  type1: [3 x i8]*
 ///     value2: i64 2  type2: [3 x i8]
-///     accumulateConstantOffset = 2
-s32_t LocationSet::accumulateConstantOffset() const
+///     computeConstantOffset = 2
+s32_t LocationSet::computeConstantOffset() const
 {
 
     assert(isConstantOffset() && "not a constant offset");
 
     if(offsetVarAndGepTypePairs.empty())
-        return accumulateConstantFieldIdx();
+        return getConstantFieldIdx();
 
     s32_t totalConstOffset = 0;
     for(int i = offsetVarAndGepTypePairs.size() - 1; i >= 0; i--)
@@ -153,14 +153,14 @@ s32_t LocationSet::accumulateConstantOffset() const
 NodeBS LocationSet::computeAllLocations() const
 {
     NodeBS result;
-    result.set(accumulateConstantFieldIdx());
+    result.set(getConstantFieldIdx());
     return result;
 }
 
 LocationSet LocationSet::operator+ (const LocationSet& rhs) const
 {
     LocationSet ls(rhs);
-    ls.fldIdx += accumulateConstantFieldIdx();
+    ls.fldIdx += getConstantFieldIdx();
     OffsetVarAndGepTypePairs::const_iterator it = getOffsetVarAndGepTypePairVec().begin();
     OffsetVarAndGepTypePairs::const_iterator eit = getOffsetVarAndGepTypePairVec().end();
     for (; it != eit; ++it)
@@ -221,7 +221,7 @@ std::string LocationSet::dump() const
     std::string str;
     std::stringstream rawstr(str);
 
-    rawstr << "LocationSet\tField_Index: " << accumulateConstantFieldIdx();
+    rawstr << "LocationSet\tField_Index: " << getConstantFieldIdx();
     rawstr << ",\tNum-Stride: {";
     const OffsetVarAndGepTypePairs& vec = getOffsetVarAndGepTypePairVec();
     OffsetVarAndGepTypePairs::const_iterator it = vec.begin();

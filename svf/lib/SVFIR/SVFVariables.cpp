@@ -145,7 +145,7 @@ const std::string GepObjVar::toString() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    rawstr << "GepObjVar ID: " << getId() << " with offset_" + std::to_string(ls.accumulateConstantFieldIdx());
+    rawstr << "GepObjVar ID: " << getId() << " with offset_" + std::to_string(ls.getConstantFieldIdx());
     if (Options::ShowSVFIRValue())
     {
         rawstr << "\n";

@@ -98,7 +98,7 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
 
-    s32_t offset = ls.accumulateConstantFieldIdx();
+    s32_t offset = ls.getConstantFieldIdx();
     if(offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");
@@ -392,13 +392,13 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         else
             sz = SymbolTableInfo::SymbolInfo()->getTypeInfo(ety)->getFlattenFieldTypes().size();
 
-        if(sz <= (u32_t)ls.accumulateConstantFieldIdx())
+        if(sz <= (u32_t) ls.getConstantFieldIdx())
         {
             writeWrnMsg("out of bound error when accessing the struct/array");
             return false;
         }
 
-        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.accumulateConstantFieldIdx());
+        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.getConstantFieldIdx());
         return (elemTy->isPointerTy() == false);
     }
     else
