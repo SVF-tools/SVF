@@ -282,6 +282,8 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         //s32_t bo = byteOffset.getSExtValue();
     }
 
+    bool isConst = true;
+
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
             gi != ge; ++gi)
     {
@@ -303,7 +305,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
                 continue;
             s32_t idx = op->getSExtValue();
             u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(arrTy), idx);
-            ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);
+            ls.setFldIdx(ls.getConstantFieldIdx() + offset);
         }
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
         {
@@ -311,7 +313,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             //The actual index
             s32_t idx = op->getSExtValue();
             u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(ST), idx);
-            ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);
+            ls.setFldIdx(ls.getConstantFieldIdx() + offset);
         }
         else if (gepTy->isSingleValueType())
         {
@@ -319,17 +321,17 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
             // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
             if(!op && gepTy->isPointerTy() && getPtrElementType(SVFUtil::dyn_cast<PointerType>(gepTy))->isSingleValueType())
-                return false;
+                isConst = false;
 
             // The actual index
             //s32_t idx = op->getSExtValue();
 
             // For pointer arithmetic we ignore the byte offset
             // consider using inferFieldIdxFromByteOffset(geopOp,dataLayout,ls,idx)?
-            // ls.setFldIdx(ls.accumulateConstantFieldIdx() + inferFieldIdxFromByteOffset(geopOp,idx));
+            // ls.setFldIdx(ls.getConstantFieldIdx() + inferFieldIdxFromByteOffset(geopOp,idx));
         }
     }
-    return true;
+    return isConst;
 }
 
 /*!
@@ -1188,8 +1190,10 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
     for (u32_t index = 0; index < sz; index++)
     {
         LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-        const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(dtype), fields[index].accumulateConstantFieldIdx());
-        const SVFType* sElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(stype), fields[index].accumulateConstantFieldIdx());
+        const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(dtype),
+                                      fields[index].getConstantFieldIdx());
+        const SVFType* sElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(stype),
+                                      fields[index].getConstantFieldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
         NodeID dummy = pag->addDummyValNode();
@@ -1397,7 +1401,8 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         //For each field (i), add store edge *(arg0 + i) = arg1
                         for (u32_t index = 0; index < sz; index++)
                         {
-                            const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(dtype), dstFields[index].accumulateConstantFieldIdx());
+                            const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(dtype),
+                                                          dstFields[index].getConstantFieldIdx());
                             NodeID dField = getGepValVar(cs->getArgOperand(op.getOperands()[0]), dstFields[index], dElementType);
                             addStoreEdge(getValueNode(cs->getArgOperand(op.getOperands()[1])),dField);
                         }
@@ -1440,7 +1445,7 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                         // Now we calculate the offset from base to vArg3
                         NodeID vnArg3 = pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(vArg3));
-                        s32_t offset = getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
+                        s32_t offset = getLocationSetFromBaseNode(vnArg3).getConstantFieldIdx();
 
                         // We get all flattened fields of base
                         vector<LocationSet> fields;
@@ -1452,7 +1457,8 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         {
                             if((u32_t)i >= fields.size())
                                 break;
-                            const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(type), fields[i].accumulateConstantFieldIdx());
+                            const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(type),
+                                                         fields[i].getConstantFieldIdx());
                             NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
                             NodeID vnS = getValueNode(vArg1);
                             if(vnD && vnS)

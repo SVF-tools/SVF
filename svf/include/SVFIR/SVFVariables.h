@@ -404,7 +404,7 @@ public:
     /// offset of the base value variable
     inline s32_t getConstantFieldIdx() const
     {
-        return ls.accumulateConstantFieldIdx();
+        return ls.getConstantFieldIdx();
     }
 
     /// Return name of a LLVM value
@@ -475,7 +475,7 @@ public:
     /// offset of the mem object
     inline s32_t getConstantFieldIdx() const
     {
-        return ls.accumulateConstantFieldIdx();
+        return ls.getConstantFieldIdx();
     }
 
     /// Set the base object from which this GEP node came from.
@@ -493,17 +493,15 @@ public:
     /// Return the type of this gep object
     inline virtual const SVFType* getType() const
     {
-        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(
-            mem->getType(), ls.accumulateConstantFieldIdx());
+        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(mem->getType(), ls.getConstantFieldIdx());
     }
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
         if (value)
-            return value->getName() + "_" +
-                   std::to_string(ls.accumulateConstantFieldIdx());
-        return "offset_" + std::to_string(ls.accumulateConstantFieldIdx());
+            return value->getName() + "_" + std::to_string(ls.getConstantFieldIdx());
+        return "offset_" + std::to_string(ls.getConstantFieldIdx());
     }
 
     virtual const std::string toString() const;
