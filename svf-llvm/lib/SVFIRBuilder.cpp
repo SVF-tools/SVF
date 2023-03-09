@@ -1181,9 +1181,9 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
     {
         LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
         const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(dtype),
-                                                                                  fields[index].getConstantFieldIdx());
+                                      fields[index].getConstantFieldIdx());
         const SVFType* sElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(stype),
-                                                                                  fields[index].getConstantFieldIdx());
+                                      fields[index].getConstantFieldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
         NodeID dummy = pag->addDummyValNode();
@@ -1392,7 +1392,7 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         for (u32_t index = 0; index < sz; index++)
                         {
                             const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(dtype),
-                                                                                                      dstFields[index].getConstantFieldIdx());
+                                                          dstFields[index].getConstantFieldIdx());
                             NodeID dField = getGepValVar(cs->getArgOperand(op.getOperands()[0]), dstFields[index], dElementType);
                             addStoreEdge(getValueNode(cs->getArgOperand(op.getOperands()[1])),dField);
                         }
@@ -1448,7 +1448,7 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                             if((u32_t)i >= fields.size())
                                 break;
                             const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(type),
-                                                                                                     fields[i].getConstantFieldIdx());
+                                                         fields[i].getConstantFieldIdx());
                             NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
                             NodeID vnS = getValueNode(vArg1);
                             if(vnD && vnS)
