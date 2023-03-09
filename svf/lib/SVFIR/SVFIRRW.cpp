@@ -9,12 +9,6 @@ static const Option<bool> humanReadableOption(
 namespace SVF
 {
 
-cJSON* SVFIRWriter::toJson(const LocationSet& ls)
-{
-    // TODO: JSON
-    return jsonCreateString("TODO: LocationSet");
-}
-
 cJSON* SVFIRWriter::toJson(unsigned number)
 {
     return jsonCreateNumber(number);
@@ -246,7 +240,10 @@ cJSON* SVFIRWriter::contentToJson(const FunEntryICFGNode* node)
 cJSON* SVFIRWriter::contentToJson(const FunExitICFGNode* node)
 {
     cJSON* root = contentToJson(static_cast<const ICFGNode*>(node));
-    JSON_WRITE_FIELD(root, node, formalRet);
+    if (node->formalRet)
+        JSON_WRITE_FIELD(root, node, formalRet);
+    else
+        jsonAddNumberToObject(root, "formalRet", 0);
     return root;
 }
 
@@ -263,7 +260,10 @@ cJSON* SVFIRWriter::contentToJson(const RetICFGNode* node)
 {
     cJSON* root = contentToJson(static_cast<const ICFGNode*>(node));
     JSON_WRITE_FIELD(root, node, cs);
-    JSON_WRITE_FIELD(root, node, actualRet);
+    if (node->actualRet)
+        JSON_WRITE_FIELD(root, node, actualRet);
+    else
+        jsonAddNumberToObject(root, "actualRet", 0);
     JSON_WRITE_FIELD(root, node, callBlockNode);
     return root;
 }
@@ -323,6 +323,35 @@ cJSON* SVFIRWriter::contentToJson(const SVFStmt* edge)
     return root;
 }
 
+cJSON* SVFIRWriter::contentToJson(const SVFLoop* loop)
+{
+    cJSON* root = jsonCreateObject();
+#define F(field) JSON_WRITE_FIELD(root, loop, field)
+    F(entryICFGEdges);
+    F(backICFGEdges);
+    F(inICFGEdges);
+    F(outICFGEdges);
+    F(icfgNodes);
+    F(loopBound);
+#undef F
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SymbolTableInfo* symTable)
+{
+    // Owns values of objMap & svfTypes (?)
+    cJSON* root = jsonCreateObject();
+    JSON_WRITE_FIELD(root, symTable, valSymMap);
+    JSON_WRITE_FIELD(root, symTable, objSymMap);
+    JSON_WRITE_FIELD(root, symTable, returnSymMap);
+    JSON_WRITE_FIELD(root, symTable, varargSymMap);
+    // TODO: Dump objMap
+    // TODO: Check symTable->module == module
+    JSON_WRITE_FIELD(root, symTable, modelConstants);
+    JSON_WRITE_FIELD(root, symTable, totalSymNum);
+    JSON_WRITE_FIELD(root, symTable, svfTypes);
+    return root;
+}
 
 cJSON* SVFIRWriter::contentToJson(const AssignStmt* edge)
 {
@@ -452,6 +481,18 @@ bool jsonAddStringToObject(cJSON* obj, const char* name,
     return jsonAddStringToObject(obj, name, str.c_str());
 }
 
+cJSON* jsonCreateNullId()
+{
+    // TODO: optimize
+    return cJSON_CreateNull();
+}
+
+bool jsonIsNullId(const cJSON* item)
+{
+    // TODO: optimize
+    return cJSON_IsNull(item);
+}
+
 cJSON* jsonCreateObject()
 {
     return humanReadableOption() ? cJSON_CreateObject() : cJSON_CreateArray();
@@ -515,9 +556,30 @@ ICFGWriter::ICFGWriter(const ICFG* icfg) : GenericICFGWriter(icfg)
     }
 }
 
+SymID SymbolTableInfoWriter::getMemObjID(const MemObj* memObj)
+{
+    auto it = memObjToID.find(memObj);
+    assert(it != memObjToID.end() && "MemObj not found!");
+    return it->second;
+}
+
+SymbolTableInfoWriter::SymbolTableInfoWriter(const SymbolTableInfo* symTab)
+    : symbolTableInfo(symTab)
+{
+    assert(symbolTableInfo && "SymbolTableInfo is null!");
+
+    for (const auto& pair : symbolTableInfo->idToObjMap())
+    {
+        const SymID id = pair.first;
+        const MemObj* obj = pair.second;
+        memObjToID.emplace(obj, id);
+    }
+}
+
 SVFIRWriter::SVFIRWriter(const SVFIR* svfir)
     : svfIR(svfir), irGraphWriter(svfir), icfgWriter(svfir->icfg),
-      chgWriter(SVFUtil::dyn_cast<CHGraph>(svfir->chgraph))
+      chgWriter(SVFUtil::dyn_cast<CHGraph>(svfir->chgraph)),
+      symbolTableInfoWriter(svfir->symInfo)
 {
 }
 
@@ -566,7 +628,7 @@ cJSON* SVFIRWriter::generateJson()
     F(funPtrToCallSitesMap);
     F(candidatePointers);
     F(icfg);
-    //F(chgraph);
+    F(chgraph);
     F(callSiteSet);
 #undef F
 
@@ -593,13 +655,15 @@ cJSON* SVFIRWriter::toJson(const IRGraph* graph)
     F(nodeNumAfterPAGBuild);
     F(totalPTAPAGEdge);
     F(valueToEdgeMap);
-    //symInfo; TODO
+    jsonAddContentToObject(root, "symInfo", graph->symInfo);
 #undef F
     return root;
 }
 
-cJSON* SVFIRWriter::toJson(const SVFVar* var) {
-    return jsonCreateIndex(irGraphWriter.getNodeID(var));
+cJSON* SVFIRWriter::toJson(const SVFVar* var)
+{
+    return var ? jsonCreateIndex(irGraphWriter.getNodeID(var))
+               : jsonCreateNullId();
 }
 
 cJSON* SVFIRWriter::toJson(const SVFStmt* stmt)
@@ -631,14 +695,21 @@ cJSON* SVFIRWriter::toJson(const ICFGEdge* edge) {
     return jsonCreateIndex(icfgWriter.getEdgeID(edge));
 }
 
+cJSON* SVFIRWriter::toJson(const CommonCHGraph* graph)
+{
+    auto chg = SVFUtil::dyn_cast<CHGraph>(graph);
+    assert(chg && "Unsupported CHGraph type!");
+    return toJson(chg);
+}
+
 cJSON* SVFIRWriter::toJson(const CHGraph* graph)
 {
     cJSON* root = genericGraphToJson(graph, chgWriter.edgePool.getPool());
 #define F(field) JSON_WRITE_FIELD(root, graph, field)
-    // TODO: SVFModule is the same as the SVFIR's?
+    // TODO: Ensure svfMod is the same as the SVFIR's?
     F(classNum);
     F(vfID);
-    // F(buildingCHGTime);
+    // F(buildingCHGTime); No need
     F(classNameToNodeMap);
     F(classNameToDescendantsMap);
     F(classNameToAncestorsMap);
@@ -646,24 +717,20 @@ cJSON* SVFIRWriter::toJson(const CHGraph* graph)
     F(templateNameToInstancesMap);
     F(csToClassesMap);
     F(virtualFunctionToIDMap);
-    //F(csToCHAVtblsMap);
-    //F(csToCHAVFnsMap);
+    F(csToCHAVtblsMap);
+    F(csToCHAVFnsMap);
 #undef F
     return root;
 }
 
 cJSON* SVFIRWriter::toJson(const CHNode* node)
 {
-    cJSON* root = jsonCreateObject();
-    // TODO
-    return root;
+    return jsonCreateIndex(chgWriter.getNodeID(node));
 }
 
 cJSON* SVFIRWriter::toJson(const CHEdge* edge)
 {
-    cJSON* root = jsonCreateObject();
-    // TODO
-    return root;
+    return jsonCreateIndex(chgWriter.getEdgeID(edge));
 }
 
 cJSON* SVFIRWriter::toJson(const CallSite& cs)
@@ -673,29 +740,42 @@ cJSON* SVFIRWriter::toJson(const CallSite& cs)
 
 cJSON* SVFIRWriter::toJson(const SVFLoop* loop)
 {
+    return jsonCreateIndex(icfgWriter.getSvfLoopID(loop));
+}
+
+cJSON* SVFIRWriter::contentToJson(const MemObj* memObj)
+{
     cJSON* root = jsonCreateObject();
-#define F(field) JSON_WRITE_FIELD(root, loop, field)
-    F(entryICFGEdges);
-    F(backICFGEdges);
-    F(inICFGEdges);
-    F(outICFGEdges);
-    F(icfgNodes);
-    F(loopBound);
-#undef F
+    JSON_WRITE_FIELD(root, memObj, typeInfo); // Owns this pointer
+    JSON_WRITE_FIELD(root, memObj, refVal);
+    JSON_WRITE_FIELD(root, memObj, symId);
     return root;
 }
 
-cJSON* SVFIRWriter::toJson(const SymbolTableInfo* symTable)
+cJSON* SVFIRWriter::toJson(const ObjTypeInfo* objTypeInfo)
 {
     cJSON* root = jsonCreateObject();
-    // TODO
+    JSON_WRITE_FIELD(root, objTypeInfo, type);
+    JSON_WRITE_FIELD(root, objTypeInfo, flags);
+    JSON_WRITE_FIELD(root, objTypeInfo, maxOffsetLimit);
+    JSON_WRITE_FIELD(root, objTypeInfo, elemNum);
+    JSON_WRITE_FIELD(root, objTypeInfo, type);
+    JSON_WRITE_FIELD(root, objTypeInfo, flags);
+    JSON_WRITE_FIELD(root, objTypeInfo, maxOffsetLimit);
+    JSON_WRITE_FIELD(root, objTypeInfo, elemNum);
     return root;
 }
 
 cJSON* SVFIRWriter::toJson(const MemObj* memObj)
 {
+    return jsonCreateIndex(symbolTableInfoWriter.getMemObjID(memObj));
+}
+
+cJSON* SVFIRWriter::toJson(const LocationSet& ls)
+{
     cJSON* root = jsonCreateObject();
-    // TODO
+    JSON_WRITE_FIELD(root, &ls, fldIdx);
+    JSON_WRITE_FIELD(root, &ls, offsetVarAndGepTypePairs);
     return root;
 }
 

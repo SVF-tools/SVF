@@ -317,18 +317,18 @@ protected:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ObjVar *)
+    static inline bool classof(const ObjVar*)
     {
         return true;
     }
-    static inline bool classof(const SVFVar *node)
+    static inline bool classof(const SVFVar* node)
     {
         return node->getNodeKind() == SVFVar::ObjNode ||
                node->getNodeKind() == SVFVar::GepObjNode ||
                node->getNodeKind() == SVFVar::FIObjNode ||
                node->getNodeKind() == SVFVar::DummyObjNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node)
+    static inline bool classof(const GenericPAGNodeTy* node)
     {
         return node->getNodeKind() == SVFVar::ObjNode ||
                node->getNodeKind() == SVFVar::GepObjNode ||

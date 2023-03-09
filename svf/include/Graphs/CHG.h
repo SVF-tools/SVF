@@ -61,7 +61,8 @@ public:
     virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) = 0;
     virtual bool csHasVtblsBasedonCHA(CallSite cs) = 0;
     virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) = 0;
-    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) = 0;
+    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet& vtbls,
+                                  VFunSet& virtualFunctions) = 0;
 
     CHGKind getKind(void) const
     {

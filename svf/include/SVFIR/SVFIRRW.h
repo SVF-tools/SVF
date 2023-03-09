@@ -17,6 +17,9 @@
         }                                                                      \
     } while (0)
 
+#define JSON_WRITE_FIELD(root, objptr, field)                                  \
+    jsonAddJsonableToObject(root, #field, (objptr)->field)
+
 /// @brief Type trait to check if a type is iterable.
 ///@{
 template <typename T>
@@ -36,6 +39,8 @@ template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
 
 namespace SVF
 {
+cJSON* jsonCreateNullId();
+bool jsonIsNullId(const cJSON* item);
 cJSON* jsonCreateObject();
 cJSON* jsonCreateArray();
 cJSON* jsonCreateMap();
@@ -50,13 +55,6 @@ bool jsonAddNumberToObject(cJSON* obj, const char* name, double number);
 bool jsonAddStringToObject(cJSON* obj, const char* name, const char* str);
 bool jsonAddStringToObject(cJSON* obj, const char* name,
                            const std::string& str);
-
-#define JSON_WRITE_NUMBER_FIELD(root, objptr, field)                           \
-    jsonAddNumberToObject(root, #field, (objptr)->field)
-#define JSON_WRITE_STRING_FIELD(root, objptr, field)                           \
-    jsonAddStringToObject(root, #field, (objptr)->field)
-#define JSON_WRITE_FIELD(root, objptr, field)                                  \
-    jsonAddJsonableToObject(root, #field, (objptr)->field)
 
 class SVFIR;
 class SVFIRWriter;
@@ -114,7 +112,7 @@ private:
 public:
     GenericGraphWriter(const GraphType* g) : graph(g)
     {
-        assert(g && "Graph should never be null");
+        assert(g && "Graph pointer should never be null");
 
         for (const auto& entry : graph->IDToNodeMap)
         {
@@ -146,11 +144,30 @@ using GenericICFGWriter = GenericGraphWriter<ICFGNode, ICFGEdge>;
 
 class ICFGWriter : public GenericICFGWriter
 {
+    friend class SVFIRWriter;
+
 private:
     PtrPool<SVFLoop> svfLoopPool;
 
 public:
     ICFGWriter(const ICFG* icfg);
+
+    inline size_t getSvfLoopID(const SVFLoop* loop)
+    {
+        return svfLoopPool.getID(loop);
+    }
+};
+
+class SymbolTableInfoWriter
+{
+public:
+    SymbolTableInfoWriter(const SymbolTableInfo* symbolTableInfo);
+
+    SymID getMemObjID(const MemObj* memObj);
+
+private:
+    const SymbolTableInfo* symbolTableInfo;
+    OrderedMap<const MemObj*, SymID> memObjToID;
 };
 
 using IRGraphWriter = GenericGraphWriter<SVFVar, SVFStmt>;
@@ -166,6 +183,7 @@ class SVFIRWriter
     IRGraphWriter irGraphWriter;
     ICFGWriter icfgWriter;
     CHGraphWriter chgWriter;
+    SymbolTableInfoWriter symbolTableInfoWriter;
 
     OrderedMap<size_t, std::string> numToStrMap;
 
@@ -189,16 +207,17 @@ private:
     cJSON* toJson(const ICFG* icfg);     // ICFG Graph
     cJSON* toJson(const ICFGNode* node); // ICFG Node
     cJSON* toJson(const ICFGEdge* edge); // ICFG Edge
+    cJSON* toJson(const CommonCHGraph* graph); // CHGraph Graph
     cJSON* toJson(const CHGraph* graph); // CHGraph Graph
     cJSON* toJson(const CHNode* node);   // CHGraph Node
     cJSON* toJson(const CHEdge* edge);   // CHGraph Edge
 
-    cJSON* toJson(const CallSite& cs);              // TODO
-    cJSON* toJson(const SVFLoop* loop);             // TODO
-    cJSON* toJson(const SymbolTableInfo* symTable); // TODO
-    cJSON* toJson(const MemObj* memObj);            // TODO
+    cJSON* toJson(const CallSite& cs);
+    cJSON* toJson(const LocationSet& ls);
+    cJSON* toJson(const SVFLoop* loop);
+    cJSON* toJson(const ObjTypeInfo* objTypeInfo);
+    cJSON* toJson(const MemObj* memObj);
 
-    static cJSON* toJson(const LocationSet& ls);
     static cJSON* toJson(unsigned number);
     static cJSON* toJson(int number);
     static cJSON* toJson(long unsigned number);
@@ -268,6 +287,10 @@ private:
     cJSON* contentToJson(const CHNode* node);
     cJSON* contentToJson(const CHEdge* edge);
 
+    // Other classes
+    cJSON* contentToJson(const SVFLoop* loop);
+    cJSON* contentToJson(const SymbolTableInfo* symTable);
+    cJSON* contentToJson(const MemObj* memObj); // Owned by SymbolTable->objMap
     ///@}
 
     template <typename NodeTy, typename EdgeTy>
@@ -331,9 +354,8 @@ private:
     template <typename T, typename U> cJSON* toJson(const std::pair<T, U>& pair)
     {
         cJSON* obj = jsonCreateObject();
-        const auto* p = &pair;
-        JSON_WRITE_FIELD(obj, p, first);
-        JSON_WRITE_FIELD(obj, p, second);
+        JSON_WRITE_FIELD(obj, &pair, first);
+        JSON_WRITE_FIELD(obj, &pair, second);
         return obj;
     }
 
@@ -353,6 +375,13 @@ private:
     bool jsonAddJsonableToObject(cJSON* obj, const char* name, const T& item)
     {
         cJSON* itemObj = toJson(item);
+        return jsonAddItemToObject(obj, name, itemObj);
+    }
+
+    template <typename T>
+    bool jsonAddContentToObject(cJSON* obj, const char* name, const T& item)
+    {
+        cJSON* itemObj = contentToJson(item);
         return jsonAddItemToObject(obj, name, itemObj);
     }
 };

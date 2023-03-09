@@ -364,7 +364,7 @@ public:
     /// return whole allocated memory object if this node is a gep obj node
     /// return nullptr is this node is not a ObjVar type
     //@{
-    inline const MemObj*getObject(NodeID id) const
+    inline const MemObj* getObject(NodeID id) const
     {
         const SVFVar* node = getGNode(id);
         if (const ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(node))

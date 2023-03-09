@@ -46,24 +46,24 @@ class ThreadAPI
 public:
     enum TD_TYPE
     {
-        TD_DUMMY = 0,		/// dummy type
-        TD_FORK,         /// create a new thread
-        TD_JOIN,         /// wait for a thread to join
-        TD_DETACH,       /// detach a thread directly instead wait for it to join
-        TD_ACQUIRE,      /// acquire a lock
-        TD_TRY_ACQUIRE,  /// try to acquire a lock
-        TD_RELEASE,      /// release a lock
-        TD_EXIT,		   /// exit/kill a thread
-        TD_CANCEL,	   /// cancel a thread by another
-        TD_COND_WAIT,    /// wait a condition
-        TD_COND_SIGNAL,    /// signal a condition
-        TD_COND_BROADCAST,    /// broadcast a condition
-        TD_MUTEX_INI,	     /// initial a mutex variable
+        TD_DUMMY = 0,   /// dummy type
+        TD_FORK,        /// create a new thread
+        TD_JOIN,        /// wait for a thread to join
+        TD_DETACH,      /// detach a thread directly instead wait for it to join
+        TD_ACQUIRE,     /// acquire a lock
+        TD_TRY_ACQUIRE, /// try to acquire a lock
+        TD_RELEASE,     /// release a lock
+        TD_EXIT,        /// exit/kill a thread
+        TD_CANCEL,      /// cancel a thread by another
+        TD_COND_WAIT,   /// wait a condition
+        TD_COND_SIGNAL, /// signal a condition
+        TD_COND_BROADCAST,  /// broadcast a condition
+        TD_MUTEX_INI,       /// initial a mutex variable
         TD_MUTEX_DESTROY,   /// initial a mutex variable
-        TD_CONDVAR_INI,	   /// initial a mutex variable
+        TD_CONDVAR_INI,     /// initial a mutex variable
         TD_CONDVAR_DESTROY, /// initial a mutex variable
         TD_BAR_INIT,        /// Barrier init
-        TD_BAR_WAIT,         /// Barrier wait
+        TD_BAR_WAIT,        /// Barrier wait
         HARE_PAR_FOR
     };
 
