@@ -1,7 +1,7 @@
-#include "SVFIR/SVFIR.h"
 #include "SVFIR/SVFIRRW.h"
-#include "Util/CommandLine.h"
 #include "Graphs/CHG.h"
+#include "SVFIR/SVFIR.h"
+#include "Util/CommandLine.h"
 
 static const Option<bool> humanReadableOption(
     "human-readable", "Whether to output human-readable JSON", true);
@@ -21,6 +21,11 @@ cJSON* SVFIRWriter::toJson(int number)
     return jsonCreateNumber(number);
 }
 
+cJSON* SVFIRWriter::toJson(float number)
+{
+    return jsonCreateNumber(number);
+}
+
 cJSON* SVFIRWriter::toJson(unsigned long number)
 {
     // unsigned long is subset of unsigned long long
@@ -37,30 +42,84 @@ cJSON* SVFIRWriter::toJson(unsigned long long number)
     return jsonCreateString(numToStr(number));
 }
 
+cJSON* SVFIRWriter::virtToJson(const SVFType* type)
+{
+    auto kind = type->getKind();
+
+    switch (kind)
+    {
+    default:
+        assert(false && "Impossible SVFType kind");
+
+#define CASE(Kind)                                                             \
+    case SVFType::Kind:                                                        \
+        return contentToJson(SVFUtil::dyn_cast<Kind##pe>(type))
+
+        CASE(SVFTy);
+        CASE(SVFPointerTy);
+        CASE(SVFIntegerTy);
+        CASE(SVFFunctionTy);
+        CASE(SVFStructTy);
+        CASE(SVFArrayTy);
+        CASE(SVFOtherTy);
+#undef CASE
+    }
+}
+
+cJSON* SVFIRWriter::virtToJson(const SVFValue* value)
+{
+    auto kind = value->getKind();
+
+    switch (kind)
+    {
+    default:
+        assert(false && "Impossible SVFValue kind");
+
+#define CASE(ValueKind, type)                                                  \
+    case SVFValue::ValueKind:                                                  \
+        return contentToJson(static_cast<const type*>(value))
+
+        CASE(SVFVal, SVFValue);
+        CASE(SVFFunc, SVFFunction);
+        CASE(SVFBB, SVFBasicBlock);
+        CASE(SVFInst, SVFInstruction);
+        CASE(SVFCall, SVFCallInst);
+        CASE(SVFVCall, SVFVirtualCallInst);
+        CASE(SVFGlob, SVFGlobalValue);
+        CASE(SVFArg, SVFArgument);
+        CASE(SVFConst, SVFConstant);
+        CASE(SVFConstData, SVFConstantData);
+        CASE(SVFConstInt, SVFConstantInt);
+        CASE(SVFConstFP, SVFConstantFP);
+        CASE(SVFNullPtr, SVFConstantNullPtr);
+        CASE(SVFBlackHole, SVFBlackHoleValue);
+        CASE(SVFMetaAsValue, SVFMetadataAsValue);
+        CASE(SVFOther, SVFOtherValue);
+#undef CASE
+    }
+}
+
 cJSON* SVFIRWriter::virtToJson(const SVFVar* var)
 {
     switch (var->getNodeKind())
     {
     default:
         assert(false && "Unknown SVFVar kind");
-    case SVFVar::ValNode:
-        return contentToJson(static_cast<const ValVar*>(var));
-    case SVFVar::ObjNode:
-        return contentToJson(static_cast<const ObjVar*>(var));
-    case SVFVar::RetNode:
-        return contentToJson(static_cast<const RetPN*>(var));
-    case SVFVar::VarargNode:
-        return contentToJson(static_cast<const VarArgPN*>(var));
-    case SVFVar::GepValNode:
-        return contentToJson(static_cast<const GepValVar*>(var));
-    case SVFVar::GepObjNode:
-        return contentToJson(static_cast<const GepObjVar*>(var));
-    case SVFVar::FIObjNode:
-        return contentToJson(static_cast<const FIObjVar*>(var));
-    case SVFVar::DummyValNode:
-        return contentToJson(static_cast<const DummyValVar*>(var));
-    case SVFVar::DummyObjNode:
-        return contentToJson(static_cast<const DummyObjVar*>(var));
+
+#define CASE(VarKind, VarType)                                                 \
+    case SVFVar::VarKind:                                                      \
+        return contentToJson(static_cast<const VarType*>(var))
+
+        CASE(ValNode, ValVar);
+        CASE(ObjNode, ObjVar);
+        CASE(RetNode, RetPN);
+        CASE(VarargNode, VarArgPN);
+        CASE(GepValNode, GepValVar);
+        CASE(GepObjNode, GepObjVar);
+        CASE(FIObjNode, FIObjVar);
+        CASE(DummyValNode, DummyValVar);
+        CASE(DummyObjNode, DummyObjVar);
+#undef CASE
     }
 }
 
@@ -70,10 +129,11 @@ cJSON* SVFIRWriter::virtToJson(const SVFStmt* stmt)
     {
     default:
         assert(false && "Unknown SVFStmt kind");
+
 #define CASE(EdgeKind, EdgeType)                                               \
-    case SVFStmt::EdgeKind: {                                                  \
-        return contentToJson(static_cast<const EdgeType*>(stmt));              \
-    }
+    case SVFStmt::EdgeKind:                                                    \
+        return contentToJson(static_cast<const EdgeType*>(stmt))
+
         CASE(Addr, AddrStmt);
         CASE(Copy, CopyStmt);
         CASE(Store, StoreStmt);
@@ -99,18 +159,18 @@ cJSON* SVFIRWriter::virtToJson(const ICFGNode* node)
     {
     default:
         assert(false && "Unknown ICFGNode kind");
-    case ICFGNode::IntraBlock:
-        return contentToJson(static_cast<const IntraICFGNode*>(node));
-    case ICFGNode::FunEntryBlock:
-        return contentToJson(static_cast<const FunEntryICFGNode*>(node));
-    case ICFGNode::FunExitBlock:
-        return contentToJson(static_cast<const FunExitICFGNode*>(node));
-    case ICFGNode::FunCallBlock:
-        return contentToJson(static_cast<const CallICFGNode*>(node));
-    case ICFGNode::FunRetBlock:
-        return contentToJson(static_cast<const RetICFGNode*>(node));
-    case ICFGNode::GlobalBlock:
-        return contentToJson(static_cast<const GlobalICFGNode*>(node));
+
+#define CASE(NodeKind, NodeType)                                               \
+    case ICFGNode::NodeKind:                                                   \
+        return contentToJson(static_cast<const NodeType*>(node))
+
+        CASE(IntraBlock, IntraICFGNode);
+        CASE(FunEntryBlock, FunEntryICFGNode);
+        CASE(FunExitBlock, FunExitICFGNode);
+        CASE(FunCallBlock, CallICFGNode);
+        CASE(FunRetBlock, RetICFGNode);
+        CASE(GlobalBlock, GlobalICFGNode);
+#undef CASE
     }
 }
 
@@ -240,10 +300,7 @@ cJSON* SVFIRWriter::contentToJson(const FunEntryICFGNode* node)
 cJSON* SVFIRWriter::contentToJson(const FunExitICFGNode* node)
 {
     cJSON* root = contentToJson(static_cast<const ICFGNode*>(node));
-    if (node->formalRet)
-        JSON_WRITE_FIELD(root, node, formalRet);
-    else
-        jsonAddNumberToObject(root, "formalRet", 0);
+    JSON_WRITE_FIELD(root, node, formalRet);
     return root;
 }
 
@@ -260,10 +317,7 @@ cJSON* SVFIRWriter::contentToJson(const RetICFGNode* node)
 {
     cJSON* root = contentToJson(static_cast<const ICFGNode*>(node));
     JSON_WRITE_FIELD(root, node, cs);
-    if (node->actualRet)
-        JSON_WRITE_FIELD(root, node, actualRet);
-    else
-        jsonAddNumberToObject(root, "actualRet", 0);
+    JSON_WRITE_FIELD(root, node, actualRet);
     JSON_WRITE_FIELD(root, node, callBlockNode);
     return root;
 }
@@ -307,10 +361,185 @@ cJSON* SVFIRWriter::contentToJson(const CHNode* node)
     return root;
 }
 
-cJSON* SVFIRWriter::contentToJson(const CHEdge* edge) {
+cJSON* SVFIRWriter::contentToJson(const CHEdge* edge)
+{
     cJSON* root = genericEdgeToJson(edge);
     JSON_WRITE_FIELD(root, edge, edgeType);
     return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFType* type)
+{
+    cJSON* root = jsonCreateObject();
+    JSON_WRITE_FIELD(root, type, kind);
+    JSON_WRITE_FIELD(root, type, getPointerToTy);
+    JSON_WRITE_FIELD(root, type, typeinfo);
+    JSON_WRITE_FIELD(root, type, isSingleValTy);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFPointerType* type)
+{
+    cJSON* root = contentToJson(static_cast<const SVFType*>(type));
+    JSON_WRITE_FIELD(root, type, ptrElementType);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFIntegerType* type)
+{
+    return contentToJson(static_cast<const SVFType*>(type));
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFFunctionType* type)
+{
+    cJSON* root = contentToJson(static_cast<const SVFType*>(type));
+    JSON_WRITE_FIELD(root, type, retTy);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFStructType* type)
+{
+    return contentToJson(static_cast<const SVFType*>(type));
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFArrayType* type)
+{
+    return contentToJson(static_cast<const SVFType*>(type));
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFOtherType* type)
+{
+    return contentToJson(static_cast<const SVFType*>(type));
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFValue* value)
+{
+    cJSON* root = jsonCreateObject();
+    JSON_WRITE_FIELD(root, value, kind);
+    JSON_WRITE_FIELD(root, value, ptrInUncalledFun);
+    JSON_WRITE_FIELD(root, value, constDataOrAggData);
+    JSON_WRITE_FIELD(root, value, type);
+    JSON_WRITE_FIELD(root, value, name);
+    JSON_WRITE_FIELD(root, value, sourceLoc);
+
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFFunction* value)
+{
+    cJSON* root = contentToJson(static_cast<const SVFValue*>(value));
+    JSON_WRITE_FIELD(root, value, isDecl);
+    JSON_WRITE_FIELD(root, value, intrinsic);
+    JSON_WRITE_FIELD(root, value, addrTaken);
+    JSON_WRITE_FIELD(root, value, isUncalled);
+    JSON_WRITE_FIELD(root, value, isNotRet);
+    JSON_WRITE_FIELD(root, value, varArg);
+    JSON_WRITE_FIELD(root, value, funcType);
+    JSON_WRITE_FIELD(root, value, loopAndDom);
+    JSON_WRITE_FIELD(root, value, realDefFun);
+    JSON_WRITE_FIELD(root, value, allBBs);
+    JSON_WRITE_FIELD(root, value, allArgs);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFBasicBlock* value)
+{
+    cJSON* root = contentToJson(static_cast<const SVFValue*>(value));
+    JSON_WRITE_FIELD(root, value, allInsts);
+    JSON_WRITE_FIELD(root, value, succBBs);
+    JSON_WRITE_FIELD(root, value, predBBs);
+    JSON_WRITE_FIELD(root, value, fun);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFInstruction* value)
+{
+    cJSON* root = contentToJson(static_cast<const SVFValue*>(value));
+    JSON_WRITE_FIELD(root, value, bb);
+    JSON_WRITE_FIELD(root, value, terminator);
+    JSON_WRITE_FIELD(root, value, ret);
+    JSON_WRITE_FIELD(root, value, succInsts);
+    JSON_WRITE_FIELD(root, value, predInsts);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFCallInst* value)
+{
+    cJSON* root = contentToJson(static_cast<const SVFInstruction*>(value));
+    JSON_WRITE_FIELD(root, value, args);
+    JSON_WRITE_FIELD(root, value, varArg);
+    JSON_WRITE_FIELD(root, value, calledVal);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFVirtualCallInst* value)
+{
+    cJSON* root = contentToJson(static_cast<const SVFCallInst*>(value));
+    JSON_WRITE_FIELD(root, value, vCallVtblPtr);
+    JSON_WRITE_FIELD(root, value, virtualFunIdx);
+    JSON_WRITE_FIELD(root, value, funNameOfVcall);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFConstant* value)
+{
+    return contentToJson(static_cast<const SVFValue*>(value));
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFGlobalValue* value)
+{
+    cJSON* root = contentToJson(static_cast<const SVFConstant*>(value));
+    JSON_WRITE_FIELD(root, value, realDefGlobal);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFArgument* value)
+{
+    cJSON* root = contentToJson(static_cast<const SVFValue*>(value));
+    JSON_WRITE_FIELD(root, value, fun);
+    JSON_WRITE_FIELD(root, value, argNo);
+    JSON_WRITE_FIELD(root, value, uncalled);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFConstantData* value)
+{
+    return contentToJson(static_cast<const SVFConstant*>(value));
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFConstantInt* value)
+{
+    cJSON* root = contentToJson(static_cast<const SVFConstantData*>(value));
+    JSON_WRITE_FIELD(root, value, zval);
+    JSON_WRITE_FIELD(root, value, sval);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFConstantFP* value)
+{
+    cJSON* root = contentToJson(static_cast<const SVFConstantData*>(value));
+    JSON_WRITE_FIELD(root, value, dval);
+    return root;
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFConstantNullPtr* value)
+{
+    return contentToJson(static_cast<const SVFConstantData*>(value));
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFBlackHoleValue* value)
+{
+    return contentToJson(static_cast<const SVFConstantData*>(value));
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFOtherValue* value)
+{
+    return contentToJson(static_cast<const SVFValue*>(value));
+}
+
+cJSON* SVFIRWriter::contentToJson(const SVFMetadataAsValue* value)
+{
+    return contentToJson(static_cast<const SVFOtherValue*>(value));
 }
 
 cJSON* SVFIRWriter::contentToJson(const SVFStmt* edge)
@@ -475,8 +704,7 @@ bool jsonAddStringToObject(cJSON* obj, const char* name, const char* str)
     return jsonAddItemToObject(obj, name, node);
 }
 
-bool jsonAddStringToObject(cJSON* obj, const char* name,
-                              const std::string& str)
+bool jsonAddStringToObject(cJSON* obj, const char* name, const std::string& str)
 {
     return jsonAddStringToObject(obj, name, str.c_str());
 }
@@ -516,7 +744,8 @@ cJSON* jsonCreateString(const char* str)
 
 cJSON* jsonCreateIndex(size_t index)
 {
-    // size_t is 8 bytes on 64-bit systems, might overflow double's capacity.
+    constexpr size_t maxPreciseIntInDouble = (1ull << 53);
+    assert(index <= maxPreciseIntInDouble);
     return cJSON_CreateNumber(index);
 }
 
@@ -533,7 +762,6 @@ bool jsonAddPairToMap(cJSON* mapObj, cJSON* key, cJSON* value)
     cJSON_AddItemToArray(mapObj, pair);
     return pair;
 }
-
 
 bool jsonAddItemToObject(cJSON* obj, const char* name, cJSON* item)
 {
@@ -575,6 +803,16 @@ SymbolTableInfoWriter::SymbolTableInfoWriter(const SymbolTableInfo* symTab)
         const MemObj* obj = pair.second;
         memObjToID.emplace(obj, id);
     }
+}
+
+size_t SVFModuleWriter::getSvfTypeID(const SVFType* type)
+{
+    return svfTypePool.getID(type);
+}
+
+size_t SVFModuleWriter::getSvfValueID(const SVFValue* value)
+{
+    return svfValuePool.getID(value);
 }
 
 SVFIRWriter::SVFIRWriter(const SVFIR* svfir)
@@ -638,16 +876,18 @@ cJSON* SVFIRWriter::generateJson()
 
 cJSON* SVFIRWriter::toJson(const SVFType* type)
 {
-    return jsonCreateIndex(svfTypePool.getID(type));
+    return jsonCreateIndex(svfModuleWriter.getSvfTypeID(type));
 }
 
 cJSON* SVFIRWriter::toJson(const SVFValue* value)
 {
-    return jsonCreateIndex(svfValuePool.getID(value));
+    return jsonCreateIndex(svfModuleWriter.getSvfValueID(value));
 }
 
 cJSON* SVFIRWriter::toJson(const IRGraph* graph)
 {
+    ENSURE_NOT_VISITED(graph);
+
     cJSON* root = genericGraphToJson(graph, irGraphWriter.edgePool.getPool());
 #define F(field) JSON_WRITE_FIELD(root, graph, field)
     F(KindToSVFStmtSetMap);
@@ -688,11 +928,13 @@ cJSON* SVFIRWriter::toJson(const ICFG* icfg)
     return root;
 }
 
-cJSON* SVFIRWriter::toJson(const ICFGNode* node) {
+cJSON* SVFIRWriter::toJson(const ICFGNode* node)
+{
     return jsonCreateIndex(icfgWriter.getNodeID(node));
 }
 
-cJSON* SVFIRWriter::toJson(const ICFGEdge* edge) {
+cJSON* SVFIRWriter::toJson(const ICFGEdge* edge)
+{
     return jsonCreateIndex(icfgWriter.getEdgeID(edge));
 }
 
@@ -772,6 +1014,34 @@ cJSON* SVFIRWriter::toJson(const MemObj* memObj)
     return jsonCreateIndex(symbolTableInfoWriter.getMemObjID(memObj));
 }
 
+cJSON* SVFIRWriter::toJson(const SVFLoopAndDomInfo* ldInfo)
+{
+    cJSON* root = jsonCreateObject();
+    JSON_WRITE_FIELD(root, ldInfo, reachableBBs);
+    JSON_WRITE_FIELD(root, ldInfo, dtBBsMap);
+    JSON_WRITE_FIELD(root, ldInfo, pdtBBsMap);
+    JSON_WRITE_FIELD(root, ldInfo, dfBBsMap);
+    JSON_WRITE_FIELD(root, ldInfo, bb2LoopMap);
+    return root;
+}
+
+cJSON* SVFIRWriter::toJson(const StInfo* type)
+{
+    ENSURE_NOT_VISITED(type);
+
+    cJSON* root = jsonCreateObject();
+#define F(field) JSON_WRITE_FIELD(root, type, field)
+    F(fldIdxVec);
+    F(elemIdxVec);
+    F(fldIdx2TypeMap);
+    F(finfo);
+    F(stride);
+    F(numOfFlattenElements);
+    F(flattenElementTypes);
+#undef F
+    return root;
+}
+
 cJSON* SVFIRWriter::toJson(const LocationSet& ls)
 {
     cJSON* root = jsonCreateObject();
@@ -780,7 +1050,7 @@ cJSON* SVFIRWriter::toJson(const LocationSet& ls)
     return root;
 }
 
-cJSON *SVFIRWriter::toJson(const SVFModule* module)
+cJSON* SVFIRWriter::toJson(const SVFModule* module)
 {
     cJSON* root = jsonCreateObject();
     // JSON_WRITE_STRING_FIELD(root, module, pagReadFromTxt);

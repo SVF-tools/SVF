@@ -6,6 +6,21 @@
 #include "Graphs/GenericGraph.h"
 #include <type_traits>
 
+#if 1
+#    define ENSURE_NOT_VISITED(graph)                                          \
+        do                                                                     \
+        {                                                                      \
+            static std::set<decltype(graph)> visited;                          \
+            bool inserted = visited.insert(graph).second;                      \
+            ABORT_IFNOT(!inserted, #graph " already visited!");                \
+        } while (0)
+#else
+#    define ENSURE_NOT_VISITED(graph)                                          \
+        do                                                                     \
+        {                                                                      \
+        } while (0)
+#endif
+
 #define ABORT_IFNOT(condition, reason)                                         \
     do                                                                         \
     {                                                                          \
@@ -39,6 +54,169 @@ template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
 
 namespace SVF
 {
+class SVFIR;
+class SVFIRWriter;
+class SVFLoop;
+class ICFG;
+class IRGraph;
+class CHGraph;
+class CommonCHGraph;
+class SymbolTableInfo;
+class MemObj;
+
+class SVFModule;
+
+class StInfo;
+class SVFType;
+class SVFPointerType;
+class SVFIntegerType;
+class SVFFunctionType;
+class SVFStructType;
+class SVFArrayType;
+class SVFOtherType;
+
+class SVFLoopAndDomInfo;
+class SVFValue;
+class SVFFunction;
+class SVFBasicBlock;
+class SVFInstruction;
+class SVFCallInst;
+class SVFVirtualCallInst;
+class SVFConstant;
+class SVFGlobalValue;
+class SVFArgument;
+class SVFConstantData;
+class SVFConstantInt;
+class SVFConstantFP;
+class SVFConstantNullPtr;
+class SVFBlackHoleValue;
+class SVFOtherValue;
+class SVFMetadataAsValue;
+
+class SVFVar;
+class ValVar;
+class ObjVar;
+class GepValVar;
+class GepObjVar;
+class FIObjVar;
+class RetPN;
+class VarArgPN;
+class DummyValVar;
+class DummyObjVar;
+
+class SVFStmt;
+class AssignStmt;
+class AddrStmt;
+class CopyStmt;
+class StoreStmt;
+class LoadStmt;
+class GepStmt;
+class CallPE;
+class RetPE;
+class MultiOpndStmt;
+class PhiStmt;
+class SelectStmt;
+class CmpStmt;
+class BinaryOPStmt;
+class UnaryOPStmt;
+class BranchStmt;
+class TDForkPE;
+class TDJoinPE;
+
+class ICFGNode;
+class GlobalICFGNode;
+class IntraICFGNode;
+class InterICFGNode;
+class FunEntryICFGNode;
+class FunExitICFGNode;
+class CallICFGNode;
+class RetICFGNode;
+
+class ICFGEdge;
+class IntraCFGEdge;
+class CallCFGEdge;
+class RetCFGEdge;
+
+
+class SVFModule;
+
+class StInfo;
+class SVFType;
+class SVFPointerType;
+class SVFIntegerType;
+class SVFFunctionType;
+class SVFStructType;
+class SVFArrayType;
+class SVFOtherType;
+class LocationSet;
+class ObjTypeInfo;
+
+class SVFLoopAndDomInfo;
+class SVFValue;
+class SVFFunction;
+class SVFBasicBlock;
+class SVFInstruction;
+class SVFCallInst;
+class SVFVirtualCallInst;
+class SVFConstant;
+class SVFGlobalValue;
+class SVFArgument;
+class SVFConstantData;
+class SVFConstantInt;
+class SVFConstantFP;
+class SVFConstantNullPtr;
+class SVFBlackHoleValue;
+class SVFOtherValue;
+class SVFMetadataAsValue;
+
+class SVFVar;
+class ValVar;
+class ObjVar;
+class GepValVar;
+class GepObjVar;
+class FIObjVar;
+class RetPN;
+class VarArgPN;
+class DummyValVar;
+class DummyObjVar;
+
+class SVFStmt;
+class AssignStmt;
+class AddrStmt;
+class CopyStmt;
+class StoreStmt;
+class LoadStmt;
+class GepStmt;
+class CallPE;
+class RetPE;
+class MultiOpndStmt;
+class PhiStmt;
+class SelectStmt;
+class CmpStmt;
+class BinaryOPStmt;
+class UnaryOPStmt;
+class BranchStmt;
+class TDForkPE;
+class TDJoinPE;
+
+class ICFGNode;
+class GlobalICFGNode;
+class IntraICFGNode;
+class InterICFGNode;
+class FunEntryICFGNode;
+class FunExitICFGNode;
+class CallICFGNode;
+class RetICFGNode;
+
+class ICFGEdge;
+class IntraCFGEdge;
+class CallCFGEdge;
+class RetCFGEdge;
+
+class CHNode;
+class CHEdge;
+class CHGraph;
+
 cJSON* jsonCreateNullId();
 bool jsonIsNullId(const cJSON* item);
 cJSON* jsonCreateObject();
@@ -55,12 +233,6 @@ bool jsonAddNumberToObject(cJSON* obj, const char* name, double number);
 bool jsonAddStringToObject(cJSON* obj, const char* name, const char* str);
 bool jsonAddStringToObject(cJSON* obj, const char* name,
                            const std::string& str);
-
-class SVFIR;
-class SVFIRWriter;
-class CHNode;
-class CHEdge;
-class CHGraph;
 
 template <typename T> class PtrPool
 {
@@ -173,6 +345,16 @@ private:
 using IRGraphWriter = GenericGraphWriter<SVFVar, SVFStmt>;
 using CHGraphWriter = GenericGraphWriter<CHNode, CHEdge>;
 
+class SVFModuleWriter
+{
+    PtrPool<SVFType> svfTypePool;
+    PtrPool<SVFValue> svfValuePool;
+
+public:
+    size_t getSvfTypeID(const SVFType* type);
+    size_t getSvfValueID(const SVFValue* value);
+};
+
 class SVFIRWriter
 {
     const SVFIR* svfIR;
@@ -180,6 +362,7 @@ class SVFIRWriter
     PtrPool<SVFType> svfTypePool;
     PtrPool<SVFValue> svfValuePool;
 
+    SVFModuleWriter svfModuleWriter;
     IRGraphWriter irGraphWriter;
     ICFGWriter icfgWriter;
     CHGraphWriter chgWriter;
@@ -217,9 +400,12 @@ private:
     cJSON* toJson(const SVFLoop* loop);
     cJSON* toJson(const ObjTypeInfo* objTypeInfo);
     cJSON* toJson(const MemObj* memObj);
+    cJSON* toJson(const SVFLoopAndDomInfo* ldInfo); // Only owned by SVFFunction
+    cJSON* toJson(const StInfo* type); // Only owned by SVFType
 
     static cJSON* toJson(unsigned number);
     static cJSON* toJson(int number);
+    static cJSON* toJson(float number);
     cJSON* toJson(unsigned long number);
     cJSON* toJson(long long number);
     cJSON* toJson(unsigned long long number);
@@ -228,6 +414,8 @@ private:
     /// When they are used as arguments of toJson(), they will be
     /// dumped as an index. `contentToJson()` will dump the actual content.
     ///@{
+    cJSON* virtToJson(const SVFType* type);
+    cJSON* virtToJson(const SVFValue* value);
     cJSON* virtToJson(const SVFVar* var);
     cJSON* virtToJson(const SVFStmt* stmt);
     cJSON* virtToJson(const ICFGNode* node);
@@ -286,6 +474,31 @@ private:
     // CHNode & CHEdge
     cJSON* contentToJson(const CHNode* node);
     cJSON* contentToJson(const CHEdge* edge);
+
+    cJSON* contentToJson(const SVFType* type);
+    cJSON* contentToJson(const SVFPointerType* type);
+    cJSON* contentToJson(const SVFIntegerType* type);
+    cJSON* contentToJson(const SVFFunctionType* type);
+    cJSON* contentToJson(const SVFStructType* type);
+    cJSON* contentToJson(const SVFArrayType* type);
+    cJSON* contentToJson(const SVFOtherType* type);
+
+    cJSON* contentToJson(const SVFValue* value);
+    cJSON* contentToJson(const SVFFunction* value);
+    cJSON* contentToJson(const SVFBasicBlock* value);
+    cJSON* contentToJson(const SVFInstruction* value);
+    cJSON* contentToJson(const SVFCallInst* value);
+    cJSON* contentToJson(const SVFVirtualCallInst* value);
+    cJSON* contentToJson(const SVFConstant* value);
+    cJSON* contentToJson(const SVFGlobalValue* value);
+    cJSON* contentToJson(const SVFArgument* value);
+    cJSON* contentToJson(const SVFConstantData* value);
+    cJSON* contentToJson(const SVFConstantInt* value);
+    cJSON* contentToJson(const SVFConstantFP* value);
+    cJSON* contentToJson(const SVFConstantNullPtr* value);
+    cJSON* contentToJson(const SVFBlackHoleValue* value);
+    cJSON* contentToJson(const SVFOtherValue* value);
+    cJSON* contentToJson(const SVFMetadataAsValue* value);
 
     // Other classes
     cJSON* contentToJson(const SVFLoop* loop);
