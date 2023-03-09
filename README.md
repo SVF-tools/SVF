@@ -42,7 +42,7 @@
 
 <br />
 
-#### We are looking for self-motivated PhD students and we welcome industry collaboration/sponsorship to improve SVF (Please contact yulei.sui@uts.edu.au if you are interested)
+#### We are looking for self-motivated PhD students and we welcome industry collaboration/sponsorship to improve SVF (Please contact y.sui@unsw.edu.au if you are interested)
 
 <br />
 <p>We release SVF source code in the hope of benefiting others. You are kindly asked to acknowledge usage of the tool by citing some of our publications listed http://svf-tools.github.io/SVF, especially the following two: </p>
