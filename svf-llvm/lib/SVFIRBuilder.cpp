@@ -167,13 +167,11 @@ SVFIR* SVFIRBuilder::build()
     // dump SVFIR as JSON
     if (!Options::DumpJson().empty())
     {
-        SVFIRWriter writer(pag);
-        auto s = writer.generateJsonString();
-        SVFUtil::outs() << s << "\n";
+        SVFIRWriter::writeJsonToPath(pag, Options::DumpJson());
     }
 
     double endTime = SVFStat::getClk(true);
-    SVFStat::timeOfBuildingSVFIR = (endTime - startTime)/TIMEINTERVAL;
+    SVFStat::timeOfBuildingSVFIR = (endTime - startTime) / TIMEINTERVAL;
 
     return pag;
 }

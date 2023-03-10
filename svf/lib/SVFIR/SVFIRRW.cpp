@@ -574,7 +574,19 @@ cJSON* SVFIRWriter::contentToJson(const SymbolTableInfo* symTable)
     JSON_WRITE_FIELD(root, symTable, objSymMap);
     JSON_WRITE_FIELD(root, symTable, returnSymMap);
     JSON_WRITE_FIELD(root, symTable, varargSymMap);
-    // TODO: Dump objMap
+
+    // objMap
+    cJSON* objMap = jsonCreateMap();
+    for (const auto &pair : symTable->objMap) {
+        SymID id = pair.first;
+        const MemObj* memObj = pair.second;
+
+        cJSON* keyJson = toJson(id);
+        cJSON* valueJson = contentToJson(memObj);
+        jsonAddPairToMap(objMap, keyJson, valueJson);
+    }
+    jsonAddItemToObject(root, "objMap", objMap);
+
     // TODO: Check symTable->module == module
     JSON_WRITE_FIELD(root, symTable, modelConstants);
     JSON_WRITE_FIELD(root, symTable, totalSymNum);
@@ -757,9 +769,9 @@ cJSON* jsonCreateNumber(double num)
 bool jsonAddPairToMap(cJSON* mapObj, cJSON* key, cJSON* value)
 {
     cJSON* pair = cJSON_CreateArray();
-    cJSON_AddItemToArray(pair, key);
-    cJSON_AddItemToArray(pair, value);
-    cJSON_AddItemToArray(mapObj, pair);
+    jsonAddItemToArray(pair, key);
+    jsonAddItemToArray(pair, value);
+    jsonAddItemToArray(mapObj, pair);
     return pair;
 }
 
@@ -822,6 +834,27 @@ SVFIRWriter::SVFIRWriter(const SVFIR* svfir)
 {
 }
 
+void SVFIRWriter::writeJsonToOstream(const SVFIR* svfir, std::ostream& os)
+{
+    SVFIRWriter writer(svfir);
+    os << writer.generateJsonString().get() << '\n';
+}
+
+void SVFIRWriter::writeJsonToPath(const SVFIR* svfir, const std::string& path)
+{
+    std::ofstream jsonFile(path);
+    if (jsonFile.is_open())
+    {
+        writeJsonToOstream(svfir, jsonFile);
+        jsonFile.close();
+    }
+    else
+    {
+        SVFUtil::errs() << "Failed to open file '" << path
+                        << "' to write SVFIR's JSON\n";
+    }
+}
+
 const char* SVFIRWriter::numToStr(size_t n)
 {
     auto it = numToStrMap.find(n);
@@ -832,26 +865,19 @@ const char* SVFIRWriter::numToStr(size_t n)
     return numToStrMap.emplace_hint(it, n, std::to_string(n))->second.c_str();
 }
 
-const char* SVFIRWriter::generateJsonString()
+SVFIRWriter::autoCStr SVFIRWriter::generateJsonString()
 {
-    cJSON* object = this->generateJson();
-    return humanReadableOption() ? cJSON_Print(object)
-                                 : cJSON_PrintUnformatted(object);
+    autoJSON object = generateJson();
+    char* str = humanReadableOption() ? cJSON_Print(object.get())
+                                      : cJSON_PrintUnformatted(object.get());
+    return {str, cJSON_free};
 }
 
-// Main logic
-cJSON* SVFIRWriter::generateJson()
+SVFIRWriter::autoJSON SVFIRWriter::generateJson()
 {
     cJSON* root = jsonCreateObject();
 
-    cJSON* nodeAllTypes = cJSON_CreateArray();
-    jsonAddItemToObject(root, "typePool", nodeAllTypes);
-    cJSON* nodeAllValues = cJSON_CreateArray();
-    jsonAddItemToObject(root, "valuePool", nodeAllValues);
-
 #define F(field) JSON_WRITE_FIELD(root, svfIR, field)
-    F(svfModule);
-
     F(icfgNode2SVFStmtsMap);
     F(icfgNode2PTASVFStmtsMap);
     F(GepValObjMap);
@@ -869,9 +895,11 @@ cJSON* SVFIRWriter::generateJson()
     F(icfg);
     F(chgraph);
     F(callSiteSet);
+
+    F(svfModule); // Keep this last one
 #undef F
 
-    return root;
+    return {root, cJSON_Delete};
 }
 
 cJSON* SVFIRWriter::toJson(const SVFType* type)
@@ -997,6 +1025,8 @@ cJSON* SVFIRWriter::contentToJson(const MemObj* memObj)
 
 cJSON* SVFIRWriter::toJson(const ObjTypeInfo* objTypeInfo)
 {
+    ENSURE_NOT_VISITED(objTypeInfo);
+
     cJSON* root = jsonCreateObject();
     JSON_WRITE_FIELD(root, objTypeInfo, type);
     JSON_WRITE_FIELD(root, objTypeInfo, flags);
@@ -1016,6 +1046,8 @@ cJSON* SVFIRWriter::toJson(const MemObj* memObj)
 
 cJSON* SVFIRWriter::toJson(const SVFLoopAndDomInfo* ldInfo)
 {
+    ENSURE_NOT_VISITED(ldInfo);
+
     cJSON* root = jsonCreateObject();
     JSON_WRITE_FIELD(root, ldInfo, reachableBBs);
     JSON_WRITE_FIELD(root, ldInfo, dtBBsMap);
@@ -1053,14 +1085,31 @@ cJSON* SVFIRWriter::toJson(const LocationSet& ls)
 cJSON* SVFIRWriter::toJson(const SVFModule* module)
 {
     cJSON* root = jsonCreateObject();
-    // JSON_WRITE_STRING_FIELD(root, module, pagReadFromTxt);
-    // JSON_WRITE_STRING_FIELD(root, module, moduleIdentifier);
 
-    // JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, FunctionSet);
-    // JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, GlobalSet);
-    // JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, AliasSet);
-    // JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, ConstantSet);
-    // JSON_WRITE_SVFVALUE_CONTAINER_FILED(root, module, OtherValueSet);
+    JSON_WRITE_FIELD(root, module, pagReadFromTxt);
+    JSON_WRITE_FIELD(root, module, moduleIdentifier);
+
+    JSON_WRITE_FIELD(root, module, FunctionSet);
+    JSON_WRITE_FIELD(root, module, GlobalSet);
+    JSON_WRITE_FIELD(root, module, AliasSet);
+    JSON_WRITE_FIELD(root, module, ConstantSet);
+    JSON_WRITE_FIELD(root, module, OtherValueSet);
+
+    cJSON* values = jsonCreateArray();
+    for (size_t i = 1; i <= svfModuleWriter.svfValuePool.size(); ++i)
+    {
+        cJSON* value = toJson(svfModuleWriter.svfValuePool.getPtr(i));
+        jsonAddItemToArray(values, value);
+    }
+    jsonAddItemToObject(root, "values", values);
+
+    cJSON* types = jsonCreateArray();
+    for (size_t i = 1; i <= svfModuleWriter.svfTypePool.size(); ++i)
+    {
+        cJSON* type = toJson(svfModuleWriter.svfTypePool.getPtr(i));
+        jsonAddItemToArray(types, type);
+    }
+    jsonAddItemToObject(root, "types", types);
 
     return root;
 }

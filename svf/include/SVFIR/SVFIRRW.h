@@ -266,6 +266,11 @@ public:
     {
         return ptrPool;
     }
+
+    size_t size() const
+    {
+        return ptrPool.size();
+    }
 };
 
 template <typename NodeTy, typename EdgeTy> class GenericGraphWriter
@@ -347,20 +352,19 @@ using CHGraphWriter = GenericGraphWriter<CHNode, CHEdge>;
 
 class SVFModuleWriter
 {
+    friend class SVFIRWriter;
+
     PtrPool<SVFType> svfTypePool;
     PtrPool<SVFValue> svfValuePool;
 
-public:
     size_t getSvfTypeID(const SVFType* type);
     size_t getSvfValueID(const SVFValue* value);
 };
 
 class SVFIRWriter
 {
+private:
     const SVFIR* svfIR;
-
-    PtrPool<SVFType> svfTypePool;
-    PtrPool<SVFValue> svfValuePool;
 
     SVFModuleWriter svfModuleWriter;
     IRGraphWriter irGraphWriter;
@@ -371,17 +375,22 @@ class SVFIRWriter
     OrderedMap<size_t, std::string> numToStrMap;
 
 public:
+    using autoJSON = std::unique_ptr<cJSON, decltype(&cJSON_Delete)>;
+    using autoCStr = std::unique_ptr<char, decltype(&cJSON_free)>;
+
     SVFIRWriter(const SVFIR* svfir);
 
-    cJSON* toJson(const SVFModule* module);
-
-    const char* generateJsonString();
+    static void writeJsonToOstream(const SVFIR* svfir, std::ostream& os);
+    static void writeJsonToPath(const SVFIR* svfir, const std::string& path);
 
 private:
     /// @brief Main logic to dump a SVFIR to a JSON object.
-    cJSON* generateJson();
+    autoJSON generateJson();
+    autoCStr generateJsonString();
+
     const char* numToStr(size_t n);
 
+    cJSON* toJson(const SVFModule* module);
     cJSON* toJson(const SVFType* type);
     cJSON* toJson(const SVFValue* value);
     cJSON* toJson(const IRGraph* graph); // IRGraph Graph
@@ -398,10 +407,10 @@ private:
     cJSON* toJson(const CallSite& cs);
     cJSON* toJson(const LocationSet& ls);
     cJSON* toJson(const SVFLoop* loop);
-    cJSON* toJson(const ObjTypeInfo* objTypeInfo);
     cJSON* toJson(const MemObj* memObj);
+    cJSON* toJson(const ObjTypeInfo* objTypeInfo); // Ensures ownership
     cJSON* toJson(const SVFLoopAndDomInfo* ldInfo); // Only owned by SVFFunction
-    cJSON* toJson(const StInfo* type); // Only owned by SVFType
+    cJSON* toJson(const StInfo* type); // Ensure Only owned by SVFType
 
     static cJSON* toJson(unsigned number);
     static cJSON* toJson(int number);
@@ -577,9 +586,9 @@ private:
 
     template <typename T, typename U> cJSON* toJson(const std::pair<T, U>& pair)
     {
-        cJSON* obj = jsonCreateObject();
-        JSON_WRITE_FIELD(obj, &pair, first);
-        JSON_WRITE_FIELD(obj, &pair, second);
+        cJSON* obj = jsonCreateArray();
+        jsonAddItemToArray(obj, toJson(pair.first));
+        jsonAddItemToArray(obj, toJson(pair.second));
         return obj;
     }
 
