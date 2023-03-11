@@ -312,13 +312,13 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
             if(!op && gepTy->isPointerTy() && getPtrElementType(SVFUtil::dyn_cast<PointerType>(gepTy))->isSingleValueType())
                 isConst = false;
-            else {
+            if(op) {
                 // The actual index
                 s32_t idx = op->getSExtValue();
 
                 // For pointer arithmetic we ignore the byte offset
                 // consider using inferFieldIdxFromByteOffset(geopOp,dataLayout,ls,idx)?
-                 ls.setFldIdx(ls.getConstantFieldIdx() + idx);
+                ls.setFldIdx(ls.getConstantFieldIdx() + idx);
             }
         }
     }
