@@ -47,7 +47,8 @@ FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGN
     }
 }
 
-FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
+FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f)
+    : InterICFGNode(id, FunExitBlock), formalRet(nullptr)
 {
     fun = f;
     // if function is implemented
@@ -55,9 +56,7 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNod
     {
         bb = f->getExitBB();
     }
-
 }
-
 
 const std::string ICFGNode::toString() const
 {

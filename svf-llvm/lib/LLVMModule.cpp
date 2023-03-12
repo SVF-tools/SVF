@@ -69,9 +69,6 @@ using namespace SVF;
 #define SVF_GLOBAL_CTORS             "llvm.global_ctors"
 #define SVF_GLOBAL_DTORS             "llvm.global_dtors"
 
-static Option<std::string> dumpJson("dump-json",
-                                    "Dump the SVFModule to JSON file", "");
-
 LLVMModuleSet *LLVMModuleSet::llvmModuleSet = nullptr;
 std::string SVFModule::pagReadFromTxt = "";
 
@@ -122,8 +119,6 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
 
     build_symbol_table();
-
-    svfModule->writeToJson(dumpJson());
 
     return svfModule.get();
 }

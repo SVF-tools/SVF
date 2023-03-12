@@ -38,7 +38,9 @@
 #include "SVF-LLVM/LLVMLoopAnalysis.h"
 #include "Util/Options.h"
 #include "SVF-LLVM/CHGBuilder.h"
+#include "SVFIR/SVFIRRW.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
+
 
 using namespace std;
 using namespace SVF;
@@ -64,7 +66,7 @@ SVFIR* SVFIRBuilder::build()
     icfgbuilder.build(svfModule);
     pag->setICFG(icfg);
 
-    CHGraph *chg = new CHGraph(pag->getModule());
+    CHGraph* chg = new CHGraph(pag->getModule());
     CHGBuilder chgbuilder(chg);
     chgbuilder.buildCHG();
     pag->setCHG(chg);
@@ -162,8 +164,14 @@ SVFIR* SVFIRBuilder::build()
         loopAnalysis.build(pag->getICFG());
     }
 
+    // dump SVFIR as JSON
+    if (!Options::DumpJson().empty())
+    {
+        SVFIRWriter::writeJsonToPath(pag, Options::DumpJson());
+    }
+
     double endTime = SVFStat::getClk(true);
-    SVFStat::timeOfBuildingSVFIR = (endTime - startTime)/TIMEINTERVAL;
+    SVFStat::timeOfBuildingSVFIR = (endTime - startTime) / TIMEINTERVAL;
 
     return pag;
 }

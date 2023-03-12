@@ -325,7 +325,7 @@ template <typename T>
 class Option : public OptionBase
 {
 public:
-    Option(std::string name, std::string description, T init)
+    Option(const std::string& name, const std::string& description, T init)
         : OptionBase(name, description), isExplicitlySet(false), value(init)
     {
         assert(!name.empty() && "Option: empty option name given");

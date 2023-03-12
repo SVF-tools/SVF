@@ -53,13 +53,19 @@ typedef GenericNode<ICFGNode, ICFGEdge> GenericICFGNodeTy;
 
 class ICFGNode : public GenericICFGNodeTy
 {
+    friend class SVFIRWriter;
 
 public:
     /// 22 kinds of ICFG node
     /// Gep represents offset edge for field sensitivity
     enum ICFGNodeK
     {
-        IntraBlock, FunEntryBlock, FunExitBlock, FunCallBlock, FunRetBlock, GlobalBlock
+        IntraBlock,
+        FunEntryBlock,
+        FunExitBlock,
+        FunCallBlock,
+        FunRetBlock,
+        GlobalBlock
     };
 
     typedef ICFGEdge::ICFGEdgeSetTy::iterator iterator;
@@ -174,6 +180,7 @@ public:
  */
 class IntraICFGNode : public ICFGNode
 {
+    friend class SVFIRWriter;
 private:
     const SVFInstruction *inst;
 
@@ -250,6 +257,7 @@ public:
  */
 class FunEntryICFGNode : public InterICFGNode
 {
+    friend class SVFIRWriter;
 
 public:
     typedef std::vector<const SVFVar *> FormalParmNodeVec;
@@ -307,6 +315,7 @@ public:
  */
 class FunExitICFGNode : public InterICFGNode
 {
+    friend class SVFIRWriter;
 
 private:
     const SVFVar *formalRet;
@@ -362,6 +371,7 @@ public:
  */
 class CallICFGNode : public InterICFGNode
 {
+    friend class SVFIRWriter;
 
 public:
     typedef std::vector<const SVFVar *> ActualParmNodeVec;
@@ -370,7 +380,8 @@ private:
     const RetICFGNode* ret;
     ActualParmNodeVec APNodes;
 public:
-    CallICFGNode(NodeID id, const SVFInstruction* c) : InterICFGNode(id, FunCallBlock), cs(c), ret(nullptr)
+    CallICFGNode(NodeID id, const SVFInstruction* c)
+        : InterICFGNode(id, FunCallBlock), cs(c), ret(nullptr)
     {
         fun = cs->getFunction();
         bb = cs->getParent();
@@ -457,6 +468,7 @@ public:
  */
 class RetICFGNode : public InterICFGNode
 {
+    friend class SVFIRWriter;
 
 private:
     const SVFInstruction* cs;

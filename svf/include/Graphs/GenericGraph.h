@@ -36,6 +36,10 @@
 
 namespace SVF
 {
+/// Forward declaration of some friend classes
+///@{
+template <typename, typename> class GenericGraphWriter;
+///@}
 
 /*!
  * Generic edge on the graph as base class
@@ -43,6 +47,7 @@ namespace SVF
 template<class NodeTy>
 class GenericEdge
 {
+    friend class SVFIRWriter;
 
 public:
     /// Node type
@@ -133,6 +138,7 @@ protected:
 template<class NodeTy,class EdgeTy>
 class GenericNode
 {
+    friend class SVFIRWriter;
 
 public:
     typedef NodeTy NodeType;
@@ -331,9 +337,11 @@ public:
  * Generic graph for program representation
  * It is base class and needs to be instantiated
  */
-template<class NodeTy,class EdgeTy>
+template<class NodeTy, class EdgeTy>
 class GenericGraph
 {
+    friend class SVFIRWriter;
+    friend class GenericGraphWriter<NodeTy, EdgeTy>;
 
 public:
     typedef NodeTy NodeType;
@@ -348,9 +356,7 @@ public:
     //@}
 
     /// Constructor
-    GenericGraph(): edgeNum(0),nodeNum(0)
-    {
-    }
+    GenericGraph() : edgeNum(0), nodeNum(0) {}
 
     /// Destructor
     virtual ~GenericGraph()

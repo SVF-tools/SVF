@@ -134,6 +134,7 @@ public:
     static const Option<bool> PAGDotGraph;
     static const Option<bool> ShowSVFIRValue;
     static const Option<bool> DumpICFG;
+    static const Option<std::string> DumpJson;
     static const Option<bool> CallGraphDotGraph;
     static const Option<bool> PAGPrint;
     static const Option<u32_t> IndirectCallLimit;

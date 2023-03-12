@@ -52,6 +52,8 @@ class SVFVar;
 class LocationSet
 {
     friend class SymbolTableInfo;
+    friend class SVFIRWriter;
+
 public:
     enum LSRelation
     {
@@ -62,12 +64,12 @@ public:
     typedef std::vector<VarAndGepTypePair> OffsetVarAndGepTypePairs;
 
     /// Constructor
-    LocationSet(s32_t o = 0) : fldIdx(o)
-    {}
+    LocationSet(s32_t o = 0) : fldIdx(o) {}
 
     /// Copy Constructor
     LocationSet(const LocationSet& ls)
-        : fldIdx(ls.fldIdx), offsetVarAndGepTypePairs(ls.getOffsetVarAndGepTypePairVec())
+        : fldIdx(ls.fldIdx),
+          offsetVarAndGepTypePairs(ls.getOffsetVarAndGepTypePairVec())
     {
     }
 
@@ -75,9 +77,9 @@ public:
 
     /// Overload operators
     //@{
-    LocationSet operator+ (const LocationSet& rhs) const;
-    bool operator< (const LocationSet& rhs) const;
-    inline const LocationSet& operator= (const LocationSet& rhs)
+    LocationSet operator+(const LocationSet& rhs) const;
+    bool operator<(const LocationSet& rhs) const;
+    inline const LocationSet& operator=(const LocationSet& rhs)
     {
         fldIdx = rhs.fldIdx;
         offsetVarAndGepTypePairs = rhs.getOffsetVarAndGepTypePairVec();
@@ -85,8 +87,8 @@ public:
     }
     inline bool operator==(const LocationSet& rhs) const
     {
-        return this->fldIdx == rhs.fldIdx
-               && this->offsetVarAndGepTypePairs == rhs.offsetVarAndGepTypePairs;
+        return this->fldIdx == rhs.fldIdx &&
+               this->offsetVarAndGepTypePairs == rhs.offsetVarAndGepTypePairs;
     }
     //@}
 

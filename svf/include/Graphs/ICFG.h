@@ -46,8 +46,8 @@ class PTACallGraph;
 typedef GenericGraph<ICFGNode,ICFGEdge> GenericICFGTy;
 class ICFG : public GenericICFGTy
 {
-
     friend class ICFGBuilder;
+    friend class SVFIRWriter;
 
 public:
 
@@ -139,6 +139,11 @@ public:
         auto it = icfgNodeToSVFLoopVec.find(node);
         assert(it != icfgNodeToSVFLoopVec.end() && "node not in loop");
         return it->second;
+    }
+
+    inline const ICFGNodeToSVFLoopVec& getIcfgNodeToSVFLoopVec() const
+    {
+        return icfgNodeToSVFLoopVec;
     }
 
 protected:

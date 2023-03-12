@@ -47,6 +47,7 @@ class StInfo;
 class SymbolTableInfo
 {
     friend class SymbolTableBuilder;
+    friend class SVFIRWriter;
 
 public:
 
@@ -69,7 +70,7 @@ public:
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
     typedef OrderedMap<const SVFValue*, SymID> ValueToIDMapTy;
     /// sym id to memory object map
-    typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
+    typedef OrderedMap<SymID, MemObj*> IDToMemMapTy;
     /// function to sym id map
     typedef OrderedMap<const SVFFunction*, SymID> FunToIDMapTy;
     /// struct type to struct info map
@@ -77,11 +78,11 @@ public:
     //@}
 
 private:
-    ValueToIDMapTy valSymMap;	///< map a value to its sym id
-    ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
-    FunToIDMapTy returnSymMap;		///< return  map
-    FunToIDMapTy varargSymMap;	    ///< vararg map
-    IDToMemMapTy		objMap;		///< map a memory sym id to its obj
+    ValueToIDMapTy valSymMap;  ///< map a value to its sym id
+    ValueToIDMapTy objSymMap;  ///< map a obj reference to its sym id
+    FunToIDMapTy returnSymMap; ///< return map
+    FunToIDMapTy varargSymMap; ///< vararg map
+    IDToMemMapTy objMap;       ///< map a memory sym id to its obj
 
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
     static SymbolTableInfo* symInfo;
@@ -100,8 +101,9 @@ private:
 
 protected:
     /// Constructor
-    SymbolTableInfo(void) :
-        mod(nullptr), modelConstants(false), totalSymNum(0), maxStruct(nullptr), maxStSize(0)
+    SymbolTableInfo(void)
+        : mod(nullptr), modelConstants(false), totalSymNum(0),
+          maxStruct(nullptr), maxStSize(0)
     {
     }
 
@@ -269,6 +271,11 @@ public:
         return objMap;
     }
 
+    inline const IDToMemMapTy& idToObjMap() const
+    {
+        return objMap;
+    }
+
     inline FunToIDMapTy& retSyms()
     {
         return returnSymMap;
@@ -347,6 +354,7 @@ protected:
  */
 class MemObj
 {
+    friend class SVFIRWriter;
 
 private:
     /// Type information of this object
@@ -424,7 +432,7 @@ public:
     //@}
 
     /// Operator overloading
-    inline bool operator==(const MemObj &mem) const
+    inline bool operator==(const MemObj& mem) const
     {
         return getValue() == mem.getValue();
     }
@@ -433,14 +441,14 @@ public:
     void destroy();
 };
 
-
-
 /*!
  * Type Info of an abstract memory object
  */
 class ObjTypeInfo
 {
+    friend class SVFIRWriter;
     friend class SymbolTableBuilder;
+
 public:
     typedef enum
     {

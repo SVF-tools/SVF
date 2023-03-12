@@ -216,12 +216,16 @@ inline unsigned countPopulation(T Value)
 /// kept up to date.  They are also significantly more memory intensive.
 template <unsigned ElementSize = 128> struct SparseBitVectorElement
 {
+    friend class SVFIRWriter;
+
 public:
     using BitWord = unsigned long;
     using size_type = unsigned;
     enum
     {
         BITWORD_SIZE = sizeof(BitWord) * CHAR_BIT,
+        // N.B. (+ BITWORD_SIZE - 1) is to round up, to ensure we can have
+        // sufficient bits to represent *at least* ElementSize bits.
         BITWORDS_PER_ELEMENT = (ElementSize + BITWORD_SIZE - 1) / BITWORD_SIZE,
         BITS_PER_ELEMENT = ElementSize
     };
@@ -453,6 +457,8 @@ public:
 template <unsigned ElementSize = 128>
 class SparseBitVector
 {
+    friend class SVFIRWriter;
+
     using ElementList = std::list<SparseBitVectorElement<ElementSize>>;
     using ElementListIter = typename ElementList::iterator;
     using ElementListConstIter = typename ElementList::const_iterator;

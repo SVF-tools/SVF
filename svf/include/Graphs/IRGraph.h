@@ -1,4 +1,4 @@
-//===- SVFIR.h -- SVF IR Graph or PAG (Program Assignment Graph)--------------------------------------//
+//===- SVFIR.h -- SVF IR Graph or PAG (Program Assignment Graph)--------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -44,21 +44,24 @@ typedef SVFVar PAGNode;
 typedef SVFStmt PAGEdge;
 
 /*
-* Graph representation of SVF IR. It can be seen as a program assignment graph (PAG)
-*/
-class IRGraph : public GenericGraph<SVFVar,SVFStmt>
+ * Graph representation of SVF IR.
+ * It can be seen as a program assignment graph (PAG).
+ */
+class IRGraph : public GenericGraph<SVFVar, SVFStmt>
 {
+    friend class SVFIRWriter;
+
 public:
     typedef Set<const SVFStmt*> SVFStmtSet;
     typedef Map<const SVFValue*,SVFStmtSet> ValueToEdgeMap;
 
 protected:
-    SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap;  // < SVFIR edge map containing all PAGEdges
-    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap;  // < SVFIR edge map containing only pointer-related edges, i.e, both LHS and RHS are of pointer type
+    SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap; ///< SVFIR edge map containing all PAGEdges
+    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap; ///< SVFIR edge map containing only pointer-related edges, i.e., both LHS and RHS are of pointer type
     bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
-    NodeID nodeNumAfterPAGBuild; // initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
+    NodeID nodeNumAfterPAGBuild; ///< initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
     u32_t totalPTAPAGEdge;
-    ValueToEdgeMap valueToEdgeMap;	///< Map llvm::Values to all corresponding PAGEdges
+    ValueToEdgeMap valueToEdgeMap; ///< Map llvm::Values to all corresponding PAGEdges
     SymbolTableInfo* symInfo;
 
     /// Add a node into the graph
@@ -73,10 +76,14 @@ protected:
     //// Return true if this edge exits
     SVFStmt* hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind);
     /// Return true if this labeled edge exits, including store, call and load
-    /// two store edge can have same dst and src but located in different basic blocks, thus flags are needed to distinguish them
-    SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind, const ICFGNode* cs);
-    /// Return MultiOpndStmt since it has more than one operands (we use operand 2 here to make the flag)
-    SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind, const SVFVar* op2);
+    /// two store edge can have same dst and src but located in different basic
+    /// blocks, thus flags are needed to distinguish them
+    SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind,
+                            const ICFGNode* cs);
+    /// Return MultiOpndStmt since it has more than one operands (we use operand
+    /// 2 here to make the flag)
+    SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind,
+                            const SVFVar* op2);
 
     /// Map a value to a set of edges
     inline void mapValueToEdge(const SVFValue* V, SVFStmt *edge)
@@ -94,7 +101,8 @@ protected:
     }
 
 public:
-    IRGraph(bool buildFromFile): fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
+    IRGraph(bool buildFromFile)
+        : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
     {
         symInfo = SymbolTableInfo::SymbolInfo();
         // insert dummy value if a correct value cannot be found
@@ -237,7 +245,7 @@ template<> struct GenericGraphTraits<Inverse<SVF::SVFVar *> > : public GenericGr
 
 template<> struct GenericGraphTraits<SVF::IRGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::SVFVar,SVF::SVFStmt>* >
 {
-    typedef SVF::SVFVar *NodeRef;
+    typedef SVF::SVFVar* NodeRef;
 };
 
 } // End namespace llvm

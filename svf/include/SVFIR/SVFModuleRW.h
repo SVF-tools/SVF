@@ -76,18 +76,15 @@ class SVFModuleWrite
 {
 private:
     const SVFModule* module; ///< Borrowed pointer to the SVFModule.
-    const char* jsonStr; ///< Json string of the SVFModule. It gets freed by
-    /// `cJSON_free()` in destructor.
+    const char* jsonStr; ///< Json string of the SVFModule. It gets freed by `cJSON_free()` in destructor.
 
     std::unordered_map<const SVFType*, TypeIndex> typeToIndex;
-    std::vector<const SVFType*>
-    typePool; ///< A pool of all SVFTypes in the SVFModule
+    std::vector<const SVFType*> typePool; ///< A pool of all SVFTypes in the SVFModule
     TypeIndex getTypeIndex(const SVFType* type);
     const char* getStrTypeIndex(const SVFType* type);
 
     std::unordered_map<const SVFValue*, ValueIndex> valueToIndex;
-    std::vector<const SVFValue*>
-    valuePool; ///< A pool of all SVFValues in the SVFModule
+    std::vector<const SVFValue*> valuePool; ///< A pool of all SVFValues in the SVFModule
     ValueIndex getValueIndex(const SVFValue* value);
     const char* getStrValueIndex(const SVFValue* value);
 
