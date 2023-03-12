@@ -156,13 +156,13 @@ public:
 
 private:
     /// conditionVar is a boolean (for if/else) or numeric condition variable
-    /// (for switch). 
-    /// branchCondVal is the value when this condition should hold to execute 
-    /// this CFGEdge. 
-    /// E.g., Inst1: br %cmp label 0, label 1,  
+    /// (for switch).
+    /// branchCondVal is the value when this condition should hold to execute
+    /// this CFGEdge.
+    /// E.g., Inst1: br %cmp label 0, label 1,
     ///       Inst2: label 0
-    ///       Inst3: label 1; 
-    /// for edge between Inst1 and Inst 2, the first element is %cmp and 
+    ///       Inst3: label 1;
+    /// for edge between Inst1 and Inst 2, the first element is %cmp and
     /// the second element is 0
     const SVFValue* conditionVar;
     s64_t branchCondVal;

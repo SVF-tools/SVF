@@ -568,8 +568,8 @@ private:
     inline NodeID addBlackholeObjNode()
     {
         return addObjNode(
-            nullptr, new DummyObjVar(getBlackHoleNode(), getBlackHoleObj()),
-            getBlackHoleNode());
+                   nullptr, new DummyObjVar(getBlackHoleNode(), getBlackHoleObj()),
+                   getBlackHoleNode());
     }
     inline NodeID addConstantObjNode()
     {

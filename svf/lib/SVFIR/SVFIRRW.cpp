@@ -577,7 +577,8 @@ cJSON* SVFIRWriter::contentToJson(const SymbolTableInfo* symTable)
 
     // objMap
     cJSON* objMap = jsonCreateMap();
-    for (const auto &pair : symTable->objMap) {
+    for (const auto &pair : symTable->objMap)
+    {
         SymID id = pair.first;
         const MemObj* memObj = pair.second;
 
@@ -778,7 +779,7 @@ bool jsonAddPairToMap(cJSON* mapObj, cJSON* key, cJSON* value)
 bool jsonAddItemToObject(cJSON* obj, const char* name, cJSON* item)
 {
     return humanReadableOption() ? cJSON_AddItemToObject(obj, name, item)
-                                 : cJSON_AddItemToArray(obj, item);
+           : cJSON_AddItemToArray(obj, item);
 }
 
 bool jsonAddItemToArray(cJSON* array, cJSON* item)
@@ -869,7 +870,7 @@ SVFIRWriter::autoCStr SVFIRWriter::generateJsonString()
 {
     autoJSON object = generateJson();
     char* str = humanReadableOption() ? cJSON_Print(object.get())
-                                      : cJSON_PrintUnformatted(object.get());
+                : cJSON_PrintUnformatted(object.get());
     return {str, cJSON_free};
 }
 
@@ -932,7 +933,7 @@ cJSON* SVFIRWriter::toJson(const IRGraph* graph)
 cJSON* SVFIRWriter::toJson(const SVFVar* var)
 {
     return var ? jsonCreateIndex(irGraphWriter.getNodeID(var))
-               : jsonCreateNullId();
+           : jsonCreateNullId();
 }
 
 cJSON* SVFIRWriter::toJson(const SVFStmt* stmt)

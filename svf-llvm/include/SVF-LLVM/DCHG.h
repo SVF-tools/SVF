@@ -321,7 +321,7 @@ public:
         }
 
         if (!(base->getTag() == dwarf::DW_TAG_class_type ||
-              base->getTag() == dwarf::DW_TAG_structure_type))
+                base->getTag() == dwarf::DW_TAG_structure_type))
         {
             return nullptr;
         }

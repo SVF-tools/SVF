@@ -157,33 +157,33 @@ public:
     /// Compute the unique edgeFlag value from edge kind and second variable
     /// operand for MultiOpndStmt.
     static inline GEdgeFlag makeEdgeFlagWithAddionalOpnd(GEdgeKind k,
-                                                         const SVFVar* var)
+            const SVFVar* var)
     {
         Var2LabelMap::const_iterator iter = var2LabelMap.find(var);
         u64_t label = (iter != var2LabelMap.end()) ? iter->second
-                                                   : multiOpndLabelCounter++;
+                      : multiOpndLabelCounter++;
         return (label << EdgeKindMaskBits) | k;
     }
 
     /// Compute the unique edgeFlag value from edge kind and call site
     /// Instruction.
     static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k,
-                                                     const ICFGNode* cs)
+            const ICFGNode* cs)
     {
         Inst2LabelMap::const_iterator iter = inst2LabelMap.find(cs);
         u64_t label = (iter != inst2LabelMap.end()) ? iter->second
-                                                    : callEdgeLabelCounter++;
+                      : callEdgeLabelCounter++;
         return (label << EdgeKindMaskBits) | k;
     }
 
     /// Compute the unique edgeFlag value from edge kind and store Instruction.
     /// Two store instructions may share the same StorePAGEdge
     static inline GEdgeFlag makeEdgeFlagWithStoreInst(GEdgeKind k,
-                                                      const ICFGNode* store)
+            const ICFGNode* store)
     {
         Inst2LabelMap::const_iterator iter = inst2LabelMap.find(store);
         u64_t label = (iter != inst2LabelMap.end()) ? iter->second
-                                                    : storeEdgeLabelCounter++;
+                      : storeEdgeLabelCounter++;
         return (label << EdgeKindMaskBits) | k;
     }
 

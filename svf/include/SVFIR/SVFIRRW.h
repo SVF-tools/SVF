@@ -39,11 +39,11 @@
 ///@{
 template <typename T>
 decltype(std::begin(std::declval<T&>()) !=
-             std::end(std::declval<T&>()), // begin/end and operator!=
+         std::end(std::declval<T&>()), // begin/end and operator!=
          void(),                           // Handle evil operator,
          ++std::declval<decltype(begin(std::declval<T&>()))&>(), // operator++
          *begin(std::declval<T&>()),                             // operator*
-         std::true_type{})
+         std::true_type {})
 is_iterable_impl(int);
 template <typename T> std::false_type is_iterable_impl(...);
 
@@ -593,7 +593,7 @@ private:
     }
 
     template <typename T, typename = std::enable_if_t<is_iterable_v<T>>>
-    cJSON* toJson(const T& container)
+              cJSON* toJson(const T& container)
     {
         cJSON* array = jsonCreateArray();
         for (const auto& item : container)
