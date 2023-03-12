@@ -101,14 +101,17 @@ SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, u32
     return ret;
 }
 
-
 std::pair<s32_t, s32_t> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep)
 {
+    /// for instant constant index, e.g.  gep arr, 1
     if (gep->getOffsetVarAndGepTypePairVec().empty())
         return std::make_pair(gep->getConstantFieldIdx(), gep->getConstantFieldIdx());
 
     s32_t totalOffsetLb = 0;
     s32_t totalOffsetUb = 0;
+    /// default value of MaxFieldLimit is 512
+    u32_t maxFieldLimit = Options::MaxFieldLimit() - 1;
+    /// for variable index and nested indexes, e.g. 1) gep arr, idx  2) gep arr idx0, idx1
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
         const SVFValue *value = gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
@@ -116,50 +119,88 @@ std::pair<s32_t, s32_t> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep)
         const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         s32_t offsetLb = 0;
         s32_t offsetUb = 0;
-        /// constant as the offset
+        /// offset is constant but stored in variable
         if (op)
         {
             offsetLb = offsetUb = op->getSExtValue();
         }
-        /// variable as the offset
+        /// offset is variable, the concrete value isn't sure util runtime, and maybe not a concrete value.
+        /// e.g.
         else
         {
             u32_t idx = _svfir->getValueNode(value);
             if (!inVarToIValTable(idx)) return std::make_pair(-1, -1);
             IntervalValue &idxVal = _es[idx];
-            if(idxVal.isBottom() || idxVal.isTop()) return std::make_pair(0, (s32_t)Options::MaxFieldLimit());
+            if (idxVal.isBottom() || idxVal.isTop()) return std::make_pair(0, (s32_t)Options::MaxFieldLimit());
+            // if idxVal is a concrete value
             if (idxVal.is_numeral())
             {
                 offsetLb = offsetUb = idxVal.lb().getNumeral();
             }
             else
             {
+                // if inxVal is an interval. we should make sure that idxVal.lb>0 && idxVal.ub<MaxFieldLimit
                 offsetLb = idxVal.lb().getNumeral() < 0 ? 0 : idxVal.lb().getNumeral();
+                offsetLb = idxVal.lb().getNumeral() > maxFieldLimit ? maxFieldLimit : offsetLb;
                 offsetUb = idxVal.ub().getNumeral() < 0 ? 0 : idxVal.ub().getNumeral();
+                offsetUb = idxVal.ub().getNumeral() > maxFieldLimit ? maxFieldLimit : offsetUb;
             }
         }
         if (type == nullptr)
         {
-            totalOffsetLb += offsetLb;
-            totalOffsetUb += offsetUb;
+            if ((long long) (totalOffsetLb + offsetLb) > maxFieldLimit)
+            {
+                totalOffsetLb = maxFieldLimit;
+            }
+            else
+            {
+                totalOffsetLb += offsetLb;
+            }
+
+            if ((long long) (totalOffsetUb + offsetUb) > maxFieldLimit)
+            {
+                totalOffsetUb = maxFieldLimit;
+            }
+            else
+            {
+                totalOffsetUb += offsetUb;
+            }
             continue;
         }
-        /// Caculate the offset
+
         if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type))
         {
-            totalOffsetLb += offsetLb * gep->getLocationSet().getElementNum(pty->getPtrElementType());
-            totalOffsetUb += offsetUb * gep->getLocationSet().getElementNum(pty->getPtrElementType());
+            offsetLb = offsetLb * gep->getLocationSet().getElementNum(pty->getPtrElementType());
+            offsetUb = offsetUb * gep->getLocationSet().getElementNum(pty->getPtrElementType());
+
         }
         else
         {
             const std::vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
-            if(so.empty() || (u32_t)offsetUb >= so.size() || (u32_t)offsetLb >= so.size()) return std::make_pair(-1, -1);
-            totalOffsetLb += SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, offsetLb);
-            totalOffsetUb += SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, offsetUb);
+            if (so.empty() || (u32_t) offsetUb >= so.size() || (u32_t) offsetLb >= so.size())
+                return std::make_pair(-1, -1);
+            offsetLb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, offsetLb);
+            offsetUb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, offsetUb);
+        }
+        if ((long long) (totalOffsetLb + offsetLb) > maxFieldLimit)
+        {
+            totalOffsetLb = maxFieldLimit;
+        }
+        else
+        {
+            totalOffsetLb += offsetLb;
+        }
+        if ((long long) (totalOffsetUb + offsetUb) > maxFieldLimit)
+        {
+            totalOffsetUb = maxFieldLimit;
+        }
+        else
+        {
+            totalOffsetUb += offsetUb;
         }
     }
     std::pair<s32_t, s32_t> offSetPair;
-    offSetPair.first =  totalOffsetLb;
+    offSetPair.first = totalOffsetLb;
     offSetPair.second = totalOffsetUb;
     return offSetPair;
 }
@@ -646,10 +687,12 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
 {
     u32_t rhs = gep->getRHSVarID();
     u32_t lhs = gep->getLHSVarID();
+    if (!inVarToAddrsTable(rhs)) return;
+    assert(!getVAddrs(rhs).empty());
     VAddrs &rhsVal = getVAddrs(rhs);
     if (rhsVal.empty()) return;
     std::pair<s32_t, s32_t> offsetPair = getGepOffset(gep);
-    if(offsetPair.first == -1 && offsetPair.second == -1) return;
+    if (offsetPair.first == -1 && offsetPair.second == -1) return;
     if (!isVirtualMemAddress(*rhsVal.begin()))
     {
         return;
@@ -658,15 +701,16 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
     {
         VAddrs gepAddrs;
         s32_t ub = offsetPair.second;
-        if (offsetPair.second - offsetPair.first > (s32_t)Options::MaxFieldLimit() - 1)
+        if (offsetPair.second > (s32_t) Options::MaxFieldLimit() - 1)
         {
-            ub = offsetPair.first + (s32_t)Options::MaxFieldLimit() - 1;
+            ub = Options::MaxFieldLimit() - 1;
         }
         for (s32_t i = offsetPair.first; i <= ub; i++)
         {
             gepAddrs.join_with(getGepObjAddress(rhs, i));
         }
-        getEs().getVAddrs(lhs) = gepAddrs;
+        if(gepAddrs.empty()) return;
+        _es.getVAddrs(lhs) = gepAddrs;
         return;
     }
 }
