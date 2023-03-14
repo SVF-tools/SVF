@@ -409,8 +409,8 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
                 const SVFFunction* callee = calleefun->getDefFunForMultipleModule();
 
                 /// if the arg size does not match then we do not need to connect this parameter
-                /// even if the callee is a variadic function (the first parameter of variadic function is its paramter number)
-                if(matchArgs(cs, callee) == false)
+                /// unless the callee is a variadic function (the first parameter of variadic function is its paramter number)
+                if(!callee->isVarArg() && matchArgs(cs, callee) == false)
                     continue;
 
                 if(0 == getIndCallMap()[cs].count(callee))
