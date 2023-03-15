@@ -1565,7 +1565,7 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
 
             if (isExtCall(*func_iter))
             {
-                setCurrentLocation(callee, &callee->getEntryBlock());
+                setCurrentLocation(callee, callee->empty() ? nullptr : &callee->getEntryBlock());
                 handleExtCall(const_cast<CallBase*>(callbase), callee);
             }
             else
