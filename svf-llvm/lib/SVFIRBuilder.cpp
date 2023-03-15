@@ -1557,13 +1557,9 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
 
             if (isExtCall(*func_iter))
             {
-                if (callee->empty()) {
-                    // calling getEntryBlock (which calls `front()` of the fun's BBs)
-                    // for empty function will cause undefined behaviour
-                    setCurrentLocation(callee, nullptr);
-                } else {
-                    setCurrentLocation(callee, &callee->getEntryBlock());
-                }
+                // calling getEntryBlock (which calls `front()` of the fun's BBs)
+                // for empty function will cause undefined behaviour
+                setCurrentLocation(callee, callee->empty() ? nullptr : &callee->getEntryBlock());
                 handleExtCall(const_cast<CallBase*>(callbase), callee);
             }
             else
