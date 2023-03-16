@@ -758,6 +758,7 @@ cJSON* jsonCreateString(const char* str)
 cJSON* jsonCreateIndex(size_t index)
 {
     constexpr size_t maxPreciseIntInDouble = (1ull << 53);
+    (void)maxPreciseIntInDouble; // silence unused warning
     assert(index <= maxPreciseIntInDouble);
     return cJSON_CreateNumber(index);
 }
@@ -1099,7 +1100,7 @@ cJSON* SVFIRWriter::toJson(const SVFModule* module)
     cJSON* values = jsonCreateArray();
     for (size_t i = 1; i <= svfModuleWriter.svfValuePool.size(); ++i)
     {
-        cJSON* value = toJson(svfModuleWriter.svfValuePool.getPtr(i));
+        cJSON* value = contentToJson(svfModuleWriter.svfValuePool.getPtr(i));
         jsonAddItemToArray(values, value);
     }
     jsonAddItemToObject(root, "values", values);
@@ -1107,7 +1108,7 @@ cJSON* SVFIRWriter::toJson(const SVFModule* module)
     cJSON* types = jsonCreateArray();
     for (size_t i = 1; i <= svfModuleWriter.svfTypePool.size(); ++i)
     {
-        cJSON* type = toJson(svfModuleWriter.svfTypePool.getPtr(i));
+        cJSON* type = contentToJson(svfModuleWriter.svfTypePool.getPtr(i));
         jsonAddItemToArray(types, type);
     }
     jsonAddItemToObject(root, "types", types);
