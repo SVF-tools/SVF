@@ -801,18 +801,13 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
             eit = nameToGlobalsMap.end(); it != eit; ++it)
     {
         Set<GlobalVariable*> &globals = it->second;
-        GlobalVariable *rep = *(globals.begin());
-        Set<GlobalVariable*>::iterator repit = globals.begin();
-        while (repit != globals.end())
-        {
-            GlobalVariable *cur = *repit;
-            if (cur->hasInitializer())
-            {
-                rep = cur;
-                break;
-            }
-            repit++;
-        }
+
+        auto repIt =
+            std::find_if(globals.begin(), globals.end(),
+                         [](GlobalVariable* g) { return g->hasInitializer(); });
+        assert(repIt != globals.end() && "No initializer found for global");
+        GlobalVariable* rep = *repIt;
+
         for (Set<GlobalVariable*>::iterator sit = globals.begin(),
                 seit = globals.end(); sit != seit; ++sit)
         {
