@@ -189,8 +189,7 @@ void LLVMModuleSet::createSVFDataStructure()
                 for (const Instruction& inst : bb)
                 {
                     SVFInstruction* svfInst = nullptr;
-                    if (const CallBase* call =
-                            SVFUtil::dyn_cast<CallBase>(&inst))
+                    if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
                     {
                         if (LLVMUtil::isVirtualCallSite(call))
                             svfInst = new SVFVirtualCallInst(
@@ -591,8 +590,11 @@ void LLVMModuleSet::addSVFMain()
         // Find main function
         for (auto &func : mod)
         {
-            assert(!func.getName().(SVF_MAIN_FUNC_NAME) && SVF_MAIN_FUNC_NAME " already defined");
-            if (func.getName().equals("main"))
+            auto funName = func.getName();
+
+            assert(!funName.equals(SVF_MAIN_FUNC_NAME) && SVF_MAIN_FUNC_NAME " already defined");
+
+            if (funName.equals("main"))
             {
                 orgMain = &func;
                 mainMod = &mod;
@@ -649,8 +651,7 @@ void LLVMModuleSet::addSVFMain()
         // emitted in the order of priority
         for (auto& dtor : dtor_funcs)
         {
-            auto target = M.getOrInsertFunction(
-                dtor->getName(), Type::getVoidTy(M.getContext()));
+            auto target = M.getOrInsertFunction(dtor->getName(), Type::getVoidTy(M.getContext()));
             Builder.CreateCall(target);
         }
         // return;
@@ -686,7 +687,7 @@ void LLVMModuleSet::buildFunToFunMap()
     // Find the intersectNames
     std::set_intersection(
         declNames.begin(), declNames.end(), defNames.begin(), defNames.end(),
-        std::inserter(intersectNames, intersectNames.begin()));
+        std::inserter(intersectNames, intersectNames.end()));
 
     ///// name to def map
     NameToFunDefMapTy nameToFunDefMap;

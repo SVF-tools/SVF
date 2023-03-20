@@ -196,8 +196,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                 else if (const BranchInst* br =
                              SVFUtil::dyn_cast<BranchInst>(&inst))
                 {
-                    Value* opnd = br->isConditional() ? br->getCondition()
-                                                      : br->getOperand(0);
+                    Value* opnd = br->isConditional() ? br->getCondition() : br->getOperand(0);
                     collectSym(opnd);
                 }
                 else if (const SwitchInst* sw =
@@ -205,8 +204,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                 {
                     collectSym(sw->getCondition());
                 }
-                else if (isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()
-                                                  ->getSVFInstruction(&inst)))
+                else if (isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(&inst)))
                 {
 
                     const CallBase* cs = LLVMUtil::getLLVMCallSite(&inst);
@@ -245,9 +243,9 @@ void SymbolTableBuilder::collectSVFTypeInfo(const Value* val)
     if(isGepConstantExpr(val) || SVFUtil::isa<GetElementPtrInst>(val))
     {
         for (bridge_gep_iterator
-                 gi = bridge_gep_begin(SVFUtil::cast<User>(val)),
-                 ge = bridge_gep_end(SVFUtil::cast<User>(val));
-             gi != ge; ++gi)
+                gi = bridge_gep_begin(SVFUtil::cast<User>(val)),
+                ge = bridge_gep_end(SVFUtil::cast<User>(val));
+                gi != ge; ++gi)
         {
             const Type* gepTy = *gi;
             (void)getOrAddSVFTypeInfo(gepTy);
@@ -265,9 +263,9 @@ void SymbolTableBuilder::collectSym(const Value* val)
 
     DBOUT(DMemModel,
           outs()
-              << "collect sym from ##"
-              << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->toString()
-              << " \n");
+          << "collect sym from ##"
+          << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val)->toString()
+          << " \n");
     //TODO handle constant expression value here??
     handleCE(val);
 
@@ -295,7 +293,7 @@ void SymbolTableBuilder::collectVal(const Value* val)
         return;
     }
     SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->valSymMap.find(
-        LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
+                LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
     if (iter == symInfo->valSymMap.end())
     {
         // create val sym and sym type
@@ -320,7 +318,7 @@ void SymbolTableBuilder::collectObj(const Value* val)
 {
     val = LLVMUtil::getGlobalRep(val);
     SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->objSymMap.find(
-        LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
+                LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val));
     if (iter == symInfo->objSymMap.end())
     {
         SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
@@ -393,10 +391,10 @@ void SymbolTableBuilder::handleCE(const Value* val)
         if (const ConstantExpr* ce = isGepConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                                      << LLVMModuleSet::getLLVMModuleSet()
-                                             ->getSVFValue(ref)
-                                             ->toString()
-                                      << "\n");
+                  << LLVMModuleSet::getLLVMModuleSet()
+                  ->getSVFValue(ref)
+                  ->toString()
+                  << "\n");
             collectVal(ce);
 
             // handle the recursive constant express case
@@ -410,10 +408,10 @@ void SymbolTableBuilder::handleCE(const Value* val)
         else if (const ConstantExpr* ce = isCastConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                                      << LLVMModuleSet::getLLVMModuleSet()
-                                             ->getSVFValue(ref)
-                                             ->toString()
-                                      << "\n");
+                  << LLVMModuleSet::getLLVMModuleSet()
+                  ->getSVFValue(ref)
+                  ->toString()
+                  << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             // handle the recursive constant express case
@@ -423,10 +421,10 @@ void SymbolTableBuilder::handleCE(const Value* val)
         else if (const ConstantExpr* ce = isSelectConstantExpr(ref))
         {
             DBOUT(DMemModelCE, outs() << "handle constant expression "
-                                      << LLVMModuleSet::getLLVMModuleSet()
-                                             ->getSVFValue(ref)
-                                             ->toString()
-                                      << "\n");
+                  << LLVMModuleSet::getLLVMModuleSet()
+                  ->getSVFValue(ref)
+                  ->toString()
+                  << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             collectVal(ce->getOperand(1));
@@ -550,7 +548,7 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
         if (Options::ModelConsts())
         {
             if (const ConstantDataSequential* seq =
-                    SVFUtil::dyn_cast<ConstantDataSequential>(data))
+                        SVFUtil::dyn_cast<ConstantDataSequential>(data))
             {
                 for(u32_t i = 0; i < seq->getNumElements(); i++)
                 {
@@ -638,9 +636,9 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
         if (elemTy->isPointerTy())
             isPtrObj = true;
         if (SVFUtil::isa<GlobalVariable>(val) &&
-            SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
-            SVFUtil::isa<ConstantArray>(
-                SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
+                SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
+                SVFUtil::isa<ConstantArray>(
+                    SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
             typeinfo->setFlag(ObjTypeInfo::CONST_ARRAY_OBJ);
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_ARRAY_OBJ);
@@ -650,11 +648,14 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
         const std::vector<const SVFType*>& flattenFields =
             getOrAddSVFTypeInfo(ST)->getFlattenFieldTypes();
         isPtrObj |= std::any_of(flattenFields.begin(), flattenFields.end(),
-                                SVFType::isPointerTy);
+                                [](const SVFType* ty)
+        {
+            return ty->isPointerTy();
+        });
         if (SVFUtil::isa<GlobalVariable>(val) &&
-            SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
-            SVFUtil::isa<ConstantStruct>(
-                SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
+                SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
+                SVFUtil::isa<ConstantStruct>(
+                    SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
             typeinfo->setFlag(ObjTypeInfo::CONST_STRUCT_OBJ);
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_STRUCT_OBJ);
