@@ -764,15 +764,31 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
         }
     }
 
-    for (auto& pair : nameToGlobalsMap)
+    for (const auto& pair : nameToGlobalsMap)
     {
-        Set<GlobalVariable*>& globals = pair.second;
-        Set<GlobalVariable*>::iterator repit = globals.begin();
-        auto it = std::find_if(globals.begin(), globals.end(),
-                               GlobalVariable::hasInitializer);
-        GlobalVariable* rep = it == globals.end() ? *repit : *it;
+        const Set<GlobalVariable*> &globals = pair.second;
 
-        for (GlobalVariable* cur : globals)
+        const auto repIt =
+            std::find_if(globals.begin(), globals.end(),
+                         [](GlobalVariable* g)
+        {
+            return g->hasInitializer();
+        });
+        GlobalVariable* rep =
+            repIt != globals.end()
+            ? *repIt
+            // When there is no initializer, just pick the first one.
+            : (assert(!globals.empty() && "Empty global set"),
+               *globals.begin());
+
+        for (Set<GlobalVariable*>::const_iterator sit = globals.begin(),
+                seit = globals.end(); sit != seit; ++sit)
+        {
+            GlobalVariable *cur = *sit;
+            GlobalDefToRepMap[cur] = rep;
+        }
+
+        for (const GlobalVariable* cur : globals)
         {
             GlobalDefToRepMap[cur] = rep;
         }
