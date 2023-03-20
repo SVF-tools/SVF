@@ -546,7 +546,7 @@ inline IntervalValue operator%(const IntervalValue &lhs,
     else
     {
         NumericLiteral n_ub = max(abs(lhs.lb()), abs(lhs.ub()));
-        NumericLiteral d_ub = max(abs(rhs.lb()), rhs.ub() - 1);
+        NumericLiteral d_ub = max(abs(rhs.lb()), rhs.ub()) - 1;
         NumericLiteral ub = min(n_ub, d_ub);
 
         if (lhs.lb().getNumeral() < 0)
@@ -592,7 +592,7 @@ inline IntervalValue operator>(const IntervalValue &lhs, const IntervalValue &rh
                 return IntervalValue(1, 1);
                 // lhs[1,2] rhs[3,4]
             }
-            else if (lhs.ub().geq(rhs.lb()))
+            else if (!lhs.ub().geq(rhs.lb()))
             {
                 return IntervalValue(0, 0);
             }
