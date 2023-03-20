@@ -32,12 +32,14 @@
 
 #include "Util/Z3Expr.h"
 
-namespace SVF {
+namespace SVF
+{
 
 /*!
  * Atom Z3 expr for unlimited precision integers
  */
-class BoundedZ3Expr : public Z3Expr {
+class BoundedZ3Expr : public Z3Expr
+{
 
 public:
     BoundedZ3Expr() = default;
@@ -53,7 +55,8 @@ public:
     BoundedZ3Expr(const BoundedZ3Expr &z3Expr) : Z3Expr(z3Expr) {}
 
 
-    inline BoundedZ3Expr &operator=(const BoundedZ3Expr &rhs) {
+    inline BoundedZ3Expr &operator=(const BoundedZ3Expr &rhs)
+    {
         Z3Expr::operator=(rhs);
         return *this;
     }
@@ -61,90 +64,111 @@ public:
     BoundedZ3Expr(BoundedZ3Expr &&z3Expr) : Z3Expr(z3Expr) {}
 
 
-    inline BoundedZ3Expr &operator=(BoundedZ3Expr &&rhs) {
+    inline BoundedZ3Expr &operator=(BoundedZ3Expr &&rhs)
+    {
         Z3Expr::operator=(rhs);
         return *this;
     }
 
-    bool is_plus_infinite() const {
+    bool is_plus_infinite() const
+    {
         return eq(*this, getContext().int_const("+oo"));
     }
 
-    bool is_minus_infinite() const {
+    bool is_minus_infinite() const
+    {
         return eq(*this, getContext().int_const("-oo"));
     }
 
-    bool is_infinite() const {
+    bool is_infinite() const
+    {
         return is_plus_infinite() || is_minus_infinite();
     }
 
-    void set_plus_infinite() {
+    void set_plus_infinite()
+    {
         *this = plus_infinity();
     }
 
-    void set_minus_infinite() {
+    void set_minus_infinite()
+    {
         *this = minus_infinity();
     }
 
-    static BoundedZ3Expr plus_infinity() {
+    static BoundedZ3Expr plus_infinity()
+    {
         return getContext().int_const("+oo");
     }
 
-    static BoundedZ3Expr minus_infinity() {
+    static BoundedZ3Expr minus_infinity()
+    {
         return getContext().int_const("-oo");
     }
 
-    static z3::context &getContext() {
+    static z3::context &getContext()
+    {
         return Z3Expr::getContext();
     }
 
-    bool is_zero() const {
+    bool is_zero() const
+    {
         return getExpr().is_numeral() && getExpr().get_numeral_int64() == 0;
     }
 
-    static bool isZero(const BoundedZ3Expr &expr) {
+    static bool isZero(const BoundedZ3Expr &expr)
+    {
         return expr.is_numeral() && expr.get_numeral_int64() == 0;
     }
 
-    BoundedZ3Expr equal(const BoundedZ3Expr &rhs) const {
+    BoundedZ3Expr equal(const BoundedZ3Expr &rhs) const
+    {
         return getExpr() == rhs.getExpr();
     }
 
-    BoundedZ3Expr leq(const BoundedZ3Expr &rhs) const {
+    BoundedZ3Expr leq(const BoundedZ3Expr &rhs) const
+    {
         return getExpr() <= rhs.getExpr();
     }
 
-    BoundedZ3Expr geq(const BoundedZ3Expr &rhs) const {
+    BoundedZ3Expr geq(const BoundedZ3Expr &rhs) const
+    {
         return getExpr() >= rhs.getExpr();
     }
 
     /// Reload operator
     //{%
-    friend BoundedZ3Expr operator==(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator==(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return lhs.equal(rhs);
     }
 
-    friend BoundedZ3Expr operator!=(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator!=(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return !lhs.equal(rhs);
     }
 
-    friend BoundedZ3Expr operator>(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator>(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return !lhs.leq(rhs);
     }
 
-    friend BoundedZ3Expr operator<(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator<(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return !lhs.geq(rhs);
     }
 
-    friend BoundedZ3Expr operator<=(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator<=(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return lhs.leq(rhs);
     }
 
-    friend BoundedZ3Expr operator>=(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator>=(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return lhs.geq(rhs);
     }
 
-    friend BoundedZ3Expr operator+(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator+(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         if (!lhs.is_infinite() && !rhs.is_infinite())
             return lhs.getExpr() + rhs.getExpr();
         else if (!lhs.is_infinite() && rhs.is_infinite())
@@ -157,11 +181,13 @@ public:
             assert(false && "undefined operation +oo + -oo");
     }
 
-    friend BoundedZ3Expr operator-(const BoundedZ3Expr &lhs) {
+    friend BoundedZ3Expr operator-(const BoundedZ3Expr &lhs)
+    {
         return -lhs.getExpr();
     }
 
-    friend BoundedZ3Expr operator-(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator-(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         if (!lhs.is_infinite() && !rhs.is_infinite())
             return lhs.getExpr() - rhs.getExpr();
         else if (!lhs.is_infinite() && rhs.is_infinite())
@@ -174,7 +200,8 @@ public:
             assert(false && "undefined operation +oo - +oo");
     }
 
-    friend BoundedZ3Expr operator*(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator*(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         if (lhs.is_zero() || rhs.is_zero()) return 0;
         else if (lhs.is_infinite() && rhs.is_infinite())
             return eq(lhs, rhs) ? plus_infinity() : minus_infinity();
@@ -186,7 +213,8 @@ public:
             return lhs.getExpr() * rhs.getExpr();
     }
 
-    friend BoundedZ3Expr operator/(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator/(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         if (rhs.is_zero()) assert(false && "divide by zero");
         else if (!lhs.is_infinite() && !rhs.is_infinite())
             return lhs.getExpr() / rhs.getExpr();
@@ -200,13 +228,14 @@ public:
 
     }
 
-    friend BoundedZ3Expr operator%(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator%(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         if (rhs.is_zero()) assert(false && "divide by zero");
         else if (!lhs.is_infinite() && !rhs.is_infinite())
             return lhs.getExpr() % rhs.getExpr();
         else if (!lhs.is_infinite() && rhs.is_infinite())
             return 0;
-            // TODO: not sure
+        // TODO: not sure
         else if (lhs.is_infinite() && !rhs.is_infinite())
             return ite(rhs.getExpr() > 0, lhs, -lhs);
         else
@@ -214,19 +243,23 @@ public:
             return eq(lhs, rhs) ? plus_infinity() : minus_infinity();
     }
 
-    friend BoundedZ3Expr operator^(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator^(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return bv2int(int2bv(64, lhs.getExpr()) ^ int2bv(64, rhs.getExpr()), true);
     }
 
-    friend BoundedZ3Expr operator&(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator&(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return bv2int(int2bv(64, lhs.getExpr()) & int2bv(64, rhs.getExpr()), true);
     }
 
-    friend BoundedZ3Expr operator|(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator|(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return bv2int(int2bv(64, lhs.getExpr()) | int2bv(64, rhs.getExpr()), true);
     }
 
-    friend BoundedZ3Expr ashr(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr ashr(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         if (lhs.is_zero())
             return lhs;
         else if (lhs.is_infinite())
@@ -237,7 +270,8 @@ public:
             return ashr(lhs.getExpr(), rhs.getExpr());
     }
 
-    friend BoundedZ3Expr shl(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr shl(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         if (lhs.is_zero())
             return lhs;
         else if (lhs.is_infinite())
@@ -248,48 +282,59 @@ public:
             return shl(lhs.getExpr(), rhs.getExpr());
     }
 
-    friend BoundedZ3Expr lshr(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr lshr(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return lshr(lhs.getExpr(), rhs.getExpr());
     }
 
-    friend BoundedZ3Expr int2bv(u32_t n, const BoundedZ3Expr &e) {
+    friend BoundedZ3Expr int2bv(u32_t n, const BoundedZ3Expr &e)
+    {
         return int2bv(n, e.getExpr());
     }
 
-    friend BoundedZ3Expr bv2int(const BoundedZ3Expr &e, bool isSigned) {
+    friend BoundedZ3Expr bv2int(const BoundedZ3Expr &e, bool isSigned)
+    {
         return bv2int(e.getExpr(), isSigned);
     }
 
-    friend BoundedZ3Expr operator&&(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator&&(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return lhs.getExpr() && rhs.getExpr();
     }
 
-    friend BoundedZ3Expr operator||(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr operator||(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return lhs.getExpr() || rhs.getExpr();
     }
 
-    friend BoundedZ3Expr operator!(const BoundedZ3Expr &lhs) {
+    friend BoundedZ3Expr operator!(const BoundedZ3Expr &lhs)
+    {
         return !lhs.getExpr();
     }
 
-    friend BoundedZ3Expr ite(const BoundedZ3Expr &cond, const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend BoundedZ3Expr ite(const BoundedZ3Expr &cond, const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return ite(cond.getExpr(), lhs.getExpr(), rhs.getExpr());
     }
 
-    friend std::ostream &operator<<(std::ostream &out, const BoundedZ3Expr &expr) {
+    friend std::ostream &operator<<(std::ostream &out, const BoundedZ3Expr &expr)
+    {
         out << expr.getExpr();
         return out;
     }
 
-    friend bool eq(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs) {
+    friend bool eq(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
+    {
         return eq(lhs.getExpr(), rhs.getExpr());
     }
 
-    inline BoundedZ3Expr simplify() const {
+    inline BoundedZ3Expr simplify() const
+    {
         return getExpr().simplify();
     }
 
-    inline bool is_true() const {
+    inline bool is_true() const
+    {
         return getExpr().is_true();
     }
     //%}
@@ -298,8 +343,10 @@ public:
 
 /// Specialise hash for ConZ3Expr
 template<>
-struct std::hash<SVF::BoundedZ3Expr> {
-    size_t operator()(const SVF::BoundedZ3Expr &z3Expr) const {
+struct std::hash<SVF::BoundedZ3Expr>
+{
+    size_t operator()(const SVF::BoundedZ3Expr &z3Expr) const
+    {
         return z3Expr.hash();
     }
 };

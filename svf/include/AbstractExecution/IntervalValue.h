@@ -107,7 +107,7 @@ public:
 
     /// Create the IntervalValue [lb, ub]
     explicit IntervalValue(NumericLiteral lb, NumericLiteral ub) : AbstractValue(AbstractValue::IntervalK),
-                                                                   _lb(std::move(lb)), _ub(std::move(ub)) {}
+        _lb(std::move(lb)), _ub(std::move(ub)) {}
 
     explicit IntervalValue(int64_t lb, int64_t ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
 
@@ -625,13 +625,18 @@ inline IntervalValue operator<(const IntervalValue &lhs, const IntervalValue &rh
         else
         {
             // lhs [1,2] rhs [3,4]
-            if (!lhs.ub().geq(rhs.lb())) {
+            if (!lhs.ub().geq(rhs.lb()))
+            {
                 return IntervalValue(1, 1);
                 // lhs [3,4] rhs [1,2]
-            } else if (!lhs.lb().leq(rhs.ub())) {
+            }
+            else if (!lhs.lb().leq(rhs.ub()))
+            {
                 return IntervalValue(0, 0);
                 // lhs [1,3] rhs [2,4]
-            } else {
+            }
+            else
+            {
                 return IntervalValue(0, 1);
             }
         }
@@ -659,13 +664,18 @@ inline IntervalValue operator>=(const IntervalValue &lhs, const IntervalValue &r
         else
         {
             // lhs [2,3] rhs [1,2]
-            if (lhs.lb().geq(rhs.ub())) {
+            if (lhs.lb().geq(rhs.ub()))
+            {
                 return IntervalValue(1, 1);
                 // lhs [1,2] rhs[3,4]
-            } else if (!lhs.ub().geq(rhs.lb())) {
+            }
+            else if (!lhs.ub().geq(rhs.lb()))
+            {
                 return IntervalValue(0, 0);
                 // lhs [1,3] rhs [2,4]
-            } else {
+            }
+            else
+            {
                 if (lhs.equals(rhs)) return IntervalValue(1, 1);
                 else return IntervalValue(0, 1);
             }
@@ -728,7 +738,7 @@ inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &r
             return IntervalValue::bottom();
         IntervalValue coeff(1 << (s32_t) shift.lb().getNumeral(),
                             shift.ub().is_infinity() ? IntervalValue::plus_infinity() : 1
-                                    << (s32_t) shift.ub().getNumeral());
+                            << (s32_t) shift.ub().getNumeral());
         return lhs * coeff;
     }
 }
