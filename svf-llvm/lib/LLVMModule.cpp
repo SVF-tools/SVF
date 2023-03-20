@@ -27,8 +27,9 @@
  *      Author: Xiaokang Fan
  */
 
-#include "Util/Options.h"
 #include <queue>
+#include <algorithm>
+#include "Util/Options.h"
 #include "SVFIR/SVFModule.h"
 #include "SVFIR/SVFModuleRW.h"
 #include "Util/SVFUtil.h"
@@ -95,7 +96,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
     double endSVFModuleTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
 
-    build_symbol_table();
+    buildSymbolTable();
 
     return svfModule.get();
 }
@@ -118,12 +119,12 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     double endSVFModuleTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
 
-    build_symbol_table();
+    buildSymbolTable();
 
     return svfModule.get();
 }
 
-void LLVMModuleSet::build_symbol_table() const
+void LLVMModuleSet::buildSymbolTable() const
 {
     double startSymInfoTime = SVFStat::getClk(true);
     if (!SVFModule::pagReadFromTXT())
@@ -134,7 +135,8 @@ void LLVMModuleSet::build_symbol_table() const
         builder.buildMemModel(svfModule.get());
     }
     double endSymInfoTime = SVFStat::getClk(true);
-    SVFStat::timeOfBuildingSymbolTable = (endSymInfoTime - startSymInfoTime)/TIMEINTERVAL;
+    SVFStat::timeOfBuildingSymbolTable =
+        (endSymInfoTime - startSymInfoTime) / TIMEINTERVAL;
 }
 
 void LLVMModuleSet::build()
@@ -158,67 +160,79 @@ void LLVMModuleSet::createSVFDataStructure()
     for (Module& mod : modules)
     {
         /// Function
-        for (Module::const_iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
+        for (const Function& func : mod.functions())
         {
-            const Function* func = &*it;
-            SVFLoopAndDomInfo* ld = new SVFLoopAndDomInfo();
-            SVFFunction* svfFunc = new SVFFunction(func->getName().str(), getSVFType(func->getType()), SVFUtil::cast<SVFFunctionType>(getSVFType(func->getFunctionType())), func->isDeclaration(), LLVMUtil::isIntrinsicFun(func), func->hasAddressTaken(), func->isVarArg(), ld);
+            SVFFunction* svfFunc = new SVFFunction(
+                func.getName().str(), getSVFType(func.getType()),
+                SVFUtil::cast<SVFFunctionType>(
+                    getSVFType(func.getFunctionType())),
+                func.isDeclaration(), LLVMUtil::isIntrinsicFun(&func),
+                func.hasAddressTaken(), func.isVarArg(), new SVFLoopAndDomInfo);
             svfModule->addFunctionSet(svfFunc);
-            addFunctionMap(func,svfFunc);
+            addFunctionMap(&func, svfFunc);
 
-            for (Function::const_arg_iterator I = func->arg_begin(), E = func->arg_end(); I != E; ++I)
+            for (const Argument& arg : func.args())
             {
-                const Argument* arg = &*I;
-                SVFArgument* svfarg = new SVFArgument(arg->getName().str(), getSVFType(arg->getType()), svfFunc, arg->getArgNo(), LLVMUtil::isArgOfUncalledFunction(arg));
+                SVFArgument* svfarg = new SVFArgument(
+                    arg.getName().str(), getSVFType(arg.getType()), svfFunc,
+                    arg.getArgNo(), LLVMUtil::isArgOfUncalledFunction(&arg));
                 svfFunc->addArgument(svfarg);
-                addArgumentMap(arg,svfarg);
+                addArgumentMap(&arg, svfarg);
             }
 
-            for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
+            for (const BasicBlock& bb : func)
             {
-                const BasicBlock* bb = &*bit;
-                SVFBasicBlock* svfBB = new SVFBasicBlock(bb->getName().str(), getSVFType(bb->getType()), svfFunc);
+                SVFBasicBlock* svfBB = new SVFBasicBlock(
+                    bb.getName().str(), getSVFType(bb.getType()), svfFunc);
                 svfFunc->addBasicBlock(svfBB);
-                addBasicBlockMap(bb,svfBB);
-                for (BasicBlock::const_iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
+                addBasicBlockMap(&bb, svfBB);
+                for (const Instruction& inst : bb)
                 {
-                    const Instruction* inst = &*iit;
                     SVFInstruction* svfInst = nullptr;
-                    if(const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
+                    if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
                     {
-                        if(LLVMUtil::isVirtualCallSite(call))
-                            svfInst = new SVFVirtualCallInst(call->getName().str(), getSVFType(call->getType()), svfBB,call->getFunctionType()->isVarArg(),inst->isTerminator());
+                        if (LLVMUtil::isVirtualCallSite(call))
+                            svfInst = new SVFVirtualCallInst(
+                                call->getName().str(),
+                                getSVFType(call->getType()), svfBB,
+                                call->getFunctionType()->isVarArg(),
+                                inst.isTerminator());
                         else
-                            svfInst = new SVFCallInst(call->getName().str(), getSVFType(call->getType()), svfBB,call->getFunctionType()->isVarArg(),inst->isTerminator());
+                            svfInst = new SVFCallInst(
+                                call->getName().str(),
+                                getSVFType(call->getType()), svfBB,
+                                call->getFunctionType()->isVarArg(),
+                                inst.isTerminator());
                     }
                     else
                     {
-                        svfInst = new SVFInstruction(inst->getName().str(),getSVFType(inst->getType()), svfBB, inst->isTerminator(), SVFUtil::isa<ReturnInst>(inst));
+                        svfInst = new SVFInstruction(
+                            inst.getName().str(), getSVFType(inst.getType()),
+                            svfBB, inst.isTerminator(),
+                            SVFUtil::isa<ReturnInst>(inst));
                     }
                     svfBB->addInstruction(svfInst);
-                    addInstructionMap(inst,svfInst);
+                    addInstructionMap(&inst, svfInst);
                 }
             }
         }
 
         /// GlobalVariable
-        for (Module::const_global_iterator it = mod.global_begin(),
-                eit = mod.global_end(); it != eit; ++it)
+        for (const GlobalVariable& global :  mod.globals())
         {
-            const GlobalVariable* global = &*it;
-            SVFGlobalValue* svfglobal = new SVFGlobalValue(global->getName().str(), getSVFType(global->getType()));
+            SVFGlobalValue* svfglobal = new SVFGlobalValue(
+                global.getName().str(), getSVFType(global.getType()));
             svfModule->addGlobalSet(svfglobal);
-            addGlobalValueMap(global,svfglobal);
+            addGlobalValueMap(&global, svfglobal);
         }
 
         /// GlobalAlias
-        for (Module::const_alias_iterator it = mod.alias_begin(),
-                eit = mod.alias_end(); it != eit; ++it)
+        for (const GlobalAlias& alias : mod.aliases())
         {
-            const GlobalAlias *alias = &*it;
-            SVFGlobalValue* svfalias = new SVFGlobalValue(alias->getName().str(), getSVFType(alias->getType()));
+            SVFGlobalValue* svfalias = new SVFGlobalValue(
+                alias.getName().str(), getSVFType(alias.getType()));
             svfModule->addAliasSet(svfalias);
-            addGlobalValueMap(alias,svfalias);
+            addGlobalValueMap(&alias, svfalias);
         }
     }
 }
@@ -228,15 +242,14 @@ void LLVMModuleSet::initSVFFunction()
     for (Module& mod : modules)
     {
         /// Function
-        for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
+        for (const Function& f : mod.functions())
         {
-            const Function* f = &*it;
-            SVFFunction* svffun = getSVFFunction(f);
-            initSVFBasicBlock(f);
+            SVFFunction* svffun = getSVFFunction(&f);
+            initSVFBasicBlock(&f);
 
-            if (SVFUtil::isExtCall(svffun) == false)
+            if (!SVFUtil::isExtCall(svffun))
             {
-                initDomTree(svffun, f);
+                initDomTree(svffun, &f);
             }
         }
     }
@@ -554,36 +567,34 @@ std::vector<const Function* > LLVMModuleSet::getLLVMGlobalFunctions(const Global
 
 void LLVMModuleSet::addSVFMain()
 {
-    std::vector<const Function* > ctor_funcs;
-    std::vector<const Function* > dtor_funcs;
-    Function*  orgMain = 0;
+    std::vector<const Function*> ctor_funcs;
+    std::vector<const Function*> dtor_funcs;
+    Function* orgMain = 0;
     Module* mainMod = nullptr;
 
     for (Module &mod : modules)
     {
         // Collect ctor and dtor functions
-        for (Module::global_iterator it = mod.global_begin(), eit = mod.global_end(); it != eit; ++it)
+        for (const GlobalVariable& global : mod.globals())
         {
-            const GlobalVariable *global = &*it;
-
-            if (global->getName().equals(SVF_GLOBAL_CTORS) &&
-                    global->hasInitializer())
+            if (global.getName().equals(SVF_GLOBAL_CTORS) && global.hasInitializer())
             {
-                ctor_funcs = getLLVMGlobalFunctions(global);
+                ctor_funcs = getLLVMGlobalFunctions(&global);
             }
-            else if (global->getName().equals(SVF_GLOBAL_DTORS) &&
-                     global->hasInitializer())
+            else if (global.getName().equals(SVF_GLOBAL_DTORS) && global.hasInitializer())
             {
-                dtor_funcs = getLLVMGlobalFunctions(global);
+                dtor_funcs = getLLVMGlobalFunctions(&global);
             }
         }
 
         // Find main function
         for (auto &func : mod)
         {
-            if (func.getName().equals(SVF_MAIN_FUNC_NAME))
-                assert(false && SVF_MAIN_FUNC_NAME " already defined");
-            if(func.getName().equals("main"))
+            auto funName = func.getName();
+
+            assert(!funName.equals(SVF_MAIN_FUNC_NAME) && SVF_MAIN_FUNC_NAME " already defined");
+
+            if (funName.equals("main"))
             {
                 orgMain = &func;
                 mainMod = &mod;
@@ -597,10 +608,10 @@ void LLVMModuleSet::addSVFMain()
             (ctor_funcs.size() > 0 || dtor_funcs.size() > 0))
     {
         assert(mainMod && "Module with main function not found.");
-        Module & M = *mainMod;
+        Module& M = *mainMod;
         // char **
-        Type*  i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
-        Type*  i32 = IntegerType::getInt32Ty(M.getContext());
+        Type* i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
+        Type* i32 = IntegerType::getInt32Ty(M.getContext());
         // define void @svf.main(i32, i8**, i8**)
 #if (LLVM_VERSION_MAJOR >= 9)
         FunctionCallee svfmainFn = M.getOrInsertFunction(
@@ -621,7 +632,7 @@ void LLVMModuleSet::addSVFMain()
         IRBuilder Builder(block);
         // emit "call void @ctor()". ctor_funcs is sorted so the functions are
         // emitted in the order of priority
-        for(auto & ctor: ctor_funcs)
+        for (auto& ctor : ctor_funcs)
         {
             auto target = M.getOrInsertFunction(
                               ctor->getName(),
@@ -632,18 +643,15 @@ void LLVMModuleSet::addSVFMain()
         // main() should be called after all ctor functions and before dtor
         // functions.
         Function::arg_iterator arg_it = svfmain->arg_begin();
-        Value*  args[] = {arg_it, arg_it + 1, arg_it + 2 };
+        Value* args[] = {arg_it, arg_it + 1, arg_it + 2};
         size_t cnt = orgMain->arg_size();
         assert(cnt <= 3 && "Too many arguments for main()");
-        Builder.CreateCall(orgMain, llvm::ArrayRef<Value*>(args,args + cnt));
+        Builder.CreateCall(orgMain, llvm::ArrayRef<Value*>(args, args + cnt));
         // emit "call void @dtor()". dtor_funcs is sorted so the functions are
         // emitted in the order of priority
-        for (auto &dtor : dtor_funcs)
+        for (auto& dtor : dtor_funcs)
         {
-            auto target = M.getOrInsertFunction(
-                              dtor->getName(),
-                              Type::getVoidTy(M.getContext())
-                          );
+            auto target = M.getOrInsertFunction(dtor->getName(), Type::getVoidTy(M.getContext()));
             Builder.CreateCall(target);
         }
         // return;
@@ -662,107 +670,79 @@ void LLVMModuleSet::buildFunToFunMap()
     for (Module& mod : modules)
     {
         /// Function
-        for (Module::iterator it = mod.begin(), eit = mod.end(); it != eit; ++it)
+        for (const Function& fun : mod.functions())
         {
-            const Function* fun = &*it;
-            if (fun->isDeclaration())
+            if (fun.isDeclaration())
             {
-                funDecls.insert(fun);
-                declNames.insert(fun->getName().str());
+                funDecls.insert(&fun);
+                declNames.insert(fun.getName().str());
             }
             else
             {
-                funDefs.insert(fun);
-                defNames.insert(fun->getName().str());
+                funDefs.insert(&fun);
+                defNames.insert(fun.getName().str());
             }
         }
     }
     // Find the intersectNames
-    OrderedSet<string>::iterator declIter, defIter;
-    declIter = declNames.begin();
-    defIter = defNames.begin();
-    while (declIter != declNames.end() && defIter != defNames.end())
-    {
-        if (*declIter < *defIter)
-        {
-            declIter++;
-        }
-        else
-        {
-            if (!(*defIter < *declIter))
-            {
-                intersectNames.insert(*declIter);
-                declIter++;
-            }
-            defIter++;
-        }
-    }
+    std::set_intersection(
+        declNames.begin(), declNames.end(), defNames.begin(), defNames.end(),
+        std::inserter(intersectNames, intersectNames.end()));
 
     ///// name to def map
     NameToFunDefMapTy nameToFunDefMap;
-    for (Set<const Function*>::iterator it = funDefs.begin(),
-            eit = funDefs.end(); it != eit; ++it)
+    for (const Function* fdef : funDefs)
     {
-        const Function* fdef = *it;
         string funName = fdef->getName().str();
-        if (intersectNames.find(funName) == intersectNames.end())
-            continue;
-        nameToFunDefMap[funName] = fdef;
+        if (intersectNames.find(funName) != intersectNames.end())
+        {
+            nameToFunDefMap.emplace(std::move(funName), fdef);
+        }
     }
 
     ///// name to decls map
     NameToFunDeclsMapTy nameToFunDeclsMap;
-    for (Set<const Function*>::iterator it = funDecls.begin(),
-            eit = funDecls.end(); it != eit; ++it)
+    for (const Function* fdecl : funDecls)
     {
-        const Function* fdecl = *it;
         string funName = fdecl->getName().str();
-        if (intersectNames.find(funName) == intersectNames.end())
-            continue;
-        NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
-        if (mit == nameToFunDeclsMap.end())
+        if (intersectNames.find(funName) != intersectNames.end())
         {
-            Set<const Function*> decls;
-            decls.insert(fdecl);
-            nameToFunDeclsMap[funName] = decls;
-        }
-        else
-        {
-            Set<const Function*> &decls = mit->second;
-            decls.insert(fdecl);
+            // pair with key funName will be created automatically if it does
+            // not exist
+            nameToFunDeclsMap[std::move(funName)].insert(fdecl);
         }
     }
 
     /// Fun decl --> def
-    for (Set<const Function*>::iterator it = funDecls.begin(),
-            eit = funDecls.end(); it != eit; ++it)
+    for (const Function* fdecl : funDecls)
     {
-        const Function* fdecl = *it;
         string funName = fdecl->getName().str();
-        if (intersectNames.find(funName) == intersectNames.end())
-            continue;
-        NameToFunDefMapTy::iterator mit = nameToFunDefMap.find(funName);
-        if (mit == nameToFunDefMap.end())
-            continue;
-        FunDeclToDefMap[fdecl] = mit->second;
+        NameToFunDefMapTy::iterator mit;
+        if (intersectNames.find(funName) != intersectNames.end() &&
+                (mit = nameToFunDefMap.find(funName)) != nameToFunDefMap.end())
+        {
+            FunDeclToDefMap[fdecl] = mit->second;
+        }
     }
 
     /// Fun def --> decls
-    for (Set<const Function*>::iterator it = funDefs.begin(),
-            eit = funDefs.end(); it != eit; ++it)
+    for (const Function* fdef : funDefs)
     {
-        const Function* fdef = *it;
         string funName = fdef->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
         NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
         if (mit == nameToFunDeclsMap.end())
             continue;
+
         std::vector<const Function*>& decls = FunDefToDeclsMap[fdef];
-        for (Set<const Function*>::iterator sit = mit->second.begin(),
-                seit = mit->second.end(); sit != seit; ++sit)
+        const auto& declsSet = mit->second;
+        // Reserve space for decls to avoid more than 1 reallocation
+        decls.reserve(decls.size() + declsSet.size());
+
+        for (const Function* decl : declsSet)
         {
-            decls.push_back(*sit);
+            decls.push_back(decl);
         }
     }
 }
@@ -774,35 +754,22 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
     for (Module &mod : modules)
     {
         // Collect ctor and dtor functions
-        for (Module::global_iterator it = mod.global_begin(), eit = mod.global_end(); it != eit; ++it)
+        for (GlobalVariable& global : mod.globals())
         {
-            GlobalVariable *global = &*it;
-            if (global->hasPrivateLinkage())
+            if (global.hasPrivateLinkage())
                 continue;
-            string name = global->getName().str();
+            string name = global.getName().str();
             if (name.empty())
                 continue;
-            NameToGlobalsMapTy::iterator mit = nameToGlobalsMap.find(name);
-            if (mit == nameToGlobalsMap.end())
-            {
-                Set<GlobalVariable*> globals;
-                globals.insert(global);
-                nameToGlobalsMap[name] = globals;
-            }
-            else
-            {
-                Set<GlobalVariable*> &globals = mit->second;
-                globals.insert(global);
-            }
+            nameToGlobalsMap[std::move(name)].insert(&global);
         }
     }
 
-    for (NameToGlobalsMapTy::iterator it = nameToGlobalsMap.begin(),
-            eit = nameToGlobalsMap.end(); it != eit; ++it)
+    for (const auto& pair : nameToGlobalsMap)
     {
-        Set<GlobalVariable*> &globals = it->second;
+        const Set<GlobalVariable*> &globals = pair.second;
 
-        auto repIt =
+        const auto repIt =
             std::find_if(globals.begin(), globals.end(),
                          [](GlobalVariable* g)
         {
@@ -815,10 +782,15 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
             : (assert(!globals.empty() && "Empty global set"),
                *globals.begin());
 
-        for (Set<GlobalVariable*>::iterator sit = globals.begin(),
+        for (Set<GlobalVariable*>::const_iterator sit = globals.begin(),
                 seit = globals.end(); sit != seit; ++sit)
         {
             GlobalVariable *cur = *sit;
+            GlobalDefToRepMap[cur] = rep;
+        }
+
+        for (const GlobalVariable* cur : globals)
+        {
             GlobalDefToRepMap[cur] = rep;
         }
     }

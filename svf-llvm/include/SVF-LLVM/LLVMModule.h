@@ -352,7 +352,7 @@ private:
     /// Invoke llvm passes to modify module
     void prePassSchedule();
     bool preProcessed;
-    void build_symbol_table() const;
+    void buildSymbolTable() const;
 };
 
 } // End namespace SVF
