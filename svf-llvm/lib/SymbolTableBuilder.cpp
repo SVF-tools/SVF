@@ -50,7 +50,7 @@ MemObj* SymbolTableBuilder::createBlkObj(SymID symId)
     LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
     MemObj* obj =
         new MemObj(symId, symInfo->createObjTypeInfo(llvmset->getSVFType(
-                              IntegerType::get(llvmset->getContext(), 32))));
+                       IntegerType::get(llvmset->getContext(), 32))));
     symInfo->objMap[symId] = obj;
     return obj;
 }
@@ -62,7 +62,7 @@ MemObj* SymbolTableBuilder::createConstantObj(SymID symId)
     LLVMModuleSet* llvmset = LLVMModuleSet::getLLVMModuleSet();
     MemObj* obj =
         new MemObj(symId, symInfo->createObjTypeInfo(llvmset->getSVFType(
-                              IntegerType::get(llvmset->getContext(), 32))));
+                       IntegerType::get(llvmset->getContext(), 32))));
     symInfo->objMap[symId] = obj;
     return obj;
 }
@@ -466,7 +466,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         }
         else
         {
-            assert(SVFUtil::isa<ConstantExpr>(val) &&
+            assert(!SVFUtil::isa<ConstantExpr>(val) &&
                    "we don't handle all other constant expression for now!");
             collectVal(ref);
         }

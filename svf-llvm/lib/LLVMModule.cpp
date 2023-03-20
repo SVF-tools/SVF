@@ -719,7 +719,7 @@ void LLVMModuleSet::buildFunToFunMap()
         string funName = fdecl->getName().str();
         NameToFunDefMapTy::iterator mit;
         if (intersectNames.find(funName) != intersectNames.end() &&
-            (mit = nameToFunDefMap.find(funName)) != nameToFunDefMap.end())
+                (mit = nameToFunDefMap.find(funName)) != nameToFunDefMap.end())
         {
             FunDeclToDefMap[fdecl] = mit->second;
         }
