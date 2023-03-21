@@ -179,6 +179,7 @@ public:
             return lhs;
         else
             assert(false && "undefined operation +oo + -oo");
+        abort();
     }
 
     friend BoundedZ3Expr operator-(const BoundedZ3Expr &lhs)
@@ -198,6 +199,7 @@ public:
             return lhs;
         else
             assert(false && "undefined operation +oo - +oo");
+        abort();
     }
 
     friend BoundedZ3Expr operator*(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
@@ -225,7 +227,7 @@ public:
         else
             // TODO: +oo/-oo L'Hôpital's rule?
             return eq(lhs, rhs) ? plus_infinity() : minus_infinity();
-
+        abort();
     }
 
     friend BoundedZ3Expr operator%(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
@@ -241,6 +243,7 @@ public:
         else
             // TODO: +oo/-oo L'Hôpital's rule?
             return eq(lhs, rhs) ? plus_infinity() : minus_infinity();
+        abort();
     }
 
     friend BoundedZ3Expr operator^(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)

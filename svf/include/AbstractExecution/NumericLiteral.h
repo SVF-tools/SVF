@@ -140,6 +140,7 @@ public:
         else
         {
             assert(false && "other literal?");
+            abort();
         }
     }
 
