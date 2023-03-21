@@ -408,7 +408,7 @@ private:
     cJSON* toJson(const LocationSet& ls);
     cJSON* toJson(const SVFLoop* loop);
     cJSON* toJson(const MemObj* memObj);
-    cJSON* toJson(const ObjTypeInfo* objTypeInfo); // Ensures ownership
+    cJSON* toJson(const ObjTypeInfo* objTypeInfo); // Only owned by MemObj
     cJSON* toJson(const SVFLoopAndDomInfo* ldInfo); // Only owned by SVFFunction
     cJSON* toJson(const StInfo* type); // Ensure Only owned by SVFType
 
