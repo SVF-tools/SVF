@@ -157,7 +157,7 @@ void LLVMModuleSet::build()
 void LLVMModuleSet::createSVFDataStructure()
 {
 
-    for (Module& mod : modules)
+    for (const Module& mod : modules)
     {
         /// Function
         for (const Function& func : mod.functions())
@@ -325,49 +325,35 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
     LLVMUtil::getFunReachableBBs(fun, reachableBBs);
     ld->setReachableBBs(reachableBBs);
 
-    for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit)
+    for (const BasicBlock &bb : fun->getBasicBlockList())
     {
-        const BasicBlock* bb = &*bit;
-        SVFBasicBlock* svf_bb = getSVFBasicBlock(bb);
-        if(DomTreeNode *dtNode = dt.getNode(const_cast<BasicBlock*>(bb)))
+        SVFBasicBlock* svfBB = getSVFBasicBlock(&bb);
+        if (DomTreeNode* dtNode = dt.getNode(&bb))
         {
-            DomTreeNode::iterator DI = dtNode->begin();
-            if (DI != dtNode->end())
+            SVFLoopAndDomInfo::BBSet& bbSet = ld->getDomTreeMap()[svfBB];
+            for (const auto domBB : *dtNode)
             {
-                for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end(); DI != DE; ++DI)
-                {
-                    const SVFBasicBlock* dombb = getSVFBasicBlock((*DI)->getBlock());
-                    ld->getDomTreeMap()[svf_bb].insert(dombb);
-                }
-            }
-            else
-            {
-                ld->getDomTreeMap()[svf_bb] = Set<const SVFBasicBlock* >();
+                const auto* domSVFBB = getSVFBasicBlock(domBB->getBlock());
+                bbSet.insert(domSVFBB);
             }
         }
 
-        if(DomTreeNode * pdtNode = pdt.getNode(const_cast<BasicBlock*>(bb)))
+        if (DomTreeNode* pdtNode = pdt.getNode(&bb))
         {
-            DomTreeNode::iterator DI = pdtNode->begin();
-            if (DI != pdtNode->end())
+            SVFLoopAndDomInfo::BBSet& bbSet = ld->getPostDomTreeMap()[svfBB];
+            for (const auto domBB : *pdtNode)
             {
-                for (DomTreeNode::iterator DI = pdtNode->begin(), DE = pdtNode->end(); DI != DE; ++DI)
-                {
-                    const SVFBasicBlock* dombb = getSVFBasicBlock((*DI)->getBlock());
-                    ld->getPostDomTreeMap()[svf_bb].insert(dombb);
-                }
-            }
-            else
-            {
-                ld->getPostDomTreeMap()[svf_bb] = Set<const SVFBasicBlock* >();
+                const auto* domSVFBB = getSVFBasicBlock(domBB->getBlock());
+                bbSet.insert(domSVFBB);
             }
         }
-        if (const Loop *loop = loopInfo.getLoopFor(bb))
+
+        if (const Loop* loop = loopInfo.getLoopFor(&bb))
         {
-            for (BasicBlock* loopBlock:loop->getBlocks())
+            for (const BasicBlock* loopBlock : loop->getBlocks())
             {
                 const SVFBasicBlock* loopbb = getSVFBasicBlock(loopBlock);
-                ld->addToBB2LoopMap(svf_bb,loopbb);
+                ld->addToBB2LoopMap(svfBB, loopbb);
             }
         }
     }
@@ -781,13 +767,6 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
             // When there is no initializer, just pick the first one.
             : (assert(!globals.empty() && "Empty global set"),
                *globals.begin());
-
-        for (Set<GlobalVariable*>::const_iterator sit = globals.begin(),
-                seit = globals.end(); sit != seit; ++sit)
-        {
-            GlobalVariable *cur = *sit;
-            GlobalDefToRepMap[cur] = rep;
-        }
 
         for (const GlobalVariable* cur : globals)
         {
