@@ -1422,21 +1422,23 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
                             src = stripConstantCasts(gep->getPointerOperand());
 
-                        auto getHookFn = [](const Value* src)->const Function*{
+                        auto getHookFn = [](const Value* src)->const Function*
+                        {
                             if (!SVFUtil::isa<GlobalVariable>(src))
                                 return nullptr;
-                            
+
                             auto *glob = SVFUtil::cast<GlobalVariable>(src);
                             if (!glob->hasInitializer() || !SVFUtil::isa<ConstantDataArray>(glob->getInitializer()))
                                 return nullptr;
-                            
+
                             auto *constarray = SVFUtil::cast<ConstantDataArray>(glob->getInitializer());
                             return LLVMUtil::getProgFunction(constarray->getAsCString().str());
                         };
 
-                        if (const Function *fn = getHookFn(src)) {
+                        if (const Function *fn = getHookFn(src))
+                        {
                             NodeID srcNode = getValueNode(fn);
-                            addCopyEdge(srcNode,  getValueNode(cs));                            
+                            addCopyEdge(srcNode,  getValueNode(cs));
                         }
                     }
                     else if (op.getOperator() == "Rb_tree_ops")
