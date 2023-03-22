@@ -1421,16 +1421,22 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         const Value* src = cs->getArgOperand(1);
                         if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
                             src = stripConstantCasts(gep->getPointerOperand());
-                        if(const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(src))
-                        {
-                            if(const ConstantDataArray* constarray = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer()))
-                            {
-                                if(const Function* fun = LLVMUtil::getProgFunction(constarray->getAsCString().str()))
-                                {
-                                    NodeID srcNode = getValueNode(fun);
-                                    addCopyEdge(srcNode,  getValueNode(cs));
-                                }
-                            }
+
+                        auto getHookFn = [](const Value* src)->const Function*{
+                            if (!SVFUtil::isa<GlobalVariable>(src))
+                                return nullptr;
+                            
+                            auto *glob = SVFUtil::cast<GlobalVariable>(src);
+                            if (!glob->hasInitializer() || !SVFUtil::isa<ConstantDataArray>(glob->getInitializer()))
+                                return nullptr;
+                            
+                            auto *constarray = SVFUtil::cast<ConstantDataArray>(glob->getInitializer());
+                            return LLVMUtil::getProgFunction(constarray->getAsCString().str());
+                        };
+
+                        if (const Function *fn = getHookFn(src)) {
+                            NodeID srcNode = getValueNode(fn);
+                            addCopyEdge(srcNode,  getValueNode(cs));                            
                         }
                     }
                     else if (op.getOperator() == "Rb_tree_ops")
