@@ -76,12 +76,12 @@ static std::string getJsonFile(const std::string& path)
 #ifdef linux
         // Linux os
         os_flag = 0;
-        jsonFilePath.append("/svf-lib/SVF-linux");
+        jsonFilePath.append("/svf-lib/SVF-linux/");
 #endif
         // Mac os
         if (os_flag == 1)
         {
-            jsonFilePath.append("/svf-lib/SVF-osx");
+            jsonFilePath.append("/svf-lib/SVF-osx/");
         }
     }
     jsonFilePath.append(EXTAPI_JSON_PATH);
