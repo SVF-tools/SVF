@@ -84,6 +84,7 @@ static std::string getJsonFile(const std::string& path)
             jsonFilePath.append("/svf-lib/SVF-osx");
         }
     }
+    if (jsonFilePath.back() != '/') jsonFilePath.push_back('/');
     jsonFilePath.append(EXTAPI_JSON_PATH);
     return jsonFilePath;
 }
@@ -164,7 +165,7 @@ ExtAPI* ExtAPI::getExtAPI(const std::string& path)
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
-        SVFUtil::errs() << "No JsonFile found at " << jsonFilePath << " for getExtAPI() \n";
+        SVFUtil::errs() << "No JsonFile found at " << jsonFilePath << " for getExtAPI(); set $SVF_DIR first!\n";
         abort();
     }
     return extOp;
