@@ -164,7 +164,7 @@ ExtAPI* ExtAPI::getExtAPI(const std::string& path)
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
         }
-        SVFUtil::errs() << "Failed to open any JsonFile for getExtAPI()\n";
+        SVFUtil::errs() << "No JsonFile found at " << jsonFilePath << " for getExtAPI() \n";
         abort();
     }
     return extOp;
