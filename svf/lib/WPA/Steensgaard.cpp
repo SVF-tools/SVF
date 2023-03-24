@@ -105,13 +105,13 @@ void Steensgaard::ecUnion(NodeID node, NodeID ec)
 void Steensgaard::processAllAddr()
 {
     for (ConstraintGraph::const_iterator nodeIt = consCG->begin(),
-                                         nodeEit = consCG->end();
-         nodeIt != nodeEit; nodeIt++)
+            nodeEit = consCG->end();
+            nodeIt != nodeEit; nodeIt++)
     {
         ConstraintNode* cgNode = nodeIt->second;
         for (ConstraintNode::const_iterator it = cgNode->incomingAddrsBegin(),
-                                            eit = cgNode->incomingAddrsEnd();
-             it != eit; ++it)
+                eit = cgNode->incomingAddrsEnd();
+                it != eit; ++it)
         {
             numOfProcessedAddr++;
 
@@ -133,19 +133,19 @@ bool Steensgaard::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     onTheFlyCallGraphSolve(callsites, newEdges);
     NodePairSet cpySrcNodes; /// nodes as a src of a generated new copy edge
     for (CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end();
-         it != eit; ++it)
+            it != eit; ++it)
     {
         CallSite cs = SVFUtil::getSVFCallSite(it->first->getCallSite());
         for (FunctionSet::iterator cit = it->second.begin(),
-                                   ecit = it->second.end();
-             cit != ecit; ++cit)
+                ecit = it->second.end();
+                cit != ecit; ++cit)
         {
             connectCaller2CalleeParams(cs, *cit, cpySrcNodes);
         }
     }
     for (NodePairSet::iterator it = cpySrcNodes.begin(),
-                               eit = cpySrcNodes.end();
-         it != eit; ++it)
+            eit = cpySrcNodes.end();
+            it != eit; ++it)
     {
         pushIntoWorklist(it->first);
     }
@@ -188,13 +188,13 @@ void Steensgaard::heapAllocatorViaIndCall(CallSite cs, NodePairSet& cpySrcNodes)
  * Connect formal and actual parameters for indirect callsites
  */
 void Steensgaard::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F,
-                                             NodePairSet& cpySrcNodes)
+        NodePairSet& cpySrcNodes)
 {
     assert(F);
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect callsite "
-                            << cs.getInstruction()->toString() << " to callee "
-                            << *F << "\n");
+          << cs.getInstruction()->toString() << " to callee "
+          << *F << "\n");
 
     CallICFGNode* callBlockNode =
         pag->getICFG()->getCallICFGNode(cs.getInstruction());
@@ -202,7 +202,7 @@ void Steensgaard::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F,
         pag->getICFG()->getRetICFGNode(cs.getInstruction());
 
     if (SVFUtil::isHeapAllocExtFunViaRet(F) &&
-        pag->callsiteHasRet(retBlockNode))
+            pag->callsiteHasRet(retBlockNode))
     {
         heapAllocatorViaIndCall(cs, cpySrcNodes);
     }
@@ -254,7 +254,7 @@ void Steensgaard::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F,
             if (cs_arg->isPointer() && fun_arg->isPointer())
             {
                 DBOUT(DAndersen, outs() << "process actual parm  "
-                                        << cs_arg->toString() << " \n");
+                      << cs_arg->toString() << " \n");
                 NodeID srcAA = getEC(cs_arg->getId());
                 NodeID dstFA = getEC(fun_arg->getId());
                 if (addCopyEdge(srcAA, dstFA))

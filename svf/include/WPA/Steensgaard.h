@@ -118,9 +118,9 @@ public:
 
 protected:
     CallSite2DummyValPN
-        callsite2DummyValPN; ///< Map an instruction to a dummy obj which
-                             ///< created at an indirect callsite, which invokes
-                             ///< a heap allocator
+    callsite2DummyValPN; ///< Map an instruction to a dummy obj which
+    ///< created at an indirect callsite, which invokes
+    ///< a heap allocator
     void heapAllocatorViaIndCall(CallSite cs, NodePairSet& cpySrcNodes);
 
     /// Update call graph for the input indirect callsites
