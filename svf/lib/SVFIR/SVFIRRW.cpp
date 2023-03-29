@@ -8,6 +8,24 @@ static const Option<bool> humanReadableOption(
 
 namespace SVF
 {
+static MemObj* createMemObj()
+{
+    return new MemObj({}, {});
+}
+
+/// @brief Helper function to create a new empty SVFType instance
+static SVFType* createSVFType(SVFType::SVFTyKind kind)
+{
+    // TODO
+    return nullptr;
+}
+
+// /// @brief Helper function to create a new empty SVFValue instance
+// static SVFValue* createSVFValue(SVFValue::SVFValKind kind)
+// {
+//     // TODO
+//     return nullptr;
+// }
 
 cJSON* SVFIRWriter::toJson(unsigned number)
 {
@@ -570,10 +588,6 @@ cJSON* SVFIRWriter::contentToJson(const SymbolTableInfo* symTable)
 {
     // Owns values of objMap & svfTypes (?)
     cJSON* root = jsonCreateObject();
-    JSON_WRITE_FIELD(root, symTable, valSymMap);
-    JSON_WRITE_FIELD(root, symTable, objSymMap);
-    JSON_WRITE_FIELD(root, symTable, returnSymMap);
-    JSON_WRITE_FIELD(root, symTable, varargSymMap);
 
     // objMap
     cJSON* objMap = jsonCreateMap();
@@ -586,12 +600,25 @@ cJSON* SVFIRWriter::contentToJson(const SymbolTableInfo* symTable)
         cJSON* valueJson = contentToJson(memObj);
         jsonAddPairToMap(objMap, keyJson, valueJson);
     }
-    jsonAddItemToObject(root, "objMap", objMap);
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(objMap));
 
+    // svfTypes
+    cJSON* allSvfTypes = jsonCreateArray();
+    for (const SVFType *svfType : symbolTableInfoWriter.svfTypePool.getPool())
+    {
+        cJSON* svfTypeObj = contentToJson(svfType);
+        jsonAddItemToArray(allSvfTypes, svfTypeObj);
+    }
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(allSvfTypes));
+
+    JSON_WRITE_FIELD(root, symTable, valSymMap);
+    JSON_WRITE_FIELD(root, symTable, objSymMap);
+    JSON_WRITE_FIELD(root, symTable, returnSymMap);
+    JSON_WRITE_FIELD(root, symTable, varargSymMap);
     // TODO: Check symTable->module == module
     JSON_WRITE_FIELD(root, symTable, modelConstants);
     JSON_WRITE_FIELD(root, symTable, totalSymNum);
-    JSON_WRITE_FIELD(root, symTable, svfTypes);
+
     return root;
 }
 
@@ -728,10 +755,48 @@ cJSON* jsonCreateNullId()
     return cJSON_CreateNull();
 }
 
+bool jsonIsNumber(const cJSON* item)
+{
+    return cJSON_IsNumber(item);
+}
+
 bool jsonIsNullId(const cJSON* item)
 {
     // TODO: optimize
     return cJSON_IsNull(item);
+}
+
+bool jsonIsArray(const cJSON* item)
+{
+    return cJSON_IsArray(item);
+}
+
+bool jsonIsMap(const cJSON* item)
+{
+    return cJSON_IsArray(item);
+}
+
+bool jsonIsObject(const cJSON* item)
+{
+    return humanReadableOption() ? cJSON_IsObject(item) : cJSON_IsArray(item);
+}
+
+bool jsonKeyEquals(const cJSON* item, const char* key)
+{
+    return !(humanReadableOption() && std::strcmp(key, item->string));
+}
+
+void jsonUnpackPair(const cJSON* item, const cJSON*& key,
+                       const cJSON*& value)
+{
+    ABORT_IFNOT(jsonIsArray(item), "Expected array as map pair");
+    cJSON* child_fst = item->child;
+    ABORT_IFNOT(child_fst != nullptr, "Missing first child of map pair");
+    cJSON* child_snd = child_fst->next;
+    ABORT_IFNOT(child_snd != nullptr, "Missing first child of map pair");
+    ABORT_IFNOT(child_snd->next == nullptr, "Too many children of map pair");
+    key = child_fst;
+    value = child_snd;
 }
 
 cJSON* jsonCreateObject()
@@ -799,6 +864,25 @@ ICFGWriter::ICFGWriter(const ICFG* icfg) : GenericICFGWriter(icfg)
     }
 }
 
+SymbolTableInfoWriter::SymbolTableInfoWriter(const SymbolTableInfo* symTab)
+{
+    assert(symTab && "SymbolTableInfo is null!");
+
+    for (const auto& pair : symTab->idToObjMap())
+    {
+        const SymID id = pair.first;
+        const MemObj* obj = pair.second;
+        memObjToID.emplace(obj, id);
+    }
+
+    const auto& svfTypes = symTab->getSVFTypes();
+    svfTypePool.reserve(svfTypes.size());
+    for (const SVFType* type : svfTypes)
+    {
+        svfTypePool.saveID(type);
+    }
+}
+
 SymID SymbolTableInfoWriter::getMemObjID(const MemObj* memObj)
 {
     auto it = memObjToID.find(memObj);
@@ -806,20 +890,7 @@ SymID SymbolTableInfoWriter::getMemObjID(const MemObj* memObj)
     return it->second;
 }
 
-SymbolTableInfoWriter::SymbolTableInfoWriter(const SymbolTableInfo* symTab)
-    : symbolTableInfo(symTab)
-{
-    assert(symbolTableInfo && "SymbolTableInfo is null!");
-
-    for (const auto& pair : symbolTableInfo->idToObjMap())
-    {
-        const SymID id = pair.first;
-        const MemObj* obj = pair.second;
-        memObjToID.emplace(obj, id);
-    }
-}
-
-size_t SVFModuleWriter::getSvfTypeID(const SVFType* type)
+size_t SymbolTableInfoWriter::getSvfTypeID(const SVFType* type)
 {
     return svfTypePool.getID(type);
 }
@@ -879,6 +950,11 @@ SVFIRWriter::autoJSON SVFIRWriter::generateJson()
 {
     cJSON* root = jsonCreateObject();
 
+    cJSON* allStInfos = jsonCreateArray();
+    for (const StInfo* stInfo : stInfoPool.getPool())
+        jsonAddItemToArray(allStInfos, contentToJson(stInfo));
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(allStInfos));
+
 #define F(field) JSON_WRITE_FIELD(root, svfIR, field)
     F(icfgNode2SVFStmtsMap);
     F(icfgNode2PTASVFStmtsMap);
@@ -901,12 +977,18 @@ SVFIRWriter::autoJSON SVFIRWriter::generateJson()
     F(svfModule); // Keep this last one
 #undef F
 
+    for (const StInfo* stInfo : stInfoPool.getPool())
+    {
+        cJSON* stInfoObj = contentToJson(stInfo);
+        jsonAddItemToArray(allStInfos, stInfoObj);
+    }
+
     return {root, cJSON_Delete};
 }
 
 cJSON* SVFIRWriter::toJson(const SVFType* type)
 {
-    return jsonCreateIndex(svfModuleWriter.getSvfTypeID(type));
+    return jsonCreateIndex(symbolTableInfoWriter.getSvfTypeID(type));
 }
 
 cJSON* SVFIRWriter::toJson(const SVFValue* value)
@@ -926,7 +1008,8 @@ cJSON* SVFIRWriter::toJson(const IRGraph* graph)
     F(nodeNumAfterPAGBuild);
     F(totalPTAPAGEdge);
     F(valueToEdgeMap);
-    jsonAddContentToObject(root, "symInfo", graph->symInfo);
+    const SymbolTableInfo* symInfo = graph->symInfo;
+    jsonAddContentToObject(root, FIELD_NAME_ITEM(symInfo));
 #undef F
     return root;
 }
@@ -945,6 +1028,14 @@ cJSON* SVFIRWriter::toJson(const SVFStmt* stmt)
 cJSON* SVFIRWriter::toJson(const ICFG* icfg)
 {
     cJSON* root = genericGraphToJson(icfg, icfgWriter.edgePool.getPool());
+
+    cJSON* allSvfLoops = jsonCreateArray(); // all indices seen in constructor
+    for (const SVFLoop* svfLoop : icfgWriter.svfLoopPool.getPool())
+    {
+        cJSON* svfLoopObj = contentToJson(svfLoop);
+        jsonAddItemToArray(allSvfLoops, svfLoopObj);
+    }
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(allSvfLoops));
 
 #define F(field) JSON_WRITE_FIELD(root, icfg, field)
     F(FunToFunEntryNodeMap);
@@ -1025,6 +1116,23 @@ cJSON* SVFIRWriter::contentToJson(const MemObj* memObj)
     return root;
 }
 
+cJSON* SVFIRWriter::contentToJson(const StInfo* stInfo)
+{
+    // ENSURE_NOT_VISITED(stInfo);
+
+    cJSON* root = jsonCreateObject();
+#define F(field) JSON_WRITE_FIELD(root, stInfo, field)
+    F(fldIdxVec);
+    F(elemIdxVec);
+    F(fldIdx2TypeMap);
+    F(finfo);
+    F(stride);
+    F(numOfFlattenElements);
+    F(flattenElementTypes);
+#undef F
+    return root;
+}
+
 cJSON* SVFIRWriter::toJson(const ObjTypeInfo* objTypeInfo)
 {
     ENSURE_NOT_VISITED(objTypeInfo);
@@ -1059,21 +1167,22 @@ cJSON* SVFIRWriter::toJson(const SVFLoopAndDomInfo* ldInfo)
     return root;
 }
 
-cJSON* SVFIRWriter::toJson(const StInfo* type)
+cJSON* SVFIRWriter::toJson(const StInfo* stInfo)
 {
-    ENSURE_NOT_VISITED(type);
+    return jsonCreateIndex(stInfoPool.getID(stInfo));
+//     ENSURE_NOT_VISITED(type);
 
-    cJSON* root = jsonCreateObject();
-#define F(field) JSON_WRITE_FIELD(root, type, field)
-    F(fldIdxVec);
-    F(elemIdxVec);
-    F(fldIdx2TypeMap);
-    F(finfo);
-    F(stride);
-    F(numOfFlattenElements);
-    F(flattenElementTypes);
-#undef F
-    return root;
+//     cJSON* root = jsonCreateObject();
+// #define F(field) JSON_WRITE_FIELD(root, type, field)
+//     F(fldIdxVec);
+//     F(elemIdxVec);
+//     F(fldIdx2TypeMap);
+//     F(finfo);
+//     F(stride);
+//     F(numOfFlattenElements);
+//     F(flattenElementTypes);
+// #undef F
+//     return root;
 }
 
 cJSON* SVFIRWriter::toJson(const LocationSet& ls)
@@ -1097,23 +1206,67 @@ cJSON* SVFIRWriter::toJson(const SVFModule* module)
     JSON_WRITE_FIELD(root, module, ConstantSet);
     JSON_WRITE_FIELD(root, module, OtherValueSet);
 
-    cJSON* values = jsonCreateArray();
+    cJSON* allValues = jsonCreateArray();
     for (size_t i = 1; i <= svfModuleWriter.svfValuePool.size(); ++i)
     {
         cJSON* value = contentToJson(svfModuleWriter.svfValuePool.getPtr(i));
-        jsonAddItemToArray(values, value);
+        jsonAddItemToArray(allValues, value);
     }
-    jsonAddItemToObject(root, "values", values);
-
-    cJSON* types = jsonCreateArray();
-    for (size_t i = 1; i <= svfModuleWriter.svfTypePool.size(); ++i)
-    {
-        cJSON* type = contentToJson(svfModuleWriter.svfTypePool.getPtr(i));
-        jsonAddItemToArray(types, type);
-    }
-    jsonAddItemToObject(root, "types", types);
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(allValues));
 
     return root;
+}
+
+void SymbolTableInfoReader::createObjs(const cJSON* symTableJson)
+{
+    assert(symTabFieldJson == nullptr && "Already created?");
+
+    // TODO: enforce the check!
+    ABORT_IFNOT(jsonIsObject(symTableJson), "symTableJson is not an object?");
+    cJSON* objMapJson = symTableJson->child;
+    ABORT_IFNOT(jsonIsMap(objMapJson) && jsonKeyEquals(objMapJson, "objMap"),
+                "Expect ObjMap");
+    cJSON* allSvfTypesJson = objMapJson->next;
+    ABORT_IFNOT(jsonIsArray(allSvfTypesJson) &&
+                    jsonKeyEquals(allSvfTypesJson, "AllSvfTypes"),
+                "Expect array");
+    symTabFieldJson = allSvfTypesJson->next;
+
+    memObjMap.createObjs(objMapJson, [](auto) { return createMemObj(); });
+
+    svfTypePool.createObjs(allSvfTypesJson, [](const cJSON*& svfTypeFieldJson) {
+        ABORT_IFNOT(jsonIsNumber(svfTypeFieldJson), "Expect number");
+        auto kind =
+            static_cast<SVFType::SVFTyKind>(svfTypeFieldJson->valuedouble);
+        svfTypeFieldJson = svfTypeFieldJson->next;
+        return createSVFType(kind);
+    });
+}
+
+void SVFIRReader::readJson(cJSON* root)
+{
+    ABORT_IFNOT(jsonIsObject(root), "Root is not an object");
+    cJSON* obj = root->child;
+
+    ABORT_IFNOT((jsonIsArray(obj) && jsonKeyEquals(obj, "allStInfos")),
+                "First field is not a string");
+    //stInfoPool.saveJsonArray(obj);
+    obj = obj->next;
+}
+
+void SVFIRReader::readJson(const cJSON*& obj, SVFIR*& svfIR)
+{
+
+}
+
+void SVFIRReader::readJson(const cJSON*& obj, SVFModule*& module)
+{
+
+}
+
+void SVFIRReader::readJson(const cJSON*& obj, SVFType*& type)
+{
+    assert(type == nullptr && "Type already read?");
 }
 
 } // namespace SVF

@@ -1,3 +1,14 @@
+/*  SVF - Static Value-Flow Analysis Framework
+ *
+ *
+ * Note for this module:
+ *  1. This module is used to read and write SVFIR from/to JSON file.
+ *
+ * Information about pointer "ownership":
+ * - SVFTypes are owned by
+ *      symbolTableInfo -> svfTypes
+ */
+
 #ifndef INCLUDE_SVFIRRW_H_
 #define INCLUDE_SVFIRRW_H_
 
@@ -6,7 +17,10 @@
 #include "Graphs/GenericGraph.h"
 #include <type_traits>
 
-#if 1
+#define JSON_KEY_ST_INFO "stInfoPool"
+
+#define SVFIR_DEBUG 1
+#if SVFIR_DEBUG
 #    define ENSURE_NOT_VISITED(graph)                                          \
         do                                                                     \
         {                                                                      \
@@ -31,6 +45,8 @@
             abort();                                                           \
         }                                                                      \
     } while (0)
+
+#define FIELD_NAME_ITEM(field) #field, (field)
 
 #define JSON_WRITE_FIELD(root, objptr, field)                                  \
     jsonAddJsonableToObject(root, #field, (objptr)->field)
@@ -217,8 +233,17 @@ class CHNode;
 class CHEdge;
 class CHGraph;
 
+#define jsonForEach(element, array)                                            \
+    for (const cJSON* element = (array != NULL) ? (array)->child : NULL;       \
+         element != NULL; element = element->next)
 cJSON* jsonCreateNullId();
+bool jsonIsNumber(const cJSON* item);
 bool jsonIsNullId(const cJSON* item);
+bool jsonIsArray(const cJSON* item);
+bool jsonIsMap(const cJSON* item);
+bool jsonIsObject(const cJSON* item);
+bool jsonKeyEquals(const cJSON* item, const char* key);
+void jsonUnpackPair(const cJSON* item, const cJSON*& key, const cJSON*& value);
 cJSON* jsonCreateObject();
 cJSON* jsonCreateArray();
 cJSON* jsonCreateMap();
@@ -234,7 +259,7 @@ bool jsonAddStringToObject(cJSON* obj, const char* name, const char* str);
 bool jsonAddStringToObject(cJSON* obj, const char* name,
                            const std::string& str);
 
-template <typename T> class PtrPool
+template <typename T> class WriterPtrPool
 {
 private:
     Map<const T*, size_t> ptrToId;
@@ -258,7 +283,7 @@ public:
 
     inline const T* getPtr(size_t id) const
     {
-        assert(id >= 0 && id <= ptrPool.size() && "Invalid ID.");
+        assert(id <= ptrPool.size() && "Invalid ID");
         return id ? ptrPool[id - 1] : nullptr;
     }
 
@@ -267,9 +292,14 @@ public:
         return ptrPool;
     }
 
-    size_t size() const
+    inline size_t size() const
     {
         return ptrPool.size();
+    }
+
+    inline void reserve(size_t size)
+    {
+        ptrPool.reserve(size);
     }
 };
 
@@ -282,14 +312,15 @@ private:
     using EdgeType = EdgeTy;
     using GraphType = GenericGraph<NodeType, EdgeType>;
 
-    const GraphType* graph;
+    // const GraphType* graph;
     OrderedMap<const NodeType*, NodeID> nodeToID;
-    PtrPool<EdgeType> edgePool;
+    WriterPtrPool<EdgeType> edgePool;
 
 public:
-    GenericGraphWriter(const GraphType* g) : graph(g)
+    GenericGraphWriter(const GraphType* graph)
     {
-        assert(g && "Graph pointer should never be null");
+        assert(graph && "Graph pointer should never be null");
+        edgePool.reserve(graph->getTotalEdgeNum());
 
         for (const auto& entry : graph->IDToNodeMap)
         {
@@ -324,7 +355,7 @@ class ICFGWriter : public GenericICFGWriter
     friend class SVFIRWriter;
 
 private:
-    PtrPool<SVFLoop> svfLoopPool;
+    WriterPtrPool<SVFLoop> svfLoopPool;
 
 public:
     ICFGWriter(const ICFG* icfg);
@@ -337,13 +368,16 @@ public:
 
 class SymbolTableInfoWriter
 {
+    friend class SVFIRWriter;
+
 public:
     SymbolTableInfoWriter(const SymbolTableInfo* symbolTableInfo);
-
     SymID getMemObjID(const MemObj* memObj);
+    size_t getSvfTypeID(const SVFType* type);
 
 private:
-    const SymbolTableInfo* symbolTableInfo;
+    // const SymbolTableInfo* symbolTableInfo; // Don't need to keep this?
+    WriterPtrPool<SVFType> svfTypePool;
     OrderedMap<const MemObj*, SymID> memObjToID;
 };
 
@@ -354,10 +388,7 @@ class SVFModuleWriter
 {
     friend class SVFIRWriter;
 
-    PtrPool<SVFType> svfTypePool;
-    PtrPool<SVFValue> svfValuePool;
-
-    size_t getSvfTypeID(const SVFType* type);
+    WriterPtrPool<SVFValue> svfValuePool;
     size_t getSvfValueID(const SVFValue* value);
 };
 
@@ -371,6 +402,7 @@ private:
     ICFGWriter icfgWriter;
     CHGraphWriter chgWriter;
     SymbolTableInfoWriter symbolTableInfoWriter;
+    WriterPtrPool<StInfo> stInfoPool; // Owned by LLVMModuleSet. Can't access LLVM.
 
     OrderedMap<size_t, std::string> numToStrMap;
 
@@ -378,6 +410,7 @@ public:
     using autoJSON = std::unique_ptr<cJSON, decltype(&cJSON_Delete)>;
     using autoCStr = std::unique_ptr<char, decltype(&cJSON_free)>;
 
+    /// @brief Constructor.
     SVFIRWriter(const SVFIR* svfir);
 
     static void writeJsonToOstream(const SVFIR* svfir, std::ostream& os);
@@ -410,7 +443,7 @@ private:
     cJSON* toJson(const MemObj* memObj);
     cJSON* toJson(const ObjTypeInfo* objTypeInfo); // Only owned by MemObj
     cJSON* toJson(const SVFLoopAndDomInfo* ldInfo); // Only owned by SVFFunction
-    cJSON* toJson(const StInfo* type); // Ensure Only owned by SVFType
+    cJSON* toJson(const StInfo* stInfo); // Ensure Only owned by SVFType
 
     static cJSON* toJson(unsigned number);
     static cJSON* toJson(int number);
@@ -513,6 +546,7 @@ private:
     cJSON* contentToJson(const SVFLoop* loop);
     cJSON* contentToJson(const SymbolTableInfo* symTable);
     cJSON* contentToJson(const MemObj* memObj); // Owned by SymbolTable->objMap
+    cJSON* contentToJson(const StInfo* stInfo);
     ///@}
 
     template <typename NodeTy, typename EdgeTy>
@@ -555,6 +589,7 @@ private:
             cJSON* jsonNode = virtToJson(node);
             jsonAddPairToMap(map, jsonID, jsonNode);
         }
+        jsonAddItemToObject(root, "nodes", map);
 
         cJSON* edgesJson = jsonCreateArray();
         for (const EdgeTy* edge : edgePool)
@@ -617,6 +652,159 @@ private:
         cJSON* itemObj = contentToJson(item);
         return jsonAddItemToObject(obj, name, itemObj);
     }
+};
+
+/*
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+
+/// @brief Keeps a map from IDs to T objects.
+/// @tparam T: The type of the objects.
+template <typename T> class ReaderIDToObjMap
+{
+private:
+    OrderedMap<size_t, std::pair<const cJSON*, T*>> idToPairMap;
+
+public:
+    template <typename Creator>
+    void createObjs(const cJSON* idToObjMapJson, Creator creator)
+    {
+        assert(idToPairMap.empty() &&
+               "idToObjMap should be empty when creating objects");
+        ABORT_IFNOT(jsonIsMap(idToObjMapJson), "expects a map");
+
+        jsonForEach(pairJson, idToObjMapJson)
+        {
+            const cJSON *idJson, *objJson;
+            jsonUnpackPair(pairJson, idJson, objJson);
+            ABORT_IFNOT(jsonIsNumber(idJson), "expects a number");
+            size_t id = idJson->valuedouble;
+
+            ABORT_IFNOT(jsonIsObject(objJson), "expects an object");
+            const cJSON* objFieldJson = objJson->child;
+            // creator is allowed to change objFieldJson
+            T* obj = creator(objFieldJson);
+            auto pair = std::pair<const cJSON*, T*>(objFieldJson, obj);
+            bool inserted = idToPairMap.emplace(id, pair).second;
+            ABORT_IFNOT(inserted, "duplicate ID");
+        }
+    }
+};
+
+template <typename T> class ReaderPtrPool
+{
+public:
+    inline void reserve(size_t size)
+    {
+        jsonArray.reserve(size);
+        ptrPool.reserve(size);
+    }
+
+    template <typename Creator>
+    void createObjs(const cJSON* objArrayJson, Creator creator)
+    {
+        assert(jsonArray.empty() && "jsonArray should be empty when creating objects");
+        ABORT_IFNOT(jsonIsArray(objArrayJson), "expects an array");
+
+        jsonForEach(objJson, objArrayJson)
+        {
+            ABORT_IFNOT(jsonIsObject(objJson), "expects objects in array");
+            const cJSON* objFieldJson = objJson->child;
+            T* obj = creator(objFieldJson);
+            jsonArray.push_back(objFieldJson);
+            ptrPool.push_back(obj);
+        }
+    }
+
+    T* getPtr(size_t id)
+    {
+        assert(id <= jsonArray.size() && "Invalid ID");
+        return id ? ptrPool[id - 1] : nullptr;
+    }
+
+private:
+    std::vector<const cJSON*> jsonArray;
+    std::vector<T*> ptrPool;
+};
+
+template <typename NodeTy, typename EdgeTy> class GenericGraphReader
+{
+private:
+    ReaderIDToObjMap<NodeTy> IdToNodeMap;
+    ReaderPtrPool<EdgeTy> edgePool;
+
+protected:
+    const cJSON* graphFieldJson = nullptr;
+
+public:
+    template <typename NodeCreator, typename EdgeCreator>
+    void createObjs(const cJSON* graphJson, NodeCreator& nodeCreator,
+                    EdgeCreator& edgeCreator)
+    {
+        // TODO: Check graphJson is an cJSON object
+        const cJSON* edgeNumJson = graphJson->child;
+        // TODO: Check edgeNumJson is an cJSON number & read it
+        const cJSON* nodeNumJson = edgeNumJson->next;
+        // TODO: Check nodeNumJson is an cJSON number & read it
+        const cJSON* nodesJson = nodeNumJson->next;
+        // TODO: Check nodesJson is an cJSON array
+        IdToNodeMap.createObjs(nodesJson, nodeCreator);
+        // TODO: Check edgesJson
+        const cJSON* edgesJson = nodesJson->next;
+        edgePool.createObjs(edgesJson, edgeCreator);
+
+        graphFieldJson = edgesJson->next;
+    }
+
+    // TODO: fill
+};
+
+using GenericICFGReader = GenericGraphReader<ICFGNode, ICFGEdge>;
+class ICFGReader : public GenericICFGReader
+{
+private:
+    ReaderPtrPool<SVFLoop> svfLoopPool;
+
+public:
+    void createObjs(const cJSON* icfgJson)
+    {
+        // GenericICFGReader::createObjs(icfgJson, nodeCreator, edgeCreator);
+        // // TODO: Check svfLoopsJson
+        // const cJSON* svfLoopsJson = graphFieldJson;
+        // svfLoopPool.createObjs(svfLoopsJson, loopCreator);
+        // graphFieldJson = svfLoopsJson->next;
+    }
+};
+
+class SymbolTableInfoReader
+{
+private:
+    const cJSON* symTabFieldJson = nullptr;
+    ReaderPtrPool<SVFType> svfTypePool;
+    ReaderIDToObjMap<MemObj> memObjMap;
+public:
+    void createObjs(const cJSON* symTableJson);
+};
+
+class SVFIRReader
+{
+private:
+    ReaderPtrPool<StInfo> stInfoPool;
+    SymbolTableInfoReader symTableReader;
+public:
+    void readJson(cJSON* root);
+    void readJson(const cJSON*& obj, SVFIR*& svfIR);
+    void readJson(const cJSON*& obj, SVFModule*& module);
+    void readJson(const cJSON*& obj, SVFType*& type);
 };
 
 } // namespace SVF

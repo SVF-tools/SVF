@@ -288,6 +288,14 @@ public:
 
     //@}
 
+    /// Constant reader that won't change the state of the symbol table
+    //@{
+    inline const SVFTypeSet& getSVFTypes() const
+    {
+        return svfTypes;
+    }
+    //@}
+
     /// Get struct info
     //@{
     ///Get a reference to StructInfo.

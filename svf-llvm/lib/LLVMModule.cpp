@@ -109,7 +109,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 
     loadModules(moduleNameVec);
 
-    if(!moduleNameVec.empty())
+    if (!moduleNameVec.empty())
         svfModule = std::make_unique<SVFModule>(*moduleNameVec.begin());
     else
         svfModule = std::make_unique<SVFModule>();
