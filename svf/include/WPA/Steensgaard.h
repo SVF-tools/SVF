@@ -17,24 +17,21 @@ namespace SVF
  */
 typedef WPASolver<ConstraintGraph*> WPAConstraintSolver;
 
-class Steensgaard:  public AndersenBase
+class Steensgaard : public AndersenBase
 {
 
 public:
-
     typedef Map<NodeID, NodeID> NodeToEquivClassMap;
     typedef Map<NodeID, Set<NodeID>> NodeToSubsMap;
+    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
     /// Constructor
-    Steensgaard(SVFIR* _pag)
-        :  AndersenBase(_pag, Steensgaard_WPA, true)
-    {
-    }
+    Steensgaard(SVFIR* _pag) : AndersenBase(_pag, Steensgaard_WPA, true) {}
 
     /// Create an singleton instance
     static Steensgaard* createSteensgaard(SVFIR* _pag)
     {
-        if(steens==nullptr)
+        if (steens == nullptr)
         {
             steens = new Steensgaard(_pag);
             steens->analyze();
@@ -57,15 +54,15 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const Steensgaard *)
+    static inline bool classof(const Steensgaard*)
     {
         return true;
     }
-    static inline bool classof(const AndersenBase *pta)
+    static inline bool classof(const AndersenBase* pta)
     {
         return (pta->getAnalysisTy() == Steensgaard_WPA);
     }
-    static inline bool classof(const PointerAnalysis *pta)
+    static inline bool classof(const PointerAnalysis* pta)
     {
         return (pta->getAnalysisTy() == Steensgaard_WPA);
     }
@@ -87,7 +84,7 @@ public:
     {
         id = getEC(id);
         ptd = getEC(ptd);
-        return getPTDataTy()->unionPts(id,ptd);
+        return getPTDataTy()->unionPts(id, ptd);
     }
 
     /// API for equivalence class operations
@@ -96,7 +93,7 @@ public:
     inline NodeID getEC(NodeID id) const
     {
         NodeToEquivClassMap::const_iterator it = nodeToECMap.find(id);
-        if(it==nodeToECMap.end())
+        if (it == nodeToECMap.end())
             return id;
         else
             return it->second;
@@ -113,14 +110,32 @@ public:
         nodeToSubsMap[node].insert(sub);
     }
 
-private:
+    /// Add copy edge on constraint graph
+    virtual inline bool addCopyEdge(NodeID src, NodeID dst)
+    {
+        return consCG->addCopyCGEdge(src, dst);
+    }
 
+protected:
+    CallSite2DummyValPN
+    callsite2DummyValPN; ///< Map an instruction to a dummy obj which
+    ///< created at an indirect callsite, which invokes
+    ///< a heap allocator
+    void heapAllocatorViaIndCall(CallSite cs, NodePairSet& cpySrcNodes);
+
+    /// Update call graph for the input indirect callsites
+    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
+
+    /// Connect formal and actual parameters for indirect callsites
+    void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F,
+                                    NodePairSet& cpySrcNodes);
+
+private:
     static Steensgaard* steens; // static instance
     NodeToEquivClassMap nodeToECMap;
     NodeToSubsMap nodeToSubsMap;
 };
 
-} /// end of the namespace
-
+} // namespace SVF
 
 #endif /* INCLUDE_WPA_STEENSGAARD_H_ */
