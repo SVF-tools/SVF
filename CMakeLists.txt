@@ -83,10 +83,15 @@ endif()
 add_subdirectory(lib)
 add_subdirectory(tools)
 
-INSTALL(
+install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
     COMPONENT devel
     DESTINATION include/svf
     FILES_MATCHING
     PATTERN "**/*.h"
-    )
+)
+
+install(
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/Util/ExtAPI.json
+    DESTINATION share/svf
+)
