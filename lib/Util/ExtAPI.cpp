@@ -39,7 +39,17 @@ using namespace SVF;
 ExtAPI *ExtAPI::extOp = nullptr;
 cJSON *ExtAPI::root = nullptr;
 
-// Get environment variables $SVF_DIR and "npm root" through popen() method
+// print error message and fail
+[[ noreturn ]] static void failToLoadJson(const std::string &msg) {
+    SVFUtil::errs() << SVFUtil::errMsg("failed to load ExtAPI.json! ") << msg << '\n';
+    exit(1);
+}
+[[ noreturn ]] static void failToLoadJson(const std::string &msg, const std::string &path) {
+    SVFUtil::errs() << SVFUtil::errMsg("failed to load ExtAPI.json! ") << msg << " The current ExtAPI.json path is: " << path << '\n';
+    exit(1);
+}
+
+// Get environment variables $SVF_DIR, $SVF_EXT_API_JSON and "npm root" through popen() method
 static std::string GetStdoutFromCommand(const std::string &command)
 {
     char buffer[128];
@@ -48,6 +58,7 @@ static std::string GetStdoutFromCommand(const std::string &command)
     FILE *pipe = popen(command.c_str(), "r");
     if (!pipe)
     {
+        failToLoadJson("GetStdoutFromCommand(): popen failed!");
         return "popen failed!";
     }
     // read till end of process:
@@ -89,9 +100,12 @@ static std::string getJsonFile(const std::string &path)
 
 static cJSON *parseJson(const std::string &path, off_t fileSize)
 {
+    SVFUtil::outs() << "load ExtAPI.json at " << path << '\n';
+
     FILE *file = fopen(path.c_str(), "r");
     if (!file)
     {
+        failToLoadJson("parseJson(): fopen failed!", path);
         return nullptr;
     }
 
@@ -102,7 +116,7 @@ static cJSON *parseJson(const std::string &path, off_t fileSize)
     u32_t size = fread(jsonStr, sizeof(char), fileSize, file);
     if (size == 0)
     {
-        SVFUtil::errs() << SVFUtil::errMsg("\t Wrong ExtAPI.json path!! ") << "The current ExtAPI.json path is: " << path << "\n";
+        failToLoadJson("Wrong ExtAPI.json path!!", path);
         assert(false && "Read ExtAPI.json file fails!");
         return nullptr;
     }
@@ -112,6 +126,7 @@ static cJSON *parseJson(const std::string &path, off_t fileSize)
     cJSON *root = cJSON_Parse(jsonStr);
     if (!root)
     {
+        failToLoadJson("parseJson(): cJSON_Parse() failed", path);
         free(jsonStr);
         return nullptr;
     }
@@ -131,12 +146,22 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
 
         // Four ways to get ExtAPI.json path
         // 1. Explicit path provided
-        // 2. default path (get ExtAPI.json path from Util/config.h)
-        // 3. from $SVF_DIR
-        // 4. from "npm root"(If SVF is installed via npm)
+        // 2. from $SVF_EXT_API_JSON
+        // 3. default path (get ExtAPI.json path from Util/config.h)
+        // 4. from $SVF_DIR
+        // 5. from ${HOME}/.local/share/svf (If SVF is installed for local user)
+        // 6. from "/usr/share/svf" or "/usr/local/share/svf" (If SVF is installed into the system)
+        // 7. from "npm root" (If SVF is installed via npm)
 
         std::string jsonFilePath = path;
         if (!jsonFilePath.empty() && !stat(jsonFilePath.c_str(), &statbuf))
+        {
+            root = parseJson(jsonFilePath, statbuf.st_size);
+            return extOp;
+        }
+
+        jsonFilePath = GetStdoutFromCommand("echo $SVF_EXT_API_JSON");
+        if (!stat(jsonFilePath.c_str(), &statbuf))
         {
             root = parseJson(jsonFilePath, statbuf.st_size);
             return extOp;
@@ -156,6 +181,27 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             return extOp;
         }
 
+        jsonFilePath = GetStdoutFromCommand("echo ${HOME}/.local/share/svf/ExtAPI.json");
+        if (!stat(jsonFilePath.c_str(), &statbuf))
+        {
+            root = parseJson(jsonFilePath, statbuf.st_size);
+            return extOp;
+        }
+
+        jsonFilePath = "/usr/share/svf/ExtAPI.json";
+        if (!stat(jsonFilePath.c_str(), &statbuf))
+        {
+            root = parseJson(jsonFilePath, statbuf.st_size);
+            return extOp;
+        }
+
+        jsonFilePath = "/usr/local/share/svf/ExtAPI.json";
+        if (!stat(jsonFilePath.c_str(), &statbuf))
+        {
+            root = parseJson(jsonFilePath, statbuf.st_size);
+            return extOp;
+        }
+
         jsonFilePath = getJsonFile("npm root");
         if (!stat(jsonFilePath.c_str(), &statbuf))
         {
@@ -163,6 +209,7 @@ ExtAPI *ExtAPI::getExtAPI(const std::string &path)
             return extOp;
         }
 
+        failToLoadJson("Could not find ExtAPI.json");
         assert(false && "Open ExtAPI.json file fails!");
     }
     return extOp;
