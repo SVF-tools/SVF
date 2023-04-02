@@ -48,6 +48,7 @@ template<class NodeTy>
 class GenericEdge
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     /// Node type

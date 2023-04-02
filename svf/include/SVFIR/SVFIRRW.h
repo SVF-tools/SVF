@@ -62,10 +62,32 @@ decltype(std::begin(std::declval<T&>()) !=
          std::true_type {})
 is_iterable_impl(int);
 template <typename T> std::false_type is_iterable_impl(...);
-
-template <typename T>
-using is_iterable = decltype(is_iterable_impl<T>(0));
+template <typename T> using is_iterable = decltype(is_iterable_impl<T>(0));
 template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
+///@}
+
+/// @brief Type trait to check if a type is a map or unordered_map.
+///@{
+template <typename T> struct is_map : std::false_type {};
+template <typename... Ts> struct is_map<std::map<Ts...>> : std::true_type {};
+template <typename... Ts> struct is_map<std::unordered_map<Ts...>> : std::true_type {};
+template <typename... Ts> constexpr bool is_map_v = is_map<Ts...>::value;
+///@}
+
+/// @brief Type trait to check if a type is a set or unordered_set.
+///@{
+template <typename T> struct is_set : std::false_type {};
+template <typename... Ts> struct is_set<std::set<Ts...>> : std::true_type {};
+template <typename... Ts> struct is_set<std::unordered_set<Ts...>> : std::true_type {};
+template <typename... Ts> constexpr bool is_set_v = is_set<Ts...>::value;
+///@}
+
+/// @brief Type trait to check if a type is vector or list.
+template <typename T> struct is_sequence_container : std::false_type {};
+template <typename... Ts> struct is_sequence_container<std::vector<Ts...>> : std::true_type {};
+template <typename... Ts> struct is_sequence_container<std::deque<Ts...>> : std::true_type {};
+template <typename... Ts> struct is_sequence_container<std::list<Ts...>> : std::true_type {};
+template <typename... Ts> constexpr bool is_sequence_container_v = is_sequence_container<Ts...>::value;
 ///@}
 
 namespace SVF
@@ -233,9 +255,6 @@ class CHNode;
 class CHEdge;
 class CHGraph;
 
-#define jsonForEach(element, array)                                            \
-    for (const cJSON* element = (array != NULL) ? (array)->child : NULL;       \
-         element != NULL; element = element->next)
 cJSON* jsonCreateNullId();
 bool jsonIsNumber(const cJSON* item);
 bool jsonIsNullId(const cJSON* item);
@@ -246,7 +265,6 @@ bool jsonKeyEquals(const cJSON* item, const char* key);
 void jsonUnpackPair(const cJSON* item, const cJSON*& key, const cJSON*& value);
 cJSON* jsonCreateObject();
 cJSON* jsonCreateArray();
-cJSON* jsonCreateMap();
 cJSON* jsonCreateString(const char* str);
 cJSON* jsonCreateIndex(size_t index);
 cJSON* jsonCreateNumber(double num);
@@ -258,6 +276,15 @@ bool jsonAddNumberToObject(cJSON* obj, const char* name, double number);
 bool jsonAddStringToObject(cJSON* obj, const char* name, const char* str);
 bool jsonAddStringToObject(cJSON* obj, const char* name,
                            const std::string& str);
+#define jsonForEach(element, array)                                            \
+    for (const cJSON* element = (array != NULL) ? (array)->child : NULL;       \
+         element != NULL; element = element->next)
+#define jsonKeyMatch(element) jsonKeyEquals(element, #element)
+/*
+#define jsonCheck(element, jsonType)                                           \
+    ABORT_IFNOT((jsonIs##jsonType(element) && jsonKeyMatch(element)),          \
+                ("Expect " #jsonType " with name " #element))
+            */
 
 template <typename T> class WriterPtrPool
 {
@@ -268,12 +295,15 @@ private:
 public:
     inline size_t getID(const T* ptr)
     {
-        if (ptr == nullptr)
+        if (!ptr)
             return 0;
-        auto it_inserted = ptrToId.emplace(ptr, 1 + ptrPool.size());
-        if (it_inserted.second)
+
+        typename decltype(ptrToId)::iterator it;
+        bool inserted;
+        std::tie(it, inserted) = ptrToId.emplace(ptr, 1 + ptrPool.size());
+        if (inserted)
             ptrPool.push_back(ptr);
-        return it_inserted.first->second;
+        return it->second;
     }
 
     inline void saveID(const T* ptr)
@@ -313,7 +343,6 @@ private:
     using GraphType = GenericGraph<NodeType, EdgeType>;
 
     // const GraphType* graph;
-    OrderedMap<const NodeType*, NodeID> nodeToID;
     WriterPtrPool<EdgeType> edgePool;
 
 public:
@@ -322,12 +351,10 @@ public:
         assert(graph && "Graph pointer should never be null");
         edgePool.reserve(graph->getTotalEdgeNum());
 
-        for (const auto& entry : graph->IDToNodeMap)
+        for (const auto& pair : graph->IDToNodeMap)
         {
-            const NodeID id = entry.first;
-            const NodeType* node = entry.second;
+            const NodeType* node = pair.second;
 
-            nodeToID.emplace(node, id);
             for (const EdgeType* edge : node->getOutEdges())
             {
                 edgePool.saveID(edge);
@@ -338,13 +365,6 @@ public:
     inline size_t getEdgeID(const EdgeType* edge)
     {
         return edgePool.getID(edge);
-    }
-
-    inline NodeID getNodeID(const NodeType* node) const
-    {
-        auto it = nodeToID.find(node);
-        assert(it != nodeToID.end() && "Node not found in the graph.");
-        return it->second;
     }
 };
 
@@ -378,7 +398,6 @@ public:
 private:
     // const SymbolTableInfo* symbolTableInfo; // Don't need to keep this?
     WriterPtrPool<SVFType> svfTypePool;
-    OrderedMap<const MemObj*, SymID> memObjToID;
 };
 
 using IRGraphWriter = GenericGraphWriter<SVFVar, SVFStmt>;
@@ -564,9 +583,9 @@ private:
     cJSON* genericEdgeToJson(const GenericEdge<NodeTy>* edge)
     {
         cJSON* root = jsonCreateObject();
+        JSON_WRITE_FIELD(root, edge, edgeFlag);
         JSON_WRITE_FIELD(root, edge, src);
         JSON_WRITE_FIELD(root, edge, dst);
-        JSON_WRITE_FIELD(root, edge, edgeFlag);
         return root;
     }
 
@@ -579,25 +598,22 @@ private:
         JSON_WRITE_FIELD(root, graph, edgeNum);
         JSON_WRITE_FIELD(root, graph, nodeNum);
 
-        cJSON* map = jsonCreateMap();
+        cJSON* allNodes = jsonCreateArray();
         for (const auto& pair : graph->IDToNodeMap)
         {
-            NodeID id = pair.first;
             NodeTy* node = pair.second;
-
-            cJSON* jsonID = jsonCreateIndex(id);
             cJSON* jsonNode = virtToJson(node);
-            jsonAddPairToMap(map, jsonID, jsonNode);
+            jsonAddItemToArray(allNodes, jsonNode);
         }
-        jsonAddItemToObject(root, "nodes", map);
+        jsonAddItemToObject(root, FIELD_NAME_ITEM(allNodes));
 
-        cJSON* edgesJson = jsonCreateArray();
+        cJSON* allEdges = jsonCreateArray();
         for (const EdgeTy* edge : edgePool)
         {
             cJSON* edgeJson = virtToJson(edge);
-            jsonAddItemToArray(edgesJson, edgeJson);
+            jsonAddItemToArray(allEdges, edgeJson);
         }
-        jsonAddItemToObject(root, "edges", edgesJson);
+        jsonAddItemToObject(root, FIELD_NAME_ITEM(allEdges));
 
         return root;
     }
@@ -654,7 +670,7 @@ private:
     }
 };
 
-/*
+/* Reader Part
  *
  *
  *
@@ -672,29 +688,27 @@ private:
 template <typename T> class ReaderIDToObjMap
 {
 private:
-    OrderedMap<size_t, std::pair<const cJSON*, T*>> idToPairMap;
+    OrderedMap<unsigned, std::pair<const cJSON*, T*>> idMap;
 
 public:
-    template <typename Creator>
-    void createObjs(const cJSON* idToObjMapJson, Creator creator)
+    template <typename IdObjCreator>
+    /// idObjcreator : (const cJSON*) -> (id, T*) with id set
+    void createObjs(const cJSON* idObjArrayJson, IdObjCreator idObjCreator)
     {
-        assert(idToPairMap.empty() &&
+        assert(idMap.empty() &&
                "idToObjMap should be empty when creating objects");
-        ABORT_IFNOT(jsonIsMap(idToObjMapJson), "expects a map");
+        ABORT_IFNOT(jsonIsArray(idObjArrayJson), "expects an array");
 
-        jsonForEach(pairJson, idToObjMapJson)
+        jsonForEach(objJson, idObjArrayJson)
         {
-            const cJSON *idJson, *objJson;
-            jsonUnpackPair(pairJson, idJson, objJson);
-            ABORT_IFNOT(jsonIsNumber(idJson), "expects a number");
-            size_t id = idJson->valuedouble;
-
             ABORT_IFNOT(jsonIsObject(objJson), "expects an object");
             const cJSON* objFieldJson = objJson->child;
             // creator is allowed to change objFieldJson
-            T* obj = creator(objFieldJson);
+            T* obj;
+            unsigned id;
+            std::tie(id, obj) = idObjCreator(objFieldJson);
             auto pair = std::pair<const cJSON*, T*>(objFieldJson, obj);
-            bool inserted = idToPairMap.emplace(id, pair).second;
+            bool inserted = idMap.emplace(id, pair).second;
             ABORT_IFNOT(inserted, "duplicate ID");
         }
     }
@@ -709,6 +723,10 @@ public:
         ptrPool.reserve(size);
     }
 
+    /// @brief
+    /// @tparam Creator
+    /// @param objArrayJson
+    /// @param creator
     template <typename Creator>
     void createObjs(const cJSON* objArrayJson, Creator creator)
     {
@@ -747,9 +765,9 @@ protected:
 
 public:
     template <typename NodeCreator, typename EdgeCreator>
-    void createObjs(const cJSON* graphJson, NodeCreator& nodeCreator,
-                    EdgeCreator& edgeCreator)
+    void createObjs(const cJSON* graphJson, NodeCreator nodeCreator, EdgeCreator edgeCreator)
     {
+        assert(graphFieldJson == nullptr && "graphFieldJson should be empty");
         // TODO: Check graphJson is an cJSON object
         const cJSON* edgeNumJson = graphJson->child;
         // TODO: Check edgeNumJson is an cJSON number & read it
@@ -769,20 +787,15 @@ public:
 };
 
 using GenericICFGReader = GenericGraphReader<ICFGNode, ICFGEdge>;
+using IRGraphReader = GenericGraphReader<SVFVar, SVFStmt>;
+using CHGraphReader = GenericGraphReader<CHNode, CHEdge>;
 class ICFGReader : public GenericICFGReader
 {
 private:
     ReaderPtrPool<SVFLoop> svfLoopPool;
 
 public:
-    void createObjs(const cJSON* icfgJson)
-    {
-        // GenericICFGReader::createObjs(icfgJson, nodeCreator, edgeCreator);
-        // // TODO: Check svfLoopsJson
-        // const cJSON* svfLoopsJson = graphFieldJson;
-        // svfLoopPool.createObjs(svfLoopsJson, loopCreator);
-        // graphFieldJson = svfLoopsJson->next;
-    }
+    void createObjs(const cJSON* icfgJson);
 };
 
 class SymbolTableInfoReader
@@ -795,16 +808,86 @@ public:
     void createObjs(const cJSON* symTableJson);
 };
 
+class SVFModuleReader
+{
+    const cJSON* svfModuleFieldJson = nullptr;
+    ReaderPtrPool<SVFValue> svfValuePool;
+public:
+    void createObjs(const cJSON* svfModuleJson);
+};
+
+#define JSON_READ_FIELD(json, objptr, field)                                   \
+    do                                                                         \
+    {                                                                          \
+        ABORT_IFNOT(jsonKeyEquals(json, #field), "expect " #field);            \
+        readJson(json, #field, (objptr)->field);                               \
+        json = json->next;                                                     \
+    } while (0)
+/* SVFIRReader
+ * Read SVFIR from JSON
+ */
 class SVFIRReader
 {
 private:
     ReaderPtrPool<StInfo> stInfoPool;
+    IRGraphReader irGraphReader;
     SymbolTableInfoReader symTableReader;
+    SVFModuleReader svfModuleReader;
+    ICFGReader icfgReader;
+    CHGraphReader chGraphReader;
 public:
+    static inline s64_t applyEdgeMask(u64_t edgeFlag) {
+        return edgeFlag & GenericEdge<void>::EdgeKindMask;
+    }
+
     void readJson(cJSON* root);
-    void readJson(const cJSON*& obj, SVFIR*& svfIR);
-    void readJson(const cJSON*& obj, SVFModule*& module);
-    void readJson(const cJSON*& obj, SVFType*& type);
+
+    static void readJson(const cJSON* obj, long long& val);
+    static void readJson(const cJSON* obj, unsigned& val);
+    static void readJson(const cJSON* obj, unsigned long& val);
+    static void readJson(const cJSON* obj, unsigned long long& val);
+    void readJson(const cJSON* obj, SVFIR*& svfIR);
+    void readJson(const cJSON* obj, SVFModule*& module);
+    void readJson(const cJSON* obj, SVFType*& type);
+
+    template <typename Container>
+    std::enable_if_t<is_sequence_container_v<Container>>
+    readJson(const cJSON* obj, Container& container)
+    {
+        assert(container.empty() && "container should be empty");
+        ABORT_IFNOT(jsonIsArray(obj), "vector expects an array");
+        jsonForEach(elemJson, obj)
+        {
+            std::remove_const_t<typename Container::value_type> elem;
+            readJson(elemJson, elem);
+            container.push_back(std::move(elem));
+            elemJson = elemJson->next;
+        }
+    }
+
+    template <typename Map>
+    std::enable_if_t<is_map_v<Map>> readJson(const cJSON* obj, Map& map)
+    {
+        assert(map.empty() && "map should be empty");
+        ABORT_IFNOT(jsonIsMap(obj), "expects an map (represted by array)");
+        jsonForEach(elemJson, obj)
+        {
+            const cJSON* keyJson;
+            const cJSON* valJson;
+            jsonUnpackPair(elemJson, keyJson, valJson);
+            std::remove_const_t<typename Map::key_type> key;
+            std::remove_const_t<typename Map::mapped_type> val;
+            readJson(keyJson, key);
+            readJson(valJson, val);
+            map.emplace(std::move(key), std::move(val));
+            elemJson = elemJson->next;
+        }
+    }
+
+    //template <typename Set, typename = std::enable_if_t<is_set_v<Set>>>
+    //void readJson(const)
+    void fill(const cJSON*& fieldJson, StInfo* stInfo);
+private:
 };
 
 } // namespace SVF

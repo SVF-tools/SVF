@@ -118,7 +118,7 @@ public:
 
     typedef std::vector<const SVFFunction*> FuncVector;
 
-    CHNode (const std::string name, NodeID i = 0, GNodeK k = 0):
+    CHNode (const std::string& name, NodeID i = 0, GNodeK k = 0):
         GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
     {
     }
