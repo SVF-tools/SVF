@@ -17,8 +17,6 @@
 #include "Graphs/GenericGraph.h"
 #include <type_traits>
 
-#define JSON_KEY_ST_INFO "stInfoPool"
-
 #define SVFIR_DEBUG 1
 #if SVFIR_DEBUG
 #    define ENSURE_NOT_VISITED(graph)                                          \
@@ -26,7 +24,7 @@
         {                                                                      \
             static std::set<decltype(graph)> visited;                          \
             bool inserted = visited.insert(graph).second;                      \
-            ABORT_IFNOT(!inserted, #graph " already visited!");                \
+            ABORT_IFNOT(inserted, #graph " already visited!");                 \
         } while (0)
 #else
 #    define ENSURE_NOT_VISITED(graph)                                          \
@@ -50,6 +48,19 @@
 
 #define JSON_WRITE_FIELD(root, objptr, field)                                  \
     jsonAddJsonableToObject(root, #field, (objptr)->field)
+
+#define JSON_READ_OBJ_WITH_NAME_FWD(json, obj, name)                           \
+    do                                                                         \
+    {                                                                          \
+        ABORT_IFNOT(jsonKeyEquals(json, name), "Expect name " << name);        \
+        SVFIRReader::readJson(json, obj);                                      \
+        json = json->next;                                                     \
+    } while (0)
+
+#define JSON_READ_OBJ_FWD(json, obj)                                           \
+    JSON_READ_OBJ_WITH_NAME_FWD(json, obj, #obj)
+#define JSON_READ_FIELD_FWD(json, objptr, field)                               \
+    JSON_READ_OBJ_WITH_NAME_FWD(json, (objptr)->field, #field)
 
 /// @brief Type trait to check if a type is iterable.
 ///@{
@@ -257,6 +268,7 @@ class CHGraph;
 
 cJSON* jsonCreateNullId();
 bool jsonIsNumber(const cJSON* item);
+bool jsonIsString(const cJSON* item);
 bool jsonIsNullId(const cJSON* item);
 bool jsonIsArray(const cJSON* item);
 bool jsonIsMap(const cJSON* item);
@@ -279,12 +291,9 @@ bool jsonAddStringToObject(cJSON* obj, const char* name,
 #define jsonForEach(element, array)                                            \
     for (const cJSON* element = (array != NULL) ? (array)->child : NULL;       \
          element != NULL; element = element->next)
-#define jsonKeyMatch(element) jsonKeyEquals(element, #element)
-/*
-#define jsonCheck(element, jsonType)                                           \
-    ABORT_IFNOT((jsonIs##jsonType(element) && jsonKeyMatch(element)),          \
-                ("Expect " #jsonType " with name " #element))
-            */
+#define CHECK_JSON_KEY(obj)                                                    \
+    ABORT_IFNOT(jsonKeyEquals(obj, #obj),                                      \
+                "Expect json key: " << #obj << ", but get " << obj->string);
 
 template <typename T> class WriterPtrPool
 {
@@ -816,13 +825,6 @@ public:
     void createObjs(const cJSON* svfModuleJson);
 };
 
-#define JSON_READ_FIELD(json, objptr, field)                                   \
-    do                                                                         \
-    {                                                                          \
-        ABORT_IFNOT(jsonKeyEquals(json, #field), "expect " #field);            \
-        readJson(json, #field, (objptr)->field);                               \
-        json = json->next;                                                     \
-    } while (0)
 /* SVFIRReader
  * Read SVFIR from JSON
  */
@@ -836,15 +838,24 @@ private:
     ICFGReader icfgReader;
     CHGraphReader chGraphReader;
 public:
+    // Helper
     static inline s64_t applyEdgeMask(u64_t edgeFlag) {
         return edgeFlag & GenericEdge<void>::EdgeKindMask;
+    }
+    template <typename T>
+    static inline void setEdgeFlag(GenericEdge<T>* edge,
+                                   typename GenericEdge<T>::GEdgeFlag edgeFlag)
+    {
+        edge->edgeFlag = edgeFlag;
     }
 
     void readJson(cJSON* root);
 
-    static void readJson(const cJSON* obj, long long& val);
     static void readJson(const cJSON* obj, unsigned& val);
+    static void readJson(const cJSON* obj, int& val);
+    static void readJson(const cJSON* obj, float& val);
     static void readJson(const cJSON* obj, unsigned long& val);
+    static void readJson(const cJSON* obj, long long& val);
     static void readJson(const cJSON* obj, unsigned long long& val);
     void readJson(const cJSON* obj, SVFIR*& svfIR);
     void readJson(const cJSON* obj, SVFModule*& module);
