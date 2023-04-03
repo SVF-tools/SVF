@@ -154,6 +154,19 @@ void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
     }
 }
 
+const PointsTo& WPAPass::getPts(const SVFValue* value)
+{
+    assert(_pta && "initialize a pointer analysis first");
+    SVFIR* pag = _pta->getPAG();
+    return getPts(pag->getValueNode(value));
+}
+
+const PointsTo& WPAPass::getPts(NodeID var)
+{
+    assert(_pta && "initialize a pointer analysis first");
+    return _pta->getPts(var);
+}
+
 /*!
  * Return alias results based on our points-to/alias analysis
  * TODO: Need to handle PartialAlias and MustAlias here.
