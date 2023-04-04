@@ -329,8 +329,13 @@ public:
 
     inline void addTypeInfo(const SVFType* ty)
     {
-        assert(!hasSVFTypeInfo(ty) && "this type info has been added before");
-        svfTypes.insert(ty);
+        bool inserted = svfTypes.insert(ty).second;
+        assert(inserted && "this type info has been added before");
+    }
+
+    inline void addStInfo(StInfo* stInfo)
+    {
+        stInfos.insert(stInfo);
     }
 
 protected:
@@ -341,11 +346,15 @@ protected:
     /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
     ObjTypeInfo* createObjTypeInfo(const SVFType* type);
 
+    /// (owned) All SVF Types
     /// Every type T is mapped to StInfo
     /// which contains size (fsize) , offset(foffset)
     /// fsize[i] is the number of fields in the largest such struct, else fsize[i] = 1.
     /// fsize[0] is always the size of the expanded struct.
     SVFTypeSet svfTypes;
+
+    /// @brief (owned) All StInfo
+    Set<StInfo*> stInfos;
 };
 
 
