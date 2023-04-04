@@ -300,9 +300,10 @@ bool jsonAddStringToObject(cJSON* obj, const char* name,
 #define jsonForEach(element, array)                                            \
     for (const cJSON* element = (array != NULL) ? (array)->child : NULL;       \
          element != NULL; element = element->next)
-#define CHECK_JSON_KEY(obj)                                                    \
-    ABORT_IFNOT(jsonKeyEquals(obj, #obj),                                      \
-                "Expect json key: " << #obj << ", but get " << obj->string);
+#define CHECK_JSON_KEY_EQUALS(obj, key)                                        \
+    ABORT_IFNOT(jsonKeyEquals(obj, key),                                       \
+                "Expect json key: " << key << ", but get " << obj->string);
+#define CHECK_JSON_KEY(obj) CHECK_JSON_KEY_EQUALS(obj, #obj)
 
 /// @brief Bookkeeping class to keep track of the IDs of objects that doesn't
 /// have any ID. E.g., SVFValue, XXXEdge.
@@ -619,22 +620,22 @@ private:
         JSON_WRITE_FIELD(root, graph, edgeNum);
         JSON_WRITE_FIELD(root, graph, nodeNum);
 
-        cJSON* allNodes = jsonCreateArray();
+        cJSON* allNode = jsonCreateArray();
         for (const auto& pair : graph->IDToNodeMap)
         {
             NodeTy* node = pair.second;
             cJSON* jsonNode = virtToJson(node);
-            jsonAddItemToArray(allNodes, jsonNode);
+            jsonAddItemToArray(allNode, jsonNode);
         }
-        jsonAddItemToObject(root, FIELD_NAME_ITEM(allNodes));
+        jsonAddItemToObject(root, FIELD_NAME_ITEM(allNode));
 
-        cJSON* allEdges = jsonCreateArray();
+        cJSON* allEdge = jsonCreateArray();
         for (const EdgeTy* edge : edgePool)
         {
             cJSON* edgeJson = virtToJson(edge);
-            jsonAddItemToArray(allEdges, edgeJson);
+            jsonAddItemToArray(allEdge, edgeJson);
         }
-        jsonAddItemToObject(root, FIELD_NAME_ITEM(allEdges));
+        jsonAddItemToObject(root, FIELD_NAME_ITEM(allEdge));
 
         return root;
     }
@@ -740,12 +741,27 @@ public:
         ABORT_IFNOT(it != idMap.end(), "ID " << id << " not found");
         return it->second.second;
     }
+
+    template <typename FillFunc>
+    void fillObjs(FillFunc fillFunc)
+    {
+        for (auto& pair : idMap)
+        {
+            const cJSON* objFieldJson = pair.second.first;
+            T* obj = pair.second.second;
+            fillFunc(objFieldJson, obj);
+        }
+    }
 };
 
 /// @brief Reverse of WriterPtrPool where T is object type without ID field.
 /// @tparam T
 template <typename T> class ReaderPtrPool
 {
+private:
+    std::vector<const cJSON*> jsonArray;
+    std::vector<T*> ptrPool;
+
 public:
     inline void reserve(size_t size)
     {
@@ -779,9 +795,16 @@ public:
         return id ? ptrPool[id - 1] : nullptr;
     }
 
-private:
-    std::vector<const cJSON*> jsonArray;
-    std::vector<T*> ptrPool;
+    template <typename FillFunc>
+    void fillObjs(FillFunc fillFunc)
+    {
+        assert(jsonArray.size() == ptrPool.size() &&
+               "jsonArray and ptrPool should have same size");
+        for (size_t i = 0; i < jsonArray.size(); ++i)
+        {
+            fillFunc(jsonArray[i], ptrPool[i]);
+        }
+    }
 };
 
 template <typename NodeTy, typename EdgeTy> class GenericGraphReader
@@ -798,19 +821,20 @@ public:
     void createObjs(const cJSON* graphJson, NodeCreator nodeCreator, EdgeCreator edgeCreator)
     {
         assert(graphFieldJson == nullptr && "graphFieldJson should be empty");
-        // TODO: Check graphJson is an cJSON object
-        const cJSON* edgeNumJson = graphJson->child;
-        // TODO: Check edgeNumJson is an cJSON number & read it
-        const cJSON* nodeNumJson = edgeNumJson->next;
-        // TODO: Check nodeNumJson is an cJSON number & read it
-        const cJSON* nodesJson = nodeNumJson->next;
-        // TODO: Check nodesJson is an cJSON array
-        IdToNodeMap.createObjs(nodesJson, nodeCreator);
-        // TODO: Check edgesJson
-        const cJSON* edgesJson = nodesJson->next;
-        edgePool.createObjs(edgesJson, edgeCreator);
 
-        graphFieldJson = edgesJson->next;
+        //graphFieldJson = graphJson->child;
+        //u32_t edgeNum, nodeNum;
+        //JSON_READ_OBJ_FWD(graphJson, edgeNum);
+        //JSON_READ_OBJ_FWD(graphJson, nodeNum);
+        graphFieldJson = graphJson->child->next->next;
+
+        CHECK_JSON_KEY_EQUALS(graphFieldJson, "allNode");
+        IdToNodeMap.createObjs(graphFieldJson, nodeCreator);
+        graphFieldJson = graphFieldJson->next;
+
+        CHECK_JSON_KEY_EQUALS(graphFieldJson, "allEdge");
+        edgePool.createObjs(graphFieldJson, edgeCreator);
+        graphFieldJson = graphFieldJson->next;
     }
 
     inline NodeTy* getNodePtr(unsigned id) const
@@ -821,6 +845,13 @@ public:
     inline EdgeTy* getEdgePtr(unsigned id) const
     {
         return edgePool.getPtr(id);
+    }
+
+    template <typename NodeFiller, typename EdgeFiller>
+    void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller)
+    {
+        IdToNodeMap.fillObjs(nodeFiller);
+        edgePool.fillObjs(edgeFiller);
     }
 
     // TODO: fill
@@ -841,6 +872,13 @@ public:
     {
         return svfLoopPool.getPtr(id);
     }
+
+    template <typename NodeFiller, typename EdgeFiller, typename SVFLoopFiller>
+    void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller, SVFLoopFiller svfLoopFiller)
+    {
+        GenericICFGReader::fillObjs(nodeFiller, edgeFiller);
+        svfLoopPool.fillObjs(svfLoopFiller);
+    }
 };
 
 class SymbolTableInfoReader
@@ -851,6 +889,13 @@ private:
     ReaderIDToObjMap<MemObj> memObjMap;
 public:
     void createObjs(const cJSON* symTableJson);
+
+    template <typename SVFTypeFiller, typename MemObjFiller>
+    void fillObjs(SVFTypeFiller svfTypeFiller, MemObjFiller memObjFiller)
+    {
+        svfTypePool.fillObjs(svfTypeFiller);
+        memObjMap.fillObjs(memObjFiller);
+    }
 };
 
 class SVFModuleReader
@@ -863,6 +908,12 @@ public:
     inline SVFValue* getSVFValuePtr(size_t id) const
     {
         return svfValuePool.getPtr(id);
+    }
+
+    template <typename SVFValueFiller>
+    void fillObjs(SVFValueFiller svfValueFiller)
+    {
+        svfValuePool.fillObjs(svfValueFiller);
     }
 };
 
