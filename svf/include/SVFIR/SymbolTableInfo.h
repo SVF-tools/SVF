@@ -333,6 +333,11 @@ public:
         svfTypes.insert(ty);
     }
 
+    inline void addStInfo(StInfo* stInfo)
+    {
+        stInfos.insert(stInfo);
+    }
+
 protected:
 
     /// Return the flattened field type for struct type only
@@ -346,6 +351,9 @@ protected:
     /// fsize[i] is the number of fields in the largest such struct, else fsize[i] = 1.
     /// fsize[0] is always the size of the expanded struct.
     SVFTypeSet svfTypes;
+
+    /// @brief (owned) All StInfo
+    Set<StInfo*> stInfos;
 };
 
 

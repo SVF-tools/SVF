@@ -78,14 +78,6 @@ LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(
     symInfo = SymbolTableInfo::SymbolInfo();
 }
 
-LLVMModuleSet::~LLVMModuleSet()
-{
-    for (auto *it: StInfos)
-    {
-        delete(it);
-    }
-}
-
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     double startSVFModuleTime = SVFStat::getClk(true);
@@ -986,8 +978,8 @@ StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
         }
         else
             stinfo = collectSimpleTypeInfo(T);
-        StInfos.insert(stinfo);
         Type2TypeInfo[T] = stinfo;
+        symInfo->addStInfo(stinfo);
     }
     return stinfo;
 }

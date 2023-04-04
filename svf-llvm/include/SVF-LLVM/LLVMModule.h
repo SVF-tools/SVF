@@ -84,11 +84,10 @@ private:
     SVFValue2LLVMValueMap SVFValue2LLVMValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
-    Set<const StInfo*> StInfos;
 
     /// Constructor
     LLVMModuleSet();
-    ~LLVMModuleSet();
+    ~LLVMModuleSet() = default;
 
     void build();
 

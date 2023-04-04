@@ -154,6 +154,10 @@ void SymbolTableInfo::destroy()
         delete type;
     svfTypes.clear();
 
+    for (const StInfo* stInfo : stInfos)
+        delete stInfo;
+    stInfos.clear();
+
     mod = nullptr;
 }
 
