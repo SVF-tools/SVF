@@ -49,14 +49,23 @@
 #define JSON_WRITE_FIELD(root, objptr, field)                                  \
     jsonAddJsonableToObject(root, #field, (objptr)->field)
 
+#define JSON_READ_OBJ_WITH_NAME(json, obj, name)                               \
+    do                                                                         \
+    {                                                                          \
+        ABORT_IFNOT(jsonKeyEquals(json, name),                                 \
+                    "Expect name '" << name << "', got "                       \
+                                    << (json ? json->string : "NULL"));        \
+        SVFIRReader::readJson(json, obj);                                      \
+    } while (0)
+
 #define JSON_READ_OBJ_WITH_NAME_FWD(json, obj, name)                           \
     do                                                                         \
     {                                                                          \
-        ABORT_IFNOT(jsonKeyEquals(json, name), "Expect name " << name);        \
-        SVFIRReader::readJson(json, obj);                                      \
+        JSON_READ_OBJ_WITH_NAME(json, obj, #obj);                              \
         json = json->next;                                                     \
     } while (0)
 
+#define JSON_READ_OBJ(json, obj) JSON_READ_OBJ_WITH_NAME(json, obj, #obj)
 #define JSON_READ_OBJ_FWD(json, obj)                                           \
     JSON_READ_OBJ_WITH_NAME_FWD(json, obj, #obj)
 #define JSON_READ_FIELD_FWD(json, objptr, field)                               \
@@ -295,6 +304,9 @@ bool jsonAddStringToObject(cJSON* obj, const char* name,
     ABORT_IFNOT(jsonKeyEquals(obj, #obj),                                      \
                 "Expect json key: " << #obj << ", but get " << obj->string);
 
+/// @brief Bookkeeping class to keep track of the IDs of objects that doesn't
+/// have any ID. E.g., SVFValue, XXXEdge.
+/// @tparam T
 template <typename T> class WriterPtrPool
 {
 private:
@@ -692,7 +704,7 @@ private:
  *
  */
 
-/// @brief Keeps a map from IDs to T objects.
+/// @brief Keeps a map from IDs to T objects, such as XXNode.
 /// @tparam T: The type of the objects.
 template <typename T> class ReaderIDToObjMap
 {
@@ -721,8 +733,17 @@ public:
             ABORT_IFNOT(inserted, "duplicate ID");
         }
     }
+
+    T* getPtr(unsigned id) const
+    {
+        auto it = idMap.find(id);
+        ABORT_IFNOT(it != idMap.end(), "ID " << id << " not found");
+        return it->second.second;
+    }
 };
 
+/// @brief Reverse of WriterPtrPool where T is object type without ID field.
+/// @tparam T
 template <typename T> class ReaderPtrPool
 {
 public:
@@ -752,7 +773,7 @@ public:
         }
     }
 
-    T* getPtr(size_t id)
+    T* getPtr(size_t id) const
     {
         assert(id <= jsonArray.size() && "Invalid ID");
         return id ? ptrPool[id - 1] : nullptr;
@@ -792,6 +813,16 @@ public:
         graphFieldJson = edgesJson->next;
     }
 
+    inline NodeTy* getNodePtr(unsigned id) const
+    {
+        return IdToNodeMap.getPtr(id);
+    }
+
+    inline EdgeTy* getEdgePtr(unsigned id) const
+    {
+        return edgePool.getPtr(id);
+    }
+
     // TODO: fill
 };
 
@@ -805,6 +836,11 @@ private:
 
 public:
     void createObjs(const cJSON* icfgJson);
+
+    inline SVFLoop* getSVFLoopPtr(size_t id) const
+    {
+        return svfLoopPool.getPtr(id);
+    }
 };
 
 class SymbolTableInfoReader
@@ -823,6 +859,11 @@ class SVFModuleReader
     ReaderPtrPool<SVFValue> svfValuePool;
 public:
     void createObjs(const cJSON* svfModuleJson);
+
+    inline SVFValue* getSVFValuePtr(size_t id) const
+    {
+        return svfValuePool.getPtr(id);
+    }
 };
 
 /* SVFIRReader
@@ -837,18 +878,8 @@ private:
     SVFModuleReader svfModuleReader;
     ICFGReader icfgReader;
     CHGraphReader chGraphReader;
-public:
-    // Helper
-    static inline s64_t applyEdgeMask(u64_t edgeFlag) {
-        return edgeFlag & GenericEdge<void>::EdgeKindMask;
-    }
-    template <typename T>
-    static inline void setEdgeFlag(GenericEdge<T>* edge,
-                                   typename GenericEdge<T>::GEdgeFlag edgeFlag)
-    {
-        edge->edgeFlag = edgeFlag;
-    }
 
+public:
     void readJson(cJSON* root);
 
     static void readJson(const cJSON* obj, unsigned& val);
@@ -860,6 +891,8 @@ public:
     void readJson(const cJSON* obj, SVFIR*& svfIR);
     void readJson(const cJSON* obj, SVFModule*& module);
     void readJson(const cJSON* obj, SVFType*& type);
+    void readJson(const cJSON* fieldObj, const SVF::ICFGNode*& node);
+    void readJson(const cJSON* fieldObj, const SVF::SVFStmt*& node);
 
     template <typename Container>
     std::enable_if_t<is_sequence_container_v<Container>>
@@ -898,7 +931,18 @@ public:
     //template <typename Set, typename = std::enable_if_t<is_set_v<Set>>>
     //void readJson(const)
     void fill(const cJSON*& fieldJson, StInfo* stInfo);
-private:
+
+    // Helper functions
+    static inline s64_t applyEdgeMask(u64_t edgeFlag)
+    {
+        return edgeFlag & GenericEdge<void>::EdgeKindMask;
+    }
+    template <typename T>
+    static inline void setEdgeFlag(GenericEdge<T>* edge,
+                                   typename GenericEdge<T>::GEdgeFlag edgeFlag)
+    {
+        edge->edgeFlag = edgeFlag;
+    }
 };
 
 } // namespace SVF

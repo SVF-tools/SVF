@@ -2,6 +2,11 @@
 #include "Graphs/CHG.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/CommandLine.h"
+#include <sys/fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 static const Option<bool> humanReadableOption(
     "human-readable", "Whether to output human-readable JSON", true);
@@ -980,7 +985,7 @@ bool jsonIsObject(const cJSON* item)
 
 bool jsonKeyEquals(const cJSON* item, const char* key)
 {
-    return item && !(humanReadableOption() && std::strcmp(key, item->string));
+    return item && !(humanReadableOption() && std::strcmp(item->string, key));
 }
 
 void jsonUnpackPair(const cJSON* item, const cJSON*& key,
@@ -1203,8 +1208,7 @@ cJSON* SVFIRWriter::toJson(const IRGraph* graph)
 
 cJSON* SVFIRWriter::toJson(const SVFVar* var)
 {
-    return var ? jsonCreateIndex(var->getId())
-           : jsonCreateNullId();
+    return var ? jsonCreateIndex(var->getId()) : jsonCreateNullId();
 }
 
 cJSON* SVFIRWriter::toJson(const SVFStmt* stmt)
@@ -1517,10 +1521,14 @@ void SVFIRReader::readJson(cJSON* root)
             JSON_READ_OBJ_FWD(fieldJson, edgeFlag);
             return createEdgeWithFlag<CHEdge>(edgeFlag);
         });
+    cJSON* svfirField = chgraph->next;
 
     // Phase 2. Fill objects
+    // TODO: later
 
     // Phase 3. Read everything else
+    SVFIR* svfIR = nullptr;
+    JSON_READ_FIELD_FWD(svfirField, svfIR, icfgNode2SVFStmtsMap);
 }
 
 void SVFIRReader::readJson(const cJSON* obj, unsigned& val)
@@ -1571,9 +1579,23 @@ void SVFIRReader::readJson(const cJSON* obj, SVFType*& type)
     assert(type == nullptr && "Type already read?");
 }
 
+void SVFIRReader::readJson(const cJSON* fieldObj, const SVF::ICFGNode*& node)
+{
+    NodeID id;
+    JSON_READ_OBJ(fieldObj, id);
+    node = icfgReader.getNodePtr(id);
+}
+
+void SVFIRReader::readJson(const cJSON* fieldObj, const SVF::SVFStmt*& node)
+{
+    unsigned id;
+    JSON_READ_OBJ(fieldObj, id);
+    node = irGraphReader.getEdgePtr(id);
+}
 
 void SVFIRReader::fill(const cJSON*& siFieldJson, StInfo* stInfo)
 {
+    // TODO
 }
 
 } // namespace SVF

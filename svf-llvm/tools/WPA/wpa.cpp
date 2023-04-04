@@ -31,8 +31,6 @@
 #include "WPA/WPAPass.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
-
-
 #include "SVFIR/SVFIRRW.h"
 
 
@@ -54,12 +52,29 @@ int main(int argc, char** argv)
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
 
+#if 0
     SVFModule* svfModule =
         LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
 
     /// Build SVFIR
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
+#else
+    SVFIR* pag;
+
+    if (Options::ReadJson().empty())
+    {
+        SVFModule* svfModule =
+            LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+        SVFIRBuilder builder(svfModule);
+        pag = builder.build();
+    }
+    else
+    {
+        SVFIRReader reader;
+        pag = nullptr;
+    }
+#endif
 
     WPAPass wpa;
     wpa.runOnModule(pag);
