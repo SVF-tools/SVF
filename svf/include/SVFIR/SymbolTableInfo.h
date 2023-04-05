@@ -294,6 +294,11 @@ public:
     {
         return svfTypes;
     }
+
+    inline const Set<const StInfo*>& getStInfos() const
+    {
+        return stInfos;
+    }
     //@}
 
     /// Get struct info
@@ -362,7 +367,7 @@ protected:
     SVFTypeSet svfTypes;
 
     /// @brief (owned) All StInfo
-    Set<StInfo*> stInfos;
+    Set<const StInfo*> stInfos;
 };
 
 

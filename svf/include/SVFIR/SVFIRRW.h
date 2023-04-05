@@ -112,6 +112,8 @@ template <typename... Ts> constexpr bool is_sequence_container_v = is_sequence_c
 
 namespace SVF
 {
+/// @brief Forward declarations.
+///@{
 class SVFIR;
 class SVFIRWriter;
 class SVFLoop;
@@ -274,6 +276,8 @@ class RetCFGEdge;
 class CHNode;
 class CHEdge;
 class CHGraph;
+// End of forward declarations
+///@}
 
 cJSON* jsonCreateNullId();
 bool jsonIsNumber(const cJSON* item);
@@ -353,6 +357,16 @@ public:
     {
         ptrPool.reserve(size);
     }
+
+    inline auto begin() const
+    {
+        return ptrPool.cbegin();
+    }
+
+    inline auto end() const
+    {
+        return ptrPool.cend();
+    }
 };
 
 template <typename NodeTy, typename EdgeTy> class GenericGraphWriter
@@ -416,10 +430,11 @@ public:
     SymbolTableInfoWriter(const SymbolTableInfo* symbolTableInfo);
     SymID getMemObjID(const MemObj* memObj);
     size_t getSvfTypeID(const SVFType* type);
+    size_t getStInfoID(const StInfo* stInfo);
 
 private:
-    // const SymbolTableInfo* symbolTableInfo; // Don't need to keep this?
     WriterPtrPool<SVFType> svfTypePool;
+    WriterPtrPool<StInfo> stInfoPool;
 };
 
 using IRGraphWriter = GenericGraphWriter<SVFVar, SVFStmt>;
@@ -443,7 +458,6 @@ private:
     ICFGWriter icfgWriter;
     CHGraphWriter chgWriter;
     SymbolTableInfoWriter symbolTableInfoWriter;
-    WriterPtrPool<StInfo> stInfoPool; // Owned by LLVMModuleSet. Can't access LLVM.
 
     OrderedMap<size_t, std::string> numToStrMap;
 
@@ -752,6 +766,11 @@ public:
             fillFunc(objFieldJson, obj);
         }
     }
+
+    inline size_t size() const
+    {
+        return idMap.size();
+    }
 };
 
 /// @brief Reverse of WriterPtrPool where T is object type without ID field.
@@ -805,12 +824,17 @@ public:
             fillFunc(jsonArray[i], ptrPool[i]);
         }
     }
+
+    inline size_t size() const
+    {
+        return ptrPool.size();
+    }
 };
 
 template <typename NodeTy, typename EdgeTy> class GenericGraphReader
 {
 private:
-    ReaderIDToObjMap<NodeTy> IdToNodeMap;
+    ReaderIDToObjMap<NodeTy> idToNodeMap;
     ReaderPtrPool<EdgeTy> edgePool;
 
 protected:
@@ -822,24 +846,35 @@ public:
     {
         assert(graphFieldJson == nullptr && "graphFieldJson should be empty");
 
-        //graphFieldJson = graphJson->child;
-        //u32_t edgeNum, nodeNum;
-        //JSON_READ_OBJ_FWD(graphJson, edgeNum);
-        //JSON_READ_OBJ_FWD(graphJson, nodeNum);
-        graphFieldJson = graphJson->child->next->next;
-
+        graphFieldJson = graphJson->child;
+        // Read nodeNum
+        ABORT_IFNOT(jsonIsNumber(graphFieldJson) &&
+                        jsonKeyEquals(graphFieldJson, "nodeNum"),
+                    "expects number nodeNum");
+        u32_t nodeNum = graphFieldJson->valuedouble;
+        graphFieldJson = graphJson->next;
+        // Read allNode
         CHECK_JSON_KEY_EQUALS(graphFieldJson, "allNode");
-        IdToNodeMap.createObjs(graphFieldJson, nodeCreator);
+        idToNodeMap.createObjs(graphFieldJson, nodeCreator);
+        ABORT_IFNOT(idToNodeMap.size() == nodeNum, "nodeNum mismatch");
         graphFieldJson = graphFieldJson->next;
 
+        // Read edgeNum
+        ABORT_IFNOT(jsonIsNumber(graphFieldJson) &&
+                        jsonKeyEquals(graphFieldJson, "edgeNum"),
+                    "expects number edgeNum");
+        u32_t edgeNum = graphFieldJson->valuedouble;
+        graphFieldJson = graphJson->next;
+        // Read allEdge
         CHECK_JSON_KEY_EQUALS(graphFieldJson, "allEdge");
         edgePool.createObjs(graphFieldJson, edgeCreator);
+        ABORT_IFNOT(edgePool.size() == edgeNum, "edgeNum mismatch");
         graphFieldJson = graphFieldJson->next;
     }
 
     inline NodeTy* getNodePtr(unsigned id) const
     {
-        return IdToNodeMap.getPtr(id);
+        return idToNodeMap.getPtr(id);
     }
 
     inline EdgeTy* getEdgePtr(unsigned id) const
@@ -850,7 +885,7 @@ public:
     template <typename NodeFiller, typename EdgeFiller>
     void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller)
     {
-        IdToNodeMap.fillObjs(nodeFiller);
+        idToNodeMap.fillObjs(nodeFiller);
         edgePool.fillObjs(edgeFiller);
     }
 
@@ -887,14 +922,16 @@ private:
     const cJSON* symTabFieldJson = nullptr;
     ReaderPtrPool<SVFType> svfTypePool;
     ReaderIDToObjMap<MemObj> memObjMap;
+    ReaderPtrPool<StInfo> stInfoPool;
 public:
     void createObjs(const cJSON* symTableJson);
 
-    template <typename SVFTypeFiller, typename MemObjFiller>
-    void fillObjs(SVFTypeFiller svfTypeFiller, MemObjFiller memObjFiller)
+    template <typename MemObjFiller, typename SVFTypeFiller, typename StInfoFiller>
+    void fillObjs(MemObjFiller memObjFiller, SVFTypeFiller svfTypeFiller, StInfoFiller stInfoFiller)
     {
-        svfTypePool.fillObjs(svfTypeFiller);
         memObjMap.fillObjs(memObjFiller);
+        svfTypePool.fillObjs(svfTypeFiller);
+        stInfoPool.fillObjs(stInfoFiller);
     }
 };
 
@@ -923,7 +960,6 @@ public:
 class SVFIRReader
 {
 private:
-    ReaderPtrPool<StInfo> stInfoPool;
     IRGraphReader irGraphReader;
     SymbolTableInfoReader symTableReader;
     SVFModuleReader svfModuleReader;
@@ -931,7 +967,7 @@ private:
     CHGraphReader chGraphReader;
 
 public:
-    void readJson(cJSON* root);
+    void read(cJSON* root);
 
     static void readJson(const cJSON* obj, unsigned& val);
     static void readJson(const cJSON* obj, int& val);

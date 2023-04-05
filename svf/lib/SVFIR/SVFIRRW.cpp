@@ -797,16 +797,25 @@ cJSON* SVFIRWriter::contentToJson(const SymbolTableInfo* symTable)
 
     // svfTypes
     cJSON* allSvfType = jsonCreateArray();
-    for (const SVFType* svfType : symbolTableInfoWriter.svfTypePool.getPool())
+    for (const SVFType* svfType : symbolTableInfoWriter.svfTypePool)
     {
         cJSON* svfTypeObj = contentToJson(svfType);
         jsonAddItemToArray(allSvfType, svfTypeObj);
+    }
+
+    // stInfos
+    cJSON* allStInfo = jsonCreateArray();
+    for (const StInfo* stInfo : symbolTableInfoWriter.stInfoPool)
+    {
+        cJSON* stInfoObj = contentToJson(stInfo);
+        jsonAddItemToArray(allStInfo, stInfoObj);
     }
 
     cJSON* root = jsonCreateObject();
 
     jsonAddItemToObject(root, FIELD_NAME_ITEM(allMemObj));
     jsonAddItemToObject(root, FIELD_NAME_ITEM(allSvfType));
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(allStInfo));
 
     JSON_WRITE_FIELD(root, symTable, valSymMap);
     JSON_WRITE_FIELD(root, symTable, objSymMap);
@@ -1076,6 +1085,11 @@ SymbolTableInfoWriter::SymbolTableInfoWriter(const SymbolTableInfo* symTab)
     {
         svfTypePool.saveID(type);
     }
+
+    for (const StInfo* stInfo : symTab->getStInfos())
+    {
+        stInfoPool.saveID(stInfo);
+    }
 }
 
 SymID SymbolTableInfoWriter::getMemObjID(const MemObj* memObj)
@@ -1086,6 +1100,11 @@ SymID SymbolTableInfoWriter::getMemObjID(const MemObj* memObj)
 size_t SymbolTableInfoWriter::getSvfTypeID(const SVFType* type)
 {
     return svfTypePool.getID(type);
+}
+
+size_t SymbolTableInfoWriter::getStInfoID(const StInfo* type)
+{
+    return stInfoPool.getID(type);
 }
 
 size_t SVFModuleWriter::getSvfValueID(const SVFValue* value)
@@ -1142,11 +1161,9 @@ SVFIRWriter::autoCStr SVFIRWriter::generateJsonString()
 SVFIRWriter::autoJSON SVFIRWriter::generateJson()
 {
     const IRGraph* const irgraph = svfIR;
-    cJSON* allStInfo = jsonCreateArray();
 
     cJSON* root = jsonCreateObject();
 #define F(field) JSON_WRITE_FIELD(root, svfIR, field)
-    jsonAddItemToObject(root, FIELD_NAME_ITEM(allStInfo));
     jsonAddJsonableToObject(root, FIELD_NAME_ITEM(irgraph));
     F(svfModule);
     F(icfg);
@@ -1168,12 +1185,6 @@ SVFIRWriter::autoJSON SVFIRWriter::generateJson()
     F(candidatePointers);
     F(callSiteSet);
 #undef F
-
-    for (const StInfo* stInfo : stInfoPool.getPool())
-    {
-        cJSON* stInfoObj = contentToJson(stInfo);
-        jsonAddItemToArray(allStInfo, stInfoObj);
-    }
 
     return {root, cJSON_Delete};
 }
@@ -1219,7 +1230,7 @@ cJSON* SVFIRWriter::toJson(const SVFStmt* stmt)
 cJSON* SVFIRWriter::toJson(const ICFG* icfg)
 {
     cJSON* allSvfLoops = jsonCreateArray(); // all indices seen in constructor
-    for (const SVFLoop* svfLoop : icfgWriter.svfLoopPool.getPool())
+    for (const SVFLoop* svfLoop : icfgWriter.svfLoopPool)
     {
         cJSON* svfLoopObj = contentToJson(svfLoop);
         jsonAddItemToArray(allSvfLoops, svfLoopObj);
@@ -1361,20 +1372,7 @@ cJSON* SVFIRWriter::toJson(const SVFLoopAndDomInfo* ldInfo)
 
 cJSON* SVFIRWriter::toJson(const StInfo* stInfo)
 {
-    return jsonCreateIndex(stInfoPool.getID(stInfo));
-//     ENSURE_NOT_VISITED(type);
-
-//     cJSON* root = jsonCreateObject();
-// #define F(field) JSON_WRITE_FIELD(root, type, field)
-//     F(fldIdxVec);
-//     F(elemIdxVec);
-//     F(fldIdx2TypeMap);
-//     F(finfo);
-//     F(stride);
-//     F(numOfFlattenElements);
-//     F(flattenElementTypes);
-// #undef F
-//     return root;
+    return jsonCreateIndex(this->symbolTableInfoWriter.getStInfoID(stInfo));
 }
 
 cJSON* SVFIRWriter::toJson(const LocationSet& ls)
@@ -1476,15 +1474,11 @@ void SVFModuleReader::createObjs(const cJSON* svfModuleJson)
     svfModuleFieldJson = allValues->next;
 }
 
-void SVFIRReader::readJson(cJSON* root)
+void SVFIRReader::read(cJSON* root)
 {
     ABORT_IFNOT(jsonIsObject(root), "Root is not an object");
     // Phase 1. Create objects
-    cJSON* allStInfo = root->child;
-    CHECK_JSON_KEY(allStInfo);
-    stInfoPool.createObjs(allStInfo, [](const cJSON*&) { return new StInfo(0); });
-
-    cJSON* irgraph = allStInfo->next;
+    cJSON* irgraph = root->child;
     irGraphReader.createObjs(
         irgraph,
         // SVFVar creator: cJSON -> (id, SVFVar*)
