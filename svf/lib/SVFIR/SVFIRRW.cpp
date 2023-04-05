@@ -214,7 +214,7 @@ static inline void readBigNumber(const cJSON* obj, BigNumberType& val, CStrToVal
 }
 
 static void readGenericNodeIdKindFwd(const cJSON*& fieldJson, NodeID& nodeId,
-                                  s64_t& kind)
+                                     s64_t& kind)
 {
     const cJSON* id = fieldJson;
     CHECK_JSON_KEY(id);
@@ -1754,9 +1754,113 @@ void SVFIRReader::fill(const cJSON*& fieldJson, DummyObjVar* var)
     fill(fieldJson, static_cast<ObjVar*>(var));
 }
 
+void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFStmt* stmt)
+{
+    auto kind = stmt->getEdgeKind();
+
+    switch (kind)
+    {
+    default:
+        ABORT_IFNOT(false, "Unknown SVFStmt kind " << kind);
+
+#define CASE(EdgeKind, EdgeType)                                               \
+    case SVFStmt::EdgeKind:                                                    \
+        return fill(fieldJson, static_cast<EdgeType*>(stmt))
+
+        CASE(Addr, AddrStmt);
+        CASE(Copy, CopyStmt);
+        CASE(Store, StoreStmt);
+        CASE(Load, LoadStmt);
+        CASE(Call, CallPE);
+        CASE(Ret, RetPE);
+        CASE(Gep, GepStmt);
+        CASE(Phi, PhiStmt);
+        CASE(Select, SelectStmt);
+        CASE(Cmp, CmpStmt);
+        CASE(BinaryOp, BinaryOPStmt);
+        CASE(UnaryOp, UnaryOPStmt);
+        CASE(Branch, BranchStmt);
+        CASE(ThreadFork, TDForkPE);
+        CASE(ThreadJoin, TDJoinPE);
+#undef CASE
+    }
+}
+
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFStmt* stmt)
 {
-    // TODO
+    fill(fieldJson, static_cast<GenericPAGEdgeTy*>(stmt));
+    JSON_READ_FIELD_FWD(fieldJson, stmt, value);
+    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, stmt, basicBlock, SVFValue);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, icfgNode);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, edgeId);
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, AssignStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, AddrStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, CopyStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, StoreStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, LoadStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, GepStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, CallPE* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, RetPE* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, MultiOpndStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, PhiStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, SelectStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, CmpStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, BinaryOPStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, UnaryOPStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, BranchStmt* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, TDForkPE* stmt)
+{ // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, TDJoinPE* stmt)
+{ // TODO
 }
 
 } // namespace SVF

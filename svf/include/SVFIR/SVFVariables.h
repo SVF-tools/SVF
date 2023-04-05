@@ -260,7 +260,6 @@ class ValVar: public SVFVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
-    friend class SVFIRReader;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:

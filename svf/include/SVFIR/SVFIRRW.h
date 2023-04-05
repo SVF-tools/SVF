@@ -17,7 +17,7 @@
 #include "Graphs/GenericGraph.h"
 #include <type_traits>
 
-#define SVFIR_DEBUG 1
+#define SVFIR_DEBUG 1 /* Turn this on if you're debugging SVFWriter */
 #if SVFIR_DEBUG
 #    define ENSURE_NOT_VISITED(graph)                                          \
         do                                                                     \
@@ -70,6 +70,16 @@
     JSON_READ_OBJ_WITH_NAME_FWD(json, obj, #obj)
 #define JSON_READ_FIELD_FWD(json, objptr, field)                               \
     JSON_READ_OBJ_WITH_NAME_FWD(json, (objptr)->field, #field)
+#define JSON_READ_FIELD_ASTYPE_FWD(json, objptr, field, base)                  \
+    do                                                                         \
+    {                                                                          \
+        base* _basePtr;                                                        \
+        JSON_READ_OBJ_WITH_NAME_FWD(json, _basePtr, #field);                   \
+        (objptr)->field = SVFUtil::dyn_cast<                                   \
+            std::remove_reference_t<decltype(*((objptr)->field))>>(_basePtr);  \
+        ABORT_IFNOT((objptr)->field,                                           \
+                    "Failed to cast from a " << #base << #field);              \
+    } while (0)
 
 /// @brief Type trait to check if a type is iterable.
 ///@{
@@ -134,101 +144,9 @@ class SVFFunctionType;
 class SVFStructType;
 class SVFArrayType;
 class SVFOtherType;
-
-class SVFLoopAndDomInfo;
-class SVFValue;
-class SVFFunction;
-class SVFBasicBlock;
-class SVFInstruction;
-class SVFCallInst;
-class SVFVirtualCallInst;
-class SVFConstant;
-class SVFGlobalValue;
-class SVFArgument;
-class SVFConstantData;
-class SVFConstantInt;
-class SVFConstantFP;
-class SVFConstantNullPtr;
-class SVFBlackHoleValue;
-class SVFOtherValue;
-class SVFMetadataAsValue;
-
-class SVFVar;
-class ValVar;
-class ObjVar;
-class GepValVar;
-class GepObjVar;
-class FIObjVar;
-class RetPN;
-class VarArgPN;
-class DummyValVar;
-class DummyObjVar;
-
-class SVFStmt;
-class AssignStmt;
-class AddrStmt;
-class CopyStmt;
-class StoreStmt;
-class LoadStmt;
-class GepStmt;
-class CallPE;
-class RetPE;
-class MultiOpndStmt;
-class PhiStmt;
-class SelectStmt;
-class CmpStmt;
-class BinaryOPStmt;
-class UnaryOPStmt;
-class BranchStmt;
-class TDForkPE;
-class TDJoinPE;
-
-class ICFGNode;
-class GlobalICFGNode;
-class IntraICFGNode;
-class InterICFGNode;
-class FunEntryICFGNode;
-class FunExitICFGNode;
-class CallICFGNode;
-class RetICFGNode;
-
-class ICFGEdge;
-class IntraCFGEdge;
-class CallCFGEdge;
-class RetCFGEdge;
-
-
-class SVFModule;
-
-class StInfo;
-class SVFType;
-class SVFPointerType;
-class SVFIntegerType;
-class SVFFunctionType;
-class SVFStructType;
-class SVFArrayType;
-class SVFOtherType;
 class LocationSet;
 class ObjTypeInfo;
 
-class SVFLoopAndDomInfo;
-class SVFValue;
-class SVFFunction;
-class SVFBasicBlock;
-class SVFInstruction;
-class SVFCallInst;
-class SVFVirtualCallInst;
-class SVFConstant;
-class SVFGlobalValue;
-class SVFArgument;
-class SVFConstantData;
-class SVFConstantInt;
-class SVFConstantFP;
-class SVFConstantNullPtr;
-class SVFBlackHoleValue;
-class SVFOtherValue;
-class SVFMetadataAsValue;
-
 class SVFVar;
 class ValVar;
 class ObjVar;
@@ -272,6 +190,24 @@ class ICFGEdge;
 class IntraCFGEdge;
 class CallCFGEdge;
 class RetCFGEdge;
+
+class SVFLoopAndDomInfo;
+class SVFValue;
+class SVFFunction;
+class SVFBasicBlock;
+class SVFInstruction;
+class SVFCallInst;
+class SVFVirtualCallInst;
+class SVFConstant;
+class SVFGlobalValue;
+class SVFArgument;
+class SVFConstantData;
+class SVFConstantInt;
+class SVFConstantFP;
+class SVFConstantNullPtr;
+class SVFBlackHoleValue;
+class SVFOtherValue;
+class SVFMetadataAsValue;
 
 class CHNode;
 class CHEdge;
@@ -1082,7 +1018,27 @@ public:
     void fill(const cJSON*& fieldJson, DummyValVar* var);
     void fill(const cJSON*& fieldJson, DummyObjVar* var);
 
-    void fill(const cJSON*& fieldJson, SVFStmt* stmt);
+    void virtFill(const cJSON*& fieldJson, SVFStmt* stmt);
+    void fill(const cJSON*&, SVFStmt* stmt);
+    void fill(const cJSON*&, AssignStmt* stmt);
+    void fill(const cJSON*&, AddrStmt* stmt);
+    void fill(const cJSON*&, CopyStmt* stmt);
+    void fill(const cJSON*&, StoreStmt* stmt);
+    void fill(const cJSON*&, LoadStmt* stmt);
+    void fill(const cJSON*&, GepStmt* stmt);
+    void fill(const cJSON*&, CallPE* stmt);
+    void fill(const cJSON*&, RetPE* stmt);
+    void fill(const cJSON*&, MultiOpndStmt* stmt);
+    void fill(const cJSON*&, PhiStmt* stmt);
+    void fill(const cJSON*&, SelectStmt* stmt);
+    void fill(const cJSON*&, CmpStmt* stmt);
+    void fill(const cJSON*&, BinaryOPStmt* stmt);
+    void fill(const cJSON*&, UnaryOPStmt* stmt);
+    void fill(const cJSON*&, BranchStmt* stmt);
+    void fill(const cJSON*&, TDForkPE* stmt);
+    void fill(const cJSON*&, TDJoinPE* stmt);
+    //void fill(const cJSON*& fieldJson, SVFStmt* stmt);
+
     void fill(const cJSON*& fieldJson, StInfo* stInfo);
 
     template <typename NodeTy, typename EdgeTy>
@@ -1091,6 +1047,14 @@ public:
         // id and nodeKind have already been read.
         JSON_READ_FIELD_FWD(fieldJson, node, InEdges);
         JSON_READ_FIELD_FWD(fieldJson, node, OutEdges);
+    }
+
+    template <typename NodeTy>
+    void fill(const cJSON*& fieldJson, GenericEdge<NodeTy>* edge)
+    {
+        // edgeFlag has already been read.
+        JSON_READ_FIELD_FWD(fieldJson, edge, src);
+        JSON_READ_FIELD_FWD(fieldJson, edge, dst);
     }
 
     // Helper functions
