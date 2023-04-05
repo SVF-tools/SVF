@@ -143,16 +143,19 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
 void SymbolTableInfo::destroy()
 {
 
-    for (IDToMemMapTy::iterator iter = objMap.begin(); iter != objMap.end();
-            ++iter)
+    for (auto &pair: objMap)
     {
-        if (iter->second)
-            delete iter->second;
+        if (MemObj* memObj = pair.second)
+            delete memObj;
     }
 
     for (const SVFType* type : svfTypes)
         delete type;
     svfTypes.clear();
+
+    for (StInfo* st : stInfos)
+        delete st;
+    stInfos.clear();
 
     mod = nullptr;
 }

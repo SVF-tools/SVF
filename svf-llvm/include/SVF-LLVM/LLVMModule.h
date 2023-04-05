@@ -84,11 +84,10 @@ private:
     SVFValue2LLVMValueMap SVFValue2LLVMValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
-    Set<const StInfo*> StInfos;
 
     /// Constructor
     LLVMModuleSet();
-    ~LLVMModuleSet();
+    ~LLVMModuleSet() = default;
 
     void build();
 
@@ -330,8 +329,8 @@ private:
     SVFType* addSVFTypeInfo(const Type* t);
     /// Collect a type info
     StInfo* collectTypeInfo(const Type* ty);
-    /// Collect the struct info; nf contains the number of fields after flattening
-    StInfo* collectStructInfo(const StructType *T, u32_t& nf);
+    /// Collect the struct info and set the number of fields after flattening
+    StInfo* collectStructInfo(const StructType* structTy, u32_t& numFields);
     /// Collect the array info
     StInfo* collectArrayInfo(const ArrayType* T);
     /// Collect simple type (non-aggregate) info
