@@ -280,6 +280,8 @@ class CHGraph;
 ///@}
 
 cJSON* jsonCreateNullId();
+bool jsonIsBool(const cJSON* item);
+bool jsonIsBool(const cJSON* item, bool& flag);
 bool jsonIsNumber(const cJSON* item);
 bool jsonIsString(const cJSON* item);
 bool jsonIsNullId(const cJSON* item);
@@ -292,6 +294,7 @@ cJSON* jsonCreateObject();
 cJSON* jsonCreateArray();
 cJSON* jsonCreateString(const char* str);
 cJSON* jsonCreateIndex(size_t index);
+cJSON* jsonCreateBool(bool flag);
 cJSON* jsonCreateNumber(double num);
 bool jsonAddPairToMap(cJSON* obj, cJSON* key, cJSON* value);
 bool jsonAddItemToObject(cJSON* obj, const char* name, cJSON* item);
@@ -372,6 +375,7 @@ public:
 template <typename NodeTy, typename EdgeTy> class GenericGraphWriter
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     using NodeType = NodeTy;
@@ -409,6 +413,7 @@ using GenericICFGWriter = GenericGraphWriter<ICFGNode, ICFGEdge>;
 class ICFGWriter : public GenericICFGWriter
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     WriterPtrPool<SVFLoop> svfLoopPool;
@@ -425,6 +430,7 @@ public:
 class SymbolTableInfoWriter
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     SymbolTableInfoWriter(const SymbolTableInfo* symbolTableInfo);
@@ -443,6 +449,7 @@ using CHGraphWriter = GenericGraphWriter<CHNode, CHEdge>;
 class SVFModuleWriter
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
     WriterPtrPool<SVFValue> svfValuePool;
     size_t getSvfValueID(const SVFValue* value);
@@ -500,6 +507,7 @@ private:
     cJSON* toJson(const SVFLoopAndDomInfo* ldInfo); // Only owned by SVFFunction
     cJSON* toJson(const StInfo* stInfo); // Ensure Only owned by SVFType
 
+    static cJSON* toJson(bool flag);
     static cJSON* toJson(unsigned number);
     static cJSON* toJson(int number);
     static cJSON* toJson(float number);
@@ -926,6 +934,11 @@ private:
 public:
     void createObjs(const cJSON* symTableJson);
 
+    inline MemObj* getMemObjPtr(unsigned id) const
+    {
+        return memObjMap.getPtr(id);
+    }
+
     template <typename MemObjFiller, typename SVFTypeFiller, typename StInfoFiller>
     void fillObjs(MemObjFiller memObjFiller, SVFTypeFiller svfTypeFiller, StInfoFiller stInfoFiller)
     {
@@ -969,17 +982,40 @@ private:
 public:
     void read(cJSON* root);
 
+    static void readJson(const cJSON* obj, bool& flag);
     static void readJson(const cJSON* obj, unsigned& val);
     static void readJson(const cJSON* obj, int& val);
     static void readJson(const cJSON* obj, float& val);
     static void readJson(const cJSON* obj, unsigned long& val);
     static void readJson(const cJSON* obj, long long& val);
     static void readJson(const cJSON* obj, unsigned long long& val);
+
+#if 1
+    void readJson(const cJSON* obj, SVFType*& type);
+    void readJson(const cJSON* obj, SVFValue*& value);
+
+    //void readJson(const cJSON* obj, IRGraph*& graph); // IRGraph Graph
+    void readJson(const cJSON* obj, SVFVar*& var);    // IRGraph Node
+    void readJson(const cJSON* obj, SVFStmt*& stmt);  // IRGraph Edge
+    //void readJson(const cJSON* obj, ICFG*& icfg);     // ICFG Graph
+    void readJson(const cJSON* obj, ICFGNode*& node); // ICFG Node
+    void readJson(const cJSON* obj, ICFGEdge*& edge); // ICFG Edge
+    //void readJson(const cJSON* obj, CommonCHGraph*& graph); // CHGraph Graph
+    //void readJson(const cJSON* obj, CHGraph*& graph); // CHGraph Graph
+    void readJson(const cJSON* obj, CHNode*& node);   // CHGraph Node
+    void readJson(const cJSON* obj, CHEdge*& edge);   // CHGraph Edge
+
     void readJson(const cJSON* obj, SVFIR*& svfIR);
     void readJson(const cJSON* obj, SVFModule*& module);
-    void readJson(const cJSON* obj, SVFType*& type);
-    void readJson(const cJSON* fieldObj, SVF::ICFGNode*& node);
-    void readJson(const cJSON* fieldObj, SVF::SVFStmt*& stmt);
+
+    // void readJson(const cJSON* obj, CallSite& cs);
+    void readJson(const cJSON* obj, LocationSet& ls);
+    // void readJson(const cJSON* obj, SVFLoop* loop);
+    void readJson(const cJSON* obj, MemObj*& memObj);
+    // void readJson(const cJSON* obj, ObjTypeInfo* objTypeInfo); // Only owned by MemObj
+    // void readJson(const cJSON* obj, SVFLoopAndDomInfo* ldInfo); // Only owned by SVFFunction
+    // void readJson(const cJSON* obj, StInfo* stInfo); // Ensure Only owned by SVFType
+#endif
 
     template <typename T> inline void readJson(const cJSON* obj, const T*& cptr)
     {
@@ -1033,7 +1069,8 @@ public:
         }
     }
 
-    void virtFill(const cJSON* fieldJson, SVFVar* var);
+
+    void virtFill(const cJSON*& fieldJson, SVFVar* var);
     void fill(const cJSON*& fieldJson, SVFVar* var);
     void fill(const cJSON*& fieldJson, ValVar* var);
     void fill(const cJSON*& fieldJson, ObjVar* var);
@@ -1047,6 +1084,14 @@ public:
 
     void fill(const cJSON*& fieldJson, SVFStmt* stmt);
     void fill(const cJSON*& fieldJson, StInfo* stInfo);
+
+    template <typename NodeTy, typename EdgeTy>
+    void fill(const cJSON*& fieldJson, GenericNode<NodeTy, EdgeTy>* node)
+    {
+        // id and nodeKind have already been read.
+        JSON_READ_FIELD_FWD(fieldJson, node, InEdges);
+        JSON_READ_FIELD_FWD(fieldJson, node, OutEdges);
+    }
 
     // Helper functions
     static inline s64_t applyEdgeMask(u64_t edgeFlag)

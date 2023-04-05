@@ -227,6 +227,11 @@ static void readGenericNodeIdKindFwd(const cJSON*& fieldJson, NodeID& nodeId,
     fieldJson = nodeKind->next;
 }
 
+cJSON* SVFIRWriter::toJson(bool flag)
+{
+    return jsonCreateBool(flag);
+}
+
 cJSON* SVFIRWriter::toJson(unsigned number)
 {
     // OK, double precision enough
@@ -961,6 +966,32 @@ cJSON* jsonCreateNullId()
     return cJSON_CreateNull();
 }
 
+bool jsonIsBool(const cJSON* item)
+{
+    return humanReadableOption()
+               ? cJSON_IsBool(item)
+               : cJSON_IsNumber(item) &&
+                     (item->valuedouble == 0 || item->valuedouble == 1);
+}
+
+bool jsonIsBool(const cJSON* item, bool& flag)
+{
+    if (humanReadableOption())
+    {
+        if (!cJSON_IsBool(item))
+            return false;
+        flag = cJSON_IsTrue(item);
+        return true;
+    }
+    else
+    {
+        if (!cJSON_IsNumber(item))
+            return false;
+        flag = item->valuedouble == 1;
+        return true;
+    }
+}
+
 bool jsonIsNumber(const cJSON* item)
 {
     return cJSON_IsNumber(item);
@@ -1037,6 +1068,12 @@ cJSON* jsonCreateIndex(size_t index)
     (void)maxPreciseIntInDouble; // silence unused warning
     assert(index <= maxPreciseIntInDouble);
     return cJSON_CreateNumber(index);
+}
+
+cJSON* jsonCreateBool(bool flag)
+{
+    bool hr = humanReadableOption();
+    return hr ? cJSON_CreateBool(flag) : cJSON_CreateNumber(flag);
 }
 
 cJSON* jsonCreateNumber(double num)
@@ -1527,6 +1564,11 @@ void SVFIRReader::read(cJSON* root)
     //JSON_READ_FIELD_FWD(svfirField, svfIR, icfgNode2SVFStmtsMap);
 }
 
+void SVFIRReader::readJson(const cJSON* obj, bool& flag)
+{
+    ABORT_IFNOT(jsonIsBool(obj, flag), "Expect bool for " << obj->string);
+}
+
 void SVFIRReader::readJson(const cJSON* obj, unsigned& val)
 {
     readSmallNumber(obj, val);
@@ -1560,6 +1602,51 @@ void SVFIRReader::readJson(const cJSON* obj, long long& val)
                   [](const char* s) { return std::strtoll(s, nullptr, 10); });
 }
 
+void SVFIRReader::readJson(const cJSON* obj, SVFType*& type)
+{
+    //TODO
+    assert(type == nullptr && "Type already read?");
+}
+
+void SVFIRReader::readJson(const cJSON* obj, SVFValue*& value)
+{
+    //TODO
+}
+
+void SVFIRReader::readJson(const cJSON* obj, SVFVar*& var)
+{
+    //TODO
+}
+
+void SVFIRReader::readJson(const cJSON* obj, SVFStmt*& stmt)
+{
+    unsigned id;
+    JSON_READ_OBJ(obj, id);
+    stmt = irGraphReader.getEdgePtr(id);
+}
+
+void SVFIRReader::readJson(const cJSON* obj, ICFGNode*& node)
+{
+    NodeID id;
+    JSON_READ_OBJ(obj, id);
+    node = icfgReader.getNodePtr(id);
+}
+
+void SVFIRReader::readJson(const cJSON* obj, ICFGEdge*& edge)
+{
+    //TODO
+}
+
+void SVFIRReader::readJson(const cJSON* obj, CHNode*& node)
+{
+    //TODO
+}
+
+void SVFIRReader::readJson(const cJSON* obj, CHEdge*& edge)
+{
+    //TODO
+}
+
 void SVFIRReader::readJson(const cJSON* obj, SVFIR*& svfIR)
 {
 
@@ -1570,23 +1657,14 @@ void SVFIRReader::readJson(const cJSON* obj, SVFModule*& module)
 
 }
 
-void SVFIRReader::readJson(const cJSON* obj, SVFType*& type)
+void SVFIRReader::readJson(const cJSON* obj, LocationSet& ls)
 {
-    assert(type == nullptr && "Type already read?");
+    // TODO
 }
 
-void SVFIRReader::readJson(const cJSON* fieldObj, SVF::ICFGNode*& node)
+void SVFIRReader::readJson(const cJSON* obj, MemObj*& memObj)
 {
-    NodeID id;
-    JSON_READ_OBJ(fieldObj, id);
-    node = icfgReader.getNodePtr(id);
-}
-
-void SVFIRReader::readJson(const cJSON* fieldObj, SVF::SVFStmt*& stmt)
-{
-    unsigned id;
-    JSON_READ_OBJ(fieldObj, id);
-    stmt = irGraphReader.getEdgePtr(id);
+    // TODO
 }
 
 void SVFIRReader::fill(const cJSON*& siFieldJson, StInfo* stInfo)
@@ -1594,35 +1672,91 @@ void SVFIRReader::fill(const cJSON*& siFieldJson, StInfo* stInfo)
     // TODO
 }
 
-void SVFIRReader::virtFill(const cJSON* fieldJson, SVFVar* var)
+void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFVar* var)
 {
-    // TODO
+    switch (var->getNodeKind())
+    {
+    default:
+        assert(false && "Unknown SVFVar kind");
+
+#define CASE(VarKind, VarType)                                                 \
+    case SVFVar::VarKind:                                                      \
+        return fill(fieldJson, static_cast<VarType*>(var))
+
+        CASE(ValNode, ValVar);
+        CASE(ObjNode, ObjVar);
+        CASE(RetNode, RetPN);
+        CASE(VarargNode, VarArgPN);
+        CASE(GepValNode, GepValVar);
+        CASE(GepObjNode, GepObjVar);
+        CASE(FIObjNode, FIObjVar);
+        CASE(DummyValNode, DummyValVar);
+        CASE(DummyObjNode, DummyObjVar);
+#undef CASE
+    }
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFVar* var)
 {
-    JSON_READ_FIELD_FWD(fieldJson, var, InEdges);
-    JSON_READ_FIELD_FWD(fieldJson, var, OutEdges);
+    fill(fieldJson, static_cast<GenericPAGNodeTy*>(var));
+    JSON_READ_FIELD_FWD(fieldJson, var, value);
+    JSON_READ_FIELD_FWD(fieldJson, var, InEdgeKindToSetMap);
+    JSON_READ_FIELD_FWD(fieldJson, var, OutEdgeKindToSetMap);
+    JSON_READ_FIELD_FWD(fieldJson, var, isPtr);
 }
 
-void SVFIRReader::fill(const cJSON*& fieldJson, ValVar* var) {}
+void SVFIRReader::fill(const cJSON*& fieldJson, ValVar* var)
+{
+    fill(fieldJson, static_cast<SVFVar*>(var));
+}
 
-void SVFIRReader::fill(const cJSON*& fieldJson, ObjVar* var) {}
+void SVFIRReader::fill(const cJSON*& fieldJson, ObjVar* var)
+{
+    fill(fieldJson, static_cast<SVFVar*>(var));
+    JSON_READ_FIELD_FWD(fieldJson, var, mem);
+}
 
-void SVFIRReader::fill(const cJSON*& fieldJson, GepValVar* var) {}
+void SVFIRReader::fill(const cJSON*& fieldJson, GepValVar* var) {
+    fill(fieldJson, static_cast<ValVar*>(var));
+    JSON_READ_FIELD_FWD(fieldJson, var, ls);
+    JSON_READ_FIELD_FWD(fieldJson, var, gepValType);
+}
 
-void SVFIRReader::fill(const cJSON*& fieldJson, GepObjVar* var) {}
+void SVFIRReader::fill(const cJSON*& fieldJson, GepObjVar* var)
+{
+    fill(fieldJson, static_cast<ObjVar*>(var));
+    JSON_READ_FIELD_FWD(fieldJson, var, ls);
+    JSON_READ_FIELD_FWD(fieldJson, var, base);
+}
 
-void SVFIRReader::fill(const cJSON*& fieldJson, FIObjVar* var) {}
+void SVFIRReader::fill(const cJSON*& fieldJson, FIObjVar* var)
+{
+    fill(fieldJson, static_cast<ObjVar*>(var));
+}
 
-void SVFIRReader::fill(const cJSON*& fieldJson, RetPN* var) {}
+void SVFIRReader::fill(const cJSON*& fieldJson, RetPN* var)
+{
+    fill(fieldJson, static_cast<ValVar*>(var));
+}
 
-void SVFIRReader::fill(const cJSON*& fieldJson, VarArgPN* var) {}
+void SVFIRReader::fill(const cJSON*& fieldJson, VarArgPN* var)
+{
+    fill(fieldJson, static_cast<ValVar*>(var));
+}
 
-void SVFIRReader::fill(const cJSON*& fieldJson, DummyValVar* var) {}
+void SVFIRReader::fill(const cJSON*& fieldJson, DummyValVar* var)
+{
+    fill(fieldJson, static_cast<ValVar*>(var));
+}
 
-void SVFIRReader::fill(const cJSON*& fieldJson, DummyObjVar* var) {}
+void SVFIRReader::fill(const cJSON*& fieldJson, DummyObjVar* var)
+{
+    fill(fieldJson, static_cast<ObjVar*>(var));
+}
 
-void SVFIRReader::fill(const cJSON*& fieldJson, SVFStmt* stmt) {}
+void SVFIRReader::fill(const cJSON*& fieldJson, SVFStmt* stmt)
+{
+    // TODO
+}
 
 } // namespace SVF

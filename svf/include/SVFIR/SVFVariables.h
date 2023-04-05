@@ -45,6 +45,7 @@ typedef GenericNode<SVFVar, SVFStmt> GenericPAGNodeTy;
 class SVFVar : public GenericPAGNodeTy
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class IRGraph;
     friend class SVFIR;
     friend class VFG;
@@ -258,6 +259,8 @@ public:
 class ValVar: public SVFVar
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
+    friend class SVFIRReader;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -306,6 +309,7 @@ public:
 class ObjVar: public SVFVar
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 protected:
     const MemObj* mem;	///< memory object
@@ -368,6 +372,7 @@ public:
 class GepValVar: public ValVar
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     LocationSet ls;	// LocationSet
@@ -432,6 +437,7 @@ public:
 class GepObjVar: public ObjVar
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     LocationSet ls;
@@ -514,6 +520,7 @@ public:
 class FIObjVar: public ObjVar
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -560,6 +567,7 @@ public:
 class RetPN: public ValVar
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -599,6 +607,7 @@ public:
 class VarArgPN: public ValVar
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -638,6 +647,7 @@ public:
 class DummyValVar: public ValVar
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -677,6 +687,7 @@ public:
 class DummyObjVar: public ObjVar
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:

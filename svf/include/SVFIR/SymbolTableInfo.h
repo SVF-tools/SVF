@@ -48,6 +48,7 @@ class SymbolTableInfo
 {
     friend class SymbolTableBuilder;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
 
@@ -377,6 +378,7 @@ protected:
 class MemObj
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     /// Type information of this object
@@ -469,6 +471,7 @@ public:
 class ObjTypeInfo
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class SymbolTableBuilder;
 
 public:

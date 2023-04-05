@@ -343,6 +343,7 @@ template<class NodeTy, class EdgeTy>
 class GenericGraph
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class GenericGraphWriter<NodeTy, EdgeTy>;
 
 public:

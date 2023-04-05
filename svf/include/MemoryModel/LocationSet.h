@@ -53,6 +53,7 @@ class LocationSet
 {
     friend class SymbolTableInfo;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     enum LSRelation

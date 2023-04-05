@@ -38,6 +38,7 @@ namespace SVF
 class SVFLoop
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
     typedef Set<const ICFGEdge *> ICFGEdgeSet;
     typedef Set<const ICFGNode *> ICFGNodeSet;

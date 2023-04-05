@@ -51,6 +51,7 @@ typedef GenericEdge<SVFVar> GenericPAGEdgeTy;
 class SVFStmt : public GenericPAGEdgeTy
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     /// Types of SVFIR statements
@@ -222,6 +223,7 @@ private:
 class AssignStmt : public SVFStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     AssignStmt();                      ///< place holder
@@ -295,6 +297,7 @@ public:
 class AddrStmt: public AssignStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     AddrStmt();                      ///< place holder
@@ -330,6 +333,7 @@ public:
 class CopyStmt: public AssignStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     CopyStmt();                      ///< place holder
@@ -364,6 +368,7 @@ public:
 class StoreStmt: public AssignStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     StoreStmt();                      ///< place holder
@@ -399,6 +404,7 @@ public:
 class LoadStmt: public AssignStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     LoadStmt();                      ///< place holder
@@ -434,6 +440,7 @@ public:
 class GepStmt: public AssignStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     GepStmt();                      ///< place holder
@@ -506,6 +513,7 @@ public:
 class CallPE: public AssignStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     CallPE();                      ///< place holder
@@ -562,6 +570,7 @@ public:
 class RetPE: public AssignStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     RetPE();                      ///< place holder
@@ -618,6 +627,7 @@ public:
 class MultiOpndStmt : public SVFStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef std::vector<SVFVar*> OPVars;
@@ -697,6 +707,7 @@ public:
 class PhiStmt: public MultiOpndStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef std::vector<const ICFGNode*> OpICFGNodeVec;
@@ -763,6 +774,7 @@ public:
 class SelectStmt: public MultiOpndStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     SelectStmt();                      ///< place holder
@@ -816,6 +828,7 @@ public:
 class CmpStmt: public MultiOpndStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     CmpStmt();                      ///< place holder
@@ -900,6 +913,7 @@ public:
 class BinaryOPStmt: public MultiOpndStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     BinaryOPStmt();                      ///< place holder
@@ -968,6 +982,7 @@ public:
 class UnaryOPStmt: public SVFStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     UnaryOPStmt();                      ///< place holder
@@ -1033,6 +1048,7 @@ public:
 class BranchStmt: public SVFStmt
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef std::vector<std::pair<const ICFGNode*, s32_t>> SuccAndCondPairVec;
@@ -1121,6 +1137,7 @@ public:
 class TDForkPE: public CallPE
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     TDForkPE();                      ///< place holder
@@ -1160,6 +1177,7 @@ public:
 class TDJoinPE: public RetPE
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     TDJoinPE();                      ///< place holder
