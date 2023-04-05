@@ -978,8 +978,15 @@ public:
     void readJson(const cJSON* obj, SVFIR*& svfIR);
     void readJson(const cJSON* obj, SVFModule*& module);
     void readJson(const cJSON* obj, SVFType*& type);
-    void readJson(const cJSON* fieldObj, const SVF::ICFGNode*& node);
-    void readJson(const cJSON* fieldObj, const SVF::SVFStmt*& node);
+    void readJson(const cJSON* fieldObj, SVF::ICFGNode*& node);
+    void readJson(const cJSON* fieldObj, SVF::SVFStmt*& stmt);
+
+    template <typename T> inline void readJson(const cJSON* obj, const T*& cptr)
+    {
+        T* ptr;
+        readJson(obj, ptr);
+        cptr = ptr;
+    }
 
     template <typename Container>
     std::enable_if_t<is_sequence_container_v<Container>>
@@ -992,7 +999,6 @@ public:
             std::remove_const_t<typename Container::value_type> elem;
             readJson(elemJson, elem);
             container.push_back(std::move(elem));
-            elemJson = elemJson->next;
         }
     }
 
@@ -1011,12 +1017,35 @@ public:
             readJson(keyJson, key);
             readJson(valJson, val);
             map.emplace(std::move(key), std::move(val));
-            elemJson = elemJson->next;
         }
     }
 
-    //template <typename Set, typename = std::enable_if_t<is_set_v<Set>>>
-    //void readJson(const)
+    template <typename Set>
+    std::enable_if_t<is_set_v<Set>> readJson(const cJSON* obj, Set& set)
+    {
+        assert(set.empty() && "set should be empty");
+        ABORT_IFNOT(jsonIsArray(obj), "expects an array");
+        jsonForEach(elemJson, obj)
+        {
+            std::remove_const_t<typename Set::value_type> elem;
+            readJson(elemJson, elem);
+            set.insert(std::move(elem));
+        }
+    }
+
+    void virtFill(const cJSON* fieldJson, SVFVar* var);
+    void fill(const cJSON*& fieldJson, SVFVar* var);
+    void fill(const cJSON*& fieldJson, ValVar* var);
+    void fill(const cJSON*& fieldJson, ObjVar* var);
+    void fill(const cJSON*& fieldJson, GepValVar* var);
+    void fill(const cJSON*& fieldJson, GepObjVar* var);
+    void fill(const cJSON*& fieldJson, FIObjVar* var);
+    void fill(const cJSON*& fieldJson, RetPN* var);
+    void fill(const cJSON*& fieldJson, VarArgPN* var);
+    void fill(const cJSON*& fieldJson, DummyValVar* var);
+    void fill(const cJSON*& fieldJson, DummyObjVar* var);
+
+    void fill(const cJSON*& fieldJson, SVFStmt* stmt);
     void fill(const cJSON*& fieldJson, StInfo* stInfo);
 
     // Helper functions

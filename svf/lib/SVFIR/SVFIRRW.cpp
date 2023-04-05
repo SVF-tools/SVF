@@ -1522,7 +1522,9 @@ void SVFIRReader::read(cJSON* root)
 
     // Phase 3. Read everything else
     SVFIR* svfIR = nullptr;
-    JSON_READ_FIELD_FWD(svfirField, svfIR, icfgNode2SVFStmtsMap);
+    (void)(svfirField);
+    (void)(svfIR);
+    //JSON_READ_FIELD_FWD(svfirField, svfIR, icfgNode2SVFStmtsMap);
 }
 
 void SVFIRReader::readJson(const cJSON* obj, unsigned& val)
@@ -1573,23 +1575,54 @@ void SVFIRReader::readJson(const cJSON* obj, SVFType*& type)
     assert(type == nullptr && "Type already read?");
 }
 
-void SVFIRReader::readJson(const cJSON* fieldObj, const SVF::ICFGNode*& node)
+void SVFIRReader::readJson(const cJSON* fieldObj, SVF::ICFGNode*& node)
 {
     NodeID id;
     JSON_READ_OBJ(fieldObj, id);
     node = icfgReader.getNodePtr(id);
 }
 
-void SVFIRReader::readJson(const cJSON* fieldObj, const SVF::SVFStmt*& node)
+void SVFIRReader::readJson(const cJSON* fieldObj, SVF::SVFStmt*& stmt)
 {
     unsigned id;
     JSON_READ_OBJ(fieldObj, id);
-    node = irGraphReader.getEdgePtr(id);
+    stmt = irGraphReader.getEdgePtr(id);
 }
 
 void SVFIRReader::fill(const cJSON*& siFieldJson, StInfo* stInfo)
 {
     // TODO
 }
+
+void SVFIRReader::virtFill(const cJSON* fieldJson, SVFVar* var)
+{
+    // TODO
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, SVFVar* var)
+{
+    JSON_READ_FIELD_FWD(fieldJson, var, InEdges);
+    JSON_READ_FIELD_FWD(fieldJson, var, OutEdges);
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, ValVar* var) {}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, ObjVar* var) {}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, GepValVar* var) {}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, GepObjVar* var) {}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, FIObjVar* var) {}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, RetPN* var) {}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, VarArgPN* var) {}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, DummyValVar* var) {}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, DummyObjVar* var) {}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, SVFStmt* stmt) {}
 
 } // namespace SVF

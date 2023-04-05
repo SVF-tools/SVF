@@ -140,6 +140,7 @@ template<class NodeTy,class EdgeTy>
 class GenericNode
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef NodeTy NodeType;
