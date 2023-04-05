@@ -1077,7 +1077,7 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
  * Given a Struct type, we recursively extend and record its fields and types.
  */
 StInfo* LLVMModuleSet::collectStructInfo(const StructType* structTy,
-                                         u32_t& numFields)
+        u32_t& numFields)
 {
     /// The struct info should not be processed before
     StInfo* stInfo = new StInfo(1);
