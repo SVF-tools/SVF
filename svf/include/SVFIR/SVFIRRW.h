@@ -739,6 +739,9 @@ public:
             const cJSON* objFieldJson = pair.second.first;
             T* obj = pair.second.second;
             fillFunc(objFieldJson, obj);
+
+            ABORT_IFNOT(!objFieldJson, "json should be consumed by filler, but "
+                                           << objFieldJson->string << " left");
         }
     }
 
@@ -957,6 +960,7 @@ public:
     static void readJson(const cJSON* obj, unsigned long& val);
     static void readJson(const cJSON* obj, long long& val);
     static void readJson(const cJSON* obj, unsigned long long& val);
+    static void readJson(const cJSON* obj, std::string& str);
 
 #if 1
     void readJson(const cJSON* obj, SVFType*& type);
@@ -1061,25 +1065,42 @@ public:
     void fill(const cJSON*& fieldJson, DummyObjVar* var);
 
     void virtFill(const cJSON*& fieldJson, SVFStmt* stmt);
-    void fill(const cJSON*&, SVFStmt* stmt);
-    void fill(const cJSON*&, AssignStmt* stmt);
-    void fill(const cJSON*&, AddrStmt* stmt);
-    void fill(const cJSON*&, CopyStmt* stmt);
-    void fill(const cJSON*&, StoreStmt* stmt);
-    void fill(const cJSON*&, LoadStmt* stmt);
-    void fill(const cJSON*&, GepStmt* stmt);
-    void fill(const cJSON*&, CallPE* stmt);
-    void fill(const cJSON*&, RetPE* stmt);
-    void fill(const cJSON*&, MultiOpndStmt* stmt);
-    void fill(const cJSON*&, PhiStmt* stmt);
-    void fill(const cJSON*&, SelectStmt* stmt);
-    void fill(const cJSON*&, CmpStmt* stmt);
-    void fill(const cJSON*&, BinaryOPStmt* stmt);
-    void fill(const cJSON*&, UnaryOPStmt* stmt);
-    void fill(const cJSON*&, BranchStmt* stmt);
-    void fill(const cJSON*&, TDForkPE* stmt);
-    void fill(const cJSON*&, TDJoinPE* stmt);
-    //void fill(const cJSON*& fieldJson, SVFStmt* stmt);
+    void fill(const cJSON*& fieldJson, SVFStmt* stmt);
+    void fill(const cJSON*& fieldJson, AssignStmt* stmt);
+    void fill(const cJSON*& fieldJson, AddrStmt* stmt);
+    void fill(const cJSON*& fieldJson, CopyStmt* stmt);
+    void fill(const cJSON*& fieldJson, StoreStmt* stmt);
+    void fill(const cJSON*& fieldJson, LoadStmt* stmt);
+    void fill(const cJSON*& fieldJson, GepStmt* stmt);
+    void fill(const cJSON*& fieldJson, CallPE* stmt);
+    void fill(const cJSON*& fieldJson, RetPE* stmt);
+    void fill(const cJSON*& fieldJson, MultiOpndStmt* stmt);
+    void fill(const cJSON*& fieldJson, PhiStmt* stmt);
+    void fill(const cJSON*& fieldJson, SelectStmt* stmt);
+    void fill(const cJSON*& fieldJson, CmpStmt* stmt);
+    void fill(const cJSON*& fieldJson, BinaryOPStmt* stmt);
+    void fill(const cJSON*& fieldJson, UnaryOPStmt* stmt);
+    void fill(const cJSON*& fieldJson, BranchStmt* stmt);
+    void fill(const cJSON*& fieldJson, TDForkPE* stmt);
+    void fill(const cJSON*& fieldJson, TDJoinPE* stmt);
+
+    void virtFill(const cJSON*& fieldJson, SVFValue* value);
+    void fill(const cJSON*& fieldJson, SVFValue* value);
+    void fill(const cJSON*& fieldJson, SVFFunction* value);
+    void fill(const cJSON*& fieldJson, SVFBasicBlock* value);
+    void fill(const cJSON*& fieldJson, SVFInstruction* value);
+    void fill(const cJSON*& fieldJson, SVFCallInst* value);
+    void fill(const cJSON*& fieldJson, SVFVirtualCallInst* value);
+    void fill(const cJSON*& fieldJson, SVFConstant* value);
+    void fill(const cJSON*& fieldJson, SVFGlobalValue* value);
+    void fill(const cJSON*& fieldJson, SVFArgument* value);
+    void fill(const cJSON*& fieldJson, SVFConstantData* value);
+    void fill(const cJSON*& fieldJson, SVFConstantInt* value);
+    void fill(const cJSON*& fieldJson, SVFConstantFP* value);
+    void fill(const cJSON*& fieldJson, SVFConstantNullPtr* value);
+    void fill(const cJSON*& fieldJson, SVFBlackHoleValue* value);
+    void fill(const cJSON*& fieldJson, SVFOtherValue* value);
+    void fill(const cJSON*& fieldJson, SVFMetadataAsValue* value);
 
     void fill(const cJSON*& fieldJson, StInfo* stInfo);
 
