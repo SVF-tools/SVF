@@ -70,6 +70,7 @@
     JSON_READ_OBJ_WITH_NAME_FWD(json, obj, #obj)
 #define JSON_READ_FIELD_FWD(json, objptr, field)                               \
     JSON_READ_OBJ_WITH_NAME_FWD(json, (objptr)->field, #field)
+// TODO: Ungly, Refactor me
 #define JSON_READ_FIELD_ASTYPE_FWD(json, objptr, field, base)                  \
     do                                                                         \
     {                                                                          \
@@ -663,6 +664,36 @@ private:
  *
  */
 
+/// @brief Type trait to get base type.
+/// Helper struct to detect inheritance from Node/Edge
+///@}
+template <typename T, typename = void> struct KindBaseHelper
+{
+};
+#define KIND_BASE(B)                                                           \
+    template <typename T>                                                      \
+    struct KindBaseHelper<T, std::enable_if_t<std::is_base_of<B, T>::value>>   \
+    {                                                                          \
+        using type = B;                                                        \
+    }
+KIND_BASE(SVFType);
+KIND_BASE(SVFValue);
+KIND_BASE(SVFVar);
+KIND_BASE(SVFStmt);
+KIND_BASE(ICFGNode);
+KIND_BASE(ICFGEdge);
+KIND_BASE(CHNode);
+KIND_BASE(CHEdge);
+#undef KIND_BASE
+template <typename T> struct KindBase
+{
+    using type = typename KindBaseHelper<T>::type;
+    static_assert(!std::is_void<type>::value, "Unsupported type");
+};
+template <typename T>
+using KindBaseT = typename KindBase<T>::type;
+///@}
+
 /// @brief Keeps a map from IDs to T objects, such as XXNode.
 /// @tparam T: The type of the objects.
 template <typename T> class ReaderIDToObjMap
@@ -906,6 +937,7 @@ public:
 /* SVFIRReader
  * Read SVFIR from JSON
  */
+
 class SVFIRReader
 {
 private:
@@ -958,6 +990,16 @@ public:
         T* ptr;
         readJson(obj, ptr);
         cptr = ptr;
+    }
+
+    template <typename T1, typename T2>
+    void readJson(const cJSON* obj, std::pair<T1, T2>& pair)
+    {
+        const cJSON* firstJson;
+        const cJSON* secondJson;
+        jsonUnpackPair(obj, firstJson, secondJson);
+        readJson(firstJson, pair.first);
+        readJson(secondJson, pair.second);
     }
 
     template <typename Container>

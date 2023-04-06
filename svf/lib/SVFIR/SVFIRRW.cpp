@@ -1031,12 +1031,12 @@ bool jsonKeyEquals(const cJSON* item, const char* key)
 void jsonUnpackPair(const cJSON* item, const cJSON*& key,
                        const cJSON*& value)
 {
-    ABORT_IFNOT(jsonIsArray(item), "Expected array as map pair");
+    ABORT_IFNOT(jsonIsArray(item), "Expected array as pair");
     cJSON* child1 = item->child;
-    ABORT_IFNOT(child1 != nullptr, "Missing first child of map pair");
+    ABORT_IFNOT(child1 != nullptr, "Missing first child of pair");
     cJSON* child2 = child1->next;
-    ABORT_IFNOT(child2 != nullptr, "Missing first child of map pair");
-    ABORT_IFNOT(child2->next == nullptr, "Too many children of map pair");
+    ABORT_IFNOT(child2 != nullptr, "Missing first child of pair");
+    ABORT_IFNOT(child2->next == nullptr, "Too many children of pair");
     key = child1;
     value = child2;
 }
@@ -1796,71 +1796,103 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFStmt* stmt)
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, AssignStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<SVFStmt*>(stmt));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, AddrStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<AssignStmt*>(stmt));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, CopyStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<AssignStmt*>(stmt));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, StoreStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<AssignStmt*>(stmt));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, LoadStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<AssignStmt*>(stmt));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, GepStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<AssignStmt*>(stmt));
+    JSON_READ_FIELD_FWD(fieldJson, stmt, ls);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, variantField);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, CallPE* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<AssignStmt*>(stmt));
+    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, stmt, call, ICFGNode);
+    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, stmt, entry, ICFGNode);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, RetPE* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<AssignStmt*>(stmt));
+    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, stmt, call, ICFGNode);
+    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, stmt, exit, ICFGNode);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, MultiOpndStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<SVFStmt*>(stmt));
+    JSON_READ_FIELD_FWD(fieldJson, stmt, opVars);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, PhiStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<MultiOpndStmt*>(stmt));
+    JSON_READ_FIELD_FWD(fieldJson, stmt, opICFGNodes);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SelectStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<MultiOpndStmt*>(stmt));
+    JSON_READ_FIELD_FWD(fieldJson, stmt, condition);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, CmpStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<MultiOpndStmt*>(stmt));
+    JSON_READ_FIELD_FWD(fieldJson, stmt, predicate);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, BinaryOPStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<MultiOpndStmt*>(stmt));
+    JSON_READ_FIELD_FWD(fieldJson, stmt, opcode);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, UnaryOPStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<SVFStmt*>(stmt));
+    JSON_READ_FIELD_FWD(fieldJson, stmt, opcode);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, BranchStmt* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<SVFStmt*>(stmt));
+    JSON_READ_FIELD_FWD(fieldJson, stmt, successors);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, cond);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, brInst);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, TDForkPE* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<CallPE*>(stmt));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, TDJoinPE* stmt)
-{ // TODO
+{
+    fill(fieldJson, static_cast<RetPE*>(stmt));
 }
 
 } // namespace SVF
