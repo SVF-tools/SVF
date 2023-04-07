@@ -651,17 +651,19 @@ cJSON* SVFIRWriter::contentToJson(const SVFValue* value)
 cJSON* SVFIRWriter::contentToJson(const SVFFunction* value)
 {
     cJSON* root = contentToJson(static_cast<const SVFValue*>(value));
-    JSON_WRITE_FIELD(root, value, isDecl);
-    JSON_WRITE_FIELD(root, value, intrinsic);
-    JSON_WRITE_FIELD(root, value, addrTaken);
-    JSON_WRITE_FIELD(root, value, isUncalled);
-    JSON_WRITE_FIELD(root, value, isNotRet);
-    JSON_WRITE_FIELD(root, value, varArg);
-    JSON_WRITE_FIELD(root, value, funcType);
-    JSON_WRITE_FIELD(root, value, loopAndDom);
-    JSON_WRITE_FIELD(root, value, realDefFun);
-    JSON_WRITE_FIELD(root, value, allBBs);
-    JSON_WRITE_FIELD(root, value, allArgs);
+#define F(f) JSON_WRITE_FIELD(root, value, f);
+    F(isDecl);
+    F(intrinsic);
+    F(addrTaken);
+    F(isUncalled);
+    F(isNotRet);
+    F(varArg);
+    F(funcType);
+    F(loopAndDom);
+    F(realDefFun);
+    F(allBBs);
+    F(allArgs);
+#undef F
     return root;
 }
 
@@ -1558,6 +1560,8 @@ void SVFIRReader::read(cJSON* root)
     irGraphReader.fillObjs(
         [this](const cJSON*& j, SVFVar* var) { virtFill(j, var); },
         [this](const cJSON*& j, SVFStmt* stmt) { virtFill(j, stmt); });
+    svfModuleReader.fillObjs(
+        [this](const cJSON*& j, SVFValue* val) { virtFill(j, val); });
 
     // TODO: later
 
@@ -1673,6 +1677,11 @@ void SVFIRReader::readJson(const cJSON* obj, LocationSet& ls)
 }
 
 void SVFIRReader::readJson(const cJSON* obj, MemObj*& memObj)
+{
+    // TODO
+}
+
+void SVFIRReader::readJson(const cJSON* obj, SVFLoopAndDomInfo*& ldInfo)
 {
     // TODO
 }
@@ -1801,7 +1810,8 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFStmt* stmt)
 {
     fill(fieldJson, static_cast<GenericPAGEdgeTy*>(stmt));
     JSON_READ_FIELD_FWD(fieldJson, stmt, value);
-    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, stmt, basicBlock, SVFValue);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, basicBlock);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, basicBlock);
     JSON_READ_FIELD_FWD(fieldJson, stmt, icfgNode);
     JSON_READ_FIELD_FWD(fieldJson, stmt, edgeId);
 }
@@ -1841,15 +1851,15 @@ void SVFIRReader::fill(const cJSON*& fieldJson, GepStmt* stmt)
 void SVFIRReader::fill(const cJSON*& fieldJson, CallPE* stmt)
 {
     fill(fieldJson, static_cast<AssignStmt*>(stmt));
-    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, stmt, call, ICFGNode);
-    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, stmt, entry, ICFGNode);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, call);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, entry);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, RetPE* stmt)
 {
     fill(fieldJson, static_cast<AssignStmt*>(stmt));
-    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, stmt, call, ICFGNode);
-    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, stmt, exit, ICFGNode);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, call);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, exit);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, MultiOpndStmt* stmt)
@@ -1952,91 +1962,111 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFValue* value)
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFFunction* value)
 {
     fill(fieldJson, static_cast<SVFValue*>(value));
-    JSON_READ_FIELD_FWD(fieldJson, value, isDecl);
-    JSON_READ_FIELD_FWD(fieldJson, value, intrinsic);
-    JSON_READ_FIELD_FWD(fieldJson, value, addrTaken);
-    JSON_READ_FIELD_FWD(fieldJson, value, isUncalled);
-    JSON_READ_FIELD_FWD(fieldJson, value, isNotRet);
-    JSON_READ_FIELD_FWD(fieldJson, value, varArg);
-    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, value, funcType, SVFType);
-    // JSON_READ_FIELD_FWD(fieldJson, value, loopAndDom); TODO
-    JSON_READ_FIELD_ASTYPE_FWD(fieldJson, value, realDefFun, SVFValue);
-    //TODO JSON_READ_FIELD_FWD(fieldJson, value, allBBs);
-    //TODO JSON_READ_FIELD_FWD(fieldJson, value, allArgs);
+#define F(f) JSON_READ_FIELD_FWD(fieldJson, value, f)
+    F(isDecl);
+    F(intrinsic);
+    F(addrTaken);
+    F(isUncalled);
+    F(isNotRet);
+    F(varArg);
+    F(funcType);
+    F(loopAndDom);
+    F(realDefFun);
+    F(allBBs);
+    F(allArgs);
+#undef F
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFBasicBlock* value)
 {
     fill(fieldJson, static_cast<SVFValue*>(value));
-    //TODO JSON_READ_FIELD_FWD(fieldJson, value, allInsts);
-    //TODO JSON_READ_FIELD_FWD(fieldJson, value, succBBs);
-    //TODO JSON_READ_FIELD_FWD(fieldJson, value, predBBs);
-    //TODO JSON_READ_FIELD_FWD(fieldJson, value, fun);
+    JSON_READ_FIELD_FWD(fieldJson, value, allInsts);
+    JSON_READ_FIELD_FWD(fieldJson, value, succBBs);
+    JSON_READ_FIELD_FWD(fieldJson, value, predBBs);
+    JSON_READ_FIELD_FWD(fieldJson, value, fun);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFInstruction* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFValue*>(value));
+    JSON_READ_FIELD_FWD(fieldJson, value, bb);
+    JSON_READ_FIELD_FWD(fieldJson, value, terminator);
+    JSON_READ_FIELD_FWD(fieldJson, value, ret);
+    JSON_READ_FIELD_FWD(fieldJson, value, succInsts);
+    JSON_READ_FIELD_FWD(fieldJson, value, predInsts);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFCallInst* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFInstruction*>(value));
+    JSON_READ_FIELD_FWD(fieldJson, value, args);
+    JSON_READ_FIELD_FWD(fieldJson, value, varArg);
+    JSON_READ_FIELD_FWD(fieldJson, value, calledVal);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFVirtualCallInst* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFCallInst*>(value));
+    JSON_READ_FIELD_FWD(fieldJson, value, vCallVtblPtr);
+    JSON_READ_FIELD_FWD(fieldJson, value, virtualFunIdx);
+    JSON_READ_FIELD_FWD(fieldJson, value, funNameOfVcall);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFConstant* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFValue*>(value));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFGlobalValue* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFConstant*>(value));
+    JSON_READ_FIELD_FWD(fieldJson, value, realDefGlobal);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFArgument* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFValue*>(value));
+    JSON_READ_FIELD_FWD(fieldJson, value, fun);
+    JSON_READ_FIELD_FWD(fieldJson, value, argNo);
+    JSON_READ_FIELD_FWD(fieldJson, value, uncalled);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFConstantData* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFConstant*>(value));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFConstantInt* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFConstantData*>(value));
+    JSON_READ_FIELD_FWD(fieldJson, value, zval);
+    JSON_READ_FIELD_FWD(fieldJson, value, sval);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFConstantFP* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFConstantData*>(value));
+    JSON_READ_FIELD_FWD(fieldJson, value, dval);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFConstantNullPtr* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFConstantData*>(value));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFBlackHoleValue* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFConstantData*>(value));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFOtherValue* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFValue*>(value));
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFMetadataAsValue* value)
 {
-    // fill(fieldJson, static_cast<SVFValue*>(func));
+    fill(fieldJson, static_cast<SVFOtherValue*>(value));
 }
 
 } // namespace SVF

@@ -70,17 +70,6 @@
     JSON_READ_OBJ_WITH_NAME_FWD(json, obj, #obj)
 #define JSON_READ_FIELD_FWD(json, objptr, field)                               \
     JSON_READ_OBJ_WITH_NAME_FWD(json, (objptr)->field, #field)
-// TODO: Ungly, Refactor me
-#define JSON_READ_FIELD_ASTYPE_FWD(json, objptr, field, base)                  \
-    do                                                                         \
-    {                                                                          \
-        base* _basePtr;                                                        \
-        JSON_READ_OBJ_WITH_NAME_FWD(json, _basePtr, #field);                   \
-        (objptr)->field = SVFUtil::dyn_cast<                                   \
-            std::remove_reference_t<decltype(*((objptr)->field))>>(_basePtr);  \
-        ABORT_IFNOT((objptr)->field,                                           \
-                    "Failed to cast from a " << #base << #field);              \
-    } while (0)
 
 /// @brief Type trait to check if a type is iterable.
 ///@{
@@ -667,31 +656,29 @@ private:
 /// @brief Type trait to get base type.
 /// Helper struct to detect inheritance from Node/Edge
 ///@}
-template <typename T, typename = void> struct KindBaseHelper
-{
-};
-#define KIND_BASE(B)                                                           \
+template <typename T, typename = void> struct KindBaseHelper {};
+#define KIND_BASE(B, KindGetter)                                               \
     template <typename T>                                                      \
     struct KindBaseHelper<T, std::enable_if_t<std::is_base_of<B, T>::value>>   \
     {                                                                          \
         using type = B;                                                        \
+        static inline s64_t getKind(T* p)                                      \
+        {                                                                      \
+            return p->KindGetter();                                            \
+        }                                                                      \
     }
-KIND_BASE(SVFType);
-KIND_BASE(SVFValue);
-KIND_BASE(SVFVar);
-KIND_BASE(SVFStmt);
-KIND_BASE(ICFGNode);
-KIND_BASE(ICFGEdge);
-KIND_BASE(CHNode);
-KIND_BASE(CHEdge);
+KIND_BASE(SVFType, getKind);
+KIND_BASE(SVFValue, getKind);
+KIND_BASE(SVFVar, getNodeKind);
+KIND_BASE(SVFStmt, getEdgeKind);
+KIND_BASE(ICFGNode, getNodeKind);
+KIND_BASE(ICFGEdge, getEdgeKind);
+KIND_BASE(CHNode, getNodeKind);
+KIND_BASE(CHEdge, getEdgeKind);
 #undef KIND_BASE
-template <typename T> struct KindBase
-{
-    using type = typename KindBaseHelper<T>::type;
-    static_assert(!std::is_void<type>::value, "Unsupported type");
-};
+
 template <typename T>
-using KindBaseT = typename KindBase<T>::type;
+using KindBaseT = typename KindBaseHelper<T>::type;
 ///@}
 
 /// @brief Keeps a map from IDs to T objects, such as XXNode.
@@ -985,9 +972,23 @@ public:
     // void readJson(const cJSON* obj, SVFLoop* loop);
     void readJson(const cJSON* obj, MemObj*& memObj);
     // void readJson(const cJSON* obj, ObjTypeInfo* objTypeInfo); // Only owned by MemObj
-    // void readJson(const cJSON* obj, SVFLoopAndDomInfo* ldInfo); // Only owned by SVFFunction
+    void readJson(const cJSON* obj, SVFLoopAndDomInfo*& ldInfo); // Only owned by SVFFunction
     // void readJson(const cJSON* obj, StInfo* stInfo); // Ensure Only owned by SVFType
 #endif
+
+    template <typename... Ts> struct make_void { typedef void type; };
+
+    template <typename... Ts> using void_t = typename make_void<Ts...>::type;
+
+    template <typename T>
+    inline void_t<KindBaseT<T>> readJson(const cJSON* obj, T*& ptr)
+    {
+        KindBaseT<T>* basePtr;
+        readJson(obj, basePtr);
+        ptr = SVFUtil::dyn_cast<T>(basePtr);
+        ABORT_IFNOT(ptr, obj->string << " shoudn't have kind "
+                                     << KindBaseHelper<T>::getKind(ptr));
+    }
 
     template <typename T> inline void readJson(const cJSON* obj, const T*& cptr)
     {
