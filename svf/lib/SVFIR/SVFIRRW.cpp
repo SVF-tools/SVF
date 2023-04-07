@@ -1268,16 +1268,16 @@ cJSON* SVFIRWriter::toJson(const SVFStmt* stmt)
 
 cJSON* SVFIRWriter::toJson(const ICFG* icfg)
 {
-    cJSON* allSvfLoops = jsonCreateArray(); // all indices seen in constructor
+    cJSON* allSvfLoop = jsonCreateArray(); // all indices seen in constructor
     for (const SVFLoop* svfLoop : icfgWriter.svfLoopPool)
     {
         cJSON* svfLoopObj = contentToJson(svfLoop);
-        jsonAddItemToArray(allSvfLoops, svfLoopObj);
+        jsonAddItemToArray(allSvfLoop, svfLoopObj);
     }
 
-    cJSON* root = genericGraphToJson(icfg, icfgWriter.edgePool.getPool());
 #define F(field) JSON_WRITE_FIELD(root, icfg, field)
-    jsonAddItemToObject(root, FIELD_NAME_ITEM(allSvfLoops));
+    cJSON* root = genericGraphToJson(icfg, icfgWriter.edgePool.getPool());
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(allSvfLoop));
     F(FunToFunEntryNodeMap);
     F(FunToFunExitNodeMap);
     F(CSToCallNodeMap);
@@ -1462,13 +1462,10 @@ void ICFGReader::createObjs(const cJSON* icfgJson)
             return createEdgeWithFlag<ICFGEdge>(flag);
         });
 
-    // TODO
-
-    // GenericICFGReader::createObjs(icfgJson, nodeCreator, edgeCreator);
-    // // TODO: Check svfLoopsJson
-    // const cJSON* svfLoopsJson = graphFieldJson;
-    // svfLoopPool.createObjs(svfLoopsJson, loopCreator);
-    // graphFieldJson = svfLoopsJson->next;
+    CHECK_JSON_KEY_EQUALS(graphFieldJson, "svfLoops");
+    svfLoopPool.createObjs(graphFieldJson,
+                           [](auto) { return new SVFLoop({}, 0); });
+    graphFieldJson = graphFieldJson->next;
 }
 
 void SymbolTableInfoReader::createObjs(const cJSON* symTableJson)
@@ -1560,8 +1557,11 @@ void SVFIRReader::read(cJSON* root)
     irGraphReader.fillObjs(
         [this](const cJSON*& j, SVFVar* var) { virtFill(j, var); },
         [this](const cJSON*& j, SVFStmt* stmt) { virtFill(j, stmt); });
-    svfModuleReader.fillObjs(
-        [this](const cJSON*& j, SVFValue* val) { virtFill(j, val); });
+    svfModuleReader.fillObjs([this](const cJSON*& j, SVFValue* val) { virtFill(j, val); });
+    icfgReader.fillObjs(
+        [this](const cJSON*& j, ICFGNode* node) { virtFill(j, node); },
+        [this](const cJSON*& j, ICFGEdge* edge) { virtFill(j, edge); },
+        [this](const cJSON*& j, SVFLoop* loop) { fill(j, loop); });
 
     // TODO: later
 
@@ -1914,6 +1914,134 @@ void SVFIRReader::fill(const cJSON*& fieldJson, TDForkPE* stmt)
 void SVFIRReader::fill(const cJSON*& fieldJson, TDJoinPE* stmt)
 {
     fill(fieldJson, static_cast<RetPE*>(stmt));
+}
+
+void SVFIRReader::virtFill(const cJSON*& fieldJson, ICFGNode* node)
+{
+    switch (node->getNodeKind())
+    {
+    default:
+        ABORT_IFNOT(false, "Unknown ICFGNode kind " << node->getNodeKind());
+
+#define CASE(NodeKind, NodeType)                                               \
+    case ICFGNode::NodeKind:                                                   \
+        return fill(fieldJson, static_cast<NodeType*>(node))
+
+        CASE(IntraBlock, IntraICFGNode);
+        CASE(FunEntryBlock, FunEntryICFGNode);
+        CASE(FunExitBlock, FunExitICFGNode);
+        CASE(FunCallBlock, CallICFGNode);
+        CASE(FunRetBlock, RetICFGNode);
+        CASE(GlobalBlock, GlobalICFGNode);
+#undef CASE
+    }
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, ICFGNode* node)
+{
+    fill(fieldJson, static_cast<GenericICFGNodeTy*>(node));
+    JSON_READ_FIELD_FWD(fieldJson, node, fun);
+    JSON_READ_FIELD_FWD(fieldJson, node, bb);
+    // Skip VFGNodes as it is empty
+    JSON_READ_FIELD_FWD(fieldJson, node, pagEdges);
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, GlobalICFGNode* node)
+{
+    fill(fieldJson, static_cast<ICFGNode*>(node));
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, IntraICFGNode* node)
+{
+    fill(fieldJson, static_cast<ICFGNode*>(node));
+    JSON_READ_FIELD_FWD(fieldJson, node, inst);
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, InterICFGNode* node)
+{
+    fill(fieldJson, static_cast<ICFGNode*>(node));
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, FunEntryICFGNode* node)
+{
+    fill(fieldJson, static_cast<ICFGNode*>(node));
+    JSON_READ_FIELD_FWD(fieldJson, node, FPNodes);
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, FunExitICFGNode* node)
+{
+    fill(fieldJson, static_cast<ICFGNode*>(node));
+    JSON_READ_FIELD_FWD(fieldJson, node, formalRet);
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, CallICFGNode* node)
+{
+    fill(fieldJson, static_cast<ICFGNode*>(node));
+    JSON_READ_FIELD_FWD(fieldJson, node, cs);
+    JSON_READ_FIELD_FWD(fieldJson, node, ret);
+    JSON_READ_FIELD_FWD(fieldJson, node, APNodes);
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, RetICFGNode* node)
+{
+    fill(fieldJson, static_cast<ICFGNode*>(node));
+    JSON_READ_FIELD_FWD(fieldJson, node, cs);
+    JSON_READ_FIELD_FWD(fieldJson, node, actualRet);
+    JSON_READ_FIELD_FWD(fieldJson, node, callBlockNode);
+}
+
+void SVFIRReader::virtFill(const cJSON*& fieldJson, ICFGEdge* edge)
+{
+    auto kind = edge->getEdgeKind();
+    switch (kind)
+    {
+    default:
+        ABORT_IFNOT(false, "Unknown ICFGEdge kind " << kind);
+    case ICFGEdge::IntraCF:
+        return fill(fieldJson, static_cast<IntraCFGEdge*>(edge));
+    case ICFGEdge::CallCF:
+        return fill(fieldJson, static_cast<CallCFGEdge*>(edge));
+    case ICFGEdge::RetCF:
+        return fill(fieldJson, static_cast<RetCFGEdge*>(edge));
+    }
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, ICFGEdge* edge)
+{
+    fill(fieldJson, static_cast<GenericICFGEdgeTy*>(edge));
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, IntraCFGEdge* edge)
+{
+    fill(fieldJson, static_cast<ICFGEdge*>(edge));
+    JSON_READ_FIELD_FWD(fieldJson, edge, conditionVar);
+    JSON_READ_FIELD_FWD(fieldJson, edge, branchCondVal);
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, CallCFGEdge* edge)
+{
+    fill(fieldJson, static_cast<ICFGEdge*>(edge));
+    JSON_READ_FIELD_FWD(fieldJson, edge, cs);
+    JSON_READ_FIELD_FWD(fieldJson, edge, callPEs);
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, RetCFGEdge* edge)
+{
+    fill(fieldJson, static_cast<ICFGEdge*>(edge));
+    JSON_READ_FIELD_FWD(fieldJson, edge, cs);
+    JSON_READ_FIELD_FWD(fieldJson, edge, retPE);
+}
+
+void SVFIRReader::fill(const cJSON*& fieldJson, SVFLoop* loop)
+{
+#define F(field) JSON_READ_FIELD_FWD(fieldJson, loop, field)
+    F(entryICFGEdges);
+    F(backICFGEdges);
+    F(inICFGEdges);
+    F(outICFGEdges);
+    F(icfgNodes);
+    F(loopBound);
+#undef F
 }
 
 void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFValue* value)

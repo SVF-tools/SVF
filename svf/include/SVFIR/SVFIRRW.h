@@ -54,15 +54,15 @@
     {                                                                          \
         ABORT_IFNOT(jsonKeyEquals(json, name),                                 \
                     "Expect name '" << name << "', got "                       \
-                                    << (json ? json->string : "NULL"));        \
+                                    << ((json) ? (json)->string : "NULL"));    \
         SVFIRReader::readJson(json, obj);                                      \
     } while (0)
 
 #define JSON_READ_OBJ_WITH_NAME_FWD(json, obj, name)                           \
     do                                                                         \
     {                                                                          \
-        JSON_READ_OBJ_WITH_NAME(json, obj, #obj);                              \
-        json = json->next;                                                     \
+        JSON_READ_OBJ_WITH_NAME(json, obj, name);                              \
+        json = (json)->next;                                                   \
     } while (0)
 
 #define JSON_READ_OBJ(json, obj) JSON_READ_OBJ_WITH_NAME(json, obj, #obj)
@@ -1052,7 +1052,7 @@ public:
         }
     }
 
-
+    // IGRaph
     void virtFill(const cJSON*& fieldJson, SVFVar* var);
     void fill(const cJSON*& fieldJson, SVFVar* var);
     void fill(const cJSON*& fieldJson, ValVar* var);
@@ -1084,7 +1084,26 @@ public:
     void fill(const cJSON*& fieldJson, BranchStmt* stmt);
     void fill(const cJSON*& fieldJson, TDForkPE* stmt);
     void fill(const cJSON*& fieldJson, TDJoinPE* stmt);
+    // ICFG
+    void virtFill(const cJSON*& fieldJson, ICFGNode* node);
+    void fill(const cJSON*& fieldJson, ICFGNode* node);
+    void fill(const cJSON*& fieldJson, GlobalICFGNode* node);
+    void fill(const cJSON*& fieldJson, IntraICFGNode* node);
+    void fill(const cJSON*& fieldJson, InterICFGNode* node);
+    void fill(const cJSON*& fieldJson, FunEntryICFGNode* node);
+    void fill(const cJSON*& fieldJson, FunExitICFGNode* node);
+    void fill(const cJSON*& fieldJson, CallICFGNode* node);
+    void fill(const cJSON*& fieldJson, RetICFGNode* node);
 
+    void virtFill(const cJSON*& fieldJson, ICFGEdge* node);
+    void fill(const cJSON*& fieldJson, ICFGEdge* edge);
+    void fill(const cJSON*& fieldJson, IntraCFGEdge* edge);
+    void fill(const cJSON*& fieldJson, CallCFGEdge* edge);
+    void fill(const cJSON*& fieldJson, RetCFGEdge* edge);
+
+    void fill(const cJSON*& fieldJson, SVFLoop* loop);
+
+    // SVFModule
     void virtFill(const cJSON*& fieldJson, SVFValue* value);
     void fill(const cJSON*& fieldJson, SVFValue* value);
     void fill(const cJSON*& fieldJson, SVFFunction* value);
