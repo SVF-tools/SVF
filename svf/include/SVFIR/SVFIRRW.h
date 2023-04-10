@@ -12,9 +12,9 @@
 #ifndef INCLUDE_SVFIRRW_H_
 #define INCLUDE_SVFIRRW_H_
 
+#include "Graphs/GenericGraph.h"
 #include "Util/SVFUtil.h"
 #include "Util/cJSON.h"
-#include "Graphs/GenericGraph.h"
 #include <type_traits>
 
 #define SVFIR_DEBUG 1 /* Turn this on if you're debugging SVFWriter */
@@ -75,11 +75,11 @@
 ///@{
 template <typename T>
 decltype(std::begin(std::declval<T&>()) !=
-         std::end(std::declval<T&>()), // begin/end and operator!=
+             std::end(std::declval<T&>()), // begin/end and operator!=
          void(),                           // Handle evil operator,
          ++std::declval<decltype(begin(std::declval<T&>()))&>(), // operator++
          *begin(std::declval<T&>()),                             // operator*
-         std::true_type {})
+         std::true_type{})
 is_iterable_impl(int);
 template <typename T> std::false_type is_iterable_impl(...);
 template <typename T> using is_iterable = decltype(is_iterable_impl<T>(0));
@@ -88,27 +88,60 @@ template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
 
 /// @brief Type trait to check if a type is a map or unordered_map.
 ///@{
-template <typename T> struct is_map : std::false_type {};
-template <typename... Ts> struct is_map<std::map<Ts...>> : std::true_type {};
-template <typename... Ts> struct is_map<std::unordered_map<Ts...>> : std::true_type {};
+template <typename T> struct is_map : std::false_type
+{
+};
+template <typename... Ts> struct is_map<std::map<Ts...>> : std::true_type
+{
+};
+template <typename... Ts>
+struct is_map<std::unordered_map<Ts...>> : std::true_type
+{
+};
 template <typename... Ts> constexpr bool is_map_v = is_map<Ts...>::value;
 ///@}
 
 /// @brief Type trait to check if a type is a set or unordered_set.
 ///@{
-template <typename T> struct is_set : std::false_type {};
-template <typename... Ts> struct is_set<std::set<Ts...>> : std::true_type {};
-template <typename... Ts> struct is_set<std::unordered_set<Ts...>> : std::true_type {};
+template <typename T> struct is_set : std::false_type
+{
+};
+template <typename... Ts> struct is_set<std::set<Ts...>> : std::true_type
+{
+};
+template <typename... Ts>
+struct is_set<std::unordered_set<Ts...>> : std::true_type
+{
+};
 template <typename... Ts> constexpr bool is_set_v = is_set<Ts...>::value;
 ///@}
 
 /// @brief Type trait to check if a type is vector or list.
-template <typename T> struct is_sequence_container : std::false_type {};
-template <typename... Ts> struct is_sequence_container<std::vector<Ts...>> : std::true_type {};
-template <typename... Ts> struct is_sequence_container<std::deque<Ts...>> : std::true_type {};
-template <typename... Ts> struct is_sequence_container<std::list<Ts...>> : std::true_type {};
-template <typename... Ts> constexpr bool is_sequence_container_v = is_sequence_container<Ts...>::value;
+template <typename T> struct is_sequence_container : std::false_type
+{
+};
+template <typename... Ts>
+struct is_sequence_container<std::vector<Ts...>> : std::true_type
+{
+};
+template <typename... Ts>
+struct is_sequence_container<std::deque<Ts...>> : std::true_type
+{
+};
+template <typename... Ts>
+struct is_sequence_container<std::list<Ts...>> : std::true_type
+{
+};
+template <typename... Ts>
+constexpr bool is_sequence_container_v = is_sequence_container<Ts...>::value;
 ///@}
+
+template <typename... Ts> struct make_void
+{
+    typedef void type;
+};
+
+template <typename... Ts> using void_t = typename make_void<Ts...>::type;
 
 namespace SVF
 {
@@ -205,7 +238,6 @@ class CHGraph;
 // End of forward declarations
 ///@}
 
-cJSON* jsonCreateNullId();
 bool jsonIsBool(const cJSON* item);
 bool jsonIsBool(const cJSON* item, bool& flag);
 bool jsonIsNumber(const cJSON* item);
@@ -216,6 +248,8 @@ bool jsonIsMap(const cJSON* item);
 bool jsonIsObject(const cJSON* item);
 bool jsonKeyEquals(const cJSON* item, const char* key);
 void jsonUnpackPair(const cJSON* item, const cJSON*& key, const cJSON*& value);
+double jsonGetNumber(const cJSON* item);
+cJSON* jsonCreateNullId();
 cJSON* jsonCreateObject();
 cJSON* jsonCreateArray();
 cJSON* jsonCreateString(const char* str);
@@ -231,11 +265,12 @@ bool jsonAddStringToObject(cJSON* obj, const char* name, const char* str);
 bool jsonAddStringToObject(cJSON* obj, const char* name,
                            const std::string& str);
 #define jsonForEach(element, array)                                            \
-    for (const cJSON* element = (array != NULL) ? (array)->child : NULL;       \
-         element != NULL; element = element->next)
+    for (const cJSON* element = (array) ? (array)->child : nullptr; element;   \
+         element = element->next)
 #define CHECK_JSON_KEY_EQUALS(obj, key)                                        \
     ABORT_IFNOT(jsonKeyEquals(obj, key),                                       \
-                "Expect json key: " << key << ", but get " << obj->string);
+                "Expect json key: " << key << ", but get "                     \
+                                    << ((obj) ? (obj)->string : "null"));
 #define CHECK_JSON_KEY(obj) CHECK_JSON_KEY_EQUALS(obj, #obj)
 
 /// @brief Bookkeeping class to keep track of the IDs of objects that doesn't
@@ -411,27 +446,28 @@ private:
 
     const char* numToStr(size_t n);
 
+    cJSON* toJson(const SymbolTableInfo* symTable);
     cJSON* toJson(const SVFModule* module);
     cJSON* toJson(const SVFType* type);
     cJSON* toJson(const SVFValue* value);
-    cJSON* toJson(const IRGraph* graph); // IRGraph Graph
-    cJSON* toJson(const SVFVar* var);    // IRGraph Node
-    cJSON* toJson(const SVFStmt* stmt);  // IRGraph Edge
-    cJSON* toJson(const ICFG* icfg);     // ICFG Graph
-    cJSON* toJson(const ICFGNode* node); // ICFG Node
-    cJSON* toJson(const ICFGEdge* edge); // ICFG Edge
+    cJSON* toJson(const IRGraph* graph);       // IRGraph Graph
+    cJSON* toJson(const SVFVar* var);          // IRGraph Node
+    cJSON* toJson(const SVFStmt* stmt);        // IRGraph Edge
+    cJSON* toJson(const ICFG* icfg);           // ICFG Graph
+    cJSON* toJson(const ICFGNode* node);       // ICFG Node
+    cJSON* toJson(const ICFGEdge* edge);       // ICFG Edge
     cJSON* toJson(const CommonCHGraph* graph); // CHGraph Graph
-    cJSON* toJson(const CHGraph* graph); // CHGraph Graph
-    cJSON* toJson(const CHNode* node);   // CHGraph Node
-    cJSON* toJson(const CHEdge* edge);   // CHGraph Edge
+    cJSON* toJson(const CHGraph* graph);       // CHGraph Graph
+    cJSON* toJson(const CHNode* node);         // CHGraph Node
+    cJSON* toJson(const CHEdge* edge);         // CHGraph Edge
 
     cJSON* toJson(const CallSite& cs);
     cJSON* toJson(const LocationSet& ls);
     cJSON* toJson(const SVFLoop* loop);
     cJSON* toJson(const MemObj* memObj);
-    cJSON* toJson(const ObjTypeInfo* objTypeInfo); // Only owned by MemObj
+    cJSON* toJson(const ObjTypeInfo* objTypeInfo);  // Only owned by MemObj
     cJSON* toJson(const SVFLoopAndDomInfo* ldInfo); // Only owned by SVFFunction
-    cJSON* toJson(const StInfo* stInfo); // Ensure Only owned by SVFType
+    cJSON* toJson(const StInfo* stInfo);
 
     static cJSON* toJson(bool flag);
     static cJSON* toJson(unsigned number);
@@ -533,7 +569,6 @@ private:
 
     // Other classes
     cJSON* contentToJson(const SVFLoop* loop);
-    cJSON* contentToJson(const SymbolTableInfo* symTable);
     cJSON* contentToJson(const MemObj* memObj); // Owned by SymbolTable->objMap
     cJSON* contentToJson(const StInfo* stInfo);
     ///@}
@@ -589,7 +624,7 @@ private:
     }
 
     template <unsigned ElementSize>
-    cJSON* toJson(const SparseBitVectorElement<ElementSize> &element)
+    cJSON* toJson(const SparseBitVectorElement<ElementSize>& element)
     {
         cJSON* array = jsonCreateArray();
         for (const auto v : element.Bits)
@@ -614,7 +649,7 @@ private:
     }
 
     template <typename T, typename = std::enable_if_t<is_iterable_v<T>>>
-              cJSON* toJson(const T& container)
+    cJSON* toJson(const T& container)
     {
         cJSON* array = jsonCreateArray();
         for (const auto& item : container)
@@ -656,7 +691,9 @@ private:
 /// @brief Type trait to get base type.
 /// Helper struct to detect inheritance from Node/Edge
 ///@}
-template <typename T, typename = void> struct KindBaseHelper {};
+template <typename T, typename = void> struct KindBaseHelper
+{
+};
 #define KIND_BASE(B, KindGetter)                                               \
     template <typename T>                                                      \
     struct KindBaseHelper<T, std::enable_if_t<std::is_base_of<B, T>::value>>   \
@@ -677,8 +714,7 @@ KIND_BASE(CHNode, getNodeKind);
 KIND_BASE(CHEdge, getEdgeKind);
 #undef KIND_BASE
 
-template <typename T>
-using KindBaseT = typename KindBaseHelper<T>::type;
+template <typename T> using KindBaseT = typename KindBaseHelper<T>::type;
 ///@}
 
 /// @brief Keeps a map from IDs to T objects, such as XXNode.
@@ -707,7 +743,7 @@ public:
             std::tie(id, obj) = idObjCreator(objFieldJson);
             auto pair = std::pair<const cJSON*, T*>(objFieldJson, obj);
             bool inserted = idMap.emplace(id, pair).second;
-            ABORT_IFNOT(inserted, "duplicate ID");
+            ABORT_IFNOT(inserted, "duplicate ID " << id);
         }
     }
 
@@ -718,8 +754,7 @@ public:
         return it->second.second;
     }
 
-    template <typename FillFunc>
-    void fillObjs(FillFunc fillFunc)
+    template <typename FillFunc> void fillObjs(FillFunc fillFunc)
     {
         for (auto& pair : idMap)
         {
@@ -760,7 +795,8 @@ public:
     template <typename Creator>
     void createObjs(const cJSON* objArrayJson, Creator creator)
     {
-        assert(jsonArray.empty() && "jsonArray should be empty when creating objects");
+        assert(jsonArray.empty() &&
+               "jsonArray should be empty when creating objects");
         ABORT_IFNOT(jsonIsArray(objArrayJson), "expects an array");
 
         jsonForEach(objJson, objArrayJson)
@@ -779,8 +815,7 @@ public:
         return id ? ptrPool[id - 1] : nullptr;
     }
 
-    template <typename FillFunc>
-    void fillObjs(FillFunc fillFunc)
+    template <typename FillFunc> void fillObjs(FillFunc fillFunc)
     {
         assert(jsonArray.size() == ptrPool.size() &&
                "jsonArray and ptrPool should have same size");
@@ -807,34 +842,34 @@ protected:
 
 public:
     template <typename NodeCreator, typename EdgeCreator>
-    void createObjs(const cJSON* graphJson, NodeCreator nodeCreator, EdgeCreator edgeCreator)
+    void createObjs(const cJSON* graphJson, NodeCreator nodeCreator,
+                    EdgeCreator edgeCreator)
     {
-        assert(graphFieldJson == nullptr && "graphFieldJson should be empty");
-
-        graphFieldJson = graphJson->child;
         // Read nodeNum
-        ABORT_IFNOT(jsonIsNumber(graphFieldJson) &&
-                        jsonKeyEquals(graphFieldJson, "nodeNum"),
-                    "expects number nodeNum");
-        u32_t nodeNum = graphFieldJson->valuedouble;
-        graphFieldJson = graphJson->next;
+        const cJSON* nodeNum = graphJson->child;
+        CHECK_JSON_KEY(nodeNum);
+        u32_t numOfNodes = jsonGetNumber(nodeNum);
+
         // Read allNode
-        CHECK_JSON_KEY_EQUALS(graphFieldJson, "allNode");
-        idToNodeMap.createObjs(graphFieldJson, nodeCreator);
-        ABORT_IFNOT(idToNodeMap.size() == nodeNum, "nodeNum mismatch");
-        graphFieldJson = graphFieldJson->next;
+        const cJSON* allNode = nodeNum->next;
+        CHECK_JSON_KEY(allNode);
+        idToNodeMap.createObjs(allNode, nodeCreator);
+        ABORT_IFNOT(idToNodeMap.size() == numOfNodes, "nodeNum mismatch");
 
         // Read edgeNum
-        ABORT_IFNOT(jsonIsNumber(graphFieldJson) &&
-                        jsonKeyEquals(graphFieldJson, "edgeNum"),
-                    "expects number edgeNum");
-        u32_t edgeNum = graphFieldJson->valuedouble;
-        graphFieldJson = graphJson->next;
+        const cJSON* edgeNum = allNode->next;
+        CHECK_JSON_KEY(edgeNum);
+        u32_t numOfEdges = jsonGetNumber(edgeNum);
+
         // Read allEdge
-        CHECK_JSON_KEY_EQUALS(graphFieldJson, "allEdge");
-        edgePool.createObjs(graphFieldJson, edgeCreator);
-        ABORT_IFNOT(edgePool.size() == edgeNum, "edgeNum mismatch");
-        graphFieldJson = graphFieldJson->next;
+        const cJSON* allEdge = edgeNum->next;
+        CHECK_JSON_KEY(allEdge);
+        edgePool.createObjs(allEdge, edgeCreator);
+        ABORT_IFNOT(edgePool.size() == numOfEdges, "edgeNum mismatch");
+
+        // Rest fields
+        assert(!graphFieldJson && "graphFieldJson should be empty");
+        graphFieldJson = allEdge->next;
     }
 
     inline NodeTy* getNodePtr(unsigned id) const
@@ -853,13 +888,67 @@ public:
         idToNodeMap.fillObjs(nodeFiller);
         edgePool.fillObjs(edgeFiller);
     }
+};
 
-    // TODO: fill
+class SymbolTableInfoReader
+{
+private:
+    const cJSON* symTabFieldJson = nullptr;
+    ReaderIDToObjMap<MemObj> memObjMap;
+    ReaderPtrPool<SVFType> svfTypePool;
+    ReaderPtrPool<StInfo> stInfoPool;
+
+public:
+    void createObjs(const cJSON* symTableJson);
+
+    inline MemObj* getMemObjPtr(unsigned id) const
+    {
+        return memObjMap.getPtr(id);
+    }
+
+    template <typename MemObjFiller, typename SVFTypeFiller,
+              typename StInfoFiller>
+    inline void fillObjs(MemObjFiller memObjFiller, SVFTypeFiller svfTypeFiller,
+                         StInfoFiller stInfoFiller)
+    {
+        memObjMap.fillObjs(memObjFiller);
+        svfTypePool.fillObjs(svfTypeFiller);
+        stInfoPool.fillObjs(stInfoFiller);
+    }
 };
 
 using GenericICFGReader = GenericGraphReader<ICFGNode, ICFGEdge>;
-using IRGraphReader = GenericGraphReader<SVFVar, SVFStmt>;
 using CHGraphReader = GenericGraphReader<CHNode, CHEdge>;
+
+class IRGraphReader : public GenericGraphReader<SVFVar, SVFStmt>
+{
+    friend class SVFIReader;
+
+private:
+    SymbolTableInfoReader symTableReader;
+
+public:
+    template <typename NodeCreator, typename EdgeCreator>
+    void createObjs(const cJSON* irGraphJson, NodeCreator nodeCreator,
+                    EdgeCreator edgeCreator)
+    {
+        GenericGraphReader<SVFVar, SVFStmt>::createObjs(
+            irGraphJson, nodeCreator, edgeCreator);
+        symTableReader.createObjs(graphFieldJson);
+        graphFieldJson = graphFieldJson->next;
+    }
+
+    template <typename NodeFiller, typename EdgeFiller, typename MemObjFiller,
+              typename SVFTypeFiller, typename StInfoFiller>
+    void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller,
+                  MemObjFiller memObjFiller, SVFTypeFiller svfTypeFiller,
+                  StInfoFiller stInfoFiller)
+    {
+        GenericGraphReader<SVFVar, SVFStmt>::fillObjs(nodeFiller, edgeFiller);
+        symTableReader.fillObjs(memObjFiller, svfTypeFiller, stInfoFiller);
+    }
+};
+
 class ICFGReader : public GenericICFGReader
 {
 private:
@@ -873,35 +962,12 @@ public:
         return svfLoopPool.getPtr(id);
     }
 
-    template <typename NodeFiller, typename EdgeFiller, typename SVFLoopFiller>
-    void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller, SVFLoopFiller svfLoopFiller)
+    template <typename NodeFiller, typename EdgeFiller, typename LoopFiller>
+    void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller,
+                  LoopFiller loopFiller)
     {
         GenericICFGReader::fillObjs(nodeFiller, edgeFiller);
-        svfLoopPool.fillObjs(svfLoopFiller);
-    }
-};
-
-class SymbolTableInfoReader
-{
-private:
-    const cJSON* symTabFieldJson = nullptr;
-    ReaderPtrPool<SVFType> svfTypePool;
-    ReaderIDToObjMap<MemObj> memObjMap;
-    ReaderPtrPool<StInfo> stInfoPool;
-public:
-    void createObjs(const cJSON* symTableJson);
-
-    inline MemObj* getMemObjPtr(unsigned id) const
-    {
-        return memObjMap.getPtr(id);
-    }
-
-    template <typename MemObjFiller, typename SVFTypeFiller, typename StInfoFiller>
-    void fillObjs(MemObjFiller memObjFiller, SVFTypeFiller svfTypeFiller, StInfoFiller stInfoFiller)
-    {
-        memObjMap.fillObjs(memObjFiller);
-        svfTypePool.fillObjs(svfTypeFiller);
-        stInfoPool.fillObjs(stInfoFiller);
+        svfLoopPool.fillObjs(loopFiller);
     }
 };
 
@@ -909,6 +975,7 @@ class SVFModuleReader
 {
     const cJSON* svfModuleFieldJson = nullptr;
     ReaderPtrPool<SVFValue> svfValuePool;
+
 public:
     void createObjs(const cJSON* svfModuleJson);
 
@@ -932,7 +999,6 @@ class SVFIRReader
 {
 private:
     IRGraphReader irGraphReader;
-    SymbolTableInfoReader symTableReader;
     SVFModuleReader svfModuleReader;
     ICFGReader icfgReader;
     CHGraphReader chGraphReader;
@@ -951,18 +1017,19 @@ public:
 
 #if 1
     void readJson(const cJSON* obj, SVFType*& type);
+    void readJson(const cJSON* obj, StInfo*& stInfo);
     void readJson(const cJSON* obj, SVFValue*& value);
 
-    //void readJson(const cJSON* obj, IRGraph*& graph); // IRGraph Graph
+    void readJson(const cJSON* obj, IRGraph*& graph); // IRGraph Graph
     void readJson(const cJSON* obj, SVFVar*& var);    // IRGraph Node
     void readJson(const cJSON* obj, SVFStmt*& stmt);  // IRGraph Edge
-    //void readJson(const cJSON* obj, ICFG*& icfg);     // ICFG Graph
+    // void readJson(const cJSON* obj, ICFG*& icfg);     // ICFG Graph
     void readJson(const cJSON* obj, ICFGNode*& node); // ICFG Node
     void readJson(const cJSON* obj, ICFGEdge*& edge); // ICFG Edge
-    //void readJson(const cJSON* obj, CommonCHGraph*& graph); // CHGraph Graph
-    //void readJson(const cJSON* obj, CHGraph*& graph); // CHGraph Graph
-    void readJson(const cJSON* obj, CHNode*& node);   // CHGraph Node
-    void readJson(const cJSON* obj, CHEdge*& edge);   // CHGraph Edge
+    // void readJson(const cJSON* obj, CommonCHGraph*& graph); // CHGraph Graph
+    // void readJson(const cJSON* obj, CHGraph*& graph); // CHGraph Graph
+    void readJson(const cJSON* obj, CHNode*& node); // CHGraph Node
+    void readJson(const cJSON* obj, CHEdge*& edge); // CHGraph Edge
 
     void readJson(const cJSON* obj, SVFIR*& svfIR);
     void readJson(const cJSON* obj, SVFModule*& module);
@@ -971,14 +1038,24 @@ public:
     void readJson(const cJSON* obj, LocationSet& ls);
     // void readJson(const cJSON* obj, SVFLoop* loop);
     void readJson(const cJSON* obj, MemObj*& memObj);
-    // void readJson(const cJSON* obj, ObjTypeInfo* objTypeInfo); // Only owned by MemObj
-    void readJson(const cJSON* obj, SVFLoopAndDomInfo*& ldInfo); // Only owned by SVFFunction
-    // void readJson(const cJSON* obj, StInfo* stInfo); // Ensure Only owned by SVFType
+    void readJson(const cJSON* obj, ObjTypeInfo*& objTypeInfo); // Only owned by MemObj
+    void readJson(const cJSON* obj,
+                  SVFLoopAndDomInfo*& ldInfo); // Only owned by SVFFunction
+
 #endif
 
-    template <typename... Ts> struct make_void { typedef void type; };
+    template <unsigned ElementSize>
+    inline void readJson(const cJSON* obj, SparseBitVector<ElementSize>& bv)
+    {
+        readJson(obj, bv.Elements);
+    }
 
-    template <typename... Ts> using void_t = typename make_void<Ts...>::type;
+    template <unsigned ElementSize>
+    inline void readJson(const cJSON* obj,
+                         SparseBitVectorElement<ElementSize>& element)
+    {
+        readJson(obj, element.Bits);
+    }
 
     template <typename T>
     inline void_t<KindBaseT<T>> readJson(const cJSON* obj, T*& ptr)
@@ -1007,9 +1084,24 @@ public:
         readJson(secondJson, pair.second);
     }
 
+    template <typename T, size_t N>
+    void readJson(const cJSON* obj, T (&array)[N])
+    {
+        static_assert(N > 0, "array size should be greater than 0");
+        ABORT_IFNOT(jsonIsArray(obj), "array expects an array");
+        size_t i = 0;
+        jsonForEach(elemJson, obj)
+        {
+            readJson(elemJson, array[i]);
+            if (++i >= N)
+                break;
+        }
+        ABORT_IFNOT(i == N, "expect array of size " << N);
+    }
+
     template <typename Container>
-    std::enable_if_t<is_sequence_container_v<Container>>
-    readJson(const cJSON* obj, Container& container)
+    std::enable_if_t<is_sequence_container_v<Container>> readJson(
+        const cJSON* obj, Container& container)
     {
         assert(container.empty() && "container should be empty");
         ABORT_IFNOT(jsonIsArray(obj), "vector expects an array");
@@ -1084,6 +1176,9 @@ public:
     void fill(const cJSON*& fieldJson, BranchStmt* stmt);
     void fill(const cJSON*& fieldJson, TDForkPE* stmt);
     void fill(const cJSON*& fieldJson, TDJoinPE* stmt);
+
+    void fill(const cJSON*& fieldJson, MemObj* memObj);
+    void fill(const cJSON*& fieldJson, StInfo* stInfo);
     // ICFG
     void virtFill(const cJSON*& fieldJson, ICFGNode* node);
     void fill(const cJSON*& fieldJson, ICFGNode* node);
@@ -1102,6 +1197,9 @@ public:
     void fill(const cJSON*& fieldJson, RetCFGEdge* edge);
 
     void fill(const cJSON*& fieldJson, SVFLoop* loop);
+    // CHGraph
+    void virtFill(const cJSON*& fieldJson, CHNode* node);
+    void virtFill(const cJSON*& fieldJson, CHEdge* edge);
 
     // SVFModule
     void virtFill(const cJSON*& fieldJson, SVFValue* value);
@@ -1122,7 +1220,14 @@ public:
     void fill(const cJSON*& fieldJson, SVFOtherValue* value);
     void fill(const cJSON*& fieldJson, SVFMetadataAsValue* value);
 
-    void fill(const cJSON*& fieldJson, StInfo* stInfo);
+    void virtFill(const cJSON*& fieldJson, SVFType* type);
+    void fill(const cJSON*& fieldJson, SVFType* type);
+    void fill(const cJSON*& fieldJson, SVFPointerType* type);
+    void fill(const cJSON*& fieldJson, SVFIntegerType* type);
+    void fill(const cJSON*& fieldJson, SVFFunctionType* type);
+    void fill(const cJSON*& fieldJson, SVFStructType* type);
+    void fill(const cJSON*& fieldJson, SVFArrayType* type);
+    void fill(const cJSON*& fieldJson, SVFOtherType* type);
 
     template <typename NodeTy, typename EdgeTy>
     void fill(const cJSON*& fieldJson, GenericNode<NodeTy, EdgeTy>* node)
