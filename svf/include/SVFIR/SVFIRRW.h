@@ -247,7 +247,7 @@ bool jsonIsArray(const cJSON* item);
 bool jsonIsMap(const cJSON* item);
 bool jsonIsObject(const cJSON* item);
 bool jsonKeyEquals(const cJSON* item, const char* key);
-void jsonUnpackPair(const cJSON* item, const cJSON*& key, const cJSON*& value);
+std::pair<const cJSON*, const cJSON*> jsonUnpackPair(const cJSON* item);
 double jsonGetNumber(const cJSON* item);
 cJSON* jsonCreateNullId();
 cJSON* jsonCreateObject();
@@ -336,7 +336,6 @@ public:
 template <typename NodeTy, typename EdgeTy> class GenericGraphWriter
 {
     friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     using NodeType = NodeTy;
@@ -374,7 +373,6 @@ using GenericICFGWriter = GenericGraphWriter<ICFGNode, ICFGEdge>;
 class ICFGWriter : public GenericICFGWriter
 {
     friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 private:
     WriterPtrPool<SVFLoop> svfLoopPool;
@@ -391,7 +389,6 @@ public:
 class SymbolTableInfoWriter
 {
     friend class SVFIRWriter;
-    friend class SVFIRReader;
 
 public:
     SymbolTableInfoWriter(const SymbolTableInfo* symbolTableInfo);
@@ -409,11 +406,21 @@ using CHGraphWriter = GenericGraphWriter<CHNode, CHEdge>;
 
 class SVFModuleWriter
 {
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-
+private:
     WriterPtrPool<SVFValue> svfValuePool;
-    size_t getSvfValueID(const SVFValue* value);
+
+public:
+    inline size_t getSvfValueID(const SVFValue* value);
+
+    inline const SVFValue* getSVFValuePtr(size_t id) const
+    {
+        return svfValuePool.getPtr(id);
+    }
+
+    inline size_t sizeSVFValuePool() const
+    {
+        return svfValuePool.size();
+    }
 };
 
 class SVFIRWriter
@@ -722,7 +729,8 @@ template <typename T> using KindBaseT = typename KindBaseHelper<T>::type;
 template <typename T> class ReaderIDToObjMap
 {
 private:
-    OrderedMap<unsigned, std::pair<const cJSON*, T*>> idMap;
+    using IDToPairMapTy = OrderedMap<unsigned, std::pair<const cJSON*, T*>>;
+    IDToPairMapTy idMap;
 
 public:
     template <typename IdObjCreator>
@@ -770,6 +778,33 @@ public:
     inline size_t size() const
     {
         return idMap.size();
+    }
+
+    //struct iterator : public IDToPairMapTy::iterator
+    //{
+    //    using value_type = T*;
+    //    using pointer = value_type*;
+    //    using reference = value_type&;
+
+    //    explicit iterator(const typename IDToPairMapTy::iterator& it)
+    //        : IDToPairMapTy::iterator(it) {}
+
+    //    reference operator*() const { return this->value()->second.second; }
+    //    pointer operator->() const { return &*this; }
+    //};
+
+    //iterator begin() { return iterator(idMap.begin()); }
+    //iterator end() { return iterator(idMap.begin()); }
+
+    template <typename Map> void saveToIDToObjMap(Map& idToObjMap) const
+    {
+        for (auto& pair : idMap)
+        {
+            unsigned id = pair.first;
+            T* obj = pair.second.second;
+            assert(obj && "obj should not be null");
+            idToObjMap.insert(std::make_pair(id, obj));
+        }
     }
 };
 
@@ -888,10 +923,24 @@ public:
         idToNodeMap.fillObjs(nodeFiller);
         edgePool.fillObjs(edgeFiller);
     }
+
+    void saveToGenericGraph(GenericGraph<NodeTy, EdgeTy>* graph) const
+    {
+        graph->edgeNum = edgePool.size();
+        graph->nodeNum = idToNodeMap.size();
+        idToNodeMap.saveToIDToObjMap(graph->IDToNodeMap);
+    }
+
+    const cJSON* getFieldJson() const
+    {
+        return graphFieldJson;
+    }
 };
 
 class SymbolTableInfoReader
 {
+    friend class SVFIRReader;
+
 private:
     const cJSON* symTabFieldJson = nullptr;
     ReaderIDToObjMap<MemObj> memObjMap;
@@ -919,38 +968,12 @@ public:
 
 using GenericICFGReader = GenericGraphReader<ICFGNode, ICFGEdge>;
 using CHGraphReader = GenericGraphReader<CHNode, CHEdge>;
-
-class IRGraphReader : public GenericGraphReader<SVFVar, SVFStmt>
-{
-    friend class SVFIReader;
-
-private:
-    SymbolTableInfoReader symTableReader;
-
-public:
-    template <typename NodeCreator, typename EdgeCreator>
-    void createObjs(const cJSON* irGraphJson, NodeCreator nodeCreator,
-                    EdgeCreator edgeCreator)
-    {
-        GenericGraphReader<SVFVar, SVFStmt>::createObjs(
-            irGraphJson, nodeCreator, edgeCreator);
-        symTableReader.createObjs(graphFieldJson);
-        graphFieldJson = graphFieldJson->next;
-    }
-
-    template <typename NodeFiller, typename EdgeFiller, typename MemObjFiller,
-              typename SVFTypeFiller, typename StInfoFiller>
-    void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller,
-                  MemObjFiller memObjFiller, SVFTypeFiller svfTypeFiller,
-                  StInfoFiller stInfoFiller)
-    {
-        GenericGraphReader<SVFVar, SVFStmt>::fillObjs(nodeFiller, edgeFiller);
-        symTableReader.fillObjs(memObjFiller, svfTypeFiller, stInfoFiller);
-    }
-};
+using IRGraphReader = GenericGraphReader<SVFVar, SVFStmt>;
 
 class ICFGReader : public GenericICFGReader
 {
+    // friend class SVFIRReader;
+
 private:
     ReaderPtrPool<SVFLoop> svfLoopPool;
 
@@ -989,6 +1012,11 @@ public:
     {
         svfValuePool.fillObjs(svfValueFiller);
     }
+
+    const cJSON* getFieldJson() const
+    {
+        return svfModuleFieldJson;
+    }
 };
 
 /* SVFIRReader
@@ -998,6 +1026,7 @@ public:
 class SVFIRReader
 {
 private:
+    SymbolTableInfoReader symTableReader;
     IRGraphReader irGraphReader;
     SVFModuleReader svfModuleReader;
     ICFGReader icfgReader;
@@ -1005,6 +1034,7 @@ private:
 
 public:
     void read(cJSON* root);
+    const cJSON* createObjs(const cJSON* root);
 
     static void readJson(const cJSON* obj, bool& flag);
     static void readJson(const cJSON* obj, unsigned& val);
@@ -1015,34 +1045,46 @@ public:
     static void readJson(const cJSON* obj, unsigned long long& val);
     static void readJson(const cJSON* obj, std::string& str);
 
-#if 1
+public:
+    template <typename T> inline T constructFromJson(const cJSON* obj)
+    {
+        T t;
+        readJson(obj, t);
+        return t;
+    }
+    template <> inline CallSite constructFromJson<CallSite>(const cJSON* obj)
+    {
+        SVFCallInst* callInst;
+        readJson(obj, callInst);
+        return CallSite(callInst);
+    }
+
+    void readJson(const cJSON* obj, SymbolTableInfo*& symTabInfo);
+    void readJson(const cJSON* obj, IRGraph*& graph); // IRGraph Graph
+    void readJson(const cJSON* obj, ICFG*& icfg);     // ICFG Graph
+    void readJson(const cJSON* obj, CHGraph*& graph); // CHGraph Graph
+    void readJson(const cJSON* obj, SVFModule*& module);
+
     void readJson(const cJSON* obj, SVFType*& type);
     void readJson(const cJSON* obj, StInfo*& stInfo);
     void readJson(const cJSON* obj, SVFValue*& value);
 
-    void readJson(const cJSON* obj, IRGraph*& graph); // IRGraph Graph
     void readJson(const cJSON* obj, SVFVar*& var);    // IRGraph Node
     void readJson(const cJSON* obj, SVFStmt*& stmt);  // IRGraph Edge
-    // void readJson(const cJSON* obj, ICFG*& icfg);     // ICFG Graph
     void readJson(const cJSON* obj, ICFGNode*& node); // ICFG Node
     void readJson(const cJSON* obj, ICFGEdge*& edge); // ICFG Edge
-    // void readJson(const cJSON* obj, CommonCHGraph*& graph); // CHGraph Graph
     // void readJson(const cJSON* obj, CHGraph*& graph); // CHGraph Graph
     void readJson(const cJSON* obj, CHNode*& node); // CHGraph Node
     void readJson(const cJSON* obj, CHEdge*& edge); // CHGraph Edge
+    void readJson(const cJSON* obj, CallSite& cs);
 
-    void readJson(const cJSON* obj, SVFIR*& svfIR);
-    void readJson(const cJSON* obj, SVFModule*& module);
-
-    // void readJson(const cJSON* obj, CallSite& cs);
     void readJson(const cJSON* obj, LocationSet& ls);
-    // void readJson(const cJSON* obj, SVFLoop* loop);
+    void readJson(const cJSON* obj, SVFLoop*& loop);
     void readJson(const cJSON* obj, MemObj*& memObj);
-    void readJson(const cJSON* obj, ObjTypeInfo*& objTypeInfo); // Only owned by MemObj
+    void readJson(const cJSON* obj,
+                  ObjTypeInfo*& objTypeInfo); // Only owned by MemObj
     void readJson(const cJSON* obj,
                   SVFLoopAndDomInfo*& ldInfo); // Only owned by SVFFunction
-
-#endif
 
     template <unsigned ElementSize>
     inline void readJson(const cJSON* obj, SparseBitVector<ElementSize>& bv)
@@ -1077,11 +1119,9 @@ public:
     template <typename T1, typename T2>
     void readJson(const cJSON* obj, std::pair<T1, T2>& pair)
     {
-        const cJSON* firstJson;
-        const cJSON* secondJson;
-        jsonUnpackPair(obj, firstJson, secondJson);
-        readJson(firstJson, pair.first);
-        readJson(secondJson, pair.second);
+        auto jpair = jsonUnpackPair(obj);
+        readJson(jpair.first, pair.first);
+        readJson(jpair.second, pair.second);
     }
 
     template <typename T, size_t N>
@@ -1107,9 +1147,8 @@ public:
         ABORT_IFNOT(jsonIsArray(obj), "vector expects an array");
         jsonForEach(elemJson, obj)
         {
-            std::remove_const_t<typename Container::value_type> elem;
-            readJson(elemJson, elem);
-            container.push_back(std::move(elem));
+            container.push_back(std::move(
+                constructFromJson<typename Container::value_type>(elemJson)));
         }
     }
 
@@ -1120,14 +1159,10 @@ public:
         ABORT_IFNOT(jsonIsMap(obj), "expects an map (represted by array)");
         jsonForEach(elemJson, obj)
         {
-            const cJSON* keyJson;
-            const cJSON* valJson;
-            jsonUnpackPair(elemJson, keyJson, valJson);
-            std::remove_const_t<typename Map::key_type> key;
-            std::remove_const_t<typename Map::mapped_type> val;
-            readJson(keyJson, key);
-            readJson(valJson, val);
-            map.emplace(std::move(key), std::move(val));
+            auto jpair = jsonUnpackPair(elemJson);
+            auto k = constructFromJson<typename Map::key_type>(jpair.first);
+            auto v = constructFromJson<typename Map::mapped_type>(jpair.second);
+            map.emplace(std::move(k), std::move(v));
         }
     }
 
@@ -1138,9 +1173,8 @@ public:
         ABORT_IFNOT(jsonIsArray(obj), "expects an array");
         jsonForEach(elemJson, obj)
         {
-            std::remove_const_t<typename Set::value_type> elem;
-            readJson(elemJson, elem);
-            set.insert(std::move(elem));
+            set.insert(std::move(
+                constructFromJson<typename Set::value_type>(elemJson)));
         }
     }
 
@@ -1245,6 +1279,7 @@ public:
         JSON_READ_FIELD_FWD(fieldJson, edge, dst);
     }
 
+public:
     // Helper functions
     static inline s64_t applyEdgeMask(u64_t edgeFlag)
     {

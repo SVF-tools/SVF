@@ -39,6 +39,7 @@ namespace SVF
 /// Forward declaration of some friend classes
 ///@{
 template <typename, typename> class GenericGraphWriter;
+template <typename, typename> class GenericGraphReader;
 ///@}
 
 /*!
@@ -345,6 +346,7 @@ class GenericGraph
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class GenericGraphWriter<NodeTy, EdgeTy>;
+    friend class GenericGraphReader<NodeTy, EdgeTy>;
 
 public:
     typedef NodeTy NodeType;
