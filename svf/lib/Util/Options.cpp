@@ -322,10 +322,10 @@ const Option<std::string> Options::DumpJson(
     ""
 );
 
-const Option<std::string> Options::ReadJson(
+const Option<bool> Options::ReadJson(
     "read-json",
     "Read the SVFIR in JSON format",
-    ""
+    false
 );
 
 const Option<bool> Options::CallGraphDotGraph(

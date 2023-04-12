@@ -19,10 +19,9 @@ template <> SVFType* create<SVFType>(SVFType::GNodeK kind)
     switch (kind)
     {
     default:
-        ABORT_IFNOT(false,
-                    "Impossible SVFTyKind " << kind << " in createType()");
+        ABORT_MSG(kind << " is an impossible SVFTyKind in create()");
     case SVFType::SVFTy:
-        ABORT_IFNOT(false, "Creation of RAW SVFType isn't allowed");
+        ABORT_MSG("Creation of RAW SVFType isn't allowed");
     case SVFType::SVFPointerTy:
         return new SVFPointerType({});
     case SVFType::SVFIntegerTy:
@@ -42,10 +41,9 @@ template <> SVFValue* create<SVFValue>(SVFValue::GNodeK kind)
     switch (kind)
     {
     default:
-        ABORT_IFNOT(false,
-                    "Impossible SVFValue kind " << kind << " in createValue()");
+        ABORT_MSG( kind << " is an impossible SVFValueKind in create()");
     case SVFValue::SVFVal:
-        ABORT_IFNOT(false, "Creation of RAW SVFValue isn't allowed");
+        ABORT_MSG("Creation of RAW SVFValue isn't allowed");
     case SVFValue::SVFFunc:
         return new SVFFunction({}, {}, {}, {}, {}, {}, {}, {});
     case SVFValue::SVFBB:
@@ -83,7 +81,7 @@ template <> ICFGNode* create<ICFGNode>(NodeID id, ICFGNode::GNodeK kind)
     switch (kind)
     {
     default:
-        ABORT_IFNOT(false, "Impossible ICFGNode kind: " << kind << "in createICFGNode()");
+        ABORT_MSG(kind << " is an impossible ICFGNodeKind in create()");
     case ICFGNode::IntraBlock:
         return new InterICFGNode(id, {});
     case ICFGNode::FunEntryBlock:
@@ -103,8 +101,7 @@ template <> ICFGEdge* create<ICFGEdge>(ICFGEdge::GEdgeKind kind)
     switch (kind)
     {
     default:
-        ABORT_IFNOT(false, "Impossible ICFGEdge kind: "
-                    << kind << "in createICFGEdge()");
+        ABORT_MSG(kind << " is an impossible ICFGEdgeKind in create()");
     case ICFGEdge::IntraCF:
         return new IntraCFGEdge(nullptr, nullptr);
     case ICFGEdge::CallCF:
@@ -118,8 +115,7 @@ template <> SVFVar* create<SVFVar>(NodeID id, SVFVar::GNodeK kind)
     switch (kind)
     {
     default:
-        ABORT_IFNOT(false,
-                    "Impossible SVFVar kind: " << kind << "in createSVFVar()");
+        ABORT_MSG(kind << " is an impossible SVFVarKind in create()");
     case SVFVar::ValNode:
         return new ValVar(nullptr, id);
     case SVFVar::ObjNode:
@@ -145,7 +141,7 @@ template <> SVFStmt* create<SVFStmt>(SVFStmt::GEdgeKind kind)
     switch (kind)
     {
     default:
-        ABORT_IFNOT(false, "Impossible SVFStmt kind: " << kind << "in createSVFStmt()");
+        ABORT_MSG(kind << " is an impossible SVFStmtKind in create()");
     case SVFStmt::Addr:
         return new AddrStmt(nullptr, nullptr);
     case SVFStmt::Copy:
@@ -185,7 +181,7 @@ template <> CHNode* create<CHNode>(NodeID id, CHNode::GNodeK kind)
 }
 template <> CHEdge* create<CHEdge>(CHEdge::GEdgeKind kind)
 {
-    ABORT_IFNOT(kind == 0, "Impossible CHEdge kind");
+    ABORT_IFNOT(kind == 0, "Unsupported CHEdge kind " << kind);
     return new CHEdge(nullptr, nullptr, {});
 }
 
@@ -916,9 +912,9 @@ bool jsonAddStringToObject(cJSON* obj, const char* name, const char* str)
     return jsonAddItemToObject(obj, name, node);
 }
 
-bool jsonAddStringToObject(cJSON* obj, const char* name, const std::string& str)
+bool jsonAddStringToObject(cJSON* obj, const char* name, const std::string& s)
 {
-    return jsonAddStringToObject(obj, name, str.c_str());
+    return jsonAddStringToObject(obj, name, s.c_str());
 }
 
 bool jsonIsBool(const cJSON* item)
@@ -1509,29 +1505,28 @@ void SVFModuleReader::createObjs(const cJSON* svfModuleJson)
     svfModuleFieldJson = allValues->next;
 }
 
-void SVFIRReader::read(cJSON* root)
+SVFIR* SVFIRReader::read(cJSON* root)
 {
     const cJSON* svfirField = createObjs(root);
+
+    SVFIR* svfIR = new SVFIR(false);
+    IRGraph* irGraph = svfIR;
 
     auto svfModule = new SVFModule();
     auto icfg = new ICFG();
     auto chgraph = new CHGraph(svfModule);
     auto symboTableInfo = SymbolTableInfo::SymbolInfo();
 
-    // Read everything else
-    SVFIR* svfIR = new SVFIR(false);
-    IRGraph* irGraph = svfIR;
-
     svfIR->svfModule = svfModule;
     svfIR->icfg = icfg;
     svfIR->chgraph = chgraph;
 
 #define F(field) JSON_READ_FIELD_FWD(svfirField, svfIR, field)
-    JSON_READ_OBJ(symTableReader.symTabFieldJson, symboTableInfo);
-    JSON_READ_OBJ(irGraphReader.getFieldJson(), irGraph);
-    JSON_READ_OBJ(icfgReader.getFieldJson(), icfg);
-    JSON_READ_OBJ(chGraphReader.getFieldJson(), chgraph);
-    JSON_READ_OBJ(svfModuleReader.getFieldJson(), svfModule);
+    readJson(symboTableInfo);
+    readJson(irGraph);
+    readJson(icfg);
+    readJson(chgraph);
+    readJson(svfModule);
 
     F(icfgNode2SVFStmtsMap);
     F(icfgNode2PTASVFStmtsMap);
@@ -1549,6 +1544,8 @@ void SVFIRReader::read(cJSON* root)
     F(candidatePointers);
     F(callSiteSet);
 #undef F
+
+    return svfIR;
 }
 
 const cJSON* SVFIRReader::createObjs(const cJSON* root)
@@ -1641,8 +1638,9 @@ void SVFIRReader::readJson(const cJSON* obj, long long& val)
                   [](const char* s) { return std::strtoll(s, nullptr, 10); });
 }
 
-void SVFIRReader::readJson(const cJSON* obj, SymbolTableInfo*& symTabInfo)
+void SVFIRReader::readJson(SymbolTableInfo*& symTabInfo)
 {
+    const cJSON* obj = symTableReader.getFieldJson();
 #define F(field) JSON_READ_FIELD_FWD(obj, symTabInfo, field)
     F(valSymMap);
     F(objSymMap);
@@ -1652,16 +1650,17 @@ void SVFIRReader::readJson(const cJSON* obj, SymbolTableInfo*& symTabInfo)
     F(modelConstants);
     F(totalSymNum);
 #undef F
+    ABORT_IFNOT(obj == nullptr, "Not all fields read in SymbolTableInfo");
 }
 
-void SVFIRReader::readJson(const cJSON* obj, IRGraph*& graph)
+void SVFIRReader::readJson(IRGraph*& graph)
 {
-    irGraphReader.saveToGenericGraph(graph);
-
     assert(graph->symInfo == nullptr && "SymInfo already read?");
     assert(SymbolTableInfo::symInfo && "static SymbolTableInfo is null?");
     graph->symInfo = SymbolTableInfo::SymbolInfo();
 
+    irGraphReader.saveToGenericGraph(graph);
+    const cJSON* obj = irGraphReader.getFieldJson();
 #define F(field) JSON_READ_FIELD_FWD(obj, graph, field)
     // base and symInfo have already been read
     F(KindToSVFStmtSetMap);
@@ -1673,9 +1672,10 @@ void SVFIRReader::readJson(const cJSON* obj, IRGraph*& graph)
 #undef F
 }
 
-void SVFIRReader::readJson(const cJSON* obj, ICFG*& icfg)
+void SVFIRReader::readJson(ICFG*& icfg)
 {
     icfgReader.saveToGenericGraph(icfg);
+    const cJSON* obj = icfgReader.getFieldJson();
 #define F(field) JSON_READ_FIELD_FWD(obj, icfg, field)
     F(FunToFunEntryNodeMap);
     F(FunToFunExitNodeMap);
@@ -1687,9 +1687,10 @@ void SVFIRReader::readJson(const cJSON* obj, ICFG*& icfg)
 #undef F
 }
 
-void SVFIRReader::readJson(const cJSON* obj, CHGraph*& graph)
+void SVFIRReader::readJson(CHGraph*& graph)
 {
     chGraphReader.saveToGenericGraph(graph);
+    const cJSON* obj = chGraphReader.getFieldJson();
 #define F(field) JSON_READ_FIELD_FWD(obj, graph, field)
     F(classNum);
     F(vfID);
@@ -1705,8 +1706,9 @@ void SVFIRReader::readJson(const cJSON* obj, CHGraph*& graph)
 #undef F
 }
 
-void SVFIRReader::readJson(const cJSON* obj, SVFModule*& module)
+void SVFIRReader::readJson(SVFModule*& module)
 {
+    const cJSON* obj = svfModuleReader.getFieldJson();
 #define F(field) JSON_READ_FIELD_FWD(obj, module, field)
     F(pagReadFromTxt);
     F(moduleIdentifier);
@@ -1720,51 +1722,60 @@ void SVFIRReader::readJson(const cJSON* obj, SVFModule*& module)
 
 void SVFIRReader::readJson(const cJSON* obj, SVFType*& type)
 {
-    //TODO
-    assert(type == nullptr && "Type already read?");
+    assert(type == nullptr && "SVFType already read?");
+    type = symTableReader.svfTypePool.getPtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, StInfo*& stInfo)
 {
-    // TODO
+    assert(stInfo == nullptr && "StInfo already read?");
+    stInfo = symTableReader.stInfoPool.getPtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, SVFValue*& value)
 {
-    //TODO
+    assert(value == nullptr && "SVFValue already read?");
+    value = svfModuleReader.getSVFValuePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, SVFVar*& var)
 {
-    //TODO
+    assert(var == nullptr && "SVFVar already read?");
+    if (jsonIsNullId(obj))
+        var = nullptr;
+    else
+        var = irGraphReader.getNodePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, SVFStmt*& stmt)
 {
-    unsigned id;
-    JSON_READ_OBJ(obj, id);
-    stmt = irGraphReader.getEdgePtr(id);
+    assert(stmt == nullptr && "SVFStmt already read?");
+    stmt = irGraphReader.getEdgePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, ICFGNode*& node)
 {
+    assert(node == nullptr && "ICFGNode already read?");
     NodeID id = jsonGetNumber(obj);
     node = icfgReader.getNodePtr(id);
 }
 
 void SVFIRReader::readJson(const cJSON* obj, ICFGEdge*& edge)
 {
-    //TODO
+    assert(edge == nullptr && "ICFGEdge already read?");
+    edge = icfgReader.getEdgePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, CHNode*& node)
 {
-    //TODO
+    assert(node == nullptr && "CHNode already read?");
+    node = chGraphReader.getNodePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, CHEdge*& edge)
 {
-    //TODO
+    assert(edge == nullptr && "CHEdge already read?");
+    edge = chGraphReader.getEdgePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, CallSite& cs)
@@ -1785,10 +1796,12 @@ void SVFIRReader::readJson(const cJSON* obj, SVFLoop*& loop)
 
 void SVFIRReader::readJson(const cJSON* obj, MemObj*& memObj)
 {
+    // TODO
 }
 
 void SVFIRReader::readJson(const cJSON* obj, ObjTypeInfo*& objTypeInfo)
 {
+    // TODO
 }
 
 void SVFIRReader::readJson(const cJSON* obj, SVFLoopAndDomInfo*& ldInfo)
@@ -1886,7 +1899,7 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFStmt* stmt)
     switch (kind)
     {
     default:
-        ABORT_IFNOT(false, "Unknown SVFStmt kind " << kind);
+        ABORT_MSG("Unknown SVFStmt kind " << kind);
 
 #define CASE(EdgeKind, EdgeType)                                               \
     case SVFStmt::EdgeKind:                                                    \
@@ -2046,7 +2059,7 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, ICFGNode* node)
     switch (node->getNodeKind())
     {
     default:
-        ABORT_IFNOT(false, "Unknown ICFGNode kind " << node->getNodeKind());
+        ABORT_MSG("Unknown ICFGNode kind " << node->getNodeKind());
 
 #define CASE(NodeKind, NodeType)                                               \
     case ICFGNode::NodeKind:                                                   \
@@ -2121,7 +2134,7 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, ICFGEdge* edge)
     switch (kind)
     {
     default:
-        ABORT_IFNOT(false, "Unknown ICFGEdge kind " << kind);
+        ABORT_MSG("Unknown ICFGEdge kind " << kind);
     case ICFGEdge::IntraCF:
         return fill(fieldJson, static_cast<IntraCFGEdge*>(edge));
     case ICFGEdge::CallCF:
@@ -2190,7 +2203,7 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, CHEdge* edge)
     else if (edgeType == CHEdge::INSTANTCE)
         edge->edgeType = CHEdge::INSTANTCE;
     else
-        ABORT_IFNOT(false, "Unknown CHEdge type " << edgeType);
+        ABORT_MSG("Unknown CHEdge type " << edgeType);
 }
 
 void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFValue* value)
@@ -2200,7 +2213,7 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFValue* value)
     switch (kind)
     {
     default:
-        ABORT_IFNOT(false, "Impossible SVFValue kind " << kind);
+        ABORT_MSG("Impossible SVFValue kind " << kind);
 
 #define CASE(ValueKind, Type)                                                  \
     case SVFValue::ValueKind:                                                  \
@@ -2408,6 +2421,46 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFArrayType* type)
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFOtherType* type)
 {
     fill(fieldJson, static_cast<SVFType*>(type));
+}
+
+SVFIR* SVFIRReader::read(const std::string& path)
+{
+    struct stat buf;
+    int fd = open(path.c_str(), O_RDONLY);
+    if (fd == -1)
+    {
+        std::string info = "open(\"" + path + "\")";
+        perror(info.c_str());
+        abort();
+    }
+    if (fstat(fd, &buf) == -1)
+    {
+        std::string info = "fstate(\"" + path + "\")";
+        perror(info.c_str());
+        abort();
+    }
+    auto addr =
+        (char*)mmap(nullptr, buf.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (addr == MAP_FAILED)
+    {
+        std::string info = "mmap(content of \"" + path + "\")";
+        perror(info.c_str());
+        abort();
+    }
+
+    auto root = cJSON_ParseWithLength(addr, buf.st_size);
+
+    if (munmap(addr, buf.st_size) == -1)
+        perror("munmap()");
+
+    if (close(fd) < 0)
+        perror("close()");
+
+    SVFIRReader reader;
+    SVFIR* ir = reader.read(root);
+
+    cJSON_Delete(root);
+    return ir;
 }
 
 } // namespace SVF

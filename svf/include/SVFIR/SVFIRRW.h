@@ -1,13 +1,25 @@
-/*  SVF - Static Value-Flow Analysis Framework
- *
- *
- * Note for this module:
- *  1. This module is used to read and write SVFIR from/to JSON file.
- *
- * Information about pointer "ownership":
- * - SVFTypes are owned by
- *      symbolTableInfo -> svfTypes
- */
+//===- SVFIRRW.h -- SVF IR Reader and Writer ------------------------------===//
+//
+//  SVF - Static Value-Flow Analysis Framework
+//                     SVF: Static Value-Flow Analysis
+//
+// Copyright (C) <2013-2023>  <Yulei Sui>
+//
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//===----------------------------------------------------------------------===//
 
 #ifndef INCLUDE_SVFIRRW_H_
 #define INCLUDE_SVFIRRW_H_
@@ -17,6 +29,20 @@
 #include "Util/cJSON.h"
 #include <type_traits>
 
+#define ABORT_MSG(reason)                                                      \
+    do                                                                         \
+    {                                                                          \
+        SVFUtil::errs() << __FILE__ << ':' << __LINE__ << ": " << reason       \
+                        << '\n';                                               \
+        abort();                                                               \
+    } while (0)
+#define ABORT_IFNOT(condition, reason)                                         \
+    do                                                                         \
+    {                                                                          \
+        if (!(condition))                                                      \
+            ABORT_MSG(reason);                                                 \
+    } while (0)
+
 #define SVFIR_DEBUG 1 /* Turn this on if you're debugging SVFWriter */
 #if SVFIR_DEBUG
 #    define ENSURE_NOT_VISITED(graph)                                          \
@@ -24,7 +50,7 @@
         {                                                                      \
             static std::set<decltype(graph)> visited;                          \
             bool inserted = visited.insert(graph).second;                      \
-            ABORT_IFNOT(inserted, #graph " already visited!");                 \
+            ABORT_IFNOT(inserted, #graph << " already visited!");              \
         } while (0)
 #else
 #    define ENSURE_NOT_VISITED(graph)                                          \
@@ -32,18 +58,6 @@
         {                                                                      \
         } while (0)
 #endif
-
-#define ABORT_IFNOT(condition, reason)                                         \
-    do                                                                         \
-    {                                                                          \
-        if (!(condition))                                                      \
-        {                                                                      \
-            SVFUtil::errs()                                                    \
-                << __FILE__ << ':' << __LINE__ << ": " << reason << '\n';      \
-            abort();                                                           \
-        }                                                                      \
-    } while (0)
-
 #define FIELD_NAME_ITEM(field) #field, (field)
 
 #define JSON_FIELD_OR(json, field, default) ((json) ? (json)->field : default)
@@ -197,8 +211,7 @@ bool jsonAddItemToArray(cJSON* array, cJSON* item);
 /// @brief Helper function to write a number to a JSON object.
 bool jsonAddNumberToObject(cJSON* obj, const char* name, double number);
 bool jsonAddStringToObject(cJSON* obj, const char* name, const char* str);
-bool jsonAddStringToObject(cJSON* obj, const char* name,
-                           const std::string& str);
+bool jsonAddStringToObject(cJSON* obj, const char* name, const std::string& s);
 #define jsonForEach(field, array)                                              \
     for (const cJSON* field = JSON_CHILD(array); field; field = field->next)
 
@@ -612,17 +625,8 @@ private:
     }
 };
 
-/* Reader Part
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
+/*
+ * Reader Part
  */
 
 /// @brief Type trait to get base type.
@@ -676,12 +680,11 @@ public:
             ABORT_IFNOT(jsonIsObject(objJson), "expects an object");
             const cJSON* objFieldJson = objJson->child;
             // creator is allowed to change objFieldJson
-            T* obj;
-            unsigned id;
-            std::tie(id, obj) = idObjCreator(objFieldJson);
-            auto pair = std::pair<const cJSON*, T*>(objFieldJson, obj);
-            bool inserted = idMap.emplace(id, pair).second;
-            ABORT_IFNOT(inserted, "duplicate ID " << id);
+            auto idObj = idObjCreator(objFieldJson);
+            auto pair = std::pair<const cJSON*, T*>(objFieldJson, idObj.second);
+            bool inserted = idMap.emplace(idObj.first, pair).second;
+            ABORT_IFNOT(inserted, "ID " << idObj.first << " duplicated in "
+                                        << idObjArrayJson->string);
         }
     }
 
@@ -709,22 +712,6 @@ public:
     {
         return idMap.size();
     }
-
-    //struct iterator : public IDToPairMapTy::iterator
-    //{
-    //    using value_type = T*;
-    //    using pointer = value_type*;
-    //    using reference = value_type&;
-
-    //    explicit iterator(const typename IDToPairMapTy::iterator& it)
-    //        : IDToPairMapTy::iterator(it) {}
-
-    //    reference operator*() const { return this->value()->second.second; }
-    //    pointer operator->() const { return &*this; }
-    //};
-
-    //iterator begin() { return iterator(idMap.begin()); }
-    //iterator end() { return iterator(idMap.begin()); }
 
     template <typename Map> void saveToIDToObjMap(Map& idToObjMap) const
     {
@@ -894,6 +881,11 @@ public:
         svfTypePool.fillObjs(svfTypeFiller);
         stInfoPool.fillObjs(stInfoFiller);
     }
+
+    inline const cJSON* getFieldJson() const
+    {
+        return symTabFieldJson;
+    }
 };
 
 using GenericICFGReader = GenericGraphReader<ICFGNode, ICFGEdge>;
@@ -963,8 +955,7 @@ private:
     CHGraphReader chGraphReader;
 
 public:
-    void read(cJSON* root);
-    const cJSON* createObjs(const cJSON* root);
+    static SVFIR* read(const std::string& path);
 
     static void readJson(const cJSON* obj, bool& flag);
     static void readJson(const cJSON* obj, unsigned& val);
@@ -975,7 +966,10 @@ public:
     static void readJson(const cJSON* obj, unsigned long long& val);
     static void readJson(const cJSON* obj, std::string& str);
 
-public:
+private:
+    SVFIR* read(cJSON* root);
+    const cJSON* createObjs(const cJSON* root);
+
     template <typename T> inline T constructFromJson(const cJSON* obj)
     {
         T t;
@@ -989,11 +983,11 @@ public:
         return CallSite(callInst);
     }
 
-    void readJson(const cJSON* obj, SymbolTableInfo*& symTabInfo);
-    void readJson(const cJSON* obj, IRGraph*& graph); // IRGraph Graph
-    void readJson(const cJSON* obj, ICFG*& icfg);     // ICFG Graph
-    void readJson(const cJSON* obj, CHGraph*& graph); // CHGraph Graph
-    void readJson(const cJSON* obj, SVFModule*& module);
+    void readJson(SymbolTableInfo*& symTabInfo);
+    void readJson(IRGraph*& graph); // IRGraph Graph
+    void readJson(ICFG*& icfg);     // ICFG Graph
+    void readJson(CHGraph*& graph); // CHGraph Graph
+    void readJson(SVFModule*& module);
 
     void readJson(const cJSON* obj, SVFType*& type);
     void readJson(const cJSON* obj, StInfo*& stInfo);
@@ -1035,8 +1029,8 @@ public:
         KindBaseT<T>* basePtr;
         readJson(obj, basePtr);
         ptr = SVFUtil::dyn_cast<T>(basePtr);
-        ABORT_IFNOT(ptr, obj->string << " shoudn't have kind "
-                                     << KindBaseHelper<T>::getKind(ptr));
+        ABORT_IFNOT(ptr, "Cast: " << obj->string << " shoudn't have kind "
+                                  << KindBaseHelper<T>::getKind(ptr));
     }
 
     template <typename T> inline void readJson(const cJSON* obj, const T*& cptr)
