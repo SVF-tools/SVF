@@ -46,6 +46,10 @@
 
 #define FIELD_NAME_ITEM(field) #field, (field)
 
+#define JSON_FIELD_OR(json, field, default) ((json) ? (json)->field : default)
+#define JSON_KEY(json) JSON_FIELD_OR(json, string, "NULL")
+#define JSON_CHILD(json) JSON_FIELD_OR(json, child, nullptr)
+
 #define JSON_WRITE_FIELD(root, objptr, field)                                  \
     jsonAddJsonableToObject(root, #field, (objptr)->field)
 
@@ -53,8 +57,7 @@
     do                                                                         \
     {                                                                          \
         ABORT_IFNOT(jsonKeyEquals(json, name),                                 \
-                    "Expect name '" << name << "', got "                       \
-                                    << ((json) ? (json)->string : "NULL"));    \
+                    "Expect name '" << name << "', got " << JSON_KEY(json));   \
         SVFIRReader::readJson(json, obj);                                      \
     } while (0)
 
@@ -70,78 +73,10 @@
     JSON_READ_OBJ_WITH_NAME_FWD(json, obj, #obj)
 #define JSON_READ_FIELD_FWD(json, objptr, field)                               \
     JSON_READ_OBJ_WITH_NAME_FWD(json, (objptr)->field, #field)
-
-/// @brief Type trait to check if a type is iterable.
-///@{
-template <typename T>
-decltype(std::begin(std::declval<T&>()) !=
-             std::end(std::declval<T&>()), // begin/end and operator!=
-         void(),                           // Handle evil operator,
-         ++std::declval<decltype(begin(std::declval<T&>()))&>(), // operator++
-         *begin(std::declval<T&>()),                             // operator*
-         std::true_type{})
-is_iterable_impl(int);
-template <typename T> std::false_type is_iterable_impl(...);
-template <typename T> using is_iterable = decltype(is_iterable_impl<T>(0));
-template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
-///@}
-
-/// @brief Type trait to check if a type is a map or unordered_map.
-///@{
-template <typename T> struct is_map : std::false_type
-{
-};
-template <typename... Ts> struct is_map<std::map<Ts...>> : std::true_type
-{
-};
-template <typename... Ts>
-struct is_map<std::unordered_map<Ts...>> : std::true_type
-{
-};
-template <typename... Ts> constexpr bool is_map_v = is_map<Ts...>::value;
-///@}
-
-/// @brief Type trait to check if a type is a set or unordered_set.
-///@{
-template <typename T> struct is_set : std::false_type
-{
-};
-template <typename... Ts> struct is_set<std::set<Ts...>> : std::true_type
-{
-};
-template <typename... Ts>
-struct is_set<std::unordered_set<Ts...>> : std::true_type
-{
-};
-template <typename... Ts> constexpr bool is_set_v = is_set<Ts...>::value;
-///@}
-
-/// @brief Type trait to check if a type is vector or list.
-template <typename T> struct is_sequence_container : std::false_type
-{
-};
-template <typename... Ts>
-struct is_sequence_container<std::vector<Ts...>> : std::true_type
-{
-};
-template <typename... Ts>
-struct is_sequence_container<std::deque<Ts...>> : std::true_type
-{
-};
-template <typename... Ts>
-struct is_sequence_container<std::list<Ts...>> : std::true_type
-{
-};
-template <typename... Ts>
-constexpr bool is_sequence_container_v = is_sequence_container<Ts...>::value;
-///@}
-
-template <typename... Ts> struct make_void
-{
-    typedef void type;
-};
-
-template <typename... Ts> using void_t = typename make_void<Ts...>::type;
+#define CHECK_JSON_KEY_EQUALS(obj, key)                                        \
+    ABORT_IFNOT(jsonKeyEquals(obj, key),                                       \
+                "Expect json key: " << key << ", but get " << JSON_KEY(obj));
+#define CHECK_JSON_KEY(obj) CHECK_JSON_KEY_EQUALS(obj, #obj)
 
 namespace SVF
 {
@@ -264,14 +199,8 @@ bool jsonAddNumberToObject(cJSON* obj, const char* name, double number);
 bool jsonAddStringToObject(cJSON* obj, const char* name, const char* str);
 bool jsonAddStringToObject(cJSON* obj, const char* name,
                            const std::string& str);
-#define jsonForEach(element, array)                                            \
-    for (const cJSON* element = (array) ? (array)->child : nullptr; element;   \
-         element = element->next)
-#define CHECK_JSON_KEY_EQUALS(obj, key)                                        \
-    ABORT_IFNOT(jsonKeyEquals(obj, key),                                       \
-                "Expect json key: " << key << ", but get "                     \
-                                    << ((obj) ? (obj)->string : "null"));
-#define CHECK_JSON_KEY(obj) CHECK_JSON_KEY_EQUALS(obj, #obj)
+#define jsonForEach(field, array)                                              \
+    for (const cJSON* field = JSON_CHILD(array); field; field = field->next)
 
 /// @brief Bookkeeping class to keep track of the IDs of objects that doesn't
 /// have any ID. E.g., SVFValue, XXXEdge.
@@ -655,7 +584,8 @@ private:
         return obj;
     }
 
-    template <typename T, typename = std::enable_if_t<is_iterable_v<T>>>
+    template <typename T,
+              typename = std::enable_if_t<SVFUtil::is_iterable_v<T>>>
     cJSON* toJson(const T& container)
     {
         cJSON* array = jsonCreateArray();
@@ -1100,7 +1030,7 @@ public:
     }
 
     template <typename T>
-    inline void_t<KindBaseT<T>> readJson(const cJSON* obj, T*& ptr)
+    inline SVFUtil::void_t<KindBaseT<T>> readJson(const cJSON* obj, T*& ptr)
     {
         KindBaseT<T>* basePtr;
         readJson(obj, basePtr);
@@ -1139,43 +1069,39 @@ public:
         ABORT_IFNOT(i == N, "expect array of size " << N);
     }
 
-    template <typename Container>
-    std::enable_if_t<is_sequence_container_v<Container>> readJson(
-        const cJSON* obj, Container& container)
+    template <typename C>
+    std::enable_if_t<SVFUtil::is_sequence_container_v<C>> readJson(
+        const cJSON* obj, C& container)
     {
+        using T = typename C::value_type;
         assert(container.empty() && "container should be empty");
         ABORT_IFNOT(jsonIsArray(obj), "vector expects an array");
         jsonForEach(elemJson, obj)
-        {
-            container.push_back(std::move(
-                constructFromJson<typename Container::value_type>(elemJson)));
-        }
+            container.push_back(std::move(constructFromJson<T>(elemJson)));
     }
 
-    template <typename Map>
-    std::enable_if_t<is_map_v<Map>> readJson(const cJSON* obj, Map& map)
+    template <typename C>
+    std::enable_if_t<SVFUtil::is_map_v<C>> readJson(const cJSON* obj, C& map)
     {
         assert(map.empty() && "map should be empty");
         ABORT_IFNOT(jsonIsMap(obj), "expects an map (represted by array)");
         jsonForEach(elemJson, obj)
         {
             auto jpair = jsonUnpackPair(elemJson);
-            auto k = constructFromJson<typename Map::key_type>(jpair.first);
-            auto v = constructFromJson<typename Map::mapped_type>(jpair.second);
+            auto k = constructFromJson<typename C::key_type>(jpair.first);
+            auto v = constructFromJson<typename C::mapped_type>(jpair.second);
             map.emplace(std::move(k), std::move(v));
         }
     }
 
-    template <typename Set>
-    std::enable_if_t<is_set_v<Set>> readJson(const cJSON* obj, Set& set)
+    template <typename C>
+    std::enable_if_t<SVFUtil::is_set_v<C>> readJson(const cJSON* obj, C& set)
     {
+        using T = typename C::value_type;
         assert(set.empty() && "set should be empty");
         ABORT_IFNOT(jsonIsArray(obj), "expects an array");
         jsonForEach(elemJson, obj)
-        {
-            set.insert(std::move(
-                constructFromJson<typename Set::value_type>(elemJson)));
-        }
+            set.insert(std::move(constructFromJson<T>(elemJson)));
     }
 
     // IGRaph

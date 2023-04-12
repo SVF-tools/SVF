@@ -207,8 +207,8 @@ static inline void readSmallNumber(const cJSON* obj, SmallNumberType& val)
 template <typename BigNumberType, typename CStrToVal>
 static inline void readBigNumber(const cJSON* obj, BigNumberType& val, CStrToVal conv)
 {
-    ABORT_IFNOT(jsonIsString(obj), "Expect (number) string JSON for "
-                                       << (obj ? obj->string : "null"));
+    ABORT_IFNOT(jsonIsString(obj),
+                "Expect (number) string JSON for " << JSON_KEY(obj));
     val = conv(obj->valuestring);
 }
 
@@ -996,8 +996,7 @@ std::pair<const cJSON*,const cJSON*> jsonUnpackPair(const cJSON* item)
 
 double jsonGetNumber(const cJSON* item)
 {
-    ABORT_IFNOT(jsonIsNumber(item),
-                "Expected number for " << (item ? item->string : "null"));
+    ABORT_IFNOT(jsonIsNumber(item), "Expected number for " << JSON_KEY(item));
     return item->valuedouble;
 }
 
