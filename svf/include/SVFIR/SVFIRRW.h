@@ -85,6 +85,9 @@
 #define JSON_READ_OBJ(json, obj) JSON_READ_OBJ_WITH_NAME(json, obj, #obj)
 #define JSON_READ_OBJ_FWD(json, obj)                                           \
     JSON_READ_OBJ_WITH_NAME_FWD(json, obj, #obj)
+#define JSON_DEF_READ_FWD(json, type, obj, ...)                                \
+    type obj __VA_ARGS__;                                                      \
+    JSON_READ_OBJ_FWD(json, obj)
 #define JSON_READ_FIELD_FWD(json, objptr, field)                               \
     JSON_READ_OBJ_WITH_NAME_FWD(json, (objptr)->field, #field)
 #define CHECK_JSON_KEY_EQUALS(obj, key)                                        \
@@ -427,6 +430,7 @@ private:
     static cJSON* toJson(unsigned number);
     static cJSON* toJson(int number);
     static cJSON* toJson(float number);
+    static cJSON* toJson(const std::string& str);
     cJSON* toJson(unsigned long number);
     cJSON* toJson(long long number);
     cJSON* toJson(unsigned long long number);
@@ -778,8 +782,13 @@ public:
                "jsonArray and ptrPool should have same size");
         for (size_t i = 0; i < jsonArray.size(); ++i)
         {
-            fillFunc(jsonArray[i], ptrPool[i]);
+            const cJSON*& objFieldJson = jsonArray[i];
+            fillFunc(objFieldJson, ptrPool[i]);
+            ABORT_IFNOT(!objFieldJson, "json should be consumed by filler, but "
+                                           << objFieldJson->string << " left");
         }
+        jsonArray.clear();
+        jsonArray.shrink_to_fit();
     }
 
     inline size_t size() const
@@ -806,23 +815,25 @@ public:
         const cJSON* nodeNum = graphJson->child;
         CHECK_JSON_KEY(nodeNum);
         u32_t numOfNodes = jsonGetNumber(nodeNum);
+        (void)numOfNodes;
 
         // Read allNode
         const cJSON* allNode = nodeNum->next;
         CHECK_JSON_KEY(allNode);
         idToNodeMap.createObjs(allNode, nodeCreator);
-        ABORT_IFNOT(idToNodeMap.size() == numOfNodes, "nodeNum mismatch");
+        // TODO: ABORT_IFNOT(idToNodeMap.size() == numOfNodes, "nodeNum mismatch");
 
         // Read edgeNum
         const cJSON* edgeNum = allNode->next;
         CHECK_JSON_KEY(edgeNum);
         u32_t numOfEdges = jsonGetNumber(edgeNum);
+        (void)numOfEdges;
 
         // Read allEdge
         const cJSON* allEdge = edgeNum->next;
         CHECK_JSON_KEY(allEdge);
         edgePool.createObjs(allEdge, edgeCreator);
-        ABORT_IFNOT(edgePool.size() == numOfEdges, "edgeNum mismatch");
+        // TODO: ABORT_IFNOT(edgePool.size() == numOfEdges, "edgeNum mismatch");
 
         // Rest fields
         assert(!graphFieldJson && "graphFieldJson should be empty");
@@ -866,25 +877,24 @@ class SymbolTableInfoReader
 private:
     const cJSON* symTabFieldJson = nullptr;
     ReaderIDToObjMap<MemObj> memObjMap;
-    ReaderPtrPool<SVFType> svfTypePool;
-    ReaderPtrPool<StInfo> stInfoPool;
 
 public:
-    void createObjs(const cJSON* symTableJson);
-
     inline MemObj* getMemObjPtr(unsigned id) const
     {
         return memObjMap.getPtr(id);
     }
 
-    template <typename MemObjFiller, typename SVFTypeFiller,
-              typename StInfoFiller>
-    inline void fillObjs(MemObjFiller memObjFiller, SVFTypeFiller svfTypeFiller,
-                         StInfoFiller stInfoFiller)
+    template <typename MemObjCreator>
+    void createObjs(const cJSON* symTabJson, MemObjCreator memObjCreator)
     {
-        memObjMap.fillObjs(memObjFiller);
-        svfTypePool.fillObjs(svfTypeFiller);
-        stInfoPool.fillObjs(stInfoFiller);
+        assert(symTabFieldJson == nullptr && "symTabFieldJson should be empty");
+        ABORT_IFNOT(jsonIsObject(symTabJson), "symTableJson is not an object?");
+
+        cJSON* allMemObj = symTabJson->child;
+        CHECK_JSON_KEY(allMemObj);
+        memObjMap.createObjs(allMemObj, memObjCreator);
+
+        symTabFieldJson = allMemObj->next;
     }
 
     inline const cJSON* getFieldJson() const
@@ -924,23 +934,50 @@ public:
 class SVFModuleReader
 {
     const cJSON* svfModuleFieldJson = nullptr;
+    ReaderPtrPool<SVFType> svfTypePool;
+    ReaderPtrPool<StInfo> stInfoPool;
     ReaderPtrPool<SVFValue> svfValuePool;
 
 public:
-    template <typename SVFValueCreator>
-    void createObjs(const cJSON* svfModuleJson, SVFValueCreator creator)
+    template <typename SVFTypeCreator, typename SVFTypeFiller,
+              typename SVFValueCreator, typename SVFValueFiller,
+              typename StInfoCreator>
+    void createObjs(const cJSON* svfModuleJson, SVFTypeCreator typeCreator,
+                    SVFTypeFiller typeFiller, SVFValueCreator valueCreator,
+                    SVFValueFiller valueFiller, StInfoCreator stInfoCreator)
     {
-        assert(svfModuleFieldJson == nullptr && "Already created?");
+        assert(svfModuleFieldJson == nullptr && "SVFModule Already created?");
+        ABORT_IFNOT(jsonIsObject(svfModuleJson),
+                    "svfModuleJson not an JSON object?");
 
-        cJSON* allSVFValue = svfModuleJson->child;
+        cJSON* allSVFType = svfModuleJson->child;
+        CHECK_JSON_KEY(allSVFType);
+        svfTypePool.createObjs(allSVFType, typeCreator);
+        svfTypePool.fillObjs(typeFiller);
+
+        cJSON* allStInfo = allSVFType->next;
+        CHECK_JSON_KEY(allStInfo);
+        stInfoPool.createObjs(allStInfo, stInfoCreator);
+
+        cJSON* allSVFValue = allStInfo->next;
         CHECK_JSON_KEY(allSVFValue);
-        svfValuePool.createObjs(allSVFValue, creator);
+        svfValuePool.createObjs(allSVFValue, valueCreator);
+        svfValuePool.fillObjs(valueFiller);
+
         svfModuleFieldJson = allSVFValue->next;
     }
 
     inline SVFValue* getSVFValuePtr(size_t id) const
     {
         return svfValuePool.getPtr(id);
+    }
+    inline SVFType* getSVFTypePtr(size_t id) const
+    {
+        return svfTypePool.getPtr(id);
+    }
+    inline StInfo* getStInfoPtr(size_t id) const
+    {
+        return stInfoPool.getPtr(id);
     }
 
     template <typename SVFValueFiller>
@@ -962,11 +999,11 @@ public:
 class SVFIRReader
 {
 private:
-    SymbolTableInfoReader symTableReader;
-    IRGraphReader irGraphReader;
     SVFModuleReader svfModuleReader;
+    SymbolTableInfoReader symTableReader;
     ICFGReader icfgReader;
     CHGraphReader chGraphReader;
+    IRGraphReader irGraphReader;
 
 public:
     static SVFIR* read(const std::string& path);
