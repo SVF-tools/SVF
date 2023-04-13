@@ -1000,7 +1000,7 @@ private:
     // void readJson(const cJSON* obj, CHGraph*& graph); // CHGraph Graph
     void readJson(const cJSON* obj, CHNode*& node); // CHGraph Node
     void readJson(const cJSON* obj, CHEdge*& edge); // CHGraph Edge
-    void readJson(const cJSON* obj, CallSite& cs);
+    //void readJson(const cJSON* obj, CallSite& cs);
 
     void readJson(const cJSON* obj, LocationSet& ls);
     void readJson(const cJSON* obj, SVFLoop*& loop);

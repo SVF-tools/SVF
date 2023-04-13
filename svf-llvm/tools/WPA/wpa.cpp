@@ -40,45 +40,33 @@ using namespace SVF;
 
 int main(int argc, char** argv)
 {
-
-    char** arg_value = new char*[argc];
-    std::vector<std::string> moduleNameVec;
-    moduleNameVec =
+    auto moduleNameVec =
         OptionBase::parseOptions(argc, argv, "Whole Program Points-to Analysis",
                                  "[options] <input-bitcode...>");
 
-    if (Options::WriteAnder() == "ir_annotator")
-    {
-        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
-    }
-
-#if 0
-    SVFModule* svfModule =
-        LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-
-    /// Build SVFIR
-    SVFIRBuilder builder(svfModule);
-    SVFIR* pag = builder.build();
-#else
     SVFIR* pag;
 
-    if (Options::ReadJson().empty())
+    if (Options::ReadJson())
     {
-        SVFModule* svfModule =
-            LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-        SVFIRBuilder builder(svfModule);
-        pag = builder.build();
+        pag = SVFIRReader::read(moduleNameVec.front());
     }
     else
     {
-        SVFIRReader reader;
-        pag = nullptr;
+        if (Options::WriteAnder() == "ir_annotator")
+        {
+            LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+        }
+
+        SVFModule* svfModule =
+            LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+
+        /// Build SVFIR
+        SVFIRBuilder builder(svfModule);
+        pag = builder.build();
     }
-#endif
 
     WPAPass wpa;
     wpa.runOnModule(pag);
 
-    delete[] arg_value;
     return 0;
 }

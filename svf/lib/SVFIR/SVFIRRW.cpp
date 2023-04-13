@@ -1778,35 +1778,69 @@ void SVFIRReader::readJson(const cJSON* obj, CHEdge*& edge)
     edge = chGraphReader.getEdgePtr(jsonGetNumber(obj));
 }
 
-void SVFIRReader::readJson(const cJSON* obj, CallSite& cs)
-{
-    // TODO
-}
+//void SVFIRReader::readJson(const cJSON* obj, CallSite& cs)
+//{
+//    // TODO
+//}
 
 void SVFIRReader::readJson(const cJSON* obj, LocationSet& ls)
 {
-    // TODO
+#define F(field) JSON_READ_FIELD_FWD(obj, &ls, field)
+    F(fldIdx);
+    F(offsetVarAndGepTypePairs);
+#undef F
 }
 
 void SVFIRReader::readJson(const cJSON* obj, SVFLoop*& loop)
 {
+    assert(loop == nullptr && "SVFLoop already read?");
     unsigned id = jsonGetNumber(obj);
     loop = icfgReader.getSVFLoopPtr(id);
 }
 
 void SVFIRReader::readJson(const cJSON* obj, MemObj*& memObj)
 {
-    // TODO
+    assert(memObj == nullptr && "MemObj already read?");
+    memObj = symTableReader.getMemObjPtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, ObjTypeInfo*& objTypeInfo)
 {
-    // TODO
+    assert(objTypeInfo == nullptr && "ObjTypeInfo already read?");
+    ABORT_IFNOT(jsonIsObject(obj), "Expected object for objTypeInfo");
+    cJSON* field = obj->child;
+
+    const SVFType* type = nullptr;
+    u32_t flags, maxOffsetLimit, elemNum;
+
+    JSON_READ_OBJ_FWD(field, type);
+    JSON_READ_OBJ_FWD(field, flags);
+    JSON_READ_OBJ_FWD(field, maxOffsetLimit);
+    JSON_READ_OBJ_FWD(field, elemNum);
+
+    ABORT_IFNOT(field == nullptr,
+                "Unconsumed fields in objTypeInfo: " << field->string);
+    objTypeInfo = new ObjTypeInfo(type, maxOffsetLimit);
+    objTypeInfo->flags = flags;
+    objTypeInfo->elemNum = elemNum;
 }
 
 void SVFIRReader::readJson(const cJSON* obj, SVFLoopAndDomInfo*& ldInfo)
 {
-    // TODO
+    assert(ldInfo == nullptr && "SVFLoopAndDomInfo already read?");
+    ABORT_IFNOT(jsonIsObject(obj), "Expected object for SVFLoopAndDomInfo");
+    cJSON* field = obj->child;
+
+    ldInfo = new SVFLoopAndDomInfo();
+
+    JSON_READ_FIELD_FWD(field, ldInfo, reachableBBs);
+    JSON_READ_FIELD_FWD(field, ldInfo, dtBBsMap);
+    JSON_READ_FIELD_FWD(field, ldInfo, pdtBBsMap);
+    JSON_READ_FIELD_FWD(field, ldInfo, dfBBsMap);
+    JSON_READ_FIELD_FWD(field, ldInfo, bb2LoopMap);
+
+    ABORT_IFNOT(field == nullptr,
+                "Unconsumed fields in SVFLoopAndDomInfo: " << field->string);
 }
 
 void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFVar* var)
