@@ -36,46 +36,7 @@ template <> SVFType* create<SVFType>(SVFType::GNodeK kind)
         return new SVFOtherType({});
     }
 }
-template <> SVFValue* create<SVFValue>(SVFValue::GNodeK kind)
-{
-    switch (kind)
-    {
-    default:
-        ABORT_MSG( kind << " is an impossible SVFValueKind in create()");
-    case SVFValue::SVFVal:
-        ABORT_MSG("Creation of RAW SVFValue isn't allowed");
-    case SVFValue::SVFFunc:
-        return new SVFFunction({}, {}, {}, {}, {}, {}, {}, {});
-    case SVFValue::SVFBB:
-        return new SVFBasicBlock({}, {}, {});
-    case SVFValue::SVFInst:
-        return new SVFInstruction({}, {}, {}, {}, {});
-    case SVFValue::SVFCall:
-        return new SVFCallInst({}, {}, {}, {}, {});
-    case SVFValue::SVFVCall:
-        return new SVFVirtualCallInst({}, {}, {}, {}, {});
-    case SVFValue::SVFGlob:
-        return new SVFGlobalValue({}, {});
-    case SVFValue::SVFArg:
-        return new SVFArgument({}, {}, {}, {}, {});
-    case SVFValue::SVFConst:
-        return new SVFConstant({}, {});
-    case SVFValue::SVFConstData:
-        return new SVFConstantData({}, {});
-    case SVFValue::SVFConstInt:
-        return new SVFConstantInt({}, {}, {}, {});
-    case SVFValue::SVFConstFP:
-        return new SVFConstantFP({}, {}, {});
-    case SVFValue::SVFNullPtr:
-        return new SVFConstantNullPtr({}, {});
-    case SVFValue::SVFBlackHole:
-        return new SVFBlackHoleValue({}, {});
-    case SVFValue::SVFMetaAsValue:
-        return new SVFMetadataAsValue({}, {});
-    case SVFValue::SVFOther:
-        return new SVFOtherValue({}, {});
-    }
-}
+
 template <> ICFGNode* create<ICFGNode>(NodeID id, ICFGNode::GNodeK kind)
 {
     switch (kind)
@@ -110,32 +71,7 @@ template <> ICFGEdge* create<ICFGEdge>(ICFGEdge::GEdgeKind kind)
         return new RetCFGEdge(nullptr, nullptr, nullptr);
     }
 }
-template <> SVFVar* create<SVFVar>(NodeID id, SVFVar::GNodeK kind)
-{
-    switch (kind)
-    {
-    default:
-        ABORT_MSG(kind << " is an impossible SVFVarKind in create()");
-    case SVFVar::ValNode:
-        return new ValVar(nullptr, id);
-    case SVFVar::ObjNode:
-        assert(false && "ObjNode should not be created by SVFIRReader");
-    case SVFVar::RetNode:
-        return new RetPN({}, id);
-    case SVFVar::VarargNode:
-        return new VarArgPN(nullptr, id);
-    case SVFVar::GepValNode:
-        return new GepValVar(nullptr, id, LocationSet(), nullptr);
-    case SVFVar::GepObjNode:
-        return new GepObjVar(nullptr, id, LocationSet());
-    case SVFVar::FIObjNode:
-        return new FIObjVar(nullptr, id, nullptr);
-    case SVFVar::DummyValNode:
-        return new DummyValVar(id);
-    case SVFVar::DummyObjNode:
-        return new DummyObjVar(id, nullptr);
-    }
-}
+
 template <> SVFStmt* create<SVFStmt>(SVFStmt::GEdgeKind kind)
 {
     switch (kind)
@@ -174,15 +110,86 @@ template <> SVFStmt* create<SVFStmt>(SVFStmt::GEdgeKind kind)
         return new TDJoinPE(nullptr, nullptr, nullptr, nullptr);
     }
 }
+
 template <> CHNode* create<CHNode>(NodeID id, CHNode::GNodeK kind)
 {
     ABORT_IFNOT(kind == 0, "Impossible CHNode kind " << kind);
     return new CHNode("", id);
 }
+
 template <> CHEdge* create<CHEdge>(CHEdge::GEdgeKind kind)
 {
     ABORT_IFNOT(kind == 0, "Unsupported CHEdge kind " << kind);
     return new CHEdge(nullptr, nullptr, {});
+}
+
+static SVFValue* createSVFValue(SVFValue::GNodeK kind, const SVFType* type,
+                         const std::string& name)
+{
+    switch (kind)
+    {
+    default:
+        ABORT_MSG(kind << " is an impossible SVFValueKind in create()");
+    case SVFValue::SVFVal:
+        ABORT_MSG("Creation of RAW SVFValue isn't allowed");
+    case SVFValue::SVFFunc:
+        return new SVFFunction(name, type, {}, {}, {}, {}, {}, {});
+    case SVFValue::SVFBB:
+        return new SVFBasicBlock(name, type, {});
+    case SVFValue::SVFInst:
+        return new SVFInstruction(name, type, {}, {}, {});
+    case SVFValue::SVFCall:
+        return new SVFCallInst(name, type, {}, {}, {});
+    case SVFValue::SVFVCall:
+        return new SVFVirtualCallInst(name, type, {}, {}, {});
+    case SVFValue::SVFGlob:
+        return new SVFGlobalValue(name, type);
+    case SVFValue::SVFArg:
+        return new SVFArgument(name, type, {}, {}, {});
+    case SVFValue::SVFConst:
+        return new SVFConstant(name, type);
+    case SVFValue::SVFConstData:
+        return new SVFConstantData(name, type);
+    case SVFValue::SVFConstInt:
+        return new SVFConstantInt(name, type, {}, {});
+    case SVFValue::SVFConstFP:
+        return new SVFConstantFP(name, type, {});
+    case SVFValue::SVFNullPtr:
+        return new SVFConstantNullPtr(name, type);
+    case SVFValue::SVFBlackHole:
+        return new SVFBlackHoleValue(name, type);
+    case SVFValue::SVFMetaAsValue:
+        return new SVFMetadataAsValue(name, type);
+    case SVFValue::SVFOther:
+        return new SVFOtherValue(name, type);
+    }
+}
+
+SVFVar* createSVFVar(NodeID id, SVFVar::GNodeK kind, const SVFValue* val)
+{
+    switch (kind)
+    {
+    default:
+        ABORT_MSG(kind << " is an impossible SVFVarKind in create()");
+    case SVFVar::ValNode:
+        return new ValVar(val, id);
+    case SVFVar::ObjNode:
+        assert(false && "ObjNode should not be created by SVFIRReader");
+    case SVFVar::RetNode:
+        return new RetPN({}, id); //TODO
+    case SVFVar::VarargNode:
+        return new VarArgPN({}, id);//TODO
+    case SVFVar::GepValNode:
+        return new GepValVar(val, id, LocationSet(), nullptr);
+    case SVFVar::GepObjNode:
+        return new GepObjVar({}, id, LocationSet());//TODO
+    case SVFVar::FIObjNode:
+        return new FIObjVar(val, id, nullptr);
+    case SVFVar::DummyValNode:
+        return new DummyValVar(id);
+    case SVFVar::DummyObjNode:
+        return new DummyObjVar(id, nullptr);
+    }
 }
 
 template <typename Edge>
@@ -638,10 +645,10 @@ cJSON* SVFIRWriter::contentToJson(const SVFValue* value)
 {
     cJSON* root = jsonCreateObject();
     JSON_WRITE_FIELD(root, value, kind);
-    JSON_WRITE_FIELD(root, value, ptrInUncalledFun);
-    JSON_WRITE_FIELD(root, value, constDataOrAggData);
     JSON_WRITE_FIELD(root, value, type);
     JSON_WRITE_FIELD(root, value, name);
+    JSON_WRITE_FIELD(root, value, ptrInUncalledFun);
+    JSON_WRITE_FIELD(root, value, constDataOrAggData);
     JSON_WRITE_FIELD(root, value, sourceLoc);
 
     return root;
@@ -1073,9 +1080,10 @@ ICFGWriter::ICFGWriter(const ICFG* icfg) : GenericICFGWriter(icfg)
     }
 }
 
-SymbolTableInfoWriter::SymbolTableInfoWriter(const SymbolTableInfo* symTab)
+SVFModuleWriter::SVFModuleWriter(const SVFModule* svfModule)
 {
-    assert(symTab && "SymbolTableInfo is null!");
+    // TODO: SVFType & StInfo are managed by SymbolTableInfo. Refactor it?
+    auto symTab = SymbolTableInfo::SymbolInfo();
 
     const auto& svfTypes = symTab->getSVFTypes();
     svfTypePool.reserve(svfTypes.size());
@@ -1084,36 +1092,22 @@ SymbolTableInfoWriter::SymbolTableInfoWriter(const SymbolTableInfo* symTab)
         svfTypePool.saveID(type);
     }
 
-    for (const StInfo* stInfo : symTab->getStInfos())
+    const auto& stInfos = symTab->getStInfos();
+    stInfoPool.reserve(stInfos.size());
+    for (const StInfo* stInfo : stInfos)
     {
         stInfoPool.saveID(stInfo);
     }
-}
 
-SymID SymbolTableInfoWriter::getMemObjID(const MemObj* memObj)
-{
-    return memObj->getId();
-}
-
-size_t SymbolTableInfoWriter::getSvfTypeID(const SVFType* type)
-{
-    return svfTypePool.getID(type);
-}
-
-size_t SymbolTableInfoWriter::getStInfoID(const StInfo* type)
-{
-    return stInfoPool.getID(type);
-}
-
-size_t SVFModuleWriter::getSvfValueID(const SVFValue* value)
-{
-    return svfValuePool.getID(value);
+    svfValuePool.reserve(svfModule->getFunctionSet().size() +
+                         svfModule->getConstantSet().size() +
+                         svfModule->getOtherValueSet().size());
 }
 
 SVFIRWriter::SVFIRWriter(const SVFIR* svfir)
-    : svfIR(svfir), irGraphWriter(svfir), icfgWriter(svfir->icfg),
+    : svfIR(svfir), svfModuleWriter(svfir->svfModule), icfgWriter(svfir->icfg),
       chgWriter(SVFUtil::dyn_cast<CHGraph>(svfir->chgraph)),
-      symbolTableInfoWriter(svfir->symInfo)
+      irGraphWriter(svfir)
 {
 }
 
@@ -1159,16 +1153,14 @@ SVFIRWriter::autoCStr SVFIRWriter::generateJsonString()
 SVFIRWriter::autoJSON SVFIRWriter::generateJson()
 {
     const IRGraph* const irGraph = svfIR;
-    const SymbolTableInfo* symbolTableInfo = SymbolTableInfo::SymbolInfo();
 
     cJSON* root = jsonCreateObject();
 #define F(field) JSON_WRITE_FIELD(root, svfIR, field)
-    jsonAddJsonableToObject(root, FIELD_NAME_ITEM(symbolTableInfo));
-    jsonAddJsonableToObject(root, FIELD_NAME_ITEM(irGraph));
+    F(svfModule);
+    F(symInfo);
     F(icfg);
     F(chgraph);
-    F(svfModule);
-
+    jsonAddJsonableToObject(root, FIELD_NAME_ITEM(irGraph));
     F(icfgNode2SVFStmtsMap);
     F(icfgNode2PTASVFStmtsMap);
     F(GepValObjMap);
@@ -1191,12 +1183,12 @@ SVFIRWriter::autoJSON SVFIRWriter::generateJson()
 
 cJSON* SVFIRWriter::toJson(const SVFType* type)
 {
-    return jsonCreateIndex(symbolTableInfoWriter.getSvfTypeID(type));
+    return jsonCreateIndex(svfModuleWriter.getSVFTypeID(type));
 }
 
 cJSON* SVFIRWriter::toJson(const SVFValue* value)
 {
-    return jsonCreateIndex(svfModuleWriter.getSvfValueID(value));
+    return jsonCreateIndex(svfModuleWriter.getSVFValueID(value));
 }
 
 cJSON* SVFIRWriter::toJson(const IRGraph* graph)
@@ -1364,7 +1356,7 @@ cJSON* SVFIRWriter::toJson(const SVFLoopAndDomInfo* ldInfo)
 
 cJSON* SVFIRWriter::toJson(const StInfo* stInfo)
 {
-    return jsonCreateIndex(this->symbolTableInfoWriter.getStInfoID(stInfo));
+    return jsonCreateIndex(svfModuleWriter.getStInfoID(stInfo));
 }
 
 cJSON* SVFIRWriter::toJson(const LocationSet& ls)
@@ -1379,7 +1371,7 @@ cJSON* SVFIRWriter::toJson(const SymbolTableInfo* symTable)
 {
     ENSURE_NOT_VISITED(symTable);
 
-    // objMap
+    cJSON* root = jsonCreateObject();
     cJSON* allMemObj = jsonCreateArray();
     for (const auto& pair : symTable->objMap)
     {
@@ -1388,35 +1380,23 @@ cJSON* SVFIRWriter::toJson(const SymbolTableInfo* symTable)
         jsonAddItemToArray(allMemObj, memObjJson);
     }
 
-    // svfTypes
-    cJSON* allSvfType = jsonCreateArray();
-    for (const SVFType* svfType : symbolTableInfoWriter.svfTypePool)
-    {
-        cJSON* svfTypeObj = contentToJson(svfType);
-        jsonAddItemToArray(allSvfType, svfTypeObj);
-    }
+#define F(field) JSON_WRITE_FIELD(root, symTable, field)
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(allMemObj)); // Actual field
 
-    // stInfos
-    cJSON* allStInfo = jsonCreateArray();
-    for (const StInfo* stInfo : symbolTableInfoWriter.stInfoPool)
-    {
-        cJSON* stInfoObj = contentToJson(stInfo);
-        jsonAddItemToArray(allStInfo, stInfoObj);
-    }
-
-    cJSON* root = jsonCreateObject();
-
-    jsonAddItemToObject(root, FIELD_NAME_ITEM(allMemObj));  // Actual field
-    jsonAddItemToObject(root, FIELD_NAME_ITEM(allSvfType)); // Meta field
-    jsonAddItemToObject(root, FIELD_NAME_ITEM(allStInfo));  // Meta field
-
-    JSON_WRITE_FIELD(root, symTable, valSymMap);
-    JSON_WRITE_FIELD(root, symTable, objSymMap);
-    JSON_WRITE_FIELD(root, symTable, returnSymMap);
-    JSON_WRITE_FIELD(root, symTable, varargSymMap);
-    // TODO: Check symTable->module == module
-    JSON_WRITE_FIELD(root, symTable, modelConstants);
-    JSON_WRITE_FIELD(root, symTable, totalSymNum);
+    F(valSymMap);
+    F(objSymMap);
+    F(returnSymMap);
+    F(varargSymMap);
+    // Field objMap can be represented by allMemObj
+    // Field mod can be represented by svfIR->svfModule. Delete it?
+    assert(symTable->mod == svfIR->svfModule && "SVFModule mismatch!");
+    F(modelConstants);
+    F(totalSymNum);
+    F(maxStruct);
+    F(maxStSize);
+    // Field svfTypes can be represented by svfModuleWriter.svfTypePool
+    // Field stInfos can be represented by svfModuleWriter.stInfoPool
+#undef F
 
     return root;
 }
@@ -1424,10 +1404,20 @@ cJSON* SVFIRWriter::toJson(const SymbolTableInfo* symTable)
 cJSON* SVFIRWriter::toJson(const SVFModule* module)
 {
     cJSON* root = jsonCreateObject();
-    cJSON* allValues = jsonCreateArray();
+    cJSON* allSVFValue = jsonCreateArray();
+    cJSON* allSVFType = jsonCreateArray();
+    cJSON* allStInfo = jsonCreateArray();
+
+    for (const SVFType* svfType : svfModuleWriter.svfTypePool)
+    {
+        cJSON* svfTypeObj = virtToJson(svfType);
+        jsonAddItemToArray(allSVFType, svfTypeObj);
+    }
 
 #define F(field) JSON_WRITE_FIELD(root, module, field)
-    jsonAddItemToObject(root, FIELD_NAME_ITEM(allValues)); // Meta field
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(allSVFType));  // Meta field
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(allStInfo));   // Meta field
+    jsonAddItemToObject(root, FIELD_NAME_ITEM(allSVFValue)); // Meta field
     F(pagReadFromTxt);
     F(moduleIdentifier);
 
@@ -1441,7 +1431,7 @@ cJSON* SVFIRWriter::toJson(const SVFModule* module)
     for (size_t i = 1; i <= svfModuleWriter.sizeSVFValuePool(); ++i)
     {
         cJSON* value = contentToJson(svfModuleWriter.getSVFValuePtr(i));
-        jsonAddItemToArray(allValues, value);
+        jsonAddItemToArray(allSVFValue, value);
     }
 
     return root;
@@ -1463,23 +1453,23 @@ void SymbolTableInfoReader::createObjs(const cJSON* symTableJson)
     assert(symTabFieldJson == nullptr && "Already created?");
     ABORT_IFNOT(jsonIsObject(symTableJson), "symTableJson is not an object?");
 
-    cJSON* objMap = symTableJson->child;
-    CHECK_JSON_KEY(objMap);
-    memObjMap.createObjs(objMap, [](const cJSON*& memObjFieldJson) {
+    cJSON* allMemObj = symTableJson->child;
+    CHECK_JSON_KEY(allMemObj);
+    memObjMap.createObjs(allMemObj, [](const cJSON*& memObjFieldJson) {
         SymID symId;
         JSON_READ_OBJ_FWD(memObjFieldJson, symId);
         return std::make_pair(symId, new MemObj(symId, nullptr));
     });
 
-    cJSON* allSvfType = objMap->next;
-    CHECK_JSON_KEY(allSvfType);
-    svfTypePool.createObjs(allSvfType, [](const cJSON*& svfTypeFieldJson) {
+    cJSON* allSVFType = allMemObj->next;
+    CHECK_JSON_KEY(allSVFType);
+    svfTypePool.createObjs(allSVFType, [](const cJSON*& svfTypeFieldJson) {
         SVFType::GNodeK kind;
         JSON_READ_OBJ_FWD(svfTypeFieldJson, kind);
         return create<SVFType>(kind);
     });
 
-    cJSON* allStInfo = allSvfType->next;
+    cJSON* allStInfo = allSVFType->next;
     CHECK_JSON_KEY(allStInfo);
     stInfoPool.createObjs(allStInfo, [](const cJSON*& stInfoFieldJson) {
         u32_t stride;
@@ -1488,21 +1478,6 @@ void SymbolTableInfoReader::createObjs(const cJSON* symTableJson)
     });
 
     symTabFieldJson = allStInfo->next;
-}
-
-void SVFModuleReader::createObjs(const cJSON* svfModuleJson)
-{
-    assert(svfModuleFieldJson == nullptr && "Already created?");
-
-    cJSON* allValues = svfModuleJson->child;
-    CHECK_JSON_KEY(allValues);
-    svfValuePool.createObjs(allValues, [](const cJSON*& svfValueFieldJson) {
-        SVFValue::GNodeK kind;
-        JSON_READ_OBJ_FWD(svfValueFieldJson, kind);
-        return create<SVFValue>(kind);
-    });
-
-    svfModuleFieldJson = allValues->next;
 }
 
 SVFIR* SVFIRReader::read(cJSON* root)
@@ -1556,14 +1531,30 @@ const cJSON* SVFIRReader::createObjs(const cJSON* root)
     CHECK_JSON_KEY(symbolTableInfo);
     symTableReader.createObjs(symbolTableInfo);
 
-    cJSON* irgraph = symbolTableInfo->next;
-    CHECK_JSON_KEY(irgraph);
-    irGraphReader.createObjs(irgraph, readCreateIDNodeFwd<SVFVar>,
-                             readCreateEdgeFwd<SVFStmt>);
-
-    cJSON* svfModule = irgraph->next;
+    cJSON* svfModule = symbolTableInfo->next;
     CHECK_JSON_KEY(svfModule);
-    svfModuleReader.createObjs(svfModule);
+    svfModuleReader.createObjs(svfModule, [this](const cJSON*& svfValueField) {
+        std::string name;
+        const SVFType* type;
+        SVFValue::GNodeK kind;
+        JSON_READ_OBJ_FWD(svfValueField, kind);
+        JSON_READ_OBJ_FWD(svfValueField, type);
+        JSON_READ_OBJ_FWD(svfValueField, name);
+        return createSVFValue(kind, type, name);
+    });
+
+    cJSON* irGraph = svfModule->next;
+    CHECK_JSON_KEY(irGraph);
+    irGraphReader.createObjs(
+        irGraph,
+        [](const cJSON*& svfVarField) {
+            NodeID id;
+            s64_t nodeKind;
+            JSON_READ_OBJ_FWD(svfVarField, id);
+            JSON_READ_OBJ_FWD(svfVarField, nodeKind);
+            return std::make_pair(id, create<SVFVar>(id, nodeKind));
+        },
+        readCreateEdgeFwd<SVFStmt>);
 
     cJSON* icfg = svfModule->next;
     CHECK_JSON_KEY(icfg);

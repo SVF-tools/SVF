@@ -96,6 +96,39 @@ namespace SVF
 {
 /// @brief Forward declarations.
 ///@{
+// Classed created upon SVFMoudle construction
+class SVFType;
+class SVFPointerType;
+class SVFIntegerType;
+class SVFFunctionType;
+class SVFStructType;
+class SVFArrayType;
+class SVFOtherType;
+
+class StInfo; // Every SVFType is linked to a StInfo. It also references SVFType
+
+class SVFValue;
+class SVFFunction;
+class SVFBasicBlock;
+class SVFInstruction;
+class SVFCallInst;
+class SVFVirtualCallInst;
+class SVFConstant;
+class SVFGlobalValue;
+class SVFArgument;
+class SVFConstantData;
+class SVFConstantInt;
+class SVFConstantFP;
+class SVFConstantNullPtr;
+class SVFBlackHoleValue;
+class SVFOtherValue;
+class SVFMetadataAsValue;
+
+class SVFLoopAndDomInfo; // Part of SVFFunction
+
+// Classed created upon buildSymbolTableInfo
+class MemObj;
+
 class SVFIR;
 class SVFIRWriter;
 class SVFLoop;
@@ -104,28 +137,19 @@ class IRGraph;
 class CHGraph;
 class CommonCHGraph;
 class SymbolTableInfo;
-class MemObj;
 
 class SVFModule;
 
-class StInfo;
-class SVFType;
-class SVFPointerType;
-class SVFIntegerType;
-class SVFFunctionType;
-class SVFStructType;
-class SVFArrayType;
-class SVFOtherType;
 class LocationSet;
-class ObjTypeInfo;
+class ObjTypeInfo; // Need SVFType
 
-class SVFVar;
-class ValVar;
+class SVFVar; // Need SVFValue with SVFType
+class ValVar; // Can't be "default"-constructed
 class ObjVar;
-class GepValVar;
-class GepObjVar;
+class GepValVar; // Can't be "default"-constructed
+class GepObjVar; // Need MemObj
 class FIObjVar;
-class RetPN;
+class RetPN; // Can't be "default"-constructed
 class VarArgPN;
 class DummyValVar;
 class DummyObjVar;
@@ -151,35 +175,17 @@ class TDJoinPE;
 
 class ICFGNode;
 class GlobalICFGNode;
-class IntraICFGNode;
+class IntraICFGNode; // Need "IntraICFGNode"
 class InterICFGNode;
-class FunEntryICFGNode;
-class FunExitICFGNode;
-class CallICFGNode;
-class RetICFGNode;
+class FunEntryICFGNode; // Need "SVFFunction"
+class FunExitICFGNode;  // Need "SVFFunction"
+class CallICFGNode;     // Need "SVFInstruction"
+class RetICFGNode;      // Need "SVFInstruction"
 
 class ICFGEdge;
 class IntraCFGEdge;
 class CallCFGEdge;
 class RetCFGEdge;
-
-class SVFLoopAndDomInfo;
-class SVFValue;
-class SVFFunction;
-class SVFBasicBlock;
-class SVFInstruction;
-class SVFCallInst;
-class SVFVirtualCallInst;
-class SVFConstant;
-class SVFGlobalValue;
-class SVFArgument;
-class SVFConstantData;
-class SVFConstantInt;
-class SVFConstantFP;
-class SVFConstantNullPtr;
-class SVFBlackHoleValue;
-class SVFOtherValue;
-class SVFMetadataAsValue;
 
 class CHNode;
 class CHEdge;
@@ -328,37 +334,37 @@ public:
     }
 };
 
-class SymbolTableInfoWriter
-{
-    friend class SVFIRWriter;
-
-public:
-    SymbolTableInfoWriter(const SymbolTableInfo* symbolTableInfo);
-    SymID getMemObjID(const MemObj* memObj);
-    size_t getSvfTypeID(const SVFType* type);
-    size_t getStInfoID(const StInfo* stInfo);
-
-private:
-    WriterPtrPool<SVFType> svfTypePool;
-    WriterPtrPool<StInfo> stInfoPool;
-};
-
 using IRGraphWriter = GenericGraphWriter<SVFVar, SVFStmt>;
 using CHGraphWriter = GenericGraphWriter<CHNode, CHEdge>;
 
 class SVFModuleWriter
 {
+    friend class SVFIRWriter;
+
 private:
+    WriterPtrPool<SVFType> svfTypePool;
+    WriterPtrPool<StInfo> stInfoPool;
     WriterPtrPool<SVFValue> svfValuePool;
 
 public:
-    inline size_t getSvfValueID(const SVFValue* value);
+    SVFModuleWriter(const SVFModule* svfModule);
 
+    inline size_t getSVFValueID(const SVFValue* value)
+    {
+        return svfValuePool.getID(value);
+    }
     inline const SVFValue* getSVFValuePtr(size_t id) const
     {
         return svfValuePool.getPtr(id);
     }
-
+    inline size_t getSVFTypeID(const SVFType* type)
+    {
+        return svfTypePool.getID(type);
+    }
+    inline size_t getStInfoID(const StInfo* stInfo)
+    {
+        return stInfoPool.getID(stInfo);
+    }
     inline size_t sizeSVFValuePool() const
     {
         return svfValuePool.size();
@@ -371,10 +377,9 @@ private:
     const SVFIR* svfIR;
 
     SVFModuleWriter svfModuleWriter;
-    IRGraphWriter irGraphWriter;
     ICFGWriter icfgWriter;
     CHGraphWriter chgWriter;
-    SymbolTableInfoWriter symbolTableInfoWriter;
+    IRGraphWriter irGraphWriter;
 
     OrderedMap<size_t, std::string> numToStrMap;
 
@@ -549,9 +554,6 @@ private:
     {
         cJSON* root = jsonCreateObject();
 
-        JSON_WRITE_FIELD(root, graph, edgeNum);
-        JSON_WRITE_FIELD(root, graph, nodeNum);
-
         cJSON* allNode = jsonCreateArray();
         for (const auto& pair : graph->IDToNodeMap)
         {
@@ -559,7 +561,6 @@ private:
             cJSON* jsonNode = virtToJson(node);
             jsonAddItemToArray(allNode, jsonNode);
         }
-        jsonAddItemToObject(root, FIELD_NAME_ITEM(allNode));
 
         cJSON* allEdge = jsonCreateArray();
         for (const EdgeTy* edge : edgePool)
@@ -567,6 +568,10 @@ private:
             cJSON* edgeJson = virtToJson(edge);
             jsonAddItemToArray(allEdge, edgeJson);
         }
+
+        JSON_WRITE_FIELD(root, graph, nodeNum);
+        jsonAddItemToObject(root, FIELD_NAME_ITEM(allNode));
+        JSON_WRITE_FIELD(root, graph, edgeNum);
         jsonAddItemToObject(root, FIELD_NAME_ITEM(allEdge));
 
         return root;
@@ -922,7 +927,16 @@ class SVFModuleReader
     ReaderPtrPool<SVFValue> svfValuePool;
 
 public:
-    void createObjs(const cJSON* svfModuleJson);
+    template <typename SVFValueCreator>
+    void createObjs(const cJSON* svfModuleJson, SVFValueCreator creator)
+    {
+        assert(svfModuleFieldJson == nullptr && "Already created?");
+
+        cJSON* allSVFValue = svfModuleJson->child;
+        CHECK_JSON_KEY(allSVFValue);
+        svfValuePool.createObjs(allSVFValue, creator);
+        svfModuleFieldJson = allSVFValue->next;
+    }
 
     inline SVFValue* getSVFValuePtr(size_t id) const
     {
