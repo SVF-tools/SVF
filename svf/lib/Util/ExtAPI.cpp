@@ -416,6 +416,11 @@ ExtAPI::extType ExtAPI::get_type(const SVF::SVFFunction* F)
 u32_t ExtAPI::isOverwrittenAppFunction(const SVF::SVFFunction* callee)
 {
     std::string funName = get_name(callee);
+    return isOverwrittenAppFunction(funName);
+}
+
+u32_t ExtAPI::isOverwrittenAppFunction(const std::string& funName)
+{
     cJSON* item = get_FunJson(funName);
     if (item != nullptr)
     {
@@ -427,6 +432,16 @@ u32_t ExtAPI::isOverwrittenAppFunction(const SVF::SVFFunction* callee)
             assert(false && "The function operation format is illegal!");
     }
     return 0;
+}
+
+void ExtAPI::setOverWrittenAppFunction(const std::string& funcName, u32_t overwrite_app_function)
+{
+    auto item = get_FunJson(funcName);
+    assert(item && "Do not set fields for ExtAPI funcs that don't exist!");
+    auto overwrite_obj = item->child->next->next->next;
+    assert(overwrite_obj);
+    assert(strcmp(overwrite_obj->string, JSON_OPT_OVERWRITE) == 0);
+    cJSON_SetIntValue(overwrite_obj, overwrite_app_function);
 }
 
 // Does (F) have a static var X (unavailable to us) that its return points to?

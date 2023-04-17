@@ -31,8 +31,8 @@
 #define __ExtAPI_H
 
 #include "SVFIR/SVFValue.h"
-#include "Util/cJSON.h"
-#include "Util/config.h"
+#include <Util/cJSON.h>
+#include <Util/config.h>
 #include <string>
 #include <map>
 
@@ -299,6 +299,9 @@ public:
     // 0: Apply user-defined functions
     // 1: Apply function specification in ExtAPI.json
     u32_t isOverwrittenAppFunction(const SVF::SVFFunction *callee);
+    u32_t isOverwrittenAppFunction(const std::string& funcName);
+    // set priority of the function
+    void setOverWrittenAppFunction(const std::string& funcName, u32_t overwrite_app_function);
 
     // Does (F) have a static var X (unavailable to us) that its return points to?
     bool has_static(const SVFFunction *F);
