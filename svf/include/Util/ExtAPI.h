@@ -261,7 +261,9 @@ public:
     static void destory();
 
     // Add an entry with the specified fields to the ExtAPI, which will be reflected immediately by further ExtAPI queries
-    void add_entry(const char* funName, extType type, bool overwrite_app_function);
+    void add_entry(const char* funName, const char* returnType, 
+                        std::vector<const char*> argTypes, extType type, 
+                        bool overwrite_app_function);
 
     // Get numeric index of the argument in external function
     u32_t getArgPos(const std::string& s);

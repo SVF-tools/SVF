@@ -185,12 +185,29 @@ void ExtAPI::destory()
     }
 }
 
-void ExtAPI::add_entry(const char* funName, extType type,
-                       bool overwrite_app_function)
+void ExtAPI::add_entry(const char* funName, const char* returnType, 
+                        std::vector<const char*> argTypes, extType type, 
+                        bool overwrite_app_function)
 {
-    assert(root);
-    assert(get_type(funName) == EFT_NULL);
+    assert(root && "Parse the json before adding additional entries");
+    assert(get_type(funName) == EFT_NULL && "Do not add entries that already exist");
     auto entry = cJSON_CreateObject();
+
+    // add the signature fields
+    auto returnTypeString = cJSON_CreateString(returnType);
+    cJSON_AddItemToObject(entry, "return", returnTypeString);
+
+    std::stringstream ss;
+    ss << "(";
+    for (auto str : argTypes)
+        ss << str << ",";
+    std::string formattedArgs = ss.str();
+    if (formattedArgs.back() == ',')
+        formattedArgs.back() = ')';
+    else 
+        formattedArgs.append(")");
+    auto argsString = cJSON_CreateString(formattedArgs.c_str());
+    cJSON_AddItemToObject(entry, "argument", argsString);
 
     // add the type field
     auto typeString = cJSON_CreateString(extType_toString(type).c_str());
@@ -200,8 +217,8 @@ void ExtAPI::add_entry(const char* funName, extType type,
     auto overwriteBool = cJSON_CreateNumber(overwrite_app_function ? 1 : 0);
     cJSON_AddItemToObject(entry, JSON_OPT_OVERWRITE, overwriteBool);
 
-    // we don't know where the `funName` comes from, so copy it just in case
-    cJSON_AddItemToObject(root, strdup(funName), entry);
+    // add object to root
+    cJSON_AddItemToObject(root, funName, entry);
 }
 
 // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
