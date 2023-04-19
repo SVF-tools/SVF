@@ -99,7 +99,7 @@ namespace SVF
 {
 /// @brief Forward declarations.
 ///@{
-// Classed created upon SVFMoudle construction
+// Classes created upon SVFMoudle construction
 class SVFType;
 class SVFPointerType;
 class SVFIntegerType;
@@ -129,8 +129,23 @@ class SVFMetadataAsValue;
 
 class SVFLoopAndDomInfo; // Part of SVFFunction
 
-// Classed created upon buildSymbolTableInfo
+// Classes created upon buildSymbolTableInfo
 class MemObj;
+
+// Classes created upon ICFG construction
+class ICFGNode;
+class GlobalICFGNode;
+class IntraICFGNode;
+class InterICFGNode;
+class FunEntryICFGNode;
+class FunExitICFGNode;
+class CallICFGNode;
+class RetICFGNode;
+
+class ICFGEdge;
+class IntraCFGEdge;
+class CallCFGEdge;
+class RetCFGEdge;
 
 class SVFIR;
 class SVFIRWriter;
@@ -146,13 +161,13 @@ class SVFModule;
 class LocationSet;
 class ObjTypeInfo; // Need SVFType
 
-class SVFVar; // Need SVFValue with SVFType
-class ValVar; // Can't be "default"-constructed
+class SVFVar;
+class ValVar;
 class ObjVar;
-class GepValVar; // Can't be "default"-constructed
-class GepObjVar; // Need MemObj
+class GepValVar;
+class GepObjVar;
 class FIObjVar;
-class RetPN; // Can't be "default"-constructed
+class RetPN;
 class VarArgPN;
 class DummyValVar;
 class DummyObjVar;
@@ -175,20 +190,6 @@ class UnaryOPStmt;
 class BranchStmt;
 class TDForkPE;
 class TDJoinPE;
-
-class ICFGNode;
-class GlobalICFGNode;
-class IntraICFGNode; // Need "IntraICFGNode"
-class InterICFGNode;
-class FunEntryICFGNode; // Need "SVFFunction"
-class FunExitICFGNode;  // Need "SVFFunction"
-class CallICFGNode;     // Need "SVFInstruction"
-class RetICFGNode;      // Need "SVFInstruction"
-
-class ICFGEdge;
-class IntraCFGEdge;
-class CallCFGEdge;
-class RetCFGEdge;
 
 class CHNode;
 class CHEdge;
@@ -915,7 +916,16 @@ private:
     ReaderPtrPool<SVFLoop> svfLoopPool;
 
 public:
-    void createObjs(const cJSON* icfgJson);
+    template <typename NodeCreator, typename EdgeCreator, typename SVFLoopCreator>
+    void createObjs(const cJSON* icfgJson, NodeCreator nodeCreator,
+                    EdgeCreator edgeCreator, SVFLoopCreator svfLoopCreator)
+    {
+        GenericICFGReader::createObjs(icfgJson, nodeCreator, edgeCreator);
+
+        CHECK_JSON_KEY_EQUALS(graphFieldJson, "svfLoops");
+        svfLoopPool.createObjs(graphFieldJson, svfLoopCreator);
+        graphFieldJson = graphFieldJson->next;
+    }
 
     inline SVFLoop* getSVFLoopPtr(size_t id) const
     {
@@ -980,12 +990,6 @@ public:
         return stInfoPool.getPtr(id);
     }
 
-    template <typename SVFValueFiller>
-    void fillObjs(SVFValueFiller svfValueFiller)
-    {
-        svfValuePool.fillObjs(svfValueFiller);
-    }
-
     const cJSON* getFieldJson() const
     {
         return svfModuleFieldJson;
@@ -1017,7 +1021,38 @@ public:
     static void readJson(const cJSON* obj, unsigned long long& val);
     static void readJson(const cJSON* obj, std::string& str);
 
+    // Helper functions
+    static inline s64_t applyEdgeMask(u64_t edgeFlag)
+    {
+        return edgeFlag & GenericEdge<void>::EdgeKindMask;
+    }
+    template <typename T>
+    static inline void setEdgeFlag(GenericEdge<T>* edge,
+                                   typename GenericEdge<T>::GEdgeFlag edgeFlag)
+    {
+        edge->edgeFlag = edgeFlag;
+    }
+
 private:
+    using GNodeK = GenericNode<int, GenericEdge<void>>::GNodeK;
+    using GEdgeFlag = GenericEdge<void>::GEdgeFlag;
+    using GEdgeKind = GenericEdge<void>::GEdgeKind;
+    static ICFGNode* createICFGNode(NodeID id, GNodeK type);
+    static ICFGEdge* createICFGEdge(GEdgeKind kind);
+    static CHNode* createCHNode(NodeID id, GNodeK kind);
+    static CHEdge* createCHEdge(GEdgeKind kind);
+    static SVFVar* createPAGNode(NodeID id, GNodeK kind);
+    static SVFStmt* createPAGEdge(GEdgeKind kind);
+
+    template <typename EdgeCreator>
+    static inline auto createEdgeWithFlag(GEdgeFlag flag, EdgeCreator creator)
+    {
+        auto kind = SVFIRReader::applyEdgeMask(flag);
+        auto edge = creator(kind);
+        setEdgeFlag(edge, flag);
+        return edge;
+    }
+
     SVFIR* read(cJSON* root);
     const cJSON* createObjs(const cJSON* root);
 
@@ -1248,19 +1283,6 @@ private:
         // edgeFlag has already been read.
         JSON_READ_FIELD_FWD(fieldJson, edge, src);
         JSON_READ_FIELD_FWD(fieldJson, edge, dst);
-    }
-
-public:
-    // Helper functions
-    static inline s64_t applyEdgeMask(u64_t edgeFlag)
-    {
-        return edgeFlag & GenericEdge<void>::EdgeKindMask;
-    }
-    template <typename T>
-    static inline void setEdgeFlag(GenericEdge<T>* edge,
-                                   typename GenericEdge<T>::GEdgeFlag edgeFlag)
-    {
-        edge->edgeFlag = edgeFlag;
     }
 };
 

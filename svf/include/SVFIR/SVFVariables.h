@@ -80,6 +80,9 @@ protected:
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
     bool isPtr;	/// whether it is a pointer (top-level or address-taken)
 
+    /// Constructor to create an empty object (for deserialization)
+    SVFVar(NodeID i, PNODEK k) : GenericPAGNodeTy(i, k), value{} {}
+
 public:
     /// Constructor
     SVFVar(const SVFValue* val, NodeID i, PNODEK k);
@@ -261,6 +264,10 @@ class ValVar: public SVFVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
+protected:
+    /// Constructor to create an empty ValVar (for SVFIRReader/deserialization)
+    ValVar(NodeID i, PNODEK ty = ValNode) : SVFVar(i, ty) {}
+
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -312,6 +319,8 @@ class ObjVar: public SVFVar
 
 protected:
     const MemObj* mem;	///< memory object
+    /// Constructor to create an empty ObjVar (for SVFIRReader/deserialization)
+    ObjVar(NodeID i, PNODEK ty = ObjNode) : SVFVar(i, ty), mem{} {}
     /// Constructor
     ObjVar(const SVFValue* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
         SVFVar(val, i, ty), mem(m)
@@ -377,6 +386,9 @@ private:
     LocationSet ls;	// LocationSet
     const SVFType* gepValType;
 
+    /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
+    GepValVar(NodeID i) : ValVar(i, GepValNode), gepValType{} {}
+
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -441,6 +453,10 @@ class GepObjVar: public ObjVar
 private:
     LocationSet ls;
     NodeID base = 0;
+
+    /// Constructor to create empty GepObjVar (for SVFIRReader/deserialization)
+    //  only for reading from file when we don't have MemObj*
+    GepObjVar(NodeID i, PNODEK ty = GepObjNode) : ObjVar(i, ty) {}
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -521,6 +537,10 @@ class FIObjVar: public ObjVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
+private:
+    /// Constructor to create empty ObjVar (for SVFIRReader/deserialization)
+    FIObjVar(NodeID i, PNODEK ty = FIObjNode) : ObjVar(i, ty) {}
+
 public:
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -568,6 +588,10 @@ class RetPN: public ValVar
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
+private:
+    /// Constructor to create empty RetPN (for SVFIRReader/deserialization)
+    RetPN(NodeID i) : ValVar(i, RetNode) {}
+
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
     static inline bool classof(const RetPN*)
@@ -607,6 +631,10 @@ class VarArgPN: public ValVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+
+private:
+    /// Constructor to create empty VarArgPN (for SVFIRReader/deserialization)
+    VarArgPN(NodeID i) : ValVar(i, VarargNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -687,6 +715,10 @@ class DummyObjVar: public ObjVar
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+
+private:
+    /// Constructor to create empty DummyObjVar (for SVFIRReader/deserialization)
+    DummyObjVar(NodeID i) : ObjVar(i, DummyObjNode) {}
 
 public:
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:

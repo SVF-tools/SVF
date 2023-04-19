@@ -13,7 +13,6 @@ static const Option<bool> humanReadableOption(
 
 namespace SVF
 {
-template <typename T, typename... Args> T* create(Args...);
 
 SVFType* createSVFType(SVFType::GNodeK kind, bool isSingleValTy)
 {
@@ -41,92 +40,6 @@ SVFType* createSVFType(SVFType::GNodeK kind, bool isSingleValTy)
     case SVFType::SVFOtherTy:
         return new SVFOtherType(isSingleValTy);
     }
-}
-
-template <> ICFGNode* create<ICFGNode>(NodeID id, ICFGNode::GNodeK kind)
-{
-    switch (kind)
-    {
-    default:
-        ABORT_MSG(kind << " is an impossible ICFGNodeKind in create()");
-    case ICFGNode::IntraBlock:
-        return new InterICFGNode(id, {});
-    case ICFGNode::FunEntryBlock:
-        return new FunEntryICFGNode(id, {});
-    case ICFGNode::FunExitBlock:
-        return new FunExitICFGNode(id, {});
-    case ICFGNode::FunCallBlock:
-        return new CallICFGNode(id, {});
-    case ICFGNode::FunRetBlock:
-        return new RetICFGNode(id, {}, {});
-    case ICFGNode::GlobalBlock:
-        return new GlobalICFGNode(id);
-    }
-}
-template <> ICFGEdge* create<ICFGEdge>(ICFGEdge::GEdgeKind kind)
-{
-    switch (kind)
-    {
-    default:
-        ABORT_MSG(kind << " is an impossible ICFGEdgeKind in create()");
-    case ICFGEdge::IntraCF:
-        return new IntraCFGEdge(nullptr, nullptr);
-    case ICFGEdge::CallCF:
-        return new CallCFGEdge(nullptr, nullptr, nullptr);
-    case ICFGEdge::RetCF:
-        return new RetCFGEdge(nullptr, nullptr, nullptr);
-    }
-}
-
-template <> SVFStmt* create<SVFStmt>(SVFStmt::GEdgeKind kind)
-{
-    switch (kind)
-    {
-    default:
-        ABORT_MSG(kind << " is an impossible SVFStmtKind in create()");
-    case SVFStmt::Addr:
-        return new AddrStmt(nullptr, nullptr);
-    case SVFStmt::Copy:
-        return new CopyStmt(nullptr, nullptr);
-    case SVFStmt::Store:
-        return new StoreStmt(nullptr, nullptr, nullptr);
-    case SVFStmt::Load:
-        return new LoadStmt(nullptr, nullptr);
-    case SVFStmt::Call:
-        return new CallPE(nullptr, nullptr, nullptr, nullptr);
-    case SVFStmt::Ret:
-        return new RetPE(nullptr, nullptr, nullptr, nullptr);
-    case SVFStmt::Gep:
-        return new GepStmt(nullptr, nullptr, LocationSet());
-    case SVFStmt::Phi:
-        return new PhiStmt(nullptr, {}, {});
-    case SVFStmt::Select:
-        return new SelectStmt(nullptr, {}, nullptr);
-    case SVFStmt::Cmp:
-        return new CmpStmt(nullptr, {}, 0);
-    case SVFStmt::BinaryOp:
-        return new BinaryOPStmt(nullptr, {}, 0);
-    case SVFStmt::UnaryOp:
-        return new UnaryOPStmt(nullptr, nullptr, 0);
-    case SVFStmt::Branch:
-        return new BranchStmt(nullptr, nullptr, {});
-    case SVFStmt::ThreadFork:
-        return new TDForkPE(nullptr, nullptr, nullptr, nullptr);
-    case SVFStmt::ThreadJoin:
-        return new TDJoinPE(nullptr, nullptr, nullptr, nullptr);
-    }
-}
-
-template <> CHNode* create<CHNode>(NodeID id, CHNode::GNodeK kind)
-{
-    ABORT_IFNOT(kind == 0, "Impossible CHNode kind " << kind);
-    return new CHNode("", id);
-}
-
-template <> CHEdge* create<CHEdge>(CHEdge::GEdgeKind kind)
-{
-    ABORT_IFNOT(kind == 0, "Unsupported CHEdge kind " << kind);
-    return new CHEdge(nullptr, nullptr, {});
 }
 
 static SVFValue* createSVFValue(SVFValue::GNodeK kind, const SVFType* type,
@@ -171,42 +84,6 @@ static SVFValue* createSVFValue(SVFValue::GNodeK kind, const SVFType* type,
     }
 }
 
-SVFVar* createSVFVar(NodeID id, SVFVar::GNodeK kind, const SVFValue* val)
-{
-    switch (kind)
-    {
-    default:
-        ABORT_MSG(kind << " is an impossible SVFVarKind in create()");
-    case SVFVar::ValNode:
-        return new ValVar(val, id);
-    case SVFVar::ObjNode:
-        assert(false && "ObjNode should not be created by SVFIRReader");
-    case SVFVar::RetNode:
-        return new RetPN({}, id); //TODO
-    case SVFVar::VarargNode:
-        return new VarArgPN({}, id);//TODO
-    case SVFVar::GepValNode:
-        return new GepValVar(val, id, LocationSet(), nullptr);
-    case SVFVar::GepObjNode:
-        return new GepObjVar({}, id, LocationSet());//TODO
-    case SVFVar::FIObjNode:
-        return new FIObjVar(val, id, nullptr);
-    case SVFVar::DummyValNode:
-        return new DummyValVar(id);
-    case SVFVar::DummyObjNode:
-        return new DummyObjVar(id, nullptr);
-    }
-}
-
-template <typename Edge>
-static inline Edge* createEdgeWithFlag(typename Edge::GEdgeFlag flag)
-{
-    auto kind = SVFIRReader::applyEdgeMask(flag);
-    Edge* edge = create<Edge>(kind);
-    SVFIRReader::setEdgeFlag(edge, flag);
-    return edge;
-}
-
 template <typename SmallNumberType>
 static inline void readSmallNumber(const cJSON* obj, SmallNumberType& val)
 {
@@ -219,21 +96,6 @@ static inline void readBigNumber(const cJSON* obj, BigNumberType& val, CStrToVal
     ABORT_IFNOT(jsonIsString(obj),
                 "Expect (number) string JSON for " << JSON_KEY(obj));
     val = conv(obj->valuestring);
-}
-
-template <typename EdgeTy>
-static inline EdgeTy* readCreateEdgeFwd(const cJSON*& fieldJson)
-{
-    JSON_DEF_READ_FWD(fieldJson, typename EdgeTy::GEdgeFlag, flag);
-    return createEdgeWithFlag<EdgeTy>(flag);
-}
-
-template <typename NodeTy>
-static std::pair<NodeID, NodeTy*> readCreateIDNodeFwd(const cJSON*& fieldJson)
-{
-    JSON_DEF_READ_FWD(fieldJson, NodeID, id);
-    JSON_DEF_READ_FWD(fieldJson, s64_t, nodeKind);
-    return {id, create<NodeTy>(id, nodeKind)};
 }
 
 cJSON* SVFIRWriter::toJson(bool flag)
@@ -1444,17 +1306,6 @@ cJSON* SVFIRWriter::toJson(const SVFModule* module)
     return root;
 }
 
-void ICFGReader::createObjs(const cJSON* icfgJson)
-{
-    GenericICFGReader::createObjs(icfgJson, readCreateIDNodeFwd<ICFGNode>,
-                                  readCreateEdgeFwd<ICFGEdge>);
-
-    CHECK_JSON_KEY_EQUALS(graphFieldJson, "svfLoops");
-    svfLoopPool.createObjs(graphFieldJson,
-                           [](auto) { return new SVFLoop({}, 0); });
-    graphFieldJson = graphFieldJson->next;
-}
-
 SVFIR* SVFIRReader::read(cJSON* root)
 {
     const cJSON* svfirField = createObjs(root);
@@ -1500,6 +1351,22 @@ SVFIR* SVFIRReader::read(cJSON* root)
 
 const cJSON* SVFIRReader::createObjs(const cJSON* root)
 {
+#define READ_CREATE_NODE_FWD(GType)                                            \
+    [](const cJSON*& nodeJson) {                                               \
+        JSON_DEF_READ_FWD(nodeJson, NodeID, id);                               \
+        JSON_DEF_READ_FWD(nodeJson, GNodeK, nodeKind);                         \
+        return std::make_pair(id, create##GType##Node(id, nodeKind));          \
+    }
+#define READ_CREATE_EDGE_FWD(GType)                                            \
+    [](const cJSON*& edgeJson) {                                               \
+        JSON_DEF_READ_FWD(edgeJson, NodeID, id);                               \
+        JSON_DEF_READ_FWD(edgeJson, GEdgeFlag, nodeFlag);                      \
+        auto kind = applyEdgeMask(nodeFlag);                                   \
+        auto edge = create##GType##Edge(kind);                                 \
+        setEdgeFlag(edge, nodeFlag);                                           \
+        return edge;                                                           \
+    }
+
     ABORT_IFNOT(jsonIsObject(root), "Root should be an object");
 
     cJSON* svfModule = root->child;
@@ -1550,34 +1417,20 @@ const cJSON* SVFIRReader::createObjs(const cJSON* root)
 
     cJSON* icfg = symbolTableInfo->next;
     CHECK_JSON_KEY(icfg);
-    icfgReader.createObjs(icfg);
+    icfgReader.createObjs(icfg, READ_CREATE_NODE_FWD(ICFG),
+                          READ_CREATE_EDGE_FWD(ICFG),
+                          [](auto) { return new SVFLoop({}, 0); });
 
     cJSON* chgraph = icfg->next;
     CHECK_JSON_KEY(chgraph);
-    chGraphReader.createObjs(chgraph, readCreateIDNodeFwd<CHNode>,
-                             readCreateEdgeFwd<CHEdge>);
+    chGraphReader.createObjs(chgraph, READ_CREATE_NODE_FWD(CH),
+                             READ_CREATE_EDGE_FWD(CH));
 
     cJSON* irGraph = chgraph->next;
     CHECK_JSON_KEY(irGraph);
-    irGraphReader.createObjs(
-        irGraph,
-        [](const cJSON*& svfVarField) {
-            JSON_DEF_READ_FWD(svfVarField, NodeID, id);
-            JSON_DEF_READ_FWD(svfVarField, s64_t, nodeKind);
-            return std::make_pair(id, create<SVFVar>(id, nodeKind));
-        },
-        readCreateEdgeFwd<SVFStmt>);
+    irGraphReader.createObjs(irGraph, READ_CREATE_NODE_FWD(PAG),
+                             READ_CREATE_EDGE_FWD(PAG));
 
-    // symTableReader.fillObjs(
-    //     [this](const cJSON*& j, MemObj* memObj) { fill(j, memObj); },
-    //     //[this](const cJSON*& j, SVFType* type) { virtFill(j, type); },
-    //     //[this](const cJSON*& j, StInfo* stInfo) { fill(j, stInfo); }
-    //     );
-    irGraphReader.fillObjs(
-        [this](const cJSON*& j, SVFVar* var) { virtFill(j, var); },
-        [this](const cJSON*& j, SVFStmt* stmt) { virtFill(j, stmt); });
-    svfModuleReader.fillObjs(
-        [this](const cJSON*& j, SVFValue* val) { virtFill(j, val); });
     icfgReader.fillObjs(
         [this](const cJSON*& j, ICFGNode* node) { virtFill(j, node); },
         [this](const cJSON*& j, ICFGEdge* edge) { virtFill(j, edge); },
@@ -1585,8 +1438,14 @@ const cJSON* SVFIRReader::createObjs(const cJSON* root)
     chGraphReader.fillObjs(
         [this](const cJSON*& j, CHNode* node) { virtFill(j, node); },
         [this](const cJSON*& j, CHEdge* edge) { virtFill(j, edge); });
+    irGraphReader.fillObjs(
+        [this](const cJSON*& j, SVFVar* var) { virtFill(j, var); },
+        [this](const cJSON*& j, SVFStmt* stmt) { virtFill(j, stmt); });
 
     return chgraph->next;
+
+#undef READ_CREATE_EDGE_FWD
+#undef READ_CREATE_NODE_FWD
 }
 
 void SVFIRReader::readJson(const cJSON* obj, bool& flag)
@@ -1615,6 +1474,12 @@ void SVFIRReader::readJson(const cJSON* obj, unsigned long& val)
                   [](const char* s) { return std::strtoul(s, nullptr, 10); });
 }
 
+void SVFIRReader::readJson(const cJSON* obj, long long& val)
+{
+    readBigNumber(obj, val,
+                  [](const char* s) { return std::strtoll(s, nullptr, 10); });
+}
+
 void SVFIRReader::readJson(const cJSON* obj, unsigned long long& val)
 {
     readBigNumber(obj, val,
@@ -1627,10 +1492,103 @@ void SVFIRReader::readJson(const cJSON* obj, std::string& str)
     str = obj->valuestring;
 }
 
-void SVFIRReader::readJson(const cJSON* obj, long long& val)
+ICFGNode* SVFIRReader::createICFGNode(NodeID id, GNodeK kind)
 {
-    readBigNumber(obj, val,
-                  [](const char* s) { return std::strtoll(s, nullptr, 10); });
+    switch (kind)
+    {
+    default:
+        ABORT_MSG(kind << " is an impossible ICFGNodeKind in create()");
+#define CASE(kind, constructor)                                                \
+    case ICFGNode::kind:                                                       \
+        return new constructor(id);
+        CASE(IntraBlock, IntraICFGNode);
+        CASE(FunEntryBlock, FunEntryICFGNode);
+        CASE(FunExitBlock, FunExitICFGNode);
+        CASE(FunCallBlock, CallICFGNode);
+        CASE(FunRetBlock, RetICFGNode);
+        CASE(GlobalBlock, GlobalICFGNode);
+#undef CASE
+    }
+}
+
+ICFGEdge* SVFIRReader::createICFGEdge(GEdgeKind kind)
+{
+    constexpr ICFGNode* src = nullptr;
+    constexpr ICFGNode* dst = nullptr;
+
+    switch (kind)
+    {
+    default:
+        ABORT_MSG(kind << " is an impossible ICFGEdgeKind in create()");
+    case ICFGEdge::IntraCF:
+        return new IntraCFGEdge(src, dst);
+    case ICFGEdge::CallCF:
+        return new CallCFGEdge(src, dst, nullptr);
+    case ICFGEdge::RetCF:
+        return new RetCFGEdge(src, dst, nullptr);
+    }
+}
+
+CHNode* SVFIRReader::createCHNode(NodeID id, GNodeK kind)
+{
+    ABORT_IFNOT(kind == 0, "Impossible CHNode kind " << kind);
+    return new CHNode("", id);
+}
+
+CHEdge* SVFIRReader::createCHEdge(GEdgeKind kind)
+{
+    ABORT_IFNOT(kind == 0, "Unsupported CHEdge kind " << kind);
+    return new CHEdge(nullptr, nullptr, {});
+}
+
+SVFVar* SVFIRReader::createPAGNode(NodeID id, GNodeK kind)
+{
+    switch (kind)
+    {
+    default:
+        ABORT_MSG(kind << " is an impossible SVFVarKind in create()");
+#define CASE(kind, constructor)                                                \
+    case SVFVar::kind:                                                         \
+        return new constructor(id);
+        CASE(ValNode, ValVar);
+        CASE(RetNode, RetPN);
+        CASE(ObjNode, ObjVar);
+        CASE(VarargNode, VarArgPN);
+        CASE(GepValNode, GepValVar);
+        CASE(GepObjNode, GepObjVar);
+        CASE(FIObjNode, FIObjVar);
+        CASE(DummyValNode, DummyValVar);
+        CASE(DummyObjNode, DummyObjVar);
+#undef CASE
+    }
+}
+
+SVFStmt* SVFIRReader::createPAGEdge(GEdgeKind kind)
+{
+    switch (kind)
+    {
+    default:
+        ABORT_MSG(kind << " is an impossible SVFStmtKind in create()");
+#define CASE(kind, constructor)                                                \
+    case SVFStmt::kind:                                                        \
+        return new constructor;
+        CASE(Addr, AddrStmt);
+        CASE(Copy, CopyStmt);
+        CASE(Store, StoreStmt);
+        CASE(Load, LoadStmt);
+        CASE(Call, CallPE);
+        CASE(Ret, RetPE);
+        CASE(Gep, GepStmt);
+        CASE(Phi, PhiStmt);
+        CASE(Select, SelectStmt);
+        CASE(Cmp, CmpStmt);
+        CASE(BinaryOp, BinaryOPStmt);
+        CASE(UnaryOp, UnaryOPStmt);
+        CASE(Branch, BranchStmt);
+        CASE(ThreadFork, TDForkPE);
+        CASE(ThreadJoin, TDJoinPE);
+#undef CASE
+    }
 }
 
 void SVFIRReader::readJson(SymbolTableInfo*& symTabInfo)
@@ -2211,6 +2169,7 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFLoop* loop)
 void SVFIRReader::virtFill(const cJSON*& fieldJson, CHNode* node)
 {
     assert(node->getNodeKind() == 0 && "Unknown CHNode kind");
+    fill(fieldJson, static_cast<GenericCHNodeTy*>(node));
     JSON_READ_FIELD_FWD(fieldJson, node, vtable);
     JSON_READ_FIELD_FWD(fieldJson, node, className);
     JSON_READ_FIELD_FWD(fieldJson, node, flags);
