@@ -5,7 +5,7 @@ on: [push, pull_request]
 
 # Customize the env variable
 env:
-  SVF_CTIR: 1 
+  SVF_CTIR: 1
   SVF_Z3: 1
   SVF_DIR: $GITHUB_WORKSPACE
 
@@ -14,9 +14,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-11]
+        os: [ubuntu-20.04, macos-11]
         include:
-          - os: [ubuntu-18.04]
+          - os: [ubuntu-20.04]
             sanitizer: address
     steps:
       # checkout the repo
@@ -37,7 +37,7 @@ jobs:
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
           sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov
-      
+
       # build-svf
       - name: build-svf
         run: |
@@ -50,27 +50,27 @@ jobs:
 
       - name: ctest wpa
         working-directory: ${{github.workspace}}/Release-build
-        run: 
+        run:
           ctest -R wpa_tests -VV
- 
+
       - name: ctest dvf and mta
         working-directory: ${{github.workspace}}/Release-build
-        run: 
+        run:
           ctest -R dvf_tests -VV
 
       - name: ctest andersen differential analysis
         working-directory: ${{github.workspace}}/Release-build
-        run: 
+        run:
           ctest -R diff_tests-ander -VV
 
       - name: ctest flow-sensitive differential analysis
         working-directory: ${{github.workspace}}/Release-build
-        run: 
+        run:
           ctest -R diff_tests-fs -VV
 
-      - name: ctest Andersen file-write-read 
+      - name: ctest Andersen file-write-read
         working-directory: ${{github.workspace}}/Release-build
-        run: 
+        run:
           ctest -R diff_tests-wr-ander -VV
 
       - name: ctest mem_leak
@@ -85,9 +85,9 @@ jobs:
 
       - name: ctest cfl_tests
         working-directory: ${{github.workspace}}/Release-build
-        run: 
+        run:
           ctest -R cfl_tests -VV
-          
+
       - name: ctest performance tests on cruxbc
         working-directory: ${{github.workspace}}/Release-build
         if: runner.os == 'Linux' && matrix.sanitizer != 'address'
@@ -103,7 +103,7 @@ jobs:
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
         if: runner.os == 'Linux' && matrix.sanitizer == ''
-        run: | 
+        run: |
           lcov --capture --directory ./ --output-file coverage.info
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/z3.obj/*' --output-file coverage.info
@@ -112,7 +112,7 @@ jobs:
           lcov --remove coverage.info '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/svf/include/AbstractExecution/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/svf/lib/AbstractExecution/*' --output-file coverage.info
-      
+
       - name: upload-coverage
         if: runner.os == 'Linux'
         uses: codecov/codecov-action@v2

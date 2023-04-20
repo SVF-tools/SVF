@@ -78,14 +78,6 @@ LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(
     symInfo = SymbolTableInfo::SymbolInfo();
 }
 
-LLVMModuleSet::~LLVMModuleSet()
-{
-    for (auto *it: StInfos)
-    {
-        delete(it);
-    }
-}
-
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     double startSVFModuleTime = SVFStat::getClk(true);
@@ -944,59 +936,63 @@ const Type* LLVMModuleSet::getLLVMType(const SVFType* T) const
  */
 SVFType* LLVMModuleSet::getSVFType(const Type* T)
 {
-    assert(T);
+    assert(T && "SVFType should not be null");
     LLVMType2SVFTypeMap::const_iterator it = LLVMType2SVFType.find(T);
-    if (it!=LLVMType2SVFType.end())
+    if (it != LLVMType2SVFType.end())
         return it->second;
-    else
-    {
-        SVFType* svfType = addSVFTypeInfo(T);
-        StInfo* stinfo = collectTypeInfo(T);
-        svfType->setTypeInfo(stinfo);
-        /// TODO: set the void* to every element for now (imprecise)
-        /// For example, [getPointerTo(): char ----> i8*] [getPointerTo(): int ----> i8*] [getPointerTo(): struct ----> i8*]
-        PointerType* ptrTy = PointerType::getInt8PtrTy(getContext())->getPointerTo();
-        svfType->setPointerTo(SVFUtil::cast<SVFPointerType>(getSVFType(ptrTy)));
-        return svfType;
-    }
+
+    SVFType* svfType = addSVFTypeInfo(T);
+    StInfo* stinfo = collectTypeInfo(T);
+    svfType->setTypeInfo(stinfo);
+    /// TODO: set the void* to every element for now (imprecise)
+    /// For example,
+    /// [getPointerTo(): char   ----> i8*]
+    /// [getPointerTo(): int    ----> i8*]
+    /// [getPointerTo(): struct ----> i8*]
+    PointerType* ptrTy =
+        PointerType::getInt8PtrTy(getContext())->getPointerTo();
+    svfType->setPointerTo(SVFUtil::cast<SVFPointerType>(getSVFType(ptrTy)));
+    return svfType;
 }
 
 StInfo* LLVMModuleSet::collectTypeInfo(const Type* T)
 {
-    StInfo* stinfo = nullptr;
-
     Type2TypeInfoMap::iterator tit = Type2TypeInfo.find(T);
-    if(tit != Type2TypeInfo.end())
+    if (tit != Type2TypeInfo.end())
     {
-        stinfo = tit->second;
+        return tit->second;
+    }
+    // No such StInfo for T, create it now.
+    StInfo* stInfo;
+    if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T))
+    {
+        stInfo = collectArrayInfo(aty);
+    }
+    else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T))
+    {
+        u32_t nf;
+        stInfo = collectStructInfo(sty, nf);
+        if (nf > symInfo->maxStSize)
+        {
+            symInfo->maxStruct = getSVFType(sty);
+            symInfo->maxStSize = nf;
+        }
     }
     else
     {
-        if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(T))
-            stinfo = collectArrayInfo(aty);
-        else if (const StructType* sty = SVFUtil::dyn_cast<StructType>(T))
-        {
-            u32_t nf;
-            stinfo = collectStructInfo(sty, nf);
-            if (nf > symInfo->maxStSize)
-            {
-                symInfo->maxStruct = getSVFType(sty);
-                symInfo->maxStSize = nf;
-            }
-        }
-        else
-            stinfo = collectSimpleTypeInfo(T);
-        StInfos.insert(stinfo);
-        Type2TypeInfo[T] = stinfo;
+        stInfo = collectSimpleTypeInfo(T);
     }
-    return stinfo;
+    Type2TypeInfo.emplace(T, stInfo);
+    symInfo->addStInfo(stInfo);
+    return stInfo;
 }
 
 SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
 {
-    assert(LLVMType2SVFType.find(T)==LLVMType2SVFType.end() && "SVFType has been added before");
+    assert(LLVMType2SVFType.find(T) == LLVMType2SVFType.end() &&
+           "SVFType has been added before");
 
-    SVFType* svftype = nullptr;
+    SVFType* svftype;
     if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
         svftype = new SVFPointerType(getSVFType(LLVMUtil::getPtrElementType(pt)));
     else if (SVFUtil::isa<IntegerType>(T))
@@ -1009,6 +1005,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = new SVFArrayType();
     else
         svftype = new SVFOtherType(T->isSingleValueType());
+
     symInfo->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
     return svftype;
@@ -1027,16 +1024,17 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
         elemTy = aty->getElementType();
     }
 
-    StInfo* stinfo = new StInfo(totalElemNum);
+    StInfo* stInfo = new StInfo(totalElemNum);
+    const SVFType* elemSvfType = getSVFType(elemTy);
 
     /// array without any element (this is not true in C/C++ arrays) we assume there is an empty dummy element
-    if(totalElemNum==0)
+    if (totalElemNum == 0)
     {
-        stinfo->addFldWithType(0, getSVFType(elemTy), 0);
-        stinfo->setNumOfFieldsAndElems(1, 1);
-        stinfo->getFlattenFieldTypes().push_back(getSVFType(elemTy));
-        stinfo->getFlattenElementTypes().push_back(getSVFType(elemTy));
-        return stinfo;
+        stInfo->addFldWithType(0, elemSvfType, 0);
+        stInfo->setNumOfFieldsAndElems(1, 1);
+        stInfo->getFlattenFieldTypes().push_back(elemSvfType);
+        stInfo->getFlattenElementTypes().push_back(elemSvfType);
+        return stInfo;
     }
 
     /// Array's flatten field infor is the same as its element's
@@ -1046,83 +1044,90 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
     for (u32_t j = 0; j < nfE; j++)
     {
         const SVFType* fieldTy = elemStInfo->getFlattenFieldTypes()[j];
-        stinfo->getFlattenFieldTypes().push_back(fieldTy);
+        stInfo->getFlattenFieldTypes().push_back(fieldTy);
     }
 
     /// Flatten arrays, map each array element index `i` to flattened index `(i * nfE * totalElemNum)/outArrayElemNum`
     /// nfE>1 if the array element is a struct with more than one field.
     u32_t outArrayElemNum = ty->getNumElements();
-    for(u32_t i = 0; i < outArrayElemNum; i++)
-        stinfo->addFldWithType(0, getSVFType(elemTy), (i * nfE * totalElemNum)/outArrayElemNum);
-
-    for(u32_t i = 0; i < totalElemNum; i++)
+    for (u32_t i = 0; i < outArrayElemNum; ++i)
     {
-        for(u32_t j = 0; j < nfE; j++)
+        auto idx = (i * nfE * totalElemNum) / outArrayElemNum;
+        stInfo->addFldWithType(0, elemSvfType, idx);
+    }
+
+    for (u32_t i = 0; i < totalElemNum; ++i)
+    {
+        for (u32_t j = 0; j < nfE; ++j)
         {
-            stinfo->getFlattenElementTypes().push_back(elemStInfo->getFlattenFieldTypes()[j]);
+            const SVFType* et = elemStInfo->getFlattenFieldTypes()[j];
+            stInfo->getFlattenElementTypes().push_back(et);
         }
     }
 
-    assert(stinfo->getFlattenElementTypes().size() == nfE * totalElemNum && "typeForArray size incorrect!!!");
-    stinfo->setNumOfFieldsAndElems(nfE, nfE * totalElemNum);
+    assert(stInfo->getFlattenElementTypes().size() == nfE * totalElemNum &&
+           "typeForArray size incorrect!!!");
+    stInfo->setNumOfFieldsAndElems(nfE, nfE * totalElemNum);
 
-    return stinfo;
+    return stInfo;
 }
-
 
 /*!
  * Fill in struct_info for T.
  * Given a Struct type, we recursively extend and record its fields and types.
  */
-StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty, u32_t &nf)
+StInfo* LLVMModuleSet::collectStructInfo(const StructType* structTy,
+        u32_t& numFields)
 {
     /// The struct info should not be processed before
-    StInfo* stinfo = new StInfo(1);
+    StInfo* stInfo = new StInfo(1);
 
     // Number of fields after flattening the struct
-    nf = 0;
+    numFields = 0;
     // The offset when considering array stride info
     u32_t strideOffset = 0;
-    for (StructType::element_iterator it = sty->element_begin(), ie =
-                sty->element_end(); it != ie; ++it)
+    for (const Type* elemTy : structTy->elements())
     {
-        const Type* et = *it;
-        /// offset with int_32 (s32_t) is large enough and will not cause overflow
-        stinfo->addFldWithType(nf, getSVFType(et), strideOffset);
+        const SVFType* elemSvfTy = getSVFType(elemTy);
+        // offset with int_32 (s32_t) is large enough and won't overflow
+        stInfo->addFldWithType(numFields, elemSvfTy, strideOffset);
 
-        if (SVFUtil::isa<StructType, ArrayType>(et))
+        if (SVFUtil::isa<StructType, ArrayType>(elemTy))
         {
-            StInfo * subStinfo = collectTypeInfo(et);
-            u32_t nfE = subStinfo->getNumOfFlattenFields();
-            //Copy ST's info, whose element 0 is the size of ST itself.
-            for (u32_t j = 0; j < nfE; j++)
+            StInfo* subStInfo = collectTypeInfo(elemTy);
+            u32_t nfE = subStInfo->getNumOfFlattenFields();
+            // Copy ST's info, whose element 0 is the size of ST itself.
+            for (u32_t j = 0; j < nfE; ++j)
             {
-                const SVFType* elemTy = subStinfo->getFlattenFieldTypes()[j];
-                stinfo->getFlattenFieldTypes().push_back(elemTy);
+                const SVFType* elemTy = subStInfo->getFlattenFieldTypes()[j];
+                stInfo->getFlattenFieldTypes().push_back(elemTy);
             }
-            nf += nfE;
-            strideOffset += nfE * subStinfo->getStride();
-            for(u32_t tpi = 0; tpi < subStinfo->getStride(); tpi++)
+            numFields += nfE;
+            strideOffset += nfE * subStInfo->getStride();
+            for (u32_t tpi = 0; tpi < subStInfo->getStride(); ++tpi)
             {
-                for(u32_t tpj = 0; tpj < nfE; tpj++)
+                for (u32_t tpj = 0; tpj < nfE; ++tpj)
                 {
-                    stinfo->getFlattenElementTypes().push_back(subStinfo->getFlattenFieldTypes()[tpj]);
+                    const SVFType* ty = subStInfo->getFlattenFieldTypes()[tpj];
+                    stInfo->getFlattenElementTypes().push_back(ty);
                 }
             }
         }
-        else     //simple type
+        else
         {
-            nf += 1;
+            // Simple type
+            numFields += 1;
             strideOffset += 1;
-            stinfo->getFlattenFieldTypes().push_back(getSVFType(et));
-            stinfo->getFlattenElementTypes().push_back(getSVFType(et));
+            stInfo->getFlattenFieldTypes().push_back(elemSvfTy);
+            stInfo->getFlattenElementTypes().push_back(elemSvfTy);
         }
     }
 
-    assert(stinfo->getFlattenElementTypes().size() == strideOffset && "typeForStruct size incorrect!");
-    stinfo->setNumOfFieldsAndElems(nf,strideOffset);
+    assert(stInfo->getFlattenElementTypes().size() == strideOffset &&
+           "typeForStruct size incorrect!");
+    stInfo->setNumOfFieldsAndElems(numFields,strideOffset);
 
-    return stinfo;
+    return stInfo;
 }
 
 
@@ -1132,12 +1137,13 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType *sty, u32_t &nf)
 StInfo* LLVMModuleSet::collectSimpleTypeInfo(const Type* ty)
 {
     /// Only one field
-    StInfo* stinfo = new StInfo(1);
-    stinfo->addFldWithType(0, getSVFType(ty), 0);
+    StInfo* stInfo = new StInfo(1);
+    SVFType* svfType = getSVFType(ty);
+    stInfo->addFldWithType(0, svfType, 0);
 
-    stinfo->getFlattenFieldTypes().push_back(getSVFType(ty));
-    stinfo->getFlattenElementTypes().push_back(getSVFType(ty));
-    stinfo->setNumOfFieldsAndElems(1,1);
+    stInfo->getFlattenFieldTypes().push_back(svfType);
+    stInfo->getFlattenElementTypes().push_back(svfType);
+    stInfo->setNumOfFieldsAndElems(1,1);
 
-    return stinfo;
+    return stInfo;
 }
