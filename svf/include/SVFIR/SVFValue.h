@@ -1084,8 +1084,13 @@ public:
 
 class CallSite
 {
+    friend class SVFIRReader;
+
 private:
     const SVFCallInst* CB;
+
+    /// Constructs empty CallSite (for SVFIRReader/deserialization)
+    CallSite() : CB{} {}
 
 public:
     CallSite(const SVFInstruction* I) : CB(SVFUtil::dyn_cast<SVFCallInst>(I))

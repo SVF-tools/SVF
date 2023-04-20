@@ -1747,6 +1747,11 @@ void SVFIRReader::readJson(const cJSON* obj, CHEdge*& edge)
     edge = chGraphReader.getEdgePtr(jsonGetNumber(obj));
 }
 
+void SVFIRReader::readJson(const cJSON* obj, CallSite& cs)
+{
+    readJson(obj, cs.CB);
+}
+
 void SVFIRReader::readJson(const cJSON* obj, LocationSet& ls)
 {
     ABORT_IFNOT(jsonIsObject(obj), "Expected obj for LocationSet");

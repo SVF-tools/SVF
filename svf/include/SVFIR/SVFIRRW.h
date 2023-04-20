@@ -1063,19 +1063,6 @@ private:
     SVFIR* read(const cJSON* root);
     const cJSON* createObjs(const cJSON* root);
 
-    template <typename T> inline T constructFromJson(const cJSON* obj)
-    {
-        T t{};
-        readJson(obj, t);
-        return t;
-    }
-    template <> inline CallSite constructFromJson<CallSite>(const cJSON* obj)
-    {
-        SVFCallInst* callInst;
-        readJson(obj, callInst);
-        return CallSite(callInst);
-    }
-
     void readJson(SymbolTableInfo*& symTabInfo);
     void readJson(IRGraph*& graph); // IRGraph Graph
     void readJson(ICFG*& icfg);     // ICFG Graph
@@ -1093,7 +1080,7 @@ private:
     // void readJson(const cJSON* obj, CHGraph*& graph); // CHGraph Graph
     void readJson(const cJSON* obj, CHNode*& node); // CHGraph Node
     void readJson(const cJSON* obj, CHEdge*& edge); // CHGraph Edge
-    //void readJson(const cJSON* obj, CallSite& cs);
+    void readJson(const cJSON* obj, CallSite& cs); // CHGraph's csToClassMap
 
     void readJson(const cJSON* obj, LocationSet& ls);
     void readJson(const cJSON* obj, SVFLoop*& loop);
@@ -1116,6 +1103,8 @@ private:
         readJson(obj, element.Bits);
     }
 
+    /// @brief Read a pointer of some child class of
+    /// SVFType/SVFValue/SVFVar/SVFStmt/ICFGNode/ICFGEdge/CHNode/CHEdge
     template <typename T>
     inline SVFUtil::void_t<KindBaseT<T>> readJson(const cJSON* obj, T*& ptr)
     {
@@ -1129,6 +1118,7 @@ private:
                                   << KindBaseHelper<T>::getKind(ptr));
     }
 
+    /// Read a const pointer
     template <typename T> inline void readJson(const cJSON* obj, const T*& cptr)
     {
         assert(!cptr && "const pointer should be NULL");
@@ -1168,7 +1158,10 @@ private:
         assert(container.empty() && "container should be empty");
         ABORT_IFNOT(jsonIsArray(obj), "vector expects an array");
         jsonForEach(elemJson, obj)
-            container.push_back(std::move(constructFromJson<T>(elemJson)));
+        {
+            container.push_back(T{});
+            readJson(elemJson, container.back());
+        }
     }
 
     template <typename C>
@@ -1179,9 +1172,11 @@ private:
         jsonForEach(elemJson, obj)
         {
             auto jpair = jsonUnpackPair(elemJson);
-            auto k = constructFromJson<typename C::key_type>(jpair.first);
-            auto v = constructFromJson<typename C::mapped_type>(jpair.second);
-            map.emplace(std::move(k), std::move(v));
+            typename C::key_type key{};
+            readJson(jpair.first, key);
+            auto it = map.emplace(std::move(key), typename C::mapped_type{});
+            ABORT_IFNOT(it.second, "Duplicated map key");
+            readJson(jpair.second, it.first->second);
         }
     }
 
@@ -1192,7 +1187,12 @@ private:
         assert(set.empty() && "set should be empty");
         ABORT_IFNOT(jsonIsArray(obj), "expects an array");
         jsonForEach(elemJson, obj)
-            set.insert(std::move(constructFromJson<T>(elemJson)));
+        {
+            T elem{};
+            readJson(elemJson, elem);
+            auto inserted = set.insert(std::move(elem)).second;
+            ABORT_IFNOT(inserted, "Duplicated set element");
+        }
     }
 
     // IGRaph
