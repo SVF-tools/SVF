@@ -816,14 +816,14 @@ SVFModule* SVFModuleRead::readSvfModule(cJSON* iter)
 
     // Fill incomplete values in valuePool and typePool
     for (size_t i = 0; i < typePool.size(); ++i)
-        fillSvfTypeAt(i);
+        fillSVFTypeAt(i);
     for (size_t i = 0; i < valuePool.size(); ++i)
-        fillSvfValueAt(i);
+        fillSVFValueAt(i);
 
     return svfModule;
 }
 
-void SVFModuleRead::fillSvfTypeAt(size_t i)
+void SVFModuleRead::fillSVFTypeAt(size_t i)
 {
     cJSON* childIter = typeArray[i]->child;
     SVFType* type = typePool[i];
@@ -833,7 +833,7 @@ void SVFModuleRead::fillSvfTypeAt(size_t i)
     {
     default:
         SVFUtil::errs() << "Impossible SVFType kind " << kind
-                        << " in fillSvfTypeAt()\n";
+                        << " in fillSVFTypeAt()\n";
         assert(false);
 
 #define CASE(Kind)                                                             \
@@ -854,7 +854,7 @@ void SVFModuleRead::fillSvfTypeAt(size_t i)
     }
 }
 
-void SVFModuleRead::fillSvfValueAt(size_t i)
+void SVFModuleRead::fillSVFValueAt(size_t i)
 {
     cJSON* childIter = valueArray[i]->child;
     SVFValue* value = valuePool[i];
@@ -863,7 +863,7 @@ void SVFModuleRead::fillSvfValueAt(size_t i)
     {
     default:
         SVFUtil::errs() << "Impossible SVFValue kind " << kind
-                        << " in fillSvfValueAt()\n";
+                        << " in fillSVFValueAt()\n";
         assert(false);
 
 #define CASE(kind, type)                                                       \

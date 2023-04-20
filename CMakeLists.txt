@@ -24,6 +24,9 @@ if(SVF_ENABLE_ASSERTIONS)
   add_compile_options("-UNDEBUG")
 endif()
 
+# Turn this on if you need symbols (e.g., use them for backtrace debugging)
+# add_link_options("-rdynamic")
+
 option(SVF_COVERAGE "Create coverage build")
 if(SVF_COVERAGE OR DEFINED ENV{SVF_COVERAGE})
   add_compile_options("-fprofile-arcs" "-ftest-coverage")

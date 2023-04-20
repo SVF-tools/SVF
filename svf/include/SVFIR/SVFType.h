@@ -133,6 +133,7 @@ class StInfo
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     /// flattened field indices of a struct (ignoring arrays)
@@ -244,6 +245,7 @@ class SVFType
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef s64_t GNodeK;
@@ -330,6 +332,7 @@ class SVFPointerType : public SVFType
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     const SVFType* ptrElementType;
@@ -364,6 +367,7 @@ class SVFFunctionType : public SVFType
     friend class SVFModuleWrite;
     friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     const SVFType* retTy;

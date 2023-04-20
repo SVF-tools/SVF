@@ -50,6 +50,7 @@ typedef SVFStmt PAGEdge;
 class IRGraph : public GenericGraph<SVFVar, SVFStmt>
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef Set<const SVFStmt*> SVFStmtSet;
