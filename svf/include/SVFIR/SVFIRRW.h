@@ -773,7 +773,8 @@ public:
 
     T* getPtr(size_t id) const
     {
-        assert(id <= jsonArray.size() && "Invalid ID");
+        ABORT_IFNOT(id <= ptrPool.size(),
+                    "Invalid ID " << id << ". Max ID = " << ptrPool.size());
         return id ? ptrPool[id - 1] : nullptr;
     }
 
@@ -854,8 +855,12 @@ public:
     template <typename NodeFiller, typename EdgeFiller>
     void fillObjs(NodeFiller nodeFiller, EdgeFiller edgeFiller)
     {
-        idToNodeMap.fillObjs(nodeFiller);
+        // GenericNode<> contains field `InEdges` and `OutEdges`, which are
+        // ordered set of edges with comparator `GenericEdge::equalGEdge()`,
+        // which need operands `src` and `dst` to be non-null to get IDs, so we
+        // need to fill nodes first.
         edgePool.fillObjs(edgeFiller);
+        idToNodeMap.fillObjs(nodeFiller);
     }
 
     void saveToGenericGraph(GenericGraph<NodeTy, EdgeTy>* graph) const
@@ -888,10 +893,10 @@ public:
     template <typename MemObjCreator>
     void createObjs(const cJSON* symTabJson, MemObjCreator memObjCreator)
     {
-        assert(symTabFieldJson == nullptr && "symTabFieldJson should be empty");
+        assert(!symTabFieldJson && "symTabFieldJson should be empty");
         ABORT_IFNOT(jsonIsObject(symTabJson), "symTableJson is not an object?");
 
-        cJSON* allMemObj = symTabJson->child;
+        const cJSON* const allMemObj = symTabJson->child;
         CHECK_JSON_KEY(allMemObj);
         memObjMap.createObjs(allMemObj, memObjCreator);
 
@@ -922,9 +927,10 @@ public:
     {
         GenericICFGReader::createObjs(icfgJson, nodeCreator, edgeCreator);
 
-        CHECK_JSON_KEY_EQUALS(graphFieldJson, "svfLoops");
+        const cJSON* const allSvfLoop = graphFieldJson;
+        CHECK_JSON_KEY(allSvfLoop);
         svfLoopPool.createObjs(graphFieldJson, svfLoopCreator);
-        graphFieldJson = graphFieldJson->next;
+        graphFieldJson = allSvfLoop->next;
     }
 
     inline SVFLoop* getSVFLoopPtr(size_t id) const
@@ -956,23 +962,24 @@ public:
                     SVFTypeFiller typeFiller, SVFValueCreator valueCreator,
                     SVFValueFiller valueFiller, StInfoCreator stInfoCreator)
     {
-        assert(svfModuleFieldJson == nullptr && "SVFModule Already created?");
+        assert(!svfModuleFieldJson && "SVFModule Already created?");
         ABORT_IFNOT(jsonIsObject(svfModuleJson),
                     "svfModuleJson not an JSON object?");
 
-        cJSON* allSVFType = svfModuleJson->child;
+        const cJSON* const allSVFType = svfModuleJson->child;
         CHECK_JSON_KEY(allSVFType);
         svfTypePool.createObjs(allSVFType, typeCreator);
-        svfTypePool.fillObjs(typeFiller);
 
-        cJSON* allStInfo = allSVFType->next;
+        const cJSON* const allStInfo = allSVFType->next;
         CHECK_JSON_KEY(allStInfo);
-        stInfoPool.createObjs(allStInfo, stInfoCreator);
+        stInfoPool.createObjs(allStInfo, stInfoCreator); // Only need SVFType*
 
-        cJSON* allSVFValue = allStInfo->next;
+        svfTypePool.fillObjs(typeFiller); // Only need SVFType* & StInfo*
+
+        const cJSON* const allSVFValue = allStInfo->next;
         CHECK_JSON_KEY(allSVFValue);
         svfValuePool.createObjs(allSVFValue, valueCreator);
-        svfValuePool.fillObjs(valueFiller);
+        svfValuePool.fillObjs(valueFiller); // Need SVFType* & SVFValue*
 
         svfModuleFieldJson = allSVFValue->next;
     }
@@ -1053,12 +1060,12 @@ private:
         return edge;
     }
 
-    SVFIR* read(cJSON* root);
+    SVFIR* read(const cJSON* root);
     const cJSON* createObjs(const cJSON* root);
 
     template <typename T> inline T constructFromJson(const cJSON* obj)
     {
-        T t;
+        T t{};
         readJson(obj, t);
         return t;
     }
@@ -1112,8 +1119,11 @@ private:
     template <typename T>
     inline SVFUtil::void_t<KindBaseT<T>> readJson(const cJSON* obj, T*& ptr)
     {
-        KindBaseT<T>* basePtr;
+        // TODO: Can be optimized?
+        KindBaseT<T>* basePtr = ptr;
         readJson(obj, basePtr);
+        if (!basePtr)
+            return; // ptr is nullptr when read
         ptr = SVFUtil::dyn_cast<T>(basePtr);
         ABORT_IFNOT(ptr, "Cast: " << obj->string << " shoudn't have kind "
                                   << KindBaseHelper<T>::getKind(ptr));
@@ -1121,7 +1131,8 @@ private:
 
     template <typename T> inline void readJson(const cJSON* obj, const T*& cptr)
     {
-        T* ptr;
+        assert(!cptr && "const pointer should be NULL");
+        T* ptr{};
         readJson(obj, ptr);
         cptr = ptr;
     }

@@ -52,13 +52,13 @@ int main(int argc, char** argv)
     }
     else
     {
+        LLVMModuleSet* moduleSet = LLVMModuleSet::getLLVMModuleSet();
         if (Options::WriteAnder() == "ir_annotator")
         {
-            LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+            moduleSet->preProcessBCs(moduleNameVec);
         }
 
-        SVFModule* svfModule =
-            LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+        SVFModule* svfModule = moduleSet->buildSVFModule(moduleNameVec);
 
         /// Build SVFIR
         SVFIRBuilder builder(svfModule);

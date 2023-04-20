@@ -859,10 +859,10 @@ std::pair<const cJSON*,const cJSON*> jsonUnpackPair(const cJSON* item)
 {
     ABORT_IFNOT(jsonIsArray(item), "Expected array as pair");
     cJSON* child1 = item->child;
-    ABORT_IFNOT(child1 != nullptr, "Missing first child of pair");
+    ABORT_IFNOT(child1, "Missing first child of pair");
     cJSON* child2 = child1->next;
-    ABORT_IFNOT(child2 != nullptr, "Missing first child of pair");
-    ABORT_IFNOT(child2->next == nullptr, "Too many children of pair");
+    ABORT_IFNOT(child2, "Missing first child of pair");
+    ABORT_IFNOT(!child2->next, "Pair has more than two children");
     return {child1, child2};
 }
 
@@ -1098,6 +1098,7 @@ cJSON* SVFIRWriter::toJson(const ICFG* icfg)
 #define F(field) JSON_WRITE_FIELD(root, icfg, field)
     cJSON* root = genericGraphToJson(icfg, icfgWriter.edgePool.getPool());
     jsonAddItemToObject(root, FIELD_NAME_ITEM(allSvfLoop)); // Meta field
+    F(totalICFGNode);
     F(FunToFunEntryNodeMap);
     F(FunToFunExitNodeMap);
     F(CSToCallNodeMap);
@@ -1283,6 +1284,12 @@ cJSON* SVFIRWriter::toJson(const SVFModule* module)
         jsonAddItemToArray(allSVFType, svfTypeObj);
     }
 
+    for (const StInfo* stInfo : svfModuleWriter.stInfoPool)
+    {
+        cJSON* stInfoObj = contentToJson(stInfo);
+        jsonAddItemToArray(allStInfo, stInfoObj);
+    }
+
 #define F(field) JSON_WRITE_FIELD(root, module, field)
     jsonAddItemToObject(root, FIELD_NAME_ITEM(allSVFType));  // Meta field
     jsonAddItemToObject(root, FIELD_NAME_ITEM(allStInfo));   // Meta field
@@ -1299,18 +1306,18 @@ cJSON* SVFIRWriter::toJson(const SVFModule* module)
 
     for (size_t i = 1; i <= svfModuleWriter.sizeSVFValuePool(); ++i)
     {
-        cJSON* value = contentToJson(svfModuleWriter.getSVFValuePtr(i));
+        cJSON* value = virtToJson(svfModuleWriter.getSVFValuePtr(i));
         jsonAddItemToArray(allSVFValue, value);
     }
 
     return root;
 }
 
-SVFIR* SVFIRReader::read(cJSON* root)
+SVFIR* SVFIRReader::read(const cJSON* root)
 {
     const cJSON* svfirField = createObjs(root);
 
-    SVFIR* svfIR = new SVFIR(false);
+    SVFIR* svfIR = SVFIR::getPAG(); // SVFIR constructor sets symInfo
     IRGraph* irGraph = svfIR;
 
     auto svfModule = new SVFModule();
@@ -1359,17 +1366,16 @@ const cJSON* SVFIRReader::createObjs(const cJSON* root)
     }
 #define READ_CREATE_EDGE_FWD(GType)                                            \
     [](const cJSON*& edgeJson) {                                               \
-        JSON_DEF_READ_FWD(edgeJson, NodeID, id);                               \
-        JSON_DEF_READ_FWD(edgeJson, GEdgeFlag, nodeFlag);                      \
-        auto kind = applyEdgeMask(nodeFlag);                                   \
+        JSON_DEF_READ_FWD(edgeJson, GEdgeFlag, edgeFlag);                      \
+        auto kind = applyEdgeMask(edgeFlag);                                   \
         auto edge = create##GType##Edge(kind);                                 \
-        setEdgeFlag(edge, nodeFlag);                                           \
+        setEdgeFlag(edge, edgeFlag);                                           \
         return edge;                                                           \
     }
 
     ABORT_IFNOT(jsonIsObject(root), "Root should be an object");
 
-    cJSON* svfModule = root->child;
+    const cJSON* const svfModule = root->child;
     CHECK_JSON_KEY(svfModule);
     svfModuleReader.createObjs(
         svfModule,
@@ -1399,14 +1405,14 @@ const cJSON* SVFIRReader::createObjs(const cJSON* root)
             JSON_DEF_READ_FWD(stInfoFldJson, u32_t, stride);
             auto si = new StInfo(stride);
             fill(stInfoFldJson, si);
-            ABORT_IFNOT(stInfoFldJson == nullptr, "StInfo has extra fields");
+            ABORT_IFNOT(!stInfoFldJson, "StInfo has extra field");
             return si;
         });
 
-    cJSON* symbolTableInfo = svfModule->next;
-    CHECK_JSON_KEY(symbolTableInfo);
+    const cJSON* const symInfo = svfModule->next;
+    CHECK_JSON_KEY(symInfo);
     symTableReader.createObjs(
-        symbolTableInfo,
+        symInfo,
         // MemObj Creator (no filler needed)
         [this](const cJSON*& memObjFldJson) {
             JSON_DEF_READ_FWD(memObjFldJson, SymID, symId);
@@ -1415,18 +1421,18 @@ const cJSON* SVFIRReader::createObjs(const cJSON* root)
             return std::make_pair(symId, new MemObj(symId, typeInfo, refVal));
         });
 
-    cJSON* icfg = symbolTableInfo->next;
+    const cJSON* const icfg = symInfo->next;
     CHECK_JSON_KEY(icfg);
     icfgReader.createObjs(icfg, READ_CREATE_NODE_FWD(ICFG),
                           READ_CREATE_EDGE_FWD(ICFG),
                           [](auto) { return new SVFLoop({}, 0); });
 
-    cJSON* chgraph = icfg->next;
+    const cJSON* const chgraph = icfg->next;
     CHECK_JSON_KEY(chgraph);
     chGraphReader.createObjs(chgraph, READ_CREATE_NODE_FWD(CH),
                              READ_CREATE_EDGE_FWD(CH));
 
-    cJSON* irGraph = chgraph->next;
+    const cJSON* const irGraph = chgraph->next;
     CHECK_JSON_KEY(irGraph);
     irGraphReader.createObjs(irGraph, READ_CREATE_NODE_FWD(PAG),
                              READ_CREATE_EDGE_FWD(PAG));
@@ -1442,7 +1448,7 @@ const cJSON* SVFIRReader::createObjs(const cJSON* root)
         [this](const cJSON*& j, SVFVar* var) { virtFill(j, var); },
         [this](const cJSON*& j, SVFStmt* stmt) { virtFill(j, stmt); });
 
-    return chgraph->next;
+    return irGraph->next;
 
 #undef READ_CREATE_EDGE_FWD
 #undef READ_CREATE_NODE_FWD
@@ -1595,22 +1601,27 @@ void SVFIRReader::readJson(SymbolTableInfo*& symTabInfo)
 {
     const cJSON* obj = symTableReader.getFieldJson();
 #define F(field) JSON_READ_FIELD_FWD(obj, symTabInfo, field)
+    // `allMemObj` was consumed during create & fill phase.
     F(valSymMap);
     F(objSymMap);
     F(returnSymMap);
     F(varargSymMap);
-    symTableReader.memObjMap.saveToIDToObjMap(symTabInfo->objMap);
+    symTableReader.memObjMap.saveToIDToObjMap(symTabInfo->objMap); // objMap
     F(modelConstants);
     F(totalSymNum);
+    F(maxStruct);
+    F(maxStSize);
 #undef F
-    ABORT_IFNOT(obj == nullptr, "Not all fields read in SymbolTableInfo");
+    ABORT_IFNOT(!obj, "Extra field " << JSON_KEY(obj) << " in SymbolTableInfo");
 }
 
 void SVFIRReader::readJson(IRGraph*& graph)
 {
-    assert(graph->symInfo == nullptr && "SymInfo already read?");
-    assert(SymbolTableInfo::symInfo && "static SymbolTableInfo is null?");
-    graph->symInfo = SymbolTableInfo::SymbolInfo();
+    assert(SymbolTableInfo::symInfo && "SymbolTableInfo should be nonempty");
+    assert(graph->symInfo == SymbolTableInfo::SymbolInfo() && "symInfo differ");
+
+    auto& valToEdgeMap = graph->valueToEdgeMap;
+    valToEdgeMap.clear();
 
     irGraphReader.saveToGenericGraph(graph);
     const cJSON* obj = irGraphReader.getFieldJson();
@@ -1623,6 +1634,10 @@ void SVFIRReader::readJson(IRGraph*& graph)
     F(totalPTAPAGEdge);
     F(valueToEdgeMap);
 #undef F
+
+    auto nullit = valToEdgeMap.find(nullptr);
+    ABORT_IFNOT(nullit != valToEdgeMap.end(), "valueToEdgeMap should has key NULL");
+    ABORT_IFNOT(nullit->second.empty(), "valueToEdgeMap[NULL] should be empty");
 }
 
 void SVFIRReader::readJson(ICFG*& icfg)
@@ -1630,6 +1645,7 @@ void SVFIRReader::readJson(ICFG*& icfg)
     icfgReader.saveToGenericGraph(icfg);
     const cJSON* obj = icfgReader.getFieldJson();
 #define F(field) JSON_READ_FIELD_FWD(obj, icfg, field)
+    F(totalICFGNode);
     F(FunToFunEntryNodeMap);
     F(FunToFunExitNodeMap);
     F(CSToCallNodeMap);
@@ -1675,25 +1691,25 @@ void SVFIRReader::readJson(SVFModule*& module)
 
 void SVFIRReader::readJson(const cJSON* obj, SVFType*& type)
 {
-    assert(type == nullptr && "SVFType already read?");
+    assert(!type && "SVFType already read?");
     type = svfModuleReader.getSVFTypePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, StInfo*& stInfo)
 {
-    assert(stInfo == nullptr && "StInfo already read?");
+    assert(!stInfo && "StInfo already read?");
     stInfo = svfModuleReader.getStInfoPtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, SVFValue*& value)
 {
-    assert(value == nullptr && "SVFValue already read?");
+    assert(!value && "SVFValue already read?");
     value = svfModuleReader.getSVFValuePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, SVFVar*& var)
 {
-    assert(var == nullptr && "SVFVar already read?");
+    assert(!var && "SVFVar already read?");
     if (jsonIsNullId(obj))
         var = nullptr;
     else
@@ -1702,64 +1718,60 @@ void SVFIRReader::readJson(const cJSON* obj, SVFVar*& var)
 
 void SVFIRReader::readJson(const cJSON* obj, SVFStmt*& stmt)
 {
-    assert(stmt == nullptr && "SVFStmt already read?");
+    assert(!stmt && "SVFStmt already read?");
     stmt = irGraphReader.getEdgePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, ICFGNode*& node)
 {
-    assert(node == nullptr && "ICFGNode already read?");
+    assert(!node && "ICFGNode already read?");
     NodeID id = jsonGetNumber(obj);
     node = icfgReader.getNodePtr(id);
 }
 
 void SVFIRReader::readJson(const cJSON* obj, ICFGEdge*& edge)
 {
-    assert(edge == nullptr && "ICFGEdge already read?");
+    assert(!edge && "ICFGEdge already read?");
     edge = icfgReader.getEdgePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, CHNode*& node)
 {
-    assert(node == nullptr && "CHNode already read?");
+    assert(!node && "CHNode already read?");
     node = chGraphReader.getNodePtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, CHEdge*& edge)
 {
-    assert(edge == nullptr && "CHEdge already read?");
+    assert(!edge && "CHEdge already read?");
     edge = chGraphReader.getEdgePtr(jsonGetNumber(obj));
 }
 
-//void SVFIRReader::readJson(const cJSON* obj, CallSite& cs)
-//{
-//    // TODO
-//}
-
 void SVFIRReader::readJson(const cJSON* obj, LocationSet& ls)
 {
-#define F(field) JSON_READ_FIELD_FWD(obj, &ls, field)
-    F(fldIdx);
-    F(offsetVarAndGepTypePairs);
-#undef F
+    ABORT_IFNOT(jsonIsObject(obj), "Expected obj for LocationSet");
+    obj = obj->child;
+    JSON_READ_FIELD_FWD(obj, &ls, fldIdx);
+    JSON_READ_FIELD_FWD(obj, &ls, offsetVarAndGepTypePairs);
+    ABORT_IFNOT(!obj, "Extra field " << JSON_KEY(obj) << " in LocationSet");
 }
 
 void SVFIRReader::readJson(const cJSON* obj, SVFLoop*& loop)
 {
-    assert(loop == nullptr && "SVFLoop already read?");
+    assert(!loop && "SVFLoop already read?");
     unsigned id = jsonGetNumber(obj);
     loop = icfgReader.getSVFLoopPtr(id);
 }
 
 void SVFIRReader::readJson(const cJSON* obj, MemObj*& memObj)
 {
-    assert(memObj == nullptr && "MemObj already read?");
+    assert(!memObj && "MemObj already read?");
     memObj = symTableReader.getMemObjPtr(jsonGetNumber(obj));
 }
 
 void SVFIRReader::readJson(const cJSON* obj, ObjTypeInfo*& objTypeInfo)
 {
-    assert(objTypeInfo == nullptr && "ObjTypeInfo already read?");
+    assert(!objTypeInfo && "ObjTypeInfo already read?");
     ABORT_IFNOT(jsonIsObject(obj), "Expected object for objTypeInfo");
     cJSON* field = obj->child;
 
@@ -1768,8 +1780,7 @@ void SVFIRReader::readJson(const cJSON* obj, ObjTypeInfo*& objTypeInfo)
     JSON_DEF_READ_FWD(field, u32_t, maxOffsetLimit);
     JSON_DEF_READ_FWD(field, u32_t, elemNum);
 
-    ABORT_IFNOT(field == nullptr,
-                "Unconsumed fields in objTypeInfo: " << field->string);
+    ABORT_IFNOT(!field, "Extra field in objTypeInfo: " << JSON_KEY(field));
     objTypeInfo = new ObjTypeInfo(type, maxOffsetLimit);
     objTypeInfo->flags = flags;
     objTypeInfo->elemNum = elemNum;
@@ -1777,7 +1788,7 @@ void SVFIRReader::readJson(const cJSON* obj, ObjTypeInfo*& objTypeInfo)
 
 void SVFIRReader::readJson(const cJSON* obj, SVFLoopAndDomInfo*& ldInfo)
 {
-    assert(ldInfo == nullptr && "SVFLoopAndDomInfo already read?");
+    assert(!ldInfo && "SVFLoopAndDomInfo already read?");
     ABORT_IFNOT(jsonIsObject(obj), "Expected object for SVFLoopAndDomInfo");
     cJSON* field = obj->child;
 
@@ -1789,8 +1800,8 @@ void SVFIRReader::readJson(const cJSON* obj, SVFLoopAndDomInfo*& ldInfo)
     JSON_READ_FIELD_FWD(field, ldInfo, dfBBsMap);
     JSON_READ_FIELD_FWD(field, ldInfo, bb2LoopMap);
 
-    ABORT_IFNOT(field == nullptr,
-                "Unconsumed fields in SVFLoopAndDomInfo: " << field->string);
+    ABORT_IFNOT(!field,
+                "Extra field in SVFLoopAndDomInfo: " << JSON_KEY(field));
 }
 
 void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFVar* var)
@@ -1912,7 +1923,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFStmt* stmt)
 {
     fill(fieldJson, static_cast<GenericPAGEdgeTy*>(stmt));
     JSON_READ_FIELD_FWD(fieldJson, stmt, value);
-    JSON_READ_FIELD_FWD(fieldJson, stmt, basicBlock);
     JSON_READ_FIELD_FWD(fieldJson, stmt, basicBlock);
     JSON_READ_FIELD_FWD(fieldJson, stmt, icfgNode);
     JSON_READ_FIELD_FWD(fieldJson, stmt, edgeId);
@@ -2370,7 +2380,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFType* type)
     // kind has already been read
     JSON_READ_FIELD_FWD(fieldJson, type, getPointerToTy);
     JSON_READ_FIELD_FWD(fieldJson, type, typeinfo);
-    JSON_READ_FIELD_FWD(fieldJson, type, isSingleValTy);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFPointerType* type)
