@@ -48,6 +48,7 @@ class SymbolTableInfo
 {
     friend class SymbolTableBuilder;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
 
@@ -288,6 +289,19 @@ public:
 
     //@}
 
+    /// Constant reader that won't change the state of the symbol table
+    //@{
+    inline const SVFTypeSet& getSVFTypes() const
+    {
+        return svfTypes;
+    }
+
+    inline const Set<const StInfo*>& getStInfos() const
+    {
+        return stInfos;
+    }
+    //@}
+
     /// Get struct info
     //@{
     ///Get a reference to StructInfo.
@@ -354,7 +368,7 @@ protected:
     SVFTypeSet svfTypes;
 
     /// @brief (owned) All StInfo
-    Set<StInfo*> stInfos;
+    Set<const StInfo*> stInfos;
 };
 
 
@@ -364,6 +378,7 @@ protected:
 class MemObj
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     /// Type information of this object
@@ -456,6 +471,7 @@ public:
 class ObjTypeInfo
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class SymbolTableBuilder;
 
 public:

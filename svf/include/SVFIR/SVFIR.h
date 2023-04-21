@@ -47,6 +47,7 @@ class SVFIR : public IRGraph
     friend class PAGBuilderFromFile;
     friend class TypeBasedHeapCloning;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef Set<const CallICFGNode*> CallSiteSet;

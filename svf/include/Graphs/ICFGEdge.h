@@ -44,6 +44,7 @@ typedef GenericEdge<ICFGNode> GenericICFGEdgeTy;
 class ICFGEdge : public GenericICFGEdgeTy
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     /// ten types of ICFG edge
@@ -112,6 +113,7 @@ public:
 class IntraCFGEdge : public ICFGEdge
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     /// Constructor
@@ -174,6 +176,7 @@ private:
 class CallCFGEdge : public ICFGEdge
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     const SVFInstruction* cs;
@@ -224,6 +227,7 @@ public:
 class RetCFGEdge : public ICFGEdge
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     const SVFInstruction* cs;
