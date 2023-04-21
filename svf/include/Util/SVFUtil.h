@@ -655,7 +655,10 @@ move(T &&t) noexcept
 }
 
 /// void_t is not avaiable until C++17. We define it here for C++11/14.
-template <typename... Ts> struct make_void { typedef void type; };
+template <typename... Ts> struct make_void
+{
+    typedef void type;
+};
 template <typename... Ts> using void_t = typename make_void<Ts...>::type;
 
 /// @brief Type trait that checks if a type is iterable
@@ -665,7 +668,7 @@ template <typename T, typename = void> struct is_iterable : std::false_type {};
 template <typename T>
 struct is_iterable<T, void_t<decltype(std::begin(std::declval<T&>()) !=
                                       std::end(std::declval<T&>()))>>
-    : std::true_type {};
+: std::true_type {};
 template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
 ///@}
 
