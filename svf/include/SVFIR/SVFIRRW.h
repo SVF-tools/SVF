@@ -609,7 +609,7 @@ private:
 
     template <typename T,
               typename = std::enable_if_t<SVFUtil::is_iterable_v<T>>>
-    cJSON* toJson(const T& container)
+                                          cJSON* toJson(const T& container)
     {
         cJSON* array = jsonCreateArray();
         for (const auto& item : container)
@@ -694,7 +694,7 @@ public:
             auto pair = std::pair<const cJSON*, T*>(objFieldJson, idObj.second);
             bool inserted = idMap.emplace(idObj.first, pair).second;
             ABORT_IFNOT(inserted, "ID " << idObj.first << " duplicated in "
-                                        << idObjArrayJson->string);
+                        << idObjArrayJson->string);
         }
     }
 
@@ -714,7 +714,7 @@ public:
             fillFunc(objFieldJson, obj);
 
             ABORT_IFNOT(!objFieldJson, "json should be consumed by filler, but "
-                                           << objFieldJson->string << " left");
+                        << objFieldJson->string << " left");
         }
     }
 
@@ -787,7 +787,7 @@ public:
             const cJSON*& objFieldJson = jsonArray[i];
             fillFunc(objFieldJson, ptrPool[i]);
             ABORT_IFNOT(!objFieldJson, "json should be consumed by filler, but "
-                                           << objFieldJson->string << " left");
+                        << objFieldJson->string << " left");
         }
         jsonArray.clear();
         jsonArray.shrink_to_fit();
@@ -1115,7 +1115,7 @@ private:
             return; // ptr is nullptr when read
         ptr = SVFUtil::dyn_cast<T>(basePtr);
         ABORT_IFNOT(ptr, "Cast: " << obj->string << " shoudn't have kind "
-                                  << KindBaseHelper<T>::getKind(ptr));
+                    << KindBaseHelper<T>::getKind(ptr));
     }
 
     /// Read a const pointer

@@ -796,9 +796,9 @@ bool jsonAddStringToObject(cJSON* obj, const char* name, const std::string& s)
 bool jsonIsBool(const cJSON* item)
 {
     return humanReadableOption()
-               ? cJSON_IsBool(item)
-               : cJSON_IsNumber(item) &&
-                     (item->valuedouble == 0 || item->valuedouble == 1);
+           ? cJSON_IsBool(item)
+           : cJSON_IsNumber(item) &&
+           (item->valuedouble == 0 || item->valuedouble == 1);
 }
 
 bool jsonIsBool(const cJSON* item, bool& flag)
@@ -1380,52 +1380,61 @@ const cJSON* SVFIRReader::createObjs(const cJSON* root)
     svfModuleReader.createObjs(
         svfModule,
         // SVFType Creator
-        [](const cJSON*& svfTypeFldJson) {
-            JSON_DEF_READ_FWD(svfTypeFldJson, SVFType::GNodeK, kind);
-            JSON_DEF_READ_FWD(svfTypeFldJson, bool, isSingleValTy);
-            return createSVFType(kind, isSingleValTy);
-        },
-        // SVFType Filler
-        [this](const cJSON*& svfVarFldJson, SVFType* type) {
-            virtFill(svfVarFldJson, type);
-        },
-        // SVFValue Creator
-        [this](const cJSON*& svfValueFldJson) {
-            JSON_DEF_READ_FWD(svfValueFldJson, SVFValue::GNodeK, kind);
-            JSON_DEF_READ_FWD(svfValueFldJson, const SVFType*, type, {});
-            JSON_DEF_READ_FWD(svfValueFldJson, std::string, name);
-            return createSVFValue(kind, type, name);
-        },
-        // SVFValue Filler
-        [this](const cJSON*& svfVarFldJson, SVFValue* value) {
-            virtFill(svfVarFldJson, value);
-        },
-        // StInfo Creator (no filler needed)
-        [this](const cJSON*& stInfoFldJson) {
-            JSON_DEF_READ_FWD(stInfoFldJson, u32_t, stride);
-            auto si = new StInfo(stride);
-            fill(stInfoFldJson, si);
-            ABORT_IFNOT(!stInfoFldJson, "StInfo has extra field");
-            return si;
-        });
+        [](const cJSON*& svfTypeFldJson)
+    {
+        JSON_DEF_READ_FWD(svfTypeFldJson, SVFType::GNodeK, kind);
+        JSON_DEF_READ_FWD(svfTypeFldJson, bool, isSingleValTy);
+        return createSVFType(kind, isSingleValTy);
+    },
+    // SVFType Filler
+    [this](const cJSON*& svfVarFldJson, SVFType* type)
+    {
+        virtFill(svfVarFldJson, type);
+    },
+    // SVFValue Creator
+    [this](const cJSON*& svfValueFldJson)
+    {
+        JSON_DEF_READ_FWD(svfValueFldJson, SVFValue::GNodeK, kind);
+        JSON_DEF_READ_FWD(svfValueFldJson, const SVFType*, type, {});
+        JSON_DEF_READ_FWD(svfValueFldJson, std::string, name);
+        return createSVFValue(kind, type, name);
+    },
+    // SVFValue Filler
+    [this](const cJSON*& svfVarFldJson, SVFValue* value)
+    {
+        virtFill(svfVarFldJson, value);
+    },
+    // StInfo Creator (no filler needed)
+    [this](const cJSON*& stInfoFldJson)
+    {
+        JSON_DEF_READ_FWD(stInfoFldJson, u32_t, stride);
+        auto si = new StInfo(stride);
+        fill(stInfoFldJson, si);
+        ABORT_IFNOT(!stInfoFldJson, "StInfo has extra field");
+        return si;
+    });
 
     const cJSON* const symInfo = svfModule->next;
     CHECK_JSON_KEY(symInfo);
     symTableReader.createObjs(
         symInfo,
         // MemObj Creator (no filler needed)
-        [this](const cJSON*& memObjFldJson) {
-            JSON_DEF_READ_FWD(memObjFldJson, SymID, symId);
-            JSON_DEF_READ_FWD(memObjFldJson, ObjTypeInfo*, typeInfo, {});
-            JSON_DEF_READ_FWD(memObjFldJson, const SVFValue*, refVal, {});
-            return std::make_pair(symId, new MemObj(symId, typeInfo, refVal));
-        });
+        [this](const cJSON*& memObjFldJson)
+    {
+        JSON_DEF_READ_FWD(memObjFldJson, SymID, symId);
+        JSON_DEF_READ_FWD(memObjFldJson, ObjTypeInfo*, typeInfo, {});
+        JSON_DEF_READ_FWD(memObjFldJson, const SVFValue*, refVal, {});
+        return std::make_pair(symId, new MemObj(symId, typeInfo, refVal));
+    });
 
     const cJSON* const icfg = symInfo->next;
     CHECK_JSON_KEY(icfg);
     icfgReader.createObjs(icfg, READ_CREATE_NODE_FWD(ICFG),
                           READ_CREATE_EDGE_FWD(ICFG),
-                          [](auto) { return new SVFLoop({}, 0); });
+                          [](auto)
+    {
+        return new SVFLoop({}, 0);
+    });
 
     const cJSON* const chgraph = icfg->next;
     CHECK_JSON_KEY(chgraph);
@@ -1438,15 +1447,36 @@ const cJSON* SVFIRReader::createObjs(const cJSON* root)
                              READ_CREATE_EDGE_FWD(PAG));
 
     icfgReader.fillObjs(
-        [this](const cJSON*& j, ICFGNode* node) { virtFill(j, node); },
-        [this](const cJSON*& j, ICFGEdge* edge) { virtFill(j, edge); },
-        [this](const cJSON*& j, SVFLoop* loop) { fill(j, loop); });
+        [this](const cJSON*& j, ICFGNode* node)
+    {
+        virtFill(j, node);
+    },
+    [this](const cJSON*& j, ICFGEdge* edge)
+    {
+        virtFill(j, edge);
+    },
+    [this](const cJSON*& j, SVFLoop* loop)
+    {
+        fill(j, loop);
+    });
     chGraphReader.fillObjs(
-        [this](const cJSON*& j, CHNode* node) { virtFill(j, node); },
-        [this](const cJSON*& j, CHEdge* edge) { virtFill(j, edge); });
+        [this](const cJSON*& j, CHNode* node)
+    {
+        virtFill(j, node);
+    },
+    [this](const cJSON*& j, CHEdge* edge)
+    {
+        virtFill(j, edge);
+    });
     irGraphReader.fillObjs(
-        [this](const cJSON*& j, SVFVar* var) { virtFill(j, var); },
-        [this](const cJSON*& j, SVFStmt* stmt) { virtFill(j, stmt); });
+        [this](const cJSON*& j, SVFVar* var)
+    {
+        virtFill(j, var);
+    },
+    [this](const cJSON*& j, SVFStmt* stmt)
+    {
+        virtFill(j, stmt);
+    });
 
     return irGraph->next;
 
@@ -1477,19 +1507,28 @@ void SVFIRReader::readJson(const cJSON* obj, float& val)
 void SVFIRReader::readJson(const cJSON* obj, unsigned long& val)
 {
     readBigNumber(obj, val,
-                  [](const char* s) { return std::strtoul(s, nullptr, 10); });
+                  [](const char* s)
+    {
+        return std::strtoul(s, nullptr, 10);
+    });
 }
 
 void SVFIRReader::readJson(const cJSON* obj, long long& val)
 {
     readBigNumber(obj, val,
-                  [](const char* s) { return std::strtoll(s, nullptr, 10); });
+                  [](const char* s)
+    {
+        return std::strtoll(s, nullptr, 10);
+    });
 }
 
 void SVFIRReader::readJson(const cJSON* obj, unsigned long long& val)
 {
     readBigNumber(obj, val,
-                  [](const char* s) { return std::strtoull(s, nullptr, 10); });
+                  [](const char* s)
+    {
+        return std::strtoull(s, nullptr, 10);
+    });
 }
 
 void SVFIRReader::readJson(const cJSON* obj, std::string& str)
