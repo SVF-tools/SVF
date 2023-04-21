@@ -53,7 +53,7 @@ std::string replaceExtension(const std::string& path)
 int main(int argc, char** argv)
 {
     auto moduleNameVec = OptionBase::parseOptions(
-        argc, argv, "llvm2svf", "[options] <input-bitcode...>");
+                             argc, argv, "llvm2svf", "[options] <input-bitcode...>");
 
     LLVMModuleSet* moduleSet = LLVMModuleSet::getLLVMModuleSet();
     if (Options::WriteAnder() == "ir_annotator")
