@@ -442,9 +442,12 @@ public:
     {
         std::string str;
         std::stringstream rawStr(str);
-        if (this->isBottom()) {
+        if (this->isBottom())
+        {
             rawStr << "⊥";
-        } else {
+        }
+        else
+        {
             rawStr << "[" << lb().to_string() << ", " << ub().to_string() << "]";
         }
         return rawStr.str();

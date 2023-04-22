@@ -204,17 +204,20 @@ public:
         auto localIt = _varToItvVal.find(varId);
         if(localIt != _varToItvVal.end())
             return localIt->second;
-        else {
+        else
+        {
             return globalES._varToItvVal[varId];
         }
     }
 
-    inline void cpyItvToLocal(u32_t varId) {
+    inline void cpyItvToLocal(u32_t varId)
+    {
         auto localIt = _varToItvVal.find(varId);
         // local already have varId
         if (localIt != _varToItvVal.end()) return;
         auto globIt = globalES._varToItvVal.find(varId);
-        if (globIt != globalES._varToItvVal.end()) {
+        if (globIt != globalES._varToItvVal.end())
+        {
             _varToItvVal[varId] = globIt->second;
         }
     }
@@ -389,9 +392,11 @@ public:
     }
 
     // lhs >= rhs
-    static bool geqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) {
+    static bool geqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs)
+    {
         if (rhs.empty()) return true;
-        for (const auto &item: rhs) {
+        for (const auto &item: rhs)
+        {
             auto it = lhs.find(item.first);
             if (it == lhs.end()) return false;
             // judge from expr id
@@ -417,7 +422,8 @@ public:
     }
 
 
-    bool operator>=(const IntervalExeState &rhs) const {
+    bool operator>=(const IntervalExeState &rhs) const
+    {
         return geqVarToValMap(_varToItvVal, rhs.getVarToVal()) && geqVarToValMap(_locToItvVal, rhs.getLocToVal());
     }
 
