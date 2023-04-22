@@ -394,7 +394,7 @@ void SVFIR2ItvExeState::translateBinary(const BinaryOPStmt *binary)
             assert(false && "undefined binary: ");
         }
         }
-        IntervalExeState::globalES[res] = resVal;
+        _es[res] = resVal;
     }
 }
 
@@ -455,7 +455,7 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
             assert(false && "undefined compare: ");
         }
         }
-        IntervalExeState::globalES[res] = resVal;
+        _es[res] = resVal;
     }
     else if (inVarToAddrsTable(op0) && inVarToAddrsTable(op1))
     {
@@ -582,7 +582,7 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
             assert(false && "undefined compare: ");
         }
         }
-        IntervalExeState::globalES[res] = resVal;
+        _es[res] = resVal;
     }
 }
 
@@ -598,9 +598,9 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
         {
             u32_t objId = getInternalID(addr);
             if (inLocToIValTable(objId))
-                IntervalExeState::globalES[lhs] = IntervalValue::bottom();
+                _es[lhs] = IntervalValue::bottom();
             else if (inLocToAddrsTable(objId))
-                IntervalExeState::globalES.getVAddrs(lhs).setBottom();
+                _es.getVAddrs(lhs).setBottom();
             break;
         }
         for (const auto &addr: addrs)
@@ -610,22 +610,22 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
             {
                 if (!inVarToIValTable(lhs))
                 {
-                    IntervalExeState::globalES[lhs] = _es.load(addr);
+                    _es[lhs] = _es.load(addr);
                 }
                 else
                 {
-                    IntervalExeState::globalES[lhs].join_with(_es.load(addr));
+                    _es[lhs].join_with(_es.load(addr));
                 }
             }
             else if (inLocToAddrsTable(objId))
             {
                 if (!inVarToAddrsTable(lhs))
                 {
-                    IntervalExeState::globalES.getVAddrs(lhs) = _es.loadVAddrs(addr);
+                    _es.getVAddrs(lhs) = _es.loadVAddrs(addr);
                 }
                 else
                 {
-                    IntervalExeState::globalES.getVAddrs(lhs).join_with(_es.loadVAddrs(addr));
+                    _es.getVAddrs(lhs).join_with(_es.loadVAddrs(addr));
                 }
             }
         }
@@ -667,18 +667,18 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
     u32_t rhs = copy->getRHSVarID();
     if (PAG::getPAG()->isBlkPtr(lhs))
     {
-        IntervalExeState::globalES[lhs] = IntervalValue::top();
+        _es[lhs] = IntervalValue::top();
     }
     else
     {
         if (inVarToIValTable(rhs))
         {
-            IntervalExeState::globalES[lhs] = _es[rhs];
+            _es[lhs] = _es[rhs];
         }
         else if (inVarToAddrsTable(rhs))
         {
             assert(!getVAddrs(rhs).empty());
-            IntervalExeState::globalES.getVAddrs(lhs) = getVAddrs(rhs);
+            _es.getVAddrs(lhs) = getVAddrs(rhs);
         }
     }
 }
@@ -710,7 +710,7 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
             gepAddrs.join_with(getGepObjAddress(rhs, i));
         }
         if(gepAddrs.empty()) return;
-        IntervalExeState::globalES.getVAddrs(lhs) = gepAddrs;
+        _es.getVAddrs(lhs) = gepAddrs;
         return;
     }
 }
@@ -725,11 +725,11 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
     {
         if (_es[cond].is_numeral())
         {
-            IntervalExeState::globalES[res] = _es[cond].is_zero() ? _es[fval] : _es[tval];
+            _es[res] = _es[cond].is_zero() ? _es[fval] : _es[tval];
         }
         else
         {
-            IntervalExeState::globalES[res] = _es[cond];
+            _es[res] = _es[cond];
         }
     }
     else if (inVarToAddrsTable(tval) && inVarToAddrsTable(fval) && inVarToIValTable(cond))
@@ -738,7 +738,7 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
         {
             assert(!getVAddrs(fval).empty());
             assert(!getVAddrs(tval).empty());
-            IntervalExeState::globalES.getVAddrs(res) = _es[cond].is_zero() ? getVAddrs(fval) : getVAddrs(tval);
+            _es.getVAddrs(res) = _es[cond].is_zero() ? getVAddrs(fval) : getVAddrs(tval);
         }
     }
 }
@@ -754,11 +754,11 @@ void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
             const IntervalValue &cur = _es[curId];
             if (!inVarToIValTable(res))
             {
-                IntervalExeState::globalES[res] = cur;
+                _es[res] = cur;
             }
             else
             {
-                IntervalExeState::globalES[res].join_with(cur);
+                _es[res].join_with(cur);
             }
         }
         else if (inVarToAddrsTable(curId))
@@ -767,11 +767,11 @@ void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
             const VAddrs &cur = getVAddrs(curId);
             if (!inVarToAddrsTable(res))
             {
-                IntervalExeState::globalES.getVAddrs(res) = cur;
+                _es.getVAddrs(res) = cur;
             }
             else
             {
-                IntervalExeState::globalES.getVAddrs(res).join_with(cur);
+                _es.getVAddrs(res).join_with(cur);
             }
         }
     }
@@ -784,12 +784,12 @@ void SVFIR2ItvExeState::translateCall(const CallPE *callPE)
     NodeID rhs = callPE->getRHSVarID();
     if (inVarToIValTable(rhs))
     {
-        IntervalExeState::globalES[lhs] = _es[rhs];
+        _es[lhs] = _es[rhs];
     }
     else if (inVarToAddrsTable(rhs))
     {
         assert(!getVAddrs(rhs).empty());
-        IntervalExeState::globalES.getVAddrs(lhs) = getVAddrs(rhs);
+        _es.getVAddrs(lhs) = getVAddrs(rhs);
     }
 }
 
@@ -799,11 +799,11 @@ void SVFIR2ItvExeState::translateRet(const RetPE *retPE)
     NodeID rhs = retPE->getRHSVarID();
     if (inVarToIValTable(rhs))
     {
-        IntervalExeState::globalES[lhs] = _es[rhs];
+        _es[lhs] = _es[rhs];
     }
     else if (inVarToAddrsTable(rhs))
     {
         assert(!getVAddrs(rhs).empty());
-        IntervalExeState::globalES.getVAddrs(lhs) = getVAddrs(rhs);
+        _es.getVAddrs(lhs) = getVAddrs(rhs);
     }
 }

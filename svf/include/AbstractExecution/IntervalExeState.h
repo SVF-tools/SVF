@@ -140,11 +140,11 @@ public:
 
     VAddrs &getVAddrs(u32_t id) override
     {
-        auto it = globalES._varToVAddrs.find(id);
-        if (it != globalES._varToVAddrs.end())
+        auto it = _varToVAddrs.find(id);
+        if (it != _varToVAddrs.end())
             return it->second;
         else
-            return _varToVAddrs[id];
+            return globalES._varToVAddrs[id];
     }
 
     inline bool inVarToIValTable(u32_t id) const
@@ -205,15 +205,7 @@ public:
         if(localIt != _varToItvVal.end())
             return localIt->second;
         else {
-            auto it = globalES._varToItvVal.find(varId);
-            if (it != globalES._varToItvVal.end())
-            {
-                return it->second;
-            }
-            else
-            {
-                return _varToItvVal[varId];
-            }
+            return globalES._varToItvVal[varId];
         }
     }
 
