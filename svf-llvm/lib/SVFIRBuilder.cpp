@@ -730,7 +730,7 @@ void SVFIRBuilder::visitCastInst(CastInst &inst)
     }
     else
     {
-        const Value*  opnd = inst.getOperand(0);
+        const Value* opnd = inst.getOperand(0);
         if (!SVFUtil::isa<PointerType>(opnd->getType()))
             opnd = stripAllCasts(opnd);
 

@@ -78,6 +78,7 @@ typedef GenericEdge<CHNode> GenericCHEdgeTy;
 class CHEdge: public GenericCHEdgeTy
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef enum
@@ -107,6 +108,7 @@ typedef GenericNode<CHNode, CHEdge> GenericCHNodeTy;
 class CHNode: public GenericCHNodeTy
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef enum
@@ -118,7 +120,7 @@ public:
 
     typedef std::vector<const SVFFunction*> FuncVector;
 
-    CHNode (const std::string name, NodeID i = 0, GNodeK k = 0):
+    CHNode (const std::string& name, NodeID i = 0, GNodeK k = 0):
         GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
     {
     }
@@ -213,6 +215,7 @@ typedef GenericGraph<CHNode, CHEdge> GenericCHGraphTy;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class CHGBuilder;
 
 public:

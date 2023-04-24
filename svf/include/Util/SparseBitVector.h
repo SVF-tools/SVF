@@ -217,6 +217,7 @@ inline unsigned countPopulation(T Value)
 template <unsigned ElementSize = 128> struct SparseBitVectorElement
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     using BitWord = unsigned long;
@@ -458,6 +459,7 @@ template <unsigned ElementSize = 128>
 class SparseBitVector
 {
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
     using ElementList = std::list<SparseBitVectorElement<ElementSize>>;
     using ElementListIter = typename ElementList::iterator;

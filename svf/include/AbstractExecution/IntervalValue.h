@@ -438,9 +438,19 @@ public:
         }
     }
 
-    std::string toString() const
+    const std::string toString() const
     {
-        return "[" + lb().to_string() + ", " + ub().to_string() + "]";
+        std::string str;
+        std::stringstream rawStr(str);
+        if (this->isBottom())
+        {
+            rawStr << "⊥";
+        }
+        else
+        {
+            rawStr << "[" << lb().to_string() << ", " << ub().to_string() << "]";
+        }
+        return rawStr.str();
     }
 
 }; // end class IntervalValue

@@ -153,7 +153,7 @@ void SymbolTableInfo::destroy()
         delete type;
     svfTypes.clear();
 
-    for (StInfo* st : stInfos)
+    for (const StInfo* st : stInfos)
         delete st;
     stInfos.clear();
 

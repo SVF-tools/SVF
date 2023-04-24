@@ -161,8 +161,8 @@ private:
     SVFType* indexToType(TypeIndex i);
     SVFValue* indexToValue(ValueIndex i);
 
-    void fillSvfTypeAt(size_t i);
-    void fillSvfValueAt(size_t i);
+    void fillSVFTypeAt(size_t i);
+    void fillSVFValueAt(size_t i);
 
     StInfo* readStInfo(cJSON* iter);
     cJSON* readJson(cJSON* iter, SVFType* type);
