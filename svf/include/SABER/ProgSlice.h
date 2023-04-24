@@ -201,6 +201,7 @@ public:
     }
     /// Evaluate final condition
     std::string evalFinalCond() const;
+    Set<std::string> evalFinalCondSet() const;
     //@}
 
 protected:

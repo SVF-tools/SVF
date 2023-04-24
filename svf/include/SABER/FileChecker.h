@@ -73,8 +73,6 @@ public:
     }
     /// Report file/close bugs
     void reportBug(ProgSlice* slice);
-    void reportNeverClose(const SVFGNode* src);
-    void reportPartialClose(const SVFGNode* src);
 };
 
 } // End namespace SVF

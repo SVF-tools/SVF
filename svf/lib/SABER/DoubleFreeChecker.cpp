@@ -41,9 +41,7 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
     {
         const SVFGNode* src = slice->getSource();
         const CallICFGNode* cs = getSrcCSID(src);
-        SVFUtil::errs() << bugMsg2("\t Double Free :") <<  " memory allocation at : ("
-                        << cs->getCallSite()->getSourceLoc() << ")\n";
-        SVFUtil::errs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
+        recoder.addBug<LeakageBug>(LeakageBug(GenericBug::DOUBLEFREE, cs->getCallSite(), false, slice->evalFinalCondSet()), false);
     }
     if(Options::ValidateTests())
         testsValidation(slice);

@@ -42,6 +42,7 @@
 #include "Graphs/SVFGOPT.h"
 #include "SABER/ProgSlice.h"
 #include "SABER/SaberSVFGBuilder.h"
+#include "Util/SVFBugRecoder.h"
 
 namespace SVF
 {
@@ -77,6 +78,7 @@ protected:
     SaberSVFGBuilder memSSA;
     SVFG* svfg;
     PTACallGraph* ptaCallGraph;
+    SVFBugRecoder recoder; /// Bug Recoder
 
 public:
 

@@ -146,33 +146,18 @@ void LeakChecker::initSnks()
     }
 }
 
-
-void LeakChecker::reportNeverFree(const SVFGNode* src)
-{
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
-                    << cs->getCallSite()->getSourceLoc() << ")\n";
-}
-
-void LeakChecker::reportPartialLeak(const SVFGNode* src)
-{
-
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
-                    << cs->getCallSite()->getSourceLoc() << ")\n";
-}
-
 void LeakChecker::reportBug(ProgSlice* slice)
 {
 
     if(isAllPathReachable() == false && isSomePathReachable() == false)
     {
-        reportNeverFree(slice->getSource());
+        // full leakage
+        recoder.addBug<LeakageBug>(LeakageBug(GenericBug::MEMLEAK, getSrcCSID(slice->getSource())->getCallSite(), true), false);
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
-        reportPartialLeak(slice->getSource());
-        SVFUtil::errs() << "\t\t conditional free path: \n" << slice->evalFinalCond() << "\n";
+        // partial leakage
+        recoder.addBug<LeakageBug>(LeakageBug(GenericBug::MEMLEAK, getSrcCSID(slice->getSource())->getCallSite(), false, slice->evalFinalCondSet()), false);
     }
 
     if(Options::ValidateTests())

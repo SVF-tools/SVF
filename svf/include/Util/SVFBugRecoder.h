@@ -34,6 +34,8 @@
 #include "Graphs/ICFGNode.h"
 #include <string>
 #include <map>
+#include "Util/cJSON.h"
+#include <set>
 
 namespace SVF{
 
@@ -46,8 +48,10 @@ class GenericEvent{
 public:
     enum EventType{Branch, Caller, CallSite, Loop};
     static std::map<EventType, std::string> eventType2Str;
-private:
+
+protected:
     EventType eventType;
+
 public:
     inline GenericEvent(EventType eventType): eventType(eventType){ };
     virtual ~GenericEvent() = default;
@@ -60,9 +64,10 @@ public:
 
 class BranchEvent: public GenericEvent{
     //branch statement and branch condition true or false
-private:
+protected:
     const BranchStmt *branchStmt;
     std::string description;
+
 public:
     inline BranchEvent(const BranchStmt *branchStmt): GenericEvent(GenericEvent::Branch), branchStmt(branchStmt){ }
 
@@ -73,15 +78,11 @@ public:
     std::string getFuncName();
     std::string getEventLoc();
 };
-//
-//class CallerEvent: public GenericEvent{
-//    //function name
-//};
 
 class CallSiteEvent: public GenericEvent{
-    //call ICFGNode
-private:
+protected:
     const CallICFGNode *callSite;
+
 public:
     inline CallSiteEvent(const CallICFGNode *callSite): GenericEvent(GenericEvent::CallSite), callSite(callSite){ }
     std::string getEventDescription();
@@ -89,18 +90,19 @@ public:
     std::string getEventLoc();
 };
 
-//class LoopEvent: public GenericEvent{
-//    //loop num
-//    //loop header position
-//};
-
 class GenericBug{
 public:
-    enum BugType{BOA};
+    typedef std::vector<GenericEvent *> EventStack;
+
+public:
+    enum BugType{BOA,MEMLEAK,DOUBLEFREE,FILENOTCLOSE};
     static std::map<BugType, std::string> bugType2Str;
-private:
+
+protected:
     BugType bugType;
     const SVFInstruction * bugInst;
+    EventStack *bugEventStack = nullptr;
+
 public:
     inline GenericBug(BugType bugType, const SVFInstruction * bugInst): bugType(bugType), bugInst(bugInst){ };
     virtual ~GenericBug() = default;
@@ -108,21 +110,44 @@ public:
     inline BugType getBugType(){ return bugType; }
     std::string getLoc();
     std::string getFuncName();
+    inline void setEventStack(EventStack *eventStack) { bugEventStack = eventStack; }
+    /// return nullptr if the bug is not path sensitive
+    inline EventStack *getEventStack(){ return bugEventStack; }
 
-    virtual std::string getBugDescription() = 0;
+    virtual cJSON *getBugDescription() = 0;
+    virtual void printBugToTerminal() = 0;
 };
 
 class BufferOverflowBug: public GenericBug{
-private:
+protected:
     long long allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
+    bool isFull;  // if the overflow is full overflow
+
 public:
-    inline BufferOverflowBug(const SVFInstruction * bugInst, long long allocLowerBound,
+    inline BufferOverflowBug(const SVFInstruction * bugInst, bool isFull, long long allocLowerBound,
                              long long allocUpperBound, long long accessLowerBound,
                              long long accessUpperBound):
           GenericBug(GenericBug::BOA, bugInst), allocLowerBound(allocLowerBound),
           allocUpperBound(allocUpperBound), accessLowerBound(accessLowerBound),
-          accessUpperBound(accessUpperBound){ }
-    std::string getBugDescription();
+          accessUpperBound(accessUpperBound), isFull(isFull){ }
+    cJSON *getBugDescription();
+    void printBugToTerminal();
+};
+
+class LeakageBug: public GenericBug{
+protected:
+    bool isFull;  // if the leakage is full leakage
+    Set<std::string> conditionPaths;
+
+public:
+    LeakageBug(BugType bugType, const SVFInstruction *bugInst, bool isFull):
+          GenericBug(bugType, bugInst), isFull(isFull){  };
+    LeakageBug(BugType bugType, const SVFInstruction *bugInst, bool isFull,
+               Set<std::string> conditionPaths):
+          GenericBug(bugType, bugInst), isFull(isFull), conditionPaths(conditionPaths){ }
+
+    cJSON *getBugDescription();
+    void printBugToTerminal();
 };
 
 class SVFBugRecoder{
@@ -130,49 +155,45 @@ public:
     SVFBugRecoder() = default;
     ~SVFBugRecoder();
     typedef std::vector<GenericEvent *> EventStack;
+    typedef std::vector<GenericEvent *> EventSet;
     typedef std::vector<GenericBug *> BugVector;
     typedef std::vector<EventStack *> EventStackVector;
-private:
+
+protected:
     EventStack eventStack;  //maintain current execution events
+    EventSet eventSet;      //for destruction
     BugVector bugVector;    //maintain bugs
     EventStackVector eventStackVector;  //maintain each bug's events
+
 public:
-    //push callsite
+    // push callsite to event stack
     void pushCallSite(const CallICFGNode *callSite);
 
-    //pop callsite
+    // pop callsite from event stack
     void popCallSite();
 
-//    //push caller
-//    void pushCaller();
-//
-//    //pop caller
-//    void popCaller();
-//
-    //push branch
-    void pushBranch();
-
-    //pop branch
-    void popBranch();
-//
-//    //push loop
-//    void pushLoop();
-//
-//    //pop loop
-//    void popLoop();
-
-    // add a bug
+    /*
+     * function: pass bug type (i.e., GenericBug::BOA) and bug object as parameter,
+     *      it will add the bug into bugQueue.
+     * usage: addBug<GenericBug::BOA>(BufferOverflowBug(bugInst, 0, 10, 1, 11))
+     */
     template <typename T>
-    void addBug(T bug)
+    void addBug(T bug, bool recordEvents)
     {
         T *newBug = new T(bug);
         bugVector.push_back(newBug);
 
-        EventStack *newEventStack = new EventStack(eventStack);
-        eventStackVector.push_back(newEventStack);
+        if(recordEvents)
+        {
+            EventStack* newEventStack = new EventStack(eventStack);
+            eventStackVector.push_back(newEventStack);
+            newBug->setEventStack(newEventStack);
+        }
+        // when add a bug, also print it to terminal
+        newBug->printBugToTerminal();
     }
 
-    //dump to string
+    //dump all bugs to string, in Json format
     std::string dumpBug();
 };
 }
