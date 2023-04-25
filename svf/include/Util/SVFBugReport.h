@@ -52,7 +52,7 @@ protected:
     EventType eventType;
 
 public:
-    inline GenericEvent(EventType eventType): eventType(eventType){ };
+    GenericEvent(EventType eventType): eventType(eventType){ };
     virtual ~GenericEvent() = default;
 
     inline EventType getEventType() const { return eventType; }
@@ -68,7 +68,7 @@ protected:
     bool branchCondition;
 
 public:
-    inline BranchEvent(const BranchStmt *branchStmt, bool branchCondition):
+    BranchEvent(const BranchStmt *branchStmt, bool branchCondition):
           GenericEvent(GenericEvent::Branch), branchStmt(branchStmt), branchCondition(branchCondition){ }
 
     const std::string getEventDescription() const;
@@ -87,7 +87,7 @@ protected:
     const CallICFGNode *callSite;
 
 public:
-    inline CallSiteEvent(const CallICFGNode *callSite): GenericEvent(GenericEvent::CallSite), callSite(callSite){ }
+    CallSiteEvent(const CallICFGNode *callSite): GenericEvent(GenericEvent::CallSite), callSite(callSite){ }
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
     const std::string getEventLoc() const;
@@ -104,7 +104,7 @@ protected:
     const SVFInstruction *sourceSVFInst;
 
 public:
-    inline SourceInstructionEvent(const SVFInstruction *sourceSVFInst):
+    SourceInstructionEvent(const SVFInstruction *sourceSVFInst):
           GenericEvent(GenericEvent::SourceInst), sourceSVFInst(sourceSVFInst) { }
 
     const std::string getEventDescription() const;
@@ -131,9 +131,12 @@ protected:
 
 public:
     /// note: should be initialized with a bugEventStack
-    inline GenericBug(BugType bugType, EventStack bugEventStack): bugType(bugType), bugEventStack(bugEventStack){ };
-
-    virtual ~GenericBug() = default;
+    GenericBug(BugType bugType, EventStack bugEventStack):
+          bugType(bugType), bugEventStack(bugEventStack)
+    {
+        assert(bugEventStack.size() != 0 && "bugEventStack should NOT be empty!");
+    }
+    virtual ~GenericBug();
 
     /// returns bug type
     inline BugType getBugType() const { return bugType; }
@@ -150,12 +153,12 @@ public:
 
 class BufferOverflowBug: public GenericBug{
 protected:
-    long long allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
+    s64_t allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
 
 public:
-    inline BufferOverflowBug(GenericBug::BugType bugType, EventStack eventStack,
-                             long long allocLowerBound, long long allocUpperBound,
-                             long long accessLowerBound, long long accessUpperBound):
+    BufferOverflowBug(GenericBug::BugType bugType, const EventStack &eventStack,
+                      s64_t allocLowerBound, s64_t allocUpperBound,
+                      s64_t accessLowerBound, s64_t accessUpperBound):
           GenericBug(bugType, eventStack), allocLowerBound(allocLowerBound),
           allocUpperBound(allocUpperBound), accessLowerBound(accessLowerBound),
           accessUpperBound(accessUpperBound){ }
@@ -172,9 +175,9 @@ public:
 
 class FullBufferOverflowBug: public BufferOverflowBug{
 public:
-    inline FullBufferOverflowBug(EventStack eventStack,
-                             long long allocLowerBound, long long allocUpperBound,
-                             long long accessLowerBound, long long accessUpperBound):
+    FullBufferOverflowBug(const EventStack &eventStack,
+                             s64_t allocLowerBound, s64_t allocUpperBound,
+                             s64_t accessLowerBound, s64_t accessUpperBound):
           BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, eventStack, allocLowerBound,
                             allocUpperBound, accessLowerBound, accessUpperBound){ }
 
@@ -186,13 +189,10 @@ public:
 };
 
 class PartialBufferOverflowBug: public BufferOverflowBug{
-protected:
-    long long allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
-
 public:
-    inline PartialBufferOverflowBug( EventStack eventStack,
-                                 long long allocLowerBound, long long allocUpperBound,
-                                 long long accessLowerBound, long long accessUpperBound):
+    PartialBufferOverflowBug( const EventStack &eventStack,
+                                 s64_t allocLowerBound, s64_t allocUpperBound,
+                                 s64_t accessLowerBound, s64_t accessUpperBound):
           BufferOverflowBug(GenericBug::PARTIALBUFOVERFLOW, eventStack, allocLowerBound,
                             allocUpperBound, accessLowerBound, accessUpperBound){ }
 
@@ -205,7 +205,7 @@ public:
 
 class NeverFreeBug : public GenericBug{
 public:
-    NeverFreeBug(EventStack bugEventStack):
+    NeverFreeBug(const EventStack &bugEventStack):
           GenericBug(GenericBug::NEVERFREE, bugEventStack){  };
 
     cJSON *getBugDescription();
@@ -221,8 +221,9 @@ public:
 class PartialLeakBug : public GenericBug{
 protected:
     Set<std::string> conditionalFreePath;
+
 public:
-    PartialLeakBug(EventStack bugEventStack, Set<std::string> conditionalFreePath):
+    PartialLeakBug(const EventStack &bugEventStack, Set<std::string> conditionalFreePath):
           GenericBug(GenericBug::PARTIALLEAK, bugEventStack), conditionalFreePath(conditionalFreePath){ }
 
     cJSON *getBugDescription();
@@ -240,7 +241,7 @@ protected:
     Set<std::string> doubleFreePath;
 
 public:
-    DoubleFreeBug(EventStack bugEventStack, Set<std::string> doubleFreePath):
+    DoubleFreeBug(const EventStack &bugEventStack, Set<std::string> doubleFreePath):
           GenericBug(GenericBug::PARTIALLEAK, bugEventStack), doubleFreePath(doubleFreePath){ }
 
     cJSON *getBugDescription();
@@ -255,7 +256,7 @@ public:
 
 class FileNeverCloseBug : public GenericBug{
 public:
-    FileNeverCloseBug(EventStack bugEventStack):
+    FileNeverCloseBug(const EventStack &bugEventStack):
           GenericBug(GenericBug::NEVERFREE, bugEventStack){  };
 
     cJSON *getBugDescription();
@@ -273,7 +274,7 @@ protected:
     Set<std::string> conditionalFileClosePath;
 
 public:
-    FilePartialCloseBug(EventStack bugEventStack, Set<std::string> conditionalFileClosePath):
+    FilePartialCloseBug(const EventStack &bugEventStack, Set<std::string> conditionalFileClosePath):
           GenericBug(GenericBug::PARTIALLEAK, bugEventStack), conditionalFileClosePath(conditionalFileClosePath){ }
 
     cJSON *getBugDescription();

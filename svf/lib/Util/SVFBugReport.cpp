@@ -26,9 +26,7 @@
 //
 
 #include "Util/SVFBugReport.h"
-#ifndef NDEBUG
 #include <cassert>
-#endif
 #include "Util/cJSON.h"
 #include "Util/SVFUtil.h"
 #include <sstream>
@@ -37,14 +35,25 @@
 using namespace std;
 using namespace SVF;
 
+GenericBug::~GenericBug()
+{
+    for(auto eventPtr:bugEventStack){
+        delete(eventPtr);
+    }
+}
+
 const std::string GenericBug::getLoc() const
 {
-    return bugEventStack.at(bugEventStack.size() -1)->getEventLoc();
+    GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
+    assert(SourceInstructionEvent::classof(sourceInstEvent) && "bugEventStack top should be a SourceInst event");
+    return sourceInstEvent->getEventLoc();
 }
 
 const std::string GenericBug::getFuncName() const
 {
-    return bugEventStack.at(bugEventStack.size() -1)->getFuncName();
+    GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
+    assert(SourceInstructionEvent::classof(sourceInstEvent) && "bugEventStack top should be a SourceInst event");
+    return sourceInstEvent->getFuncName();
 }
 
 cJSON *BufferOverflowBug::getBugDescription()
@@ -79,11 +88,10 @@ void BufferOverflowBug::printBugToTerminal()
     SVFUtil::errs() << "\t\t Info : \n" << bugInfo.str();
     SVFUtil::errs() << "\t\t Events : \n";
 
-    auto eventIt = bugEventStack.begin();
-    for(; eventIt != bugEventStack.end(); eventIt ++){
-        switch((*eventIt)->getEventType()){
+    for(auto eventPtr : bugEventStack){
+        switch(eventPtr->getEventType()){
         case GenericEvent::CallSite:{
-            SVFUtil::errs() << "\t\t  callsite at : ( " << (*eventIt)->getEventLoc() << " )\n";
+            SVFUtil::errs() << "\t\t  callsite at : ( " << eventPtr->getEventLoc() << " )\n";
             break;
         }
         default:{  // TODO: implement more events when needed
@@ -290,7 +298,7 @@ void SVFBugReport::dumpToFile(const std::string& filePath)
 
     jsonFile << "{";
 
-    int commaCounter = 1;  // count comma num
+    size_t commaCounter = bugSet.size() - 1;  // comma num needed
     for(auto bugPtr : bugSet){
         cJSON *singleBug = cJSON_CreateObject();
 
@@ -343,10 +351,10 @@ void SVFBugReport::dumpToFile(const std::string& filePath)
         /// dump single bug to json str and write to file
         char *singleBugStr = cJSON_Print(singleBug);
         jsonFile << singleBugStr;
-        if (commaCounter != bugSet.size()){
+        if (commaCounter != 0){
             jsonFile << ",\n";
         }
-        commaCounter ++;
+        commaCounter --;
 
         /// destroy the cJSON object
         cJSON_Delete(singleBug);
