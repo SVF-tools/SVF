@@ -47,7 +47,6 @@ namespace SVF{
 class GenericEvent{
 public:
     enum EventType{Branch, Caller, CallSite, Loop};
-    static std::map<EventType, std::string> eventType2Str;
 
 protected:
     EventType eventType;
@@ -95,8 +94,7 @@ public:
     typedef std::vector<GenericEvent *> EventStack;
 
 public:
-    enum BugType{BOA,MEMLEAK,DOUBLEFREE,FILENOTCLOSE};
-    static std::map<BugType, std::string> bugType2Str;
+    enum BugType{BOA, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
 
 protected:
     BugType bugType;
@@ -134,17 +132,54 @@ public:
     void printBugToTerminal();
 };
 
-class SaberBugReport : public GenericBug{
+class NeverFreeBug : public GenericBug{
+public:
+    NeverFreeBug(const SVFInstruction *bugInst):
+          GenericBug(GenericBug::NEVERFREE, bugInst){  };
+
+    cJSON *getBugDescription();
+    void printBugToTerminal();
+};
+
+class PartialLeakBug : public GenericBug{
 protected:
-    bool isFull;  // if the leakage is full leakage
-    Set<std::string> conditionPaths;
+    Set<std::string> conditionalFreePath;
+public:
+    PartialLeakBug(const SVFInstruction *bugInst, Set<std::string> conditionalFreePath):
+          GenericBug(GenericBug::PARTIALLEAK, bugInst), conditionalFreePath(conditionalFreePath){ }
+
+    cJSON *getBugDescription();
+    void printBugToTerminal();
+};
+
+class DoubleFreeBug : public GenericBug{
+protected:
+    Set<std::string> doubleFreePath;
 
 public:
-    SaberBugReport(BugType bugType, const SVFInstruction *bugInst, bool isFull):
-          GenericBug(bugType, bugInst), isFull(isFull){  };
-    SaberBugReport(BugType bugType, const SVFInstruction *bugInst, bool isFull,
-               Set<std::string> conditionPaths):
-          GenericBug(bugType, bugInst), isFull(isFull), conditionPaths(conditionPaths){ }
+    DoubleFreeBug(const SVFInstruction *bugInst, Set<std::string> doubleFreePath):
+          GenericBug(GenericBug::PARTIALLEAK, bugInst), doubleFreePath(doubleFreePath){ }
+
+    cJSON *getBugDescription();
+    void printBugToTerminal();
+};
+
+class FileNeverCloseBug : public GenericBug{
+public:
+    FileNeverCloseBug(const SVFInstruction *bugInst):
+          GenericBug(GenericBug::NEVERFREE, bugInst){  };
+
+    cJSON *getBugDescription();
+    void printBugToTerminal();
+};
+
+class PartialFileCloseBug : public GenericBug{
+protected:
+    Set<std::string> conditionalFileClosePath;
+
+public:
+    PartialFileCloseBug(const SVFInstruction *bugInst, Set<std::string> conditionalFileClosePath):
+          GenericBug(GenericBug::PARTIALLEAK, bugInst), conditionalFileClosePath(conditionalFileClosePath){ }
 
     cJSON *getBugDescription();
     void printBugToTerminal();
@@ -161,17 +196,17 @@ public:
     typedef std::vector<EventStack *> EventStackVector;
 
 protected:
-    EventStack eventStack;  //maintain current execution events
-    EventSet eventSet;      //for destruction
-    BugVector bugVector;    //maintain bugs
-    EventStackVector eventStackVector;  //maintain each bug's events
+    EventStack eventStack;  // maintain current execution events
+    EventSet eventSet;      // maintain all added events
+    BugVector bugVector;    // maintain bugs
+    EventStackVector eventStackVector;  // maintain each bug's events
 
 public:
     // push callsite to event stack
-    void pushCallSite(const CallICFGNode *callSite);
+    void pushToEventStack(const CallICFGNode *callSite);
 
     // pop callsite from event stack
-    void popCallSite();
+    void popFromEventStack();
 
     /*
      * function: pass bug type (i.e., GenericBug::BOA) and bug object as parameter,
@@ -195,7 +230,7 @@ public:
     }
 
     //dump all bugs to string, in Json format
-    std::string dumpBug();
+    std::string toString();
 };
 }
 

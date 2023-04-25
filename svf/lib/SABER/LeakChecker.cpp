@@ -152,14 +152,14 @@ void LeakChecker::reportBug(ProgSlice* slice)
     if(isAllPathReachable() == false && isSomePathReachable() == false)
     {
         // full leakage
-        recoder.addBug<SaberBugReport>(
-            SaberBugReport(GenericBug::MEMLEAK, getSrcCSID(slice->getSource())->getCallSite(), true), false);
+        report.addBug<NeverFreeBug>(
+            NeverFreeBug(getSrcCSID(slice->getSource())->getCallSite()), false);
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
         // partial leakage
-        recoder.addBug<SaberBugReport>(
-            SaberBugReport(GenericBug::MEMLEAK, getSrcCSID(slice->getSource())->getCallSite(), false, slice->evalFinalCondSet()), false);
+        report.addBug<PartialLeakBug>(
+            PartialLeakBug(getSrcCSID(slice->getSource())->getCallSite(), slice->evalFinalCondSet()), false);
     }
 
     if(Options::ValidateTests())

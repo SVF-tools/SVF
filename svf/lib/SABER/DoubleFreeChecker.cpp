@@ -41,8 +41,8 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
     {
         const SVFGNode* src = slice->getSource();
         const CallICFGNode* cs = getSrcCSID(src);
-        recoder.addBug<SaberBugReport>(
-            SaberBugReport(GenericBug::DOUBLEFREE, cs->getCallSite(), false, slice->evalFinalCondSet()), false);
+        report.addBug<DoubleFreeBug>(
+            DoubleFreeBug(cs->getCallSite(), slice->evalFinalCondSet()), false);
     }
     if(Options::ValidateTests())
         testsValidation(slice);

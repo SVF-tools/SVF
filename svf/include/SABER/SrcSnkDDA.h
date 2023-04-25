@@ -77,7 +77,7 @@ protected:
     SaberSVFGBuilder memSSA;
     SVFG* svfg;
     PTACallGraph* ptaCallGraph;
-    SVFBugReport recoder; /// Bug Recoder
+    SVFBugReport report; /// Bug Reporter
 
 public:
 
