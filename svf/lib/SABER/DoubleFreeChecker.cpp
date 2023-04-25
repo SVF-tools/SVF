@@ -39,10 +39,10 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
 
     if(slice->isSatisfiableForPairs() == false)
     {
-        const SVFGNode* src = slice->getSource();
-        const CallICFGNode* cs = getSrcCSID(src);
+        SourceInstructionEvent *sourceInstEvent = new SourceInstructionEvent(getSrcCSID(slice->getSource())->getCallSite());
+        GenericBug::EventStack eventStack = {sourceInstEvent};
         report.addBug<DoubleFreeBug>(
-            DoubleFreeBug(cs->getCallSite(), slice->evalFinalCondSet()));
+            DoubleFreeBug(eventStack, slice->evalFinalCondSet()));
     }
     if(Options::ValidateTests())
         testsValidation(slice);

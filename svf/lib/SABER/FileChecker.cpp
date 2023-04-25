@@ -39,12 +39,16 @@ void FileChecker::reportBug(ProgSlice* slice)
     if(isAllPathReachable() == false && isSomePathReachable() == false)
     {
         // full leakage
+        SourceInstructionEvent *sourceInstEvent = new SourceInstructionEvent(getSrcCSID(slice->getSource())->getCallSite());
+        GenericBug::EventStack eventStack = {sourceInstEvent};
         report.addBug<FileNeverCloseBug>(
-            FileNeverCloseBug(getSrcCSID(slice->getSource())->getCallSite()));
+            FileNeverCloseBug(eventStack));
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
+        SourceInstructionEvent *sourceInstEvent = new SourceInstructionEvent(getSrcCSID(slice->getSource())->getCallSite());
+        GenericBug::EventStack eventStack = {sourceInstEvent};
         report.addBug<FilePartialCloseBug>(
-            FilePartialCloseBug(getSrcCSID(slice->getSource())->getCallSite(), slice->evalFinalCondSet()));
+            FilePartialCloseBug(eventStack, slice->evalFinalCondSet()));
     }
 }

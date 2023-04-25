@@ -46,7 +46,7 @@ namespace SVF{
 
 class GenericEvent{
 public:
-    enum EventType{Branch, Caller, CallSite, Loop};
+    enum EventType{Branch, Caller, CallSite, Loop, SourceInst};
 
 protected:
     EventType eventType;
@@ -65,13 +65,11 @@ class BranchEvent: public GenericEvent{
     /// branch statement and branch condition true or false
 protected:
     const BranchStmt *branchStmt;
-    std::string description;
+    bool branchCondition;
 
 public:
-    inline BranchEvent(const BranchStmt *branchStmt): GenericEvent(GenericEvent::Branch), branchStmt(branchStmt){ }
-
-    inline BranchEvent(const BranchStmt *branchStmt, std::string description):
-          GenericEvent(GenericEvent::Branch), branchStmt(branchStmt), description(description){ }
+    inline BranchEvent(const BranchStmt *branchStmt, bool branchCondition):
+          GenericEvent(GenericEvent::Branch), branchStmt(branchStmt), branchCondition(branchCondition){ }
 
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
@@ -101,6 +99,25 @@ public:
     }
 };
 
+class SourceInstructionEvent: public GenericEvent{
+protected:
+    const SVFInstruction *sourceSVFInst;
+
+public:
+    inline SourceInstructionEvent(const SVFInstruction *sourceSVFInst):
+          GenericEvent(GenericEvent::SourceInst), sourceSVFInst(sourceSVFInst) { }
+
+    const std::string getEventDescription() const;
+    const std::string getFuncName() const;
+    const std::string getEventLoc() const;
+
+    /// ClassOf
+    static inline bool classof(const GenericEvent* event)
+    {
+        return event->getEventType() == GenericEvent::SourceInst;
+    }
+};
+
 class GenericBug{
 public:
     typedef std::vector<GenericEvent *> EventStack;
@@ -110,17 +127,19 @@ public:
 
 protected:
     BugType bugType;
-    const SVFInstruction * bugInst;
     EventStack bugEventStack;
 
 public:
-    inline GenericBug(BugType bugType, const SVFInstruction * bugInst, EventStack bugEventStack): bugType(bugType), bugInst(bugInst), bugEventStack(bugEventStack){ };
-    inline GenericBug(BugType bugType, const SVFInstruction * bugInst): bugType(bugType), bugInst(bugInst){ };
+    /// note: should be initialized with a bugEventStack
+    inline GenericBug(BugType bugType, EventStack bugEventStack): bugType(bugType), bugEventStack(bugEventStack){ };
 
     virtual ~GenericBug() = default;
 
+    /// returns bug type
     inline BugType getBugType() const { return bugType; }
+    /// returns bug location as json format string
     const std::string getLoc() const;
+    /// return bug source function name
     const std::string getFuncName() const;
 
     inline const EventStack& getEventStack() const { return bugEventStack; }
@@ -134,10 +153,10 @@ protected:
     long long allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
 
 public:
-    inline BufferOverflowBug(GenericBug::BugType bugType, const SVFInstruction * bugInst, EventStack eventStack,
+    inline BufferOverflowBug(GenericBug::BugType bugType, EventStack eventStack,
                              long long allocLowerBound, long long allocUpperBound,
                              long long accessLowerBound, long long accessUpperBound):
-          GenericBug(bugType, bugInst, eventStack), allocLowerBound(allocLowerBound),
+          GenericBug(bugType, eventStack), allocLowerBound(allocLowerBound),
           allocUpperBound(allocUpperBound), accessLowerBound(accessLowerBound),
           accessUpperBound(accessUpperBound){ }
 
@@ -153,10 +172,10 @@ public:
 
 class FullBufferOverflowBug: public BufferOverflowBug{
 public:
-    inline FullBufferOverflowBug(const SVFInstruction * bugInst, EventStack eventStack,
+    inline FullBufferOverflowBug(EventStack eventStack,
                              long long allocLowerBound, long long allocUpperBound,
                              long long accessLowerBound, long long accessUpperBound):
-          BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, bugInst, eventStack, allocLowerBound,
+          BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, eventStack, allocLowerBound,
                             allocUpperBound, accessLowerBound, accessUpperBound){ }
 
     /// ClassOf
@@ -171,10 +190,10 @@ protected:
     long long allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
 
 public:
-    inline PartialBufferOverflowBug(const SVFInstruction * bugInst, EventStack eventStack,
+    inline PartialBufferOverflowBug( EventStack eventStack,
                                  long long allocLowerBound, long long allocUpperBound,
                                  long long accessLowerBound, long long accessUpperBound):
-          BufferOverflowBug(GenericBug::PARTIALBUFOVERFLOW, bugInst, eventStack, allocLowerBound,
+          BufferOverflowBug(GenericBug::PARTIALBUFOVERFLOW, eventStack, allocLowerBound,
                             allocUpperBound, accessLowerBound, accessUpperBound){ }
 
     /// ClassOf
@@ -186,8 +205,8 @@ public:
 
 class NeverFreeBug : public GenericBug{
 public:
-    NeverFreeBug(const SVFInstruction *bugInst):
-          GenericBug(GenericBug::NEVERFREE, bugInst){  };
+    NeverFreeBug(EventStack bugEventStack):
+          GenericBug(GenericBug::NEVERFREE, bugEventStack){  };
 
     cJSON *getBugDescription();
     void printBugToTerminal();
@@ -203,8 +222,8 @@ class PartialLeakBug : public GenericBug{
 protected:
     Set<std::string> conditionalFreePath;
 public:
-    PartialLeakBug(const SVFInstruction *bugInst, Set<std::string> conditionalFreePath):
-          GenericBug(GenericBug::PARTIALLEAK, bugInst), conditionalFreePath(conditionalFreePath){ }
+    PartialLeakBug(EventStack bugEventStack, Set<std::string> conditionalFreePath):
+          GenericBug(GenericBug::PARTIALLEAK, bugEventStack), conditionalFreePath(conditionalFreePath){ }
 
     cJSON *getBugDescription();
     void printBugToTerminal();
@@ -221,8 +240,8 @@ protected:
     Set<std::string> doubleFreePath;
 
 public:
-    DoubleFreeBug(const SVFInstruction *bugInst, Set<std::string> doubleFreePath):
-          GenericBug(GenericBug::PARTIALLEAK, bugInst), doubleFreePath(doubleFreePath){ }
+    DoubleFreeBug(EventStack bugEventStack, Set<std::string> doubleFreePath):
+          GenericBug(GenericBug::PARTIALLEAK, bugEventStack), doubleFreePath(doubleFreePath){ }
 
     cJSON *getBugDescription();
     void printBugToTerminal();
@@ -236,8 +255,8 @@ public:
 
 class FileNeverCloseBug : public GenericBug{
 public:
-    FileNeverCloseBug(const SVFInstruction *bugInst):
-          GenericBug(GenericBug::NEVERFREE, bugInst){  };
+    FileNeverCloseBug(EventStack bugEventStack):
+          GenericBug(GenericBug::NEVERFREE, bugEventStack){  };
 
     cJSON *getBugDescription();
     void printBugToTerminal();
@@ -254,8 +273,8 @@ protected:
     Set<std::string> conditionalFileClosePath;
 
 public:
-    FilePartialCloseBug(const SVFInstruction *bugInst, Set<std::string> conditionalFileClosePath):
-          GenericBug(GenericBug::PARTIALLEAK, bugInst), conditionalFileClosePath(conditionalFileClosePath){ }
+    FilePartialCloseBug(EventStack bugEventStack, Set<std::string> conditionalFileClosePath):
+          GenericBug(GenericBug::PARTIALLEAK, bugEventStack), conditionalFileClosePath(conditionalFileClosePath){ }
 
     cJSON *getBugDescription();
     void printBugToTerminal();
@@ -272,10 +291,10 @@ class SVFBugReport
 public:
     SVFBugReport() = default;
     ~SVFBugReport();
-    typedef std::vector<GenericBug *> BugVector;
+    typedef SVF::Set<GenericBug *> BugSet;
 
 protected:
-    BugVector bugVector;    // maintain bugs
+    BugSet bugSet;    // maintain bugs
 
 public:
     /*
@@ -287,14 +306,17 @@ public:
     void addBug(T bug)
     {
         T *newBug = new T(bug);
-        bugVector.push_back(newBug);
+        bugSet.insert(newBug);
 
         // when add a bug, also print it to terminal
         newBug->printBugToTerminal();
     }
 
-    //dump all bugs to string, in Json format
-    std::string toString();
+    /*
+     * function: pass file path, open the file and dump bug report as JSON format
+     * usage: dumpToFile("/path/to/file")
+     */
+    void dumpToFile(const std::string& filePath);
 };
 }
 
