@@ -1,4 +1,4 @@
-//===- SVFBugRecoder.cpp -- Base class for statistics---------------------------------//
+//===- SVFBugReport.cpp -- Base class for statistics---------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -25,7 +25,7 @@
 // Created by JoelYang on 2023/4/19.
 //
 
-#include "Util/SVFBugRecoder.h"
+#include "Util/SVFBugReport.h"
 #ifndef NDEBUG
 #include <cassert>
 #endif
@@ -105,7 +105,7 @@ void BufferOverflowBug::printBugToTerminal()
     }
 }
 
-cJSON *LeakageBug::getBugDescription()
+cJSON * SaberBugReport::getBugDescription()
 {
     cJSON *bugDescription = cJSON_CreateObject();
     cJSON *isfullBug = cJSON_CreateBool((int)isFull);
@@ -118,13 +118,13 @@ cJSON *LeakageBug::getBugDescription()
             cJSON *newPath = cJSON_CreateString((*pathIt).c_str());
             cJSON_AddItemToArray(pathInfo, newPath);
         }
-        cJSON_AddItemToObject(bugDescription, "pathConditions", pathInfo);
+        cJSON_AddItemToObject(bugDescription, "PathConditions", pathInfo);
     }
 
     return bugDescription;
 }
 
-void LeakageBug::printBugToTerminal()
+void SaberBugReport::printBugToTerminal()
 {
     switch(bugType){
     case GenericBug::MEMLEAK:{
@@ -226,7 +226,7 @@ std::string BranchEvent::getFuncName()
     return branchStmt->getInst()->getFunction()->getName();
 }
 
-SVFBugRecoder::~SVFBugRecoder()
+SVFBugReport::~SVFBugReport()
 {
     auto bugIt = bugVector.begin();
     for(;bugIt != bugVector.end(); bugIt ++){
@@ -242,14 +242,14 @@ SVFBugRecoder::~SVFBugRecoder()
     }
 }
 
-void SVFBugRecoder::pushCallSite(const CallICFGNode* callSite)
+void SVFBugReport::pushCallSite(const CallICFGNode* callSite)
 {
     CallSiteEvent *callSiteEvent = new CallSiteEvent(callSite);
     eventStack.push_back(callSiteEvent);
     eventSet.push_back(callSiteEvent);
 }
 
-void SVFBugRecoder::popCallSite()
+void SVFBugReport::popCallSite()
 {
 #ifndef NDEBUG
     assert(eventStack.size() != 0 && eventStack.back()->getEventType() == GenericEvent::CallSite);
@@ -259,7 +259,7 @@ void SVFBugRecoder::popCallSite()
     }
 }
 
-std::string SVFBugRecoder::dumpBug()
+std::string SVFBugReport::dumpBug()
 {
     cJSON *bugArray = cJSON_CreateArray();
 

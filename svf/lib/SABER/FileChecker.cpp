@@ -39,10 +39,12 @@ void FileChecker::reportBug(ProgSlice* slice)
     if(isAllPathReachable() == false && isSomePathReachable() == false)
     {
         // full leakage
-        recoder.addBug<LeakageBug>(LeakageBug(GenericBug::FILENOTCLOSE, getSrcCSID(slice->getSource())->getCallSite(), true), false);
+        recoder.addBug<SaberBugReport>(
+            SaberBugReport(GenericBug::FILENOTCLOSE, getSrcCSID(slice->getSource())->getCallSite(), true), false);
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
-        recoder.addBug<LeakageBug>(LeakageBug(GenericBug::FILENOTCLOSE, getSrcCSID(slice->getSource())->getCallSite(), false, slice->evalFinalCondSet()), false);
+        recoder.addBug<SaberBugReport>(
+            SaberBugReport(GenericBug::FILENOTCLOSE, getSrcCSID(slice->getSource())->getCallSite(), false, slice->evalFinalCondSet()), false);
     }
 }

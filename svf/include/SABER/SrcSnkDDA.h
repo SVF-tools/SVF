@@ -37,12 +37,11 @@
 #ifndef SRCSNKANALYSIS_H_
 #define SRCSNKANALYSIS_H_
 
-
-#include "Util/GraphReachSolver.h"
 #include "Graphs/SVFGOPT.h"
 #include "SABER/ProgSlice.h"
 #include "SABER/SaberSVFGBuilder.h"
-#include "Util/SVFBugRecoder.h"
+#include "Util/GraphReachSolver.h"
+#include "Util/SVFBugReport.h"
 
 namespace SVF
 {
@@ -78,7 +77,7 @@ protected:
     SaberSVFGBuilder memSSA;
     SVFG* svfg;
     PTACallGraph* ptaCallGraph;
-    SVFBugRecoder recoder; /// Bug Recoder
+    SVFBugReport recoder; /// Bug Recoder
 
 public:
 

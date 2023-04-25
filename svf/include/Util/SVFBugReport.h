@@ -1,4 +1,4 @@
-//===- SVFBugRecoder.h -- Base class for statistics---------------------------------//
+//===- SVFBugReport.h -- Base class for statistics---------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -134,15 +134,15 @@ public:
     void printBugToTerminal();
 };
 
-class LeakageBug: public GenericBug{
+class SaberBugReport : public GenericBug{
 protected:
     bool isFull;  // if the leakage is full leakage
     Set<std::string> conditionPaths;
 
 public:
-    LeakageBug(BugType bugType, const SVFInstruction *bugInst, bool isFull):
+    SaberBugReport(BugType bugType, const SVFInstruction *bugInst, bool isFull):
           GenericBug(bugType, bugInst), isFull(isFull){  };
-    LeakageBug(BugType bugType, const SVFInstruction *bugInst, bool isFull,
+    SaberBugReport(BugType bugType, const SVFInstruction *bugInst, bool isFull,
                Set<std::string> conditionPaths):
           GenericBug(bugType, bugInst), isFull(isFull), conditionPaths(conditionPaths){ }
 
@@ -150,10 +150,11 @@ public:
     void printBugToTerminal();
 };
 
-class SVFBugRecoder{
+class SVFBugReport
+{
 public:
-    SVFBugRecoder() = default;
-    ~SVFBugRecoder();
+    SVFBugReport() = default;
+    ~SVFBugReport();
     typedef std::vector<GenericEvent *> EventStack;
     typedef std::vector<GenericEvent *> EventSet;
     typedef std::vector<GenericBug *> BugVector;
