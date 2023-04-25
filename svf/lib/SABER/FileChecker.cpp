@@ -40,11 +40,11 @@ void FileChecker::reportBug(ProgSlice* slice)
     {
         // full leakage
         report.addBug<FileNeverCloseBug>(
-            FileNeverCloseBug(getSrcCSID(slice->getSource())->getCallSite()), false);
+            FileNeverCloseBug(getSrcCSID(slice->getSource())->getCallSite()));
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
-        report.addBug<PartialFileCloseBug>(
-            PartialFileCloseBug(getSrcCSID(slice->getSource())->getCallSite(), slice->evalFinalCondSet()), false);
+        report.addBug<FilePartialCloseBug>(
+            FilePartialCloseBug(getSrcCSID(slice->getSource())->getCallSite(), slice->evalFinalCondSet()));
     }
 }

@@ -42,7 +42,7 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
         const SVFGNode* src = slice->getSource();
         const CallICFGNode* cs = getSrcCSID(src);
         report.addBug<DoubleFreeBug>(
-            DoubleFreeBug(cs->getCallSite(), slice->evalFinalCondSet()), false);
+            DoubleFreeBug(cs->getCallSite(), slice->evalFinalCondSet()));
     }
     if(Options::ValidateTests())
         testsValidation(slice);

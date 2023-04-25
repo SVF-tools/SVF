@@ -153,13 +153,13 @@ void LeakChecker::reportBug(ProgSlice* slice)
     {
         // full leakage
         report.addBug<NeverFreeBug>(
-            NeverFreeBug(getSrcCSID(slice->getSource())->getCallSite()), false);
+            NeverFreeBug(getSrcCSID(slice->getSource())->getCallSite()));
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
         // partial leakage
         report.addBug<PartialLeakBug>(
-            PartialLeakBug(getSrcCSID(slice->getSource())->getCallSite(), slice->evalFinalCondSet()), false);
+            PartialLeakBug(getSrcCSID(slice->getSource())->getCallSite(), slice->evalFinalCondSet()));
     }
 
     if(Options::ValidateTests())

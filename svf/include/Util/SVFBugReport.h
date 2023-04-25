@@ -55,14 +55,14 @@ public:
     inline GenericEvent(EventType eventType): eventType(eventType){ };
     virtual ~GenericEvent() = default;
 
-    inline EventType getEventType() { return eventType; }
-    virtual std::string getEventDescription() = 0;
-    virtual std::string getFuncName() = 0;
-    virtual std::string getEventLoc() = 0;
+    inline EventType getEventType() const { return eventType; }
+    virtual const std::string getEventDescription() const = 0;
+    virtual const std::string getFuncName() const = 0;
+    virtual const std::string getEventLoc() const = 0;
 };
 
 class BranchEvent: public GenericEvent{
-    //branch statement and branch condition true or false
+    /// branch statement and branch condition true or false
 protected:
     const BranchStmt *branchStmt;
     std::string description;
@@ -73,9 +73,15 @@ public:
     inline BranchEvent(const BranchStmt *branchStmt, std::string description):
           GenericEvent(GenericEvent::Branch), branchStmt(branchStmt), description(description){ }
 
-    std::string getEventDescription();
-    std::string getFuncName();
-    std::string getEventLoc();
+    const std::string getEventDescription() const;
+    const std::string getFuncName() const;
+    const std::string getEventLoc() const;
+
+    /// ClassOf
+    static inline bool classof(const GenericEvent* event)
+    {
+        return event->getEventType() == GenericEvent::Branch;
+    }
 };
 
 class CallSiteEvent: public GenericEvent{
@@ -84,9 +90,15 @@ protected:
 
 public:
     inline CallSiteEvent(const CallICFGNode *callSite): GenericEvent(GenericEvent::CallSite), callSite(callSite){ }
-    std::string getEventDescription();
-    std::string getFuncName();
-    std::string getEventLoc();
+    const std::string getEventDescription() const;
+    const std::string getFuncName() const;
+    const std::string getEventLoc() const;
+
+    /// ClassOf
+    static inline bool classof(const GenericEvent* event)
+    {
+        return event->getEventType() == GenericEvent::CallSite;
+    }
 };
 
 class GenericBug{
@@ -94,23 +106,24 @@ public:
     typedef std::vector<GenericEvent *> EventStack;
 
 public:
-    enum BugType{BOA, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
+    enum BugType{FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
 
 protected:
     BugType bugType;
     const SVFInstruction * bugInst;
-    EventStack *bugEventStack = nullptr;
+    EventStack bugEventStack;
 
 public:
+    inline GenericBug(BugType bugType, const SVFInstruction * bugInst, EventStack bugEventStack): bugType(bugType), bugInst(bugInst), bugEventStack(bugEventStack){ };
     inline GenericBug(BugType bugType, const SVFInstruction * bugInst): bugType(bugType), bugInst(bugInst){ };
+
     virtual ~GenericBug() = default;
 
-    inline BugType getBugType(){ return bugType; }
-    std::string getLoc();
-    std::string getFuncName();
-    inline void setEventStack(EventStack *eventStack) { bugEventStack = eventStack; }
-    /// return nullptr if the bug is not path sensitive
-    inline EventStack *getEventStack(){ return bugEventStack; }
+    inline BugType getBugType() const { return bugType; }
+    const std::string getLoc() const;
+    const std::string getFuncName() const;
+
+    inline const EventStack& getEventStack() const { return bugEventStack; }
 
     virtual cJSON *getBugDescription() = 0;
     virtual void printBugToTerminal() = 0;
@@ -119,17 +132,56 @@ public:
 class BufferOverflowBug: public GenericBug{
 protected:
     long long allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
-    bool isFull;  // if the overflow is full overflow
 
 public:
-    inline BufferOverflowBug(const SVFInstruction * bugInst, bool isFull, long long allocLowerBound,
-                             long long allocUpperBound, long long accessLowerBound,
-                             long long accessUpperBound):
-          GenericBug(GenericBug::BOA, bugInst), allocLowerBound(allocLowerBound),
+    inline BufferOverflowBug(GenericBug::BugType bugType, const SVFInstruction * bugInst, EventStack eventStack,
+                             long long allocLowerBound, long long allocUpperBound,
+                             long long accessLowerBound, long long accessUpperBound):
+          GenericBug(bugType, bugInst, eventStack), allocLowerBound(allocLowerBound),
           allocUpperBound(allocUpperBound), accessLowerBound(accessLowerBound),
-          accessUpperBound(accessUpperBound), isFull(isFull){ }
+          accessUpperBound(accessUpperBound){ }
+
     cJSON *getBugDescription();
     void printBugToTerminal();
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::PARTIALBUFOVERFLOW || bug->getBugType() == GenericBug::FULLBUFOVERFLOW;
+    }
+};
+
+class FullBufferOverflowBug: public BufferOverflowBug{
+public:
+    inline FullBufferOverflowBug(const SVFInstruction * bugInst, EventStack eventStack,
+                             long long allocLowerBound, long long allocUpperBound,
+                             long long accessLowerBound, long long accessUpperBound):
+          BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, bugInst, eventStack, allocLowerBound,
+                            allocUpperBound, accessLowerBound, accessUpperBound){ }
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::FULLBUFOVERFLOW;
+    }
+};
+
+class PartialBufferOverflowBug: public BufferOverflowBug{
+protected:
+    long long allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
+
+public:
+    inline PartialBufferOverflowBug(const SVFInstruction * bugInst, EventStack eventStack,
+                                 long long allocLowerBound, long long allocUpperBound,
+                                 long long accessLowerBound, long long accessUpperBound):
+          BufferOverflowBug(GenericBug::PARTIALBUFOVERFLOW, bugInst, eventStack, allocLowerBound,
+                            allocUpperBound, accessLowerBound, accessUpperBound){ }
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::PARTIALBUFOVERFLOW;
+    }
 };
 
 class NeverFreeBug : public GenericBug{
@@ -139,6 +191,12 @@ public:
 
     cJSON *getBugDescription();
     void printBugToTerminal();
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::NEVERFREE;
+    }
 };
 
 class PartialLeakBug : public GenericBug{
@@ -150,6 +208,12 @@ public:
 
     cJSON *getBugDescription();
     void printBugToTerminal();
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::PARTIALLEAK;
+    }
 };
 
 class DoubleFreeBug : public GenericBug{
@@ -162,6 +226,12 @@ public:
 
     cJSON *getBugDescription();
     void printBugToTerminal();
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::DOUBLEFREE;
+    }
 };
 
 class FileNeverCloseBug : public GenericBug{
@@ -171,18 +241,30 @@ public:
 
     cJSON *getBugDescription();
     void printBugToTerminal();
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::FILENEVERCLOSE;
+    }
 };
 
-class PartialFileCloseBug : public GenericBug{
+class FilePartialCloseBug : public GenericBug{
 protected:
     Set<std::string> conditionalFileClosePath;
 
 public:
-    PartialFileCloseBug(const SVFInstruction *bugInst, Set<std::string> conditionalFileClosePath):
+    FilePartialCloseBug(const SVFInstruction *bugInst, Set<std::string> conditionalFileClosePath):
           GenericBug(GenericBug::PARTIALLEAK, bugInst), conditionalFileClosePath(conditionalFileClosePath){ }
 
     cJSON *getBugDescription();
     void printBugToTerminal();
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::FILEPARTIALCLOSE;
+    }
 };
 
 class SVFBugReport
@@ -190,41 +272,23 @@ class SVFBugReport
 public:
     SVFBugReport() = default;
     ~SVFBugReport();
-    typedef std::vector<GenericEvent *> EventStack;
-    typedef std::vector<GenericEvent *> EventSet;
     typedef std::vector<GenericBug *> BugVector;
-    typedef std::vector<EventStack *> EventStackVector;
 
 protected:
-    EventStack eventStack;  // maintain current execution events
-    EventSet eventSet;      // maintain all added events
     BugVector bugVector;    // maintain bugs
-    EventStackVector eventStackVector;  // maintain each bug's events
 
 public:
-    // push callsite to event stack
-    void pushToEventStack(const CallICFGNode *callSite);
-
-    // pop callsite from event stack
-    void popFromEventStack();
-
     /*
      * function: pass bug type (i.e., GenericBug::BOA) and bug object as parameter,
      *      it will add the bug into bugQueue.
      * usage: addBug<GenericBug::BOA>(BufferOverflowBug(bugInst, 0, 10, 1, 11))
      */
     template <typename T>
-    void addBug(T bug, bool recordEvents)
+    void addBug(T bug)
     {
         T *newBug = new T(bug);
         bugVector.push_back(newBug);
 
-        if(recordEvents)
-        {
-            EventStack* newEventStack = new EventStack(eventStack);
-            eventStackVector.push_back(newEventStack);
-            newBug->setEventStack(newEventStack);
-        }
         // when add a bug, also print it to terminal
         newBug->printBugToTerminal();
     }
@@ -235,5 +299,3 @@ public:
 }
 
 #endif
-
-

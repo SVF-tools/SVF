@@ -36,12 +36,12 @@
 using namespace std;
 using namespace SVF;
 
-std::string GenericBug::getLoc()
+const std::string GenericBug::getLoc() const
 {
     return bugInst->getSourceLoc();
 }
 
-std::string GenericBug::getFuncName()
+const std::string GenericBug::getFuncName() const
 {
     return bugInst->getFunction()->getName();
 }
@@ -49,13 +49,11 @@ std::string GenericBug::getFuncName()
 cJSON *BufferOverflowBug::getBugDescription()
 {
     cJSON *bugDescription = cJSON_CreateObject();
-    cJSON *isfullBug = cJSON_CreateBool((int)isFull);
     cJSON *allocLB = cJSON_CreateNumber(allocLowerBound);
     cJSON *allocUB = cJSON_CreateNumber(allocUpperBound);
     cJSON *accessLB = cJSON_CreateNumber(accessLowerBound);
     cJSON *accessUB = cJSON_CreateNumber(accessUpperBound);
 
-    cJSON_AddItemToObject(bugDescription, "IsFullBug", isfullBug);
     cJSON_AddItemToObject(bugDescription, "AllocLowerBound", allocLB);
     cJSON_AddItemToObject(bugDescription, "AllocUpperBound", allocUB);
     cJSON_AddItemToObject(bugDescription, "AccessLowerBound", accessLB);
@@ -67,7 +65,7 @@ cJSON *BufferOverflowBug::getBugDescription()
 void BufferOverflowBug::printBugToTerminal()
 {
     stringstream bugInfo;
-    if(isFull){
+    if(FullBufferOverflowBug::classof(this)){
         SVFUtil::errs() << SVFUtil::bugMsg1("\t Full Overflow :") <<  " accessing at : ("
                         << bugInst->getSourceLoc() << ")\n";
 
@@ -79,23 +77,20 @@ void BufferOverflowBug::printBugToTerminal()
     bugInfo << "access size : [" << accessLowerBound << ", " << accessUpperBound << "]\n";
     SVFUtil::errs() << "\t\t Info : \n" << bugInfo.str();
     SVFUtil::errs() << "\t\t Events : \n";
-    #ifndef NDEBUG
-    assert(bugEventStack != nullptr);
-    #endif
-    if(bugEventStack != nullptr){
-        auto eventIt = bugEventStack->begin();
-        for(; eventIt != bugEventStack->end(); eventIt ++){
-            switch((*eventIt)->getEventType()){
-            case GenericEvent::CallSite:{
-                SVFUtil::errs() << "\t\t  callsite at : ( " << (*eventIt)->getEventLoc() << " )\n";
-                break;
-            }
-            default:{  // TODO: implement more events when needed
-                break;
-            }
-            }
+
+    auto eventIt = bugEventStack.begin();
+    for(; eventIt != bugEventStack.end(); eventIt ++){
+        switch((*eventIt)->getEventType()){
+        case GenericEvent::CallSite:{
+            SVFUtil::errs() << "\t\t  callsite at : ( " << (*eventIt)->getEventLoc() << " )\n";
+            break;
+        }
+        default:{  // TODO: implement more events when needed
+            break;
+        }
         }
     }
+
 }
 
 cJSON * NeverFreeBug::getBugDescription()
@@ -180,7 +175,7 @@ void FileNeverCloseBug::printBugToTerminal()
                     << bugInst->getSourceLoc() << ")\n";
 }
 
-cJSON * PartialFileCloseBug::getBugDescription()
+cJSON * FilePartialCloseBug::getBugDescription()
 {
     cJSON *bugDescription = cJSON_CreateObject();
 
@@ -195,7 +190,7 @@ cJSON * PartialFileCloseBug::getBugDescription()
     return bugDescription;
 }
 
-void PartialFileCloseBug::printBugToTerminal()
+void FilePartialCloseBug::printBugToTerminal()
 {
     SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialFileClose :") <<  " file open location at : ("
                     << bugInst->getSourceLoc() << ")\n";
@@ -209,19 +204,17 @@ void PartialFileCloseBug::printBugToTerminal()
     SVFUtil::errs() << "\n";
 }
 
-
-
-std::string CallSiteEvent::getFuncName()
+const std::string CallSiteEvent::getFuncName() const
 {
     return callSite->getCallSite()->getFunction()->getName();
 }
 
-std::string CallSiteEvent::getEventLoc()
+const std::string CallSiteEvent::getEventLoc() const
 {
     return callSite->getCallSite()->getSourceLoc();
 }
 
-std::string CallSiteEvent::getEventDescription()
+const std::string CallSiteEvent::getEventDescription() const
 {
     std::string description("calls ");
     const SVFFunction *callee = SVFUtil::getCallee(callSite->getCallSite());
@@ -233,17 +226,17 @@ std::string CallSiteEvent::getEventDescription()
     return description;
 }
 
-std::string BranchEvent::getFuncName()
+const std::string BranchEvent::getFuncName() const
 {
     return branchStmt->getInst()->getFunction()->getName();
 }
 
-std::string BranchEvent::getEventLoc()
+const std::string BranchEvent::getEventLoc() const
 {
     return branchStmt->getInst()->getSourceLoc();
 }
 
-std::string BranchEvent::getEventDescription()
+const std::string BranchEvent::getEventDescription() const
 {
     return description;
 }
@@ -253,31 +246,6 @@ SVFBugReport::~SVFBugReport()
     auto bugIt = bugVector.begin();
     for(;bugIt != bugVector.end(); bugIt ++){
         delete (*bugIt);
-    }
-    auto eventStackIt = eventStackVector.begin();
-    for(;eventStackIt != eventStackVector.end(); eventStackIt++){
-        delete(*eventStackIt);
-    }
-    auto eventIt = eventSet.begin();
-    for(;eventIt != eventSet.end(); eventIt++){
-        delete(*eventIt);
-    }
-}
-
-void SVFBugReport::pushToEventStack(const CallICFGNode* callSite)
-{
-    CallSiteEvent *callSiteEvent = new CallSiteEvent(callSite);
-    eventStack.push_back(callSiteEvent);
-    eventSet.push_back(callSiteEvent);
-}
-
-void SVFBugReport::popFromEventStack()
-{
-#ifndef NDEBUG
-    assert(eventStack.size() != 0 && eventStack.back()->getEventType() == GenericEvent::CallSite);
-#endif
-    if(eventStack.size() != 0 && eventStack.back()->getEventType() == GenericEvent::CallSite){
-        eventStack.pop_back();
     }
 }
 
@@ -291,7 +259,8 @@ std::string SVFBugReport::toString()
     };
 
     std::map<GenericBug::BugType, std::string> bugType2Str = {
-        {GenericBug::BOA, "Buffer Overflow"},
+        {GenericBug::FULLBUFOVERFLOW, "Full Buffer Overflow"},
+        {GenericBug::PARTIALBUFOVERFLOW, "Partial Buffer Overflow"},
         {GenericBug::NEVERFREE, "Never Free"},
         {GenericBug::PARTIALLEAK, "Partial Leak"},
         {GenericBug::FILENEVERCLOSE, "File Never Close"},
@@ -323,10 +292,10 @@ std::string SVFBugReport::toString()
 
         // add event information to json
         cJSON *eventList = cJSON_CreateArray();
-        EventStack *bugEventStack = (*bugIt)->getEventStack();
-        if(bugEventStack != nullptr){  // add only when bug is context sensitive
-            auto eventIt = bugEventStack->begin();
-            for(; eventIt != bugEventStack->end(); eventIt ++){
+        const GenericBug::EventStack bugEventStack = (*bugIt)->getEventStack();
+        if(BufferOverflowBug::classof(*bugIt)){  // add only when bug is context sensitive
+            auto eventIt = bugEventStack.begin();
+            for(; eventIt != bugEventStack.end(); eventIt ++){
                 cJSON *singleEvent = cJSON_CreateObject();
 
                 //event type
