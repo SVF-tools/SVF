@@ -35,13 +35,6 @@
 using namespace std;
 using namespace SVF;
 
-GenericBug::~GenericBug()
-{
-    for(auto eventPtr:bugEventStack){
-        delete(eventPtr);
-    }
-}
-
 const std::string GenericBug::getLoc() const
 {
     const GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
@@ -298,6 +291,9 @@ SVFBugReport::~SVFBugReport()
 {
     for(auto bugIt: bugSet){
         delete bugIt;
+    }
+    for(auto eventPtr:eventSet){
+        delete eventPtr;
     }
 }
 

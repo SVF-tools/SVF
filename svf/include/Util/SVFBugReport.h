@@ -136,7 +136,7 @@ public:
     {
         assert(bugEventStack.size() != 0 && "bugEventStack should NOT be empty!");
     }
-    virtual ~GenericBug();
+    virtual ~GenericBug() = default;
     //GenericBug(const GenericBug &) = delete;
     /// returns bug type
     inline BugType getBugType() const { return bugType; }
@@ -284,19 +284,27 @@ public:
     SVFBugReport() = default;
     ~SVFBugReport();
     typedef SVF::Set<const GenericBug *> BugSet;
+    typedef SVF::Set<const GenericEvent *> EventSet;
 
 protected:
     BugSet bugSet;    // maintain bugs
+    EventSet eventSet;// maintain added events
 
 public:
     /*
-     * function: pass bug type (i.e., GenericBug::BOA) and bug object as parameter,
+     * function: pass bug type (i.e., GenericBug::NEVERFREE) and eventStack as parameter,
      *      it will add the bug into bugQueue.
-     * usage: addBug<GenericBug::BOA>(BufferOverflowBug(bugInst, 0, 10, 1, 11))
+     * usage: addSaberBug(GenericBug::NEVERFREE, eventStack)
      */
     void addSaberBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack)
     {
-        GenericBug *newBug;
+        /// resign added events
+        for(auto eventPtr : eventStack){
+            eventSet.insert(eventPtr);
+        }
+
+        /// create and add the bug
+        GenericBug *newBug = nullptr;
         switch(bugType){
         case GenericBug::NEVERFREE:{
             newBug = new NeverFreeBug(eventStack);
@@ -333,9 +341,20 @@ public:
         newBug->printBugToTerminal();
     }
 
+    /*
+     * function: pass bug type (i.e., GenericBug::FULLBUFOVERFLOW) and eventStack as parameter,
+     *      it will add the bug into bugQueue.
+     * usage: addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack, 0, 10, 11, 11)
+     */
     void addAbsExecBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack,
                        s64_t allocLowerBound, s64_t allocUpperBound, s64_t accessLowerBound, s64_t accessUpperBound){
-        GenericBug *newBug;
+        /// resign added events
+        for(auto eventPtr : eventStack){
+            eventSet.insert(eventPtr);
+        }
+
+        /// add bugs
+        GenericBug *newBug = nullptr;
         switch(bugType){
         case GenericBug::FULLBUFOVERFLOW:  {
             newBug = new FullBufferOverflowBug(eventStack, allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound);
