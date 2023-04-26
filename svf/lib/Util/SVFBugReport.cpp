@@ -117,13 +117,21 @@ void NeverFreeBug::printBugToTerminal()
 cJSON * PartialLeakBug::getBugDescription()
 {
     cJSON *bugDescription = cJSON_CreateObject();
-
     cJSON *pathInfo = cJSON_CreateArray();
+    auto lastBranchEventIt = bugEventStack.end() - 1;
+    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
+    {
+        cJSON *newBranch = cJSON_CreateObject();
+        cJSON *branchLoc = cJSON_Parse((*eventIt)->getEventLoc().c_str());
+        if(branchLoc == nullptr) branchLoc = cJSON_CreateObject();
+        cJSON *branchCondition = cJSON_CreateString((*eventIt)->getEventDescription().c_str());
 
-    for(const string& pathPtr: conditionalFreePath){
-        cJSON *newPath = cJSON_CreateString(pathPtr.c_str());
-        cJSON_AddItemToArray(pathInfo, newPath);
+        cJSON_AddItemToObject(newBranch, "BranchLoc", branchLoc);
+        cJSON_AddItemToObject(newBranch, "BranchCond", branchCondition);
+
+        cJSON_AddItemToArray(pathInfo, newBranch);
     }
+
     cJSON_AddItemToObject(bugDescription, "ConditionalFreePath", pathInfo);
 
     return bugDescription;
@@ -135,10 +143,10 @@ void PartialLeakBug::printBugToTerminal()
                     << GenericBug::getLoc() << ")\n";
 
     SVFUtil::errs() << "\t\t conditional free path: \n";
-    for(Set<std::string>::iterator iter = conditionalFreePath.begin(), eiter = conditionalFreePath.end();
-         iter!=eiter; ++iter)
+    auto lastBranchEventIt = bugEventStack.end() - 1;
+    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        SVFUtil::errs() << "\t\t  --> (" << *iter << ") \n";
+        SVFUtil::errs() << "\t\t  --> (" << (*eventIt)->getEventLoc() << "|" << (*eventIt)->getEventDescription() << ") \n";
     }
     SVFUtil::errs() << "\n";
 }
@@ -148,9 +156,18 @@ cJSON * DoubleFreeBug::getBugDescription()
     cJSON *bugDescription = cJSON_CreateObject();
 
     cJSON *pathInfo = cJSON_CreateArray();
-    for(const string& pathPtr : doubleFreePath){
-        cJSON *newPath = cJSON_CreateString(pathPtr.c_str());
-        cJSON_AddItemToArray(pathInfo, newPath);
+    auto lastBranchEventIt = bugEventStack.end() - 1;
+    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
+    {
+        cJSON *newBranch = cJSON_CreateObject();
+        cJSON *branchLoc = cJSON_Parse((*eventIt)->getEventLoc().c_str());
+        if(branchLoc == nullptr) branchLoc = cJSON_CreateObject();
+        cJSON *branchCondition = cJSON_CreateString((*eventIt)->getEventDescription().c_str());
+
+        cJSON_AddItemToObject(newBranch, "BranchLoc", branchLoc);
+        cJSON_AddItemToObject(newBranch, "BranchCond", branchCondition);
+
+        cJSON_AddItemToArray(pathInfo, newBranch);
     }
     cJSON_AddItemToObject(bugDescription, "DoubleFreePath", pathInfo);
 
@@ -163,10 +180,10 @@ void DoubleFreeBug::printBugToTerminal()
                     << GenericBug::getLoc() << ")\n";
 
     SVFUtil::errs() << "\t\t double free path: \n";
-    for(Set<std::string>::iterator iter = doubleFreePath.begin(), eiter = doubleFreePath.end();
-         iter!=eiter; ++iter)
+    auto lastBranchEventIt = bugEventStack.end() - 1;
+    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        SVFUtil::errs() << "\t\t  --> (" << *iter << ") \n";
+        SVFUtil::errs() << "\t\t  --> (" << (*eventIt)->getEventLoc() << "|" << (*eventIt)->getEventDescription() << ") \n";
     }
     SVFUtil::errs() << "\n";
 }
@@ -189,9 +206,18 @@ cJSON * FilePartialCloseBug::getBugDescription()
 
     cJSON *pathInfo = cJSON_CreateArray();
 
-    for(const string& pathPtr: conditionalFileClosePath){
-        cJSON *newPath = cJSON_CreateString(pathPtr.c_str());
-        cJSON_AddItemToArray(pathInfo, newPath);
+    auto lastBranchEventIt = bugEventStack.end() - 1;
+    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
+    {
+        cJSON *newBranch = cJSON_CreateObject();
+        cJSON *branchLoc = cJSON_Parse((*eventIt)->getEventLoc().c_str());
+        if(branchLoc == nullptr) branchLoc = cJSON_CreateObject();
+        cJSON *branchCondition = cJSON_CreateString((*eventIt)->getEventDescription().c_str());
+
+        cJSON_AddItemToObject(newBranch, "BranchLoc", branchLoc);
+        cJSON_AddItemToObject(newBranch, "BranchCond", branchCondition);
+
+        cJSON_AddItemToArray(pathInfo, newBranch);
     }
     cJSON_AddItemToObject(bugDescription, "ConditionalFileClosePath", pathInfo);
 
@@ -204,10 +230,10 @@ void FilePartialCloseBug::printBugToTerminal()
                     << GenericBug::getLoc() << ")\n";
 
     SVFUtil::errs() << "\t\t conditional file close path: \n";
-    for(Set<std::string>::iterator iter = conditionalFileClosePath.begin(), eiter = conditionalFileClosePath.end();
-         iter!=eiter; ++iter)
+    auto lastBranchEventIt = bugEventStack.end() - 1;
+    for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        SVFUtil::errs() << "\t\t  --> (" << *iter << ") \n";
+        SVFUtil::errs() << "\t\t  --> (" << (*eventIt)->getEventLoc() << "|" << (*eventIt)->getEventDescription() << ") \n";
     }
     SVFUtil::errs() << "\n";
 }
@@ -246,7 +272,7 @@ const std::string BranchEvent::getEventLoc() const
 
 const std::string BranchEvent::getEventDescription() const
 {
-    if (branchCondition){
+    if (branchSuccessFlg){
         return "True";
     }else{
         return "False";

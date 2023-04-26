@@ -41,6 +41,7 @@
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
 #include "Util/DPItem.h"
+#include "Util/SVFBugReport.h"
 
 namespace SVF
 {
@@ -201,7 +202,8 @@ public:
     }
     /// Evaluate final condition
     std::string evalFinalCond() const;
-    Set<std::string> evalFinalCondSet() const;
+    /// Add final condition to eventStack
+    void evalFinalCond2Event(GenericBug::EventStack &eventStack) const;
     //@}
 
 protected:

@@ -105,7 +105,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
 
         reportBug(getCurSlice());
     }
-
+    report.dumpToFile("/Users/joel/Projects/dump.txt");
     finalize();
 
 }

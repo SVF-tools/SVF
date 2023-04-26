@@ -64,12 +64,12 @@ public:
 class BranchEvent: public GenericEvent{
     /// branch statement and branch condition true or false
 protected:
-    const BranchStmt *branchStmt;
-    bool branchCondition;
+    const SVFStmt *branchStmt;
+    bool branchSuccessFlg;
 
 public:
-    BranchEvent(const BranchStmt *branchStmt, bool branchCondition):
-          GenericEvent(GenericEvent::Branch), branchStmt(branchStmt), branchCondition(branchCondition){ }
+    BranchEvent(const SVFStmt *branchStmt, bool branchSuccessFlg):
+          GenericEvent(GenericEvent::Branch), branchStmt(branchStmt), branchSuccessFlg(branchSuccessFlg){ }
 
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
@@ -137,7 +137,7 @@ public:
         assert(bugEventStack.size() != 0 && "bugEventStack should NOT be empty!");
     }
     virtual ~GenericBug();
-
+    //GenericBug(const GenericBug &) = delete;
     /// returns bug type
     inline BugType getBugType() const { return bugType; }
     /// returns bug location as json format string
@@ -219,12 +219,9 @@ public:
 };
 
 class PartialLeakBug : public GenericBug{
-protected:
-    Set<std::string> conditionalFreePath;
-
 public:
-    PartialLeakBug(const EventStack &bugEventStack, Set<std::string> conditionalFreePath):
-          GenericBug(GenericBug::PARTIALLEAK, bugEventStack), conditionalFreePath(conditionalFreePath){ }
+    PartialLeakBug(const EventStack &bugEventStack):
+          GenericBug(GenericBug::PARTIALLEAK, bugEventStack){ }
 
     cJSON *getBugDescription();
     void printBugToTerminal();
@@ -237,12 +234,9 @@ public:
 };
 
 class DoubleFreeBug : public GenericBug{
-protected:
-    Set<std::string> doubleFreePath;
-
 public:
-    DoubleFreeBug(const EventStack &bugEventStack, Set<std::string> doubleFreePath):
-          GenericBug(GenericBug::PARTIALLEAK, bugEventStack), doubleFreePath(doubleFreePath){ }
+    DoubleFreeBug(const EventStack &bugEventStack):
+          GenericBug(GenericBug::PARTIALLEAK, bugEventStack){ }
 
     cJSON *getBugDescription();
     void printBugToTerminal();
@@ -270,12 +264,9 @@ public:
 };
 
 class FilePartialCloseBug : public GenericBug{
-protected:
-    Set<std::string> conditionalFileClosePath;
-
 public:
-    FilePartialCloseBug(const EventStack &bugEventStack, Set<std::string> conditionalFileClosePath):
-          GenericBug(GenericBug::PARTIALLEAK, bugEventStack), conditionalFileClosePath(conditionalFileClosePath){ }
+    FilePartialCloseBug(const EventStack &bugEventStack):
+          GenericBug(GenericBug::PARTIALLEAK, bugEventStack){ }
 
     cJSON *getBugDescription();
     void printBugToTerminal();
@@ -303,14 +294,64 @@ public:
      *      it will add the bug into bugQueue.
      * usage: addBug<GenericBug::BOA>(BufferOverflowBug(bugInst, 0, 10, 1, 11))
      */
-    template <typename T>
-    void addBug(T bug)
+    void addSaberBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack)
     {
-        T *newBug = new T(bug);
-        bugSet.insert(newBug);
+        GenericBug *newBug;
+        switch(bugType){
+        case GenericBug::NEVERFREE:{
+            newBug = new NeverFreeBug(eventStack);
+            bugSet.insert(newBug);
+            break;
+        }
+        case GenericBug::PARTIALLEAK:{
+            newBug = new PartialLeakBug(eventStack);
+            bugSet.insert(newBug);
+            break;
+        }
+        case GenericBug::DOUBLEFREE:{
+            newBug = new DoubleFreeBug(eventStack);
+            bugSet.insert(newBug);
+            break;
+        }
+        case GenericBug::FILENEVERCLOSE:{
+            newBug = new FileNeverCloseBug(eventStack);
+            bugSet.insert(newBug);
+            break;
+        }
+        case GenericBug::FILEPARTIALCLOSE:{
+            newBug = new FilePartialCloseBug(eventStack);
+            bugSet.insert(newBug);
+            break;
+        }
+        default:{
+            assert(false && "saber does NOT have this bug type!");
+            break;
+        }
+        }
 
         // when add a bug, also print it to terminal
         newBug->printBugToTerminal();
+    }
+
+    void addAbsExecBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack,
+                       s64_t allocLowerBound, s64_t allocUpperBound, s64_t accessLowerBound, s64_t accessUpperBound){
+        GenericBug *newBug;
+        switch(bugType){
+        case GenericBug::FULLBUFOVERFLOW:  {
+            newBug = new FullBufferOverflowBug(eventStack, allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound);
+            bugSet.insert(newBug);
+            break;
+        }
+        case GenericBug::PARTIALBUFOVERFLOW:{
+            newBug = new PartialBufferOverflowBug(eventStack, allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound);
+            bugSet.insert(newBug);
+            break;
+        }
+        default:{
+            assert(false && "Abstract Execution does NOT hava his bug type!");
+            break;
+        }
+        }
     }
 
     /*
