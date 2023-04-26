@@ -164,6 +164,7 @@ NodeID NodeIDAllocator::allocateValueId(void)
 
 NodeID NodeIDAllocator::endSymbolAllocation(void)
 {
+    std::cout << "NodeIDAllocator::endSymbolAllocation(): numSymbols = " << numSymbols << std::endl;
     numSymbols = numNodes;
     return numSymbols;
 }

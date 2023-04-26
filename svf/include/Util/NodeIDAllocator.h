@@ -19,6 +19,9 @@ class BVDataPTAImpl;
 /// all symbols have been allocated through endSymbolAllocation.
 class NodeIDAllocator
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
 public:
     /// Allocation strategy to use.
     enum Strategy
