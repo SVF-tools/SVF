@@ -486,7 +486,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                 if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII))
                 {
                     llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
-                    rawstr << "ln: " << DIVar->getLine() << " fl: " << DIVar->getFilename().str();
+                    rawstr << "\"ln\": " << DIVar->getLine() << ", \"fl\": \"" << DIVar->getFilename().str() << "\"";
                     break;
                 }
             }
@@ -508,7 +508,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                     File = inlineLoc->getFilename().str();
                 }
             }
-            rawstr << "ln: " << Line << "  cl: " << Column << "  fl: " << File;
+            rawstr << "\"ln\": " << Line << ", \"cl\": " << Column << ", \"fl\": \"" << File << "\"";
         }
     }
     else if (const Argument* argument = SVFUtil::dyn_cast<Argument>(val))
@@ -539,7 +539,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
 
                     if(DGV->getName() == gvar->getName())
                     {
-                        rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename().str();
+                        rawstr << "\"ln\": " << DGV->getLine() << ", \"fl\": \"" << DGV->getFilename().str() << "\"";
                     }
 
                 }
@@ -552,7 +552,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     }
     else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(val))
     {
-        rawstr << "basic block: " << bb->getName().str() << " " << getSourceLoc(bb->getFirstNonPHI());
+        rawstr << "\"basic block\": " << bb->getName().str() << ", \"location\": " << getSourceLoc(bb->getFirstNonPHI());
     }
     else if(LLVMUtil::isConstDataOrAggData(val))
     {
@@ -584,7 +584,7 @@ const std::string LLVMUtil::getSourceLocOfFunction(const Function* F)
     if (llvm::DISubprogram *SP =  F->getSubprogram())
     {
         if (SP->describes(F))
-            rawstr << "in line: " << SP->getLine() << " file: " << SP->getFilename().str();
+            rawstr << "\"ln\": " << SP->getLine() << ", \"file\": \"" << SP->getFilename().str() << "\"";
     }
     return rawstr.str();
 }

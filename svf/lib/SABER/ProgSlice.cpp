@@ -146,6 +146,19 @@ const CallICFGNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
         return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId());
 }
 
+void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack) const
+{
+    NodeBS elems = pathAllocator->exactCondElem(finalCond);
+    Set<std::string> locations;
+    for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
+    {
+        const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
+        if(pathAllocator->isNegCond(*it))
+            eventStack.push_back(new BranchEvent(tinst, false));
+        else
+            eventStack.push_back(new BranchEvent(tinst, true));
+    }
+}
 
 /*!
  * Evaluate Atoms of a condition
@@ -160,8 +173,9 @@ std::string ProgSlice::evalFinalCond() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    NodeBS elems = pathAllocator->exactCondElem(finalCond);
     Set<std::string> locations;
+    NodeBS elems = pathAllocator->exactCondElem(finalCond);
+
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
         const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
@@ -170,6 +184,7 @@ std::string ProgSlice::evalFinalCond() const
         else
             locations.insert(tinst->getSourceLoc()+"|True");
     }
+
     /// print leak path after eliminating duplicated element
     for(Set<std::string>::iterator iter = locations.begin(), eiter = locations.end();
             iter!=eiter; ++iter)
