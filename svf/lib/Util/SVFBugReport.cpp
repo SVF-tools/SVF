@@ -68,11 +68,14 @@ cJSON *BufferOverflowBug::getBugDescription() const
 void BufferOverflowBug::printBugToTerminal() const
 {
     stringstream bugInfo;
-    if(FullBufferOverflowBug::classof(this)){
+    if(FullBufferOverflowBug::classof(this))
+    {
         SVFUtil::errs() << SVFUtil::bugMsg1("\t Full Overflow :") <<  " accessing at : ("
                         << GenericBug::getLoc() << ")\n";
 
-    }else{
+    }
+    else
+    {
         SVFUtil::errs() << SVFUtil::bugMsg1("\t Partial Overflow :") <<  " accessing at : ("
                         << GenericBug::getLoc() << ")\n";
     }
@@ -81,13 +84,17 @@ void BufferOverflowBug::printBugToTerminal() const
     SVFUtil::errs() << "\t\t Info : \n" << bugInfo.str();
     SVFUtil::errs() << "\t\t Events : \n";
 
-    for(auto eventPtr : bugEventStack){
-        switch(eventPtr->getEventType()){
-        case GenericEvent::CallSite:{
+    for(auto eventPtr : bugEventStack)
+    {
+        switch(eventPtr->getEventType())
+        {
+        case GenericEvent::CallSite:
+        {
             SVFUtil::errs() << "\t\t  callsite at : ( " << eventPtr->getEventLoc() << " )\n";
             break;
         }
-        default:{  // TODO: implement more events when needed
+        default:   // TODO: implement more events when needed
+        {
             break;
         }
         }
@@ -245,9 +252,12 @@ const std::string CallSiteEvent::getEventDescription() const
 {
     std::string description("calls ");
     const SVFFunction *callee = SVFUtil::getCallee(callSite->getCallSite());
-    if(callee == nullptr){
+    if(callee == nullptr)
+    {
         description += "<unknown>";
-    }else{
+    }
+    else
+    {
         description += callee->getName();
     }
     return description;
@@ -265,9 +275,12 @@ const std::string BranchEvent::getEventLoc() const
 
 const std::string BranchEvent::getEventDescription() const
 {
-    if (branchSuccessFlg){
+    if (branchSuccessFlg)
+    {
         return "True";
-    }else{
+    }
+    else
+    {
         return "False";
     }
 }
@@ -289,24 +302,28 @@ const std::string SourceInstEvent::getEventDescription() const
 
 SVFBugReport::~SVFBugReport()
 {
-    for(auto bugIt: bugSet){
+    for(auto bugIt: bugSet)
+    {
         delete bugIt;
     }
-    for(auto eventPtr:eventSet){
+    for(auto eventPtr:eventSet)
+    {
         delete eventPtr;
     }
 }
 
 void SVFBugReport::dumpToJsonFile(const std::string& filePath)
 {
-    std::map<GenericEvent::EventType, std::string> eventType2Str = {
+    std::map<GenericEvent::EventType, std::string> eventType2Str =
+    {
         {GenericEvent::CallSite, "call site"},
         {GenericEvent::Caller, "caller"},
         {GenericEvent::Loop, "loop"},
         {GenericEvent::Branch, "branch"}
     };
 
-    std::map<GenericBug::BugType, std::string> bugType2Str = {
+    std::map<GenericBug::BugType, std::string> bugType2Str =
+    {
         {GenericBug::FULLBUFOVERFLOW, "Full Buffer Overflow"},
         {GenericBug::PARTIALBUFOVERFLOW, "Partial Buffer Overflow"},
         {GenericBug::NEVERFREE, "Never Free"},
@@ -321,7 +338,8 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
     jsonFile << "{";
 
     size_t commaCounter = bugSet.size() - 1;  // comma num needed
-    for(auto bugPtr : bugSet){
+    for(auto bugPtr : bugSet)
+    {
         cJSON *singleBug = cJSON_CreateObject();
 
         /// add bug information to json
@@ -329,7 +347,8 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
         cJSON_AddItemToObject(singleBug, "DefectType", bugType);
 
         cJSON *bugLoc = cJSON_Parse(bugPtr->getLoc().c_str());
-        if(bugLoc == nullptr){
+        if(bugLoc == nullptr)
+        {
             bugLoc = cJSON_CreateObject();
         }
         cJSON_AddItemToObject(singleBug, "Location", bugLoc);
@@ -342,9 +361,12 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
         /// add event information to json
         cJSON *eventList = cJSON_CreateArray();
         const GenericBug::EventStack bugEventStack = bugPtr->getEventStack();
-        if(BufferOverflowBug::classof(bugPtr)){  // add only when bug is context sensitive
-            for(auto eventPtr : bugEventStack){
-                if (SourceInstEvent::classof(eventPtr)){
+        if(BufferOverflowBug::classof(bugPtr))   // add only when bug is context sensitive
+        {
+            for(auto eventPtr : bugEventStack)
+            {
+                if (SourceInstEvent::classof(eventPtr))
+                {
                     continue;
                 }
 
@@ -357,7 +379,8 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
                 cJSON_AddItemToObject(singleEvent, "Function", eventFunc);
                 //event loc
                 cJSON *eventLoc = cJSON_Parse(eventPtr->getEventLoc().c_str());
-                if(eventLoc == nullptr){
+                if(eventLoc == nullptr)
+                {
                     eventLoc = cJSON_CreateObject();
                 }
                 cJSON_AddItemToObject(singleEvent, "Location", eventLoc);
@@ -373,7 +396,8 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
         /// dump single bug to json str and write to file
         char *singleBugStr = cJSON_Print(singleBug);
         jsonFile << singleBugStr;
-        if (commaCounter != 0){
+        if (commaCounter != 0)
+        {
             jsonFile << ",\n";
         }
         commaCounter --;

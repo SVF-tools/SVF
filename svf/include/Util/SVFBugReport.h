@@ -37,31 +37,37 @@
 #include "Util/cJSON.h"
 #include <set>
 
-namespace SVF{
+namespace SVF
+{
 
 /*!
  * Bug Detector Recoder
  */
 
 
-class GenericEvent{
+class GenericEvent
+{
 public:
-    enum EventType{Branch, Caller, CallSite, Loop, SourceInst};
+    enum EventType {Branch, Caller, CallSite, Loop, SourceInst};
 
 protected:
     EventType eventType;
 
 public:
-    GenericEvent(EventType eventType): eventType(eventType){ };
+    GenericEvent(EventType eventType): eventType(eventType) { };
     virtual ~GenericEvent() = default;
 
-    inline EventType getEventType() const { return eventType; }
+    inline EventType getEventType() const
+    {
+        return eventType;
+    }
     virtual const std::string getEventDescription() const = 0;
     virtual const std::string getFuncName() const = 0;
     virtual const std::string getEventLoc() const = 0;
 };
 
-class BranchEvent: public GenericEvent{
+class BranchEvent: public GenericEvent
+{
     /// branch statement and branch condition true or false
 protected:
     const SVFInstruction *branchInst;
@@ -69,7 +75,7 @@ protected:
 
 public:
     BranchEvent(const SVFInstruction *branchInst, bool branchSuccessFlg):
-          GenericEvent(GenericEvent::Branch), branchInst(branchInst), branchSuccessFlg(branchSuccessFlg){ }
+        GenericEvent(GenericEvent::Branch), branchInst(branchInst), branchSuccessFlg(branchSuccessFlg) { }
 
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
@@ -82,12 +88,13 @@ public:
     }
 };
 
-class CallSiteEvent: public GenericEvent{
+class CallSiteEvent: public GenericEvent
+{
 protected:
     const CallICFGNode *callSite;
 
 public:
-    CallSiteEvent(const CallICFGNode *callSite): GenericEvent(GenericEvent::CallSite), callSite(callSite){ }
+    CallSiteEvent(const CallICFGNode *callSite): GenericEvent(GenericEvent::CallSite), callSite(callSite) { }
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
     const std::string getEventLoc() const;
@@ -99,13 +106,14 @@ public:
     }
 };
 
-class SourceInstEvent : public GenericEvent{
+class SourceInstEvent : public GenericEvent
+{
 protected:
     const SVFInstruction *sourceSVFInst;
 
 public:
     SourceInstEvent(const SVFInstruction *sourceSVFInst):
-          GenericEvent(GenericEvent::SourceInst), sourceSVFInst(sourceSVFInst) { }
+        GenericEvent(GenericEvent::SourceInst), sourceSVFInst(sourceSVFInst) { }
 
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
@@ -118,12 +126,13 @@ public:
     }
 };
 
-class GenericBug{
+class GenericBug
+{
 public:
     typedef std::vector<const GenericEvent *> EventStack;
 
 public:
-    enum BugType{FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
+    enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
 
 protected:
     BugType bugType;
@@ -132,26 +141,33 @@ protected:
 public:
     /// note: should be initialized with a bugEventStack
     GenericBug(BugType bugType, EventStack bugEventStack):
-          bugType(bugType), bugEventStack(bugEventStack)
+        bugType(bugType), bugEventStack(bugEventStack)
     {
         assert(bugEventStack.size() != 0 && "bugEventStack should NOT be empty!");
     }
     virtual ~GenericBug() = default;
     //GenericBug(const GenericBug &) = delete;
     /// returns bug type
-    inline BugType getBugType() const { return bugType; }
+    inline BugType getBugType() const
+    {
+        return bugType;
+    }
     /// returns bug location as json format string
     const std::string getLoc() const;
     /// return bug source function name
     const std::string getFuncName() const;
 
-    inline const EventStack& getEventStack() const { return bugEventStack; }
+    inline const EventStack& getEventStack() const
+    {
+        return bugEventStack;
+    }
 
     virtual cJSON *getBugDescription() const = 0;
     virtual void printBugToTerminal() const = 0;
 };
 
-class BufferOverflowBug: public GenericBug{
+class BufferOverflowBug: public GenericBug
+{
 protected:
     s64_t allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound;
 
@@ -159,9 +175,9 @@ public:
     BufferOverflowBug(GenericBug::BugType bugType, const EventStack &eventStack,
                       s64_t allocLowerBound, s64_t allocUpperBound,
                       s64_t accessLowerBound, s64_t accessUpperBound):
-          GenericBug(bugType, eventStack), allocLowerBound(allocLowerBound),
-          allocUpperBound(allocUpperBound), accessLowerBound(accessLowerBound),
-          accessUpperBound(accessUpperBound){ }
+        GenericBug(bugType, eventStack), allocLowerBound(allocLowerBound),
+        allocUpperBound(allocUpperBound), accessLowerBound(accessLowerBound),
+        accessUpperBound(accessUpperBound) { }
 
     cJSON *getBugDescription() const;
     void printBugToTerminal() const;
@@ -173,13 +189,14 @@ public:
     }
 };
 
-class FullBufferOverflowBug: public BufferOverflowBug{
+class FullBufferOverflowBug: public BufferOverflowBug
+{
 public:
     FullBufferOverflowBug(const EventStack &eventStack,
-                             s64_t allocLowerBound, s64_t allocUpperBound,
-                             s64_t accessLowerBound, s64_t accessUpperBound):
-          BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, eventStack, allocLowerBound,
-                            allocUpperBound, accessLowerBound, accessUpperBound){ }
+                          s64_t allocLowerBound, s64_t allocUpperBound,
+                          s64_t accessLowerBound, s64_t accessUpperBound):
+        BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, eventStack, allocLowerBound,
+                          allocUpperBound, accessLowerBound, accessUpperBound) { }
 
     /// ClassOf
     static inline bool classof(const GenericBug *bug)
@@ -188,13 +205,14 @@ public:
     }
 };
 
-class PartialBufferOverflowBug: public BufferOverflowBug{
+class PartialBufferOverflowBug: public BufferOverflowBug
+{
 public:
     PartialBufferOverflowBug( const EventStack &eventStack,
-                                 s64_t allocLowerBound, s64_t allocUpperBound,
-                                 s64_t accessLowerBound, s64_t accessUpperBound):
-          BufferOverflowBug(GenericBug::PARTIALBUFOVERFLOW, eventStack, allocLowerBound,
-                            allocUpperBound, accessLowerBound, accessUpperBound){ }
+                              s64_t allocLowerBound, s64_t allocUpperBound,
+                              s64_t accessLowerBound, s64_t accessUpperBound):
+        BufferOverflowBug(GenericBug::PARTIALBUFOVERFLOW, eventStack, allocLowerBound,
+                          allocUpperBound, accessLowerBound, accessUpperBound) { }
 
     /// ClassOf
     static inline bool classof(const GenericBug *bug)
@@ -203,10 +221,11 @@ public:
     }
 };
 
-class NeverFreeBug : public GenericBug{
+class NeverFreeBug : public GenericBug
+{
 public:
     NeverFreeBug(const EventStack &bugEventStack):
-          GenericBug(GenericBug::NEVERFREE, bugEventStack){  };
+        GenericBug(GenericBug::NEVERFREE, bugEventStack) {  };
 
     cJSON *getBugDescription() const;
     void printBugToTerminal() const;
@@ -218,10 +237,11 @@ public:
     }
 };
 
-class PartialLeakBug : public GenericBug{
+class PartialLeakBug : public GenericBug
+{
 public:
     PartialLeakBug(const EventStack &bugEventStack):
-          GenericBug(GenericBug::PARTIALLEAK, bugEventStack){ }
+        GenericBug(GenericBug::PARTIALLEAK, bugEventStack) { }
 
     cJSON *getBugDescription() const;
     void printBugToTerminal() const;
@@ -233,10 +253,11 @@ public:
     }
 };
 
-class DoubleFreeBug : public GenericBug{
+class DoubleFreeBug : public GenericBug
+{
 public:
     DoubleFreeBug(const EventStack &bugEventStack):
-          GenericBug(GenericBug::PARTIALLEAK, bugEventStack){ }
+        GenericBug(GenericBug::PARTIALLEAK, bugEventStack) { }
 
     cJSON *getBugDescription() const;
     void printBugToTerminal() const;
@@ -248,10 +269,11 @@ public:
     }
 };
 
-class FileNeverCloseBug : public GenericBug{
+class FileNeverCloseBug : public GenericBug
+{
 public:
     FileNeverCloseBug(const EventStack &bugEventStack):
-          GenericBug(GenericBug::NEVERFREE, bugEventStack){  };
+        GenericBug(GenericBug::NEVERFREE, bugEventStack) {  };
 
     cJSON *getBugDescription() const;
     void printBugToTerminal() const;
@@ -263,10 +285,11 @@ public:
     }
 };
 
-class FilePartialCloseBug : public GenericBug{
+class FilePartialCloseBug : public GenericBug
+{
 public:
     FilePartialCloseBug(const EventStack &bugEventStack):
-          GenericBug(GenericBug::PARTIALLEAK, bugEventStack){ }
+        GenericBug(GenericBug::PARTIALLEAK, bugEventStack) { }
 
     cJSON *getBugDescription() const;
     void printBugToTerminal() const;
@@ -299,39 +322,47 @@ public:
     void addSaberBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack)
     {
         /// resign added events
-        for(auto eventPtr : eventStack){
+        for(auto eventPtr : eventStack)
+        {
             eventSet.insert(eventPtr);
         }
 
         /// create and add the bug
         GenericBug *newBug = nullptr;
-        switch(bugType){
-        case GenericBug::NEVERFREE:{
+        switch(bugType)
+        {
+        case GenericBug::NEVERFREE:
+        {
             newBug = new NeverFreeBug(eventStack);
             bugSet.insert(newBug);
             break;
         }
-        case GenericBug::PARTIALLEAK:{
+        case GenericBug::PARTIALLEAK:
+        {
             newBug = new PartialLeakBug(eventStack);
             bugSet.insert(newBug);
             break;
         }
-        case GenericBug::DOUBLEFREE:{
+        case GenericBug::DOUBLEFREE:
+        {
             newBug = new DoubleFreeBug(eventStack);
             bugSet.insert(newBug);
             break;
         }
-        case GenericBug::FILENEVERCLOSE:{
+        case GenericBug::FILENEVERCLOSE:
+        {
             newBug = new FileNeverCloseBug(eventStack);
             bugSet.insert(newBug);
             break;
         }
-        case GenericBug::FILEPARTIALCLOSE:{
+        case GenericBug::FILEPARTIALCLOSE:
+        {
             newBug = new FilePartialCloseBug(eventStack);
             bugSet.insert(newBug);
             break;
         }
-        default:{
+        default:
+        {
             assert(false && "saber does NOT have this bug type!");
             break;
         }
@@ -347,26 +378,32 @@ public:
      * usage: addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack, 0, 10, 11, 11)
      */
     void addAbsExecBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack,
-                       s64_t allocLowerBound, s64_t allocUpperBound, s64_t accessLowerBound, s64_t accessUpperBound){
+                       s64_t allocLowerBound, s64_t allocUpperBound, s64_t accessLowerBound, s64_t accessUpperBound)
+    {
         /// resign added events
-        for(auto eventPtr : eventStack){
+        for(auto eventPtr : eventStack)
+        {
             eventSet.insert(eventPtr);
         }
 
         /// add bugs
         GenericBug *newBug = nullptr;
-        switch(bugType){
-        case GenericBug::FULLBUFOVERFLOW:  {
+        switch(bugType)
+        {
+        case GenericBug::FULLBUFOVERFLOW:
+        {
             newBug = new FullBufferOverflowBug(eventStack, allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound);
             bugSet.insert(newBug);
             break;
         }
-        case GenericBug::PARTIALBUFOVERFLOW:{
+        case GenericBug::PARTIALBUFOVERFLOW:
+        {
             newBug = new PartialBufferOverflowBug(eventStack, allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound);
             bugSet.insert(newBug);
             break;
         }
-        default:{
+        default:
+        {
             assert(false && "Abstract Execution does NOT hava his bug type!");
             break;
         }
