@@ -120,7 +120,7 @@ public:
 
 class GenericBug{
 public:
-    typedef std::vector<GenericEvent *> EventStack;
+    typedef std::vector<const GenericEvent *> EventStack;
 
 public:
     enum BugType{FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
@@ -147,8 +147,8 @@ public:
 
     inline const EventStack& getEventStack() const { return bugEventStack; }
 
-    virtual cJSON *getBugDescription() = 0;
-    virtual void printBugToTerminal() = 0;
+    virtual cJSON *getBugDescription() const = 0;
+    virtual void printBugToTerminal() const = 0;
 };
 
 class BufferOverflowBug: public GenericBug{
@@ -163,8 +163,8 @@ public:
           allocUpperBound(allocUpperBound), accessLowerBound(accessLowerBound),
           accessUpperBound(accessUpperBound){ }
 
-    cJSON *getBugDescription();
-    void printBugToTerminal();
+    cJSON *getBugDescription() const;
+    void printBugToTerminal() const;
 
     /// ClassOf
     static inline bool classof(const GenericBug *bug)
@@ -208,8 +208,8 @@ public:
     NeverFreeBug(const EventStack &bugEventStack):
           GenericBug(GenericBug::NEVERFREE, bugEventStack){  };
 
-    cJSON *getBugDescription();
-    void printBugToTerminal();
+    cJSON *getBugDescription() const;
+    void printBugToTerminal() const;
 
     /// ClassOf
     static inline bool classof(const GenericBug *bug)
@@ -223,8 +223,8 @@ public:
     PartialLeakBug(const EventStack &bugEventStack):
           GenericBug(GenericBug::PARTIALLEAK, bugEventStack){ }
 
-    cJSON *getBugDescription();
-    void printBugToTerminal();
+    cJSON *getBugDescription() const;
+    void printBugToTerminal() const;
 
     /// ClassOf
     static inline bool classof(const GenericBug *bug)
@@ -238,8 +238,8 @@ public:
     DoubleFreeBug(const EventStack &bugEventStack):
           GenericBug(GenericBug::PARTIALLEAK, bugEventStack){ }
 
-    cJSON *getBugDescription();
-    void printBugToTerminal();
+    cJSON *getBugDescription() const;
+    void printBugToTerminal() const;
 
     /// ClassOf
     static inline bool classof(const GenericBug *bug)
@@ -253,8 +253,8 @@ public:
     FileNeverCloseBug(const EventStack &bugEventStack):
           GenericBug(GenericBug::NEVERFREE, bugEventStack){  };
 
-    cJSON *getBugDescription();
-    void printBugToTerminal();
+    cJSON *getBugDescription() const;
+    void printBugToTerminal() const;
 
     /// ClassOf
     static inline bool classof(const GenericBug *bug)
@@ -268,8 +268,8 @@ public:
     FilePartialCloseBug(const EventStack &bugEventStack):
           GenericBug(GenericBug::PARTIALLEAK, bugEventStack){ }
 
-    cJSON *getBugDescription();
-    void printBugToTerminal();
+    cJSON *getBugDescription() const;
+    void printBugToTerminal() const;
 
     /// ClassOf
     static inline bool classof(const GenericBug *bug)
@@ -283,7 +283,7 @@ class SVFBugReport
 public:
     SVFBugReport() = default;
     ~SVFBugReport();
-    typedef SVF::Set<GenericBug *> BugSet;
+    typedef SVF::Set<const GenericBug *> BugSet;
 
 protected:
     BugSet bugSet;    // maintain bugs
@@ -358,7 +358,7 @@ public:
      * function: pass file path, open the file and dump bug report as JSON format
      * usage: dumpToFile("/path/to/file")
      */
-    void dumpToFile(const std::string& filePath);
+    void dumpToJsonFile(const std::string& filePath);
 };
 }
 

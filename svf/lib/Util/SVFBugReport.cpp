@@ -44,19 +44,19 @@ GenericBug::~GenericBug()
 
 const std::string GenericBug::getLoc() const
 {
-    GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
+    const GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
     assert(SourceInstructionEvent::classof(sourceInstEvent) && "bugEventStack top should be a SourceInst event");
     return sourceInstEvent->getEventLoc();
 }
 
 const std::string GenericBug::getFuncName() const
 {
-    GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
+    const GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
     assert(SourceInstructionEvent::classof(sourceInstEvent) && "bugEventStack top should be a SourceInst event");
     return sourceInstEvent->getFuncName();
 }
 
-cJSON *BufferOverflowBug::getBugDescription()
+cJSON *BufferOverflowBug::getBugDescription() const
 {
     cJSON *bugDescription = cJSON_CreateObject();
     cJSON *allocLB = cJSON_CreateNumber(allocLowerBound);
@@ -72,7 +72,7 @@ cJSON *BufferOverflowBug::getBugDescription()
     return bugDescription;
 }
 
-void BufferOverflowBug::printBugToTerminal()
+void BufferOverflowBug::printBugToTerminal() const
 {
     stringstream bugInfo;
     if(FullBufferOverflowBug::classof(this)){
@@ -102,19 +102,19 @@ void BufferOverflowBug::printBugToTerminal()
 
 }
 
-cJSON * NeverFreeBug::getBugDescription()
+cJSON * NeverFreeBug::getBugDescription() const
 {
     cJSON *bugDescription = cJSON_CreateObject();
     return bugDescription;
 }
 
-void NeverFreeBug::printBugToTerminal()
+void NeverFreeBug::printBugToTerminal() const
 {
     SVFUtil::errs() << SVFUtil::bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
                     << GenericBug::getLoc() << ")\n";
 }
 
-cJSON * PartialLeakBug::getBugDescription()
+cJSON * PartialLeakBug::getBugDescription() const
 {
     cJSON *bugDescription = cJSON_CreateObject();
     cJSON *pathInfo = cJSON_CreateArray();
@@ -137,7 +137,7 @@ cJSON * PartialLeakBug::getBugDescription()
     return bugDescription;
 }
 
-void PartialLeakBug::printBugToTerminal()
+void PartialLeakBug::printBugToTerminal() const
 {
     SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
                     << GenericBug::getLoc() << ")\n";
@@ -151,7 +151,7 @@ void PartialLeakBug::printBugToTerminal()
     SVFUtil::errs() << "\n";
 }
 
-cJSON * DoubleFreeBug::getBugDescription()
+cJSON * DoubleFreeBug::getBugDescription() const
 {
     cJSON *bugDescription = cJSON_CreateObject();
 
@@ -174,7 +174,7 @@ cJSON * DoubleFreeBug::getBugDescription()
     return bugDescription;
 }
 
-void DoubleFreeBug::printBugToTerminal()
+void DoubleFreeBug::printBugToTerminal() const
 {
     SVFUtil::errs() << SVFUtil::bugMsg2("\t Double Free :") <<  " memory allocation at : ("
                     << GenericBug::getLoc() << ")\n";
@@ -188,19 +188,19 @@ void DoubleFreeBug::printBugToTerminal()
     SVFUtil::errs() << "\n";
 }
 
-cJSON * FileNeverCloseBug::getBugDescription()
+cJSON * FileNeverCloseBug::getBugDescription() const
 {
     cJSON *bugDescription = cJSON_CreateObject();
     return bugDescription;
 }
 
-void FileNeverCloseBug::printBugToTerminal()
+void FileNeverCloseBug::printBugToTerminal() const
 {
     SVFUtil::errs() << SVFUtil::bugMsg1("\t FileNeverClose :") <<  " file open location at : ("
                     << GenericBug::getLoc() << ")\n";
 }
 
-cJSON * FilePartialCloseBug::getBugDescription()
+cJSON * FilePartialCloseBug::getBugDescription() const
 {
     cJSON *bugDescription = cJSON_CreateObject();
 
@@ -224,7 +224,7 @@ cJSON * FilePartialCloseBug::getBugDescription()
     return bugDescription;
 }
 
-void FilePartialCloseBug::printBugToTerminal()
+void FilePartialCloseBug::printBugToTerminal() const
 {
     SVFUtil::errs() << SVFUtil::bugMsg2("\t PartialFileClose :") <<  " file open location at : ("
                     << GenericBug::getLoc() << ")\n";
@@ -301,7 +301,7 @@ SVFBugReport::~SVFBugReport()
     }
 }
 
-void SVFBugReport::dumpToFile(const std::string& filePath)
+void SVFBugReport::dumpToJsonFile(const std::string& filePath)
 {
     std::map<GenericEvent::EventType, std::string> eventType2Str = {
         {GenericEvent::CallSite, "call site"},
