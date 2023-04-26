@@ -152,14 +152,14 @@ void LeakChecker::reportBug(ProgSlice* slice)
     if(isAllPathReachable() == false && isSomePathReachable() == false)
     {
         // full leakage
-        SourceInstructionEvent *sourceInstEvent = new SourceInstructionEvent(getSrcCSID(slice->getSource())->getCallSite());
+        SourceInstEvent*sourceInstEvent = new SourceInstEvent(getSrcCSID(slice->getSource())->getCallSite());
         GenericBug::EventStack eventStack = {sourceInstEvent};
         report.addSaberBug(GenericBug::NEVERFREE, eventStack);
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
         // partial leakage
-        SourceInstructionEvent *sourceInstEvent = new SourceInstructionEvent(getSrcCSID(slice->getSource())->getCallSite());
+        SourceInstEvent*sourceInstEvent = new SourceInstEvent(getSrcCSID(slice->getSource())->getCallSite());
         GenericBug::EventStack eventStack;
         slice->evalFinalCond2Event(eventStack);
         eventStack.push_back(sourceInstEvent);

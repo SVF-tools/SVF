@@ -64,12 +64,12 @@ public:
 class BranchEvent: public GenericEvent{
     /// branch statement and branch condition true or false
 protected:
-    const SVFStmt *branchStmt;
+    const SVFInstruction *branchInst;
     bool branchSuccessFlg;
 
 public:
-    BranchEvent(const SVFStmt *branchStmt, bool branchSuccessFlg):
-          GenericEvent(GenericEvent::Branch), branchStmt(branchStmt), branchSuccessFlg(branchSuccessFlg){ }
+    BranchEvent(const SVFInstruction *branchInst, bool branchSuccessFlg):
+          GenericEvent(GenericEvent::Branch), branchInst(branchInst), branchSuccessFlg(branchSuccessFlg){ }
 
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
@@ -99,12 +99,12 @@ public:
     }
 };
 
-class SourceInstructionEvent: public GenericEvent{
+class SourceInstEvent : public GenericEvent{
 protected:
     const SVFInstruction *sourceSVFInst;
 
 public:
-    SourceInstructionEvent(const SVFInstruction *sourceSVFInst):
+    SourceInstEvent(const SVFInstruction *sourceSVFInst):
           GenericEvent(GenericEvent::SourceInst), sourceSVFInst(sourceSVFInst) { }
 
     const std::string getEventDescription() const;
@@ -371,6 +371,9 @@ public:
             break;
         }
         }
+
+        // when add a bug, also print it to terminal
+        newBug->printBugToTerminal();
     }
 
     /*

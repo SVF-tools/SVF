@@ -38,14 +38,14 @@ using namespace SVF;
 const std::string GenericBug::getLoc() const
 {
     const GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
-    assert(SourceInstructionEvent::classof(sourceInstEvent) && "bugEventStack top should be a SourceInst event");
+    assert(SourceInstEvent::classof(sourceInstEvent) && "bugEventStack top should be a SourceInst event");
     return sourceInstEvent->getEventLoc();
 }
 
 const std::string GenericBug::getFuncName() const
 {
     const GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
-    assert(SourceInstructionEvent::classof(sourceInstEvent) && "bugEventStack top should be a SourceInst event");
+    assert(SourceInstEvent::classof(sourceInstEvent) && "bugEventStack top should be a SourceInst event");
     return sourceInstEvent->getFuncName();
 }
 
@@ -255,12 +255,12 @@ const std::string CallSiteEvent::getEventDescription() const
 
 const std::string BranchEvent::getFuncName() const
 {
-    return branchStmt->getInst()->getFunction()->getName();
+    return branchInst->getFunction()->getName();
 }
 
 const std::string BranchEvent::getEventLoc() const
 {
-    return branchStmt->getInst()->getSourceLoc();
+    return branchInst->getSourceLoc();
 }
 
 const std::string BranchEvent::getEventDescription() const
@@ -272,17 +272,17 @@ const std::string BranchEvent::getEventDescription() const
     }
 }
 
-const std::string SourceInstructionEvent::getFuncName() const
+const std::string SourceInstEvent::getFuncName() const
 {
     return sourceSVFInst->getFunction()->getName();
 }
 
-const std::string SourceInstructionEvent::getEventLoc() const
+const std::string SourceInstEvent::getEventLoc() const
 {
     return sourceSVFInst->getSourceLoc();
 }
 
-const std::string SourceInstructionEvent::getEventDescription() const
+const std::string SourceInstEvent::getEventDescription() const
 {
     return "None";
 }
@@ -344,7 +344,7 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
         const GenericBug::EventStack bugEventStack = bugPtr->getEventStack();
         if(BufferOverflowBug::classof(bugPtr)){  // add only when bug is context sensitive
             for(auto eventPtr : bugEventStack){
-                if (SourceInstructionEvent::classof(eventPtr)){
+                if (SourceInstEvent::classof(eventPtr)){
                     continue;
                 }
 

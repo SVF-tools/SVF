@@ -153,12 +153,10 @@ void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack) const
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
         const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
-        auto stmt = PAG::getPAG()->getValueEdges(tinst);
-        assert(stmt.size() == 1 && "returned SVFStmtSet should be of size 1!");
         if(pathAllocator->isNegCond(*it))
-            eventStack.push_back(new BranchEvent(*(stmt.begin()), false));
+            eventStack.push_back(new BranchEvent(tinst, false));
         else
-            eventStack.push_back(new BranchEvent(*(stmt.begin()), true));
+            eventStack.push_back(new BranchEvent(tinst, true));
     }
 }
 

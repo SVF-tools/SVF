@@ -39,7 +39,7 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
 
     if(slice->isSatisfiableForPairs() == false)
     {
-        SourceInstructionEvent *sourceInstEvent = new SourceInstructionEvent(getSrcCSID(slice->getSource())->getCallSite());
+        SourceInstEvent*sourceInstEvent = new SourceInstEvent(getSrcCSID(slice->getSource())->getCallSite());
         GenericBug::EventStack eventStack;
         slice->evalFinalCond2Event(eventStack);
         eventStack.push_back(sourceInstEvent);
