@@ -283,10 +283,6 @@ SVFBugReport::~SVFBugReport()
     {
         delete bugIt;
     }
-    for(auto eventPtr:eventHashMap)
-    {
-        delete eventPtr.second;
-    }
 }
 
 void SVFBugReport::dumpToJsonFile(const std::string& filePath)

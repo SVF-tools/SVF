@@ -301,7 +301,6 @@ public:
 
 protected:
     BugSet bugSet;    // maintain bugs
-    EventHashMap eventHashMap;// maintain added events
 
 public:
 
