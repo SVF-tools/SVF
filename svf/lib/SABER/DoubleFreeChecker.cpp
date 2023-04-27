@@ -41,7 +41,8 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
     {
         GenericBug::EventStack eventStack;
         slice->evalFinalCond2Event(eventStack);
-        eventStack.push_back(GenericEvent(GenericEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite()));
+        eventStack.push_back(
+            BugEvent(BugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite()));
         report.addSaberBug(GenericBug::DOUBLEFREE, eventStack);
     }
     if(Options::ValidateTests())
