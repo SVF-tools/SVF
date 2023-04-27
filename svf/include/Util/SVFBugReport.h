@@ -73,44 +73,6 @@ public:
     virtual const std::string getEventLoc() const;
 };
 
-class BranchEvent: public GenericEvent
-{
-public:
-    BranchEvent(const SVFInstruction *branchInst, bool branchSuccessFlg):
-          GenericEvent(GenericEvent::Branch|((((u32_t)branchSuccessFlg) << 4) & BRANCHFLAGMASK), branchInst) { }
-
-    /// ClassOf
-    static inline bool classof(const GenericEvent* event)
-    {
-        return event->getEventType() == GenericEvent::Branch;
-    }
-};
-
-class CallSiteEvent: public GenericEvent
-{
-public:
-    CallSiteEvent(const SVFInstruction *callInst): GenericEvent(GenericEvent::CallSite, callInst) { }
-
-    /// ClassOf
-    static inline bool classof(const GenericEvent* event)
-    {
-        return event->getEventType() == GenericEvent::CallSite;
-    }
-};
-
-class SourceInstEvent : public GenericEvent
-{
-public:
-    SourceInstEvent(const SVFInstruction *sourceSVFInst):
-          GenericEvent(GenericEvent::SourceInst, sourceSVFInst) { }
-
-    /// ClassOf
-    static inline bool classof(const GenericEvent* event)
-    {
-        return event->getEventType() == GenericEvent::SourceInst;
-    }
-};
-
 class GenericBug
 {
 public:

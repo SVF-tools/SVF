@@ -153,9 +153,9 @@ void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack) const
     {
         const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
         if(pathAllocator->isNegCond(*it))
-            eventStack.push_back(BranchEvent(tinst, false));
+            eventStack.push_back(GenericEvent(GenericEvent::Branch|((((u32_t)false) << 4) & BRANCHFLAGMASK), tinst));
         else
-            eventStack.push_back(BranchEvent(tinst, true));
+            eventStack.push_back(GenericEvent(GenericEvent::Branch|((((u32_t)true) << 4) & BRANCHFLAGMASK), tinst));
     }
 }
 
