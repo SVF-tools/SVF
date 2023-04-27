@@ -39,8 +39,10 @@ void FileChecker::reportBug(ProgSlice* slice)
     if(isAllPathReachable() == false && isSomePathReachable() == false)
     {
         // full leakage
-        GenericBug::EventStack eventStack = {
-            BugEvent(BugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite())};
+        GenericBug::EventStack eventStack =
+        {
+            BugEvent(BugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite())
+        };
         report.addSaberBug(GenericBug::FILENEVERCLOSE, eventStack);
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)

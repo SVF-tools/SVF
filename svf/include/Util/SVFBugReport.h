@@ -51,7 +51,8 @@ namespace SVF
 class BugEvent
 {
 public:
-    enum EventType{
+    enum EventType
+    {
         Branch = 0x1,
         Caller = 0x2,
         CallSite = 0x3,
@@ -67,7 +68,10 @@ public:
     BugEvent(u32_t typeAndInfoFlag, const SVFInstruction *eventInst): typeAndInfoFlag(typeAndInfoFlag), eventInst(eventInst) { };
     virtual ~BugEvent() = default;
 
-    inline u32_t getEventType() const { return typeAndInfoFlag & EVENTTYPEMASK; }
+    inline u32_t getEventType() const
+    {
+        return typeAndInfoFlag & EVENTTYPEMASK;
+    }
     virtual const std::string getEventDescription() const;
     virtual const std::string getFuncName() const;
     virtual const std::string getEventLoc() const;
@@ -79,7 +83,7 @@ public:
     typedef std::vector<BugEvent> EventStack;
 
 public:
-    enum BugType{FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
+    enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
 
 protected:
     BugType bugType;
@@ -88,7 +92,7 @@ protected:
 public:
     /// note: should be initialized with a bugEventStack
     GenericBug(BugType bugType, const EventStack &bugEventStack):
-          bugType(bugType), bugEventStack(bugEventStack)
+        bugType(bugType), bugEventStack(bugEventStack)
     {
         assert(bugEventStack.size() != 0 && "bugEventStack should NOT be empty!");
     }
@@ -140,10 +144,10 @@ class FullBufferOverflowBug: public BufferOverflowBug
 {
 public:
     FullBufferOverflowBug(const EventStack &eventStack,
-                             s64_t allocLowerBound, s64_t allocUpperBound,
-                             s64_t accessLowerBound, s64_t accessUpperBound):
-          BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, eventStack, allocLowerBound,
-                            allocUpperBound, accessLowerBound, accessUpperBound) { }
+                          s64_t allocLowerBound, s64_t allocUpperBound,
+                          s64_t accessLowerBound, s64_t accessUpperBound):
+        BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, eventStack, allocLowerBound,
+                          allocUpperBound, accessLowerBound, accessUpperBound) { }
 
     /// ClassOf
     static inline bool classof(const GenericBug *bug)
@@ -269,7 +273,8 @@ public:
     {
         /// create and add the bug
         GenericBug *newBug = nullptr;
-        switch(bugType){
+        switch(bugType)
+        {
         case GenericBug::NEVERFREE:
         {
             newBug = new NeverFreeBug(eventStack);
@@ -317,10 +322,12 @@ public:
      * usage: addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack, 0, 10, 11, 11)
      */
     void addAbsExecBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack,
-                       s64_t allocLowerBound, s64_t allocUpperBound, s64_t accessLowerBound, s64_t accessUpperBound){
+                       s64_t allocLowerBound, s64_t allocUpperBound, s64_t accessLowerBound, s64_t accessUpperBound)
+    {
         /// add bugs
         GenericBug *newBug = nullptr;
-        switch(bugType){
+        switch(bugType)
+        {
         case GenericBug::FULLBUFOVERFLOW:
         {
             newBug = new FullBufferOverflowBug(eventStack, allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound);

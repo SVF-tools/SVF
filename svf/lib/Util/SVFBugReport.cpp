@@ -73,7 +73,8 @@ void BufferOverflowBug::printBugToTerminal() const
         SVFUtil::errs() << SVFUtil::bugMsg1("\t Full Overflow :") <<  " accessing at : ("
                         << GenericBug::getLoc() << ")\n";
 
-    }else
+    }
+    else
     {
         SVFUtil::errs() << SVFUtil::bugMsg1("\t Partial Overflow :") <<  " accessing at : ("
                         << GenericBug::getLoc() << ")\n";
@@ -93,7 +94,8 @@ void BufferOverflowBug::printBugToTerminal() const
             break;
         }
         default:
-        {  // TODO: implement more events when needed
+        {
+            // TODO: implement more events when needed
             break;
         }
         }
@@ -249,34 +251,41 @@ const std::string BugEvent::getEventLoc() const
 
 const std::string BugEvent::getEventDescription() const
 {
-    switch(getEventType()){
-    case BugEvent::Branch:{
+    switch(getEventType())
+    {
+    case BugEvent::Branch:
+    {
         if (typeAndInfoFlag & BRANCHFLAGMASK)
         {
             return "True";
-        }else
+        }
+        else
         {
             return "False";
         }
         break;
     }
-    case BugEvent::CallSite:{
+    case BugEvent::CallSite:
+    {
         std::string description("calls ");
         const SVFFunction *callee = SVFUtil::getCallee(eventInst);
         if(callee == nullptr)
         {
             description += "<unknown>";
-        }else
+        }
+        else
         {
             description += callee->getName();
         }
         return description;
         break;
     }
-    case BugEvent::SourceInst:{
+    case BugEvent::SourceInst:
+    {
         return "None";
     }
-    default:{
+    default:
+    {
         assert(false && "No such type of event!");
     }
     }
@@ -340,7 +349,8 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
         cJSON *eventList = cJSON_CreateArray();
         const GenericBug::EventStack &bugEventStack = bugPtr->getEventStack();
         if(BufferOverflowBug::classof(bugPtr))
-        {  // add only when bug is context sensitive
+        {
+            // add only when bug is context sensitive
             for(const BugEvent&event : bugEventStack)
             {
                 if (event.getEventType() == BugEvent::SourceInst)
