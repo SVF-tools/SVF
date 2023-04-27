@@ -247,34 +247,39 @@ const std::string GenericEvent::getEventLoc() const
     return eventInst->getSourceLoc();
 }
 
-const std::string CallSiteEvent::getEventDescription() const
+const std::string GenericEvent::getEventDescription() const
 {
-    std::string description("calls ");
-    const SVFFunction *callee = SVFUtil::getCallee(eventInst);
-    if(callee == nullptr)
-    {
-        description += "<unknown>";
-    }else
-    {
-        description += callee->getName();
+    switch(getEventType()){
+    case GenericEvent::Branch:{
+        if (typeAndInfoFlag & BRANCHFLAGMASK)
+        {
+            return "True";
+        }else
+        {
+            return "False";
+        }
+        break;
     }
-    return description;
-}
-
-const std::string BranchEvent::getEventDescription() const
-{
-    if (typeAndInfoFlag & BRANCHFLAGMASK)
-    {
-        return "True";
-    }else
-    {
-        return "False";
+    case GenericEvent::CallSite:{
+        std::string description("calls ");
+        const SVFFunction *callee = SVFUtil::getCallee(eventInst);
+        if(callee == nullptr)
+        {
+            description += "<unknown>";
+        }else
+        {
+            description += callee->getName();
+        }
+        return description;
+        break;
     }
-}
-
-const std::string SourceInstEvent::getEventDescription() const
-{
-    return "None";
+    case GenericEvent::SourceInst:{
+        return "None";
+    }
+    default:{
+        assert(false && "No such type of event!");
+    }
+    }
 }
 
 SVFBugReport::~SVFBugReport()

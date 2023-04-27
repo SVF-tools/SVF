@@ -64,11 +64,11 @@ protected:
     const SVFInstruction *eventInst;
 
 public:
-    GenericEvent(u32_t typeAndInfoFlag, const SVFInstruction *eventInst): typeAndInfoFlag(typeAndInfoFlag), eventInst(eventInst){ };
+    GenericEvent(u32_t typeAndInfoFlag, const SVFInstruction *eventInst): typeAndInfoFlag(typeAndInfoFlag), eventInst(eventInst) { };
     virtual ~GenericEvent() = default;
 
     inline u32_t getEventType() const { return typeAndInfoFlag & EVENTTYPEMASK; }
-    virtual const std::string getEventDescription() const { return ""; };
+    virtual const std::string getEventDescription() const;
     virtual const std::string getFuncName() const;
     virtual const std::string getEventLoc() const;
 };
@@ -78,8 +78,6 @@ class BranchEvent: public GenericEvent
 public:
     BranchEvent(const SVFInstruction *branchInst, bool branchSuccessFlg):
           GenericEvent(GenericEvent::Branch|((((u32_t)branchSuccessFlg) << 4) & BRANCHFLAGMASK), branchInst) { }
-
-    const std::string getEventDescription() const override;
 
     /// ClassOf
     static inline bool classof(const GenericEvent* event)
@@ -91,8 +89,7 @@ public:
 class CallSiteEvent: public GenericEvent
 {
 public:
-    CallSiteEvent(const SVFInstruction *callInst): GenericEvent(GenericEvent::CallSite, callInst){ }
-    const std::string getEventDescription() const override;
+    CallSiteEvent(const SVFInstruction *callInst): GenericEvent(GenericEvent::CallSite, callInst) { }
 
     /// ClassOf
     static inline bool classof(const GenericEvent* event)
@@ -106,8 +103,6 @@ class SourceInstEvent : public GenericEvent
 public:
     SourceInstEvent(const SVFInstruction *sourceSVFInst):
           GenericEvent(GenericEvent::SourceInst, sourceSVFInst) { }
-
-    const std::string getEventDescription() const override;
 
     /// ClassOf
     static inline bool classof(const GenericEvent* event)
