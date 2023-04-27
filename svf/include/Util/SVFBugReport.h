@@ -114,7 +114,7 @@ public:
 class GenericBug
 {
 public:
-    typedef std::vector<GenericEvent> EventStack;
+    typedef std::vector<const GenericEvent> EventStack;
 
 public:
     enum BugType{FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
@@ -125,7 +125,7 @@ protected:
 
 public:
     /// note: should be initialized with a bugEventStack
-    GenericBug(BugType bugType, EventStack bugEventStack):
+    GenericBug(BugType bugType, const EventStack &bugEventStack):
           bugType(bugType), bugEventStack(bugEventStack)
     {
         assert(bugEventStack.size() != 0 && "bugEventStack should NOT be empty!");
