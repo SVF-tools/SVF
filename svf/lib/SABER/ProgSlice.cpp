@@ -149,14 +149,15 @@ const CallICFGNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
 void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack) const
 {
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
-    Set<std::string> locations;
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
         const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
         if(pathAllocator->isNegCond(*it))
-            eventStack.push_back(new BranchEvent(tinst, false));
+            eventStack.push_back(BugEvent(
+                BugEvent::Branch|((((u32_t)false) << 4) & BRANCHFLAGMASK), tinst));
         else
-            eventStack.push_back(new BranchEvent(tinst, true));
+            eventStack.push_back(BugEvent(
+                BugEvent::Branch|((((u32_t)true) << 4) & BRANCHFLAGMASK), tinst));
     }
 }
 
