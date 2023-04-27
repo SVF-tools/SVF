@@ -37,6 +37,9 @@
 #include "Util/cJSON.h"
 #include <set>
 
+#define BRANCHFLAGMASK 0x00000010
+#define EVENTTYPEMASK 0x0000000f
+
 namespace SVF
 {
 
@@ -48,34 +51,35 @@ namespace SVF
 class GenericEvent
 {
 public:
-    enum EventType{Branch, Caller, CallSite, Loop, SourceInst};
+    enum EventType{
+        Branch = 0x1,
+        Caller = 0x2,
+        CallSite = 0x3,
+        Loop = 0x4,
+        SourceInst = 0x5
+    };
 
 protected:
-    EventType eventType;
+    u32_t typeAndInfoFlag;
     const SVFInstruction *eventInst;
 
 public:
-    GenericEvent(EventType eventType, const SVFInstruction *eventInst): eventType(eventType), eventInst(eventInst){ };
+    GenericEvent(u32_t typeAndInfoFlag, const SVFInstruction *eventInst): typeAndInfoFlag(typeAndInfoFlag), eventInst(eventInst){ };
     virtual ~GenericEvent() = default;
 
-    inline EventType getEventType() const { return eventType; }
-    virtual const std::string getEventDescription() const = 0;
-    virtual const std::string getFuncName() const = 0;
-    virtual const std::string getEventLoc() const = 0;
+    inline u32_t getEventType() const { return typeAndInfoFlag & EVENTTYPEMASK; }
+    virtual const std::string getEventDescription() const { return ""; };
+    virtual const std::string getFuncName() const;
+    virtual const std::string getEventLoc() const;
 };
 
 class BranchEvent: public GenericEvent
 {
-protected:
-    bool branchSuccessFlg;  /// branch successful? true or false
-
 public:
     BranchEvent(const SVFInstruction *branchInst, bool branchSuccessFlg):
-          GenericEvent(GenericEvent::Branch, branchInst), branchSuccessFlg(branchSuccessFlg){ }
+          GenericEvent(GenericEvent::Branch|((((u32_t)branchSuccessFlg) << 4) & BRANCHFLAGMASK), branchInst) { }
 
-    const std::string getEventDescription() const;
-    const std::string getFuncName() const;
-    const std::string getEventLoc() const;
+    const std::string getEventDescription() const override;
 
     /// ClassOf
     static inline bool classof(const GenericEvent* event)
@@ -88,9 +92,7 @@ class CallSiteEvent: public GenericEvent
 {
 public:
     CallSiteEvent(const SVFInstruction *callInst): GenericEvent(GenericEvent::CallSite, callInst){ }
-    const std::string getEventDescription() const;
-    const std::string getFuncName() const;
-    const std::string getEventLoc() const;
+    const std::string getEventDescription() const override;
 
     /// ClassOf
     static inline bool classof(const GenericEvent* event)
@@ -105,9 +107,7 @@ public:
     SourceInstEvent(const SVFInstruction *sourceSVFInst):
           GenericEvent(GenericEvent::SourceInst, sourceSVFInst) { }
 
-    const std::string getEventDescription() const;
-    const std::string getFuncName() const;
-    const std::string getEventLoc() const;
+    const std::string getEventDescription() const override;
 
     /// ClassOf
     static inline bool classof(const GenericEvent* event)
@@ -119,7 +119,7 @@ public:
 class GenericBug
 {
 public:
-    typedef std::vector<const GenericEvent *> EventStack;
+    typedef std::vector<GenericEvent> EventStack;
 
 public:
     enum BugType{FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
@@ -304,10 +304,6 @@ protected:
     EventHashMap eventHashMap;// maintain added events
 
 public:
-
-    /// note: use these functions to create new event object, for safety
-    const GenericEvent* newEventByInst(GenericEvent::EventType eventType, const SVFInstruction *eventInst);
-    const GenericEvent* newEventByInstAndCond(GenericEvent::EventType eventType, const SVFInstruction *eventInst, bool cond);
 
     /*
      * function: pass bug type (i.e., GenericBug::NEVERFREE) and eventStack as parameter,

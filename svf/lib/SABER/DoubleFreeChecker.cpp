@@ -39,10 +39,9 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice)
 
     if(slice->isSatisfiableForPairs() == false)
     {
-        const GenericEvent* sourceInstEvent = report.newEventByInst(GenericEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite());
         GenericBug::EventStack eventStack;
-        slice->evalFinalCond2Event(eventStack, report);
-        eventStack.push_back(sourceInstEvent);
+        slice->evalFinalCond2Event(eventStack);
+        eventStack.push_back(SourceInstEvent(getSrcCSID(slice->getSource())->getCallSite()));
         report.addSaberBug(GenericBug::DOUBLEFREE, eventStack);
     }
     if(Options::ValidateTests())

@@ -37,16 +37,16 @@ using namespace SVF;
 
 const std::string GenericBug::getLoc() const
 {
-    const GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
-    assert(SourceInstEvent::classof(sourceInstEvent) && "bugEventStack top should be a SourceInst event");
-    return sourceInstEvent->getEventLoc();
+    const GenericEvent &sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
+    assert(SourceInstEvent::classof(&sourceInstEvent) && "bugEventStack top should be a SourceInst event");
+    return SVFUtil::dyn_cast<SourceInstEvent>(&sourceInstEvent)->getEventLoc();
 }
 
 const std::string GenericBug::getFuncName() const
 {
-    const GenericEvent *sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
-    assert(SourceInstEvent::classof(sourceInstEvent) && "bugEventStack top should be a SourceInst event");
-    return sourceInstEvent->getFuncName();
+    const GenericEvent &sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
+    assert(SourceInstEvent::classof(&sourceInstEvent) && "bugEventStack top should be a SourceInst event");
+    return SVFUtil::dyn_cast<SourceInstEvent>(&sourceInstEvent)->getFuncName();
 }
 
 cJSON *BufferOverflowBug::getBugDescription() const
@@ -83,13 +83,13 @@ void BufferOverflowBug::printBugToTerminal() const
     SVFUtil::errs() << "\t\t Info : \n" << bugInfo.str();
     SVFUtil::errs() << "\t\t Events : \n";
 
-    for(auto eventPtr : bugEventStack)
+    for(auto event : bugEventStack)
     {
-        switch(eventPtr->getEventType())
+        switch(event.getEventType())
         {
         case GenericEvent::CallSite:
         {
-            SVFUtil::errs() << "\t\t  callsite at : ( " << eventPtr->getEventLoc() << " )\n";
+            SVFUtil::errs() << "\t\t  callsite at : ( " << event.getEventLoc() << " )\n";
             break;
         }
         default:
@@ -120,9 +120,10 @@ cJSON * PartialLeakBug::getBugDescription() const
     for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
         cJSON *newBranch = cJSON_CreateObject();
-        cJSON *branchLoc = cJSON_Parse((*eventIt)->getEventLoc().c_str());
+        cJSON *branchLoc = cJSON_Parse((*eventIt).getEventLoc().c_str());
         if(branchLoc == nullptr) branchLoc = cJSON_CreateObject();
-        cJSON *branchCondition = cJSON_CreateString((*eventIt)->getEventDescription().c_str());
+
+        cJSON *branchCondition = cJSON_CreateString(SVFUtil::dyn_cast<BranchEvent>(&(*eventIt))->getEventDescription().c_str());
 
         cJSON_AddItemToObject(newBranch, "BranchLoc", branchLoc);
         cJSON_AddItemToObject(newBranch, "BranchCond", branchCondition);
@@ -144,7 +145,7 @@ void PartialLeakBug::printBugToTerminal() const
     auto lastBranchEventIt = bugEventStack.end() - 1;
     for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        SVFUtil::errs() << "\t\t  --> (" << (*eventIt)->getEventLoc() << "|" << (*eventIt)->getEventDescription() << ") \n";
+        SVFUtil::errs() << "\t\t  --> (" << (*eventIt).getEventLoc() << "|" << SVFUtil::dyn_cast<BranchEvent>(&(*eventIt))->getEventDescription() << ") \n";
     }
     SVFUtil::errs() << "\n";
 }
@@ -158,9 +159,9 @@ cJSON * DoubleFreeBug::getBugDescription() const
     for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
         cJSON *newBranch = cJSON_CreateObject();
-        cJSON *branchLoc = cJSON_Parse((*eventIt)->getEventLoc().c_str());
+        cJSON *branchLoc = cJSON_Parse((*eventIt).getEventLoc().c_str());
         if(branchLoc == nullptr) branchLoc = cJSON_CreateObject();
-        cJSON *branchCondition = cJSON_CreateString((*eventIt)->getEventDescription().c_str());
+        cJSON *branchCondition = cJSON_CreateString(SVFUtil::dyn_cast<BranchEvent>(&(*eventIt))->getEventDescription().c_str());
 
         cJSON_AddItemToObject(newBranch, "BranchLoc", branchLoc);
         cJSON_AddItemToObject(newBranch, "BranchCond", branchCondition);
@@ -181,7 +182,7 @@ void DoubleFreeBug::printBugToTerminal() const
     auto lastBranchEventIt = bugEventStack.end() - 1;
     for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        SVFUtil::errs() << "\t\t  --> (" << (*eventIt)->getEventLoc() << "|" << (*eventIt)->getEventDescription() << ") \n";
+        SVFUtil::errs() << "\t\t  --> (" << (*eventIt).getEventLoc() << "|" << SVFUtil::dyn_cast<BranchEvent>(&(*eventIt))->getEventDescription() << ") \n";
     }
     SVFUtil::errs() << "\n";
 }
@@ -208,9 +209,9 @@ cJSON * FilePartialCloseBug::getBugDescription() const
     for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
         cJSON *newBranch = cJSON_CreateObject();
-        cJSON *branchLoc = cJSON_Parse((*eventIt)->getEventLoc().c_str());
+        cJSON *branchLoc = cJSON_Parse((*eventIt).getEventLoc().c_str());
         if(branchLoc == nullptr) branchLoc = cJSON_CreateObject();
-        cJSON *branchCondition = cJSON_CreateString((*eventIt)->getEventDescription().c_str());
+        cJSON *branchCondition = cJSON_CreateString(SVFUtil::dyn_cast<BranchEvent>(&(*eventIt))->getEventDescription().c_str());
 
         cJSON_AddItemToObject(newBranch, "BranchLoc", branchLoc);
         cJSON_AddItemToObject(newBranch, "BranchCond", branchCondition);
@@ -231,17 +232,17 @@ void FilePartialCloseBug::printBugToTerminal() const
     auto lastBranchEventIt = bugEventStack.end() - 1;
     for(auto eventIt = bugEventStack.begin(); eventIt != lastBranchEventIt; eventIt++)
     {
-        SVFUtil::errs() << "\t\t  --> (" << (*eventIt)->getEventLoc() << "|" << (*eventIt)->getEventDescription() << ") \n";
+        SVFUtil::errs() << "\t\t  --> (" << (*eventIt).getEventLoc() << "|" << SVFUtil::dyn_cast<BranchEvent>(&(*eventIt))->getEventDescription() << ") \n";
     }
     SVFUtil::errs() << "\n";
 }
 
-const std::string CallSiteEvent::getFuncName() const
+const std::string GenericEvent::getFuncName() const
 {
     return eventInst->getFunction()->getName();
 }
 
-const std::string CallSiteEvent::getEventLoc() const
+const std::string GenericEvent::getEventLoc() const
 {
     return eventInst->getSourceLoc();
 }
@@ -260,35 +261,15 @@ const std::string CallSiteEvent::getEventDescription() const
     return description;
 }
 
-const std::string BranchEvent::getFuncName() const
-{
-    return eventInst->getName();
-}
-
-const std::string BranchEvent::getEventLoc() const
-{
-    return eventInst->getSourceLoc();
-}
-
 const std::string BranchEvent::getEventDescription() const
 {
-    if (branchSuccessFlg)
+    if (typeAndInfoFlag & BRANCHFLAGMASK)
     {
         return "True";
     }else
     {
         return "False";
     }
-}
-
-const std::string SourceInstEvent::getFuncName() const
-{
-    return eventInst->getFunction()->getName();
-}
-
-const std::string SourceInstEvent::getEventLoc() const
-{
-    return eventInst->getSourceLoc();
 }
 
 const std::string SourceInstEvent::getEventDescription() const
@@ -308,48 +289,9 @@ SVFBugReport::~SVFBugReport()
     }
 }
 
-const GenericEvent* SVFBugReport::newEventByInst(GenericEvent::EventType eventType, const SVFInstruction *eventInst)
-{
-    switch(eventType)
-    {
-    case GenericEvent::CallSite: {
-        auto searchRes = eventHashMap.find(std::make_pair(eventInst, true));
-        if (searchRes != eventHashMap.end())
-            return searchRes->second;
-        else
-            return new CallSiteEvent(eventInst);
-        break;
-    }
-    case GenericEvent::SourceInst: {
-        auto searchRes = eventHashMap.find(std::make_pair(eventInst, true));
-        if(searchRes != eventHashMap.end())
-            return searchRes->second;
-        else
-            return new SourceInstEvent(eventInst);
-        break;
-    }
-    default: {
-        assert(false && "newEventByInst does NOT create this type of event!");
-        break;
-    }
-    }
-}
-
-const GenericEvent* SVFBugReport::newEventByInstAndCond(GenericEvent::EventType eventType, const SVFInstruction *eventInst, bool cond){
-    if(eventType == GenericEvent::Branch){
-        auto searchRes = eventHashMap.find(std::make_pair(eventInst, cond));
-        if (searchRes != eventHashMap.end())
-            return searchRes->second;
-        else
-            return new BranchEvent(eventInst, cond);
-    }else{
-        assert(false && "newEventByInstAndCond does NOT create this type of event!");
-    }
-}
-
 void SVFBugReport::dumpToJsonFile(const std::string& filePath)
 {
-    std::map<GenericEvent::EventType, std::string> eventType2Str =
+    std::map<u32_t, std::string> eventType2Str =
     {
         {GenericEvent::CallSite, "call site"},
         {GenericEvent::Caller, "caller"},
@@ -395,32 +337,32 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
 
         /// add event information to json
         cJSON *eventList = cJSON_CreateArray();
-        const GenericBug::EventStack bugEventStack = bugPtr->getEventStack();
+        const GenericBug::EventStack &bugEventStack = bugPtr->getEventStack();
         if(BufferOverflowBug::classof(bugPtr))
         {  // add only when bug is context sensitive
-            for(auto eventPtr : bugEventStack)
+            for(const GenericEvent &event : bugEventStack)
             {
-                if (SourceInstEvent::classof(eventPtr))
+                if (SourceInstEvent::classof(&event))
                 {
                     continue;
                 }
 
                 cJSON *singleEvent = cJSON_CreateObject();
                 //event type
-                cJSON *eventType = cJSON_CreateString(eventType2Str[eventPtr->getEventType()].c_str());
+                cJSON *eventType = cJSON_CreateString(eventType2Str[event.getEventType()].c_str());
                 cJSON_AddItemToObject(singleEvent, "EventType", eventType);
                 //function name
-                cJSON *eventFunc = cJSON_CreateString(eventPtr->getFuncName().c_str());
+                cJSON *eventFunc = cJSON_CreateString(event.getFuncName().c_str());
                 cJSON_AddItemToObject(singleEvent, "Function", eventFunc);
                 //event loc
-                cJSON *eventLoc = cJSON_Parse(eventPtr->getEventLoc().c_str());
+                cJSON *eventLoc = cJSON_Parse(event.getEventLoc().c_str());
                 if(eventLoc == nullptr)
                 {
                     eventLoc = cJSON_CreateObject();
                 }
                 cJSON_AddItemToObject(singleEvent, "Location", eventLoc);
                 //event description
-                cJSON *eventDescription = cJSON_CreateString(eventPtr->getEventDescription().c_str());
+                cJSON *eventDescription = cJSON_CreateString(SVFUtil::dyn_cast<CallSiteEvent>(&event)->getEventDescription().c_str());
                 cJSON_AddItemToObject(singleEvent, "Description", eventDescription);
 
                 cJSON_AddItemToArray(eventList, singleEvent);
