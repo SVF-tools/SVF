@@ -50,9 +50,10 @@ public:
 
 protected:
     EventType eventType;
+    const SVFInstruction *eventInst;
 
 public:
-    GenericEvent(EventType eventType): eventType(eventType){ };
+    GenericEvent(EventType eventType, const SVFInstruction *eventInst): eventType(eventType), eventInst(eventInst){ };
     virtual ~GenericEvent() = default;
 
     inline EventType getEventType() const { return eventType; }
@@ -62,14 +63,12 @@ public:
 };
 
 class BranchEvent: public GenericEvent{
-    /// branch statement and branch condition true or false
 protected:
-    const SVFInstruction *branchInst;
-    bool branchSuccessFlg;
+    bool branchSuccessFlg;  /// branch successful? true or false
 
 public:
     BranchEvent(const SVFInstruction *branchInst, bool branchSuccessFlg):
-          GenericEvent(GenericEvent::Branch), branchInst(branchInst), branchSuccessFlg(branchSuccessFlg){ }
+          GenericEvent(GenericEvent::Branch, branchInst), branchSuccessFlg(branchSuccessFlg){ }
 
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
@@ -83,11 +82,8 @@ public:
 };
 
 class CallSiteEvent: public GenericEvent{
-protected:
-    const CallICFGNode *callSite;
-
 public:
-    CallSiteEvent(const CallICFGNode *callSite): GenericEvent(GenericEvent::CallSite), callSite(callSite){ }
+    CallSiteEvent(const SVFInstruction *callInst): GenericEvent(GenericEvent::CallSite, callInst){ }
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
     const std::string getEventLoc() const;
@@ -100,12 +96,9 @@ public:
 };
 
 class SourceInstEvent : public GenericEvent{
-protected:
-    const SVFInstruction *sourceSVFInst;
-
 public:
     SourceInstEvent(const SVFInstruction *sourceSVFInst):
-          GenericEvent(GenericEvent::SourceInst), sourceSVFInst(sourceSVFInst) { }
+          GenericEvent(GenericEvent::SourceInst, sourceSVFInst) { }
 
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
@@ -284,13 +277,18 @@ public:
     SVFBugReport() = default;
     ~SVFBugReport();
     typedef SVF::Set<const GenericBug *> BugSet;
-    typedef SVF::Set<const GenericEvent *> EventSet;
+    typedef SVF::Map<std::pair<const SVFInstruction *, bool>, const GenericEvent *> EventHashMap;
 
 protected:
     BugSet bugSet;    // maintain bugs
-    EventSet eventSet;// maintain added events
+    EventHashMap eventHashMap;// maintain added events
 
 public:
+
+    /// note: use these functions to create new event object, for safety
+    const GenericEvent* newEventByInst(GenericEvent::EventType eventType, const SVFInstruction *eventInst);
+    const GenericEvent* newEventByInstAndCond(GenericEvent::EventType eventType, const SVFInstruction *eventInst, bool cond);
+
     /*
      * function: pass bug type (i.e., GenericBug::NEVERFREE) and eventStack as parameter,
      *      it will add the bug into bugQueue.
@@ -298,11 +296,6 @@ public:
      */
     void addSaberBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack)
     {
-        /// resign added events
-        for(auto eventPtr : eventStack){
-            eventSet.insert(eventPtr);
-        }
-
         /// create and add the bug
         GenericBug *newBug = nullptr;
         switch(bugType){
@@ -341,6 +334,7 @@ public:
         newBug->printBugToTerminal();
     }
 
+
     /*
      * function: pass bug type (i.e., GenericBug::FULLBUFOVERFLOW) and eventStack as parameter,
      *      it will add the bug into bugQueue.
@@ -348,11 +342,6 @@ public:
      */
     void addAbsExecBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack,
                        s64_t allocLowerBound, s64_t allocUpperBound, s64_t accessLowerBound, s64_t accessUpperBound){
-        /// resign added events
-        for(auto eventPtr : eventStack){
-            eventSet.insert(eventPtr);
-        }
-
         /// add bugs
         GenericBug *newBug = nullptr;
         switch(bugType){

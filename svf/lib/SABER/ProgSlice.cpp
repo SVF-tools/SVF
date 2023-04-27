@@ -146,17 +146,16 @@ const CallICFGNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
         return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId());
 }
 
-void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack) const
+void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack, SVFBugReport& report) const
 {
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
-    Set<std::string> locations;
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
         const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
         if(pathAllocator->isNegCond(*it))
-            eventStack.push_back(new BranchEvent(tinst, false));
+            eventStack.push_back(report.newEventByInstAndCond(GenericEvent::Branch, tinst, false));
         else
-            eventStack.push_back(new BranchEvent(tinst, true));
+            eventStack.push_back(report.newEventByInstAndCond(GenericEvent::Branch, tinst, true));
     }
 }
 

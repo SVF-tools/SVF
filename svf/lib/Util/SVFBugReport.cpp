@@ -92,7 +92,6 @@ void BufferOverflowBug::printBugToTerminal() const
         }
         }
     }
-
 }
 
 cJSON * NeverFreeBug::getBugDescription() const
@@ -233,18 +232,18 @@ void FilePartialCloseBug::printBugToTerminal() const
 
 const std::string CallSiteEvent::getFuncName() const
 {
-    return callSite->getCallSite()->getFunction()->getName();
+    return eventInst->getFunction()->getName();
 }
 
 const std::string CallSiteEvent::getEventLoc() const
 {
-    return callSite->getCallSite()->getSourceLoc();
+    return eventInst->getSourceLoc();
 }
 
 const std::string CallSiteEvent::getEventDescription() const
 {
     std::string description("calls ");
-    const SVFFunction *callee = SVFUtil::getCallee(callSite->getCallSite());
+    const SVFFunction *callee = SVFUtil::getCallee(eventInst);
     if(callee == nullptr){
         description += "<unknown>";
     }else{
@@ -255,12 +254,12 @@ const std::string CallSiteEvent::getEventDescription() const
 
 const std::string BranchEvent::getFuncName() const
 {
-    return branchInst->getFunction()->getName();
+    return eventInst->getName();
 }
 
 const std::string BranchEvent::getEventLoc() const
 {
-    return branchInst->getSourceLoc();
+    return eventInst->getSourceLoc();
 }
 
 const std::string BranchEvent::getEventDescription() const
@@ -274,12 +273,12 @@ const std::string BranchEvent::getEventDescription() const
 
 const std::string SourceInstEvent::getFuncName() const
 {
-    return sourceSVFInst->getFunction()->getName();
+    return eventInst->getFunction()->getName();
 }
 
 const std::string SourceInstEvent::getEventLoc() const
 {
-    return sourceSVFInst->getSourceLoc();
+    return eventInst->getSourceLoc();
 }
 
 const std::string SourceInstEvent::getEventDescription() const
@@ -292,8 +291,47 @@ SVFBugReport::~SVFBugReport()
     for(auto bugIt: bugSet){
         delete bugIt;
     }
-    for(auto eventPtr:eventSet){
-        delete eventPtr;
+    for(auto eventPtr:eventHashMap){
+        delete eventPtr.second;
+    }
+}
+
+const GenericEvent* SVFBugReport::newEventByInst(GenericEvent::EventType eventType, const SVFInstruction *eventInst)
+{
+    switch(eventType)
+    {
+    case GenericEvent::CallSite: {
+        auto searchRes = eventHashMap.find(std::make_pair(eventInst, true));
+        if (searchRes != eventHashMap.end())
+            return searchRes->second;
+        else
+            return new CallSiteEvent(eventInst);
+        break;
+    }
+    case GenericEvent::SourceInst: {
+        auto searchRes = eventHashMap.find(std::make_pair(eventInst, true));
+        if(searchRes != eventHashMap.end())
+            return searchRes->second;
+        else
+            return new SourceInstEvent(eventInst);
+        break;
+    }
+    default: {
+        assert(false && "newEventByInst does NOT create this type of event!");
+        break;
+    }
+    }
+}
+
+const GenericEvent* SVFBugReport::newEventByInstAndCond(GenericEvent::EventType eventType, const SVFInstruction *eventInst, bool cond){
+    if(eventType == GenericEvent::Branch){
+        auto searchRes = eventHashMap.find(std::make_pair(eventInst, cond));
+        if (searchRes != eventHashMap.end())
+            return searchRes->second;
+        else
+            return new BranchEvent(eventInst, cond);
+    }else{
+        assert(false && "newEventByInstAndCond does NOT create this type of event!");
     }
 }
 
