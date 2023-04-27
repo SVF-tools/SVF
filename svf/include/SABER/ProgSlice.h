@@ -203,7 +203,7 @@ public:
     /// Evaluate final condition
     std::string evalFinalCond() const;
     /// Add final condition to eventStack
-    void evalFinalCond2Event(GenericBug::EventStack &eventStack) const;
+    void evalFinalCond2Event(GenericBug::EventStack &eventStack, SVFBugReport& report) const;
     //@}
 
 protected:

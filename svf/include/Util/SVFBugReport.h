@@ -48,19 +48,17 @@ namespace SVF
 class GenericEvent
 {
 public:
-    enum EventType {Branch, Caller, CallSite, Loop, SourceInst};
+    enum EventType{Branch, Caller, CallSite, Loop, SourceInst};
 
 protected:
     EventType eventType;
+    const SVFInstruction *eventInst;
 
 public:
-    GenericEvent(EventType eventType): eventType(eventType) { };
+    GenericEvent(EventType eventType, const SVFInstruction *eventInst): eventType(eventType), eventInst(eventInst){ };
     virtual ~GenericEvent() = default;
 
-    inline EventType getEventType() const
-    {
-        return eventType;
-    }
+    inline EventType getEventType() const { return eventType; }
     virtual const std::string getEventDescription() const = 0;
     virtual const std::string getFuncName() const = 0;
     virtual const std::string getEventLoc() const = 0;
@@ -68,14 +66,12 @@ public:
 
 class BranchEvent: public GenericEvent
 {
-    /// branch statement and branch condition true or false
 protected:
-    const SVFInstruction *branchInst;
-    bool branchSuccessFlg;
+    bool branchSuccessFlg;  /// branch successful? true or false
 
 public:
     BranchEvent(const SVFInstruction *branchInst, bool branchSuccessFlg):
-        GenericEvent(GenericEvent::Branch), branchInst(branchInst), branchSuccessFlg(branchSuccessFlg) { }
+          GenericEvent(GenericEvent::Branch, branchInst), branchSuccessFlg(branchSuccessFlg){ }
 
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
@@ -90,11 +86,8 @@ public:
 
 class CallSiteEvent: public GenericEvent
 {
-protected:
-    const CallICFGNode *callSite;
-
 public:
-    CallSiteEvent(const CallICFGNode *callSite): GenericEvent(GenericEvent::CallSite), callSite(callSite) { }
+    CallSiteEvent(const SVFInstruction *callInst): GenericEvent(GenericEvent::CallSite, callInst){ }
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
     const std::string getEventLoc() const;
@@ -108,12 +101,9 @@ public:
 
 class SourceInstEvent : public GenericEvent
 {
-protected:
-    const SVFInstruction *sourceSVFInst;
-
 public:
     SourceInstEvent(const SVFInstruction *sourceSVFInst):
-        GenericEvent(GenericEvent::SourceInst), sourceSVFInst(sourceSVFInst) { }
+          GenericEvent(GenericEvent::SourceInst, sourceSVFInst) { }
 
     const std::string getEventDescription() const;
     const std::string getFuncName() const;
@@ -132,7 +122,7 @@ public:
     typedef std::vector<const GenericEvent *> EventStack;
 
 public:
-    enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
+    enum BugType{FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
 
 protected:
     BugType bugType;
@@ -141,7 +131,7 @@ protected:
 public:
     /// note: should be initialized with a bugEventStack
     GenericBug(BugType bugType, EventStack bugEventStack):
-        bugType(bugType), bugEventStack(bugEventStack)
+          bugType(bugType), bugEventStack(bugEventStack)
     {
         assert(bugEventStack.size() != 0 && "bugEventStack should NOT be empty!");
     }
@@ -193,10 +183,10 @@ class FullBufferOverflowBug: public BufferOverflowBug
 {
 public:
     FullBufferOverflowBug(const EventStack &eventStack,
-                          s64_t allocLowerBound, s64_t allocUpperBound,
-                          s64_t accessLowerBound, s64_t accessUpperBound):
-        BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, eventStack, allocLowerBound,
-                          allocUpperBound, accessLowerBound, accessUpperBound) { }
+                             s64_t allocLowerBound, s64_t allocUpperBound,
+                             s64_t accessLowerBound, s64_t accessUpperBound):
+          BufferOverflowBug(GenericBug::FULLBUFOVERFLOW, eventStack, allocLowerBound,
+                            allocUpperBound, accessLowerBound, accessUpperBound) { }
 
     /// ClassOf
     static inline bool classof(const GenericBug *bug)
@@ -307,13 +297,18 @@ public:
     SVFBugReport() = default;
     ~SVFBugReport();
     typedef SVF::Set<const GenericBug *> BugSet;
-    typedef SVF::Set<const GenericEvent *> EventSet;
+    typedef SVF::Map<std::pair<const SVFInstruction *, bool>, const GenericEvent *> EventHashMap;
 
 protected:
     BugSet bugSet;    // maintain bugs
-    EventSet eventSet;// maintain added events
+    EventHashMap eventHashMap;// maintain added events
 
 public:
+
+    /// note: use these functions to create new event object, for safety
+    const GenericEvent* newEventByInst(GenericEvent::EventType eventType, const SVFInstruction *eventInst);
+    const GenericEvent* newEventByInstAndCond(GenericEvent::EventType eventType, const SVFInstruction *eventInst, bool cond);
+
     /*
      * function: pass bug type (i.e., GenericBug::NEVERFREE) and eventStack as parameter,
      *      it will add the bug into bugQueue.
@@ -321,16 +316,9 @@ public:
      */
     void addSaberBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack)
     {
-        /// resign added events
-        for(auto eventPtr : eventStack)
-        {
-            eventSet.insert(eventPtr);
-        }
-
         /// create and add the bug
         GenericBug *newBug = nullptr;
-        switch(bugType)
-        {
+        switch(bugType){
         case GenericBug::NEVERFREE:
         {
             newBug = new NeverFreeBug(eventStack);
@@ -378,18 +366,10 @@ public:
      * usage: addAbsExecBug(GenericBug::FULLBUFOVERFLOW, eventStack, 0, 10, 11, 11)
      */
     void addAbsExecBug(GenericBug::BugType bugType, const GenericBug::EventStack &eventStack,
-                       s64_t allocLowerBound, s64_t allocUpperBound, s64_t accessLowerBound, s64_t accessUpperBound)
-    {
-        /// resign added events
-        for(auto eventPtr : eventStack)
-        {
-            eventSet.insert(eventPtr);
-        }
-
+                       s64_t allocLowerBound, s64_t allocUpperBound, s64_t accessLowerBound, s64_t accessUpperBound){
         /// add bugs
         GenericBug *newBug = nullptr;
-        switch(bugType)
-        {
+        switch(bugType){
         case GenericBug::FULLBUFOVERFLOW:
         {
             newBug = new FullBufferOverflowBug(eventStack, allocLowerBound, allocUpperBound, accessLowerBound, accessUpperBound);
