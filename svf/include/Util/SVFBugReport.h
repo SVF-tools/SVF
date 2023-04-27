@@ -292,7 +292,6 @@ public:
     SVFBugReport() = default;
     ~SVFBugReport();
     typedef SVF::Set<const GenericBug *> BugSet;
-    typedef SVF::Map<std::pair<const SVFInstruction *, bool>, const GenericEvent *> EventHashMap;
 
 protected:
     BugSet bugSet;    // maintain bugs
