@@ -80,25 +80,36 @@ void SVFIR2ItvExeState::moveToGlobal()
     _es._locToVAddrs.clear();
 }
 
-void SVFIR2ItvExeState::widenVAddrs(IntervalExeState &lhs, const IntervalExeState &rhs) {
-    for (const auto &rhsItem: rhs._varToVAddrs) {
+void SVFIR2ItvExeState::widenVAddrs(IntervalExeState &lhs, const IntervalExeState &rhs)
+{
+    for (const auto &rhsItem: rhs._varToVAddrs)
+    {
         auto lhsIter = lhs._varToVAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._varToVAddrs.end()) {
-            for (const auto &addr: rhsItem.second) {
-                if (!lhsIter->second.contains(addr)) {
-                    for (s32_t i = 0; i < (s32_t) Options::MaxFieldLimit(); i++) {
+        if (lhsIter != lhs._varToVAddrs.end())
+        {
+            for (const auto &addr: rhsItem.second)
+            {
+                if (!lhsIter->second.contains(addr))
+                {
+                    for (s32_t i = 0; i < (s32_t) Options::MaxFieldLimit(); i++)
+                    {
                         lhsIter->second.join_with(getGepObjAddress(getInternalID(addr), i));
                     }
                 }
             }
         }
     }
-    for (const auto &rhsItem: rhs._locToVAddrs) {
+    for (const auto &rhsItem: rhs._locToVAddrs)
+    {
         auto lhsIter = lhs._locToVAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._locToVAddrs.end()) {
-            for (const auto &addr: rhsItem.second) {
-                if (!lhsIter->second.contains(addr)) {
-                    for (s32_t i = 0; i < (s32_t) Options::MaxFieldLimit(); i++) {
+        if (lhsIter != lhs._locToVAddrs.end())
+        {
+            for (const auto &addr: rhsItem.second)
+            {
+                if (!lhsIter->second.contains(addr))
+                {
+                    for (s32_t i = 0; i < (s32_t) Options::MaxFieldLimit(); i++)
+                    {
                         lhsIter->second.join_with(getGepObjAddress(getInternalID(addr), i));
                     }
                 }
@@ -107,23 +118,32 @@ void SVFIR2ItvExeState::widenVAddrs(IntervalExeState &lhs, const IntervalExeStat
     }
 }
 
-void SVFIR2ItvExeState::narrowVAddrs(IntervalExeState &lhs, const IntervalExeState &rhs) {
-    for (const auto &rhsItem: rhs._varToVAddrs) {
+void SVFIR2ItvExeState::narrowVAddrs(IntervalExeState &lhs, const IntervalExeState &rhs)
+{
+    for (const auto &rhsItem: rhs._varToVAddrs)
+    {
         auto lhsIter = lhs._varToVAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._varToVAddrs.end()) {
-            for (const auto &addr: lhsIter->second) {
-                if (!rhsItem.second.contains(addr)) {
+        if (lhsIter != lhs._varToVAddrs.end())
+        {
+            for (const auto &addr: lhsIter->second)
+            {
+                if (!rhsItem.second.contains(addr))
+                {
                     lhsIter->second = rhsItem.second;
                     break;
                 }
             }
         }
     }
-    for (const auto &rhsItem: rhs._locToVAddrs) {
+    for (const auto &rhsItem: rhs._locToVAddrs)
+    {
         auto lhsIter = lhs._locToVAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._locToVAddrs.end()) {
-            for (const auto &addr: lhsIter->second) {
-                if (!rhsItem.second.contains(addr)) {
+        if (lhsIter != lhs._locToVAddrs.end())
+        {
+            for (const auto &addr: lhsIter->second)
+            {
+                if (!rhsItem.second.contains(addr))
+                {
                     lhsIter->second = rhsItem.second;
                     break;
                 }
