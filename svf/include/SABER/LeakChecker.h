@@ -93,8 +93,6 @@ protected:
     /// Report leaks
     //@{
     virtual void reportBug(ProgSlice* slice) override;
-    void reportNeverFree(const SVFGNode* src);
-    void reportPartialLeak(const SVFGNode* src);
     //@}
 
     /// Validate test cases for regression test purpose

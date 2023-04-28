@@ -140,11 +140,11 @@ public:
 
     VAddrs &getVAddrs(u32_t id) override
     {
-        auto it = globalES._varToVAddrs.find(id);
-        if (it != globalES._varToVAddrs.end())
+        auto it = _varToVAddrs.find(id);
+        if (it != _varToVAddrs.end())
             return it->second;
         else
-            return _varToVAddrs[id];
+            return globalES._varToVAddrs[id];
     }
 
     inline bool inVarToIValTable(u32_t id) const
@@ -201,14 +201,24 @@ public:
     ///  [], call getValueExpr()
     inline IntervalValue &operator[](u32_t varId)
     {
-        auto it = globalES._varToItvVal.find(varId);
-        if (it != globalES._varToItvVal.end())
-        {
-            return it->second;
-        }
+        auto localIt = _varToItvVal.find(varId);
+        if(localIt != _varToItvVal.end())
+            return localIt->second;
         else
         {
-            return _varToItvVal[varId];
+            return globalES._varToItvVal[varId];
+        }
+    }
+
+    inline void cpyItvToLocal(u32_t varId)
+    {
+        auto localIt = _varToItvVal.find(varId);
+        // local already have varId
+        if (localIt != _varToItvVal.end()) return;
+        auto globIt = globalES._varToItvVal.find(varId);
+        if (globIt != globalES._varToItvVal.end())
+        {
+            _varToItvVal[varId] = globIt->second;
         }
     }
 
@@ -370,16 +380,29 @@ public:
 
     static bool lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs)
     {
+        if (lhs.empty()) return !rhs.empty();
         for (const auto &item: lhs)
         {
             auto it = rhs.find(item.first);
+            if (it == rhs.end()) return false;
             // judge from expr id
-            if (!item.second.equals(it->second))
-            {
-                return !item.second.geq(it->second);
-            }
+            if (item.second.geq(it->second)) return false;
         }
-        return false;
+        return true;
+    }
+
+    // lhs >= rhs
+    static bool geqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs)
+    {
+        if (rhs.empty()) return true;
+        for (const auto &item: rhs)
+        {
+            auto it = lhs.find(item.first);
+            if (it == lhs.end()) return false;
+            // judge from expr id
+            if (!it->second.geq(item.second)) return false;
+        }
+        return true;
     }
 
     bool operator==(const IntervalExeState &rhs) const
@@ -395,15 +418,13 @@ public:
 
     bool operator<(const IntervalExeState &rhs) const
     {
-        // judge from path constraint
-        return (lessThanVarToValMap(_varToItvVal, rhs.getVarToVal()) ||
-                lessThanVarToValMap(_locToItvVal, rhs.getLocToVal()));
+        return !(*this >= rhs);
     }
 
 
     bool operator>=(const IntervalExeState &rhs) const
     {
-        return !(*this < rhs);
+        return geqVarToValMap(_varToItvVal, rhs.getVarToVal()) && geqVarToValMap(_locToItvVal, rhs.getLocToVal());
     }
 
     void clear()
