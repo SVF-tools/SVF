@@ -31,7 +31,6 @@
 #include <algorithm>
 #include "Util/Options.h"
 #include "SVFIR/SVFModule.h"
-#include "SVFIR/SVFModuleRW.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMUtil.h"

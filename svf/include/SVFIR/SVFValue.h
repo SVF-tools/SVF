@@ -49,8 +49,6 @@ class SVFType;
 
 class SVFLoopAndDomInfo
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
@@ -151,8 +149,6 @@ public:
 
 class SVFValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class LLVMModuleSet;
@@ -268,8 +264,6 @@ public:
 class SVFFunction : public SVFValue
 {
     friend class LLVMModuleSet;
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -486,8 +480,6 @@ public:
 class SVFBasicBlock : public SVFValue
 {
     friend class LLVMModuleSet;
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -588,8 +580,6 @@ public:
 
 class SVFInstruction : public SVFValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
@@ -657,8 +647,6 @@ public:
 
 class SVFCallInst : public SVFInstruction
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class LLVMModuleSet;
@@ -733,8 +721,6 @@ public:
 
 class SVFVirtualCallInst : public SVFCallInst
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class LLVMModuleSet;
@@ -793,8 +779,6 @@ public:
 
 class SVFConstant : public SVFValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
@@ -817,8 +801,6 @@ public:
 
 class SVFGlobalValue : public SVFConstant
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class LLVMModuleSet;
@@ -857,8 +839,6 @@ public:
 
 class SVFArgument : public SVFValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 private:
@@ -898,8 +878,6 @@ public:
 
 class SVFConstantData : public SVFConstant
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
@@ -929,8 +907,6 @@ public:
 
 class SVFConstantInt : public SVFConstantData
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 private:
@@ -965,8 +941,6 @@ public:
 
 class SVFConstantFP : public SVFConstantData
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 private:
@@ -994,8 +968,6 @@ public:
 
 class SVFConstantNullPtr : public SVFConstantData
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -1017,8 +989,6 @@ public:
 
 class SVFBlackHoleValue : public SVFConstantData
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -1040,8 +1010,6 @@ public:
 
 class SVFOtherValue : public SVFValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
@@ -1061,8 +1029,6 @@ public:
 */
 class SVFMetadataAsValue : public SVFOtherValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:

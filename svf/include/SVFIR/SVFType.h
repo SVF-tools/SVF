@@ -130,8 +130,6 @@ typedef Set<VersionedVar> VersionedVarSet;
  */
 class StInfo
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -242,8 +240,6 @@ public:
 
 class SVFType
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -329,8 +325,6 @@ public:
 
 class SVFPointerType : public SVFType
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -364,8 +358,6 @@ public:
 
 class SVFFunctionType : public SVFType
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 

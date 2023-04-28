@@ -584,6 +584,14 @@ private:
         return root;
     }
 
+    /** The following 2 functions are intended to convert SparseBitVectors
+     * to JSON. But they're buggy. Commentting them out would enable the
+     * toJson(T) where is_iterable_v<T> is true. But that implementation is less
+     * space-efficient if the bitvector contains many elements.
+     * It is observed that upon construction, SVF IR bitvectors contain at most
+     * 1 element. In that case, we can just use the toJson(T) for iterable T
+     * without much space overhead.
+
     template <unsigned ElementSize>
     cJSON* toJson(const SparseBitVectorElement<ElementSize>& element)
     {
@@ -600,6 +608,7 @@ private:
     {
         return toJson(bv.Elements);
     }
+    */
 
     template <typename T, typename U> cJSON* toJson(const std::pair<T, U>& pair)
     {
@@ -1106,15 +1115,24 @@ private:
     template <unsigned ElementSize>
     inline void readJson(const cJSON* obj, SparseBitVector<ElementSize>& bv)
     {
-        readJson(obj, bv.Elements);
+        ABORT_IFNOT(jsonIsArray(obj), "SparseBitVector should be an array");
+        jsonForEach(nObj, obj)
+        {
+            unsigned n;
+            readJson(nObj, n);
+            bv.set(n);
+        }
     }
 
+    /* See comment of toJson(SparseBitVectorElement) for reason of commenting
+       it out.
     template <unsigned ElementSize>
     inline void readJson(const cJSON* obj,
                          SparseBitVectorElement<ElementSize>& element)
     {
         readJson(obj, element.Bits);
     }
+    */
 
     /// @brief Read a pointer of some child class of
     /// SVFType/SVFValue/SVFVar/SVFStmt/ICFGNode/ICFGEdge/CHNode/CHEdge
