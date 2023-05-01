@@ -1181,7 +1181,7 @@ void SVFIRBuilder::addComplexConsForExt(const SVFValue* D, const SVFValue* S, co
     if (szValue && SVFUtil::dyn_cast<SVFConstantInt>(szValue))
     {
         const SVFConstantInt* arg2 = SVFUtil::dyn_cast<SVFConstantInt>(szValue);
-        sz = (fields.size() > arg2->getSExtValue()) ? arg2->getSExtValue() : fields.size();
+        sz = (fields.size() > static_cast<u32_t>(arg2->getSExtValue())) ? arg2->getSExtValue() : fields.size();
     }
     
     if (fields.size() == 1 && (SVFUtil::isa<SVFConstantData>(D) || SVFUtil::isa<SVFConstantData>(S)))
