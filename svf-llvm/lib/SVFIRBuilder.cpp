@@ -1471,7 +1471,7 @@ void SVFIRBuilder::handleExtCall(SVFInstruction* svfinst, const SVFFunction* svf
                         std::vector<LocationSet> dstFields =  pag->getTypeLocSetsMap(st).second;
                         u32_t sz = dstFields.size();
                         if (const SVFConstantInt* arg2 = SVFUtil::dyn_cast<SVFConstantInt>(svfcall->getArgOperand(op.getOperands()[2])))
-                            sz = (dstFields.size() > arg2->getSExtValue()) ? arg2->getSExtValue() : dstFields.size();
+                            sz = (dstFields.size() > static_cast<u32_t>(arg2->getSExtValue())) ? arg2->getSExtValue() : dstFields.size();
                         //For each field (i), add store edge *(arg0 + i) = arg1
                         for (u32_t index = 0; index < sz; index++)
                         {
