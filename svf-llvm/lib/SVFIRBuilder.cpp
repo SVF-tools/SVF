@@ -470,7 +470,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset,
     /// then we need to create a gep node for this field
     else
     {
-        return getGepValVar(gvar, LocationSet(offset), tpy);
+        return getGepValVar(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(gvar), LocationSet(offset), tpy);
     }
 }
 
@@ -847,7 +847,9 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
         if (isExtCall(svfcallee))
         {
             // There is no extpag for the function, use the old method.
-            handleExtCall(cs, callee);
+            preProcessExtCall(cs);
+            SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
+            handleExtCall(svfinst, svfcallee);
         }
         else
         {
@@ -1154,20 +1156,21 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
  * Add the load/store constraints and temp. nodes for the complex constraint
  * *D = *S (where D/S may point to structs).
  */
-void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Value* szValue)
+void SVFIRBuilder::addComplexConsForExt(const SVFValue* D, const SVFValue* S, const SVFValue* szValue)
 {
     assert(D && S);
-    NodeID vnD= getValueNode(D), vnS= getValueNode(S);
+    NodeID vnD= pag->getValueNode(D), vnS= pag->getValueNode(S);
     if(!vnD || !vnS)
         return;
 
     std::vector<LocationSet> fields;
 
     //Get the max possible size of the copy, unless it was provided.
-    std::vector<LocationSet> srcFields;
-    std::vector<LocationSet> dstFields;
-    const Type* stype = getBaseTypeAndFlattenedFields(S, srcFields, szValue);
-    const Type* dtype = getBaseTypeAndFlattenedFields(D, dstFields, szValue);
+    const SVFType* stype = pag->getTypeLocSetsMap(S->getType()).first;
+    const SVFType* dtype = pag->getTypeLocSetsMap(S->getType()).first;
+    std::vector<LocationSet> srcFields = pag->getTypeLocSetsMap(S->getType()).second;
+    std::vector<LocationSet> dstFields = pag->getTypeLocSetsMap(S->getType()).second;
+    
     if(srcFields.size() > dstFields.size())
         fields = dstFields;
     else
@@ -1175,8 +1178,13 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
 
     /// If sz is 0, we will add edges for all fields.
     u32_t sz = fields.size();
-
-    if (fields.size() == 1 && (LLVMUtil::isConstDataOrAggData(D) || LLVMUtil::isConstDataOrAggData(S)))
+    if (szValue && SVFUtil::dyn_cast<SVFConstantInt>(szValue))
+    {
+        const SVFConstantInt* arg2 = SVFUtil::dyn_cast<SVFConstantInt>(szValue);
+        sz = (fields.size() > arg2->getSExtValue()) ? arg2->getSExtValue() : fields.size();
+    }
+    
+    if (fields.size() == 1 && (SVFUtil::isa<SVFConstantData>(D) || SVFUtil::isa<SVFConstantData>(S)))
     {
         NodeID dummy = pag->addDummyValNode();
         addLoadEdge(vnD,dummy);
@@ -1187,10 +1195,9 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
-        LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-        const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(dtype),
+        const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(dtype,
                                       fields[index].getConstantFieldIdx());
-        const SVFType* sElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(stype),
+        const SVFType* sElementType = pag->getSymbolInfo()->getFlatternedElemType(stype,
                                       fields[index].getConstantFieldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
@@ -1200,7 +1207,7 @@ void SVFIRBuilder::addComplexConsForExt(const Value* D, const Value* S, const Va
     }
 }
 
-void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, CallBase* cs)
+void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, const SVFCallInst* svfcall)
 {
     // Record all dummy nodes
     std::map<std::string, NodeID> nodeIDMap;
@@ -1219,7 +1226,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                 s32_t nodeIDType = ExtAPI::getExtAPI()->getNodeIDType(s);
                 if (nodeIDType >= 0)
                 {
-                    if( cs->arg_size() <= (u32_t) nodeIDType)
+                    if( svfcall->arg_size() <= (u32_t) nodeIDType)
                         assert(false && "Argument out of bounds!");
                     else if (operation.getOperator() == "memcpy_like" || operation.getOperator() == "memset_like")
                     {
@@ -1228,14 +1235,14 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     }
                     else
                     {
-                        operands.push_back(getValueNode(cs->getArgOperand(nodeIDType)));
-                        nodeIDMap[s] = getValueNode(cs->getArgOperand(nodeIDType));
+                        operands.push_back(pag->getValueNode(svfcall->getArgOperand(nodeIDType)));
+                        nodeIDMap[s] = pag->getValueNode(svfcall->getArgOperand(nodeIDType));
                     }
                 }
                 else if (nodeIDType == -1)
                 {
-                    operands.push_back(getValueNode(cs));
-                    nodeIDMap[s] = getValueNode(cs);
+                    operands.push_back(pag->getValueNode(svfcall));
+                    nodeIDMap[s] = pag->getValueNode(svfcall);
                 }
                 else if (nodeIDType == -2)
                 {
@@ -1243,11 +1250,11 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     nodeIDMap[s] = operands[operands.size() - 1];
                 }
                 else if (nodeIDType == -3)
-                {
-                    if (SVFUtil::isa<PointerType>(cs->getType()))
+                {   
+                    if (svfcall->getType()->isPointerTy())
                     {
-                        operands.push_back(getObjectNode(cs));
-                        nodeIDMap[s] = getObjectNode(cs);
+                        operands.push_back(pag->getObjectNode(svfcall));
+                        nodeIDMap[s] = pag->getObjectNode(svfcall);
                     }
                 }
                 else if (nodeIDType == -4)
@@ -1272,21 +1279,87 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
     }
 }
 
+void SVFIRBuilder::preProcessExtCall(CallBase* cs)
+{
+    const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
+    const SVFCallInst* svfcall = SVFUtil::cast<SVFCallInst>(svfinst);
+    /// Currently focusing on providing specialized treatment for the extern function void *dlsym(void *handle, const char *funname)
+    /// and generalization will be done later.
+    if (svfcall->getCalledFunction()->getName() == "dlsym")
+    {
+        const Value* src = cs->getArgOperand(1);
+        if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
+            src = stripConstantCasts(gep->getPointerOperand());
+
+        auto getHookFn = [](const Value* src)->const Function*
+        {
+            if (!SVFUtil::isa<GlobalVariable>(src))
+                return nullptr;
+
+            auto *glob = SVFUtil::cast<GlobalVariable>(src);
+            if (!glob->hasInitializer() || !SVFUtil::isa<ConstantDataArray>(glob->getInitializer()))
+                return nullptr;
+
+            auto *constarray = SVFUtil::cast<ConstantDataArray>(glob->getInitializer());
+            return LLVMUtil::getProgFunction(constarray->getAsCString().str());
+        };
+
+        if (const Function *fn = getHookFn(src))
+        {
+            NodeID srcNode = getValueNode(fn);
+            addCopyEdge(srcNode,  getValueNode(cs));
+        }
+        return;
+    }
+    /// Preprocess the arguments of functions such as memset() and memcpy() that involve arrays or structures, 
+    /// and identify the original data types of these arguments, flattening each subfield.
+    for (u32_t i = 0; i < cs->arg_size(); i++)
+    {
+        const Type* T = getBaseValueForExtArg(cs->getArgOperand(i))->getType();
+        while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
+            T = getPtrElementType(ptype);
+        const SVFType *st = LLVMModuleSet::getLLVMModuleSet()->getSVFType(T);
+        if (SVFUtil::isa<SVFStructType, SVFArrayType>(st))
+        {
+            std::vector<LocationSet> fields;
+            u32_t numOfElems = pag->getSymbolInfo()->getNumOfFlattenElements(st);
+            LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
+            for(u32_t ei = 0; ei < numOfElems; ei++)
+            {
+                LocationSet ls(ei);
+                // make a ConstantInt and create char for the content type due to byte-wise copy
+                const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, ei));
+                const SVFValue* svfOffset = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offset);
+                if (!pag->getSymbolInfo()->hasValSym(svfOffset))
+                {
+                    SymbolTableBuilder builder(pag->getSymbolInfo());
+                    builder.collectSym(offset);
+                    pag->addValNode(svfOffset, pag->getSymbolInfo()->getValSym(svfOffset));
+                }
+                ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
+                fields.push_back(ls);
+            }
+            const SVFType* svfArgType = svfcall->getArgOperand(i)->getType();
+            std::pair<const SVFType*, std::vector<LocationSet>> pairToInsert = std::make_pair(st, fields);
+            pag->addToTypeLocSetsMap(svfArgType, pairToInsert);
+        }
+    }
+}
+
 /*!
  * Handle external calls
  */
-void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
+void SVFIRBuilder::handleExtCall(SVFInstruction* svfinst, const SVFFunction* svfcallee)
 {
-    const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
-    const SVFFunction* svfcallee = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+    const SVFCallInst* svfcall = SVFUtil::cast<SVFCallInst>(svfinst);
 
     if (isHeapAllocOrStaticExtCall(svfinst))
     {
         // case 1: ret = new obj
         if (isHeapAllocExtCallViaRet(svfinst) || isStaticExtCall(svfinst))
         {
-            NodeID val = getValueNode(cs);
-            NodeID obj = getObjectNode(cs);
+            NodeID val = pag->getValueNode(svfinst);
+            NodeID obj = pag->getObjectNode(svfinst);
             addAddrEdge(obj, val);
         }
         // case 2: *arg = new obj
@@ -1294,12 +1367,12 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
         {
             assert(isHeapAllocExtCallViaArg(svfinst) && "Must be heap alloc call via arg.");
             u32_t arg_pos = getHeapAllocHoldingArgPosition(svfcallee);
-            const Value* arg = cs->getArgOperand(arg_pos);
+            const SVFValue* arg = svfcall->getArgOperand(arg_pos);
             if (arg->getType()->isPointerTy())
             {
-                NodeID vnArg = getValueNode(arg);
+                NodeID vnArg = pag->getValueNode(arg);
                 NodeID dummy = pag->addDummyValNode();
-                NodeID obj = pag->addDummyObjNode(LLVMModuleSet::getLLVMModuleSet()->getSVFType(arg->getType()));
+                NodeID obj = pag->addDummyObjNode(arg->getType());
                 if (vnArg && dummy && obj)
                 {
                     addAddrEdge(obj, dummy);
@@ -1322,12 +1395,12 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
             {
                 std::string str;
                 std::stringstream rawstr(str);
-                rawstr << "function " << callee->getName().str() << " not in the external function summary ExtAPI.json file";
+                rawstr << "function " << funName << " not in the external function summary ExtAPI.json file";
                 writeWrnMsg(rawstr.str());
             }
             else
             {
-                parseOperations(allOperations, cs);
+                parseOperations(allOperations, svfcall);
                 for (ExtAPI::Operation op : allOperations)
                 {
                     if (op.getOperator() == "AddrStmt")
@@ -1393,69 +1466,41 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                     {
                         // this is for memset(void *str, int c, size_t n)
                         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
-                        std::vector<LocationSet> dstFields;
-                        const Type* dtype = getBaseTypeAndFlattenedFields(cs->getArgOperand(op.getOperands()[0]), dstFields, cs->getArgOperand(op.getOperands()[2]));
+                        // const SVFConstantInt* arg2 = SVFUtil::dyn_cast<SVFConstantInt>(svfcall->getArgOperand(op.getOperands()[2]));
+                        const SVF::SVFType* st = svfcall->getArgOperand(op.getOperands()[0])->getType();
+                        std::vector<LocationSet> dstFields =  pag->getTypeLocSetsMap(st).second;
                         u32_t sz = dstFields.size();
+                        if (const SVFConstantInt* arg2 = SVFUtil::dyn_cast<SVFConstantInt>(svfcall->getArgOperand(op.getOperands()[2])))
+                            sz = (dstFields.size() > arg2->getSExtValue()) ? arg2->getSExtValue() : dstFields.size();
                         //For each field (i), add store edge *(arg0 + i) = arg1
                         for (u32_t index = 0; index < sz; index++)
                         {
-                            const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(dtype),
-                                                          dstFields[index].getConstantFieldIdx());
-                            NodeID dField = getGepValVar(cs->getArgOperand(op.getOperands()[0]), dstFields[index], dElementType);
-                            addStoreEdge(getValueNode(cs->getArgOperand(op.getOperands()[1])),dField);
+                            const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(pag->getTypeLocSetsMap(st).first, dstFields[index].getConstantFieldIdx());
+                            NodeID dField = getGepValVar(svfcall->getArgOperand(op.getOperands()[0]), dstFields[index], dElementType);
+                            addStoreEdge(pag->getValueNode(svfcall->getArgOperand(op.getOperands()[1])),dField);
                         }
-                        if(SVFUtil::isa<PointerType>(cs->getType()))
-                            addCopyEdge(getValueNode(cs->getArgOperand(op.getOperands()[0])), getValueNode(cs));
+                        if(svfcall->getType()->isPointerTy())
+                            addCopyEdge(pag->getValueNode(svfcall->getArgOperand(op.getOperands()[0])), pag->getValueNode(svfinst));
                     }
                     else if (op.getOperator() == "memcpy_like")
                     {
-                        /// handle strcpy
                         if(op.getOperands().size() == 3)
-                            addComplexConsForExt(cs->getArgOperand(op.getOperands()[0]), cs->getArgOperand(op.getOperands()[1]), cs->getArgOperand(op.getOperands()[2]));
+                            addComplexConsForExt(svfcall->getArgOperand(op.getOperands()[0]), svfcall->getArgOperand(op.getOperands()[1]), svfcall->getArgOperand(op.getOperands()[2]));
                         else
-                            addComplexConsForExt(cs->getArgOperand(op.getOperands()[0]), cs->getArgOperand(op.getOperands()[1]), nullptr);
-                    }
-                    else if (op.getOperator() == "funptr_ops")
-                    {
-                        /// handling external function e.g., void *dlsym(void *handle, const char *funname);
-                        const Value* src = cs->getArgOperand(1);
-                        if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
-                            src = stripConstantCasts(gep->getPointerOperand());
-
-                        auto getHookFn = [](const Value* src)->const Function*
-                        {
-                            if (!SVFUtil::isa<GlobalVariable>(src))
-                                return nullptr;
-
-                            auto *glob = SVFUtil::cast<GlobalVariable>(src);
-                            if (!glob->hasInitializer() || !SVFUtil::isa<ConstantDataArray>(glob->getInitializer()))
-                                return nullptr;
-
-                            auto *constarray = SVFUtil::cast<ConstantDataArray>(glob->getInitializer());
-                            return LLVMUtil::getProgFunction(constarray->getAsCString().str());
-                        };
-
-                        if (const Function *fn = getHookFn(src))
-                        {
-                            NodeID srcNode = getValueNode(fn);
-                            addCopyEdge(srcNode,  getValueNode(cs));
-                        }
+                            addComplexConsForExt(svfcall->getArgOperand(op.getOperands()[0]), svfcall->getArgOperand(op.getOperands()[1]), nullptr);
                     }
                     else if (op.getOperator() == "Rb_tree_ops")
                     {
-                        assert(cs->arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
-
-                        const Value* vArg1 = cs->getArgOperand(1);
-                        const Value* vArg3 = cs->getArgOperand(3);
+                        assert(svfcall->arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
 
                         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                         // Now we calculate the offset from base to vArg3
-                        NodeID vnArg3 = pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(vArg3));
+                        NodeID vnArg3 = pag->getValueNode(svfcall->getArgOperand(3));
                         s32_t offset = getLocationSetFromBaseNode(vnArg3).getConstantFieldIdx();
 
                         // We get all flattened fields of base
-                        vector<LocationSet> fields;
-                        const Type* type = getBaseTypeAndFlattenedFields(vArg3, fields, nullptr);
+                        const SVF::SVFType* st = svfcall->getArgOperand(3)->getType();
+                        vector<LocationSet> fields =  pag->getTypeLocSetsMap(st).second;
 
                         // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
                         // Note that arg0 is aligned with "offset".
@@ -1463,10 +1508,10 @@ void SVFIRBuilder::handleExtCall(CallBase* cs, const Function *callee)
                         {
                             if((u32_t)i >= fields.size())
                                 break;
-                            const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(LLVMModuleSet::getLLVMModuleSet()->getSVFType(type),
+                            const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(pag->getTypeLocSetsMap(st).first,
                                                          fields[i].getConstantFieldIdx());
-                            NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
-                            NodeID vnS = getValueNode(vArg1);
+                            NodeID vnD = getGepValVar(svfcall->getArgOperand(3), fields[i], elementType);
+                            NodeID vnS = pag->getValueNode(svfcall->getArgOperand(1));
                             if(vnD && vnS)
                                 addStoreEdge(vnS,vnD);
                         }
@@ -1574,7 +1619,9 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
             if (isExtCall(*func_iter))
             {
                 setCurrentLocation(callee, callee->empty() ? nullptr : &callee->getEntryBlock());
-                handleExtCall(const_cast<CallBase*>(callbase), callee);
+                SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callbase);
+                const SVFFunction* svfcallee = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+                handleExtCall(svfinst, svfcallee);
             }
             else
             {
@@ -1618,9 +1665,9 @@ void SVFIRBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const SVFType* elementType)
+NodeID SVFIRBuilder::getGepValVar(const SVFValue* val, const LocationSet& ls, const SVFType* elementType)
 {
-    NodeID base = pag->getBaseValVar(getValueNode(val));
+    NodeID base = pag->getBaseValVar(pag->getValueNode(val));
     NodeID gepval = pag->getGepValVar(curVal, base, ls);
     if (gepval==UINT_MAX)
     {
@@ -1640,8 +1687,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const
         const SVFValue* cval = getCurrentValue();
         const SVFBasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
-        LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-        NodeID gepNode= pag->addGepValNode(curVal, llvmmodule->getSVFValue(val),ls, NodeIDAllocator::get()->allocateValueId(),elementType->getPointerTo());
+        NodeID gepNode= pag->addGepValNode(curVal, val,ls, NodeIDAllocator::get()->allocateValueId(),elementType->getPointerTo());
         addGepEdge(base, gepNode, ls, true);
         setCurrentLocation(cval, cbb);
         return gepNode;
