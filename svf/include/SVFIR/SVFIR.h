@@ -70,7 +70,7 @@ public:
     typedef Map<NodeLocationSet,NodeID> NodeLocationSetMap;
     typedef Map<const SVFValue*, NodeLocationSetMap> GepValueVarMap;
     typedef std::pair<const SVFType*, std::vector<LocationSet>> SVFTypeLocSetsPair;
-    typedef Map<const SVFType*, SVFTypeLocSetsPair> TypeLocSetsMap;
+    typedef Map<NodeID, SVFTypeLocSetsPair> TypeLocSetsMap;
     typedef Map<NodePair,NodeID> NodePairSetMap;
 
 private:
@@ -79,7 +79,7 @@ private:
     ICFGNode2SVFStmtsMap icfgNode2SVFStmtsMap;	///< Map an ICFGNode to its SVFStmts
     ICFGNode2SVFStmtsMap icfgNode2PTASVFStmtsMap;	///< Map an ICFGNode to its PointerAnalysis related SVFStmts
     GepValueVarMap GepValObjMap;	///< Map a pair<base,off> to a gep value node id
-    TypeLocSetsMap typeLocSetsMap;	///< Map a SVFType* to its base SVFType* and all its field location sets
+    TypeLocSetsMap typeLocSetsMap;	///< Map an arg to its base SVFType* and all its field location sets
     NodeLocationSetMap GepObjVarMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     SVFStmtSet globSVFStmtSet;	///< Global PAGEdges without control flow information
@@ -221,15 +221,15 @@ public:
         if (edge->isPTAEdge())
             icfgNode2PTASVFStmtsMap[inst].push_back(edge);
     }
-    /// Add a base SVFType* and all its field location sets
-    inline void addToTypeLocSetsMap(const SVFType* type, SVFTypeLocSetsPair& locSets)
+    /// Add a base SVFType* and all its field location sets to an arg NodeId
+    inline void addToTypeLocSetsMap(NodeID argId, SVFTypeLocSetsPair& locSets)
     {
-        typeLocSetsMap[type]=locSets;
+        typeLocSetsMap[argId]=locSets;
     }
-    /// Given an SVFType*, get its base SVFType* and all its field location sets
-    inline SVFTypeLocSetsPair& getTypeLocSetsMap(const SVFType* type)
+    /// Given an arg NodeId, get its base SVFType* and all its field location sets
+    inline SVFTypeLocSetsPair& getTypeLocSetsMap(NodeID argId)
     {
-        return typeLocSetsMap[type];
+        return typeLocSetsMap[argId];
     }
     /// Get global PAGEdges (not in a procedure)
     inline SVFStmtSet& getGlobalSVFStmtSet()

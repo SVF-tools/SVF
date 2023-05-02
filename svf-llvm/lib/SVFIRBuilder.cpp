@@ -1166,10 +1166,10 @@ void SVFIRBuilder::addComplexConsForExt(const SVFValue* D, const SVFValue* S, co
     std::vector<LocationSet> fields;
 
     //Get the max possible size of the copy, unless it was provided.
-    const SVFType* stype = pag->getTypeLocSetsMap(S->getType()).first;
-    const SVFType* dtype = pag->getTypeLocSetsMap(S->getType()).first;
-    std::vector<LocationSet> srcFields = pag->getTypeLocSetsMap(S->getType()).second;
-    std::vector<LocationSet> dstFields = pag->getTypeLocSetsMap(S->getType()).second;
+    const SVFType* stype = pag->getTypeLocSetsMap(vnS).first;
+    const SVFType* dtype = pag->getTypeLocSetsMap(vnD).first;
+    std::vector<LocationSet> srcFields = pag->getTypeLocSetsMap(vnS).second;
+    std::vector<LocationSet> dstFields = pag->getTypeLocSetsMap(vnD).second;
     
     if(srcFields.size() > dstFields.size())
         fields = dstFields;
@@ -1313,14 +1313,14 @@ void SVFIRBuilder::preProcessExtCall(CallBase* cs)
     }
     /// Preprocess the arguments of functions such as memset() and memcpy() that involve arrays or structures, 
     /// and identify the original data types of these arguments, flattening each subfield.
-    for (u32_t i = 0; i < cs->arg_size(); i++)
+    if (isMemSetOrCpyExtFun(svfcall->getCalledFunction()))
     {
-        const Type* T = getBaseValueForExtArg(cs->getArgOperand(i))->getType();
-        while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
-            T = getPtrElementType(ptype);
-        const SVFType *st = LLVMModuleSet::getLLVMModuleSet()->getSVFType(T);
-        if (SVFUtil::isa<SVFStructType, SVFArrayType>(st))
+        for (u32_t i = 0; i < cs->arg_size(); i++)
         {
+            const Type* T = getBaseValueForExtArg(cs->getArgOperand(i))->getType();
+            while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
+                T = getPtrElementType(ptype);
+            const SVFType *st = LLVMModuleSet::getLLVMModuleSet()->getSVFType(T);
             std::vector<LocationSet> fields;
             u32_t numOfElems = pag->getSymbolInfo()->getNumOfFlattenElements(st);
             LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
@@ -1339,9 +1339,9 @@ void SVFIRBuilder::preProcessExtCall(CallBase* cs)
                 ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
                 fields.push_back(ls);
             }
-            const SVFType* svfArgType = svfcall->getArgOperand(i)->getType();
+            NodeID argId = pag->getValueNode(svfcall->getArgOperand(i));
             std::pair<const SVFType*, std::vector<LocationSet>> pairToInsert = std::make_pair(st, fields);
-            pag->addToTypeLocSetsMap(svfArgType, pairToInsert);
+            pag->addToTypeLocSetsMap(argId, pairToInsert);
         }
     }
 }
@@ -1467,15 +1467,15 @@ void SVFIRBuilder::handleExtCall(SVFInstruction* svfinst, const SVFFunction* svf
                         // this is for memset(void *str, int c, size_t n)
                         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
                         // const SVFConstantInt* arg2 = SVFUtil::dyn_cast<SVFConstantInt>(svfcall->getArgOperand(op.getOperands()[2]));
-                        const SVF::SVFType* st = svfcall->getArgOperand(op.getOperands()[0])->getType();
-                        std::vector<LocationSet> dstFields =  pag->getTypeLocSetsMap(st).second;
+                        NodeID argId = pag->getValueNode(svfcall->getArgOperand(op.getOperands()[0]));
+                        std::vector<LocationSet> dstFields =  pag->getTypeLocSetsMap(argId).second;
                         u32_t sz = dstFields.size();
                         if (const SVFConstantInt* arg2 = SVFUtil::dyn_cast<SVFConstantInt>(svfcall->getArgOperand(op.getOperands()[2])))
                             sz = (dstFields.size() > static_cast<u32_t>(arg2->getSExtValue())) ? arg2->getSExtValue() : dstFields.size();
                         //For each field (i), add store edge *(arg0 + i) = arg1
                         for (u32_t index = 0; index < sz; index++)
                         {
-                            const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(pag->getTypeLocSetsMap(st).first, dstFields[index].getConstantFieldIdx());
+                            const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(pag->getTypeLocSetsMap(argId).first, dstFields[index].getConstantFieldIdx());
                             NodeID dField = getGepValVar(svfcall->getArgOperand(op.getOperands()[0]), dstFields[index], dElementType);
                             addStoreEdge(pag->getValueNode(svfcall->getArgOperand(op.getOperands()[1])),dField);
                         }
@@ -1499,8 +1499,7 @@ void SVFIRBuilder::handleExtCall(SVFInstruction* svfinst, const SVFFunction* svf
                         s32_t offset = getLocationSetFromBaseNode(vnArg3).getConstantFieldIdx();
 
                         // We get all flattened fields of base
-                        const SVF::SVFType* st = svfcall->getArgOperand(3)->getType();
-                        vector<LocationSet> fields =  pag->getTypeLocSetsMap(st).second;
+                        vector<LocationSet> fields =  pag->getTypeLocSetsMap(vnArg3).second;
 
                         // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
                         // Note that arg0 is aligned with "offset".
@@ -1508,7 +1507,7 @@ void SVFIRBuilder::handleExtCall(SVFInstruction* svfinst, const SVFFunction* svf
                         {
                             if((u32_t)i >= fields.size())
                                 break;
-                            const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(pag->getTypeLocSetsMap(st).first,
+                            const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(pag->getTypeLocSetsMap(vnArg3).first,
                                                          fields[i].getConstantFieldIdx());
                             NodeID vnD = getGepValVar(svfcall->getArgOperand(3), fields[i], elementType);
                             NodeID vnS = pag->getValueNode(svfcall->getArgOperand(1));
