@@ -38,7 +38,7 @@
 #include "SVF-LLVM/LLVMLoopAnalysis.h"
 #include "Util/Options.h"
 #include "SVF-LLVM/CHGBuilder.h"
-#include "SVFIR/SVFIRRW.h"
+#include "SVFIR/SVFFileSystem.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 
 

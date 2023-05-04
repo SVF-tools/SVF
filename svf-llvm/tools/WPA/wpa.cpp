@@ -31,7 +31,7 @@
 #include "WPA/WPAPass.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
-#include "SVFIR/SVFIRRW.h"
+#include "SVFIR/SVFFileSystem.h"
 
 
 using namespace llvm;

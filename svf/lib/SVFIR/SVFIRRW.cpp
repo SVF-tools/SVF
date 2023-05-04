@@ -1,4 +1,4 @@
-#include "SVFIR/SVFIRRW.h"
+#include "SVFIR/SVFFileSystem.h"
 #include "Graphs/CHG.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/CommandLine.h"
