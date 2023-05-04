@@ -322,7 +322,7 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
 
     ofstream jsonFile(filePath, ios::out);
 
-    jsonFile << "{";
+    jsonFile << "[";
 
     size_t commaCounter = bugSet.size() - 1;  // comma num needed
     for(auto bugPtr : bugSet)
@@ -394,6 +394,6 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
         cJSON_Delete(singleBug);
     }
 
-    jsonFile << "}";
+    jsonFile << "]";
     jsonFile.close();
 }
