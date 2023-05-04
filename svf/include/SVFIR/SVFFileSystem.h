@@ -1,4 +1,4 @@
-//===- SVFIRRW.h -- SVF IR Reader and Writer ------------------------------===//
+//===- SVFFileSystem.h -- SVF IR Reader and Writer ------------------------===//
 //
 //  SVF - Static Value-Flow Analysis Framework
 //                     SVF: Static Value-Flow Analysis
@@ -21,8 +21,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef INCLUDE_SVFIRRW_H_
-#define INCLUDE_SVFIRRW_H_
+#ifndef INCLUDE_SVFFILESYSTEM_H_
+#define INCLUDE_SVFFILESYSTEM_H_
 
 #include "Graphs/GenericGraph.h"
 #include "Util/SVFUtil.h"
@@ -1330,4 +1330,4 @@ private:
 
 } // namespace SVF
 
-#endif // !INCLUDE_SVFIRRW_H_
+#endif // !INCLUDE_SVFFILESYSTEM_H_
