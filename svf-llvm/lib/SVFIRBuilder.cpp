@@ -1170,7 +1170,7 @@ void SVFIRBuilder::addComplexConsForExt(const SVFValue* D, const SVFValue* S, co
     const SVFType* dtype = pag->getTypeLocSetsMap(vnD).first;
     std::vector<LocationSet> srcFields = pag->getTypeLocSetsMap(vnS).second;
     std::vector<LocationSet> dstFields = pag->getTypeLocSetsMap(vnD).second;
-    
+
     if(srcFields.size() > dstFields.size())
         fields = dstFields;
     else
@@ -1183,7 +1183,7 @@ void SVFIRBuilder::addComplexConsForExt(const SVFValue* D, const SVFValue* S, co
         const SVFConstantInt* arg2 = SVFUtil::dyn_cast<SVFConstantInt>(szValue);
         sz = (fields.size() > static_cast<u32_t>(arg2->getSExtValue())) ? arg2->getSExtValue() : fields.size();
     }
-    
+
     if (fields.size() == 1 && (SVFUtil::isa<SVFConstantData>(D) || SVFUtil::isa<SVFConstantData>(S)))
     {
         NodeID dummy = pag->addDummyValNode();
@@ -1250,7 +1250,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     nodeIDMap[s] = operands[operands.size() - 1];
                 }
                 else if (nodeIDType == -3)
-                {   
+                {
                     if (svfcall->getType()->isPointerTy())
                     {
                         operands.push_back(pag->getObjectNode(svfcall));
@@ -1311,7 +1311,7 @@ void SVFIRBuilder::preProcessExtCall(CallBase* cs)
         }
         return;
     }
-    /// Preprocess the arguments of functions such as memset() and memcpy() that involve arrays or structures, 
+    /// Preprocess the arguments of functions such as memset() and memcpy() that involve arrays or structures,
     /// and identify the original data types of these arguments, flattening each subfield.
     if (isMemSetOrCpyExtFun(svfcall->getCalledFunction()))
     {

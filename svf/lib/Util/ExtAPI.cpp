@@ -446,8 +446,8 @@ bool ExtAPI::has_static2(const SVFFunction* F)
 bool ExtAPI::is_memset_or_memcpy(const SVFFunction* F)
 {
     ExtAPI::extType t = get_type(F);
-    return t == EFT_L_A0__A0R_A1 || t == EFT_L_A0__A0R_A1R || t == EFT_A1R_A0R || t == EFT_A3R_A1R_NS 
-        || t == EFT_STD_RB_TREE_INSERT_AND_REBALANCE || t == EFT_L_A0__A1_A0;
+    return t == EFT_L_A0__A0R_A1 || t == EFT_L_A0__A0R_A1R || t == EFT_A1R_A0R || t == EFT_A3R_A1R_NS
+           || t == EFT_STD_RB_TREE_INSERT_AND_REBALANCE || t == EFT_L_A0__A1_A0;
 }
 
 bool ExtAPI::is_alloc(const SVFFunction* F)
