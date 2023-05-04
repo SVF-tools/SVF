@@ -2,10 +2,8 @@ codecov:
   require_ci_to_pass: yes
 
 ignore:
-  - "svf/lib/SVFIR/SVFModuleRW.cpp"
-  - "svf/include/SVFIR/SVFModuleRW.h"
-  - "svf/lib/SVFIR/SVFIRRW.cpp"
-  - "svf/include/SVFIR/SVFIRRW.h"
+  - "svf/lib/SVFIR/SVFFileSystem.cpp"
+  - "svf/include/SVFIR/SVFFileSystem.h"
 
 coverage:
   status:

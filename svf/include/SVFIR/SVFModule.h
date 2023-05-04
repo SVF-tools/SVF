@@ -40,8 +40,6 @@ namespace SVF
 
 class SVFModule
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
@@ -78,8 +76,6 @@ public:
     SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName) {}
 
     ~SVFModule();
-
-    void writeToJson(const std::string& filePath);
 
     static inline void setPagFromTXT(const std::string& txt)
     {

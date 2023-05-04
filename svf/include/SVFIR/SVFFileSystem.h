@@ -1,4 +1,4 @@
-//===- SVFIRRW.h -- SVF IR Reader and Writer ------------------------------===//
+//===- SVFFileSystem.h -- SVF IR Reader and Writer ------------------------===//
 //
 //  SVF - Static Value-Flow Analysis Framework
 //                     SVF: Static Value-Flow Analysis
@@ -21,8 +21,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef INCLUDE_SVFIRRW_H_
-#define INCLUDE_SVFIRRW_H_
+#ifndef INCLUDE_SVFFILESYSTEM_H_
+#define INCLUDE_SVFFILESYSTEM_H_
 
 #include "Graphs/GenericGraph.h"
 #include "Util/SVFUtil.h"
@@ -99,6 +99,7 @@ namespace SVF
 {
 /// @brief Forward declarations.
 ///@{
+class NodeIDAllocator;
 // Classes created upon SVFMoudle construction
 class SVFType;
 class SVFPointerType;
@@ -404,6 +405,7 @@ private:
 
     const char* numToStr(size_t n);
 
+    cJSON* toJson(const NodeIDAllocator* nodeIDAllocator);
     cJSON* toJson(const SymbolTableInfo* symTable);
     cJSON* toJson(const SVFModule* module);
     cJSON* toJson(const SVFType* type);
@@ -582,6 +584,14 @@ private:
         return root;
     }
 
+    /** The following 2 functions are intended to convert SparseBitVectors
+     * to JSON. But they're buggy. Commentting them out would enable the
+     * toJson(T) where is_iterable_v<T> is true. But that implementation is less
+     * space-efficient if the bitvector contains many elements.
+     * It is observed that upon construction, SVF IR bitvectors contain at most
+     * 1 element. In that case, we can just use the toJson(T) for iterable T
+     * without much space overhead.
+
     template <unsigned ElementSize>
     cJSON* toJson(const SparseBitVectorElement<ElementSize>& element)
     {
@@ -598,6 +608,7 @@ private:
     {
         return toJson(bv.Elements);
     }
+    */
 
     template <typename T, typename U> cJSON* toJson(const std::pair<T, U>& pair)
     {
@@ -652,7 +663,7 @@ template <typename T, typename = void> struct KindBaseHelper
         using type = B;                                                        \
         static inline s64_t getKind(T* p)                                      \
         {                                                                      \
-            return p->KindGetter();                                            \
+            return {p->KindGetter()};                                          \
         }                                                                      \
     }
 KIND_BASE(SVFType, getKind);
@@ -796,6 +807,14 @@ public:
     inline size_t size() const
     {
         return ptrPool.size();
+    }
+
+    template <typename Set> void saveToSet(Set& set) const
+    {
+        for (T* obj : ptrPool)
+        {
+            set.insert(obj);
+        }
     }
 };
 
@@ -949,6 +968,9 @@ public:
 
 class SVFModuleReader
 {
+    friend class SVFIRReader;
+
+private:
     const cJSON* svfModuleFieldJson = nullptr;
     ReaderPtrPool<SVFType> svfTypePool;
     ReaderPtrPool<StInfo> stInfoPool;
@@ -1063,11 +1085,12 @@ private:
     SVFIR* read(const cJSON* root);
     const cJSON* createObjs(const cJSON* root);
 
-    void readJson(SymbolTableInfo*& symTabInfo);
-    void readJson(IRGraph*& graph); // IRGraph Graph
-    void readJson(ICFG*& icfg);     // ICFG Graph
-    void readJson(CHGraph*& graph); // CHGraph Graph
-    void readJson(SVFModule*& module);
+    void readJson(const cJSON* obj, NodeIDAllocator* idAllocator);
+    void readJson(SymbolTableInfo* symTabInfo);
+    void readJson(IRGraph* graph); // IRGraph Graph
+    void readJson(ICFG* icfg);     // ICFG Graph
+    void readJson(CHGraph* graph); // CHGraph Graph
+    void readJson(SVFModule* module);
 
     void readJson(const cJSON* obj, SVFType*& type);
     void readJson(const cJSON* obj, StInfo*& stInfo);
@@ -1077,7 +1100,6 @@ private:
     void readJson(const cJSON* obj, SVFStmt*& stmt);  // IRGraph Edge
     void readJson(const cJSON* obj, ICFGNode*& node); // ICFG Node
     void readJson(const cJSON* obj, ICFGEdge*& edge); // ICFG Edge
-    // void readJson(const cJSON* obj, CHGraph*& graph); // CHGraph Graph
     void readJson(const cJSON* obj, CHNode*& node); // CHGraph Node
     void readJson(const cJSON* obj, CHEdge*& edge); // CHGraph Edge
     void readJson(const cJSON* obj, CallSite& cs); // CHGraph's csToClassMap
@@ -1093,15 +1115,24 @@ private:
     template <unsigned ElementSize>
     inline void readJson(const cJSON* obj, SparseBitVector<ElementSize>& bv)
     {
-        readJson(obj, bv.Elements);
+        ABORT_IFNOT(jsonIsArray(obj), "SparseBitVector should be an array");
+        jsonForEach(nObj, obj)
+        {
+            unsigned n;
+            readJson(nObj, n);
+            bv.set(n);
+        }
     }
 
+    /* See comment of toJson(SparseBitVectorElement) for reason of commenting
+       it out.
     template <unsigned ElementSize>
     inline void readJson(const cJSON* obj,
                          SparseBitVectorElement<ElementSize>& element)
     {
         readJson(obj, element.Bits);
     }
+    */
 
     /// @brief Read a pointer of some child class of
     /// SVFType/SVFValue/SVFVar/SVFStmt/ICFGNode/ICFGEdge/CHNode/CHEdge
@@ -1299,4 +1330,4 @@ private:
 
 } // namespace SVF
 
-#endif // !INCLUDE_SVFIRRW_H_
+#endif // !INCLUDE_SVFFILESYSTEM_H_

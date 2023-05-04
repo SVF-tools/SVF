@@ -22,7 +22,6 @@
 
 
 #include "SVFIR/SVFModule.h"
-#include "SVFIR/SVFModuleRW.h"
 #include "SVFIR/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
@@ -53,10 +52,4 @@ const SVFFunction* SVFModule::getSVFFunction(const std::string& name)
         }
     }
     return nullptr;
-}
-
-void SVFModule::writeToJson(const std::string& filePath)
-{
-    if (!filePath.empty())
-        SVFModuleWrite(this, filePath);
 }

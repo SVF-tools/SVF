@@ -1,4 +1,4 @@
-#include "SVFIR/SVFIRRW.h"
+#include "SVFIR/SVFFileSystem.h"
 #include "Graphs/CHG.h"
 #include "SVFIR/SVFIR.h"
 #include "Util/CommandLine.h"
@@ -1022,6 +1022,8 @@ SVFIRWriter::autoCStr SVFIRWriter::generateJsonString()
 SVFIRWriter::autoJSON SVFIRWriter::generateJson()
 {
     const IRGraph* const irGraph = svfIR;
+    NodeIDAllocator* nodeIDAllocator = NodeIDAllocator::allocator;
+    assert(nodeIDAllocator && "NodeIDAllocator is not initialized?");
 
     cJSON* root = jsonCreateObject();
 #define F(field) JSON_WRITE_FIELD(root, svfIR, field)
@@ -1033,6 +1035,7 @@ SVFIRWriter::autoJSON SVFIRWriter::generateJson()
     F(icfgNode2SVFStmtsMap);
     F(icfgNode2PTASVFStmtsMap);
     F(GepValObjMap);
+    F(typeLocSetsMap);
     F(GepObjVarMap);
     F(memToFieldsMap);
     F(globSVFStmtSet);
@@ -1045,6 +1048,7 @@ SVFIRWriter::autoJSON SVFIRWriter::generateJson()
     F(funPtrToCallSitesMap);
     F(candidatePointers);
     F(callSiteSet);
+    jsonAddJsonableToObject(root, FIELD_NAME_ITEM(nodeIDAllocator));
 #undef F
 
     return {root, cJSON_Delete};
@@ -1237,6 +1241,19 @@ cJSON* SVFIRWriter::toJson(const LocationSet& ls)
     return root;
 }
 
+cJSON* SVFIRWriter::toJson(const NodeIDAllocator* nodeIDAllocator)
+{
+    ENSURE_NOT_VISITED(nodeIDAllocator);
+
+    cJSON* root = jsonCreateObject();
+    JSON_WRITE_FIELD(root, nodeIDAllocator, strategy);
+    JSON_WRITE_FIELD(root, nodeIDAllocator, numObjects);
+    JSON_WRITE_FIELD(root, nodeIDAllocator, numValues);
+    JSON_WRITE_FIELD(root, nodeIDAllocator, numSymbols);
+    JSON_WRITE_FIELD(root, nodeIDAllocator, numNodes);
+    return root;
+}
+
 cJSON* SVFIRWriter::toJson(const SymbolTableInfo* symTable)
 {
     ENSURE_NOT_VISITED(symTable);
@@ -1323,14 +1340,15 @@ SVFIR* SVFIRReader::read(const cJSON* root)
     auto svfModule = new SVFModule();
     auto icfg = new ICFG();
     auto chgraph = new CHGraph(svfModule);
-    auto symboTableInfo = SymbolTableInfo::SymbolInfo();
+    auto symInfo = SymbolTableInfo::SymbolInfo();
+    symInfo->mod = svfModule;
 
     svfIR->svfModule = svfModule;
     svfIR->icfg = icfg;
     svfIR->chgraph = chgraph;
 
 #define F(field) JSON_READ_FIELD_FWD(svfirField, svfIR, field)
-    readJson(symboTableInfo);
+    readJson(symInfo);
     readJson(irGraph);
     readJson(icfg);
     readJson(chgraph);
@@ -1339,6 +1357,7 @@ SVFIR* SVFIRReader::read(const cJSON* root)
     F(icfgNode2SVFStmtsMap);
     F(icfgNode2PTASVFStmtsMap);
     F(GepValObjMap);
+    F(typeLocSetsMap);
     F(GepObjVarMap);
     F(memToFieldsMap);
     F(globSVFStmtSet);
@@ -1352,6 +1371,9 @@ SVFIR* SVFIRReader::read(const cJSON* root)
     F(candidatePointers);
     F(callSiteSet);
 #undef F
+    assert(!NodeIDAllocator::allocator && "NodeIDAllocator should be NULL");
+    auto nodeIDAllocator = NodeIDAllocator::get();
+    JSON_READ_OBJ_FWD(svfirField, nodeIDAllocator);
 
     return svfIR;
 }
@@ -1636,7 +1658,26 @@ SVFStmt* SVFIRReader::createPAGEdge(GEdgeKind kind)
     }
 }
 
-void SVFIRReader::readJson(SymbolTableInfo*& symTabInfo)
+void SVFIRReader::readJson(const cJSON* obj, NodeIDAllocator* idAllocator)
+{
+    assert(idAllocator && "idAllocator should be nonempty");
+
+    ABORT_IFNOT(jsonIsObject(obj), "Expect object for " << JSON_KEY(obj));
+    obj = obj->child;
+
+    JSON_DEF_READ_FWD(obj, int, strategy);
+    static_assert(sizeof(idAllocator->strategy) == sizeof(strategy),
+                  "idAllocator->strategy should be represented by int");
+    idAllocator->strategy = static_cast<NodeIDAllocator::Strategy>(strategy);
+    JSON_READ_FIELD_FWD(obj, idAllocator, numObjects);
+    JSON_READ_FIELD_FWD(obj, idAllocator, numValues);
+    JSON_READ_FIELD_FWD(obj, idAllocator, numSymbols);
+    JSON_READ_FIELD_FWD(obj, idAllocator, numNodes);
+
+    ABORT_IFNOT(!obj, "Extra field " << JSON_KEY(obj) << " in NodeIDAllocator");
+}
+
+void SVFIRReader::readJson(SymbolTableInfo* symTabInfo)
 {
     const cJSON* obj = symTableReader.getFieldJson();
 #define F(field) JSON_READ_FIELD_FWD(obj, symTabInfo, field)
@@ -1654,7 +1695,7 @@ void SVFIRReader::readJson(SymbolTableInfo*& symTabInfo)
     ABORT_IFNOT(!obj, "Extra field " << JSON_KEY(obj) << " in SymbolTableInfo");
 }
 
-void SVFIRReader::readJson(IRGraph*& graph)
+void SVFIRReader::readJson(IRGraph* graph)
 {
     assert(SymbolTableInfo::symInfo && "SymbolTableInfo should be nonempty");
     assert(graph->symInfo == SymbolTableInfo::SymbolInfo() && "symInfo differ");
@@ -1679,7 +1720,7 @@ void SVFIRReader::readJson(IRGraph*& graph)
     ABORT_IFNOT(nullit->second.empty(), "valueToEdgeMap[NULL] should be empty");
 }
 
-void SVFIRReader::readJson(ICFG*& icfg)
+void SVFIRReader::readJson(ICFG* icfg)
 {
     icfgReader.saveToGenericGraph(icfg);
     const cJSON* obj = icfgReader.getFieldJson();
@@ -1695,7 +1736,7 @@ void SVFIRReader::readJson(ICFG*& icfg)
 #undef F
 }
 
-void SVFIRReader::readJson(CHGraph*& graph)
+void SVFIRReader::readJson(CHGraph* graph)
 {
     chGraphReader.saveToGenericGraph(graph);
     const cJSON* obj = chGraphReader.getFieldJson();
@@ -1714,9 +1755,14 @@ void SVFIRReader::readJson(CHGraph*& graph)
 #undef F
 }
 
-void SVFIRReader::readJson(SVFModule*& module)
+void SVFIRReader::readJson(SVFModule* module)
 {
     const cJSON* obj = svfModuleReader.getFieldJson();
+    auto symInfo = SymbolTableInfo::symInfo;
+    assert(symInfo && "SymbolTableInfo should be non-NULL");
+    svfModuleReader.svfTypePool.saveToSet(symInfo->svfTypes);
+    svfModuleReader.stInfoPool.saveToSet(symInfo->stInfos);
+
 #define F(field) JSON_READ_FIELD_FWD(obj, module, field)
     F(pagReadFromTxt);
     F(moduleIdentifier);
