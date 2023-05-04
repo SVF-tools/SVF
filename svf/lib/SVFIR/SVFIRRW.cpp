@@ -1035,6 +1035,7 @@ SVFIRWriter::autoJSON SVFIRWriter::generateJson()
     F(icfgNode2SVFStmtsMap);
     F(icfgNode2PTASVFStmtsMap);
     F(GepValObjMap);
+    F(typeLocSetsMap);
     F(GepObjVarMap);
     F(memToFieldsMap);
     F(globSVFStmtSet);
@@ -1356,6 +1357,7 @@ SVFIR* SVFIRReader::read(const cJSON* root)
     F(icfgNode2SVFStmtsMap);
     F(icfgNode2PTASVFStmtsMap);
     F(GepValObjMap);
+    F(typeLocSetsMap);
     F(GepObjVarMap);
     F(memToFieldsMap);
     F(globSVFStmtSet);
