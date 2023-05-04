@@ -42,7 +42,8 @@ class SVFIR2ItvExeState
 {
 public:
     typedef ExeState::VAddrs VAddrs;
-    static VAddrs globalNullVaddrs;
+    typedef ExeState::VAddrsID VAddrsID;
+    static VAddrsID globalNullVaddrs;
 public:
     SVFIR2ItvExeState(SVFIR *ir) : _svfir(ir) {}
 
@@ -92,7 +93,7 @@ public:
     /// Init SVFVar
     void initSVFVar(u32_t varId);
 
-    inline VAddrs &getVAddrs(u32_t id)
+    inline VAddrsID &getVAddrs(u32_t id)
     {
         if (inVarToAddrsTable(id))
             return _es.getVAddrs(id);
@@ -160,6 +161,35 @@ public:
     static inline bool isVirtualMemAddress(u32_t val)
     {
         return ExeState::isVirtualMemAddress(val);
+    }
+
+public:
+    static bool emptyVAddrs() {
+        return ExeState::emptyVAddrs();
+    }
+
+    static bool isEmpty(const PointsToID &lhs) {
+        return ExeState::isEmpty(lhs);
+    }
+
+    static PointsToID unionVAddrs(const PointsToID &lhs, const PointsToID &rhs) {
+        return ExeState::unionVAddrs(lhs, rhs);
+    }
+
+    static PointsToID intersectVAddrs(const PointsToID &lhs, const PointsToID &rhs) {
+        return ExeState::intersectVAddrs(lhs, rhs);
+    }
+
+    static const VAddrs &getActualVAddrs(PointsToID id) {
+        return ExeState::getActualVAddrs(id);
+    }
+
+    static VAddrsID emplaceVAddrs(const VAddrs &addrs) {
+        return ExeState::emplaceVAddrs(addrs);
+    }
+
+    static VAddrsID emplaceVAddrs(NodeID addr) {
+        return ExeState::emplaceVAddrs(addr);
     }
 
 protected:

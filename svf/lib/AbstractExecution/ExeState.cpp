@@ -32,6 +32,8 @@
 
 using namespace SVF;
 
+PersistentPointsToCache<PointsTo> ExeState::ptCache;
+
 bool ExeState::operator==(const ExeState &rhs) const
 {
     return eqVarToVAddrs(_varToVAddrs, rhs._varToVAddrs) && eqVarToVAddrs(_locToVAddrs, rhs._locToVAddrs);
@@ -45,7 +47,7 @@ void ExeState::joinWith(const ExeState &other)
         auto oit = _varToVAddrs.find(key);
         if (oit != _varToVAddrs.end())
         {
-            oit->second.join_with(it->second);
+            oit->second = unionVAddrs(oit->second, it->second);
         }
         else
         {
@@ -58,7 +60,7 @@ void ExeState::joinWith(const ExeState &other)
         auto oit = _locToVAddrs.find(key);
         if (oit != _locToVAddrs.end())
         {
-            oit->second.join_with(it->second);
+            oit->second = unionVAddrs(oit->second, it->second);
         }
         else
         {
@@ -76,7 +78,7 @@ void ExeState::meetWith(const ExeState &other)
         auto oit = _varToVAddrs.find(key);
         if (oit != _varToVAddrs.end())
         {
-            oit->second.meet_with(it->second);
+            oit->second = intersectVAddrs(oit->second, it->second);
         }
     }
     for (auto it = other._locToVAddrs.begin(); it != other._locToVAddrs.end(); ++it)
@@ -85,7 +87,7 @@ void ExeState::meetWith(const ExeState &other)
         auto oit = _locToVAddrs.find(key);
         if (oit != _locToVAddrs.end())
         {
-            oit->second.meet_with(it->second);
+            oit->second = intersectVAddrs(oit->second, it->second);
         }
     }
 }

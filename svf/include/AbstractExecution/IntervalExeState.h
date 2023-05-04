@@ -63,12 +63,12 @@ public:
 
     /// set path constraints, val2val and loc2val map
     IntervalExeState(VarToValMap &_varToValMap, LocToValMap &_locToValMap) : ExeState(ExeState::IntervalK),
-        _varToItvVal(_varToValMap),
-        _locToItvVal(_locToValMap) {}
+                                                                             _varToItvVal(_varToValMap),
+                                                                             _locToItvVal(_locToValMap) {}
 
     /// copy constructor
     IntervalExeState(const IntervalExeState &rhs) : ExeState(rhs), _varToItvVal(rhs.getVarToVal()),
-        _locToItvVal(rhs.getLocToVal())
+                                                    _locToItvVal(rhs.getLocToVal())
     {
 
     }
@@ -87,8 +87,8 @@ public:
 
     /// move constructor
     IntervalExeState(IntervalExeState &&rhs) : ExeState(std::move(rhs)),
-        _varToItvVal(std::move(rhs._varToItvVal)),
-        _locToItvVal(std::move(rhs._locToItvVal))
+                                               _varToItvVal(std::move(rhs._varToItvVal)),
+                                               _locToItvVal(std::move(rhs._locToItvVal))
     {
 
     }
@@ -138,7 +138,7 @@ public:
         return inv;
     }
 
-    VAddrs &getVAddrs(u32_t id) override
+    VAddrsID &getVAddrs(u32_t id) override
     {
         auto it = _varToVAddrs.find(id);
         if (it != _varToVAddrs.end())
@@ -285,41 +285,38 @@ public:
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         if (isNullPtr(addr)) return;
-        u32_t objId = getInternalID(addr);
-        _locToItvVal[objId] = val;
+        _locToItvVal[addr] = val;
     }
 
     inline IntervalValue &load(u32_t addr)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
-        u32_t objId = getInternalID(addr);
-        auto it = _locToItvVal.find(objId);
+        auto it = _locToItvVal.find(addr);
         if(it != _locToItvVal.end())
             return it->second;
         else
         {
-            auto globIt = globalES._locToItvVal.find(objId);
+            auto globIt = globalES._locToItvVal.find(addr);
             if(globIt != globalES._locToItvVal.end())
                 return globIt->second;
             else
-                return _locToItvVal[objId];
+                return _locToItvVal[addr];
         }
     }
 
-    inline VAddrs &loadVAddrs(u32_t addr) override
+    inline VAddrsID &loadVAddrs(u32_t addr) override
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
-        u32_t objId = getInternalID(addr);
-        auto it = _locToVAddrs.find(objId);
+        auto it = _locToVAddrs.find(addr);
         if(it != _locToVAddrs.end())
             return it->second;
         else
         {
-            auto globIt = globalES._locToVAddrs.find(objId);
+            auto globIt = globalES._locToVAddrs.find(addr);
             if(globIt != globalES._locToVAddrs.end())
                 return globIt->second;
             else
-                return _locToVAddrs[objId];
+                return _locToVAddrs[addr];
         }
     }
 
@@ -338,7 +335,7 @@ public:
         }
     }
 
-    inline VAddrs& getLocVAddrs(u32_t id)
+    inline VAddrsID& getLocVAddrs(u32_t id)
     {
         auto it = _locToVAddrs.find(id);
         if(it != _locToVAddrs.end())

@@ -206,7 +206,11 @@ void IntervalExeState::printTable(const VarToValMap &table, std::ostream &oss) c
     }
     for (const auto &item: ordered)
     {
-        oss << "Var" << std::to_string(item);
+        if (isVirtualMemAddress(item)) {
+            oss << "Loc" << std::hex << "0x" << item << "(" << std::to_string(item&(0x00ffffff)) << ")";
+        } else {
+            oss << "Var" << std::to_string(item);
+        }
         IntervalValue sim = table.at(item);
         if (sim.is_numeral() && isVirtualMemAddress(Interval2NumValue(sim)))
         {
@@ -229,8 +233,13 @@ void IntervalExeState::printTable(const VarToVAddrs &table, std::ostream &oss) c
     }
     for (const auto &item: ordered)
     {
-        oss << "Var" << std::to_string(item);
-        VAddrs sim = table.at(item);
+        if (isVirtualMemAddress(item)) {
+            oss << "Loc" << std::hex << "0x" << item << "(" << std::to_string(item&(0x00ffffff)) << ")";
+        } else {
+            oss << "Var" << std::to_string(item);
+        }
+        VAddrsID simId = table.at(item);
+        const VAddrs& sim = getActualVAddrs(simId);
         oss << "\t Value: " << std::hex << "[ ";
         for (auto it = sim.begin(); it != sim.end(); ++it)
         {
