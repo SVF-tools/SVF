@@ -235,9 +235,10 @@ protected:
 
     /// Handle external call
     //@{
-    virtual void parseOperations(std::vector<ExtAPI::Operation>  &operations, CallBase* cs);
-    virtual void handleExtCall(CallBase* cs, const Function *F);
-    void addComplexConsForExt(const Value* D, const Value* S, const Value* sz);
+    virtual void parseOperations(std::vector<ExtAPI::Operation>  &operations, const SVFCallInst* svfcall);
+    virtual void preProcessExtCall(CallBase* cs);
+    virtual void handleExtCall(SVFInstruction* svfinst, const SVFFunction* svfcallee);
+    void addComplexConsForExt(const SVFValue* D, const SVFValue* S, const SVFValue* sz);
     //@}
 
     /// Set current basic block in order to keep track of control flow information
@@ -281,7 +282,7 @@ protected:
         return nullPtr;
     }
 
-    NodeID getGepValVar(const Value* val, const LocationSet& ls, const SVFType* baseType);
+    NodeID getGepValVar(const SVFValue* val, const LocationSet& ls, const SVFType* baseType);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 

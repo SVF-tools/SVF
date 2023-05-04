@@ -299,6 +299,12 @@ inline bool isExtCall(const SVFFunction* fun)
     return fun && ExtAPI::getExtAPI()->is_ext(fun);
 }
 
+// Return true if extern function contains memset_like or memcpy_like operations
+inline bool isMemSetOrCpyExtFun(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_memset_or_memcpy(fun);
+}
+
 /// Return true if the call is a heap allocator/reallocator
 //@{
 /// note that these two functions are not suppose to be used externally

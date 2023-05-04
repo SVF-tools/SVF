@@ -5096,13 +5096,6 @@
 			"dst": "Ret"
 		}
     },
-    "dlsym":    {
-        "return":  "void *",
-        "arguments":  "(void *, const char *)",
-        "type": "EFT_L_A1__FunPtr",
-        "overwrite_app_function": 0,
-        "funptr_ops":   ["Arg1"]
-    },
     "bcopy":    {
         "return":  "void",
         "arguments":  "(const void *, void *, size_t)",

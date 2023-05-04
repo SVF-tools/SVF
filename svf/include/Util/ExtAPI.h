@@ -306,6 +306,9 @@ public:
     // Assuming hasStatic(F), does (F) have a second static Y where X -> Y?
     bool has_static2(const SVFFunction *F);
 
+    // Does (F) have a memset_like or memcpy_like operation?
+    bool is_memset_or_memcpy(const SVFFunction *F);
+
     // Does (F) allocate a new object and return it?
     bool is_alloc(const SVFFunction *F);
 
