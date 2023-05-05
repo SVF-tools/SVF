@@ -51,9 +51,11 @@ class ExeState
 
 public:
 
+    typedef u32_t VAddr;
     typedef PointsTo VAddrs;
     typedef PointsToID VAddrsID;
     typedef Map<NodeID, VAddrsID> VarToVAddrs;
+    typedef Map<VAddr, VAddrsID> VAddrToVAddrsID;
     /// Execution state kind
     enum ExeState_TYPE
     {
@@ -68,10 +70,12 @@ public:
     virtual ~ExeState() = default;
 
     ExeState(const ExeState &rhs) : _varToVAddrs(rhs._varToVAddrs),
-                                    _locToVAddrs(rhs._locToVAddrs) {}
+                                    _locToVAddrs(rhs._locToVAddrs),
+                                    _vAddrMToMR(rhs._vAddrMToMR) {}
 
     ExeState(ExeState &&rhs) noexcept: _varToVAddrs(std::move(rhs._varToVAddrs)),
-                                       _locToVAddrs(std::move(rhs._locToVAddrs)) {}
+                                       _locToVAddrs(std::move(rhs._locToVAddrs)),
+                                       _vAddrMToMR(std::move(rhs._vAddrMToMR)) {}
 
     ExeState &operator=(const ExeState &rhs)
     {
@@ -79,6 +83,7 @@ public:
         {
             _varToVAddrs = rhs._varToVAddrs;
             _locToVAddrs = rhs._locToVAddrs;
+            _vAddrMToMR = rhs._vAddrMToMR;
         }
         return *this;
     }
@@ -89,6 +94,7 @@ public:
         {
             _varToVAddrs = std::move(rhs._varToVAddrs);
             _locToVAddrs = std::move(rhs._locToVAddrs);
+            _vAddrMToMR = std::move(rhs._vAddrMToMR);
         }
         return *this;
     }
@@ -136,14 +142,24 @@ public:
         return _locToVAddrs;
     }
 
+    inline virtual const VAddrToVAddrsID &getVAddrMToMR() const
+    {
+        return _vAddrMToMR;
+    }
+
     inline virtual bool inVarToAddrsTable(u32_t id) const
     {
         return _varToVAddrs.find(id) != _varToVAddrs.end();
     }
 
-    inline virtual bool inLocToAddrsTable(u32_t id) const
+    inline virtual bool inVAddrMToMRTable(u32_t id) const
     {
-        return _locToVAddrs.find(id) != _locToVAddrs.end();
+        return _vAddrMToMR.find(id) != _vAddrMToMR.end();
+    }
+
+    inline virtual bool inLocToAddrsTable(u32_t vAddrId) const
+    {
+        return _locToVAddrs.find(vAddrId) != _locToVAddrs.end();
     }
 
     virtual VAddrsID &getVAddrs(u32_t id)
@@ -151,17 +167,14 @@ public:
         return _varToVAddrs[id];
     }
 
-    inline virtual void storeVAddrs(u32_t addr, const VAddrsID &vaddrs)
-    {
-        assert(isVirtualMemAddress(addr) && "not virtual address?");
-        if(isNullPtr(addr)) return;
-        _locToVAddrs[addr] = vaddrs;
-    }
+    virtual void storeVAddrs(u32_t vAddrId, const VAddrsID &vaddrs);
 
     inline virtual VAddrsID &loadVAddrs(u32_t addr)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
-        return _locToVAddrs[addr];
+        auto it = _vAddrMToMR.find(addr);
+        assert(it != _vAddrMToMR.end() && "null dereference!");
+        return _locToVAddrs[it->second];
     }
 
     inline bool isNullPtr(u32_t addr)
@@ -172,6 +185,7 @@ public:
 protected:
     VarToVAddrs _varToVAddrs;
     VarToVAddrs _locToVAddrs;
+    VAddrToVAddrsID _vAddrMToMR;
 
 protected:
 
@@ -185,6 +199,23 @@ protected:
                 return false;
             if (item.second != it->second)
             {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool eqLocToVAddrs(const VarToVAddrs &lhs, const VAddrToVAddrsID &lhsMToMR, const VarToVAddrs &rhs,
+                              const VAddrToVAddrsID &rhsMToMR) {
+        if (lhsMToMR.size() != rhsMToMR.size()) return false;
+        Set<std::pair<VAddrsID, VAddrsID>> visited;
+        for (const auto &item: lhsMToMR) {
+            auto it = rhsMToMR.find(item.first);
+            if (it == rhsMToMR.end())
+                return false;
+            if(visited.count({it->second, item.second})) continue;
+            visited.emplace(it->second, item.second);
+            if (lhs.at(item.second) != rhs.at(it->second)) {
                 return false;
             }
         }

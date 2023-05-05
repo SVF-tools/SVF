@@ -36,7 +36,48 @@ PersistentPointsToCache<PointsTo> ExeState::ptCache;
 
 bool ExeState::operator==(const ExeState &rhs) const
 {
-    return eqVarToVAddrs(_varToVAddrs, rhs._varToVAddrs) && eqVarToVAddrs(_locToVAddrs, rhs._locToVAddrs);
+    return eqVarToVAddrs(_varToVAddrs, rhs._varToVAddrs) &&
+           eqLocToVAddrs(_locToVAddrs, _vAddrMToMR, rhs._locToVAddrs, rhs._vAddrMToMR);
+}
+
+void ExeState::storeVAddrs(u32_t vAddrId, const ExeState::VAddrsID &vaddrs) {
+    if(isEmpty(vAddrId)) return;
+    auto it = _locToVAddrs.find(vAddrId);
+    if (it != _locToVAddrs.end()) {
+        it->second = vaddrs;
+    } else {
+        // find intersection
+        Map<VAddrsID, VAddrs> intersectMap;
+        for (const auto &vAddr: getActualVAddrs(vAddrId)) {
+            auto originalIt = _vAddrMToMR.find(vAddr);
+            if (originalIt != _vAddrMToMR.end()) {
+                intersectMap[originalIt->second].set(vAddr);
+            }
+        }
+        // update intersection
+        Map<VAddrsID, VAddrs> MR2M;
+        for (const auto &vAddrsID: _locToVAddrs) {
+            VAddrs oVAddrs = getActualVAddrs(vAddrsID.first);
+            auto interIt = intersectMap.find(vAddrsID.first);
+            if (interIt != intersectMap.end()) {
+                oVAddrs -= interIt->second; // remove intersection
+                MR2M[vAddrsID.first] = oVAddrs;
+            }
+        }
+        // update \delta and m2MR
+        for (const auto &mit: MR2M) {
+            VAddrsID newId = emplaceVAddrs(mit.second);
+            _locToVAddrs[newId] = _locToVAddrs[mit.first];
+            _locToVAddrs.erase(mit.first);
+            for (const auto &m: mit.second) {
+                _vAddrMToMR[m] = newId;
+            }
+        }
+        for (const auto &vAddr: getActualVAddrs(vAddrId)) {
+            _vAddrMToMR[vAddr] = vAddrId;
+        }
+        _locToVAddrs[vAddrId] = vaddrs;
+    }
 }
 
 void ExeState::joinWith(const ExeState &other)
@@ -54,19 +95,75 @@ void ExeState::joinWith(const ExeState &other)
             _varToVAddrs.emplace(key, it->second);
         }
     }
+    VarToVAddrs locToVAddrs;
+    VAddrToVAddrsID vAddrMToMR;
+    Set<VAddrsID> IMRs;
+    Map<std::pair<VAddrsID, VAddrsID>, VAddrs> Pair2IM;
+    
     for (auto it = other._locToVAddrs.begin(); it != other._locToVAddrs.end(); ++it)
     {
-        auto key = it->first;
-        auto oit = _locToVAddrs.find(key);
-        if (oit != _locToVAddrs.end())
-        {
-            oit->second = unionVAddrs(oit->second, it->second);
+        const VAddrs &M = getActualVAddrs(it->first);
+        auto lhsIt = _locToVAddrs.find(it->first);
+        if (lhsIt != _locToVAddrs.end()) {
+            IMRs.insert(it->first);
+            locToVAddrs[it->first] = unionVAddrs(it->second, lhsIt->second);
+            for (const auto &m: M) {
+                vAddrMToMR[m] = it->first;
+            }
+            continue;
         }
-        else
-        {
-            _locToVAddrs.emplace(key, it->second);
+        for (const auto &m: M) {
+            auto lhsVIt = _vAddrMToMR.find(m);
+            if (lhsVIt != _vAddrMToMR.end()) {
+                Pair2IM[{lhsVIt->second, it->first}].set(m);
+            }
         }
     }
+    // update intersection
+    for (const auto &item: Pair2IM) {
+        VAddrsID newId = emplaceVAddrs(item.second);
+        locToVAddrs[newId] = unionVAddrs(_locToVAddrs.at(item.first.first), other._locToVAddrs.at(item.first.second));
+        for (const auto &m: item.second) {
+            vAddrMToMR[m] = newId;
+        }
+    }
+    Map<VAddrsID, VAddrs> MR2M1, MR2M2;
+    for (const auto &lhs: _locToVAddrs) {
+        if (!IMRs.count(lhs.first)) {
+            MR2M1[lhs.first] = getActualVAddrs(lhs.first);
+        }
+    }
+    for (const auto &lhs: other._locToVAddrs) {
+        if (!IMRs.count(lhs.first)) {
+            MR2M2[lhs.first] = getActualVAddrs(lhs.first);
+        }
+    }
+    // erase intersection
+    for (const auto &item: Pair2IM) {
+        MR2M1[item.first.first] -= item.second;
+        MR2M2[item.first.second] -= item.second;
+    }
+    // update complement
+    for (const auto &item: MR2M1) {
+        if (!item.second.empty()) {
+            VAddrsID newId = emplaceVAddrs(item.second);
+            locToVAddrs[newId] = _locToVAddrs[item.first];
+            for (const auto &m: item.second) {
+                vAddrMToMR[m] = newId;
+            }
+        }
+    }
+    for (const auto &item: MR2M2) {
+        if (!item.second.empty()) {
+            VAddrsID newId = emplaceVAddrs(item.second);
+            locToVAddrs[newId] = other._locToVAddrs.at(item.first);
+            for (const auto &m: item.second) {
+                vAddrMToMR[m] = newId;
+            }
+        }
+    }
+    _locToVAddrs = std::move(locToVAddrs);
+    _vAddrMToMR = std::move(vAddrMToMR);
 }
 
 
