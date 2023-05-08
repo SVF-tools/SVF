@@ -185,9 +185,9 @@ void ExtAPI::destory()
     }
 }
 
-void ExtAPI::add_entry(const char* funName, const char* returnType, 
-                        std::vector<const char*> argTypes, extType type, 
-                        bool overwrite_app_function)
+void ExtAPI::add_entry(const char* funName, const char* returnType,
+                       std::vector<const char*> argTypes, extType type,
+                       bool overwrite_app_function)
 {
     assert(root && "Parse the json before adding additional entries");
     assert(get_type(funName) == EFT_NULL && "Do not add entries that already exist");
@@ -204,7 +204,7 @@ void ExtAPI::add_entry(const char* funName, const char* returnType,
     std::string formattedArgs = ss.str();
     if (formattedArgs.back() == ',')
         formattedArgs.back() = ')';
-    else 
+    else
         formattedArgs.append(")");
     auto argsString = cJSON_CreateString(formattedArgs.c_str());
     cJSON_AddItemToObject(entry, "argument", argsString);
