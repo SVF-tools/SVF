@@ -1254,13 +1254,13 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                 }
                 // return value = -3 is an object node
                 else if (nodeIDType == -3)
-                {   
+                {
                     if (svfcall->getType()->isPointerTy())
                     {
                         NodeID objId;
                         // Indirect call
                         if (getCallee(svfcall) == nullptr)
-                            objId = pag->addDummyObjNode(svfcall->getType());           
+                            objId = pag->addDummyObjNode(svfcall->getType());
                         else // Direct call
                             objId = pag->getObjectNode(svfcall);
 
