@@ -1,10 +1,6 @@
 codecov:
   require_ci_to_pass: yes
 
-ignore:
-  - "svf/lib/SVFIR/SVFFileSystem.cpp"
-  - "svf/include/SVFIR/SVFFileSystem.h"
-
 coverage:
   status:
     project:
