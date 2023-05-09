@@ -62,7 +62,7 @@ public:
 
 private:
     static LLVMModuleSet* llvmModuleSet;
-    SymbolTableInfo *symInfo;
+    SymbolTableInfo* symInfo;
     std::unique_ptr<SVFModule> svfModule;
     std::unique_ptr<LLVMContext> cxts;
     std::vector<std::unique_ptr<Module>> owned_modules;
