@@ -1224,6 +1224,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
             else
             {
                 s32_t nodeIDType = ExtAPI::getExtAPI()->getNodeIDType(s);
+                // return value >= 0 is an argument node
                 if (nodeIDType >= 0)
                 {
                     if( svfcall->arg_size() <= (u32_t) nodeIDType)
@@ -1239,29 +1240,41 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                         nodeIDMap[s] = pag->getValueNode(svfcall->getArgOperand(nodeIDType));
                     }
                 }
+                // return value = -1 is an inst node
                 else if (nodeIDType == -1)
                 {
                     operands.push_back(pag->getValueNode(svfcall));
                     nodeIDMap[s] = pag->getValueNode(svfcall);
                 }
+                // return value = -2 is a Dummy node
                 else if (nodeIDType == -2)
                 {
                     operands.push_back(pag->addDummyValNode());
                     nodeIDMap[s] = operands[operands.size() - 1];
                 }
+                // return value = -3 is an object node
                 else if (nodeIDType == -3)
                 {
                     if (svfcall->getType()->isPointerTy())
                     {
-                        operands.push_back(pag->getObjectNode(svfcall));
-                        nodeIDMap[s] = pag->getObjectNode(svfcall);
+                        NodeID objId;
+                        // Indirect call
+                        if (getCallee(svfcall) == nullptr)
+                            objId = pag->addDummyObjNode(svfcall->getType());
+                        else // Direct call
+                            objId = pag->getObjectNode(svfcall);
+
+                        operands.push_back(objId);
+                        nodeIDMap[s] = objId;
                     }
                 }
+                // return value = -4 is a nullptr node
                 else if (nodeIDType == -4)
                 {
                     operands.push_back(pag->getNullPtr());
                     nodeIDMap[s] = operands[operands.size() - 1];
                 }
+                // return value = -5 is an offset
                 else if (nodeIDType == -5)
                 {
                     for (char const &c : s)
@@ -1272,6 +1285,7 @@ void SVFIRBuilder::parseOperations(std::vector<ExtAPI::Operation>  &operations, 
                     operands.push_back(atoi(s.c_str()));
                     nodeIDMap[s] = atoi(s.c_str());
                 }
+                // return value = -6 is an illegal operand format
                 else
                     assert(false && "The operand format of function operation is illegal!");
             }
