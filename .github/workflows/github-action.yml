@@ -73,6 +73,11 @@ jobs:
         run:
           ctest -R diff_tests-wr-ander -VV
 
+      - name: ctest file system
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R diff_tests-filesys -VV
+
       - name: ctest mem_leak
         working-directory: ${{github.workspace}}/Release-build
         run:
