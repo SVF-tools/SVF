@@ -31,8 +31,8 @@
 #define __ExtAPI_H
 
 #include "SVFIR/SVFValue.h"
-#include "Util/cJSON.h"
-#include "Util/config.h"
+#include <Util/cJSON.h>
+#include <Util/config.h>
 #include <string>
 #include <map>
 
@@ -261,7 +261,9 @@ public:
     static void destory();
 
     // Add an entry with the specified fields to the ExtAPI, which will be reflected immediately by further ExtAPI queries
-    void add_entry(const char* funName, extType type, bool overwrite_app_function);
+    void add_entry(const char* funName, const char* returnType,
+                   std::vector<const char*> argTypes, extType type,
+                   bool overwrite_app_function);
 
     // Get numeric index of the argument in external function
     u32_t getArgPos(const std::string& s);
@@ -299,6 +301,9 @@ public:
     // 0: Apply user-defined functions
     // 1: Apply function specification in ExtAPI.json
     u32_t isOverwrittenAppFunction(const SVF::SVFFunction *callee);
+    u32_t isOverwrittenAppFunction(const std::string& funcName);
+    // set priority of the function
+    void setOverWrittenAppFunction(const std::string& funcName, u32_t overwrite_app_function);
 
     // Does (F) have a static var X (unavailable to us) that its return points to?
     bool has_static(const SVFFunction *F);
