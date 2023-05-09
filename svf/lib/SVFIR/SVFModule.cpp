@@ -29,6 +29,9 @@
 
 using namespace SVF;
 
+std::string SVFModule::pagReadFromTxt = "";
+std::unique_ptr<SVFModule> SVFModule::svfModule;
+
 SVFModule::~SVFModule()
 {
     for (const SVFFunction* f : FunctionSet)
@@ -52,4 +55,11 @@ const SVFFunction* SVFModule::getSVFFunction(const std::string& name)
         }
     }
     return nullptr;
+}
+
+SVFModule* SVFModule::initializeSVFModule(const std::string& moduleName)
+{
+    assert(!svfModule && "svfModule should be null by now");
+    svfModule.reset(new SVFModule(moduleName));
+    return svfModule.get();
 }

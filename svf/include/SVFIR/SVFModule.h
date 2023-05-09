@@ -63,6 +63,7 @@ public:
     typedef OtherValueType::const_iterator const_ovalue_iterator;
 
 private:
+    static std::unique_ptr<SVFModule> svfModule;
     static std::string pagReadFromTxt;
     std::string moduleIdentifier;
     FunctionSetType FunctionSet;  ///< The Functions in the module
@@ -71,9 +72,11 @@ private:
     ConstantType ConstantSet;     ///< The ConstantData in the module
     OtherValueType OtherValueSet; ///< All other values in the module
 
-public:
     /// Constructors
-    SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName) {}
+    SVFModule(const std::string& moduleName) : moduleIdentifier(moduleName) {}
+
+public:
+    static SVFModule* initializeSVFModule(const std::string& moduleName);
 
     ~SVFModule();
 

@@ -69,8 +69,7 @@ using namespace SVF;
 #define SVF_GLOBAL_CTORS             "llvm.global_ctors"
 #define SVF_GLOBAL_DTORS             "llvm.global_dtors"
 
-LLVMModuleSet *LLVMModuleSet::llvmModuleSet = nullptr;
-std::string SVFModule::pagReadFromTxt = "";
+std::unique_ptr<LLVMModuleSet> LLVMModuleSet::llvmModuleSet;
 
 LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false)
 {
@@ -80,7 +79,7 @@ LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     double startSVFModuleTime = SVFStat::getClk(true);
-    svfModule = std::make_unique<SVFModule>(mod.getModuleIdentifier());
+    svfModule = SVFModule::initializeSVFModule(mod.getModuleIdentifier());
     modules.emplace_back(mod);
 
     build();
@@ -89,7 +88,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 
     buildSymbolTable();
 
-    return svfModule.get();
+    return svfModule;
 }
 
 SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec)
@@ -100,10 +99,9 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 
     loadModules(moduleNameVec);
 
-    if (!moduleNameVec.empty())
-        svfModule = std::make_unique<SVFModule>(*moduleNameVec.begin());
-    else
-        svfModule = std::make_unique<SVFModule>();
+    const std::string& moduleName =
+        moduleNameVec.empty() ? "" : moduleNameVec.front();
+    svfModule = SVFModule::initializeSVFModule(moduleName);
 
     build();
 
@@ -112,7 +110,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 
     buildSymbolTable();
 
-    return svfModule.get();
+    return svfModule;
 }
 
 void LLVMModuleSet::buildSymbolTable() const
@@ -123,7 +121,7 @@ void LLVMModuleSet::buildSymbolTable() const
         /// building symbol table
         DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
         SymbolTableBuilder builder(symInfo);
-        builder.buildMemModel(svfModule.get());
+        builder.buildMemModel(svfModule);
     }
     double endSymInfoTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingSymbolTable =

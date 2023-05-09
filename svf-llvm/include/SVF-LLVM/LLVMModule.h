@@ -61,9 +61,9 @@ public:
     typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
 
 private:
-    static LLVMModuleSet* llvmModuleSet;
+    static std::unique_ptr<LLVMModuleSet> llvmModuleSet;
     SymbolTableInfo* symInfo;
-    std::unique_ptr<SVFModule> svfModule;
+    SVFModule* svfModule; ///< Borrowed from singleton SVFModule::svfModule
     std::unique_ptr<LLVMContext> cxts;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
@@ -87,23 +87,22 @@ private:
 
     /// Constructor
     LLVMModuleSet();
-    ~LLVMModuleSet() = default;
 
     void build();
 
 public:
+    ~LLVMModuleSet() = default;
+
     static inline LLVMModuleSet* getLLVMModuleSet()
     {
-        if (llvmModuleSet == nullptr)
-            llvmModuleSet = new LLVMModuleSet();
-        return llvmModuleSet;
+        if (!llvmModuleSet)
+            llvmModuleSet.reset(new LLVMModuleSet);
+        return llvmModuleSet.get();
     }
 
     static void releaseLLVMModuleSet()
     {
-        if (llvmModuleSet)
-            delete llvmModuleSet;
-        llvmModuleSet = nullptr;
+        llvmModuleSet.reset();
     }
 
     SVFModule* buildSVFModule(Module& mod);
@@ -111,8 +110,10 @@ public:
 
     inline SVFModule* getSVFModule()
     {
+        // TODO(xudong): If we do `initializeSVFModule()` upon construction, we
+        // can safely remove this assert.
         assert(svfModule && "svfModule has not been built yet!");
-        return svfModule.get();
+        return svfModule;
     }
 
     void preProcessBCs(std::vector<std::string>& moduleNameVec);
