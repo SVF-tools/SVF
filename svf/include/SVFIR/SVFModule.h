@@ -63,6 +63,7 @@ public:
     typedef OtherValueType::const_iterator const_ovalue_iterator;
 
 private:
+    static SVFModule* svfModule;
     static std::string pagReadFromTxt;
     std::string moduleIdentifier;
     FunctionSetType FunctionSet;  ///< The Functions in the module
@@ -71,15 +72,23 @@ private:
     ConstantType ConstantSet;     ///< The ConstantData in the module
     OtherValueType OtherValueSet; ///< All other values in the module
 
-public:
     /// Constructors
-    SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName) {}
+    SVFModule() = default;
+
+public:
+    static SVFModule* getSVFModule();
+    static void releaseSVFModule();
 
     ~SVFModule();
 
     static inline void setPagFromTXT(const std::string& txt)
     {
         pagReadFromTxt = txt;
+    }
+
+    inline void setModuleIdentifier(const std::string& moduleIdentifier)
+    {
+        this->moduleIdentifier = moduleIdentifier;
     }
 
     static inline std::string pagFileName()

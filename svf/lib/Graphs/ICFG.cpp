@@ -193,7 +193,7 @@ const std::string RetCFGEdge::toString() const
  * 2) connect ICFG edges
  *    between two statements (PAGEdges)
  */
-ICFG::ICFG(): totalICFGNode(0)
+ICFG::ICFG(): totalICFGNode(0), globalBlockNode(nullptr)
 {
 }
 

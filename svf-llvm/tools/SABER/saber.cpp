@@ -60,7 +60,6 @@ static Option<bool> DFREECHECKER(
 int main(int argc, char ** argv)
 {
 
-    char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
                         argc, argv, "Source-Sink Bug Detector", "[options] <input-bitcode...>"
@@ -68,10 +67,10 @@ int main(int argc, char ** argv)
 
     if (Options::WriteAnder() == "ir_annotator")
     {
-        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+        LLVMModuleSet::preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
 
@@ -88,7 +87,7 @@ int main(int argc, char ** argv)
 
     saber->runOnModule(pag);
 
-    delete[] arg_value;
+    LLVMModuleSet::releaseLLVMModuleSet();
 
     return 0;
 

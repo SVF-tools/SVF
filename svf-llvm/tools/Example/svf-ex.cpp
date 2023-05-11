@@ -142,7 +142,6 @@ void traverseOnVFG(const SVFG* vfg, SVFValue* val)
 int main(int argc, char ** argv)
 {
 
-    char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
                         argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>"
@@ -150,10 +149,10 @@ int main(int argc, char ** argv)
 
     if (Options::WriteAnder() == "ir_annotator")
     {
-        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+        LLVMModuleSet::preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
 
     /// Build Program Assignment Graph (SVFIR)
     SVFIRBuilder builder(svfModule);
@@ -198,7 +197,6 @@ int main(int argc, char ** argv)
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
     llvm::llvm_shutdown();
-    delete[] arg_value;
     return 0;
 }
 

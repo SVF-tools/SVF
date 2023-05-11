@@ -1337,7 +1337,7 @@ SVFIR* SVFIRReader::read(const cJSON* root)
     SVFIR* svfIR = SVFIR::getPAG(); // SVFIR constructor sets symInfo
     IRGraph* irGraph = svfIR;
 
-    auto svfModule = new SVFModule();
+    auto svfModule = SVFModule::getSVFModule();
     auto icfg = new ICFG();
     auto chgraph = new CHGraph(svfModule);
     auto symInfo = SymbolTableInfo::SymbolInfo();
