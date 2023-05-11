@@ -67,5 +67,6 @@ int main(int argc, char** argv)
     SVFIRWriter::writeJsonToPath(pag, jsonPath);
     SVFUtil::outs() << "SVF IR is written to '" << jsonPath << "'\n";
 
+    LLVMModuleSet::releaseLLVMModuleSet();
     return 0;
 }

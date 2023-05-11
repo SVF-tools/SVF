@@ -60,7 +60,6 @@ public:
     /// Destructor
     virtual ~SVFIRBuilder()
     {
-        LLVMModuleSet::releaseLLVMModuleSet();
     }
 
     /// Start building SVFIR here

@@ -68,5 +68,7 @@ int main(int argc, char** argv)
     WPAPass wpa;
     wpa.runOnModule(pag);
 
+    LLVMModuleSet::releaseLLVMModuleSet();
+
     return 0;
 }

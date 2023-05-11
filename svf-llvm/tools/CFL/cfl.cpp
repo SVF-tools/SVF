@@ -37,7 +37,6 @@ using namespace SVF;
 
 int main(int argc, char ** argv)
 {
-    char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
                         argc, argv, "CFL Reachability Analysis", "[options] <input-bitcode...>"
@@ -45,13 +44,13 @@ int main(int argc, char ** argv)
 
     if (Options::WriteAnder() == "ir_annotator")
     {
-        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+        LLVMModuleSet::preProcessBCs(moduleNameVec);
     }
 
     SVFIR* svfir = nullptr;
     if (Options::CFLGraph().empty())
     {
-        SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+        SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
         SVFIRBuilder builder(svfModule);
         svfir = builder.build();
     }  // if no dot form CFLGraph is specified, we use svfir from .bc.
@@ -69,8 +68,6 @@ int main(int argc, char ** argv)
 
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
-
-    delete[] arg_value;
 
     return 0;
 
