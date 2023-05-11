@@ -73,11 +73,6 @@ jobs:
         run:
           ctest -R diff_tests-wr-ander -VV
 
-      - name: ctest file system
-        working-directory: ${{github.workspace}}/Release-build
-        run:
-          ctest -R diff_tests-filesys -VV
-
       - name: ctest mem_leak
         working-directory: ${{github.workspace}}/Release-build
         run:
@@ -93,17 +88,11 @@ jobs:
         run:
           ctest -R cfl_tests -VV
 
-      - name: ctest performance tests on cruxbc
-        working-directory: ${{github.workspace}}/Release-build
-        if: runner.os == 'Linux' && matrix.sanitizer != 'address'
-        run:
-          ctest -R diff-perf-cruxbc -VV
-
-      - name: ctest performance tests on cruxbc (small)
+      - name: ctest performance tests on cruxbc & File system diff tests
         working-directory: ${{github.workspace}}/Release-build
         if: runner.os == 'Linux'
         run:
-          ctest -R diff-perf-cruxbc-small -VV
+          ctest -R diff-perf-cruxbc -VV
 
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build
