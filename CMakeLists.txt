@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.13.4)
 
 project("SVF")
 
-configure_file(${CMAKE_SOURCE_DIR}/.config.in
-               ${CMAKE_BINARY_DIR}/include/Util/config.h)
+configure_file(${PROJECT_SOURCE_DIR}/.config.in
+               ${PROJECT_BINARY_DIR}/include/Util/config.h)
 
 # We need to match the build environment for LLVM: In particular, we need C++14
 # and the -fno-rtti flag
@@ -65,13 +65,13 @@ endif()
 message(STATUS "Found Z3: ${Z3_LIBRARIES}")
 message(STATUS "Z3 include dir: ${Z3_INCLUDES}")
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/svf/include
-                    ${CMAKE_BINARY_DIR}/include ${Z3_INCLUDES})
+include_directories(${PROJECT_SOURCE_DIR}/svf/include
+                    ${PROJECT_BINARY_DIR}/include ${Z3_INCLUDES})
 
 # checks if the test-suite is present, if it is then build bc files and add
 # testing to cmake build
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite")
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite)
+if(EXISTS "${PROJECT_SOURCE_DIR}/Test-Suite")
+  include_directories(${PROJECT_SOURCE_DIR}/Test-Suite)
   enable_testing()
   add_subdirectory(Test-Suite)
   include(CTest)
@@ -81,8 +81,8 @@ add_subdirectory(svf)
 add_subdirectory(svf-llvm)
 
 install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/svf/include/
-            ${CMAKE_CURRENT_SOURCE_DIR}/svf-llvm/include/
+  DIRECTORY ${PROJECT_SOURCE_DIR}/svf/include/
+            ${PROJECT_SOURCE_DIR}/svf-llvm/include/
   COMPONENT devel
   DESTINATION include/svf
   FILES_MATCHING
