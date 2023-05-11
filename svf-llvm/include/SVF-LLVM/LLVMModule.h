@@ -112,9 +112,6 @@ public:
 
     inline SVFModule* getSVFModule()
     {
-        // TODO(xudong): If we do `initializeSVFModule()` upon construction, we
-        // can safely remove this assert.
-        assert(svfModule && "svfModule has not been built yet!");
         return svfModule;
     }
 

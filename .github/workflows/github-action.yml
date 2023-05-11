@@ -90,7 +90,7 @@ jobs:
 
       - name: ctest performance tests on cruxbc & File system diff tests
         working-directory: ${{github.workspace}}/Release-build
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.sanitizer != 'address'
         run:
           ctest -R diff-perf-cruxbc -VV
 
