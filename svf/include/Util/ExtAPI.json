@@ -518,8 +518,16 @@
     "asprintf": {
         "return":  "int",
         "arguments":  "(char **restrict, const char *restrict, ...)",
-        "type": "EFT_NOOP",
-        "overwrite_app_function": 1
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 1,
+        "AddrStmt": {
+            "src": "Obj",
+            "dst": "Dummy"
+        },
+        "StoreStmt": {
+            "src": "Dummy",
+            "dst": "Arg0"
+        }
     },
     "atexit":   {
         "return":  "int",
@@ -2192,8 +2200,16 @@
     "vasprintf":    {
         "return":  "int",
         "arguments":  "(char **, const char *, va_list)",
-        "type": "EFT_NOOP",
-        "overwrite_app_function": 1
+        "type": "EFT_A0R_NEW",
+        "overwrite_app_function": 1,
+        "AddrStmt": {
+            "src": "Obj",
+            "dst": "Dummy"
+        },
+        "StoreStmt": {
+            "src": "Dummy",
+            "dst": "Arg0"
+        }
     },
     "vfprintf": {
         "return":  "int",
