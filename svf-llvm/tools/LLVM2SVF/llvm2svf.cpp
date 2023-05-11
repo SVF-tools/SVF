@@ -55,13 +55,12 @@ int main(int argc, char** argv)
     auto moduleNameVec = OptionBase::parseOptions(
                              argc, argv, "llvm2svf", "[options] <input-bitcode...>");
 
-    LLVMModuleSet* moduleSet = LLVMModuleSet::getLLVMModuleSet();
     if (Options::WriteAnder() == "ir_annotator")
     {
-        moduleSet->preProcessBCs(moduleNameVec);
+        LLVMModuleSet::preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = moduleSet->buildSVFModule(moduleNameVec);
+    SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
     const std::string jsonPath = replaceExtension(moduleNameVec.front());
     // PAG is borrowed from a unique_ptr, so we don't need to delete it.
     const SVFIR* pag = SVFIRBuilder(svfModule).build();

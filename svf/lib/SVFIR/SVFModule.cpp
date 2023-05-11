@@ -30,7 +30,7 @@
 using namespace SVF;
 
 std::string SVFModule::pagReadFromTxt = "";
-std::unique_ptr<SVFModule> SVFModule::svfModule;
+SVFModule* SVFModule::svfModule = nullptr;
 
 SVFModule::~SVFModule()
 {
@@ -57,9 +57,18 @@ const SVFFunction* SVFModule::getSVFFunction(const std::string& name)
     return nullptr;
 }
 
-SVFModule* SVFModule::initializeSVFModule(const std::string& moduleName)
+SVFModule* SVFModule::getSVFModule()
 {
-    assert(!svfModule && "svfModule should be null by now");
-    svfModule.reset(new SVFModule(moduleName));
-    return svfModule.get();
+    if (svfModule == nullptr)
+    {
+        svfModule = new SVFModule;
+    }
+    return svfModule;
+}
+
+void SVFModule::releaseSVFModule()
+{
+    assert(svfModule != nullptr && "SVFModule is not initialized?");
+    delete svfModule;
+    svfModule = nullptr;
 }

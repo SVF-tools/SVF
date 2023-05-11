@@ -69,48 +69,54 @@ using namespace SVF;
 #define SVF_GLOBAL_CTORS             "llvm.global_ctors"
 #define SVF_GLOBAL_DTORS             "llvm.global_dtors"
 
-std::unique_ptr<LLVMModuleSet> LLVMModuleSet::llvmModuleSet;
+LLVMModuleSet* LLVMModuleSet::llvmModuleSet = nullptr;
+bool LLVMModuleSet::preProcessed = false;
 
-LLVMModuleSet::LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false)
+LLVMModuleSet::LLVMModuleSet()
+    : symInfo(SymbolTableInfo::SymbolInfo()),
+      svfModule(SVFModule::getSVFModule()), cxts(nullptr)
 {
-    symInfo = SymbolTableInfo::SymbolInfo();
 }
 
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
-    double startSVFModuleTime = SVFStat::getClk(true);
-    svfModule = SVFModule::initializeSVFModule(mod.getModuleIdentifier());
-    modules.emplace_back(mod);
+    LLVMModuleSet* mset = getLLVMModuleSet();
 
-    build();
+    double startSVFModuleTime = SVFStat::getClk(true);
+    SVFModule::getSVFModule()->setModuleIdentifier(mod.getModuleIdentifier());
+    mset->modules.emplace_back(mod);
+
+    mset->build();
     double endSVFModuleTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
 
-    buildSymbolTable();
-
-    return svfModule;
+    mset->buildSymbolTable();
+    // Don't releaseLLVMModuleSet() here, as IRBuilder might still need LLVMMoudleSet
+    return SVFModule::getSVFModule();
 }
 
 SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec)
 {
     double startSVFModuleTime = SVFStat::getClk(true);
 
-    assert(llvmModuleSet && "LLVM Module set needs to be created!");
+    LLVMModuleSet* mset = getLLVMModuleSet();
 
-    loadModules(moduleNameVec);
+    mset->loadModules(moduleNameVec);
 
-    const std::string& moduleName =
-        moduleNameVec.empty() ? "" : moduleNameVec.front();
-    svfModule = SVFModule::initializeSVFModule(moduleName);
+    if (!moduleNameVec.empty())
+    {
+        SVFModule::getSVFModule()->setModuleIdentifier(moduleNameVec.front());
+    }
 
-    build();
+    mset->build();
 
     double endSVFModuleTime = SVFStat::getClk(true);
-    SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
+    SVFStat::timeOfBuildingLLVMModule =
+        (endSVFModuleTime - startSVFModuleTime) / TIMEINTERVAL;
 
-    buildSymbolTable();
-
-    return svfModule;
+    mset->buildSymbolTable();
+    // Don't releaseLLVMModuleSet() here, as IRBuilder might still need LLVMMoudleSet
+    return SVFModule::getSVFModule();
 }
 
 void LLVMModuleSet::buildSymbolTable() const
@@ -364,7 +370,7 @@ void LLVMModuleSet::prePassSchedule()
     /// MergeFunctionRets Pass
     std::unique_ptr<UnifyFunctionExitNodes> p2 =
         std::make_unique<UnifyFunctionExitNodes>();
-    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
+    for (Module &M : getLLVMModules())
     {
         for (auto F = M.begin(), E = M.end(); F != E; ++F)
         {
@@ -378,8 +384,9 @@ void LLVMModuleSet::prePassSchedule()
 
 void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 {
-    loadModules(moduleNameVec);
-    prePassSchedule();
+    LLVMModuleSet* mset = getLLVMModuleSet();
+    mset->loadModules(moduleNameVec);
+    mset->prePassSchedule();
 
     std::string preProcessSuffix = ".pre.bc";
     // Get the existing module names, remove old extention, add preProcessSuffix
@@ -390,9 +397,8 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
         moduleNameVec[i] = (rawName + preProcessSuffix);
     }
 
-    dumpModulesToFile(preProcessSuffix);
+    mset->dumpModulesToFile(preProcessSuffix);
     preProcessed = true;
-
     releaseLLVMModuleSet();
 }
 
@@ -765,7 +771,7 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
 }
 
 // Dump modules to files
-void LLVMModuleSet::dumpModulesToFile(const std::string suffix)
+void LLVMModuleSet::dumpModulesToFile(const std::string& suffix)
 {
     for (Module& mod : modules)
     {

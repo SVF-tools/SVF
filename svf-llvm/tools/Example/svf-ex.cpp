@@ -150,10 +150,10 @@ int main(int argc, char ** argv)
 
     if (Options::WriteAnder() == "ir_annotator")
     {
-        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+        LLVMModuleSet::preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
 
     /// Build Program Assignment Graph (SVFIR)
     SVFIRBuilder builder(svfModule);

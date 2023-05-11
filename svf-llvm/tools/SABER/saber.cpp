@@ -71,7 +71,7 @@ int main(int argc, char ** argv)
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
 

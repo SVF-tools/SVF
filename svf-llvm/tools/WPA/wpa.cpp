@@ -44,6 +44,7 @@ int main(int argc, char** argv)
         OptionBase::parseOptions(argc, argv, "Whole Program Points-to Analysis",
                                  "[options] <input-bitcode...>");
 
+    // Refers to content of a singleton unique_ptr<SVFIR> in SVFIR.
     SVFIR* pag;
 
     if (Options::ReadJson())
@@ -52,13 +53,12 @@ int main(int argc, char** argv)
     }
     else
     {
-        LLVMModuleSet* moduleSet = LLVMModuleSet::getLLVMModuleSet();
         if (Options::WriteAnder() == "ir_annotator")
         {
-            moduleSet->preProcessBCs(moduleNameVec);
+            LLVMModuleSet::preProcessBCs(moduleNameVec);
         }
 
-        SVFModule* svfModule = moduleSet->buildSVFModule(moduleNameVec);
+        SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
 
         /// Build SVFIR
         SVFIRBuilder builder(svfModule);

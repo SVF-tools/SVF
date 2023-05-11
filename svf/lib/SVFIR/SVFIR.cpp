@@ -562,6 +562,8 @@ void SVFIR::destroy()
     icfg = nullptr;
     delete chgraph;
     chgraph = nullptr;
+    SVFModule::releaseSVFModule();
+    svfModule = nullptr;
 }
 
 /*!
