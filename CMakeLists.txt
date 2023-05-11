@@ -14,7 +14,6 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 add_compile_options("-fno-rtti")
 add_compile_options("-fno-exceptions")
-add_compile_options("-ggdb")
 
 # Treat compiler warnings as errors
 add_compile_options("-Werror" "-Wall")
