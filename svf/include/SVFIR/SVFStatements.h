@@ -113,9 +113,12 @@ public:
                edge->getEdgeKind() == SVFStmt::Call ||
                edge->getEdgeKind() == SVFStmt::Ret ||
                edge->getEdgeKind() == SVFStmt::Gep ||
+               edge->getEdgeKind() == SVFStmt::Phi ||
+               edge->getEdgeKind() == SVFStmt::Select ||
                edge->getEdgeKind() == SVFStmt::Cmp ||
                edge->getEdgeKind() == SVFStmt::BinaryOp ||
                edge->getEdgeKind() == SVFStmt::UnaryOp ||
+               edge->getEdgeKind() == SVFStmt::Branch ||
                edge->getEdgeKind() == SVFStmt::ThreadFork ||
                edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
