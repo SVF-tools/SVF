@@ -1020,7 +1020,7 @@ public:
 
     static inline bool classof(const SVFValue *node)
     {
-        return node->getKind() == SVFOther;
+        return node->getKind() == SVFOther || node->getKind() == SVFMetaAsValue;
     }
 };
 
