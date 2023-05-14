@@ -112,12 +112,12 @@ public:
 
     bool is_zero() const
     {
-        return getExpr().is_numeral() && getExpr().get_numeral_int64() == 0;
+        return getExpr().is_numeral() && eq(getExpr(), Z3Expr(0));
     }
 
     static bool isZero(const BoundedZ3Expr &expr)
     {
-        return expr.is_numeral() && expr.get_numeral_int64() == 0;
+        return expr.is_numeral() && eq(expr.getExpr(), Z3Expr(0));
     }
 
     BoundedZ3Expr equal(const BoundedZ3Expr &rhs) const
