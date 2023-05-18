@@ -41,7 +41,7 @@ void FileChecker::reportBug(ProgSlice* slice)
         // full leakage
         GenericBug::EventStack eventStack =
         {
-            BugEvent(BugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite())
+            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite())
         };
         report.addSaberBug(GenericBug::FILENEVERCLOSE, eventStack);
     }
@@ -50,7 +50,7 @@ void FileChecker::reportBug(ProgSlice* slice)
         GenericBug::EventStack eventStack;
         slice->evalFinalCond2Event(eventStack);
         eventStack.push_back(
-            BugEvent(BugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite()));
+            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite()));
         report.addSaberBug(GenericBug::FILEPARTIALCLOSE, eventStack);
     }
 }

@@ -48,7 +48,7 @@ namespace SVF
  */
 
 
-class BugEvent
+class SVFBugEvent
 {
 public:
     enum EventType
@@ -65,8 +65,8 @@ protected:
     const SVFInstruction *eventInst;
 
 public:
-    BugEvent(u32_t typeAndInfoFlag, const SVFInstruction *eventInst): typeAndInfoFlag(typeAndInfoFlag), eventInst(eventInst) { };
-    virtual ~BugEvent() = default;
+    SVFBugEvent(u32_t typeAndInfoFlag, const SVFInstruction *eventInst): typeAndInfoFlag(typeAndInfoFlag), eventInst(eventInst) { };
+    virtual ~SVFBugEvent() = default;
 
     inline u32_t getEventType() const
     {
@@ -80,7 +80,7 @@ public:
 class GenericBug
 {
 public:
-    typedef std::vector<BugEvent> EventStack;
+    typedef std::vector<SVFBugEvent> EventStack;
 
 public:
     enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};

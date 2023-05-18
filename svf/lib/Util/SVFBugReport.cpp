@@ -37,15 +37,15 @@ using namespace SVF;
 
 const std::string GenericBug::getLoc() const
 {
-    const BugEvent&sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
-    assert(sourceInstEvent.getEventType() == BugEvent::SourceInst && "bugEventStack top should be a SourceInst event");
+    const SVFBugEvent&sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
+    assert(sourceInstEvent.getEventType() == SVFBugEvent::SourceInst && "bugEventStack top should be a SourceInst event");
     return sourceInstEvent.getEventLoc();
 }
 
 const std::string GenericBug::getFuncName() const
 {
-    const BugEvent&sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
-    assert(sourceInstEvent.getEventType() == BugEvent::SourceInst && "bugEventStack top should be a SourceInst event");
+    const SVFBugEvent&sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
+    assert(sourceInstEvent.getEventType() == SVFBugEvent::SourceInst && "bugEventStack top should be a SourceInst event");
     return sourceInstEvent.getFuncName();
 }
 
@@ -88,7 +88,7 @@ void BufferOverflowBug::printBugToTerminal() const
     {
         switch(event.getEventType())
         {
-        case BugEvent::CallSite:
+        case SVFBugEvent::CallSite:
         {
             SVFUtil::errs() << "\t\t  callsite at : ( " << event.getEventLoc() << " )\n";
             break;
@@ -239,21 +239,21 @@ void FilePartialCloseBug::printBugToTerminal() const
     SVFUtil::errs() << "\n";
 }
 
-const std::string BugEvent::getFuncName() const
+const std::string SVFBugEvent::getFuncName() const
 {
     return eventInst->getFunction()->getName();
 }
 
-const std::string BugEvent::getEventLoc() const
+const std::string SVFBugEvent::getEventLoc() const
 {
     return eventInst->getSourceLoc();
 }
 
-const std::string BugEvent::getEventDescription() const
+const std::string SVFBugEvent::getEventDescription() const
 {
     switch(getEventType())
     {
-    case BugEvent::Branch:
+    case SVFBugEvent::Branch:
     {
         if (typeAndInfoFlag & BRANCHFLAGMASK)
         {
@@ -265,7 +265,7 @@ const std::string BugEvent::getEventDescription() const
         }
         break;
     }
-    case BugEvent::CallSite:
+    case SVFBugEvent::CallSite:
     {
         std::string description("calls ");
         const SVFFunction *callee = SVFUtil::getCallee(eventInst);
@@ -280,7 +280,7 @@ const std::string BugEvent::getEventDescription() const
         return description;
         break;
     }
-    case BugEvent::SourceInst:
+    case SVFBugEvent::SourceInst:
     {
         return "None";
     }
@@ -303,10 +303,10 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
 {
     std::map<u32_t, std::string> eventType2Str =
     {
-        {BugEvent::CallSite, "call site"},
-        {BugEvent::Caller, "caller"},
-        {BugEvent::Loop, "loop"},
-        {BugEvent::Branch, "branch"}
+        {SVFBugEvent::CallSite, "call site"},
+        {SVFBugEvent::Caller, "caller"},
+        {SVFBugEvent::Loop, "loop"},
+        {SVFBugEvent::Branch, "branch"}
     };
 
     std::map<GenericBug::BugType, std::string> bugType2Str =
@@ -351,9 +351,9 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
         if(BufferOverflowBug::classof(bugPtr))
         {
             // add only when bug is context sensitive
-            for(const BugEvent&event : bugEventStack)
+            for(const SVFBugEvent&event : bugEventStack)
             {
-                if (event.getEventType() == BugEvent::SourceInst)
+                if (event.getEventType() == SVFBugEvent::SourceInst)
                 {
                     continue;
                 }
