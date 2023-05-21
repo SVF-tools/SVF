@@ -408,9 +408,7 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
                 const SVFFunction* calleefun = SVFUtil::cast<SVFFunction>(obj->getValue());
                 const SVFFunction* callee = calleefun->getDefFunForMultipleModule();
 
-                /// if the arg size does not match then we do not need to connect this parameter
-                /// unless the callee is a variadic function (the first parameter of variadic function is its paramter number)
-                if(matchArgs(cs, callee) == false)
+                if(SVFUtil::matchArgs(cs->getCallSite(), callee) == false)
                     continue;
 
                 if(0 == getIndCallMap()[cs].count(callee))
@@ -427,17 +425,6 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
             }
         }
     }
-}
-
-/*!
- * Match arguments for callsite at caller and callee
- */
-bool PointerAnalysis::matchArgs(const CallICFGNode* cs, const SVFFunction* callee)
-{
-    if(callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(cs->getCallSite()))
-        return true;
-    else
-        return SVFUtil::getSVFCallSite(cs->getCallSite()).arg_size() == callee->arg_size();
 }
 
 /*

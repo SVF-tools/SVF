@@ -311,3 +311,16 @@ void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 {
     if (limitTimerSet) alarm(0);
 }
+
+/// Match arguments for callsite at caller and callee
+/// if the arg size does not match then we do not need to connect this parameter
+/// unless the callee is a variadic function (the first parameter of variadic function is its paramter number)
+/// e.g., void variadicFoo(int num, ...); variadicFoo(5, 1,2,3,4,5)
+/// for variadic function, callsite arg size must be greater than or equal to callee arg size
+bool SVFUtil::matchArgs(const SVFInstruction* cs, const SVFFunction* callee)
+{
+    if (callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(cs))
+        return getSVFCallSite(cs).arg_size() >= callee->arg_size();
+    else
+        return getSVFCallSite(cs).arg_size() == callee->arg_size();
+}

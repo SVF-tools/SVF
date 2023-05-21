@@ -200,6 +200,11 @@ inline CallSite getSVFCallSite(const SVFInstruction* inst)
     return cs;
 }
 
+/// Match arguments for callsite at caller and callee
+/// if the arg size does not match then we do not need to connect this parameter
+/// unless the callee is a variadic function (the first parameter of variadic function is its paramter number)
+bool matchArgs(const SVFInstruction* cs, const SVFFunction* callee);
+
 /// Return LLVM callsite given a value
 inline CallSite getSVFCallSite(const SVFValue* value)
 {
