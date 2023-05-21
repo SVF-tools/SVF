@@ -408,8 +408,6 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
                 const SVFFunction* calleefun = SVFUtil::cast<SVFFunction>(obj->getValue());
                 const SVFFunction* callee = calleefun->getDefFunForMultipleModule();
 
-                /// if the arg size does not match then we do not need to connect this parameter
-                /// unless the callee is a variadic function (the first parameter of variadic function is its paramter number)
                 if(SVFUtil::matchArgs(cs->getCallSite(), callee) == false)
                     continue;
 
