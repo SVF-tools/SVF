@@ -965,12 +965,27 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
     }
 }
 
+/*!
+ * Match arguments for callsite at caller and callee
+ */
+bool VFG::matchArgs(const CallICFGNode* cs, const SVFFunction* callee)
+{
+    if(callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(cs->getCallSite()))
+        return true;
+    else
+        return SVFUtil::getSVFCallSite(cs->getCallSite()).arg_size() == callee->arg_size();
+}
+
 /**
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
 void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFunction* callee, VFGEdgeSetTy& edges)
 {
+    /// if the arg size does not match then we do not need to connect this parameter
+    /// unless the callee is a variadic function (the first parameter of variadic function is its paramter number)
+    if(matchArgs(callBlockNode, callee) == false)
+        return;
     SVFIR * pag = SVFIR::getPAG();
     ICFG * icfg = pag->getICFG();
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
