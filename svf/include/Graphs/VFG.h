@@ -170,9 +170,6 @@ public:
     /// Update VFG based on pointer analysis results
     void updateCallGraph(PointerAnalysis* pta);
 
-    /// Match arguments for callsite at caller and callee
-    bool matchArgs(const CallICFGNode* cs, const SVFFunction* callee);
-
     /// Connect VFG nodes between caller and callee for indirect call site
     virtual void connectCallerAndCallee(const CallICFGNode* cs, const SVFFunction* callee, VFGEdgeSetTy& edges);
 

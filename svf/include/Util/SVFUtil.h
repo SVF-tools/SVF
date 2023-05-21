@@ -200,6 +200,15 @@ inline CallSite getSVFCallSite(const SVFInstruction* inst)
     return cs;
 }
 
+/// Match arguments for callsite at caller and callee
+bool matchArgs(const SVFInstruction* cs, const SVFFunction* callee)
+{
+    if(callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(cs))
+        return true;
+    else
+        return getSVFCallSite(cs).arg_size() == callee->arg_size();
+}
+
 /// Return LLVM callsite given a value
 inline CallSite getSVFCallSite(const SVFValue* value)
 {
