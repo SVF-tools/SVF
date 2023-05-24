@@ -953,8 +953,7 @@ SVFType* LLVMModuleSet::getSVFType(const Type* T)
     /// [getPointerTo(): char   ----> i8*]
     /// [getPointerTo(): int    ----> i8*]
     /// [getPointerTo(): struct ----> i8*]
-    PointerType* ptrTy =
-        PointerType::getInt8PtrTy(getContext())->getPointerTo();
+    PointerType* ptrTy = PointerType::getInt8PtrTy(getContext());
     svfType->setPointerTo(SVFUtil::cast<SVFPointerType>(getSVFType(ptrTy)));
     return svfType;
 }
@@ -1010,9 +1009,18 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     else
         svftype = new SVFOtherType(T->isSingleValueType());
 
-    symInfo->addTypeInfo(svftype);
-    LLVMType2SVFType[T] = svftype;
-    return svftype;
+    LLVMType2SVFTypeMap::const_iterator it = LLVMType2SVFType.find(T);
+    if (it != LLVMType2SVFType.end())
+    {
+        delete svftype;
+        return it->second;
+    }
+    else
+    {
+        symInfo->addTypeInfo(svftype);
+        LLVMType2SVFType[T] = svftype;
+        return svftype;
+    }
 }
 
 /*!

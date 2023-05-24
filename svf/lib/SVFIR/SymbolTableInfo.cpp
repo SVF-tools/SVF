@@ -282,6 +282,13 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
         outs() << "(Function)}\n\n";
     }
 
+    else if ( const SVFOtherType* ot= SVFUtil::dyn_cast<SVFOtherType> (type))
+    {
+        outs() << "  {Type: ";
+        outs() << ot->toString();
+        outs() << "(SVFOtherType)}\n\n";
+    }
+
     else
     {
         assert(type->isSingleValueType() && "not a single value type, then what else!!");
