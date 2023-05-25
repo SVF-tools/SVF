@@ -498,17 +498,24 @@ cJSON* SVFIRWriter::contentToJson(const SVFFunctionType* type)
 
 cJSON* SVFIRWriter::contentToJson(const SVFStructType* type)
 {
-    return contentToJson(static_cast<const SVFType*>(type));
+    cJSON* root = contentToJson(static_cast<const SVFType*>(type));
+    JSON_WRITE_FIELD(root, type, name);
+    return root;
 }
 
 cJSON* SVFIRWriter::contentToJson(const SVFArrayType* type)
 {
-    return contentToJson(static_cast<const SVFType*>(type));
+    cJSON* root = contentToJson(static_cast<const SVFType*>(type));
+    JSON_WRITE_FIELD(root, type, numOfElement);
+    JSON_WRITE_FIELD(root, type, typeOfElement);
+    return root;
 }
 
 cJSON* SVFIRWriter::contentToJson(const SVFOtherType* type)
 {
-    return contentToJson(static_cast<const SVFType*>(type));
+    cJSON* root = contentToJson(static_cast<const SVFType*>(type));
+    JSON_WRITE_FIELD(root, type, repr);
+    return root;
 }
 
 cJSON* SVFIRWriter::contentToJson(const SVFValue* value)
@@ -2492,16 +2499,20 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFFunctionType* type)
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFStructType* type)
 {
     fill(fieldJson, static_cast<SVFType*>(type));
+    JSON_READ_FIELD_FWD(fieldJson, type, name);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFArrayType* type)
 {
     fill(fieldJson, static_cast<SVFType*>(type));
+    JSON_READ_FIELD_FWD(fieldJson, type, numOfElement);
+    JSON_READ_FIELD_FWD(fieldJson, type, typeOfElement);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFOtherType* type)
 {
     fill(fieldJson, static_cast<SVFType*>(type));
+    JSON_READ_FIELD_FWD(fieldJson, type, repr);
 }
 
 SVFIR* SVFIRReader::read(const std::string& path)

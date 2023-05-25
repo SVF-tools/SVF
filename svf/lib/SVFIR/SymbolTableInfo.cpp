@@ -237,68 +237,49 @@ const std::vector<const SVFType*>& SymbolTableInfo::getFlattenFieldTypes(const S
 void SymbolTableInfo::printFlattenFields(const SVFType* type)
 {
 
-    if(const SVFArrayType *at = SVFUtil::dyn_cast<SVFArrayType> (type))
+    if (const SVFArrayType* at = SVFUtil::dyn_cast<SVFArrayType>(type))
     {
-        outs() <<"  {Type: ";
-        outs() << at->toString();
-        outs() << "}\n";
-        outs() << "\tarray type ";
-        outs() << "\t [element size = " << getNumOfFlattenElements(at) << "]\n";
-        outs() << "\n";
+        outs() << "  {Type: " << *at << "}\n"
+               << "\tarray type "
+               << "\t [element size = " << getNumOfFlattenElements(at) << "]\n"
+               << "\n";
     }
-
-    else if(const SVFStructType *st = SVFUtil::dyn_cast<SVFStructType> (type))
+    else if (const SVFStructType *st = SVFUtil::dyn_cast<SVFStructType>(type))
     {
-        outs() <<"  {Type: ";
-        outs() << st->toString();
-        outs() << "}\n";
+        outs() <<"  {Type: " << *st << "}\n";
         const std::vector<const SVFType*>& finfo = getTypeInfo(st)->getFlattenFieldTypes();
         int field_idx = 0;
-        for(std::vector<const SVFType*>::const_iterator it = finfo.begin(), eit = finfo.end();
-                it!=eit; ++it, field_idx++)
+        for(const SVFType* type : finfo)
         {
-            outs() << " \tField_idx = " << field_idx;
-            outs() << ", field type: ";
-            outs() << (*it)->toString();
-            outs() << "\n";
+            outs() << " \tField_idx = " << ++field_idx
+                   << ", field type: " << *type << "\n";
         }
         outs() << "\n";
     }
-
-    else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType> (type))
+    else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType>(type))
     {
         u32_t eSize = getNumOfFlattenElements(pt->getPtrElementType());
-        outs() << "  {Type: ";
-        outs() << pt->toString();
-        outs() << "}\n";
-        outs() <<"\t [target size = " << eSize << "]\n";
-        outs() << "\n";
+        outs() << "  {Type: " << *pt << "}\n"
+               << "\t [target size = " << eSize << "]\n"
+               << "\n";
     }
-
-    else if ( const SVFFunctionType* fu= SVFUtil::dyn_cast<SVFFunctionType> (type))
+    else if (const SVFFunctionType* fu =
+                 SVFUtil::dyn_cast<SVFFunctionType>(type))
     {
-        outs() << "  {Type: ";
-        outs() << fu->getReturnType()->toString();
-        outs() << "(Function)}\n\n";
+        outs() << "  {Type: " << *fu << "}\n\n";
     }
-
-    else if ( const SVFOtherType* ot= SVFUtil::dyn_cast<SVFOtherType> (type))
+    else if (const SVFOtherType* ot = SVFUtil::dyn_cast<SVFOtherType>(type))
     {
-        outs() << "  {Type: ";
-        outs() << ot->toString();
-        outs() << "(SVFOtherType)}\n\n";
+        outs() << "  {Type: "<< *ot << "(SVFOtherType)}\n\n";
     }
-
     else
     {
         assert(type->isSingleValueType() && "not a single value type, then what else!!");
         /// All rest types are scalar type?
         u32_t eSize = getNumOfFlattenElements(type);
-        outs() <<"  {Type: ";
-        outs() << type->toString();
-        outs() << "}\n";
-        outs() <<"\t [object size = " << eSize << "]\n";
-        outs() << "\n";
+        outs() << "  {Type: " << *type << "}\n"
+               << "\t [object size = " << eSize << "]\n"
+               << "\n";
     }
 }
 
@@ -593,4 +574,3 @@ bool SymbolTableInfo::hasValSym(const SVFValue* val)
     else
         return (valSymMap.find(val) != valSymMap.end());
 }
-
