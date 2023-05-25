@@ -1003,12 +1003,25 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = new SVFIntegerType();
     else if (const FunctionType* ft = SVFUtil::dyn_cast<FunctionType>(T))
         svftype = new SVFFunctionType(getSVFType(ft->getReturnType()));
-    else if (SVFUtil::isa<StructType>(T))
-        svftype = new SVFStructType();
-    else if (SVFUtil::isa<ArrayType>(T))
-        svftype = new SVFArrayType();
+    else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
+    {
+        auto svfst = new SVFStructType;
+        svfst->getName() = st->getName().str();
+        svftype = svfst;
+    }
+    else if (const auto at = SVFUtil::dyn_cast<ArrayType>(T))
+    {
+        auto svfat = new SVFArrayType();
+        svfat->setNumOfElement(at->getNumElements());
+        svfat->setTypeOfElement(getSVFType(at->getElementType()));
+        svftype = svfat;
+    }
     else
-        svftype = new SVFOtherType(T->isSingleValueType());
+    {
+        auto ot = new SVFOtherType(T->isSingleValueType());
+        llvm::raw_string_ostream(ot->getRepr()) << *T;
+        svftype = ot;
+    }
 
     symInfo->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;

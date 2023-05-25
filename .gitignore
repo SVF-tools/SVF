@@ -2,7 +2,7 @@ Release*/
 Debug*/
 build/
 html/
-Test-Suite/
+Test-Suite
 Release+Asserts/
 Debug+Asserts/
 autoconf/
@@ -21,3 +21,4 @@ doxygen/
 *.obj
 *.svf
 cmake-build-debug/
+compile_commands.json

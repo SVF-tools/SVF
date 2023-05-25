@@ -300,7 +300,7 @@ void SVFIR2ItvExeState::initValVar(const ValVar *valVar, u32_t varId)
         else
         {
 
-            SVFUtil::errs() << valVar->getValue()->toString() << "\n" << " type: " << type->toString() << "\n";
+            SVFUtil::errs() << valVar->getValue()->toString() << "\n" << " type: " << *type << "\n";
             assert(false && "what other types we have");
         }
     }
