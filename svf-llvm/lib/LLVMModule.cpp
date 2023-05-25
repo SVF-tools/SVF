@@ -151,6 +151,7 @@ void LLVMModuleSet::build()
 
 void LLVMModuleSet::createSVFDataStructure()
 {
+    getSVFType(IntegerType::getInt8Ty(getContext()));
 
     for (const Module& mod : modules)
     {
@@ -1009,18 +1010,9 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     else
         svftype = new SVFOtherType(T->isSingleValueType());
 
-    LLVMType2SVFTypeMap::const_iterator it = LLVMType2SVFType.find(T);
-    if (it != LLVMType2SVFType.end())
-    {
-        delete svftype;
-        return it->second;
-    }
-    else
-    {
-        symInfo->addTypeInfo(svftype);
-        LLVMType2SVFType[T] = svftype;
-        return svftype;
-    }
+    symInfo->addTypeInfo(svftype);
+    LLVMType2SVFType[T] = svftype;
+    return svftype;
 }
 
 /*!
