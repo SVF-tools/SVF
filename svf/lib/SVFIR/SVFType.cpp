@@ -1,7 +1,14 @@
 #include "SVFIR/SVFType.h"
+#include <sstream>
 
 namespace SVF
 {
+std::string SVFType::toString() const
+{
+    std::ostringstream os;
+    print(os);
+    return os.str();
+}
 
 std::ostream& operator<<(std::ostream& OS, const SVFType& type)
 {

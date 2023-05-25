@@ -281,6 +281,10 @@ public:
         return kind;
     }
 
+    /// Note: Use `os<<svfType` or `svfType.print(os)` when possible to avoid
+    /// string concatenation.
+    std::string toString() const;
+
     virtual void print(std::ostream& OS) const = 0;
 
     inline void setPointerTo(const SVFPointerType* ty)
