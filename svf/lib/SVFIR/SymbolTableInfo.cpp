@@ -244,7 +244,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
                << "\t [element size = " << getNumOfFlattenElements(at) << "]\n"
                << "\n";
     }
-    else if(const SVFStructType *st = SVFUtil::dyn_cast<SVFStructType> (type))
+    else if (const SVFStructType *st = SVFUtil::dyn_cast<SVFStructType>(type))
     {
         outs() <<"  {Type: " << *st << "}\n";
         const std::vector<const SVFType*>& finfo = getTypeInfo(st)->getFlattenFieldTypes();
@@ -256,7 +256,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
         }
         outs() << "\n";
     }
-    else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType> (type))
+    else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType>(type))
     {
         u32_t eSize = getNumOfFlattenElements(pt->getPtrElementType());
         outs() << "  {Type: " << *pt << "}\n"
@@ -267,6 +267,10 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
                  SVFUtil::dyn_cast<SVFFunctionType>(type))
     {
         outs() << "  {Type: " << *fu << "}\n\n";
+    }
+    else if (const SVFOtherType* ot = SVFUtil::dyn_cast<SVFOtherType>(type))
+    {
+        outs() << "  {Type: "<< *ot << "(SVFOtherType)}\n\n";
     }
     else
     {
