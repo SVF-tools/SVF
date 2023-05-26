@@ -84,7 +84,7 @@ public:
 
 public:
     enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
-    static const std::string BugTypeName[7];
+    static const std::map<GenericBug::BugType, std::string> BugType2Str;
 
 protected:
     BugType bugType;

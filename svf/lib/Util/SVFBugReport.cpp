@@ -35,10 +35,16 @@
 using namespace std;
 using namespace SVF;
 
-
-const std::string GenericBug::BugTypeName[7] = {
-    "FULLBUFOVERFLOW", "PARTIALBUFOVERFLOW", "NEVERFREE",
-    "PARTIALLEAK", "DOUBLEFREE", "FILENEVERCLOSE", "FILEPARTIALCLOSE"};
+const std::map<GenericBug::BugType, std::string> GenericBug::BugType2Str =
+    {
+        {GenericBug::FULLBUFOVERFLOW, "Full Buffer Overflow"},
+        {GenericBug::PARTIALBUFOVERFLOW, "Partial Buffer Overflow"},
+        {GenericBug::NEVERFREE, "Never Free"},
+        {GenericBug::PARTIALLEAK, "Partial Leak"},
+        {GenericBug::FILENEVERCLOSE, "File Never Close"},
+        {GenericBug::FILEPARTIALCLOSE, "File Partial Close"},
+        {GenericBug::DOUBLEFREE, "Double Free"}
+};
 
 const std::string GenericBug::getLoc() const
 {
@@ -314,17 +320,6 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
         {SVFBugEvent::Branch, "branch"}
     };
 
-    std::map<GenericBug::BugType, std::string> bugType2Str =
-    {
-        {GenericBug::FULLBUFOVERFLOW, "Full Buffer Overflow"},
-        {GenericBug::PARTIALBUFOVERFLOW, "Partial Buffer Overflow"},
-        {GenericBug::NEVERFREE, "Never Free"},
-        {GenericBug::PARTIALLEAK, "Partial Leak"},
-        {GenericBug::FILENEVERCLOSE, "File Never Close"},
-        {GenericBug::FILEPARTIALCLOSE, "File Partial Close"},
-        {GenericBug::DOUBLEFREE, "Double Free"}
-    };
-
     ofstream jsonFile(filePath, ios::out);
 
     jsonFile << "[";
@@ -335,7 +330,7 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath)
         cJSON *singleBug = cJSON_CreateObject();
 
         /// add bug information to json
-        cJSON *bugType = cJSON_CreateString(bugType2Str[bugPtr->getBugType()].c_str());
+        cJSON *bugType = cJSON_CreateString(GenericBug::BugType2Str.at(bugPtr->getBugType()).c_str());
         cJSON_AddItemToObject(singleBug, "DefectType", bugType);
 
         cJSON *bugLoc = cJSON_Parse(bugPtr->getLoc().c_str());
