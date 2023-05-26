@@ -1057,8 +1057,9 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
     StInfo* elemStInfo = collectTypeInfo(elemTy);
-    u32_t nfE = elemStInfo->getNumOfFlattenFields();
-    for (u32_t j = 0; j < nfE; j++)
+    u32_t nfF = elemStInfo->getNumOfFlattenFields();
+    u32_t nfE = elemStInfo->getNumOfFlattenElements();
+    for (u32_t j = 0; j < nfF; j++)
     {
         const SVFType* fieldTy = elemStInfo->getFlattenFieldTypes()[j];
         stInfo->getFlattenFieldTypes().push_back(fieldTy);
@@ -1077,14 +1078,14 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
     {
         for (u32_t j = 0; j < nfE; ++j)
         {
-            const SVFType* et = elemStInfo->getFlattenFieldTypes()[j];
+            const SVFType* et = elemStInfo->getFlattenElementTypes()[j];
             stInfo->getFlattenElementTypes().push_back(et);
         }
     }
 
     assert(stInfo->getFlattenElementTypes().size() == nfE * totalElemNum &&
            "typeForArray size incorrect!!!");
-    stInfo->setNumOfFieldsAndElems(nfE, nfE * totalElemNum);
+    stInfo->setNumOfFieldsAndElems(nfF, nfE * totalElemNum);
 
     return stInfo;
 }
@@ -1112,23 +1113,22 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType* structTy,
         if (SVFUtil::isa<StructType, ArrayType>(elemTy))
         {
             StInfo* subStInfo = collectTypeInfo(elemTy);
-            u32_t nfE = subStInfo->getNumOfFlattenFields();
+            u32_t nfF = subStInfo->getNumOfFlattenFields();
+            u32_t nfE = subStInfo->getNumOfFlattenElements();
             // Copy ST's info, whose element 0 is the size of ST itself.
-            for (u32_t j = 0; j < nfE; ++j)
+            for (u32_t j = 0; j < nfF; ++j)
             {
                 const SVFType* elemTy = subStInfo->getFlattenFieldTypes()[j];
                 stInfo->getFlattenFieldTypes().push_back(elemTy);
             }
-            numFields += nfE;
-            strideOffset += nfE * subStInfo->getStride();
-            for (u32_t tpi = 0; tpi < subStInfo->getStride(); ++tpi)
+            numFields += nfF;
+            strideOffset += nfE;
+            for (u32_t tpj = 0; tpj < nfE; ++tpj)
             {
-                for (u32_t tpj = 0; tpj < nfE; ++tpj)
-                {
-                    const SVFType* ty = subStInfo->getFlattenFieldTypes()[tpj];
-                    stInfo->getFlattenElementTypes().push_back(ty);
-                }
+                const SVFType* ty = subStInfo->getFlattenElementTypes()[tpj];
+                stInfo->getFlattenElementTypes().push_back(ty);
             }
+
         }
         else
         {
