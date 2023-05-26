@@ -1057,34 +1057,29 @@ StInfo* LLVMModuleSet::collectArrayInfo(const ArrayType* ty)
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
     StInfo* elemStInfo = collectTypeInfo(elemTy);
-    u32_t nfE = elemStInfo->getNumOfFlattenFields();
-    for (u32_t j = 0; j < nfE; j++)
+    u32_t nfF = elemStInfo->getNumOfFlattenFields();
+    u32_t nfE = elemStInfo->getNumOfFlattenElements();
+    for (u32_t j = 0; j < nfF; j++)
     {
         const SVFType* fieldTy = elemStInfo->getFlattenFieldTypes()[j];
-        stInfo->getFlattenFieldTypes().push_back(fieldTy);
+        stinfo->getFlattenFieldTypes().push_back(fieldTy);
     }
 
     /// Flatten arrays, map each array element index `i` to flattened index `(i * nfE * totalElemNum)/outArrayElemNum`
     /// nfE>1 if the array element is a struct with more than one field.
     u32_t outArrayElemNum = ty->getNumElements();
-    for (u32_t i = 0; i < outArrayElemNum; ++i)
+    for(u32_t i = 0; i < outArrayElemNum; i++)
+        stinfo->addFldWithType(0, getSVFType(elemTy), (i * nfE * totalElemNum)/outArrayElemNum);
+    for(u32_t i = 0; i < totalElemNum; i++)
     {
-        auto idx = (i * nfE * totalElemNum) / outArrayElemNum;
-        stInfo->addFldWithType(0, elemSvfType, idx);
-    }
-
-    for (u32_t i = 0; i < totalElemNum; ++i)
-    {
-        for (u32_t j = 0; j < nfE; ++j)
+        for(u32_t j = 0; j < nfE; j++)
         {
-            const SVFType* et = elemStInfo->getFlattenFieldTypes()[j];
-            stInfo->getFlattenElementTypes().push_back(et);
+            stinfo->getFlattenElementTypes().push_back(elemStInfo->getFlattenFieldTypes()[j]);
         }
     }
 
-    assert(stInfo->getFlattenElementTypes().size() == nfE * totalElemNum &&
-           "typeForArray size incorrect!!!");
-    stInfo->setNumOfFieldsAndElems(nfE, nfE * totalElemNum);
+    assert(stinfo->getFlattenElementTypes().size() == nfE * totalElemNum && "typeForArray size incorrect!!!");
+    stinfo->setNumOfFieldsAndElems(nfF, nfE * totalElemNum);
 
     return stInfo;
 }
@@ -1112,22 +1107,18 @@ StInfo* LLVMModuleSet::collectStructInfo(const StructType* structTy,
         if (SVFUtil::isa<StructType, ArrayType>(elemTy))
         {
             StInfo* subStInfo = collectTypeInfo(elemTy);
-            u32_t nfE = subStInfo->getNumOfFlattenFields();
-            // Copy ST's info, whose element 0 is the size of ST itself.
-            for (u32_t j = 0; j < nfE; ++j)
+            u32_t nfF = subStinfo->getNumOfFlattenFields();
+            u32_t nfE = subStinfo->getNumOfFlattenElements();
+            for (u32_t j = 0; j < nfF; j++)
             {
-                const SVFType* elemTy = subStInfo->getFlattenFieldTypes()[j];
-                stInfo->getFlattenFieldTypes().push_back(elemTy);
+                const SVFType* fieldTy = subStinfo->getFlattenFieldTypes()[j];
+                stinfo->getFlattenFieldTypes().push_back(fieldTy);
             }
-            numFields += nfE;
-            strideOffset += nfE * subStInfo->getStride();
-            for (u32_t tpi = 0; tpi < subStInfo->getStride(); ++tpi)
+            nf += nfF;
+            strideOffset += nfE;
+            for(u32_t tpj = 0; tpj < nfE; tpj++)
             {
-                for (u32_t tpj = 0; tpj < nfE; ++tpj)
-                {
-                    const SVFType* ty = subStInfo->getFlattenFieldTypes()[tpj];
-                    stInfo->getFlattenElementTypes().push_back(ty);
-                }
+                stinfo->getFlattenElementTypes().push_back(subStinfo->getFlattenElementTypes()[tpj]);
             }
         }
         else
