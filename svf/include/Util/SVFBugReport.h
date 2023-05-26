@@ -84,6 +84,7 @@ public:
 
 public:
     enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
+    static const std::map<GenericBug::BugType, std::string> BugType2Str;
 
 protected:
     BugType bugType;
@@ -355,7 +356,16 @@ public:
      * function: pass file path, open the file and dump bug report as JSON format
      * usage: dumpToFile("/path/to/file")
      */
-    void dumpToJsonFile(const std::string& filePath);
+    void dumpToJsonFile(const std::string& filePath) const;
+
+    /*
+     * function: get underlying bugset
+     * usage: getBugSet()
+     */
+    const BugSet &getBugSet() const{
+        return bugSet;
+    }
+
 };
 }
 
