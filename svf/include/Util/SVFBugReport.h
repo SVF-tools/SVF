@@ -362,7 +362,8 @@ public:
      * function: get underlying bugset
      * usage: getBugSet()
      */
-    const BugSet &getBugSet() const{
+    const BugSet &getBugSet() const
+    {
         return bugSet;
     }
 

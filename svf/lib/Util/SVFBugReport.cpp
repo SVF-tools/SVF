@@ -36,14 +36,14 @@ using namespace std;
 using namespace SVF;
 
 const std::map<GenericBug::BugType, std::string> GenericBug::BugType2Str =
-    {
-        {GenericBug::FULLBUFOVERFLOW, "Full Buffer Overflow"},
-        {GenericBug::PARTIALBUFOVERFLOW, "Partial Buffer Overflow"},
-        {GenericBug::NEVERFREE, "Never Free"},
-        {GenericBug::PARTIALLEAK, "Partial Leak"},
-        {GenericBug::FILENEVERCLOSE, "File Never Close"},
-        {GenericBug::FILEPARTIALCLOSE, "File Partial Close"},
-        {GenericBug::DOUBLEFREE, "Double Free"}
+{
+    {GenericBug::FULLBUFOVERFLOW, "Full Buffer Overflow"},
+    {GenericBug::PARTIALBUFOVERFLOW, "Partial Buffer Overflow"},
+    {GenericBug::NEVERFREE, "Never Free"},
+    {GenericBug::PARTIALLEAK, "Partial Leak"},
+    {GenericBug::FILENEVERCLOSE, "File Never Close"},
+    {GenericBug::FILEPARTIALCLOSE, "File Partial Close"},
+    {GenericBug::DOUBLEFREE, "Double Free"}
 };
 
 const std::string GenericBug::getLoc() const

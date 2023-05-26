@@ -243,7 +243,8 @@ public:
         return saberCondAllocator.get();
     }
 
-    inline const SVFBugReport& getBugReport() const {
+    inline const SVFBugReport& getBugReport() const
+    {
         return report;
     }
 
