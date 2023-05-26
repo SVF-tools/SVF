@@ -310,7 +310,7 @@ SVFBugReport::~SVFBugReport()
     }
 }
 
-void SVFBugReport::dumpToJsonFile(const std::string& filePath)
+void SVFBugReport::dumpToJsonFile(const std::string& filePath) const
 {
     std::map<u32_t, std::string> eventType2Str =
     {

@@ -356,7 +356,7 @@ public:
      * function: pass file path, open the file and dump bug report as JSON format
      * usage: dumpToFile("/path/to/file")
      */
-    void dumpToJsonFile(const std::string& filePath);
+    void dumpToJsonFile(const std::string& filePath) const;
 
     /*
      * function: get underlying bugset
