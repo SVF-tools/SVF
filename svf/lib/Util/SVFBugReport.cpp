@@ -35,6 +35,11 @@
 using namespace std;
 using namespace SVF;
 
+
+const std::string GenericBug::BugTypeName[7] = {
+    "FULLBUFOVERFLOW", "PARTIALBUFOVERFLOW", "NEVERFREE",
+    "PARTIALLEAK", "DOUBLEFREE", "FILENEVERCLOSE", "FILEPARTIALCLOSE"};
+
 const std::string GenericBug::getLoc() const
 {
     const SVFBugEvent&sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
