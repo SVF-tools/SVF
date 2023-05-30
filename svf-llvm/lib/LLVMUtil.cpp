@@ -1048,4 +1048,13 @@ const std::string SVFValue::toString() const
     return rawstr.str();
 }
 
+std::string dumpLLVMType(const SVFType* svfType)
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    const Type* ty = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(svfType);
+    rawstr << *ty;
+    return rawstr.str();
 }
+
+} // namespace SVF

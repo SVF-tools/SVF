@@ -471,6 +471,12 @@ public:
     void print(std::ostream& OS) const override;
 };
 
+/// [FOR DEBUG ONLY, DON'T USE IT UNSIDE `svf`!]
+/// Converts an SVFType to corresponding LLVM::Type, then get the string
+/// representation of it. Use it only when you are debugging. Don't use
+/// it in any SVF algorithm because it relies on information stored in LLVM bc.
+std::string dumpLLVMType(const SVFType* svfType);
+
 // TODO: be explicit that this is a pair of 32-bit unsigneds?
 template <> struct Hash<NodePair>
 {
