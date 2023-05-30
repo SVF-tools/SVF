@@ -298,6 +298,7 @@ const std::string SVFBugEvent::getEventDescription() const
     default:
     {
         assert(false && "No such type of event!");
+        abort();
     }
     }
 }
