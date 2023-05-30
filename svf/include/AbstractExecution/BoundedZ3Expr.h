@@ -270,7 +270,7 @@ public:
         else if (rhs.is_infinite())
             return ite(lhs.getExpr() >= 0, BoundedZ3Expr(0), BoundedZ3Expr(-1));
         else
-            return ashr(lhs.getExpr(), rhs.getExpr());
+            return bv2int(ashr(int2bv(64, lhs.getExpr()), int2bv(64, rhs.getExpr())), true);
     }
 
     friend BoundedZ3Expr shl(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
@@ -282,12 +282,12 @@ public:
         else if (rhs.is_infinite())
             return ite(lhs.getExpr() >= 0, plus_infinity(), minus_infinity());
         else
-            return shl(lhs.getExpr(), rhs.getExpr());
+            return bv2int(shl(int2bv(64, lhs.getExpr()), int2bv(64, rhs.getExpr())), true);
     }
 
     friend BoundedZ3Expr lshr(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
     {
-        return lshr(lhs.getExpr(), rhs.getExpr());
+        return bv2int(lshr(int2bv(64, lhs.getExpr()), int2bv(64, rhs.getExpr())), true);
     }
 
     friend BoundedZ3Expr int2bv(u32_t n, const BoundedZ3Expr &e)
