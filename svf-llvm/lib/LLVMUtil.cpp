@@ -1028,23 +1028,29 @@ namespace SVF
 {
 const std::string SVFValue::toString() const
 {
+    // TODO: Should only use info in SVFValue. Refactor it later.
+    return dumpLLVMValue(this);
+}
+
+std::string dumpLLVMValue(const SVFValue* svfValue)
+{
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-    if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
+    if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(svfValue))
     {
         rawstr << "Function: " << fun->getName() << " ";
     }
-    else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
+    else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(svfValue))
     {
         rawstr << "BasicBlock: " << bb->getName() << " ";
     }
     else
     {
         const Value* val =
-            LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+            LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfValue);
         rawstr << " " << *val << " ";
     }
-    rawstr << this->getSourceLoc();
+    rawstr << svfValue->getSourceLoc();
     return rawstr.str();
 }
 
