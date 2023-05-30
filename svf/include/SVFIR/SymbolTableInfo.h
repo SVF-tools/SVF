@@ -344,7 +344,8 @@ public:
     inline void addTypeInfo(const SVFType* ty)
     {
         bool inserted = svfTypes.insert(ty).second;
-        assert(inserted && "this type info has been added before");
+        if(!inserted)
+            assert(false && "this type info has been added before");
     }
 
     inline void addStInfo(StInfo* stInfo)
