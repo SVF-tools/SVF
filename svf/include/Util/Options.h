@@ -223,6 +223,9 @@ public:
     // Conditions.cpp
     static const Option<u32_t> MaxZ3Size;
 
+    // BoundedZ3Expr.cpp
+    static const Option<u32_t> MaxBVLen;
+
     // SaberCondAllocator.cpp
     static const Option<bool> PrintPathCond;
 

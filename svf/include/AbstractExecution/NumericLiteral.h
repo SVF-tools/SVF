@@ -119,29 +119,7 @@ public:
     /// Return Numeral
     inline int64_t getNumeral() const
     {
-        if (_n.is_numeral())
-        {
-            int64_t i;
-            if(_n.getExpr().is_numeral_i64(i))
-                return _n.get_numeral_int64();
-            else
-            {
-                return leq(0) ? INT64_MIN : INT64_MAX;
-            }
-        }
-        if (is_minus_infinity())
-        {
-            return INT64_MIN;
-        }
-        else if (is_plus_infinity())
-        {
-            return INT64_MAX;
-        }
-        else
-        {
-            assert(false && "other literal?");
-            abort();
-        }
+        return _n.getNumeral();
     }
 
     /// Check two object is equal
