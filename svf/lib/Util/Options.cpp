@@ -688,6 +688,14 @@ const Option<u32_t> Options::MaxZ3Size(
     30
 );
 
+// BoundedZ3Expr.cpp
+const Option<u32_t> Options::MaxBVLen(
+    "max-bv-len",
+    "Maximum length limit for Z3 bitvector",
+    64
+);
+
+
 
 // SaberCondAllocator.cpp
 const Option<bool> Options::PrintPathCond(
