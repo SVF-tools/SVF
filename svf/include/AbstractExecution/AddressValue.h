@@ -139,8 +139,10 @@ public:
     bool join_with(const AddressValue &other)
     {
         bool changed = false;
-        for (const auto &addr: other) {
-            if (!_addrs.count(addr)) {
+        for (const auto &addr: other)
+        {
+            if (!_addrs.count(addr))
+            {
                 if (insert(addr).second)
                     changed = true;
             }

@@ -31,7 +31,8 @@
 
 using namespace SVF;
 
-int64_t BoundedZ3Expr::bvLen() const {
+int64_t BoundedZ3Expr::bvLen() const
+{
     if(is_infinite()) return Options::MaxBVLen();
     // No overflow
     if(getNumeral() != INT64_MIN && getNumeral() != INT64_MAX) return Options::MaxBVLen();
@@ -48,12 +49,15 @@ int64_t BoundedZ3Expr::bvLen() const {
     Z3Expr::getSolver().add(assertions.getExpr());
 
     // Check for a solution
-    if (solver->check() == z3::sat) {
+    if (solver->check() == z3::sat)
+    {
         z3::model model = solver->get_model();
         Z3Expr log2_x = model.eval(y.getExpr(), true);
         Z3Expr::getSolver().pop();
         return BoundedZ3Expr(log2_x + 1).simplify().getNumeral();
-    } else {
+    }
+    else
+    {
         Z3Expr::getSolver().pop();
         return Options::MaxBVLen();
     }

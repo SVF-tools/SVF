@@ -352,20 +352,28 @@ public:
     }
 
     /// Return Numeral
-    inline int64_t getNumeral() const {
-        if (is_numeral()) {
+    inline int64_t getNumeral() const
+    {
+        if (is_numeral())
+        {
             int64_t i;
             if (getExpr().is_numeral_i64(i))
                 return get_numeral_int64();
-            else {
+            else
+            {
                 return (getExpr() < 0).simplify().is_true() ? INT64_MIN : INT64_MAX;
             }
         }
-        if (is_minus_infinite()) {
+        if (is_minus_infinite())
+        {
             return INT64_MIN;
-        } else if (is_plus_infinite()) {
+        }
+        else if (is_plus_infinite())
+        {
             return INT64_MAX;
-        } else {
+        }
+        else
+        {
             assert(false && "other literal?");
             abort();
         }
