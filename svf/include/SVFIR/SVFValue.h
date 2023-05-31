@@ -1140,6 +1140,12 @@ public:
     }
 };
 
+/// [FOR DEBUG ONLY, DON'T USE IT UNSIDE `svf`!]
+/// Converts an SVFValue to corresponding LLVM::Value, then get the string
+/// representation of it. Use it only when you are debugging. Don't use
+/// it in any SVF algorithm because it relies on information stored in LLVM bc.
+std::string dumpLLVMValue(const SVFValue* svfValue);
+
 template <typename F, typename S>
 OutStream& operator<< (OutStream &o, const std::pair<F, S> &var)
 {
