@@ -43,7 +43,7 @@ std::string replaceExtension(const std::string& path)
 {
     size_t pos = path.rfind('.');
     if (pos == std::string::npos ||
-        (path.substr(pos) != ".bc" && path.substr(pos) != ".ll"))
+            (path.substr(pos) != ".bc" && path.substr(pos) != ".ll"))
     {
         SVFUtil::errs() << "Error: expect file with extension .bc or .ll\n";
         exit(EXIT_FAILURE);
