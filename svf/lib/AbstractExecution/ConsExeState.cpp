@@ -42,8 +42,10 @@ ConsExeState ConsExeState::globalConsES(initExeState());
  * @param rhs
  * @return
  */
-ConsExeState &ConsExeState::operator=(const ConsExeState &rhs) {
-    if (*this != rhs) {
+ConsExeState &ConsExeState::operator=(const ConsExeState &rhs)
+{
+    if (*this != rhs)
+    {
         _varToVal = rhs.getVarToVal();
         _locToVal = rhs.getLocToVal();
         ExeState::operator=(rhs);
@@ -56,8 +58,10 @@ ConsExeState &ConsExeState::operator=(const ConsExeState &rhs) {
  * @param rhs
  * @return
  */
-ConsExeState &ConsExeState::operator=(ConsExeState &&rhs) noexcept {
-    if (this != &rhs) {
+ConsExeState &ConsExeState::operator=(ConsExeState &&rhs) noexcept
+{
+    if (this != &rhs)
+    {
         _varToVal = SVFUtil::move(rhs._varToVal);
         _locToVal = SVFUtil::move(rhs._locToVal);
         ExeState::operator=(std::move(rhs));
@@ -70,7 +74,8 @@ ConsExeState &ConsExeState::operator=(ConsExeState &&rhs) noexcept {
  * @param rhs
  * @return
  */
-bool ConsExeState::operator==(const ConsExeState &rhs) const {
+bool ConsExeState::operator==(const ConsExeState &rhs) const
+{
     // if values of variables are not changed, fix-point is reached
     return ExeState::operator==(rhs) && eqVarToValMap(_varToVal, rhs.getVarToVal()) &&
            eqVarToValMap(_locToVal, rhs.getLocToVal());
@@ -81,25 +86,29 @@ bool ConsExeState::operator==(const ConsExeState &rhs) const {
  * @param rhs
  * @return
  */
-bool ConsExeState::operator<(const ConsExeState &rhs) const {
+bool ConsExeState::operator<(const ConsExeState &rhs) const
+{
     // judge from path constraint
     if (lessThanVarToValMap(_varToVal, rhs.getVarToVal()) || lessThanVarToValMap(_locToVal, rhs.getLocToVal()))
         return true;
     return false;
 }
 
-u32_t ConsExeState::hash() const {
+u32_t ConsExeState::hash() const
+{
     size_t bas = ExeState::hash();
     size_t h = getVarToVal().size() * 2;
     SVF::Hash<SVF::u32_t> hf;
-    for (const auto &t: getVarToVal()) {
+    for (const auto &t: getVarToVal())
+    {
         h ^= hf(t.first) + 0x9e3779b9 + (h << 6) + (h >> 2);
         h ^= hf(t.second.id()) + 0x9e3779b9 + (h << 6) + (h >> 2);
     }
 
     size_t h2 = getVarToVal().size() * 2;
 
-    for (const auto &t: getLocToVal()) {
+    for (const auto &t: getLocToVal())
+    {
         h2 ^= hf(t.first) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
         h2 ^= hf(t.second.id()) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
     }
@@ -113,11 +122,15 @@ u32_t ConsExeState::hash() const {
  * @param globES
  * @param vars
  */
-void ConsExeState::buildGlobES(ConsExeState &globES, Set<u32_t> &vars) {
-    for (const auto &varId: vars) {
+void ConsExeState::buildGlobES(ConsExeState &globES, Set<u32_t> &vars)
+{
+    for (const auto &varId: vars)
+    {
         SingleAbsValue &expr = globES[varId];
-        if (expr.is_numeral() && isVirtualMemAddress(expr.get_numeral_int())) {
-            if (globES.inLocalLocToVal(expr)) {
+        if (expr.is_numeral() && isVirtualMemAddress(expr.get_numeral_int()))
+        {
+            if (globES.inLocalLocToVal(expr))
+            {
                 store(expr, globES.load(expr));
             }
         }
@@ -129,51 +142,76 @@ void ConsExeState::buildGlobES(ConsExeState &globES, Set<u32_t> &vars) {
  * @param rhs
  * @return
  */
-bool ConsExeState::joinWith(const SVF::ConsExeState &rhs) {
+bool ConsExeState::joinWith(const SVF::ConsExeState &rhs)
+{
     bool changed = ExeState::joinWith(rhs);
-    for (const auto &rhsItem: rhs._varToVal) {
+    for (const auto &rhsItem: rhs._varToVal)
+    {
         auto it = _varToVal.find(rhsItem.first);
         // Intersection - lhs and rhs have the same var id
-        if (it != getVarToVal().end()) {
-            if (it->second.isTop() || rhsItem.second.isTop()) {
+        if (it != getVarToVal().end())
+        {
+            if (it->second.isTop() || rhsItem.second.isTop())
+            {
                 if (assign(it->second, SingleAbsValue::topConstant()))
                     changed = true;
-            } else if (it->second.isBottom()) {
+            }
+            else if (it->second.isBottom())
+            {
                 if (assign(it->second, rhsItem.second))
                     changed = true;
-            } else if (rhsItem.second.isBottom()) {
+            }
+            else if (rhsItem.second.isBottom())
+            {
 
-            } else {
-                if (!eq(it->second, rhsItem.second)) {
+            }
+            else
+            {
+                if (!eq(it->second, rhsItem.second))
+                {
                     if (assign(it->second, SingleAbsValue::topConstant()))
                         changed = true;
                 }
             }
-        } else {
+        }
+        else
+        {
             _varToVal.emplace(rhsItem.first, rhsItem.second);
             changed = true;
         }
     }
 
-    for (const auto &rhsItem: rhs._locToVal) {
+    for (const auto &rhsItem: rhs._locToVal)
+    {
         auto it = _locToVal.find(rhsItem.first);
         // Intersection - lhs and rhs have the same var id
-        if (it != getLocToVal().end()) {
-            if (it->second.isTop() || rhsItem.second.isTop()) {
+        if (it != getLocToVal().end())
+        {
+            if (it->second.isTop() || rhsItem.second.isTop())
+            {
                 if (assign(it->second, SingleAbsValue::topConstant()))
                     changed = true;
-            } else if (it->second.isBottom()) {
+            }
+            else if (it->second.isBottom())
+            {
                 if (assign(it->second, rhsItem.second))
                     changed = true;
-            } else if (rhsItem.second.isBottom()) {
+            }
+            else if (rhsItem.second.isBottom())
+            {
 
-            } else {
-                if (!eq(it->second, rhsItem.second)) {
+            }
+            else
+            {
+                if (!eq(it->second, rhsItem.second))
+                {
                     if (assign(it->second, SingleAbsValue::topConstant()))
                         changed = true;
                 }
             }
-        } else {
+        }
+        else
+        {
             _locToVal.emplace(rhsItem.first, rhsItem.second);
             changed = true;
         }
@@ -188,17 +226,22 @@ bool ConsExeState::joinWith(const SVF::ConsExeState &rhs) {
  *  We apply the summary to the exestate at each callsite.
  * @param summary
  */
-void ConsExeState::applySummary(const ConsExeState &summary) {
-    for (const auto &item: summary._varToVal) {
+void ConsExeState::applySummary(const ConsExeState &summary)
+{
+    for (const auto &item: summary._varToVal)
+    {
         _varToVal[item.first] = item.second;
     }
-    for (const auto &item: summary._locToVal) {
+    for (const auto &item: summary._locToVal)
+    {
         _locToVal[item.first] = item.second;
     }
-    for (const auto &item: summary._varToVAddrs) {
+    for (const auto &item: summary._varToVAddrs)
+    {
         _varToVAddrs[item.first] = item.second;
     }
-    for (const auto &item: summary._locToVAddrs) {
+    for (const auto &item: summary._locToVAddrs)
+    {
         _locToVAddrs[item.first] = item.second;
     }
 }
@@ -206,97 +249,129 @@ void ConsExeState::applySummary(const ConsExeState &summary) {
 /*!
  * Print values of all expressions
  */
-void ConsExeState::printExprValues() const {
+void ConsExeState::printExprValues() const
+{
     std::cout << "\n";
     std::cout.flags(std::ios::left);
     std::cout << "\t-----------------Var and Value-----------------\n";
-    for (const auto &item: getVarToVal()) {
+    for (const auto &item: getVarToVal())
+    {
         std::stringstream exprName;
         exprName << "\tVar" << item.first;
         std::cout << std::setw(20) << exprName.str();
         const SingleAbsValue &sim = item.second.simplify();
-        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim))) {
+        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim)))
+        {
             std::cout << "\t\t Value: " << std::hex << "0x" << z3Expr2NumValue(sim) << "\n";
-        } else {
+        }
+        else
+        {
             std::cout << "\t\t Value: " << std::dec << sim << "\n";
         }
     }
     std::cout << "\t-----------------------------------------------\n";
     std::cout << "\t-----------------Loc and Value-----------------\n";
-    for (const auto &item: getLocToVal()) {
+    for (const auto &item: getLocToVal())
+    {
         std::stringstream exprName;
         exprName << "\tVar" << item.first;
         std::cout << std::setw(20) << exprName.str();
         const SingleAbsValue &sim = item.second.simplify();
-        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim))) {
+        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim)))
+        {
             std::cout << "\t\t Value: " << std::hex << "0x" << z3Expr2NumValue(sim) << "\n";
-        } else {
+        }
+        else
+        {
             std::cout << "\t\t Value: " << std::dec << sim << "\n";
         }
     }
     std::cout << "\t-----------------------------------------------\n";
 }
 
-void ConsExeState::printExprValues(std::ostream &oss) const {
+void ConsExeState::printExprValues(std::ostream &oss) const
+{
     oss << "\n";
     oss.flags(std::ios::left);
     oss << "\t-----------------Var and Value-----------------\n";
-    for (const auto &item: getVarToVal()) {
+    for (const auto &item: getVarToVal())
+    {
         std::stringstream exprName;
         exprName << "\tVar" << item.first;
         oss << std::setw(20) << exprName.str();
         const SingleAbsValue &sim = item.second.simplify();
-        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim))) {
+        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim)))
+        {
             oss << "\t\t Value: " << std::hex << "0x" << z3Expr2NumValue(sim) << "\n";
-        } else {
+        }
+        else
+        {
             oss << "\t\t Value: " << std::dec << sim << "\n";
         }
     }
     oss << "\t-----------------------------------------------\n";
     oss << "\t-----------------Loc and Value-----------------\n";
-    for (const auto &item: getLocToVal()) {
+    for (const auto &item: getLocToVal())
+    {
         std::stringstream exprName;
         exprName << "\tVar" << item.first;
         oss << std::setw(20) << exprName.str();
         const SingleAbsValue &sim = item.second.simplify();
-        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim))) {
+        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim)))
+        {
             oss << "\t\t Value: " << std::hex << "0x" << z3Expr2NumValue(sim) << "\n";
-        } else {
+        }
+        else
+        {
             oss << "\t\t Value: " << std::dec << sim << "\n";
         }
     }
     oss << "\t-----------------------------------------------\n";
 }
 
-std::string ConsExeState::pcToString() const {
+std::string ConsExeState::pcToString() const
+{
     std::stringstream exprName;
     exprName << "Path Constraint:\n";
     return SVFUtil::move(exprName.str());
 }
 
-std::string ConsExeState::varToString(u32_t valId) const {
+std::string ConsExeState::varToString(u32_t valId) const
+{
     std::stringstream exprName;
     auto it = getVarToVal().find(valId);
-    if (it == getVarToVal().end()) {
+    if (it == getVarToVal().end())
+    {
         auto it2 = globalConsES._varToVal.find(valId);
-        if (it2 == globalConsES._varToVal.end()) {
+        if (it2 == globalConsES._varToVal.end())
+        {
             exprName << "Var not in varToVal!\n";
-        } else {
+        }
+        else
+        {
             const SingleAbsValue &sim = it2->second.simplify();
-            if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim))) {
+            if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim)))
+            {
                 exprName << "addr: " << std::dec << getInternalID(z3Expr2NumValue(sim)) << "\n";
-            } else {
+            }
+            else
+            {
                 if (sim.is_numeral())
                     exprName << std::dec << z3Expr2NumValue(sim) << "\n";
                 else
                     exprName << sim.to_string() << "\n";
             }
         }
-    } else {
+    }
+    else
+    {
         const SingleAbsValue &sim = it->second.simplify();
-        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim))) {
+        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim)))
+        {
             exprName << "addr: " << std::dec << getInternalID(z3Expr2NumValue(sim)) << "\n";
-        } else {
+        }
+        else
+        {
             if (sim.is_numeral())
                 exprName << std::dec << z3Expr2NumValue(sim) << "\n";
             else
@@ -306,16 +381,23 @@ std::string ConsExeState::varToString(u32_t valId) const {
     return SVFUtil::move(exprName.str());
 }
 
-std::string ConsExeState::locToString(u32_t objId) const {
+std::string ConsExeState::locToString(u32_t objId) const
+{
     std::stringstream exprName;
     auto it = getLocToVal().find(objId);
-    if (it == getLocToVal().end()) {
+    if (it == getLocToVal().end())
+    {
         exprName << "Obj not in locToVal!\n";
-    } else {
+    }
+    else
+    {
         const SingleAbsValue &sim = it->second.simplify();
-        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim))) {
+        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim)))
+        {
             exprName << "addr: " << std::dec << getInternalID(z3Expr2NumValue(sim)) << "\n";
-        } else {
+        }
+        else
+        {
             if (sim.is_numeral())
                 exprName << std::dec << z3Expr2NumValue(sim) << "\n";
             else
@@ -325,62 +407,87 @@ std::string ConsExeState::locToString(u32_t objId) const {
     return SVFUtil::move(exprName.str());
 }
 
-std::string ConsExeState::toString() const {
+std::string ConsExeState::toString() const
+{
     std::stringstream exprName;
     exprName << pcToString();
     exprName << "VarToVal:\n";
-    for (const auto &item: getVarToVal()) {
+    for (const auto &item: getVarToVal())
+    {
         exprName << "Var" << std::to_string(item.first) << ":\n";
         const SingleAbsValue &sim = item.second.simplify();
-        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim))) {
+        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim)))
+        {
             exprName << " \tValue" << std::dec << getInternalID(z3Expr2NumValue(sim)) << "\n";
-        } else {
+        }
+        else
+        {
             exprName << " \tValue" << std::dec << z3Expr2NumValue(sim) << "\n";
         }
     }
 
     exprName << "LocToVal:\n";
-    for (const auto &item: getLocToVal()) {
+    for (const auto &item: getLocToVal())
+    {
         exprName << "Var" << std::to_string(item.first) << ":\n";
         const SingleAbsValue &sim = item.second.simplify();
-        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim))) {
+        if (sim.is_numeral() && isVirtualMemAddress(z3Expr2NumValue(sim)))
+        {
             exprName << " \tValue" << std::dec << getInternalID(z3Expr2NumValue(sim)) << "\n";
-        } else {
+        }
+        else
+        {
             exprName << " \tValue" << std::dec << z3Expr2NumValue(sim) << "\n";
         }
     }
     return SVFUtil::move(exprName.str());
 }
 
-bool ConsExeState::applySelect(u32_t res, u32_t cond, u32_t top, u32_t fop) {
-    if (inVarToVal(top) && inVarToVal(fop) && inVarToVal(cond)) {
+bool ConsExeState::applySelect(u32_t res, u32_t cond, u32_t top, u32_t fop)
+{
+    if (inVarToVal(top) && inVarToVal(fop) && inVarToVal(cond))
+    {
         SingleAbsValue &tExpr = (*this)[top], &fExpr = (*this)[fop], &condExpr = (*this)[cond];
 
         return assign((*this)[res], ite(condExpr == 1, tExpr, fExpr));
-    } else if (inVarToAddrsTable(top) && inVarToAddrsTable(fop) && inVarToVal(cond)) {
+    }
+    else if (inVarToAddrsTable(top) && inVarToAddrsTable(fop) && inVarToVal(cond))
+    {
         SingleAbsValue &condExpr = (*this)[cond];
-        if (condExpr.is_numeral()) {
+        if (condExpr.is_numeral())
+        {
             getVAddrs(res) = condExpr.is_zero() ? getVAddrs(fop) : getVAddrs(top);
         }
     }
     return false;
 }
 
-bool ConsExeState::applyPhi(u32_t res, std::vector<u32_t> &ops) {
-    for (u32_t i = 0; i < ops.size(); i++) {
+bool ConsExeState::applyPhi(u32_t res, std::vector<u32_t> &ops)
+{
+    for (u32_t i = 0; i < ops.size(); i++)
+    {
         NodeID curId = ops[i];
-        if (inVarToVal(curId)) {
+        if (inVarToVal(curId))
+        {
             const SingleAbsValue &cur = (*this)[curId];
-            if (!inVarToVal(res)) {
+            if (!inVarToVal(res))
+            {
                 (*this)[res] = cur;
-            } else {
+            }
+            else
+            {
                 (*this)[res].join_with(cur);
             }
-        } else if (inVarToAddrsTable(curId)) {
+        }
+        else if (inVarToAddrsTable(curId))
+        {
             const VAddrs &cur = getVAddrs(curId);
-            if (!inVarToAddrsTable(res)) {
+            if (!inVarToAddrsTable(res))
+            {
                 getVAddrs(res) = cur;
-            } else {
+            }
+            else
+            {
                 getVAddrs(res).join_with(cur);
             }
         }
@@ -388,7 +495,8 @@ bool ConsExeState::applyPhi(u32_t res, std::vector<u32_t> &ops) {
     return true;
 }
 
-s64_t ConsExeState::getNumber(u32_t lhs) {
+s64_t ConsExeState::getNumber(u32_t lhs)
+{
     return z3Expr2NumValue((*this)[lhs]);
 }
 
@@ -397,7 +505,8 @@ s64_t ConsExeState::getNumber(u32_t lhs) {
  * @param loc location, e.g., int_val(0x7f..01)
  * @param value
  */
-bool ConsExeState::store(const SingleAbsValue &loc, const SingleAbsValue &value) {
+bool ConsExeState::store(const SingleAbsValue &loc, const SingleAbsValue &value)
+{
     assert(loc.is_numeral() && "location must be numeral");
     s32_t virAddr = z3Expr2NumValue(loc);
     assert(isVirtualMemAddress(virAddr) && "Pointer operand is not a physical address?");
@@ -409,7 +518,8 @@ bool ConsExeState::store(const SingleAbsValue &loc, const SingleAbsValue &value)
  * @param loc location, e.g., int_val(0x7f..01)
  * @return
  */
-SingleAbsValue ConsExeState::load(const SingleAbsValue &loc) {
+SingleAbsValue ConsExeState::load(const SingleAbsValue &loc)
+{
     assert(loc.is_numeral() && "location must be numeral");
     s32_t virAddr = z3Expr2NumValue(loc);
     assert(isVirtualMemAddress(virAddr) && "Pointer operand is not a physical address?");
@@ -425,9 +535,11 @@ SingleAbsValue ConsExeState::load(const SingleAbsValue &loc) {
  * @param nxt
  * @return
  */
-bool ConsExeState::eqVarToValMap(const VarToValMap &pre, const VarToValMap &nxt) {
+bool ConsExeState::eqVarToValMap(const VarToValMap &pre, const VarToValMap &nxt)
+{
     if (pre.size() != nxt.size()) return false;
-    for (const auto &item: nxt) {
+    for (const auto &item: nxt)
+    {
         auto it = pre.find(item.first);
         // return false if SVFVar not exists in rhs
         if (it == pre.end())
@@ -444,9 +556,11 @@ bool ConsExeState::eqVarToValMap(const VarToValMap &pre, const VarToValMap &nxt)
  * @param rhs
  * @return
  */
-bool ConsExeState::lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) {
+bool ConsExeState::lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs)
+{
     if (lhs.size() != rhs.size()) return lhs.size() < rhs.size();
-    for (const auto &item: lhs) {
+    for (const auto &item: lhs)
+    {
         auto it = rhs.find(item.first);
         // lhs > rhs if SVFVar not exists in rhs
         if (it == rhs.end())
@@ -458,26 +572,35 @@ bool ConsExeState::lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap
     return false;
 }
 
-SingleAbsValue ConsExeState::load(u32_t objId) {
+SingleAbsValue ConsExeState::load(u32_t objId)
+{
     auto it = _locToVal.find(objId);
-    if (it != _locToVal.end()) {
+    if (it != _locToVal.end())
+    {
         return it->second;
-    } else {
+    }
+    else
+    {
         auto globIt = globalConsES._locToVal.find(objId);
         if (globIt != globalConsES._locToVal.end())
             return globIt->second;
-        else {
+        else
+        {
             SVFUtil::writeWrnMsg("Null dereference");
             return SingleAbsValue::topConstant();
         }
     }
 }
 
-bool ConsExeState::assign(SingleAbsValue &lhs, const SingleAbsValue &rhs) {
-    if (!eq(lhs, rhs)) {
+bool ConsExeState::assign(SingleAbsValue &lhs, const SingleAbsValue &rhs)
+{
+    if (!eq(lhs, rhs))
+    {
         lhs = rhs;
         return true;
-    } else {
+    }
+    else
+    {
         return false;
     }
 }

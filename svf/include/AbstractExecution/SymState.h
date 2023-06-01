@@ -29,13 +29,15 @@
 
 #include "AbstractExecution/ConsExeState.h"
 
-namespace SVF {
+namespace SVF
+{
 /*!
  * Symbolic state
  *
  * Execution State + Type State
  */
-class SymState {
+class SymState
+{
 
 public:
     typedef std::string TypeState;
@@ -63,13 +65,16 @@ public:
 
     /// Copy Constructor
     SymState(const SymState &rhs) : _exeState(rhs._exeState), _typeState(rhs._typeState), _keyNodesSet(rhs._keyNodesSet),
-          _branchCondition(rhs._branchCondition) {
+        _branchCondition(rhs._branchCondition)
+    {
 
     }
 
     /// Operator=
-    SymState &operator=(const SymState &rhs) {
-        if (*this != rhs) {
+    SymState &operator=(const SymState &rhs)
+    {
+        if (*this != rhs)
+        {
             _typeState = rhs._typeState;
             _exeState = rhs._exeState;
             _keyNodesSet = rhs._keyNodesSet;
@@ -81,15 +86,18 @@ public:
 
     /// Move Constructor
     SymState(SymState &&rhs) noexcept: _exeState(SVFUtil::move(rhs._exeState)),
-          _typeState(SVFUtil::move(rhs._typeState)),
-          _keyNodesSet(SVFUtil::move(rhs._keyNodesSet)),
-          _branchCondition(rhs._branchCondition) {
+        _typeState(SVFUtil::move(rhs._typeState)),
+        _keyNodesSet(SVFUtil::move(rhs._keyNodesSet)),
+        _branchCondition(rhs._branchCondition)
+    {
 
     }
 
     /// Move operator=
-    SymState &operator=(SymState &&rhs) noexcept {
-        if (this != &rhs) {
+    SymState &operator=(SymState &&rhs) noexcept
+    {
+        if (this != &rhs)
+        {
             _typeState = SVFUtil::move(rhs._typeState);
             _exeState = SVFUtil::move(rhs._exeState);
             _keyNodesSet = SVFUtil::move(rhs._keyNodesSet);
@@ -98,69 +106,87 @@ public:
         return *this;
     }
 
-    const KeyNodesSet &getKeyNodesSet() const {
+    const KeyNodesSet &getKeyNodesSet() const
+    {
         return _keyNodesSet;
     }
 
 
-    void insertKeyNode(NodeID id) {
-        if (_keyNodesSet.empty()) {
+    void insertKeyNode(NodeID id)
+    {
+        if (_keyNodesSet.empty())
+        {
             _keyNodesSet.insert(KeyNodes{id});
-        } else {
-            for (const auto &df: _keyNodesSet) {
+        }
+        else
+        {
+            for (const auto &df: _keyNodesSet)
+            {
                 const_cast<KeyNodes &>(df).push_back(id);
             }
         }
     }
 
-    void setKeyNodesSet(KeyNodesSet ns) {
+    void setKeyNodesSet(KeyNodesSet ns)
+    {
         _keyNodesSet = SVFUtil::move(ns);
     }
 
-    void clearKeyNodesSet() {
+    void clearKeyNodesSet()
+    {
         _keyNodesSet.clear();
     }
 
-    inline const Z3Expr &getBranchCondition() const {
+    inline const Z3Expr &getBranchCondition() const
+    {
         return _branchCondition;
     }
 
-    inline void setBranchCondition(const Z3Expr &br) {
+    inline void setBranchCondition(const Z3Expr &br)
+    {
         _branchCondition = br;
     }
 
-    const TypeState &getAbstractState() const {
+    const TypeState &getAbstractState() const
+    {
         return _typeState;
     }
 
-    TypeState &getAbstractState() {
+    TypeState &getAbstractState()
+    {
         return _typeState;
     }
 
-    void setAbsState(const TypeState &absState) {
+    void setAbsState(const TypeState &absState)
+    {
         _typeState = absState;
     }
 
-    const ConsExeState &getExecutionState() const {
+    const ConsExeState &getExecutionState() const
+    {
         return _exeState;
     }
 
-    ConsExeState &getExecutionState() {
+    ConsExeState &getExecutionState()
+    {
         return _exeState;
     }
 
     /// Overloading Operator==
-    inline bool operator==(const SymState &rhs) const {
+    inline bool operator==(const SymState &rhs) const
+    {
         return _typeState == rhs.getAbstractState() && _exeState == rhs.getExecutionState();
     }
 
     /// Overloading Operator!=
-    inline bool operator!=(const SymState &rhs) const {
+    inline bool operator!=(const SymState &rhs) const
+    {
         return !(*this == rhs);
     }
 
     /// Overloading Operator==
-    inline bool operator<(const SymState &rhs) const {
+    inline bool operator<(const SymState &rhs) const
+    {
         if (_typeState != rhs.getAbstractState())
             return _typeState < rhs.getAbstractState();
         if (_exeState != rhs.getExecutionState())
@@ -168,7 +194,8 @@ public:
         return false;
     }
 
-    inline bool isNullSymState() const {
+    inline bool isNullSymState() const
+    {
         return getExecutionState().isNullState() && getAbstractState().empty();
     }
 
@@ -180,8 +207,10 @@ public:
 
 /// Specialise hash for SymState
 template<>
-struct std::hash<SVF::SymState> {
-    size_t operator()(const SVF::SymState &symState) const {
+struct std::hash<SVF::SymState>
+{
+    size_t operator()(const SVF::SymState &symState) const
+    {
 
         SVF::Hash<std::pair<SVF::SymState::TypeState, SVF::ConsExeState>> pairH;
 

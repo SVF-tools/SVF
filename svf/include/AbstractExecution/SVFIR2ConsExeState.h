@@ -30,18 +30,22 @@
 #include "AbstractExecution/ConsExeState.h"
 #include "SVFIR/SVFIR.h"
 
-namespace SVF {
-class SVFIR2ConsExeState {
+namespace SVF
+{
+class SVFIR2ConsExeState
+{
 public:
     typedef ExeState::VAddrs VAddrs;
 
     SVFIR2ConsExeState() = default;
 
-    void setEs(ConsExeState *es) {
+    void setEs(ConsExeState *es)
+    {
         _es = es;
     }
 
-    ConsExeState *getEs() {
+    ConsExeState *getEs()
+    {
         return _es;
     }
 
@@ -100,33 +104,40 @@ public:
     void moveToGlobal();
 
     /// The physical address starts with 0x7f...... + idx
-    static inline u32_t getVirtualMemAddress(u32_t idx) {
+    static inline u32_t getVirtualMemAddress(u32_t idx)
+    {
         return ExeState::getVirtualMemAddress(idx);
     }
 
     /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
-    static inline bool isVirtualMemAddress(u32_t val) {
+    static inline bool isVirtualMemAddress(u32_t val)
+    {
         return ExeState::isVirtualMemAddress(val);
     }
 
     /// Return the internal index if idx is an address otherwise return the value of idx
-    static inline u32_t getInternalID(u32_t idx) {
+    static inline u32_t getInternalID(u32_t idx)
+    {
         return ExeState::getInternalID(idx);
     }
 
-    inline bool inVarToValTable(u32_t id) const {
+    inline bool inVarToValTable(u32_t id) const
+    {
         return _es->inVarToVal(id);
     }
 
-    inline bool inLocToValTable(u32_t id) const {
+    inline bool inLocToValTable(u32_t id) const
+    {
         return _es->inLocToVal(id);
     }
 
-    inline bool inVarToAddrsTable(u32_t id) const {
+    inline bool inVarToAddrsTable(u32_t id) const
+    {
         return _es->inVarToAddrsTable(id);
     }
 
-    inline bool inLocToAddrsTable(u32_t id) const {
+    inline bool inLocToAddrsTable(u32_t id) const
+    {
         return _es->inLocToAddrsTable(id);
     }
 

@@ -192,18 +192,26 @@ protected:
 
 public:
 
-    virtual std::string varToAddrs(u32_t varId) const {
+    virtual std::string varToAddrs(u32_t varId) const
+    {
         std::stringstream exprName;
         auto it = _varToVAddrs.find(varId);
-        if (it == _varToVAddrs.end()) {
+        if (it == _varToVAddrs.end())
+        {
             exprName << "Var not in varToAddrs!\n";
-        } else {
+        }
+        else
+        {
             const VAddrs &vaddrs = it->second;
-            if (vaddrs.size() == 1) {
+            if (vaddrs.size() == 1)
+            {
                 exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
-            } else {
+            }
+            else
+            {
                 exprName << "addr: {";
-                for (const auto &addr: vaddrs) {
+                for (const auto &addr: vaddrs)
+                {
                     exprName << std::dec << getInternalID(addr) << ", ";
                 }
                 exprName << "}\n";
@@ -212,18 +220,26 @@ public:
         return SVFUtil::move(exprName.str());
     }
 
-    virtual std::string locToAddrs(u32_t objId) const {
+    virtual std::string locToAddrs(u32_t objId) const
+    {
         std::stringstream exprName;
         auto it = _locToVAddrs.find(objId);
-        if (it == _locToVAddrs.end()) {
+        if (it == _locToVAddrs.end())
+        {
             exprName << "Var not in varToAddrs!\n";
-        } else {
+        }
+        else
+        {
             const VAddrs &vaddrs = it->second;
-            if (vaddrs.size() == 1) {
+            if (vaddrs.size() == 1)
+            {
                 exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
-            } else {
+            }
+            else
+            {
                 exprName << "addr: {";
-                for (const auto &addr: vaddrs) {
+                for (const auto &addr: vaddrs)
+                {
                     exprName << std::dec << getInternalID(addr) << ", ";
                 }
                 exprName << "}\n";
@@ -264,8 +280,10 @@ public:
 } // end namespace SVF
 
 template<>
-struct std::hash<SVF::ExeState> {
-    size_t operator()(const SVF::ExeState &es) const {
+struct std::hash<SVF::ExeState>
+{
+    size_t operator()(const SVF::ExeState &es) const
+    {
         return es.hash();
     }
 };

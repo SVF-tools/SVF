@@ -29,7 +29,8 @@
 #include "AbstractExecution/SingleAbsValue.h"
 #include "AbstractExecution/ExeState.h"
 
-namespace SVF {
+namespace SVF
+{
 
 /*!
  * Constant Expr Execution State
@@ -43,7 +44,8 @@ namespace SVF {
  *         \    \   \   |  |    |
  *                   ⊥                      not contant
  */
-class ConsExeState final : public ExeState {
+class ConsExeState final : public ExeState
+{
     friend class SVFIR2ConsExeState;
 
 public:
@@ -62,16 +64,18 @@ public:
 
     /// Constructor
     ConsExeState(VarToValMap varToValMap, LocToValMap locToValMap) : ExeState(ExeState::SingleValueK), _varToVal(
-                                             SVFUtil::move(varToValMap)), _locToVal(SVFUtil::move(locToValMap))  {}
+            SVFUtil::move(varToValMap)), _locToVal(SVFUtil::move(locToValMap))  {}
 
     /// Copy Constructor
     ConsExeState(const ConsExeState &rhs) : ExeState(rhs), _varToVal(rhs.getVarToVal()),
-          _locToVal(rhs.getLocToVal()) {
+        _locToVal(rhs.getLocToVal())
+    {
 
     }
 
     /// Destructor
-    ~ConsExeState() override {
+    ~ConsExeState() override
+    {
         _varToVal.clear();
         _locToVal.clear();
     }
@@ -81,7 +85,8 @@ public:
 
     /// Move Constructor
     ConsExeState(ConsExeState &&rhs) noexcept: ExeState(std::move(rhs)),
-          _varToVal(SVFUtil::move(rhs._varToVal)), _locToVal(SVFUtil::move(rhs._locToVal)) {
+        _varToVal(SVFUtil::move(rhs._varToVal)), _locToVal(SVFUtil::move(rhs._locToVal))
+    {
 
     }
 
@@ -89,7 +94,8 @@ public:
     ConsExeState &operator=(ConsExeState &&rhs) noexcept;
 
     /// Name
-    static inline std::string name() {
+    static inline std::string name()
+    {
         return "ConstantExpr";
     }
 
@@ -97,7 +103,8 @@ public:
     //{%
     bool operator==(const ConsExeState &rhs) const;
 
-    bool operator!=(const ConsExeState &other) const {
+    bool operator!=(const ConsExeState &other) const
+    {
         return !(*this == other);
     }
 
@@ -115,7 +122,8 @@ public:
     void applySummary(const ConsExeState &summary);
 
     /// Whether state is null state (uninitialized state)
-    inline bool isNullState() const {
+    inline bool isNullState() const
+    {
         return _varToVal.size() == 1 && eq((*_varToVal.begin()).second, -1) && _locToVal.empty();
     }
 
@@ -137,11 +145,13 @@ public:
 
     bool applyPhi(u32_t res, std::vector<u32_t> &ops);
 
-    inline bool inVarToVal(u32_t varId) const {
+    inline bool inVarToVal(u32_t varId) const
+    {
         return _varToVal.count(varId) || globalConsES._varToVal.count(varId);
     }
 
-    inline bool inLocalLocToVal(const SingleAbsValue &loc) const {
+    inline bool inLocalLocToVal(const SingleAbsValue &loc) const
+    {
         assert(loc.is_numeral() && "location must be numeral");
         s32_t virAddr = z3Expr2NumValue(loc);
         assert(isVirtualMemAddress(virAddr) && "Pointer operand is not a physical address?");
@@ -150,81 +160,108 @@ public:
         return inLocalLocToVal(objId);
     }
 
-    inline bool inLocalLocToVal(u32_t varId) const {
+    inline bool inLocalLocToVal(u32_t varId) const
+    {
         return _locToVal.count(varId);
     }
 
-    inline bool inLocToVal(u32_t varId) const {
+    inline bool inLocToVal(u32_t varId) const
+    {
         return inLocalLocToVal(varId) || globalConsES._locToVal.count(varId);
     }
 
-    inline bool equalVar(u32_t lhs, u32_t rhs) {
+    inline bool equalVar(u32_t lhs, u32_t rhs)
+    {
         if (!inVarToVal(lhs) || !inVarToVal(rhs)) return false;
         return eq((*this)[lhs], (*this)[rhs]);
     }
     //%}
 
-    virtual inline bool inVarToAddrsTable(u32_t id) const override {
+    virtual inline bool inVarToAddrsTable(u32_t id) const override
+    {
         return _varToVAddrs.find(id) != _varToVAddrs.end() ||
                globalConsES._varToVAddrs.find(id) != globalConsES._varToVAddrs.end();
     }
 
-    virtual inline bool inLocToAddrsTable(u32_t id) const override {
+    virtual inline bool inLocToAddrsTable(u32_t id) const override
+    {
         return globalConsES._locToVAddrs.find(id) != globalConsES._locToVAddrs.end() || inLocalLocToAddrsTable(id);
     }
 
-    virtual inline bool inLocalLocToAddrsTable(u32_t id) const {
+    virtual inline bool inLocalLocToAddrsTable(u32_t id) const
+    {
         return _locToVAddrs.find(id) != _locToVAddrs.end();
     }
 
-    virtual VAddrs &getVAddrs(u32_t id) override {
+    virtual VAddrs &getVAddrs(u32_t id) override
+    {
         auto it = globalConsES._varToVAddrs.find(id);
         if (it != globalConsES._varToVAddrs.end()) return it->second;
         return _varToVAddrs[id];
     }
 
-    virtual VAddrs &loadVAddrs(u32_t addr) override {
+    virtual VAddrs &loadVAddrs(u32_t addr) override
+    {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getInternalID(addr);
         auto it = _locToVAddrs.find(objId);
-        if (it != _locToVAddrs.end()) {
+        if (it != _locToVAddrs.end())
+        {
             return it->second;
-        } else {
+        }
+        else
+        {
             auto globIt = globalConsES._locToVAddrs.find(objId);
-            if (globIt != globalConsES._locToVAddrs.end()) {
+            if (globIt != globalConsES._locToVAddrs.end())
+            {
                 return globIt->second;
-            } else {
+            }
+            else
+            {
                 return getVAddrs(0);
             }
         }
     }
 
-    virtual std::string varToAddrs(u32_t varId) const override {
+    virtual std::string varToAddrs(u32_t varId) const override
+    {
         std::stringstream exprName;
         auto it = _varToVAddrs.find(varId);
-        if (it == _varToVAddrs.end()) {
+        if (it == _varToVAddrs.end())
+        {
             auto git = globalConsES._varToVAddrs.find(varId);
             if (git == globalConsES._varToVAddrs.end())
                 exprName << "Var not in varToAddrs!\n";
-            else {
+            else
+            {
                 const VAddrs &vaddrs = git->second;
-                if (vaddrs.size() == 1) {
+                if (vaddrs.size() == 1)
+                {
                     exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
-                } else {
+                }
+                else
+                {
                     exprName << "addr: {";
-                    for (const auto &addr: vaddrs) {
+                    for (const auto &addr: vaddrs)
+                    {
                         exprName << std::dec << getInternalID(addr) << ", ";
                     }
                     exprName << "}\n";
                 }
             }
-        } else {
+        }
+        else
+        {
             const VAddrs &vaddrs = it->second;
-            if (vaddrs.size() == 1) {
+            if (vaddrs.size() == 1)
+            {
                 exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
-            } else {
+            }
+            else
+            {
                 exprName << "addr: {";
-                for (const auto &addr: vaddrs) {
+                for (const auto &addr: vaddrs)
+                {
                     exprName << std::dec << getInternalID(addr) << ", ";
                 }
                 exprName << "}\n";
@@ -233,32 +270,45 @@ public:
         return SVFUtil::move(exprName.str());
     }
 
-    virtual std::string locToAddrs(u32_t objId) const override {
+    virtual std::string locToAddrs(u32_t objId) const override
+    {
         std::stringstream exprName;
         auto it = _locToVAddrs.find(objId);
-        if (it == _locToVAddrs.end()) {
+        if (it == _locToVAddrs.end())
+        {
             auto git = globalConsES._locToVAddrs.find(objId);
             if (git == globalConsES._locToVAddrs.end())
                 exprName << "Obj not in locToVal!\n";
-            else {
+            else
+            {
                 const VAddrs &vaddrs = git->second;
-                if (vaddrs.size() == 1) {
+                if (vaddrs.size() == 1)
+                {
                     exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
-                } else {
+                }
+                else
+                {
                     exprName << "addr: {";
-                    for (const auto &addr: vaddrs) {
+                    for (const auto &addr: vaddrs)
+                    {
                         exprName << std::dec << getInternalID(addr) << ", ";
                     }
                     exprName << "}\n";
                 }
             }
-        } else {
+        }
+        else
+        {
             const VAddrs &vaddrs = it->second;
-            if (vaddrs.size() == 1) {
+            if (vaddrs.size() == 1)
+            {
                 exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
-            } else {
+            }
+            else
+            {
                 exprName << "addr: {";
-                for (const auto &addr: vaddrs) {
+                for (const auto &addr: vaddrs)
+                {
                     exprName << std::dec << getInternalID(addr) << ", ";
                 }
                 exprName << "}\n";
@@ -268,14 +318,16 @@ public:
     }
 
     /// Empty execution state with a true path constraint
-    static inline ConsExeState initExeState() {
+    static inline ConsExeState initExeState()
+    {
         VarToValMap mp;
         ConsExeState exeState(mp, SVFUtil::move(mp));
         return SVFUtil::move(exeState);
     }
 
     /// Empty execution state with a null expr
-    static inline ConsExeState nullExeState() {
+    static inline ConsExeState nullExeState()
+    {
         VarToValMap mp;
         ConsExeState exeState(mp, SVFUtil::move(mp));
         exeState._varToVal[PAG::getPAG()->getNullPtr()] = -1;
@@ -284,11 +336,13 @@ public:
 
 public:
 
-    inline const VarToValMap &getVarToVal() const {
+    inline const VarToValMap &getVarToVal() const
+    {
         return _varToVal;
     }
 
-    inline const LocToValMap &getLocToVal() const {
+    inline const LocToValMap &getLocToVal() const
+    {
         return _locToVal;
     }
 
@@ -298,24 +352,29 @@ public:
 public:
 
 
-    static inline SingleAbsValue getIntOneZ3Expr() {
+    static inline SingleAbsValue getIntOneZ3Expr()
+    {
         return getContext().int_val(1);
     }
 
-    static inline SingleAbsValue getIntZeroZ3Expr() {
+    static inline SingleAbsValue getIntZeroZ3Expr()
+    {
         return getContext().int_val(0);
     }
 
-    static inline SingleAbsValue getTrueZ3Expr() {
+    static inline SingleAbsValue getTrueZ3Expr()
+    {
         return getContext().bool_val(true);
     }
 
-    static inline SingleAbsValue getFalseZ3Expr() {
+    static inline SingleAbsValue getFalseZ3Expr()
+    {
         return getContext().bool_val(false);
     }
 
 public:
-    inline SingleAbsValue &operator[](u32_t varId) {
+    inline SingleAbsValue &operator[](u32_t varId)
+    {
         auto it = globalConsES._varToVal.find(varId);
         if (it != globalConsES._varToVal.end())
             return it->second;
@@ -330,7 +389,8 @@ public:
     SingleAbsValue load(const SingleAbsValue &loc);
 
     /// Return int value from an expression if it is a numeral, otherwise return an approximate value
-    static inline s32_t z3Expr2NumValue(const SingleAbsValue &e) {
+    static inline s32_t z3Expr2NumValue(const SingleAbsValue &e)
+    {
         assert(e.is_numeral() && "not numeral?");
         int64_t i;
         if(e.getExpr().is_numeral_i64(i))
@@ -354,12 +414,15 @@ private:
 
     static bool assign(SingleAbsValue &lhs, const SingleAbsValue &rhs);
 
-    inline bool store(u32_t objId, const SingleAbsValue &z3Expr) {
+    inline bool store(u32_t objId, const SingleAbsValue &z3Expr)
+    {
         SingleAbsValue &lhs = _locToVal[objId];
-        if (!eq(lhs, z3Expr.simplify())) {
+        if (!eq(lhs, z3Expr.simplify()))
+        {
             lhs = z3Expr.simplify();
             return true;
-        } else
+        }
+        else
             return false;
     }
 
@@ -370,8 +433,10 @@ private:
 
 /// Specialized hash for ConExeState
 template<>
-struct std::hash<SVF::ConsExeState> {
-    size_t operator()(const SVF::ConsExeState &exeState) const {
+struct std::hash<SVF::ConsExeState>
+{
+    size_t operator()(const SVF::ConsExeState &exeState) const
+    {
         return exeState.hash();
     }
 };

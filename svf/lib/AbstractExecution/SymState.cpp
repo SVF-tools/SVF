@@ -31,6 +31,7 @@ using namespace SVF;
 
 
 SymState::SymState(ConsExeState es, TypeState ts) : _exeState(SVFUtil::move(es)), _typeState(SVFUtil::move(ts)),
-      _branchCondition(Z3Expr::getContext().bool_val(true)) {
+    _branchCondition(Z3Expr::getContext().bool_val(true))
+{
 
 }
