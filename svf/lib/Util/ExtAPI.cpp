@@ -348,44 +348,116 @@ cJSON* ExtAPI::get_FunJson(const std::string& funName)
     return cJSON_GetObjectItemCaseSensitive(root, funName.c_str());
 }
 
-// Get all operations of an extern function
-std::vector<ExtAPI::Operation> ExtAPI::getAllOperations(std::string funName)
+ExtAPI::Operand ExtAPI::getBasicOperation(cJSON* obj)
 {
-    std::vector<ExtAPI::Operation> allOperations;
+    Operand basicOp;
+    if (strstr(obj->string, "AddrStmt") != NULL)
+        basicOp.setType(ExtAPI::OperationType::Addr);
+    else if (strstr(obj->string, "CopyStmt") != NULL)
+        basicOp.setType(ExtAPI::OperationType::Copy);
+    else if (strstr(obj->string, "LoadStmt") != NULL)
+        basicOp.setType(ExtAPI::OperationType::Load);
+    else if (strstr(obj->string, "StoreStmt") != NULL)
+        basicOp.setType(ExtAPI::OperationType::Store);
+    else if (strstr(obj->string, "GepStmt") != NULL)
+        basicOp.setType(ExtAPI::OperationType::Gep);
+    else if (strstr(obj->string, "ReturnStmt") != NULL)
+        basicOp.setType(ExtAPI::OperationType::Return);
+    else if (strstr(obj->string, "Rb_tree_ops") != NULL)
+        basicOp.setType(ExtAPI::OperationType::Rb_tree_ops);
+    else if (strstr(obj->string, "memcpy_like") != NULL)
+        basicOp.setType(ExtAPI::OperationType::Memcpy_like);
+    else if (strstr(obj->string, "memset_like") != NULL)
+        basicOp.setType(ExtAPI::OperationType::Memset_like);
+    else
+        assert(false && "Unknown operation type");
+
+    cJSON* value = obj->child;
+    while (value)
+    {
+        if (strcmp(value->string, "src") == 0)
+            basicOp.setSrcValue(value->valuestring);
+        else if (strcmp(value->string, "dst") == 0)
+            basicOp.setDstValue(value->valuestring);
+        else if (strcmp(value->string, "offset") == 0 || strcmp(value->string, "size") == 0)
+            basicOp.setOffsetOrSizeStr(value->valuestring);
+        else
+            assert(false && "Unknown operation value");
+        value = value->next;
+    }
+    return basicOp;
+}
+
+// Get all operations of an extern function
+ExtAPI::ExtFunctionOps ExtAPI::getExtFunctionOps(std::string funName)
+{
+    auto it = extFunToOps.find(funName);
+    if (it != extFunToOps.end())
+        return it->second;
+
+    ExtAPI::ExtFunctionOps extFunctionOps;
+    extFunctionOps.setExtFunName(funName);
     cJSON* item = get_FunJson(funName);
     if (item != nullptr)
     {
         cJSON* obj = item->child;
         //  Get the first operation of the function
         obj = obj->next->next->next->next;
-        std::vector<ExtAPI::Operation*> operations;
         while (obj)
         {
-            std::string op;
-            std::vector<std::string> operandsStr;
-            std::map<std::string, NodeID> opMap;
+            ExtOperation operation;
             if (obj->type == cJSON_Object || obj->type == cJSON_Array)
             {
-                op = get_opName(obj->string);
-                cJSON* value = obj->child;
-                std::vector<std::string> args;
-                while (value)
+                if (strstr(obj->string, "CallStmt") != NULL)
                 {
-                    if (value->type == cJSON_String)
+                    extFunctionOps.setCallStmtNum(extFunctionOps.getCallStmtNum() + 1);
+                    operation.setCallOp(true);
+                    cJSON* value = obj->child;
+                    while (value)
                     {
-                        operandsStr.push_back(value->valuestring);
-                    }
-                    value = value->next;
+                        if (strcmp(value->string, "callee_name") == 0)
+                            operation.setCalleeName(value->valuestring);
+                        else if (strcmp(value->string, "callee_return") == 0)
+                            operation.setCalleeReturn(value->valuestring);
+                        else if (strcmp(value->string, "callee_arguments") == 0)
+                            operation.setCalleeArguments(value->valuestring);
+                        else 
+                            operation.getCalleeOperands().push_back(getBasicOperation(value));
+                        value = value->next;
+                    }    
                 }
+                else if (strstr(obj->string, "CondStmt") != NULL)
+                {
+                    operation.setConOp(true);
+                    obj = obj->child;
+                    assert(strcmp(obj->string, "Condition") == 0 && "Unknown operation type");
+                    operation.setConOp(obj->valuestring);
+                    obj = obj->next;
+                    assert(strcmp(obj->string, "TrueBranch") == 0 && "Unknown operation type");
+                    cJSON* value = obj->child;
+                    while (value)
+                    {
+                        operation.getTrueBranchOperands().push_back(getBasicOperation(value));
+                        value = value->next;
+                    }
+                    obj = obj->next;
+                    assert(strcmp(obj->string, "FalseBranch") == 0&& "Unknown operation type");
+                    value = obj->child;
+                    while (value)
+                    {
+                        operation.getFalseBranchOperands().push_back(getBasicOperation(value));
+                        value = value->next;
+                    }            
+                }
+                else
+                    operation.setBasicOp(getBasicOperation(obj));
             }
-            ExtAPI::Operation operation(op, operandsStr);
-            allOperations.push_back(operation);
-            operations.clear();
-
             obj = obj->next;
+            extFunctionOps.getOperations().push_back(operation);
         }
     }
-    return allOperations;
+    extFunToOps[funName] = extFunctionOps;
+    return extFunctionOps;
 }
 
 // Get arguments of the operation, e.g. ["A1R", "A0", "A2"]
