@@ -180,8 +180,7 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 node->setVTable(svfgv);
                 vtblToTypeMap[svfgv] = getCanonicalType(type);
 
-                const ConstantStruct *vtbls = SVFUtil::dyn_cast<ConstantStruct>(gv->getOperand(0));
-                assert(vtbls && "unexpected vtable type");
+                const ConstantStruct *vtbls = LLVMUtil::getVtblStruct(gv);
                 for (unsigned nthVtbl = 0; nthVtbl < vtbls->getNumOperands(); ++nthVtbl)
                 {
                     const ConstantArray *vtbl = SVFUtil::dyn_cast<ConstantArray>(vtbls->getOperand(nthVtbl));

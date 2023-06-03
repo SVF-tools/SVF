@@ -90,8 +90,7 @@ void CHGBuilder::buildCHGNodes(const GlobalValue *globalvalue)
 {
     if (LLVMUtil::isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
     {
-        const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
-        assert(vtblStruct && "Initializer of a vtable not a struct?");
+        const ConstantStruct *vtblStruct = LLVMUtil::getVtblStruct(globalvalue);
         string className = getClassNameFromVtblObj(globalvalue->getName().str());
         if (!chg->getNode(className))
             createNode(className);
@@ -367,9 +366,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
         const GlobalValue *globalvalue = SVFUtil::dyn_cast<const GlobalValue>(&(*I));
         if (LLVMUtil::isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
         {
-            const ConstantStruct *vtblStruct =
-                SVFUtil::dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
-            assert(vtblStruct && "Initializer of a vtable not a struct?");
+            const ConstantStruct *vtblStruct = LLVMUtil::getVtblStruct(globalvalue);
 
             string vtblClassName = getClassNameFromVtblObj(globalvalue->getName().str());
             CHNode *node = chg->getNode(vtblClassName);
