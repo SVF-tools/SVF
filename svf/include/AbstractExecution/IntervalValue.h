@@ -299,7 +299,7 @@ public:
         }
         else
         {
-            return this->_lb.leq(other._lb) && this->_ub.leq(other._ub);
+            return other._lb.leq(this->_lb) && this->_ub.leq(other._ub);
         }
 
     }
@@ -317,7 +317,7 @@ public:
         }
         else
         {
-            return this->_lb.geq(other._lb) && this->_ub.geq(other._ub);
+            return other._lb.geq(this->_lb) && this->_ub.geq(other._ub);
         }
     }
 
@@ -381,7 +381,7 @@ public:
         }
         else
         {
-            this->_lb = !lb().geq(other.lb()) ? minus_infinity() : this->lb();
+            this->_lb = !lb().leq(other.lb()) ? minus_infinity() : this->lb();
             this->_ub = !ub().geq(other.ub()) ? plus_infinity() : this->ub();
         }
     }
@@ -438,9 +438,19 @@ public:
         }
     }
 
-    std::string toString() const
+    const std::string toString() const
     {
-        return "[" + lb().to_string() + ", " + ub().to_string() + "]";
+        std::string str;
+        std::stringstream rawStr(str);
+        if (this->isBottom())
+        {
+            rawStr << "⊥";
+        }
+        else
+        {
+            rawStr << "[" << lb().to_string() << ", " << ub().to_string() << "]";
+        }
+        return rawStr.str();
     }
 
 }; // end class IntervalValue

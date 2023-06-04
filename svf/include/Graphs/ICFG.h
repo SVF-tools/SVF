@@ -48,6 +48,7 @@ class ICFG : public GenericICFGTy
 {
     friend class ICFGBuilder;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
 

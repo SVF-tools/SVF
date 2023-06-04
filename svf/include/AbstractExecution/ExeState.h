@@ -54,7 +54,7 @@ public:
     /// Execution state kind
     enum ExeState_TYPE
     {
-        IntervalK, ConcreteK
+        IntervalK, SingleValueK
     };
 private:
     ExeState_TYPE _kind;
@@ -90,9 +90,9 @@ public:
         return *this;
     }
 
-    bool operator==(const ExeState &rhs) const;
+    virtual bool operator==(const ExeState &rhs) const;
 
-    inline bool operator!=(const ExeState &rhs) const
+    inline virtual bool operator!=(const ExeState &rhs) const
     {
         return !(*this == rhs);
     }
@@ -103,10 +103,10 @@ public:
     }
 
     /// Make all value join with the other
-    void joinWith(const ExeState &other);
+    bool joinWith(const ExeState &other);
 
     /// Make all value meet with the other
-    void meetWith(const ExeState &other);
+    bool meetWith(const ExeState &other);
 
     virtual u32_t hash() const;
 
@@ -191,6 +191,64 @@ protected:
     }
 
 public:
+
+    virtual std::string varToAddrs(u32_t varId) const
+    {
+        std::stringstream exprName;
+        auto it = _varToVAddrs.find(varId);
+        if (it == _varToVAddrs.end())
+        {
+            exprName << "Var not in varToAddrs!\n";
+        }
+        else
+        {
+            const VAddrs &vaddrs = it->second;
+            if (vaddrs.size() == 1)
+            {
+                exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
+            }
+            else
+            {
+                exprName << "addr: {";
+                for (const auto &addr: vaddrs)
+                {
+                    exprName << std::dec << getInternalID(addr) << ", ";
+                }
+                exprName << "}\n";
+            }
+        }
+        return SVFUtil::move(exprName.str());
+    }
+
+    virtual std::string locToAddrs(u32_t objId) const
+    {
+        std::stringstream exprName;
+        auto it = _locToVAddrs.find(objId);
+        if (it == _locToVAddrs.end())
+        {
+            exprName << "Var not in varToAddrs!\n";
+        }
+        else
+        {
+            const VAddrs &vaddrs = it->second;
+            if (vaddrs.size() == 1)
+            {
+                exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
+            }
+            else
+            {
+                exprName << "addr: {";
+                for (const auto &addr: vaddrs)
+                {
+                    exprName << std::dec << getInternalID(addr) << ", ";
+                }
+                exprName << "}\n";
+            }
+        }
+        return SVFUtil::move(exprName.str());
+    }
+
+public:
     static z3::context &getContext()
     {
         return Z3Expr::getContext();
@@ -220,4 +278,13 @@ public:
 
 
 } // end namespace SVF
+
+template<>
+struct std::hash<SVF::ExeState>
+{
+    size_t operator()(const SVF::ExeState &es) const
+    {
+        return es.hash();
+    }
+};
 #endif //Z3_EXAMPLE_EXESTATE_H

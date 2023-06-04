@@ -33,31 +33,24 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-void FileChecker::reportNeverClose(const SVFGNode* src)
-{
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg1("\t FileNeverClose :") <<  " file open location at : ("
-                    << cs->getCallSite()->getSourceLoc() << ")\n";
-}
-
-void FileChecker::reportPartialClose(const SVFGNode* src)
-{
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg2("\t PartialFileClose :") <<  " file open location at : ("
-                    << cs->getCallSite()->getSourceLoc() << ")\n";
-}
-
 void FileChecker::reportBug(ProgSlice* slice)
 {
 
     if(isAllPathReachable() == false && isSomePathReachable() == false)
     {
-        reportNeverClose(slice->getSource());
+        // full leakage
+        GenericBug::EventStack eventStack =
+        {
+            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite())
+        };
+        report.addSaberBug(GenericBug::FILENEVERCLOSE, eventStack);
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
-        reportPartialClose(slice->getSource());
-        SVFUtil::errs() << "\t\t conditional file close path: \n" << slice->evalFinalCond() << "\n";
+        GenericBug::EventStack eventStack;
+        slice->evalFinalCond2Event(eventStack);
+        eventStack.push_back(
+            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite()));
+        report.addSaberBug(GenericBug::FILEPARTIALCLOSE, eventStack);
     }
-
 }

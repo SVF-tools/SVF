@@ -388,8 +388,6 @@ public:
 
     /// Resolve indirect call edges
     virtual void resolveIndCalls(const CallICFGNode* cs, const PointsTo& target, CallEdgeMap& newEdges);
-    /// Match arguments for callsite at caller and callee
-    bool matchArgs(const CallICFGNode* cs, const SVFFunction* callee);
 
     /// CallGraph SCC related methods
     //@{

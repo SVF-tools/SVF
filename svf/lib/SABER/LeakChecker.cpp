@@ -146,33 +146,26 @@ void LeakChecker::initSnks()
     }
 }
 
-
-void LeakChecker::reportNeverFree(const SVFGNode* src)
-{
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
-                    << cs->getCallSite()->getSourceLoc() << ")\n";
-}
-
-void LeakChecker::reportPartialLeak(const SVFGNode* src)
-{
-
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
-                    << cs->getCallSite()->getSourceLoc() << ")\n";
-}
-
 void LeakChecker::reportBug(ProgSlice* slice)
 {
 
     if(isAllPathReachable() == false && isSomePathReachable() == false)
     {
-        reportNeverFree(slice->getSource());
+        // full leakage
+        GenericBug::EventStack eventStack =
+        {
+            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite())
+        };
+        report.addSaberBug(GenericBug::NEVERFREE, eventStack);
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
-        reportPartialLeak(slice->getSource());
-        SVFUtil::errs() << "\t\t conditional free path: \n" << slice->evalFinalCond() << "\n";
+        // partial leakage
+        GenericBug::EventStack eventStack;
+        slice->evalFinalCond2Event(eventStack);
+        eventStack.push_back(
+            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite()));
+        report.addSaberBug(GenericBug::PARTIALLEAK, eventStack);
     }
 
     if(Options::ValidateTests())

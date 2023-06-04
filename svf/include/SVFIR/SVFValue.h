@@ -49,9 +49,8 @@ class SVFType;
 
 class SVFLoopAndDomInfo
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 public:
     typedef Set<const SVFBasicBlock*> BBSet;
     typedef std::vector<const SVFBasicBlock*> BBList;
@@ -150,9 +149,8 @@ public:
 
 class SVFValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class LLVMModuleSet;
 
 public:
@@ -266,9 +264,8 @@ public:
 class SVFFunction : public SVFValue
 {
     friend class LLVMModuleSet;
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
@@ -483,9 +480,8 @@ public:
 class SVFBasicBlock : public SVFValue
 {
     friend class LLVMModuleSet;
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
@@ -584,9 +580,8 @@ public:
 
 class SVFInstruction : public SVFValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 public:
     typedef std::vector<const SVFInstruction*> InstVec;
 
@@ -652,9 +647,8 @@ public:
 
 class SVFCallInst : public SVFInstruction
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class LLVMModuleSet;
 
 private:
@@ -727,9 +721,8 @@ public:
 
 class SVFVirtualCallInst : public SVFCallInst
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class LLVMModuleSet;
 
 private:
@@ -786,9 +779,8 @@ public:
 
 class SVFConstant : public SVFValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 public:
     SVFConstant(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConst): SVFValue(_const, ty, k)
     {
@@ -809,9 +801,8 @@ public:
 
 class SVFGlobalValue : public SVFConstant
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class LLVMModuleSet;
 
 private:
@@ -848,9 +839,8 @@ public:
 
 class SVFArgument : public SVFValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 private:
     const SVFFunction* fun;
     u32_t argNo;
@@ -888,9 +878,8 @@ public:
 
 class SVFConstantData : public SVFConstant
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 public:
     SVFConstantData(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConstData): SVFConstant(_const, ty, k)
     {
@@ -918,9 +907,8 @@ public:
 
 class SVFConstantInt : public SVFConstantData
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 private:
     u64_t zval;
     s64_t sval;
@@ -953,9 +941,8 @@ public:
 
 class SVFConstantFP : public SVFConstantData
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 private:
     float dval;
 public:
@@ -981,9 +968,8 @@ public:
 
 class SVFConstantNullPtr : public SVFConstantData
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     SVFConstantNullPtr(const std::string& _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFNullPtr)
@@ -1003,9 +989,8 @@ public:
 
 class SVFBlackHoleValue : public SVFConstantData
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     SVFBlackHoleValue(const std::string& _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFBlackHole)
@@ -1025,9 +1010,8 @@ public:
 
 class SVFOtherValue : public SVFValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 public:
     SVFOtherValue(const std::string& other, const SVFType* ty, SVFValKind k = SVFValue::SVFOther): SVFValue(other, ty, k)
     {
@@ -1036,7 +1020,7 @@ public:
 
     static inline bool classof(const SVFValue *node)
     {
-        return node->getKind() == SVFOther;
+        return node->getKind() == SVFOther || node->getKind() == SVFMetaAsValue;
     }
 };
 
@@ -1045,9 +1029,8 @@ public:
 */
 class SVFMetadataAsValue : public SVFOtherValue
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
     friend class SVFIRWriter;
+    friend class SVFIRReader;
 public:
     SVFMetadataAsValue(const std::string& other, const SVFType* ty): SVFOtherValue(other, ty, SVFValue::SVFMetaAsValue)
     {
@@ -1067,8 +1050,13 @@ public:
 
 class CallSite
 {
+    friend class SVFIRReader;
+
 private:
     const SVFCallInst* CB;
+
+    /// Constructs empty CallSite (for SVFIRReader/deserialization)
+    CallSite() : CB{} {}
 
 public:
     CallSite(const SVFInstruction* I) : CB(SVFUtil::dyn_cast<SVFCallInst>(I))
@@ -1151,6 +1139,12 @@ public:
         return getInstruction() < CS.getInstruction();
     }
 };
+
+/// [FOR DEBUG ONLY, DON'T USE IT UNSIDE `svf`!]
+/// Converts an SVFValue to corresponding LLVM::Value, then get the string
+/// representation of it. Use it only when you are debugging. Don't use
+/// it in any SVF algorithm because it relies on information stored in LLVM bc.
+std::string dumpLLVMValue(const SVFValue* svfValue);
 
 template <typename F, typename S>
 OutStream& operator<< (OutStream &o, const std::pair<F, S> &var)

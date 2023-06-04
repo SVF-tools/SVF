@@ -1,4 +1,4 @@
-//===- AddressValue.h ----Address Value Sets-------------------------//
+//===- BoundedZ3Expr.h ----Address Value Sets-------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -112,12 +112,12 @@ public:
 
     bool is_zero() const
     {
-        return getExpr().is_numeral() && getExpr().get_numeral_int64() == 0;
+        return getExpr().is_numeral() && eq(getExpr(), Z3Expr(0));
     }
 
     static bool isZero(const BoundedZ3Expr &expr)
     {
-        return expr.is_numeral() && expr.get_numeral_int64() == 0;
+        return expr.is_numeral() && eq(expr.getExpr(), Z3Expr(0));
     }
 
     BoundedZ3Expr equal(const BoundedZ3Expr &rhs) const
@@ -248,17 +248,20 @@ public:
 
     friend BoundedZ3Expr operator^(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
     {
-        return bv2int(int2bv(64, lhs.getExpr()) ^ int2bv(64, rhs.getExpr()), true);
+        const auto &maxBvLen = std::max(lhs.bvLen(), rhs.bvLen());
+        return bv2int(int2bv(maxBvLen, lhs.getExpr()) ^ int2bv(maxBvLen, rhs.getExpr()), true);
     }
 
     friend BoundedZ3Expr operator&(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
     {
-        return bv2int(int2bv(64, lhs.getExpr()) & int2bv(64, rhs.getExpr()), true);
+        const auto &maxBvLen = std::max(lhs.bvLen(), rhs.bvLen());
+        return bv2int(int2bv(maxBvLen, lhs.getExpr()) & int2bv(maxBvLen, rhs.getExpr()), true);
     }
 
     friend BoundedZ3Expr operator|(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
     {
-        return bv2int(int2bv(64, lhs.getExpr()) | int2bv(64, rhs.getExpr()), true);
+        const auto &maxBvLen = std::max(lhs.bvLen(), rhs.bvLen());
+        return bv2int(int2bv(maxBvLen, lhs.getExpr()) | int2bv(maxBvLen, rhs.getExpr()), true);
     }
 
     friend BoundedZ3Expr ashr(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
@@ -270,7 +273,10 @@ public:
         else if (rhs.is_infinite())
             return ite(lhs.getExpr() >= 0, BoundedZ3Expr(0), BoundedZ3Expr(-1));
         else
-            return ashr(lhs.getExpr(), rhs.getExpr());
+        {
+            const auto &maxBvLen = std::max(lhs.bvLen(), rhs.bvLen());
+            return bv2int(ashr(int2bv(maxBvLen, lhs.getExpr()), int2bv(maxBvLen, rhs.getExpr())), true);
+        }
     }
 
     friend BoundedZ3Expr shl(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
@@ -282,12 +288,16 @@ public:
         else if (rhs.is_infinite())
             return ite(lhs.getExpr() >= 0, plus_infinity(), minus_infinity());
         else
-            return shl(lhs.getExpr(), rhs.getExpr());
+        {
+            const auto &maxBvLen = std::max(lhs.bvLen(), rhs.bvLen());
+            return bv2int(shl(int2bv(maxBvLen, lhs.getExpr()), int2bv(maxBvLen, rhs.getExpr())), true);
+        }
     }
 
     friend BoundedZ3Expr lshr(const BoundedZ3Expr &lhs, const BoundedZ3Expr &rhs)
     {
-        return lshr(lhs.getExpr(), rhs.getExpr());
+        const auto &maxBvLen = std::max(lhs.bvLen(), rhs.bvLen());
+        return bv2int(lshr(int2bv(maxBvLen, lhs.getExpr()), int2bv(maxBvLen, rhs.getExpr())), true);
     }
 
     friend BoundedZ3Expr int2bv(u32_t n, const BoundedZ3Expr &e)
@@ -340,6 +350,36 @@ public:
     {
         return getExpr().is_true();
     }
+
+    /// Return Numeral
+    inline int64_t getNumeral() const
+    {
+        if (is_numeral())
+        {
+            int64_t i;
+            if (getExpr().is_numeral_i64(i))
+                return get_numeral_int64();
+            else
+            {
+                return (getExpr() < 0).simplify().is_true() ? INT64_MIN : INT64_MAX;
+            }
+        }
+        if (is_minus_infinite())
+        {
+            return INT64_MIN;
+        }
+        else if (is_plus_infinite())
+        {
+            return INT64_MAX;
+        }
+        else
+        {
+            assert(false && "other literal?");
+            abort();
+        }
+    }
+
+    int64_t bvLen() const;
     //%}
 }; // end class ConZ3Expr
 } // end namespace SVF

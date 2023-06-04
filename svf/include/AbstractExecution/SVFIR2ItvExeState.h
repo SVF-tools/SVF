@@ -66,6 +66,10 @@ public:
         return _relEs;
     }
 
+    void widenVAddrs(IntervalExeState &lhs, const IntervalExeState &rhs);
+
+    void narrowVAddrs(IntervalExeState &lhs, const IntervalExeState &rhs);
+
     /// Return the field address given a pointer points to a struct object and an offset
     VAddrs getGepObjAddress(u32_t pointer, u32_t offset);
 

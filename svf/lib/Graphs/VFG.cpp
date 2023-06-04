@@ -976,7 +976,8 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
     RetICFGNode* retBlockNode = icfg->getRetICFGNode(callBlockNode->getCallSite());
     // connect actual and formal param
-    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee))
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee) &&
+            matchArgs(callBlockNode->getCallSite(), callee))
     {
         const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
         const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee);
@@ -990,6 +991,7 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
                 connectAParamAndFParam(cs_arg, fun_arg, callBlockNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
+
         if (callee->isVarArg())
         {
             NodeID varFunArg = pag->getVarargNode(callee);

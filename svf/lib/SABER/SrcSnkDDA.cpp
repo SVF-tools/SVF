@@ -105,7 +105,6 @@ void SrcSnkDDA::analyze(SVFModule* module)
 
         reportBug(getCurSlice());
     }
-
     finalize();
 
 }

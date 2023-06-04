@@ -200,6 +200,11 @@ inline CallSite getSVFCallSite(const SVFInstruction* inst)
     return cs;
 }
 
+/// Match arguments for callsite at caller and callee
+/// if the arg size does not match then we do not need to connect this parameter
+/// unless the callee is a variadic function (the first parameter of variadic function is its paramter number)
+bool matchArgs(const SVFInstruction* cs, const SVFFunction* callee);
+
 /// Return LLVM callsite given a value
 inline CallSite getSVFCallSite(const SVFValue* value)
 {
@@ -297,6 +302,12 @@ void stopAnalysisLimitTimer(bool limitTimerSet);
 inline bool isExtCall(const SVFFunction* fun)
 {
     return fun && ExtAPI::getExtAPI()->is_ext(fun);
+}
+
+// Return true if extern function contains memset_like or memcpy_like operations
+inline bool isMemSetOrCpyExtFun(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_memset_or_memcpy(fun);
 }
 
 /// Return true if the call is a heap allocator/reallocator
@@ -653,6 +664,55 @@ move(T &&t) noexcept
 {
     return std::move(t);
 }
+
+/// void_t is not avaiable until C++17. We define it here for C++11/14.
+template <typename... Ts> struct make_void
+{
+    typedef void type;
+};
+template <typename... Ts> using void_t = typename make_void<Ts...>::type;
+
+/// @brief Type trait that checks if a type is iterable
+/// (can be applied on a range-based for loop)
+///@{
+template <typename T, typename = void> struct is_iterable : std::false_type {};
+template <typename T>
+struct is_iterable<T, void_t<decltype(std::begin(std::declval<T&>()) !=
+                                      std::end(std::declval<T&>()))>>
+: std::true_type {};
+template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
+///@}
+
+/// @brief Type trait to check if a type is a map or unordered_map.
+///@{
+template <typename T> struct is_map : std::false_type {};
+template <typename... Ts> struct is_map<std::map<Ts...>> : std::true_type {};
+template <typename... Ts>
+struct is_map<std::unordered_map<Ts...>> : std::true_type {};
+template <typename... Ts> constexpr bool is_map_v = is_map<Ts...>::value;
+///@}
+
+/// @brief Type trait to check if a type is a set or unordered_set.
+///@{
+template <typename T> struct is_set : std::false_type {};
+template <typename... Ts> struct is_set<std::set<Ts...>> : std::true_type {};
+template <typename... Ts>
+struct is_set<std::unordered_set<Ts...>> : std::true_type {};
+template <typename... Ts> constexpr bool is_set_v = is_set<Ts...>::value;
+///@}
+
+/// @brief Type trait to check if a type is vector or list.
+template <typename T> struct is_sequence_container : std::false_type {};
+template <typename... Ts>
+struct is_sequence_container<std::vector<Ts...>> : std::true_type {};
+template <typename... Ts>
+struct is_sequence_container<std::deque<Ts...>> : std::true_type {};
+template <typename... Ts>
+struct is_sequence_container<std::list<Ts...>> : std::true_type {};
+template <typename... Ts>
+constexpr bool is_sequence_container_v = is_sequence_container<Ts...>::value;
+///@}
+
 
 } // End namespace SVFUtil
 

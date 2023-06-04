@@ -135,6 +135,7 @@ public:
     static const Option<bool> ShowSVFIRValue;
     static const Option<bool> DumpICFG;
     static const Option<std::string> DumpJson;
+    static const Option<bool> ReadJson;
     static const Option<bool> CallGraphDotGraph;
     static const Option<bool> PAGPrint;
     static const Option<u32_t> IndirectCallLimit;
@@ -221,6 +222,9 @@ public:
 
     // Conditions.cpp
     static const Option<u32_t> MaxZ3Size;
+
+    // BoundedZ3Expr.cpp
+    static const Option<u32_t> MaxBVLen;
 
     // SaberCondAllocator.cpp
     static const Option<bool> PrintPathCond;

@@ -136,13 +136,22 @@ public:
     }
 
     /// Current AddressValue joins with another AddressValue
-    void join_with(const AddressValue &other)
+    bool join_with(const AddressValue &other)
     {
-        _addrs.insert(other.begin(), other.end());
+        bool changed = false;
+        for (const auto &addr: other)
+        {
+            if (!_addrs.count(addr))
+            {
+                if (insert(addr).second)
+                    changed = true;
+            }
+        }
+        return changed;
     }
 
     /// Return a intersected AddressValue
-    void meet_with(const AddressValue &other)
+    bool meet_with(const AddressValue &other)
     {
         AddrSet s;
         for (const auto &id: other._addrs)
@@ -152,7 +161,9 @@ public:
                 s.insert(id);
             }
         }
+        bool changed = (_addrs != s);
         _addrs = std::move(s);
+        return changed;
     }
 
     /// Return true if the AddressValue contains n

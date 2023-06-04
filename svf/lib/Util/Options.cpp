@@ -322,6 +322,12 @@ const Option<std::string> Options::DumpJson(
     ""
 );
 
+const Option<bool> Options::ReadJson(
+    "read-json",
+    "Read the SVFIR in JSON format",
+    false
+);
+
 const Option<bool> Options::CallGraphDotGraph(
     "dump-callgraph",
     "Dump dot graph of Call Graph",
@@ -681,6 +687,14 @@ const Option<u32_t> Options::MaxZ3Size(
     "Maximum size limit for Z3 expression",
     30
 );
+
+// BoundedZ3Expr.cpp
+const Option<u32_t> Options::MaxBVLen(
+    "max-bv-len",
+    "Maximum length limit for Z3 bitvector",
+    64
+);
+
 
 
 // SaberCondAllocator.cpp

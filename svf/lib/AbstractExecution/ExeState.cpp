@@ -37,18 +37,21 @@ bool ExeState::operator==(const ExeState &rhs) const
     return eqVarToVAddrs(_varToVAddrs, rhs._varToVAddrs) && eqVarToVAddrs(_locToVAddrs, rhs._locToVAddrs);
 }
 
-void ExeState::joinWith(const ExeState &other)
+bool ExeState::joinWith(const ExeState &other)
 {
+    bool changed = false;
     for (auto it = other._varToVAddrs.begin(); it != other._varToVAddrs.end(); ++it)
     {
         auto key = it->first;
         auto oit = _varToVAddrs.find(key);
         if (oit != _varToVAddrs.end())
         {
-            oit->second.join_with(it->second);
+            if(oit->second.join_with(it->second))
+                changed = true;
         }
         else
         {
+            changed = true;
             _varToVAddrs.emplace(key, it->second);
         }
     }
@@ -58,25 +61,29 @@ void ExeState::joinWith(const ExeState &other)
         auto oit = _locToVAddrs.find(key);
         if (oit != _locToVAddrs.end())
         {
-            oit->second.join_with(it->second);
+            if(oit->second.join_with(it->second))
+                changed = true;
         }
         else
         {
+            changed = true;
             _locToVAddrs.emplace(key, it->second);
         }
     }
+    return changed;
 }
 
-
-void ExeState::meetWith(const ExeState &other)
+bool ExeState::meetWith(const ExeState &other)
 {
+    bool changed = false;
     for (auto it = other._varToVAddrs.begin(); it != other._varToVAddrs.end(); ++it)
     {
         auto key = it->first;
         auto oit = _varToVAddrs.find(key);
         if (oit != _varToVAddrs.end())
         {
-            oit->second.meet_with(it->second);
+            if(oit->second.meet_with(it->second))
+                changed = true;
         }
     }
     for (auto it = other._locToVAddrs.begin(); it != other._locToVAddrs.end(); ++it)
@@ -85,9 +92,11 @@ void ExeState::meetWith(const ExeState &other)
         auto oit = _locToVAddrs.find(key);
         if (oit != _locToVAddrs.end())
         {
-            oit->second.meet_with(it->second);
+            if(oit->second.meet_with(it->second))
+                changed = true;
         }
     }
+    return changed;
 }
 
 u32_t ExeState::hash() const

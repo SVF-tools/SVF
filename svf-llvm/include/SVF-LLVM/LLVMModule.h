@@ -62,8 +62,9 @@ public:
 
 private:
     static LLVMModuleSet* llvmModuleSet;
-    SymbolTableInfo *symInfo;
-    std::unique_ptr<SVFModule> svfModule;
+    static bool preProcessed;
+    SymbolTableInfo* symInfo;
+    SVFModule* svfModule; ///< Borrowed from singleton SVFModule::svfModule
     std::unique_ptr<LLVMContext> cxts;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
@@ -84,39 +85,37 @@ private:
     SVFValue2LLVMValueMap SVFValue2LLVMValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
-    Set<const StInfo*> StInfos;
 
     /// Constructor
     LLVMModuleSet();
-    ~LLVMModuleSet();
 
     void build();
 
 public:
+    ~LLVMModuleSet() = default;
+
     static inline LLVMModuleSet* getLLVMModuleSet()
     {
-        if (llvmModuleSet == nullptr)
-            llvmModuleSet = new LLVMModuleSet();
+        if (!llvmModuleSet)
+            llvmModuleSet = new LLVMModuleSet;
         return llvmModuleSet;
     }
 
     static void releaseLLVMModuleSet()
     {
-        if (llvmModuleSet)
-            delete llvmModuleSet;
+        delete llvmModuleSet;
         llvmModuleSet = nullptr;
     }
 
-    SVFModule* buildSVFModule(Module& mod);
-    SVFModule* buildSVFModule(const std::vector<std::string>& moduleNameVec);
+    static SVFModule* buildSVFModule(Module& mod);
+    static SVFModule* buildSVFModule(const std::vector<std::string>& moduleNameVec);
 
     inline SVFModule* getSVFModule()
     {
-        assert(svfModule && "svfModule has not been built yet!");
-        return svfModule.get();
+        return svfModule;
     }
 
-    void preProcessBCs(std::vector<std::string>& moduleNameVec);
+    static void preProcessBCs(std::vector<std::string>& moduleNameVec);
 
     u32_t getModuleNum() const
     {
@@ -140,7 +139,7 @@ public:
     }
 
     // Dump modules to files
-    void dumpModulesToFile(const std::string suffix);
+    void dumpModulesToFile(const std::string& suffix);
 
     inline void addFunctionMap(const Function* func, SVFFunction* svfFunc)
     {
@@ -330,8 +329,8 @@ private:
     SVFType* addSVFTypeInfo(const Type* t);
     /// Collect a type info
     StInfo* collectTypeInfo(const Type* ty);
-    /// Collect the struct info; nf contains the number of fields after flattening
-    StInfo* collectStructInfo(const StructType *T, u32_t& nf);
+    /// Collect the struct info and set the number of fields after flattening
+    StInfo* collectStructInfo(const StructType* structTy, u32_t& numFields);
     /// Collect the array info
     StInfo* collectArrayInfo(const ArrayType* T);
     /// Collect simple type (non-aggregate) info
@@ -351,7 +350,6 @@ private:
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module
     void prePassSchedule();
-    bool preProcessed;
     void buildSymbolTable() const;
 };
 

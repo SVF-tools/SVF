@@ -486,7 +486,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                 if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII))
                 {
                     llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
-                    rawstr << "ln: " << DIVar->getLine() << " fl: " << DIVar->getFilename().str();
+                    rawstr << "\"ln\": " << DIVar->getLine() << ", \"fl\": \"" << DIVar->getFilename().str() << "\"";
                     break;
                 }
             }
@@ -508,7 +508,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
                     File = inlineLoc->getFilename().str();
                 }
             }
-            rawstr << "ln: " << Line << "  cl: " << Column << "  fl: " << File;
+            rawstr << "\"ln\": " << Line << ", \"cl\": " << Column << ", \"fl\": \"" << File << "\"";
         }
     }
     else if (const Argument* argument = SVFUtil::dyn_cast<Argument>(val))
@@ -539,7 +539,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
 
                     if(DGV->getName() == gvar->getName())
                     {
-                        rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename().str();
+                        rawstr << "\"ln\": " << DGV->getLine() << ", \"fl\": \"" << DGV->getFilename().str() << "\"";
                     }
 
                 }
@@ -552,7 +552,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     }
     else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(val))
     {
-        rawstr << "basic block: " << bb->getName().str() << " " << getSourceLoc(bb->getFirstNonPHI());
+        rawstr << "\"basic block\": " << bb->getName().str() << ", \"location\": " << getSourceLoc(bb->getFirstNonPHI());
     }
     else if(LLVMUtil::isConstDataOrAggData(val))
     {
@@ -584,7 +584,7 @@ const std::string LLVMUtil::getSourceLocOfFunction(const Function* F)
     if (llvm::DISubprogram *SP =  F->getSubprogram())
     {
         if (SP->describes(F))
-            rawstr << "in line: " << SP->getLine() << " file: " << SP->getFilename().str();
+            rawstr << "\"ln\": " << SP->getLine() << ", \"file\": \"" << SP->getFilename().str() << "\"";
     }
     return rawstr.str();
 }
@@ -680,6 +680,19 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
         }
     }
     return LLVMUtil::isConstDataOrAggData(val);
+}
+
+const ConstantStruct *LLVMUtil::getVtblStruct(const GlobalValue *vtbl)
+{
+    const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(vtbl->getOperand(0));
+    assert(vtblStruct && "Initializer of a vtable not a struct?");
+
+    if (vtblStruct->getNumOperands() == 2 &&
+            SVFUtil::isa<ConstantStruct>(vtblStruct->getOperand(0)) &&
+            vtblStruct->getOperand(1)->getType()->isArrayTy())
+        return SVFUtil::cast<ConstantStruct>(vtblStruct->getOperand(0));
+
+    return vtblStruct;
 }
 
 bool LLVMUtil::isValVtbl(const Value* val)
@@ -1028,32 +1041,39 @@ namespace SVF
 {
 const std::string SVFValue::toString() const
 {
+    // TODO: Should only use info in SVFValue. Refactor it later.
+    return dumpLLVMValue(this);
+}
+
+std::string dumpLLVMValue(const SVFValue* svfValue)
+{
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-    if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(this))
+    if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(svfValue))
     {
         rawstr << "Function: " << fun->getName() << " ";
     }
-    else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(this))
+    else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(svfValue))
     {
         rawstr << "BasicBlock: " << bb->getName() << " ";
     }
     else
     {
         const Value* val =
-            LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+            LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfValue);
         rawstr << " " << *val << " ";
     }
-    rawstr << this->getSourceLoc();
+    rawstr << svfValue->getSourceLoc();
     return rawstr.str();
 }
 
-const std::string SVFType::toString() const
+std::string dumpLLVMType(const SVFType* svfType)
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-    const Type* ty = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(this);
+    const Type* ty = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(svfType);
     rawstr << *ty;
     return rawstr.str();
 }
-}
+
+} // namespace SVF

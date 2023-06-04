@@ -37,11 +37,11 @@
 #ifndef SRCSNKANALYSIS_H_
 #define SRCSNKANALYSIS_H_
 
-
-#include "Util/GraphReachSolver.h"
 #include "Graphs/SVFGOPT.h"
 #include "SABER/ProgSlice.h"
 #include "SABER/SaberSVFGBuilder.h"
+#include "Util/GraphReachSolver.h"
+#include "Util/SVFBugReport.h"
 
 namespace SVF
 {
@@ -77,6 +77,7 @@ protected:
     SaberSVFGBuilder memSSA;
     SVFG* svfg;
     PTACallGraph* ptaCallGraph;
+    SVFBugReport report; /// Bug Reporter
 
 public:
 
@@ -240,6 +241,11 @@ public:
     SaberCondAllocator* getSaberCondAllocator() const
     {
         return saberCondAllocator.get();
+    }
+
+    inline const SVFBugReport& getBugReport() const
+    {
+        return report;
     }
 
 protected:
