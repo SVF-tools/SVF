@@ -56,7 +56,7 @@ public:
     CFLGrammar* normalize(GrammarBase *generalGrammar);
 
     /// Expand every variable attribute in rawProductions of grammarbase
-    CFLGrammar* fillAttribute(CFLGrammar *grammar, const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kind2AttrsMap);
+    CFLGrammar* fillAttribute(CFLGrammar *grammar, const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kindToAttrsMap);
 
 private:
     /// Add nonterminal to tranfer long rules to binary rules

@@ -192,9 +192,9 @@ public:
         return this->rawProductions;
     }
 
-    inline const Map<Kind,  Set<Attribute>>& getKind2AttrsMap() const
+    inline const Map<Kind,  Set<Attribute>>& getKindToAttrsMap() const
     {
-        return this->kind2AttrsMap;
+        return this->kindToAttrsMap;
     }
 
     inline Kind getTotalKind()
@@ -223,17 +223,17 @@ public:
 
     void setRawProductions(SymbolMap<Symbol, Productions>& rawProductions);
 
-    void setKind2AttrsMap(const Map<Kind,  Set<Attribute>>& kind2AttrsMap);
+    void setKindToAttrsMap(const Map<Kind,  Set<Attribute>>& kindToAttrsMap);
 
     void setAttributeKinds(const Set<Kind>& attributeKind);
 
-    Kind str2Kind(std::string str) const;
+    Kind strToKind(std::string str) const;
 
-    Symbol str2Symbol(const std::string str) const;
+    Symbol strToSymbol(const std::string str) const;
 
-    std::string kind2Str(Kind kind) const;
+    std::string kindToStr(Kind kind) const;
 
-    std::string sym2StrDump(Symbol sym) const;
+    std::string symToStrDump(Symbol sym) const;
 
     Symbol getSymbol(const Production& prod, u32_t pos)
     {
@@ -282,7 +282,7 @@ private:
     Map<std::string, Kind> terminals;
     Map<std::string, Kind> EBNFSigns; /// Map contains Signs' String and associated Symbols
     Set<Kind> attributeKinds;
-    Map<Kind,  Set<Attribute>> kind2AttrsMap;
+    Map<Kind,  Set<Attribute>> kindToAttrsMap;
     SymbolMap<Symbol, Productions> rawProductions;
     u32_t totalKind;
 };
@@ -310,57 +310,57 @@ public:
         return epsilonProds;
     }
 
-    SymbolMap<Symbol, Productions>& getSingleRHS2Prods()
+    SymbolMap<Symbol, Productions>& getSingleRHSToProds()
     {
-        return singleRHS2Prods;
+        return singleRHSToProds;
     }
 
-    SymbolMap<Symbol, Productions>& getFirstRHS2Prods()
+    SymbolMap<Symbol, Productions>& getFirstRHSToProds()
     {
-        return firstRHS2Prods;
+        return firstRHSToProds;
     }
 
-    SymbolMap<Symbol, Productions>& getSecondRHS2Prods()
+    SymbolMap<Symbol, Productions>& getSecondRHSToProds()
     {
-        return secondRHS2Prods;
+        return secondRHSToProds;
     }
 
     const bool hasProdsFromFirstRHS(const Symbol sym) const
     {
-        auto it = firstRHS2Prods.find(sym);
-        return it!=firstRHS2Prods.end();
+        auto it = firstRHSToProds.find(sym);
+        return it!=firstRHSToProds.end();
     }
 
     const bool hasProdsFromSingleRHS(const Symbol sym) const
     {
-        auto it = singleRHS2Prods.find(sym);
-        return it!=singleRHS2Prods.end();
+        auto it = singleRHSToProds.find(sym);
+        return it!=singleRHSToProds.end();
     }
 
     const bool hasProdsFromSecondRHS(const Symbol sym) const
     {
-        auto it = secondRHS2Prods.find(sym);
-        return it!=secondRHS2Prods.end();
+        auto it = secondRHSToProds.find(sym);
+        return it!=secondRHSToProds.end();
     }
 
     const Productions& getProdsFromSingleRHS(const Symbol sym) const
     {
-        auto it = singleRHS2Prods.find(sym);
-        assert(it!=singleRHS2Prods.end() && "production (X -> sym) not found for sym!!");
+        auto it = singleRHSToProds.find(sym);
+        assert(it!=singleRHSToProds.end() && "production (X -> sym) not found for sym!!");
         return it->second;
     }
 
     const Productions& getProdsFromFirstRHS(const Symbol sym) const
     {
-        auto it = firstRHS2Prods.find(sym);
-        assert(it!=firstRHS2Prods.end() && "production (X -> sym Y ) not found for sym!!");
+        auto it = firstRHSToProds.find(sym);
+        assert(it!=firstRHSToProds.end() && "production (X -> sym Y ) not found for sym!!");
         return it->second;
     }
 
     const Productions& getProdsFromSecondRHS(const Symbol sym) const
     {
-        auto it = secondRHS2Prods.find(sym);
-        assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
+        auto it = secondRHSToProds.find(sym);
+        assert(it!=secondRHSToProds.end() && "production (X -> Y sym) not found for sym!!");
         return it->second;
     }
 
@@ -392,9 +392,9 @@ public:
 
 private:
     SymbolSet<Production> epsilonProds;
-    SymbolMap<Symbol, Productions> singleRHS2Prods;
-    SymbolMap<Symbol, Productions> firstRHS2Prods;
-    SymbolMap<Symbol, Productions> secondRHS2Prods;
+    SymbolMap<Symbol, Productions> singleRHSToProds;
+    SymbolMap<Symbol, Productions> firstRHSToProds;
+    SymbolMap<Symbol, Productions> secondRHSToProds;
     u32_t newTerminalSubscript;
 };
 

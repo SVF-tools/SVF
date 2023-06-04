@@ -240,7 +240,7 @@ void POCRHybridSolver::processCFLEdge(const CFLEdge* Y_edge)
     if (grammar->hasProdsFromFirstRHS(Y))
         for(const Production& prod : grammar->getProdsFromFirstRHS(Y))
         {
-            if ((grammar->getLHSSymbol(prod) == grammar->str2Symbol("F")) && (Y == grammar->str2Symbol("F")) && (grammar->getSecondRHSSymbol(prod) == grammar->str2Symbol("F")))
+            if ((grammar->getLHSSymbol(prod) == grammar->strToSymbol("F")) && (Y == grammar->strToSymbol("F")) && (grammar->getSecondRHSSymbol(prod) == grammar->strToSymbol("F")))
             {
                 addArc(i->getId(), j->getId());
             }
@@ -263,7 +263,7 @@ void POCRHybridSolver::processCFLEdge(const CFLEdge* Y_edge)
     if(grammar->hasProdsFromSecondRHS(Y))
         for(const Production& prod : grammar->getProdsFromSecondRHS(Y))
         {
-            if ((grammar->getLHSSymbol(prod) == grammar->str2Symbol("F")) && (Y == grammar->str2Symbol("F")) && (grammar->getFirstRHSSymbol(prod) == grammar->str2Symbol("F")))
+            if ((grammar->getLHSSymbol(prod) == grammar->strToSymbol("F")) && (Y == grammar->strToSymbol("F")) && (grammar->getFirstRHSSymbol(prod) == grammar->strToSymbol("F")))
             {
                 addArc(i->getId(), j->getId());
             }
@@ -313,7 +313,7 @@ void POCRHybridSolver::initialize()
 
 void POCRHybridSolver::addArc(NodeID src, NodeID dst)
 {
-    if(hasEdge(src, dst, grammar->str2Symbol("F")))
+    if(hasEdge(src, dst, grammar->strToSymbol("F")))
         return;
 
     for (auto& iter: indMap[src])

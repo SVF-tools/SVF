@@ -47,14 +47,14 @@ class CFLGraphBuilder
 protected:
     typedef CFLGrammar::Kind Kind;
     typedef CFLGrammar::Symbol Symbol;
-    Map<std::string, Kind> label2KindMap;
-    Map<Kind, std::string> kind2LabelMap;
-    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kind2AttrsMap;
+    Map<std::string, Kind> labelToKindMap;
+    Map<Kind, std::string> kindToLabelMap;
+    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kindToAttrsMap;
     bool externMap;
     Kind current;
 
 public:
-    /// add attribute to kind2Attribute Map
+    /// add attribute to kindToAttribute Map
     void addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute);
 
     /// Build graph by copying nodes and edges from any graph inherited from GenericGraph
@@ -84,24 +84,24 @@ public:
         externMap = true;
         for(auto pairV : grammar->getTerminals())
         {
-            if(label2KindMap.find(pairV.first) == label2KindMap.end())
+            if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
             {
-                label2KindMap.insert(pairV);
+                labelToKindMap.insert(pairV);
             }
-            if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+            if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
             {
-                kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+                kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
             }
         }
         for(auto pairV : grammar->getNonterminals())
         {
-            if(label2KindMap.find(pairV.first) == label2KindMap.end())
+            if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
             {
-                label2KindMap.insert(pairV);
+                labelToKindMap.insert(pairV);
             }
-            if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+            if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
             {
-                kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+                kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
             }
         }
         for(auto it = graph->begin(); it!= graph->end(); it++)
@@ -116,9 +116,9 @@ public:
             {
                 CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                std::string key = kindToLabelMap[edge->getEdgeKind()];
                 key.append("bar");
-                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), labelToKindMap[key]);
             }
         }
         return cflGraph;
@@ -130,19 +130,19 @@ public:
     /// Build graph from Dot
     CFLGraph *buildFromDot(std::string filename, GrammarBase *grammar);
 
-    Map<std::string, Kind>& getLabel2KindMap()
+    Map<std::string, Kind>& getLabelToKindMap()
     {
-        return this->label2KindMap;
+        return this->labelToKindMap;
     }
 
-    Map<Kind, std::string>& getKind2LabelMap()
+    Map<Kind, std::string>& getKindToLabelMap()
     {
-        return this->kind2LabelMap;
+        return this->kindToLabelMap;
     }
 
-    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>>& getKind2AttrsMap()
+    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>>& getKindToAttrsMap()
     {
-        return this->kind2AttrsMap;
+        return this->kindToAttrsMap;
     }
 
 
