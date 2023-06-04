@@ -46,6 +46,21 @@ double CFLBase::numOfStartEdges = 0;
 double CFLBase::numOfIteration = 1;
 double CFLBase::numOfChecks = 1;
 
+void CFLBase::checkParameter()
+{
+    // Check for valid grammar file before parsing other options
+    std::string filename = Options::GrammarFilename();
+    bool cflfile = (filename.rfind("CFLGrammar.txt") == filename.length() - std::string("CFLGrammar.txt").length());
+    bool pegfile = (filename.rfind("PEGGrammar.txt") == filename.length() - std::string("PEGGrammar.txt").length());
+    if (!Options::Customized()  && !(cflfile || pegfile)) 
+    {
+        SVFUtil::errs() << "Invalid alias grammar file: " << Options::GrammarFilename() << "\n"
+                    << "Please use a file that ends with either 'CFLGrammar.txt' or 'PEGGrammar.txt', "
+                    << "or use the -customized flag to allow custom grammar files.\n";
+        assert(false && "grammar loading failed!");  // exit with error
+    }
+}
+
 void CFLBase::buildCFLGrammar()
 {
     // Start building grammar

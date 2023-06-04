@@ -266,6 +266,7 @@ public:
     static const Option<bool>  CFLSVFG;
     static const Option<bool> POCRAlias;
     static const Option<bool> POCRHybrid;
+    static const Option<bool> Customized;
 
     // Loop Analysis
     static const Option<bool> LoopAnalysis;

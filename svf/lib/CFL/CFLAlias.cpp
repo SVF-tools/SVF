@@ -191,6 +191,9 @@ void CFLAlias::initialize()
 {
     stat = new CFLStat(this);
 
+    // Parameter Checking
+    checkParameter();
+
     // Build CFL Grammar
     buildCFLGrammar();
 
