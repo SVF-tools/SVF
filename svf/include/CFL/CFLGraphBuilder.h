@@ -131,11 +131,11 @@ public:
         return cflGraph;
     }
 
-    /// Method to build a CFL graph from a file
-    void build(std::string filename, CFLGraph* cflGraph);
-
     /// Method to build a CFL graph from a Dot file
     CFLGraph *buildFromDot(std::string filename, GrammarBase *grammar);
+
+    /// Method to build a CFL graph from a Text file
+    CFLGraph* buildFromTextFile(std::string fileName, GrammarBase *grammar);
 
     /// @{
     /// Getter methods for accessing class variables
