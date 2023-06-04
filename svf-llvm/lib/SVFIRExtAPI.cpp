@@ -93,7 +93,7 @@ NodeID SVFIRBuilder::getExtID(ExtAPI::OperationType operationType, const std::st
 {
     s32_t nodeIDType = ExtAPI::getExtAPI()->getNodeIDType(s);
 
-     // return value >= 0 is an argument node
+    // return value >= 0 is an argument node
     if (nodeIDType >= 0)
     {
         assert(svfCall->arg_size() > (u32_t) nodeIDType && "Argument out of bounds!");
@@ -110,12 +110,12 @@ NodeID SVFIRBuilder::getExtID(ExtAPI::OperationType operationType, const std::st
         return pag->addDummyValNode();
     // return value = -3 is an object node
     else if (nodeIDType == -3)
-    {  
-        assert(svfCall->getType()->isPointerTy() && "The operand should be a pointer type!"); 
+    {
+        assert(svfCall->getType()->isPointerTy() && "The operand should be a pointer type!");
         NodeID objId;
         // Indirect call
         if (getCallee(svfCall) == nullptr)
-            objId = pag->addDummyObjNode(svfCall->getType());           
+            objId = pag->addDummyObjNode(svfCall->getType());
         else // Direct call
             objId = pag->getObjectNode(svfCall);
         return objId;
@@ -173,7 +173,7 @@ void SVFIRBuilder::parseAtomaticOp(SVF::ExtAPI::Operand &atomaticOp, const SVFCa
     }
     else
         assert(false && "The 'dst' operand cannot be empty.");
-        
+
     // Get offset or size
     if (!atomaticOp.getOffsetOrSizeStr().empty())
     {
@@ -260,7 +260,7 @@ void SVFIRBuilder::addSVFExtRetInst(SVFCallInst* svfCall, SVFBasicBlock* svfBB, 
     SVFInstruction* retInst = addSVFExtInst("ext_inst", svfCall, svfBB, ExtAPI::OperationType::Return, nullptr);
     retInst->setName(retInst->getName() + "_" + std::to_string(pag->getValueNode(retInst)));
     setCurrentLocation(retInst, svfBB);
-  
+
     NodeID rnF = getReturnNode(svfCaller);
     NodeID vnS = pag->getValueNode(svfCall);
     const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(retInst);
@@ -276,10 +276,10 @@ SVFInstruction* SVFIRBuilder::addSVFExtInst(const std::string& instName, const S
         ptType = svfType;
     else
     {
-        if (opType == ExtAPI::OperationType::Addr 
-            || opType == ExtAPI::OperationType::Copy 
-            || opType == ExtAPI::OperationType::Load 
-            || opType == ExtAPI::OperationType::Gep)
+        if (opType == ExtAPI::OperationType::Addr
+                || opType == ExtAPI::OperationType::Copy
+                || opType == ExtAPI::OperationType::Load
+                || opType == ExtAPI::OperationType::Gep)
         {
             for (u32_t i = 0; i < svfInst->arg_size(); ++i)
                 if (svfInst->getArgOperand(i)->getType()->isPointerTy())
@@ -311,8 +311,8 @@ SVFInstruction* SVFIRBuilder::addSVFExtInst(const std::string& instName, const S
 
 SVFBasicBlock* SVFIRBuilder::extFuncInitialization(const SVFCallInst* svfInst, SVFFunction* svfCaller)
 {
-    // Initialization, linking actual parameters with formal parameters, 
-    // adding basic blocks for external functions, 
+    // Initialization, linking actual parameters with formal parameters,
+    // adding basic blocks for external functions,
     // and creating return edges (if the external function has a return value)
     CallICFGNode* callSiteICFGNode = pag->getICFG()->getCallICFGNode(svfInst);
     FunEntryICFGNode* funEntryICFGNode = pag->getICFG()->getFunEntryICFGNode(svfCaller);
@@ -326,7 +326,7 @@ SVFBasicBlock* SVFIRBuilder::extFuncInitialization(const SVFCallInst* svfInst, S
         addCallEdge(srcAA, dstFA, callSiteICFGNode, funEntryICFGNode);
         pag->addFunArgs(svfCaller,pag->getGNode(dstFA));
     }
-    
+
     SVFBasicBlock* svfBB = new SVFBasicBlock("ext_bb", svfInst->getParent()->getType(), svfCaller);
     assert(svfBB && "Failed to create External SVFBasicBlock!");
     LLVMModuleSet::getLLVMModuleSet()->SVFValue2LLVMValue[svfBB] = nullptr;
@@ -358,8 +358,8 @@ void SVFIRBuilder::handleExtCallStat(ExtAPI::ExtFunctionOps &extFunctionOps, con
             operandToSVFValueMap[svfCallee->getName()] = svfCall;
             CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(svfCall);
 
-            assert(extOperation.getCalleeOperands().size() >= svfCallee->arg_size() 
-                    && "Number of arguments set in CallStmt in ExtAPI.json is inconsistent with the number of arguments required by the Callee?");
+            assert(extOperation.getCalleeOperands().size() >= svfCallee->arg_size()
+                   && "Number of arguments set in CallStmt in ExtAPI.json is inconsistent with the number of arguments required by the Callee?");
             // To parse the operations contained in ‘CallStmt’, obtain the NodeID, and add the callEdge
             for (ExtAPI::Operand &operand : extOperation.getCalleeOperands())
             {
@@ -370,10 +370,11 @@ void SVFIRBuilder::handleExtCallStat(ExtAPI::ExtFunctionOps &extFunctionOps, con
                 {
                     addSVFExtRetInst(svfCall, svfBB, svfCaller);
                     continue;
-                }            
+                }
 
-                auto getCallStmtOperands = [](const std::string& str) -> std::pair<std::string, std::string> {
-                    size_t pos = str.find('_');  
+                auto getCallStmtOperands = [](const std::string& str) -> std::pair<std::string, std::string>
+                {
+                    size_t pos = str.find('_');
                     assert(pos != std::string::npos && "The operand format in CallStmt is incorrect! It should be either 'funName_Argi' or 'funName_Ret'!");
                     return std::make_pair(str.substr(0, pos), str.substr(pos + 1));
                 };
@@ -381,8 +382,8 @@ void SVFIRBuilder::handleExtCallStat(ExtAPI::ExtFunctionOps &extFunctionOps, con
                 if (src.find('_') != std::string::npos)
                 {
                     std::pair<std::string, std::string> srcRet = getCallStmtOperands(src);
-                    s32_t argPos = ExtAPI::getExtAPI()->getNodeIDType(srcRet.second); 
-                    // operand like "caller_Argi"       
+                    s32_t argPos = ExtAPI::getExtAPI()->getNodeIDType(srcRet.second);
+                    // operand like "caller_Argi"
                     if (svfCaller->getName() == srcRet.first)
                     {
                         assert(argPos >= 0 && static_cast<u32_t>(argPos) < svfCaller->arg_size() && "The argument index is out of bounds in CallStmt?");
@@ -399,8 +400,8 @@ void SVFIRBuilder::handleExtCallStat(ExtAPI::ExtFunctionOps &extFunctionOps, con
                 // operand like self-defined "x", which should be created beforehand
                 else
                 {
-                    assert(operandToSVFValueMap.find(src) != operandToSVFValueMap.end() 
-                        && "Cannot find manual create ext inst, incorrect invocation order for external functions?");
+                    assert(operandToSVFValueMap.find(src) != operandToSVFValueMap.end()
+                           && "Cannot find manual create ext inst, incorrect invocation order for external functions?");
                     operand.setSrcID(pag->getValueNode(operandToSVFValueMap[src]));
                 }
                 // 'dst' operand
@@ -412,7 +413,7 @@ void SVFIRBuilder::handleExtCallStat(ExtAPI::ExtFunctionOps &extFunctionOps, con
                     s32_t argPos = ExtAPI::getExtAPI()->getNodeIDType(dstRet.second);
                     assert(argPos >= 0 && static_cast<u32_t>(argPos) < svfCallee->arg_size() && "The argument index is out of bounds of callee in CallStmt?");
                     // Create an new SVFInstruction for "callee_Argi".
-                    if(operandToSVFValueMap.find(dst) == operandToSVFValueMap.end()) 
+                    if(operandToSVFValueMap.find(dst) == operandToSVFValueMap.end())
                     {
                         SVFInstruction* inst = addSVFExtInst("ext_inst", svfInst, svfBB, operand.getType(), nullptr);
                         operand.setDstID(pag->getValueNode(inst));
@@ -524,7 +525,7 @@ void SVFIRBuilder::extFuncAtomaticOperation(ExtAPI::Operand& atomicOp, const SVF
             if((u32_t)i >= fields.size())
                 break;
             const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(pag->getTypeLocSetsMap(vnArg3).first,
-                                            fields[i].getConstantFieldIdx());
+                                         fields[i].getConstantFieldIdx());
             NodeID vnD = getGepValVar(svfCall->getArgOperand(3), fields[i], elementType);
             NodeID vnS = pag->getValueNode(svfCall->getArgOperand(1));
             if(vnD && vnS)

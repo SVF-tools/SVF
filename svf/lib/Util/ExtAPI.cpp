@@ -421,10 +421,10 @@ ExtAPI::ExtFunctionOps ExtAPI::getExtFunctionOps(std::string funName)
                             operation.setCalleeReturn(value->valuestring);
                         else if (strcmp(value->string, "callee_arguments") == 0)
                             operation.setCalleeArguments(value->valuestring);
-                        else 
+                        else
                             operation.getCalleeOperands().push_back(getBasicOperation(value));
                         value = value->next;
-                    }    
+                    }
                 }
                 else if (strstr(obj->string, "CondStmt") != NULL)
                 {
@@ -447,7 +447,7 @@ ExtAPI::ExtFunctionOps ExtAPI::getExtFunctionOps(std::string funName)
                     {
                         operation.getFalseBranchOperands().push_back(getBasicOperation(value));
                         value = value->next;
-                    }            
+                    }
                 }
                 else
                     operation.setBasicOp(getBasicOperation(obj));
