@@ -688,8 +688,8 @@ const ConstantStruct *LLVMUtil::getVtblStruct(const GlobalValue *vtbl)
     assert(vtblStruct && "Initializer of a vtable not a struct?");
 
     if (vtblStruct->getNumOperands() == 2 &&
-        SVFUtil::isa<ConstantStruct>(vtblStruct->getOperand(0)) &&
-        vtblStruct->getOperand(1)->getType()->isArrayTy())
+            SVFUtil::isa<ConstantStruct>(vtblStruct->getOperand(0)) &&
+            vtblStruct->getOperand(1)->getType()->isArrayTy())
         return SVFUtil::cast<ConstantStruct>(vtblStruct->getOperand(0));
 
     return vtblStruct;
