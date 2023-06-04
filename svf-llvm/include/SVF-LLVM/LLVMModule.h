@@ -42,6 +42,7 @@ class SymbolTableInfo;
 
 class LLVMModuleSet
 {
+    friend class SVFIRBuilder;
 
 public:
 
