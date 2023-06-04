@@ -37,7 +37,6 @@ using namespace SVF;
 
 int main(int argc, char ** argv)
 {
-    char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
                         argc, argv, "CFL Reachability Analysis", "[options] <input-bitcode...>"
@@ -69,8 +68,6 @@ int main(int argc, char ** argv)
 
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
-
-    delete[] arg_value;
 
     return 0;
 
