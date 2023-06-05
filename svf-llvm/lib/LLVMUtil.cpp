@@ -1049,22 +1049,32 @@ std::string dumpLLVMValue(const SVFValue* svfValue)
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
-    if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(svfValue))
+    if (LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfValue) == nullptr)
     {
-        rawstr << "Function: " << fun->getName() << " ";
-    }
-    else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(svfValue))
-    {
-        rawstr << "BasicBlock: " << bb->getName() << " ";
+        assert((SVFUtil::isa<SVFInstruction>(svfValue) ||
+                SVFUtil::isa<SVFBasicBlock>(svfValue)) && "Manually created SVF call inst, actual parameter and BasicBlock by ExtAPI do not have LLVM value!");
+        rawstr << svfValue->getName();
+        return rawstr.str();
     }
     else
     {
-        const Value* val =
-            LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfValue);
-        rawstr << " " << *val << " ";
+        if (const SVF::SVFFunction* fun = SVFUtil::dyn_cast<SVFFunction>(svfValue))
+        {
+            rawstr << "Function: " << fun->getName() << " ";
+        }
+        else if (const SVFBasicBlock* bb = SVFUtil::dyn_cast<SVFBasicBlock>(svfValue))
+        {
+            rawstr << "BasicBlock: " << bb->getName() << " ";
+        }
+        else
+        {
+            const Value* val =
+                LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfValue);
+            rawstr << " " << *val << " ";
+        }
+        rawstr << svfValue->getSourceLoc();
+        return rawstr.str();
     }
-    rawstr << svfValue->getSourceLoc();
-    return rawstr.str();
 }
 
 std::string dumpLLVMType(const SVFType* svfType)

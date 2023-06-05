@@ -224,9 +224,6 @@ protected:
     /// Get the base value of (i8* src and i8* dst) for external argument (e.g. memcpy(i8* dst, i8* src, int size))
     const Value* getBaseValueForExtArg(const Value* V);
 
-    /// Get the base type and max offset
-    const Type* getBaseTypeAndFlattenedFields(const Value* V, std::vector<LocationSet> &fields, const Value* sz);
-
     /// Handle direct call
     void handleDirectCall(CallBase* cs, const Function *F);
 
@@ -235,9 +232,17 @@ protected:
 
     /// Handle external call
     //@{
-    virtual void parseOperations(std::vector<ExtAPI::Operation>  &operations, const SVFCallInst* svfcall);
+    virtual SVFCallInst* addSVFExtCallInst(const SVFCallInst* svfInst, SVFBasicBlock* svfBB, const SVFFunction* svfCaller, const SVFFunction* svfCallee);
+    virtual void addSVFExtRetInst(SVFCallInst* svfCall, SVFBasicBlock* svfBB, SVFFunction* svfCaller);
+    virtual SVFInstruction* addSVFExtInst(const std::string& instName, const SVFCallInst* svfInst, SVFBasicBlock* svfBB, SVF::ExtAPI::OperationType opType, const SVFType* svfType);
+    virtual void extFuncAtomaticOperation(ExtAPI::Operand& atomicOp, const SVFCallInst* svfInst);
+    virtual SVFBasicBlock* extFuncInitialization(const SVFCallInst* svfInst, SVFFunction* svfCaller);
+    virtual void handleExtCallStat(ExtAPI::ExtFunctionOps &extFunctionOps, const SVFCallInst* svfInst);
+    virtual NodeID getExtID(ExtAPI::OperationType operationType, const std::string &s, const SVFCallInst* svfCall);
+    virtual void parseAtomaticOp(SVF::ExtAPI::Operand &atomaticOp, const SVFCallInst* svfCall, std::map<std::string, NodeID> &nodeIDMap);
+    virtual void parseExtFunctionOps(ExtAPI::ExtFunctionOps &extFunctionOps, const SVFCallInst* svfCall);
     virtual void preProcessExtCall(CallBase* cs);
-    virtual void handleExtCall(SVFInstruction* svfinst, const SVFFunction* svfcallee);
+    virtual void handleExtCall(const SVFInstruction* svfInst, const SVFFunction* svfCallee);
     void addComplexConsForExt(const SVFValue* D, const SVFValue* S, const SVFValue* sz);
     //@}
 

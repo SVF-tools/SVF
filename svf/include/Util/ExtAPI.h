@@ -224,38 +224,227 @@ private:
 
 public:
 
-    class Operation
+    enum OperationType
+    {
+        Addr,
+        Copy,
+        Load,
+        Store,
+        Gep,
+        Call,
+        Return,
+        Rb_tree_ops,
+        Memcpy_like,
+        Memset_like,
+        Other
+    };
+
+    class Operand
     {
     public:
-        Operation() {};
-
-        Operation(std::string opn, std::vector<std::string> varstr) : op(opn), operandStr(varstr) {};
-
-        std::string getOperator()
+        OperationType getType() const
         {
-            return op;
+            return opType;
         }
-
-        std::vector<std::string> getOperandStr()
+        void setType(OperationType type)
         {
-            return operandStr;
+            opType = type;
         }
-
-        std::vector<NodeID> &getOperands()
+        const std::string &getSrcValue() const
         {
-            return operands;
+            return src;
         }
-
-        void setOperands(std::vector<NodeID> vars)
+        void setSrcValue(const std::string &value)
         {
-            operands = vars;
+            src = value;
         }
-
+        const std::string &getDstValue() const
+        {
+            return dst;
+        }
+        void setDstValue(const std::string &value)
+        {
+            dst = value;
+        }
+        NodeID getSrcID() const
+        {
+            return srcID;
+        }
+        void setSrcID(NodeID id)
+        {
+            srcID = id;
+        }
+        NodeID getDstID() const
+        {
+            return dstID;
+        }
+        void setDstID(NodeID id)
+        {
+            dstID = id;
+        }
+        const std::string &getOffsetOrSizeStr() const
+        {
+            return offsetOrSizeStr;
+        }
+        void setOffsetOrSizeStr(const std::string &str)
+        {
+            offsetOrSizeStr = str;
+        }
+        u32_t getOffsetOrSize() const
+        {
+            return offsetOrSize;
+        }
+        void setOffsetOrSize(u32_t off)
+        {
+            offsetOrSize = off;
+        }
     private:
-        std::string op;
-        std::vector<std::string> operandStr;
-        std::vector<NodeID> operands;
+        OperationType opType; // 操作数类型
+        std::string src; // 操作数值
+        std::string dst; //
+        std::string offsetOrSizeStr; // Gep
+        NodeID srcID;
+        NodeID dstID;
+        u32_t offsetOrSize;
     };
+
+    class ExtOperation
+    {
+    public:
+        bool isCallOp() const
+        {
+            return callOp;
+        }
+        void setCallOp(bool isCall)
+        {
+            callOp = isCall;
+        }
+        bool isConOp() const
+        {
+            return conOp;
+        }
+        void setConOp(bool isCon)
+        {
+            conOp = isCon;
+        }
+        Operand& getBasicOp()
+        {
+            return basicOp;
+        }
+        void setBasicOp(Operand op)
+        {
+            basicOp = op;
+        }
+        const std::string &getCondition() const
+        {
+            return condition;
+        }
+        void setCondition(const std::string &cond)
+        {
+            condition = cond;
+        }
+        std::vector<Operand>& getTrueBranchOperands()
+        {
+            return trueBranch_operands;
+        }
+        void setTrueBranchOperands(std::vector<Operand> tbo)
+        {
+            trueBranch_operands = tbo;
+        }
+        std::vector<Operand>& getFalseBranchOperands()
+        {
+            return falseBranch_operands;
+        }
+        void setFalseBranchOperands(std::vector<Operand> fbo)
+        {
+            falseBranch_operands = fbo;
+        }
+        const std::string &getCalleeName() const
+        {
+            return callee_name;
+        }
+        void setCalleeName(const std::string &name)
+        {
+            callee_name = name;
+        }
+        const std::string &getCalleeReturn() const
+        {
+            return callee_return;
+        }
+        void setCalleeReturn(const std::string &ret)
+        {
+            callee_return = ret;
+        }
+        const std::string &getCalleeArguments() const
+        {
+            return callee_arguments;
+        }
+        void setCalleeArguments(const std::string &args)
+        {
+            callee_arguments = args;
+        }
+        std::vector<Operand>& getCalleeOperands()
+        {
+            return callee_operands;
+        }
+        void setCalleeOperands(std::vector<Operand> ops)
+        {
+            callee_operands = ops;
+        }
+    private:
+        bool callOp = false;
+        bool conOp = false;
+        Operand basicOp;
+        std::string condition;
+        std::vector<Operand> trueBranch_operands;
+        std::vector<Operand> falseBranch_operands;
+        std::string callee_name;
+        std::string callee_return;
+        std::string callee_arguments;
+        std::vector<Operand> callee_operands;
+    };
+
+    class ExtFunctionOps
+    {
+    public:
+        ExtFunctionOps() {};
+        ExtFunctionOps(const std::string &name, std::vector<ExtOperation> ops) : extFunName(name), extOperations(ops) {};
+        const std::string &getExtFunName() const
+        {
+            return extFunName;
+        }
+        void setExtFunName(const std::string &name)
+        {
+            extFunName = name;
+        }
+        std::vector<ExtOperation>& getOperations()
+        {
+            return extOperations;
+        }
+        void setOperations(std::vector<ExtOperation> ops)
+        {
+            extOperations = ops;
+        }
+        u32_t getCallStmtNum()
+        {
+            return callStmtNum;
+        }
+        void setCallStmtNum(u32_t num)
+        {
+            callStmtNum = num;
+        }
+    private:
+        std::string extFunName;
+        std::vector<ExtOperation> extOperations;
+        u32_t callStmtNum = 0;
+    };
+
+private:
+    // Map an external function to its operations
+    std::map<std::string, ExtFunctionOps> extFunToOps;
+
+public:
+
     static ExtAPI *getExtAPI(const std::string& = "");
 
     static void destory();
@@ -291,7 +480,8 @@ public:
     cJSON *get_FunJson(const std::string &funName);
 
     // Get all operations of an extern function
-    std::vector<Operation> getAllOperations(std::string funName);
+    Operand getBasicOperation(cJSON* obj);
+    ExtFunctionOps getExtFunctionOps(std::string funName);
 
     // Get property of the operation, e.g. "EFT_A1R_A0R"
     extType get_type(const SVF::SVFFunction *callee);

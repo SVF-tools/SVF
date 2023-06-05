@@ -218,6 +218,10 @@ public:
     {
         return name;
     }
+    inline virtual void setName(const std::string& valueName)
+    {
+        name = valueName;
+    }
 
     inline virtual const SVFType* getType() const
     {
@@ -266,6 +270,7 @@ class SVFFunction : public SVFValue
     friend class LLVMModuleSet;
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class SVFIRBuilder;
 
 public:
     typedef std::vector<const SVFBasicBlock*>::const_iterator const_iterator;
@@ -482,6 +487,7 @@ class SVFBasicBlock : public SVFValue
     friend class LLVMModuleSet;
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class SVFIRBuilder;
 
 public:
     typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
@@ -650,6 +656,7 @@ class SVFCallInst : public SVFInstruction
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class LLVMModuleSet;
+    friend class SVFIRBuilder;
 
 private:
     std::vector<const SVFValue*> args;
