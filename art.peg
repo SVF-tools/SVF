@@ -1,0 +1,10 @@
+0	1	copy
+1	0	copybar
+0	2	copy
+2	0	copybar
+0	3	copy
+3	0	copybar
+0	4	copy
+4	0	copybar
+6	7	gep_0
+7	6	gep_0

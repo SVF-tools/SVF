@@ -44,7 +44,8 @@ namespace SVF
 class CFLGraphBuilder
 {
 protected:
-    /// Define Kind and Symbol as types derived from CFLGrammar
+    /// Define Kind(Not contain attribute) and Symbol(May contain attribute) as types derived from CFLGrammar
+    /// to numerically represent label
     typedef CFLGrammar::Kind Kind;
     typedef CFLGrammar::Symbol Symbol;
 
@@ -54,14 +55,20 @@ protected:
 
     /// Map to maintain attributes associated with each kind
     Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kindToAttrsMap;
-    
-    bool externMap;
-    Kind current;
 
-public:
+    Kind current;
+    CFLGraph *cflGraph;
+
     /// Method to add an attribute to a specific kind
     void addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute);
 
+    /// build label and kind connect from the grammar
+    void buildlabelToKindMap(GrammarBase *grammar);
+
+    /// add src and dst node from file
+    CFLNode* addGNode(u32_t NodeID);
+    
+public:
     /// Method to build a CFL graph by copying nodes and edges from any graph 
     /// inherited from GenericGraph
     template<class N, class E>
@@ -88,7 +95,6 @@ public:
     CFLGraph* buildBigraph(GenericGraph<N,E>* graph, Kind startKind, GrammarBase *grammar)
     {
         CFLGraph *cflGraph = new CFLGraph(startKind);
-        externMap = true;
         for(auto pairV : grammar->getTerminals())
         {
             if(labelToKindMap.find(pairV.first) == labelToKindMap.end())

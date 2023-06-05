@@ -45,119 +45,9 @@ void CFLGraphBuilder::addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute 
     }
 }
 
-
-//// Build graph from text file
-CFLGraph* CFLGraphBuilder::buildFromTextFile(std::string fileName, GrammarBase *grammar)
+/// build label and kind connect from the grammar
+void CFLGraphBuilder::buildlabelToKindMap(GrammarBase *grammar)
 {
-    CFLGraph *cflGraph = new CFLGraph(grammar->getStartKind());
-    externMap = true;
-        for(auto pairV : grammar->getTerminals())
-    {
-        if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
-        {
-            labelToKindMap.insert(pairV);
-        }
-        if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
-        {
-            kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-
-    for(auto pairV : grammar->getNonterminals())
-    {
-        if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
-        {
-            labelToKindMap.insert(pairV);
-        }
-        if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
-        {
-            kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-
-    std::cout << "Building CFL Graph from dot file: " << fileName << "..\n";
-    std::string lineString;
-    std::ifstream inputFile(fileName);
-
-    if (!inputFile.is_open()) {
-        SVFUtil::errs()  << "Error opening " << fileName << std::endl;
-        abort();
-    }
-
-    std::string line;
-    u32_t lineNum = 0 ;
-    while (getline(inputFile, line)) {
-        std::vector<std::string> vec = SVFUtil::split(line, '\t');
-        if (vec.empty())
-            continue;
-        lineNum += 1;
-        NodeID srcID = std::stoi(vec[0]);
-        NodeID dstID = std::stoi(vec[1]);
-        CFLNode *src, *dst;
-        std::string lblString = vec[2];
-
-        if (cflGraph->hasGNode(srcID)==false)
-            {
-                src = new CFLNode(srcID);
-                cflGraph->addCFLNode(src->getId(), src);
-            }
-            else
-            {
-                src = cflGraph->getGNode(srcID);
-            }
-            if (cflGraph->hasGNode(dstID)==false)
-            {
-                dst = new CFLNode(dstID);
-                cflGraph->addCFLNode(dst->getId(), dst);
-            }
-            else
-            {
-                dst = cflGraph->getGNode(dstID);
-            }
-            if (externMap == false)
-            {
-                if (labelToKindMap.find(lblString) != labelToKindMap.end())
-                {
-                    cflGraph->addCFLEdge(src, dst, labelToKindMap[lblString]);
-                }
-                else
-                {
-                    labelToKindMap.insert({lblString, current++});
-                    cflGraph->addCFLEdge(src, dst, labelToKindMap[lblString]);
-                }
-            }
-            else
-            {
-                if (labelToKindMap.find(lblString) != labelToKindMap.end())
-                {
-                    cflGraph->addCFLEdge(src, dst, labelToKindMap[lblString]);
-                }
-                else
-                {
-                    if(Options::FlexSymMap() == true)
-                    {
-                        labelToKindMap.insert({lblString, current++});
-                        cflGraph->addCFLEdge(src, dst, labelToKindMap[lblString]);
-                    }
-                    else
-                    {
-                        std::string msg = "In line " + std::to_string(lineNum) + " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
-                        SVFUtil::errMsg(msg);
-                        std::cout << msg;
-                        abort();
-                    }
-                }
-            }
-        }
-
-    inputFile.close();
-    return cflGraph;
-}
-
-CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *grammar)
-{
-    CFLGraph *cflGraph = new CFLGraph(grammar->getStartKind());
-    externMap = true;
     for(auto pairV : grammar->getTerminals())
     {
         if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
@@ -180,14 +70,87 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
         {
             kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
         }
-    }
+    } 
+}
 
-    std::cout << "Building CFL Graph from dot file: " << fileName << "..\n";
+/// add src and dst node from file
+CFLNode* CFLGraphBuilder::addGNode(u32_t NodeID)
+{
+    CFLNode* cflNode;
+    if (cflGraph->hasGNode(NodeID)==false)
+    {
+        cflNode = new CFLNode(NodeID);
+        cflGraph->addCFLNode(NodeID, cflNode);
+    }
+    else
+    {
+        cflNode = cflGraph->getGNode(NodeID);
+    }
+    return cflNode;
+}
+
+
+//// Build graph from text file
+CFLGraph* CFLGraphBuilder::buildFromTextFile(std::string fileName, GrammarBase *grammar)
+{
+    buildlabelToKindMap(grammar);
+    cflGraph = new CFLGraph(grammar->getStartKind());
+
+    std::cout << "Building CFL Graph from text file: " << fileName << "..\n";
     std::string lineString;
     std::ifstream inputFile(fileName);
 
-    std::regex reg("Node(\\w+)\\s*->\\s*Node(\\w+)\\s*\\[.*label=(.*)\\]");
+    if (!inputFile.is_open()) {
+        SVFUtil::errs()  << "Error opening " << fileName << std::endl;
+        abort();
+    }
 
+    std::string line;
+    current = labelToKindMap.size();
+    u32_t lineNum = 0 ;
+
+    while (getline(inputFile, line)) {
+        std::vector<std::string> vec = SVFUtil::split(line, '\t');
+        if (vec.empty())
+            continue;
+        lineNum += 1;
+        NodeID srcID = std::stoi(vec[0]);
+        NodeID dstID = std::stoi(vec[1]);
+        CFLNode *src = addGNode(srcID);
+        CFLNode *dst = addGNode(dstID); 
+        std::string label = vec[2];
+        if (labelToKindMap.find(label) != labelToKindMap.end())
+            cflGraph->addCFLEdge(src, dst, labelToKindMap[label]);
+        else
+        {
+            if(Options::FlexSymMap() == true)
+            {
+                labelToKindMap.insert({label, current++});
+                cflGraph->addCFLEdge(src, dst, labelToKindMap[label]);
+            }
+            else
+            {
+                std::string msg = "In line " + std::to_string(lineNum) + 
+                                " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
+                SVFUtil::errMsg(msg);
+                std::cout << msg;
+                abort();
+            }
+        }
+    }
+
+    inputFile.close();
+    return cflGraph;
+}
+
+CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *grammar)
+{
+    buildlabelToKindMap(grammar);
+    cflGraph = new CFLGraph(grammar->getStartKind());
+    std::string lineString;
+    std::ifstream inputFile(fileName);
+    std::cout << "Building CFL Graph from dot file: " << fileName << "..\n";
+    std::regex reg("Node(\\w+)\\s*->\\s*Node(\\w+)\\s*\\[.*label=(.*)\\]");
     std::cout << std::boolalpha;
     u32_t lineNum = 0 ;
     current = labelToKindMap.size();
@@ -198,57 +161,27 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
         std::smatch matches;
         if (std::regex_search(lineString, matches, reg))
         {
-            CFLNode *src, *dst;
-            if (cflGraph->hasGNode(std::stoul(matches.str(1), nullptr, 16))==false)
-            {
-                src = new CFLNode(std::stoul(matches.str(1), nullptr, 16));
-                cflGraph->addCFLNode(src->getId(), src);
-            }
+            u32_t srcID = std::stoul(matches.str(1), nullptr, 16);
+            u32_t dstID = std::stoul(matches.str(2), nullptr, 16);
+            std::string label = matches.str(3);
+            CFLNode *src = addGNode(srcID);
+            CFLNode *dst = addGNode(dstID); 
+            if (labelToKindMap.find(label) != labelToKindMap.end())
+                cflGraph->addCFLEdge(src, dst, labelToKindMap[label]);
             else
             {
-                src = cflGraph->getGNode(std::stoul(matches.str(1), nullptr, 16));
-            }
-            if (cflGraph->hasGNode(std::stoul(matches.str(2), nullptr, 16))==false)
-            {
-                dst = new CFLNode(std::stoul(matches.str(2), nullptr, 16));
-                cflGraph->addCFLNode(dst->getId(), dst);
-            }
-            else
-            {
-                dst = cflGraph->getGNode(std::stoul(matches.str(2), nullptr, 16));
-            }
-            if (externMap == false)
-            {
-                if (labelToKindMap.find(matches.str(3)) != labelToKindMap.end())
+                if(Options::FlexSymMap() == true)
                 {
-                    cflGraph->addCFLEdge(src, dst, labelToKindMap[matches.str(3)]);
+                    labelToKindMap.insert({label, current++});
+                    cflGraph->addCFLEdge(src, dst, labelToKindMap[label]);
                 }
                 else
                 {
-                    labelToKindMap.insert({matches.str(3), current++});
-                    cflGraph->addCFLEdge(src, dst, labelToKindMap[matches.str(3)]);
-                }
-            }
-            else
-            {
-                if (labelToKindMap.find(matches.str(3)) != labelToKindMap.end())
-                {
-                    cflGraph->addCFLEdge(src, dst, labelToKindMap[matches.str(3)]);
-                }
-                else
-                {
-                    if(Options::FlexSymMap() == true)
-                    {
-                        labelToKindMap.insert({matches.str(3), current++});
-                        cflGraph->addCFLEdge(src, dst, labelToKindMap[matches.str(3)]);
-                    }
-                    else
-                    {
-                        std::string msg = "In line " + std::to_string(lineNum) + " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
-                        SVFUtil::errMsg(msg);
-                        std::cout << msg;
-                        abort();
-                    }
+                    std::string msg = "In line " + std::to_string(lineNum) + 
+                                    " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
+                    SVFUtil::errMsg(msg);
+                    std::cout << msg;
+                    abort();
                 }
             }
         }
@@ -259,30 +192,9 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
 
 CFLGraph* AliasCFLGraphBuilder::buildBigraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar)
 {
-    CFLGraph *cflGraph = new CFLGraph(startKind);
-    externMap = true;
-    for(auto pairV : grammar->getTerminals())
-    {
-        if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
-        {
-            labelToKindMap.insert(pairV);
-        }
-        if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
-        {
-            kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-    for(auto pairV : grammar->getNonterminals())
-    {
-        if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
-        {
-            labelToKindMap.insert(pairV);
-        }
-        if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
-        {
-            kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
+    cflGraph = new CFLGraph(startKind);
+
+    buildlabelToKindMap(grammar);
     for(auto it = graph->begin(); it!= graph->end(); it++)
     {
         CFLNode* node = new CFLNode((*it).first);
@@ -322,30 +234,9 @@ CFLGraph* AliasCFLGraphBuilder::buildBigraph(ConstraintGraph *graph, Kind startK
 
 CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar, SVFIR* pag)
 {
-    CFLGraph *cflGraph = new CFLGraph(startKind);
-    externMap = true;
-    for(auto pairV : grammar->getTerminals())
-    {
-        if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
-        {
-            labelToKindMap.insert(pairV);
-        }
-        if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
-        {
-            kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-    for(auto pairV : grammar->getNonterminals())
-    {
-        if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
-        {
-            labelToKindMap.insert(pairV);
-        }
-        if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
-        {
-            kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
+    cflGraph = new CFLGraph(startKind);
+
+    buildlabelToKindMap(grammar);
     for(auto it = graph->begin(); it!= graph->end(); it++)
     {
         CFLNode* node = new CFLNode((*it).first);
@@ -502,30 +393,9 @@ void AliasCFLGraphBuilder::addBiGepCFLEdge(CFLGraph *cflGraph,  ConstraintNode* 
 
 CFLGraph* VFCFLGraphBuilder::buildBigraph(SVFG *graph, Kind startKind, GrammarBase *grammar)
 {
-    CFLGraph *cflGraph = new CFLGraph(startKind);
-    externMap = true;
-    for(auto pairV : grammar->getTerminals())
-    {
-        if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
-        {
-            labelToKindMap.insert(pairV);
-        }
-        if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
-        {
-            kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-    for(auto pairV : grammar->getNonterminals())
-    {
-        if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
-        {
-            labelToKindMap.insert(pairV);
-        }
-        if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
-        {
-            kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
+    cflGraph = new CFLGraph(startKind);
+
+    buildlabelToKindMap(grammar);
     for(auto it = graph->begin(); it!= graph->end(); it++)
     {
         CFLNode* node = new CFLNode((*it).first);

@@ -90,9 +90,15 @@ void CFLBase::buildCFLGraph()
             graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
         delete consCG;
     }
-    else
-        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph(), grammarBase);
-
+    else 
+    {
+        std::string fileName = Options::CFLGraph();
+        bool dotfile = (fileName.rfind(".dot") == fileName.length() - std::string("dot").length());
+        if (dotfile)
+            graph = cflGraphBuilder.buildFromDot(Options::CFLGraph(), grammarBase);
+        else
+            graph = cflGraphBuilder.buildFromTextFile(Options::CFLGraph(), grammarBase);
+    }
     // Check CFL Graph and Grammar are accordance with grammar
     CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
     cflChecker.check(grammarBase, &cflGraphBuilder, graph);
