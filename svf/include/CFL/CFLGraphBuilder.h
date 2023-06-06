@@ -37,9 +37,9 @@
 namespace SVF
 {
 
-/*!
- * Class for building a context-free language (CFL) graph from memory graph or dot form
-
+/**
+ * CFLGraphBuilder class is responsible for building CFL (Context-Free Language) graphs
+ * from text files or dot files or from memory graph.
  */
 class CFLGraphBuilder
 {
