@@ -583,13 +583,12 @@ void SVFIRBuilder::handleExtCall(const SVFInstruction* svfInst, const SVFFunctio
     {
         if (isExtCall(svfCallee))
         {
-            std::string funName = ExtAPI::getExtAPI()->get_name(svfCallee);
-            ExtAPI::ExtFunctionOps extFunctionOps = ExtAPI::getExtAPI()->getExtFunctionOps(funName);
+            ExtAPI::ExtFunctionOps extFunctionOps = ExtAPI::getExtAPI()->getExtFunctionOps(svfCallee);
             if (extFunctionOps.getOperations().size() == 0)
             {
                 std::string str;
                 std::stringstream rawstr(str);
-                rawstr << "function " << funName << " not in the external function summary ExtAPI.json file";
+                rawstr << "function " << svfCallee->getName() << " not in the external function summary ExtAPI.json file";
                 writeWrnMsg(rawstr.str());
             }
             else

@@ -481,7 +481,7 @@ public:
 
     // Get all operations of an extern function
     Operand getBasicOperation(cJSON* obj);
-    ExtFunctionOps getExtFunctionOps(std::string funName);
+    ExtFunctionOps getExtFunctionOps(const SVFFunction* extFunction);
 
     // Get property of the operation, e.g. "EFT_A1R_A0R"
     extType get_type(const SVF::SVFFunction *callee);

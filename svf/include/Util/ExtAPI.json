@@ -1401,7 +1401,7 @@
     },
     "llvm.va_start":    {
         "return":  "void",
-        "arguments":  "(ptr)",
+        "arguments":  "(i8*)",
         "type": "EFT_NOOP",
         "overwrite_app_function": 1
     },
@@ -3346,8 +3346,8 @@
 		}
     },
     "__sysv_signal":    {
-        "return":  "__sighandler_t",
-        "arguments":  "(int, __sighandler_t)",
+        "return":  "void (i32)*",
+        "arguments":  "(i32, void (i32)*)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -3356,8 +3356,8 @@
 		}
     },
     "signal":   {
-        "return":  "sighandler_t",
-        "arguments":  "(int, sighandler_t)",
+        "return":  "void (i32)*",
+        "arguments":  "(i32, void (i32)*)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
@@ -5009,7 +5009,7 @@
     },
     "llvm.memset.p0i8.i64": {
         "return":  "void",
-        "arguments":  "(i8*, i8, i64, i32, i1)",
+        "arguments":  "(i8*, i8, i64, i1)",
         "type": "EFT_L_A0__A0R_A1",
         "overwrite_app_function": 0,
         "memset_like":  {
@@ -5061,7 +5061,7 @@
     },
     "llvm.memcpy.p0i8.p0i8.i64":    {
         "return":  "void",
-        "arguments":  "(i8*, *i8, i64, i32, i1)",
+        "arguments":  "(i8*, i8*, i64, i1)",
         "type": "EFT_L_A0__A0R_A1R",
         "overwrite_app_function": 0,
         "memcpy_like":  {
@@ -5585,7 +5585,7 @@
     },
     "_ZNSt8__detail15_List_node_base7_M_hookEPS0_":{
         "return":  "void",
-        "arguments":  "(std::__detail::_List_node_base*)",
+        "arguments":  "(struct.std::__detail::_List_node_base*, struct.std::__detail::_List_node_base*)",
         "type": "EFT_STD_LIST_HOOK",
         "overwrite_app_function": 0,
         "StoreStmt": {
