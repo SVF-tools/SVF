@@ -389,15 +389,19 @@ ExtAPI::Operand ExtAPI::getBasicOperation(cJSON* obj)
 }
 
 // Get all operations of an extern function
-ExtAPI::ExtFunctionOps ExtAPI::getExtFunctionOps(std::string funName)
+ExtAPI::ExtFunctionOps ExtAPI::getExtFunctionOps(const SVFFunction* extFunction)
 {
-    auto it = extFunToOps.find(funName);
+    ExtAPI::ExtFunctionOps extFunctionOps;
+    extFunctionOps.setExtFunName(extFunction->getName());
+    if (!is_sameSignature(extFunction))
+        return extFunctionOps;
+    
+    auto it = extFunToOps.find(extFunction->getName());
     if (it != extFunToOps.end())
         return it->second;
 
-    ExtAPI::ExtFunctionOps extFunctionOps;
-    extFunctionOps.setExtFunName(funName);
-    cJSON* item = get_FunJson(funName);
+    extFunctionOps.setExtFunName(extFunction->getName());
+    cJSON* item = get_FunJson(extFunction->getName());
     if (item != nullptr)
     {
         cJSON* obj = item->child;
@@ -456,7 +460,7 @@ ExtAPI::ExtFunctionOps ExtAPI::getExtFunctionOps(std::string funName)
             extFunctionOps.getOperations().push_back(operation);
         }
     }
-    extFunToOps[funName] = extFunctionOps;
+    extFunToOps[extFunction->getName()] = extFunctionOps;
     return extFunctionOps;
 }
 
@@ -649,7 +653,8 @@ bool ExtAPI::is_sameSignature(const SVFFunction* F)
                     argNum++;
         }
     }
-    if (F->arg_size() != argNum) // The number of arguments is different
+    
+    if ( !F->isVarArg() && F->arg_size() != argNum) // The number of arguments is different
         return false;
     // Is the return type the same?
     return F->getReturnType()->isPointerTy() == isPointer;
