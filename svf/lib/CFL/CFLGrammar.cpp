@@ -42,9 +42,9 @@ void GrammarBase::setRawProductions(SymbolMap<Symbol, Productions>& rawProductio
     this->rawProductions = rawProductions;
 }
 
-void GrammarBase::setKind2AttrsMap(const Map<Kind,  Set<Attribute>>& kind2AttrsMap)
+void GrammarBase::setKindToAttrsMap(const Map<Kind,  Set<Attribute>>& kindToAttrsMap)
 {
-    this->kind2AttrsMap = kind2AttrsMap;
+    this->kindToAttrsMap = kindToAttrsMap;
 }
 
 void GrammarBase::setAttributeKinds(const Set<Kind>& attributeKinds)
@@ -52,7 +52,7 @@ void GrammarBase::setAttributeKinds(const Set<Kind>& attributeKinds)
     this->attributeKinds = attributeKinds;
 }
 
-GrammarBase::Kind GrammarBase::str2Kind(std::string str) const
+GrammarBase::Kind GrammarBase::strToKind(std::string str) const
 {
 
     auto tit = terminals.find(str);
@@ -71,12 +71,12 @@ GrammarBase::Kind GrammarBase::str2Kind(std::string str) const
     abort();
 }
 
-GrammarBase::Symbol GrammarBase::str2Symbol(const std::string str) const
+GrammarBase::Symbol GrammarBase::strToSymbol(const std::string str) const
 {
     Symbol symbol;
     std::string attributeStr = extractAttributeStrFromSymbolStr(str);
     std::string kindStr = extractKindStrFromSymbolStr(str);
-    symbol.kind = str2Kind(kindStr);
+    symbol.kind = strToKind(kindStr);
 
     if ( attributeStr == "") return symbol;
 
@@ -100,7 +100,7 @@ GrammarBase::Symbol GrammarBase::str2Symbol(const std::string str) const
     return symbol;
 }
 
-std::string GrammarBase::kind2Str(Kind kind) const
+std::string GrammarBase::kindToStr(Kind kind) const
 {
 
     std::string key = "";
@@ -136,7 +136,7 @@ std::string GrammarBase::kind2Str(Kind kind) const
     return "";
 }
 
-std::string GrammarBase::sym2StrDump(Symbol sym) const
+std::string GrammarBase::symToStrDump(Symbol sym) const
 {
     Kind kind = sym.kind;
     Attribute attribute = sym.attribute;
@@ -184,7 +184,7 @@ GrammarBase::Kind GrammarBase::insertTerminalKind(std::string kindStr)
     }
     else
     {
-        kind = str2Kind(kindStr);
+        kind = strToKind(kindStr);
     }
     return kind;
 }
@@ -199,7 +199,7 @@ inline GrammarBase::Kind GrammarBase::insertNonterminalKind(std::string const ki
     }
     else
     {
-        kind = str2Kind(kindStr);
+        kind = strToKind(kindStr);
     }
     return kind;
 }
@@ -318,7 +318,7 @@ GrammarBase::Symbol GrammarBase::insertEBNFSigns(std::string symbolStr)
     }
     else
     {
-        sign = str2Kind(symbolStr);
+        sign = strToKind(symbolStr);
     }
     return sign;
 
@@ -327,14 +327,14 @@ GrammarBase::Symbol GrammarBase::insertEBNFSigns(std::string symbolStr)
 void GrammarBase::insertAttribute(Kind kind, Attribute attribute)
 {
     attributeKinds.insert(kind);
-    if (kind2AttrsMap.find(kind)!= kind2AttrsMap.end())
+    if (kindToAttrsMap.find(kind)!= kindToAttrsMap.end())
     {
-        kind2AttrsMap[kind].insert(attribute);
+        kindToAttrsMap[kind].insert(attribute);
     }
     else
     {
         Set<CFLGrammar::Attribute> attrs {attribute};
-        kind2AttrsMap.insert(make_pair(kind, attrs));
+        kindToAttrsMap.insert(make_pair(kind, attrs));
     }
 }
 
@@ -352,7 +352,7 @@ void CFLGrammar::dump(std::string fileName) const
 {
     std::ofstream gramFile(fileName);
     gramFile << "Start Kind:\n";
-    gramFile << '\t' << kind2Str(startKind) << '(' << startKind << ')' << ' ' << "\n\n";
+    gramFile << '\t' << kindToStr(startKind) << '(' << startKind << ')' << ' ' << "\n\n";
 
     gramFile << "Epsilon Production:\n";
     std::vector<std::string> strV;
@@ -365,7 +365,7 @@ void CFLGrammar::dump(std::string fileName) const
             {
                 ss << "-> ";
             }
-            ss << sym2StrDump(sym) << '(' << sym.kind << ')' << ' ';
+            ss << symToStrDump(sym) << '(' << sym.kind << ')' << ' ';
         }
         strV.insert(strV.begin(), ss.str());
     }
@@ -380,7 +380,7 @@ void CFLGrammar::dump(std::string fileName) const
 
     gramFile << "Single Production:\n";
     strV = {};
-    for (auto symProPair: singleRHS2Prods)
+    for (auto symProPair: singleRHSToProds)
     {
         for (auto pro: symProPair.second)
         {
@@ -393,7 +393,7 @@ void CFLGrammar::dump(std::string fileName) const
                 {
                     ss << "-> ";
                 }
-                ss << sym2StrDump(sym) << '(' << sym.kind << ')' << ' ';
+                ss << symToStrDump(sym) << '(' << sym.kind << ')' << ' ';
             }
             strV.insert(strV.begin(), ss.str());
         }
@@ -409,7 +409,7 @@ void CFLGrammar::dump(std::string fileName) const
 
     gramFile << "Binary Production:\n";
     strV = {};
-    for (auto symProPair: firstRHS2Prods)
+    for (auto symProPair: firstRHSToProds)
     {
         for (auto pro: symProPair.second)
         {
@@ -423,7 +423,7 @@ void CFLGrammar::dump(std::string fileName) const
                 {
                     ss << "-> ";
                 }
-                ss << sym2StrDump(sym) << '(' << sym.kind << ')' << ' ';
+                ss << symToStrDump(sym) << '(' << sym.kind << ')' << ' ';
             }
             strV.insert(strV.begin(), ss.str());
         }

@@ -61,6 +61,9 @@ public:
         delete grammarBase;
     }
 
+    /// Parameter Checking
+    virtual void checkParameter();
+
     /// Build Grammar from text file
     virtual void buildCFLGrammar();
 

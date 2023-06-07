@@ -869,6 +869,12 @@ const Option<bool> Options::POCRHybrid(
     false
 );
 
+const Option<bool> Options::Customized(
+    "customized",
+    "When explicit to true, user can use any grammar file.",
+    false
+);
+
 const Option<bool> Options::LoopAnalysis(
     "loop-analysis",
     "Analyze every func and get loop info and loop bounds.",
