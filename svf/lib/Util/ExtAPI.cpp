@@ -395,7 +395,7 @@ ExtAPI::ExtFunctionOps ExtAPI::getExtFunctionOps(const SVFFunction* extFunction)
     extFunctionOps.setExtFunName(extFunction->getName());
     if (!is_sameSignature(extFunction))
         return extFunctionOps;
-    
+
     auto it = extFunToOps.find(extFunction->getName());
     if (it != extFunToOps.end())
         return it->second;
@@ -653,7 +653,7 @@ bool ExtAPI::is_sameSignature(const SVFFunction* F)
                     argNum++;
         }
     }
-    
+
     if ( !F->isVarArg() && F->arg_size() != argNum) // The number of arguments is different
         return false;
     // Is the return type the same?
