@@ -80,7 +80,7 @@ private:
     ICFGNode2SVFStmtsMap icfgNode2PTASVFStmtsMap;	///< Map an ICFGNode to its PointerAnalysis related SVFStmts
     GepValueVarMap GepValObjMap;	///< Map a pair<base,off> to a gep value node id
     TypeLocSetsMap typeLocSetsMap;	///< Map an arg to its base SVFType* and all its field location sets
-    NodeLocationSetMap GepObjVarMap;	///< Map a pair<base,off> to a gep obj node id
+    NodeOffsetMap GepObjVarMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     SVFStmtSet globSVFStmtSet;	///< Global PAGEdges without control flow information
     PHINodeMap phiNodeMap;	///< A set of phi copy edges
@@ -129,7 +129,7 @@ public:
         return memToFieldsMap;
     }
     /// Return GepObjVarMap
-    inline NodeLocationSetMap& getGepObjNodeMap()
+    inline NodeOffsetMap& getGepObjNodeMap()
     {
         return GepObjVarMap;
     }
@@ -392,9 +392,9 @@ public:
     //@}
 
     /// Get a field SVFIR Object node according to base mem obj and offset
-    NodeID getGepObjVar(const MemObj* obj, const LocationSet& ls);
+    NodeID getGepObjVar(const MemObj* obj, const s32_t& ls);
     /// Get a field obj SVFIR node according to a mem obj and a given offset
-    NodeID getGepObjVar(NodeID id, const LocationSet& ls) ;
+    NodeID getGepObjVar(NodeID id, const s32_t& ls) ;
     /// Get a field-insensitive obj SVFIR node according to a mem obj
     //@{
     inline NodeID getFIObjVar(const MemObj* obj) const
@@ -559,7 +559,7 @@ private:
     /// Add a temp field value node, this method can only invoked by getGepValVar
     NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const LocationSet& ls, NodeID i, const SVFType* type);
     /// Add a field obj node, this method can only invoked by getGepObjVar
-    NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls);
+    NodeID addGepObjNode(const MemObj* obj, const s32_t& ls);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
     NodeID addFIObjNode(const MemObj* obj);
     //@}

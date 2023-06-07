@@ -165,7 +165,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, s32_t offset, NodeBS& strides, 
             // get gep objs
             for (s32_t _f : offsets)
             {
-                NodeID gepId = consCG->getGepObjVar(init, LocationSet(_f));
+                NodeID gepId = consCG->getGepObjVar(init, _f);
                 initials.erase(gepId);  // gep id in initials should be removed to avoid redundant derivation
                 expandPts.set(gepId);
             }

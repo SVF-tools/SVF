@@ -152,7 +152,7 @@ void SVFIR2ItvExeState::narrowVAddrs(IntervalExeState &lhs, const IntervalExeSta
     }
 }
 
-SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, u32_t offset)
+SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, s32_t offset)
 {
     assert(!getVAddrs(pointer).empty());
     VAddrs &addrs = getVAddrs(pointer);

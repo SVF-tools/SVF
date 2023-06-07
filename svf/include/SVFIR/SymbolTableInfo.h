@@ -333,7 +333,7 @@ public:
     virtual void dump();
 
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
+    virtual s32_t getModulusOffset(const MemObj* obj, const s32_t& ls);
 
     ///The struct type with the most fields
     const SVFType* maxStruct;
@@ -453,7 +453,7 @@ public:
     bool isConstDataOrConstGlobal() const;
     bool isConstDataOrAggData() const;
     bool hasPtrObj() const;
-    bool isNonPtrFieldObj(const LocationSet& ls) const;
+    bool isNonPtrFieldObj(const s32_t& ls) const;
     //@}
 
     /// Operator overloading
@@ -621,7 +621,7 @@ public:
     {
         return hasFlag(HASPTR_OBJ);
     }
-    virtual bool isNonPtrFieldObj(const LocationSet& ls);
+    virtual bool isNonPtrFieldObj(const s32_t& ls);
     //@}
 };
 

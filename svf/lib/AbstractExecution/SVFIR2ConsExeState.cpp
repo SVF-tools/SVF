@@ -579,7 +579,7 @@ void SVFIR2ConsExeState::translatePhi(const PhiStmt *phi)
  * @param offset
  * @return
  */
-SVFIR2ConsExeState::VAddrs SVFIR2ConsExeState::getGepObjAddress(u32_t base, u32_t offset)
+SVFIR2ConsExeState::VAddrs SVFIR2ConsExeState::getGepObjAddress(u32_t base, s32_t offset)
 {
     const VAddrs &addrs = _es->getVAddrs(base);
     VAddrs ret;

@@ -451,7 +451,7 @@ class GepObjVar: public ObjVar
     friend class SVFIRReader;
 
 private:
-    LocationSet ls;
+    s32_t ls = 0;
     NodeID base = 0;
 
     /// Constructor to create empty GepObjVar (for SVFIRReader/deserialization)
@@ -480,7 +480,7 @@ public:
     //@}
 
     /// Constructor
-    GepObjVar(const MemObj* mem, NodeID i, const LocationSet& l,
+    GepObjVar(const MemObj* mem, NodeID i, const s32_t& l,
               PNODEK ty = GepObjNode)
         : ObjVar(mem->getValue(), i, mem, ty), ls(l)
     {
@@ -488,15 +488,9 @@ public:
     }
 
     /// offset of the mem object
-    inline const LocationSet& getLocationSet() const
-    {
-        return ls;
-    }
-
-    /// offset of the mem object
     inline s32_t getConstantFieldIdx() const
     {
-        return ls.getConstantFieldIdx();
+        return ls;
     }
 
     /// Set the base object from which this GEP node came from.
@@ -514,15 +508,15 @@ public:
     /// Return the type of this gep object
     inline virtual const SVFType* getType() const
     {
-        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(mem->getType(), ls.getConstantFieldIdx());
+        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(mem->getType(), ls);
     }
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
         if (value)
-            return value->getName() + "_" + std::to_string(ls.getConstantFieldIdx());
-        return "offset_" + std::to_string(ls.getConstantFieldIdx());
+            return value->getName() + "_" + std::to_string(ls);
+        return "offset_" + std::to_string(ls);
     }
 
     virtual const std::string toString() const;

@@ -366,7 +366,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
         NodeID base;
         size_t offset;
         ss >> id >> base >> offset;
-        NodeID n = pag->getGepObjVar(base, LocationSet(offset));
+        NodeID n = pag->getGepObjVar(base, offset);
         bool matched = (id == n);
         (void)matched;
         assert(matched && "Error adding GepObjNode into SVFIR!");
@@ -480,7 +480,7 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
 void BVDataPTAImpl::normalizePointsTo()
 {
     SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    SVFIR::NodeLocationSetMap &GepObjVarMap = pag->getGepObjNodeMap();
+    SVFIR::NodeOffsetMap &GepObjVarMap = pag->getGepObjNodeMap();
 
     // collect each gep node whose base node has been set as field-insensitive
     NodeBS dropNodes;
@@ -525,7 +525,7 @@ void BVDataPTAImpl::normalizePointsTo()
     {
         NodeID base = pag->getBaseObjVar(n);
         GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
-        const LocationSet ls = gepNode->getLocationSet();
+        const s32_t ls = gepNode->getConstantFieldIdx();
         GepObjVarMap.erase(std::make_pair(base, ls));
         memToFieldsMap[base].reset(n);
 

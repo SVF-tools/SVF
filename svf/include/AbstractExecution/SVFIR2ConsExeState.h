@@ -89,7 +89,7 @@ public:
     //%}
 
     /// Return the expr of gep object given a base and offset
-    VAddrs getGepObjAddress(u32_t base, u32_t offset);
+    VAddrs getGepObjAddress(u32_t base, s32_t offset);
 
     /// Return the offset expression of a GepStmt
     std::pair<s32_t, s32_t> getGepOffset(const GepStmt *gep);
