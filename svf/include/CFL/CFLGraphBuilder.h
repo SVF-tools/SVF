@@ -37,27 +37,40 @@
 namespace SVF
 {
 
-/*!
- * Build CFLGraph from memory graph or dot form
-
+/**
+ * CFLGraphBuilder class is responsible for building CFL (Context-Free Language) graphs
+ * from text files or dot files or from memory graph.
  */
-
 class CFLGraphBuilder
 {
 protected:
+    /// Define Kind(Not contain attribute) and Symbol(May contain attribute) as types derived from CFLGrammar
+    /// to numerically represent label
     typedef CFLGrammar::Kind Kind;
     typedef CFLGrammar::Symbol Symbol;
-    Map<std::string, Kind> label2KindMap;
-    Map<Kind, std::string> kind2LabelMap;
-    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kind2AttrsMap;
-    bool externMap;
-    Kind current;
 
-public:
-    /// add attribute to kind2Attribute Map
+    /// Maps to maintain mapping between labels and kinds
+    Map<std::string, Kind> labelToKindMap;
+    Map<Kind, std::string> kindToLabelMap;
+
+    /// Map to maintain attributes associated with each kind
+    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>> kindToAttrsMap;
+
+    Kind current;
+    CFLGraph *cflGraph;
+
+    /// Method to add an attribute to a specific kind
     void addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute);
 
-    /// Build graph by copying nodes and edges from any graph inherited from GenericGraph
+    /// build label and kind connect from the grammar
+    void buildlabelToKindMap(GrammarBase *grammar);
+
+    /// add src and dst node from file
+    CFLNode* addGNode(u32_t NodeID);
+
+public:
+    /// Method to build a CFL graph by copying nodes and edges from any graph
+    /// inherited from GenericGraph
     template<class N, class E>
     void build(GenericGraph<N,E>* graph, CFLGraph* cflGraph)
     {
@@ -76,32 +89,32 @@ public:
         }
     }
 
-    /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
+    /// Method to build a bidirectional CFL graph by copying nodes and edges
+    /// from any graph inherited from GenericGraph
     template<class N, class E>
     CFLGraph* buildBigraph(GenericGraph<N,E>* graph, Kind startKind, GrammarBase *grammar)
     {
         CFLGraph *cflGraph = new CFLGraph(startKind);
-        externMap = true;
         for(auto pairV : grammar->getTerminals())
         {
-            if(label2KindMap.find(pairV.first) == label2KindMap.end())
+            if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
             {
-                label2KindMap.insert(pairV);
+                labelToKindMap.insert(pairV);
             }
-            if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+            if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
             {
-                kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+                kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
             }
         }
         for(auto pairV : grammar->getNonterminals())
         {
-            if(label2KindMap.find(pairV.first) == label2KindMap.end())
+            if(labelToKindMap.find(pairV.first) == labelToKindMap.end())
             {
-                label2KindMap.insert(pairV);
+                labelToKindMap.insert(pairV);
             }
-            if(kind2LabelMap.find(pairV.second) == kind2LabelMap.end())
+            if(kindToLabelMap.find(pairV.second) == kindToLabelMap.end())
             {
-                kind2LabelMap.insert(make_pair(pairV.second, pairV.first));
+                kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
             }
         }
         for(auto it = graph->begin(); it!= graph->end(); it++)
@@ -116,77 +129,88 @@ public:
             {
                 CFLGrammar::Kind edgeLabel = edge->getEdgeKind();
                 cflGraph->addCFLEdge(cflGraph->getGNode(edge->getSrcID()), cflGraph->getGNode(edge->getDstID()), edgeLabel);
-                std::string key = kind2LabelMap[edge->getEdgeKind()];
+                std::string key = kindToLabelMap[edge->getEdgeKind()];
                 key.append("bar");
-                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), label2KindMap[key]);
+                cflGraph->addCFLEdge(cflGraph->getGNode(edge->getDstID()), cflGraph->getGNode(edge->getSrcID()), labelToKindMap[key]);
             }
         }
         return cflGraph;
     }
 
-    /// Build graph from file
-    void build(std::string filename, CFLGraph* cflGraph);
-
-    /// Build graph from Dot
+    /// Method to build a CFL graph from a Dot file
     CFLGraph *buildFromDot(std::string filename, GrammarBase *grammar);
 
-    Map<std::string, Kind>& getLabel2KindMap()
+    /// Method to build a CFL graph from a Text file
+    CFLGraph* buildFromTextFile(std::string fileName, GrammarBase *grammar);
+
+    /// @{
+    /// Getter methods for accessing class variables
+
+    /// Returns a reference to the map that associates string labels with their corresponding Kind
+    Map<std::string, Kind>& getLabelToKindMap()
     {
-        return this->label2KindMap;
+        return this->labelToKindMap;
     }
 
-    Map<Kind, std::string>& getKind2LabelMap()
+    /// Returns a reference to the map that associates Kinds with their corresponding string labels
+    Map<Kind, std::string>& getKindToLabelMap()
     {
-        return this->kind2LabelMap;
+        return this->kindToLabelMap;
     }
 
-    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>>& getKind2AttrsMap()
+    /// Returns a reference to the map that associates Kinds with their corresponding attributes
+    Map<CFLGrammar::Kind,  Set<CFLGrammar::Attribute>>& getKindToAttrsMap()
     {
-        return this->kind2AttrsMap;
+        return this->kindToAttrsMap;
     }
 
-
+    /// @}
 };
 
+/// AliasCFLGraphBuilder: a CFLGraphBuilder specialized for handling aliasing
 class AliasCFLGraphBuilder : public CFLGraphBuilder
 {
 public:
-    /// Build Bidirectional graph by copying nodes and edges from const graph inherited from GenericGraph
+    /// Builds a bidirectional CFL graph by copying nodes and edges from a const graph that inherits from GenericGraph
     CFLGraph* buildBigraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar);
 
-    /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
-    /// And transfer Load Store to copy edge and address edge to construct PEG style CFG
+    /// Builds a bidirectional CFL graph by copying nodes and edges from any graph that inherits from GenericGraph
+    /// Transfers Load and Store to copy edge and address edge to construct PEG style CFLGraph
     CFLGraph* buildBiPEGgraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar, SVFIR* pag);
 
 private:
+    /// Connects VGep (Variable GEP)
     void connectVGep(CFLGraph *cflGraph,  ConstraintGraph *graph, ConstraintNode *src, ConstraintNode *dst, u32_t level, SVFIR* pag);
 
-    /// Handle edge except for the GEP
+    /// Handles edges, with the exception of the GEP
     void addBiCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFLGrammar::Kind label);
 
-    /// Add Bidirectional GEP edge with attribute
+    /// Adds bidirectional GEP edges with attributes
     void addBiGepCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFLGrammar::Attribute attri);
 };
 
+/// VFCFLGraphBuilder: a CFLGraphBuilder specialized for handling value-flow
 class VFCFLGraphBuilder : public CFLGraphBuilder
 {
 public:
-    /// Build Bidirectional graph by copying nodes and edges from const graph inherited from GenericGraph
+    /// Builds a bidirectional CFL graph by copying nodes and edges from a const graph that inherits from SVFG
     CFLGraph* buildBigraph(SVFG *graph, Kind startKind, GrammarBase *grammar);
 
-    /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
-    /// And transfer Load Store to copy edge and address edge to construct PEG style CFG
+    /// Builds a bidirectional CFL graph by copying nodes and edges from any graph that inherits from GenericGraph
+    /// Transfers Load and Store to copy edge and address edge to construct PEG style CFLGraph
     CFLGraph* buildBiPEGgraph(ConstraintGraph *graph, Kind startKind, GrammarBase *grammar, SVFIR* pag);
 
 private:
+    /// Connects VGep (Variable GEP)
     void connectVGep(CFLGraph *cflGraph,  ConstraintGraph *graph, ConstraintNode *src, ConstraintNode *dst, u32_t level, SVFIR* pag);
 
-    /// Handle edge except for the GEP
+    /// Handles edges, with the exception of the GEP
     void addBiCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFLGrammar::Kind label);
 
-    /// Add Bidirectional GEP edge with attribute
+    /// Adds bidirectional GEP edges with attributes
     void addBiGepCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFLGrammar::Attribute attri);
 };
+
 
 }// SVF
 

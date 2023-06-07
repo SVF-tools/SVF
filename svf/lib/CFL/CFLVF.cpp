@@ -55,6 +55,9 @@ void CFLVF::buildCFLGraph()
 
 void CFLVF::initialize()
 {
+    // Parameter Checking
+    checkParameter();
+
     // Build CFL Grammar
     buildCFLGrammar();
 
@@ -67,6 +70,21 @@ void CFLVF::initialize()
     // Initialize sovler
     solver = new CFLSolver(graph, grammar);
 }
+
+void CFLVF::checkParameter()
+{
+    // Check for valid grammar file before parsing other options
+    std::string filename = Options::GrammarFilename();
+    bool vfgfile = (filename.rfind("VFG.txt") == filename.length() - std::string("VFG.txt").length());
+    if (!Options::Customized()  && !vfgfile)
+    {
+        SVFUtil::errs() << "Invalid VFG grammar file: " << Options::GrammarFilename() << "\n"
+                        << "Please use a file that ends with 'VFG.txt', "
+                        << "or use the -customized flag to allow custom grammar files.\n";
+        assert(false && "grammar loading failed!");  // exit with error
+    }
+}
+
 
 void CFLVF::finalize()
 {

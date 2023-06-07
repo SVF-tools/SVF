@@ -215,17 +215,24 @@ inline CallSite getSVFCallSite(const SVFValue* value)
 }
 
 /// Split into two substrings around the first occurrence of a separator string.
-inline std::vector<std::string> split(const std::string& s, char seperator)
+inline std::vector<std::string> split(const std::string& s, char separator)
 {
     std::vector<std::string> output;
     std::string::size_type prev_pos = 0, pos = 0;
-    while((pos = s.find(seperator, pos)) != std::string::npos)
+    while ((pos = s.find(separator, pos)) != std::string::npos)
     {
-        std::string substring( s.substr(prev_pos, pos-prev_pos) );
-        output.push_back(substring);
+        std::string substring(s.substr(prev_pos, pos - prev_pos));
+        if (!substring.empty())
+        {
+            output.push_back(substring);
+        }
         prev_pos = ++pos;
     }
-    output.push_back(s.substr(prev_pos, pos-prev_pos));
+    std::string lastSubstring(s.substr(prev_pos, pos - prev_pos));
+    if (!lastSubstring.empty())
+    {
+        output.push_back(lastSubstring);
+    }
     return output;
 }
 

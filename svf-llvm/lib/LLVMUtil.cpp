@@ -682,6 +682,19 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
     return LLVMUtil::isConstDataOrAggData(val);
 }
 
+const ConstantStruct *LLVMUtil::getVtblStruct(const GlobalValue *vtbl)
+{
+    const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(vtbl->getOperand(0));
+    assert(vtblStruct && "Initializer of a vtable not a struct?");
+
+    if (vtblStruct->getNumOperands() == 2 &&
+            SVFUtil::isa<ConstantStruct>(vtblStruct->getOperand(0)) &&
+            vtblStruct->getOperand(1)->getType()->isArrayTy())
+        return SVFUtil::cast<ConstantStruct>(vtblStruct->getOperand(0));
+
+    return vtblStruct;
+}
+
 bool LLVMUtil::isValVtbl(const Value* val)
 {
     if (!SVFUtil::isa<GlobalVariable>(val))

@@ -409,6 +409,29 @@ void viewCFG(const Function* fun);
 // Dump Control Flow Graph of llvm function, without instructions
 void viewCFGOnly(const Function* fun);
 
+/*
+ * Get the vtable struct of a class.
+ *
+ * Given the class:
+ *
+ *   class A {
+ *     virtual ~A();
+ *   };
+ *   A::~A() = default;
+ *
+ *  The corresponding vtable @_ZTV1A is of type:
+ *
+ *    { [4 x i8*] }
+ *
+ *  If the program has been compiled with AddressSanitizer,
+ *  the vtable will have redzones and appear as:
+ *
+ *    { { [4 x i8*] }, [32 x i8] }
+ *
+ *  See https://github.com/SVF-tools/SVF/issues/1114 for more.
+ */
+const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
+
 bool isValVtbl(const Value* val);
 bool isLoadVtblInst(const LoadInst* loadInst);
 bool isVirtualCallSite(const CallBase* cs);

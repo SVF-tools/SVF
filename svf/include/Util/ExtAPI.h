@@ -224,7 +224,8 @@ private:
 
 public:
 
-    enum OperationType {
+    enum OperationType
+    {
         Addr,
         Copy,
         Load,
@@ -238,24 +239,65 @@ public:
         Other
     };
 
-    class Operand {
+    class Operand
+    {
     public:
-        OperationType getType() const { return opType; }
-        void setType(OperationType type) { 
-            opType = type; 
+        OperationType getType() const
+        {
+            return opType;
         }
-        const std::string &getSrcValue() const { return src; }
-        void setSrcValue(const std::string &value) { src = value; }
-        const std::string &getDstValue() const { return dst; }
-        void setDstValue(const std::string &value) { dst = value; }
-        NodeID getSrcID() const { return srcID; }
-        void setSrcID(NodeID id) { srcID = id; }
-        NodeID getDstID() const { return dstID; }
-        void setDstID(NodeID id) { dstID = id; }
-        const std::string &getOffsetOrSizeStr() const { return offsetOrSizeStr; }
-        void setOffsetOrSizeStr(const std::string &str) { offsetOrSizeStr = str; }
-        u32_t getOffsetOrSize() const { return offsetOrSize; }
-        void setOffsetOrSize(u32_t off) { offsetOrSize = off; }
+        void setType(OperationType type)
+        {
+            opType = type;
+        }
+        const std::string &getSrcValue() const
+        {
+            return src;
+        }
+        void setSrcValue(const std::string &value)
+        {
+            src = value;
+        }
+        const std::string &getDstValue() const
+        {
+            return dst;
+        }
+        void setDstValue(const std::string &value)
+        {
+            dst = value;
+        }
+        NodeID getSrcID() const
+        {
+            return srcID;
+        }
+        void setSrcID(NodeID id)
+        {
+            srcID = id;
+        }
+        NodeID getDstID() const
+        {
+            return dstID;
+        }
+        void setDstID(NodeID id)
+        {
+            dstID = id;
+        }
+        const std::string &getOffsetOrSizeStr() const
+        {
+            return offsetOrSizeStr;
+        }
+        void setOffsetOrSizeStr(const std::string &str)
+        {
+            offsetOrSizeStr = str;
+        }
+        u32_t getOffsetOrSize() const
+        {
+            return offsetOrSize;
+        }
+        void setOffsetOrSize(u32_t off)
+        {
+            offsetOrSize = off;
+        }
     private:
         OperationType opType; // 操作数类型
         std::string src; // 操作数值
@@ -266,28 +308,89 @@ public:
         u32_t offsetOrSize;
     };
 
-    class ExtOperation {
+    class ExtOperation
+    {
     public:
-        bool isCallOp() const { return callOp; }
-        void setCallOp(bool isCall) { callOp = isCall; }
-        bool isConOp() const { return conOp; }
-        void setConOp(bool isCon) { conOp = isCon; }
-        Operand& getBasicOp() { return basicOp; }
-        void setBasicOp(Operand op) { basicOp = op; }
-        const std::string &getCondition() const { return condition; }
-        void setCondition(const std::string &cond) { condition = cond; }
-        std::vector<Operand>& getTrueBranchOperands() { return trueBranch_operands; }
-        void setTrueBranchOperands(std::vector<Operand> tbo) { trueBranch_operands = tbo; }
-        std::vector<Operand>& getFalseBranchOperands() { return falseBranch_operands; }
-        void setFalseBranchOperands(std::vector<Operand> fbo) { falseBranch_operands = fbo; }
-        const std::string &getCalleeName() const { return callee_name; }
-        void setCalleeName(const std::string &name) { callee_name = name; }
-        const std::string &getCalleeReturn() const { return callee_return; }
-        void setCalleeReturn(const std::string &ret) { callee_return = ret; }
-        const std::string &getCalleeArguments() const { return callee_arguments; }
-        void setCalleeArguments(const std::string &args) { callee_arguments = args; }
-        std::vector<Operand>& getCalleeOperands() { return callee_operands; }
-        void setCalleeOperands(std::vector<Operand> ops) { callee_operands = ops; }
+        bool isCallOp() const
+        {
+            return callOp;
+        }
+        void setCallOp(bool isCall)
+        {
+            callOp = isCall;
+        }
+        bool isConOp() const
+        {
+            return conOp;
+        }
+        void setConOp(bool isCon)
+        {
+            conOp = isCon;
+        }
+        Operand& getBasicOp()
+        {
+            return basicOp;
+        }
+        void setBasicOp(Operand op)
+        {
+            basicOp = op;
+        }
+        const std::string &getCondition() const
+        {
+            return condition;
+        }
+        void setCondition(const std::string &cond)
+        {
+            condition = cond;
+        }
+        std::vector<Operand>& getTrueBranchOperands()
+        {
+            return trueBranch_operands;
+        }
+        void setTrueBranchOperands(std::vector<Operand> tbo)
+        {
+            trueBranch_operands = tbo;
+        }
+        std::vector<Operand>& getFalseBranchOperands()
+        {
+            return falseBranch_operands;
+        }
+        void setFalseBranchOperands(std::vector<Operand> fbo)
+        {
+            falseBranch_operands = fbo;
+        }
+        const std::string &getCalleeName() const
+        {
+            return callee_name;
+        }
+        void setCalleeName(const std::string &name)
+        {
+            callee_name = name;
+        }
+        const std::string &getCalleeReturn() const
+        {
+            return callee_return;
+        }
+        void setCalleeReturn(const std::string &ret)
+        {
+            callee_return = ret;
+        }
+        const std::string &getCalleeArguments() const
+        {
+            return callee_arguments;
+        }
+        void setCalleeArguments(const std::string &args)
+        {
+            callee_arguments = args;
+        }
+        std::vector<Operand>& getCalleeOperands()
+        {
+            return callee_operands;
+        }
+        void setCalleeOperands(std::vector<Operand> ops)
+        {
+            callee_operands = ops;
+        }
     private:
         bool callOp = false;
         bool conOp = false;
@@ -301,16 +404,35 @@ public:
         std::vector<Operand> callee_operands;
     };
 
-    class ExtFunctionOps {
+    class ExtFunctionOps
+    {
     public:
         ExtFunctionOps() {};
-        ExtFunctionOps(const std::string &name, std::vector<ExtOperation> ops) : extFunName(name), extOperations(ops){};
-        const std::string &getExtFunName() const { return extFunName; }
-        void setExtFunName(const std::string &name) { extFunName = name; }
-        std::vector<ExtOperation>& getOperations() { return extOperations; }
-        void setOperations(std::vector<ExtOperation> ops) { extOperations = ops; }  
-        u32_t getCallStmtNum() { return callStmtNum; }
-        void setCallStmtNum(u32_t num) { callStmtNum = num; }   
+        ExtFunctionOps(const std::string &name, std::vector<ExtOperation> ops) : extFunName(name), extOperations(ops) {};
+        const std::string &getExtFunName() const
+        {
+            return extFunName;
+        }
+        void setExtFunName(const std::string &name)
+        {
+            extFunName = name;
+        }
+        std::vector<ExtOperation>& getOperations()
+        {
+            return extOperations;
+        }
+        void setOperations(std::vector<ExtOperation> ops)
+        {
+            extOperations = ops;
+        }
+        u32_t getCallStmtNum()
+        {
+            return callStmtNum;
+        }
+        void setCallStmtNum(u32_t num)
+        {
+            callStmtNum = num;
+        }
     private:
         std::string extFunName;
         std::vector<ExtOperation> extOperations;
@@ -322,7 +444,7 @@ private:
     std::map<std::string, ExtFunctionOps> extFunToOps;
 
 public:
-    
+
     static ExtAPI *getExtAPI(const std::string& = "");
 
     static void destory();

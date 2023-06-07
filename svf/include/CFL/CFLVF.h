@@ -46,6 +46,9 @@ public:
     {
     }
 
+    /// Parameter Checking
+    virtual void checkParameter();
+
     /// Initialize the grammar, graph, solver
     virtual void initialize();
 
