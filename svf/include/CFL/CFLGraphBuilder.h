@@ -67,9 +67,9 @@ protected:
 
     /// add src and dst node from file
     CFLNode* addGNode(u32_t NodeID);
-    
+
 public:
-    /// Method to build a CFL graph by copying nodes and edges from any graph 
+    /// Method to build a CFL graph by copying nodes and edges from any graph
     /// inherited from GenericGraph
     template<class N, class E>
     void build(GenericGraph<N,E>* graph, CFLGraph* cflGraph)
@@ -89,7 +89,7 @@ public:
         }
     }
 
-    /// Method to build a bidirectional CFL graph by copying nodes and edges 
+    /// Method to build a bidirectional CFL graph by copying nodes and edges
     /// from any graph inherited from GenericGraph
     template<class N, class E>
     CFLGraph* buildBigraph(GenericGraph<N,E>* graph, Kind startKind, GrammarBase *grammar)
@@ -167,7 +167,7 @@ public:
     /// @}
 };
 
-/// AliasCFLGraphBuilder: a CFLGraphBuilder specialized for handling aliasing 
+/// AliasCFLGraphBuilder: a CFLGraphBuilder specialized for handling aliasing
 class AliasCFLGraphBuilder : public CFLGraphBuilder
 {
 public:
@@ -189,7 +189,7 @@ private:
     void addBiGepCFLEdge(CFLGraph *cflGraph,  ConstraintNode* src, ConstraintNode* dst, CFLGrammar::Attribute attri);
 };
 
-/// VFCFLGraphBuilder: a CFLGraphBuilder specialized for handling value-flow 
+/// VFCFLGraphBuilder: a CFLGraphBuilder specialized for handling value-flow
 class VFCFLGraphBuilder : public CFLGraphBuilder
 {
 public:

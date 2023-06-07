@@ -26,8 +26,8 @@
  // Author: Yulei Sui,
  */
 
-// This file is a driver for Context-Free Language (CFL) Reachability Analysis. The code 
-// processes command-line arguments, sets up the analysis based on these arguments, and 
+// This file is a driver for Context-Free Language (CFL) Reachability Analysis. The code
+// processes command-line arguments, sets up the analysis based on these arguments, and
 // then runs the analysis.
 
 #include "SVF-LLVM/LLVMUtil.h"
@@ -46,7 +46,7 @@ int main(int argc, char ** argv)
                         argc, argv, "CFL Reachability Analysis", "[options] <input-bitcode...>"
                     );
 
-     // If the WriteAnder option is set to "ir_annotator", pre-processes the bytecodes of the modules
+    // If the WriteAnder option is set to "ir_annotator", pre-processes the bytecodes of the modules
     if (Options::WriteAnder() == "ir_annotator")
     {
         LLVMModuleSet::preProcessBCs(moduleNameVec);
@@ -75,7 +75,7 @@ int main(int argc, char ** argv)
         cfl = std::make_unique<POCRAlias>(svfir);
     else
         cfl = std::make_unique<CFLAlias>(svfir); // if no svfg is specified, we use CFLAlias as the default one.
-    
+
     // Runs the analysis
     cfl->analyze();
 

@@ -52,11 +52,11 @@ void CFLBase::checkParameter()
     std::string filename = Options::GrammarFilename();
     bool cflfile = (filename.rfind("CFLGrammar.txt") == filename.length() - std::string("CFLGrammar.txt").length());
     bool pegfile = (filename.rfind("PEGGrammar.txt") == filename.length() - std::string("PEGGrammar.txt").length());
-    if (!Options::Customized()  && !(cflfile || pegfile)) 
+    if (!Options::Customized()  && !(cflfile || pegfile))
     {
         SVFUtil::errs() << "Invalid alias grammar file: " << Options::GrammarFilename() << "\n"
-                    << "Please use a file that ends with either 'CFLGrammar.txt' or 'PEGGrammar.txt', "
-                    << "or use the -customized flag to allow custom grammar files.\n";
+                        << "Please use a file that ends with either 'CFLGrammar.txt' or 'PEGGrammar.txt', "
+                        << "or use the -customized flag to allow custom grammar files.\n";
         assert(false && "grammar loading failed!");  // exit with error
     }
 }
@@ -90,7 +90,7 @@ void CFLBase::buildCFLGraph()
             graph = cflGraphBuilder.buildBigraph(consCG, grammarBase->getStartKind(), grammarBase);
         delete consCG;
     }
-    else 
+    else
     {
         std::string fileName = Options::CFLGraph();
         bool dotfile = (fileName.rfind(".dot") == fileName.length() - std::string("dot").length());

@@ -34,12 +34,17 @@
 namespace SVF
 {
 /// Add attribute to kindToAttribute Map
-void CFLGraphBuilder::addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute) {
-    if (kindToAttrsMap.find(kind) == kindToAttrsMap.end()) {
+void CFLGraphBuilder::addAttribute(CFLGrammar::Kind kind, CFLGrammar::Attribute attribute)
+{
+    if (kindToAttrsMap.find(kind) == kindToAttrsMap.end())
+    {
         Set<CFLGrammar::Attribute> attrs{attribute};
         kindToAttrsMap.insert(make_pair(kind, attrs));
-    } else {
-        if (kindToAttrsMap[kind].find(attribute) == kindToAttrsMap[kind].end()) {
+    }
+    else
+    {
+        if (kindToAttrsMap[kind].find(attribute) == kindToAttrsMap[kind].end())
+        {
             kindToAttrsMap[kind].insert(attribute);
         }
     }
@@ -70,7 +75,7 @@ void CFLGraphBuilder::buildlabelToKindMap(GrammarBase *grammar)
         {
             kindToLabelMap.insert(make_pair(pairV.second, pairV.first));
         }
-    } 
+    }
 }
 
 /// add src and dst node from file
@@ -100,7 +105,8 @@ CFLGraph* CFLGraphBuilder::buildFromTextFile(std::string fileName, GrammarBase *
     std::string lineString;
     std::ifstream inputFile(fileName);
 
-    if (!inputFile.is_open()) {
+    if (!inputFile.is_open())
+    {
         SVFUtil::errs()  << "Error opening " << fileName << std::endl;
         abort();
     }
@@ -109,7 +115,8 @@ CFLGraph* CFLGraphBuilder::buildFromTextFile(std::string fileName, GrammarBase *
     current = labelToKindMap.size();
     u32_t lineNum = 0 ;
 
-    while (getline(inputFile, line)) {
+    while (getline(inputFile, line))
+    {
         std::vector<std::string> vec = SVFUtil::split(line, '\t');
         if (vec.empty())
             continue;
@@ -117,7 +124,7 @@ CFLGraph* CFLGraphBuilder::buildFromTextFile(std::string fileName, GrammarBase *
         NodeID srcID = std::stoi(vec[0]);
         NodeID dstID = std::stoi(vec[1]);
         CFLNode *src = addGNode(srcID);
-        CFLNode *dst = addGNode(dstID); 
+        CFLNode *dst = addGNode(dstID);
         std::string label = vec[2];
         if (labelToKindMap.find(label) != labelToKindMap.end())
             cflGraph->addCFLEdge(src, dst, labelToKindMap[label]);
@@ -130,8 +137,8 @@ CFLGraph* CFLGraphBuilder::buildFromTextFile(std::string fileName, GrammarBase *
             }
             else
             {
-                std::string msg = "In line " + std::to_string(lineNum) + 
-                                " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
+                std::string msg = "In line " + std::to_string(lineNum) +
+                                  " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
                 SVFUtil::errMsg(msg);
                 std::cout << msg;
                 abort();
@@ -165,7 +172,7 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
             u32_t dstID = std::stoul(matches.str(2), nullptr, 16);
             std::string label = matches.str(3);
             CFLNode *src = addGNode(srcID);
-            CFLNode *dst = addGNode(dstID); 
+            CFLNode *dst = addGNode(dstID);
             if (labelToKindMap.find(label) != labelToKindMap.end())
                 cflGraph->addCFLEdge(src, dst, labelToKindMap[label]);
             else
@@ -177,8 +184,8 @@ CFLGraph * CFLGraphBuilder::buildFromDot(std::string fileName, GrammarBase *gram
                 }
                 else
                 {
-                    std::string msg = "In line " + std::to_string(lineNum) + 
-                                    " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
+                    std::string msg = "In line " + std::to_string(lineNum) +
+                                      " sym can not find in grammar, please correct the input dot or set --flexsymmap.";
                     SVFUtil::errMsg(msg);
                     std::cout << msg;
                     abort();
