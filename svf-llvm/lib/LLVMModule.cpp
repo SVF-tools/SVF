@@ -230,6 +230,15 @@ void LLVMModuleSet::createSVFDataStructure()
             svfModule->addAliasSet(svfalias);
             addGlobalValueMap(&alias, svfalias);
         }
+
+        /// GlobalIFunc
+        for (const GlobalIFunc& ifunc : mod.ifuncs())
+        {
+            SVFGlobalValue* svfifunc = new SVFGlobalValue(
+                ifunc.getName().str(), getSVFType(ifunc.getType()));
+            svfModule->addAliasSet(svfifunc);
+            addGlobalValueMap(&ifunc, svfifunc);
+        }
     }
 }
 

@@ -124,6 +124,7 @@ typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantFP ConstantFP;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::GlobalAlias GlobalAlias;
+typedef llvm::GlobalIFunc GlobalIFunc;
 typedef llvm::GlobalVariable GlobalVariable;
 
 /// LLVM Dominators
