@@ -261,7 +261,7 @@ public:
 
     friend bool eq(const Z3Expr &lhs, const Z3Expr &rhs)
     {
-        return eq(lhs.getExpr(), rhs.getExpr());
+        return eq(lhs.getExpr().simplify(), rhs.getExpr().simplify());
     }
 
     z3::sort get_sort() const
@@ -293,7 +293,7 @@ public:
     /// compute NEG
     static inline Z3Expr NEG(const Z3Expr &z3Expr)
     {
-        return !z3Expr;
+        return (!z3Expr).simplify();
     }
 
     /// compute AND, used for branch condition

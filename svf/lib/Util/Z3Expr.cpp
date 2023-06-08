@@ -105,7 +105,7 @@ Z3Expr Z3Expr::AND(const Z3Expr &lhs, const Z3Expr &rhs)
     }
     else
     {
-        Z3Expr expr = lhs && rhs;
+        Z3Expr expr = (lhs && rhs).simplify();
         // check subexpression size and option limit
         if (Z3Expr::getExprSize(expr) > Options::MaxZ3Size())
         {
@@ -143,7 +143,7 @@ Z3Expr Z3Expr::OR(const Z3Expr &lhs, const Z3Expr &rhs)
     }
     else
     {
-        Z3Expr expr = lhs || rhs;
+        Z3Expr expr = (lhs || rhs).simplify();
         // check subexpression size and option limit
         if (Z3Expr::getExprSize(expr) > Options::MaxZ3Size())
         {
