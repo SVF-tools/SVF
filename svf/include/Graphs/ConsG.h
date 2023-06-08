@@ -180,7 +180,7 @@ public:
     /// Add Copy edge
     CopyCGEdge* addCopyCGEdge(NodeID src, NodeID dst);
     /// Add Gep edge
-    NormalGepCGEdge*  addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls);
+    NormalGepCGEdge*  addNormalGepCGEdge(NodeID src, NodeID dst, const AccessPath& ls);
     VariantGepCGEdge* addVariantGepCGEdge(NodeID src, NodeID dst);
     /// Add Load edge
     LoadCGEdge* addLoadCGEdge(NodeID src, NodeID dst);

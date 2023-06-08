@@ -383,7 +383,7 @@ class GepValVar: public ValVar
     friend class SVFIRReader;
 
 private:
-    LocationSet ls;	// LocationSet
+    AccessPath ls;	// AccessPath
     const SVFType* gepValType;
 
     /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
@@ -411,7 +411,7 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(const SVFValue* val, NodeID i, const LocationSet& l,
+    GepValVar(const SVFValue* val, NodeID i, const AccessPath& l,
               const SVFType* ty)
         : ValVar(val, i, GepValNode), ls(l), gepValType(ty)
     {

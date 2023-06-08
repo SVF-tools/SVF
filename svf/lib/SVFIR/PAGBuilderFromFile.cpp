@@ -169,9 +169,9 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     else if (edge == "store")
         pag->addStoreStmt(srcID, dstID, nullptr);
     else if (edge == "gep")
-        pag->addNormalGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
+        pag->addNormalGepStmt(srcID, dstID, AccessPath(offsetOrCSId));
     else if (edge == "variant-gep")
-        pag->addVariantGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
+        pag->addVariantGepStmt(srcID, dstID, AccessPath(offsetOrCSId));
     else if (edge == "call")
         pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, nullptr, nullptr));
     else if (edge == "ret")

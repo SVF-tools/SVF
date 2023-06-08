@@ -1,4 +1,4 @@
-//===- LocationSet.cpp -- Location set for modeling abstract memory object----//
+//===- AccessPath.cpp -- Location set for modeling abstract memory object----//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * @file: LocationSet.cpp
+ * @file: AccessPath.cpp
  * @author: yesen
  * @date: 26 Sep 2014
  *
@@ -30,7 +30,7 @@
  */
 
 #include "Util/Options.h"
-#include "MemoryModel/LocationSet.h"
+#include "MemoryModel/AccessPath.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVF;
@@ -39,14 +39,14 @@ using namespace SVFUtil;
 /*!
  * Add offset value to vector offsetVarAndGepTypePairs
  */
-bool LocationSet::addOffsetVarAndGepTypePair(const SVFVar* var, const SVFType* gepIterType)
+bool AccessPath::addOffsetVarAndGepTypePair(const SVFVar* var, const SVFType* gepIterType)
 {
     offsetVarAndGepTypePairs.emplace_back(var, gepIterType);
     return true;
 }
 
 /// Return true if all offset values are constants
-bool LocationSet::isConstantOffset() const
+bool AccessPath::isConstantOffset() const
 {
     for(auto it : offsetVarAndGepTypePairs)
     {
@@ -60,7 +60,7 @@ bool LocationSet::isConstantOffset() const
 /// (1) StructType or Array, return flatterned number elements.
 /// (2) PointerType, return the element number of the pointee
 /// (3) non-pointer SingleValueType, return 1
-u32_t LocationSet::getElementNum(const SVFType* type) const
+u32_t AccessPath::getElementNum(const SVFType* type) const
 {
 
     if (SVFUtil::isa<SVFArrayType, SVFStructType>(type))
@@ -115,7 +115,7 @@ u32_t LocationSet::getElementNum(const SVFType* type) const
 ///     value1: i64 0  type1: [3 x i8]*
 ///     value2: i64 2  type2: [3 x i8]
 ///     computeConstantOffset = 2
-s32_t LocationSet::computeConstantOffset() const
+s32_t AccessPath::computeConstantOffset() const
 {
 
     assert(isConstantOffset() && "not a constant offset");
@@ -150,16 +150,16 @@ s32_t LocationSet::computeConstantOffset() const
 /*!
  * Compute all possible locations according to offset and number-stride pairs.
  */
-NodeBS LocationSet::computeAllLocations() const
+NodeBS AccessPath::computeAllLocations() const
 {
     NodeBS result;
     result.set(getConstantFieldIdx());
     return result;
 }
 
-LocationSet LocationSet::operator+ (const LocationSet& rhs) const
+AccessPath AccessPath::operator+ (const AccessPath& rhs) const
 {
-    LocationSet ls(rhs);
+    AccessPath ls(rhs);
     ls.fldIdx += getConstantFieldIdx();
     OffsetVarAndGepTypePairs::const_iterator it = getOffsetVarAndGepTypePairVec().begin();
     OffsetVarAndGepTypePairs::const_iterator eit = getOffsetVarAndGepTypePairVec().end();
@@ -170,7 +170,7 @@ LocationSet LocationSet::operator+ (const LocationSet& rhs) const
 }
 
 
-bool LocationSet::operator< (const LocationSet& rhs) const
+bool AccessPath::operator< (const AccessPath& rhs) const
 {
     if (fldIdx != rhs.fldIdx)
         return (fldIdx < rhs.fldIdx);
@@ -194,7 +194,7 @@ bool LocationSet::operator< (const LocationSet& rhs) const
     }
 }
 
-SVF::LocationSet::LSRelation LocationSet::checkRelation(const LocationSet& LHS, const LocationSet& RHS)
+SVF::AccessPath::LSRelation AccessPath::checkRelation(const AccessPath& LHS, const AccessPath& RHS)
 {
     NodeBS lhsLocations = LHS.computeAllLocations();
     NodeBS rhsLocations = RHS.computeAllLocations();
@@ -216,12 +216,12 @@ SVF::LocationSet::LSRelation LocationSet::checkRelation(const LocationSet& LHS, 
 }
 
 /// Dump location set
-std::string LocationSet::dump() const
+std::string AccessPath::dump() const
 {
     std::string str;
     std::stringstream rawstr(str);
 
-    rawstr << "LocationSet\tField_Index: " << getConstantFieldIdx();
+    rawstr << "AccessPath\tField_Index: " << getConstantFieldIdx();
     rawstr << ",\tNum-Stride: {";
     const OffsetVarAndGepTypePairs& vec = getOffsetVarAndGepTypePairVec();
     OffsetVarAndGepTypePairs::const_iterator it = vec.begin();

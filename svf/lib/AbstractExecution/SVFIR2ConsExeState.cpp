@@ -655,7 +655,7 @@ std::pair<s32_t, s32_t> SVFIR2ConsExeState::getGepOffset(const SVF::GepStmt *gep
 
         if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type))
         {
-            offset = offset * gep->getLocationSet().getElementNum(pty->getPtrElementType());
+            offset = offset * gep->getAccessPath().getElementNum(pty->getPtrElementType());
         }
         else
         {

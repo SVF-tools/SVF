@@ -253,7 +253,7 @@ const Option<bool> Options::DumpVFG(
 );
 
 
-// Location set for modeling abstract memory object (LocationSet.cpp)
+// Location set for modeling abstract memory object (AccessPath.cpp)
 const Option<bool> Options::SingleStride(
     "stride-only",
     "Only use single stride in LocMemoryModel",

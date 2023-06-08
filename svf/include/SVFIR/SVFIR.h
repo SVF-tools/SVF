@@ -65,11 +65,11 @@ public:
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, s32_t> NodeOffset;
-    typedef std::pair<NodeID, LocationSet> NodeLocationSet;
+    typedef std::pair<NodeID, AccessPath> NodeAccessPath;
     typedef Map<NodeOffset,NodeID> NodeOffsetMap;
-    typedef Map<NodeLocationSet,NodeID> NodeLocationSetMap;
-    typedef Map<const SVFValue*, NodeLocationSetMap> GepValueVarMap;
-    typedef std::pair<const SVFType*, std::vector<LocationSet>> SVFTypeLocSetsPair;
+    typedef Map<NodeAccessPath,NodeID> NodeAccessPathMap;
+    typedef Map<const SVFValue*, NodeAccessPathMap> GepValueVarMap;
+    typedef std::pair<const SVFType*, std::vector<AccessPath>> SVFTypeLocSetsPair;
     typedef Map<NodeID, SVFTypeLocSetsPair> TypeLocSetsMap;
     typedef Map<NodePair,NodeID> NodePairSetMap;
 
@@ -328,7 +328,7 @@ public:
     //@}
 
     /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
-    NodeID getGepValVar(const SVFValue* curInst, NodeID base, const LocationSet& ls) const;
+    NodeID getGepValVar(const SVFValue* curInst, NodeID base, const AccessPath& ls) const;
 
     /// Add/get indirect callsites
     //@{
@@ -557,7 +557,7 @@ private:
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValVar
-    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const LocationSet& ls, NodeID i, const SVFType* type);
+    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const AccessPath& ls, NodeID i, const SVFType* type);
     /// Add a field obj node, this method can only invoked by getGepObjVar
     NodeID addGepObjNode(const MemObj* obj, const s32_t& ls);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
@@ -665,12 +665,12 @@ private:
     RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                     const FunExitICFGNode* exit);
     /// Add Gep edge
-    GepStmt* addGepStmt(NodeID src, NodeID dst, const LocationSet& ls,
+    GepStmt* addGepStmt(NodeID src, NodeID dst, const AccessPath& ls,
                         bool constGep);
     /// Add Offset(Gep) edge
-    GepStmt* addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls);
+    GepStmt* addNormalGepStmt(NodeID src, NodeID dst, const AccessPath& ls);
     /// Add Variant(Gep) edge
-    GepStmt* addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls);
+    GepStmt* addVariantGepStmt(NodeID src, NodeID dst, const AccessPath& ls);
     /// Add Thread fork edge for parameter passing
     TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                               const FunEntryICFGNode* entry);

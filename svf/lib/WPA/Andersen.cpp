@@ -437,7 +437,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
                 continue;
             }
 
-            NodeID fieldSrcPtdNode = consCG->getGepObjVar(o, normalGepEdge->getLocationSet().getConstantFieldIdx());
+            NodeID fieldSrcPtdNode = consCG->getGepObjVar(o, normalGepEdge->getAccessPath().getConstantFieldIdx());
             tmpDstPts.set(fieldSrcPtdNode);
         }
     }

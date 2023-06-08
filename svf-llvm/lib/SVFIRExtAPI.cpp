@@ -45,13 +45,13 @@ void SVFIRBuilder::addComplexConsForExt(const SVFValue* D, const SVFValue* S, co
     if(!vnD || !vnS)
         return;
 
-    std::vector<LocationSet> fields;
+    std::vector<AccessPath> fields;
 
     //Get the max possible size of the copy, unless it was provided.
     const SVFType* stype = pag->getTypeLocSetsMap(vnS).first;
     const SVFType* dtype = pag->getTypeLocSetsMap(vnD).first;
-    std::vector<LocationSet> srcFields = pag->getTypeLocSetsMap(vnS).second;
-    std::vector<LocationSet> dstFields = pag->getTypeLocSetsMap(vnD).second;
+    std::vector<AccessPath> srcFields = pag->getTypeLocSetsMap(vnS).second;
+    std::vector<AccessPath> dstFields = pag->getTypeLocSetsMap(vnD).second;
 
     if(srcFields.size() > dstFields.size())
         fields = dstFields;
@@ -471,7 +471,7 @@ void SVFIRBuilder::extFuncAtomaticOperation(ExtAPI::Operand& atomicOp, const SVF
     {
         if (!atomicOp.getSrcValue().empty() && !atomicOp.getDstValue().empty() && !atomicOp.getOffsetOrSizeStr().empty())
         {
-            LocationSet ls(atomicOp.getOffsetOrSize());
+            AccessPath ls(atomicOp.getOffsetOrSize());
             addNormalGepEdge(atomicOp.getSrcID(), atomicOp.getDstID(), ls);
         }
         else
@@ -485,7 +485,7 @@ void SVFIRBuilder::extFuncAtomaticOperation(ExtAPI::Operand& atomicOp, const SVF
         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
         // const SVFConstantInt* arg2 = SVFUtil::dyn_cast<SVFConstantInt>(svfCall->getArgOperand(op.getOperands()[2]));
         NodeID argId = pag->getValueNode(svfCall->getArgOperand(0));
-        std::vector<LocationSet> dstFields =  pag->getTypeLocSetsMap(argId).second;
+        std::vector<AccessPath> dstFields =  pag->getTypeLocSetsMap(argId).second;
         u32_t sz = dstFields.size();
         if (const SVFConstantInt* arg2 = SVFUtil::dyn_cast<SVFConstantInt>(svfCall->getArgOperand(2)))
             sz = (dstFields.size() > static_cast<u32_t>(arg2->getSExtValue())) ? arg2->getSExtValue() : dstFields.size();
@@ -513,10 +513,10 @@ void SVFIRBuilder::extFuncAtomaticOperation(ExtAPI::Operand& atomicOp, const SVF
         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
         // Now we calculate the offset from base to vArg3
         NodeID vnArg3 = pag->getValueNode(svfCall->getArgOperand(3));
-        s32_t offset = getLocationSetFromBaseNode(vnArg3).getConstantFieldIdx();
+        s32_t offset = getAccessPathFromBaseNode(vnArg3).getConstantFieldIdx();
 
         // We get all flattened fields of base
-        vector<LocationSet> fields =  pag->getTypeLocSetsMap(vnArg3).second;
+        vector<AccessPath> fields =  pag->getTypeLocSetsMap(vnArg3).second;
 
         // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
         // Note that arg0 is aligned with "offset".

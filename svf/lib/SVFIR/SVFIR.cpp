@@ -324,7 +324,7 @@ TDJoinPE* SVFIR::addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs,
  * Find the base node id of src and connect base node to dst node
  * Create gep offset:  (offset + baseOff <nested struct gep size>)
  */
-GepStmt* SVFIR::addGepStmt(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
+GepStmt* SVFIR::addGepStmt(NodeID src, NodeID dst, const AccessPath& ls, bool constGep)
 {
 
     SVFVar* node = getGNode(src);
@@ -343,7 +343,7 @@ GepStmt* SVFIR::addGepStmt(NodeID src, NodeID dst, const LocationSet& ls, bool c
 /*!
  * Add normal (Gep) edge
  */
-GepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
+GepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const AccessPath& ls)
 {
     SVFVar* baseNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -362,7 +362,7 @@ GepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
  * Add variant(Gep) edge
  * Find the base node id of src and connect base node to dst node
  */
-GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
+GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const AccessPath& ls)
 {
     SVFVar* baseNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -383,7 +383,7 @@ GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
  * Add a temp field value node, this method can only invoked by getGepValVar
  * due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
  */
-NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const LocationSet& ls, NodeID i, const SVFType* type)
+NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const AccessPath& ls, NodeID i, const SVFType* type)
 {
     NodeID base = getBaseValVar(getValueNode(gepVal));
     //assert(findPAGNode(i) == false && "this node should not be created before");
@@ -535,7 +535,7 @@ NodeID SVFIR::getBaseValVar(NodeID nodeId)
 /*!
  * It is used to create a dummy GepValVar during global initiailzation.
  */
-NodeID SVFIR::getGepValVar(const SVFValue* curInst, NodeID base, const LocationSet& ls) const
+NodeID SVFIR::getGepValVar(const SVFValue* curInst, NodeID base, const AccessPath& ls) const
 {
     GepValueVarMap::const_iterator iter = GepValObjMap.find(curInst);
     if(iter==GepValObjMap.end())
@@ -544,7 +544,7 @@ NodeID SVFIR::getGepValVar(const SVFValue* curInst, NodeID base, const LocationS
     }
     else
     {
-        NodeLocationSetMap::const_iterator lit = iter->second.find(std::make_pair(base, ls));
+        NodeAccessPathMap::const_iterator lit = iter->second.find(std::make_pair(base, ls));
         if(lit==iter->second.end())
             return UINT_MAX;
         else

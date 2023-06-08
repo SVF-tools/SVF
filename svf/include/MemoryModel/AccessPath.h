@@ -1,4 +1,4 @@
-//===- LocationSet.h -- Location set of abstract object-----------------------//
+//===- AccessPath.h -- Location set of abstract object-----------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * @file: LocationSet.h
+ * @file: AccessPath.h
  * @author: yesen
  * @date: 26 Sep 2014
  *
@@ -30,8 +30,8 @@
  */
 
 
-#ifndef LOCATIONSET_H_
-#define LOCATIONSET_H_
+#ifndef AccessPath_H_
+#define AccessPath_H_
 
 
 #include "SVFIR/SVFValue.h"
@@ -49,7 +49,7 @@ class SVFVar;
 * where N is the size of number-stride pair vector, M_i (stride_i) is i-th number (stride)
 * in the number-stride pair vector.
 */
-class LocationSet
+class AccessPath
 {
     friend class SymbolTableInfo;
     friend class SVFIRWriter;
@@ -65,28 +65,28 @@ public:
     typedef std::vector<VarAndGepTypePair> OffsetVarAndGepTypePairs;
 
     /// Constructor
-    LocationSet(s32_t o = 0) : fldIdx(o) {}
+    AccessPath(s32_t o = 0) : fldIdx(o) {}
 
     /// Copy Constructor
-    LocationSet(const LocationSet& ls)
+    AccessPath(const AccessPath& ls)
         : fldIdx(ls.fldIdx),
           offsetVarAndGepTypePairs(ls.getOffsetVarAndGepTypePairVec())
     {
     }
 
-    ~LocationSet() {}
+    ~AccessPath() {}
 
     /// Overload operators
     //@{
-    LocationSet operator+(const LocationSet& rhs) const;
-    bool operator<(const LocationSet& rhs) const;
-    inline const LocationSet& operator=(const LocationSet& rhs)
+    AccessPath operator+(const AccessPath& rhs) const;
+    bool operator<(const AccessPath& rhs) const;
+    inline const AccessPath& operator=(const AccessPath& rhs)
     {
         fldIdx = rhs.fldIdx;
         offsetVarAndGepTypePairs = rhs.getOffsetVarAndGepTypePairVec();
         return *this;
     }
-    inline bool operator==(const LocationSet& rhs) const
+    inline bool operator==(const AccessPath& rhs) const
     {
         return this->fldIdx == rhs.fldIdx &&
                this->offsetVarAndGepTypePairs == rhs.offsetVarAndGepTypePairs;
@@ -122,7 +122,7 @@ public:
     bool isConstantOffset() const;
 
     /// Return TRUE if we share any location in common with RHS
-    inline bool intersects(const LocationSet& RHS) const
+    inline bool intersects(const AccessPath& RHS) const
     {
         return computeAllLocations().intersects(RHS.computeAllLocations());
     }
@@ -133,7 +133,7 @@ public:
 private:
 
     /// Check relations of two location sets
-    LSRelation checkRelation(const LocationSet& LHS, const LocationSet& RHS);
+    LSRelation checkRelation(const AccessPath& LHS, const AccessPath& RHS);
 
     /// Compute all possible locations according to offset and number-stride pairs.
     NodeBS computeAllLocations() const;
@@ -144,14 +144,14 @@ private:
 
 } // End namespace SVF
 
-template <> struct std::hash<SVF::LocationSet>
+template <> struct std::hash<SVF::AccessPath>
 {
-    size_t operator()(const SVF::LocationSet &ls) const
+    size_t operator()(const SVF::AccessPath &ls) const
     {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
-        std::hash<SVF::LocationSet::OffsetVarAndGepTypePairs> v;
+        std::hash<SVF::AccessPath::OffsetVarAndGepTypePairs> v;
         return h(std::make_pair(ls.getConstantFieldIdx(), v(ls.getOffsetVarAndGepTypePairVec())));
     }
 };
 
-#endif /* LOCATIONSET_H_ */
+#endif /* AccessPath_H_ */
