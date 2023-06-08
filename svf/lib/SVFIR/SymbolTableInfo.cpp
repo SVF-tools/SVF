@@ -91,14 +91,14 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 /*!
  * Get modulus offset given the type information
  */
-s32_t SymbolTableInfo::getModulusOffset(const MemObj* obj, const s32_t& ls)
+APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& ls)
 {
 
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
 
-    s32_t offset = ls;
+    APOffset offset = ls;
     if(offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");
@@ -368,7 +368,7 @@ void SymbolTableInfo::dump()
 /*!
  * Whether a location set is a pointer type or not
  */
-bool ObjTypeInfo::isNonPtrFieldObj(const s32_t& ls)
+bool ObjTypeInfo::isNonPtrFieldObj(const APOffset& ls)
 {
     if (hasPtrObj() == false)
         return true;
@@ -537,7 +537,7 @@ bool MemObj::hasPtrObj() const
     return typeInfo->hasPtrObj();
 }
 
-bool MemObj::isNonPtrFieldObj(const s32_t& ls) const
+bool MemObj::isNonPtrFieldObj(const APOffset& ls) const
 {
     return typeInfo->isNonPtrFieldObj(ls);
 }

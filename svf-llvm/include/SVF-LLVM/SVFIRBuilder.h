@@ -75,7 +75,7 @@ public:
     //@{
     void initialiseNodes();
     void addEdge(NodeID src, NodeID dst, SVFStmt::PEDGEK kind,
-                 s32_t offset = 0, Instruction* cs = nullptr);
+                 APOffset offset = 0, Instruction* cs = nullptr);
     // @}
 
     /// Sanity check for SVFIR
@@ -216,7 +216,7 @@ protected:
     void processCE(const Value* val);
 
     /// Infer field index from byteoffset.
-    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ls, s32_t idx);
+    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ls, APOffset idx);
 
     /// Compute offset of a gep instruction or gep constant expression
     bool computeGepOffset(const User *V, AccessPath& ls);

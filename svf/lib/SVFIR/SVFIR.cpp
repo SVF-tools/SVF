@@ -397,7 +397,7 @@ NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, cons
 /*!
  * Given an object node, find its field object node
  */
-NodeID SVFIR::getGepObjVar(NodeID id, const s32_t& ls)
+NodeID SVFIR::getGepObjVar(NodeID id, const APOffset& ls)
 {
     SVFVar* node = pag->getGNode(id);
     if (GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
@@ -419,7 +419,7 @@ NodeID SVFIR::getGepObjVar(NodeID id, const s32_t& ls)
  * offset = offset % obj->getMaxFieldOffsetLimit() to create limited number of mem objects
  * maximum number of field object creation is obj->getMaxFieldOffsetLimit()
  */
-NodeID SVFIR::getGepObjVar(const MemObj* obj, const s32_t& ls)
+NodeID SVFIR::getGepObjVar(const MemObj* obj, const APOffset& ls)
 {
     NodeID base = obj->getId();
 
@@ -427,7 +427,7 @@ NodeID SVFIR::getGepObjVar(const MemObj* obj, const s32_t& ls)
     if (obj->isFieldInsensitive())
         return getFIObjVar(obj);
 
-    s32_t newLS = pag->getSymbolInfo()->getModulusOffset(obj,ls);
+    APOffset newLS = pag->getSymbolInfo()->getModulusOffset(obj,ls);
 
     // Base and first field are the same memory location.
     if (Options::FirstFieldEqBase() && newLS == 0) return base;
@@ -443,7 +443,7 @@ NodeID SVFIR::getGepObjVar(const MemObj* obj, const s32_t& ls)
 /*!
  * Add a field obj node, this method can only invoked by getGepObjVar
  */
-NodeID SVFIR::addGepObjNode(const MemObj* obj, const s32_t& ls)
+NodeID SVFIR::addGepObjNode(const MemObj* obj, const APOffset& ls)
 {
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = obj->getId();

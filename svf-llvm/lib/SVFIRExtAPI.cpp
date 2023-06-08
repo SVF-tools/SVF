@@ -513,14 +513,14 @@ void SVFIRBuilder::extFuncAtomaticOperation(ExtAPI::Operand& atomicOp, const SVF
         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
         // Now we calculate the offset from base to vArg3
         NodeID vnArg3 = pag->getValueNode(svfCall->getArgOperand(3));
-        s32_t offset = getAccessPathFromBaseNode(vnArg3).getConstantFieldIdx();
+        APOffset offset = getAccessPathFromBaseNode(vnArg3).getConstantFieldIdx();
 
         // We get all flattened fields of base
         vector<AccessPath> fields =  pag->getTypeLocSetsMap(vnArg3).second;
 
         // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
         // Note that arg0 is aligned with "offset".
-        for (s32_t i = offset + 1; i <= offset + 3; ++i)
+        for (APOffset i = offset + 1; i <= offset + 3; ++i)
         {
             if((u32_t)i >= fields.size())
                 break;

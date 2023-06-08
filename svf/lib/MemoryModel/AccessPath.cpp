@@ -115,7 +115,7 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 ///     value1: i64 0  type1: [3 x i8]*
 ///     value2: i64 2  type2: [3 x i8]
 ///     computeConstantOffset = 2
-s32_t AccessPath::computeConstantOffset() const
+APOffset AccessPath::computeConstantOffset() const
 {
 
     assert(isConstantOffset() && "not a constant offset");
@@ -123,7 +123,7 @@ s32_t AccessPath::computeConstantOffset() const
     if(offsetVarAndGepTypePairs.empty())
         return getConstantFieldIdx();
 
-    s32_t totalConstOffset = 0;
+    APOffset totalConstOffset = 0;
     for(int i = offsetVarAndGepTypePairs.size() - 1; i >= 0; i--)
     {
         const SVFValue* value = offsetVarAndGepTypePairs[i].first->getValue();
@@ -140,7 +140,7 @@ s32_t AccessPath::computeConstantOffset() const
             totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType());
         else
         {
-            s32_t offset = op->getSExtValue();
+            APOffset offset = op->getSExtValue();
             u32_t flattenOffset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, offset);
             totalConstOffset += flattenOffset;
         }

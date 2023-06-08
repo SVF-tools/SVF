@@ -179,7 +179,7 @@ void AndersenBase::normalizePointsTo()
         NodeID base = pag->getBaseObjVar(n);
         GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
         assert(gepNode && "Not a gep node in redundantGepNodes set");
-        const s32_t ls = gepNode->getConstantFieldIdx();
+        const APOffset ls = gepNode->getConstantFieldIdx();
         GepObjVarMap.erase(std::make_pair(base, ls));
         memToFieldsMap[base].reset(n);
         cleanConsCG(n);

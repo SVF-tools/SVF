@@ -304,7 +304,7 @@ public:
     }
 
     /// Get location set of the gep edge
-    inline s32_t getConstantFieldIdx() const
+    inline APOffset getConstantFieldIdx() const
     {
         return ls.getConstantFieldIdx();
     }

@@ -325,7 +325,7 @@ public:
         return (mem->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object
-    inline NodeID getGepObjVar(NodeID id, const s32_t& ls)
+    inline NodeID getGepObjVar(NodeID id, const APOffset& ls)
     {
         NodeID gep =  pag->getGepObjVar(id,ls);
         /// Create a node when it is (1) not exist on graph and (2) not merged

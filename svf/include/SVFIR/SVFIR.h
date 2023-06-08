@@ -64,7 +64,7 @@ public:
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
-    typedef std::pair<NodeID, s32_t> NodeOffset;
+    typedef std::pair<NodeID, APOffset> NodeOffset;
     typedef std::pair<NodeID, AccessPath> NodeAccessPath;
     typedef Map<NodeOffset,NodeID> NodeOffsetMap;
     typedef Map<NodeAccessPath,NodeID> NodeAccessPathMap;
@@ -392,9 +392,9 @@ public:
     //@}
 
     /// Get a field SVFIR Object node according to base mem obj and offset
-    NodeID getGepObjVar(const MemObj* obj, const s32_t& ls);
+    NodeID getGepObjVar(const MemObj* obj, const APOffset& ls);
     /// Get a field obj SVFIR node according to a mem obj and a given offset
-    NodeID getGepObjVar(NodeID id, const s32_t& ls) ;
+    NodeID getGepObjVar(NodeID id, const APOffset& ls) ;
     /// Get a field-insensitive obj SVFIR node according to a mem obj
     //@{
     inline NodeID getFIObjVar(const MemObj* obj) const
@@ -559,7 +559,7 @@ private:
     /// Add a temp field value node, this method can only invoked by getGepValVar
     NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const AccessPath& ls, NodeID i, const SVFType* type);
     /// Add a field obj node, this method can only invoked by getGepObjVar
-    NodeID addGepObjNode(const MemObj* obj, const s32_t& ls);
+    NodeID addGepObjNode(const MemObj* obj, const APOffset& ls);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
     NodeID addFIObjNode(const MemObj* obj);
     //@}

@@ -418,7 +418,7 @@ public:
     }
 
     /// offset of the base value variable
-    inline s32_t getConstantFieldIdx() const
+    inline APOffset getConstantFieldIdx() const
     {
         return ls.getConstantFieldIdx();
     }
@@ -451,7 +451,7 @@ class GepObjVar: public ObjVar
     friend class SVFIRReader;
 
 private:
-    s32_t ls = 0;
+    APOffset ls = 0;
     NodeID base = 0;
 
     /// Constructor to create empty GepObjVar (for SVFIRReader/deserialization)
@@ -480,7 +480,7 @@ public:
     //@}
 
     /// Constructor
-    GepObjVar(const MemObj* mem, NodeID i, const s32_t& l,
+    GepObjVar(const MemObj* mem, NodeID i, const APOffset& l,
               PNODEK ty = GepObjNode)
         : ObjVar(mem->getValue(), i, mem, ty), ls(l)
     {
@@ -488,7 +488,7 @@ public:
     }
 
     /// offset of the mem object
-    inline s32_t getConstantFieldIdx() const
+    inline APOffset getConstantFieldIdx() const
     {
         return ls;
     }

@@ -257,7 +257,7 @@ void SVFIRBuilder::initialiseNodes()
     e.g. field_idx = getelementptr i8, %struct_type %p, i64 1
 
 */
-u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ls, s32_t idx)
+u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ls, APOffset idx)
 {
     return 0;
 }
@@ -301,7 +301,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ls)
         {
             if(!op || (arrTy->getArrayNumElements() <= (u32_t)op->getSExtValue()))
                 continue;
-            s32_t idx = op->getSExtValue();
+            APOffset idx = op->getSExtValue();
             u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(arrTy), idx);
             ls.setFldIdx(ls.getConstantFieldIdx() + offset);
         }
@@ -309,7 +309,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ls)
         {
             assert(op && "non-const offset accessing a struct");
             //The actual index
-            s32_t idx = op->getSExtValue();
+            APOffset idx = op->getSExtValue();
             u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(ST), idx);
             ls.setFldIdx(ls.getConstantFieldIdx() + offset);
         }
@@ -1066,7 +1066,7 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
     assert(value && "null ptr?");
     if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
     {
-        s32_t totalidx = 0;
+        APOffset totalidx = 0;
         for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi)
         {
             if(const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))

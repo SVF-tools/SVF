@@ -498,12 +498,12 @@ public:
         return getAccessPath().isConstantOffset();
     }
     /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
-    inline s32_t accumulateConstantOffset() const
+    inline APOffset accumulateConstantOffset() const
     {
         return getAccessPath().computeConstantOffset();
     }
     /// Field index of the gep statement if it access the field of a struct
-    inline s32_t getConstantFieldIdx() const
+    inline APOffset getConstantFieldIdx() const
     {
         assert(isVariantFieldGep()==false && "Can't retrieve the AccessPath if using a variable field index (pointer arithmetic) for struct field access ");
         return getAccessPath().getConstantFieldIdx();

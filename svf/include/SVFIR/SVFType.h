@@ -58,6 +58,7 @@ typedef u32_t EdgeID;
 typedef unsigned SymID;
 typedef unsigned CallSiteID;
 typedef unsigned ThreadID;
+typedef s64_t APOffset;
 
 typedef SparseBitVector<> NodeBS;
 typedef unsigned PointsToID;

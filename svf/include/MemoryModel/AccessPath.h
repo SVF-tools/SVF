@@ -65,7 +65,7 @@ public:
     typedef std::vector<VarAndGepTypePair> OffsetVarAndGepTypePairs;
 
     /// Constructor
-    AccessPath(s32_t o = 0) : fldIdx(o) {}
+    AccessPath(APOffset o = 0) : fldIdx(o) {}
 
     /// Copy Constructor
     AccessPath(const AccessPath& ls)
@@ -95,11 +95,11 @@ public:
 
     /// Get methods
     //@{
-    inline s32_t getConstantFieldIdx() const
+    inline APOffset getConstantFieldIdx() const
     {
         return fldIdx;
     }
-    inline void setFldIdx(s32_t idx)
+    inline void setFldIdx(APOffset idx)
     {
         fldIdx = idx;
     }
@@ -110,7 +110,7 @@ public:
     //@}
 
     /// Return accumulated constant offset given OffsetVarVec
-    s32_t computeConstantOffset() const;
+    APOffset computeConstantOffset() const;
 
     /// Return element number of a type.
     u32_t getElementNum(const SVFType* type) const;
@@ -138,7 +138,7 @@ private:
     /// Compute all possible locations according to offset and number-stride pairs.
     NodeBS computeAllLocations() const;
 
-    s32_t fldIdx;	///< Accumulated Constant Offsets
+    APOffset fldIdx;	///< Accumulated Constant Offsets
     OffsetVarAndGepTypePairs offsetVarAndGepTypePairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>s
 };
 

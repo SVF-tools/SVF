@@ -525,7 +525,7 @@ void BVDataPTAImpl::normalizePointsTo()
     {
         NodeID base = pag->getBaseObjVar(n);
         GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
-        const s32_t ls = gepNode->getConstantFieldIdx();
+        const APOffset ls = gepNode->getConstantFieldIdx();
         GepObjVarMap.erase(std::make_pair(base, ls));
         memToFieldsMap[base].reset(n);
 
