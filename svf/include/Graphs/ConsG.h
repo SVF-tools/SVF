@@ -180,7 +180,7 @@ public:
     /// Add Copy edge
     CopyCGEdge* addCopyCGEdge(NodeID src, NodeID dst);
     /// Add Gep edge
-    NormalGepCGEdge*  addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls);
+    NormalGepCGEdge*  addNormalGepCGEdge(NodeID src, NodeID dst, const AccessPath& ls);
     VariantGepCGEdge* addVariantGepCGEdge(NodeID src, NodeID dst);
     /// Add Load edge
     LoadCGEdge* addLoadCGEdge(NodeID src, NodeID dst);
@@ -325,7 +325,7 @@ public:
         return (mem->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object
-    inline NodeID getGepObjVar(NodeID id, const LocationSet& ls)
+    inline NodeID getGepObjVar(NodeID id, const APOffset& ls)
     {
         NodeID gep =  pag->getGepObjVar(id,ls);
         /// Create a node when it is (1) not exist on graph and (2) not merged

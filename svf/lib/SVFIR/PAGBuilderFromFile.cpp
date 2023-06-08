@@ -103,7 +103,7 @@ SVFIR* PAGBuilderFromFile::build()
             {
                 NodeID nodeSrc;
                 NodeID nodeDst;
-                s32_t offsetOrCSId;
+                APOffset offsetOrCSId;
                 string edge;
                 istringstream ss(line);
                 ss >> nodeSrc;
@@ -144,7 +144,7 @@ SVFIR* PAGBuilderFromFile::build()
  * Add SVFIR edge according to a file format
  */
 void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
-                                 s32_t offsetOrCSId, std::string edge)
+                                 APOffset offsetOrCSId, std::string edge)
 {
 
     //check whether these two nodes available
@@ -169,9 +169,9 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     else if (edge == "store")
         pag->addStoreStmt(srcID, dstID, nullptr);
     else if (edge == "gep")
-        pag->addNormalGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
+        pag->addNormalGepStmt(srcID, dstID, AccessPath(offsetOrCSId));
     else if (edge == "variant-gep")
-        pag->addVariantGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
+        pag->addVariantGepStmt(srcID, dstID, AccessPath(offsetOrCSId));
     else if (edge == "call")
         pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, nullptr, nullptr));
     else if (edge == "ret")

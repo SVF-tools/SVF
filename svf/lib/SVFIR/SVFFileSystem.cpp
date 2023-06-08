@@ -1240,7 +1240,7 @@ cJSON* SVFIRWriter::toJson(const StInfo* stInfo)
     return jsonCreateIndex(svfModuleWriter.getStInfoID(stInfo));
 }
 
-cJSON* SVFIRWriter::toJson(const LocationSet& ls)
+cJSON* SVFIRWriter::toJson(const AccessPath& ls)
 {
     cJSON* root = jsonCreateObject();
     JSON_WRITE_FIELD(root, &ls, fldIdx);
@@ -1844,13 +1844,13 @@ void SVFIRReader::readJson(const cJSON* obj, CallSite& cs)
     readJson(obj, cs.CB);
 }
 
-void SVFIRReader::readJson(const cJSON* obj, LocationSet& ls)
+void SVFIRReader::readJson(const cJSON* obj, AccessPath& ls)
 {
-    ABORT_IFNOT(jsonIsObject(obj), "Expected obj for LocationSet");
+    ABORT_IFNOT(jsonIsObject(obj), "Expected obj for AccessPath");
     obj = obj->child;
     JSON_READ_FIELD_FWD(obj, &ls, fldIdx);
     JSON_READ_FIELD_FWD(obj, &ls, offsetVarAndGepTypePairs);
-    ABORT_IFNOT(!obj, "Extra field " << JSON_KEY(obj) << " in LocationSet");
+    ABORT_IFNOT(!obj, "Extra field " << JSON_KEY(obj) << " in AccessPath");
 }
 
 void SVFIRReader::readJson(const cJSON* obj, SVFLoop*& loop)

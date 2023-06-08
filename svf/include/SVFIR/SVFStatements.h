@@ -32,7 +32,7 @@
 #define INCLUDE_SVFIR_SVFSTATEMENT_H_
 
 #include "Graphs/GenericGraph.h"
-#include "MemoryModel/LocationSet.h"
+#include "MemoryModel/AccessPath.h"
 
 namespace SVF
 {
@@ -465,7 +465,7 @@ private:
     GepStmt(const GepStmt &);  ///< place holder
     void operator=(const GepStmt &); ///< place holder
 
-    LocationSet ls;	///< location set of the gep edge
+    AccessPath ls;	///< location set of the gep edge
     bool variantField;  ///< Gep statement with a variant field index (pointer arithmetic) for struct field access (e.g., p = &(q + f), where f is a variable)
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -484,29 +484,29 @@ public:
     }
     //@}
 
-    inline const LocationSet& getLocationSet() const
+    inline const AccessPath& getAccessPath() const
     {
         return ls;
     }
-    inline const LocationSet::OffsetVarAndGepTypePairs getOffsetVarAndGepTypePairVec() const
+    inline const AccessPath::OffsetVarAndGepTypePairs getOffsetVarAndGepTypePairVec() const
     {
-        return getLocationSet().getOffsetVarAndGepTypePairVec();
+        return getAccessPath().getOffsetVarAndGepTypePairVec();
     }
     /// Return TRUE if this is a constant location set.
     inline bool isConstantOffset() const
     {
-        return getLocationSet().isConstantOffset();
+        return getAccessPath().isConstantOffset();
     }
     /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
-    inline s32_t accumulateConstantOffset() const
+    inline APOffset accumulateConstantOffset() const
     {
-        return getLocationSet().computeConstantOffset();
+        return getAccessPath().computeConstantOffset();
     }
     /// Field index of the gep statement if it access the field of a struct
-    inline s32_t getConstantFieldIdx() const
+    inline APOffset getConstantFieldIdx() const
     {
-        assert(isVariantFieldGep()==false && "Can't retrieve the LocationSet if using a variable field index (pointer arithmetic) for struct field access ");
-        return getLocationSet().getConstantFieldIdx();
+        assert(isVariantFieldGep()==false && "Can't retrieve the AccessPath if using a variable field index (pointer arithmetic) for struct field access ");
+        return getAccessPath().getConstantFieldIdx();
     }
     /// Gep statement with a variant field index (pointer arithmetic) for struct field access
     inline bool isVariantFieldGep() const
@@ -515,7 +515,7 @@ public:
     }
 
     /// constructor
-    GepStmt(SVFVar* s, SVFVar* d, const LocationSet& l, bool varfld = false)
+    GepStmt(SVFVar* s, SVFVar* d, const AccessPath& l, bool varfld = false)
         : AssignStmt(s, d, SVFStmt::Gep), ls(l), variantField(varfld)
     {
     }

@@ -156,7 +156,7 @@ PointsTo FlowDDA::processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts)
             }
             else
             {
-                NodeID fieldSrcPtdNode = getGepObjVar(ptd,	gepStmt->getLocationSet());
+                NodeID fieldSrcPtdNode = getGepObjVar(ptd,	gepStmt->getAccessPath().getConstantFieldIdx());
                 tmpDstPts.set(fieldSrcPtdNode);
             }
         }

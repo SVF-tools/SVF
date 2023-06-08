@@ -170,7 +170,7 @@ void AndersenBase::cleanConsCG(NodeID id)
 void AndersenBase::normalizePointsTo()
 {
     SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    SVFIR::NodeLocationSetMap &GepObjVarMap = pag->getGepObjNodeMap();
+    SVFIR::NodeOffsetMap &GepObjVarMap = pag->getGepObjNodeMap();
 
     // clear GepObjVarMap/memToFieldsMap/nodeToSubsMap/nodeToRepMap
     // for redundant gepnodes and remove those nodes from pag
@@ -179,7 +179,7 @@ void AndersenBase::normalizePointsTo()
         NodeID base = pag->getBaseObjVar(n);
         GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
         assert(gepNode && "Not a gep node in redundantGepNodes set");
-        const LocationSet ls = gepNode->getLocationSet();
+        const APOffset ls = gepNode->getConstantFieldIdx();
         GepObjVarMap.erase(std::make_pair(base, ls));
         memToFieldsMap[base].reset(n);
         cleanConsCG(n);
@@ -437,7 +437,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
                 continue;
             }
 
-            NodeID fieldSrcPtdNode = consCG->getGepObjVar(o, normalGepEdge->getLocationSet());
+            NodeID fieldSrcPtdNode = consCG->getGepObjVar(o, normalGepEdge->getAccessPath().getConstantFieldIdx());
             tmpDstPts.set(fieldSrcPtdNode);
         }
     }

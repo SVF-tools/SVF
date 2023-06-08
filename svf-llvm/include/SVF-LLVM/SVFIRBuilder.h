@@ -75,7 +75,7 @@ public:
     //@{
     void initialiseNodes();
     void addEdge(NodeID src, NodeID dst, SVFStmt::PEDGEK kind,
-                 s32_t offset = 0, Instruction* cs = nullptr);
+                 APOffset offset = 0, Instruction* cs = nullptr);
     // @}
 
     /// Sanity check for SVFIR
@@ -216,10 +216,10 @@ protected:
     void processCE(const Value* val);
 
     /// Infer field index from byteoffset.
-    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s32_t idx);
+    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ls, APOffset idx);
 
     /// Compute offset of a gep instruction or gep constant expression
-    bool computeGepOffset(const User *V, LocationSet& ls);
+    bool computeGepOffset(const User *V, AccessPath& ls);
 
     /// Get the base value of (i8* src and i8* dst) for external argument (e.g. memcpy(i8* dst, i8* src, int size))
     const Value* getBaseValueForExtArg(const Value* V);
@@ -287,7 +287,7 @@ protected:
         return nullPtr;
     }
 
-    NodeID getGepValVar(const SVFValue* val, const LocationSet& ls, const SVFType* baseType);
+    NodeID getGepValVar(const SVFValue* val, const AccessPath& ls, const SVFType* baseType);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
@@ -384,19 +384,19 @@ protected:
             setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Gep edge
-    inline void addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
+    inline void addGepEdge(NodeID src, NodeID dst, const AccessPath& ls, bool constGep)
     {
         if(GepStmt *edge = pag->addGepStmt(src, dst, ls, constGep))
             setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Offset(Gep) edge
-    inline void addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
+    inline void addNormalGepEdge(NodeID src, NodeID dst, const AccessPath& ls)
     {
         if(GepStmt *edge = pag->addNormalGepStmt(src, dst, ls))
             setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Variant(Gep) edge
-    inline void addVariantGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
+    inline void addVariantGepEdge(NodeID src, NodeID dst, const AccessPath& ls)
     {
         if(GepStmt *edge = pag->addVariantGepStmt(src, dst, ls))
             setCurrentBBAndValueForPAGEdge(edge);
@@ -415,7 +415,7 @@ protected:
     }
     //@}
 
-    LocationSet getLocationSetFromBaseNode(NodeID nodeId);
+    AccessPath getAccessPathFromBaseNode(NodeID nodeId);
 };
 
 } // End namespace SVF

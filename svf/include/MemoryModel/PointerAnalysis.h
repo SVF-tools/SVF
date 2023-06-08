@@ -338,7 +338,7 @@ public:
     {
         return pag->getFIObjVar(id);
     }
-    inline NodeID getGepObjVar(NodeID id, const LocationSet& ls)
+    inline NodeID getGepObjVar(NodeID id, const APOffset& ls)
     {
         return pag->getGepObjVar(id,ls);
     }

@@ -171,7 +171,7 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
             }
             else
             {
-                CxtVar var(ptd.get_cond(),getGepObjVar(ptd.get_id(),gepStmt->getLocationSet()));
+                CxtVar var(ptd.get_cond(),getGepObjVar(ptd.get_id(),gepStmt->getAccessPath().getConstantFieldIdx()));
                 tmpDstPts.set(var);
             }
         }

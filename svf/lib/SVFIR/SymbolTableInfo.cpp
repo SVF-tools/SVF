@@ -91,14 +91,14 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 /*!
  * Get modulus offset given the type information
  */
-LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationSet& ls)
+APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& ls)
 {
 
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
 
-    s32_t offset = ls.getConstantFieldIdx();
+    APOffset offset = ls;
     if(offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");
@@ -132,7 +132,7 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
             offset = maxOffset - 1;
     }
 
-    return LocationSet(offset);
+    return offset;
 }
 
 
@@ -368,7 +368,7 @@ void SymbolTableInfo::dump()
 /*!
  * Whether a location set is a pointer type or not
  */
-bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
+bool ObjTypeInfo::isNonPtrFieldObj(const APOffset& ls)
 {
     if (hasPtrObj() == false)
         return true;
@@ -383,13 +383,13 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         else
             sz = SymbolTableInfo::SymbolInfo()->getTypeInfo(ety)->getFlattenFieldTypes().size();
 
-        if(sz <= (u32_t) ls.getConstantFieldIdx())
+        if(sz <= (u32_t) ls)
         {
             writeWrnMsg("out of bound error when accessing the struct/array");
             return false;
         }
 
-        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.getConstantFieldIdx());
+        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls);
         return (elemTy->isPointerTy() == false);
     }
     else
@@ -537,7 +537,7 @@ bool MemObj::hasPtrObj() const
     return typeInfo->hasPtrObj();
 }
 
-bool MemObj::isNonPtrFieldObj(const LocationSet& ls) const
+bool MemObj::isNonPtrFieldObj(const APOffset& ls) const
 {
     return typeInfo->isNonPtrFieldObj(ls);
 }

@@ -152,7 +152,7 @@ void SVFIR2ItvExeState::narrowVAddrs(IntervalExeState &lhs, const IntervalExeSta
     }
 }
 
-SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, u32_t offset)
+SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, s32_t offset)
 {
     assert(!getVAddrs(pointer).empty());
     VAddrs &addrs = getVAddrs(pointer);
@@ -242,8 +242,8 @@ std::pair<s32_t, s32_t> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep)
 
         if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type))
         {
-            offsetLb = offsetLb * gep->getLocationSet().getElementNum(pty->getPtrElementType());
-            offsetUb = offsetUb * gep->getLocationSet().getElementNum(pty->getPtrElementType());
+            offsetLb = offsetLb * gep->getAccessPath().getElementNum(pty->getPtrElementType());
+            offsetUb = offsetUb * gep->getAccessPath().getElementNum(pty->getPtrElementType());
 
         }
         else

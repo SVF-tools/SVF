@@ -121,7 +121,7 @@ public:
     // Sparse value-flow graph (VFG.cpp)
     static const Option<bool> DumpVFG;
 
-    // Location set for modeling abstract memory object (LocationSet.cpp)
+    // Location set for modeling abstract memory object (AccessPath.cpp)
     static const Option<bool> SingleStride;
 
     // Base class of pointer analyses (PointerAnalysis.cpp)

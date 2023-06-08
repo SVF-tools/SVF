@@ -487,7 +487,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
                 continue;
             }
 
-            NodeID fieldSrcPtdNode = getGepObjVar(o, gepStmt->getLocationSet());
+            NodeID fieldSrcPtdNode = getGepObjVar(o, gepStmt->getAccessPath().getConstantFieldIdx());
             tmpDstPts.set(fieldSrcPtdNode);
         }
     }
