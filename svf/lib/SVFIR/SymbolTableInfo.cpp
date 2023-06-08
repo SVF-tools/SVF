@@ -91,14 +91,14 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 /*!
  * Get modulus offset given the type information
  */
-APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& ls)
+APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& apOffset)
 {
 
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
 
-    APOffset offset = ls;
+    APOffset offset = apOffset;
     if(offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");
@@ -368,7 +368,7 @@ void SymbolTableInfo::dump()
 /*!
  * Whether a location set is a pointer type or not
  */
-bool ObjTypeInfo::isNonPtrFieldObj(const APOffset& ls)
+bool ObjTypeInfo::isNonPtrFieldObj(const APOffset& apOffset)
 {
     if (hasPtrObj() == false)
         return true;
@@ -383,13 +383,13 @@ bool ObjTypeInfo::isNonPtrFieldObj(const APOffset& ls)
         else
             sz = SymbolTableInfo::SymbolInfo()->getTypeInfo(ety)->getFlattenFieldTypes().size();
 
-        if(sz <= (u32_t) ls)
+        if(sz <= (u32_t) apOffset)
         {
             writeWrnMsg("out of bound error when accessing the struct/array");
             return false;
         }
 
-        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls);
+        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, apOffset);
         return (elemTy->isPointerTy() == false);
     }
     else
@@ -537,9 +537,9 @@ bool MemObj::hasPtrObj() const
     return typeInfo->hasPtrObj();
 }
 
-bool MemObj::isNonPtrFieldObj(const APOffset& ls) const
+bool MemObj::isNonPtrFieldObj(const APOffset& apOffset) const
 {
-    return typeInfo->isNonPtrFieldObj(ls);
+    return typeInfo->isNonPtrFieldObj(apOffset);
 }
 
 const std::string MemObj::toString() const

@@ -323,7 +323,7 @@ cJSON* SVFIRWriter::contentToJson(const ObjVar* var)
 cJSON* SVFIRWriter::contentToJson(const GepValVar* var)
 {
     cJSON* root = contentToJson(static_cast<const ValVar*>(var));
-    JSON_WRITE_FIELD(root, var, ls);
+    JSON_WRITE_FIELD(root, var, ap);
     JSON_WRITE_FIELD(root, var, gepValType);
     return root;
 }
@@ -331,7 +331,7 @@ cJSON* SVFIRWriter::contentToJson(const GepValVar* var)
 cJSON* SVFIRWriter::contentToJson(const GepObjVar* var)
 {
     cJSON* root = contentToJson(static_cast<const ObjVar*>(var));
-    JSON_WRITE_FIELD(root, var, ls);
+    JSON_WRITE_FIELD(root, var, apOffset);
     JSON_WRITE_FIELD(root, var, base);
     return root;
 }
@@ -701,7 +701,7 @@ cJSON* SVFIRWriter::contentToJson(const LoadStmt* edge)
 cJSON* SVFIRWriter::contentToJson(const GepStmt* edge)
 {
     cJSON* root = contentToJson(static_cast<const AssignStmt*>(edge));
-    JSON_WRITE_FIELD(root, edge, ls);
+    JSON_WRITE_FIELD(root, edge, ap);
     JSON_WRITE_FIELD(root, edge, variantField);
     return root;
 }
@@ -1240,11 +1240,11 @@ cJSON* SVFIRWriter::toJson(const StInfo* stInfo)
     return jsonCreateIndex(svfModuleWriter.getStInfoID(stInfo));
 }
 
-cJSON* SVFIRWriter::toJson(const AccessPath& ls)
+cJSON* SVFIRWriter::toJson(const AccessPath& ap)
 {
     cJSON* root = jsonCreateObject();
-    JSON_WRITE_FIELD(root, &ls, fldIdx);
-    JSON_WRITE_FIELD(root, &ls, offsetVarAndGepTypePairs);
+    JSON_WRITE_FIELD(root, &ap, fldIdx);
+    JSON_WRITE_FIELD(root, &ap, offsetVarAndGepTypePairs);
     return root;
 }
 
@@ -1844,12 +1844,12 @@ void SVFIRReader::readJson(const cJSON* obj, CallSite& cs)
     readJson(obj, cs.CB);
 }
 
-void SVFIRReader::readJson(const cJSON* obj, AccessPath& ls)
+void SVFIRReader::readJson(const cJSON* obj, AccessPath& ap)
 {
     ABORT_IFNOT(jsonIsObject(obj), "Expected obj for AccessPath");
     obj = obj->child;
-    JSON_READ_FIELD_FWD(obj, &ls, fldIdx);
-    JSON_READ_FIELD_FWD(obj, &ls, offsetVarAndGepTypePairs);
+    JSON_READ_FIELD_FWD(obj, &ap, fldIdx);
+    JSON_READ_FIELD_FWD(obj, &ap, offsetVarAndGepTypePairs);
     ABORT_IFNOT(!obj, "Extra field " << JSON_KEY(obj) << " in AccessPath");
 }
 
@@ -1948,14 +1948,14 @@ void SVFIRReader::fill(const cJSON*& fieldJson, ObjVar* var)
 void SVFIRReader::fill(const cJSON*& fieldJson, GepValVar* var)
 {
     fill(fieldJson, static_cast<ValVar*>(var));
-    JSON_READ_FIELD_FWD(fieldJson, var, ls);
+    JSON_READ_FIELD_FWD(fieldJson, var, ap);
     JSON_READ_FIELD_FWD(fieldJson, var, gepValType);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, GepObjVar* var)
 {
     fill(fieldJson, static_cast<ObjVar*>(var));
-    JSON_READ_FIELD_FWD(fieldJson, var, ls);
+    JSON_READ_FIELD_FWD(fieldJson, var, apOffset);
     JSON_READ_FIELD_FWD(fieldJson, var, base);
 }
 
@@ -2053,7 +2053,7 @@ void SVFIRReader::fill(const cJSON*& fieldJson, LoadStmt* stmt)
 void SVFIRReader::fill(const cJSON*& fieldJson, GepStmt* stmt)
 {
     fill(fieldJson, static_cast<AssignStmt*>(stmt));
-    JSON_READ_FIELD_FWD(fieldJson, stmt, ls);
+    JSON_READ_FIELD_FWD(fieldJson, stmt, ap);
     JSON_READ_FIELD_FWD(fieldJson, stmt, variantField);
 }
 

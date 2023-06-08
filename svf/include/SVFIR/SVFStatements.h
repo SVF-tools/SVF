@@ -465,7 +465,7 @@ private:
     GepStmt(const GepStmt &);  ///< place holder
     void operator=(const GepStmt &); ///< place holder
 
-    AccessPath ls;	///< location set of the gep edge
+    AccessPath ap;	///< Access path of the GEP edge
     bool variantField;  ///< Gep statement with a variant field index (pointer arithmetic) for struct field access (e.g., p = &(q + f), where f is a variable)
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -486,7 +486,7 @@ public:
 
     inline const AccessPath& getAccessPath() const
     {
-        return ls;
+        return ap;
     }
     inline const AccessPath::OffsetVarAndGepTypePairs getOffsetVarAndGepTypePairVec() const
     {
@@ -515,8 +515,8 @@ public:
     }
 
     /// constructor
-    GepStmt(SVFVar* s, SVFVar* d, const AccessPath& l, bool varfld = false)
-        : AssignStmt(s, d, SVFStmt::Gep), ls(l), variantField(varfld)
+    GepStmt(SVFVar* s, SVFVar* d, const AccessPath& ap, bool varfld = false)
+        : AssignStmt(s, d, SVFStmt::Gep), ap(ap), variantField(varfld)
     {
     }
 

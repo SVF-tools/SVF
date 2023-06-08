@@ -216,10 +216,10 @@ protected:
     void processCE(const Value* val);
 
     /// Infer field index from byteoffset.
-    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ls, APOffset idx);
+    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, AccessPath& ap, APOffset idx);
 
     /// Compute offset of a gep instruction or gep constant expression
-    bool computeGepOffset(const User *V, AccessPath& ls);
+    bool computeGepOffset(const User *V, AccessPath& ap);
 
     /// Get the base value of (i8* src and i8* dst) for external argument (e.g. memcpy(i8* dst, i8* src, int size))
     const Value* getBaseValueForExtArg(const Value* V);
@@ -287,7 +287,7 @@ protected:
         return nullPtr;
     }
 
-    NodeID getGepValVar(const SVFValue* val, const AccessPath& ls, const SVFType* baseType);
+    NodeID getGepValVar(const SVFValue* val, const AccessPath& ap, const SVFType* baseType);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
@@ -364,53 +364,53 @@ protected:
     inline void addStoreEdge(NodeID src, NodeID dst)
     {
         IntraICFGNode* node;
-        if(const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
+        if (const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(curVal))
             node = pag->getICFG()->getIntraICFGNode(inst);
         else
             node = nullptr;
-        if(StoreStmt *edge = pag->addStoreStmt(src, dst, node))
+        if (StoreStmt* edge = pag->addStoreStmt(src, dst, node))
             setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Call edge
     inline void addCallEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
     {
-        if(CallPE *edge = pag->addCallPE(src, dst, cs, entry))
+        if (CallPE* edge = pag->addCallPE(src, dst, cs, entry))
             setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Return edge
     inline void addRetEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit)
     {
-        if(RetPE *edge = pag->addRetPE(src, dst, cs, exit))
+        if (RetPE* edge = pag->addRetPE(src, dst, cs, exit))
             setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Gep edge
-    inline void addGepEdge(NodeID src, NodeID dst, const AccessPath& ls, bool constGep)
+    inline void addGepEdge(NodeID src, NodeID dst, const AccessPath& ap, bool constGep)
     {
-        if(GepStmt *edge = pag->addGepStmt(src, dst, ls, constGep))
+        if (GepStmt* edge = pag->addGepStmt(src, dst, ap, constGep))
             setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Offset(Gep) edge
-    inline void addNormalGepEdge(NodeID src, NodeID dst, const AccessPath& ls)
+    inline void addNormalGepEdge(NodeID src, NodeID dst, const AccessPath& ap)
     {
-        if(GepStmt *edge = pag->addNormalGepStmt(src, dst, ls))
+        if (GepStmt* edge = pag->addNormalGepStmt(src, dst, ap))
             setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Variant(Gep) edge
-    inline void addVariantGepEdge(NodeID src, NodeID dst, const AccessPath& ls)
+    inline void addVariantGepEdge(NodeID src, NodeID dst, const AccessPath& ap)
     {
-        if(GepStmt *edge = pag->addVariantGepStmt(src, dst, ls))
+        if (GepStmt* edge = pag->addVariantGepStmt(src, dst, ap))
             setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Thread fork edge for parameter passing
     inline void addThreadForkEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
     {
-        if(TDForkPE *edge = pag->addThreadForkPE(src, dst, cs, entry))
+        if (TDForkPE* edge = pag->addThreadForkPE(src, dst, cs, entry))
             setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Thread join edge for parameter passing
     inline void addThreadJoinEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit)
     {
-        if(TDJoinPE *edge = pag->addThreadJoinPE(src, dst, cs, exit))
+        if (TDJoinPE* edge = pag->addThreadJoinPE(src, dst, cs, exit))
             setCurrentBBAndValueForPAGEdge(edge);
     }
     //@}

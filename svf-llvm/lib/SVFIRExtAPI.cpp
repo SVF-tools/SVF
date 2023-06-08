@@ -471,8 +471,8 @@ void SVFIRBuilder::extFuncAtomaticOperation(ExtAPI::Operand& atomicOp, const SVF
     {
         if (!atomicOp.getSrcValue().empty() && !atomicOp.getDstValue().empty() && !atomicOp.getOffsetOrSizeStr().empty())
         {
-            AccessPath ls(atomicOp.getOffsetOrSize());
-            addNormalGepEdge(atomicOp.getSrcID(), atomicOp.getDstID(), ls);
+            AccessPath ap(atomicOp.getOffsetOrSize());
+            addNormalGepEdge(atomicOp.getSrcID(), atomicOp.getDstID(), ap);
         }
         else
             writeWrnMsg("We need two valid NodeIDs and an offset to add a Gep edge");

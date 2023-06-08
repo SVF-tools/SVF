@@ -68,9 +68,9 @@ public:
     AccessPath(APOffset o = 0) : fldIdx(o) {}
 
     /// Copy Constructor
-    AccessPath(const AccessPath& ls)
-        : fldIdx(ls.fldIdx),
-          offsetVarAndGepTypePairs(ls.getOffsetVarAndGepTypePairVec())
+    AccessPath(const AccessPath& ap)
+        : fldIdx(ap.fldIdx),
+          offsetVarAndGepTypePairs(ap.getOffsetVarAndGepTypePairVec())
     {
     }
 
@@ -146,11 +146,12 @@ private:
 
 template <> struct std::hash<SVF::AccessPath>
 {
-    size_t operator()(const SVF::AccessPath &ls) const
+    size_t operator()(const SVF::AccessPath &ap) const
     {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
         std::hash<SVF::AccessPath::OffsetVarAndGepTypePairs> v;
-        return h(std::make_pair(ls.getConstantFieldIdx(), v(ls.getOffsetVarAndGepTypePairVec())));
+        return h(std::make_pair(ap.getConstantFieldIdx(),
+                                v(ap.getOffsetVarAndGepTypePairVec())));
     }
 };
 

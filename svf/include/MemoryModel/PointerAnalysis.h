@@ -338,9 +338,9 @@ public:
     {
         return pag->getFIObjVar(id);
     }
-    inline NodeID getGepObjVar(NodeID id, const APOffset& ls)
+    inline NodeID getGepObjVar(NodeID id, const APOffset& ap)
     {
-        return pag->getGepObjVar(id,ls);
+        return pag->getGepObjVar(id, ap);
     }
     virtual inline const NodeBS& getAllFieldsObjVars(NodeID id)
     {
