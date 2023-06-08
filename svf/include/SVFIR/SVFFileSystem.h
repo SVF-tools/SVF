@@ -422,7 +422,7 @@ private:
     cJSON* toJson(const CHEdge* edge);         // CHGraph Edge
 
     cJSON* toJson(const CallSite& cs);
-    cJSON* toJson(const AccessPath& ls);
+    cJSON* toJson(const AccessPath& ap);
     cJSON* toJson(const SVFLoop* loop);
     cJSON* toJson(const MemObj* memObj);
     cJSON* toJson(const ObjTypeInfo* objTypeInfo);  // Only owned by MemObj
@@ -1104,7 +1104,7 @@ private:
     void readJson(const cJSON* obj, CHEdge*& edge); // CHGraph Edge
     void readJson(const cJSON* obj, CallSite& cs); // CHGraph's csToClassMap
 
-    void readJson(const cJSON* obj, AccessPath& ls);
+    void readJson(const cJSON* obj, AccessPath& ap);
     void readJson(const cJSON* obj, SVFLoop*& loop);
     void readJson(const cJSON* obj, MemObj*& memObj);
     void readJson(const cJSON* obj,

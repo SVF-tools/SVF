@@ -383,7 +383,7 @@ class GepValVar: public ValVar
     friend class SVFIRReader;
 
 private:
-    AccessPath ls;	// AccessPath
+    AccessPath ap;	// AccessPath
     const SVFType* gepValType;
 
     /// Constructor to create empty GeValVar (for SVFIRReader/deserialization)
@@ -411,16 +411,16 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(const SVFValue* val, NodeID i, const AccessPath& l,
+    GepValVar(const SVFValue* val, NodeID i, const AccessPath& ap,
               const SVFType* ty)
-        : ValVar(val, i, GepValNode), ls(l), gepValType(ty)
+        : ValVar(val, i, GepValNode), ap(ap), gepValType(ty)
     {
     }
 
     /// offset of the base value variable
     inline APOffset getConstantFieldIdx() const
     {
-        return ls.getConstantFieldIdx();
+        return ap.getConstantFieldIdx();
     }
 
     /// Return name of a LLVM value
@@ -451,7 +451,7 @@ class GepObjVar: public ObjVar
     friend class SVFIRReader;
 
 private:
-    APOffset ls = 0;
+    APOffset apOffset = 0;
     NodeID base = 0;
 
     /// Constructor to create empty GepObjVar (for SVFIRReader/deserialization)
@@ -480,9 +480,9 @@ public:
     //@}
 
     /// Constructor
-    GepObjVar(const MemObj* mem, NodeID i, const APOffset& l,
+    GepObjVar(const MemObj* mem, NodeID i, const APOffset& apOffset,
               PNODEK ty = GepObjNode)
-        : ObjVar(mem->getValue(), i, mem, ty), ls(l)
+        : ObjVar(mem->getValue(), i, mem, ty), apOffset(apOffset)
     {
         base = mem->getId();
     }
@@ -490,7 +490,7 @@ public:
     /// offset of the mem object
     inline APOffset getConstantFieldIdx() const
     {
-        return ls;
+        return apOffset;
     }
 
     /// Set the base object from which this GEP node came from.
@@ -508,15 +508,15 @@ public:
     /// Return the type of this gep object
     inline virtual const SVFType* getType() const
     {
-        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(mem->getType(), ls);
+        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(mem->getType(), apOffset);
     }
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
         if (value)
-            return value->getName() + "_" + std::to_string(ls);
-        return "offset_" + std::to_string(ls);
+            return value->getName() + "_" + std::to_string(apOffset);
+        return "offset_" + std::to_string(apOffset);
     }
 
     virtual const std::string toString() const;

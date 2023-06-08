@@ -20,7 +20,7 @@ namespace SVF
 class RaceValidator : public RaceResultValidator
 {
 public:
-    RaceValidator(LockAnalysis* ls) :lsa(ls)
+    RaceValidator(LockAnalysis* lockAnalysis) :lsa(lockAnalysis)
     {
     }
     bool protectedByCommonLocks(const Instruction* I1, const Instruction* I2)

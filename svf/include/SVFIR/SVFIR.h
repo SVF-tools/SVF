@@ -328,7 +328,8 @@ public:
     //@}
 
     /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
-    NodeID getGepValVar(const SVFValue* curInst, NodeID base, const AccessPath& ls) const;
+    NodeID getGepValVar(const SVFValue* curInst, NodeID base,
+                        const AccessPath& ap) const;
 
     /// Add/get indirect callsites
     //@{
@@ -392,9 +393,9 @@ public:
     //@}
 
     /// Get a field SVFIR Object node according to base mem obj and offset
-    NodeID getGepObjVar(const MemObj* obj, const APOffset& ls);
+    NodeID getGepObjVar(const MemObj* obj, const APOffset& ap);
     /// Get a field obj SVFIR node according to a mem obj and a given offset
-    NodeID getGepObjVar(NodeID id, const APOffset& ls) ;
+    NodeID getGepObjVar(NodeID id, const APOffset& ap) ;
     /// Get a field-insensitive obj SVFIR node according to a mem obj
     //@{
     inline NodeID getFIObjVar(const MemObj* obj) const
@@ -557,9 +558,9 @@ private:
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValVar
-    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const AccessPath& ls, NodeID i, const SVFType* type);
+    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const AccessPath& ap, NodeID i, const SVFType* type);
     /// Add a field obj node, this method can only invoked by getGepObjVar
-    NodeID addGepObjNode(const MemObj* obj, const APOffset& ls);
+    NodeID addGepObjNode(const MemObj* obj, const APOffset& apOffset);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
     NodeID addFIObjNode(const MemObj* obj);
     //@}
@@ -665,12 +666,12 @@ private:
     RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                     const FunExitICFGNode* exit);
     /// Add Gep edge
-    GepStmt* addGepStmt(NodeID src, NodeID dst, const AccessPath& ls,
+    GepStmt* addGepStmt(NodeID src, NodeID dst, const AccessPath& ap,
                         bool constGep);
     /// Add Offset(Gep) edge
-    GepStmt* addNormalGepStmt(NodeID src, NodeID dst, const AccessPath& ls);
+    GepStmt* addNormalGepStmt(NodeID src, NodeID dst, const AccessPath& ap);
     /// Add Variant(Gep) edge
-    GepStmt* addVariantGepStmt(NodeID src, NodeID dst, const AccessPath& ls);
+    GepStmt* addVariantGepStmt(NodeID src, NodeID dst, const AccessPath& ap);
     /// Add Thread fork edge for parameter passing
     TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs,
                               const FunEntryICFGNode* entry);

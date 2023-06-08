@@ -157,18 +157,15 @@ NodeBS AccessPath::computeAllLocations() const
     return result;
 }
 
-AccessPath AccessPath::operator+ (const AccessPath& rhs) const
+AccessPath AccessPath::operator+(const AccessPath& rhs) const
 {
-    AccessPath ls(rhs);
-    ls.fldIdx += getConstantFieldIdx();
-    OffsetVarAndGepTypePairs::const_iterator it = getOffsetVarAndGepTypePairVec().begin();
-    OffsetVarAndGepTypePairs::const_iterator eit = getOffsetVarAndGepTypePairVec().end();
-    for (; it != eit; ++it)
-        ls.addOffsetVarAndGepTypePair(it->first, it->second);
+    AccessPath ap(rhs);
+    ap.fldIdx += getConstantFieldIdx();
+    for (auto &p : ap.getOffsetVarAndGepTypePairVec())
+        ap.addOffsetVarAndGepTypePair(p.first, p.second);
 
-    return ls;
+    return ap;
 }
-
 
 bool AccessPath::operator< (const AccessPath& rhs) const
 {
