@@ -1014,8 +1014,9 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = new SVFFunctionType(getSVFType(ft->getReturnType()));
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
     {
-        auto svfst = new SVFStructType;
-        svfst->getName() = st->getName().str();
+        auto svfst = new SVFStructType();
+        if(st->hasName())
+            svfst->getName() = st->getName().str();
         svftype = svfst;
     }
     else if (const auto at = SVFUtil::dyn_cast<ArrayType>(T))
