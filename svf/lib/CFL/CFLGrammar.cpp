@@ -204,7 +204,7 @@ inline GrammarBase::Kind GrammarBase::insertNonterminalKind(std::string const ki
     return kind;
 }
 
-std::string GrammarBase::extractKindStrFromSymbolStr(const std::string symbolStr) const
+std::string GrammarBase::extractKindStrFromSymbolStr(const std::string& symbolStr) const
 {
     std::string kindStr;
     // symbolStr end with '_', the whole symbolStr treat as kind, not with attribute.
@@ -216,7 +216,7 @@ std::string GrammarBase::extractKindStrFromSymbolStr(const std::string symbolStr
     return symbolStr.substr(0, underscorePosition);
 }
 
-std::string GrammarBase::extractAttributeStrFromSymbolStr(const std::string symbolStr) const
+std::string GrammarBase::extractAttributeStrFromSymbolStr(const std::string& symbolStr) const
 {
     std::string attributeStr;
     // symbolStr end with '_', the whole symbolStr treat as kind, not with attribute.

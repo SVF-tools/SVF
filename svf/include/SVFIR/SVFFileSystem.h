@@ -429,6 +429,7 @@ private:
     cJSON* toJson(const SVFLoopAndDomInfo* ldInfo); // Only owned by SVFFunction
     cJSON* toJson(const StInfo* stInfo);
 
+    // No need for 'toJson(short)' because of promotion to int
     static cJSON* toJson(bool flag);
     static cJSON* toJson(unsigned number);
     static cJSON* toJson(int number);
@@ -1044,6 +1045,7 @@ public:
     static void readJson(const cJSON* obj, bool& flag);
     static void readJson(const cJSON* obj, unsigned& val);
     static void readJson(const cJSON* obj, int& val);
+    static void readJson(const cJSON* obj, short& val);
     static void readJson(const cJSON* obj, float& val);
     static void readJson(const cJSON* obj, unsigned long& val);
     static void readJson(const cJSON* obj, long long& val);

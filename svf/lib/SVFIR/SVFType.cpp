@@ -18,14 +18,15 @@ std::ostream& operator<<(std::ostream& OS, const SVFType& type)
 
 void SVFPointerType::print(std::ostream& OS) const
 {
-    getPtrElementType()->print(OS);
-    OS << "*";
+    OS << *getPtrElementType() << '*';
 }
 
 void SVFIntegerType::print(std::ostream& OS) const
 {
-    // Making it more informative?
-    OS << "I";
+    if (signAndWidth < 0)
+        OS << 'i' << -signAndWidth;
+    else
+        OS << 'u' << signAndWidth;
 }
 
 void SVFFunctionType::print(std::ostream& OS) const
@@ -40,7 +41,7 @@ void SVFStructType::print(std::ostream& OS) const
 
 void SVFArrayType::print(std::ostream& OS) const
 {
-    OS << "[" << numOfElement << "x" << *typeOfElement << "]";
+    OS << '[' << numOfElement << 'x' << *typeOfElement << ']';
 }
 
 void SVFOtherType::print(std::ostream& OS) const

@@ -356,6 +356,12 @@ public:
 
 class SVFIntegerType : public SVFType
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+private:
+    short signAndWidth; ///< For printing
+
 public:
     SVFIntegerType() : SVFType(true, SVFIntegerTy) {}
     static inline bool classof(const SVFType* node)
@@ -364,6 +370,16 @@ public:
     }
 
     void print(std::ostream& OS) const override;
+
+    void setSignAndWidth(short sw)
+    {
+        signAndWidth = sw;
+    }
+
+    bool isSigned() const
+    {
+        return signAndWidth < 0;
+    }
 };
 
 class SVFFunctionType : public SVFType
@@ -397,6 +413,7 @@ class SVFStructType : public SVFType
     friend class SVFIRReader;
 
 private:
+    /// @brief Field for printing & debugging
     std::string name;
 
 public:
@@ -409,9 +426,17 @@ public:
 
     void print(std::ostream& OS) const override;
 
-    std::string& getName()
+    const std::string& getName()
     {
         return name;
+    }
+    void setName(const std::string& structName)
+    {
+        name = structName;
+    }
+    void setName(std::string&& structName)
+    {
+        name = std::move(structName);
     }
 };
 
@@ -421,8 +446,8 @@ class SVFArrayType : public SVFType
     friend class SVFIRReader;
 
 private:
-    unsigned numOfElement; /// For printing
-    SVFType* typeOfElement; /// For printing
+    unsigned numOfElement; /// For printing & debugging
+    const SVFType* typeOfElement; /// For printing & debugging
 
 public:
     SVFArrayType()
@@ -437,7 +462,7 @@ public:
 
     void print(std::ostream& OS) const override;
 
-    void setTypeOfElement(SVFType* elemType)
+    void setTypeOfElement(const SVFType* elemType)
     {
         typeOfElement = elemType;
     }
@@ -464,9 +489,19 @@ public:
         return node->getKind() == SVFOtherTy;
     }
 
-    std::string& getRepr()
+    const std::string& getRepr()
     {
         return repr;
+    }
+
+    void setRepr(std::string&& r)
+    {
+        repr = std::move(r);
+    }
+
+    void setRepr(const std::string& r)
+    {
+        repr = r;
     }
 
     void print(std::ostream& OS) const override;
