@@ -282,11 +282,11 @@ public:
         return kind;
     }
 
-    /// Note: Use `os<<svfType` or `svfType.print(os)` when possible to avoid
+    /// \note Use `os<<svfType` or `svfType.print(os)` when possible to avoid
     /// string concatenation.
     std::string toString() const;
 
-    virtual void print(std::ostream& OS) const = 0;
+    virtual void print(std::ostream& os) const = 0;
 
     inline void setPointerTo(const SVFPointerType* ty)
     {
@@ -327,7 +327,7 @@ public:
     }
 };
 
-std::ostream& operator<<(std::ostream& OS, const SVFType& type);
+std::ostream& operator<<(std::ostream& os, const SVFType& type);
 
 class SVFPointerType : public SVFType
 {
@@ -351,7 +351,7 @@ public:
         return ptrElementType;
     }
 
-    void print(std::ostream& OS) const override;
+    void print(std::ostream& os) const override;
 };
 
 class SVFIntegerType : public SVFType
@@ -369,7 +369,7 @@ public:
         return node->getKind() == SVFIntegerTy;
     }
 
-    void print(std::ostream& OS) const override;
+    void print(std::ostream& os) const override;
 
     void setSignAndWidth(short sw)
     {
@@ -404,7 +404,7 @@ public:
         return retTy;
     }
 
-    void print(std::ostream& OS) const override;
+    void print(std::ostream& os) const override;
 };
 
 class SVFStructType : public SVFType
@@ -424,7 +424,7 @@ public:
         return node->getKind() == SVFStructTy;
     }
 
-    void print(std::ostream& OS) const override;
+    void print(std::ostream& os) const override;
 
     const std::string& getName()
     {
@@ -460,7 +460,7 @@ public:
         return node->getKind() == SVFArrayTy;
     }
 
-    void print(std::ostream& OS) const override;
+    void print(std::ostream& os) const override;
 
     void setTypeOfElement(const SVFType* elemType)
     {
@@ -504,7 +504,7 @@ public:
         repr = r;
     }
 
-    void print(std::ostream& OS) const override;
+    void print(std::ostream& os) const override;
 };
 
 /// [FOR DEBUG ONLY, DON'T USE IT UNSIDE `svf`!]

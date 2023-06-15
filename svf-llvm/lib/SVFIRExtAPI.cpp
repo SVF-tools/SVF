@@ -135,7 +135,10 @@ NodeID SVFIRBuilder::getExtID(ExtAPI::OperationType operationType, const std::st
     }
     // return value = -6 is an illegal operand format
     else
+    {
         assert(false && "The operand format of function operation is illegal!");
+        abort();
+    }
 }
 
 void SVFIRBuilder::parseAtomaticOp(SVF::ExtAPI::Operand &atomaticOp, const SVFCallInst* svfCall, std::map<std::string, NodeID> &nodeIDMap)

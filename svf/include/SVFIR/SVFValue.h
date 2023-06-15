@@ -255,8 +255,9 @@ public:
         return sourceLoc;
     }
 
-    /// Needs to be implemented by a specific SVF front end (e.g., the implementation in LLVMUtil)
-    virtual const std::string toString() const;
+    /// \note Use `os<<SVFvalue` or `svfValue.print(os)` when possible to avoid
+    /// string concatenation.
+    std::string toString() const;
 
     virtual void print(OutStream& os) const = 0;
 

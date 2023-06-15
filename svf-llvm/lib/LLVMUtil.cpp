@@ -1039,12 +1039,6 @@ s32_t LLVMUtil::getVCallIdx(const CallBase* cs)
 
 namespace SVF
 {
-const std::string SVFValue::toString() const
-{
-    // TODO: Should only use info in SVFValue. Refactor it later.
-    return dumpLLVMValue(this);
-}
-
 std::string dumpLLVMValue(const SVFValue* svfValue)
 {
     std::string str;
