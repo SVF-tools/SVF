@@ -88,7 +88,7 @@ public:
         return fun;
     }
 
-    /// Return the function of this ICFGNode
+    /// Return the basic block of this ICFGNode
     virtual const SVFBasicBlock* getBB() const
     {
         return bb;
