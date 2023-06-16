@@ -1075,7 +1075,7 @@ std::string dumpLLVMValue(const SVFValue* svfValue)
 std::string dumpLLVMType(const SVFType* svfType)
 {
     const Type* ty = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(svfType);
-    return LLVMUtil::getLLVMPrinted(*ty);
+    return LLVMUtil::llvmToString(*ty);
 }
 
 } // namespace SVF

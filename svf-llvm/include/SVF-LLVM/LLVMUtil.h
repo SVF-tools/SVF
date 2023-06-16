@@ -483,7 +483,7 @@ bool isSameThisPtrInConstructor(const Argument* thisPtr1,
                                 const Value* thisPtr2);
 
 template<typename T>
-std::string getLLVMPrinted(const T& val)
+std::string llvmToString(const T& val)
 {
     std::string str;
     llvm::raw_string_ostream(str) << val;

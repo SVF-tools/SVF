@@ -5,7 +5,9 @@ namespace SVF
 {
 std::string SVFType::toString() const
 {
-    return (std::ostringstream() << *this).str();
+    std::ostringstream os;
+    print(os);
+    return os.str();
 }
 
 std::ostream& operator<<(std::ostream& os, const SVFType& type)

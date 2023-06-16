@@ -235,7 +235,7 @@ void LLVMModuleSet::createSVFDataStructure()
                     }
                     else
                     {
-                        std::string str = LLVMUtil::getLLVMPrinted(inst);
+                        std::string str = LLVMUtil::llvmToString(inst);
                         auto it = str.begin(), ite = str.end();
                         while (it != ite && std::isspace(*it))
                             ++it;
@@ -930,7 +930,7 @@ SVFConstant* LLVMModuleSet::getOtherSVFConstant(const Constant* oc)
 
         // Setting up string representation.
         // Usually is a bitcast from a global variable's address
-        std::string str = LLVMUtil::getLLVMPrinted(*oc);
+        std::string str = LLVMUtil::llvmToString(*oc);
         const char* spaceChars = " \t\n\v\f\r";
         size_t space = str.find_first_of(spaceChars);
         const int maxLen = 62; // Arbitrary chosen small number that fits string
@@ -971,7 +971,7 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
             svfov->setName(ov->getName().str());
         else
         {
-            auto str = LLVMUtil::getLLVMPrinted(*ov);
+            auto str = LLVMUtil::llvmToString(*ov);
             shortenLongInfo(str, 30);
             svfov->setName(std::move(str));
         }

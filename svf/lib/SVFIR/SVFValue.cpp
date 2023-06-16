@@ -124,7 +124,9 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
 
 std::string SVFValue::toString() const
 {
-    return (std::ostringstream() << *this).str();
+    std::ostringstream os;
+    print(os);
+    return os.str();
 }
 
 SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
