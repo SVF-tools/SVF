@@ -183,17 +183,17 @@ private:
 
 protected:
     const SVFType* type;   ///< Type of this SVFValue
-    std::string name;       ///< Short name of this value for debugging
+    std::string name;       ///< Short name of value for printing & debugging
     std::string sourceLoc;  ///< Source code information of this value
-    /// Constructor
-    SVFValue(const std::string& val, const SVFType* ty, SVFValKind k)
+    /// Constructor without name
+    SVFValue(const SVFType* ty, SVFValKind k)
         : kind(k), ptrInUncalledFun(false),
-          constDataOrAggData(SVFConstData == k), type(ty), name(val),
-          sourceLoc("No source code Info")
+          constDataOrAggData(SVFConstData == k), type(ty), sourceLoc("NoLoc")
     {
     }
 
-    ///@{ attributes to be set only through Module builders e.g., LLVMModule
+    ///@{ attributes to be set only through Module builders e.g.,
+    /// LLVMModule
     inline void setConstDataOrAggData()
     {
         constDataOrAggData = true;
@@ -213,14 +213,17 @@ public:
         return kind;
     }
 
-    // TODO: (Optimization) Returns `const std::string&`?
-    inline virtual const std::string getName() const
+    inline const std::string &getName() const
     {
         return name;
     }
-    inline virtual void setName(const std::string& valueName)
+    inline void setName(const std::string& n)
     {
-        name = valueName;
+        name = n;
+    }
+    inline void setName(std::string&& n)
+    {
+        name = std::move(n);
     }
 
     inline virtual const SVFType* getType() const
@@ -252,15 +255,18 @@ public:
         return sourceLoc;
     }
 
-    /// Needs to be implemented by a specific SVF front end (e.g., the implementation in LLVMUtil)
-    virtual const std::string toString() const;
+    /// \note Use `os<<SVFvalue` or `svfValue.print(os)` when possible to avoid
+    /// string concatenation.
+    std::string toString() const;
+
+    virtual void print(OutStream& os) const = 0;
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend OutStream& operator<< (OutStream &o, const SVFValue &node)
+    friend OutStream& operator<<(OutStream &os, const SVFValue &value)
     {
-        o << node.toString();
-        return o;
+        value.print(os);
+        return os;
     }
     //@}
 };
@@ -291,7 +297,6 @@ private:
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
 
-
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
     inline void addBasicBlock(const SVFBasicBlock* bb)
@@ -321,8 +326,7 @@ protected:
     /// @}
 
 public:
-    SVFFunction(const std::string& f, const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
-    SVFFunction(const std::string& f) = delete;
+    SVFFunction(const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
 
@@ -330,6 +334,8 @@ public:
     {
         return node->getKind() == SVFFunc;
     }
+
+    void print(OutStream& os) const override;
 
     inline SVFLoopAndDomInfo* getLoopAndDomInfo()
     {
@@ -479,7 +485,6 @@ public:
     {
         return loopAndDom->postDominate(bbKey,bbValue);
     }
-
 };
 
 class SVFBasicBlock : public SVFValue
@@ -517,7 +522,8 @@ protected:
     /// @}
 
 public:
-    SVFBasicBlock(const std::string& b, const SVFType* ty, const SVFFunction* f);
+    /// Constructor without name
+    SVFBasicBlock(const SVFType* ty, const SVFFunction* f);
     SVFBasicBlock() = delete;
     ~SVFBasicBlock() override;
 
@@ -525,6 +531,8 @@ public:
     {
         return node->getKind() == SVFBB;
     }
+
+    void print(OutStream& os) const override;
 
     inline const std::vector<const SVFInstruction*>& getInstructionList() const
     {
@@ -599,8 +607,9 @@ private:
     InstVec predInsts;  /// predecessor Instructions
 
 public:
-    SVFInstruction(const std::string& i, const SVFType* ty, const SVFBasicBlock* b, bool tm, bool isRet, SVFValKind k = SVFInst);
-    SVFInstruction(const std::string& i) = delete;
+    /// Constructor without name, set name with setName()
+    SVFInstruction(const SVFType* ty, const SVFBasicBlock* b, bool tm,
+                   bool isRet, SVFValKind k = SVFInst);
     SVFInstruction(void) = delete;
 
     static inline bool classof(const SVFValue *node)
@@ -609,6 +618,8 @@ public:
                node->getKind() == SVFCall ||
                node->getKind() == SVFVCall;
     }
+
+    void print(OutStream& os) const override;
 
     inline const SVFBasicBlock* getParent() const
     {
@@ -676,11 +687,10 @@ protected:
     /// @}
 
 public:
-    SVFCallInst(const std::string& i, const SVFType* ty, const SVFBasicBlock* b, bool va, bool tm, SVFValKind k = SVFCall) :
-        SVFInstruction(i, ty, b, tm, false, k), varArg(va), calledVal(nullptr)
+    SVFCallInst(const SVFType* ty, const SVFBasicBlock* b, bool va, bool tm, SVFValKind k = SVFCall) :
+        SVFInstruction(ty, b, tm, false, k), varArg(va), calledVal(nullptr)
     {
     }
-    SVFCallInst(const std::string& i) = delete;
     SVFCallInst(void) = delete;
 
     static inline bool classof(const SVFValue *node)
@@ -752,8 +762,10 @@ protected:
     }
 
 public:
-    SVFVirtualCallInst(const std::string& i, const SVFType* ty, const SVFBasicBlock* b, bool vararg, bool tm) :
-        SVFCallInst(i,ty,b,vararg,tm, SVFVCall), vCallVtblPtr(nullptr), virtualFunIdx(-1), funNameOfVcall("")
+    SVFVirtualCallInst(const SVFType* ty, const SVFBasicBlock* b, bool vararg,
+                       bool tm)
+        : SVFCallInst(ty, b, vararg, tm, SVFVCall), vCallVtblPtr(nullptr),
+          virtualFunIdx(-1), funNameOfVcall()
     {
     }
     inline const SVFValue* getVtablePtr() const
@@ -789,7 +801,7 @@ class SVFConstant : public SVFValue
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
-    SVFConstant(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConst): SVFValue(_const, ty, k)
+    SVFConstant(const SVFType* ty, SVFValKind k = SVFConst): SVFValue(ty, k)
     {
     }
     SVFConstant() = delete;
@@ -804,6 +816,8 @@ public:
                node->getKind() == SVFNullPtr ||
                node->getKind() == SVFBlackHole;
     }
+
+    void print(OutStream& os) const override;
 };
 
 class SVFGlobalValue : public SVFConstant
@@ -822,11 +836,16 @@ protected:
     }
 
 public:
-    SVFGlobalValue(const std::string& _gv, const SVFType* ty): SVFConstant(_gv, ty, SVFValue::SVFGlob), realDefGlobal(nullptr)
+    SVFGlobalValue(const SVFType* ty): SVFConstant(ty, SVFValue::SVFGlob), realDefGlobal(nullptr)
     {
+    }
+    SVFGlobalValue(std::string&& name, const SVFType* ty) : SVFGlobalValue(ty)
+    {
+        setName(std::move(name));
     }
     SVFGlobalValue() = delete;
 
+    void print(OutStream& os) const override;
 
     inline const SVFValue* getDefGlobalForMultipleModule() const
     {
@@ -853,10 +872,15 @@ private:
     u32_t argNo;
     bool uncalled;
 public:
-    SVFArgument(const std::string& _arg, const SVFType* ty, const SVFFunction* _fun, u32_t _argNo, bool _uncalled): SVFValue(_arg, ty, SVFValue::SVFArg), fun(_fun), argNo(_argNo), uncalled(_uncalled)
+    SVFArgument(const SVFType* ty, const SVFFunction* fun, u32_t argNo,
+                bool uncalled)
+        : SVFValue(ty, SVFValue::SVFArg), fun(fun), argNo(argNo),
+          uncalled(uncalled)
     {
     }
     SVFArgument() = delete;
+
+    void print(OutStream& os) const override;
 
     inline const SVFFunction* getParent() const
     {
@@ -881,17 +905,18 @@ public:
     }
 };
 
-
-
 class SVFConstantData : public SVFConstant
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
-    SVFConstantData(const std::string& _const, const SVFType* ty, SVFValKind k = SVFConstData): SVFConstant(_const, ty, k)
+    SVFConstantData(const SVFType* ty, SVFValKind k = SVFConstData)
+        : SVFConstant(ty, k)
     {
     }
     SVFConstantData() = delete;
+
+    void print(OutStream& os) const override;
 
     static inline bool classof(const SVFValue *node)
     {
@@ -911,7 +936,6 @@ public:
     }
 };
 
-
 class SVFConstantInt : public SVFConstantData
 {
     friend class SVFIRWriter;
@@ -920,10 +944,13 @@ private:
     u64_t zval;
     s64_t sval;
 public:
-    SVFConstantInt(const std::string& _const, const SVFType* ty, u64_t z, s64_t s): SVFConstantData(_const, ty, SVFValue::SVFConstInt), zval(z), sval(s)
+    SVFConstantInt(const SVFType* ty, u64_t z, s64_t s)
+        : SVFConstantData(ty, SVFValue::SVFConstInt), zval(z), sval(s)
     {
     }
     SVFConstantInt() = delete;
+
+    void print(OutStream& os) const override;
 
     static inline bool classof(const SVFValue *node)
     {
@@ -945,7 +972,6 @@ public:
     }
 };
 
-
 class SVFConstantFP : public SVFConstantData
 {
     friend class SVFIRWriter;
@@ -953,10 +979,13 @@ class SVFConstantFP : public SVFConstantData
 private:
     float dval;
 public:
-    SVFConstantFP(const std::string& _const, const SVFType* ty, double d): SVFConstantData(_const, ty, SVFValue::SVFConstFP), dval(d)
+    SVFConstantFP(const SVFType* ty, double d)
+        : SVFConstantData(ty, SVFValue::SVFConstFP), dval(d)
     {
     }
     SVFConstantFP() = delete;
+
+    void print(OutStream& os) const override;
 
     inline double getFPValue () const
     {
@@ -972,17 +1001,19 @@ public:
     }
 };
 
-
 class SVFConstantNullPtr : public SVFConstantData
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
 public:
-    SVFConstantNullPtr(const std::string& _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFNullPtr)
+    SVFConstantNullPtr(const SVFType* ty)
+        : SVFConstantData(ty, SVFValue::SVFNullPtr)
     {
     }
     SVFConstantNullPtr() = delete;
+
+    void print(OutStream& os) const override;
 
     static inline bool classof(const SVFValue *node)
     {
@@ -1000,10 +1031,13 @@ class SVFBlackHoleValue : public SVFConstantData
     friend class SVFIRReader;
 
 public:
-    SVFBlackHoleValue(const std::string& _const, const SVFType* ty): SVFConstantData(_const, ty, SVFValue::SVFBlackHole)
+    SVFBlackHoleValue(const SVFType* ty)
+        : SVFConstantData(ty, SVFValue::SVFBlackHole)
     {
     }
     SVFBlackHoleValue() = delete;
+
+    void print(OutStream& os) const override;
 
     static inline bool classof(const SVFValue *node)
     {
@@ -1020,7 +1054,8 @@ class SVFOtherValue : public SVFValue
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
-    SVFOtherValue(const std::string& other, const SVFType* ty, SVFValKind k = SVFValue::SVFOther): SVFValue(other, ty, k)
+    SVFOtherValue(const SVFType* ty, SVFValKind k = SVFValue::SVFOther)
+        : SVFValue(ty, k)
     {
     }
     SVFOtherValue() = delete;
@@ -1029,6 +1064,8 @@ public:
     {
         return node->getKind() == SVFOther || node->getKind() == SVFMetaAsValue;
     }
+
+    void print(OutStream& os) const override;
 };
 
 /*
@@ -1039,7 +1076,8 @@ class SVFMetadataAsValue : public SVFOtherValue
     friend class SVFIRWriter;
     friend class SVFIRReader;
 public:
-    SVFMetadataAsValue(const std::string& other, const SVFType* ty): SVFOtherValue(other, ty, SVFValue::SVFMetaAsValue)
+    SVFMetadataAsValue(const SVFType* ty)
+        : SVFOtherValue(ty, SVFValue::SVFMetaAsValue)
     {
     }
     SVFMetadataAsValue() = delete;
@@ -1052,6 +1090,8 @@ public:
     {
         return node->getKind() == SVFMetaAsValue;
     }
+
+    void print(OutStream& os) const override;
 };
 
 

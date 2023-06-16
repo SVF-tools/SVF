@@ -54,13 +54,13 @@ public:
     void buildInternalMaps();
     void readInheritanceMetadataFromModule(const Module &M);
 
-    CHNode *createNode(const std::string name);
+    CHNode *createNode(const std::string& name);
 
     void connectInheritEdgeViaCall(const Function* caller, const CallBase* cs);
     void connectInheritEdgeViaStore(const Function* caller, const StoreInst* store);
 
     void buildClassNameToAncestorsDescendantsMap();
-    const CHGraph::CHNodeSetTy& getInstancesAndDescendants(const std::string className);
+    const CHGraph::CHNodeSetTy& getInstancesAndDescendants(const std::string& className);
 
     void analyzeVTables(const Module &M);
     void buildVirtualFunctionToIDMap();

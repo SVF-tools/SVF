@@ -43,45 +43,51 @@ SVFType* createSVFType(SVFType::GNodeK kind, bool isSingleValTy)
 }
 
 static SVFValue* createSVFValue(SVFValue::GNodeK kind, const SVFType* type,
-                                const std::string& name)
+                                std::string&& name)
 {
-    switch (kind)
+    auto creator = [=]() -> SVFValue*
     {
-    default:
-        ABORT_MSG(kind << " is an impossible SVFValueKind in create()");
-    case SVFValue::SVFVal:
-        ABORT_MSG("Creation of RAW SVFValue isn't allowed");
-    case SVFValue::SVFFunc:
-        return new SVFFunction(name, type, {}, {}, {}, {}, {}, {});
-    case SVFValue::SVFBB:
-        return new SVFBasicBlock(name, type, {});
-    case SVFValue::SVFInst:
-        return new SVFInstruction(name, type, {}, {}, {});
-    case SVFValue::SVFCall:
-        return new SVFCallInst(name, type, {}, {}, {});
-    case SVFValue::SVFVCall:
-        return new SVFVirtualCallInst(name, type, {}, {}, {});
-    case SVFValue::SVFGlob:
-        return new SVFGlobalValue(name, type);
-    case SVFValue::SVFArg:
-        return new SVFArgument(name, type, {}, {}, {});
-    case SVFValue::SVFConst:
-        return new SVFConstant(name, type);
-    case SVFValue::SVFConstData:
-        return new SVFConstantData(name, type);
-    case SVFValue::SVFConstInt:
-        return new SVFConstantInt(name, type, {}, {});
-    case SVFValue::SVFConstFP:
-        return new SVFConstantFP(name, type, {});
-    case SVFValue::SVFNullPtr:
-        return new SVFConstantNullPtr(name, type);
-    case SVFValue::SVFBlackHole:
-        return new SVFBlackHoleValue(name, type);
-    case SVFValue::SVFMetaAsValue:
-        return new SVFMetadataAsValue(name, type);
-    case SVFValue::SVFOther:
-        return new SVFOtherValue(name, type);
-    }
+        switch (kind)
+        {
+        default:
+            ABORT_MSG(kind << " is an impossible SVFValueKind in create()");
+        case SVFValue::SVFVal:
+            ABORT_MSG("Creation of RAW SVFValue isn't allowed");
+        case SVFValue::SVFFunc:
+            return new SVFFunction(type, {}, {}, {}, {}, {}, {});
+        case SVFValue::SVFBB:
+            return new SVFBasicBlock(type, {});
+        case SVFValue::SVFInst:
+            return new SVFInstruction(type, {}, {}, {});
+        case SVFValue::SVFCall:
+            return new SVFCallInst(type, {}, {}, {});
+        case SVFValue::SVFVCall:
+            return new SVFVirtualCallInst(type, {}, {}, {});
+        case SVFValue::SVFGlob:
+            return new SVFGlobalValue(type);
+        case SVFValue::SVFArg:
+            return new SVFArgument(type, {}, {}, {});
+        case SVFValue::SVFConst:
+            return new SVFConstant(type);
+        case SVFValue::SVFConstData:
+            return new SVFConstantData(type);
+        case SVFValue::SVFConstInt:
+            return new SVFConstantInt(type, {}, {});
+        case SVFValue::SVFConstFP:
+            return new SVFConstantFP(type, {});
+        case SVFValue::SVFNullPtr:
+            return new SVFConstantNullPtr(type);
+        case SVFValue::SVFBlackHole:
+            return new SVFBlackHoleValue(type);
+        case SVFValue::SVFMetaAsValue:
+            return new SVFMetadataAsValue(type);
+        case SVFValue::SVFOther:
+            return new SVFOtherValue(type);
+        }
+    };
+    auto val = creator();
+    val->setName(std::move(name));
+    return val;
 }
 
 template <typename SmallNumberType>
@@ -486,7 +492,9 @@ cJSON* SVFIRWriter::contentToJson(const SVFPointerType* type)
 
 cJSON* SVFIRWriter::contentToJson(const SVFIntegerType* type)
 {
-    return contentToJson(static_cast<const SVFType*>(type));
+    cJSON* root = contentToJson(static_cast<const SVFType*>(type));
+    JSON_WRITE_FIELD(root, type, signAndWidth);
+    return root;
 }
 
 cJSON* SVFIRWriter::contentToJson(const SVFFunctionType* type)
@@ -1426,7 +1434,7 @@ const cJSON* SVFIRReader::createObjs(const cJSON* root)
         JSON_DEF_READ_FWD(svfValueFldJson, SVFValue::GNodeK, kind);
         JSON_DEF_READ_FWD(svfValueFldJson, const SVFType*, type, {});
         JSON_DEF_READ_FWD(svfValueFldJson, std::string, name);
-        return createSVFValue(kind, type, name);
+        return createSVFValue(kind, type, std::move(name));
     },
     // SVFValue Filler
     [this](const cJSON*& svfVarFldJson, SVFValue* value)
@@ -1524,6 +1532,11 @@ void SVFIRReader::readJson(const cJSON* obj, unsigned& val)
 }
 
 void SVFIRReader::readJson(const cJSON* obj, int& val)
+{
+    readSmallNumber(obj, val);
+}
+
+void SVFIRReader::readJson(const cJSON* obj, short& val)
 {
     readSmallNumber(obj, val);
 }
@@ -2488,6 +2501,7 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFPointerType* type)
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFIntegerType* type)
 {
     fill(fieldJson, static_cast<SVFType*>(type));
+    JSON_READ_FIELD_FWD(fieldJson, type, signAndWidth);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFFunctionType* type)

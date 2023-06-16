@@ -482,6 +482,13 @@ bool VCallInCtorOrDtor(const CallBase* cs);
 bool isSameThisPtrInConstructor(const Argument* thisPtr1,
                                 const Value* thisPtr2);
 
+template<typename T>
+std::string llvmToString(const T& val)
+{
+    std::string str;
+    llvm::raw_string_ostream(str) << val;
+    return str;
+}
 } // End namespace LLVMUtil
 
 } // End namespace SVF

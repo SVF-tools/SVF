@@ -560,7 +560,7 @@ const std::string LLVMUtil::getSourceLoc(const Value* val )
     }
     else
     {
-        rawstr << "Can only get source location for instruction, argument, global var, function or constant data.";
+        rawstr << "N/A";
     }
     rawstr << " }";
 
@@ -1039,20 +1039,15 @@ s32_t LLVMUtil::getVCallIdx(const CallBase* cs)
 
 namespace SVF
 {
-const std::string SVFValue::toString() const
-{
-    // TODO: Should only use info in SVFValue. Refactor it later.
-    return dumpLLVMValue(this);
-}
-
 std::string dumpLLVMValue(const SVFValue* svfValue)
 {
     std::string str;
     llvm::raw_string_ostream rawstr(str);
     if (LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfValue) == nullptr)
     {
-        assert((SVFUtil::isa<SVFInstruction>(svfValue) ||
-                SVFUtil::isa<SVFBasicBlock>(svfValue)) && "Manually created SVF call inst, actual parameter and BasicBlock by ExtAPI do not have LLVM value!");
+        assert((SVFUtil::isa<SVFInstruction, SVFBasicBlock>(svfValue)) &&
+               "Manually created SVF call inst, actual parameter and "
+               "BasicBlock by ExtAPI do not have LLVM value!");
         rawstr << svfValue->getName();
         return rawstr.str();
     }
@@ -1079,11 +1074,8 @@ std::string dumpLLVMValue(const SVFValue* svfValue)
 
 std::string dumpLLVMType(const SVFType* svfType)
 {
-    std::string str;
-    llvm::raw_string_ostream rawstr(str);
     const Type* ty = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(svfType);
-    rawstr << *ty;
-    return rawstr.str();
+    return LLVMUtil::llvmToString(*ty);
 }
 
 } // namespace SVF

@@ -10,42 +10,43 @@ std::string SVFType::toString() const
     return os.str();
 }
 
-std::ostream& operator<<(std::ostream& OS, const SVFType& type)
+std::ostream& operator<<(std::ostream& os, const SVFType& type)
 {
-    type.print(OS);
-    return OS;
+    type.print(os);
+    return os;
 }
 
-void SVFPointerType::print(std::ostream& OS) const
+void SVFPointerType::print(std::ostream& os) const
 {
-    getPtrElementType()->print(OS);
-    OS << "*";
+    os << *getPtrElementType() << '*';
 }
 
-void SVFIntegerType::print(std::ostream& OS) const
+void SVFIntegerType::print(std::ostream& os) const
 {
-    // Making it more informative?
-    OS << "I";
+    if (signAndWidth < 0)
+        os << 'i' << -signAndWidth;
+    else
+        os << 'u' << signAndWidth;
 }
 
-void SVFFunctionType::print(std::ostream& OS) const
+void SVFFunctionType::print(std::ostream& os) const
 {
-    OS << *getReturnType() << "()";
+    os << *getReturnType() << "()";
 }
 
-void SVFStructType::print(std::ostream& OS) const
+void SVFStructType::print(std::ostream& os) const
 {
-    OS << "S." << name;
+    os << "S." << name;
 }
 
-void SVFArrayType::print(std::ostream& OS) const
+void SVFArrayType::print(std::ostream& os) const
 {
-    OS << "[" << numOfElement << "x" << *typeOfElement << "]";
+    os << '[' << numOfElement << 'x' << *typeOfElement << ']';
 }
 
-void SVFOtherType::print(std::ostream& OS) const
+void SVFOtherType::print(std::ostream& os) const
 {
-    OS << repr;
+    os << repr;
 }
 
 } // namespace SVF

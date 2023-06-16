@@ -72,6 +72,19 @@ using namespace SVF;
 LLVMModuleSet* LLVMModuleSet::llvmModuleSet = nullptr;
 bool LLVMModuleSet::preProcessed = false;
 
+/// Helper function to summarize a long string
+static void shortenLongInfo(std::string& info, unsigned bestLen = 15)
+{
+    if (info.size() <= bestLen)
+        return;
+    // If it is of form "name = value", keep on the name part
+    size_t index = info.find(" =");
+    if (index != std::string::npos)
+        info.resize(index);
+    else
+        info.resize(bestLen);
+}
+
 LLVMModuleSet::LLVMModuleSet()
     : symInfo(SymbolTableInfo::SymbolInfo()),
       svfModule(SVFModule::getSVFModule()), cxts(nullptr)
@@ -159,27 +172,36 @@ void LLVMModuleSet::createSVFDataStructure()
         for (const Function& func : mod.functions())
         {
             SVFFunction* svfFunc = new SVFFunction(
-                func.getName().str(), getSVFType(func.getType()),
+                getSVFType(func.getType()),
                 SVFUtil::cast<SVFFunctionType>(
                     getSVFType(func.getFunctionType())),
                 func.isDeclaration(), LLVMUtil::isIntrinsicFun(&func),
                 func.hasAddressTaken(), func.isVarArg(), new SVFLoopAndDomInfo);
+            svfFunc->setName(func.getName().str());
             svfModule->addFunctionSet(svfFunc);
             addFunctionMap(&func, svfFunc);
 
             for (const Argument& arg : func.args())
             {
                 SVFArgument* svfarg = new SVFArgument(
-                    arg.getName().str(), getSVFType(arg.getType()), svfFunc,
-                    arg.getArgNo(), LLVMUtil::isArgOfUncalledFunction(&arg));
+                    getSVFType(arg.getType()), svfFunc, arg.getArgNo(),
+                    LLVMUtil::isArgOfUncalledFunction(&arg));
+                // Setting up arg name
+                if (arg.hasName())
+                    svfarg->setName(arg.getName().str());
+                else
+                    svfarg->setName(std::to_string(arg.getArgNo()));
+
                 svfFunc->addArgument(svfarg);
                 addArgumentMap(&arg, svfarg);
             }
 
             for (const BasicBlock& bb : func)
             {
-                SVFBasicBlock* svfBB = new SVFBasicBlock(
-                    bb.getName().str(), getSVFType(bb.getType()), svfFunc);
+                SVFBasicBlock* svfBB =
+                    new SVFBasicBlock(getSVFType(bb.getType()), svfFunc);
+                if (bb.hasName())
+                    svfBB->setName(bb.getName().str());
                 svfFunc->addBasicBlock(svfBB);
                 addBasicBlockMap(&bb, svfBB);
                 for (const Instruction& inst : bb)
@@ -189,23 +211,36 @@ void LLVMModuleSet::createSVFDataStructure()
                     {
                         if (LLVMUtil::isVirtualCallSite(call))
                             svfInst = new SVFVirtualCallInst(
-                                call->getName().str(),
                                 getSVFType(call->getType()), svfBB,
                                 call->getFunctionType()->isVarArg(),
                                 inst.isTerminator());
                         else
                             svfInst = new SVFCallInst(
-                                call->getName().str(),
                                 getSVFType(call->getType()), svfBB,
                                 call->getFunctionType()->isVarArg(),
                                 inst.isTerminator());
                     }
                     else
                     {
-                        svfInst = new SVFInstruction(
-                            inst.getName().str(), getSVFType(inst.getType()),
-                            svfBB, inst.isTerminator(),
-                            SVFUtil::isa<ReturnInst>(inst));
+                        svfInst =
+                            new SVFInstruction(getSVFType(inst.getType()),
+                                               svfBB, inst.isTerminator(),
+                                               SVFUtil::isa<ReturnInst>(inst));
+                    }
+
+                    // Set instruction's string representation
+                    if (inst.hasName() && !inst.getName().empty())
+                    {
+                        svfInst->setName(inst.getName().str());
+                    }
+                    else
+                    {
+                        std::string str = LLVMUtil::llvmToString(inst);
+                        auto it = str.begin(), ite = str.end();
+                        while (it != ite && std::isspace(*it))
+                            ++it;
+                        // 0xf (15) is the max length a local string can hold
+                        svfInst->setName({it, std::min(it + 0xf, ite)});
                     }
                     svfBB->addInstruction(svfInst);
                     addInstructionMap(&inst, svfInst);
@@ -850,25 +885,30 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
             /// bitwidth <=64 1 : cint has value from getSExtValue()
             /// bitwidth >64 1 : cint has value 0 because it represents an invalid int
             if(cint->getBitWidth() == 1)
-                svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), cint->getZExtValue(), cint->getZExtValue());
+                svfcd = new SVFConstantInt(getSVFType(cint->getType()), cint->getZExtValue(), cint->getZExtValue());
             else if(cint->getBitWidth() <= 64 && cint->getBitWidth() > 1)
-                svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), cint->getZExtValue(), cint->getSExtValue());
+                svfcd = new SVFConstantInt(getSVFType(cint->getType()), cint->getZExtValue(), cint->getSExtValue());
             else
-                svfcd = new SVFConstantInt(cd->getName().str(), getSVFType(cint->getType()), 0, 0);
+                svfcd = new SVFConstantInt(getSVFType(cint->getType()), 0, 0);
         }
         else if(const ConstantFP* cfp = SVFUtil::dyn_cast<ConstantFP>(cd))
         {
             double dval = 0;
+            // TODO: Why only double is considered? What about float?
             if(cfp->isNormalFP() &&  (&cfp->getValueAPF().getSemantics()== &llvm::APFloatBase::IEEEdouble()))
                 dval =  cfp->getValueAPF().convertToDouble();
-            svfcd = new SVFConstantFP(cd->getName().str(), getSVFType(cd->getType()), dval);
+            svfcd = new SVFConstantFP(getSVFType(cd->getType()), dval);
         }
         else if(SVFUtil::isa<ConstantPointerNull>(cd))
-            svfcd = new SVFConstantNullPtr(cd->getName().str(), getSVFType(cd->getType()));
+            svfcd = new SVFConstantNullPtr(getSVFType(cd->getType()));
         else if (SVFUtil::isa<UndefValue>(cd))
-            svfcd = new SVFBlackHoleValue(cd->getName().str(), getSVFType(cd->getType()));
+            svfcd = new SVFBlackHoleValue(getSVFType(cd->getType()));
         else
-            svfcd = new SVFConstantData(cd->getName().str(), getSVFType(cd->getType()));
+            svfcd = new SVFConstantData(getSVFType(cd->getType()));
+
+        if (cd->hasName())
+            svfcd->setName(cd->getName().str());
+
         svfModule->addConstant(svfcd);
         addConstantDataMap(cd,svfcd);
         return svfcd;
@@ -884,9 +924,32 @@ SVFConstant* LLVMModuleSet::getOtherSVFConstant(const Constant* oc)
     }
     else
     {
-        SVFConstant* svfoc = new SVFConstant(oc->getName().str(), getSVFType(oc->getType()));
+        SVFConstant* svfoc = new SVFConstant(getSVFType(oc->getType()));
         svfModule->addConstant(svfoc);
         addOtherConstantMap(oc,svfoc);
+
+        // Setting up string representation.
+        // Usually is a bitcast from a global variable's address
+        std::string str = LLVMUtil::llvmToString(*oc);
+        const char* spaceChars = " \t\n\v\f\r";
+        size_t space = str.find_first_of(spaceChars);
+        const int maxLen = 62; // Arbitrary chosen small number that fits string
+        // within one line
+        if (space != str.npos &&
+                (space = str.find_first_of(spaceChars, space + 1)) != str.npos)
+        {
+            size_t name = str.find('@', space);
+            str.erase(space, name - space);
+        }
+        else if (str.size() > maxLen)
+        {
+            int extra = str.size() - maxLen;
+            int half = maxLen / 2;
+            str[half++] = '~';
+            str.erase(half, half + extra);
+        }
+        svfoc->setName(std::move(str));
+
         return svfoc;
     }
 }
@@ -900,11 +963,18 @@ SVFOtherValue* LLVMModuleSet::getSVFOtherValue(const Value* ov)
     }
     else
     {
-        SVFOtherValue* svfov = nullptr;
-        if(SVFUtil::isa<MetadataAsValue>(ov))
-            svfov = new SVFMetadataAsValue(ov->getName().str(), getSVFType(ov->getType()));
+        SVFOtherValue* svfov =
+            SVFUtil::isa<MetadataAsValue>(ov)
+            ? new SVFMetadataAsValue(getSVFType(ov->getType()))
+            : new SVFOtherValue(getSVFType(ov->getType()));
+        if (ov->hasName())
+            svfov->setName(ov->getName().str());
         else
-            svfov = new SVFOtherValue(ov->getName().str(), getSVFType(ov->getType()));
+        {
+            auto str = LLVMUtil::llvmToString(*ov);
+            shortenLongInfo(str, 30);
+            svfov->setName(std::move(str));
+        }
         svfModule->addOtherValue(svfov);
         addOtherValueMap(ov,svfov);
         return svfov;
@@ -1008,15 +1078,21 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     SVFType* svftype;
     if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
         svftype = new SVFPointerType(getSVFType(LLVMUtil::getPtrElementType(pt)));
-    else if (SVFUtil::isa<IntegerType>(T))
-        svftype = new SVFIntegerType();
+    else if (const IntegerType* intT = SVFUtil::dyn_cast<IntegerType>(T))
+    {
+        auto svfIntT = new SVFIntegerType();
+        unsigned signWidth = intT->getBitWidth();
+        assert(signWidth < INT16_MAX && "Integer width too big");
+        svfIntT->setSignAndWidth(intT->getSignBit() ? -signWidth : signWidth);
+        svftype = svfIntT;
+    }
     else if (const FunctionType* ft = SVFUtil::dyn_cast<FunctionType>(T))
         svftype = new SVFFunctionType(getSVFType(ft->getReturnType()));
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
     {
         auto svfst = new SVFStructType();
-        if(st->hasName())
-            svfst->getName() = st->getName().str();
+        if (st->hasName())
+            svfst->setName(st->getName().str());
         svftype = svfst;
     }
     else if (const auto at = SVFUtil::dyn_cast<ArrayType>(T))
@@ -1028,8 +1104,10 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     }
     else
     {
+        std::string buffer;
         auto ot = new SVFOtherType(T->isSingleValueType());
-        llvm::raw_string_ostream(ot->getRepr()) << *T;
+        llvm::raw_string_ostream(buffer) << *T;
+        ot->setRepr(std::move(buffer));
         svftype = ot;
     }
 

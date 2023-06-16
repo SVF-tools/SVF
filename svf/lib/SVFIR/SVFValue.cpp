@@ -122,10 +122,17 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
-SVFFunction::SVFFunction(const std::string& f, const SVFType* ty,
-                         const SVFFunctionType* ft, bool declare, bool intrinsic,
-                         bool adt, bool varg, SVFLoopAndDomInfo* ld)
-    : SVFValue(f, ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
+std::string SVFValue::toString() const
+{
+    std::ostringstream os;
+    print(os);
+    return os.str();
+}
+
+SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
+                         bool declare, bool intrinsic, bool adt, bool varg,
+                         SVFLoopAndDomInfo* ld)
+    : SVFValue(ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
       addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
       funcType(ft), loopAndDom(ld), realDefFun(nullptr)
 {
@@ -156,8 +163,8 @@ bool SVFFunction::isVarArg() const
     return varArg;
 }
 
-SVFBasicBlock::SVFBasicBlock(const std::string& b, const SVFType* ty, const SVFFunction* f):
-    SVFValue(b, ty, SVFValue::SVFBB), fun(f)
+SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f)
+    : SVFValue(ty, SVFValue::SVFBB), fun(f)
 {
 }
 
@@ -231,7 +238,96 @@ u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
     return pos;
 }
 
-SVFInstruction::SVFInstruction(const std::string& i, const SVFType* ty, const SVFBasicBlock* b,  bool tm, bool isRet, SVFValKind k):
-    SVFValue(i, ty, k), bb(b), terminator(tm), ret(isRet)
+SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b,
+                               bool tm, bool isRet, SVFValKind k)
+    : SVFValue(ty, k), bb(b), terminator(tm), ret(isRet)
 {
+}
+
+void SVFFunction::print(OutStream& os) const
+{
+    os << "fun " << getName();
+}
+
+void SVFBasicBlock::print(OutStream& os) const
+{
+    os << "BB";
+    if (!getName().empty())
+        os << ' ' << getName();
+    os << " in " << getFunction()->getName();
+}
+
+void SVFInstruction::print(OutStream& os) const
+{
+    os << '`' << getName() << "` in " << getFunction()->getName();
+    const std::string& bbName = getParent()->getName();
+    if (bbName.size())
+        os << " BB " << bbName;
+}
+
+void SVFConstant::print(OutStream& os) const
+{
+    os << "Const " << getName();
+}
+
+void SVFGlobalValue::print(OutStream& os) const
+{
+    os << "@" << getName();
+}
+
+void SVFArgument::print(OutStream& os) const
+{
+    os << "arg %" << getName() << " of " << getParent()->getName();
+}
+
+void SVFConstantData::print(OutStream& os) const
+{
+    // N.B. Haven't found instance of this class so far
+    os << "ConstData " << getName();
+}
+
+void SVFConstantInt::print(OutStream& os) const
+{
+    os << "ConstInt ";
+    if (!getName().empty())
+        os << getName() << ' ';
+    auto ty = dyn_cast<SVFIntegerType>(getType());
+    assert(ty && "ConstantInt has non-integer type?");
+    os << *ty << ' ';
+    if (ty->isSigned())
+        os << getSExtValue();
+    else
+        os << getZExtValue();
+}
+
+void SVFConstantFP::print(OutStream& os) const
+{
+    os << "ConstFP ";
+    if (!getName().empty())
+        os << getName() << ' ';
+    os << *getType() << ' ' << getFPValue();
+}
+
+void SVFConstantNullPtr::print(OutStream& os) const
+{
+    os << "ConstNull " << *getType();
+    if (!getName().empty())
+        os << ' ' << getName();
+}
+
+void SVFBlackHoleValue::print(OutStream& os) const
+{
+    os << "BlackHole " << *getType();
+    if (!getName().empty())
+        os << ' ' << getName();
+}
+
+void SVFOtherValue::print(OutStream& os) const
+{
+    os << "OtherVal " << getName();
+}
+
+void SVFMetadataAsValue::print(OutStream& os) const
+{
+    os << "MetaDataVal " << getName();
 }

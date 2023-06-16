@@ -135,7 +135,10 @@ NodeID SVFIRBuilder::getExtID(ExtAPI::OperationType operationType, const std::st
     }
     // return value = -6 is an illegal operand format
     else
+    {
         assert(false && "The operand format of function operation is illegal!");
+        abort();
+    }
 }
 
 void SVFIRBuilder::parseAtomaticOp(SVF::ExtAPI::Operand &atomaticOp, const SVFCallInst* svfCall, std::map<std::string, NodeID> &nodeIDMap)
@@ -214,8 +217,8 @@ void SVFIRBuilder::parseExtFunctionOps(ExtAPI::ExtFunctionOps &extFunctionOps, c
 
 SVFCallInst* SVFIRBuilder::addSVFExtCallInst(const SVFCallInst* svfInst, SVFBasicBlock* svfBB, const SVFFunction* svfCaller, const SVFFunction* svfCallee)
 {
-    SVFCallInst* svfCall = new SVFCallInst("ext_inst", svfCallee->getFunctionType(), svfBB, false, false);
-    assert(svfCall && "Failed to create External SVFCallInst");
+    SVFCallInst* svfCall = new SVFCallInst(svfCallee->getFunctionType(), svfBB, false, false);
+    svfCall->setName("ext_inst");
     LLVMModuleSet::getLLVMModuleSet()->SVFValue2LLVMValue[svfCall] = nullptr;
     svfCall->setCalledOperand(svfCallee);
     setCurrentLocation(svfCall, svfBB);
@@ -293,8 +296,8 @@ SVFInstruction* SVFIRBuilder::addSVFExtInst(const std::string& instName, const S
     }
 
     assert(ptType != nullptr && "At least one argument of an external call is of pointer type!");
-    SVFInstruction* inst = new SVFInstruction(instName, ptType, svfBB, false, false);
-    assert(inst && "Failed to create External SVFInstruction!");
+    SVFInstruction* inst = new SVFInstruction(ptType, svfBB, false, false);
+    inst->setName(instName);
     LLVMModuleSet::getLLVMModuleSet()->SVFValue2LLVMValue[inst] = nullptr;
     svfBB->addInstruction(inst);
     SymbolTableInfo::ValueToIDMapTy::iterator iter = pag->getSymbolInfo()->valSyms().find(inst);
@@ -327,8 +330,8 @@ SVFBasicBlock* SVFIRBuilder::extFuncInitialization(const SVFCallInst* svfInst, S
         pag->addFunArgs(svfCaller,pag->getGNode(dstFA));
     }
 
-    SVFBasicBlock* svfBB = new SVFBasicBlock("ext_bb", svfInst->getParent()->getType(), svfCaller);
-    assert(svfBB && "Failed to create External SVFBasicBlock!");
+    SVFBasicBlock* svfBB = new SVFBasicBlock(svfInst->getParent()->getType(), svfCaller);
+    svfBB->setName("ext_bb");
     LLVMModuleSet::getLLVMModuleSet()->SVFValue2LLVMValue[svfBB] = nullptr;
 
     if (!svfCaller->isNotRetFunction())

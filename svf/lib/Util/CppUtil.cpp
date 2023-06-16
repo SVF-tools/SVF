@@ -41,7 +41,7 @@ const std::string vtblLabelAfterDemangle = "vtable for ";
 const std::string NVThunkFunLabel = "non-virtual thunk to ";
 const std::string VThunkFuncLabel = "virtual thunk to ";
 
-static bool isOperOverload(const std::string name)
+static bool isOperOverload(const std::string& name)
 {
     u32_t leftnum = 0, rightnum = 0;
     std::string subname = name;

@@ -217,9 +217,9 @@ public:
         this->totalKind = totalKind;
     }
 
-    std::string extractKindStrFromSymbolStr(const std::string symbolStr) const;
+    std::string extractKindStrFromSymbolStr(const std::string& symbolStr) const;
 
-    std::string extractAttributeStrFromSymbolStr(const std::string symbolStr) const;
+    std::string extractAttributeStrFromSymbolStr(const std::string& symbolStr) const;
 
     void setRawProductions(SymbolMap<Symbol, Productions>& rawProductions);
 

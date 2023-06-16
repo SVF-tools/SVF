@@ -232,7 +232,7 @@ void CHGBuilder::readInheritanceMetadataFromModule(const Module &M)
     }
 }
 
-CHNode *CHGBuilder::createNode(const std::string className)
+CHNode *CHGBuilder::createNode(const std::string& className)
 {
     assert(!chg->getNode(className) && "this node should never be created before!");
     CHNode * node = new CHNode(className, chg->classNum++);
@@ -292,8 +292,8 @@ void CHGBuilder::buildClassNameToAncestorsDescendantsMap()
     }
 }
 
-
-const CHGraph::CHNodeSetTy& CHGBuilder::getInstancesAndDescendants(const string className)
+const CHGraph::CHNodeSetTy& CHGBuilder::getInstancesAndDescendants(
+    const string& className)
 {
 
     CHGraph::NameToCHNodesMap::const_iterator it = chg->classNameToInstAndDescsMap.find(className);
