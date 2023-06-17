@@ -324,7 +324,7 @@ void SymbolTableBuilder::collectObj(const Value* val)
         SVFValue* svfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if((isConstantObjSym(val) && !symInfo->getModelConstants()))
+        if (isConstantObjSym(val) && !symInfo->getModelConstants())
         {
             symInfo->objSymMap.insert(std::make_pair(svfVal, symInfo->constantSymID()));
         }
