@@ -53,6 +53,7 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, ICFG* icfg)
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
             const Function* func = &*F;
+            func = LLVMUtil::getDefFunForMultipleModule(func);
             const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(func);
             // do not analyze external call
             if (SVFUtil::isExtCall(svffun)) continue;

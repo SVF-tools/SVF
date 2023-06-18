@@ -57,6 +57,9 @@ inline bool isCallSite(const Value* val)
 /// Get the definition of a function across multiple modules
 inline const Function* getDefFunForMultipleModule(const Function* fun)
 {
+    if (fun->getName() == "llvm.dbg.declare") {
+        return fun;
+    }
     if (fun == nullptr)
         return nullptr;
     LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();

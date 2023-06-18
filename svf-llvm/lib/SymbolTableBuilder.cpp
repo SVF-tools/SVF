@@ -107,8 +107,10 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
         }
 
         // Add symbols for all of the functions and the instructions in them.
-        for (const Function& fun : M.functions())
+        for (const Function& fun2 : M.functions())
         {
+            const Function* func_ptr = LLVMUtil::getDefFunForMultipleModule(&fun2);
+            const Function& fun = *func_ptr;
             collectSym(&fun);
             collectRet(&fun);
             if (fun.getFunctionType()->isVarArg())

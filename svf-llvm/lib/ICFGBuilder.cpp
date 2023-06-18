@@ -67,6 +67,7 @@ void ICFGBuilder::build(SVFModule* svfModule)
  */
 void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
 {
+    fun = LLVMUtil::getDefFunForMultipleModule(fun);
     FunEntryICFGNode* FunEntryICFGNode = icfg->getFunEntryICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun));
     const Instruction* entryInst = &((fun->getEntryBlock()).front());
     const SVFInstruction* svfentryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(entryInst);

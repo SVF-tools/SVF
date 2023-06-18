@@ -70,6 +70,9 @@ private:
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
 
+    std::vector<std::unique_ptr<Module>> owned_ext_modules;
+    std::vector<std::reference_wrapper<Module>> ext_modules;
+
     /// Function declaration to function definition map
     FunDeclToDefMapTy FunDeclToDefMap;
     /// Function definition to function declaration map
@@ -86,6 +89,9 @@ private:
     SVFValue2LLVMValueMap SVFValue2LLVMValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
+
+    Map<std::string, SVFFunction*> nameToExtSVFFunc;
+    Map<std::string, std::string> llvmExtNameToSVFExtName;
 
     /// Constructor
     LLVMModuleSet();
@@ -194,6 +200,8 @@ public:
 
     inline SVFFunction* getSVFFunction(const Function* fun) const
     {
+        if (fun->isDeclaration() && hasDefinition(fun) && fun->getName() != "llvm.dbg.declare")
+            fun = getDefinition(fun);
         LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
         assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
         return it->second;

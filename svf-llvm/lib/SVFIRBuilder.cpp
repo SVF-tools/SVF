@@ -95,7 +95,9 @@ SVFIR* SVFIRBuilder::build()
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
-            const Function& fun = *F;
+            const Function& fun2 = *F;
+            const Function* funptr = LLVMUtil::getDefFunForMultipleModule(&fun2);
+            const Function& fun = *funptr;
             const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(&fun);
             /// collect return node of function fun
             if(!fun.isDeclaration())
@@ -590,7 +592,7 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
         /// initialize global functions
         for (Module::const_iterator I = M.begin(), E = M.end(); I != E; ++I)
         {
-            const Function* fun = &*I;
+            const Function* fun = LLVMUtil::getDefFunForMultipleModule(&*I);
             NodeID idx = getValueNode(fun);
             NodeID obj = getObjectNode(fun);
 
@@ -838,11 +840,13 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     for (u32_t i = 0; i < cs->arg_size(); i++)
         pag->addCallSiteArgs(callBlockNode,pag->getGNode(getValueNode(cs->getArgOperand(i))));
 
-    if(!cs->getType()->isVoidTy())
+    const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getCalledFunction());
+    if(!cs->getType()->isVoidTy() || !svffun->isDeclaration())
         pag->addCallSiteRets(retBlockNode,pag->getGNode(getValueNode(cs)));
 
     if (const Function *callee = LLVMUtil::getCallee(cs))
     {
+        callee = LLVMUtil::getDefFunForMultipleModule(callee);
         const SVFFunction* svfcallee = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
         if (isExtCall(svfcallee))
         {
@@ -1006,7 +1010,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs);
     //Does it actually return a ptr?
-    if (!cs->getType()->isVoidTy())
+    if (!cs->getType()->isVoidTy() || !svffun->isDeclaration())
     {
         NodeID srcret = getReturnNode(svffun);
         CallICFGNode* callICFGNode = pag->getICFG()->getCallICFGNode(svfcall);
