@@ -902,20 +902,6 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
 
-    std::cout << "decl funcs:" << std::endl;
-    for (auto it = funDecls.begin(); it != funDecls.end() ; ++it) {
-        const Function* func = *it;
-        std::cout << func->getName().str() << ", ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "def funcs:" << std::endl;
-    for (auto it = funDefs.begin(); it != funDefs.end() ; ++it) {
-        const Function* func = *it;
-        std::cout << func->getName().str() << ", ";
-    }
-    std::cout << std::endl;
-
     // Find the intersectNames
     std::set_intersection(
         declNames.begin(), declNames.end(), defNames.begin(), defNames.end(),
@@ -927,19 +913,11 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
 
-    std::cout << "intersectNames funcs:" << std::endl;
-    for (auto it = intersectNames.begin(); it != intersectNames.end() ; ++it) {
-        const std::string funcName = *it;
-        std::cout << funcName << ", ";
-    }
-    std::cout << std::endl;
-
     ///// name to def map
     NameToFunDefMapTy nameToFunDefMap;
     for (const Function* fdef : funDefs)
     {
         string funName = fdef->getName().str();
-        std::cout << "funName: " << funName << std::endl;
         if (intersectNames.find(funName) != intersectNames.end())
         {
             nameToFunDefMap.emplace(std::move(funName), fdef);
