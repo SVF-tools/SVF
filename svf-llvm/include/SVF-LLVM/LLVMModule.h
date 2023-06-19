@@ -90,7 +90,7 @@ private:
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
 
-    Map<std::string, SVFFunction*> nameToExtSVFFunc;
+
     Map<std::string, std::string> llvmExtNameToSVFExtName;
 
     /// Constructor
@@ -200,7 +200,7 @@ public:
 
     inline SVFFunction* getSVFFunction(const Function* fun) const
     {
-        if (fun->isDeclaration() && hasDefinition(fun) && fun->getName() != "llvm.dbg.declare")
+        if (fun->isDeclaration() && hasDefinition(fun))
             fun = getDefinition(fun);
         LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
         assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");

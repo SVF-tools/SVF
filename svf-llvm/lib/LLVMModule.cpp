@@ -165,123 +165,11 @@ void LLVMModuleSet::build()
 void LLVMModuleSet::createSVFDataStructure()
 {
     getSVFType(IntegerType::getInt8Ty(getContext()));
+    std::vector<std::reference_wrapper<Module>> combined_modules;
+    std::copy(modules.begin(), modules.end(), std::back_inserter(combined_modules));
+    std::copy(ext_modules.begin(), ext_modules.end(), std::back_inserter(combined_modules));
 
-    for (const Module& mod : modules)
-    {
-        /// Function
-        for (const Function& func2 : mod.functions())
-        {
-            const Function* func_ptr = LLVMUtil::getDefFunForMultipleModule(&func2);
-            const Function& func = *func_ptr;
-            if (LLVMFunc2SVFFunc.find(&func) != LLVMFunc2SVFFunc.end()) {
-                continue;
-            }
-            SVFFunction* svfFunc = new SVFFunction(
-                getSVFType(func.getType()),
-                SVFUtil::cast<SVFFunctionType>(
-                    getSVFType(func.getFunctionType())),
-                func.isDeclaration(), LLVMUtil::isIntrinsicFun(&func),
-                func.hasAddressTaken(), func.isVarArg(), new SVFLoopAndDomInfo);
-            svfFunc->setName(func.getName().str());
-            svfModule->addFunctionSet(svfFunc);
-            addFunctionMap(&func, svfFunc);
-
-            for (const Argument& arg : func.args())
-            {
-                SVFArgument* svfarg = new SVFArgument(
-                    getSVFType(arg.getType()), svfFunc, arg.getArgNo(),
-                    LLVMUtil::isArgOfUncalledFunction(&arg));
-                // Setting up arg name
-                if (arg.hasName())
-                    svfarg->setName(arg.getName().str());
-                else
-                    svfarg->setName(std::to_string(arg.getArgNo()));
-
-                svfFunc->addArgument(svfarg);
-                addArgumentMap(&arg, svfarg);
-            }
-
-            for (const BasicBlock& bb : func)
-            {
-                SVFBasicBlock* svfBB =
-                    new SVFBasicBlock(getSVFType(bb.getType()), svfFunc);
-                if (bb.hasName())
-                    svfBB->setName(bb.getName().str());
-                svfFunc->addBasicBlock(svfBB);
-                addBasicBlockMap(&bb, svfBB);
-                for (const Instruction& inst : bb)
-                {
-                    SVFInstruction* svfInst = nullptr;
-                    if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
-                    {
-                        if (LLVMUtil::isVirtualCallSite(call))
-                            svfInst = new SVFVirtualCallInst(
-                                getSVFType(call->getType()), svfBB,
-                                call->getFunctionType()->isVarArg(),
-                                inst.isTerminator());
-                        else
-                            svfInst = new SVFCallInst(
-                                getSVFType(call->getType()), svfBB,
-                                call->getFunctionType()->isVarArg(),
-                                inst.isTerminator());
-                    }
-                    else
-                    {
-                        svfInst =
-                            new SVFInstruction(getSVFType(inst.getType()),
-                                               svfBB, inst.isTerminator(),
-                                               SVFUtil::isa<ReturnInst>(inst));
-                    }
-
-                    // Set instruction's string representation
-                    if (inst.hasName() && !inst.getName().empty())
-                    {
-                        svfInst->setName(inst.getName().str());
-                    }
-                    else
-                    {
-                        std::string str = LLVMUtil::llvmToString(inst);
-                        auto it = str.begin(), ite = str.end();
-                        while (it != ite && std::isspace(*it))
-                            ++it;
-                        // 0xf (15) is the max length a local string can hold
-                        svfInst->setName({it, std::min(it + 0xf, ite)});
-                    }
-                    svfBB->addInstruction(svfInst);
-                    addInstructionMap(&inst, svfInst);
-                }
-            }
-        }
-
-        /// GlobalVariable
-        for (const GlobalVariable& global :  mod.globals())
-        {
-            SVFGlobalValue* svfglobal = new SVFGlobalValue(
-                global.getName().str(), getSVFType(global.getType()));
-            svfModule->addGlobalSet(svfglobal);
-            addGlobalValueMap(&global, svfglobal);
-        }
-
-        /// GlobalAlias
-        for (const GlobalAlias& alias : mod.aliases())
-        {
-            SVFGlobalValue* svfalias = new SVFGlobalValue(
-                alias.getName().str(), getSVFType(alias.getType()));
-            svfModule->addAliasSet(svfalias);
-            addGlobalValueMap(&alias, svfalias);
-        }
-
-        /// GlobalIFunc
-        for (const GlobalIFunc& ifunc : mod.ifuncs())
-        {
-            SVFGlobalValue* svfifunc = new SVFGlobalValue(
-                ifunc.getName().str(), getSVFType(ifunc.getType()));
-            svfModule->addAliasSet(svfifunc);
-            addGlobalValueMap(&ifunc, svfifunc);
-        }
-    }
-
-    for (const Module& mod : ext_modules)
+    for (const Module& mod : combined_modules)
     {
         /// Function
         for (const Function& func2 : mod.functions())
@@ -399,21 +287,10 @@ void LLVMModuleSet::createSVFDataStructure()
 
 void LLVMModuleSet::initSVFFunction()
 {
-    for (Module& mod : modules)
-    {
-        /// Function
-        for (const Function& f : mod.functions())
-        {
-            SVFFunction* svffun = getSVFFunction(&f);
-            initSVFBasicBlock(&f);
-
-            if (!SVFUtil::isExtCall(svffun))
-            {
-                initDomTree(svffun, &f);
-            }
-        }
-    }
-    for (Module& mod : ext_modules)
+    std::vector<std::reference_wrapper<Module>> combined_modules;
+    std::copy(modules.begin(), modules.end(), std::back_inserter(combined_modules));
+    std::copy(ext_modules.begin(), ext_modules.end(), std::back_inserter(combined_modules));
+    for (Module& mod : combined_modules)
     {
         /// Function
         for (const Function& f : mod.functions())
@@ -446,11 +323,9 @@ void LLVMModuleSet:: initSVFBasicBlock(const Function* func2)
             const SVFBasicBlock* svf_pred_bb = getSVFBasicBlock(*pred_it);
             svfbb->addPredBasicBlock(svf_pred_bb);
         }
-        int idx = 0;
         for (BasicBlock::const_iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
         {
             const Instruction* inst = &*iit;
-            idx++;
             if(const CallBase* call = SVFUtil::dyn_cast<CallBase>(inst))
             {
                 SVFInstruction* svfinst = getSVFInstruction(call);

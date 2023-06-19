@@ -840,8 +840,7 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
     for (u32_t i = 0; i < cs->arg_size(); i++)
         pag->addCallSiteArgs(callBlockNode,pag->getGNode(getValueNode(cs->getArgOperand(i))));
 
-    const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getCalledFunction());
-    if(!cs->getType()->isVoidTy() || !svffun->isDeclaration())
+    if(!cs->getType()->isVoidTy())
         pag->addCallSiteRets(retBlockNode,pag->getGNode(getValueNode(cs)));
 
     if (const Function *callee = LLVMUtil::getCallee(cs))
@@ -1010,7 +1009,7 @@ void SVFIRBuilder::handleDirectCall(CallBase* cs, const Function *F)
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs);
     //Does it actually return a ptr?
-    if (!cs->getType()->isVoidTy() || !svffun->isDeclaration())
+    if (!cs->getType()->isVoidTy())
     {
         NodeID srcret = getReturnNode(svffun);
         CallICFGNode* callICFGNode = pag->getICFG()->getCallICFGNode(svfcall);
