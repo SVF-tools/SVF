@@ -857,6 +857,7 @@ void LLVMModuleSet::buildFunToFunMap()
     llvmExtNameToSVFExtName["__memcpy_chk"] = "svf_memcpy";
     llvmExtNameToSVFExtName["__memmove_chk"] = "svf_memcpy";
 
+
     Map<std::string, Set<std::string>> NameToExtDefs;
     for (auto it = llvmExtNameToSVFExtName.begin(); it != llvmExtNameToSVFExtName.end(); ++it) {
         if (llvmExtNameToSVFExtName.find(it->second) == llvmExtNameToSVFExtName.end()) {
@@ -943,10 +944,7 @@ void LLVMModuleSet::buildFunToFunMap()
     for (const Function* fdecl : funDecls)
     {
         string funName = fdecl->getName().str();
-        if (intersectNames.find(funName) == intersectNames.end()) {
-
-        }
-        else if (nameToFunDefMap.find(funName) != nameToFunDefMap.end())
+        if (nameToFunDefMap.find(funName) != nameToFunDefMap.end())
         {
             FunDeclToDefMap[fdecl] = nameToFunDefMap.at(funName);
         }
