@@ -1203,11 +1203,12 @@ cJSON* SVFIRWriter::contentToJson(const StInfo* stInfo)
     cJSON* root = jsonCreateObject();
 #define F(field) JSON_WRITE_FIELD(root, stInfo, field)
     F(stride);
+    F(numOfFlattenElements);
+    F(numOfFlattenFields);
     F(fldIdxVec);
     F(elemIdxVec);
     F(fldIdx2TypeMap);
     F(finfo);
-    F(numOfFlattenElements);
     F(flattenElementTypes);
 #undef F
     return root;
@@ -2148,12 +2149,13 @@ void SVFIRReader::fill(const cJSON*& fieldJson, MemObj* memObj)
 void SVFIRReader::fill(const cJSON*& fieldJson, StInfo* stInfo)
 {
 #define F(field) JSON_READ_FIELD_FWD(fieldJson, stInfo, field)
-    // stride has already been read
+    // stride has already been read upon construction
+    F(numOfFlattenElements);
+    F(numOfFlattenFields);
     F(fldIdxVec);
     F(elemIdxVec);
     F(fldIdx2TypeMap);
     F(finfo);
-    F(numOfFlattenElements);
     F(flattenElementTypes);
 #undef F
 }
