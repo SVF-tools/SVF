@@ -91,6 +91,9 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     assert(symInfo->totalSymNum++ == SymbolTableInfo::ConstantObj && "Something changed!");
     createConstantObj(SymbolTableInfo::ConstantObj);
 
+    // TODO: User's LLVM Module, including global alias and functions
+    // External LLVM Module, including global, alias and (selected functions).
+    // Since Now we cannot process nested calls in Ext Modules.
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
         // Add symbols for all the globals .

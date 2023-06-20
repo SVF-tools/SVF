@@ -90,9 +90,6 @@ private:
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
 
-
-    Map<std::string, std::string> llvmExtNameToSVFExtName;
-
     /// Constructor
     LLVMModuleSet();
 

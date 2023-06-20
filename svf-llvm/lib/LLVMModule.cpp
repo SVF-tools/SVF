@@ -726,21 +726,11 @@ void LLVMModuleSet::buildFunToFunMap()
     OrderedSet<string> declNames, defNames, intersectNames;
     typedef Map<string, const Function*> NameToFunDefMapTy;
     typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
-
-    llvmExtNameToSVFExtName["llvm.memcpy.p0i8.p0i8.i64"] = "svf_memcpy";
-    llvmExtNameToSVFExtName["llvm.memmove.p0i8.p0i8.i64"] = "svf_memcpy";
-    llvmExtNameToSVFExtName["__memcpy_chk"] = "svf_memcpy";
-    llvmExtNameToSVFExtName["__memmove_chk"] = "svf_memcpy";
-
+    typedef Map<string, string> llvmExtNameToSVFExtNameTy;
+    llvmExtNameToSVFExtNameTy llvmExtNameToSVFExtName;
 
     Map<std::string, Set<std::string>> NameToExtDefs;
-    for (auto it = llvmExtNameToSVFExtName.begin(); it != llvmExtNameToSVFExtName.end(); ++it) {
-        if (llvmExtNameToSVFExtName.find(it->second) == llvmExtNameToSVFExtName.end()) {
-            NameToExtDefs[it->second] = Set<std::string>();
-        } else {
-            NameToExtDefs.at(it->second).insert(it->first);
-        }
-    }
+
 
     for (Module& mod : modules)
     {
@@ -784,8 +774,21 @@ void LLVMModuleSet::buildFunToFunMap()
         std::inserter(intersectNames, intersectNames.end()));
 
     for (auto it = declNames.begin(); it != declNames.end(); ++it) {
-        if (llvmExtNameToSVFExtName.find(*it) != llvmExtNameToSVFExtName.end()) {
+        std::string declName = *it;
+        std::string svfExtName = "svf_";
+        svfExtName.reserve(svfExtName.size() + declName.size());
+        svfExtName.append(declName);
+        std::replace(svfExtName.begin(), svfExtName.end(), '.', '_');
+        if (defNames.find(svfExtName) != defNames.end()) {
+            llvmExtNameToSVFExtName[declName] = svfExtName;
             intersectNames.insert(llvmExtNameToSVFExtName.at(*it));
+        }
+    }
+    for (auto it = llvmExtNameToSVFExtName.begin(); it != llvmExtNameToSVFExtName.end(); ++it) {
+        if (llvmExtNameToSVFExtName.find(it->second) == llvmExtNameToSVFExtName.end()) {
+            NameToExtDefs[it->second] = Set<std::string>();
+        } else {
+            NameToExtDefs.at(it->second).insert(it->first);
         }
     }
 
