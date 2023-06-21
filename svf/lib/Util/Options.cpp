@@ -774,7 +774,7 @@ const Option<bool> Options::VtableInSVFIR(
 
 //WPAPass.cpp
 const Option<std::string> Options::ExtAPIInput(
-    "extapi", "External API ext.bc", ""
+    "extapi", "External API ext.bc", std::string(PROJECT_PATH) + "/extapi.ll"
 );
 
 const Option<bool> Options::AnderSVFG(

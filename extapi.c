@@ -48,3 +48,8 @@ void svf_llvm_memset_p0i8_i64(char* dst, char elem, int sz) {
 void svf___memset_chk(char* dst, char elem, int sz) {
     SVF_MEMSET(dst, elem, sz);
 }
+
+void* svf___dynamic_cast(void* source, const void* sourceTypeInfo, const void* targetTypeInfo, unsigned long castType)
+{
+    return source;
+}
