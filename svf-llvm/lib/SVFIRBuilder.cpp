@@ -90,6 +90,7 @@ SVFIR* SVFIRBuilder::build()
     visitGlobal(svfModule);
     ///// collect exception vals in the program
 
+    Set<const Function*> visitedFuncs;
     /// handle functions
     for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
@@ -99,6 +100,17 @@ SVFIR* SVFIRBuilder::build()
             const Function* funptr = LLVMUtil::getDefFunForMultipleModule(&fun2);
             const Function& fun = *funptr;
             const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(&fun);
+            std::string extFuncName = fun.getName().str();
+            // is start with svf_
+            if (extFuncName.length() >= 4 && extFuncName.substr(0, 4).compare("svf_") == 0) {
+                if (!LLVMModuleSet::getLLVMModuleSet()->isUsedExtFuncNames(extFuncName)) {
+                    continue;
+                }
+            }
+            if (visitedFuncs.find(funptr) != visitedFuncs.end())
+                continue;
+            visitedFuncs.insert(funptr);
+
             /// collect return node of function fun
             if(!fun.isDeclaration())
             {
@@ -593,6 +605,13 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
         for (Module::const_iterator I = M.begin(), E = M.end(); I != E; ++I)
         {
             const Function* fun = LLVMUtil::getDefFunForMultipleModule(&*I);
+            std::string extFuncName = fun->getName().str();
+            // is start with svf_
+            if (extFuncName.length() >= 4 && extFuncName.substr(0, 4).compare("svf_") == 0) {
+                if (!LLVMModuleSet::getLLVMModuleSet()->isUsedExtFuncNames(extFuncName)) {
+                    continue;
+                }
+            }
             NodeID idx = getValueNode(fun);
             NodeID obj = getObjectNode(fun);
 

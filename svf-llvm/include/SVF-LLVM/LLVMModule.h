@@ -69,9 +69,7 @@ private:
     std::unique_ptr<LLVMContext> cxts;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
-
-    std::vector<std::unique_ptr<Module>> owned_ext_modules;
-    std::vector<std::reference_wrapper<Module>> ext_modules;
+    OrderedSet<std::string> usedExtFuncNames;
 
     /// Function declaration to function definition map
     FunDeclToDefMapTy FunDeclToDefMap;
@@ -253,6 +251,10 @@ public:
             }
         }
         return nullptr;
+    }
+
+    inline bool isUsedExtFuncNames(const std::string& name) {
+        return usedExtFuncNames.find(name) != usedExtFuncNames.end();
     }
 
     bool hasDefinition(const Function* fun) const

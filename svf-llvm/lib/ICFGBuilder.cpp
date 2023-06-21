@@ -45,18 +45,31 @@ void ICFGBuilder::build(SVFModule* svfModule)
     // Add the unqiue global ICFGNode at the entry of a program (before the main method).
     icfg->addGlobalICFGNode();
 
+    Set<const Function*> visitedFuncs;
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
-            const Function *fun = &*F;
-            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+            const Function* fun = &*F;
+            const Function* funptr = LLVMUtil::getDefFunForMultipleModule(fun);
+            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(funptr);
+            std::string extFuncName = funptr->getName().str();
+            // is start with svf_
+            if (extFuncName.length() >= 4 && extFuncName.substr(0, 4).compare("svf_") == 0) {
+                if (!LLVMModuleSet::getLLVMModuleSet()->isUsedExtFuncNames(extFuncName)) {
+                    continue;
+                }
+            }
+            if (visitedFuncs.find(funptr) != visitedFuncs.end())
+                continue;
+            visitedFuncs.insert(funptr);
+
             if (SVFUtil::isExtCall(svffun))
                 continue;
             WorkList worklist;
-            processFunEntry(fun,worklist);
+            processFunEntry(funptr,worklist);
             processFunBody(worklist);
-            processFunExit(fun);
+            processFunExit(funptr);
         }
     }
     connectGlobalToProgEntry(svfModule);

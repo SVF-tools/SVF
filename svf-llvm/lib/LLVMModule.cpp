@@ -165,11 +165,7 @@ void LLVMModuleSet::build()
 void LLVMModuleSet::createSVFDataStructure()
 {
     getSVFType(IntegerType::getInt8Ty(getContext()));
-    std::vector<std::reference_wrapper<Module>> combined_modules;
-    std::copy(modules.begin(), modules.end(), std::back_inserter(combined_modules));
-    std::copy(ext_modules.begin(), ext_modules.end(), std::back_inserter(combined_modules));
-
-    for (const Module& mod : combined_modules)
+    for (const Module& mod : modules)
     {
         /// Function
         for (const Function& func2 : mod.functions())
@@ -287,10 +283,7 @@ void LLVMModuleSet::createSVFDataStructure()
 
 void LLVMModuleSet::initSVFFunction()
 {
-    std::vector<std::reference_wrapper<Module>> combined_modules;
-    std::copy(modules.begin(), modules.end(), std::back_inserter(combined_modules));
-    std::copy(ext_modules.begin(), ext_modules.end(), std::back_inserter(combined_modules));
-    for (Module& mod : combined_modules)
+    for (Module& mod : modules)
     {
         /// Function
         for (const Function& f : mod.functions())
@@ -531,8 +524,8 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
             Err.print("SVFModuleLoader", llvm::errs());
             abort();
         }
-        ext_modules.emplace_back(*mod);
-        owned_ext_modules.emplace_back(std::move(mod));
+        modules.emplace_back(*mod);
+        owned_modules.emplace_back(std::move(mod));
     }
 }
 
@@ -723,7 +716,7 @@ void LLVMModuleSet::addSVFMain()
 void LLVMModuleSet::buildFunToFunMap()
 {
     Set<const Function*> funDecls, funDefs;
-    OrderedSet<string> declNames, defNames, intersectNames;
+    OrderedSet<string> declNames, defNames;
     typedef Map<string, const Function*> NameToFunDefMapTy;
     typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
     typedef Map<string, string> llvmExtNameToSVFExtNameTy;
@@ -749,29 +742,10 @@ void LLVMModuleSet::buildFunToFunMap()
             }
         }
     }
-
-    for (Module& mod : ext_modules)
-    {
-        /// Function
-        for (const Function& fun : mod.functions())
-        {
-            if (fun.isDeclaration())
-            {
-                funDecls.insert(&fun);
-                declNames.insert(fun.getName().str());
-            }
-            else
-            {
-                funDefs.insert(&fun);
-                defNames.insert(fun.getName().str());
-            }
-        }
-    }
-
     // Find the intersectNames
     std::set_intersection(
         declNames.begin(), declNames.end(), defNames.begin(), defNames.end(),
-        std::inserter(intersectNames, intersectNames.end()));
+        std::inserter(usedExtFuncNames, usedExtFuncNames.end()));
 
     for (auto it = declNames.begin(); it != declNames.end(); ++it) {
         std::string declName = *it;
@@ -781,7 +755,7 @@ void LLVMModuleSet::buildFunToFunMap()
         std::replace(svfExtName.begin(), svfExtName.end(), '.', '_');
         if (defNames.find(svfExtName) != defNames.end()) {
             llvmExtNameToSVFExtName[declName] = svfExtName;
-            intersectNames.insert(llvmExtNameToSVFExtName.at(*it));
+            usedExtFuncNames.insert(llvmExtNameToSVFExtName.at(*it));
         }
     }
     for (auto it = llvmExtNameToSVFExtName.begin(); it != llvmExtNameToSVFExtName.end(); ++it) {
@@ -797,7 +771,7 @@ void LLVMModuleSet::buildFunToFunMap()
     for (const Function* fdef : funDefs)
     {
         string funName = fdef->getName().str();
-        if (intersectNames.find(funName) != intersectNames.end())
+        if (usedExtFuncNames.find(funName) != usedExtFuncNames.end())
         {
             nameToFunDefMap.emplace(std::move(funName), fdef);
         }
@@ -810,7 +784,7 @@ void LLVMModuleSet::buildFunToFunMap()
     {
         string funName = fdecl->getName().str();
 
-        if (intersectNames.find(funName) != intersectNames.end())
+        if (usedExtFuncNames.find(funName) != usedExtFuncNames.end())
         {
             // pair with key funName will be created automatically if it does
             // not exist
@@ -851,7 +825,7 @@ void LLVMModuleSet::buildFunToFunMap()
             }
             continue;
         }
-        if (intersectNames.find(funName) == intersectNames.end()) //
+        if (usedExtFuncNames.find(funName) == usedExtFuncNames.end()) //
             continue;
         else if (nameToFunDeclsMap.find(funName) == nameToFunDeclsMap.end())
             continue;

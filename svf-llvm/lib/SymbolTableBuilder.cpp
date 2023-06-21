@@ -110,10 +110,22 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
         }
 
         // Add symbols for all of the functions and the instructions in them.
+        Set<const Function*> visitedFuncs;
         for (const Function& fun2 : M.functions())
         {
-            const Function* func_ptr = LLVMUtil::getDefFunForMultipleModule(&fun2);
-            const Function& fun = *func_ptr;
+            const Function* funptr = LLVMUtil::getDefFunForMultipleModule(&fun2);
+            const Function& fun = *funptr;
+            std::string extFuncName = fun.getName().str();
+            // is start with svf_
+            if (extFuncName.length() >= 4 && extFuncName.substr(0, 4).compare("svf_") == 0) {
+                if (!LLVMModuleSet::getLLVMModuleSet()->isUsedExtFuncNames(extFuncName)) {
+                    continue;
+                }
+            }
+            if (visitedFuncs.find(funptr) != visitedFuncs.end())
+                continue;
+            visitedFuncs.insert(funptr);
+
             collectSym(&fun);
             collectRet(&fun);
             if (fun.getFunctionType()->isVarArg())
