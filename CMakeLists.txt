@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.13.4)
 
 project("SVF")
+execute_process(COMMAND  clang -S -c -g -emit-llvm ${PROJECT_SOURCE_DIR}/extapi.c -o ${PROJECT_SOURCE_DIR}/extapi.ll)
 
 configure_file(${PROJECT_SOURCE_DIR}/.config.in
                ${PROJECT_BINARY_DIR}/include/Util/config.h)
