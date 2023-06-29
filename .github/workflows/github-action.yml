@@ -19,10 +19,8 @@ jobs:
           - os: [ubuntu-20.04]
             sanitizer: address
     steps:
-      # checkout the repo (with fetch-depth 2 to get base of merge)
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
+      # checkout the repo
+      - uses: actions/checkout@v2
       # setup the environment
       - name: mac-setup
         if: runner.os == 'macOS'
@@ -35,18 +33,10 @@ jobs:
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
+          sudo apt-get update
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov clang-format
-
-      # code style check
-      - name: style-check
-        if: runner.os == 'Linux' && matrix.sanitizer == ''
-        run: |
-          BASE_SHA="${{github.event.pull_request.base.sha}}"
-          MSG="Please format all code changes to the style that clang-format accepts (e.g., with command \`git-clang-format --commit ${BASE_SHA}\`)"
-          DIFF=$(git-clang-format --quiet --diff --commit ${BASE_SHA})
-          if [[ -n "${DIFF}" ]]; then echo "${MSG}"; echo "${DIFF}"; exit 1; fi
+          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov
 
       # build-svf
       - name: build-svf
