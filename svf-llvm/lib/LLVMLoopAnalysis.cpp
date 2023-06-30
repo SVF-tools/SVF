@@ -48,24 +48,13 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, ICFG* icfg)
 {
     llvm::DominatorTree DT = llvm::DominatorTree();
     std::vector<const Loop *> loop_stack;
-    Set<const Function*> visitedFuncs;
     for (Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
             const Function* func = &*F;
-            func = LLVMUtil::getDefFunForMultipleModule(func);
             const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(func);
-            std::string extFuncName = func->getName().str();
-            // is start with svf_
-            if (extFuncName.length() >= 4 && extFuncName.substr(0, 4).compare("svf_") == 0) {
-                if (!LLVMModuleSet::getLLVMModuleSet()->isUsedExtFuncNames(extFuncName)) {
-                    continue;
-                }
-            }
-            if (visitedFuncs.find(func) != visitedFuncs.end())
-                continue;
-            visitedFuncs.insert(func);
+            if (func->isDeclaration()) continue;
             // do not analyze external call
             if (SVFUtil::isExtCall(svffun)) continue;
             DT.recalculate(const_cast<Function&>(*func));

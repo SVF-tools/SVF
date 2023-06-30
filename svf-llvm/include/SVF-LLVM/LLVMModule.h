@@ -69,7 +69,6 @@ private:
     std::unique_ptr<LLVMContext> cxts;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
-    OrderedSet<std::string> usedExtFuncNames;
 
     /// Function declaration to function definition map
     FunDeclToDefMapTy FunDeclToDefMap;
@@ -195,8 +194,6 @@ public:
 
     inline SVFFunction* getSVFFunction(const Function* fun) const
     {
-        if (fun->isDeclaration() && hasDefinition(fun))
-            fun = getDefinition(fun);
         LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
         assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
         return it->second;
@@ -251,10 +248,6 @@ public:
             }
         }
         return nullptr;
-    }
-
-    inline bool isUsedExtFuncNames(const std::string& name) {
-        return usedExtFuncNames.find(name) != usedExtFuncNames.end();
     }
 
     bool hasDefinition(const Function* fun) const

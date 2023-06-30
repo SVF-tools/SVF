@@ -91,9 +91,6 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     assert(symInfo->totalSymNum++ == SymbolTableInfo::ConstantObj && "Something changed!");
     createConstantObj(SymbolTableInfo::ConstantObj);
 
-    // TODO: User's LLVM Module, including global alias and functions
-    // External LLVM Module, including global, alias and (selected functions).
-    // Since Now we cannot process nested calls in Ext Modules.
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
         // Add symbols for all the globals .
@@ -110,22 +107,8 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
         }
 
         // Add symbols for all of the functions and the instructions in them.
-        Set<const Function*> visitedFuncs;
-        for (const Function& fun2 : M.functions())
+        for (const Function& fun : M.functions())
         {
-            const Function* funptr = LLVMUtil::getDefFunForMultipleModule(&fun2);
-            const Function& fun = *funptr;
-            std::string extFuncName = fun.getName().str();
-            // is start with svf_
-            if (extFuncName.length() >= 4 && extFuncName.substr(0, 4).compare("svf_") == 0) {
-                if (!LLVMModuleSet::getLLVMModuleSet()->isUsedExtFuncNames(extFuncName)) {
-                    continue;
-                }
-            }
-            if (visitedFuncs.find(funptr) != visitedFuncs.end())
-                continue;
-            visitedFuncs.insert(funptr);
-
             collectSym(&fun);
             collectRet(&fun);
             if (fun.getFunctionType()->isVarArg())

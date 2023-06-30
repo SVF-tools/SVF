@@ -45,31 +45,18 @@ void ICFGBuilder::build(SVFModule* svfModule)
     // Add the unqiue global ICFGNode at the entry of a program (before the main method).
     icfg->addGlobalICFGNode();
 
-    Set<const Function*> visitedFuncs;
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
     {
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
-            const Function* fun = &*F;
-            const Function* funptr = LLVMUtil::getDefFunForMultipleModule(fun);
-            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(funptr);
-            std::string extFuncName = funptr->getName().str();
-            // is start with svf_
-            if (extFuncName.length() >= 4 && extFuncName.substr(0, 4).compare("svf_") == 0) {
-                if (!LLVMModuleSet::getLLVMModuleSet()->isUsedExtFuncNames(extFuncName)) {
-                    continue;
-                }
-            }
-            if (visitedFuncs.find(funptr) != visitedFuncs.end())
-                continue;
-            visitedFuncs.insert(funptr);
-
+            const Function *fun = &*F;
+            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
             if (SVFUtil::isExtCall(svffun))
                 continue;
             WorkList worklist;
-            processFunEntry(funptr,worklist);
+            processFunEntry(fun,worklist);
             processFunBody(worklist);
-            processFunExit(funptr);
+            processFunExit(fun);
         }
     }
     connectGlobalToProgEntry(svfModule);
@@ -80,7 +67,6 @@ void ICFGBuilder::build(SVFModule* svfModule)
  */
 void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
 {
-    fun = LLVMUtil::getDefFunForMultipleModule(fun);
     FunEntryICFGNode* FunEntryICFGNode = icfg->getFunEntryICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun));
     const Instruction* entryInst = &((fun->getEntryBlock()).front());
     const SVFInstruction* svfentryInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(entryInst);
