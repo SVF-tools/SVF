@@ -540,8 +540,11 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         modules.emplace_back(*mod);
         owned_modules.emplace_back(std::move(mod));
     }
+}
 
+void LLVMModuleSet::loadExtModules() {
     // has external bc
+    cxts = std::make_unique<LLVMContext>();
     if (Options::ExtAPIInput().size() > 0) {
         std::string extModuleName = Options::ExtAPIInput();
         if (!LLVMUtil::isIRFile(extModuleName))
