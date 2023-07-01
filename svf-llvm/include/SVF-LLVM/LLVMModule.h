@@ -343,6 +343,7 @@ private:
     void addSVFMain();
 
     void createSVFDataStructure();
+    void createSVFFunction(const Function* func);
     void initSVFFunction();
     void initSVFBasicBlock(const Function* func);
     void initDomTree(SVFFunction* func, const Function* f);

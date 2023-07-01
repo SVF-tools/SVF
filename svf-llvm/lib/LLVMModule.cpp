@@ -165,88 +165,38 @@ void LLVMModuleSet::build()
 void LLVMModuleSet::createSVFDataStructure()
 {
     getSVFType(IntegerType::getInt8Ty(getContext()));
+    Set<const Function*> candidateDeclares;
+    Set<const Function*> candidateDefs;
     for (const Module& mod : modules)
     {
         /// Function
         for (const Function& func : mod.functions())
         {
-            SVFFunction* svfFunc = new SVFFunction(
-                getSVFType(func.getType()),
-                SVFUtil::cast<SVFFunctionType>(
-                    getSVFType(func.getFunctionType())),
-                func.isDeclaration(), LLVMUtil::isIntrinsicFun(&func),
-                func.hasAddressTaken(), func.isVarArg(), new SVFLoopAndDomInfo);
-            svfFunc->setName(func.getName().str());
-            svfModule->addFunctionSet(svfFunc);
-            addFunctionMap(&func, svfFunc);
-
-            for (const Argument& arg : func.args())
+            if (FunDefToDeclsMap.find(&func) != FunDefToDeclsMap.end() &&
+                FunDefToDeclsMap[&func].empty())
             {
-                SVFArgument* svfarg = new SVFArgument(
-                    getSVFType(arg.getType()), svfFunc, arg.getArgNo(),
-                    LLVMUtil::isArgOfUncalledFunction(&arg));
-                // Setting up arg name
-                if (arg.hasName())
-                    svfarg->setName(arg.getName().str());
-                else
-                    svfarg->setName(std::to_string(arg.getArgNo()));
-
-                svfFunc->addArgument(svfarg);
-                addArgumentMap(&arg, svfarg);
+                continue;
             }
-
-            for (const BasicBlock& bb : func)
+            else if (func.isDeclaration())
             {
-                SVFBasicBlock* svfBB =
-                    new SVFBasicBlock(getSVFType(bb.getType()), svfFunc);
-                if (bb.hasName())
-                    svfBB->setName(bb.getName().str());
-                svfFunc->addBasicBlock(svfBB);
-                addBasicBlockMap(&bb, svfBB);
-                for (const Instruction& inst : bb)
-                {
-                    SVFInstruction* svfInst = nullptr;
-                    if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
-                    {
-                        if (LLVMUtil::isVirtualCallSite(call))
-                            svfInst = new SVFVirtualCallInst(
-                                getSVFType(call->getType()), svfBB,
-                                call->getFunctionType()->isVarArg(),
-                                inst.isTerminator());
-                        else
-                            svfInst = new SVFCallInst(
-                                getSVFType(call->getType()), svfBB,
-                                call->getFunctionType()->isVarArg(),
-                                inst.isTerminator());
-                    }
-                    else
-                    {
-                        svfInst =
-                            new SVFInstruction(getSVFType(inst.getType()),
-                                               svfBB, inst.isTerminator(),
-                                               SVFUtil::isa<ReturnInst>(inst));
-                    }
-
-                    // Set instruction's string representation
-                    if (inst.hasName() && !inst.getName().empty())
-                    {
-                        svfInst->setName(inst.getName().str());
-                    }
-                    else
-                    {
-                        std::string str = LLVMUtil::llvmToString(inst);
-                        auto it = str.begin(), ite = str.end();
-                        while (it != ite && std::isspace(*it))
-                            ++it;
-                        // 0xf (15) is the max length a local string can hold
-                        svfInst->setName({it, std::min(it + 0xf, ite)});
-                    }
-                    svfBB->addInstruction(svfInst);
-                    addInstructionMap(&inst, svfInst);
-                }
+                candidateDeclares.insert(&func);
+            }
+            else {
+                candidateDefs.insert(&func);
             }
         }
+    }
+    for (const Function* func: candidateDefs) {
+        createSVFFunction(func);
+    }
 
+    for (const Function* func: candidateDeclares) {
+        createSVFFunction(func);
+    }
+
+    /// then traverse candidate sets
+    for (const Module& mod : modules)
+    {
         /// GlobalVariable
         for (const GlobalVariable& global :  mod.globals())
         {
@@ -272,6 +222,84 @@ void LLVMModuleSet::createSVFDataStructure()
                 ifunc.getName().str(), getSVFType(ifunc.getType()));
             svfModule->addAliasSet(svfifunc);
             addGlobalValueMap(&ifunc, svfifunc);
+        }
+    }
+}
+
+void LLVMModuleSet::createSVFFunction(const Function* func) {
+    SVFFunction* svfFunc = new SVFFunction(
+        getSVFType(func->getType()),
+        SVFUtil::cast<SVFFunctionType>(
+            getSVFType(func->getFunctionType())),
+        func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
+        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
+    svfFunc->setName(func->getName().str());
+    svfModule->addFunctionSet(svfFunc);
+    addFunctionMap(func, svfFunc);
+
+    for (const Argument& arg : func->args())
+    {
+        SVFArgument* svfarg = new SVFArgument(
+            getSVFType(arg.getType()), svfFunc, arg.getArgNo(),
+            LLVMUtil::isArgOfUncalledFunction(&arg));
+        // Setting up arg name
+        if (arg.hasName())
+            svfarg->setName(arg.getName().str());
+        else
+            svfarg->setName(std::to_string(arg.getArgNo()));
+
+        svfFunc->addArgument(svfarg);
+        addArgumentMap(&arg, svfarg);
+    }
+
+    for (const BasicBlock& bb : *func)
+    {
+        SVFBasicBlock* svfBB =
+            new SVFBasicBlock(getSVFType(bb.getType()), svfFunc);
+        if (bb.hasName())
+            svfBB->setName(bb.getName().str());
+        svfFunc->addBasicBlock(svfBB);
+        addBasicBlockMap(&bb, svfBB);
+        for (const Instruction& inst : bb)
+        {
+            SVFInstruction* svfInst = nullptr;
+            if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
+            {
+                if (LLVMUtil::isVirtualCallSite(call))
+                    svfInst = new SVFVirtualCallInst(
+                        getSVFType(call->getType()), svfBB,
+                        call->getFunctionType()->isVarArg(),
+                        inst.isTerminator());
+                else
+                    svfInst = new SVFCallInst(
+                        getSVFType(call->getType()), svfBB,
+                        call->getFunctionType()->isVarArg(),
+                        inst.isTerminator());
+            }
+            else
+            {
+                svfInst =
+                    new SVFInstruction(getSVFType(inst.getType()),
+                                       svfBB, inst.isTerminator(),
+                                       SVFUtil::isa<ReturnInst>(inst));
+            }
+
+            // Set instruction's string representation
+            if (inst.hasName() && !inst.getName().empty())
+            {
+                svfInst->setName(inst.getName().str());
+            }
+            else
+            {
+                std::string str = LLVMUtil::llvmToString(inst);
+                auto it = str.begin(), ite = str.end();
+                while (it != ite && std::isspace(*it))
+                    ++it;
+                // 0xf (15) is the max length a local string can hold
+                svfInst->setName({it, std::min(it + 0xf, ite)});
+            }
+            svfBB->addInstruction(svfInst);
+            addInstructionMap(&inst, svfInst);
         }
     }
 }
