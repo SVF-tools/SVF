@@ -165,7 +165,7 @@ void LLVMModuleSet::build()
 void LLVMModuleSet::createSVFDataStructure()
 {
     getSVFType(IntegerType::getInt8Ty(getContext()));
-    Set<const Function*> candidateDeclares;
+    Set<const Function*> candidateDecls;
     Set<const Function*> candidateDefs;
     for (const Module& mod : modules)
     {
@@ -179,7 +179,7 @@ void LLVMModuleSet::createSVFDataStructure()
             }
             else if (func.isDeclaration())
             {
-                candidateDeclares.insert(&func);
+                candidateDecls.insert(&func);
             }
             else {
                 candidateDefs.insert(&func);
@@ -190,7 +190,7 @@ void LLVMModuleSet::createSVFDataStructure()
         createSVFFunction(func);
     }
 
-    for (const Function* func: candidateDeclares) {
+    for (const Function* func: candidateDecls) {
         createSVFFunction(func);
     }
 
