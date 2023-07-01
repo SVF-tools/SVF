@@ -346,16 +346,10 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                 SVFInstruction* svfinst = getSVFInstruction(call);
                 SVFCallInst* svfcall = SVFUtil::cast<SVFCallInst>(svfinst);
                 auto called_llvmval = call->getCalledOperand()->stripPointerCasts();
-                const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval);
-                if (called_llvmfunc)
-                {
-                    const Function* real_llvmfunc =
-                        LLVMUtil::getDefFunForMultipleModule(called_llvmfunc);
-                    SVFValue* callee = getSVFValue(real_llvmfunc);
+                if (const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval)) {
+                    const Function* llvmfunc_def = LLVMUtil::getDefFunForMultipleModule(called_llvmfunc);
+                    SVFFunction* callee = getSVFFunction(llvmfunc_def);
                     svfcall->setCalledOperand(callee);
-                }
-                else {
-                    svfcall->setCalledOperand(getSVFValue(called_llvmval));
                 }
                 if(SVFVirtualCallInst* virtualCall = SVFUtil::dyn_cast<SVFVirtualCallInst>(svfcall))
                 {
