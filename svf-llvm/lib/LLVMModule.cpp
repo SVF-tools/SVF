@@ -350,6 +350,8 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                     const Function* llvmfunc_def = LLVMUtil::getDefFunForMultipleModule(called_llvmfunc);
                     SVFFunction* callee = getSVFFunction(llvmfunc_def);
                     svfcall->setCalledOperand(callee);
+                } else {
+                    svfcall->setCalledOperand(getSVFValue(called_llvmval));
                 }
                 if(SVFVirtualCallInst* virtualCall = SVFUtil::dyn_cast<SVFVirtualCallInst>(svfcall))
                 {
