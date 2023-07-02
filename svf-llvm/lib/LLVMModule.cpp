@@ -183,7 +183,7 @@ void LLVMModuleSet::createSVFDataStructure()
                 }
                 else {
                     /// if this function is in app bc, any def func should be added.
-                    /// if this function is in ext bc, only functions which has declarations can be inserted.
+                    /// if this function is in ext bc, only functions which have declarations(should be used by app bc) can be inserted.
                     candidateDecls.insert(&func);
                 }
             }
