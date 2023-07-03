@@ -679,8 +679,6 @@ const Option<bool> Options::SymTabPrint(
     false
 );
 
-
-
 // Conditions.cpp
 const Option<u32_t> Options::MaxZ3Size(
     "max-z3-size",
@@ -773,6 +771,10 @@ const Option<bool> Options::VtableInSVFIR(
 
 
 //WPAPass.cpp
+const Option<std::string> Options::ExtAPIInput(
+    "extapi", "External API ext.bc", ""
+);
+
 const Option<bool> Options::AnderSVFG(
     "svfg",
     "Generate SVFG after Andersen's Analysis",

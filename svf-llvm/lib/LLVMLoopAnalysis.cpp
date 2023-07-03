@@ -54,6 +54,7 @@ void LLVMLoopAnalysis::buildLLVMLoops(SVFModule *mod, ICFG* icfg)
         {
             const Function* func = &*F;
             const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(func);
+            if (func->isDeclaration()) continue;
             // do not analyze external call
             if (SVFUtil::isExtCall(svffun)) continue;
             DT.recalculate(const_cast<Function&>(*func));
