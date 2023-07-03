@@ -115,6 +115,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     LLVMModuleSet* mset = getLLVMModuleSet();
 
     mset->loadModules(moduleNameVec);
+    mset->loadExtModules();
 
     if (!moduleNameVec.empty())
     {
@@ -165,8 +166,7 @@ void LLVMModuleSet::build()
 void LLVMModuleSet::createSVFDataStructure()
 {
     getSVFType(IntegerType::getInt8Ty(getContext()));
-    Set<const Function*> candidateDecls;
-    Set<const Function*> candidateDefs;
+
     for (const Module& mod : modules)
     {
         /// Function
@@ -177,14 +177,14 @@ void LLVMModuleSet::createSVFDataStructure()
                 candidateDecls.insert(&func);
             } else {
                 /// if this function is definition
-                if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap[&func].empty()) {
+                if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap[&func].empty() && func.getName().str() != "svf__main") {
                     /// if this function func defined in ExtAPI but never used in application code (without any corresponding declared functions).
                     continue;
                 }
                 else {
                     /// if this function is in app bc, any def func should be added.
                     /// if this function is in ext bc, only functions which have declarations(should be used by app bc) can be inserted.
-                    candidateDecls.insert(&func);
+                    candidateDefs.insert(&func);
                 }
             }
         }
@@ -314,6 +314,7 @@ void LLVMModuleSet::initSVFFunction()
         /// Function
         for (const Function& f : mod.functions())
         {
+            if (!LLVMModuleSet::getLLVMModuleSet()->isCandidateFun(&f)) continue;
             SVFFunction* svffun = getSVFFunction(&f);
             initSVFBasicBlock(&f);
 
@@ -470,6 +471,7 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 {
     LLVMModuleSet* mset = getLLVMModuleSet();
     mset->loadModules(moduleNameVec);
+    mset->loadExtModules();
     mset->prePassSchedule();
 
     std::string preProcessSuffix = ".pre.bc";
@@ -543,7 +545,6 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 
 void LLVMModuleSet::loadExtModules() {
     // has external bc
-    cxts = std::make_unique<LLVMContext>();
     if (Options::ExtAPIInput().size() > 0) {
         std::string extModuleName = Options::ExtAPIInput();
         if (!LLVMUtil::isIRFile(extModuleName))
@@ -833,6 +834,7 @@ void LLVMModuleSet::buildFunToFunMap()
             decls.push_back(decl);
         }
     }
+    return;
 }
 
 void LLVMModuleSet::buildGlobalDefToRepMap()

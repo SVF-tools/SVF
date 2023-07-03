@@ -109,6 +109,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
         // Add symbols for all of the functions and the instructions in them.
         for (const Function& fun : M.functions())
         {
+            if (!LLVMModuleSet::getLLVMModuleSet()->isCandidateFun(&fun)) continue;
             collectSym(&fun);
             collectRet(&fun);
             if (fun.getFunctionType()->isVarArg())
