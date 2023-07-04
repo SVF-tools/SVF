@@ -236,7 +236,8 @@ void LLVMModuleSet::createSVFDataStructure()
     }
 }
 
-void LLVMModuleSet::createSVFFunction(const Function* func) {
+void LLVMModuleSet::createSVFFunction(const Function* func)
+{
     SVFFunction* svfFunc = new SVFFunction(
         getSVFType(func->getType()),
         SVFUtil::cast<SVFFunctionType>(
@@ -356,11 +357,14 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                 SVFInstruction* svfinst = getSVFInstruction(call);
                 SVFCallInst* svfcall = SVFUtil::cast<SVFCallInst>(svfinst);
                 auto called_llvmval = call->getCalledOperand()->stripPointerCasts();
-                if (const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval)) {
+                if (const Function* called_llvmfunc = SVFUtil::dyn_cast<Function>(called_llvmval))
+                {
                     const Function* llvmfunc_def = LLVMUtil::getDefFunForMultipleModule(called_llvmfunc);
                     SVFFunction* callee = getSVFFunction(llvmfunc_def);
                     svfcall->setCalledOperand(callee);
-                } else {
+                }
+                else
+                {
                     svfcall->setCalledOperand(getSVFValue(called_llvmval));
                 }
                 if(SVFVirtualCallInst* virtualCall = SVFUtil::dyn_cast<SVFVirtualCallInst>(svfcall))
@@ -549,9 +553,12 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     }
 }
 
-void LLVMModuleSet::loadExtModules() {
+void LLVMModuleSet::loadExtModules()
+{
     // has external bc
-    if (Options::ExtAPIInput().size() > 0) {
+    cxts = std::make_unique<LLVMContext>();
+    if (Options::ExtAPIInput().size() > 0)
+    {
         std::string extModuleName = Options::ExtAPIInput();
         if (!LLVMUtil::isIRFile(extModuleName))
         {

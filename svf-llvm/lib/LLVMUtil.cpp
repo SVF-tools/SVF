@@ -53,17 +53,16 @@ const std::string structName = "struct.";
  */
 bool LLVMUtil::isObject(const Value*  ref)
 {
-    bool createobj = false;
     if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))) )
-        createobj = true;
+        return true;
     if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isHeapAllocExtCallViaRet(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))))
-        createobj = true;
+        return true;
     if (SVFUtil::isa<GlobalVariable>(ref))
-        createobj = true;
+        return true;
     if (SVFUtil::isa<Function, AllocaInst>(ref))
-        createobj = true;
+        return true;
 
-    return createobj;
+    return false;
 }
 
 /*!
@@ -659,10 +658,7 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
             return false;
         else if (!v->hasInitializer())
         {
-            if(v->isExternalLinkage(v->getLinkage()))
-                return false;
-            else
-                return true;
+            return !v->isExternalLinkage(v->getLinkage());
         }
         else
         {
