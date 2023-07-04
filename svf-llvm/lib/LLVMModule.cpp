@@ -115,7 +115,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     LLVMModuleSet* mset = getLLVMModuleSet();
 
     mset->loadModules(moduleNameVec);
-    mset->loadExtModules();
+    mset->loadExtAPIModules();
 
     if (!moduleNameVec.empty())
     {
@@ -481,7 +481,7 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 {
     LLVMModuleSet* mset = getLLVMModuleSet();
     mset->loadModules(moduleNameVec);
-    mset->loadExtModules();
+    mset->loadExtAPIModules();
     mset->prePassSchedule();
 
     std::string preProcessSuffix = ".pre.bc";
@@ -553,10 +553,9 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     }
 }
 
-void LLVMModuleSet::loadExtModules()
+void LLVMModuleSet::loadExtAPIModules()
 {
     // has external bc
-    cxts = std::make_unique<LLVMContext>();
     if (Options::ExtAPIInput().size() > 0)
     {
         std::string extModuleName = Options::ExtAPIInput();
@@ -847,7 +846,6 @@ void LLVMModuleSet::buildFunToFunMap()
             decls.push_back(decl);
         }
     }
-    return;
 }
 
 void LLVMModuleSet::buildGlobalDefToRepMap()
