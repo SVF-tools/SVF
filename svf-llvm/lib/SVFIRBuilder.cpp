@@ -96,7 +96,6 @@ SVFIR* SVFIRBuilder::build()
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
             const Function& fun = *F;
-            if (!LLVMModuleSet::getLLVMModuleSet()->isCandidateFun(&fun)) continue;
             const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(&fun);
             /// collect return node of function fun
             if(!fun.isDeclaration())
@@ -592,7 +591,6 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
         for (Module::const_iterator I = M.begin(), E = M.end(); I != E; ++I)
         {
             const Function* fun = &*I;
-            if (!LLVMModuleSet::getLLVMModuleSet()->isCandidateFun(fun)) continue;
             NodeID idx = getValueNode(fun);
             NodeID obj = getObjectNode(fun);
 

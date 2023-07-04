@@ -50,7 +50,6 @@ void ICFGBuilder::build(SVFModule* svfModule)
         for (Module::const_iterator F = M.begin(), E = M.end(); F != E; ++F)
         {
             const Function *fun = &*F;
-            if (!LLVMModuleSet::getLLVMModuleSet()->isCandidateFun(fun)) continue;
             const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
             if (SVFUtil::isExtCall(svffun))
                 continue;

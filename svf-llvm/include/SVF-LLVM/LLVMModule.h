@@ -87,8 +87,6 @@ private:
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
 
-    Set<const Function*> candidateDecls;
-    Set<const Function*> candidateDefs;
     /// Constructor
     LLVMModuleSet();
 
@@ -123,11 +121,6 @@ public:
     u32_t getModuleNum() const
     {
         return modules.size();
-    }
-
-    bool isCandidateFun(const llvm::Function* fun) const {
-        return candidateDecls.find(fun) != candidateDecls.end() ||
-               candidateDefs.find(fun) != candidateDefs.end();
     }
 
     const std::vector<std::reference_wrapper<Module>>& getLLVMModules() const

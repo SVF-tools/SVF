@@ -166,11 +166,14 @@ void LLVMModuleSet::build()
 void LLVMModuleSet::createSVFDataStructure()
 {
     getSVFType(IntegerType::getInt8Ty(getContext()));
+    Set<const Function*> candidateDecls;
+    Set<const Function*> candidateDefs;
 
-    for (const Module& mod : modules)
+    for (Module& mod : modules)
     {
+        std::vector<Function*> removedFuncList;
         /// Function
-        for (const Function& func : mod.functions())
+        for (Function& func : mod.functions())
         {
             if (func.isDeclaration()) {
                 /// if this function is declaration
@@ -179,6 +182,7 @@ void LLVMModuleSet::createSVFDataStructure()
                 /// if this function is definition
                 if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap[&func].empty() && func.getName().str() != "svf__main") {
                     /// if this function func defined in ExtAPI but never used in application code (without any corresponding declared functions).
+                    removedFuncList.push_back(&func);
                     continue;
                 }
                 else {
@@ -187,6 +191,9 @@ void LLVMModuleSet::createSVFDataStructure()
                     candidateDefs.insert(&func);
                 }
             }
+        }
+        for (Function* func : removedFuncList) {
+            mod.getFunctionList().remove(func);
         }
     }
     for (const Function* func: candidateDefs) {
@@ -314,7 +321,6 @@ void LLVMModuleSet::initSVFFunction()
         /// Function
         for (const Function& f : mod.functions())
         {
-            if (!LLVMModuleSet::getLLVMModuleSet()->isCandidateFun(&f)) continue;
             SVFFunction* svffun = getSVFFunction(&f);
             initSVFBasicBlock(&f);
 
