@@ -175,32 +175,40 @@ void LLVMModuleSet::createSVFDataStructure()
         /// Function
         for (Function& func : mod.functions())
         {
-            if (func.isDeclaration()) {
+            if (func.isDeclaration())
+            {
                 /// if this function is declaration
                 candidateDecls.insert(&func);
-            } else {
+            }
+            else
+            {
                 /// if this function is definition
-                if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap[&func].empty() && func.getName().str() != "svf__main") {
+                if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap[&func].empty() && func.getName().str() != "svf__main")
+                {
                     /// if this function func defined in ExtAPI but never used in application code (without any corresponding declared functions).
                     removedFuncList.push_back(&func);
                     continue;
                 }
-                else {
+                else
+                {
                     /// if this function is in app bc, any def func should be added.
                     /// if this function is in ext bc, only functions which have declarations(should be used by app bc) can be inserted.
                     candidateDefs.insert(&func);
                 }
             }
         }
-        for (Function* func : removedFuncList) {
+        for (Function* func : removedFuncList)
+        {
             mod.getFunctionList().remove(func);
         }
     }
-    for (const Function* func: candidateDefs) {
+    for (const Function* func: candidateDefs)
+    {
         createSVFFunction(func);
     }
 
-    for (const Function* func: candidateDecls) {
+    for (const Function* func: candidateDecls)
+    {
         createSVFFunction(func);
     }
 
