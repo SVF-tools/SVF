@@ -115,6 +115,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     LLVMModuleSet* mset = getLLVMModuleSet();
 
     mset->loadModules(moduleNameVec);
+    mset->loadExtAPIModules();
 
     if (!moduleNameVec.empty())
     {
@@ -167,40 +168,39 @@ void LLVMModuleSet::createSVFDataStructure()
     getSVFType(IntegerType::getInt8Ty(getContext()));
     Set<const Function*> candidateDecls;
     Set<const Function*> candidateDefs;
-    for (const Module& mod : modules)
+
+    for (Module& mod : modules)
     {
+        std::vector<Function*> removedFuncList;
         /// Function
-        for (const Function& func : mod.functions())
+        for (Function& func : mod.functions())
         {
-            if (func.isDeclaration())
-            {
+            if (func.isDeclaration()) {
                 /// if this function is declaration
                 candidateDecls.insert(&func);
-            }
-            else
-            {
+            } else {
                 /// if this function is definition
-                if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap[&func].empty())
-                {
+                if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap[&func].empty() && func.getName().str() != "svf__main") {
                     /// if this function func defined in ExtAPI but never used in application code (without any corresponding declared functions).
+                    removedFuncList.push_back(&func);
                     continue;
                 }
-                else
-                {
+                else {
                     /// if this function is in app bc, any def func should be added.
                     /// if this function is in ext bc, only functions which have declarations(should be used by app bc) can be inserted.
-                    candidateDecls.insert(&func);
+                    candidateDefs.insert(&func);
                 }
             }
         }
+        for (Function* func : removedFuncList) {
+            mod.getFunctionList().remove(func);
+        }
     }
-    for (const Function* func: candidateDefs)
-    {
+    for (const Function* func: candidateDefs) {
         createSVFFunction(func);
     }
 
-    for (const Function* func: candidateDecls)
-    {
+    for (const Function* func: candidateDecls) {
         createSVFFunction(func);
     }
 
@@ -481,6 +481,7 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 {
     LLVMModuleSet* mset = getLLVMModuleSet();
     mset->loadModules(moduleNameVec);
+    mset->loadExtAPIModules();
     mset->prePassSchedule();
 
     std::string preProcessSuffix = ".pre.bc";
@@ -552,10 +553,9 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     }
 }
 
-void LLVMModuleSet::loadExtModules()
+void LLVMModuleSet::loadExtAPIModules()
 {
     // has external bc
-    cxts = std::make_unique<LLVMContext>();
     if (Options::ExtAPIInput().size() > 0)
     {
         std::string extModuleName = Options::ExtAPIInput();
