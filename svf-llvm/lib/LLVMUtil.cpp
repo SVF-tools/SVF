@@ -1049,9 +1049,11 @@ std::string SVFValue::toString() const
     }
     else
     {
-        const Value* val =
-            LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
-        rawstr << " " << *val << " ";
+        auto llvmVal = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this);
+        if (llvmVal)
+            rawstr << " " << *llvmVal << " ";
+        else
+            rawstr << " No llvmVal found";
     }
     rawstr << this->getSourceLoc();
     return rawstr.str();
