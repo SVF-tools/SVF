@@ -171,9 +171,10 @@ public:
     static inline GEdgeFlag makeEdgeFlagWithAddionalOpnd(GEdgeKind k,
             const SVFVar* var)
     {
-        Var2LabelMap::const_iterator iter = var2LabelMap.find(var);
-        u64_t label = (iter != var2LabelMap.end()) ? iter->second
-                      : multiOpndLabelCounter++;
+        auto it_inserted = var2LabelMap.emplace(var, multiOpndLabelCounter);
+        if (it_inserted.second)
+            ++multiOpndLabelCounter;
+        u64_t label = it_inserted.first->second;
         return (label << EdgeKindMaskBits) | k;
     }
 
@@ -182,9 +183,10 @@ public:
     static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k,
             const ICFGNode* cs)
     {
-        Inst2LabelMap::const_iterator iter = inst2LabelMap.find(cs);
-        u64_t label = (iter != inst2LabelMap.end()) ? iter->second
-                      : callEdgeLabelCounter++;
+        auto it_inserted = inst2LabelMap.emplace(cs, callEdgeLabelCounter);
+        if (it_inserted.second)
+            ++callEdgeLabelCounter;
+        u64_t label = it_inserted.first->second;
         return (label << EdgeKindMaskBits) | k;
     }
 
@@ -193,9 +195,10 @@ public:
     static inline GEdgeFlag makeEdgeFlagWithStoreInst(GEdgeKind k,
             const ICFGNode* store)
     {
-        Inst2LabelMap::const_iterator iter = inst2LabelMap.find(store);
-        u64_t label = (iter != inst2LabelMap.end()) ? iter->second
-                      : storeEdgeLabelCounter++;
+        auto it_inserted = inst2LabelMap.emplace(store, storeEdgeLabelCounter);
+        if (it_inserted.second)
+            ++storeEdgeLabelCounter;
+        u64_t label = it_inserted.first->second;
         return (label << EdgeKindMaskBits) | k;
     }
 
