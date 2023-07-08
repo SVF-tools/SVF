@@ -255,18 +255,14 @@ public:
         return sourceLoc;
     }
 
-    /// \note Use `os<<SVFvalue` or `svfValue.print(os)` when possible to avoid
-    /// string concatenation.
+    /// Needs to be implemented by a SVF front end
     std::string toString() const;
-
-    virtual void print(OutStream& os) const = 0;
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
     friend OutStream& operator<<(OutStream &os, const SVFValue &value)
     {
-        value.print(os);
-        return os;
+        return os << value.toString();
     }
     //@}
 };
@@ -334,8 +330,6 @@ public:
     {
         return node->getKind() == SVFFunc;
     }
-
-    void print(OutStream& os) const override;
 
     inline SVFLoopAndDomInfo* getLoopAndDomInfo()
     {
@@ -532,8 +526,6 @@ public:
         return node->getKind() == SVFBB;
     }
 
-    void print(OutStream& os) const override;
-
     inline const std::vector<const SVFInstruction*>& getInstructionList() const
     {
         return allInsts;
@@ -618,8 +610,6 @@ public:
                node->getKind() == SVFCall ||
                node->getKind() == SVFVCall;
     }
-
-    void print(OutStream& os) const override;
 
     inline const SVFBasicBlock* getParent() const
     {
@@ -817,7 +807,6 @@ public:
                node->getKind() == SVFBlackHole;
     }
 
-    void print(OutStream& os) const override;
 };
 
 class SVFGlobalValue : public SVFConstant
@@ -844,8 +833,6 @@ public:
         setName(std::move(name));
     }
     SVFGlobalValue() = delete;
-
-    void print(OutStream& os) const override;
 
     inline const SVFValue* getDefGlobalForMultipleModule() const
     {
@@ -879,8 +866,6 @@ public:
     {
     }
     SVFArgument() = delete;
-
-    void print(OutStream& os) const override;
 
     inline const SVFFunction* getParent() const
     {
@@ -916,8 +901,6 @@ public:
     }
     SVFConstantData() = delete;
 
-    void print(OutStream& os) const override;
-
     static inline bool classof(const SVFValue *node)
     {
         return node->getKind() == SVFConstData ||
@@ -949,8 +932,6 @@ public:
     {
     }
     SVFConstantInt() = delete;
-
-    void print(OutStream& os) const override;
 
     static inline bool classof(const SVFValue *node)
     {
@@ -985,8 +966,6 @@ public:
     }
     SVFConstantFP() = delete;
 
-    void print(OutStream& os) const override;
-
     inline double getFPValue () const
     {
         return dval;
@@ -1013,8 +992,6 @@ public:
     }
     SVFConstantNullPtr() = delete;
 
-    void print(OutStream& os) const override;
-
     static inline bool classof(const SVFValue *node)
     {
         return node->getKind() == SVFNullPtr;
@@ -1036,8 +1013,6 @@ public:
     {
     }
     SVFBlackHoleValue() = delete;
-
-    void print(OutStream& os) const override;
 
     static inline bool classof(const SVFValue *node)
     {
@@ -1064,8 +1039,6 @@ public:
     {
         return node->getKind() == SVFOther || node->getKind() == SVFMetaAsValue;
     }
-
-    void print(OutStream& os) const override;
 };
 
 /*
@@ -1090,8 +1063,6 @@ public:
     {
         return node->getKind() == SVFMetaAsValue;
     }
-
-    void print(OutStream& os) const override;
 };
 
 
