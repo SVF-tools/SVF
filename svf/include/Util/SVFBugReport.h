@@ -83,7 +83,7 @@ public:
     typedef std::vector<SVFBugEvent> EventStack;
 
 public:
-    enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE};
+    enum BugType {FULLBUFOVERFLOW, PARTIALBUFOVERFLOW, NEVERFREE, PARTIALLEAK, DOUBLEFREE, FILENEVERCLOSE, FILEPARTIALCLOSE, FULLNULLPTRDEREFERENCE, PARTIALNULLPTRDEREFERENCE};
     static const std::map<GenericBug::BugType, std::string> BugType2Str;
 
 protected:
@@ -250,6 +250,38 @@ public:
     static inline bool classof(const GenericBug *bug)
     {
         return bug->getBugType() == GenericBug::FILEPARTIALCLOSE;
+    }
+};
+
+class FullNullPtrDereferenceBug : public GenericBug
+{
+public:
+    FullNullPtrDereferenceBug(const EventStack &bugEventStack):
+          GenericBug(GenericBug::FULLNULLPTRDEREFERENCE, bugEventStack) { }
+
+    cJSON *getBugDescription() const;
+    void printBugToTerminal() const;
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::FULLNULLPTRDEREFERENCE;
+    }
+};
+
+class PartialNullPtrDereferenceBug : public GenericBug
+{
+public:
+    PartialNullPtrDereferenceBug(const EventStack &bugEventStack):
+          GenericBug(GenericBug::PARTIALNULLPTRDEREFERENCE, bugEventStack) { }
+
+    cJSON *getBugDescription() const;
+    void printBugToTerminal() const;
+
+    /// ClassOf
+    static inline bool classof(const GenericBug *bug)
+    {
+        return bug->getBugType() == GenericBug::PARTIALNULLPTRDEREFERENCE;
     }
 };
 
