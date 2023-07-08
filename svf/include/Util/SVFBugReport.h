@@ -257,7 +257,7 @@ class FullNullPtrDereferenceBug : public GenericBug
 {
 public:
     FullNullPtrDereferenceBug(const EventStack &bugEventStack):
-          GenericBug(GenericBug::FULLNULLPTRDEREFERENCE, bugEventStack) { }
+        GenericBug(GenericBug::FULLNULLPTRDEREFERENCE, bugEventStack) { }
 
     cJSON *getBugDescription() const;
     void printBugToTerminal() const;
@@ -273,7 +273,7 @@ class PartialNullPtrDereferenceBug : public GenericBug
 {
 public:
     PartialNullPtrDereferenceBug(const EventStack &bugEventStack):
-          GenericBug(GenericBug::PARTIALNULLPTRDEREFERENCE, bugEventStack) { }
+        GenericBug(GenericBug::PARTIALNULLPTRDEREFERENCE, bugEventStack) { }
 
     cJSON *getBugDescription() const;
     void printBugToTerminal() const;
