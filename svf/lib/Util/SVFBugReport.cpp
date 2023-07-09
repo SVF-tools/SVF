@@ -43,7 +43,9 @@ const std::map<GenericBug::BugType, std::string> GenericBug::BugType2Str =
     {GenericBug::PARTIALLEAK, "Partial Leak"},
     {GenericBug::FILENEVERCLOSE, "File Never Close"},
     {GenericBug::FILEPARTIALCLOSE, "File Partial Close"},
-    {GenericBug::DOUBLEFREE, "Double Free"}
+    {GenericBug::DOUBLEFREE, "Double Free"},
+    {GenericBug::FULLNULLPTRDEREFERENCE, "Full Null Ptr Dereference"},
+    {GenericBug::PARTIALNULLPTRDEREFERENCE, "Partial Null Ptr Dereference"}
 };
 
 const std::string GenericBug::getLoc() const
