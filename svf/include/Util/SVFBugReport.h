@@ -373,6 +373,18 @@ public:
             bugSet.insert(newBug);
             break;
         }
+        case GenericBug::FULLNULLPTRDEREFERENCE:
+        {
+            newBug = new FullNullPtrDereferenceBug(eventStack);
+            bugSet.insert(newBug);
+            break;
+        }
+        case GenericBug::PARTIALNULLPTRDEREFERENCE:
+        {
+            newBug = new PartialNullPtrDereferenceBug(eventStack);
+            bugSet.insert(newBug);
+            break;
+        }
         default:
         {
             assert(false && "Abstract Execution does NOT hava his bug type!");
