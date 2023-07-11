@@ -34,7 +34,6 @@
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVFIR/SVFValue.h"
-#include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
 
 namespace SVF
@@ -99,6 +98,42 @@ inline const Function* getProgFunction(const std::string& funName)
     return nullptr;
 }
 
+inline bool isHeapAllocExtCallViaRet(const Instruction* inst)
+{
+    if (isCallSite(inst))
+    {
+        const Function* func = getCallee(getLLVMCallSite(inst));
+        return func && (func->getName().str().find("_ALLOC_RET") != std::string::npos 
+            || func->getName().str().find("_REALLOC_RET") != std::string::npos);
+    }
+    return false;
+}
+
+inline bool isHeapAllocExtCallViaArg(const Instruction* inst)
+{
+    if (isCallSite(inst))
+    {
+        const Function* func = getCallee(getLLVMCallSite(inst));
+        return func && func->getName().str().find("_ALLOC_ARG") != std::string::npos;
+    }
+    return false;
+}
+
+inline bool isHeapAllocExtCall(const Instruction* inst)
+{
+    return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
+}
+
+inline bool isStaticExtCall(const Instruction* inst)
+{
+    if (isCallSite(inst))
+    {
+        const Function* func = getCallee(getLLVMCallSite(inst));
+        return func && func->getName().str().find("_STATIC") != std::string::npos;
+    }
+    return false;
+}
+
 /// Check whether a function is an entry function (i.e., main)
 inline bool isProgEntryFunction(const Function* fun)
 {
@@ -145,7 +180,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallBase* cs)
     // Case 2: heap/static object held by return value.
     else
     {
-        assert((SVFUtil::isStaticExtCall(svfcs) || SVFUtil::isHeapAllocExtCallViaRet(svfcs))
+        assert((isStaticExtCall(cs) || isHeapAllocExtCallViaRet(cs))
                && "Must be heap alloc via ret, or static allocation site");
         refType = SVFUtil::dyn_cast<PointerType>(cs->getType());
     }

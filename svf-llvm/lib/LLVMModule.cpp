@@ -153,8 +153,9 @@ void LLVMModuleSet::build()
 void LLVMModuleSet::createSVFDataStructure()
 {
     getSVFType(IntegerType::getInt8Ty(getContext()));
-    Set<const Function*> candidateDecls;
-    Set<const Function*> candidateDefs;
+    // Functions need to be retrieved in the order of insertion
+    std::vector<const Function*> candidateDecls;
+    std::vector<const Function*> candidateDefs;
 
     for (Module& mod : modules)
     {
@@ -165,7 +166,7 @@ void LLVMModuleSet::createSVFDataStructure()
             if (func.isDeclaration())
             {
                 /// if this function is declaration
-                candidateDecls.insert(&func);
+                candidateDecls.push_back(&func);
             }
             else
             {
@@ -180,7 +181,7 @@ void LLVMModuleSet::createSVFDataStructure()
                 {
                     /// if this function is in app bc, any def func should be added.
                     /// if this function is in ext bc, only functions which have declarations(should be used by app bc) can be inserted.
-                    candidateDefs.insert(&func);
+                    candidateDefs.push_back(&func);
                 }
             }
         }
@@ -553,8 +554,11 @@ void LLVMModuleSet::loadExtAPIModules()
             Err.print("SVFModuleLoader", llvm::errs());
             abort();
         }
-        modules.emplace_back(*mod);
-        owned_modules.emplace_back(std::move(mod));
+        // The module of ext.bc needs to be imported before other modules. 
+        // Otherwise, when overwriting the app function with SVF extern function, 
+        // the corresponding SVFFunction of the extern function will not be found.
+        modules.insert(modules.begin(), *mod);
+        owned_modules.insert(owned_modules.begin(),std::move(mod));
     }
 }
 
@@ -744,25 +748,39 @@ void LLVMModuleSet::addSVFMain()
 
 void LLVMModuleSet::buildFunToFunMap()
 {
-    Set<const Function*> funDecls, funDefs;
+    Set<const Function*> funDecls, funDefs, extFuncs, overwriteExtFuncs;
     OrderedSet<string> declNames, defNames, intersectNames;
     typedef Map<string, const Function*> NameToFunDefMapTy;
     typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
+    FunDeclToDefMapTy appFunToExtFun;
 
     for (Module& mod : modules)
     {
-        /// Function
-        for (const Function& fun : mod.functions())
+        // extapi.bc functions
+        if (mod.getName().str() == Options::ExtAPIInput())
         {
-            if (fun.isDeclaration())
+            for (const Function& fun : mod.functions())
             {
-                funDecls.insert(&fun);
-                declNames.insert(fun.getName().str());
+                if (fun.getName().str().find("_OVERWRITE") != std::string::npos)
+                    overwriteExtFuncs.insert(&fun);
+                extFuncs.insert(&fun);
             }
-            else
+        }
+        else
+        {
+            /// app functions
+            for (const Function& fun : mod.functions())
             {
-                funDefs.insert(&fun);
-                defNames.insert(fun.getName().str());
+                if (fun.isDeclaration())
+                {
+                    funDecls.insert(&fun);
+                    declNames.insert(fun.getName().str());
+                }
+                else
+                {
+                    funDefs.insert(&fun);
+                    defNames.insert(fun.getName().str());
+                }
             }
         }
     }
@@ -825,6 +843,58 @@ void LLVMModuleSet::buildFunToFunMap()
         for (const Function* decl : declsSet)
         {
             decls.push_back(decl);
+        }
+    }
+
+    /// App Func decl -> SVF extern Func def
+    for (const Function* fdecl : funDecls)
+    {
+        for (const Function* extfun : extFuncs)
+        {
+            std::string declName = fdecl->getName().str();
+            std::string svfExtName = "svf_";
+            svfExtName.reserve(svfExtName.size() + declName.size());
+            svfExtName.append(declName);
+            std::replace(svfExtName.begin(), svfExtName.end(), '.', '_');
+            if ((fdecl->arg_size() == extfun->arg_size() || (fdecl->isVarArg() && extfun->isVarArg()))
+                && ((extfun->getName().str().length() == svfExtName.length() && extfun->getName().str().compare(svfExtName) == 0) || 
+                    (extfun->getName().str().length() > svfExtName.length() && extfun->getName().str().find(svfExtName + "_") != std::string::npos)))
+            {
+                assert(extfun->getName().str().length() > 4 && extfun->getName().str().substr(0, 4).compare("svf_") == 0 && "Function in extapi.bc should be start with 'svf_'");
+                FunDeclToDefMap[fdecl] = extfun;
+                std::vector<const Function*>& decls = FunDefToDeclsMap[extfun];
+                decls.push_back(fdecl);
+            }
+        } 
+    }
+
+    /// Overwrite 
+    /// App Func def -> SVF extern Func def
+    for (const Function* appfunc : funDefs)
+    {
+        for (const Function* owfunc : overwriteExtFuncs)
+        {
+            
+            if (owfunc->getName().str().find("svf_" + appfunc->getName().str() + "_") != std::string::npos &&
+                (owfunc->arg_size() == appfunc->arg_size() || (owfunc->isVarArg() && appfunc->isVarArg())))
+            {
+                assert(owfunc->getName().str().length() > 4 && owfunc->getName().str().substr(0, 4).compare("svf_") == 0 && "Function in extapi.bc should be start with 'svf_'");
+                appFunToExtFun[appfunc] = owfunc;
+                
+                Function* fun = const_cast<Function*>(appfunc);
+                Module* mod = fun->getParent();
+                FunctionType* funType = fun->getFunctionType();
+                std::string funName = fun->getName().str();
+                Function* declaration = Function::Create(funType, GlobalValue::ExternalLinkage, funName, mod);
+                // Replace app function with svf extern function
+                fun->replaceAllUsesWith(declaration);
+                fun->eraseFromParent();
+                declaration->setName(funName);
+
+                FunDeclToDefMap[declaration] = owfunc;
+                std::vector<const Function*>& decls = FunDefToDeclsMap[owfunc];
+                decls.push_back(declaration);
+            }
         }
     }
 }

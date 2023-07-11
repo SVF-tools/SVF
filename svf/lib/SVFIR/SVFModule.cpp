@@ -42,7 +42,6 @@ SVFModule::~SVFModule()
         delete o;
     NodeIDAllocator::unset();
     ThreadAPI::destroy();
-    ExtAPI::destory();
 }
 
 const SVFFunction* SVFModule::getSVFFunction(const std::string& name)

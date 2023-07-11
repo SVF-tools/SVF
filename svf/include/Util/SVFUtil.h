@@ -33,7 +33,7 @@
 #include "FastCluster/fastcluster.h"
 #include "SVFIR/SVFValue.h"
 #include "SVFIR/SVFModule.h"
-#include "Util/ExtAPI.h"
+#include <Util/config.h>
 #include "MemoryModel/PointsTo.h"
 #include <time.h>
 
@@ -303,18 +303,31 @@ bool startAnalysisLimitTimer(unsigned timeLimit);
 /// timer or not (return value of startLimitTimer).
 void stopAnalysisLimitTimer(bool limitTimerSet);
 
+inline bool hasExtFuncProperty(const SVFFunction* fun, const std::string& propertyName)
+{
+    return fun->getName().find(propertyName) != std::string::npos;
+}
+
 /// Return true if the call is an external call (external library in function summary table)
 /// If the libary function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
 //@{
 inline bool isExtCall(const SVFFunction* fun)
 {
-    return fun && ExtAPI::getExtAPI()->is_ext(fun);
+    if (!fun)
+        return false;
+    else if (fun->isDeclaration() || fun->isIntrinsic())
+        return true;
+    return false;
 }
 
-// Return true if extern function contains memset_like or memcpy_like operations
-inline bool isMemSetOrCpyExtFun(const SVFFunction* fun)
+inline bool isMemcpyExtFun(const SVFFunction* fun)
 {
-    return fun && ExtAPI::getExtAPI()->is_memset_or_memcpy(fun);
+    return fun && hasExtFuncProperty(fun, "_MEMCPY");
+}
+
+inline bool isMemsetExtFun(const SVFFunction* fun)
+{
+    return fun && hasExtFuncProperty(fun, "_MEMSET");
 }
 
 /// Return true if the call is a heap allocator/reallocator
@@ -322,20 +335,31 @@ inline bool isMemSetOrCpyExtFun(const SVFFunction* fun)
 /// note that these two functions are not suppose to be used externally
 inline bool isHeapAllocExtFunViaRet(const SVFFunction* fun)
 {
-    return fun && (ExtAPI::getExtAPI()->is_alloc(fun)
-                   || ExtAPI::getExtAPI()->is_realloc(fun));
+    return fun && (hasExtFuncProperty(fun, "_ALLOC_RET")
+                   || hasExtFuncProperty(fun, "_REALLOC_RET"));
 }
 
 inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun)
 {
-    return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
+    return fun && hasExtFuncProperty(fun, "_ALLOC_ARG");
 }
 
 /// Get the position of argument that holds an allocated heap object.
 //@{
 inline int getHeapAllocHoldingArgPosition(const SVFFunction* fun)
 {
-    return ExtAPI::getExtAPI()->get_alloc_arg_pos(fun);
+    std::string s = "_ALLOC_ARG";
+    std::string subStr = fun->getName().substr(fun->getName().find(s) + s.length());  
+    std::string number;
+    for (char c : subStr) {
+        if (isdigit(c)) {
+            number.push_back(c);
+        } else {
+            break;
+        }
+    }
+    assert(!number.empty() && "Incorrect naming convention for svf external functions(ALLOCHEAPVIAARG + number)?");
+    return std::stoi(number);
 }
 
 /// Return true if the call is a heap reallocator
@@ -343,7 +367,7 @@ inline int getHeapAllocHoldingArgPosition(const SVFFunction* fun)
 /// note that this function is not suppose to be used externally
 inline bool isReallocExtFun(const SVFFunction* fun)
 {
-    return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
+    return fun && hasExtFuncProperty(fun, "_REALLOC_RET");
 }
 
 /// Return true if the call is a heap dealloc or not
@@ -351,7 +375,7 @@ inline bool isReallocExtFun(const SVFFunction* fun)
 /// note that this function is not suppose to be used externally
 inline bool isDeallocExtFun(const SVFFunction* fun)
 {
-    return fun && (ExtAPI::getExtAPI()->is_dealloc(fun));
+    return fun && hasExtFuncProperty(fun, "_ALLOC_RET");
 }
 
 /// Return true if the call is a static global call
@@ -359,7 +383,7 @@ inline bool isDeallocExtFun(const SVFFunction* fun)
 /// note that this function is not suppose to be used externally
 inline bool isStaticExtFun(const SVFFunction* fun)
 {
-    return fun && ExtAPI::getExtAPI()->has_static(fun);
+    return fun && hasExtFuncProperty(fun, "_STATIC");
 }
 
 /// Program entry function e.g. main
