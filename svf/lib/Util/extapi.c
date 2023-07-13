@@ -311,15 +311,15 @@ extern void *svf_memccpy_MEMCPY( void * restrict dest, const void * restrict src
 
 extern void svf___memmove_chk_MEMCPY(char* dst, char* src, int sz);
 
-extern void svf_llvm_memset_MEMSET(char* dst, char elem, int sz);
+extern void svf_llvm_memset_MEMSET(char* dst, char elem, int sz, int flag);
 
-extern void svf_llvm_memset_p0i8_i32_MEMSET(char* dst, char elem, int sz);
+extern void svf_llvm_memset_p0i8_i32_MEMSET(char* dst, char elem, int sz, int flag);
 
-extern void svf_llvm_memset_p0i8_i64_MEMSET(char* dst, char elem, int sz);
+extern void svf_llvm_memset_p0i8_i64_MEMSET(char* dst, char elem, int sz, int flag);
 
-extern void svf_MEMSET(char* dst, char elem, int sz);
+extern void svf_MEMSET(char* dst, char elem, int sz, int flag);
 
-extern char * svf___memset_chk_MEMSET(char * dest, const char * src, unsigned long destlen);
+extern char * svf___memset_chk_MEMSET(char * dest, int c, unsigned long destlen, int flag);
 
 char * svf___strcpy_chk_MEMCPY(char * dest, const char * src, unsigned long destlen);
 
@@ -601,10 +601,11 @@ void svf_preserveExtFuncDeclarations()
     svf_bcopy_MEMCPY(NULL, NULL, 0);
     svf_memccpy_MEMCPY(NULL, NULL, 0, 0);
     svf___memmove_chk_MEMCPY(NULL, NULL, 0);
-    svf_llvm_memset_MEMSET(NULL, 'a', 0);
-    svf_llvm_memset_p0i8_i32_MEMSET(NULL, 'a', 0);
-    svf_llvm_memset_p0i8_i64_MEMSET(NULL, 'a', 0);
-    svf___memset_chk_MEMSET(NULL, NULL, 0);
+    svf_llvm_memset_MEMSET(NULL, 'a', 0, 0);
+    svf_llvm_memset_p0i8_i32_MEMSET(NULL, 'a', 0, 0);
+    svf_llvm_memset_p0i8_i64_MEMSET(NULL, 'a', 0, 0);
+    svf_MEMSET(NULL, 'a', 0, 0);
+    svf___memset_chk_MEMSET(NULL, 'a', 0, 0);
     svf___strcpy_chk_MEMCPY(NULL, NULL, 0);
     svf___strcat_chk_MEMCPY(NULL, NULL, 0);
     svf_stpcpy_MEMCPY(NULL, NULL);
