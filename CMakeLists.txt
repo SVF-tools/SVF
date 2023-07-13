@@ -89,9 +89,10 @@ install(
   PATTERN "**/*.h")
 
 # Compile extapi.c to extapi.bc
+string(REGEX REPLACE "/lib/cmake/llvm$" "" LLVM_DIR "${LLVM_DIR}")
 add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/include/Util/extapi.bc
-    COMMAND ${PROJECT_SOURCE_DIR}/llvm-14.0.0.obj/bin/clang -S -c -Xclang -disable-O0-optnone -fno-discard-value-names -emit-llvm ${PROJECT_SOURCE_DIR}/svf/lib/Util/extapi.c -o ${PROJECT_BINARY_DIR}/include/Util/extapi.bc
+    COMMAND ${LLVM_DIR}/bin/clang -S -c -Xclang -disable-O0-optnone -fno-discard-value-names -emit-llvm ${PROJECT_SOURCE_DIR}/svf/lib/Util/extapi.c -o ${PROJECT_BINARY_DIR}/include/Util/extapi.bc
     DEPENDS ${PROJECT_SOURCE_DIR}/svf/lib/Util/extapi.c
 )
 

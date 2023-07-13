@@ -163,7 +163,7 @@ void LLVMModuleSet::createSVFDataStructure()
         /// Function
         for (Function& func : mod.functions())
         {
-            if (func.isDeclaration())
+            if (func.isDeclaration() && (FunDefToDeclsMap.find(&func) != FunDefToDeclsMap.end() || mod.getName().str() != Options::ExtAPIInput()))
             {
                 /// if this function is declaration
                 candidateDecls.push_back(&func);
@@ -171,7 +171,7 @@ void LLVMModuleSet::createSVFDataStructure()
             else
             {
                 /// if this function is definition
-                if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap[&func].empty() && func.getName().str() != "svf__main")
+                if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap.find(&func) == FunDefToDeclsMap.end() && func.getName().str() != "svf__main")
                 {
                     /// if this function func defined in ExtAPI but never used in application code (without any corresponding declared functions).
                     removedFuncList.push_back(&func);
@@ -187,7 +187,7 @@ void LLVMModuleSet::createSVFDataStructure()
         }
         for (Function* func : removedFuncList)
         {
-            mod.getFunctionList().remove(func);
+            func->eraseFromParent();
         }
     }
     for (const Function* func: candidateDefs)
