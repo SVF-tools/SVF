@@ -113,9 +113,6 @@ void AndersenBase::analyze()
         PointerAnalysis::finalize();
     }
 
-    if (!Options::WriteAnder().empty())
-        this->writeObjVarToFile(Options::WriteAnder());
-
     if(!readResultsFromFile)
     {
         // Start solving constraints

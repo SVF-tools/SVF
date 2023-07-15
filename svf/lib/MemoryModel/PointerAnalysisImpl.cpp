@@ -159,16 +159,9 @@ void BVDataPTAImpl::remapPointsToSets(void)
     getPTDataTy()->remapAllPts();
 }
 
-void BVDataPTAImpl::writeObjVarToFile(const string& filename)
+void BVDataPTAImpl::writeObjVarToFile(const string& filename, std::fstream& f)
 {
     outs() << "Storing ObjVar to '" << filename << "'...";
-    error_code err;
-    std::fstream f(filename.c_str(), std::ios_base::out);
-    if (!f.good())
-    {
-        outs() << "  error opening file for writing!\n";
-        return;
-    }
 
     // Write BaseNodes insensitivity to file
     NodeBS NodeIDs;
@@ -185,14 +178,6 @@ void BVDataPTAImpl::writeObjVarToFile(const string& filename)
 
     f << "------\n";
 
-    // Job finish and close file
-    f.close();
-    if (f.good())
-    {
-        outs() << "\n";
-        return;
-    }
-
 }
 
 /*!
@@ -206,12 +191,15 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     outs() << "Storing pointer analysis results to '" << filename << "'...";
 
     error_code err;
-    std::fstream f(filename.c_str(), std::ios_base::app);
+    std::fstream f(filename.c_str(), std::ios_base::out);
     if (!f.good())
     {
         outs() << "  error opening file for writing!\n";
         return;
     }
+
+    if (!Options::WriteAnder().empty())
+        this->writeObjVarToFile(filename, f);
 
     // Write analysis results to file
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
