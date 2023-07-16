@@ -86,6 +86,16 @@ public:
         return fspta.get();
     }
 
+    static FlowSensitive* createFSWPA(SVFIR* _pag, const std::string& filename)
+    {
+        if (fspta == nullptr)
+        {
+            fspta = std::unique_ptr<FlowSensitive>(new FlowSensitive(_pag));
+            fspta->analyzeAndWrite(filename);
+        }
+        return fspta.get();
+    }
+
     /// Release flow-sensitive pointer analysis
     static void releaseFSWPA()
     {
@@ -100,6 +110,10 @@ public:
 
     /// Flow sensitive analysis
     void analyze() override;
+
+    virtual void analyzeAndWrite(const std::string& filename);
+
+    virtual void solveConstraints();
 
     /// Initialize analysis
     void initialize() override;

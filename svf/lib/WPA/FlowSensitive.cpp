@@ -74,18 +74,8 @@ void FlowSensitive::initialize()
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 }
-
-/*!
- * Start analysis
- */
-void FlowSensitive::analyze()
+void FlowSensitive::solveConstraints()
 {
-    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
-
-    /// Initialization for the Solver
-    initialize();
-
-    double start = stat->getClk(true);
     /// Start solving constraints
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
@@ -104,6 +94,46 @@ void FlowSensitive::analyze()
     while (updateCallGraph(getIndirectCallsites()));
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+}
+
+/*!
+ * Start analysis
+ */
+void FlowSensitive::analyzeAndWrite(const std::string& filename)
+{
+    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
+
+    /// Initialization for the Solver
+    initialize();
+
+    double start = stat->getClk(true);
+    writeObjVarToFile(filename);
+    solveConstraints();
+
+    // Reset the time-up alarm; analysis is done.
+    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
+
+    writeToFile(filename);
+
+    double end = stat->getClk(true);
+    solveTime += (end - start) / TIMEINTERVAL;
+
+    /// finalize the analysis
+    finalize();
+}
+
+/*!
+ * Start analysis
+ */
+void FlowSensitive::analyze()
+{
+    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
+
+    /// Initialization for the Solver
+    initialize();
+
+    double start = stat->getClk(true);
+    solveConstraints();
 
     // Reset the time-up alarm; analysis is done.
     SVFUtil::stopAnalysisLimitTimer(limitTimerSet);

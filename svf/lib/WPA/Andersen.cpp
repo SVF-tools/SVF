@@ -97,25 +97,9 @@ void AndersenBase::finalize()
     BVDataPTAImpl::finalize();
 }
 
-/*!
- * Andersen analysis
- */
-void AndersenBase::analyze()
+void AndersenBase::solveConstraints()
 {
-    /// Initialization for the Solver
-    initialize();
-
-    bool readResultsFromFile = false;
-    if(!Options::ReadAnder().empty())
-    {
-        readResultsFromFile = this->readFromFile(Options::ReadAnder());
-        // Finalize the analysis
-        PointerAnalysis::finalize();
-    }
-
-    if(!readResultsFromFile)
-    {
-        // Start solving constraints
+     // Start solving constraints
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
         bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
@@ -141,12 +125,57 @@ void AndersenBase::analyze()
         SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+}
 
+/*!
+ * Andersen analysis
+ */
+void AndersenBase::analyze()
+{
+    /// Initialization for the Solver
+    initialize();
+
+    bool readResultsFromFile = false;
+    if(!Options::ReadAnder().empty())
+    {
+        readResultsFromFile = this->readFromFile(Options::ReadAnder());
+        // Finalize the analysis
+        PointerAnalysis::finalize();
     }
+
+    if (!Options::WriteAnder().empty())
+        this->writeObjVarToFile(Options::WriteAnder());
+        
+    if(!readResultsFromFile)
+        solveConstraints();
 
     if (!Options::WriteAnder().empty())
     {
         this->writeToFile(Options::WriteAnder());
+    }
+
+    if (!readResultsFromFile)
+        // Finalize the analysis
+        finalize();
+}
+
+
+void AndersenBase::analyzeAndWrite(const std::string& filename)
+{
+    /// Initialization for the Solver
+    initialize();
+
+    bool readResultsFromFile = false;
+
+    if (filename.empty())
+        this->writeObjVarToFile(filename);
+        
+    if(!readResultsFromFile)
+        solveConstraints();
+
+    if (filename.empty())
+    {
+        this->writeToFile(filename);
     }
 
     if (!readResultsFromFile)

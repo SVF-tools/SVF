@@ -69,6 +69,10 @@ public:
     /// Andersen analysis
     virtual void analyze() override;
 
+    virtual void analyzeAndWrite(const std::string& filename);
+
+    virtual void solveConstraints();
+
     /// Initialize analysis
     virtual void initialize() override;
 
