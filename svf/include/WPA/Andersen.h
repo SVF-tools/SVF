@@ -118,6 +118,8 @@ public:
 
     NodeBS redundantGepNodes;
 
+    void solveConstraints();
+
     /// Statistics
     //@{
     static u32_t numOfProcessedAddr;   /// Number of processed Addr edge
