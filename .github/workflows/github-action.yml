@@ -112,6 +112,7 @@ jobs:
           lcov --remove coverage.info '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/svf/include/AbstractExecution/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/svf/lib/AbstractExecution/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/svf/lib/Util/extapi.c' --output-file coverage.info
 
       - name: upload-coverage
         if: runner.os == 'Linux'
