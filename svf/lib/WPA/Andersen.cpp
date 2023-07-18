@@ -132,55 +132,46 @@ void AndersenBase::solveConstraints()
  */
 void AndersenBase::analyze()
 {
-    /// Initialization for the Solver
-    initialize();
-
-    bool readResultsFromFile = false;
     if(!Options::ReadAnder().empty())
     {
-        readResultsFromFile = this->readFromFile(Options::ReadAnder());
-        // Finalize the analysis
-        PointerAnalysis::finalize();
+        readPtsFromFile(Options::ReadAnder());
     }
-
-    if (!Options::WriteAnder().empty())
-        this->writeObjVarToFile(Options::WriteAnder());
-        
-    if(!readResultsFromFile)
-        solveConstraints();
-
-    if (!Options::WriteAnder().empty())
-    {
-        this->writeToFile(Options::WriteAnder());
+    else{
+        if(Options::WriteAnder().empty())
+        {
+            initialize();
+            solveConstraints();
+            finalize();
+        }else{
+            solveAndwritePtsToFile(Options::WriteAnder());
+        }
     }
-
-    if (!readResultsFromFile)
-        // Finalize the analysis
-        finalize();
 }
 
+/*!
+ * Andersen analysis: read pointer analysis result from file
+ */
+void AndersenBase::readPtsFromFile(const std::string& filename)
+{
+    initialize();
+    if (!filename.empty())
+        this->readFromFile(filename);
+    PointerAnalysis::finalize();
+}
 
-void AndersenBase::analyzeAndWrite(const std::string& filename)
+/*!
+ * Andersen analysis: solve constraints and write pointer analysis result to file
+ */
+void AndersenBase:: solveAndwritePtsToFile(const std::string& filename)
 {
     /// Initialization for the Solver
     initialize();
-
-    bool readResultsFromFile = false;
-
-    if (filename.empty())
+    if (!filename.empty())
         this->writeObjVarToFile(filename);
-        
-    if(!readResultsFromFile)
-        solveConstraints();
-
-    if (filename.empty())
-    {
+    solveConstraints();
+    if (!filename.empty())
         this->writeToFile(filename);
-    }
-
-    if (!readResultsFromFile)
-        // Finalize the analysis
-        finalize();
+    finalize();
 }
 
 void AndersenBase::cleanConsCG(NodeID id)

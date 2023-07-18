@@ -76,6 +76,9 @@ void FlowSensitive::initialize()
 }
 void FlowSensitive::solveConstraints()
 {
+    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
+    
+    double start = stat->getClk(true);
     /// Start solving constraints
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
@@ -94,30 +97,27 @@ void FlowSensitive::solveConstraints()
     while (updateCallGraph(getIndirectCallsites()));
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+    
+    // Reset the time-up alarm; analysis is done.
+    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
+
+    double end = stat->getClk(true);
+    solveTime += (end - start) / TIMEINTERVAL;
+
 }
 
 /*!
  * Start analysis
  */
-void FlowSensitive::analyzeAndWrite(const std::string& filename)
+void FlowSensitive::solveAndwritePtsToFile(const std::string& filename)
 {
-    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
-
     /// Initialization for the Solver
     initialize();
-
-    double start = stat->getClk(true);
-    writeObjVarToFile(filename);
+    if(!filename.empty())
+        writeObjVarToFile(filename);
     solveConstraints();
-
-    // Reset the time-up alarm; analysis is done.
-    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
-
-    writeToFile(filename);
-
-    double end = stat->getClk(true);
-    solveTime += (end - start) / TIMEINTERVAL;
-
+    if(!filename.empty())
+        writeToFile(filename);
     /// finalize the analysis
     finalize();
 }
@@ -127,21 +127,30 @@ void FlowSensitive::analyzeAndWrite(const std::string& filename)
  */
 void FlowSensitive::analyze()
 {
-    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
+    if(!Options::ReadAnder().empty())
+    {
+        readPtsFromFile(Options::ReadAnder());
+    }
+    else{
+        if(Options::WriteAnder().empty())
+        {
+            initialize();
+            solveConstraints();
+            finalize();
+        }else{
+            solveAndwritePtsToFile(Options::WriteAnder());
+        }
+    }
+}
 
+void FlowSensitive::readPtsFromFile(const std::string& filename)
+{
     /// Initialization for the Solver
     initialize();
-
-    double start = stat->getClk(true);
-    solveConstraints();
-
-    // Reset the time-up alarm; analysis is done.
-    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
-
-    double end = stat->getClk(true);
-    solveTime += (end - start) / TIMEINTERVAL;
-
-    /// finalize the analysis
+    /// Load the pts from file
+    if(!filename.empty())
+        this->readFromFile(filename);
+     /// finalize the analysis
     finalize();
 }
 
