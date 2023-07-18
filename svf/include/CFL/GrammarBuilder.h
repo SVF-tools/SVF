@@ -30,7 +30,7 @@
 #ifndef INCLUDE_CFL_GRAMMARBUILDER_H_
 #define INCLUDE_CFL_GRAMMARBUILDER_H_
 
-#include "CFL/CFLGrammar.h"
+#include "CFL/CFGrammar.h"
 
 namespace SVF
 {

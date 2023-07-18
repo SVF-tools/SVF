@@ -46,7 +46,7 @@ void CFLVF::buildCFLGraph()
         graph = cflGraphBuilder.buildBigraph(svfg, grammarBase->getStartKind(), grammarBase);
     }
     else
-        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph(), grammarBase);
+        graph = cflGraphBuilder.build(Options::CFLGraph(), grammarBase);
 
     // Check CFL Graph and Grammar are accordance with grammar
     CFLGramGraphChecker cflChecker = CFLGramGraphChecker();

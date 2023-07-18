@@ -34,7 +34,7 @@
 #include <iostream>
 #include <string>
 #include <regex>
-#include "CFL/CFLGrammar.h"
+#include "CFL/CFGrammar.h"
 #include "Graphs/GenericGraph.h"
 #include "Graphs/ConsG.h"
 
@@ -155,8 +155,8 @@ typedef GenericGraph<CFLNode,CFLEdge> GenericCFLGraphTy;
 class CFLGraph: public GenericCFLGraphTy
 {
 public:
-    typedef CFLGrammar::Symbol Symbol;
-    typedef CFLGrammar::Kind Kind;
+    typedef CFGrammar::Symbol Symbol;
+    typedef CFGrammar::Kind Kind;
     typedef GenericNode<CFLNode,CFLEdge>::GEdgeSetTy CFLEdgeSet;
     Kind startKind;
 

@@ -1,4 +1,4 @@
-//===----- CFLGrammar.h -- Context-free grammar --------------------------//
+//===----- CFGrammar.h -- Context-free grammar --------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CFLGrammar.h
+ * CFGrammar.h
  *
  *  Created on: March 5, 2022
  *      Author: Yulei Sui
@@ -287,15 +287,15 @@ private:
     u32_t totalKind;
 };
 
-class CFLGrammar : public GrammarBase
+class CFGrammar : public GrammarBase
 {
 
 public:
-    CFLGrammar();
+    CFGrammar();
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CFLGrammar *)
+    static inline bool classof(const CFGrammar *)
     {
         return true;
     }
