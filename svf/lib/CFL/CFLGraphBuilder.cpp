@@ -101,7 +101,7 @@ template<class N, class E>
 CFLGraph* CFLGraphBuilder::build(GenericGraph<N,E>* graph, GrammarBase *grammar, BuildDirection direction)
 {
     *cflGraph = new CFLGraph(grammar->startKind);
-    buildlabelToKindMap(grammar);
+    // buildlabelToKindMap(grammar);
     for(auto it = graph->begin(); it!= graph->end(); it++)
     {
         CFLNode* node = new CFLNode((*it).first);
