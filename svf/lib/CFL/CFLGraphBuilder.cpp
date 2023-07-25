@@ -100,7 +100,7 @@ CFLNode* CFLGraphBuilder::addGNode(u32_t NodeID)
 template<class N, class E>
 CFLGraph* CFLGraphBuilder::build(GenericGraph<N,E>* graph, GrammarBase *grammar, BuildDirection direction)
 {
-    *cflGraph = new CFLGraph(grammar->startKind);
+    *cflGraph = new CFLGraph(grammar->getStartKind());
     // buildlabelToKindMap(grammar);
     for(auto it = graph->begin(); it!= graph->end(); it++)
     {
