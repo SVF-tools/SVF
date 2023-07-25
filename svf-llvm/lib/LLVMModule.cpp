@@ -190,7 +190,7 @@ void LLVMModuleSet::createSVFDataStructure()
         // Remove unused function in extapi.bc
         for (Function* func : removedFuncList)
         {
-            func->removeFromParent();
+            func->eraseFromParent();
         }
     }
     for (const Function* func: candidateDefs)
