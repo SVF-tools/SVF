@@ -311,10 +311,14 @@ inline bool isExtCall(const SVFFunction* fun)
     return fun && ExtAPI::getExtAPI()->is_ext(fun);
 }
 
-// Return true if extern function contains memset_like or memcpy_like operations
-inline bool isMemSetOrCpyExtFun(const SVFFunction* fun)
+inline bool isMemcpyExtFun(const SVFFunction* fun)
 {
-    return fun && ExtAPI::getExtAPI()->is_memset_or_memcpy(fun);
+    return fun && ExtAPI::getExtAPI()->is_memcpy(fun);
+}
+
+inline bool isMemsetExtFun(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_memset(fun);
 }
 
 /// Return true if the call is a heap allocator/reallocator
@@ -344,14 +348,6 @@ inline int getHeapAllocHoldingArgPosition(const SVFFunction* fun)
 inline bool isReallocExtFun(const SVFFunction* fun)
 {
     return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
-}
-
-/// Return true if the call is a heap dealloc or not
-//@{
-/// note that this function is not suppose to be used externally
-inline bool isDeallocExtFun(const SVFFunction* fun)
-{
-    return fun && (ExtAPI::getExtAPI()->is_dealloc(fun));
 }
 
 /// Return true if the call is a static global call
@@ -495,17 +491,6 @@ inline bool isReallocExtCall(const SVFInstruction *inst)
 {
     bool isPtrTy = inst->getType()->isPointerTy();
     return isPtrTy && isReallocExtFun(getCallee(inst));
-}
-//@}
-
-inline bool isDeallocExtCall(const CallSite cs)
-{
-    return isDeallocExtFun(getCallee(cs));
-}
-
-inline bool isDeallocExtCall(const SVFInstruction *inst)
-{
-    return isDeallocExtFun(getCallee(inst));
 }
 //@}
 
