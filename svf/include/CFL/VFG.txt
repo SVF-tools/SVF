@@ -1,7 +1,0 @@
-Start:  
-   A
-Terminal:
-   a call ret
-Productions:
-   A -> A A | a | call_i A ret_i | epsilon;
-   Abar -> Abar Abar | abar | retbar_i Abar callbar_i | epsilon; 

@@ -50,9 +50,10 @@ void CFLBase::checkParameter()
 {
     // Check for valid grammar file before parsing other options
     std::string filename = Options::GrammarFilename();
-    bool cflfile = (filename.rfind("CFGrammar.txt") == filename.length() - std::string("CFGrammar.txt").length());
+    bool pagfile = (filename.rfind("PAGGrammar.txt") == filename.length() - std::string("PAGGrammar.txt").length());
     bool pegfile = (filename.rfind("PEGGrammar.txt") == filename.length() - std::string("PEGGrammar.txt").length());
-    if (!Options::Customized()  && !(cflfile || pegfile))
+    bool vfgfile = (filename.rfind("VFGGrammar.txt") == filename.length() - std::string("VFGGrammar.txt").length());
+    if (!Options::Customized()  && !(pagfile || pegfile || vfgfile))
     {
         SVFUtil::errs() << "Invalid alias grammar file: " << Options::GrammarFilename() << "\n"
                         << "Please use a file that ends with either 'CFGrammar.txt' or 'PEGGrammar.txt', "
