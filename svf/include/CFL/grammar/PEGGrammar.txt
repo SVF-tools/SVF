@@ -1,0 +1,11 @@
+Start:  
+   V
+Terminal:
+   addr copy store load gep
+Productions:
+   F -> ( copy M ? ) *;
+   Fbar -> ( M ? copybar ) *;
+   M -> addr V addrbar;
+   V -> Fbar V F | gepbar_i V gep_i | M | epsilon | gepbar_i Memcpy gep_i | gep_i Memcpy gepbar_i | ArrayPath V gep_0;
+   ArrayPath -> gepbar_0 gepbar_0 | ArrayPath gepbar_0;
+   Memcpy -> addrbar V addr | gep_i Memcpy gepbar_i | F Memcpy Fbar;
