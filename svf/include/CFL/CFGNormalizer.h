@@ -30,7 +30,7 @@
 #ifndef INCLUDE_CFL_CFGNORMALIZER_H_
 #define INCLUDE_CFL_CFGNORMALIZER_H_
 
-#include "CFLGrammar.h"
+#include "CFGrammar.h"
 
 namespace SVF
 {
@@ -53,30 +53,30 @@ public:
     }
 
     /// Binary Normal Form(BNF) normalization with variable attribute expanded
-    CFLGrammar* normalize(GrammarBase *generalGrammar);
+    CFGrammar* normalize(GrammarBase *generalGrammar);
 
     /// Expand every variable attribute in rawProductions of grammarbase
-    CFLGrammar* fillAttribute(CFLGrammar *grammar, const Map<CFLGrammar::Kind, Set<CFLGrammar::Attribute>>& kindToAttrsMap);
+    CFGrammar* fillAttribute(CFGrammar *grammar, const Map<CFGrammar::Kind, Set<CFGrammar::Attribute>>& kindToAttrsMap);
 
 private:
     /// Add nonterminal to tranfer long rules to binary rules
-    void ebnf_bin(CFLGrammar *grammar);
+    void ebnf_bin(CFGrammar *grammar);
 
-    void ebnfSignReplace(char sign, CFLGrammar *grammar);
+    void ebnfSignReplace(char sign, CFGrammar *grammar);
 
-    void barReplace(CFLGrammar *grammar);
+    void barReplace(CFGrammar *grammar);
 
-    void insertToCFLGrammar(CFLGrammar *grammar, GrammarBase::Production &prod);
+    void insertToCFLGrammar(CFGrammar *grammar, GrammarBase::Production &prod);
 
-    int ebnfBracketMatch(GrammarBase::Production& prod, int i, CFLGrammar *grammar) ;
+    int ebnfBracketMatch(GrammarBase::Production& prod, int i, CFGrammar *grammar) ;
 
     GrammarBase::Symbol check_head(GrammarBase::SymbolMap<GrammarBase::Symbol, GrammarBase::Productions>& grammar, GrammarBase::Production& rule);
 
-    void strTrans(std::string strPro, CFLGrammar *grammar, GrammarBase::Production& normalProd);
+    void strTrans(std::string strPro, CFGrammar *grammar, GrammarBase::Production& normalProd);
 
-    void getFilledProductions(GrammarBase::Production &prod,const NodeSet& nodeSet, CFLGrammar *grammar, GrammarBase::Productions& normalProds);
+    void getFilledProductions(GrammarBase::Production &prod,const NodeSet& nodeSet, CFGrammar *grammar, GrammarBase::Productions& normalProds);
 
-    void removeFirstSymbol(CFLGrammar *grammar);
+    void removeFirstSymbol(CFGrammar *grammar);
 };
 
 } // End namespace SVF

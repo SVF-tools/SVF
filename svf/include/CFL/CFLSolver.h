@@ -31,7 +31,7 @@
 #define INCLUDE_CFL_CFLSolver_H_
 
 #include "Graphs/CFLGraph.h"
-#include "CFL/CFLGrammar.h"
+#include "CFL/CFGrammar.h"
 #include "Util/WorkList.h"
 
 using namespace std;
@@ -46,12 +46,12 @@ class CFLSolver
 public:
     /// Define worklist
     typedef FIFOWorkList<const CFLEdge*> WorkList;
-    typedef CFLGrammar::Production Production;
-    typedef CFLGrammar::Symbol Symbol;
+    typedef CFGrammar::Production Production;
+    typedef CFGrammar::Symbol Symbol;
 
     static double numOfChecks;
 
-    CFLSolver(CFLGraph* _graph, CFLGrammar* _grammar): graph(_graph), grammar(_grammar)
+    CFLSolver(CFLGraph* _graph, CFGrammar* _grammar): graph(_graph), grammar(_grammar)
     {
     }
 
@@ -77,7 +77,7 @@ public:
     }
 
     /// Return CFL Grammar
-    inline const CFLGrammar* getGrammar() const
+    inline const CFGrammar* getGrammar() const
     {
         return grammar;
     }
@@ -106,7 +106,7 @@ protected:
 
 protected:
     CFLGraph* graph;
-    CFLGrammar* grammar;
+    CFGrammar* grammar;
     /// Worklist for resolution
     WorkList worklist;
 
@@ -266,7 +266,7 @@ public:
     }
     //@}
 
-    POCRSolver(CFLGraph* _graph, CFLGrammar* _grammar) : CFLSolver(_graph, _grammar)
+    POCRSolver(CFLGraph* _graph, CFGrammar* _grammar) : CFLSolver(_graph, _grammar)
     {
         buildCFLData();
     }
@@ -344,7 +344,7 @@ public:
     void meld_h(NodeID x, TreeNode* uNode, TreeNode* vNode);
 //@}
 public:
-    POCRHybridSolver(CFLGraph* _graph, CFLGrammar* _grammar) : POCRSolver(_graph, _grammar)
+    POCRHybridSolver(CFLGraph* _graph, CFGrammar* _grammar) : POCRSolver(_graph, _grammar)
     {
     }
     /// Destructor
