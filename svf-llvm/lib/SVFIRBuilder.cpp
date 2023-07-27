@@ -1187,10 +1187,10 @@ void SVFIRBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ls, const SVFType* elementType)
+NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const SVFType* elementType)
 {
     NodeID base = pag->getBaseValVar(getValueNode(val));
-    NodeID gepval = pag->getGepValVar(curVal, base, ls);
+    NodeID gepval = pag->getGepValVar(curVal, base, ap);
     if (gepval==UINT_MAX)
     {
         assert(((int) UINT_MAX)==-1 && "maximum limit of unsigned int is not -1?");
@@ -1210,8 +1210,8 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ls, const 
         const SVFBasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
         LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-        NodeID gepNode= pag->addGepValNode(curVal, llvmmodule->getSVFValue(val),ls, NodeIDAllocator::get()->allocateValueId(),elementType->getPointerTo());
-        addGepEdge(base, gepNode, ls, true);
+        NodeID gepNode= pag->addGepValNode(curVal, llvmmodule->getSVFValue(val),ap, NodeIDAllocator::get()->allocateValueId(),elementType->getPointerTo());
+        addGepEdge(base, gepNode, ap, true);
         setCurrentLocation(cval, cbb);
         return gepNode;
     }

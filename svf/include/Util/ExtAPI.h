@@ -53,11 +53,11 @@ public:
 
     static void destory();
 
-    // Get the attribute of (F)
-    std::string getExtFuncProperty(const SVFFunction* fun, const std::string& funcAttribute);
+    // Get the annotation of (F)
+    std::string getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
 
-    // Does (F) have some attribute?
-    bool hasExtFuncProperty(const SVFFunction* fun, const std::string& funcAttribute);
+    // Does (F) have some annotation?
+    bool hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
 
     // Does (F) have a static var X (unavailable to us) that its return points to?
     bool has_static(const SVFFunction *F);

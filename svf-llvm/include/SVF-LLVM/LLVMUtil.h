@@ -98,17 +98,17 @@ inline const Function* getProgFunction(const std::string& funName)
     return nullptr;
 }
 
-inline std::vector<std::string> getFunAttributes(const Function* fun)
+inline std::vector<std::string> getFunAnnotations(const Function* fun)
 {
-    std::vector<std::string> attributes;
+    std::vector<std::string> annotations;
     // Get annotation variable
     GlobalVariable *glob = fun->getParent()->getGlobalVariable("llvm.global.annotations");
     if (glob == nullptr)
-        return attributes;
+        return annotations;
 
     ConstantArray *ca = SVFUtil::dyn_cast<ConstantArray>(glob->getInitializer());
     if (ca == nullptr)
-        return attributes;
+        return annotations;
 
     for (unsigned i = 0; i < ca->getNumOperands(); ++i)
     {
@@ -136,13 +136,13 @@ inline std::vector<std::string> getFunAttributes(const Function* fun)
             continue;
 
         if (data->isString()) {
-            std::string attribute = data->getAsString().str();
-            if (!attribute.empty()) {
-                attributes.push_back(attribute);
+            std::string annotation = data->getAsString().str();
+            if (!annotation.empty()) {
+                annotations.push_back(annotation);
             }
         }
     }
-    return attributes;
+    return annotations;
 }
 
 inline void removeFunAnnotations(const std::vector<Function*>& removedFuncList) {

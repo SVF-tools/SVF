@@ -242,7 +242,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         SVFUtil::cast<SVFFunctionType>(
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
-        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo, LLVMUtil::getFunAttributes(func));
+        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo, LLVMUtil::getFunAnnotations(func));
     svfFunc->setName(func->getName().str());
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
@@ -765,11 +765,11 @@ void LLVMModuleSet::buildFunToFunMap()
             {
                 extFuncs.insert(&fun);
                 // Find overwrite functions in extapi.bc
-                std::vector<std::string> attributes = LLVMUtil::getFunAttributes(&fun);                
-                auto it = std::find_if(attributes.begin(), attributes.end(), [&](const std::string& attribute) {
-                    return attribute.find("OVERWRITE") != std::string::npos;
+                std::vector<std::string> annotations = LLVMUtil::getFunAnnotations(&fun);                
+                auto it = std::find_if(annotations.begin(), annotations.end(), [&](const std::string& annotation) {
+                    return annotation.find("OVERWRITE") != std::string::npos;
                 });
-                if (it != attributes.end()) {
+                if (it != annotations.end()) {
                     overwriteExtFuncs.insert(&fun);
                 }
             }

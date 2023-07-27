@@ -51,22 +51,22 @@ void ExtAPI::destory()
     }
 }
 
-std::string ExtAPI::getExtFuncProperty(const SVFFunction* fun, const std::string& funcAttribute)
+std::string ExtAPI::getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
 {
     assert(fun && "Null SVFFunction* pointer");
-    const std::vector<std::string>& attributes = fun->getAnnotations();
-    for (const std::string& attribute : attributes) 
-        if (attribute.find(funcAttribute) != std::string::npos) 
-            return attribute;
+    const std::vector<std::string>& annotations = fun->getAnnotations();
+    for (const std::string& annotation : annotations) 
+        if (annotation.find(funcAnnotation) != std::string::npos) 
+            return annotation;
     return "";
 }
 
-bool ExtAPI::hasExtFuncProperty(const SVFFunction* fun, const std::string& funcAttribute) 
+bool ExtAPI::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation) 
 {
     assert(fun && "Null SVFFunction* pointer");
-    const std::vector<std::string>& attributes = fun->getAnnotations();
-    for (const std::string& attribute : attributes) 
-        if (attribute.find(funcAttribute) != std::string::npos) 
+    const std::vector<std::string>& annotations = fun->getAnnotations();
+    for (const std::string& annotation : annotations) 
+        if (annotation.find(funcAnnotation) != std::string::npos) 
             return true;
     return false;
 } 
@@ -74,36 +74,36 @@ bool ExtAPI::hasExtFuncProperty(const SVFFunction* fun, const std::string& funcA
 // Does (F) have a static var X (unavailable to us) that its return points to?
 bool ExtAPI::has_static(const SVFFunction* F)
 {
-    return F && hasExtFuncProperty(F, "STATIC");
+    return F && hasExtFuncAnnotation(F, "STATIC");
 }
 
 bool ExtAPI::is_memcpy(const SVFFunction *F)
 {
-    return F && hasExtFuncProperty(F, "MEMCPY");
+    return F && hasExtFuncAnnotation(F, "MEMCPY");
 }
 
 bool ExtAPI::is_memset(const SVFFunction *F)
 {
-    return F && hasExtFuncProperty(F, "MEMSET");
+    return F && hasExtFuncAnnotation(F, "MEMSET");
 }
 
 bool ExtAPI::is_alloc(const SVFFunction* F)
 {
-    return F && hasExtFuncProperty(F, "ALLOC_RET");
+    return F && hasExtFuncAnnotation(F, "ALLOC_RET");
 }
 
 // Does (F) allocate a new object and assign it to one of its arguments?
 bool ExtAPI::is_arg_alloc(const SVFFunction* F)
 {
-    return F && hasExtFuncProperty(F, "ALLOC_ARG");
+    return F && hasExtFuncAnnotation(F, "ALLOC_ARG");
 }
 
 // Get the position of argument which holds the new object
 s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction* F)
 {
     std::string s = "ALLOC_ARG";
-    std::string allocArg = getExtFuncProperty(F, s);
-    assert(!allocArg.empty() && "Not an alloc call via argument or incorrect extern function attribute!");
+    std::string allocArg = getExtFuncAnnotation(F, s);
+    assert(!allocArg.empty() && "Not an alloc call via argument or incorrect extern function annotation!");
 
     std::string number;
     for (char c : allocArg) {
@@ -117,7 +117,7 @@ s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction* F)
 // Does (F) reallocate a new object?
 bool ExtAPI::is_realloc(const SVFFunction* F)
 {
-    return F && hasExtFuncProperty(F, "REALLOC_RET");
+    return F && hasExtFuncAnnotation(F, "REALLOC_RET");
 }
 
 
@@ -129,6 +129,6 @@ bool ExtAPI::is_ext(const SVFFunction* F)
     if (F->isDeclaration() || F->isIntrinsic())
         return true;
     else
-        return hasExtFuncProperty(F, "SVF");
+        return hasExtFuncAnnotation(F, "SVF");
     return false;
 }
