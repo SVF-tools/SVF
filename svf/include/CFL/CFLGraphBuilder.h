@@ -37,9 +37,10 @@
 namespace SVF
 {
 
-enum class BuildDirection {
-  plain,
-  bidirection,
+enum class BuildDirection
+{
+    plain,
+    bidirection,
 };
 
 /**

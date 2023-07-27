@@ -128,13 +128,13 @@ CFLGraph* CFLGraphBuilder::build(GenericGraph<N,E>* graph, GrammarBase *grammar,
 CFLGraph* CFLGraphBuilder::build(std::string fileName, GrammarBase *grammar, BuildDirection direction)
 {
     bool isDot = (fileName.rfind(".dot") == fileName.length() - std::string(".dot").length());
-    if (isDot) 
+    if (isDot)
         return buildFromDot(fileName, grammar, direction);
 
-    bool isJson = (fileName.rfind(".json") == fileName.length() - std::string(".json").length());    
-    if (isJson) 
+    bool isJson = (fileName.rfind(".json") == fileName.length() - std::string(".json").length());
+    if (isJson)
         return buildFromJson(fileName, grammar, direction);
-    
+
     return buildFromText(fileName, grammar, direction);
 }
 
