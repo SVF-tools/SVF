@@ -278,7 +278,7 @@ protected:
         return nullPtr;
     }
 
-    NodeID getGepValVar(const Value* val, const AccessPath& ls, const SVFType* elementType);
+    NodeID getGepValVar(const Value* val, const AccessPath& ap, const SVFType* elementType);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 

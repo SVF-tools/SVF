@@ -154,51 +154,29 @@ void LLVMModuleSet::createSVFDataStructure()
 {
     getSVFType(IntegerType::getInt8Ty(getContext()));
     // Functions need to be retrieved in the order of insertion
-    std::vector<const Function*> candidateDecls;
-    std::vector<const Function*> candidateDefs;
-
+    std::vector<const Function*> candidateFuncs;
     for (Module& mod : modules)
     {
         std::vector<Function*> removedFuncList;
         /// Function
         for (Function& func : mod.functions())
         {
-            if (func.isDeclaration() && (FunDefToDeclsMap.find(&func) != FunDefToDeclsMap.end() || mod.getName().str() != Options::ExtAPIInput()))
+            /// Remove unused function in extapi.bc module
+            /// if this function func defined in extapi.bc but never used in application code (without any corresponding declared functions).
+            if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap.find(&func) == FunDefToDeclsMap.end() && func.getName().str() != "svf__main")
             {
-                /// if this function is declaration
-                candidateDecls.push_back(&func);
+                removedFuncList.push_back(&func);
+                continue;
             }
             else
             {
-                /// if this function is definition
-                if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap.find(&func) == FunDefToDeclsMap.end() && func.getName().str() != "svf__main")
-                {
-                    /// if this function func defined in ExtAPI but never used in application code (without any corresponding declared functions).
-                    removedFuncList.push_back(&func);
-                    continue;
-                }
-                else
-                {
-                    /// if this function is in app bc, any def func should be added.
-                    /// if this function is in ext bc, only functions which have declarations(should be used by app bc) can be inserted.
-                    candidateDefs.push_back(&func);
-                }
+                candidateFuncs.push_back(&func);
             }
         }
-        // Remove unused function annotations in extapi.bc
-        LLVMUtil::removeFunAnnotations(removedFuncList);
-        // Remove unused function in extapi.bc
-        for (Function* func : removedFuncList)
-        {
-            func->eraseFromParent();
-        }
+        /// Remove unused functions and annotations in extapi.bc
+        LLVMUtil::removeUnusedFuncsAndAnnotations(removedFuncList);
     }
-    for (const Function* func: candidateDefs)
-    {
-        createSVFFunction(func);
-    }
-
-    for (const Function* func: candidateDecls)
+    for (const Function* func: candidateFuncs)
     {
         createSVFFunction(func);
     }
@@ -557,9 +535,8 @@ void LLVMModuleSet::loadExtAPIModules()
             Err.print("SVFModuleLoader", llvm::errs());
             abort();
         }
-        // The module of ext.bc needs to be imported before other modules. 
-        // Otherwise, when overwriting the app function with SVF extern function, 
-        // the corresponding SVFFunction of the extern function will not be found.
+        // The module of extapi.bc needs to be inserted before applications modules, like std::vector<std::reference_wrapper<Module>> modules{extapi_module, app_module}. 
+        // Otherwise, when overwriting the app function with SVF extern function, the corresponding SVFFunction of the extern function will not be found.
         modules.insert(modules.begin(), *mod);
         owned_modules.insert(owned_modules.begin(),std::move(mod));
     }
