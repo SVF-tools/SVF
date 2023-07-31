@@ -99,32 +99,32 @@ void AndersenBase::finalize()
 
 void AndersenBase::solveConstraints()
 {
-     // Start solving constraints
-        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
+    // Start solving constraints
+    DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
-        bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
+    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
 
-        initWorklist();
-        do
-        {
-            numOfIteration++;
-            if (0 == numOfIteration % iterationForPrintStat)
-                printStat();
+    initWorklist();
+    do
+    {
+        numOfIteration++;
+        if (0 == numOfIteration % iterationForPrintStat)
+            printStat();
 
-            reanalyze = false;
+        reanalyze = false;
 
-            solveWorklist();
+        solveWorklist();
 
-            if (updateCallGraph(getIndirectCallsites()))
-                reanalyze = true;
+        if (updateCallGraph(getIndirectCallsites()))
+            reanalyze = true;
 
-        }
-        while (reanalyze);
+    }
+    while (reanalyze);
 
-        // Analysis is finished, reset the alarm if we set it.
-        SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
+    // Analysis is finished, reset the alarm if we set it.
+    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
-        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+    DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 }
 
 /*!
@@ -136,13 +136,16 @@ void AndersenBase::analyze()
     {
         readPtsFromFile(Options::ReadAnder());
     }
-    else{
+    else
+    {
         if(Options::WriteAnder().empty())
         {
             initialize();
             solveConstraints();
             finalize();
-        }else{
+        }
+        else
+        {
             solveAndwritePtsToFile(Options::WriteAnder());
         }
     }
