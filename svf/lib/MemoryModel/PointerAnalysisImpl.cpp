@@ -169,7 +169,7 @@ void BVDataPTAImpl::writeObjVarToFile(const string& filename)
         outs() << "  error opening file for writing!\n";
         return;
     }
-
+    
     // Write BaseNodes insensitivity to file
     NodeBS NodeIDs;
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
@@ -185,13 +185,13 @@ void BVDataPTAImpl::writeObjVarToFile(const string& filename)
 
     f << "------\n";
 
-    // Job finish and close file
     f.close();
     if (f.good())
     {
         outs() << "\n";
         return;
     }
+
 
 }
 

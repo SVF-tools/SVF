@@ -74,17 +74,10 @@ void FlowSensitive::initialize()
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 }
-
-/*!
- * Start analysis
- */
-void FlowSensitive::analyze()
+void FlowSensitive::solveConstraints()
 {
     bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
-
-    /// Initialization for the Solver
-    initialize();
-
+    
     double start = stat->getClk(true);
     /// Start solving constraints
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
@@ -104,14 +97,60 @@ void FlowSensitive::analyze()
     while (updateCallGraph(getIndirectCallsites()));
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
-
+    
     // Reset the time-up alarm; analysis is done.
     SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
     double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;
 
+}
+
+/*!
+ * Start analysis
+ */
+void FlowSensitive::solveAndwritePtsToFile(const std::string& filename)
+{
+    /// Initialization for the Solver
+    initialize();
+    if(!filename.empty())
+        writeObjVarToFile(filename);
+    solveConstraints();
+    if(!filename.empty())
+        writeToFile(filename);
     /// finalize the analysis
+    finalize();
+}
+
+/*!
+ * Start analysis
+ */
+void FlowSensitive::analyze()
+{
+    if(!Options::ReadAnder().empty())
+    {
+        readPtsFromFile(Options::ReadAnder());
+    }
+    else{
+        if(Options::WriteAnder().empty())
+        {
+            initialize();
+            solveConstraints();
+            finalize();
+        }else{
+            solveAndwritePtsToFile(Options::WriteAnder());
+        }
+    }
+}
+
+void FlowSensitive::readPtsFromFile(const std::string& filename)
+{
+    /// Initialization for the Solver
+    initialize();
+    /// Load the pts from file
+    if(!filename.empty())
+        this->readFromFile(filename);
+     /// finalize the analysis
     finalize();
 }
 

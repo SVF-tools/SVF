@@ -97,28 +97,9 @@ void AndersenBase::finalize()
     BVDataPTAImpl::finalize();
 }
 
-/*!
- * Andersen analysis
- */
-void AndersenBase::analyze()
+void AndersenBase::solveConstraints()
 {
-    /// Initialization for the Solver
-    initialize();
-
-    bool readResultsFromFile = false;
-    if(!Options::ReadAnder().empty())
-    {
-        readResultsFromFile = this->readFromFile(Options::ReadAnder());
-        // Finalize the analysis
-        PointerAnalysis::finalize();
-    }
-
-    if (!Options::WriteAnder().empty())
-        this->writeObjVarToFile(Options::WriteAnder());
-
-    if(!readResultsFromFile)
-    {
-        // Start solving constraints
+     // Start solving constraints
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
         bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
@@ -144,17 +125,53 @@ void AndersenBase::analyze()
         SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+}
 
-    }
-
-    if (!Options::WriteAnder().empty())
+/*!
+ * Andersen analysis
+ */
+void AndersenBase::analyze()
+{
+    if(!Options::ReadAnder().empty())
     {
-        this->writeToFile(Options::WriteAnder());
+        readPtsFromFile(Options::ReadAnder());
     }
+    else{
+        if(Options::WriteAnder().empty())
+        {
+            initialize();
+            solveConstraints();
+            finalize();
+        }else{
+            solveAndwritePtsToFile(Options::WriteAnder());
+        }
+    }
+}
 
-    if (!readResultsFromFile)
-        // Finalize the analysis
-        finalize();
+/*!
+ * Andersen analysis: read pointer analysis result from file
+ */
+void AndersenBase::readPtsFromFile(const std::string& filename)
+{
+    initialize();
+    if (!filename.empty())
+        this->readFromFile(filename);
+    PointerAnalysis::finalize();
+}
+
+/*!
+ * Andersen analysis: solve constraints and write pointer analysis result to file
+ */
+void AndersenBase:: solveAndwritePtsToFile(const std::string& filename)
+{
+    /// Initialization for the Solver
+    initialize();
+    if (!filename.empty())
+        this->writeObjVarToFile(filename);
+    solveConstraints();
+    if (!filename.empty())
+        this->writeToFile(filename);
+    finalize();
 }
 
 void AndersenBase::cleanConsCG(NodeID id)
