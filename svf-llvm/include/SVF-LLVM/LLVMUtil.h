@@ -372,6 +372,8 @@ const std::string getSourceLocOfFunction(const Function* F);
 bool isIntrinsicInst(const Instruction* inst);
 bool isIntrinsicFun(const Function* func);
 
+/// Get all called funcions in a parent function
+std::set<const Function *> getCalledFunctions(const Function *F);
 std::vector<std::string> getFunAnnotations(const Function* fun);
 void removeFunAnnotations(std::vector<Function*>& removedFuncList);
 

@@ -844,6 +844,14 @@ void LLVMModuleSet::buildFunToFunMap()
                 FunDeclToDefMap[fdecl] = extfun;
                 std::vector<const Function*>& decls = FunDefToDeclsMap[extfun];
                 decls.push_back(fdecl);
+                // Keep all called functions in extfun
+                std::set<const Function *> calledExtFunctions = LLVMUtil::getCalledFunctions(extfun);
+                for (const Function *calledExtFunction : calledExtFunctions) 
+                {
+                    FunDeclToDefMap[calledExtFunction] = calledExtFunction;
+                    std::vector<const Function*>& decls = FunDefToDeclsMap[calledExtFunction];
+                    decls.push_back(calledExtFunction);
+                }
             }
         } 
     }
@@ -869,6 +877,14 @@ void LLVMModuleSet::buildFunToFunMap()
                 FunDeclToDefMap[declaration] = owfunc;
                 std::vector<const Function*>& decls = FunDefToDeclsMap[owfunc];
                 decls.push_back(declaration);
+                // Keep all called functions in owfunc
+                std::set<const Function *> calledExtFunctions = LLVMUtil::getCalledFunctions(owfunc);
+                for (const Function *calledExtFunction : calledExtFunctions) 
+                {
+                    FunDeclToDefMap[calledExtFunction] = calledExtFunction;
+                    std::vector<const Function*>& decls = FunDefToDeclsMap[calledExtFunction];
+                    decls.push_back(calledExtFunction);
+                }
             }
         }
     }

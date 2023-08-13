@@ -452,6 +452,9 @@ std::vector<std::string> LLVMUtil::getFunAnnotations(const Function* fun)
         return annotations;
 
     ConstantArray *ca = SVFUtil::dyn_cast<ConstantArray>(glob->getInitializer());
+    if (ca == nullptr)
+        return annotations;
+
     for (unsigned i = 0; i < ca->getNumOperands(); ++i)
     {
         ConstantStruct *structAn = SVFUtil::dyn_cast<ConstantStruct>(ca->getOperand(i));
@@ -492,6 +495,9 @@ void LLVMUtil::removeFunAnnotations(std::vector<Function*>& removedFuncList)
         return;
 
     ConstantArray* ca = SVFUtil::dyn_cast<ConstantArray>(glob->getInitializer());
+    if (ca == nullptr)
+        return;
+
     std::vector<Constant*> newAnnotations;
     for (unsigned i = 0; i < ca->getNumOperands(); ++i) 
     {
@@ -537,6 +543,26 @@ void LLVMUtil::removeFunAnnotations(std::vector<Function*>& removedFuncList)
 
     // Remove the old global variable
     glob->eraseFromParent();
+}
+
+/// Get all called funcions in a parent function
+std::set<const Function *> LLVMUtil::getCalledFunctions(const Function *F) 
+{
+    std::set<const Function *> calledFunctions;
+    for (const Instruction &I : instructions(F)) 
+    {
+        if (const CallBase *callInst = SVFUtil::dyn_cast<CallBase>(&I)) 
+        {
+            Function *calledFunction = callInst->getCalledFunction();
+            if (calledFunction) 
+            {
+                calledFunctions.insert(calledFunction);
+                std::set<const Function *> nestedCalledFunctions = getCalledFunctions(calledFunction);
+                calledFunctions.insert(nestedCalledFunctions.begin(), nestedCalledFunctions.end());
+            }
+        }
+    }
+    return calledFunctions;
 }
 
 u32_t LLVMUtil::getTypeSizeInBytes(const Type* type)
