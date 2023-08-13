@@ -3435,9 +3435,29 @@
 			"dst": "Ret"
 		}
     },
+    "_ZnwmRKSt9nothrow_t":  {
+        "return":  "i8*",
+        "arguments":  "(i64, const std::nothrow_t&)",
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
+		}
+    },
     "_Znam":    {
         "return":  "i8*",
         "arguments":  "(i64)",
+        "type": "EFT_ALLOC",
+        "overwrite_app_function": 1,
+        "AddrStmt": {
+			"src": "Obj",
+			"dst": "Ret"
+		}
+    },
+    "_ZnamRKSt9nothrow_t": {
+        "return":  "i8*",
+        "arguments":  "(i64, const std::nothrow_t&)",
         "type": "EFT_ALLOC",
         "overwrite_app_function": 1,
         "AddrStmt": {
