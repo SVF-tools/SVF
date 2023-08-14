@@ -344,7 +344,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
             if (gepobj != nullptr)
             {
                 assert(SVFUtil::isa<DummyObjVar>(_pag->getGNode(gepobj->getBaseNode()))
-                       && "emtpy refVal in a gep object whose base is a non-dummy object");
+                       && "empty refVal in a gep object whose base is a non-dummy object");
             }
             else
             {

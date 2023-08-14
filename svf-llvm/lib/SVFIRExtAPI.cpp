@@ -1,4 +1,4 @@
-//===- SVFIR.cpp -- Exteral function IR of SVF ---------------------------------------------//
+//===- SVFIR.cpp -- External function IR of SVF ---------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -649,7 +649,7 @@ void SVFIRBuilder::handleExtCall(const SVFInstruction* svfInst, const SVFFunctio
             }
             /// If forkedFun does not pass to spawnee as function type but as void pointer
             /// remember to update inter-procedural callgraph/SVFIR/SVFG etc. when indirect call targets are resolved
-            /// We don't connect the callgraph here, further investigation is need to hanle mod-ref during SVFG construction.
+            /// We don't connect the callgraph here, further investigation is need to handle mod-ref during SVFG construction.
         }
 
         /// create inter-procedural SVFIR edges for hare_parallel_for calls

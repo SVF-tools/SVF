@@ -75,7 +75,7 @@ public:
     /// Destructor
     ~FlowSensitive() override = default;
 
-    /// Create signle instance of flow-sensitive pointer analysis
+    /// Create single instance of flow-sensitive pointer analysis
     static FlowSensitive* createFSWPA(SVFIR* _pag)
     {
         if (fspta == nullptr)

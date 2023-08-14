@@ -62,7 +62,7 @@ namespace SVF
 namespace SVFUtil
 {
 
-//===- Part of llvm/Support/type_traits.h - Simplfied type traits -------*- C++ -*-===//
+//===- Part of llvm/Support/type_traits.h - Simplified type traits -------*- C++ -*-===//
 
 /// If T is a pointer to X, return a pointer to const X. If it is not,
 /// return const T.

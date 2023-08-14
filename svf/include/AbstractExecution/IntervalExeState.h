@@ -264,7 +264,7 @@ public:
         return (s32_t) e.lb().getNumeral();
     }
 
-    ///TODO: Create new inteval value
+    ///TODO: Create new interval value
     IntervalValue createIntervalValue(double lb, double ub, NodeID id)
     {
         _varToItvVal[id] = IntervalValue(lb, ub);

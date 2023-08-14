@@ -168,7 +168,7 @@ const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const SVFType* type)
     return memObj;
 }
 
-/// Number of flattenned elements of an array or struct
+/// Number of flattened elements of an array or struct
 u32_t SymbolTableInfo::getNumOfFlattenElements(const SVFType* T)
 {
     if(Options::ModelArrays())
@@ -177,7 +177,7 @@ u32_t SymbolTableInfo::getNumOfFlattenElements(const SVFType* T)
         return getTypeInfo(T)->getNumOfFlattenFields();
 }
 
-/// Flatterned offset information of a struct or an array including its array fields
+/// Flattened offset information of a struct or an array including its array fields
 u32_t SymbolTableInfo::getFlattenedElemIdx(const SVFType* T, u32_t origId)
 {
     if(Options::ModelArrays())

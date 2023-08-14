@@ -107,7 +107,7 @@ public:
     }
 
     /// add the hash function here to sort elements and remove
-    /// and remove duplicated element in the set (binary tree comparision)
+    /// and remove duplicated element in the set (binary tree comparison)
     //@{
     typedef struct equalMemRegion
     {

@@ -946,7 +946,7 @@ public:
     {
         return zval;
     }
-    // Return the constant as a 64-bit integer value after it has been sign extended as appropriate for the type of this constan
+    // Return the constant as a 64-bit integer value after it has been sign extended as appropriate for the type of this constant
     inline s64_t getSExtValue () const
     {
         return sval;

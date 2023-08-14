@@ -42,7 +42,7 @@ namespace SVF
  *         /    /   |   \  \    \
  *       true ...  c0  c1 ...  false        constant
  *         \    \   \   |  |    |
- *                   ⊥                      not contant
+ *                   ⊥                      not constant
  */
 class ConsExeState final : public ExeState
 {

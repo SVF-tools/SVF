@@ -327,7 +327,7 @@ public:
         _condPts = cptsSet.pointsTo();
     }
 
-    /// Get Conditional PointsTo and starndard points-to
+    /// Get Conditional PointsTo and standard points-to
     //@{
     inline CondPts &pointsTo(void)
     {

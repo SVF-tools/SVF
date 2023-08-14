@@ -232,7 +232,7 @@ private:
 /*
  Parent class of Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, ThreadFork, ThreadJoin
  connecting RHS expression and LHS expression with an assignment  (e.g., LHSExpr = RHSExpr)
- Only one operand on the right handside of an assignment
+ Only one operand on the right hand side of an assignment
 */
 class AssignStmt : public SVFStmt
 {
@@ -251,7 +251,7 @@ private:
 protected:
     /// constructor
     AssignStmt(SVFVar* s, SVFVar* d, GEdgeFlag k) : SVFStmt(s, d, k) {}
-    /// Constructor to create empty AssignStmt (for SVFIRReader/serilization)
+    /// Constructor to create empty AssignStmt (for SVFIRReader/serialization)
     AssignStmt(GEdgeFlag k) : SVFStmt(k) {}
 
 public:
@@ -316,7 +316,7 @@ class AddrStmt: public AssignStmt
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty AddrStmt (for SVFIRReader/serilization)
+    /// Constructs empty AddrStmt (for SVFIRReader/serialization)
     AddrStmt() : AssignStmt(SVFStmt::Addr) {}
     AddrStmt(const AddrStmt&);       ///< place holder
     void operator=(const AddrStmt&); ///< place holder
@@ -353,7 +353,7 @@ class CopyStmt: public AssignStmt
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty CopyStmt (for SVFIRReader/serilization)
+    /// Constructs empty CopyStmt (for SVFIRReader/serialization)
     CopyStmt() : AssignStmt(SVFStmt::Copy) {}
     CopyStmt(const CopyStmt&);       ///< place holder
     void operator=(const CopyStmt&); ///< place holder
@@ -389,7 +389,7 @@ class StoreStmt: public AssignStmt
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty StoreStmt (for SVFIRReader/serilization)
+    /// Constructs empty StoreStmt (for SVFIRReader/serialization)
     StoreStmt() : AssignStmt(SVFStmt::Store) {}
     StoreStmt(const StoreStmt&);      ///< place holder
     void operator=(const StoreStmt&); ///< place holder
@@ -426,7 +426,7 @@ class LoadStmt: public AssignStmt
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty LoadStmt (for SVFIRReader/serilization)
+    /// Constructs empty LoadStmt (for SVFIRReader/serialization)
     LoadStmt(): AssignStmt(SVFStmt::Load) {}
     LoadStmt(const LoadStmt&);       ///< place holder
     void operator=(const LoadStmt&); ///< place holder
@@ -463,7 +463,7 @@ class GepStmt: public AssignStmt
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty GepStmt (for SVFIRReader/serilization)
+    /// Constructs empty GepStmt (for SVFIRReader/serialization)
     GepStmt() : AssignStmt(SVFStmt::Gep) {}
     GepStmt(const GepStmt &);  ///< place holder
     void operator=(const GepStmt &); ///< place holder
@@ -543,7 +543,7 @@ private:
     const CallICFGNode* call;      /// the callsite statement calling from
     const FunEntryICFGNode* entry; /// the function exit statement calling to
 protected:
-    /// Constructs empty CallPE (for SVFIRReader/serilization)
+    /// Constructs empty CallPE (for SVFIRReader/serialization)
     CallPE(GEdgeFlag k = SVFStmt::Call) : AssignStmt(k), call{}, entry{} {}
 
 public:
@@ -604,7 +604,7 @@ private:
     const FunExitICFGNode* exit; /// the function exit statement returned from
 
 protected:
-    /// Constructs empty RetPE (for SVFIRReader/serilization)
+    /// Constructs empty RetPE (for SVFIRReader/serialization)
     RetPE(GEdgeFlag k = SVFStmt::Ret) : AssignStmt(k), call{}, exit{} {}
 
 public:
@@ -671,9 +671,9 @@ private:
 
 protected:
     OPVars opVars;
-    /// Constructor, only used by subclassess but not external users
+    /// Constructor, only used by subclasses but not external users
     MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k);
-    /// Constructs empty MultiOpndStmt (for SVFIRReader/serilization)
+    /// Constructs empty MultiOpndStmt (for SVFIRReader/serialization)
     MultiOpndStmt(GEdgeFlag k) : SVFStmt(k) {}
 
 public:
@@ -743,7 +743,7 @@ public:
     typedef std::vector<const ICFGNode*> OpICFGNodeVec;
 
 private:
-    /// Constructs empty PhiStmt (for SVFIRReader/serilization)
+    /// Constructs empty PhiStmt (for SVFIRReader/serialization)
     PhiStmt() : MultiOpndStmt(SVFStmt::Phi) {}
     PhiStmt(const PhiStmt&);        ///< place holder
     void operator=(const PhiStmt&); ///< place holder
@@ -808,7 +808,7 @@ class SelectStmt: public MultiOpndStmt
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty SelectStmt (for SVFIRReader/serilization)
+    /// Constructs empty SelectStmt (for SVFIRReader/serialization)
     SelectStmt() : MultiOpndStmt(SVFStmt::Select), condition{} {}
     SelectStmt(const SelectStmt&);     ///< place holder
     void operator=(const SelectStmt&); ///< place holder
@@ -863,7 +863,7 @@ class CmpStmt: public MultiOpndStmt
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty CmpStmt (for SVFIRReader/serilization)
+    /// Constructs empty CmpStmt (for SVFIRReader/serialization)
     CmpStmt() : MultiOpndStmt(SVFStmt::Cmp) {}
     CmpStmt(const CmpStmt&);        ///< place holder
     void operator=(const CmpStmt&); ///< place holder
@@ -949,7 +949,7 @@ class BinaryOPStmt: public MultiOpndStmt
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty BinaryOPStmt (for SVFIRReader/serilization)
+    /// Constructs empty BinaryOPStmt (for SVFIRReader/serialization)
     BinaryOPStmt() : MultiOpndStmt(SVFStmt::BinaryOp) {}
     BinaryOPStmt(const BinaryOPStmt&);   ///< place holder
     void operator=(const BinaryOPStmt&); ///< place holder
@@ -1019,7 +1019,7 @@ class UnaryOPStmt: public SVFStmt
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty UnaryOPStmt (for SVFIRReader/serilization)
+    /// Constructs empty UnaryOPStmt (for SVFIRReader/serialization)
     UnaryOPStmt() : SVFStmt(SVFStmt::UnaryOp) {}
     UnaryOPStmt(const UnaryOPStmt&);    ///< place holder
     void operator=(const UnaryOPStmt&); ///< place holder
@@ -1089,7 +1089,7 @@ public:
     typedef std::vector<std::pair<const ICFGNode*, s32_t>> SuccAndCondPairVec;
 
 private:
-    /// Constructs empty BranchStmt (for SVFIRReader/serilization)
+    /// Constructs empty BranchStmt (for SVFIRReader/serialization)
     BranchStmt() : SVFStmt(SVFStmt::Branch), cond{}, brInst{} {}
     BranchStmt(const BranchStmt&);     ///< place holder
     void operator=(const BranchStmt&); ///< place holder
@@ -1176,7 +1176,7 @@ class TDForkPE: public CallPE
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty TDForkPE (for SVFIRReader/serilization)
+    /// Constructs empty TDForkPE (for SVFIRReader/serialization)
     TDForkPE() : CallPE(SVFStmt::ThreadFork) {}
     TDForkPE(const TDForkPE&);       ///< place holder
     void operator=(const TDForkPE&); ///< place holder
@@ -1217,7 +1217,7 @@ class TDJoinPE: public RetPE
     friend class SVFIRReader;
 
 private:
-    /// Constructs empty TDJoinPE (for SVFIRReader/serilization)
+    /// Constructs empty TDJoinPE (for SVFIRReader/serialization)
     TDJoinPE() : RetPE(SVFStmt::ThreadJoin) {}
     TDJoinPE(const TDJoinPE&);       ///< place holder
     void operator=(const TDJoinPE&); ///< place holder

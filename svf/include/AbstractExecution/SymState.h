@@ -60,7 +60,7 @@ public:
     /// Constructor
     SymState(ConsExeState _es, TypeState _as);
 
-    /// Desstructor
+    /// Destructor
     virtual ~SymState() = default;
 
     /// Copy Constructor

@@ -203,7 +203,7 @@ void CFLAlias::initialize()
     // Normalize CFL Grammar
     normalizeCFLGrammar();
 
-    // Initialize sovler
+    // Initialize solver
     initializeSolver();
 }
 
@@ -240,7 +240,7 @@ void CFLAlias::solve()
             numOfIteration++;
             solver->solve();
         }
-    } // Only cflgraph built from bc could reanlyze by update call graph
+    } // Only cflgraph built from bc could reanalyze by update call graph
 
     double end = stat->getClk(true);
     timeOfSolving += (end - start) / TIMEINTERVAL;

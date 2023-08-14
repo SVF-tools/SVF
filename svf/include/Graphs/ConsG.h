@@ -72,7 +72,7 @@ protected:
         return pag->getPTASVFStmtSet(kind);
     }
 
-    /// Wappers used internally, not expose to Andernsen Pass
+    /// Wrappers used internally, not expose to Andersen Pass
     //@{
     inline NodeID getValueNode(const SVFValue* value) const
     {
@@ -214,9 +214,9 @@ public:
 
     /// Used for cycle elimination
     //@{
-    /// Remove edge from old dst target, change edge dst id and add modifed edge into new dst
+    /// Remove edge from old dst target, change edge dst id and add modified edge into new dst
     void reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* newDstNode);
-    /// Remove edge from old src target, change edge dst id and add modifed edge into new src
+    /// Remove edge from old src target, change edge dst id and add modified edge into new src
     void reTargetSrcOfEdge(ConstraintEdge* edge, ConstraintNode* newSrcNode);
     /// Remove addr edge from their src and dst edge sets
     void removeAddrEdge(AddrCGEdge* edge);

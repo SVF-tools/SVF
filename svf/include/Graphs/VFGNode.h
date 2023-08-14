@@ -841,7 +841,7 @@ public:
 };
 
 /*
- * ICFG Node stands for acutal parameter node (top level pointers)
+ * ICFG Node stands for actual parameter node (top level pointers)
  */
 class ActualParmVFGNode : public ArgumentVFGNode
 {
@@ -962,7 +962,7 @@ public:
 };
 
 /*!
- * Callsite receive paramter
+ * Callsite receive parameter
  */
 class ActualRetVFGNode: public ArgumentVFGNode
 {

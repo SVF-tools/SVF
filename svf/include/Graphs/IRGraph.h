@@ -233,7 +233,7 @@ namespace SVF
 
 /* !
  * GenericGraphTraits specializations of SVFIR to be used for the generic graph algorithms.
- * Provide graph traits for tranversing from a SVFIR node using standard graph traversals.
+ * Provide graph traits for traversing from a SVFIR node using standard graph traversals.
  */
 template<> struct GenericGraphTraits<SVF::SVFVar*> : public GenericGraphTraits<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>*  >
 {

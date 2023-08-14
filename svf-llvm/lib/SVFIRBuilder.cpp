@@ -244,7 +244,7 @@ void SVFIRBuilder::initialiseNodes()
     }
 
     assert(pag->getTotalNodeNum() >= symTable->getTotalSymNum()
-           && "not all node been inititalize!!!");
+           && "not all node have been initialized!!!");
 
 }
 
@@ -296,7 +296,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         const ConstantInt* op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
 
         // if Options::ModelConsts() is disabled. We will treat whole array as one,
-        // but we can distinguish different field of an array of struct, e.g. s[1].f1 is differet from s[0].f2
+        // but we can distinguish different field of an array of struct, e.g. s[1].f1 is different from s[0].f2
         if(const ArrayType* arrTy = SVFUtil::dyn_cast<ArrayType>(gepTy))
         {
             if(!op || (arrTy->getArrayNumElements() <= (u32_t)op->getSExtValue()))
@@ -433,7 +433,7 @@ void SVFIRBuilder::processCE(const Value* val)
         }
         else if (SVFUtil::isa<ConstantAggregate>(ref))
         {
-            // we don't handle constant agrgregate like constant vectors
+            // we don't handle constant aggregate like constant vectors
         }
         else if (SVFUtil::isa<BlockAddress>(ref))
         {
@@ -492,7 +492,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     if (C->getType()->isSingleValueType())
     {
         NodeID src = getValueNode(C);
-        // get the field value if it is avaiable, otherwise we create a dummy field node.
+        // get the field value if it is available, otherwise we create a dummy field node.
         setCurrentLocation(gvar, nullptr);
         NodeID field = getGlobalVarField(gvar, offset, LLVMModuleSet::getLLVMModuleSet()->getSVFType(C->getType()));
 
@@ -979,7 +979,7 @@ void SVFIRBuilder::visitVAArgInst(VAArgInst &inst)
 /// <result> = freeze ty <val>
 /// If <val> is undef or poison, ‘freeze’ returns an arbitrary, but fixed value of type `ty`
 /// Otherwise, this instruction is a no-op and returns the input <val>
-/// For now, we assume <val> is never a posion or undef.
+/// For now, we assume <val> is never a poison or undef.
 void SVFIRBuilder::visitFreezeInst(FreezeInst &inst)
 {
     NodeID dst = getValueNode(&inst);

@@ -48,7 +48,7 @@ public:
         /// Default Value for Symbol is 0.
         Symbol() : kind(0), attribute(0), variableAttribute(0) {}
 
-        /// Contruct from u32_t move the bit to right field
+        /// Construct from u32_t move the bit to right field
         Symbol(const u32_t& num) : kind(num & 0xFF), attribute((num >> 8 ) & 0xFFFF), variableAttribute((num >> 24)) {}
 
         /// Conversion of u32_t

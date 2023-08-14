@@ -461,7 +461,7 @@ void SymbolTableBuilder::handleCE(const Value* val)
         }
         else if (SVFUtil::isa<ConstantAggregate>(ref))
         {
-            // we don't handle constant agrgregate like constant vectors
+            // we don't handle constant aggregate like constant vectors
             collectVal(ref);
         }
         else
@@ -795,7 +795,7 @@ u32_t SymbolTableBuilder::getObjSize(const Type* ety)
     return numOfFields;
 }
 
-/// Number of flattenned elements of an array or struct
+/// Number of flattened elements of an array or struct
 u32_t SymbolTableBuilder::getNumOfFlattenElements(const Type* T)
 {
     if(Options::ModelArrays())

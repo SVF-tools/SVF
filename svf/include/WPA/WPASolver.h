@@ -196,7 +196,7 @@ protected:
     WorkList worklist;
 
 public:
-    /// num of iterations during constaint solving
+    /// num of iterations during constraint solving
     u32_t numOfIteration;
 };
 

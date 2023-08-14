@@ -301,7 +301,7 @@ public:
                   const void *DestNodeID, int DestNodePort,
                   const std::string &Attrs)
     {
-        if (SrcNodePort  > 64) return;             // Eminating from truncated part?
+        if (SrcNodePort  > 64) return;             // Emanating from truncated part?
         if (DestNodePort > 64) DestNodePort = 64;  // Targeting the truncated part?
 
         O << "\tNode" << SrcNodeID;

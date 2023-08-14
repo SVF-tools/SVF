@@ -42,7 +42,7 @@ using namespace LLVMUtil;
 void ICFGBuilder::build(SVFModule* svfModule)
 {
     DBOUT(DGENERAL, outs() << pasMsg("\t Building ICFG ...\n"));
-    // Add the unqiue global ICFGNode at the entry of a program (before the main method).
+    // Add the unique global ICFGNode at the entry of a program (before the main method).
     icfg->addGlobalICFGNode();
 
     for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
@@ -79,7 +79,7 @@ void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
     for (InstVec::const_iterator nit = insts.begin(), enit = insts.end();
             nit != enit; ++nit)
     {
-        ICFGNode* instNode = getOrAddBlockICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*nit));           //add interprocedure edge
+        ICFGNode* instNode = getOrAddBlockICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(*nit));           //add interprocedural edge
         icfg->addIntraEdge(FunEntryICFGNode, instNode);
         worklist.push(*nit);
     }

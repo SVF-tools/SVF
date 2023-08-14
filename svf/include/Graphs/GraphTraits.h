@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 //
 // This file defines the little GenericGraphTraits<X> template class that should be
-// specialized by classes that want to be iteratable by generic graph iterators.
+// specialized by classes that want to be iterable by generic graph iterators.
 //
 // This file also defines the marker class Inverse that is used to iterate over
 // graphs in a graph defined, inverse ordering...

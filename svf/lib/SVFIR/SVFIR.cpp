@@ -381,7 +381,7 @@ GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const AccessPath& ap)
 
 /*!
  * Add a temp field value node, this method can only invoked by getGepValVar
- * due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
+ * due to constraint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
  */
 NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const AccessPath& ap, NodeID i, const SVFType* type)
 {
@@ -533,7 +533,7 @@ NodeID SVFIR::getBaseValVar(NodeID nodeId)
 }
 
 /*!
- * It is used to create a dummy GepValVar during global initiailzation.
+ * It is used to create a dummy GepValVar during global initialization.
  */
 NodeID SVFIR::getGepValVar(const SVFValue* curInst, NodeID base, const AccessPath& ap) const
 {
@@ -693,7 +693,7 @@ bool SVFIR::isNonPointerObj(NodeID id) const
     }
 }
 /*
- * If this is a dummy node or node does not have incoming edges and outcoming edges we assume it is not a pointer here.
+ * If this is a dummy node or node does not have incoming edges and outgoing edges we assume it is not a pointer here.
  * However, if it is a pointer and it is an argument of a function definition, we assume it is a pointer here.
  */
 bool SVFIR::isValidPointer(NodeID nodeId) const
