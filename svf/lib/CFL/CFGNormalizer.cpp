@@ -341,13 +341,13 @@ void CFGNormalizer::ebnfSignReplace(char sign, CFGrammar *grammar)
                 s32_t signGroupStart = -1;
                 if (grammar->kindToStr(ebnfProduction[i].kind) == std::string(1, sign))
                 {
-                    /// If sign assoicate wihout group e.i with single symble
+                    /// If sign associate without group e.i with single symbol
                     assert(i != 1 && "sign in grammar associate with no symbol");
                     if (grammar->kindToStr(ebnfProduction[i - 1].kind) != std::string(1, ')'))
                     {
                         signGroupStart = i - 1;
                     }
-                    /// sign associate with group of symble by brace pair
+                    /// sign associate with group of symbol by brace pair
                     else
                     {
                         signGroupStart = ebnfBracketMatch(ebnfProduction, i, grammar);

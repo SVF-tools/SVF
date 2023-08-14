@@ -223,7 +223,7 @@ public:
         return mhp->getTCT()->getPTA()->getPAG();
     }
 
-    /// Create signle instance of flow-sensitive pointer analysis
+    /// Create single instance of flow-sensitive pointer analysis
     static FSMPTA* createFSMPTA(SVFModule* module, MHP* m, LockAnalysis* la)
     {
         if (mfspta == nullptr)

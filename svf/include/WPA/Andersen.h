@@ -327,7 +327,7 @@ protected:
     void mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes);
     void mergeSccCycle();
     //@}
-    /// Collapse a field object into its base for field insensitive anlaysis
+    /// Collapse a field object into its base for field insensitive analysis
     //@{
     virtual void collapsePWCNode(NodeID nodeId);
     void collapseFields();

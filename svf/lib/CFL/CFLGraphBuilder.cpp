@@ -377,8 +377,8 @@ CFLGraph* AliasCFLGraphBuilder::buildBiPEGgraph(ConstraintGraph *graph, Kind sta
             {
                 /// Handle VGep normalize to Normal Gep by connecting all geps' srcs to vgep dest
                 /// Example: In Test Case: Ctest field-ptr-arith-varIdx.c.bc
-                /// BFS Search the 8 LEVEL up to find the ValueNode, and the number of level search is arbitary
-                /// the more the level search the more valueNode and the Vgep Dst will possivble connect
+                /// BFS Search the 8 LEVEL up to find the ValueNode, and the number of level search is arbitrary
+                /// the more the level search the more valueNode and the Vgep Dst will possibly connect
                 connectVGep(cflGraph, graph,  edge->getSrcNode(), edge->getDstNode(), 8, pag);
             }
             else

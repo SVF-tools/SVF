@@ -315,7 +315,7 @@ void VersionedFlowSensitive::meldLabel(void)
 
                     int mSCC = partOf[m];
 
-                    // There is an edge from the SCC n belongs to to that m belongs to.
+                    // There is an edge from the SCC n belongs to that m belongs to.
                     sccReliance[nSCC].insert(mSCC);
 
                     // Ignore edges to delta nodes (prelabeled consume).
@@ -385,7 +385,7 @@ void VersionedFlowSensitive::meldLabel(void)
 
             // 7. a. Save versions for nodes which need them.
             //    b. Fill in stmtReliance.
-            // TODO: maybe randomise iteration order for less contention? Needs profiling.
+            // TODO: maybe randomize iteration order for less contention? Needs profiling.
             Map<Version, NodeBS> &osStmtReliance = this->stmtReliance.at(o);
             for (size_t i = 0; i < nodesWhichNeedVersions.size(); ++i)
             {

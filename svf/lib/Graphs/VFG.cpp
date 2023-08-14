@@ -463,7 +463,7 @@ void VFG::destroy()
 void VFG::addVFGNodes()
 {
 
-    // initialize dummy definition  null pointers in order to uniform the construction
+    // initialize dummy definition null pointers in order to uniform the construction
     // to be noted for black hole pointer it has already has address edge connected,
     // and its definition will be set when processing addr SVFIR edge.
     addNullPtrVFGNode(pag->getGNode(pag->getNullPtr()));
@@ -658,7 +658,7 @@ void VFG::addVFGNodes()
         if(isInterestedPAGNode(edge->getBranchInst()))
             addBranchVFGNode(edge);
     }
-    // initialize llvm cmp nodes (comparision)
+    // initialize llvm cmp nodes (comparison)
     SVFStmt::SVFStmtSetTy& cmps = getPAGEdgeSet(SVFStmt::Cmp);
     for (SVFStmt::SVFStmtSetTy::iterator iter = cmps.begin(), eiter =
                 cmps.end(); iter != eiter; ++iter)

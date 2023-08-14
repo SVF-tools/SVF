@@ -248,7 +248,7 @@ public:
     }
     //@}
 
-    /// Iterators used for SCC detection, overwrite it in child class if necessory
+    /// Iterators used for SCC detection, overwrite it in child class if necessary
     //@{
     virtual inline iterator directOutEdgeBegin()
     {
@@ -460,7 +460,7 @@ public:
 
 /* !
  * GenericGraphTraits specializations for generic graph algorithms.
- * Provide graph traits for tranversing from a node using standard graph traversals.
+ * Provide graph traits for traversing from a node using standard graph traversals.
  */
 namespace SVF
 {

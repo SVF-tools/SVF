@@ -287,7 +287,7 @@ std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, cons
     }
 
     // Points-to sets which are relevant to a region, i.e., those whose elements
-    // belong to that region. Pair is for occurences.
+    // belong to that region. Pair is for occurrences.
     std::vector<std::vector<std::pair<const PointsTo *, unsigned>>> regionsPointsTos(numRegions);
     for (const Map<PointsTo, unsigned>::value_type &ptocc : pointsToSets)
     {
@@ -476,7 +476,7 @@ double *NodeIDAllocator::Clusterer::getDistanceMatrix(const std::vector<std::pai
                     // We have something like distance == x, existingDistance == x - e, for some e < 1
                     // (potentially even set during this iteration).
                     // So, the new distance is an occurrence the existingDistance being tracked, it just
-                    // had some reductions because of multiple occurences.
+                    // had some reductions because of multiple occurrences.
                     // If there is not room within this distance to reduce more (increase priority),
                     // just ignore it. TODO: maybe warn?
                     if (existingDistance - occ * occurrenceEpsilon > std::floor(existingDistance))

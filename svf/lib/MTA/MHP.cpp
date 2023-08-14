@@ -400,7 +400,7 @@ void MHP::updateAncestorThreads(NodeID curTid)
  * Exclude sibling thread that never happen in parallel based on ForkJoinAnalysis
  *
  * The interleaving of a thread t is not unnecessary to be updated if
- * (1) t HB Sibling and t fully joins curTid recusively
+ * (1) t HB Sibling and t fully joins curTid recursively
  * or
  * (2) Sibling HB t
  */

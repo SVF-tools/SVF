@@ -114,7 +114,7 @@ CallStrCxt MTAResultValidator::getCxtArg(const Instruction* inst, unsigned int a
     CallStrCxt cxt;
     if (0 == x.size())
         return cxt;
-    // Deal with the the second argument that records all callsites
+    // Deal with the second argument that records all callsites
     for (std::vector<std::string>::iterator i = x.begin(); i != x.end(); i++)
     {
         std::vector<std::string> y = split((*i), '.');

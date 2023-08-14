@@ -48,7 +48,7 @@ using namespace SVF;
   LLVM may generate two global arrays @llvm.global_ctors and @llvm.global_dtors
   that contain constructor and destructor functions for global variables. They
   are not called explicitly, so we have to add them in the svf.main function.
-  The order to call these constructor and desctructor functions are also
+  The order to call these constructor and destructor functions are also
   specified in the global arrays.
   Related part in LLVM language reference:
   https://llvm.org/docs/LangRef.html#the-llvm-global-ctors-global-variable
@@ -466,7 +466,7 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
     mset->prePassSchedule();
 
     std::string preProcessSuffix = ".pre.bc";
-    // Get the existing module names, remove old extention, add preProcessSuffix
+    // Get the existing module names, remove old extension, add preProcessSuffix
     for (u32_t i = 0; i < moduleNameVec.size(); i++)
     {
         u32_t lastIndex = moduleNameVec[i].find_last_of(".");
@@ -685,7 +685,7 @@ void LLVMModuleSet::addSVFMain()
     }
 
     // Only create svf.main when the original main function is found, and also
-    // there are global contructor or destructor functions.
+    // there are global constructor or destructor functions.
     if (orgMain && getModuleNum() > 0 &&
             (ctor_funcs.size() > 0 || dtor_funcs.size() > 0))
     {

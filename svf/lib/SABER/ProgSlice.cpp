@@ -165,7 +165,7 @@ void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack) const
  * Evaluate Atoms of a condition
  * TODO: for now we only evaluate one path, evaluate every single path
  *
- * Atom -- a propositional valirable: a, b, c
+ * Atom -- a propositional variable: a, b, c
  * Literal -- an atom or its negation: a, ~a
  * Clause  -- A disjunction of some literals: a \vee b
  * CNF formula -- a conjunction of some clauses:  (a \vee b ) \wedge (c \vee d)

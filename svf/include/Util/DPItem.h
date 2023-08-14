@@ -37,7 +37,7 @@ namespace SVF
 {
 
 /*!
- * Dynamic programming item for CFL researchability search
+ * Dynamic programming item for CFL reachability search
  * This serves as a base class for CFL-reachability formulation by matching parentheses.
  * Extend this class for further sophisticated CFL-reachability items (e.g. field, flow, path)
  */
