@@ -124,10 +124,10 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
 
 SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
                          bool declare, bool intrinsic, bool adt, bool varg,
-                         SVFLoopAndDomInfo* ld)
+                         SVFLoopAndDomInfo* ld, std::vector<std::string> annos)
     : SVFValue(ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
       addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
-      funcType(ft), loopAndDom(ld), realDefFun(nullptr)
+      funcType(ft), loopAndDom(ld), realDefFun(nullptr), annotations(std::move(annos))
 {
 }
 

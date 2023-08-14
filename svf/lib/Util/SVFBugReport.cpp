@@ -51,14 +51,12 @@ const std::map<GenericBug::BugType, std::string> GenericBug::BugType2Str =
 const std::string GenericBug::getLoc() const
 {
     const SVFBugEvent&sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
-    assert(sourceInstEvent.getEventType() == SVFBugEvent::SourceInst && "bugEventStack top should be a SourceInst event");
     return sourceInstEvent.getEventLoc();
 }
 
 const std::string GenericBug::getFuncName() const
 {
     const SVFBugEvent&sourceInstEvent = bugEventStack.at(bugEventStack.size() -1);
-    assert(sourceInstEvent.getEventType() == SVFBugEvent::SourceInst && "bugEventStack top should be a SourceInst event");
     return sourceInstEvent.getFuncName();
 }
 
