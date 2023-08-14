@@ -546,9 +546,9 @@ void LLVMUtil::removeFunAnnotations(std::vector<Function*>& removedFuncList)
 }
 
 /// Get all called funcions in a parent function
-std::set<const Function *> LLVMUtil::getCalledFunctions(const Function *F) 
+std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F) 
 {
-    std::set<const Function *> calledFunctions;
+    std::vector<const Function *> calledFunctions;
     for (const Instruction &I : instructions(F)) 
     {
         if (const CallBase *callInst = SVFUtil::dyn_cast<CallBase>(&I)) 
@@ -556,9 +556,9 @@ std::set<const Function *> LLVMUtil::getCalledFunctions(const Function *F)
             Function *calledFunction = callInst->getCalledFunction();
             if (calledFunction) 
             {
-                calledFunctions.insert(calledFunction);
-                std::set<const Function *> nestedCalledFunctions = getCalledFunctions(calledFunction);
-                calledFunctions.insert(nestedCalledFunctions.begin(), nestedCalledFunctions.end());
+                calledFunctions.push_back(calledFunction);
+                std::vector<const Function *> nestedCalledFunctions = getCalledFunctions(calledFunction);
+                calledFunctions.insert(calledFunctions.end(), nestedCalledFunctions.begin(), nestedCalledFunctions.end());
             }
         }
     }

@@ -163,10 +163,10 @@ void LLVMModuleSet::createSVFDataStructure()
         {
             /// Remove unused function in extapi.bc module
             /// if this function func defined in extapi.bc but never used in application code (without any corresponding declared functions).
-            if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap.find(&func) == FunDefToDeclsMap.end() && func.getName().str() != "svf__main")
+            if (mod.getName().str() == Options::ExtAPIInput() && func.getName().str() != "svf__main" && FunDefToDeclsMap.find(&func) == FunDefToDeclsMap.end()
+                                                                                                     && std::find(ExtFuncsVec.begin(), ExtFuncsVec.end(), &func) == ExtFuncsVec.end())
             {
                 removedFuncList.push_back(&func);
-                continue;
             }
             else
             {
@@ -831,27 +831,61 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
 
+    /*
+                                    Table 1
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    |         |      AppDef       |     AppDecl     |      ExtDef       |   ExtDecl   |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | AppDef  |        X          | FunDefToDeclsMap| FunDeclToDefMap   |      X      |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | AppDecl | FunDeclToDefMap   |        X        | FunDeclToDefMap   |      X      |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | ExtDef  | FunDefToDeclsMap  | FunDefToDeclsMap|        X          |      X      |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | ExtDecl | FunDeclToDefMap   |        X        |        X          | ExtFuncsVec |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+
+    AppDef -> ExtDef/ExtDef -> AppDef (overwrite): 
+        Use Ext function definition to override App function definition( Ext function with "__attribute__((annotate("OVERWRITE")))" in extapi.c).
+        The app function definition will be changed to an app function declaration.
+        Then put the app function declaration and its corresponding Ext function definition into FunDeclToDefMap/FunDefToDeclsMap
+    
+    ExtDecl -> ExtDecl:
+        For example, 
+        App function: 
+            foo()
+            {
+                call memcpy();
+            }
+        Ext function: 
+            declare sse_check_overflow();
+            memcpy()
+            {
+                sse_check_overflow();
+            }
+        
+        sse_check_overflow() used in Ext function, but not in App function.
+        sse_check_overflow should be keep in ExtFuncsVec.
+    */
+
     /// App Func decl -> SVF extern Func def
     for (const Function* fdecl : funDecls)
     {
         for (const Function* extfun : extFuncs)
         {
             std::string declName = fdecl->getName().str();
-            // Change function like llvm.memcpy.p0i8.p0i8.i64 to llvm_memcpy_p0i8_p0i8_i64
+            // Since C function names cannot include '.', change the function name from llvm.memcpy.p0i8.p0i8.i64 to llvm_memcpy_p0i8_p0i8_i64."
             std::replace(declName.begin(), declName.end(), '.', '_');
             if (extfun->getName().str().compare(declName) == 0)
             {
+                // AppDecl -> ExtDef in Table 1
                 FunDeclToDefMap[fdecl] = extfun;
+                // ExtDef -> AppDecl in Table 1
                 std::vector<const Function*>& decls = FunDefToDeclsMap[extfun];
                 decls.push_back(fdecl);
                 // Keep all called functions in extfun
-                std::set<const Function *> calledExtFunctions = LLVMUtil::getCalledFunctions(extfun);
-                for (const Function *calledExtFunction : calledExtFunctions) 
-                {
-                    FunDeclToDefMap[calledExtFunction] = calledExtFunction;
-                    std::vector<const Function*>& decls = FunDefToDeclsMap[calledExtFunction];
-                    decls.push_back(calledExtFunction);
-                }
+                // ExtDecl -> ExtDecl in Table 1
+                ExtFuncsVec = LLVMUtil::getCalledFunctions(extfun);
             }
         } 
     }
@@ -868,23 +902,19 @@ void LLVMModuleSet::buildFunToFunMap()
                 Module* mod = fun->getParent();
                 FunctionType* funType = fun->getFunctionType();
                 std::string funName = fun->getName().str();
+                // Replace app function definition with declaration
                 Function* declaration = Function::Create(funType, GlobalValue::ExternalLinkage, funName, mod);
-                // Replace app function with svf extern function
                 fun->replaceAllUsesWith(declaration);
                 fun->eraseFromParent();
                 declaration->setName(funName);
-
+                // AppDef -> ExtDef in Table 1, AppDef has been changed to AppDecl
                 FunDeclToDefMap[declaration] = owfunc;
+                // ExtDef -> AppDef in Table 1
                 std::vector<const Function*>& decls = FunDefToDeclsMap[owfunc];
                 decls.push_back(declaration);
                 // Keep all called functions in owfunc
-                std::set<const Function *> calledExtFunctions = LLVMUtil::getCalledFunctions(owfunc);
-                for (const Function *calledExtFunction : calledExtFunctions) 
-                {
-                    FunDeclToDefMap[calledExtFunction] = calledExtFunction;
-                    std::vector<const Function*>& decls = FunDefToDeclsMap[calledExtFunction];
-                    decls.push_back(calledExtFunction);
-                }
+                // ExtDecl -> ExtDecl in Table 1    
+                ExtFuncsVec = LLVMUtil::getCalledFunctions(owfunc);
             }
         }
     }

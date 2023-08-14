@@ -74,6 +74,8 @@ private:
     FunDeclToDefMapTy FunDeclToDefMap;
     /// Function definition to function declaration map
     FunDefToDeclsMapTy FunDefToDeclsMap;
+    /// Record some "sse_" function declarations used in other ext function definition, e.g., svf_ext_foo(), and svf_ext_foo() used in app functions
+    FunctionSetType ExtFuncsVec;
     /// Global definition to a rep definition map
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
