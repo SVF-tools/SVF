@@ -890,6 +890,20 @@ void *_Znwm(unsigned long size)
     return NULL;
 }
 
+__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("SVF")))
+void *_ZnwmRKSt9nothrow_t(unsigned long size, void *)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("SVF")))
+void *_ZnamRKSt9nothrow_t(unsigned long size, void *)
+{
+    return NULL;
+}
+
 __attribute__((annotate("ALLOC_ARG0")))
 __attribute__((annotate("SVF")))
 int asprintf(char **restrict strp, const char *restrict fmt, ...)
