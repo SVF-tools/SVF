@@ -29,7 +29,6 @@
 
 #include <queue>
 #include <algorithm>
-#include "Util/Options.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
@@ -161,10 +160,7 @@ void LLVMModuleSet::createSVFDataStructure()
         /// Function
         for (Function& func : mod.functions())
         {
-            /// Remove unused function in extapi.bc module
-            /// if this function func defined in extapi.bc but never used in application code (without any corresponding declared functions).
-            if (mod.getName().str() == Options::ExtAPIInput() && func.getName().str() != "svf__main" && FunDefToDeclsMap.find(&func) == FunDefToDeclsMap.end()
-                                                                                                     && std::find(ExtFuncsVec.begin(), ExtFuncsVec.end(), &func) == ExtFuncsVec.end())
+            if (isUsedExtFunction(&func))
             {
                 removedFuncList.push_back(&func);
             }
@@ -725,7 +721,66 @@ void LLVMModuleSet::addSVFMain()
     }
 }
 
+/*
+                                    Table 1
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    |         |      AppDef       |     AppDecl     |      ExtDef       |   ExtDecl   |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | AppDef  |        X          | FunDefToDeclsMap| FunDeclToDefMap   |      X      |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | AppDecl | FunDeclToDefMap   |        X        | FunDeclToDefMap   |      X      |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | ExtDef  | FunDefToDeclsMap  | FunDefToDeclsMap|        X          |      X      |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | ExtDecl | FunDeclToDefMap   |        X        |        X          | ExtFuncsVec |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
 
+    When a user wants to use functions in extapi.c to overwrite the functions defined in the app code, two relationships, "AppDef -> ExtDef" and "ExtDef -> AppDef," are used.
+    Use Ext function definition to override the App function definition (Ext function with "__attribute__((annotate("OVERWRITE")))" in extapi.c).
+    The app function definition will be changed to an app function declaration.
+    Then, put the app function declaration and its corresponding Ext function definition into FunDeclToDefMap/FunDefToDeclsMap.
+    ------------------------------------------------------
+    AppDef -> ExtDef (overwrite): 
+        For example,
+            App function: 
+                char* foo(char *a, char *b){return a;}
+            Ext function: 
+                __attribute__((annotate("OVERWRITE")))
+                char* foo(char *a, char *b){return b;}
+            
+            When SVF handles the foo function in the App module, 
+            the definition of 
+                foo: char* foo(char *a, char *b){return a;}
+            will be changed to a declaration
+                foo: char* foo(char *a, char *b);
+            Then, 
+                foo: char* foo(char *a, char *b); 
+                and
+                __attribute__((annotate("OVERWRITE")))
+                char* foo(char *a, char *b){return b;}
+            will be put into FunDeclToDefMap
+    ------------------------------------------------------
+    ExtDef -> AppDef (overwrite): 
+        __attribute__((annotate("OVERWRITE")))
+        char* foo(char *a, char *b){return b;} 
+        and
+        foo: char* foo(char *a, char *b);
+        are put into FunDefToDeclsMap;
+    ------------------------------------------------------
+    In principle, all functions in extapi.c have bodies (definitions), but some functions (those starting with "sse_") 
+    have only function declarations without definitions. ExtFuncsVec is used to record function declarations starting with "sse_" that are used.
+    
+    ExtDecl -> ExtDecl:
+        For example, 
+        App function: 
+            foo(){call memcpy();}
+        Ext function: 
+            declare sse_check_overflow();
+            memcpy(){sse_check_overflow();}
+        
+        sse_check_overflow() used in the Ext function but not in the App function.
+        sse_check_overflow should be kept in ExtFuncsVec.
+*/
 void LLVMModuleSet::buildFunToFunMap()
 {
     Set<const Function*> funDecls, funDefs, extFuncs, overwriteExtFuncs;
@@ -830,43 +885,6 @@ void LLVMModuleSet::buildFunToFunMap()
             decls.push_back(decl);
         }
     }
-
-    /*
-                                    Table 1
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-    |         |      AppDef       |     AppDecl     |      ExtDef       |   ExtDecl   |
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-    | AppDef  |        X          | FunDefToDeclsMap| FunDeclToDefMap   |      X      |
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-    | AppDecl | FunDeclToDefMap   |        X        | FunDeclToDefMap   |      X      |
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-    | ExtDef  | FunDefToDeclsMap  | FunDefToDeclsMap|        X          |      X      |
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-    | ExtDecl | FunDeclToDefMap   |        X        |        X          | ExtFuncsVec |
-    | ------- | ----------------- | --------------- | ----------------- | ----------- |
-
-    AppDef -> ExtDef/ExtDef -> AppDef (overwrite): 
-        Use Ext function definition to override App function definition( Ext function with "__attribute__((annotate("OVERWRITE")))" in extapi.c).
-        The app function definition will be changed to an app function declaration.
-        Then put the app function declaration and its corresponding Ext function definition into FunDeclToDefMap/FunDefToDeclsMap
-    
-    ExtDecl -> ExtDecl:
-        For example, 
-        App function: 
-            foo()
-            {
-                call memcpy();
-            }
-        Ext function: 
-            declare sse_check_overflow();
-            memcpy()
-            {
-                sse_check_overflow();
-            }
-        
-        sse_check_overflow() used in Ext function, but not in App function.
-        sse_check_overflow should be keep in ExtFuncsVec.
-    */
 
     /// App Func decl -> SVF extern Func def
     for (const Function* fdecl : funDecls)
