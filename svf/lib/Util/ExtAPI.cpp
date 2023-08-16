@@ -55,21 +55,21 @@ std::string ExtAPI::getExtFuncAnnotation(const SVFFunction* fun, const std::stri
 {
     assert(fun && "Null SVFFunction* pointer");
     const std::vector<std::string>& annotations = fun->getAnnotations();
-    for (const std::string& annotation : annotations) 
-        if (annotation.find(funcAnnotation) != std::string::npos) 
+    for (const std::string& annotation : annotations)
+        if (annotation.find(funcAnnotation) != std::string::npos)
             return annotation;
     return "";
 }
 
-bool ExtAPI::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation) 
+bool ExtAPI::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
 {
     assert(fun && "Null SVFFunction* pointer");
     const std::vector<std::string>& annotations = fun->getAnnotations();
-    for (const std::string& annotation : annotations) 
-        if (annotation.find(funcAnnotation) != std::string::npos) 
+    for (const std::string& annotation : annotations)
+        if (annotation.find(funcAnnotation) != std::string::npos)
             return true;
     return false;
-} 
+}
 
 // Does (F) have a static var X (unavailable to us) that its return points to?
 bool ExtAPI::has_static(const SVFFunction* F)
@@ -106,8 +106,9 @@ s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction* F)
     assert(!allocArg.empty() && "Not an alloc call via argument or incorrect extern function annotation!");
 
     std::string number;
-    for (char c : allocArg) {
-        if (isdigit(c)) 
+    for (char c : allocArg)
+    {
+        if (isdigit(c))
             number.push_back(c);
     }
     assert(!number.empty() && "Incorrect naming convention for svf external functions(ALLOC_ARG + number)?");

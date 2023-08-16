@@ -240,8 +240,8 @@ public:
     bool isUsedExtFunction(Function* func)
     {
         /// if this function func defined in extapi.bc but never used in application code (without any corresponding declared functions).
-        if (func->getParent()->getName().str() == Options::ExtAPIInput() 
-                && func->getName().str() != "svf__main" 
+        if (func->getParent()->getName().str() == Options::ExtAPIInput()
+                && func->getName().str() != "svf__main"
                 && FunDefToDeclsMap.find(func) == FunDefToDeclsMap.end()
                 && std::find(ExtFuncsVec.begin(), ExtFuncsVec.end(), func) == ExtFuncsVec.end())
         {

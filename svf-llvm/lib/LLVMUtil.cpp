@@ -474,17 +474,17 @@ std::vector<std::string> LLVMUtil::getFunAnnotations(const Function* fun)
             continue;
 
         ConstantDataSequential *data = SVFUtil::dyn_cast<ConstantDataSequential>(annotateStr->getInitializer());
-        if (data->isString()) 
+        if (data->isString())
         {
             std::string annotation = data->getAsString().str();
-            if (!annotation.empty()) 
+            if (!annotation.empty())
                 annotations.push_back(annotation);
         }
     }
     return annotations;
 }
 
-void LLVMUtil::removeFunAnnotations(std::vector<Function*>& removedFuncList) 
+void LLVMUtil::removeFunAnnotations(std::vector<Function*>& removedFuncList)
 {
     if (removedFuncList.empty())
         return; // No functions to remove annotations in extapi.bc module
@@ -499,14 +499,14 @@ void LLVMUtil::removeFunAnnotations(std::vector<Function*>& removedFuncList)
         return;
 
     std::vector<Constant*> newAnnotations;
-    for (unsigned i = 0; i < ca->getNumOperands(); ++i) 
+    for (unsigned i = 0; i < ca->getNumOperands(); ++i)
     {
         ConstantStruct* structAn = SVFUtil::dyn_cast<ConstantStruct>(ca->getOperand(i));
         if (structAn == nullptr)
             continue;
 
         ConstantExpr* expr = SVFUtil::dyn_cast<ConstantExpr>(structAn->getOperand(0));
-        if (expr == nullptr || expr->getOpcode() != Instruction::BitCast) 
+        if (expr == nullptr || expr->getOpcode() != Instruction::BitCast)
         {
             // Keep the annotation if it's not created using BitCast
             newAnnotations.push_back(structAn);
@@ -529,13 +529,13 @@ void LLVMUtil::removeFunAnnotations(std::vector<Function*>& removedFuncList)
 
     // Check if a global variable with the name llvm.global.annotations already exists
     GlobalVariable* existingGlobal = module->getGlobalVariable("llvm.global.annotations");
-    if (existingGlobal) 
+    if (existingGlobal)
         // Rename the existing llvm.global.annotations to llvm.global.annotations_old
         existingGlobal->setName("llvm.global.annotations_old");
 
     // Create a new global variable with the updated annotations
     GlobalVariable* newGlobal = new GlobalVariable(*module, newCA->getType(), glob->isConstant(),
-        glob->getLinkage(), newCA, "llvm.global.annotations", glob, glob->getThreadLocalMode());
+            glob->getLinkage(), newCA, "llvm.global.annotations", glob, glob->getThreadLocalMode());
 
     // Copy other properties from the old global variable to the new one
     newGlobal->setSection(glob->getSection());
@@ -546,15 +546,15 @@ void LLVMUtil::removeFunAnnotations(std::vector<Function*>& removedFuncList)
 }
 
 /// Get all called funcions in a parent function
-std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F) 
+std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F)
 {
     std::vector<const Function *> calledFunctions;
-    for (const Instruction &I : instructions(F)) 
+    for (const Instruction &I : instructions(F))
     {
-        if (const CallBase *callInst = SVFUtil::dyn_cast<CallBase>(&I)) 
+        if (const CallBase *callInst = SVFUtil::dyn_cast<CallBase>(&I))
         {
             Function *calledFunction = callInst->getCalledFunction();
-            if (calledFunction) 
+            if (calledFunction)
             {
                 calledFunctions.push_back(calledFunction);
                 std::vector<const Function *> nestedCalledFunctions = getCalledFunctions(calledFunction);

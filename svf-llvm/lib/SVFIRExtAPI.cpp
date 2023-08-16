@@ -189,9 +189,9 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     {
         NodeID dummy = pag->addDummyValNode();
         AccessPath ap1(0);
-        addNormalGepEdge(getValueNode(cs->getArgOperand(0)), dummy, ap1); 
+        addNormalGepEdge(getValueNode(cs->getArgOperand(0)), dummy, ap1);
         AccessPath ap2(0);
-        addNormalGepEdge(dummy, getValueNode(cs), ap2); 
+        addNormalGepEdge(dummy, getValueNode(cs), ap2);
     }
     else if(svfCallee->getName().compare("dlsym") == 0)
     {
