@@ -470,7 +470,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset,
     /// then we need to create a gep node for this field
     else
     {
-        return getGepValVar(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(gvar), AccessPath(offset), tpy);
+        return getGepValVar(gvar, AccessPath(offset), tpy);
     }
 }
 
@@ -847,9 +847,7 @@ void SVFIRBuilder::visitCallSite(CallBase* cs)
         const SVFFunction* svfcallee = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
         if (isExtCall(svfcallee))
         {
-            // There is no extpag for the function, use the old method.
-            preProcessExtCall(cs);
-            handleExtCall(svfcall, svfcallee);
+            handleExtCall(cs, svfcallee);
         }
         else
         {
@@ -1115,73 +1113,6 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
     return value;
 }
 
-void SVFIRBuilder::preProcessExtCall(CallBase* cs)
-{
-    const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
-    const SVFCallInst* svfcall = SVFUtil::cast<SVFCallInst>(svfinst);
-    /// Currently focusing on providing specialized treatment for the extern function void *dlsym(void *handle, const char *funname)
-    /// and generalization will be done later.
-    if (svfcall->getCalledFunction()->getName() == "dlsym")
-    {
-        const Value* src = cs->getArgOperand(1);
-        if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
-            src = stripConstantCasts(gep->getPointerOperand());
-
-        auto getHookFn = [](const Value* src)->const Function*
-        {
-            if (!SVFUtil::isa<GlobalVariable>(src))
-                return nullptr;
-
-            auto *glob = SVFUtil::cast<GlobalVariable>(src);
-            if (!glob->hasInitializer() || !SVFUtil::isa<ConstantDataArray>(glob->getInitializer()))
-                return nullptr;
-
-            auto *constarray = SVFUtil::cast<ConstantDataArray>(glob->getInitializer());
-            return LLVMUtil::getProgFunction(constarray->getAsCString().str());
-        };
-
-        if (const Function *fn = getHookFn(src))
-        {
-            NodeID srcNode = getValueNode(fn);
-            addCopyEdge(srcNode,  getValueNode(cs));
-        }
-        return;
-    }
-    /// Preprocess the arguments of functions such as memset() and memcpy() that involve arrays or structures,
-    /// and identify the original data types of these arguments, flattening each subfield.
-    if (isMemSetOrCpyExtFun(svfcall->getCalledFunction()))
-    {
-        for (u32_t i = 0; i < cs->arg_size(); i++)
-        {
-            const Type* T = getBaseValueForExtArg(cs->getArgOperand(i))->getType();
-            while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
-                T = getPtrElementType(ptype);
-            const SVFType *st = LLVMModuleSet::getLLVMModuleSet()->getSVFType(T);
-            std::vector<AccessPath> fields;
-            u32_t numOfElems = pag->getSymbolInfo()->getNumOfFlattenElements(st);
-            LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
-            for(u32_t ei = 0; ei < numOfElems; ei++)
-            {
-                AccessPath ap(ei);
-                // make a ConstantInt and create char for the content type due to byte-wise copy
-                const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, ei));
-                const SVFValue* svfOffset = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offset);
-                if (!pag->getSymbolInfo()->hasValSym(svfOffset))
-                {
-                    SymbolTableBuilder builder(pag->getSymbolInfo());
-                    builder.collectSym(offset);
-                    pag->addValNode(svfOffset, pag->getSymbolInfo()->getValSym(svfOffset));
-                }
-                ap.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
-                fields.push_back(ap);
-            }
-            NodeID argId = pag->getValueNode(svfcall->getArgOperand(i));
-            std::pair<const SVFType*, std::vector<AccessPath>> pairToInsert = std::make_pair(st, fields);
-            pag->addToTypeLocSetsMap(argId, pairToInsert);
-        }
-    }
-}
-
 /*!
  * Indirect call is resolved on-the-fly during pointer analysis
  */
@@ -1211,9 +1142,8 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph)
             if (isExtCall(*func_iter))
             {
                 setCurrentLocation(callee, callee->empty() ? nullptr : &callee->getEntryBlock());
-                SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(callbase);
                 const SVFFunction* svfcallee = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
-                handleExtCall(svfinst, svfcallee);
+                handleExtCall(callbase, svfcallee);
             }
             else
             {
@@ -1257,9 +1187,9 @@ void SVFIRBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID SVFIRBuilder::getGepValVar(const SVFValue* val, const AccessPath& ap, const SVFType* elementType)
+NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const SVFType* elementType)
 {
-    NodeID base = pag->getBaseValVar(pag->getValueNode(val));
+    NodeID base = pag->getBaseValVar(getValueNode(val));
     NodeID gepval = pag->getGepValVar(curVal, base, ap);
     if (gepval==UINT_MAX)
     {
@@ -1279,7 +1209,8 @@ NodeID SVFIRBuilder::getGepValVar(const SVFValue* val, const AccessPath& ap, con
         const SVFValue* cval = getCurrentValue();
         const SVFBasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
-        NodeID gepNode= pag->addGepValNode(curVal, val, ap, NodeIDAllocator::get()->allocateValueId(),elementType->getPointerTo());
+        LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
+        NodeID gepNode= pag->addGepValNode(curVal, llvmmodule->getSVFValue(val),ap, NodeIDAllocator::get()->allocateValueId(),elementType->getPointerTo());
         addGepEdge(base, gepNode, ap, true);
         setCurrentLocation(cval, cbb);
         return gepNode;
