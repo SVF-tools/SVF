@@ -7,6 +7,7 @@
 
     The description of methodProperties is as follows:
 
+        SVF,          // inform SVF that this function is managed by SVF and should not use its body.
         ALLOC_RET,    // returns a ptr to a newly allocated object
         ALLOC_ARGi    // stores a pointer to an allocated object in *argi
         REALLOC_RET,  

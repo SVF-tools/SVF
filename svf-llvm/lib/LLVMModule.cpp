@@ -722,6 +722,9 @@ void LLVMModuleSet::addSVFMain()
 }
 
 /*
+    For a more detailed explanation of the Function declaration and definition mapping relationships and how External APIs are handled, 
+    please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
+
                                     Table 1
     | ------- | ----------------- | --------------- | ----------------- | ----------- |
     |         |      AppDef       |     AppDecl     |      ExtDef       |   ExtDecl   |
