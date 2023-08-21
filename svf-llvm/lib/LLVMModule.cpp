@@ -153,7 +153,7 @@ void LLVMModuleSet::createSVFDataStructure()
 {
     getSVFType(IntegerType::getInt8Ty(getContext()));
     // Functions need to be retrieved in the order of insertion
-    std::vector<const Function*> candidateFuncs;
+    std::vector<const Function*> candidateDefs, candidateDecls;
     for (Module& mod : modules)
     {
         std::vector<Function*> removedFuncList;
@@ -164,15 +164,22 @@ void LLVMModuleSet::createSVFDataStructure()
             {
                 removedFuncList.push_back(&func);
             }
-            else
+            else if (func.isDeclaration())
             {
-                candidateFuncs.push_back(&func);
+                candidateDecls.push_back(&func);
+            }
+            else {
+                candidateDefs.push_back(&func);
             }
         }
         /// Remove unused functions and annotations in extapi.bc
         LLVMUtil::removeUnusedFuncsAndAnnotations(removedFuncList);
     }
-    for (const Function* func: candidateFuncs)
+    for (const Function* func: candidateDefs)
+    {
+        createSVFFunction(func);
+    }
+    for (const Function* func: candidateDecls)
     {
         createSVFFunction(func);
     }
@@ -790,7 +797,8 @@ void LLVMModuleSet::buildFunToFunMap()
     OrderedSet<string> declNames, defNames, intersectNames;
     typedef Map<string, const Function*> NameToFunDefMapTy;
     typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
-
+    const Function* main_ext = nullptr;
+    const Function* main_app = nullptr;
     for (Module& mod : modules)
     {
         // extapi.bc functions
@@ -809,6 +817,9 @@ void LLVMModuleSet::buildFunToFunMap()
                 {
                     overwriteExtFuncs.insert(&fun);
                 }
+                if (fun.getName().str() == "main") {
+                    main_ext = &fun;
+                }
             }
         }
         else
@@ -825,6 +836,9 @@ void LLVMModuleSet::buildFunToFunMap()
                 {
                     funDefs.insert(&fun);
                     defNames.insert(fun.getName().str());
+                }
+                if (fun.getName().str() == "main") {
+                    main_app = &fun;
                 }
             }
         }
@@ -869,6 +883,7 @@ void LLVMModuleSet::buildFunToFunMap()
             FunDeclToDefMap[fdecl] = mit->second;
         }
     }
+    FunDeclToDefMap[main_ext] = main_app;
 
     /// Fun def --> decls
     for (const Function* fdef : funDefs)
@@ -890,6 +905,7 @@ void LLVMModuleSet::buildFunToFunMap()
             decls.push_back(decl);
         }
     }
+    FunDefToDeclsMap[main_app] = {main_ext};
 
     /// App Func decl -> SVF extern Func def
     for (const Function* fdecl : funDecls)
