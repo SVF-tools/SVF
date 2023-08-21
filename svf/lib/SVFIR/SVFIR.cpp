@@ -463,7 +463,7 @@ void SVFIR::readGepObjNodeFromFile(const NodeID& base, const APOffset& apOffset,
     assert(0==GepObjVarMap.count(std::make_pair(base, apOffset))
            && "this node should not be created before");
     GepObjVarMap[std::make_pair(base, apOffset)] = gepId;
-    NodeIDAllocator::get()->updateNumObjAndNodes();
+    NodeIDAllocator::get()->increaseNumOfObjAndNodes();
     memToFieldsMap[base].set(gepId);
     const MemObj* obj;
     if (GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))

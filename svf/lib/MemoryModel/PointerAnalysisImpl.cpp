@@ -252,21 +252,6 @@ void BVDataPTAImpl::writeToFile(const string& filename)
 
     f << "------\n";
 
-
-    // Write GepPAGNodes to file
-    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
-    {
-        PAGNode* pagNode = it->second;
-        if (GepObjVar *gepObjPN = SVFUtil::dyn_cast<GepObjVar>(pagNode))
-        {
-            f << it->first << " ";
-            f << pag->getBaseObjVar(it->first) << " ";
-            f << gepObjPN->getConstantFieldIdx() << "\n";
-        }
-    }
-
-    f << "------\n";
-
     // Write BaseNodes insensitivity to file
     NodeBS NodeIDs;
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
@@ -371,6 +356,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     for (auto t: nodePtsMap)
         ptD->unionPts(t.first, strPtsMap[t.second]);
 
+    //read GepObjVarMap from file
     SVFIR::NodeOffsetMap &gepObjVarMap = pag->getGepObjNodeMap();
     while (F.good())
     {
@@ -388,23 +374,6 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
             pag->readGepObjNodeFromFile(base, offset, id);
         }
         
-    }
-
-    // Read BaseNode insensitivity
-    while (F.good())
-    {
-        getline(F, line);
-        if (line == "------")     break;
-        // Parse a single line in the form of "ID baseNodeID offset"
-        istringstream ss(line);
-        NodeID id;
-        NodeID base;
-        size_t offset;
-        ss >> id >> base >> offset;
-        NodeID n = pag->getGepObjVar(base, offset);
-        bool matched = (id == n);
-        (void)matched;
-        assert(matched && "Error adding GepObjNode into SVFIR!");
     }
 
     // //update ObjVar status

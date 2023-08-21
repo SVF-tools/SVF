@@ -82,7 +82,11 @@ public:
         return numObjects;
     }
 
-    void updateNumObjAndNodes();
+    inline void increaseNumOfObjAndNodes()
+    {
+        ++numObjects;
+        ++numNodes;
+    }
 private:
     /// Builds a node ID allocator with the strategy specified on the command line.
     NodeIDAllocator(void);
