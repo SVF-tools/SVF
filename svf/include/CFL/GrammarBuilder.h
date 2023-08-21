@@ -30,7 +30,7 @@
 #ifndef INCLUDE_CFL_GRAMMARBUILDER_H_
 #define INCLUDE_CFL_GRAMMARBUILDER_H_
 
-#include "CFL/CFLGrammar.h"
+#include "CFL/CFGrammar.h"
 
 namespace SVF
 {
@@ -49,7 +49,7 @@ namespace SVF
  *
  * Production Format:
  *      <symbol> -> <symbol> *;
- *      LHS and RHS, Seperate by '->', symbol seperate by ' ', end by ';'
+ *      LHS and RHS, Separate by '->', symbol separate by ' ', end by ';'
  *      support '*', '?', '(', ')'
  *
  * Input Format:
@@ -57,10 +57,10 @@ namespace SVF
  *      M                   // Specify Start Symbol in Second Line
  *      Terminal:
  *      Addr Copy Store Load Gep Vgep // Specify the order of terminal Addr->0, Copy->1 ..
- *      Productions:        // Each Symbol seperate by 'Space', production end with ';'
+ *      Productions:        // Each Symbol separate by 'Space', production end with ';'
  *      M -> V d;           // Terminal in NonCapital
  *      M -> dbar V d;      // NonTerminal in Capital
- *      V -> M abar M a M;  // LHS and RHS, Seperate by '->'
+ *      V -> M abar M a M;  // LHS and RHS, Separate by '->'
  *      V -> ( M ? abar ) * M ? ( a M ? ) *;    // Support '(' ')' '?' '*' four regular expression sign
  *      Gep_j -> Gep_i F vgep; // Support variable attribute with variable attribute
  *      Gep_1 -> Gep_2;      // Support fix number attribute

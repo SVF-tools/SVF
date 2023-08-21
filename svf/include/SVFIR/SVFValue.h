@@ -292,6 +292,7 @@ private:
     const SVFFunction* realDefFun;  /// the definition of a function across multiple modules
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
+    std::vector<std::string> annotations; /// annotations of this function
 
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
@@ -322,7 +323,7 @@ protected:
     /// @}
 
 public:
-    SVFFunction(const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
+    SVFFunction(const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld, std::vector<std::string> annos);
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
 
@@ -428,6 +429,11 @@ public:
     inline bool isNotRetFunction() const
     {
         return isNotRet;
+    }
+
+    inline const std::vector<std::string>& getAnnotations() const
+    {
+        return annotations;
     }
 
     inline void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const
@@ -946,7 +952,7 @@ public:
     {
         return zval;
     }
-    // Return the constant as a 64-bit integer value after it has been sign extended as appropriate for the type of this constan
+    // Return the constant as a 64-bit integer value after it has been sign extended as appropriate for the type of this constant
     inline s64_t getSExtValue () const
     {
         return sval;

@@ -77,7 +77,7 @@ void FlowSensitive::initialize()
 void FlowSensitive::solveConstraints()
 {
     bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit());
-    
+
     double start = stat->getClk(true);
     /// Start solving constraints
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
@@ -97,7 +97,7 @@ void FlowSensitive::solveConstraints()
     while (updateCallGraph(getIndirectCallsites()));
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
-    
+
     // Reset the time-up alarm; analysis is done.
     SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
@@ -131,13 +131,16 @@ void FlowSensitive::analyze()
     {
         readPtsFromFile(Options::ReadAnder());
     }
-    else{
+    else
+    {
         if(Options::WriteAnder().empty())
         {
             initialize();
             solveConstraints();
             finalize();
-        }else{
+        }
+        else
+        {
             solveAndwritePtsToFile(Options::WriteAnder());
         }
     }
@@ -150,7 +153,7 @@ void FlowSensitive::readPtsFromFile(const std::string& filename)
     /// Load the pts from file
     if(!filename.empty())
         this->readFromFile(filename);
-     /// finalize the analysis
+    /// finalize the analysis
     finalize();
 }
 

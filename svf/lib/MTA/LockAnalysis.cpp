@@ -676,7 +676,7 @@ bool LockAnalysis::isInSameCSSpan(const CxtStmt& cxtStmt1, const CxtStmt& cxtStm
     return intersects(lockset1,lockset2);
 }
 /*!
- * Return true if two instructions are inside at least one common contex-sensitive lock span
+ * Return true if two instructions are inside at least one common context-sensitive lock span
  */
 bool LockAnalysis::isInSameCSSpan(const SVFInstruction *I1, const SVFInstruction *I2) const
 {

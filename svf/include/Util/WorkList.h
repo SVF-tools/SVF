@@ -221,7 +221,7 @@ private:
 };
 
 /**
- * Worlist with "first in last out" order.
+ * Worklist with "first in last out" order.
  * New nodes will be pushed at back and popped from back.
  * Elements in the list are unique as they're recorded by Set.
  */

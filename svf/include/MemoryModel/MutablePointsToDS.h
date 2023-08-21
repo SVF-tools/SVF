@@ -848,7 +848,7 @@ private:
             return it->second.test(var);
         return false;
     }
-    /// Get all var which have new pts informationin loc's IN set
+    /// Get all var which have new pts information in loc's IN set
     inline const DataSet& getDFInUpdatedVar(LocID loc)
     {
         return inUpdatedVarMap[loc];
@@ -877,7 +877,7 @@ private:
             return it->second.test(var);
         return false;
     }
-    /// Get all var which have new pts informationin loc's OUT set
+    /// Get all var which have new pts information in loc's OUT set
     inline const DataSet& getDFOutUpdatedVar(LocID loc)
     {
         return outUpdatedVarMap[loc];

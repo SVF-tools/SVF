@@ -1,4 +1,4 @@
-//===----- CHG.h -- Class hirachary graph  ---------------------------//
+//===----- CHG.h -- Class hierarchy graph  ---------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

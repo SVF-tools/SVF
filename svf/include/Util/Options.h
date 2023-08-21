@@ -61,7 +61,7 @@ public:
     /// Align identifiers in each region to a word.
     static const Option<bool> RegionAlign;
 
-    /// Predict occurences of points-to sets in the staged points-to set to
+    /// Predict occurrences of points-to sets in the staged points-to set to
     /// weigh more common points-to sets as more important.
     static const Option<bool> PredictPtOcc;
 

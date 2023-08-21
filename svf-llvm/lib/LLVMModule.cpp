@@ -29,7 +29,6 @@
 
 #include <queue>
 #include <algorithm>
-#include "Util/Options.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
@@ -48,7 +47,7 @@ using namespace SVF;
   LLVM may generate two global arrays @llvm.global_ctors and @llvm.global_dtors
   that contain constructor and destructor functions for global variables. They
   are not called explicitly, so we have to add them in the svf.main function.
-  The order to call these constructor and desctructor functions are also
+  The order to call these constructor and destructor functions are also
   specified in the global arrays.
   Related part in LLVM language reference:
   https://llvm.org/docs/LangRef.html#the-llvm-global-ctors-global-variable
@@ -153,48 +152,27 @@ void LLVMModuleSet::build()
 void LLVMModuleSet::createSVFDataStructure()
 {
     getSVFType(IntegerType::getInt8Ty(getContext()));
-    Set<const Function*> candidateDecls;
-    Set<const Function*> candidateDefs;
-
+    // Functions need to be retrieved in the order of insertion
+    std::vector<const Function*> candidateFuncs;
     for (Module& mod : modules)
     {
         std::vector<Function*> removedFuncList;
         /// Function
         for (Function& func : mod.functions())
         {
-            if (func.isDeclaration())
+            if (isUsedExtFunction(&func))
             {
-                /// if this function is declaration
-                candidateDecls.insert(&func);
+                removedFuncList.push_back(&func);
             }
             else
             {
-                /// if this function is definition
-                if (mod.getName().str() == Options::ExtAPIInput() && FunDefToDeclsMap[&func].empty() && func.getName().str() != "svf__main")
-                {
-                    /// if this function func defined in ExtAPI but never used in application code (without any corresponding declared functions).
-                    removedFuncList.push_back(&func);
-                    continue;
-                }
-                else
-                {
-                    /// if this function is in app bc, any def func should be added.
-                    /// if this function is in ext bc, only functions which have declarations(should be used by app bc) can be inserted.
-                    candidateDefs.insert(&func);
-                }
+                candidateFuncs.push_back(&func);
             }
         }
-        for (Function* func : removedFuncList)
-        {
-            mod.getFunctionList().remove(func);
-        }
+        /// Remove unused functions and annotations in extapi.bc
+        LLVMUtil::removeUnusedFuncsAndAnnotations(removedFuncList);
     }
-    for (const Function* func: candidateDefs)
-    {
-        createSVFFunction(func);
-    }
-
-    for (const Function* func: candidateDecls)
+    for (const Function* func: candidateFuncs)
     {
         createSVFFunction(func);
     }
@@ -238,7 +216,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         SVFUtil::cast<SVFFunctionType>(
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
-        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
+        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo, LLVMUtil::getFunAnnotations(func));
     svfFunc->setName(func->getName().str());
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
@@ -466,7 +444,7 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
     mset->prePassSchedule();
 
     std::string preProcessSuffix = ".pre.bc";
-    // Get the existing module names, remove old extention, add preProcessSuffix
+    // Get the existing module names, remove old extension, add preProcessSuffix
     for (u32_t i = 0; i < moduleNameVec.size(); i++)
     {
         u32_t lastIndex = moduleNameVec[i].find_last_of(".");
@@ -553,8 +531,10 @@ void LLVMModuleSet::loadExtAPIModules()
             Err.print("SVFModuleLoader", llvm::errs());
             abort();
         }
-        modules.emplace_back(*mod);
-        owned_modules.emplace_back(std::move(mod));
+        // The module of extapi.bc needs to be inserted before applications modules, like std::vector<std::reference_wrapper<Module>> modules{extapi_module, app_module}.
+        // Otherwise, when overwriting the app function with SVF extern function, the corresponding SVFFunction of the extern function will not be found.
+        modules.insert(modules.begin(), *mod);
+        owned_modules.insert(owned_modules.begin(),std::move(mod));
     }
 }
 
@@ -685,7 +665,7 @@ void LLVMModuleSet::addSVFMain()
     }
 
     // Only create svf.main when the original main function is found, and also
-    // there are global contructor or destructor functions.
+    // there are global constructor or destructor functions.
     if (orgMain && getModuleNum() > 0 &&
             (ctor_funcs.size() > 0 || dtor_funcs.size() > 0))
     {
@@ -741,28 +721,111 @@ void LLVMModuleSet::addSVFMain()
     }
 }
 
+/*
+    For a more detailed explanation of the Function declaration and definition mapping relationships and how External APIs are handled,
+    please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
 
+                                    Table 1
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    |         |      AppDef       |     AppDecl     |      ExtDef       |   ExtDecl   |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | AppDef  |        X          | FunDefToDeclsMap| FunDeclToDefMap   |      X      |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | AppDecl | FunDeclToDefMap   |        X        | FunDeclToDefMap   |      X      |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | ExtDef  | FunDefToDeclsMap  | FunDefToDeclsMap|        X          |      X      |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+    | ExtDecl | FunDeclToDefMap   |        X        |        X          | ExtFuncsVec |
+    | ------- | ----------------- | --------------- | ----------------- | ----------- |
+
+    When a user wants to use functions in extapi.c to overwrite the functions defined in the app code, two relationships, "AppDef -> ExtDef" and "ExtDef -> AppDef," are used.
+    Use Ext function definition to override the App function definition (Ext function with "__attribute__((annotate("OVERWRITE")))" in extapi.c).
+    The app function definition will be changed to an app function declaration.
+    Then, put the app function declaration and its corresponding Ext function definition into FunDeclToDefMap/FunDefToDeclsMap.
+    ------------------------------------------------------
+    AppDef -> ExtDef (overwrite):
+        For example,
+            App function:
+                char* foo(char *a, char *b){return a;}
+            Ext function:
+                __attribute__((annotate("OVERWRITE")))
+                char* foo(char *a, char *b){return b;}
+
+            When SVF handles the foo function in the App module,
+            the definition of
+                foo: char* foo(char *a, char *b){return a;}
+            will be changed to a declaration
+                foo: char* foo(char *a, char *b);
+            Then,
+                foo: char* foo(char *a, char *b);
+                and
+                __attribute__((annotate("OVERWRITE")))
+                char* foo(char *a, char *b){return b;}
+            will be put into FunDeclToDefMap
+    ------------------------------------------------------
+    ExtDef -> AppDef (overwrite):
+        __attribute__((annotate("OVERWRITE")))
+        char* foo(char *a, char *b){return b;}
+        and
+        foo: char* foo(char *a, char *b);
+        are put into FunDefToDeclsMap;
+    ------------------------------------------------------
+    In principle, all functions in extapi.c have bodies (definitions), but some functions (those starting with "sse_")
+    have only function declarations without definitions. ExtFuncsVec is used to record function declarations starting with "sse_" that are used.
+
+    ExtDecl -> ExtDecl:
+        For example,
+        App function:
+            foo(){call memcpy();}
+        Ext function:
+            declare sse_check_overflow();
+            memcpy(){sse_check_overflow();}
+
+        sse_check_overflow() used in the Ext function but not in the App function.
+        sse_check_overflow should be kept in ExtFuncsVec.
+*/
 void LLVMModuleSet::buildFunToFunMap()
 {
-    Set<const Function*> funDecls, funDefs;
+    Set<const Function*> funDecls, funDefs, extFuncs, overwriteExtFuncs;
     OrderedSet<string> declNames, defNames, intersectNames;
     typedef Map<string, const Function*> NameToFunDefMapTy;
     typedef Map<string, Set<const Function*>> NameToFunDeclsMapTy;
 
     for (Module& mod : modules)
     {
-        /// Function
-        for (const Function& fun : mod.functions())
+        // extapi.bc functions
+        if (mod.getName().str() == Options::ExtAPIInput())
         {
-            if (fun.isDeclaration())
+            for (const Function& fun : mod.functions())
             {
-                funDecls.insert(&fun);
-                declNames.insert(fun.getName().str());
+                extFuncs.insert(&fun);
+                // Find overwrite functions in extapi.bc
+                std::vector<std::string> annotations = LLVMUtil::getFunAnnotations(&fun);
+                auto it = std::find_if(annotations.begin(), annotations.end(), [&](const std::string& annotation)
+                {
+                    return annotation.find("OVERWRITE") != std::string::npos;
+                });
+                if (it != annotations.end())
+                {
+                    overwriteExtFuncs.insert(&fun);
+                }
             }
-            else
+        }
+        else
+        {
+            /// app functions
+            for (const Function& fun : mod.functions())
             {
-                funDefs.insert(&fun);
-                defNames.insert(fun.getName().str());
+                if (fun.isDeclaration())
+                {
+                    funDecls.insert(&fun);
+                    declNames.insert(fun.getName().str());
+                }
+                else
+                {
+                    funDefs.insert(&fun);
+                    defNames.insert(fun.getName().str());
+                }
             }
         }
     }
@@ -825,6 +888,57 @@ void LLVMModuleSet::buildFunToFunMap()
         for (const Function* decl : declsSet)
         {
             decls.push_back(decl);
+        }
+    }
+
+    /// App Func decl -> SVF extern Func def
+    for (const Function* fdecl : funDecls)
+    {
+        for (const Function* extfun : extFuncs)
+        {
+            std::string declName = fdecl->getName().str();
+            // Since C function names cannot include '.', change the function name from llvm.memcpy.p0i8.p0i8.i64 to llvm_memcpy_p0i8_p0i8_i64."
+            std::replace(declName.begin(), declName.end(), '.', '_');
+            if (extfun->getName().str().compare(declName) == 0)
+            {
+                // AppDecl -> ExtDef in Table 1
+                FunDeclToDefMap[fdecl] = extfun;
+                // ExtDef -> AppDecl in Table 1
+                std::vector<const Function*>& decls = FunDefToDeclsMap[extfun];
+                decls.push_back(fdecl);
+                // Keep all called functions in extfun
+                // ExtDecl -> ExtDecl in Table 1
+                ExtFuncsVec = LLVMUtil::getCalledFunctions(extfun);
+            }
+        }
+    }
+
+    /// Overwrite
+    /// App Func def -> SVF extern Func def
+    for (const Function* appfunc : funDefs)
+    {
+        for (const Function* owfunc : overwriteExtFuncs)
+        {
+            if (appfunc->getName().str().compare(owfunc->getName().str()) == 0)
+            {
+                Function* fun = const_cast<Function*>(appfunc);
+                Module* mod = fun->getParent();
+                FunctionType* funType = fun->getFunctionType();
+                std::string funName = fun->getName().str();
+                // Replace app function definition with declaration
+                Function* declaration = Function::Create(funType, GlobalValue::ExternalLinkage, funName, mod);
+                fun->replaceAllUsesWith(declaration);
+                fun->eraseFromParent();
+                declaration->setName(funName);
+                // AppDef -> ExtDef in Table 1, AppDef has been changed to AppDecl
+                FunDeclToDefMap[declaration] = owfunc;
+                // ExtDef -> AppDef in Table 1
+                std::vector<const Function*>& decls = FunDefToDeclsMap[owfunc];
+                decls.push_back(declaration);
+                // Keep all called functions in owfunc
+                // ExtDecl -> ExtDecl in Table 1
+                ExtFuncsVec = LLVMUtil::getCalledFunctions(owfunc);
+            }
         }
     }
 }

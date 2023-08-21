@@ -327,7 +327,7 @@ public:
     }
     //@}
 
-    /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
+    /// Due to constraint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
     NodeID getGepValVar(const SVFValue* curInst, NodeID base,
                         const AccessPath& ap) const;
 

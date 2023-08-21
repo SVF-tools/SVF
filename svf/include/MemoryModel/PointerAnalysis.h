@@ -76,7 +76,7 @@ public:
         VFS_WPA,		///< Versioned sparse flow-sensitive WPA
         FSCS_WPA,			///< Flow-, context- sensitive WPA
         CFLFICI_WPA,		///< Flow-, context-, insensitive CFL-reachability-based analysis
-        CFLFSCI_WPA,		///< Flow-insensitive, context-sensitive  CFL-reachability-based analysis
+        CFLFSCI_WPA,		///< Flow-insensitive, context-sensitive CFL-reachability-based analysis
         CFLFSCS_WPA,	///< Flow-, context-, CFL-reachability-based analysis
         TypeCPP_WPA, ///<  Type-based analysis for C++
 

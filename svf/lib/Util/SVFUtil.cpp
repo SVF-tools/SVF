@@ -176,7 +176,7 @@ void SVFUtil::reportMemoryUsageKB(const std::string& infor, OutStream & O)
  */
 bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
 {
-    /* Get the the current process' status file from the proc filesystem */
+    /* Get the current process' status file from the proc filesystem */
     char buffer[8192];
     FILE* procfile = fopen("/proc/self/status", "r");
     if(procfile)
@@ -314,7 +314,7 @@ void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 
 /// Match arguments for callsite at caller and callee
 /// if the arg size does not match then we do not need to connect this parameter
-/// unless the callee is a variadic function (the first parameter of variadic function is its paramter number)
+/// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
 /// e.g., void variadicFoo(int num, ...); variadicFoo(5, 1,2,3,4,5)
 /// for variadic function, callsite arg size must be greater than or equal to callee arg size
 bool SVFUtil::matchArgs(const SVFInstruction* cs, const SVFFunction* callee)

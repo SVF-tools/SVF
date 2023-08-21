@@ -34,7 +34,6 @@
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVFIR/SVFValue.h"
-#include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
 
 namespace SVF
@@ -372,6 +371,20 @@ const std::string getSourceLocOfFunction(const Function* F);
 
 bool isIntrinsicInst(const Instruction* inst);
 bool isIntrinsicFun(const Function* func);
+
+/// Get all called funcions in a parent function
+std::vector<const Function *> getCalledFunctions(const Function *F);
+std::vector<std::string> getFunAnnotations(const Function* fun);
+void removeFunAnnotations(std::vector<Function*>& removedFuncList);
+
+inline void removeUnusedFuncsAndAnnotations(std::vector<Function*> removedFuncList)
+{
+    /// Remove unused function annotations in extapi.bc
+    LLVMUtil::removeFunAnnotations(removedFuncList);
+    /// Remove unused function in extapi.bc
+    for (Function* func : removedFuncList)
+        func->eraseFromParent();
+}
 
 /// Get the corresponding Function based on its name
 inline const SVFFunction* getFunction(const std::string& name)

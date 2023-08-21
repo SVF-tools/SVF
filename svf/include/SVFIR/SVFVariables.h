@@ -56,8 +56,8 @@ public:
     /// ObjNode: memory object
     /// RetNode: unique return node
     /// Vararg: unique node for vararg parameter
-    /// GepValNode: tempory gep value node for field sensitivity
-    /// GepValNode: tempory gep obj node for field sensitivity
+    /// GepValNode: temporary gep value node for field sensitivity
+    /// GepValNode: temporary gep obj node for field sensitivity
     /// FIObjNode: for field insensitive analysis
     /// DummyValNode and DummyObjNode: for non-llvm-value node
     enum PNODEK
@@ -122,7 +122,7 @@ public:
     /// or llvm's metadata, i.e., metadata !4087
     bool isConstDataOrAggDataButNotNullPtr() const;
 
-    /// Whether this is an isoloated node on the SVFIR graph
+    /// Whether this is an isolated node on the SVFIR graph
     bool isIsolatedNode() const;
 
     /// Get name of the LLVM value

@@ -214,7 +214,7 @@ const Option<bool> Options::OCGDotGraph(
 // Program Assignment Graph for pointer analysis (SVFIR.cpp)
 Option<bool> Options::HandBlackHole(
     "blk",
-    "Hanle blackhole edge",
+    "Handle blackhole edge",
     false
 );
 
@@ -461,12 +461,12 @@ const Option<std::string> Options::MSSAFun(
 
 const OptionMap<MemSSA::MemPartition> Options::MemPar(
     "mem-par",
-    "Memory region partiion strategies (e.g., for SVFG construction)",
+    "Memory region partition strategies (e.g., for SVFG construction)",
     MemSSA::MemPartition::IntraDisjoint,
 {
     {MemSSA::MemPartition::Distinct, "distinct", "memory region per each object"},
-    {MemSSA::MemPartition::IntraDisjoint, "intra-disjoint", "memory regions partioned based on each function"},
-    {MemSSA::MemPartition::InterDisjoint, "inter-disjoint", "memory regions partioned across functions"},
+    {MemSSA::MemPartition::IntraDisjoint, "intra-disjoint", "memory regions partitioned based on each function"},
+    {MemSSA::MemPartition::InterDisjoint, "inter-disjoint", "memory regions partitioned across functions"},
 }
 );
 
@@ -505,7 +505,7 @@ const Option<bool> Options::UsePCG(
 
 const Option<bool> Options::IntraLock(
     "intra-lock-td-edge",
-    "Use simple intra-procedual lock for adding SVFG edges",
+    "Use simple intra-procedural lock for adding SVFG edges",
     true
 );
 
@@ -772,7 +772,7 @@ const Option<bool> Options::VtableInSVFIR(
 
 //WPAPass.cpp
 const Option<std::string> Options::ExtAPIInput(
-    "extapi", "External API ext.bc", ""
+    "extapi", "External API extapi.bc", std::string(EXTAPI_PATH) + "/extapi.bc"
 );
 
 const Option<bool> Options::AnderSVFG(
@@ -798,7 +798,7 @@ OptionMultiple<PointerAnalysis::PTATY> Options::PASelected(
 {
     {PointerAnalysis::Andersen_WPA, "nander", "Standard inclusion-based analysis"},
     {PointerAnalysis::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"},
-    {PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation includion-based analysis"},
+    {PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation inclusion-based analysis"},
     {PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"},
     {PointerAnalysis::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"},
     // Disabled till further work is done.
@@ -867,7 +867,7 @@ const Option<bool> Options::POCRAlias(
 
 const Option<bool> Options::POCRHybrid(
     "pocr-hybrid",
-    "When explicit to true, POCRHybridSolver transfer CFL graph to internal hybird graph representation.",
+    "When explicit to true, POCRHybridSolver transfer CFL graph to internal hybrid graph representation.",
     false
 );
 

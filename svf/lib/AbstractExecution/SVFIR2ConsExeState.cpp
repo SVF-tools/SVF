@@ -688,7 +688,7 @@ void SVFIR2ConsExeState::initValVar(const ValVar *valVar, u32_t varId)
 
     if (const SVFType *type = valVar->getType())
     {
-        // TODO:miss floatpointerty, voidty, labelty, matadataty
+        // TODO:miss floatpointerty, voidty, labelty, metadataty
         if (type->getKind() == SVFType::SVFIntegerTy ||
                 type->getKind() == SVFType::SVFPointerTy ||
                 type->getKind() == SVFType::SVFFunctionTy ||

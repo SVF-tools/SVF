@@ -68,7 +68,7 @@ AndersenBase::~AndersenBase()
 }
 
 /*!
- * Initilize analysis
+ * Initialize analysis
  */
 void AndersenBase::initialize()
 {
@@ -99,32 +99,32 @@ void AndersenBase::finalize()
 
 void AndersenBase::solveConstraints()
 {
-     // Start solving constraints
-        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
+    // Start solving constraints
+    DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
-        bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
+    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
 
-        initWorklist();
-        do
-        {
-            numOfIteration++;
-            if (0 == numOfIteration % iterationForPrintStat)
-                printStat();
+    initWorklist();
+    do
+    {
+        numOfIteration++;
+        if (0 == numOfIteration % iterationForPrintStat)
+            printStat();
 
-            reanalyze = false;
+        reanalyze = false;
 
-            solveWorklist();
+        solveWorklist();
 
-            if (updateCallGraph(getIndirectCallsites()))
-                reanalyze = true;
+        if (updateCallGraph(getIndirectCallsites()))
+            reanalyze = true;
 
-        }
-        while (reanalyze);
+    }
+    while (reanalyze);
 
-        // Analysis is finished, reset the alarm if we set it.
-        SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
+    // Analysis is finished, reset the alarm if we set it.
+    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
-        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+    DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 }
 
 /*!
@@ -136,13 +136,16 @@ void AndersenBase::analyze()
     {
         readPtsFromFile(Options::ReadAnder());
     }
-    else{
+    else
+    {
         if(Options::WriteAnder().empty())
         {
             initialize();
             solveConstraints();
             finalize();
-        }else{
+        }
+        else
+        {
             solveAndwritePtsToFile(Options::WriteAnder());
         }
     }
@@ -206,7 +209,7 @@ void AndersenBase::normalizePointsTo()
 }
 
 /*!
- * Initilize analysis
+ * Initialize analysis
  */
 void Andersen::initialize()
 {
@@ -347,7 +350,7 @@ bool Andersen::processLoad(NodeID node, const ConstraintEdge* load)
 {
     /// TODO: New copy edges are also added for black hole obj node to
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
-    ///       Try to handle black hole obj in an appropiate way.
+    ///       Try to handle black hole obj in an appropriate way.
 //	if (pag->isBlkObjOrConstantObj(node) || isNonPointerObj(node))
     if (pag->isConstantObj(node) || isNonPointerObj(node))
         return false;
@@ -367,7 +370,7 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store)
 {
     /// TODO: New copy edges are also added for black hole obj node to
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
-    ///       Try to handle black hole obj in an appropiate way
+    ///       Try to handle black hole obj in an appropriate way
 //	if (pag->isBlkObjOrConstantObj(node) || isNonPointerObj(node))
     if (pag->isConstantObj(node) || isNonPointerObj(node))
         return false;
@@ -478,7 +481,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
  */
 inline void Andersen::collapsePWCNode(NodeID nodeId)
 {
-    // If a node is a PWC node, collapse all its points-to tarsget.
+    // If a node is a PWC node, collapse all its points-to target.
     // collapseNodePts() may change the points-to set of the nodes which have been processed
     // before, in this case, we may need to re-do the analysis.
     if (consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
@@ -861,7 +864,7 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
 
 void Andersen::cluster(void) const
 {
-    assert(Options::MaxFieldLimit() == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insesnsitive analysis");
+    assert(Options::MaxFieldLimit() == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insensitive analysis");
     Steensgaard *steens = Steensgaard::createSteensgaard(pag);
     std::vector<std::pair<unsigned, unsigned>> keys;
     for (SVFIR::iterator pit = pag->begin(); pit != pag->end(); ++pit)
