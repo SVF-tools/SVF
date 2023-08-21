@@ -168,7 +168,8 @@ void LLVMModuleSet::createSVFDataStructure()
             {
                 candidateDecls.push_back(&func);
             }
-            else {
+            else
+            {
                 candidateDefs.push_back(&func);
             }
         }
@@ -817,7 +818,8 @@ void LLVMModuleSet::buildFunToFunMap()
                 {
                     overwriteExtFuncs.insert(&fun);
                 }
-                if (fun.getName().str() == "main") {
+                if (fun.getName().str() == "main")
+                {
                     main_ext = &fun;
                 }
             }
@@ -837,7 +839,8 @@ void LLVMModuleSet::buildFunToFunMap()
                     funDefs.insert(&fun);
                     defNames.insert(fun.getName().str());
                 }
-                if (fun.getName().str() == "main") {
+                if (fun.getName().str() == "main")
+                {
                     main_app = &fun;
                 }
             }
