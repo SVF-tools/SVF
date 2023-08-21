@@ -237,6 +237,22 @@ void BVDataPTAImpl::writeToFile(const string& filename)
 
     f << "------\n";
 
+    //write gepObjVarMap to file(in form of: baseID offset gepObjNodeId)
+    SVFIR::NodeOffsetMap &gepObjVarMap = pag->getGepObjNodeMap();
+    for(SVFIR::NodeOffsetMap::const_iterator it = gepObjVarMap.begin(), eit = gepObjVarMap.end(); it != eit; it++)
+    {
+        const SVFIR::NodeOffset offsetPair = it -> first;    
+        //write the base id to file
+        f << offsetPair.first << " ";
+        //write the offset to file
+        f << offsetPair.second << " ";
+        //write the gepObjNodeId to file
+        f << it->second << "\n";
+    }
+
+    f << "------\n";
+
+
     // Write GepPAGNodes to file
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
     {
@@ -354,6 +370,25 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     // map the variable ID to its pointer set
     for (auto t: nodePtsMap)
         ptD->unionPts(t.first, strPtsMap[t.second]);
+
+    SVFIR::NodeOffsetMap &gepObjVarMap = pag->getGepObjNodeMap();
+    while (F.good())
+    {
+        getline(F, line);
+        if (line == "------")     break;
+        // Parse a single line in the form of "ID baseNodeID offset"
+        istringstream ss(line);
+        NodeID base;
+        size_t offset;
+        NodeID id;
+        ss >> base >> offset >>id;
+        SVFIR::NodeOffsetMap::const_iterator iter = gepObjVarMap.find(std::make_pair(base, offset));
+        if (iter == gepObjVarMap.end())
+        {
+            pag->readGepObjNodeFromFile(base, offset, id);
+        }
+        
+    }
 
     // Read BaseNode insensitivity
     while (F.good())

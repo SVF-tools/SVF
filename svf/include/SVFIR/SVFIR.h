@@ -392,6 +392,7 @@ public:
     }
     //@}
 
+    void readGepObjNodeFromFile(const NodeID& base, const APOffset& apOffset, const NodeID id);
     /// Get a field SVFIR Object node according to base mem obj and offset
     NodeID getGepObjVar(const MemObj* obj, const APOffset& ap);
     /// Get a field obj SVFIR node according to a mem obj and a given offset

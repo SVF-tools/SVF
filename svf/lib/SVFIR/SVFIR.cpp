@@ -457,6 +457,25 @@ NodeID SVFIR::addGepObjNode(const MemObj* obj, const APOffset& apOffset)
     return addObjNode(obj->getValue(), node, gepId);
 }
 
+void SVFIR::readGepObjNodeFromFile(const NodeID& base, const APOffset& apOffset, const NodeID gepId)
+{
+    SVFVar* node = pag->getGNode(base);
+    assert(0==GepObjVarMap.count(std::make_pair(base, apOffset))
+           && "this node should not be created before");
+    GepObjVarMap[std::make_pair(base, apOffset)] = gepId;
+    NodeIDAllocator::get()->updateNumObjAndNodes();
+    memToFieldsMap[base].set(gepId);
+    const MemObj* obj;
+    if (GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
+        obj = gepNode->getMemObj();
+    else if (FIObjVar* baseNode = SVFUtil::dyn_cast<FIObjVar>(node))
+        obj = baseNode->getMemObj();
+    if (DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
+        obj = baseNode->getMemObj();
+    GepObjVar *gepNode = new GepObjVar(obj, gepId, apOffset);
+    addObjNode(obj->getValue(), gepNode, gepId);
+}
+
 /*!
  * Add a field-insensitive node, this method can only invoked by getFIGepObjNode
  */

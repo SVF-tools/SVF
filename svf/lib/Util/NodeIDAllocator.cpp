@@ -84,6 +84,12 @@ NodeID NodeIDAllocator::allocateObjectId(void)
     return id;
 }
 
+void NodeIDAllocator::updateNumObjAndNodes()
+{
+    ++numObjects;
+    ++numNodes;
+}
+
 NodeID NodeIDAllocator::allocateGepObjectId(NodeID base, u32_t offset, u32_t maxFieldLimit)
 {
     NodeID id = 0;
