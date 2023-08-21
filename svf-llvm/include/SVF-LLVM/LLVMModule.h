@@ -34,6 +34,7 @@
 #include "Util/CppUtil.h"
 #include "SVFIR/SVFValue.h"
 #include "SVFIR/SVFModule.h"
+#include "Util/Options.h"
 
 namespace SVF
 {
@@ -74,6 +75,8 @@ private:
     FunDeclToDefMapTy FunDeclToDefMap;
     /// Function definition to function declaration map
     FunDefToDeclsMapTy FunDefToDeclsMap;
+    /// Record some "sse_" function declarations used in other ext function definition, e.g., svf_ext_foo(), and svf_ext_foo() used in app functions
+    FunctionSetType ExtFuncsVec;
     /// Global definition to a rep definition map
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
@@ -232,6 +235,20 @@ public:
     SVFConstant* getOtherSVFConstant(const Constant* oc);
 
     SVFOtherValue* getSVFOtherValue(const Value* ov);
+
+    /// Remove unused function in extapi.bc module
+    bool isUsedExtFunction(Function* func)
+    {
+        /// if this function func defined in extapi.bc but never used in application code (without any corresponding declared functions).
+        if (func->getParent()->getName().str() == Options::ExtAPIInput()
+                && func->getName().str() != "svf__main"
+                && FunDefToDeclsMap.find(func) == FunDefToDeclsMap.end()
+                && std::find(ExtFuncsVec.begin(), ExtFuncsVec.end(), func) == ExtFuncsVec.end())
+        {
+            return true;
+        }
+        return false;
+    }
 
     /// Get the corresponding Function based on its name
     inline const SVFFunction* getSVFFunction(const std::string& name)

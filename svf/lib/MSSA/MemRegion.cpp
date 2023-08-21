@@ -520,7 +520,7 @@ void MRGenerator::collectCallSitePts(const CallICFGNode* cs)
 
 
 /*!
- * Recurisively collect all points-to of the whole struct fields
+ * Recursively collect all points-to of the whole struct fields
  */
 NodeBS& MRGenerator::CollectPtsChain(NodeID id)
 {

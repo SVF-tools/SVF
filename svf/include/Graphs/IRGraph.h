@@ -62,7 +62,7 @@ protected:
     bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
     NodeID nodeNumAfterPAGBuild; ///< initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
     u32_t totalPTAPAGEdge;
-    ValueToEdgeMap valueToEdgeMap; ///< Map llvm::Values to all corresponding PAGEdges
+    ValueToEdgeMap valueToEdgeMap; ///< Map SVFValues (e.g., SVFInstruction) to all corresponding PAGEdges
     SymbolTableInfo* symInfo;
 
     /// Add a node into the graph
@@ -233,7 +233,7 @@ namespace SVF
 
 /* !
  * GenericGraphTraits specializations of SVFIR to be used for the generic graph algorithms.
- * Provide graph traits for tranversing from a SVFIR node using standard graph traversals.
+ * Provide graph traits for traversing from a SVFIR node using standard graph traversals.
  */
 template<> struct GenericGraphTraits<SVF::SVFVar*> : public GenericGraphTraits<SVF::GenericNode<SVF::SVFVar,SVF::SVFStmt>*  >
 {

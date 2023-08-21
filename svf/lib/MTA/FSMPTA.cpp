@@ -499,7 +499,7 @@ void MTASVFGBuilder::handleStoreLoad(const StmtSVFGNode* n1,const StmtSVFGNode* 
     /// Lock
     /// todo: we only consider all cxtstmt of one instruction in one lock span,
     /// otherwise we think this instruction is not locked
-    /// This constrait is too strong. All cxt lock under different cxt cannot be identified.
+    /// This constraint is too strong. All cxt lock under different cxt cannot be identified.
 
 
     if (ADDEDGE_NOLOCK!=Options::AddModelFlag() && lockana->isProtectedByCommonLock(i1, i2))

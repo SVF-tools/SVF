@@ -313,7 +313,7 @@ protected:
     {
         return _curSlice->isPartialReachable();
     }
-    /// Dump SVFG with annotated slice informaiton
+    /// Dump SVFG with annotated slice information
     //@{
     void dumpSlices();
     void annotateSlice(ProgSlice* slice);

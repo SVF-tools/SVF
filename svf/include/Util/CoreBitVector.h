@@ -102,11 +102,11 @@ public:
     /// Returns true if CBV changed.
     bool operator-=(const CoreBitVector &rhs);
 
-    /// Put intersection of this CBV with complemenet of rhs into this CBV.
+    /// Put intersection of this CBV with complement of rhs into this CBV.
     /// Returns true if this CBV changed.
     bool intersectWithComplement(const CoreBitVector &rhs);
 
-    /// Put intersection of lhs with complemenet of rhs into this CBV.
+    /// Put intersection of lhs with complement of rhs into this CBV.
     void intersectWithComplement(const CoreBitVector &lhs, const CoreBitVector &rhs);
 
     /// Hash for this CBV.

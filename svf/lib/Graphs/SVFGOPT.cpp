@@ -340,7 +340,7 @@ bool SVFGOPT::canBeRemoved(const SVFGNode * node)
              FormalOUTSVFGNode, MSSAPHISVFGNode>(node))
     {
         /// Now each SVFG edge can only be associated with one call site id,
-        /// so if this node has both incoming call/ret and outgoting call/ret
+        /// so if this node has both incoming call/ret and outgoing call/ret
         /// edges, we don't remove this node.
         if (isConnectingTwoCallSites(node))
             return false;
@@ -438,7 +438,7 @@ void SVFGOPT::handleIntraValueFlow()
 /// 1. keepAllSelfCycle = TRUE: all self cycle edges are kept;
 /// 2. keepContextSelfCycle = TRUE: all self cycle edges related-to context are kept;
 /// 3. Otherwise, all self cycle edges are NOT kept.
-/// Return TRUE if some self cycle edges remaine in this node.
+/// Return TRUE if some self cycle edges remain in this node.
 bool SVFGOPT::checkSelfCycleEdges(const MSSAPHISVFGNode* node)
 {
     bool hasSelfCycle = false;

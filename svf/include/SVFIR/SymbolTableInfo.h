@@ -200,7 +200,7 @@ public:
         return BlackHole;
     }
 
-    /// Can only be invoked by SVFIR::addDummyNode() when creaing SVFIR from file.
+    /// Can only be invoked by SVFIR::addDummyNode() when creating SVFIR from file.
     const MemObj* createDummyObj(SymID symId, const SVFType* type);
     // @}
 
@@ -312,9 +312,9 @@ public:
     }
 
     ///Get a reference to the components of struct_info.
-    /// Number of flattenned elements of an array or struct
+    /// Number of flattened elements of an array or struct
     u32_t getNumOfFlattenElements(const SVFType* T);
-    /// Flatterned element idx of an array or struct by considering stride
+    /// Flattened element idx of an array or struct by considering stride
     u32_t getFlattenedElemIdx(const SVFType* T, u32_t origId);
     /// Return the type of a flattened element given a flattened index
     const SVFType* getFlatternedElemType(const SVFType* baseType, u32_t flatten_idx);

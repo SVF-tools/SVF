@@ -147,9 +147,9 @@ private:
     /// stride represents the number of repetitive elements if this StInfo
     /// represent an ArrayType. stride is 1 by default.
     u32_t stride;
-    /// number of elements after flattenning (including array elements)
+    /// number of elements after flattening (including array elements)
     u32_t numOfFlattenElements;
-    /// number of fields after flattenning (ignoring array elements)
+    /// number of fields after flattening (ignoring array elements)
     u32_t numOfFlattenFields;
     /// Type vector of fields
     std::vector<const SVFType*> flattenElementTypes;
@@ -214,20 +214,20 @@ public:
     /// Add field index and element index and their corresponding type
     void addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx);
 
-    /// Set number of fields and elements of an aggrate
+    /// Set number of fields and elements of an aggregate
     inline void setNumOfFieldsAndElems(u32_t nf, u32_t ne)
     {
         numOfFlattenFields = nf;
         numOfFlattenElements = ne;
     }
 
-    /// Return number of elements after flattenning (including array elements)
+    /// Return number of elements after flattening (including array elements)
     inline u32_t getNumOfFlattenElements() const
     {
         return numOfFlattenElements;
     }
 
-    /// Return the number of fields after flattenning (ignoring array elements)
+    /// Return the number of fields after flattening (ignoring array elements)
     inline u32_t getNumOfFlattenFields() const
     {
         return numOfFlattenFields;

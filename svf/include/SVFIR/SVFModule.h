@@ -31,7 +31,6 @@
 #define INCLUDE_SVFMODULE_H_
 
 #include "SVFIR/SVFValue.h"
-#include "Util/ExtAPI.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/ThreadAPI.h"
 

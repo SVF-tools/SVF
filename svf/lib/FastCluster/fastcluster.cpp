@@ -1,5 +1,5 @@
 //
-// C++ standalone verion of fastcluster by Daniel Müllner
+// C++ standalone version of fastcluster by Daniel Müllner
 //
 // Copyright: Christoph Dalitz, 2020
 //            Daniel Müllner, 2011
@@ -145,7 +145,7 @@ void cutree_cdist(int n, const int* merge, double* height, double cdist, int* la
 // Output arguments:
 //   merge   = allocated (n-1)x2 matrix (2*(n-1) array) for storing result.
 //             Result follows R hclust convention:
-//              - observabe indices start with one
+//              - observable indices start with one
 //              - merge[i][] contains the merged nodes in step i
 //              - merge[i][j] is negative when the node is an atom
 //   height  = allocated (n-1) array with distances at each merge step
@@ -156,7 +156,7 @@ void cutree_cdist(int n, const int* merge, double* height, double cdist, int* la
 int hclust_fast(int n, double* distmat, int method, int* merge, double* height)
 {
 
-    // call appropriate culstering function
+    // call appropriate clustering function
     cluster_result Z2(n-1);
     if (method == HCLUST_METHOD_SINGLE)
     {

@@ -202,7 +202,7 @@ inline CallSite getSVFCallSite(const SVFInstruction* inst)
 
 /// Match arguments for callsite at caller and callee
 /// if the arg size does not match then we do not need to connect this parameter
-/// unless the callee is a variadic function (the first parameter of variadic function is its paramter number)
+/// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
 bool matchArgs(const SVFInstruction* cs, const SVFFunction* callee);
 
 /// Return LLVM callsite given a value
@@ -304,17 +304,21 @@ bool startAnalysisLimitTimer(unsigned timeLimit);
 void stopAnalysisLimitTimer(bool limitTimerSet);
 
 /// Return true if the call is an external call (external library in function summary table)
-/// If the libary function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
+/// If the library function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
 //@{
 inline bool isExtCall(const SVFFunction* fun)
 {
     return fun && ExtAPI::getExtAPI()->is_ext(fun);
 }
 
-// Return true if extern function contains memset_like or memcpy_like operations
-inline bool isMemSetOrCpyExtFun(const SVFFunction* fun)
+inline bool isMemcpyExtFun(const SVFFunction* fun)
 {
-    return fun && ExtAPI::getExtAPI()->is_memset_or_memcpy(fun);
+    return fun && ExtAPI::getExtAPI()->is_memcpy(fun);
+}
+
+inline bool isMemsetExtFun(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_memset(fun);
 }
 
 /// Return true if the call is a heap allocator/reallocator
@@ -344,14 +348,6 @@ inline int getHeapAllocHoldingArgPosition(const SVFFunction* fun)
 inline bool isReallocExtFun(const SVFFunction* fun)
 {
     return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
-}
-
-/// Return true if the call is a heap dealloc or not
-//@{
-/// note that this function is not suppose to be used externally
-inline bool isDeallocExtFun(const SVFFunction* fun)
-{
-    return fun && (ExtAPI::getExtAPI()->is_dealloc(fun));
 }
 
 /// Return true if the call is a static global call
@@ -498,17 +494,6 @@ inline bool isReallocExtCall(const SVFInstruction *inst)
 }
 //@}
 
-inline bool isDeallocExtCall(const CallSite cs)
-{
-    return isDeallocExtFun(getCallee(cs));
-}
-
-inline bool isDeallocExtCall(const SVFInstruction *inst)
-{
-    return isDeallocExtFun(getCallee(inst));
-}
-//@}
-
 inline bool isStaticExtCall(const CallSite cs)
 {
     bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
@@ -643,7 +628,7 @@ inline const SVFValue* getTaskFuncAtHareParForSite(const SVFInstruction *inst)
 }
 //@}
 
-/// Return the task data argument of the parallel_for rountine
+/// Return the task data argument of the parallel_for routine
 //@{
 inline const SVFValue* getTaskDataAtHareParForSite(const CallSite cs)
 {
@@ -672,7 +657,7 @@ move(T &&t) noexcept
     return std::move(t);
 }
 
-/// void_t is not avaiable until C++17. We define it here for C++11/14.
+/// void_t is not available until C++17. We define it here for C++11/14.
 template <typename... Ts> struct make_void
 {
     typedef void type;

@@ -222,7 +222,7 @@ BreakConstantGEPs::runOnModule (Module & module)
                 {
                     //
                     // For other instructions, we want to insert instructions replacing
-                    // constant expressions immediently before the instruction using the
+                    // constant expressions immediately before the instruction using the
                     // constant expression.
                     //
                     if (ConstantExpr * CE = hasConstantGEP (I->getOperand(index)))

@@ -89,7 +89,7 @@ public:
     }
 
     // non-standard operators, these may not need be bridged but seems it's
-    // predunt to do so...
+    // prudent to do so...
     Type* operator->() const
     {
         return operator*();

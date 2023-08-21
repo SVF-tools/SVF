@@ -1,4 +1,4 @@
-//===----- CFLGrammar.cpp -- Context-free grammar --------------------------//
+//===----- CFGrammar.cpp -- Context-free grammar --------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,13 +21,13 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CFLGrammar.cpp
+ * CFGrammar.cpp
  *
  *  Created on: March 5, 2022
  *      Author: Yulei Sui
  */
 
-#include "CFL/CFLGrammar.h"
+#include "CFL/CFGrammar.h"
 #include "Util/SVFUtil.h"
 #include <string>
 #include <iostream>
@@ -333,22 +333,22 @@ void GrammarBase::insertAttribute(Kind kind, Attribute attribute)
     }
     else
     {
-        Set<CFLGrammar::Attribute> attrs {attribute};
+        Set<CFGrammar::Attribute> attrs {attribute};
         kindToAttrsMap.insert(make_pair(kind, attrs));
     }
 }
 
-CFLGrammar::CFLGrammar()
+CFGrammar::CFGrammar()
 {
     newTerminalSubscript = 0;
 }
 
-void CFLGrammar::dump() const
+void CFGrammar::dump() const
 {
     dump("Normailized_Grammar.txt");
 }
 
-void CFLGrammar::dump(std::string fileName) const
+void CFGrammar::dump(std::string fileName) const
 {
     std::ofstream gramFile(fileName);
     gramFile << "Start Kind:\n";

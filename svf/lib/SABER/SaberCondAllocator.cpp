@@ -466,7 +466,7 @@ SaberCondAllocator::getPHIComplementCond(const SVFBasicBlock* BB1, const SVFBasi
 {
     assert(BB1 && BB2 && "expect nullptr BB here!");
 
-    /// avoid both BB0 and BB1 dominate BB2 (e.g., while loop), then BB2 is not necessaryly a complement BB
+    /// avoid both BB0 and BB1 dominate BB2 (e.g., while loop), then BB2 is not necessarily a complement BB
     if (dominate(BB1, BB2) && ! dominate(BB0, BB2))
     {
         Condition cond = ComputeIntraVFGGuard(BB1, BB2);

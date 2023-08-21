@@ -298,7 +298,7 @@ StoreCGEdge* ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
  *
  * (1) Remove edge from old dst target,
  * (2) Change edge dst id and
- * (3) Add modifed edge into new dst
+ * (3) Add modified edge into new dst
  */
 void ConstraintGraph::reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* newDstNode)
 {

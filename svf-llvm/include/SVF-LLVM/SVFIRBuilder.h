@@ -31,10 +31,10 @@
 #define PAGBUILDER_H_
 
 #include "SVFIR/SVFIR.h"
-#include "Util/ExtAPI.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/ICFGBuilder.h"
 #include "SVF-LLVM/LLVMModule.h"
+#include "SVF-LLVM/LLVMUtil.h"
 
 namespace SVF
 {
@@ -232,18 +232,9 @@ protected:
 
     /// Handle external call
     //@{
-    virtual SVFCallInst* addSVFExtCallInst(const SVFCallInst* svfInst, SVFBasicBlock* svfBB, const SVFFunction* svfCaller, const SVFFunction* svfCallee);
-    virtual void addSVFExtRetInst(SVFCallInst* svfCall, SVFBasicBlock* svfBB, SVFFunction* svfCaller);
-    virtual SVFInstruction* addSVFExtInst(const std::string& instName, const SVFCallInst* svfInst, SVFBasicBlock* svfBB, SVF::ExtAPI::OperationType opType, const SVFType* svfType);
-    virtual void extFuncAtomaticOperation(ExtAPI::Operand& atomicOp, const SVFCallInst* svfInst);
-    virtual SVFBasicBlock* extFuncInitialization(const SVFCallInst* svfInst, SVFFunction* svfCaller);
-    virtual void handleExtCallStat(ExtAPI::ExtFunctionOps &extFunctionOps, const SVFCallInst* svfInst);
-    virtual NodeID getExtID(ExtAPI::OperationType operationType, const std::string &s, const SVFCallInst* svfCall);
-    virtual void parseAtomaticOp(SVF::ExtAPI::Operand &atomaticOp, const SVFCallInst* svfCall, std::map<std::string, NodeID> &nodeIDMap);
-    virtual void parseExtFunctionOps(ExtAPI::ExtFunctionOps &extFunctionOps, const SVFCallInst* svfCall);
-    virtual void preProcessExtCall(CallBase* cs);
-    virtual void handleExtCall(const SVFInstruction* svfInst, const SVFFunction* svfCallee);
-    void addComplexConsForExt(const SVFValue* D, const SVFValue* S, const SVFValue* sz);
+    virtual const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<AccessPath> &fields, const Value* szValue);
+    virtual void addComplexConsForExt(Value *D, Value *S, const Value* sz);
+    virtual void handleExtCall(const CallBase* cs, const SVFFunction* svfCallee);
     //@}
 
     /// Set current basic block in order to keep track of control flow information
@@ -287,7 +278,7 @@ protected:
         return nullPtr;
     }
 
-    NodeID getGepValVar(const SVFValue* val, const AccessPath& ap, const SVFType* baseType);
+    NodeID getGepValVar(const Value* val, const AccessPath& ap, const SVFType* elementType);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 

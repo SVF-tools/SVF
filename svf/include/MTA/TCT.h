@@ -193,7 +193,7 @@ public:
     {
         return getGNode(id);
     }
-    /// Whether we have aleady created this call graph edge
+    /// Whether we have already created this call graph edge
     TCTEdge* hasGraphEdge(TCTNode* src, TCTNode* dst, TCTEdge::CEDGEK kind) const;
     /// Get call graph edge via nodes
     TCTEdge* getGraphEdge(TCTNode* src, TCTNode* dst, TCTEdge::CEDGEK kind);

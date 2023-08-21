@@ -586,7 +586,7 @@ private:
     }
 
     /** The following 2 functions are intended to convert SparseBitVectors
-     * to JSON. But they're buggy. Commentting them out would enable the
+     * to JSON. But they're buggy. Commenting them out would enable the
      * toJson(T) where is_iterable_v<T> is true. But that implementation is less
      * space-efficient if the bitvector contains many elements.
      * It is observed that upon construction, SVF IR bitvectors contain at most
@@ -1147,7 +1147,7 @@ private:
         if (!basePtr)
             return; // ptr is nullptr when read
         ptr = SVFUtil::dyn_cast<T>(basePtr);
-        ABORT_IFNOT(ptr, "Cast: " << obj->string << " shoudn't have kind "
+        ABORT_IFNOT(ptr, "Cast: " << obj->string << " shouldn't have kind "
                     << KindBaseHelper<T>::getKind(ptr));
     }
 
@@ -1201,7 +1201,7 @@ private:
     std::enable_if_t<SVFUtil::is_map_v<C>> readJson(const cJSON* obj, C& map)
     {
         assert(map.empty() && "map should be empty");
-        ABORT_IFNOT(jsonIsMap(obj), "expects an map (represted by array)");
+        ABORT_IFNOT(jsonIsMap(obj), "expects an map (represented by array)");
         jsonForEach(elemJson, obj)
         {
             auto jpair = jsonUnpackPair(elemJson);

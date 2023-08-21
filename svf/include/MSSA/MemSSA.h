@@ -124,7 +124,7 @@ protected:
 
     /// Create mu chi for candidate regions in a function
     virtual void createMUCHI(const SVFFunction& fun);
-    /// Insert phi for candidate regions in a fucntion
+    /// Insert phi for candidate regions in a function
     virtual void insertPHI(const SVFFunction& fun);
     /// SSA rename for a function
     virtual void SSARename(const SVFFunction& fun);

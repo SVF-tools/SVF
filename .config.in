@@ -2,5 +2,6 @@
 #define CONFIG_H_IN
 
 #define PROJECT_PATH "@CMAKE_CURRENT_SOURCE_DIR@"
+#define EXTAPI_PATH PROJECT_PATH "/@CMAKE_BUILD_TYPE@-build/svf-llvm"
 
 #endif

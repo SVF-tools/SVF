@@ -26,7 +26,7 @@ const SVFType* StInfo::getOriginalElemType(u32_t fldIdx) const
 
 const SVFLoopAndDomInfo::LoopBBs& SVFLoopAndDomInfo::getLoopInfo(const SVFBasicBlock* bb) const
 {
-    assert(hasLoopInfo(bb) && "loopinfo does not exit (bb not in a loop)");
+    assert(hasLoopInfo(bb) && "loopinfo does not exist (bb not in a loop)");
     Map<const SVFBasicBlock*, LoopBBs>::const_iterator mapIter = bb2LoopMap.find(bb);
     return mapIter->second;
 }
@@ -124,10 +124,10 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
 
 SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
                          bool declare, bool intrinsic, bool adt, bool varg,
-                         SVFLoopAndDomInfo* ld)
+                         SVFLoopAndDomInfo* ld, std::vector<std::string> annos)
     : SVFValue(ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
       addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
-      funcType(ft), loopAndDom(ld), realDefFun(nullptr)
+      funcType(ft), loopAndDom(ld), realDefFun(nullptr), annotations(std::move(annos))
 {
 }
 
@@ -179,7 +179,7 @@ u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ)
             return i;
         i++;
     }
-    assert(false && "Didn't find succesor edge?");
+    assert(false && "Didn't find successor edge?");
     return 0;
 }
 
@@ -192,7 +192,7 @@ u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ) const
             return i;
         i++;
     }
-    assert(false && "Didn't find succesor edge?");
+    assert(false && "Didn't find successor edge?");
     return 0;
 }
 

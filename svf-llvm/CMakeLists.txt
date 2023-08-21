@@ -45,7 +45,7 @@ else()
   set(IN_SOURCE_BUILD 1)
 endif()
 
-# SVF-LLVM containes LLVM Libs
+# SVF-LLVM contains LLVM Libs
 file(GLOB SVFLLVM_SOURCES lib/*.cpp)
 
 add_llvm_library(SvfLLVM STATIC ${SVFLLVM_SOURCES})

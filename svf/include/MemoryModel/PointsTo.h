@@ -112,7 +112,7 @@ public:
     /// Returns true if this set changed.
     bool intersectWithComplement(const PointsTo &rhs);
 
-    /// Put intersection of lhs with complemenet of rhs into this set (overwrites).
+    /// Put intersection of lhs with complement of rhs into this set (overwrites).
     void intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs);
 
     /// Returns this points-to set as a NodeBS.
