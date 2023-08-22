@@ -129,7 +129,8 @@ bool ExtAPI::is_ext(const SVFFunction* F)
     assert(F && "Null SVFFunction* pointer");
     if (F->isDeclaration() || F->isIntrinsic())
         return true;
+    else if (hasExtFuncAnnotation(F, "OVERWRITE") && F->getAnnotations().size() == 1)
+        return false;
     else
-        return hasExtFuncAnnotation(F, "SVF");
-    return false;
+        return !F->getAnnotations().empty();
 }

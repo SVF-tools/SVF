@@ -170,7 +170,8 @@ void LLVMModuleSet::createSVFDataStructure()
             {
                 candidateDecls.push_back(&func);
             }
-            else {
+            else
+            {
                 candidateDefs.push_back(&func);
             }
         }
