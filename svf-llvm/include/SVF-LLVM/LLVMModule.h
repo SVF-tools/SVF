@@ -237,14 +237,22 @@ public:
     SVFOtherValue* getSVFOtherValue(const Value* ov);
 
     /// Remove unused function in extapi.bc module
-    bool isUsedExtFunction(Function* func)
+    bool isCalledExtFunction(Function* func)
     {
+        /// check if a llvm Function is called.
+        auto isFunctionCalled = [](llvm::Function* F) {
+            for (auto& use : F->uses()) {
+                llvm::User* user = use.getUser();
+                if (llvm::isa<llvm::CallBase>(user)) {
+                    return true;
+                }
+            }
+            return false;
+        };
         /// if this function func defined in extapi.bc but never used in application code (without any corresponding declared functions).
-        if (func->getParent()->getName().str() == Options::ExtAPIInput() 
+        if (func->getParent()->getName().str() == Options::ExtAPIInput()
+                && !isFunctionCalled(func)
                 && func->getName().str() != "svf__main"
-                && func->getName().str() != "malloc"
-                && func->getName().str() != "main"
-                && func->getName().substr(0,4) != "sse_"
                 && FunDefToDeclsMap.find(func) == FunDefToDeclsMap.end()
                 && std::find(ExtFuncsVec.begin(), ExtFuncsVec.end(), func) == ExtFuncsVec.end())
         {
