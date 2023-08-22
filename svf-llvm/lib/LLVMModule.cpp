@@ -822,10 +822,11 @@ void LLVMModuleSet::buildFunToFunMap()
                         LLVMUtil::getFunAnnotations(&fun);
                     auto it =
                         std::find_if(annotations.begin(), annotations.end(),
-                                     [&](const std::string& annotation) {
-                                         return annotation.find("OVERWRITE") !=
-                                                std::string::npos;
-                                     });
+                                     [&](const std::string& annotation)
+                    {
+                        return annotation.find("OVERWRITE") !=
+                               std::string::npos;
+                    });
                     if (it != annotations.end())
                     {
                         overwriteExtFuncs.insert(&fun);
