@@ -243,6 +243,7 @@ public:
         auto isFunctionCalled = [](llvm::Function* F) {
             for (auto& use : F->uses()) {
                 llvm::User* user = use.getUser();
+
                 if (llvm::isa<llvm::CallBase>(user)) {
                     return true;
                 }

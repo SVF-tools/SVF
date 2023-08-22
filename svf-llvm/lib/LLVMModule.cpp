@@ -540,7 +540,7 @@ void LLVMModuleSet::loadExtAPIModules()
             Err.print("SVFModuleLoader", llvm::errs());
             abort();
         }
-        // The module of extapi.bc needs to be inserted before applications modules, like std::vector<std::reference_wrapper<Module>> modules{extapi_module, app_module}. 
+        // The module of extapi.bc needs to be inserted before applications modules, like std::vector<std::reference_wrapper<Module>> modules{extapi_module, app_module}.
         // Otherwise, when overwriting the app function with SVF extern function, the corresponding SVFFunction of the extern function will not be found.
         modules.insert(modules.begin(), *mod);
         owned_modules.insert(owned_modules.begin(),std::move(mod));
@@ -731,7 +731,7 @@ void LLVMModuleSet::addSVFMain()
 }
 
 /*
-    For a more detailed explanation of the Function declaration and definition mapping relationships and how External APIs are handled, 
+    For a more detailed explanation of the Function declaration and definition mapping relationships and how External APIs are handled,
     please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
 
                                     Table 1
@@ -752,44 +752,44 @@ void LLVMModuleSet::addSVFMain()
     The app function definition will be changed to an app function declaration.
     Then, put the app function declaration and its corresponding Ext function definition into FunDeclToDefMap/FunDefToDeclsMap.
     ------------------------------------------------------
-    AppDef -> ExtDef (overwrite): 
+    AppDef -> ExtDef (overwrite):
         For example,
-            App function: 
+            App function:
                 char* foo(char *a, char *b){return a;}
-            Ext function: 
+            Ext function:
                 __attribute__((annotate("OVERWRITE")))
                 char* foo(char *a, char *b){return b;}
-            
-            When SVF handles the foo function in the App module, 
-            the definition of 
+
+            When SVF handles the foo function in the App module,
+            the definition of
                 foo: char* foo(char *a, char *b){return a;}
             will be changed to a declaration
                 foo: char* foo(char *a, char *b);
-            Then, 
-                foo: char* foo(char *a, char *b); 
+            Then,
+                foo: char* foo(char *a, char *b);
                 and
                 __attribute__((annotate("OVERWRITE")))
                 char* foo(char *a, char *b){return b;}
             will be put into FunDeclToDefMap
     ------------------------------------------------------
-    ExtDef -> AppDef (overwrite): 
+    ExtDef -> AppDef (overwrite):
         __attribute__((annotate("OVERWRITE")))
-        char* foo(char *a, char *b){return b;} 
+        char* foo(char *a, char *b){return b;}
         and
         foo: char* foo(char *a, char *b);
         are put into FunDefToDeclsMap;
     ------------------------------------------------------
-    In principle, all functions in extapi.c have bodies (definitions), but some functions (those starting with "sse_") 
+    In principle, all functions in extapi.c have bodies (definitions), but some functions (those starting with "sse_")
     have only function declarations without definitions. ExtFuncsVec is used to record function declarations starting with "sse_" that are used.
-    
+
     ExtDecl -> ExtDecl:
-        For example, 
-        App function: 
+        For example,
+        App function:
             foo(){call memcpy();}
-        Ext function: 
+        Ext function:
             declare sse_check_overflow();
             memcpy(){sse_check_overflow();}
-        
+
         sse_check_overflow() used in the Ext function but not in the App function.
         sse_check_overflow should be kept in ExtFuncsVec.
 */
@@ -931,10 +931,10 @@ void LLVMModuleSet::buildFunToFunMap()
                 // ExtDecl -> ExtDecl in Table 1
                 ExtFuncsVec = LLVMUtil::getCalledFunctions(extfun);
             }
-        } 
+        }
     }
 
-    /// Overwrite 
+    /// Overwrite
     /// App Func def -> SVF extern Func def
     for (const Function* appfunc : funDefs)
     {
@@ -957,7 +957,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 std::vector<const Function*>& decls = FunDefToDeclsMap[owfunc];
                 decls.push_back(declaration);
                 // Keep all called functions in owfunc
-                // ExtDecl -> ExtDecl in Table 1    
+                // ExtDecl -> ExtDecl in Table 1
                 ExtFuncsVec = LLVMUtil::getCalledFunctions(owfunc);
             }
         }
