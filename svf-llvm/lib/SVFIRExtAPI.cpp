@@ -185,14 +185,6 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         if(SVFUtil::isa<PointerType>(cs->getType()))
             addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs));
     }
-    else if (svfCallee->getName().find("_ZNSt5arrayIPK1ALm2EE4backEv") != std::string::npos)
-    {
-        NodeID dummy = pag->addDummyValNode();
-        AccessPath ap1(0);
-        addNormalGepEdge(getValueNode(cs->getArgOperand(0)), dummy, ap1);
-        AccessPath ap2(0);
-        addNormalGepEdge(dummy, getValueNode(cs), ap2);
-    }
     else if(svfCallee->getName().compare("dlsym") == 0)
     {
         const Value* src = cs->getArgOperand(1);
