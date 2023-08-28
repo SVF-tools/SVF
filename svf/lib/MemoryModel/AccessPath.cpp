@@ -141,8 +141,15 @@ APOffset AccessPath::computeConstantOffset() const
         else
         {
             APOffset offset = op->getSExtValue();
-            u32_t flattenOffset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, offset);
-            totalConstOffset += flattenOffset;
+            if (offset >= 0)
+            {
+                u32_t flattenOffset =
+                    SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type,
+                                                                       offset);
+                totalConstOffset += flattenOffset;
+            }
+            else
+                totalConstOffset += offset;
         }
     }
     return totalConstOffset;
