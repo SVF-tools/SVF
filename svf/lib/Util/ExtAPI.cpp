@@ -28,6 +28,8 @@
  */
 
 #include "Util/ExtAPI.h"
+#include "Util/SVFUtil.h"
+#include <sys/stat.h>
 
 using namespace SVF;
 
@@ -49,6 +51,77 @@ void ExtAPI::destory()
         delete extOp;
         extOp = nullptr;
     }
+}
+
+// Get environment variables $SVF_DIR and "npm root" through popen() method
+static std::string GetStdoutFromCommand(const std::string& command)
+{
+    char buffer[128];
+    std::string result = "";
+    // Open pipe to file
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe)
+    {
+        return "popen failed!";
+    }
+    // read till end of process:
+    while (!feof(pipe))
+    {
+        // use buffer to read and add to result
+        if (fgets(buffer, 128, pipe) != NULL)
+            result += buffer;
+    }
+    pclose(pipe);
+    // remove "\n"
+    result.erase(remove(result.begin(), result.end(), '\n'), result.end());
+    return result;
+}
+
+// Get extapi.bc file path
+static std::string getExtBCFile(const std::string& path)
+{
+    std::string bcFilePath = GetStdoutFromCommand(path);
+    if (path.compare("npm root") == 0)
+    {
+        int os_flag = 1;
+        // SVF installed via npm needs to determine the type of operating
+        // system, otherwise the extapi.bc path may not be found.
+#ifdef linux
+        // Linux os
+        os_flag = 0;
+        bcFilePath.append("/svf-lib/SVF-linux");
+#endif
+        // Mac os
+        if (os_flag == 1)
+        {
+            bcFilePath.append("/svf-lib/SVF-osx");
+        }
+    }
+
+    if (bcFilePath.back() != '/') 
+        bcFilePath.push_back('/');
+    bcFilePath.append(EXTAPI_BC_PATH);
+    return bcFilePath;
+}
+
+// Get extapi.bc path
+std::string ExtAPI::getExtAPIPath()
+{
+    struct stat statbuf;
+    std::string bcFilePath = std::string(EXTAPI_PATH) + "/extapi.bc";
+    if (!stat(bcFilePath.c_str(), &statbuf))
+        return bcFilePath;
+
+    bcFilePath = getExtBCFile("echo $SVF_DIR");
+    if (!stat(bcFilePath.c_str(), &statbuf))
+        return bcFilePath;
+
+    bcFilePath = getExtBCFile("npm root");
+    if (!stat(bcFilePath.c_str(), &statbuf))
+        return bcFilePath;
+
+    SVFUtil::errs() << "No extpai.bc found at " << bcFilePath << " for getExtAPI(); set $SVF_DIR first!\n";
+    abort();
 }
 
 std::string ExtAPI::getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
