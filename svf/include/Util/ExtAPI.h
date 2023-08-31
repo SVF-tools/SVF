@@ -38,6 +38,8 @@
 
 /// For a more detailed explanation of how External APIs are handled in SVF, please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
 
+#define EXTAPI_BC_PATH "Release-build/svf-llvm/extapi.bc"
+
 namespace SVF
 {
 
@@ -54,6 +56,9 @@ public:
     static ExtAPI *getExtAPI(const std::string& = "");
 
     static void destory();
+
+    // Get extapi.bc file path
+    std::string getExtBcPath();
 
     // Get the annotation of (F)
     std::string getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);

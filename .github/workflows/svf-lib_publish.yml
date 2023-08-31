@@ -117,6 +117,7 @@ jobs:
             cp -rf $GITHUB_WORKSPACE/svf/include SVF-${osVersion}/svf
             cp -rf $GITHUB_WORKSPACE/svf-llvm/include SVF-${osVersion}/svf-llvm
             cp -f $GITHUB_WORKSPACE/Release-build/svf-llvm/libSvfLLVM.a SVF-${osVersion}/Release-build/svf-llvm/libSvfLLVM.a
+            cp -f $GITHUB_WORKSPACE/Release-build/svf-llvm/extapi.bc SVF-${osVersion}/Release-build/svf-llvm/extapi.bc
             cp -f $GITHUB_WORKSPACE/Release-build/svf/libSvfCore.a SVF-${osVersion}/Release-build/svf/libSvfCore.a
             cp -rf $GITHUB_WORKSPACE/Release-build/include SVF-${osVersion}/Release-build
             git add .
