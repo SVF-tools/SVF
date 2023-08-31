@@ -77,8 +77,8 @@ static std::string GetStdoutFromCommand(const std::string& command)
     return result;
 }
 
-// Get extapi.bc file path
-static std::string getExtBCFile(const std::string& path)
+// Get extapi.bc file path in npm
+static std::string getFilePath(const std::string& path)
 {
     std::string bcFilePath = GetStdoutFromCommand(path);
     if (path.compare("npm root") == 0)
@@ -105,18 +105,18 @@ static std::string getExtBCFile(const std::string& path)
 }
 
 // Get extapi.bc path
-std::string ExtAPI::getExtAPIPath()
+std::string ExtAPI::getExtBcPath()
 {
     struct stat statbuf;
     std::string bcFilePath = std::string(EXTAPI_PATH) + "/extapi.bc";
     if (!stat(bcFilePath.c_str(), &statbuf))
         return bcFilePath;
 
-    bcFilePath = getExtBCFile("echo $SVF_DIR");
+    bcFilePath = getFilePath("echo $SVF_DIR");
     if (!stat(bcFilePath.c_str(), &statbuf))
         return bcFilePath;
 
-    bcFilePath = getExtBCFile("npm root");
+    bcFilePath = getFilePath("npm root");
     if (!stat(bcFilePath.c_str(), &statbuf))
         return bcFilePath;
 
