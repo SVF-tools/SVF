@@ -58,7 +58,7 @@ public:
     static void destory();
 
     // Get extapi.bc file path
-    std::string getExtAPIPath();
+    std::string getExtBcPath();
 
     // Get the annotation of (F)
     std::string getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
