@@ -98,7 +98,7 @@ static std::string getFilePath(const std::string& path)
         }
     }
 
-    if (bcFilePath.back() != '/') 
+    if (bcFilePath.back() != '/')
         bcFilePath.push_back('/');
     bcFilePath.append(EXTAPI_BC_PATH);
     return bcFilePath;
