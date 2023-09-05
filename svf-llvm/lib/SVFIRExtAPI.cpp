@@ -156,6 +156,8 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     }
     else if (isMemcpyExtFun(svfCallee))
     {
+        // Side-effects similar to void *memcpy(void *dest, const void * src, size_t n)
+        // which  copies n characters from memory area 'src' to memory area 'dest'.
         if(svfCallee->getName().find("iconv") != std::string::npos)
             addComplexConsForExt(cs->getArgOperand(3), cs->getArgOperand(1), nullptr);
         else if(svfCallee->getName().find("bcopy") != std::string::npos)
@@ -169,7 +171,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     }
     else if(isMemsetExtFun(svfCallee))
     {
-        // this is for memset(void *str, int c, size_t n)
+        // Side-effects similar to memset(void *str, int c, size_t n)
         // which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
         std::vector<AccessPath> dstFields;
         const Type *dtype = getBaseTypeAndFlattenedFields(cs->getArgOperand(0), dstFields, cs->getArgOperand(2));
@@ -187,6 +189,19 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     }
     else if(svfCallee->getName().compare("dlsym") == 0)
     {
+        /*
+        Side-effects of void* dlsym( void* handle, const char* funName),
+        Locate the function with the name "funName," then add a "copy" edge between the callsite and that function.
+        dlsym() example:
+            int main() {
+                // Open the shared library
+                void* handle = dlopen("./my_shared_library.so", RTLD_LAZY);
+                // Find the function address
+                void (*myFunctionPtr)() = (void (*)())dlsym(handle, "myFunction");
+                // Call the function
+                myFunctionPtr();
+            }
+        */
         const Value* src = cs->getArgOperand(1);
         if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
             src = stripConstantCasts(gep->getPointerOperand());
@@ -212,6 +227,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     }
     else if(svfCallee->getName().find("_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_") != std::string::npos)
     {
+        // The purpose of this function is to insert a new node into the red-black tree and then rebalance the tree to ensure that the red-black tree properties are maintained. 
         assert(svfCall->arg_size() == 4 && "_Rb_tree_insert_and_rebalance should have 4 arguments.\n");
 
         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
