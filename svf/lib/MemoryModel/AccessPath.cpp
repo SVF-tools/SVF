@@ -115,13 +115,15 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 ///     value1: i64 0  type1: [3 x i8]*
 ///     value2: i64 2  type2: [3 x i8]
 ///     computeConstantOffset = 2
-APOffset AccessPath::computeConstantOffset() const
+///  if getByteOffset is True, it will return byte size, and elem_bytesize
+///  should be the element byte size of gep base var
+APOffset AccessPath::computeConstantOffset(u32_t elem_bytesize, bool getByteOffset) const
 {
 
     assert(isConstantOffset() && "not a constant offset");
 
     if(offsetVarAndGepTypePairs.empty())
-        return getConstantFieldIdx();
+        return getConstantFieldIdx() * elem_bytesize;
 
     APOffset totalConstOffset = 0;
     for(int i = offsetVarAndGepTypePairs.size() - 1; i >= 0; i--)
@@ -132,16 +134,17 @@ APOffset AccessPath::computeConstantOffset() const
         assert(op && "not a constant offset?");
         if(type==nullptr)
         {
-            totalConstOffset += op->getSExtValue();
+            totalConstOffset += op->getSExtValue() * elem_bytesize;
             continue;
         }
 
         if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
-            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType());
+            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType()) * elem_bytesize;
         else
         {
             APOffset offset = op->getSExtValue();
-            if (offset >= 0)
+            // if getByteOffset is false, it will retrieve flatten idx
+            if (offset >= 0 && !getByteOffset)
             {
                 u32_t flattenOffset =
                     SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type,
@@ -149,7 +152,7 @@ APOffset AccessPath::computeConstantOffset() const
                 totalConstOffset += flattenOffset;
             }
             else
-                totalConstOffset += offset;
+                totalConstOffset += offset * elem_bytesize;
         }
     }
     return totalConstOffset;
