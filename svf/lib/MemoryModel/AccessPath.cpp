@@ -91,6 +91,45 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 ///
 /// "value" is the offset variable (must be a constant)
 /// "type" is the location where we want to compute offset
+/// Given a vector and elem byte size: [(value1,type1), (value2,type2), (value3,type3)], bytesize
+/// totalConstByteOffset = ByteOffset(value1,type1) * ByteOffset(value2,type2) + ByteOffset(value3,type3)
+/// For a pointer type (e.g., t1 is PointerType), we will retrieve the pointee type and times the offset, i.e., getElementNum(t1) X off1
+APOffset AccessPath::computeConstantByteOffset(u32_t elemBytesize) const
+{
+    assert(isConstantOffset() && "not a constant offset");
+
+    if(offsetVarAndGepTypePairs.empty())
+        return getConstantFieldIdx() * elemBytesize;
+
+    APOffset totalConstOffset = 0;
+    for(int i = offsetVarAndGepTypePairs.size() - 1; i >= 0; i--)
+    {
+        const SVFValue* value = offsetVarAndGepTypePairs[i].first->getValue();
+        const SVFType* type = offsetVarAndGepTypePairs[i].second;
+        const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
+        assert(op && "not a constant offset?");
+        if(type==nullptr)
+        {
+            totalConstOffset += op->getSExtValue() * elemBytesize;
+            continue;
+        }
+
+        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType()) * elemBytesize;
+        else
+        {
+            APOffset offset = op->getSExtValue();
+            // if getByteOffset is false, it will retrieve flatten idx
+            totalConstOffset += offset * elemBytesize;
+        }
+    }
+    return totalConstOffset;
+}
+
+/// Return accumulated constant offset
+///
+/// "value" is the offset variable (must be a constant)
+/// "type" is the location where we want to compute offset
 /// Given a vector: [(value1,type1), (value2,type2), (value3,type3)]
 /// totalConstOffset = flattenOffset(value1,type1) * flattenOffset(value2,type2) + flattenOffset(value3,type3)
 /// For a pointer type (e.g., t1 is PointerType), we will retrieve the pointee type and times the offset, i.e., getElementNum(t1) X off1
@@ -115,15 +154,13 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 ///     value1: i64 0  type1: [3 x i8]*
 ///     value2: i64 2  type2: [3 x i8]
 ///     computeConstantOffset = 2
-///  if getByteOffset is True, it will return byte size, and elem_bytesize
-///  should be the element byte size of gep base var
-APOffset AccessPath::computeConstantOffset(u32_t elem_bytesize, bool getByteOffset) const
+APOffset AccessPath::computeConstantOffset() const
 {
 
     assert(isConstantOffset() && "not a constant offset");
 
     if(offsetVarAndGepTypePairs.empty())
-        return getConstantFieldIdx() * elem_bytesize;
+        return getConstantFieldIdx();
 
     APOffset totalConstOffset = 0;
     for(int i = offsetVarAndGepTypePairs.size() - 1; i >= 0; i--)
@@ -134,17 +171,16 @@ APOffset AccessPath::computeConstantOffset(u32_t elem_bytesize, bool getByteOffs
         assert(op && "not a constant offset?");
         if(type==nullptr)
         {
-            totalConstOffset += op->getSExtValue() * elem_bytesize;
+            totalConstOffset += op->getSExtValue();
             continue;
         }
 
         if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
-            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType()) * elem_bytesize;
+            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType());
         else
         {
             APOffset offset = op->getSExtValue();
-            // if getByteOffset is false, it will retrieve flatten idx
-            if (offset >= 0 && !getByteOffset)
+            if (offset >= 0)
             {
                 u32_t flattenOffset =
                     SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type,
@@ -152,7 +188,7 @@ APOffset AccessPath::computeConstantOffset(u32_t elem_bytesize, bool getByteOffs
                 totalConstOffset += flattenOffset;
             }
             else
-                totalConstOffset += offset * elem_bytesize;
+                totalConstOffset += offset;
         }
     }
     return totalConstOffset;

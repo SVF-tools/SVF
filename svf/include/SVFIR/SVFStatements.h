@@ -501,9 +501,15 @@ public:
         return getAccessPath().isConstantOffset();
     }
     /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
-    inline APOffset accumulateConstantOffset(u32_t elem_bytesize, bool getByteOffset) const
+    inline APOffset accumulateConstantByteOffset(u32_t elemBytesize) const
     {
-        return getAccessPath().computeConstantOffset(elem_bytesize, getByteOffset);
+        return getAccessPath().computeConstantByteOffset(elemBytesize);
+    }
+
+    /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
+    inline APOffset accumulateConstantOffset() const
+    {
+        return getAccessPath().computeConstantOffset();
     }
     /// Field index of the gep statement if it access the field of a struct
     inline APOffset getConstantFieldIdx() const
