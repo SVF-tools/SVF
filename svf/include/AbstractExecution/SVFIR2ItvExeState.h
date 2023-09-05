@@ -74,7 +74,7 @@ public:
     VAddrs getGepObjAddress(u32_t pointer, s32_t offset);
 
     /// Return the offset expression of a GepStmt
-    std::pair<s32_t, s32_t> getGepOffset(const GepStmt *gep);
+    std::pair<s32_t, s32_t> getGepOffset(const GepStmt *gep, u32_t elem_bytesize, bool getOffset);
 
     static z3::context &getContext()
     {

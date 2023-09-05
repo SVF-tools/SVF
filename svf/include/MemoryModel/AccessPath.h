@@ -110,7 +110,7 @@ public:
     //@}
 
     /// Return accumulated constant offset given OffsetVarVec
-    APOffset computeConstantOffset() const;
+    APOffset computeConstantOffset(u32_t elem_bytesize, bool getByteOffset) const;
 
     /// Return element number of a type.
     u32_t getElementNum(const SVFType* type) const;
