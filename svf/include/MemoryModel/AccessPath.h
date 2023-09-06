@@ -109,6 +109,12 @@ public:
     }
     //@}
 
+    /// Return accumulated constant byte offset given OffsetVarVec and elemByteSize
+    /// elemBytesize is the element byte size of an static alloc or heap alloc array
+    /// e.g. GepStmt* gep = **,
+    /// s32_t elemBytesize = LLVMUtil::SVFType2ByteSize(gep->getRHSVar()->getValue()->getType());
+    /// APOffset byteOffset = gep->accumulateConstantByteOffset(elemBytesize);
+    APOffset computeConstantByteOffset(u32_t elemBytesize) const;
     /// Return accumulated constant offset given OffsetVarVec
     APOffset computeConstantOffset() const;
 

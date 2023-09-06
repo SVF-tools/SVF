@@ -91,6 +91,45 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 ///
 /// "value" is the offset variable (must be a constant)
 /// "type" is the location where we want to compute offset
+/// Given a vector and elem byte size: [(value1,type1), (value2,type2), (value3,type3)], bytesize
+/// totalConstByteOffset = ByteOffset(value1,type1) * ByteOffset(value2,type2) + ByteOffset(value3,type3)
+/// For a pointer type (e.g., t1 is PointerType), we will retrieve the pointee type and times the offset, i.e., getElementNum(t1) X off1
+APOffset AccessPath::computeConstantByteOffset(u32_t elemBytesize) const
+{
+    assert(isConstantOffset() && "not a constant offset");
+
+    if(offsetVarAndGepTypePairs.empty())
+        return getConstantFieldIdx() * elemBytesize;
+
+    APOffset totalConstOffset = 0;
+    for(int i = offsetVarAndGepTypePairs.size() - 1; i >= 0; i--)
+    {
+        const SVFValue* value = offsetVarAndGepTypePairs[i].first->getValue();
+        const SVFType* type = offsetVarAndGepTypePairs[i].second;
+        const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
+        assert(op && "not a constant offset?");
+        if(type==nullptr)
+        {
+            totalConstOffset += op->getSExtValue() * elemBytesize;
+            continue;
+        }
+
+        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType()) * elemBytesize;
+        else
+        {
+            APOffset offset = op->getSExtValue();
+            // if getByteOffset is false, it will retrieve flatten idx
+            totalConstOffset += offset * elemBytesize;
+        }
+    }
+    return totalConstOffset;
+}
+
+/// Return accumulated constant offset
+///
+/// "value" is the offset variable (must be a constant)
+/// "type" is the location where we want to compute offset
 /// Given a vector: [(value1,type1), (value2,type2), (value3,type3)]
 /// totalConstOffset = flattenOffset(value1,type1) * flattenOffset(value2,type2) + flattenOffset(value3,type3)
 /// For a pointer type (e.g., t1 is PointerType), we will retrieve the pointee type and times the offset, i.e., getElementNum(t1) X off1
