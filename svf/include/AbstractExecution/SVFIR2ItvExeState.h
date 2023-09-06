@@ -79,11 +79,15 @@ public:
     /// Return the Index offset from one gep param offset
     std::pair<s32_t, s32_t> getIndexfromGepTypePair(const AccessPath::VarAndGepTypePair& gep_pair, const GepStmt *gep);
 
+    /// Return the byte offset expression of a GepStmt
+    /// elemBytesize is the element byte size of an static alloc or heap alloc array
+    /// e.g. GepStmt* gep = **,
+    /// s32_t elemBytesize = LLVMUtil::SVFType2ByteSize(gep->getRHSVar()->getValue()->getType());
+    /// std::pair<s32_t, s32_t> byteOffset = getGepByteOffset(gep, elemBytesize);
+    std::pair<s32_t, s32_t> getGepByteOffset(const GepStmt *gep, s32_t elemBytesize);
+
     /// Return the offset expression of a GepStmt
     std::pair<s32_t, s32_t> getGepOffset(const GepStmt *gep);
-
-    /// Return the byte offset expression of a GepStmt
-    std::pair<s32_t, s32_t> getGepByteOffset(const GepStmt *gep, s32_t elem_bytesize);
 
 
     static z3::context &getContext()
