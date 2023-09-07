@@ -128,7 +128,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
     const SVFCallInst* svfCall = SVFUtil::cast<SVFCallInst>(svfInst);
 
-    if (isHeapAllocExtCallViaRet(svfCall) || isStaticExtCall(svfCall))
+    if (isHeapAllocExtCallViaRet(svfCall))
     {
         NodeID val = pag->getValueNode(svfInst);
         NodeID obj = pag->getObjectNode(svfInst);

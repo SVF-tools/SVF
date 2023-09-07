@@ -750,15 +750,6 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
         // Heap object, label its field as infinite here
         objSize = typeinfo->getMaxFieldOffsetLimit();
     }
-    else if (SVFUtil::isa<Instruction>(val) &&
-             isStaticExtCall(
-                 LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(
-                     SVFUtil::cast<Instruction>(val))))
-    {
-        analyzeStaticObjType(typeinfo,val);
-        // static object allocated before main, label its field as infinite here
-        objSize = typeinfo->getMaxFieldOffsetLimit();
-    }
     else if(ArgInProgEntryFunction(val))
     {
         analyzeStaticObjType(typeinfo,val);

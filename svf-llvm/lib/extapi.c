@@ -11,7 +11,6 @@
         ALLOC_RET,    // returns a ptr to a newly allocated object
         ALLOC_ARGi    // stores a pointer to an allocated object in *argi
         REALLOC_RET,  
-        STATIC,       // retval points to an unknown static var X
         MEMSET,       // memcpy() operations
         MEMCPY,       // memset() operations
         OVERWRITE,    // svf function overwrite app function
@@ -23,291 +22,209 @@ void *SyGetmem(unsigned long size)
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 const unsigned short **__ctype_b_loc(void)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 int **__ctype_tolower_loc(void)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 int **__ctype_toupper_loc(void)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 int *__errno_location(void)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 int * __h_errno_location(void)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 void* __res_state(void)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char *asctime(const void *timeptr)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char * bindtextdomain(const char * domainname, const char * dirname)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char * bind_textdomain_codeset(const char * domainname, const char * codeset)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char *ctermid(char *s)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char * dcgettext(const char * domainname, const char * msgid, int category)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char * dgettext(const char * domainname, const char * msgid)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char * dngettext(const char * domainname, const char * msgid, const char * msgid_plural, unsigned long int n)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 void *fdopen(int fd, const char *mode)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct group *getgrgid(unsigned int gid)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct group *getgrnam(const char *name)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct hostent *gethostbyaddr(const void *addr, unsigned int len, int type)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct hostent *gethostbyname(const char *name)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct hostent *gethostbyname2(const char *name, int af)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct mntent *getmntent(void *stream)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct protoent *getprotobyname(const char *name)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct protoent *getprotobynumber(int proto)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct passwd *getpwent(void)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct passwd *getpwnam(const char *name)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct passwd *getpwuid(unsigned int uid)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct servent *getservbyname(const char *name, const char *proto)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct servent *getservbyport(int port, const char *proto)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct spwd *getspnam(const char *name)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char * gettext(const char * msgid)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct tm *gmtime(const void *timer)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 const char *gnu_get_libc_version(void)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 const char * gnutls_check_version(const char * req_version)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct lconv *localeconv(void)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 struct tm *localtime(const void *timer)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char * ngettext(const char * msgid, const char * msgid_plural, unsigned long int n)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 void *pango_cairo_font_map_get_default(void)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char *re_comp(const char *regex)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char *setlocale(int category, const char *locale)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char *tgoto(const char *cap, int col, int row)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 char *tparm(char *str, ...)
 {
-    return NULL;
+    return malloc(10);
 }
 
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
 const char *zError(int a)
 {
-    return NULL;
+    return malloc(10);
 }
 
 __attribute__((annotate("ALLOC_RET")))
