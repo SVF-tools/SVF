@@ -180,7 +180,17 @@ std::pair<s32_t, s32_t> SVFIR2ItvExeState::getBytefromGepTypePair(const AccessPa
     s32_t offsetLb = 0;
     s32_t offsetUb = 0;
     /// set largest byte offset is 0xFFFFFF in case of int32 overflow
-    s32_t maxFieldLimit = 0xFFFFFF;
+    s32_t maxFieldLimit = 99999;
+    s32_t minFieldLimit = -99999;
+    auto valueReshape = [&](s64_t offset) {
+        if (offset < (s64_t)minFieldLimit) {
+            return minFieldLimit;
+        } else if (offset > (s64_t)maxFieldLimit) {
+            return maxFieldLimit;
+        } else {
+            return (s32_t)offset;
+        }
+    };
     /// offset is constant but stored in variable
     if (op)
     {
@@ -194,11 +204,10 @@ std::pair<s32_t, s32_t> SVFIR2ItvExeState::getBytefromGepTypePair(const AccessPa
         // if idxVal is a concrete value
         if (idxVal.is_numeral())
         {
-            offsetLb = offsetUb = idxVal.lb().getNumeral()>
-                                          maxFieldLimit? maxFieldLimit: idxVal.lb().getNumeral();
+            offsetLb = offsetUb = valueReshape(idxVal.lb().getNumeral());
         } else {
-            offsetLb = idxVal.lb().getNumeral()> maxFieldLimit? maxFieldLimit:idxVal.lb().getNumeral() * elemBytesize ;
-            offsetUb = idxVal.ub().getNumeral() > maxFieldLimit? maxFieldLimit:idxVal.ub().getNumeral() * elemBytesize;
+            offsetLb = valueReshape(idxVal.lb().getNumeral());
+            offsetUb = valueReshape(idxVal.ub().getNumeral());
         }
     }
 
@@ -223,11 +232,20 @@ std::pair<s32_t, s32_t> SVFIR2ItvExeState::getIndexfromGepTypePair(const AccessP
     s32_t offsetLb = 0;
     s32_t offsetUb = 0;
     s32_t maxFieldLimit = (s32_t)Options::MaxFieldLimit();
+    s32_t minFieldLimit = 0;
+    auto valueReshape = [&](s64_t offset) {
+        if (offset < (s64_t)minFieldLimit) {
+            return minFieldLimit;
+        } else if (offset > (s64_t)maxFieldLimit) {
+            return maxFieldLimit;
+        } else {
+            return (s32_t)offset;
+        }
+    };
         /// offset is constant but stored in variable
     if (op)
     {
-        offsetLb = offsetUb = op->getSExtValue() >
-                                      maxFieldLimit? maxFieldLimit: op->getSExtValue();
+        offsetLb = offsetUb = valueReshape(op->getSExtValue());
     } else {
         u32_t idx = _svfir->getValueNode(value);
         //if (!inVarToIValTable(idx)) return std::make_pair(-1, -1);
@@ -237,21 +255,10 @@ std::pair<s32_t, s32_t> SVFIR2ItvExeState::getIndexfromGepTypePair(const AccessP
         // if idxVal is a concrete value
         if (idxVal.is_numeral())
         {
-            offsetLb = offsetUb = idxVal.lb().getNumeral()>
-                                          maxFieldLimit? maxFieldLimit: idxVal.lb().getNumeral();
+            offsetLb = offsetUb = valueReshape(idxVal.lb().getNumeral());
         } else {
-            offsetLb = idxVal.lb().getNumeral() < 0
-                           ? 0
-                           : idxVal.lb().getNumeral();
-            offsetLb = idxVal.lb().getNumeral() > maxFieldLimit
-                           ? maxFieldLimit
-                           : offsetLb;
-            offsetUb = idxVal.ub().getNumeral() < 0
-                           ? 0
-                           : idxVal.ub().getNumeral();
-            offsetUb = idxVal.ub().getNumeral() > maxFieldLimit
-                           ? maxFieldLimit
-                           : offsetUb;
+            offsetLb = valueReshape(idxVal.lb().getNumeral());
+            offsetUb = valueReshape(idxVal.ub().getNumeral());
         }
     }
 
