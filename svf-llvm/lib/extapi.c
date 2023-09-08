@@ -33,6 +33,12 @@ void *fopen64(const char *voidname, const char *mode)
 }
 
 __attribute__((annotate("ALLOC_RET")))
+void *fdopen(int fd, const char *mode)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
 struct dirent64 *readdir64(void *dirp)
 {
     return NULL;
@@ -964,11 +970,6 @@ char * dgettext(const char * domainname, const char * msgid)
 }
 
 char * dngettext(const char * domainname, const char * msgid, const char * msgid_plural, unsigned long int n)
-{
-    return STATIC_OBJECT;
-}
-
-void *fdopen(int fd, const char *mode)
 {
     return STATIC_OBJECT;
 }
