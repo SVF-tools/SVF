@@ -141,10 +141,10 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallBase* cs)
         if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
             refType = SVFUtil::dyn_cast<PointerType>(getPtrElementType(argType));
     }
-    // Case 2: heap/static object held by return value.
+    // Case 2: heap object held by return value.
     else
     {
-        assert((SVFUtil::isStaticExtCall(svfcs) || SVFUtil::isHeapAllocExtCallViaRet(svfcs))
+        assert(SVFUtil::isHeapAllocExtCallViaRet(svfcs)
                && "Must be heap alloc via ret, or static allocation site");
         refType = SVFUtil::dyn_cast<PointerType>(cs->getType());
     }

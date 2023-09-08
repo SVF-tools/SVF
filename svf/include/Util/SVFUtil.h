@@ -350,14 +350,6 @@ inline bool isReallocExtFun(const SVFFunction* fun)
     return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
 }
 
-/// Return true if the call is a static global call
-//@{
-/// note that this function is not suppose to be used externally
-inline bool isStaticExtFun(const SVFFunction* fun)
-{
-    return fun && ExtAPI::getExtAPI()->has_static(fun);
-}
-
 /// Program entry function e.g. main
 //@{
 /// Return true if this is a program entry function (e.g. main)
@@ -491,32 +483,6 @@ inline bool isReallocExtCall(const SVFInstruction *inst)
 {
     bool isPtrTy = inst->getType()->isPointerTy();
     return isPtrTy && isReallocExtFun(getCallee(inst));
-}
-//@}
-
-inline bool isStaticExtCall(const CallSite cs)
-{
-    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
-    return isPtrTy && isStaticExtFun(getCallee(cs));
-}
-
-inline bool isStaticExtCall(const SVFInstruction *inst)
-{
-    bool isPtrTy = inst->getType()->isPointerTy();
-    return isPtrTy && isStaticExtFun(getCallee(inst));
-}
-//@}
-
-/// Return true if the call is a static global call
-//@{
-inline bool isHeapAllocOrStaticExtCall(const CallSite cs)
-{
-    return isStaticExtCall(cs) || isHeapAllocExtCall(cs);
-}
-
-inline bool isHeapAllocOrStaticExtCall(const SVFInstruction *inst)
-{
-    return isStaticExtCall(inst) || isHeapAllocExtCall(inst);
 }
 //@}
 
