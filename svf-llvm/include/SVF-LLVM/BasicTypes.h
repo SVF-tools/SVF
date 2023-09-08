@@ -178,6 +178,10 @@ typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
 
+// Related to Switch Case
+typedef std::pair<const BasicBlock*, const ConstantInt*> SuccBBAndCondValPair;
+typedef std::vector<SuccBBAndCondValPair> SuccBBAndCondValPairVec;
+
 // LLVM Intrinsic Instructions
 #if LLVM_VERSION_MAJOR >= 13
 typedef llvm::IntrinsicInst IntrinsicInst;
