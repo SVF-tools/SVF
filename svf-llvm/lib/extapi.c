@@ -14,6 +14,656 @@
         MEMCPY,       // memset() operations
         OVERWRITE,    // svf function overwrite app function
 */
+__attribute__((annotate("ALLOC_RET")))
+void *malloc(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *fopen(const char *voidname, const char *mode)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *fopen64(const char *voidname, const char *mode)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+struct dirent64 *readdir64(void *dirp)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *tmpvoid64(void)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *calloc(unsigned long nitems, unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *zmalloc(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *gzdopen(int fd, const char *mode)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *iconv_open(const char *tocode, const char *fromcode)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *lalloc(unsigned long size, int a)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *lalloc_clear(unsigned long size, int a)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+long *nhalloc(unsigned int a, const char *b, int c)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *oballoc(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *popen(const char *command, const char *type)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *pthread_getspecific(const char *a, const char *b)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+struct dirent *readdir(void *dirp)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void* safe_calloc(unsigned nelem, unsigned elsize)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void* safe_malloc(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char* safecalloc(int a, int b)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char* safemalloc(int a, int b)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *setmntent(const char *voidname, const char *type)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *shmat(int shmid, const void *shmaddr, int shmflg)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void* __sysv_signal(int a, void *b)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void (*signal(int sig, void (*func)(int)))(int)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *tempnam(const char *dir, const char *pfx)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *tmpvoid(void)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void* xcalloc(unsigned long size1, unsigned long size2)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void* xmalloc(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *_Znam(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *_Znaj(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *_Znwj(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *__cxa_allocate_exception(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void* aligned_alloc(unsigned long size1, unsigned long size2)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void* memalign(unsigned long size1, unsigned long size2)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *valloc(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *mmap64(void *addr, unsigned long len, int prot, int flags, int fildes, long off)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *XSetLocaleModifiers(char *a)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char * __strdup(const char * string)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *crypt(const char *key, const char *salt)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *ctime(const void *timer)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *dlerror(void)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *dlopen(const char *voidname, int flags)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+const char *gai_strerror(int errcode)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+const char *gcry_cipher_algo_name(int errcode)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+const char *svfgcry_md_algo_name_(int errcode)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *getenv(const char *name)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *getlogin(void)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *getpass(const char *prompt)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+const char * gnutls_strerror(int error)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+const char *gpg_strerror(unsigned int a)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+const char * gzerror(void* file, int * errnum)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *inet_ntoa(unsigned int in)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *initscr(void)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void* llvm_stacksave()
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *mmap(void *addr, unsigned long len, int prot, int flags, int fildes, long off)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *newwin(int nlines, int ncols, int begin_y, int begin_x)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *nl_langinfo(int item)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *opendir(const char *name)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *sbrk(long increment)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *strdup(const char *s)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *strerror(int errnum)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *strsignal(int errnum)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *textdomain(const char * domainname)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *tgetstr(char *id, char **area)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *tigetstr(char *capname)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *tmpnam(char *s)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+char *ttyname(int fd)
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_RET")))
+char *getcwd(char *buf, unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_RET")))
+char *mem_realloc(void *ptr, unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_RET")))
+char *realloc(void *ptr, unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_RET")))
+void* safe_realloc(void *p, unsigned long n)
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_RET")))
+void* saferealloc(void *p, unsigned long n1, unsigned long n2)
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_RET")))
+void* safexrealloc()
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_RET")))
+char *strtok(char *str, const char *delim)
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_RET")))
+char *strtok_r(char *str, const char *delim, char **saveptr)
+{
+    return NULL;
+}
+
+__attribute__((annotate("REALLOC_RET")))
+void *xrealloc(void *ptr, unsigned long bytes)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *_Znwm(unsigned long size)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *_ZnwmRKSt9nothrow_t(unsigned long size, void *)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *_ZnamRKSt9nothrow_t(unsigned long size, void *)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_ARG0")))
+int asprintf(char **restrict strp, const char *restrict fmt, ...)
+{
+    return 0;
+}
+
+__attribute__((annotate("ALLOC_ARG0")))
+int vasprintf(char **strp, const char *fmt, void* ap)
+{
+    return 0;
+}
+
+__attribute__((annotate("ALLOC_ARG0")))
+int db_create(void **dbp, void *dbenv, unsigned int flags)
+{
+    return 0;
+}
+
+__attribute__((annotate("ALLOC_ARG0")))
+int gnutls_pkcs12_bag_init(void *a)
+{
+    return 0;
+}
+
+__attribute__((annotate("ALLOC_ARG0")))
+int gnutls_pkcs12_init(void *a)
+{
+    return 0;
+}
+
+__attribute__((annotate("ALLOC_ARG0")))
+int gnutls_x509_crt_init(void *a)
+{
+    return 0;
+}
+
+__attribute__((annotate("ALLOC_ARG0")))
+int gnutls_x509_privkey_init(void *a)
+{
+    return 0;
+}
+
+__attribute__((annotate("ALLOC_ARG0")))
+int posix_memalign(void **a, unsigned long b, unsigned long c)
+{
+    return 0;
+}
+
+__attribute__((annotate("ALLOC_ARG1")))
+int scandir(const char *restrict dirp, struct dirent ***restrict namelist, int (*filter)(const struct dirent *), int (*compar)(const struct dirent **, const struct dirent **))
+{
+    return 0;
+}
+
+__attribute__((annotate("ALLOC_ARG2")))
+int XmbTextPropertyToTextList(void *a, void *b, char ***c, int *d)
+{
+    return 0;
+}
+
+__attribute__((annotate("MEMCPY")))
+void llvm_memcpy_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
+void llvm_memcpy_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
+void llvm_memcpy(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
+void llvm_memmove(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
+void llvm_memmove_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
+void llvm_memmove_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
+void __memcpy_chk(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
+void *memmove(void *str1, const void *str2, unsigned long n)
+{
+    return NULL;
+}
+
+__attribute__((annotate("MEMCPY")))
+void bcopy(const void *s1, void *s2, unsigned long n){}
+
+__attribute__((annotate("MEMCPY")))
+void *memccpy( void * restrict dest, const void * restrict src, int c, unsigned long count)
+{
+    return NULL;
+}
+
+__attribute__((annotate("MEMCPY")))
+void __memmove_chk(char* dst, char* src, int sz){}
+
+__attribute__((annotate("MEMSET")))
+void llvm_memset(char* dst, char elem, int sz, int flag){}
+
+__attribute__((annotate("MEMSET")))
+void llvm_memset_p0i8_i32(char* dst, char elem, int sz, int flag){}
+
+__attribute__((annotate("MEMSET")))
+void llvm_memset_p0i8_i64(char* dst, char elem, int sz, int flag){}
+
+__attribute__((annotate("MEMSET")))
+char *__memset_chk(char * dest, int c, unsigned long destlen, int flag)
+{
+    return NULL;
+}
+
+__attribute__((annotate("MEMCPY")))
+char * __strcpy_chk(char * dest, const char * src, unsigned long destlen)
+{
+    return NULL;
+}
+
+__attribute__((annotate("MEMCPY")))
+char *__strcat_chk(char * dest, const char * src, unsigned long destlen)
+{
+    return NULL;
+}
+
+__attribute__((annotate("MEMCPY")))
+char *stpcpy(char *restrict dst, const char *restrict src)
+{
+    return NULL;
+}
+
+__attribute__((annotate("MEMCPY")))
+char *strcat(char *dest, const char *src)
+{
+    return NULL;
+}
+
+__attribute__((annotate("MEMCPY")))
+char *strcpy(char *dest, const char *src)
+{
+    return NULL;
+}
+
+__attribute__((annotate("MEMCPY")))
+char *strncat(char *dest, const char *src, unsigned long n)
+{
+    return NULL;
+}
+
+__attribute__((annotate("MEMCPY")))
+char *strncpy(char *dest, const char *src, unsigned long n)
+{
+    return NULL;
+}
+
+__attribute__((annotate("MEMCPY")))
+unsigned long iconv(void* cd, char **restrict inbuf, unsigned long *restrict inbytesleft, char **restrict outbuf, unsigned long *restrict outbytesleft)
+{
+    return 0;
+}
+
+__attribute__((annotate("OVERWRITE")))
+void* _ZNSt5arrayIPK1ALm2EE4backEv(void *arg)
+{
+    void* ptr1 = (char*)arg + 0;
+    void* ptr2 = (char*)ptr1 + 0;
+    return ptr2;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("OVERWRITE")))
+void *SyGetmem(unsigned long size)
+{
+    return NULL;
+}
 
 void * __rawmemchr(const void * s, int c)
 {
@@ -456,655 +1106,4 @@ char *tparm(char *str, ...)
 const char *zError(int a)
 {
     return STATIC_OBJECT;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *fopen(const char *voidname, const char *mode)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *fopen64(const char *voidname, const char *mode)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-struct dirent64 *readdir64(void *dirp)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *tmpvoid64(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *calloc(unsigned long nitems, unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *zmalloc(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *gzdopen(int fd, const char *mode)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *iconv_open(const char *tocode, const char *fromcode)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *lalloc(unsigned long size, int a)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *lalloc_clear(unsigned long size, int a)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-long *nhalloc(unsigned int a, const char *b, int c)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *oballoc(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *popen(const char *command, const char *type)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *pthread_getspecific(const char *a, const char *b)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-struct dirent *readdir(void *dirp)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void* safe_calloc(unsigned nelem, unsigned elsize)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void* safe_malloc(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char* safecalloc(int a, int b)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char* safemalloc(int a, int b)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *setmntent(const char *voidname, const char *type)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *shmat(int shmid, const void *shmaddr, int shmflg)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void* __sysv_signal(int a, void *b)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void (*signal(int sig, void (*func)(int)))(int)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *tempnam(const char *dir, const char *pfx)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *tmpvoid(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void* xcalloc(unsigned long size1, unsigned long size2)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void* xmalloc(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *_Znam(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *_Znaj(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *_Znwj(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *__cxa_allocate_exception(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void* aligned_alloc(unsigned long size1, unsigned long size2)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void* memalign(unsigned long size1, unsigned long size2)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *valloc(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *mmap64(void *addr, unsigned long len, int prot, int flags, int fildes, long off)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *XSetLocaleModifiers(char *a)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char * __strdup(const char * string)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *crypt(const char *key, const char *salt)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *ctime(const void *timer)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *dlerror(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *dlopen(const char *voidname, int flags)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-const char *gai_strerror(int errcode)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-const char *gcry_cipher_algo_name(int errcode)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-const char *svfgcry_md_algo_name_(int errcode)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *getenv(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *getlogin(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *getpass(const char *prompt)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-const char * gnutls_strerror(int error)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-const char *gpg_strerror(unsigned int a)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-const char * gzerror(void* file, int * errnum)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *inet_ntoa(unsigned int in)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *initscr(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void* llvm_stacksave()
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *mmap(void *addr, unsigned long len, int prot, int flags, int fildes, long off)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *newwin(int nlines, int ncols, int begin_y, int begin_x)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *nl_langinfo(int item)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *opendir(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *sbrk(long increment)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *strdup(const char *s)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *strerror(int errnum)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *strsignal(int errnum)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *textdomain(const char * domainname)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *tgetstr(char *id, char **area)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *tigetstr(char *capname)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *tmpnam(char *s)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-char *ttyname(int fd)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *malloc(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("REALLOC_RET")))
-char *getcwd(char *buf, unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("REALLOC_RET")))
-char *mem_realloc(void *ptr, unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("REALLOC_RET")))
-char *realloc(void *ptr, unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("REALLOC_RET")))
-void* safe_realloc(void *p, unsigned long n)
-{
-    return NULL;
-}
-
-__attribute__((annotate("REALLOC_RET")))
-void* saferealloc(void *p, unsigned long n1, unsigned long n2)
-{
-    return NULL;
-}
-
-__attribute__((annotate("REALLOC_RET")))
-void* safexrealloc()
-{
-    return NULL;
-}
-
-__attribute__((annotate("REALLOC_RET")))
-char *strtok(char *str, const char *delim)
-{
-    return NULL;
-}
-
-__attribute__((annotate("REALLOC_RET")))
-char *strtok_r(char *str, const char *delim, char **saveptr)
-{
-    return NULL;
-}
-
-__attribute__((annotate("REALLOC_RET")))
-void *xrealloc(void *ptr, unsigned long bytes)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *_Znwm(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *_ZnwmRKSt9nothrow_t(unsigned long size, void *)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-void *_ZnamRKSt9nothrow_t(unsigned long size, void *)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_ARG0")))
-int asprintf(char **restrict strp, const char *restrict fmt, ...)
-{
-    return 0;
-}
-
-__attribute__((annotate("ALLOC_ARG0")))
-int vasprintf(char **strp, const char *fmt, void* ap)
-{
-    return 0;
-}
-
-__attribute__((annotate("ALLOC_ARG0")))
-int db_create(void **dbp, void *dbenv, unsigned int flags)
-{
-    return 0;
-}
-
-__attribute__((annotate("ALLOC_ARG0")))
-int gnutls_pkcs12_bag_init(void *a)
-{
-    return 0;
-}
-
-__attribute__((annotate("ALLOC_ARG0")))
-int gnutls_pkcs12_init(void *a)
-{
-    return 0;
-}
-
-__attribute__((annotate("ALLOC_ARG0")))
-int gnutls_x509_crt_init(void *a)
-{
-    return 0;
-}
-
-__attribute__((annotate("ALLOC_ARG0")))
-int gnutls_x509_privkey_init(void *a)
-{
-    return 0;
-}
-
-__attribute__((annotate("ALLOC_ARG0")))
-int posix_memalign(void **a, unsigned long b, unsigned long c)
-{
-    return 0;
-}
-
-__attribute__((annotate("ALLOC_ARG1")))
-int scandir(const char *restrict dirp, struct dirent ***restrict namelist, int (*filter)(const struct dirent *), int (*compar)(const struct dirent **, const struct dirent **))
-{
-    return 0;
-}
-
-__attribute__((annotate("ALLOC_ARG2")))
-int XmbTextPropertyToTextList(void *a, void *b, char ***c, int *d)
-{
-    return 0;
-}
-
-__attribute__((annotate("MEMCPY")))
-void llvm_memcpy_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
-
-__attribute__((annotate("MEMCPY")))
-void llvm_memcpy_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
-
-__attribute__((annotate("MEMCPY")))
-void llvm_memcpy(char* dst, char* src, int sz, int flag){}
-
-__attribute__((annotate("MEMCPY")))
-void llvm_memmove(char* dst, char* src, int sz, int flag){}
-
-__attribute__((annotate("MEMCPY")))
-void llvm_memmove_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
-
-__attribute__((annotate("MEMCPY")))
-void llvm_memmove_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
-
-__attribute__((annotate("MEMCPY")))
-void __memcpy_chk(char* dst, char* src, int sz, int flag){}
-
-__attribute__((annotate("MEMCPY")))
-void *memmove(void *str1, const void *str2, unsigned long n)
-{
-    return NULL;
-}
-
-__attribute__((annotate("MEMCPY")))
-void bcopy(const void *s1, void *s2, unsigned long n){}
-
-__attribute__((annotate("MEMCPY")))
-void *memccpy( void * restrict dest, const void * restrict src, int c, unsigned long count)
-{
-    return NULL;
-}
-
-__attribute__((annotate("MEMCPY")))
-void __memmove_chk(char* dst, char* src, int sz){}
-
-__attribute__((annotate("MEMSET")))
-void llvm_memset(char* dst, char elem, int sz, int flag){}
-
-__attribute__((annotate("MEMSET")))
-void llvm_memset_p0i8_i32(char* dst, char elem, int sz, int flag){}
-
-__attribute__((annotate("MEMSET")))
-void llvm_memset_p0i8_i64(char* dst, char elem, int sz, int flag){}
-
-__attribute__((annotate("MEMSET")))
-char *__memset_chk(char * dest, int c, unsigned long destlen, int flag)
-{
-    return NULL;
-}
-
-__attribute__((annotate("MEMCPY")))
-char * __strcpy_chk(char * dest, const char * src, unsigned long destlen)
-{
-    return NULL;
-}
-
-__attribute__((annotate("MEMCPY")))
-char *__strcat_chk(char * dest, const char * src, unsigned long destlen)
-{
-    return NULL;
-}
-
-__attribute__((annotate("MEMCPY")))
-char *stpcpy(char *restrict dst, const char *restrict src)
-{
-    return NULL;
-}
-
-__attribute__((annotate("MEMCPY")))
-char *strcat(char *dest, const char *src)
-{
-    return NULL;
-}
-
-__attribute__((annotate("MEMCPY")))
-char *strcpy(char *dest, const char *src)
-{
-    return NULL;
-}
-
-__attribute__((annotate("MEMCPY")))
-char *strncat(char *dest, const char *src, unsigned long n)
-{
-    return NULL;
-}
-
-__attribute__((annotate("MEMCPY")))
-char *strncpy(char *dest, const char *src, unsigned long n)
-{
-    return NULL;
-}
-
-__attribute__((annotate("MEMCPY")))
-unsigned long iconv(void* cd, char **restrict inbuf, unsigned long *restrict inbytesleft, char **restrict outbuf, unsigned long *restrict outbytesleft)
-{
-    return 0;
-}
-
-__attribute__((annotate("OVERWRITE")))
-void* _ZNSt5arrayIPK1ALm2EE4backEv(void *arg)
-{
-    void* ptr1 = (char*)arg + 0;
-    void* ptr2 = (char*)ptr1 + 0;
-    return ptr2;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("OVERWRITE")))
-void *SyGetmem(unsigned long size)
-{
-    return NULL;
 }
