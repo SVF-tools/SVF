@@ -946,19 +946,20 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
     NodeID cond = getValueNode(inst.getCondition());
 
     BranchStmt::SuccAndCondPairVec successors;
-    for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
+
+    // get case successor basic block and related case value
+    SuccBBAndCondValPairVec succBB2CondValPairVec;
+    LLVMUtil::getSuccBBandCondValPairVec(inst, succBB2CondValPairVec);
+    for (auto &succBB2CaseValue : succBB2CondValPairVec)
     {
-        const Instruction* succInst = &inst.getSuccessor(i)->front();
-        const ConstantInt* condVal = inst.findCaseDest(inst.getSuccessor(i));
-        /// default case is set to -1;
-        s64_t val = -1;
-        if (condVal && condVal->getBitWidth() <= 64)
-            val = condVal->getSExtValue();
+        s64_t val = LLVMUtil::getCaseValue(inst, succBB2CaseValue);
+        const BasicBlock *succBB = succBB2CaseValue.first;
+        const Instruction* succInst = &succBB->front();
         const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succInst);
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfSuccInst);
-        successors.push_back(std::make_pair(icfgNode,val));
+        successors.push_back(std::make_pair(icfgNode, val));
     }
-    addBranchStmt(brinst, cond,successors);
+    addBranchStmt(brinst, cond, successors);
 }
 
 ///   %ap = alloca %struct.va_list
