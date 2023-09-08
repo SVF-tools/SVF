@@ -144,12 +144,6 @@ bool ExtAPI::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& fun
     return false;
 }
 
-// Does (F) have a static var X (unavailable to us) that its return points to?
-bool ExtAPI::has_static(const SVFFunction* F)
-{
-    return F && hasExtFuncAnnotation(F, "STATIC");
-}
-
 bool ExtAPI::is_memcpy(const SVFFunction *F)
 {
     return F && hasExtFuncAnnotation(F, "MEMCPY");

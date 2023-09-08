@@ -53,8 +53,6 @@ const std::string structName = "struct.";
  */
 bool LLVMUtil::isObject(const Value*  ref)
 {
-    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))) )
-        return true;
     if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isHeapAllocExtCallViaRet(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(ref))))
         return true;
     if (SVFUtil::isa<GlobalVariable>(ref))
