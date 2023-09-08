@@ -948,12 +948,22 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
     BranchStmt::SuccAndCondPairVec successors;
     for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
     {
-        const Instruction* succInst = &inst.getSuccessor(i)->front();
-        const ConstantInt* condVal = inst.findCaseDest(inst.getSuccessor(i));
+        BasicBlock *succBB = inst.getSuccessor(i);
         /// default case is set to -1;
         s64_t val = -1;
-        if (condVal && condVal->getBitWidth() <= 64)
-            val = condVal->getSExtValue();
+        /// Equivalent to: succBB != inst.getDefaultDest()
+        if (i != 0)
+        {
+            // According to llvm::SwitchInst class comments:
+            // Operand[0]    = Value to switch on
+            // Operand[1]    = Default basic block destination
+            // Operand[2n  ] = Value to match
+            // Operand[2n+1] = BasicBlock to go to on match
+            ConstantInt *condVal = SVFUtil::dyn_cast<ConstantInt>(inst.getOperand(i * 2));
+            if (condVal && condVal->getBitWidth() <= 64)
+                val = condVal->getSExtValue();
+        }
+        const Instruction* succInst = &succBB->front();
         const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succInst);
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfSuccInst);
         successors.push_back(std::make_pair(icfgNode,val));
