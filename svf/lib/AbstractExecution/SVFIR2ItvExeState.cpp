@@ -278,8 +278,8 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getIndexfromGepTypePair(const A
             const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()
                                                ->getTypeInfo(type)
                                                ->getFlattenedElemIdxVec();
-            if (so.empty() || offsetUb >= so.size() ||
-                offsetLb >= so.size())
+            if (so.empty() || offsetUb >= (APOffset)so.size() ||
+                offsetLb >= (APOffset)so.size())
             {
                 offsetLb = 0;
                 offsetUb = maxFieldLimit;
