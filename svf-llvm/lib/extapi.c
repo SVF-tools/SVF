@@ -1,5 +1,5 @@
-// #include <stdio.h>
 #define NULL ((void *)0)
+#define STATIC_OBJECT malloc(10)
 
 /*
     Functions with __attribute__((annotate("XXX"))) will be handle by SVF specifcially.
@@ -7,305 +7,15 @@
 
     The description of methodProperties is as follows:
 
-        SVF,          // inform SVF that this function is managed by SVF and should not use its body.
         ALLOC_RET,    // returns a ptr to a newly allocated object
         ALLOC_ARGi    // stores a pointer to an allocated object in *argi
         REALLOC_RET,  
-        STATIC,       // retval points to an unknown static var X
         MEMSET,       // memcpy() operations
         MEMCPY,       // memset() operations
         OVERWRITE,    // svf function overwrite app function
 */
 __attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("OVERWRITE")))
-void *SyGetmem(unsigned long size)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-const unsigned short **__ctype_b_loc(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-int **__ctype_tolower_loc(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-int **__ctype_toupper_loc(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-int *__errno_location(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-int * __h_errno_location(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-void* __res_state(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char *asctime(const void *timeptr)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char * bindtextdomain(const char * domainname, const char * dirname)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char * bind_textdomain_codeset(const char * domainname, const char * codeset)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char *ctermid(char *s)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char * dcgettext(const char * domainname, const char * msgid, int category)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char * dgettext(const char * domainname, const char * msgid)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char * dngettext(const char * domainname, const char * msgid, const char * msgid_plural, unsigned long int n)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-void *fdopen(int fd, const char *mode)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct group *getgrgid(unsigned int gid)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct group *getgrnam(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct hostent *gethostbyaddr(const void *addr, unsigned int len, int type)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct hostent *gethostbyname(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct hostent *gethostbyname2(const char *name, int af)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct mntent *getmntent(void *stream)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct protoent *getprotobyname(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct protoent *getprotobynumber(int proto)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct passwd *getpwent(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct passwd *getpwnam(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct passwd *getpwuid(unsigned int uid)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct servent *getservbyname(const char *name, const char *proto)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct servent *getservbyport(int port, const char *proto)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct spwd *getspnam(const char *name)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char * gettext(const char * msgid)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct tm *gmtime(const void *timer)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-const char *gnu_get_libc_version(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-const char * gnutls_check_version(const char * req_version)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct lconv *localeconv(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-struct tm *localtime(const void *timer)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char * ngettext(const char * msgid, const char * msgid_plural, unsigned long int n)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-void *pango_cairo_font_map_get_default(void)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char *re_comp(const char *regex)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char *setlocale(int category, const char *locale)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char *tgoto(const char *cap, int col, int row)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-char *tparm(char *str, ...)
-{
-    return NULL;
-}
-
-__attribute__((annotate("ALLOC_RET")))
-__attribute__((annotate("STATIC")))
-const char *zError(int a)
+void *malloc(unsigned long size)
 {
     return NULL;
 }
@@ -318,6 +28,12 @@ void *fopen(const char *voidname, const char *mode)
 
 __attribute__((annotate("ALLOC_RET")))
 void *fopen64(const char *voidname, const char *mode)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET")))
+void *fdopen(int fd, const char *mode)
 {
     return NULL;
 }
@@ -706,12 +422,6 @@ char *ttyname(int fd)
     return NULL;
 }
 
-__attribute__((annotate("ALLOC_RET")))
-void *malloc(unsigned long size)
-{
-    return NULL;
-}
-
 __attribute__((annotate("REALLOC_RET")))
 char *getcwd(char *buf, unsigned long size)
 {
@@ -954,6 +664,12 @@ void* _ZNSt5arrayIPK1ALm2EE4backEv(void *arg)
     return ptr2;
 }
 
+__attribute__((annotate("ALLOC_RET")))
+__attribute__((annotate("OVERWRITE")))
+void *SyGetmem(unsigned long size)
+{
+    return NULL;
+}
 
 void * __rawmemchr(const void * s, int c)
 {
@@ -1173,7 +889,6 @@ int getpwuid_r(unsigned int uid, void *pwd, char *buf, unsigned long buflen, voi
     return 0;
 }
 
-
 void _ZNSt8__detail15_List_node_base7_M_hookEPS0_(void *arg0, void **arg1)
 {
     *arg1 = arg0;
@@ -1192,4 +907,204 @@ void _ZNSsC1EPKcRKSaIcE(void **arg0, void *arg1)
 void _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_(void **arg0, void *arg1)
 {
     *arg0 = arg1;
+}
+
+const unsigned short **__ctype_b_loc(void)
+{
+    return STATIC_OBJECT;
+}
+
+int **__ctype_tolower_loc(void)
+{
+    return STATIC_OBJECT;
+}
+
+int **__ctype_toupper_loc(void)
+{
+    return STATIC_OBJECT;
+}
+
+int *__errno_location(void)
+{
+    return STATIC_OBJECT;
+}
+
+int * __h_errno_location(void)
+{
+    return STATIC_OBJECT;
+}
+
+void* __res_state(void)
+{
+    return STATIC_OBJECT;
+}
+
+char *asctime(const void *timeptr)
+{
+    return STATIC_OBJECT;
+}
+
+char * bindtextdomain(const char * domainname, const char * dirname)
+{
+    return STATIC_OBJECT;
+}
+
+char * bind_textdomain_codeset(const char * domainname, const char * codeset)
+{
+    return STATIC_OBJECT;
+}
+
+char *ctermid(char *s)
+{
+    return STATIC_OBJECT;
+}
+
+char * dcgettext(const char * domainname, const char * msgid, int category)
+{
+    return STATIC_OBJECT;
+}
+
+char * dgettext(const char * domainname, const char * msgid)
+{
+    return STATIC_OBJECT;
+}
+
+char * dngettext(const char * domainname, const char * msgid, const char * msgid_plural, unsigned long int n)
+{
+    return STATIC_OBJECT;
+}
+
+struct group *getgrgid(unsigned int gid)
+{
+    return STATIC_OBJECT;
+}
+
+struct group *getgrnam(const char *name)
+{
+    return STATIC_OBJECT;
+}
+
+struct hostent *gethostbyaddr(const void *addr, unsigned int len, int type)
+{
+    return STATIC_OBJECT;
+}
+
+struct hostent *gethostbyname(const char *name)
+{
+    return STATIC_OBJECT;
+}
+
+struct hostent *gethostbyname2(const char *name, int af)
+{
+    return STATIC_OBJECT;
+}
+
+struct mntent *getmntent(void *stream)
+{
+    return STATIC_OBJECT;
+}
+
+struct protoent *getprotobyname(const char *name)
+{
+    return STATIC_OBJECT;
+}
+
+struct protoent *getprotobynumber(int proto)
+{
+    return STATIC_OBJECT;
+}
+
+struct passwd *getpwent(void)
+{
+    return STATIC_OBJECT;
+}
+
+struct passwd *getpwnam(const char *name)
+{
+    return STATIC_OBJECT;
+}
+
+struct passwd *getpwuid(unsigned int uid)
+{
+    return STATIC_OBJECT;
+}
+
+struct servent *getservbyname(const char *name, const char *proto)
+{
+    return STATIC_OBJECT;
+}
+
+struct servent *getservbyport(int port, const char *proto)
+{
+    return STATIC_OBJECT;
+}
+
+struct spwd *getspnam(const char *name)
+{
+    return STATIC_OBJECT;
+}
+
+char * gettext(const char * msgid)
+{
+    return STATIC_OBJECT;
+}
+
+struct tm *gmtime(const void *timer)
+{
+    return STATIC_OBJECT;
+}
+
+const char *gnu_get_libc_version(void)
+{
+    return STATIC_OBJECT;
+}
+
+const char * gnutls_check_version(const char * req_version)
+{
+    return STATIC_OBJECT;
+}
+
+struct lconv *localeconv(void)
+{
+    return STATIC_OBJECT;
+}
+
+struct tm *localtime(const void *timer)
+{
+    return STATIC_OBJECT;
+}
+
+char * ngettext(const char * msgid, const char * msgid_plural, unsigned long int n)
+{
+    return STATIC_OBJECT;
+}
+
+void *pango_cairo_font_map_get_default(void)
+{
+    return STATIC_OBJECT;
+}
+
+char *re_comp(const char *regex)
+{
+    return STATIC_OBJECT;
+}
+
+char *setlocale(int category, const char *locale)
+{
+    return STATIC_OBJECT;
+}
+
+char *tgoto(const char *cap, int col, int row)
+{
+    return STATIC_OBJECT;
+}
+
+char *tparm(char *str, ...)
+{
+    return STATIC_OBJECT;
+}
+
+const char *zError(int a)
+{
+    return STATIC_OBJECT;
 }

@@ -212,12 +212,15 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getBytefromGepTypePair(const Ac
         }
     }
 
-    if (type) {
-        if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type)) {
+    if (type)
+    {
+        if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+        {
             offsetLb = offsetLb * gep->getAccessPath().getElementNum(pty->getPtrElementType())* elemBytesize;
             offsetUb = offsetUb * gep->getAccessPath().getElementNum(pty->getPtrElementType())* elemBytesize;
         }
-        else {
+        else
+        {
             offsetLb = offsetLb * elemBytesize;
             offsetUb = offsetUb * elemBytesize;
         }
@@ -263,12 +266,15 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getIndexfromGepTypePair(const A
         }
     }
 
-    if (type) {
-        if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type)) {
+    if (type)
+    {
+        if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+        {
             offsetLb = offsetLb * gep->getAccessPath().getElementNum(pty->getPtrElementType());
             offsetUb = offsetUb * gep->getAccessPath().getElementNum(pty->getPtrElementType());
         }
-        else {
+        else
+        {
             const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()
                                                ->getTypeInfo(type)
                                                ->getFlattenedElemIdxVec();
@@ -277,7 +283,9 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getIndexfromGepTypePair(const A
             {
                 offsetLb = 0;
                 offsetUb = maxFieldLimit;
-            } else {
+            }
+            else
+            {
                 offsetLb =
                     SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
                         type, offsetLb);

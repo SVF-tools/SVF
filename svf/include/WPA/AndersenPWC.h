@@ -62,7 +62,7 @@ public:
     {
         if (scdAndersen == nullptr)
         {
-            new AndersenSCD(_pag);
+            scdAndersen = new AndersenSCD(_pag);
             scdAndersen->analyze();
             return scdAndersen;
         }
