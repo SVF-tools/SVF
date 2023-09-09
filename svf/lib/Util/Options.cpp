@@ -2,6 +2,7 @@
 
 #include "Util/Options.h"
 #include "Util/CommandLine.h"
+#include "Util/ExtAPI.h"
 
 namespace SVF
 {
@@ -772,7 +773,7 @@ const Option<bool> Options::VtableInSVFIR(
 
 //WPAPass.cpp
 const Option<std::string> Options::ExtAPIInput(
-    "extapi", "External API extapi.bc", std::string(EXTAPI_PATH) + "/extapi.bc"
+    "extapi", "External API extapi.bc", ExtAPI::getExtAPI()->getExtBcPath()
 );
 
 const Option<bool> Options::AnderSVFG(

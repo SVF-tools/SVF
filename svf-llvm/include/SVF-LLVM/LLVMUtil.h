@@ -141,10 +141,10 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallBase* cs)
         if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
             refType = SVFUtil::dyn_cast<PointerType>(getPtrElementType(argType));
     }
-    // Case 2: heap/static object held by return value.
+    // Case 2: heap object held by return value.
     else
     {
-        assert((SVFUtil::isStaticExtCall(svfcs) || SVFUtil::isHeapAllocExtCallViaRet(svfcs))
+        assert(SVFUtil::isHeapAllocExtCallViaRet(svfcs)
                && "Must be heap alloc via ret, or static allocation site");
         refType = SVFUtil::dyn_cast<PointerType>(cs->getType());
     }
@@ -377,14 +377,18 @@ std::vector<const Function *> getCalledFunctions(const Function *F);
 std::vector<std::string> getFunAnnotations(const Function* fun);
 void removeFunAnnotations(std::vector<Function*>& removedFuncList);
 
-inline u32_t SVFType2ByteSize(const SVFType* type) {
+inline u32_t SVFType2ByteSize(const SVFType* type)
+{
     const llvm::Type* llvm_rhs = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(type);
     u32_t llvm_rhs_size = LLVMUtil::getTypeSizeInBytes(llvm_rhs->getPointerElementType());
     u32_t llvm_elem_size = -1;
-    if (llvm_rhs->getPointerElementType()->isArrayTy() && llvm_rhs_size > 0) {
+    if (llvm_rhs->getPointerElementType()->isArrayTy() && llvm_rhs_size > 0)
+    {
         size_t array_len = llvm_rhs->getPointerElementType()->getArrayNumElements();
         llvm_elem_size = llvm_rhs_size / array_len;
-    } else {
+    }
+    else
+    {
         llvm_elem_size =llvm_rhs_size;
     }
     return llvm_elem_size;
@@ -515,6 +519,55 @@ std::string llvmToString(const T& val)
     llvm::raw_string_ostream(str) << val;
     return str;
 }
+
+/**
+ * See more: https://github.com/SVF-tools/SVF/pull/1191
+ *
+ * Given the code:
+ *
+ * switch (a) {
+ *   case 0: printf("0\n"); break;
+ *   case 1:
+ *   case 2:
+ *   case 3: printf("a >=1 && a <= 3\n"); break;
+ *   case 4:
+ *   case 6:
+ *   case 7:  printf("a >= 4 && a <=7\n"); break;
+ *   default: printf("a < 0 || a > 7"); break;
+ * }
+ *
+ * Generate the IR:
+ *
+ * switch i32 %0, label %sw.default [
+ *  i32 0, label %sw.bb
+ *  i32 1, label %sw.bb1
+ *  i32 2, label %sw.bb1
+ *  i32 3, label %sw.bb1
+ *  i32 4, label %sw.bb3
+ *  i32 6, label %sw.bb3
+ *  i32 7, label %sw.bb3
+ * ]
+ *
+ * We can get every case basic block and related case value:
+ * [
+ *   {%sw.default, -1},
+ *   {%sw.bb, 0},
+ *   {%sw.bb1, 1},
+ *   {%sw.bb1, 2},
+ *   {%sw.bb1, 3},
+ *   {%sw.bb3, 4},
+ *   {%sw.bb3, 6},
+ *   {%sw.bb3, 7},
+ * ]
+ * Note: default case value is nullptr
+ */
+void getSuccBBandCondValPairVec(const SwitchInst &switchInst, SuccBBAndCondValPairVec &vec);
+
+/**
+ * Note: default case value is nullptr
+ */
+s64_t getCaseValue(const SwitchInst &switchInst, SuccBBAndCondValPair &succBB2CondVal);
+
 } // End namespace LLVMUtil
 
 } // End namespace SVF

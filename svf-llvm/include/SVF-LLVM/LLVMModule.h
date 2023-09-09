@@ -240,11 +240,14 @@ public:
     bool isCalledExtFunction(Function* func)
     {
         /// check if a llvm Function is called.
-        auto isCalledFunction = [](llvm::Function* F) {
-            for (auto& use : F->uses()) {
+        auto isCalledFunction = [](llvm::Function* F)
+        {
+            for (auto& use : F->uses())
+            {
                 llvm::User* user = use.getUser();
 
-                if (llvm::isa<llvm::CallBase>(user)) {
+                if (llvm::isa<llvm::CallBase>(user))
+                {
                     return true;
                 }
             }
