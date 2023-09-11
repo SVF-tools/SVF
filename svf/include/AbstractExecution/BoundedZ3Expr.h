@@ -352,7 +352,7 @@ public:
         {
             s64_t i;
             if (getExpr().is_numeral_i64(i))
-                return get_numeral_int64();
+                return (s64_t)get_numeral_int64();
             else
             {
                 return (getExpr() < 0).simplify().is_true() ? INT64_MIN : INT64_MAX;
