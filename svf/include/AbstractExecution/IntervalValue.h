@@ -95,7 +95,7 @@ public:
     explicit IntervalValue() : AbstractValue(AbstractValue::IntervalK), _lb(minus_infinity()), _ub(plus_infinity()) {}
 
     /// Create the IntervalValue [n, n]
-    explicit IntervalValue(int64_t n) : AbstractValue(AbstractValue::IntervalK), _lb(n), _ub(n) {}
+    explicit IntervalValue(s64_t n) : AbstractValue(AbstractValue::IntervalK), _lb(n), _ub(n) {}
 
     explicit IntervalValue(s32_t n) : IntervalValue((int64_t) n) {}
 
@@ -109,7 +109,7 @@ public:
     explicit IntervalValue(NumericLiteral lb, NumericLiteral ub) : AbstractValue(AbstractValue::IntervalK),
         _lb(std::move(lb)), _ub(std::move(ub)) {}
 
-    explicit IntervalValue(int64_t lb, int64_t ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
+    explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
 
     explicit IntervalValue(double lb, double ub) : IntervalValue(NumericLiteral((int64_t) lb), NumericLiteral((int64_t) ub)) {}
 
