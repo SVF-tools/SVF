@@ -143,6 +143,10 @@ public:
     virtual void writeToFile(const std::string& filename);
     virtual void writeObjVarToFile(const std::string& filename);
     virtual bool readFromFile(const std::string& filename);
+    virtual void readObjVarFromFile(std::ifstream& f);
+    virtual void readPtsResultFromFile(std::ifstream& f);
+    virtual void readGepObjVarMapFromFile(std::ifstream& f);
+    virtual void updateObjVarStatusFromFile(std::ifstream& f);
     //@}
 
 protected:

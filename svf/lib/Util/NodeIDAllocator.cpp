@@ -77,8 +77,7 @@ NodeID NodeIDAllocator::allocateObjectId(void)
         assert(false && "NodeIDAllocator::allocateObjectId: unimplemented node allocation strategy.");
     }
 
-    ++numObjects;
-    ++numNodes;
+    increaseNumOfObjAndNodes();
 
     assert(id != 0 && "NodeIDAllocator::allocateObjectId: ID not allocated");
     return id;
@@ -120,8 +119,7 @@ NodeID NodeIDAllocator::allocateGepObjectId(NodeID base, u32_t offset, u32_t max
         assert(false && "NodeIDAllocator::allocateGepObjectId: unimplemented node allocation strategy");
     }
 
-    ++numObjects;
-    ++numNodes;
+    increaseNumOfObjAndNodes();
 
     assert(id != 0 && "NodeIDAllocator::allocateGepObjectId: ID not allocated");
     return id;

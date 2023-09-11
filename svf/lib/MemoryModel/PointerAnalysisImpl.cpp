@@ -237,16 +237,17 @@ void BVDataPTAImpl::writeToFile(const string& filename)
 
     f << "------\n";
 
-    // Write GepPAGNodes to file
-    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
+    //write gepObjVarMap to file(in form of: baseID offset gepObjNodeId)
+    SVFIR::NodeOffsetMap &gepObjVarMap = pag->getGepObjNodeMap();
+    for(SVFIR::NodeOffsetMap::const_iterator it = gepObjVarMap.begin(), eit = gepObjVarMap.end(); it != eit; it++)
     {
-        PAGNode* pagNode = it->second;
-        if (GepObjVar *gepObjPN = SVFUtil::dyn_cast<GepObjVar>(pagNode))
-        {
-            f << it->first << " ";
-            f << pag->getBaseObjVar(it->first) << " ";
-            f << gepObjPN->getConstantFieldIdx() << "\n";
-        }
+        const SVFIR::NodeOffset offsetPair = it -> first;    
+        //write the base id to file
+        f << offsetPair.first << " ";
+        //write the offset to file
+        f << offsetPair.second << " ";
+        //write the gepObjNodeId to file
+        f << it->second << "\n";
     }
 
     f << "------\n";
@@ -273,23 +274,8 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     }
 }
 
-/*!
- * Load pointer analysis result form a file.
- * It populates BVDataPTAImpl with the points-to data, and updates SVFIR with
- * the SVFIR offset nodes created during Andersen's solving stage.
- */
-bool BVDataPTAImpl::readFromFile(const string& filename)
+void BVDataPTAImpl::readObjVarFromFile(std::ifstream& F)
 {
-
-    outs() << "Loading pointer analysis results from '" << filename << "'...";
-
-    ifstream F(filename.c_str());
-    if (!F.is_open())
-    {
-        outs() << "  error opening file for reading!\n";
-        return false;
-    }
-
     // Read ObjVar
     string line;
     while (F.good())
@@ -305,7 +291,11 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
         if (insensitive)
             setObjFieldInsensitive(base);
     }
+}
 
+void BVDataPTAImpl::readPtsResultFromFile(std::ifstream& F)
+{
+    string line;
     // Read analysis results from file
     PTDataTy *ptD = getPTDataTy();
 
@@ -319,6 +309,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     {
         // Parse a single line in the form of "var -> { obj1 obj2 obj3 }"
         getline(F, line);
+        if (line.at(0) == '[' || line == "---VERSIONED---") continue;
         if (line == "------")     break;
         size_t pos = line.find(delimiter1);
         if (pos == string::npos)    break;
@@ -354,24 +345,34 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     // map the variable ID to its pointer set
     for (auto t: nodePtsMap)
         ptD->unionPts(t.first, strPtsMap[t.second]);
+}
 
-    // Read BaseNode insensitivity
+void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
+{
+    string line;
+     //read GepObjVarMap from file
+    SVFIR::NodeOffsetMap gepObjVarMap = pag->getGepObjNodeMap();
     while (F.good())
     {
         getline(F, line);
         if (line == "------")     break;
         // Parse a single line in the form of "ID baseNodeID offset"
         istringstream ss(line);
-        NodeID id;
         NodeID base;
         size_t offset;
-        ss >> id >> base >> offset;
-        NodeID n = pag->getGepObjVar(base, offset);
-        bool matched = (id == n);
-        (void)matched;
-        assert(matched && "Error adding GepObjNode into SVFIR!");
+        NodeID id;
+        ss >> base >> offset >>id;
+        SVFIR::NodeOffsetMap::const_iterator iter = gepObjVarMap.find(std::make_pair(base, offset));
+        if (iter == gepObjVarMap.end())
+            pag->readGepObjNodeFromFile(base, offset, id);
+        
+        
     }
+}
 
+void BVDataPTAImpl::updateObjVarStatusFromFile(std::ifstream& F)
+{
+    string line;
     // //update ObjVar status
     while (F.good())
     {
@@ -388,6 +389,33 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
             setObjFieldInsensitive(base);
     }
 
+}
+
+/*!
+ * Load pointer analysis result form a file.
+ * It populates BVDataPTAImpl with the points-to data, and updates SVFIR with
+ * the SVFIR offset nodes created during Andersen's solving stage.
+ */
+bool BVDataPTAImpl::readFromFile(const string& filename)
+{
+
+    outs() << "Loading pointer analysis results from '" << filename << "'...";
+
+    ifstream F(filename.c_str());
+    if (!F.is_open())
+    {
+        outs() << "  error opening file for reading!\n";
+        return false;
+    }
+
+    readObjVarFromFile(F);
+
+    readPtsResultFromFile(F);
+
+    readGepObjVarMapFromFile(F);
+
+    updateObjVarStatusFromFile(F);
+
     // Update callgraph
     updateCallGraph(pag->getIndirectCallsites());
 
@@ -396,6 +424,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
 
     return true;
 }
+
 
 /*!
  * Dump points-to of each pag node
