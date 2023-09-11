@@ -51,10 +51,9 @@ public:
 
     BoundedZ3Expr(s32_t i) : Z3Expr(i) {}
 
-    BoundedZ3Expr(int64_t i) : Z3Expr(getContext().int_val(i)) {}
+    BoundedZ3Expr(s64_t i) : Z3Expr(getContext().int_val((int64_t)i)) {}
 
     BoundedZ3Expr(const BoundedZ3Expr &z3Expr) : Z3Expr(z3Expr) {}
-
 
     inline BoundedZ3Expr &operator=(const BoundedZ3Expr &rhs)
     {
@@ -347,11 +346,11 @@ public:
     }
 
     /// Return Numeral
-    inline int64_t getNumeral() const
+    inline s64_t getNumeral() const
     {
         if (is_numeral())
         {
-            int64_t i;
+            s64_t i;
             if (getExpr().is_numeral_i64(i))
                 return get_numeral_int64();
             else
@@ -374,7 +373,7 @@ public:
         }
     }
 
-    int64_t bvLen() const;
+    s64_t bvLen() const;
     //%}
 }; // end class ConZ3Expr
 } // end namespace SVF
