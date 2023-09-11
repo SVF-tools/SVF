@@ -31,11 +31,11 @@
 
 using namespace SVF;
 
-int64_t BoundedZ3Expr::bvLen() const
+s64_t BoundedZ3Expr::bvLen() const
 {
-    if(is_infinite()) return Options::MaxBVLen();
+    if(is_infinite()) return (s64_t)Options::MaxBVLen();
     // No overflow
-    if(getNumeral() != INT64_MIN && getNumeral() != INT64_MAX) return Options::MaxBVLen();
+    if(getNumeral() != INT64_MIN && getNumeral() != INT64_MAX) return (s64_t)Options::MaxBVLen();
     // Create a symbolic variable
     Z3Expr x = getContext().real_const("x");
     Z3Expr y = getContext().real_const("y");
@@ -54,11 +54,11 @@ int64_t BoundedZ3Expr::bvLen() const
         z3::model model = solver->get_model();
         Z3Expr log2_x = model.eval(y.getExpr(), true);
         Z3Expr::getSolver().pop();
-        return BoundedZ3Expr(log2_x + 1).simplify().getNumeral();
+        return (s64_t)BoundedZ3Expr(log2_x + 1).simplify().getNumeral();
     }
     else
     {
         Z3Expr::getSolver().pop();
-        return Options::MaxBVLen();
+        return (s64_t)Options::MaxBVLen();
     }
 }
