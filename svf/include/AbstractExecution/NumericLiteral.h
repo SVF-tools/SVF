@@ -54,7 +54,7 @@ public:
 
     NumericLiteral(s32_t i) : _n(i) {}
 
-    NumericLiteral(int64_t i) : _n(i) {}
+    NumericLiteral(s64_t i) : _n(i) {}
 
     NumericLiteral(BoundedZ3Expr z3Expr) : _n(std::move(z3Expr)) {}
 
@@ -117,7 +117,7 @@ public:
     }
 
     /// Return Numeral
-    inline int64_t getNumeral() const
+    inline s64_t getNumeral() const
     {
         return _n.getNumeral();
     }
