@@ -350,7 +350,7 @@ public:
     {
         if (is_numeral())
         {
-            s64_t i;
+            int64_t i;
             if (getExpr().is_numeral_i64(i))
                 return (s64_t)get_numeral_int64();
             else
