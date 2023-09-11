@@ -74,7 +74,7 @@ public:
     VAddrs getGepObjAddress(u32_t pointer, APOffset offset);
 
     /// Return the byte offset from one gep param offset
-    std::pair<APOffset , APOffset> getBytefromGepTypePair(const AccessPath::VarAndGepTypePair& gep_pair, const GepStmt *gep, APOffset elem_bytesize);
+    std::pair<APOffset, APOffset> getBytefromGepTypePair(const AccessPath::VarAndGepTypePair& gep_pair, const GepStmt *gep, APOffset elem_bytesize);
 
     /// Return the Index offset from one gep param offset
     std::pair<APOffset, APOffset> getIndexfromGepTypePair(const AccessPath::VarAndGepTypePair& gep_pair, const GepStmt *gep);
@@ -84,10 +84,10 @@ public:
     /// e.g. GepStmt* gep = **,
     /// s32_t elemBytesize = LLVMUtil::SVFType2ByteSize(gep->getRHSVar()->getValue()->getType());
     /// std::pair<s32_t, s32_t> byteOffset = getGepByteOffset(gep, elemBytesize);
-    std::pair<APOffset , APOffset> getGepByteOffset(const GepStmt *gep, APOffset elemBytesize);
+    std::pair<APOffset, APOffset> getGepByteOffset(const GepStmt *gep, APOffset elemBytesize);
 
     /// Return the offset expression of a GepStmt
-    std::pair<APOffset , APOffset> getGepOffset(const GepStmt *gep);
+    std::pair<APOffset, APOffset> getGepOffset(const GepStmt *gep);
 
 
     static z3::context &getContext()

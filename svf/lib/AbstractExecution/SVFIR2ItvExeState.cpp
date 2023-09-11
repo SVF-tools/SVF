@@ -608,10 +608,6 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
     {
         IntervalValue resVal;
         VAddrs &lhs = getVAddrs(op0), &rhs = getVAddrs(op1);
-//        if (lhs.empty() || rhs.empty()) {
-//            outs() << "empty address cmp?\n";
-//            return;
-//        }
         assert(!lhs.empty() && !rhs.empty() && "empty address?");
         auto predicate = cmp->getPredicate();
         switch (predicate)
