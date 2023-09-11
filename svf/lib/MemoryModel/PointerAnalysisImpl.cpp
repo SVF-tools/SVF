@@ -195,24 +195,8 @@ void BVDataPTAImpl::writeObjVarToFile(const string& filename)
 
 }
 
-/*!
- * Store pointer analysis result into a file.
- * It includes the points-to relations, and all SVFIR nodes including those
- * created when solving Andersen's constraints.
- */
-void BVDataPTAImpl::writeToFile(const string& filename)
+void BVDataPTAImpl::writePtsResultToFile(std::fstream& f)
 {
-
-    outs() << "Storing pointer analysis results to '" << filename << "'...";
-
-    error_code err;
-    std::fstream f(filename.c_str(), std::ios_base::app);
-    if (!f.good())
-    {
-        outs() << "  error opening file for writing!\n";
-        return;
-    }
-
     // Write analysis results to file
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
     {
@@ -235,8 +219,10 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         f << "}\n";
     }
 
-    f << "------\n";
+}
 
+void BVDataPTAImpl::writeGepObjVarMapToFile(std::fstream& f)
+{
     //write gepObjVarMap to file(in form of: baseID offset gepObjNodeId)
     SVFIR::NodeOffsetMap &gepObjVarMap = pag->getGepObjNodeMap();
     for(SVFIR::NodeOffsetMap::const_iterator it = gepObjVarMap.begin(), eit = gepObjVarMap.end(); it != eit; it++)
@@ -249,6 +235,32 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         //write the gepObjNodeId to file
         f << it->second << "\n";
     }
+
+}
+
+/*!
+ * Store pointer analysis result into a file.
+ * It includes the points-to relations, and all SVFIR nodes including those
+ * created when solving Andersen's constraints.
+ */
+void BVDataPTAImpl::writeToFile(const string& filename)
+{
+
+    outs() << "Storing pointer analysis results to '" << filename << "'...";
+
+    error_code err;
+    std::fstream f(filename.c_str(), std::ios_base::app);
+    if (!f.good())
+    {
+        outs() << "  error opening file for writing!\n";
+        return;
+    }
+
+    writePtsResultToFile(f);
+
+    f << "------\n";
+
+    writeGepObjVarMapToFile(f);
 
     f << "------\n";
 
@@ -271,25 +283,6 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     {
         outs() << "\n";
         return;
-    }
-}
-
-void BVDataPTAImpl::readObjVarFromFile(std::ifstream& F)
-{
-    // Read ObjVar
-    string line;
-    while (F.good())
-    {
-        getline(F, line);
-        if (line == "------")     break;
-        // Parse a single line in the form of "baseNodeID insensitive"
-        istringstream ss(line);
-        NodeID base;
-        bool insensitive;
-        ss >> base >> insensitive;
-
-        if (insensitive)
-            setObjFieldInsensitive(base);
     }
 }
 
@@ -352,7 +345,7 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
     string line;
      //read GepObjVarMap from file
     SVFIR::NodeOffsetMap gepObjVarMap = pag->getGepObjNodeMap();
-    while (F.good())
+        while (F.good())
     {
         getline(F, line);
         if (line == "------")     break;
@@ -364,20 +357,33 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
         ss >> base >> offset >>id;
         SVFIR::NodeOffsetMap::const_iterator iter = gepObjVarMap.find(std::make_pair(base, offset));
         if (iter == gepObjVarMap.end())
-            pag->readGepObjNodeFromFile(base, offset, id);
+        {
+            SVFVar* node = pag->getGNode(base);
+            const MemObj* obj = nullptr;
+            if (GepObjVar* gepObjVar = SVFUtil::dyn_cast<GepObjVar>(node))
+                obj = gepObjVar->getMemObj();
+            else if (FIObjVar* baseNode = SVFUtil::dyn_cast<FIObjVar>(node))
+                obj = baseNode->getMemObj();
+            else if (DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
+                obj = baseNode->getMemObj();
+            else
+                assert(false && "new gep obj node kind?");
+            pag->addGepObjNode(obj, offset, id);
+            NodeIDAllocator::get()->increaseNumOfObjAndNodes();
+        }
         
         
     }
 }
 
-void BVDataPTAImpl::updateObjVarStatusFromFile(std::ifstream& F)
+void BVDataPTAImpl::readAndSetObjFieldSensitivity(std::ifstream& F, const std::string& delimiterStr)
 {
     string line;
     // //update ObjVar status
     while (F.good())
     {
         getline(F, line);
-        if (line.empty())
+        if (line.empty() || line == delimiterStr)
             break;
         // Parse a single line in the form of "baseNodeID insensitive"
         istringstream ss(line);
@@ -408,13 +414,13 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
         return false;
     }
 
-    readObjVarFromFile(F);
+    readAndSetObjFieldSensitivity(F,"------");
 
     readPtsResultFromFile(F);
 
     readGepObjVarMapFromFile(F);
 
-    updateObjVarStatusFromFile(F);
+    readAndSetObjFieldSensitivity(F,"");
 
     // Update callgraph
     updateCallGraph(pag->getIndirectCallsites());

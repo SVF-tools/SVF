@@ -48,6 +48,7 @@ class SVFIR : public IRGraph
     friend class TypeBasedHeapCloning;
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class BVDataPTAImpl;
 
 public:
     typedef Set<const CallICFGNode*> CallSiteSet;
@@ -391,8 +392,6 @@ public:
         return node->getMemObj();
     }
     //@}
-
-    void readGepObjNodeFromFile(const NodeID& base, const APOffset& apOffset, const NodeID id);
     
     /// Get a field SVFIR Object node according to base mem obj and offset
     NodeID getGepObjVar(const MemObj* obj, const APOffset& ap);
@@ -562,7 +561,7 @@ private:
     /// Add a temp field value node, this method can only invoked by getGepValVar
     NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const AccessPath& ap, NodeID i, const SVFType* type);
     /// Add a field obj node, this method can only invoked by getGepObjVar
-    NodeID addGepObjNode(const MemObj* obj, const APOffset& apOffset);
+    NodeID addGepObjNode(const MemObj* obj, const APOffset& apOffset, const NodeID gepId);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
     NodeID addFIObjNode(const MemObj* obj);
     //@}

@@ -966,7 +966,7 @@ void VersionedFlowSensitive::readPtsFromFile(const std::string& filename)
             SVFUtil::outs() << "  error opening file for reading!\n";
             return ;
         }
-        readObjVarFromFile(F);
+        readAndSetObjFieldSensitivity(F,"------");
 
         readVersionedAnalysisResultFromFile(F);
 
@@ -974,7 +974,7 @@ void VersionedFlowSensitive::readPtsFromFile(const std::string& filename)
 
         readGepObjVarMapFromFile(F);
 
-        updateObjVarStatusFromFile(F);
+        readAndSetObjFieldSensitivity(F,"");
 
         // Update callgraph
         updateCallGraph(pag->getIndirectCallsites());
