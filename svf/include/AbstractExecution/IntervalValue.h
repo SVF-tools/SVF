@@ -95,13 +95,13 @@ public:
     explicit IntervalValue() : AbstractValue(AbstractValue::IntervalK), _lb(minus_infinity()), _ub(plus_infinity()) {}
 
     /// Create the IntervalValue [n, n]
-    explicit IntervalValue(int64_t n) : AbstractValue(AbstractValue::IntervalK), _lb(n), _ub(n) {}
+    explicit IntervalValue(s64_t n) : AbstractValue(AbstractValue::IntervalK), _lb(n), _ub(n) {}
 
-    explicit IntervalValue(s32_t n) : IntervalValue((int64_t) n) {}
+    explicit IntervalValue(s32_t n) : IntervalValue((s64_t) n) {}
 
-    explicit IntervalValue(u32_t n) : IntervalValue((int64_t) n) {}
+    explicit IntervalValue(u32_t n) : IntervalValue((s64_t) n) {}
 
-    explicit IntervalValue(double n) : IntervalValue((int64_t) n) {}
+    explicit IntervalValue(double n) : IntervalValue((s64_t) n) {}
 
     explicit IntervalValue(NumericLiteral n) : IntervalValue(n, n) {}
 
@@ -109,15 +109,15 @@ public:
     explicit IntervalValue(NumericLiteral lb, NumericLiteral ub) : AbstractValue(AbstractValue::IntervalK),
         _lb(std::move(lb)), _ub(std::move(ub)) {}
 
-    explicit IntervalValue(int64_t lb, int64_t ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
+    explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
 
-    explicit IntervalValue(double lb, double ub) : IntervalValue(NumericLiteral((int64_t) lb), NumericLiteral((int64_t) ub)) {}
+    explicit IntervalValue(double lb, double ub) : IntervalValue(NumericLiteral((s64_t) lb), NumericLiteral((s64_t) ub)) {}
 
-    explicit IntervalValue(s32_t lb, s32_t ub) : IntervalValue((int64_t) lb, (int64_t) ub) {}
+    explicit IntervalValue(s32_t lb, s32_t ub) : IntervalValue((s64_t) lb, (s64_t) ub) {}
 
-    explicit IntervalValue(u32_t lb, u32_t ub) : IntervalValue((int64_t) lb, (int64_t) ub) {}
+    explicit IntervalValue(u32_t lb, u32_t ub) : IntervalValue((s64_t) lb, (s64_t) ub) {}
 
-    explicit IntervalValue(u64_t lb, u64_t ub) : IntervalValue((int64_t) lb, (int64_t) ub) {}
+    explicit IntervalValue(u64_t lb, u64_t ub) : IntervalValue((s64_t) lb, (s64_t) ub) {}
 
     /// Copy constructor
     IntervalValue(const IntervalValue &) = default;
@@ -260,7 +260,7 @@ public:
     }
 
     /// Return
-    int64_t getNumeral() const
+    s64_t getNumeral() const
     {
         assert(is_numeral() && "this IntervalValue is not numeral");
         return _lb.getNumeral();
@@ -800,15 +800,15 @@ inline IntervalValue operator&(const IntervalValue &lhs, const IntervalValue &rh
     }
     else if (lhs.lb().getNumeral() >= 0 && rhs.lb().getNumeral() >= 0)
     {
-        return IntervalValue((int64_t) 0, min(lhs.ub(), rhs.ub()));
+        return IntervalValue((s64_t) 0, min(lhs.ub(), rhs.ub()));
     }
     else if (lhs.lb().getNumeral() >= 0)
     {
-        return IntervalValue((int64_t) 0, lhs.ub());
+        return IntervalValue((s64_t) 0, lhs.ub());
     }
     else if (rhs.lb().getNumeral() >= 0)
     {
-        return IntervalValue((int64_t) 0, rhs.ub());
+        return IntervalValue((s64_t) 0, rhs.ub());
     }
     else
     {
@@ -835,9 +835,9 @@ inline IntervalValue operator|(const IntervalValue &lhs, const IntervalValue &rh
     else if (lhs.lb().getNumeral() >= 0 && !lhs.ub().is_infinity() &&
              rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity())
     {
-        int64_t m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
-        int64_t ub = next_power_of_2(s64_t(m+1));
-        return IntervalValue((int64_t) 0, (int64_t) ub);
+        s64_t m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
+        s64_t ub = next_power_of_2(s64_t(m+1));
+        return IntervalValue((s64_t) 0, (s64_t) ub);
     }
     else
     {
@@ -864,9 +864,9 @@ inline IntervalValue operator^(const IntervalValue &lhs, const IntervalValue &rh
     else if (lhs.lb().getNumeral() >= 0 && !lhs.ub().is_infinity() &&
              rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity())
     {
-        int64_t m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
-        int64_t ub = next_power_of_2(s64_t(m+1));
-        return IntervalValue((int64_t) 0, (int64_t) ub);
+        s64_t m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
+        s64_t ub = next_power_of_2(s64_t(m+1));
+        return IntervalValue((s64_t) 0, (s64_t) ub);
     }
     else
     {
