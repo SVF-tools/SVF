@@ -1035,7 +1035,9 @@ void VersionedFlowSensitive::writeVersionedAnalysisResultToFile(const std::strin
                     {
                         f << n << " ";
                     }
-                } else{
+                }
+                else
+                {
                     f << " ";
                 }
                 f << "}\n";
@@ -1092,7 +1094,7 @@ void VersionedFlowSensitive::readVersionedAnalysisResultFromFile(std::ifstream& 
         }
 
         // union point-to reuslt
-        vPtD->unionPts(keyPair, dstPts); 
+        vPtD->unionPts(keyPair, dstPts);
     }
 
 }

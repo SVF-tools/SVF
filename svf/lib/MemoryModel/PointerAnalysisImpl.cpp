@@ -227,7 +227,7 @@ void BVDataPTAImpl::writeGepObjVarMapToFile(std::fstream& f)
     SVFIR::NodeOffsetMap &gepObjVarMap = pag->getGepObjNodeMap();
     for(SVFIR::NodeOffsetMap::const_iterator it = gepObjVarMap.begin(), eit = gepObjVarMap.end(); it != eit; it++)
     {
-        const SVFIR::NodeOffset offsetPair = it -> first;    
+        const SVFIR::NodeOffset offsetPair = it -> first;
         //write the base id to file
         f << offsetPair.first << " ";
         //write the offset to file
@@ -343,9 +343,9 @@ void BVDataPTAImpl::readPtsResultFromFile(std::ifstream& F)
 void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
 {
     string line;
-     //read GepObjVarMap from file
+    //read GepObjVarMap from file
     SVFIR::NodeOffsetMap gepObjVarMap = pag->getGepObjNodeMap();
-        while (F.good())
+    while (F.good())
     {
         getline(F, line);
         if (line == "------")     break;
@@ -371,8 +371,8 @@ void BVDataPTAImpl::readGepObjVarMapFromFile(std::ifstream& F)
             pag->addGepObjNode(obj, offset, id);
             NodeIDAllocator::get()->increaseNumOfObjAndNodes();
         }
-        
-        
+
+
     }
 }
 
