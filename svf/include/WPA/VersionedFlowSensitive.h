@@ -181,6 +181,14 @@ private:
     /// Dumps maps consume and yield.
     void dumpLocVersionMaps(void) const;
 
+    void solveAndwritePtsToFile(const std::string& filename) override;
+
+    void writeVersionedAnalysisResultToFile(const std::string& filename);
+
+    void readVersionedAnalysisResultFromFile(std::ifstream& F);
+
+    void readPtsFromFile(const std::string& filename) override;
+
     /// Dumps a MeldVersion to stdout.
     static void dumpMeldVersion(MeldVersion &v);
 

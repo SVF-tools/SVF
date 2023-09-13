@@ -434,7 +434,10 @@ NodeID SVFIR::getGepObjVar(const MemObj* obj, const APOffset& apOffset)
 
     NodeOffsetMap::iterator iter = GepObjVarMap.find(std::make_pair(base, newLS));
     if (iter == GepObjVarMap.end())
-        return addGepObjNode(obj, newLS);
+    {
+        NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, apOffset, Options::MaxFieldLimit());
+        return addGepObjNode(obj, newLS,gepId);
+    }
     else
         return iter->second;
 
@@ -443,14 +446,13 @@ NodeID SVFIR::getGepObjVar(const MemObj* obj, const APOffset& apOffset)
 /*!
  * Add a field obj node, this method can only invoked by getGepObjVar
  */
-NodeID SVFIR::addGepObjNode(const MemObj* obj, const APOffset& apOffset)
+NodeID SVFIR::addGepObjNode(const MemObj* obj, const APOffset& apOffset, const NodeID gepId)
 {
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = obj->getId();
     assert(0==GepObjVarMap.count(std::make_pair(base, apOffset))
            && "this node should not be created before");
 
-    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, apOffset, Options::MaxFieldLimit());
     GepObjVarMap[std::make_pair(base, apOffset)] = gepId;
     GepObjVar *node = new GepObjVar(obj, gepId, apOffset);
     memToFieldsMap[base].set(gepId);

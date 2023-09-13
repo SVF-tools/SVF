@@ -159,7 +159,7 @@ void AndersenBase::readPtsFromFile(const std::string& filename)
     initialize();
     if (!filename.empty())
         this->readFromFile(filename);
-    PointerAnalysis::finalize();
+    finalize();
 }
 
 /*!
