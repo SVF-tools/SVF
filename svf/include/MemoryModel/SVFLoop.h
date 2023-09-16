@@ -78,17 +78,17 @@ public:
 
     inline bool isBackICFGEdge(const ICFGEdge *edge) const
     {
-        return backICFGEdges.find(edge) != entryICFGEdges.end();
+        return backICFGEdges.find(edge) != backICFGEdges.end();
     }
 
     inline bool isInICFGEdge(const ICFGEdge *edge) const
     {
-        return inICFGEdges.find(edge) != entryICFGEdges.end();
+        return inICFGEdges.find(edge) != inICFGEdges.end();
     }
 
     inline bool isOutICFGEdge(const ICFGEdge *edge) const
     {
-        return outICFGEdges.find(edge) != entryICFGEdges.end();
+        return outICFGEdges.find(edge) != outICFGEdges.end();
     }
 
     inline void addEntryICFGEdge(const ICFGEdge *edge)
