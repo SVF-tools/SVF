@@ -62,6 +62,9 @@ private:
     Map<const SVFBasicBlock*,BBSet> pdtBBsMap;   ///< map a BasicBlock to BasicBlocks it PostDominates
     Map<const SVFBasicBlock*,BBSet> dfBBsMap;    ///< map a BasicBlock to its Dominate Frontier BasicBlocks
     Map<const SVFBasicBlock*, LoopBBs> bb2LoopMap;  ///< map a BasicBlock (if it is in a loop) to all the BasicBlocks in this loop
+    Map<const SVFBasicBlock*, u32_t> bb2PdomLevel;  ///< map a BasicBlock to its level in pdom tree, used in findNearestCommonPDominator
+    Map<const SVFBasicBlock*, const SVFBasicBlock*> bb2PIdom;  ///< map a BasicBlock to its immediate dominator in pdom tree, used in findNearestCommonPDominator
+
 public:
     SVFLoopAndDomInfo()
     {
@@ -112,6 +115,27 @@ public:
         return pdtBBsMap;
     }
 
+    inline const Map<const SVFBasicBlock*,u32_t>& getBBPDomLevel() const
+    {
+        return bb2PdomLevel;
+    }
+
+    inline Map<const SVFBasicBlock*,u32_t>& getBBPDomLevel()
+    {
+        return bb2PdomLevel;
+    }
+
+    inline const Map<const SVFBasicBlock*,const SVFBasicBlock*>& getBB2PIdom() const
+    {
+        return bb2PIdom;
+    }
+
+    inline Map<const SVFBasicBlock*,const SVFBasicBlock*>& getBB2PIdom()
+    {
+        return bb2PIdom;
+    }
+
+
     inline Map<const SVFBasicBlock*,BBSet>& getDomTreeMap()
     {
         return dtBBsMap;
@@ -145,6 +169,9 @@ public:
     bool dominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
 
     bool postDominate(const SVFBasicBlock* bbKey, const SVFBasicBlock* bbValue) const;
+
+    /// find nearest common post dominator of two basic blocks
+    const SVFBasicBlock *findNearestCommonPDominator(const SVFBasicBlock *A, const SVFBasicBlock *B) const;
 };
 
 class SVFValue
