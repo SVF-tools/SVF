@@ -62,6 +62,9 @@ private:
     Map<const SVFBasicBlock*,BBSet> pdtBBsMap;   ///< map a BasicBlock to BasicBlocks it PostDominates
     Map<const SVFBasicBlock*,BBSet> dfBBsMap;    ///< map a BasicBlock to its Dominate Frontier BasicBlocks
     Map<const SVFBasicBlock*, LoopBBs> bb2LoopMap;  ///< map a BasicBlock (if it is in a loop) to all the BasicBlocks in this loop
+    Map<const SVFBasicBlock*, u32_t> bb2Level;  ///< map a BasicBlock to its level in pdom tree
+    Map<const SVFBasicBlock*, const SVFBasicBlock*> bb2idom;  ///< map a BasicBlock to its idom in pdom tree
+
 public:
     SVFLoopAndDomInfo()
     {
@@ -111,6 +114,27 @@ public:
     {
         return pdtBBsMap;
     }
+
+    inline const Map<const SVFBasicBlock*,u32_t>& getBBPDomLevel() const
+    {
+        return bb2Level;
+    }
+
+    inline Map<const SVFBasicBlock*,u32_t>& getBBPDomLevel()
+    {
+        return bb2Level;
+    }
+
+    inline const Map<const SVFBasicBlock*,const SVFBasicBlock*>& getBB2Idom() const
+    {
+        return bb2idom;
+    }
+
+    inline Map<const SVFBasicBlock*,const SVFBasicBlock*>& getBB2Idom()
+    {
+        return bb2idom;
+    }
+
 
     inline Map<const SVFBasicBlock*,BBSet>& getDomTreeMap()
     {
