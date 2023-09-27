@@ -1242,6 +1242,8 @@ cJSON* SVFIRWriter::toJson(const SVFLoopAndDomInfo* ldInfo)
     JSON_WRITE_FIELD(root, ldInfo, pdtBBsMap);
     JSON_WRITE_FIELD(root, ldInfo, dfBBsMap);
     JSON_WRITE_FIELD(root, ldInfo, bb2LoopMap);
+    JSON_WRITE_FIELD(root, ldInfo, bb2PdomLevel);
+    JSON_WRITE_FIELD(root, ldInfo, bb2PIdom);
     return root;
 }
 
@@ -1911,6 +1913,8 @@ void SVFIRReader::readJson(const cJSON* obj, SVFLoopAndDomInfo*& ldInfo)
     JSON_READ_FIELD_FWD(field, ldInfo, pdtBBsMap);
     JSON_READ_FIELD_FWD(field, ldInfo, dfBBsMap);
     JSON_READ_FIELD_FWD(field, ldInfo, bb2LoopMap);
+    JSON_READ_FIELD_FWD(field, ldInfo, bb2PdomLevel);
+    JSON_READ_FIELD_FWD(field, ldInfo, bb2PIdom);
 
     ABORT_IFNOT(!field,
                 "Extra field in SVFLoopAndDomInfo: " << JSON_KEY(field));
