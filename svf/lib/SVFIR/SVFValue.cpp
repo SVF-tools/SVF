@@ -119,7 +119,8 @@ const SVFBasicBlock* SVFLoopAndDomInfo::findNearestCommonPDominator(const SVFBas
 
     // Use level information to go up the tree until the levels match. Then
     // continue going up til we arrive at the same node.
-    while (A != B) {
+    while (A != B)
+    {
         const auto lvA = getBBPDomLevel().find(A);
         const auto lvB = getBBPDomLevel().find(B);
         assert(lvA != getBBPDomLevel().end() && lvB != getBBPDomLevel().end());

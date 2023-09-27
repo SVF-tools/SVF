@@ -33,17 +33,21 @@
 #include "SVFIR/SVFValue.h"
 
 // control dependence builder
-namespace SVF {
-class CDGBuilder {
+namespace SVF
+{
+class CDGBuilder
+{
 public:
 
     /// constructor
-    CDGBuilder() : _controlDG(CDG::getCDG()) {
+    CDGBuilder() : _controlDG(CDG::getCDG())
+    {
 
     }
 
     /// destructor
-    ~CDGBuilder() {
+    ~CDGBuilder()
+    {
 
     }
 
@@ -83,7 +87,8 @@ private:
 
 
     /// update map
-    inline void updateMap(const SVFBasicBlock *pred, const SVFBasicBlock *bb, s32_t pos) {
+    inline void updateMap(const SVFBasicBlock *pred, const SVFBasicBlock *bb, s32_t pos)
+    {
         _svfcontrolMap[pred][bb].insert(pos);
         _svfdependentOnMap[bb][pred].insert(pos);
     }
