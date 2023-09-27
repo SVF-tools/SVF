@@ -563,9 +563,101 @@ std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F)
     return calledFunctions;
 }
 
+bool LLVMUtil::isUnusedGlobalVariable(const GlobalVariable& global)
+{
+    // Check if it is an empty global annotations
+    if (global.getName() == "llvm.global.annotations" && SVFUtil::isa<ConstantArray>(global.getInitializer()))   
+        return false;
+    else
+    {
+        // Check if any global strings has at least one effective user
+        for (auto& use : global.uses())
+        {
+            if (use.getUser()->getNumUses() != 0)
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void LLVMUtil::removeUnusedGlobalVariables(Module* module)
+{
+    std::vector<GlobalVariable*> unusedGlobals;
+
+    for (GlobalVariable& global : module->globals())
+    {
+        if (isUnusedGlobalVariable(global))
+        {
+            // Record unused global variables
+            unusedGlobals.push_back(&global);
+        }
+    }
+
+    // Delete unused global variables
+    for (GlobalVariable* global : unusedGlobals)
+    {
+        global->eraseFromParent();
+    }
+}
+
+/// Delete unused functions, annotations and global variables in extapi.bc
+void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> removedFuncList)
+{
+    if (removedFuncList.empty())
+        return;
+    if (removedFuncList[0]->getParent()->getName().str() != Options::ExtAPIInput())  
+        return;
+
+    Module* mod = removedFuncList[0]->getParent();
+    /// Delete unused function annotations
+    LLVMUtil::removeFunAnnotations(removedFuncList);
+
+    /// Delete unused functions
+    /// The functions to be deleted from extapi.bc can be categorized into two types. 
+    /// The first type includes functions do not contain any invocation statements, 
+    /// The second type includes functions whose contain invocation statements. 
+    /// It is necessary to delete functions of the second type first before deleting those of the first type; 
+    /// Otherwise, errors may occur when calling eraseFromParent().
+    std::vector<Function*> funcsToKeep;
+    auto isCalledFunction = [](llvm::Function* F)
+    {
+        for (auto& use : F->uses())
+        {
+            llvm::User* user = use.getUser();
+            if (llvm::isa<llvm::CallBase>(user))
+                return true;
+        }
+        return false;
+    };
+
+    for (Function* func : removedFuncList)
+    {
+        if (isCalledFunction(func))
+        {
+            // Record first kind function(which does not contain any invocation statements)
+            funcsToKeep.push_back(func);
+        }
+        else
+        {
+            // Delete second kind function(which contains invocation statements)
+            func->eraseFromParent();
+        }
+    }
+
+    // Delete first kind functions
+    for (Function* func : funcsToKeep)
+    {
+        func->eraseFromParent();
+    }
+
+    // Delete unused global variables
+    removeUnusedGlobalVariables(mod);
+}
+
 u32_t LLVMUtil::getTypeSizeInBytes(const Type* type)
 {
-
     // if the type has size then simply return it, otherwise just return 0
     if(type->isSized())
         return getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getTypeStoreSize(const_cast<Type*>(type));
