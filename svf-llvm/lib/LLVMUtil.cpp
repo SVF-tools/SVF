@@ -572,18 +572,15 @@ bool LLVMUtil::isUnusedGlobalVariable(const GlobalVariable& global)
     {
         // Check if any global strings has at least one effective user
         for (auto& use : global.uses())
-        {
             if (use.getUser()->getNumUses() != 0)
-            {
                 return false;
-            }
-        }
     }
     return true;
 }
 
 void LLVMUtil::removeUnusedGlobalVariables(Module* module)
 {
+    assert(module && "Null module pointer!");
     std::vector<GlobalVariable*> unusedGlobals;
     for (GlobalVariable& global : module->globals())
         if (isUnusedGlobalVariable(global))
@@ -600,10 +597,11 @@ void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Fun
 {
     if (removedFuncList.empty())
         return;
-    if (removedFuncList[0]->getParent()->getName().str() != Options::ExtAPIInput())  
-        return;
 
     Module* mod = removedFuncList[0]->getParent();
+    if (mod->getName().str() != Options::ExtAPIInput())  
+        return;
+
     /// Delete unused function annotations
     LLVMUtil::removeFunAnnotations(removedFuncList);
 
@@ -617,6 +615,7 @@ void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Fun
     /// Check whether a function is called by other functions
     auto isCalledFunction = [](llvm::Function* F)
     {
+        assert(F && "Null function pointer!");
         for (auto& use : F->uses())
         {
             llvm::User* user = use.getUser();
