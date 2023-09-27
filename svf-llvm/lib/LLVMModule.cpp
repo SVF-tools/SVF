@@ -175,8 +175,8 @@ void LLVMModuleSet::createSVFDataStructure()
                 candidateDefs.push_back(&func);
             }
         }
-        /// Remove unused functions and annotations in extapi.bc
-        LLVMUtil::removeUnusedFuncsAndAnnotations(removedFuncList);
+        /// Remove unused functions, annotations and global variables in extapi.bc
+        LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(removedFuncList);
     }
     for (const Function* func: candidateDefs)
     {
@@ -814,6 +814,14 @@ void LLVMModuleSet::buildFunToFunMap()
                     funDecls.insert(&fun);
                     declNames.insert(fun.getName().str());
                 }
+                /// Keep svf_main() function and all the functions called in svf_main()
+                else if (fun.getName().str() == "svf__main")
+                {
+                    ExtFuncsVec.push_back(&fun);
+                    // Get all called functions in svf_main()
+                    std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(&fun);
+                    ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
+                }
                 else
                 {
                     extFuncs.insert(&fun);
@@ -931,7 +939,8 @@ void LLVMModuleSet::buildFunToFunMap()
                 decls.push_back(fdecl);
                 // Keep all called functions in extfun
                 // ExtDecl -> ExtDecl in Table 1
-                ExtFuncsVec = LLVMUtil::getCalledFunctions(extfun);
+                std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(extfun);
+                ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
             }
         }
     }
@@ -960,7 +969,8 @@ void LLVMModuleSet::buildFunToFunMap()
                 decls.push_back(declaration);
                 // Keep all called functions in owfunc
                 // ExtDecl -> ExtDecl in Table 1
-                ExtFuncsVec = LLVMUtil::getCalledFunctions(owfunc);
+                std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(owfunc);
+                ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
             }
         }
     }

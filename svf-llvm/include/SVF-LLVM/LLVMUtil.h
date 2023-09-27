@@ -376,6 +376,10 @@ bool isIntrinsicFun(const Function* func);
 std::vector<const Function *> getCalledFunctions(const Function *F);
 std::vector<std::string> getFunAnnotations(const Function* fun);
 void removeFunAnnotations(std::vector<Function*>& removedFuncList);
+bool isUnusedGlobalVariable(const GlobalVariable& global);
+void removeUnusedGlobalVariables(Module* module);
+/// Delete unused functions, annotations and global variables in extapi.bc
+void removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> removedFuncList);
 
 inline u32_t SVFType2ByteSize(const SVFType* type)
 {
@@ -392,15 +396,6 @@ inline u32_t SVFType2ByteSize(const SVFType* type)
         llvm_elem_size =llvm_rhs_size;
     }
     return llvm_elem_size;
-}
-
-inline void removeUnusedFuncsAndAnnotations(std::vector<Function*> removedFuncList)
-{
-    /// Remove unused function annotations in extapi.bc
-    LLVMUtil::removeFunAnnotations(removedFuncList);
-    /// Remove unused function in extapi.bc
-    for (Function* func : removedFuncList)
-        func->eraseFromParent();
 }
 
 /// Get the corresponding Function based on its name

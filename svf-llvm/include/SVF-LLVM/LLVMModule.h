@@ -239,24 +239,8 @@ public:
     /// Remove unused function in extapi.bc module
     bool isCalledExtFunction(Function* func)
     {
-        /// check if a llvm Function is called.
-        auto isCalledFunction = [](llvm::Function* F)
-        {
-            for (auto& use : F->uses())
-            {
-                llvm::User* user = use.getUser();
-
-                if (llvm::isa<llvm::CallBase>(user))
-                {
-                    return true;
-                }
-            }
-            return false;
-        };
         /// if this function func defined in extapi.bc but never used in application code (without any corresponding declared functions).
         if (func->getParent()->getName().str() == Options::ExtAPIInput()
-                && !isCalledFunction(func)
-                && func->getName().str() != "svf__main"
                 && FunDefToDeclsMap.find(func) == FunDefToDeclsMap.end()
                 && std::find(ExtFuncsVec.begin(), ExtFuncsVec.end(), func) == ExtFuncsVec.end())
         {
