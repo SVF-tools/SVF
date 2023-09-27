@@ -566,7 +566,7 @@ std::vector<const Function *> LLVMUtil::getCalledFunctions(const Function *F)
 bool LLVMUtil::isUnusedGlobalVariable(const GlobalVariable& global)
 {
     // Check if it is an empty global annotations
-    if (global.getName() == "llvm.global.annotations" && SVFUtil::isa<ConstantArray>(global.getInitializer()))   
+    if (global.getName() == "llvm.global.annotations" && SVFUtil::isa<ConstantArray>(global.getInitializer()))
         return false;
     else
     {
@@ -599,17 +599,17 @@ void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Fun
         return;
 
     Module* mod = removedFuncList[0]->getParent();
-    if (mod->getName().str() != Options::ExtAPIInput())  
+    if (mod->getName().str() != Options::ExtAPIInput())
         return;
 
     /// Delete unused function annotations
     LLVMUtil::removeFunAnnotations(removedFuncList);
 
     /// Delete unused functions
-    /// The functions to be deleted from extapi.bc can be categorized into two types. 
-    /// The first type includes functions do not contain any invocation statements, 
-    /// The second type includes functions whose contain invocation statements. 
-    /// It is necessary to delete functions of the second type first before deleting those of the first type; 
+    /// The functions to be deleted from extapi.bc can be categorized into two types.
+    /// The first type includes functions do not contain any invocation statements,
+    /// The second type includes functions whose contain invocation statements.
+    /// It is necessary to delete functions of the second type first before deleting those of the first type;
     /// Otherwise, errors may occur when calling eraseFromParent().
     std::vector<Function*> funcsToKeep;
     /// Check whether a function is called by other functions
