@@ -585,21 +585,14 @@ bool LLVMUtil::isUnusedGlobalVariable(const GlobalVariable& global)
 void LLVMUtil::removeUnusedGlobalVariables(Module* module)
 {
     std::vector<GlobalVariable*> unusedGlobals;
-
     for (GlobalVariable& global : module->globals())
-    {
         if (isUnusedGlobalVariable(global))
-        {
             // Record unused global variables
             unusedGlobals.push_back(&global);
-        }
-    }
 
     // Delete unused global variables
     for (GlobalVariable* global : unusedGlobals)
-    {
         global->eraseFromParent();
-    }
 }
 
 /// Delete unused functions, annotations and global variables in extapi.bc
@@ -621,6 +614,7 @@ void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Fun
     /// It is necessary to delete functions of the second type first before deleting those of the first type; 
     /// Otherwise, errors may occur when calling eraseFromParent().
     std::vector<Function*> funcsToKeep;
+    /// Check whether a function is called by other functions
     auto isCalledFunction = [](llvm::Function* F)
     {
         for (auto& use : F->uses())
@@ -635,23 +629,15 @@ void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Fun
     for (Function* func : removedFuncList)
     {
         if (isCalledFunction(func))
-        {
             // Record first kind function(which does not contain any invocation statements)
             funcsToKeep.push_back(func);
-        }
         else
-        {
             // Delete second kind function(which contains invocation statements)
             func->eraseFromParent();
-        }
     }
-
     // Delete first kind functions
     for (Function* func : funcsToKeep)
-    {
         func->eraseFromParent();
-    }
-
     // Delete unused global variables
     removeUnusedGlobalVariables(mod);
 }

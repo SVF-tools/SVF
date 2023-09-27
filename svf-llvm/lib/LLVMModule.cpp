@@ -814,9 +814,11 @@ void LLVMModuleSet::buildFunToFunMap()
                     funDecls.insert(&fun);
                     declNames.insert(fun.getName().str());
                 }
+                /// Keep svf_main() function and all the functions called in svf_main()
                 else if (fun.getName().str() == "svf__main")
                 {
                     ExtFuncsVec.push_back(&fun);
+                    // Get all called functions in svf_main()
                     std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(&fun);
                     ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
                 }
