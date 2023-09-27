@@ -403,7 +403,7 @@ void LLVMModuleSet::initDomTree(SVFFunction* svffun, const Function* fun)
             ld->getBBPDomLevel()[svfBB] = level;
             BasicBlock* idomBB = pdtNode->getIDom()->getBlock();
             const SVFBasicBlock* idom = idomBB == NULL ? NULL: getSVFBasicBlock(idomBB);
-            ld->getBB2Idom()[svfBB] = idom;
+            ld->getBB2PIdom()[svfBB] = idom;
 
             SVFLoopAndDomInfo::BBSet& bbSet = ld->getPostDomTreeMap()[svfBB];
             for (const auto domBB : *pdtNode)

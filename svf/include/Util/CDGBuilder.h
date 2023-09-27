@@ -88,7 +88,6 @@ private:
         _svfdependentOnMap[bb][pred].insert(pos);
     }
 
-    const SVFBasicBlock *findNearestCommonDominator(const SVFBasicBlock *A, const SVFBasicBlock *B, SVFLoopAndDomInfo *ld) const;
 
 private:
     CDG *_controlDG;

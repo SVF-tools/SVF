@@ -94,29 +94,6 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
     }
 }
 
-const SVFBasicBlock *CDGBuilder::findNearestCommonDominator(const SVFBasicBlock *A, const SVFBasicBlock *B,
-                                                                  SVFLoopAndDomInfo *ld) const {
-    assert(A && B && "Pointers are not valid");
-    assert(A->getParent() == B->getParent() &&
-           "Two blocks are not in same function");
-
-    // Use level information to go up the tree until the levels match. Then
-    // continue going up til we arrive at the same node.
-    while (A != B) {
-        const auto lvA = ld->getBBPDomLevel().find(A);
-        const auto lvB = ld->getBBPDomLevel().find(B);
-        assert(lvA != ld->getBBPDomLevel().end() && lvB != ld->getBBPDomLevel().end());
-
-        if (lvA->second < lvB->second) std::swap(A, B);
-
-        const auto lvAIdom = ld->getBB2Idom().find(A);
-        assert(lvAIdom != ld->getBB2Idom().end());
-        A = lvAIdom->second;
-    }
-
-    return A;
-}
-
 /*!
  * Build control dependence for each function
  *
@@ -138,8 +115,8 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule) {
             const SVFBasicBlock *pred = item.first;
             // for each bb pair
             for (const SVFBasicBlock *succ: item.second) {
-                const SVFBasicBlock *SVFLCA = findNearestCommonDominator(pred, succ,
-                                                                         const_cast<SVFFunction *>(svfFun)->getLoopAndDomInfo());
+                const SVFBasicBlock *SVFLCA = const_cast<SVFFunction *>(svfFun)->
+                                              getLoopAndDomInfo()->findNearestCommonPDominator(pred, succ);
                 std::vector<const SVFBasicBlock *> tgtNodes;
                 if (SVFLCA == pred) tgtNodes.push_back(SVFLCA);
                 // from succ to LCA

@@ -111,6 +111,29 @@ bool SVFLoopAndDomInfo::postDominate(const SVFBasicBlock* bbKey, const SVFBasicB
     return false;
 }
 
+const SVFBasicBlock* SVFLoopAndDomInfo::findNearestCommonPDominator(const SVFBasicBlock* A, const SVFBasicBlock* B) const
+{
+    assert(A && B && "Pointers are not valid");
+    assert(A->getParent() == B->getParent() &&
+           "Two blocks are not in same function");
+
+    // Use level information to go up the tree until the levels match. Then
+    // continue going up til we arrive at the same node.
+    while (A != B) {
+        const auto lvA = getBBPDomLevel().find(A);
+        const auto lvB = getBBPDomLevel().find(B);
+        assert(lvA != getBBPDomLevel().end() && lvB != getBBPDomLevel().end());
+
+        if (lvA->second < lvB->second) std::swap(A, B);
+
+        const auto lvAIdom = getBB2PIdom().find(A);
+        assert(lvAIdom != getBB2PIdom().end());
+        A = lvAIdom->second;
+    }
+
+    return A;
+}
+
 bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
 {
     if (hasLoopInfo(bb))
