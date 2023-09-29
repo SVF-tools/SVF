@@ -31,7 +31,7 @@
 #define INCLUDE_SVFIR_SVFTYPE_H_
 
 #include "Util/SparseBitVector.h"
-
+#include <cstdint>
 #include <deque>
 #include <iostream>
 #include <list>

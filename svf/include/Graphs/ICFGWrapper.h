@@ -88,6 +88,7 @@ public:
         _icfgEdge = edge;
     }
 
+    using SVF::GenericEdge<NodeType>::operator==;
     /// Add the hash function for std::set (we also can overload operator< to implement this)
     //  and duplicated elements in the set are not inserted (binary tree comparison)
     //@{
