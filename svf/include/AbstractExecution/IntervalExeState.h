@@ -418,6 +418,8 @@ public:
         return true;
     }
 
+    using ExeState::operator==;
+    using ExeState::operator!=;
     bool operator==(const IntervalExeState &rhs) const
     {
         return ExeState::operator==(rhs) && eqVarToValMap(_varToItvVal, rhs.getVarToVal()) &&
