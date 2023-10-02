@@ -35,7 +35,7 @@ using namespace SVF;
 
 ExtAPI* ExtAPI::extOp = nullptr;
 
-ExtAPI* ExtAPI::getExtAPI(const std::string& path)
+ExtAPI* ExtAPI::getExtAPI()
 {
     if (extOp == nullptr)
     {
@@ -108,7 +108,7 @@ static std::string getFilePath(const std::string& path)
 std::string ExtAPI::getExtBcPath()
 {
     struct stat statbuf;
-    std::string bcFilePath = std::string(EXTAPI_PATH) + "/extapi.bc";
+    std::string bcFilePath = std::string(EXTAPI_DIR) + "/extapi.bc";
     if (!stat(bcFilePath.c_str(), &statbuf))
         return bcFilePath;
 
@@ -120,7 +120,7 @@ std::string ExtAPI::getExtBcPath()
     if (!stat(bcFilePath.c_str(), &statbuf))
         return bcFilePath;
 
-    SVFUtil::errs() << "No extpai.bc found at " << bcFilePath << " for getExtAPI(); set $SVF_DIR first!\n";
+    SVFUtil::errs() << "No extapi.bc found at " << bcFilePath << " for getExtAPI(); The default path for extapi.bc is: SVF_IR_PATH/CMAKE_BUILD_TYPE-build/svf-llvm/extapi.bc !\n";
     abort();
 }
 

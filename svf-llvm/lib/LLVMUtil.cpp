@@ -599,7 +599,7 @@ void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Fun
         return;
 
     Module* mod = removedFuncList[0]->getParent();
-    if (mod->getName().str() != Options::ExtAPIInput())
+    if (mod->getName().str() != ExtAPI::getExtAPI()->getExtBcPath())
         return;
 
     /// Delete unused function annotations

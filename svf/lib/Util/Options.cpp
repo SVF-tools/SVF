@@ -770,12 +770,6 @@ const Option<bool> Options::VtableInSVFIR(
     false
 );
 
-
-//WPAPass.cpp
-const Option<std::string> Options::ExtAPIInput(
-    "extapi", "External API extapi.bc", ExtAPI::getExtAPI()->getExtBcPath()
-);
-
 const Option<bool> Options::AnderSVFG(
     "svfg",
     "Generate SVFG after Andersen's Analysis",
