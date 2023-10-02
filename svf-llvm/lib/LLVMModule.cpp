@@ -530,10 +530,10 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 
 void LLVMModuleSet::loadExtAPIModules()
 {
-    // has external bc
-    if (Options::ExtAPIInput().size() > 0)
+    // Load external API module (extapi.bc)
+    if (!ExtAPI::getExtAPI()->getExtBcPath().empty())
     {
-        std::string extModuleName = Options::ExtAPIInput();
+        std::string extModuleName = ExtAPI::getExtAPI()->getExtBcPath();
         if (!LLVMUtil::isIRFile(extModuleName))
         {
             SVFUtil::errs() << "not an external IR file: " << extModuleName << std::endl;
@@ -809,7 +809,7 @@ void LLVMModuleSet::buildFunToFunMap()
     for (Module& mod : modules)
     {
         // extapi.bc functions
-        if (mod.getName().str() == Options::ExtAPIInput())
+        if (mod.getName().str() == ExtAPI::getExtAPI()->getExtBcPath())
         {
             for (const Function& fun : mod.functions())
             {

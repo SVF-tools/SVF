@@ -35,7 +35,7 @@ using namespace SVF;
 
 ExtAPI* ExtAPI::extOp = nullptr;
 
-ExtAPI* ExtAPI::getExtAPI(const std::string& path)
+ExtAPI* ExtAPI::getExtAPI()
 {
     if (extOp == nullptr)
     {
@@ -108,7 +108,7 @@ static std::string getFilePath(const std::string& path)
 std::string ExtAPI::getExtBcPath()
 {
     struct stat statbuf;
-    std::string bcFilePath = std::string(EXTAPI_PATH) + "/extapi.bc";
+    std::string bcFilePath = std::string(EXTAPI_DIR) + "/extapi.bc";
     if (!stat(bcFilePath.c_str(), &statbuf))
         return bcFilePath;
 

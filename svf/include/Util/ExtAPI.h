@@ -53,7 +53,7 @@ private:
 
 public:
 
-    static ExtAPI *getExtAPI(const std::string& = "");
+    static ExtAPI *getExtAPI();
 
     static void destory();
 
