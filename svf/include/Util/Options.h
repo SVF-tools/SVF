@@ -248,6 +248,7 @@ public:
     static const Option<bool> VtableInSVFIR;
 
     // WPAPass.cpp
+    static const Option<std::string> ExtAPIPath;
     static const Option<bool> AnderSVFG;
     static const Option<bool> SABERFULLSVFG;
     static const Option<bool> PrintAliases;
