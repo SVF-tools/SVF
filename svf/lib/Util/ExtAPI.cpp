@@ -88,28 +88,28 @@ static std::string GetStdoutFromCommand(const std::string& command)
 // Get extapi.bc file path in npm
 static std::string getFilePath(const std::string& path)
 {
-    std::string bcFilePath = GetStdoutFromCommand(path);
-    if (path.compare("npm root") == 0)
+    std::string bcFilePath = "";
+    if (path.compare("SVF_DIR") == 0)
     {
-        int os_flag = 1;
+        bcFilePath = getenv("SVF_DIR");
+    }
+    else if (path.compare("npm root") == 0)
+    {
+        bcFilePath = GetStdoutFromCommand(path);
         // SVF installed via npm needs to determine the type of operating
         // system, otherwise the extapi.bc path may not be found.
 #ifdef linux
         // Linux os
-        os_flag = 0;
         bcFilePath.append("/svf-lib/SVF-linux");
-#endif
+#else
         // Mac os
-        if (os_flag == 1)
-        {
-            bcFilePath.append("/svf-lib/SVF-osx");
-        }
+        bcFilePath.append("/svf-lib/SVF-osx");
+#endif
     }
 
     if (!bcFilePath.empty() && bcFilePath.back() != '/')
         bcFilePath.push_back('/');
-    bcFilePath.append(BUILD_TYPE);
-    bcFilePath.append(DEFUALT_EXTAPI_BC_PATH);
+    bcFilePath.append(BUILD_TYPE).append(DEFUALT_EXTAPI_BC_PATH);
     return bcFilePath;
 }
 
@@ -139,11 +139,7 @@ std::string ExtAPI::getExtBcPath()
         return extBcPath;
 
     // 4. From $SVF_DIR
-    extBcPath = getenv("SVF_DIR");
-    if (!extBcPath.empty() && extBcPath.back() != '/')
-        extBcPath.push_back('/');
-    extBcPath.append(BUILD_TYPE);
-    extBcPath.append(DEFUALT_EXTAPI_BC_PATH);
+    extBcPath = getFilePath("SVF_DIR");
     if (!stat(extBcPath.c_str(), &statbuf))
         return extBcPath;
 
@@ -162,8 +158,7 @@ std::string ExtAPI::getExtBcPath()
 std::string ExtAPI::getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
 {
     assert(fun && "Null SVFFunction* pointer");
-    const std::vector<std::string>& annotations = fun->getAnnotations();
-    for (const std::string& annotation : annotations)
+    for (const std::string& annotation : fun->getAnnotations())
         if (annotation.find(funcAnnotation) != std::string::npos)
             return annotation;
     return "";
@@ -172,8 +167,7 @@ std::string ExtAPI::getExtFuncAnnotation(const SVFFunction* fun, const std::stri
 bool ExtAPI::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation)
 {
     assert(fun && "Null SVFFunction* pointer");
-    const std::vector<std::string>& annotations = fun->getAnnotations();
-    for (const std::string& annotation : annotations)
+    for (const std::string& annotation : fun->getAnnotations())
         if (annotation.find(funcAnnotation) != std::string::npos)
             return true;
     return false;
@@ -203,8 +197,7 @@ bool ExtAPI::is_arg_alloc(const SVFFunction* F)
 // Get the position of argument which holds the new object
 s32_t ExtAPI::get_alloc_arg_pos(const SVFFunction* F)
 {
-    std::string s = "ALLOC_ARG";
-    std::string allocArg = getExtFuncAnnotation(F, s);
+    std::string allocArg = getExtFuncAnnotation(F, "ALLOC_ARG");
     assert(!allocArg.empty() && "Not an alloc call via argument or incorrect extern function annotation!");
 
     std::string number;
