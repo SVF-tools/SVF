@@ -148,9 +148,9 @@ std::string ExtAPI::getExtBcPath()
     if (!stat(extBcPath.c_str(), &statbuf))
         return extBcPath;
 
-    SVFUtil::errs() << "No extapi.bc found at " << extBcPath << " in getExtBcPath() !!!" << "\n" 
-                    << "You can specify extapi.bc path in two ways:" << "\n" 
-                    << "1. Set it via the command line using -extapi=/path_to_extapi;" << "\n" 
+    SVFUtil::errs() << "No extapi.bc found at " << extBcPath << " in getExtBcPath() !!!" << "\n"
+                    << "You can specify extapi.bc path in two ways:" << "\n"
+                    << "1. Set it via the command line using -extapi=/path_to_extapi;" << "\n"
                     << "2. Use the API setExtBcPath(). Please note that setExtBcPath() should be used before buildSVFModule().\n";
     abort();
 }
