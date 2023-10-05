@@ -29,11 +29,13 @@
 
 #include "Util/ExtAPI.h"
 #include "Util/SVFUtil.h"
+#include "Util/Options.h"
 #include <sys/stat.h>
 
 using namespace SVF;
 
 ExtAPI* ExtAPI::extOp = nullptr;
+std::string ExtAPI::extBcPath = "";
 
 ExtAPI* ExtAPI::getExtAPI()
 {
@@ -51,6 +53,12 @@ void ExtAPI::destory()
         delete extOp;
         extOp = nullptr;
     }
+}
+
+// Set extapi.bc file path
+void ExtAPI::setExtBcPath(const std::string& path)
+{
+    extBcPath = path;
 }
 
 // Get environment variables $SVF_DIR and "npm root" through popen() method
@@ -98,29 +106,56 @@ static std::string getFilePath(const std::string& path)
         }
     }
 
-    if (bcFilePath.back() != '/')
+    if (!bcFilePath.empty() && bcFilePath.back() != '/')
         bcFilePath.push_back('/');
-    bcFilePath.append(EXTAPI_BC_PATH);
+    bcFilePath.append(BUILD_TYPE);
+    bcFilePath.append(DEFUALT_EXTAPI_BC_PATH);
     return bcFilePath;
 }
 
 // Get extapi.bc path
 std::string ExtAPI::getExtBcPath()
 {
+    // Five default ways to get extapi.bc path
+    // 1. Set extapi.bc path through setExtBcPath() method
+    // 2. Set extapi.bc path through the "-extapi = PATH_TO_EXTAPIFILE" option
+    // 3. Default path: "SVF_IR_PATH/CMAKE_BUILD_TYPE-build/svf-llvm/extapi.bc"
+    // 4. From $SVF_DIR
+    // 5. From "npm root"(If SVF is installed via npm)
+
     struct stat statbuf;
-    std::string bcFilePath = std::string(EXTAPI_DIR) + "/extapi.bc";
-    if (!stat(bcFilePath.c_str(), &statbuf))
-        return bcFilePath;
+    // 1. Set extapi.bc path through setExtBcPath() method
+    if (!extBcPath.empty() && !stat(extBcPath.c_str(), &statbuf))
+        return extBcPath;
 
-    bcFilePath = getFilePath("echo $SVF_DIR");
-    if (!stat(bcFilePath.c_str(), &statbuf))
-        return bcFilePath;
+    // 2. Set extapi.bc path through the "-extapi = PATH_TO_EXTAPIFILE" option
+    extBcPath = Options::ExtAPIPath();
+    if (!extBcPath.empty() && !stat(extBcPath.c_str(), &statbuf))
+        return extBcPath;
 
-    bcFilePath = getFilePath("npm root");
-    if (!stat(bcFilePath.c_str(), &statbuf))
-        return bcFilePath;
+    // 3. Default path: "SVF_IR_PATH/CMAKE_BUILD_TYPE-build/svf-llvm/extapi.bc"
+    extBcPath = std::string(EXTAPI_DIR) + "/extapi.bc";
+    if (!stat(extBcPath.c_str(), &statbuf))
+        return extBcPath;
 
-    SVFUtil::errs() << "No extapi.bc found at " << bcFilePath << " for getExtAPI(); The default path for extapi.bc is: SVF_IR_PATH/CMAKE_BUILD_TYPE-build/svf-llvm/extapi.bc !\n";
+    // 4. From $SVF_DIR
+    extBcPath = getenv("SVF_DIR");
+    if (!extBcPath.empty() && extBcPath.back() != '/')
+        extBcPath.push_back('/');
+    extBcPath.append(BUILD_TYPE);
+    extBcPath.append(DEFUALT_EXTAPI_BC_PATH);
+    if (!stat(extBcPath.c_str(), &statbuf))
+        return extBcPath;
+
+    // 5. From "npm root"(If SVF is installed via npm)
+    extBcPath = getFilePath("npm root");
+    if (!stat(extBcPath.c_str(), &statbuf))
+        return extBcPath;
+
+    SVFUtil::errs() << "No extapi.bc found at " << extBcPath << " in getExtBcPath() !!!" << "\n" 
+                    << "You can specify extapi.bc path in two ways:" << "\n" 
+                    << "1. Set it via the command line using -extapi=/path_to_extapi;" << "\n" 
+                    << "2. Use the API setExtBcPath(). Please note that setExtBcPath() should be used before buildSVFModule().\n";
     abort();
 }
 
