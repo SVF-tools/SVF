@@ -38,7 +38,7 @@
 
 /// For a more detailed explanation of how External APIs are handled in SVF, please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
 
-#define DEFUALT_EXTAPI_BC_PATH "/svf-llvm/extapi.bc" // Default path to extapi.bc through the SVF build method(e.g. source ./build.sh)
+#define DEFAULT_EXTAPI_BC_PATH "/svf-llvm/extapi.bc" // Default path to extapi.bc through the SVF build method(e.g. source ./build.sh)
 
 namespace SVF
 {
@@ -61,7 +61,7 @@ public:
     static void destory();
 
     // Set extapi.bc file path
-    static void setExtBcPath(const std::string& path);
+    static bool setExtBcPath(const std::string& path);
 
     // Get extapi.bc file path
     std::string getExtBcPath();

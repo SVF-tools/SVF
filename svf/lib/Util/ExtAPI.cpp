@@ -56,9 +56,15 @@ void ExtAPI::destory()
 }
 
 // Set extapi.bc file path
-void ExtAPI::setExtBcPath(const std::string& path)
+bool ExtAPI::setExtBcPath(const std::string& path)
 {
-    extBcPath = path;
+    struct stat statbuf;
+    if (!path.empty() && !stat(path.c_str(), &statbuf))
+    {
+        extBcPath = path;
+        return true;
+    }
+    return false;
 }
 
 // Get environment variables $SVF_DIR and "npm root" through popen() method
@@ -109,7 +115,7 @@ static std::string getFilePath(const std::string& path)
 
     if (!bcFilePath.empty() && bcFilePath.back() != '/')
         bcFilePath.push_back('/');
-    bcFilePath.append(BUILD_TYPE).append(DEFUALT_EXTAPI_BC_PATH);
+    bcFilePath.append(BUILD_TYPE).append(DEFAULT_EXTAPI_BC_PATH);
     return bcFilePath;
 }
 
@@ -122,30 +128,23 @@ std::string ExtAPI::getExtBcPath()
     // 3. Default path: "SVF_IR_PATH/CMAKE_BUILD_TYPE-build/svf-llvm/extapi.bc"
     // 4. From $SVF_DIR
     // 5. From "npm root"(If SVF is installed via npm)
-
-    struct stat statbuf;
-    // 1. Set extapi.bc path through setExtBcPath() method
-    if (!extBcPath.empty() && !stat(extBcPath.c_str(), &statbuf))
+    if (!extBcPath.empty())
         return extBcPath;
 
     // 2. Set extapi.bc path through the "-extapi = PATH_TO_EXTAPIFILE" option
-    extBcPath = Options::ExtAPIPath();
-    if (!extBcPath.empty() && !stat(extBcPath.c_str(), &statbuf))
+    if (setExtBcPath(Options::ExtAPIPath()))
         return extBcPath;
 
     // 3. Default path: "SVF_IR_PATH/CMAKE_BUILD_TYPE-build/svf-llvm/extapi.bc"
-    extBcPath = std::string(EXTAPI_DIR) + "/extapi.bc";
-    if (!stat(extBcPath.c_str(), &statbuf))
+    if (setExtBcPath(std::string(EXTAPI_DIR) + "/extapi.bc"))
         return extBcPath;
 
     // 4. From $SVF_DIR
-    extBcPath = getFilePath("SVF_DIR");
-    if (!stat(extBcPath.c_str(), &statbuf))
+    if (setExtBcPath(getFilePath("SVF_DIR")))
         return extBcPath;
 
     // 5. From "npm root"(If SVF is installed via npm)
-    extBcPath = getFilePath("npm root");
-    if (!stat(extBcPath.c_str(), &statbuf))
+    if (setExtBcPath(getFilePath("npm root")))
         return extBcPath;
 
     SVFUtil::errs() << "No extapi.bc found at " << extBcPath << " in getExtBcPath() !!!" << "\n"
