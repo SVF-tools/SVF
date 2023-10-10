@@ -172,7 +172,8 @@ public:
         _icfgNodes.push_back(node);
     }
 
-    inline u32_t getICFGNodeNum() const {
+    inline u32_t getICFGNodeNum() const
+    {
         return _icfgNodes.size();
     }
 
@@ -374,10 +375,14 @@ public:
         return hasGNode(id);
     }
 
-    inline CFBasicBlockNode* getCFBasicBlockNode(const SVFBasicBlock* bb) const {
-        if (bb && _bbToNode.find(bb) != _bbToNode.end()) {
+    inline CFBasicBlockNode* getCFBasicBlockNode(const SVFBasicBlock* bb) const
+    {
+        if (bb && _bbToNode.find(bb) != _bbToNode.end())
+        {
             return _bbToNode.at(bb);
-        } else {
+        }
+        else
+        {
             return nullptr;
         }
     }

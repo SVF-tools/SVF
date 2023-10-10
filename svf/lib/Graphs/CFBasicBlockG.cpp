@@ -35,9 +35,9 @@ namespace SVF
 CFBasicBlockNode::CFBasicBlockNode(const SVFBasicBlock* svfBasicBlock)
     : GenericCFBasicBlockNodeTy(
           PAG::getPAG()
-              ->getICFG()
-              ->getICFGNode(*svfBasicBlock->getInstructionList().begin())
-              ->getId(),
+          ->getICFG()
+          ->getICFGNode(*svfBasicBlock->getInstructionList().begin())
+          ->getId(),
           0)
 {
     for (auto it = svfBasicBlock->begin(); it != svfBasicBlock->end(); ++it)
@@ -81,7 +81,7 @@ std::vector<CFBasicBlockEdge*> CFBasicBlockGraph::getCFBasicBlockEdge(const CFBa
 {
     std::vector<CFBasicBlockEdge*> edges;
     for (auto iter = src->OutEdgeBegin();
-         iter != src->OutEdgeEnd(); ++iter)
+            iter != src->OutEdgeEnd(); ++iter)
     {
         if ((*iter)->getDstID() == dst->getId())
         {
@@ -164,8 +164,10 @@ void CFBasicBlockGBuilder::build(ICFG* icfg)
             const SVFFunction* succ_fun = succ->getDstNode()->getFun();
             const SVFBasicBlock* node_bb = node.second->getBB();
             const SVFBasicBlock* succ_bb = succ->getDstNode()->getBB();
-            if (node_fun == succ_fun) {
-                if (node_bb != succ_bb) {
+            if (node_fun == succ_fun)
+            {
+                if (node_bb != succ_bb)
+                {
                     CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbToNode[node_bb], bbToNode[succ_bb], succ);
                     _CFBasicBlockG->addCFBBEdge(pEdge);
                 }
