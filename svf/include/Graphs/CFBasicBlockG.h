@@ -167,6 +167,15 @@ public:
         _icfgNodes.erase(it);
     }
 
+    inline void addNode(const ICFGNode* node)
+    {
+        _icfgNodes.push_back(node);
+    }
+
+    inline u32_t getICFGNodeNum() const {
+        return _icfgNodes.size();
+    }
+
 public:
     /// Get incoming/outgoing edge set
     ///@{
@@ -340,6 +349,7 @@ class CFBasicBlockGraph : public GenericCFBasicBlockGTy
 private:
     u32_t _totalCFBasicBlockNode{0};
     u32_t _totalCFBasicBlockEdge{0};
+    Map<const SVFBasicBlock*, CFBasicBlockNode*> _bbToNode;
 
 public:
 
@@ -362,6 +372,19 @@ public:
     inline bool hasCFBasicBlockNode(NodeID id) const
     {
         return hasGNode(id);
+    }
+
+    inline CFBasicBlockNode* getCFBasicBlockNode(const SVFBasicBlock* bb) const {
+        if (bb && _bbToNode.find(bb) != _bbToNode.end()) {
+            return _bbToNode.at(bb);
+        } else {
+            return nullptr;
+        }
+    }
+
+    inline bool hasCFBasicBlockNode(const SVFBasicBlock* bb) const
+    {
+        return bb && _bbToNode.find(bb) != _bbToNode.end();
     }
 
     bool hasCFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst, ICFGEdge *icfgEdge)
