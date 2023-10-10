@@ -32,13 +32,18 @@
 
 namespace SVF
 {
-CFBasicBlockNode::CFBasicBlockNode(u32_t id, const SVFBasicBlock *svfBasicBlock) : GenericCFBasicBlockNodeTy(id, 0),
-    _svfBasicBlock(svfBasicBlock)
+CFBasicBlockNode::CFBasicBlockNode(const SVFBasicBlock* svfBasicBlock)
+    : GenericCFBasicBlockNodeTy(
+          PAG::getPAG()
+              ->getICFG()
+              ->getICFGNode(*svfBasicBlock->getInstructionList().begin())
+              ->getId(),
+          0)
 {
     for (auto it = svfBasicBlock->begin(); it != svfBasicBlock->end(); ++it)
     {
-        const SVFInstruction *ins = *it;
-        ICFGNode *icfgNode = PAG::getPAG()->getICFG()->getICFGNode(ins);
+        const SVFInstruction* ins = *it;
+        ICFGNode* icfgNode = PAG::getPAG()->getICFG()->getICFGNode(ins);
         _icfgNodes.push_back(icfgNode);
     }
 }
@@ -47,7 +52,7 @@ const std::string CFBasicBlockNode::toString() const
 {
     std::string rawStr;
     std::stringstream stringstream(rawStr);
-    stringstream << "Block Name: " << _svfBasicBlock->getName() << "\n";
+    stringstream << "Block Name: " << getName() << "\n";
     for (const auto &icfgNode: _icfgNodes)
     {
         stringstream << icfgNode->toString() << "\n";
@@ -55,19 +60,14 @@ const std::string CFBasicBlockNode::toString() const
     return stringstream.str();
 }
 
-CFBasicBlockEdge* CFBasicBlockGraph::getCFBasicBlockEdge(const SVFBasicBlock *src, const SVFBasicBlock *dst)
-{
-    return getCFBasicBlockEdge(getCFBasicBlockNode(src), getCFBasicBlockNode(dst));
-}
-
-CFBasicBlockEdge* CFBasicBlockGraph::getCFBasicBlockEdge(const CFBasicBlockNode *src, const CFBasicBlockNode *dst)
+CFBasicBlockEdge* CFBasicBlockGraph::getCFBasicBlockEdge(const CFBasicBlockNode *src, const CFBasicBlockNode *dst, const ICFGEdge* icfgEdge)
 {
     CFBasicBlockEdge *edge = nullptr;
     size_t counter = 0;
     for (auto iter = src->OutEdgeBegin();
             iter != src->OutEdgeEnd(); ++iter)
     {
-        if ((*iter)->getDstID() == dst->getId())
+        if ((*iter)->getDstID() == dst->getId() && (*iter)->getICFGEdge() == icfgEdge)
         {
             counter++;
             edge = (*iter);
@@ -77,42 +77,101 @@ CFBasicBlockEdge* CFBasicBlockGraph::getCFBasicBlockEdge(const CFBasicBlockNode 
     return edge;
 }
 
-const CFBasicBlockNode* CFBasicBlockGraph::getOrAddCFBasicBlockNode(const SVFBasicBlock *bb)
+std::vector<CFBasicBlockEdge*> CFBasicBlockGraph::getCFBasicBlockEdge(const CFBasicBlockNode *src, const CFBasicBlockNode *dst)
 {
-    auto it = _bbToNode.find(bb);
-    if (it != _bbToNode.end()) return it->second;
-    CFBasicBlockNode *node = new CFBasicBlockNode(_totalCFBasicBlockNode++, bb);
-    _bbToNode[bb] = node;
-    addGNode(node->getId(), node);
-    return node;
-}
-
-const CFBasicBlockEdge* CFBasicBlockGraph::getOrAddCFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst)
-{
-    if (const CFBasicBlockEdge *edge = getCFBasicBlockEdge(src, dst)) return edge;
-    CFBasicBlockEdge *edge = new CFBasicBlockEdge(src, dst);
-    bool added1 = edge->getDstNode()->addIncomingEdge(edge);
-    bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
-    (void) added1;
-    (void) added2;
-    assert(added1 && added2 && "edge not added??");
-    _totalCFBasicBlockEdge++;
-    return edge;
-}
-
-void CFBasicBlockGBuilder::build()
-{
-    for (const auto &bb: *_CFBasicBlockG->_svfFunction)
+    std::vector<CFBasicBlockEdge*> edges;
+    for (auto iter = src->OutEdgeBegin();
+         iter != src->OutEdgeEnd(); ++iter)
     {
-        _CFBasicBlockG->getOrAddCFBasicBlockNode(bb);
-    }
-    for (const auto &bb: *_CFBasicBlockG->_svfFunction)
-    {
-        for (const auto &succ: bb->getSuccessors())
+        if ((*iter)->getDstID() == dst->getId())
         {
-            _CFBasicBlockG->getOrAddCFBasicBlockEdge(_CFBasicBlockG->getCFBasicBlockNode(bb),
-                    _CFBasicBlockG->getCFBasicBlockNode(succ));
+            edges.push_back(*iter);
         }
     }
+    return SVFUtil::move(edges);
+}
+
+void CFBasicBlockGBuilder::build(SVFModule* module)
+{
+    _CFBasicBlockG = new CFBasicBlockGraph();
+    Map<const SVFBasicBlock*, CFBasicBlockNode*> bbToNode;
+    for (const auto& func : *module)
+    {
+        for (const auto& bb : *func)
+        {
+            CFBasicBlockNode* pNode = new CFBasicBlockNode(bb);
+            bbToNode[bb] = pNode;
+            _CFBasicBlockG->addCFBBNode(pNode);
+        }
+    }
+
+    for (const auto& func : *module)
+    {
+        for (const auto& bb : *func)
+        {
+            for (const auto &succ: bb->getSuccessors())
+            {
+                ICFG *icfg = PAG::getPAG()->getICFG();
+                const ICFGNode *pred = icfg->getICFGNode(bb->getTerminator());
+                const ICFGEdge *edge = nullptr;
+                for (const auto &inst: succ->getInstructionList())
+                {
+                    if (const ICFGEdge *e = icfg->getICFGEdge(pred, icfg->getICFGNode(inst), ICFGEdge::ICFGEdgeK::IntraCF))
+                    {
+                        edge = e;
+                        break;
+                    }
+                }
+                if (SVFUtil::isa<IntraCFGEdge>(edge))
+                {
+                    CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbToNode[bb], bbToNode[succ], edge);
+                    _CFBasicBlockG->addCFBBEdge(pEdge);
+                }
+            }
+        }
+    }
+    _CFBasicBlockG->_bbToNode = bbToNode;
+}
+
+void CFBasicBlockGBuilder::build(ICFG* icfg)
+{
+    _CFBasicBlockG = new CFBasicBlockGraph();
+    Map<const SVFBasicBlock*, CFBasicBlockNode*> bbToNode;
+    for (const auto& node : *icfg)
+    {
+        CFBasicBlockNode* pNode  = nullptr;
+        if (const SVFBasicBlock* bb = node.second->getBB())
+        {
+            if (bbToNode.find(bb) == bbToNode.end())
+            {
+                pNode = new CFBasicBlockNode({node.second});
+                bbToNode[node.second->getBB()] = pNode;
+                _CFBasicBlockG->addCFBBNode(pNode);
+            }
+            else
+            {
+                pNode = bbToNode[node.second->getBB()];
+                pNode->addNode(node.second);
+            }
+        }
+    }
+
+    for (const auto& node : *icfg)
+    {
+        for (const auto &succ: node.second->getOutEdges())
+        {
+            const SVFFunction* node_fun = node.second->getFun();
+            const SVFFunction* succ_fun = succ->getDstNode()->getFun();
+            const SVFBasicBlock* node_bb = node.second->getBB();
+            const SVFBasicBlock* succ_bb = succ->getDstNode()->getBB();
+            if (node_fun == succ_fun) {
+                if (node_bb != succ_bb) {
+                    CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbToNode[node_bb], bbToNode[succ_bb], succ);
+                    _CFBasicBlockG->addCFBBEdge(pEdge);
+                }
+            }
+        }
+    }
+    _CFBasicBlockG->_bbToNode = bbToNode;
 }
 }
