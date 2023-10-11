@@ -137,6 +137,7 @@ void CFBasicBlockGBuilder::build(ICFG* icfg)
 {
     _CFBasicBlockG = new CFBasicBlockGraph();
     Map<const SVFBasicBlock*, CFBasicBlockNode*> bbToNode;
+    Map<const SVFFunction*, CFBasicBlockNode*> funToFirstNode;
     for (const auto& node : *icfg)
     {
         CFBasicBlockNode* pNode  = nullptr;
@@ -152,6 +153,10 @@ void CFBasicBlockGBuilder::build(ICFG* icfg)
             {
                 pNode = bbToNode[node.second->getBB()];
                 pNode->addNode(node.second);
+            }
+            const SVFFunction* fun = node.second->getFun();
+            if (funToFirstNode.find(fun) == funToFirstNode.end()) {
+                funToFirstNode[fun] = nullptr;
             }
         }
     }
@@ -174,6 +179,13 @@ void CFBasicBlockGBuilder::build(ICFG* icfg)
             }
         }
     }
+
+    for (auto it = funToFirstNode.begin(); it != funToFirstNode.end(); ++it) {
+        const SVFFunction* fun = it->first;
+        const SVFBasicBlock* bb = *fun->getBasicBlockList().begin();
+        funToFirstNode[fun] = bbToNode[bb];
+    }
     _CFBasicBlockG->_bbToNode = bbToNode;
+    _CFBasicBlockG->_funToFirstNode = funToFirstNode;
 }
 }
