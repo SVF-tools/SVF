@@ -155,7 +155,8 @@ void CFBasicBlockGBuilder::build(ICFG* icfg)
                 pNode->addNode(node.second);
             }
             const SVFFunction* fun = node.second->getFun();
-            if (funToFirstNode.find(fun) == funToFirstNode.end()) {
+            if (funToFirstNode.find(fun) == funToFirstNode.end())
+            {
                 funToFirstNode[fun] = nullptr;
             }
         }
@@ -180,7 +181,8 @@ void CFBasicBlockGBuilder::build(ICFG* icfg)
         }
     }
 
-    for (auto it = funToFirstNode.begin(); it != funToFirstNode.end(); ++it) {
+    for (auto it = funToFirstNode.begin(); it != funToFirstNode.end(); ++it)
+    {
         const SVFFunction* fun = it->first;
         const SVFBasicBlock* bb = *fun->getBasicBlockList().begin();
         funToFirstNode[fun] = bbToNode[bb];

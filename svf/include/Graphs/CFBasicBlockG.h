@@ -397,10 +397,14 @@ public:
         return bb && _bbToNode.find(bb) != _bbToNode.end();
     }
 
-    inline CFBasicBlockNode* getFirstCFBasicBlockNode(const SVFFunction* fun) const {
-        if (fun && _funToFirstNode.find(fun) != _funToFirstNode.end()) {
+    inline CFBasicBlockNode* getFirstCFBasicBlockNode(const SVFFunction* fun) const
+    {
+        if (fun && _funToFirstNode.find(fun) != _funToFirstNode.end())
+        {
             return _funToFirstNode.at(fun);
-        } else {
+        }
+        else
+        {
             return nullptr;
         }
     }
