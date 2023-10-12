@@ -379,8 +379,10 @@ public:
         return hasGNode(id);
     }
 
-    inline CFBasicBlockNode* getFirstCFBasicBlockNode(const SVFFunction* fun) const {
-        if (fun && _funToFirstNode.find(fun) != _funToFirstNode.end()) {
+    inline CFBasicBlockNode* getFirstCFBasicBlockNode(const SVFFunction* fun) const
+    {
+        if (fun && _funToFirstNode.find(fun) != _funToFirstNode.end())
+        {
             return _funToFirstNode.at(fun);
         }
         else
