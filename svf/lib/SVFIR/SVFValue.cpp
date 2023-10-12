@@ -121,6 +121,8 @@ const SVFBasicBlock* SVFLoopAndDomInfo::findNearestCommonPDominator(const SVFBas
     // continue going up til we arrive at the same node.
     while (A != B)
     {
+        // no common PDominator
+        if(A == NULL) return NULL;
         const auto lvA = getBBPDomLevel().find(A);
         const auto lvB = getBBPDomLevel().find(B);
         assert(lvA != getBBPDomLevel().end() && lvB != getBBPDomLevel().end());
