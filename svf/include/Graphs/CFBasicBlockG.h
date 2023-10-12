@@ -177,7 +177,8 @@ public:
         _icfgNodes.push_back(node);
     }
 
-    inline u32_t getICFGNodeNum() const {
+    inline u32_t getICFGNodeNum() const
+    {
         return _icfgNodes.size();
     }
 
@@ -381,7 +382,9 @@ public:
     inline CFBasicBlockNode* getFirstCFBasicBlockNode(const SVFFunction* fun) const {
         if (fun && _funToFirstNode.find(fun) != _funToFirstNode.end()) {
             return _funToFirstNode.at(fun);
-        } else {
+        }
+        else
+        {
             return nullptr;
         }
     }
