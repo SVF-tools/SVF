@@ -354,7 +354,6 @@ class CFBasicBlockGraph : public GenericCFBasicBlockGTy
 private:
     u32_t _totalCFBasicBlockNode{0};
     u32_t _totalCFBasicBlockEdge{0};
-    Map<const SVFBasicBlock*, CFBasicBlockNode*> _bbToNode;
     Map<const SVFFunction*, CFBasicBlockNode*> _funToFirstNode;
 public:
 
@@ -379,19 +378,6 @@ public:
         return hasGNode(id);
     }
 
-    inline CFBasicBlockNode* getCFBasicBlockNode(const SVFBasicBlock* bb) const {
-        if (bb && _bbToNode.find(bb) != _bbToNode.end()) {
-            return _bbToNode.at(bb);
-        } else {
-            return nullptr;
-        }
-    }
-
-    inline bool hasCFBasicBlockNode(const SVFBasicBlock* bb) const
-    {
-        return bb && _bbToNode.find(bb) != _bbToNode.end();
-    }
-
     inline CFBasicBlockNode* getFirstCFBasicBlockNode(const SVFFunction* fun) const {
         if (fun && _funToFirstNode.find(fun) != _funToFirstNode.end()) {
             return _funToFirstNode.at(fun);
@@ -409,15 +395,6 @@ public:
         _funToFirstNode = svfNodeMap;
     }
 
-    inline void setBBCFNodeMap(const Map<const SVFBasicBlock*, CFBasicBlockNode*>& svfNodeMap)
-    {
-        _bbToNode = svfNodeMap;
-    }
-
-    inline const Map<const SVFBasicBlock*, CFBasicBlockNode*>& getBBCFNodeMap() const
-    {
-        return _bbToNode;
-    }
 
     bool hasCFBasicBlockEdge(CFBasicBlockNode *src, CFBasicBlockNode *dst, ICFGEdge *icfgEdge)
     {

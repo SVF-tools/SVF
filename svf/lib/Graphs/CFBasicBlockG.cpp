@@ -130,7 +130,6 @@ void CFBasicBlockGBuilder::build(SVFModule* module)
             }
         }
     }
-    _CFBasicBlockG->_bbToNode = bbToNode;
 }
 
 void CFBasicBlockGBuilder::build(ICFG* icfg)
@@ -183,7 +182,6 @@ void CFBasicBlockGBuilder::build(ICFG* icfg)
         const SVFBasicBlock* bb = *fun->getBasicBlockList().begin();
         funToFirstNode[fun] = bbToNode[bb];
     }
-    _CFBasicBlockG->_bbToNode = bbToNode;
     _CFBasicBlockG->_funToFirstNode = funToFirstNode;
 }
 }
