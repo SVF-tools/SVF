@@ -64,6 +64,11 @@ void
 CDGBuilder::extractNodesBetweenPdomNodes(const SVFBasicBlock *succ, const SVFBasicBlock *LCA,
         std::vector<const SVFBasicBlock *> &tgtNodes)
 {
+    if (LCA == NULL)
+    {
+        tgtNodes.push_back(succ);
+        return;
+    }
     if (succ == LCA) return;
     std::vector<const SVFBasicBlock *> path;
     SVFLoopAndDomInfo *ld = const_cast<SVFFunction *>(LCA->getFunction())->getLoopAndDomInfo();
