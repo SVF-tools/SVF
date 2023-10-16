@@ -21,7 +21,7 @@ if(NOT COMMAND add_llvm_library)
   include(AddLLVM)
 
   add_definitions(${LLVM_DEFINITIONS})
-  # include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
+  include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 
   if(LLVM_LINK_LLVM_DYLIB)
     set(llvm_libs LLVM)
@@ -50,8 +50,9 @@ file(GLOB SVFLLVM_SOURCES lib/*.cpp)
 
 add_llvm_library(SvfLLVM STATIC ${SVFLLVM_SOURCES})
 target_include_directories(SvfLLVM SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
+include_directories(SvfLLVM PUBLIC include)
 target_include_directories(SvfLLVM PUBLIC include)
-target_link_libraries(SvfLLVM PUBLIC ${Z3_LIBRARIES} SvfCoreObj)
+target_link_libraries(SvfLLVM PUBLIC ${Z3_LIBRARIES} SvfCoreObj  ${llvm_libs})
 
 if(DEFINED IN_SOURCE_BUILD)
   add_dependencies(SvfLLVM intrinsics_gen)
