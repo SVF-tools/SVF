@@ -132,35 +132,46 @@ void CFBasicBlockGBuilder::build(SVFModule* module)
     }
 }
 
-void CFBasicBlockGBuilder::build(ICFG* icfg)
-{
-    _CFBasicBlockG = new CFBasicBlockGraph();
-    Map<const SVFBasicBlock*, CFBasicBlockNode*> bbToNode;
-    Map<const SVFFunction*, CFBasicBlockNode*> funToFirstNode;
+void CFBasicBlockGBuilder::initCFBasicBlockGNodes(ICFG *icfg, SVFBBToCFBBNodes& bbToNodes) {
     for (const auto& node : *icfg)
     {
-        CFBasicBlockNode* pNode  = nullptr;
+        CFBasicBlockNode* pNode;
         if (const SVFBasicBlock* bb = node.second->getBB())
         {
-            if (bbToNode.find(bb) == bbToNode.end())
-            {
-                pNode = new CFBasicBlockNode({node.second});
-                bbToNode[node.second->getBB()] = pNode;
+            if (const CallICFGNode *callNode = SVFUtil::dyn_cast<CallICFGNode>(node.second)) {
+                pNode = new CFBasicBlockNode({callNode});
+                bbToNodes[bb].push_back(pNode);
                 _CFBasicBlockG->addCFBBNode(pNode);
-            }
-            else
-            {
-                pNode = bbToNode[node.second->getBB()];
-                pNode->addNode(node.second);
-            }
-            const SVFFunction* fun = node.second->getFun();
-            if (funToFirstNode.find(fun) == funToFirstNode.end())
-            {
-                funToFirstNode[fun] = nullptr;
+
+                auto* retNode = new CFBasicBlockNode({callNode->getRetICFGNode()});
+                bbToNodes[bb].push_back(retNode);
+                _CFBasicBlockG->addCFBBNode(retNode);
+
+            } else if (!SVFUtil::isa<RetICFGNode>(node.second)) {
+                if (bbToNodes.find(bb) == bbToNodes.end())
+                {
+                    pNode = new CFBasicBlockNode({node.second});
+                    bbToNodes[node.second->getBB()] = {pNode};
+                    _CFBasicBlockG->addCFBBNode(pNode);
+                }
+                else
+                {
+                    pNode = bbToNodes[node.second->getBB()].back();
+                    if(!SVFUtil::isa<RetICFGNode>(pNode->getICFGNodes()[0])){
+                        pNode->addNode(node.second);
+                    } else {
+                        pNode = new CFBasicBlockNode({node.second});
+                        bbToNodes[node.second->getBB()].push_back(pNode);
+                        _CFBasicBlockG->addCFBBNode(pNode);
+                    }
+                }
             }
         }
     }
+}
 
+void CFBasicBlockGBuilder::addInterBBEdge(ICFG *icfg, SVFBBToCFBBNodes &bbToNodes) {
+    // connect inter-BB BBNodes
     for (const auto& node : *icfg)
     {
         for (const auto &succ: node.second->getOutEdges())
@@ -173,19 +184,78 @@ void CFBasicBlockGBuilder::build(ICFG* icfg)
             {
                 if (node_bb != succ_bb)
                 {
-                    CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbToNode[node_bb], bbToNode[succ_bb], succ);
+                    CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbToNodes[node_bb].back(), bbToNodes[succ_bb].front(), succ);
                     _CFBasicBlockG->addCFBBEdge(pEdge);
                 }
             }
         }
     }
+}
+
+void CFBasicBlockGBuilder::addIntraBBEdge(ICFG *icfg, SVFBBToCFBBNodes &bbToNodes) {
+    // connect intra-BB BBNodes
+    for (const auto &bbNodes: bbToNodes) {
+        for (u32_t i = 0; i < bbNodes.second.size() - 1; ++i) {
+            if (ICFGEdge *icfgEdge = icfg->getICFGEdge(
+                    const_cast<ICFGNode *>(bbNodes.second[i]->getICFGNodes().back()),
+                    const_cast<ICFGNode *>(bbNodes.second[i + 1]->getICFGNodes().front()),
+                    ICFGEdge::IntraCF)) {
+                CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbNodes.second[i], bbNodes.second[i + 1], icfgEdge);
+                _CFBasicBlockG->addCFBBEdge(pEdge);
+            } else {
+                // no intra-procedural edge, maybe ext api
+            }
+        }
+    }
+}
+
+void CFBasicBlockGBuilder::addInterProceduralEdge(ICFG* icfg, SVFBBToCFBBNodes& bbToNodes) {
+    // connect inter-procedural BBNodes
+    for (const auto &bbNodes: bbToNodes) {
+        for (u32_t i = 0; i < bbNodes.second.size(); ++i) {
+            if (const CallICFGNode* callICFGNode = SVFUtil::dyn_cast<CallICFGNode>(bbNodes.second[i]->getICFGNodes().front())) {
+                for (const auto &icfgEdge: callICFGNode->getOutEdges()) {
+                    if (const CallCFGEdge *callEdge = SVFUtil::dyn_cast<CallCFGEdge>(icfgEdge)) {
+                        CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbNodes.second[i],
+                                                                       bbToNodes[callEdge->getDstNode()->getBB()].front(),
+                                                                       callEdge);
+                        _CFBasicBlockG->addCFBBEdge(pEdge);
+                    }
+                }
+            } else if (const RetICFGNode* retICFGNode = SVFUtil::dyn_cast<RetICFGNode>(bbNodes.second[i]->getICFGNodes().front())) {
+                for (const auto &icfgEdge: retICFGNode->getInEdges()) {
+                    if (const RetCFGEdge *retEdge = SVFUtil::dyn_cast<RetCFGEdge>(icfgEdge)) {
+                        CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbToNodes[retEdge->getSrcNode()->getBB()].back(), bbNodes.second[i],
+                                                                       retEdge);
+                        _CFBasicBlockG->addCFBBEdge(pEdge);
+                    }
+                }
+            } else {
+                // other nodes are intra-procedural
+            }
+        }
+    }
+}
+
+void CFBasicBlockGBuilder::build(ICFG* icfg)
+{
+    _CFBasicBlockG = new CFBasicBlockGraph();
+    Map<const SVFBasicBlock*, std::vector<CFBasicBlockNode*>> bbToNodes;
+    Map<const SVFFunction*, CFBasicBlockNode*> funToFirstNode;
+
+    initCFBasicBlockGNodes(icfg, bbToNodes);
+    addInterBBEdge(icfg, bbToNodes);
+    addIntraBBEdge(icfg, bbToNodes);
+    addInterProceduralEdge(icfg, bbToNodes);
+
 
     for (auto it = funToFirstNode.begin(); it != funToFirstNode.end(); ++it)
     {
         const SVFFunction* fun = it->first;
         const SVFBasicBlock* bb = *fun->getBasicBlockList().begin();
-        funToFirstNode[fun] = bbToNode[bb];
+        funToFirstNode[fun] = bbToNodes[bb].front();
     }
     _CFBasicBlockG->_funToFirstNode = funToFirstNode;
 }
 }
+
