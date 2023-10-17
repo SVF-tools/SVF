@@ -496,7 +496,8 @@ struct GenericGraphTraits<SVF::CFBasicBlockGraph *>
 
 } // End namespace SVF
 
-namespace SVF {
+namespace SVF
+{
 template<>
 struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVFIR *>
 {
@@ -504,7 +505,7 @@ struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVF
     typedef SVF::CFBasicBlockNode NodeType;
 
     DOTGraphTraits(bool isSimple = false) :
-            DOTGraphTraits<SVF::SVFIR *>(isSimple)
+        DOTGraphTraits<SVF::SVFIR *>(isSimple)
     {
     }
 
@@ -534,7 +535,8 @@ struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVF
     {
         std::string str;
         std::stringstream rawstr(str);
-        if(node->getICFGNodes().size() == 1) {
+        if(node->getICFGNodes().size() == 1)
+        {
             const ICFGNode* n = node->getICFGNodes()[0];
             if(SVFUtil::isa<IntraICFGNode>(n))
             {
@@ -562,7 +564,9 @@ struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVF
             }
             else
                 assert(false && "no such kind of node!!");
-        } else {
+        }
+        else
+        {
             rawstr << "color=black";
         }
         rawstr <<  "";

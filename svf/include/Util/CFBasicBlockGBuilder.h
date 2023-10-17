@@ -29,7 +29,8 @@
 
 #include "Graphs/CFBasicBlockG.h"
 
-namespace SVF {
+namespace SVF
+{
 
 class CFBasicBlockGBuilder
 {

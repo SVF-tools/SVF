@@ -673,14 +673,17 @@ protected:
 
         virtual void visit(const CFBasicBlockGWTONode &node) override
         {
-            if(const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node.node()->getICFGNodes().front())) {
+            if(const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node.node()->getICFGNodes().front()))
+            {
                 const CFBasicBlockNode *succ = _graph->getCFBasicBlockNode(callNode->getRetICFGNode()->getId());
                 const CFBasicBlockGWTOCycleDepth &succNesting = getWTOCycleDepth(succ);
                 if (succ != _head && succNesting <= _headWTOCycleDepth)
                 {
                     _tails.insert(node.node());
                 }
-            } else {
+            }
+            else
+            {
                 for (const auto &edge: node.node()->getOutEdges())
                 {
                     const CFBasicBlockNode *succ = edge->getDstNode();
@@ -762,13 +765,16 @@ protected:
     const CFBasicBlockGWTOCycle *component(const CFBasicBlockNode *node)
     {
         WTOCompRefList partition;
-        if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front())) {
+        if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
+        {
             const CFBasicBlockNode *succ = _graph->getCFBasicBlockNode(callNode->getRetICFGNode()->getId());
             if (getCDN(succ) == 0)
             {
                 visit(succ, partition);
             }
-        } else {
+        }
+        else
+        {
             for (auto it = node->getOutEdges().begin(), et = node->getOutEdges().end(); it != et; ++it)
             {
                 const CFBasicBlockNode *succ = (*it)->getDstNode();
@@ -795,7 +801,8 @@ protected:
         head = _num;
         setCDN(node, head);
         loop = false;
-        if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front())) {
+        if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
+        {
             const CFBasicBlockNode *succ = _graph->getCFBasicBlockNode(callNode->getRetICFGNode()->getId());
             CycleDepthNumber succ_dfn = getCDN(succ);
             if (succ_dfn == CycleDepthNumber(0))
@@ -811,7 +818,9 @@ protected:
                 head = min;
                 loop = true;
             }
-        } else {
+        }
+        else
+        {
             for (auto it = node->getOutEdges().begin(), et = node->getOutEdges().end(); it != et; ++it)
             {
                 const CFBasicBlockNode *succ = (*it)->getDstNode();
