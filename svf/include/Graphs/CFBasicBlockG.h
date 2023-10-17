@@ -127,8 +127,6 @@ public:
     {
     }
 
-    CFBasicBlockNode(const SVFBasicBlock* bb);
-
     friend std::ostream &operator<<(std::ostream &o, const CFBasicBlockNode &node)
     {
         o << node.toString();
@@ -141,12 +139,6 @@ public:
     {
         assert(!_icfgNodes.empty() && "no ICFG nodes in CFBB");
         return (*_icfgNodes.begin())->getBB()->getName();
-    }
-
-    inline const SVFBasicBlock *getSVFBasicBlock() const
-    {
-        assert(!_icfgNodes.empty() && "no ICFG nodes in CFBB");
-        return (*_icfgNodes.begin())->getBB();
     }
 
     inline const std::vector<const ICFGNode*>& getICFGNodes() const
@@ -360,7 +352,6 @@ class CFBasicBlockGraph : public GenericCFBasicBlockGTy
 private:
     u32_t _totalCFBasicBlockNode{0};
     u32_t _totalCFBasicBlockEdge{0};
-    Map<const SVFFunction*, CFBasicBlockNode*> _funToFirstNode;
 public:
 
     CFBasicBlockGraph() = default;
@@ -382,27 +373,6 @@ public:
     inline bool hasCFBasicBlockNode(NodeID id) const
     {
         return hasGNode(id);
-    }
-
-    inline CFBasicBlockNode* getFirstCFBasicBlockNode(const SVFFunction* fun) const
-    {
-        if (fun && _funToFirstNode.find(fun) != _funToFirstNode.end())
-        {
-            return _funToFirstNode.at(fun);
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
-    inline bool hasFirstCFBasicBlockNode(const SVFFunction* fun) const
-    {
-        return fun && _funToFirstNode.find(fun) != _funToFirstNode.end();
-    }
-
-    inline void setFirstCFBasicBlockNode(const Map<const SVFFunction*, CFBasicBlockNode*>& svfNodeMap)
-    {
-        _funToFirstNode = svfNodeMap;
     }
 
 
@@ -498,16 +468,11 @@ public:
 class CFBasicBlockGBuilder
 {
 
-public:
-    typedef Map<const SVFBasicBlock*, std::vector<CFBasicBlockNode*>> SVFBBToCFBBNodes;
-
 private:
     CFBasicBlockGraph* _CFBasicBlockG;
 
 public:
     CFBasicBlockGBuilder() : _CFBasicBlockG() {}
-
-    virtual void build(SVFModule* module);
 
     virtual void build(ICFG* icfg);
 
@@ -516,13 +481,13 @@ public:
         return _CFBasicBlockG;
     }
 private:
-    void initCFBasicBlockGNodes(ICFG* icfg, SVFBBToCFBBNodes& bbToNodes);
+    void initCFBasicBlockGNodes(ICFG *icfg, Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes);
 
-    void addInterBBEdge(ICFG* icfg, SVFBBToCFBBNodes& bbToNodes);
+    void addInterBBEdge(ICFG *icfg, Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes);
 
-    void addIntraBBEdge(ICFG* icfg, SVFBBToCFBBNodes& bbToNodes);
+    void addIntraBBEdge(ICFG *icfg, Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes);
 
-    void addInterProceduralEdge(ICFG* icfg, SVFBBToCFBBNodes& bbToNodes);
+    void addInterProceduralEdge(ICFG *icfg, Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes);
 };
 }
 
