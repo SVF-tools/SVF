@@ -581,14 +581,19 @@ struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVF
     {
         CFBasicBlockEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
-        if (edge->getICFGEdge()) {
-            if (SVFUtil::isa<CallCFGEdge>(edge->getICFGEdge())){
-                return "style=solid,color=red";}
+        if (edge->getICFGEdge())
+        {
+            if (SVFUtil::isa<CallCFGEdge>(edge->getICFGEdge()))
+            {
+                return "style=solid,color=red";
+            }
             else if (SVFUtil::isa<RetCFGEdge>(edge->getICFGEdge()))
                 return "style=solid,color=blue";
             else
                 return "style=solid";
-        } else {
+        }
+        else
+        {
             return "style=solid";
         }
     }
@@ -601,7 +606,8 @@ struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVF
 
         std::string str;
         std::stringstream rawstr(str);
-        if (edge->getICFGEdge()) {
+        if (edge->getICFGEdge())
+        {
             if (const CallCFGEdge* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge->getICFGEdge()))
                 rawstr << dirCall->getCallSite();
             else if (const RetCFGEdge* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge->getICFGEdge()))
