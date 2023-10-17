@@ -465,30 +465,6 @@ public:
     }
 };
 
-class CFBasicBlockGBuilder
-{
-
-private:
-    CFBasicBlockGraph* _CFBasicBlockG;
-
-public:
-    CFBasicBlockGBuilder() : _CFBasicBlockG() {}
-
-    virtual void build(ICFG* icfg);
-
-    inline CFBasicBlockGraph* getCFBasicBlockGraph()
-    {
-        return _CFBasicBlockG;
-    }
-private:
-    void initCFBasicBlockGNodes(ICFG *icfg, Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes);
-
-    void addInterBBEdge(ICFG *icfg, Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes);
-
-    void addIntraBBEdge(ICFG *icfg, Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes);
-
-    void addInterProceduralEdge(ICFG *icfg, Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes);
-};
 }
 
 
