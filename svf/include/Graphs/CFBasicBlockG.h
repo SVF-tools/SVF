@@ -84,7 +84,10 @@ public:
 
     virtual const std::string toString() const
     {
-        return _icfgEdge->toString();
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "CFBBGEdge: [CFBBGNode" << getDstID() << " <-- CFBBGNode" << getSrcID() << "]\t";
+        return rawstr.str();
     }
 
     inline const ICFGEdge *getICFGEdge() const
@@ -578,13 +581,16 @@ struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVF
     {
         CFBasicBlockEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
-        if (SVFUtil::isa<CallCFGEdge>(edge->getICFGEdge()))
-            return "style=solid,color=red";
-        else if (SVFUtil::isa<RetCFGEdge>(edge->getICFGEdge()))
-            return "style=solid,color=blue";
-        else
+        if (edge->getICFGEdge()) {
+            if (SVFUtil::isa<CallCFGEdge>(edge->getICFGEdge())){
+                return "style=solid,color=red";}
+            else if (SVFUtil::isa<RetCFGEdge>(edge->getICFGEdge()))
+                return "style=solid,color=blue";
+            else
+                return "style=solid";
+        } else {
             return "style=solid";
-        return "";
+        }
     }
 
     template<class EdgeIter>
@@ -595,11 +601,12 @@ struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVF
 
         std::string str;
         std::stringstream rawstr(str);
-        if (const CallCFGEdge* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge->getICFGEdge()))
-            rawstr << dirCall->getCallSite();
-        else if (const RetCFGEdge* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge->getICFGEdge()))
-            rawstr << dirRet->getCallSite();
-
+        if (edge->getICFGEdge()) {
+            if (const CallCFGEdge* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge->getICFGEdge()))
+                rawstr << dirCall->getCallSite();
+            else if (const RetCFGEdge* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge->getICFGEdge()))
+                rawstr << dirRet->getCallSite();
+        }
         return rawstr.str();
     }
 };
