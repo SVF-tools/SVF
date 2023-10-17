@@ -127,8 +127,6 @@ public:
     {
     }
 
-    CFBasicBlockNode(const SVFBasicBlock* bb);
-
     friend std::ostream &operator<<(std::ostream &o, const CFBasicBlockNode &node)
     {
         o << node.toString();
@@ -143,10 +141,9 @@ public:
         return (*_icfgNodes.begin())->getBB()->getName();
     }
 
-    inline const SVFBasicBlock *getSVFBasicBlock() const
+    inline const std::vector<const ICFGNode*>& getICFGNodes() const
     {
-        assert(!_icfgNodes.empty() && "no ICFG nodes in CFBB");
-        return (*_icfgNodes.begin())->getBB();
+        return _icfgNodes;
     }
 
     inline const SVFFunction *getFunction() const
@@ -355,7 +352,6 @@ class CFBasicBlockGraph : public GenericCFBasicBlockGTy
 private:
     u32_t _totalCFBasicBlockNode{0};
     u32_t _totalCFBasicBlockEdge{0};
-    Map<const SVFFunction*, CFBasicBlockNode*> _funToFirstNode;
 public:
 
     CFBasicBlockGraph() = default;
@@ -377,27 +373,6 @@ public:
     inline bool hasCFBasicBlockNode(NodeID id) const
     {
         return hasGNode(id);
-    }
-
-    inline CFBasicBlockNode* getFirstCFBasicBlockNode(const SVFFunction* fun) const
-    {
-        if (fun && _funToFirstNode.find(fun) != _funToFirstNode.end())
-        {
-            return _funToFirstNode.at(fun);
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
-    inline bool hasFirstCFBasicBlockNode(const SVFFunction* fun) const
-    {
-        return fun && _funToFirstNode.find(fun) != _funToFirstNode.end();
-    }
-
-    inline void setFirstCFBasicBlockNode(const Map<const SVFFunction*, CFBasicBlockNode*>& svfNodeMap)
-    {
-        _funToFirstNode = svfNodeMap;
     }
 
 
@@ -490,24 +465,6 @@ public:
     }
 };
 
-class CFBasicBlockGBuilder
-{
-
-private:
-    CFBasicBlockGraph* _CFBasicBlockG;
-
-public:
-    CFBasicBlockGBuilder() : _CFBasicBlockG() {}
-
-    virtual void build(SVFModule* module);
-
-    virtual void build(ICFG* icfg);
-
-    inline CFBasicBlockGraph* getCFBasicBlockGraph()
-    {
-        return _CFBasicBlockG;
-    }
-};
 }
 
 
@@ -537,6 +494,9 @@ struct GenericGraphTraits<SVF::CFBasicBlockGraph *>
     typedef SVF::CFBasicBlockNode *NodeRef;
 };
 
+} // End namespace SVF
+
+namespace SVF {
 template<>
 struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVFIR *>
 {
@@ -544,7 +504,7 @@ struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVF
     typedef SVF::CFBasicBlockNode NodeType;
 
     DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<SVF::SVFIR *>(isSimple)
+            DOTGraphTraits<SVF::SVFIR *>(isSimple)
     {
     }
 
@@ -574,22 +534,70 @@ struct DOTGraphTraits<SVF::CFBasicBlockGraph *> : public DOTGraphTraits<SVF::SVF
     {
         std::string str;
         std::stringstream rawstr(str);
-        rawstr << "color=black";
+        if(node->getICFGNodes().size() == 1) {
+            const ICFGNode* n = node->getICFGNodes()[0];
+            if(SVFUtil::isa<IntraICFGNode>(n))
+            {
+                rawstr <<  "color=black";
+            }
+            else if(SVFUtil::isa<FunEntryICFGNode>(n))
+            {
+                rawstr <<  "color=yellow";
+            }
+            else if(SVFUtil::isa<FunExitICFGNode>(n))
+            {
+                rawstr <<  "color=green";
+            }
+            else if(SVFUtil::isa<CallICFGNode>(n))
+            {
+                rawstr <<  "color=red";
+            }
+            else if(SVFUtil::isa<RetICFGNode>(n))
+            {
+                rawstr <<  "color=blue";
+            }
+            else if(SVFUtil::isa<GlobalICFGNode>(n))
+            {
+                rawstr <<  "color=purple";
+            }
+            else
+                assert(false && "no such kind of node!!");
+        } else {
+            rawstr << "color=black";
+        }
+        rawstr <<  "";
         return rawstr.str();
     }
 
     template<class EdgeIter>
     static std::string getEdgeAttributes(NodeType *, EdgeIter EI, SVF::CFBasicBlockGraph *)
     {
-        return "style=solid";
+        CFBasicBlockEdge* edge = *(EI.getCurrent());
+        assert(edge && "No edge found!!");
+        if (SVFUtil::isa<CallCFGEdge>(edge->getICFGEdge()))
+            return "style=solid,color=red";
+        else if (SVFUtil::isa<RetCFGEdge>(edge->getICFGEdge()))
+            return "style=solid,color=blue";
+        else
+            return "style=solid";
+        return "";
     }
 
     template<class EdgeIter>
     static std::string getEdgeSourceLabel(NodeType *, EdgeIter EI)
     {
-        return "";
+        CFBasicBlockEdge* edge = *(EI.getCurrent());
+        assert(edge && "No edge found!!");
+
+        std::string str;
+        std::stringstream rawstr(str);
+        if (const CallCFGEdge* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge->getICFGEdge()))
+            rawstr << dirCall->getCallSite();
+        else if (const RetCFGEdge* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge->getICFGEdge()))
+            rawstr << dirRet->getCallSite();
+
+        return rawstr.str();
     }
 };
-
-} // End namespace SVF
+}
 #endif //SVF_CFBASICBLOCKG_H
