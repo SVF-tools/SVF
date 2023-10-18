@@ -33,6 +33,9 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+SVF::SVFIR2ItvExeState::VAddrs SVF::SVFIR2ItvExeState::globalNullVaddrs =
+    AddressValue();
+
 void SVFIR2ItvExeState::applySummary(IntervalExeState &es)
 {
     for (const auto &item: es._varToItvVal)

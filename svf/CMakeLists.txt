@@ -19,8 +19,5 @@ file(
   lib/Util/*.cpp
   lib/WPA/*.cpp)
 
-# Refer to this link for detail:
-# https://stackoverflow.com/questions/68864536/cmake-linking-static-libraries-in-different-subdirectories-into-one-single-stati
-add_library(SvfCoreObj OBJECT ${SVF_CORE_SOURCES})
-add_library(SvfCore STATIC)
-target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES} SvfCoreObj)
+add_library(SvfCore ${SVF_CORE_SOURCES})
+target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES})
