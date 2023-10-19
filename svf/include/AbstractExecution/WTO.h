@@ -824,6 +824,8 @@ protected:
             for (auto it = node->getOutEdges().begin(), et = node->getOutEdges().end(); it != et; ++it)
             {
                 const CFBasicBlockNode *succ = (*it)->getDstNode();
+                if (succ->getFunction() != node->getFunction())
+                    continue;
                 CycleDepthNumber succ_dfn = getCDN(succ);
                 if (succ_dfn == CycleDepthNumber(0))
                 {
