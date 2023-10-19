@@ -686,6 +686,7 @@ protected:
             {
                 for (const auto &edge: node.node()->getOutEdges())
                 {
+                    if(edge->getICFGEdge() && !edge->getICFGEdge()->isIntraCFGEdge()) continue;
                     const CFBasicBlockNode *succ = edge->getDstNode();
                     const CFBasicBlockGWTOCycleDepth &succNesting = getWTOCycleDepth(succ);
                     if (succ != _head && succNesting <= _headWTOCycleDepth)
@@ -777,6 +778,7 @@ protected:
         {
             for (auto it = node->getOutEdges().begin(), et = node->getOutEdges().end(); it != et; ++it)
             {
+                if((*it)->getICFGEdge() && !(*it)->getICFGEdge()->isIntraCFGEdge()) continue;
                 const CFBasicBlockNode *succ = (*it)->getDstNode();
                 if (getCDN(succ) == 0)
                 {
@@ -823,6 +825,7 @@ protected:
         {
             for (auto it = node->getOutEdges().begin(), et = node->getOutEdges().end(); it != et; ++it)
             {
+                if((*it)->getICFGEdge() && !(*it)->getICFGEdge()->isIntraCFGEdge()) continue;
                 const CFBasicBlockNode *succ = (*it)->getDstNode();
                 if (succ->getFunction() != node->getFunction())
                     continue;
