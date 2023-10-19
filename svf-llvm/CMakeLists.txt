@@ -3,6 +3,7 @@
 # building out-of-source
 if(NOT COMMAND add_llvm_library)
   find_package(LLVM REQUIRED CONFIG HINTS "${LLVM_DIR}")
+  set(LLVM_DIR ${LLVM_BINARY_DIR} PARENT_SCOPE)
 
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")

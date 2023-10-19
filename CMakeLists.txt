@@ -89,7 +89,10 @@ install(
   PATTERN "**/*.h")
 
 # Compile extapi.c to extapi.bc
-find_path(LLVM_CLANG_DIR NAMES clang PATH_SUFFIXES bin)
+find_path(LLVM_CLANG_DIR
+        NAMES clang llvm
+        HINTS ${LLVM_DIR} ENV LLVM_DIR
+        PATH_SUFFIXES bin)
 add_custom_target(extapi_ir ALL
     COMMAND ${LLVM_CLANG_DIR}/clang -w -S -c -Xclang -disable-O0-optnone -fno-discard-value-names -emit-llvm ${PROJECT_SOURCE_DIR}/svf-llvm/lib/extapi.c -o ${PROJECT_BINARY_DIR}/svf-llvm/extapi.bc
     DEPENDS ${PROJECT_SOURCE_DIR}/svf-llvm/lib/extapi.c
