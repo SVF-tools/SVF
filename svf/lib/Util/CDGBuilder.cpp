@@ -141,7 +141,8 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
                 // no common ancestor, may be exit()
                 if (SVFLCA == NULL)
                     tgtNodes.push_back(succ);
-                else {
+                else
+                {
                     if (SVFLCA == pred) tgtNodes.push_back(SVFLCA);
                     // from succ to LCA
                     extractNodesBetweenPdomNodes(succ, SVFLCA, tgtNodes);
