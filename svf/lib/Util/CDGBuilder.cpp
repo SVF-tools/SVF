@@ -64,11 +64,6 @@ void
 CDGBuilder::extractNodesBetweenPdomNodes(const SVFBasicBlock *succ, const SVFBasicBlock *LCA,
         std::vector<const SVFBasicBlock *> &tgtNodes)
 {
-    if (LCA == NULL)
-    {
-        tgtNodes.push_back(succ);
-        return;
-    }
     if (succ == LCA) return;
     std::vector<const SVFBasicBlock *> path;
     SVFLoopAndDomInfo *ld = const_cast<SVFFunction *>(LCA->getFunction())->getLoopAndDomInfo();
@@ -103,7 +98,10 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
     }
     if (const IntraCFGEdge *intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
     {
-        return intraEdge->getSuccessorCondValue();
+        if(intraEdge->getCondition())
+            return intraEdge->getSuccessorCondValue();
+        else
+            return 0;
     }
     else
     {
@@ -140,9 +138,14 @@ void CDGBuilder::buildControlDependence(const SVFModule *svfgModule)
                 const SVFBasicBlock *SVFLCA = const_cast<SVFFunction *>(svfFun)->
                                               getLoopAndDomInfo()->findNearestCommonPDominator(pred, succ);
                 std::vector<const SVFBasicBlock *> tgtNodes;
-                if (SVFLCA == pred) tgtNodes.push_back(SVFLCA);
-                // from succ to LCA
-                extractNodesBetweenPdomNodes(succ, SVFLCA, tgtNodes);
+                // no common ancestor, may be exit()
+                if (SVFLCA == NULL)
+                    tgtNodes.push_back(succ);
+                else {
+                    if (SVFLCA == pred) tgtNodes.push_back(SVFLCA);
+                    // from succ to LCA
+                    extractNodesBetweenPdomNodes(succ, SVFLCA, tgtNodes);
+                }
 
                 s64_t pos = getBBSuccessorBranchID(pred, succ);
                 for (const SVFBasicBlock *bb: tgtNodes)
