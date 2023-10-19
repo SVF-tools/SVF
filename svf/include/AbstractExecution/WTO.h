@@ -797,7 +797,6 @@ protected:
         loop = false;
         if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front())) {
             const CFBasicBlockNode *succ = _graph->getCFBasicBlockNode(callNode->getRetICFGNode()->getId());
-            std::cout << "WTO visit ID:" << succ->getId() << ", func: " << succ->getFunction()->getName()  << std::endl;
             CycleDepthNumber succ_dfn = getCDN(succ);
             if (succ_dfn == CycleDepthNumber(0))
             {
@@ -818,7 +817,6 @@ protected:
                 const CFBasicBlockNode *succ = (*it)->getDstNode();
                 if (succ->getFunction() != node->getFunction())
                     continue;
-                std::cout << "WTO visit ID:" << succ->getId() << ", func: " << succ->getFunction()->getName()  << std::endl;
                 CycleDepthNumber succ_dfn = getCDN(succ);
                 if (succ_dfn == CycleDepthNumber(0))
                 {
