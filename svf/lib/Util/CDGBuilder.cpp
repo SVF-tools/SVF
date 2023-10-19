@@ -98,7 +98,10 @@ s64_t CDGBuilder::getBBSuccessorBranchID(const SVFBasicBlock *BB, const SVFBasic
     }
     if (const IntraCFGEdge *intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge))
     {
-        return intraEdge->getSuccessorCondValue();
+        if(intraEdge->getCondition())
+            return intraEdge->getSuccessorCondValue();
+        else
+            return 0;
     }
     else
     {
