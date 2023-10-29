@@ -49,7 +49,7 @@ endif()
 # SVF-LLVM contains LLVM Libs
 file(GLOB SVFLLVM_SOURCES lib/*.cpp)
 
-add_llvm_library(SvfLLVM ${SVFLLVM_SOURCES})
+add_llvm_library(SvfLLVM SHARED ${SVFLLVM_SOURCES})
 target_include_directories(SvfLLVM SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
 target_include_directories(SvfLLVM PUBLIC include)
 target_link_libraries(SvfLLVM PUBLIC ${Z3_LIBRARIES} SvfCore)
