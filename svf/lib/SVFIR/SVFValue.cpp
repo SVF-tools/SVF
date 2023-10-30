@@ -7,7 +7,7 @@ using namespace SVFUtil;
 __attribute__((weak))
 std::string SVFValue::toString() const
 {
-    assert("SVFValue::toString should be implemented by fronted" && false);
+    assert("SVFValue::toString should be implemented or supported by fronted" && false);
     abort();
 }
 
