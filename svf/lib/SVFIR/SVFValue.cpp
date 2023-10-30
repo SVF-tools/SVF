@@ -4,6 +4,13 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+__attribute__((weak))
+std::string SVFValue::toString() const
+{
+    assert("SVFValue::toString should be implemented or supported by fronted" && false);
+    abort();
+}
+
 /// Add field (index and offset) with its corresponding type
 void StInfo::addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx)
 {
