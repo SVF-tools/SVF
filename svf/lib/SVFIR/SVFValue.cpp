@@ -8,7 +8,7 @@ __attribute__((weak))
 std::string SVFValue::toString() const
 {
     assert("SVFValue::toString should be implemented by fronted" && false);
-    return "";
+    abort();
 }
 
 /// Add field (index and offset) with its corresponding type
