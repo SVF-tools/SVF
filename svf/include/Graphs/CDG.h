@@ -266,7 +266,7 @@ public:
         bool added1 = edge->getDstNode()->addIncomingEdge(edge);
         bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
         assert(added1 && added2 && "edge not added??");
-        return true;
+        return added1 && added2;
     }
 
     /// Add a CDG node
@@ -438,8 +438,7 @@ struct DOTGraphTraits<SVF::CDG *> : public DOTGraphTraits<SVF::PAG *>
     template<class EdgeIter>
     static std::string getEdgeAttributes(NodeType *, EdgeIter EI, SVF::CDG *)
     {
-        SVF::CDGEdge *edge = *(EI.getCurrent());
-        assert(edge && "No edge found!!");
+        assert(*(EI.getCurrent()) && "No edge found!!");
         return "style=solid";
     }
 

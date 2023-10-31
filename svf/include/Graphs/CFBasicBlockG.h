@@ -312,15 +312,13 @@ public:
     ///@{
     inline u32_t removeIncomingEdge(CFBasicBlockEdge *edge)
     {
-        iterator it = InEdges.find(edge);
-        assert(it != InEdges.end() && "can not find in edge in SVFG node");
+        assert(InEdges.find(edge) != InEdges.end() && "can not find in edge in SVFG node");
         return InEdges.erase(edge);
     }
 
     inline u32_t removeOutgoingEdge(CFBasicBlockEdge *edge)
     {
-        iterator it = OutEdges.find(edge);
-        assert(it != OutEdges.end() && "can not find out edge in SVFG node");
+        assert(OutEdges.find(edge) != OutEdges.end() && "can not find out edge in SVFG node");
         return OutEdges.erase(edge);
     }
     ///@}
@@ -457,7 +455,7 @@ public:
         bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
         assert(added1 && added2 && "edge not added??");
         _totalCFBasicBlockEdge++;
-        return true;
+        return added1 && added2;
     }
 
     /// Add a ICFGNodeWrapper
