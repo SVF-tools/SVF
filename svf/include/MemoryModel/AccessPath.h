@@ -109,12 +109,31 @@ public:
     }
     //@}
 
-    /// Return accumulated constant byte offset given OffsetVarVec
-    /// e.g. GepStmt* gep = [i32*4]*, 2
+    /**
+     * Computes the total constant byte offset of an access path.
+     * This function iterates over the offset-variable-type pairs in reverse order,
+     * accumulating the total byte offset for constant offsets. For each pair,
+     * it retrieves the corresponding SVFValue and determines the type of offset
+     * (whether it's an array, pointer, or structure). If the offset corresponds
+     * to a structure, it further resolves the actual element type based on the
+     * offset value. It then multiplies the offset value by the size of the type
+     * to compute the byte offset. This is used to handle composite types where
+     * offsets are derived from the type's internal structure, such as arrays
+     * or structures with fields of various types and sizes. The function asserts
+     * that the access path must have a constant offset, and it is intended to be
+     * used when the offset is known to be constant at compile time.
+     *
+     * @return APOffset representing the computed total constant byte offset.
+     */
+    /// e.g. GepStmt* gep = [i32*4], 2
     /// APOffset byteOffset = gep->accumulateConstantByteOffset();
     /// byteOffset should be 8 since i32 is 4 bytes and index is 2.
     APOffset computeConstantByteOffset() const;
     /// Return accumulated constant offset given OffsetVarVec
+    /// compard to computeConstantByteOffset, it is field offset rather than byte offset
+    /// e.g. GepStmt* gep = [i32*4], 2
+    /// APOffset byteOffset = gep->computeConstantOffset();
+    /// byteOffset should be 2 since it is field offset.
     APOffset computeConstantOffset() const;
 
     /// Return element number of a type.
