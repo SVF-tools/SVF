@@ -94,33 +94,29 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
 /// Given a vector and elem byte size: [(value1,type1), (value2,type2), (value3,type3)], bytesize
 /// totalConstByteOffset = ByteOffset(value1,type1) * ByteOffset(value2,type2) + ByteOffset(value3,type3)
 /// For a pointer type (e.g., t1 is PointerType), we will retrieve the pointee type and times the offset, i.e., getElementNum(t1) X off1
-APOffset AccessPath::computeConstantByteOffset(u32_t elemBytesize) const
+APOffset AccessPath::computeConstantByteOffset() const
 {
     assert(isConstantOffset() && "not a constant offset");
-
-    if(offsetVarAndGepTypePairs.empty())
-        return getConstantFieldIdx() * elemBytesize;
 
     APOffset totalConstOffset = 0;
     for(int i = offsetVarAndGepTypePairs.size() - 1; i >= 0; i--)
     {
         const SVFValue* value = offsetVarAndGepTypePairs[i].first->getValue();
         const SVFType* type = offsetVarAndGepTypePairs[i].second;
-        const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
-        assert(op && "not a constant offset?");
-        if(type==nullptr)
-        {
-            totalConstOffset += op->getSExtValue() * elemBytesize;
-            continue;
+        const SVFType* type2 = type;
+        if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type)) {
+            type2 = arrType->getTypeOfElement();
+        }
+        else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type)) {
+            type2 = ptrType->getPtrElementType();
         }
 
-        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
-            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType()) * elemBytesize;
-        else
-        {
-            APOffset offset = op->getSExtValue();
-            // if getByteOffset is false, it will retrieve flatten idx
-            totalConstOffset += offset * elemBytesize;
+        const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
+        if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type)) {
+            type2 = structType->getTypeInfo()->getOriginalElemType(op->getSExtValue());
+            totalConstOffset += type2->getLLVMByteSize();
+        } else {
+            totalConstOffset += op->getSExtValue() * type2->getLLVMByteSize();
         }
     }
     return totalConstOffset;

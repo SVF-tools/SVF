@@ -5,6 +5,11 @@ namespace SVF
 {
 
 __attribute__((weak))
+u32_t SVFType::getLLVMByteSize() const {
+    return 0;
+}
+
+__attribute__((weak))
 std::string SVFType::toString() const
 {
     std::ostringstream os;
