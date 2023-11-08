@@ -83,10 +83,7 @@ void traverseOnSVFStmt(const ICFGNode* node) {
             svfir2ExeState->translateBinary(binary);
         } else if (const CmpStmt *cmp = SVFUtil::dyn_cast<CmpStmt>(stmt)) {
             svfir2ExeState->translateCmp(cmp);
-        } else if (const UnaryOPStmt *unary = SVFUtil::dyn_cast<UnaryOPStmt>(stmt)) {
-        } else if (const BranchStmt *br = SVFUtil::dyn_cast<BranchStmt>(stmt)) {
-            
-        } else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
+        }  else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
             svfir2ExeState->translateLoad(load);
         } else if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt)) {
             svfir2ExeState->translateStore(store);
