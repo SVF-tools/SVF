@@ -180,10 +180,12 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getBytefromGepTypePair(const Ac
 {
     const SVFValue *value = gep_pair.first->getValue();
     const SVFType *type = gep_pair.second;
-    if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type)) {
+    if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type))
+    {
         type = arrType->getTypeOfElement();
     }
-    else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type)) {
+    else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type))
+    {
         type = ptrType->getPtrElementType();
     }
     const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value);
@@ -211,9 +213,9 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getBytefromGepTypePair(const Ac
     if (op)
     {
         offsetLb = offsetUb =
-            op->getSExtValue() * type->getLLVMByteSize() > maxByteLimit
-                ? maxByteLimit
-                : op->getSExtValue() * type->getLLVMByteSize();
+                       op->getSExtValue() * type->getLLVMByteSize() > maxByteLimit
+                       ? maxByteLimit
+                       : op->getSExtValue() * type->getLLVMByteSize();
     }
     else
     {

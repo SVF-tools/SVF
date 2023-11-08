@@ -104,18 +104,23 @@ APOffset AccessPath::computeConstantByteOffset() const
         const SVFValue* value = offsetVarAndGepTypePairs[i].first->getValue();
         const SVFType* type = offsetVarAndGepTypePairs[i].second;
         const SVFType* type2 = type;
-        if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type)) {
+        if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type))
+        {
             type2 = arrType->getTypeOfElement();
         }
-        else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type)) {
+        else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type))
+        {
             type2 = ptrType->getPtrElementType();
         }
 
         const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
-        if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type)) {
+        if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type))
+        {
             type2 = structType->getTypeInfo()->getOriginalElemType(op->getSExtValue());
             totalConstOffset += type2->getLLVMByteSize();
-        } else {
+        }
+        else
+        {
             totalConstOffset += op->getSExtValue() * type2->getLLVMByteSize();
         }
     }

@@ -74,37 +74,62 @@ std::string printPts(PointerAnalysis* pta, SVFValue* val)
 /*!
  * An example to query/collect all SVFStmt from a ICFGNode (iNode)
  */
-void traverseOnSVFStmt(const ICFGNode* node) {
+void traverseOnSVFStmt(const ICFGNode* node)
+{
     SVFIR2ItvExeState* svfir2ExeState = new SVFIR2ItvExeState(SVFIR::getPAG());
-    for (const SVFStmt* stmt: node->getSVFStmts()) {
-        if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt)) {
+    for (const SVFStmt* stmt: node->getSVFStmts())
+    {
+        if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
+        {
             svfir2ExeState->translateAddr(addr);
-        } else if (const BinaryOPStmt *binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt)) {
+        }
+        else if (const BinaryOPStmt *binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
+        {
             svfir2ExeState->translateBinary(binary);
-        } else if (const CmpStmt *cmp = SVFUtil::dyn_cast<CmpStmt>(stmt)) {
+        }
+        else if (const CmpStmt *cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+        {
             svfir2ExeState->translateCmp(cmp);
-        }  else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
+        }
+        else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+        {
             svfir2ExeState->translateLoad(load);
-        } else if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt)) {
+        }
+        else if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+        {
             svfir2ExeState->translateStore(store);
-        } else if (const CopyStmt *copy = SVFUtil::dyn_cast<CopyStmt>(stmt)) {
+        }
+        else if (const CopyStmt *copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
+        {
             svfir2ExeState->translateCopy(copy);
-        } else if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt)) {
-            if (gep->isConstantOffset()) {
+        }
+        else if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+        {
+            if (gep->isConstantOffset())
+            {
                 gep->accumulateConstantByteOffset();
                 gep->accumulateConstantOffset();
             }
             svfir2ExeState->translateGep(gep);
-        } else if (const SelectStmt *select = SVFUtil::dyn_cast<SelectStmt>(stmt)) {
+        }
+        else if (const SelectStmt *select = SVFUtil::dyn_cast<SelectStmt>(stmt))
+        {
             svfir2ExeState->translateSelect(select);
-        } else if (const PhiStmt *phi = SVFUtil::dyn_cast<PhiStmt>(stmt)) {
+        }
+        else if (const PhiStmt *phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
+        {
             svfir2ExeState->translatePhi(phi);
-        } else if (const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt)) {
+        }
+        else if (const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt))
+        {
             // To handle Call Edge
             svfir2ExeState->translateCall(callPE);
-        } else if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt)) {
+        }
+        else if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt))
+        {
             svfir2ExeState->translateRet(retPE);
-        } else
+        }
+        else
             assert(false && "implement this part");
     }
 }
