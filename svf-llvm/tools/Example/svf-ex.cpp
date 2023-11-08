@@ -113,9 +113,8 @@ void traverseOnSVFStmt(const ICFGNode* node) {
 /*!
  * An example to query/collect all successor nodes from a ICFGNode (iNode) along control-flow graph (ICFG)
  */
-void traverseOnICFG(ICFG* icfg, const SVFInstruction* svfInst)
+void traverseOnICFG(ICFG* icfg, const ICFGNode* iNode)
 {
-    ICFGNode* iNode = icfg->getICFGNode(svfInst);
     FIFOWorkList<const ICFGNode*> worklist;
     Set<const ICFGNode*> visited;
     worklist.push(iNode);
@@ -225,8 +224,12 @@ int main(int argc, char ** argv)
     /// Collect uses of an LLVM Value
     /// traverseOnVFG(svfg, value);
 
+
     /// Collect all successor nodes on ICFG
-    /// traverseOnICFG(icfg, value);
+    for (const auto &it : *icfg) {
+        const ICFGNode* node = it.second;
+        traverseOnICFG(icfg, node);
+    }
 
     // clean up memory
     delete vfg;
