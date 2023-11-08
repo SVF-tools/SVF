@@ -505,9 +505,9 @@ public:
     /// e.g. GepStmt* gep = **,
     /// s32_t elemBytesize = LLVMUtil::SVFType2ByteSize(gep->getRHSVar()->getValue()->getType());
     /// APOffset byteOffset = gep->accumulateConstantByteOffset(elemBytesize);
-    inline APOffset accumulateConstantByteOffset(u32_t elemBytesize) const
+    inline APOffset accumulateConstantByteOffset() const
     {
-        return getAccessPath().computeConstantByteOffset(elemBytesize);
+        return getAccessPath().computeConstantByteOffset();
     }
 
     /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.

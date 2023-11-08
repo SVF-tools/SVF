@@ -299,6 +299,8 @@ public:
         return getPointerToTy;
     }
 
+    u32_t getLLVMByteSize() const;
+
     inline void setTypeInfo(StInfo* ti)
     {
         typeinfo = ti;
@@ -319,6 +321,16 @@ public:
     inline bool isPointerTy() const
     {
         return kind == SVFPointerTy;
+    }
+
+    inline bool isArrayTy() const
+    {
+        return kind == SVFArrayTy;
+    }
+
+    inline bool isStructTy() const
+    {
+        return kind == SVFStructTy;
     }
 
     inline bool isSingleValueType() const
@@ -462,6 +474,10 @@ public:
 
     void print(std::ostream& os) const override;
 
+    const SVFType* getTypeOfElement() const {
+        return typeOfElement;
+    }
+
     void setTypeOfElement(const SVFType* elemType)
     {
         typeOfElement = elemType;
@@ -471,6 +487,8 @@ public:
     {
         numOfElement = elemNum;
     }
+
+
 };
 
 class SVFOtherType : public SVFType
