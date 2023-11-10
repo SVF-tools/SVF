@@ -126,16 +126,20 @@ APOffset AccessPath::computeConstantByteOffset() const
         }
 
         const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
-        if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type)) {
+        if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type))
+        {
             /// for (1) structType: %struct.DEST
             ///   structField = 0, type2: int
             ///   structField = 1, type2: char[10]
             ///   structField = 2, type2: int[5]
-            for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField) {
+            for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField)
+            {
                 type2 = structType->getTypeInfo()->getOriginalElemType(structField);
                 totalConstOffset += type2->getLLVMByteSize();
             }
-        } else {
+        }
+        else
+        {
             /// for (2) i = 0, op: 0, type: [10 x i8]*(Ptr), type2: [10 x i8](Arr)
             ///         i = 1, op: 8, type: [10 x i8](Arr), type2: i8
             totalConstOffset += op->getSExtValue() * type2->getLLVMByteSize();
