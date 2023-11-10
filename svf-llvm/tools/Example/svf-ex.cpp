@@ -128,7 +128,6 @@ void traverseOnICFG(ICFG* icfg, const ICFGNode* iNode)
         {
             ICFGEdge* edge = *it;
             ICFGNode* succNode = edge->getDstNode();
-            traverseOnSVFStmt(succNode);
             if (visited.find(succNode) == visited.end())
             {
                 visited.insert(succNode);
