@@ -104,10 +104,12 @@ APOffset AccessPath::computeConstantByteOffset() const
         const SVFValue* value = offsetVarAndGepTypePairs[i].first->getValue();
         const SVFType* type = offsetVarAndGepTypePairs[i].second;
         const SVFType* type2 = type;
-        if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type)) {
+        if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type))
+        {
             type2 = arrType->getTypeOfElement();
         }
-        else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type)) {
+        else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type))
+        {
             type2 = ptrType->getPtrElementType();
         }
 

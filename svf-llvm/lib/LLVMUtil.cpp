@@ -1269,7 +1269,8 @@ s64_t LLVMUtil::getCaseValue(const SwitchInst &switchInst, SuccBBAndCondValPair 
 namespace SVF
 {
 // getLLVMByteSize
-u32_t SVFType::getLLVMByteSize() const {
+u32_t SVFType::getLLVMByteSize() const
+{
     const llvm::DataLayout &DL = LLVMModuleSet::getLLVMModuleSet()->
                                  getMainLLVMModule()->getDataLayout();
     const Type* T = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(this);

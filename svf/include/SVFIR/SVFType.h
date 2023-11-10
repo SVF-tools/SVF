@@ -474,7 +474,8 @@ public:
 
     void print(std::ostream& os) const override;
 
-    const SVFType* getTypeOfElement() const {
+    const SVFType* getTypeOfElement() const
+    {
         return typeOfElement;
     }
 
