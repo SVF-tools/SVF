@@ -101,26 +101,43 @@ APOffset AccessPath::computeConstantByteOffset() const
     APOffset totalConstOffset = 0;
     for(int i = offsetVarAndGepTypePairs.size() - 1; i >= 0; i--)
     {
+        /// For example, there is struct DEST{int a, char b[10], int c[5]}
+        /// (1) %c = getelementptr inbounds %struct.DEST, %struct.DEST* %arr, i32 0, i32 2
+        //  (2) %arrayidx = getelementptr inbounds [10 x i8], [10 x i8]* %b, i64 0, i64 8
         const SVFValue* value = offsetVarAndGepTypePairs[i].first->getValue();
+        /// for (1) offsetVarAndGepTypePairs.size()  = 2
+        ///     i = 0, type: %struct.DEST*, PtrType, op = 0
+        ///     i = 1, type: %struct.DEST, StructType, op = 2
+        /// for (2) offsetVarAndGepTypePairs.size()  = 2
+        ///     i = 0, type: [10 x i8]*, PtrType, op = 0
+        ///     i = 1, type: [10 x i8], ArrType, op = 8
         const SVFType* type = offsetVarAndGepTypePairs[i].second;
         const SVFType* type2 = type;
         if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type))
         {
+            /// for (2) i = 1, arrType: [10 x i8], type2 = i8
             type2 = arrType->getTypeOfElement();
         }
         else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type))
         {
+            /// for (1) i = 0, ptrType: %struct.DEST*, type2: %struct.DEST
+            /// for (2) i = 0, ptrType: [10 x i8]*, type2 = [10 x i8]
             type2 = ptrType->getPtrElementType();
         }
 
         const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
-        if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type))
-        {
-            type2 = structType->getTypeInfo()->getOriginalElemType(op->getSExtValue());
-            totalConstOffset += type2->getLLVMByteSize();
-        }
-        else
-        {
+        if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type)) {
+            /// for (1) structType: %struct.DEST
+            ///   structField = 0, type2: int
+            ///   structField = 1, type2: char[10]
+            ///   structField = 2, type2: int[5]
+            for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField) {
+                type2 = structType->getTypeInfo()->getOriginalElemType(structField);
+                totalConstOffset += type2->getLLVMByteSize();
+            }
+        } else {
+            /// for (2) i = 0, op: 0, type: [10 x i8]*(Ptr), type2: [10 x i8](Arr)
+            ///         i = 1, op: 8, type: [10 x i8](Arr), type2: i8
             totalConstOffset += op->getSExtValue() * type2->getLLVMByteSize();
         }
     }
