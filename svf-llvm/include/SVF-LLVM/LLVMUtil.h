@@ -384,11 +384,11 @@ void removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> re
 inline u32_t SVFType2ByteSize(const SVFType* type)
 {
     const llvm::Type* llvm_rhs = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(type);
-    u32_t llvm_rhs_size = LLVMUtil::getTypeSizeInBytes(llvm_rhs->getPointerElementType());
+    u32_t llvm_rhs_size = LLVMUtil::getTypeSizeInBytes(llvm_rhs->getNonOpaquePointerElementType());
     u32_t llvm_elem_size = -1;
-    if (llvm_rhs->getPointerElementType()->isArrayTy() && llvm_rhs_size > 0)
+    if (llvm_rhs->getNonOpaquePointerElementType()->isArrayTy() && llvm_rhs_size > 0)
     {
-        size_t array_len = llvm_rhs->getPointerElementType()->getArrayNumElements();
+        size_t array_len = llvm_rhs->getNonOpaquePointerElementType()->getArrayNumElements();
         llvm_elem_size = llvm_rhs_size / array_len;
     }
     else
