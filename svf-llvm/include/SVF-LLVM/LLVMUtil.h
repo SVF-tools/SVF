@@ -119,7 +119,7 @@ inline bool isNullPtrSym(const Value* val)
 static inline Type* getPtrElementType(const PointerType* pty)
 {
 #if (LLVM_VERSION_MAJOR < 14)
-    return pty->getElementType();
+    return pty->getPointerElementType();
 #else
     assert(!pty->isOpaque() && "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointers'");
     return pty->getNonOpaquePointerElementType();
@@ -384,11 +384,14 @@ void removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> re
 inline u32_t SVFType2ByteSize(const SVFType* type)
 {
     const llvm::Type* llvm_rhs = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(type);
-    u32_t llvm_rhs_size = LLVMUtil::getTypeSizeInBytes(llvm_rhs->getPointerElementType());
+    const llvm::PointerType* llvm_rhs_ptr = SVFUtil::dyn_cast<PointerType>(llvm_rhs);
+    assert(llvm_rhs_ptr && "not a pointer type?");
+    const Type *ptrElementType = getPtrElementType(llvm_rhs_ptr);
+    u32_t llvm_rhs_size = LLVMUtil::getTypeSizeInBytes(ptrElementType);
     u32_t llvm_elem_size = -1;
-    if (llvm_rhs->getPointerElementType()->isArrayTy() && llvm_rhs_size > 0)
+    if (ptrElementType->isArrayTy() && llvm_rhs_size > 0)
     {
-        size_t array_len = llvm_rhs->getPointerElementType()->getArrayNumElements();
+        size_t array_len = ptrElementType->getArrayNumElements();
         llvm_elem_size = llvm_rhs_size / array_len;
     }
     else
