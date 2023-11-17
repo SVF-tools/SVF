@@ -250,7 +250,8 @@ int main(int argc, char ** argv)
 
 
     /// Collect all successor nodes on ICFG
-    for (const auto &it : *icfg) {
+    for (const auto &it : *icfg)
+    {
         const ICFGNode* node = it.second;
         traverseOnICFG(icfg, node);
     }
