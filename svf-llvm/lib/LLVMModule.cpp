@@ -1253,7 +1253,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
            "SVFType has been added before");
 
     SVFType* svftype;
-    if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T)) {
+    if (SVFUtil::isa<PointerType>(T)) {
         svftype = new SVFPointerType();
     }
     else if (const IntegerType* intT = SVFUtil::dyn_cast<IntegerType>(T))
