@@ -365,7 +365,8 @@ public:
         return ptrElementType;
     }
 
-    inline void setPtrElementType(SVFType* _ptrElementType)  {
+    inline void setPtrElementType(SVFType* _ptrElementType)
+    {
         ptrElementType = _ptrElementType;
     }
 

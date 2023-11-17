@@ -132,7 +132,8 @@ APOffset AccessPath::computeConstantByteOffset() const
             ///   structField = 0, flattenIdx = 0, type2: int
             ///   structField = 1, flattenIdx = 1, type2: char[10]
             ///   structField = 2, flattenIdx = 11, type2: int[5]
-            for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField) {
+            for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField)
+            {
                 u32_t flattenIdx = structType->getTypeInfo()->getFlattenedFieldIdxVec()[structField];
                 type2 = structType->getTypeInfo()->getOriginalElemType(flattenIdx);
                 totalConstOffset += type2->getLLVMByteSize();
