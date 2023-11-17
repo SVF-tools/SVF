@@ -350,17 +350,23 @@ private:
     const SVFType* ptrElementType;
 
 public:
-    SVFPointerType(const SVFType* pty)
-        : SVFType(true, SVFPointerTy), ptrElementType(pty)
+    SVFPointerType()
+        : SVFType(true, SVFPointerTy), ptrElementType(nullptr)
     {
     }
+
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFPointerTy;
     }
     inline const SVFType* getPtrElementType() const
     {
+        assert(ptrElementType && "ptrElementType is nullptr");
         return ptrElementType;
+    }
+
+    inline void setPtrElementType(SVFType* _ptrElementType)  {
+        ptrElementType = _ptrElementType;
     }
 
     void print(std::ostream& os) const override;
