@@ -24,7 +24,7 @@ SVFType* createSVFType(SVFType::GNodeK kind, bool isSingleValTy)
         ABORT_MSG("Creation of RAW SVFType isn't allowed");
     case SVFType::SVFPointerTy:
         ABORT_IFNOT(isSingleValTy, "Pointer type must be single-valued");
-        return new SVFPointerType(nullptr);
+        return new SVFPointerType();
     case SVFType::SVFIntegerTy:
         ABORT_IFNOT(isSingleValTy, "Integer type must be single-valued");
         return new SVFIntegerType();
