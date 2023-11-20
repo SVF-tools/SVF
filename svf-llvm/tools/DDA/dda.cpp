@@ -45,36 +45,6 @@ static Option<bool> DAA(
     false
 );
 
-static Option<bool> REGPT(
-    "dreg",
-    "Demand-driven regular points-to analysis",
-    false
-);
-
-static Option<bool> RFINEPT(
-    "dref",
-    "Demand-driven refinement points-to analysis",
-    false
-);
-
-static Option<bool> ENABLEFIELD(
-    "fdaa",
-    "enable field-sensitivity for demand-driven analysis",
-    false
-);
-
-static Option<bool> ENABLECONTEXT(
-    "cdaa",
-    "enable context-sensitivity for demand-driven analysis",
-    false
-);
-
-static Option<bool> ENABLEFLOW(
-    "ldaa",
-    "enable flow-sensitivity for demand-driven analysis",
-    false
-);
-
 int main(int argc, char ** argv)
 {
     std::vector<std::string> moduleNameVec;
