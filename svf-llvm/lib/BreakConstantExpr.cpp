@@ -94,7 +94,7 @@ hasConstantGEP (Value*  V)
         }
         else
         {
-            for (unsigned index = 0; index < CE->getNumOperands(); ++index)
+            for (u32_t index = 0; index < CE->getNumOperands(); ++index)
             {
                 if (hasConstantGEP (CE->getOperand(index)))
                     return CE;
@@ -102,7 +102,51 @@ hasConstantGEP (Value*  V)
         }
     }
 
-    return 0;
+    return nullptr;
+}
+
+// Description:
+//  This function determines whether the given value is a constant expression
+//  that has a constant binary or unary operator expression embedded within it.
+static ConstantExpr *
+hasConstantBinaryOrUnaryOp (Value*  V)
+{
+    if (ConstantExpr * CE = SVFUtil::dyn_cast<ConstantExpr>(V))
+    {
+        if (Instruction::isBinaryOp(CE->getOpcode()) || Instruction::isUnaryOp(CE->getOpcode()))
+        {
+            return CE;
+        }
+        else
+        {
+            for (u32_t index = 0; index < CE->getNumOperands(); ++index)
+            {
+                if (hasConstantBinaryOrUnaryOp (CE->getOperand(index)))
+                    return CE;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+// Description:
+// Return true if this is a constant Gep or binaryOp or UnaryOp expression
+static ConstantExpr *
+hasConstantExpr (Value*  V)
+{
+    if (ConstantExpr * gep = hasConstantGEP(V))
+    {
+        return gep;
+    }
+    else if (ConstantExpr * buop = hasConstantBinaryOrUnaryOp(V))
+    {
+        return buop;
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 
@@ -160,9 +204,9 @@ BreakConstantGEPs::runOnModule (Module & module)
                 // expression GEP, insert an instruction GEP before the instruction.
                 //
                 Instruction*  I = &(*i);
-                for (unsigned index = 0; index < I->getNumOperands(); ++index)
+                for (u32_t index = 0; index < I->getNumOperands(); ++index)
                 {
-                    if (hasConstantGEP (I->getOperand(index)))
+                    if (hasConstantExpr(I->getOperand(index)))
                     {
                         Worklist.push_back (I);
                     }
@@ -193,7 +237,7 @@ BreakConstantGEPs::runOnModule (Module & module)
             //
             if (PHINode * PHI = SVFUtil::dyn_cast<PHINode>(I))
             {
-                for (unsigned index = 0; index < PHI->getNumIncomingValues(); ++index)
+                for (u32_t index = 0; index < PHI->getNumIncomingValues(); ++index)
                 {
                     //
                     // For PHI Nodes, if an operand is a constant expression with a GEP, we
@@ -204,10 +248,10 @@ BreakConstantGEPs::runOnModule (Module & module)
                     // the same value is listed for the incoming block.
                     //
                     Instruction*  InsertPt = PHI->getIncomingBlock(index)->getTerminator();
-                    if (ConstantExpr * CE = hasConstantGEP (PHI->getIncomingValue(index)))
+                    if (ConstantExpr * CE = hasConstantExpr(PHI->getIncomingValue(index)))
                     {
                         Instruction*  NewInst = convertExpression (CE, InsertPt);
-                        for (unsigned i2 = index; i2 < PHI->getNumIncomingValues(); ++i2)
+                        for (u32_t i2 = index; i2 < PHI->getNumIncomingValues(); ++i2)
                         {
                             if ((PHI->getIncomingBlock (i2)) == PHI->getIncomingBlock (index))
                                 PHI->setIncomingValue (i2, NewInst);
@@ -218,14 +262,14 @@ BreakConstantGEPs::runOnModule (Module & module)
             }
             else
             {
-                for (unsigned index = 0; index < I->getNumOperands(); ++index)
+                for (u32_t index = 0; index < I->getNumOperands(); ++index)
                 {
                     //
                     // For other instructions, we want to insert instructions replacing
                     // constant expressions immediately before the instruction using the
                     // constant expression.
                     //
-                    if (ConstantExpr * CE = hasConstantGEP (I->getOperand(index)))
+                    if (ConstantExpr * CE = hasConstantExpr(I->getOperand(index)))
                     {
                         Instruction*  NewInst = convertExpression (CE, I);
                         I->replaceUsesOfWith (CE, NewInst);
