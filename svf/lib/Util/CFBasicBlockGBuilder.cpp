@@ -38,7 +38,7 @@ namespace SVF
  * @param bbToNodes A map that associates each SVFBasicBlock with a vector of CFBasicBlockNode objects.
  */
 void CFBasicBlockGBuilder::initCFBasicBlockGNodes(ICFG *icfg,
-                                                  Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes)
+        Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes)
 {
     for (const auto &node : *icfg)
     {
@@ -95,7 +95,7 @@ void CFBasicBlockGBuilder::initCFBasicBlockGNodes(ICFG *icfg,
  * @param bbToNodes A map that associates each SVFBasicBlock with a vector of CFBasicBlockNode objects.
  */
 void CFBasicBlockGBuilder::addInterBBEdge(ICFG *icfg,
-                                          Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes)
+        Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes)
 {
     // Connect inter-BB BBNodes
     for (const auto &node : *icfg)
@@ -135,7 +135,7 @@ void CFBasicBlockGBuilder::addInterBBEdge(ICFG *icfg,
  * @param bbToNodes A map that associates each SVFBasicBlock with a vector of CFBasicBlockNode objects.
  */
 void CFBasicBlockGBuilder::addIntraBBEdge(ICFG *icfg,
-                                          Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes)
+        Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes)
 {
     // Connect intra-BB BBNodes
     for (const auto &bbNodes : bbToNodes)
@@ -144,9 +144,9 @@ void CFBasicBlockGBuilder::addIntraBBEdge(ICFG *icfg,
         {
             // Check if an intraCFGEdge exists between the last node of the source BB and the first node of the destination BB
             if (ICFGEdge *icfgEdge = icfg->getICFGEdge(
-                    const_cast<ICFGNode *>(bbNodes.second[i]->getICFGNodes().back()),
-                    const_cast<ICFGNode *>(bbNodes.second[i + 1]->getICFGNodes().front()),
-                    ICFGEdge::IntraCF))
+                                         const_cast<ICFGNode *>(bbNodes.second[i]->getICFGNodes().back()),
+                                         const_cast<ICFGNode *>(bbNodes.second[i + 1]->getICFGNodes().front()),
+                                         ICFGEdge::IntraCF))
             {
                 CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbNodes.second[i], bbNodes.second[i + 1], icfgEdge);
                 _CFBasicBlockG->addCFBBEdge(pEdge);
@@ -166,7 +166,7 @@ void CFBasicBlockGBuilder::addIntraBBEdge(ICFG *icfg,
  * @param bbToNodes A map that associates each SVFBasicBlock with a vector of CFBasicBlockNode objects.
  */
 void CFBasicBlockGBuilder::addInterProceduralEdge(ICFG *icfg,
-                                                  Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes)
+        Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes)
 {
     // Connect inter-procedural BBNodes
     for (const auto &bbNodes : bbToNodes)
@@ -181,8 +181,8 @@ void CFBasicBlockGBuilder::addInterProceduralEdge(ICFG *icfg,
                     if (const CallCFGEdge *callEdge = SVFUtil::dyn_cast<CallCFGEdge>(icfgEdge))
                     {
                         CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbNodes.second[i],
-                                                                       bbToNodes[callEdge->getDstNode()->getBB()].front(),
-                                                                       callEdge);
+                                bbToNodes[callEdge->getDstNode()->getBB()].front(),
+                                callEdge);
                         _CFBasicBlockG->addCFBBEdge(pEdge);
                     }
                 }
@@ -195,8 +195,8 @@ void CFBasicBlockGBuilder::addInterProceduralEdge(ICFG *icfg,
                     if (const RetCFGEdge *retEdge = SVFUtil::dyn_cast<RetCFGEdge>(icfgEdge))
                     {
                         CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbToNodes[retEdge->getSrcNode()->getBB()].back(),
-                                                                       bbNodes.second[i],
-                                                                       retEdge);
+                                bbNodes.second[i],
+                                retEdge);
                         _CFBasicBlockG->addCFBBEdge(pEdge);
                     }
                 }
