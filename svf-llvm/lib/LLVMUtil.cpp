@@ -1268,6 +1268,234 @@ s64_t LLVMUtil::getCaseValue(const SwitchInst &switchInst, SuccBBAndCondValPair 
 
 namespace SVF
 {
+
+
+/**
+ * Determines whether the memory allocation size associated with this AddrStmt is constant.
+ *
+ * @return True if the allocation size is constant, false otherwise.
+ */
+bool AddrStmt::isConstantAllocSize() const {
+    // Retrieve the LLVM Value associated with this AddrStmt from the LLVMModuleSet.
+    const llvm::Value* value = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this->getLHSVar()->getValue());
+
+    // Assert failure if there's no associated LLVM Value.
+    if (!value) {
+        assert(false && "this AddrStmt has no LLVM Value");
+    }
+
+    // Handle the case where the value is an AllocaInst (stack allocation).
+    if (const llvm::AllocaInst* allocaInst = llvm::dyn_cast<llvm::AllocaInst>(value)) {
+        const llvm::Value* sizeOperand = allocaInst->getArraySize();
+        // Check if the size of the allocation is a constant integer.
+        return llvm::isa<llvm::ConstantInt>(sizeOperand);
+    }
+    // Handle the case where the value is a GlobalVariable.
+    else if (const llvm::GlobalVariable* globalVar = llvm::dyn_cast<llvm::GlobalVariable>(value)) {
+        // Check if the GlobalVariable is constant.
+        return globalVar->isConstant();
+    }
+    // Handle the case where the value is a CallInst (dynamic memory allocation).
+    else if (const llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(value)) {
+        if (const llvm::Function* calledFunction = callInst->getCalledFunction()) {
+            std::string functionName = calledFunction->getName().str();
+
+            // Check if the function called is 'malloc'.
+            if (functionName == "malloc") {
+                if (callInst->getNumOperands() > 0) {
+                    const llvm::Value* arg = callInst->getArgOperand(0);
+                    // Check if the argument to malloc is a constant integer.
+                    return llvm::isa<llvm::ConstantInt>(arg);
+                }
+            }
+            // Check if the function called is 'calloc'.
+            else if (functionName == "calloc") {
+                if (callInst->getNumOperands() > 1) {
+                    const llvm::Value* arg1 = callInst->getArgOperand(0);
+                    const llvm::Value* arg2 = callInst->getArgOperand(1);
+                    // Check if both arguments to calloc are constant integers.
+                    return llvm::isa<llvm::ConstantInt>(arg1) && llvm::isa<llvm::ConstantInt>(arg2);
+                }
+            }
+            // Handle other similar functions for memory allocation.
+            else {
+                if (callInst->getNumOperands() > 0) {
+                    const llvm::Value* arg = callInst->getArgOperand(0);
+                    // Check if the first argument is a constant integer.
+                    return llvm::isa<llvm::ConstantInt>(arg);
+                }
+                // Assert failure if the allocation function does not have any arguments.
+                assert(false && "alloc function has no arg");
+            }
+        }
+        // Assert failure if there's no function called in this AddrStmt.
+        else {
+            assert(false && "this AddrStmt has no called Function");
+        }
+    }
+    // Handle the case where the instruction is unknown and not an allocation/malloc/global variable.
+    else {
+        assert(false && "unknown inst, it is not Alloc/Malloc/GlobalValue");
+    }
+
+    return false;
+}
+
+
+/**
+ * Retrieves the constant byte size of the memory allocation associated with this AddrStmt.
+ *
+ * @return The byte size of the memory allocation if it is constant.
+ * Throws an assertion if the size is not constant or the LLVM value is not recognized.
+ */
+u32_t AddrStmt::getConstLLVMByteSize() const {
+    // Retrieve the LLVM Value associated with this AddrStmt.
+    const llvm::Value* value = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this->getLHSVar()->getValue());
+
+    // Assert failure if there's no associated LLVM Value.
+    if (!value) {
+        assert(false && "this AddrStmt has no LLVM Value");
+    }
+
+    // Handle the case where the value is an AllocaInst (stack allocation).
+    if (const llvm::AllocaInst* allocaInst = llvm::dyn_cast<llvm::AllocaInst>(value)) {
+        // Check if the size of the allocation is a constant integer.
+        if (const llvm::ConstantInt* constSizeVal = llvm::dyn_cast<llvm::ConstantInt>(allocaInst->getArraySize())) {
+            // Retrieve the number of elements to be allocated.
+            uint64_t numElements = constSizeVal->getZExtValue();
+
+            // Retrieve the type being allocated and calculate its size.
+            llvm::Type* allocatedType = allocaInst->getAllocatedType();
+            const llvm::DataLayout& dataLayout = allocaInst->getModule()->getDataLayout();
+            uint64_t elementSize = dataLayout.getTypeAllocSize(allocatedType);
+
+            // Calculate and return the total size of the allocation.
+            return numElements * elementSize;
+        }
+    }
+    // Handle the case where the value is a GlobalVariable.
+    else if (const llvm::GlobalVariable* globalVar = llvm::dyn_cast<llvm::GlobalVariable>(value)) {
+        // If the global variable has an initializer, calculate its size.
+        if (globalVar->hasInitializer()) {
+            llvm::Type* type = globalVar->getValueType();
+            const llvm::DataLayout& dataLayout = globalVar->getParent()->getDataLayout();
+            return dataLayout.getTypeAllocSize(type);
+        }
+    }
+    // Handle the case where the value is a CallInst (dynamic memory allocation).
+    else if (const llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(value)) {
+        if (const llvm::Function* calledFunction = callInst->getCalledFunction()) {
+            std::string functionName = calledFunction->getName().str();
+
+            // Check if the function called is 'malloc' and process its argument.
+            if (functionName == "malloc" && callInst->getNumOperands() > 0) {
+                if (const llvm::ConstantInt* arg = llvm::dyn_cast<llvm::ConstantInt>(callInst->getArgOperand(0))) {
+                    return arg->getZExtValue();
+                }
+            }
+            // Check if the function called is 'calloc' and process its arguments.
+            else if (functionName == "calloc" && callInst->getNumOperands() > 1) {
+                if (const llvm::ConstantInt* arg1 = llvm::dyn_cast<llvm::ConstantInt>(callInst->getArgOperand(0))) {
+                    if (const llvm::ConstantInt* arg2 = llvm::dyn_cast<llvm::ConstantInt>(callInst->getArgOperand(1))) {
+                        return arg1->getZExtValue() * arg2->getZExtValue();
+                    }
+                }
+            }
+            // Handle other similar functions for memory allocation.
+            else {
+                if (callInst->getNumOperands() > 0) {
+                    if(const llvm::ConstantInt* arg = llvm::dyn_cast<llvm::ConstantInt>(callInst->getArgOperand(0))){
+                        return arg->getZExtValue();
+                    }
+                }
+            }
+        }
+    }
+    // Assert failure if the allocation size is unknown or the instance is not a recognized type.
+    assert(false && "unknown alloc size (you should check isConstantAllocSize() first), or unknown inst");
+}
+
+
+/**
+ * Retrieves the runtime byte size of the memory allocation associated with this AddrStmt.
+ *
+ * @return An SVFAllocationInfo object containing the size(s) of the memory allocation and the element size.
+ * Throws an assertion if the LLVM value is not recognized or the size cannot be determined.
+ */
+SVFAllocationInfo AddrStmt::getRuntimeLLVMByteSize() const {
+    // Retrieve the LLVM Value associated with this AddrStmt.
+    const llvm::Value* value = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(this->getLHSVar()->getValue());
+
+    // Assert failure if there's no associated LLVM Value.
+    if (!value) {
+        assert(false && "this AddrStmt has no LLVM Value");
+    }
+
+    // Vector to store the size(s) of the allocation.
+    std::vector<const llvm::Value*> sizes;
+
+    // Default element size is set to 1.
+    u32_t elementSize = 1;
+
+    // Handle the case where the value is an AllocaInst (stack allocation).
+    if (const llvm::AllocaInst* allocaInst = llvm::dyn_cast<llvm::AllocaInst>(value)) {
+        // Add the array size to the sizes vector.
+        sizes.push_back(allocaInst->getArraySize());
+
+        // Retrieve the type being allocated and calculate its size.
+        llvm::Type* allocatedType = allocaInst->getAllocatedType();
+        const llvm::DataLayout& dataLayout = allocaInst->getModule()->getDataLayout();
+        elementSize = dataLayout.getTypeAllocSize(allocatedType);
+    }
+    // Handle the case where the value is a GlobalVariable.
+    else if (llvm::isa<llvm::GlobalVariable>(value)) {
+        // Global variables usually have constant sizes, assert failure.
+        assert (false && "usually the size of global value is const");
+    }
+    // Handle the case where the value is a CallInst (dynamic memory allocation).
+    else if (const llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(value)) {
+        if (const llvm::Function* calledFunction = callInst->getCalledFunction()) {
+            std::string functionName = calledFunction->getName().str();
+
+            // Check if the function called is 'malloc' and process its argument.
+            if (functionName == "malloc") {
+                if (callInst->getNumOperands() > 0) {
+                    sizes.push_back(callInst->getArgOperand(0));
+                }
+            }
+            // Check if the function called is 'calloc' and process its arguments.
+            else if (functionName == "calloc") {
+                if (callInst->getNumOperands() > 1) {
+                    sizes.push_back(callInst->getArgOperand(0));
+                    sizes.push_back(callInst->getArgOperand(1));
+                }
+            }
+            // Handle other similar functions for memory allocation.
+            else {
+                if (callInst->getNumOperands() > 0) {
+                    sizes.push_back(callInst->getArgOperand(0));
+                }
+            }
+        }
+    }
+
+    // Assert failure if the allocation instruction is unknown.
+    assert(sizes.size() > 0 && "unknown alloc inst");
+
+    // Vector to store the SVFValues corresponding to the LLVM Values.
+    std::vector<const SVFValue*> svfSizes;
+    // Transform LLVM Values to SVFValues.
+    std::transform(sizes.begin(), sizes.end(), svfSizes.begin(),
+                   [](const llvm::Value* value) -> const SVFValue* {
+                       return LLVMModuleSet::getLLVMModuleSet()->getSVFValue(value);
+                   }
+    );
+
+    // Return the allocation information.
+    return SVFAllocationInfo(svfSizes, elementSize);
+}
+
+
 // getLLVMByteSize
 u32_t SVFType::getLLVMByteSize() const
 {

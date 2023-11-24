@@ -37,6 +37,9 @@ public:
     /// Maximum number of field derivations for an object.
     static const Option<u32_t> MaxFieldLimit;
 
+    /// Maximum number of byte offset for an object
+    static const Option<u32_t> MaxByteLimit;
+
     /// Whether to stage Andersen's with Steensgaard and cluster based on that data.
     static const Option<bool> ClusterAnder;
 

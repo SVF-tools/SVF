@@ -1098,6 +1098,17 @@ public:
     }
 };
 
+/*
+ * This class is only for AddrStmt's runtime allocated bytes
+ */
+struct SVFAllocationInfo {
+    std::vector<const SVFValue*> sizes;
+    u32_t elementSize;
+
+    SVFAllocationInfo(std::vector<const SVFValue*> sizes, u32_t elementSize)
+        : sizes(std::move(sizes)), elementSize(elementSize) {}
+};
+
 
 class CallSite
 {

@@ -342,6 +342,15 @@ public:
     AddrStmt(SVFVar* s, SVFVar* d) : AssignStmt(s, d, SVFStmt::Addr) {}
 
     virtual const std::string toString() const override;
+
+    /// Determines whether the memory allocation size associated with this AddrStmt is constant.
+    bool isConstantAllocSize() const;
+
+    /// Retrieves the constant byte size of the memory allocation associated with this AddrStmt.
+    u32_t getConstLLVMByteSize() const;
+
+    /// Retrieves the runtime byte size of the memory allocation associated with this AddrStmt.
+    SVFAllocationInfo getRuntimeLLVMByteSize() const;
 };
 
 /*!

@@ -40,6 +40,12 @@ const Option<u32_t> Options::MaxFieldLimit(
     512
 );
 
+const Option<u32_t> Options::MaxByteLimit(
+    "byte-limit",
+    "Maximum number of byte offset for field sensitive analysis",
+    99999
+);
+
 const OptionMap<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
     "ptd",
     "Overarching points-to data structure",
