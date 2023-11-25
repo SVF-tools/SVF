@@ -77,13 +77,14 @@ LLVMModuleSet::LLVMModuleSet()
 {
 }
 
-SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
+SVFModule* LLVMModuleSet::buildSVFModule(Module &mod, std::unique_ptr<LLVMContext> context)
 {
     LLVMModuleSet* mset = getLLVMModuleSet();
 
     double startSVFModuleTime = SVFStat::getClk(true);
     SVFModule::getSVFModule()->setModuleIdentifier(mod.getModuleIdentifier());
     mset->modules.emplace_back(mod);
+    mset->loadExtAPIModules(std::move(context));
 
     mset->build();
     double endSVFModuleTime = SVFStat::getClk(true);
@@ -528,7 +529,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     }
 }
 
-void LLVMModuleSet::loadExtAPIModules()
+void LLVMModuleSet::loadExtAPIModules(std::unique_ptr<LLVMContext> context)
 {
     // Load external API module (extapi.bc)
     if (!ExtAPI::getExtAPI()->getExtBcPath().empty())
@@ -540,6 +541,9 @@ void LLVMModuleSet::loadExtAPIModules()
             abort();
         }
         SMDiagnostic Err;
+        assert(!(cxts == nullptr && context == nullptr) && "Before loading extapi module, at least one LLVMContext should be initialized !!!");
+        if (context != nullptr)
+            cxts = std::move(context);
         std::unique_ptr<Module> mod = parseIRFile(extModuleName, Err, *cxts);
         if (mod == nullptr)
         {

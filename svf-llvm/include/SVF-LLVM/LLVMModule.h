@@ -111,7 +111,8 @@ public:
         llvmModuleSet = nullptr;
     }
 
-    static SVFModule* buildSVFModule(Module& mod);
+    // The parameter of context should be the llvm context of the mod, the llvm context of mod and extapi module should be the same
+    static SVFModule* buildSVFModule(Module& mod, std::unique_ptr<LLVMContext> context);
     static SVFModule* buildSVFModule(const std::vector<std::string>& moduleNameVec);
 
     inline SVFModule* getSVFModule()
@@ -356,7 +357,8 @@ private:
     std::vector<const Function*> getLLVMGlobalFunctions(const GlobalVariable* global);
 
     void loadModules(const std::vector<std::string>& moduleNameVec);
-    void loadExtAPIModules();
+    // The llvm context of app module and extapi module should be the same
+    void loadExtAPIModules(std::unique_ptr<LLVMContext> context = nullptr);
     void addSVFMain();
 
     void createSVFDataStructure();
