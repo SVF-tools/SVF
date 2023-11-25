@@ -438,6 +438,13 @@ public:
     /// Whether it is a black hole object
     bool isBlackHoleObj() const;
 
+    /// Get the byte size of this object
+    u32_t getByteSizeOfObj() const;
+
+    /// Check if byte size is static determined
+    bool isStaticDeterminedByteSize() const;
+
+
     /// object attributes methods
     //@{
     bool isFunction() const;
@@ -505,6 +512,11 @@ private:
     /// Size of the object or number of elements
     u32_t elemNum;
 
+    /// Byte size of object
+    u32_t byteSize;
+    /// Flag if byte size is static determined
+    bool staticDeterminedByteSize{true};
+
     void resetTypeForHeapStaticObj(const SVFType* type);
 public:
 
@@ -545,6 +557,26 @@ public:
     inline u32_t getNumOfElements() const
     {
         return elemNum;
+    }
+
+    /// Get the byte size of this object
+    inline u32_t getByteSizeOfObj() const {
+        return byteSize;
+    }
+
+    /// Set the byte size of this object
+    inline void setByteSizeOfObj(u32_t size)  {
+        byteSize = size;
+    }
+
+    /// Check if byte size is static determined
+    inline bool isStaticDeterminedByteSize() const {
+        return staticDeterminedByteSize;
+    }
+
+    /// Set true if byte size is static determined
+    inline void setStaticDeterminedByteSize(bool val) {
+        staticDeterminedByteSize = val;
     }
 
     /// Flag for this object type

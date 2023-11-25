@@ -71,24 +71,6 @@ const std::string SVFStmt::toString() const
     return rawstr.str();
 }
 
-__attribute__((weak))
-bool AddrStmt::isConstantAllocSize() const {
-    assert("AddrStmt::isConstantAllocSize should be implemented or supported by fronted" && false);
-    abort();
-}
-
-__attribute__((weak))
-u32_t AddrStmt::getConstLLVMByteSize() const {
-    assert("AddrStmt::getConstLLVMByteSize should be implemented or supported by fronted" && false);
-    abort();
-}
-
-__attribute__((weak))
-SVFAllocationInfo AddrStmt::getRuntimeLLVMByteSize() const {
-    assert("AddrStmt::getRuntimeLLVMByteSize should be implemented or supported by fronted" && false);
-    abort();
-}
-
 const std::string AddrStmt::toString() const
 {
     std::string str;

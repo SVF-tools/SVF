@@ -55,7 +55,8 @@ public:
     void buildMemModel(SVFModule* svfModule);
 
     /// Return size of this object based on LLVM value
-    u32_t getObjSize(const Type* type);
+    u32_t getNumOfElements(const Type* ety);
+
 
 protected:
 
