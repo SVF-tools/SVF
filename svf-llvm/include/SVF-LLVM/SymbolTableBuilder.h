@@ -94,6 +94,9 @@ protected:
     /// Analyse types of heap and static objects
     void analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val);
 
+    /// Analyze byte size of heap alloc function (e.g. malloc/calloc/...)
+    u32_t analyzeHeapAllocByteSize(const Value* val);
+
     ///Get a reference to the components of struct_info.
     /// Number of flattened elements of an array or struct
     u32_t getNumOfFlattenElements(const Type* T);

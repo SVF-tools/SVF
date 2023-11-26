@@ -436,9 +436,9 @@ u32_t MemObj::getByteSizeOfObj() const
 }
 
 /// Check if byte size is static determined
-bool MemObj::isStaticDeterminedByteSize() const
+bool MemObj::isConstantByteSize() const
 {
-    return typeInfo->isStaticDeterminedByteSize();
+    return typeInfo->isConstantByteSize();
 }
 
 

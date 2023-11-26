@@ -441,8 +441,8 @@ public:
     /// Get the byte size of this object
     u32_t getByteSizeOfObj() const;
 
-    /// Check if byte size is static determined
-    bool isStaticDeterminedByteSize() const;
+    /// Check if byte size is a const value
+    bool isConstantByteSize() const;
 
 
     /// object attributes methods
@@ -514,8 +514,6 @@ private:
 
     /// Byte size of object
     u32_t byteSize;
-    /// Flag if byte size is static determined
-    bool staticDeterminedByteSize{true};
 
     void resetTypeForHeapStaticObj(const SVFType* type);
 public:
@@ -561,6 +559,7 @@ public:
 
     /// Get the byte size of this object
     inline u32_t getByteSizeOfObj() const {
+        assert(isConstantByteSize() && "This Obj's byte size is not constant.");
         return byteSize;
     }
 
@@ -569,14 +568,9 @@ public:
         byteSize = size;
     }
 
-    /// Check if byte size is static determined
-    inline bool isStaticDeterminedByteSize() const {
-        return staticDeterminedByteSize;
-    }
-
-    /// Set true if byte size is static determined
-    inline void setStaticDeterminedByteSize(bool val) {
-        staticDeterminedByteSize = val;
+    /// Check if byte size is a const value
+    inline bool isConstantByteSize() const {
+        return byteSize != 0;
     }
 
     /// Flag for this object type

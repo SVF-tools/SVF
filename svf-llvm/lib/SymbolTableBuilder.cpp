@@ -670,6 +670,64 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 }
 
 /*!
+ * Analyze byte size of heap alloc function (e.g. malloc/calloc/...)
+ */
+u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val) {
+    if (const llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(val))
+    {
+        if (const llvm::Function* calledFunction = callInst->getCalledFunction()) {
+            const SVFFunction* svfFunction = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(calledFunction);
+            std::vector<const Value*> args;
+            // Heap alloc functions have annoation like "AllocSize:Arg1"
+            for (std::string annotation: svfFunction->getAnnotations()) {
+                if (annotation.find("AllocSize:") != std::string::npos) {
+                    std::string allocSize = annotation.substr(10);
+                    std::stringstream ss(allocSize);
+                    std::string token;
+                    // Analyaze annotation string and attract Arg list
+                    while (std::getline(ss, token, '*')) {
+                        if (token.rfind("Arg", 0) == 0) {
+                            int argIndex;
+                            std::istringstream(token.substr(3)) >> argIndex;
+                            if (argIndex < callInst->getNumOperands() - 1) {
+                                args.push_back(callInst->getArgOperand(argIndex));
+                            }
+                        }
+                    }
+                }
+            }
+            uint64_t product = 1;
+            if (args.size() > 0)
+            {
+                // for annotations like "AllocSize:Arg0*Arg1"
+                for (const llvm::Value* arg : args)
+                {
+                    if (const llvm::ConstantInt* constIntArg =
+                            llvm::dyn_cast<llvm::ConstantInt>(arg))
+                    {
+                        // Multiply the constant Value if all Args are const
+                        product *= constIntArg->getZExtValue();
+                    }
+                    else
+                    {
+                        // if Arg list has non-const value, return 0 to indicate it is non const byte size
+                        return 0;
+                    }
+                }
+                // If all the Args are const, return product
+                return product;
+            }
+            else {
+                // for annotations like "AllocSize:UNKNOWN"
+                return 0;
+            }
+        }
+    }
+    // if it is not CallInst or CallInst has no CalledFunction, return 0 to indicate it is non const byte size
+    return 0;
+}
+
+/*!
  * Analyse types of heap and static objects
  */
 void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val)
@@ -715,6 +773,8 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
 {
 
     u32_t elemNum = 1;
+    // init byteSize = 0, If byteSize is changed in the following process,
+    // it means that ObjTypeInfo has a Constant Byte Size
     u32_t byteSize = 0;
     // Global variable
     // if val is Function Obj, byteSize is not set
@@ -725,6 +785,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
         elemNum = getNumOfElements(objTy);
     }
     /// if val is AllocaInst, byteSize is Type's LLVM ByteSize * ArraySize
+    /// e.g. alloc i32, 10. byteSize is 4 (i32's size) * 10 (ArraySize) = 40
     else if(const AllocaInst* allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::STACK_OBJ);
@@ -740,11 +801,11 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
         else
         {
             elemNum = getNumOfElements(objTy);
-            byteSize = typeinfo->getType()->getLLVMByteSize();
-            typeinfo->setStaticDeterminedByteSize(false);
+            byteSize = 0;
         }
     }
     /// if val is GlobalVar, byteSize is Type's LLVM ByteSize
+    /// All GlobalVariable must have constant size
     else if(SVFUtil::isa<GlobalVariable>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::GLOBVAR_OBJ);
@@ -763,56 +824,11 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
         analyzeHeapObjType(typeinfo,val);
         // Heap object, label its field as infinite here
         elemNum = typeinfo->getMaxFieldOffsetLimit();
-        if (const llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(val))
-        {
-            if (const llvm::Function* calledFunction =
-                    callInst->getCalledFunction())
-            {
-                std::string functionName = calledFunction->getName().str();
-                // Check if the function called is 'malloc' and process its argument.
-                // if arg is constant, set byteSize, otherwise byteSize is not static determined.
-                if (functionName == "malloc" && callInst->getNumOperands() > 0)
-                {
-                    if (const llvm::ConstantInt* arg =
-                            llvm::dyn_cast<llvm::ConstantInt>(
-                                callInst->getArgOperand(0)))
-                    {
-                        byteSize = arg->getZExtValue();
-                    }
-                    else {
-                        typeinfo->setStaticDeterminedByteSize(false);
-                    }
-                }
-                // Check if the function called is 'calloc' and process its arguments.
-                // if both arg0 and arg1 is constant, set byteSize,
-                // otherwise byteSize is not static determined.
-                else if (functionName == "calloc" &&
-                         callInst->getNumOperands() > 1)
-                {
-                    if (const llvm::ConstantInt* arg1 =
-                            llvm::dyn_cast<llvm::ConstantInt>(
-                                callInst->getArgOperand(0)))
-                    {
-                        if (const llvm::ConstantInt* arg2 =
-                                llvm::dyn_cast<llvm::ConstantInt>(
-                                    callInst->getArgOperand(1)))
-                        {
-                            byteSize = arg1->getZExtValue() * arg2->getZExtValue();
-                        } else {
-                            typeinfo->setStaticDeterminedByteSize(false);
-                        }
-                    } else {
-                        typeinfo->setStaticDeterminedByteSize(false);
-                    }
-                }
-                // Other function, let ByteSize be non-static determined.
-                else
-                {
-                    typeinfo->setStaticDeterminedByteSize(false);
-                }
-            }
-        }
-
+        // analyze heap alloc like (malloc/calloc/...), the alloc functions have
+        // annotation like "AllocSize:Arg1". Please refer to extapi.c.
+        // e.g. calloc(4, 10), annotation is "AllocSize:Arg0*Arg1",
+        // it means byteSize = 4 (Arg0) * 10 (Arg1) = 40
+        byteSize = analyzeHeapAllocByteSize(val);
     }
     else if(ArgInProgEntryFunction(val))
     {
@@ -836,9 +852,12 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
     // Reset maxOffsetLimit if it is over the total fieldNum of this object
     if(typeinfo->getMaxFieldOffsetLimit() > elemNum)
         typeinfo->setNumOfElements(elemNum);
-    if(typeinfo->isStaticDeterminedByteSize())
-        typeinfo->setByteSizeOfObj(byteSize);
 
+    // set ByteSize. If ByteSize > 0, this typeinfo has constant type.
+    // If ByteSize == 0, this typeinfo has 1) zero byte 2) non-const byte size
+    // If ByteSize>MaxFieldLimit, set MaxFieldLimit to the byteSize;
+    byteSize = Options::MaxFieldLimit() > byteSize? byteSize: Options::MaxFieldLimit();
+    typeinfo->setByteSizeOfObj(byteSize);
 }
 
 /*!

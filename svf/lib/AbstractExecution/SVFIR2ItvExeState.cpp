@@ -192,8 +192,8 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getBytefromGepTypePair(const Ac
     APOffset offsetLb = 0;
     APOffset offsetUb = 0;
     /// set largest byte offset is 0xFFFFFF in case of int32 overflow
-    APOffset maxByteLimit = 99999;
-    APOffset minByteLimit = -99999;
+    APOffset maxByteLimit = Options::MaxFieldLimit();
+    APOffset minByteLimit = 0;
     auto valueReshape = [&](s64_t offset)
     {
         if (offset < (s64_t)minByteLimit)

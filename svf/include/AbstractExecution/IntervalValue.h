@@ -663,7 +663,7 @@ inline IntervalValue operator<(const IntervalValue &lhs, const IntervalValue &rh
             // i.e., lhs is totally greater than or equal to rhs
             // When lhs.ub >= rhs.lb, e.g., lhs:[3, 4] rhs:[4，5]
             // lhs.ub(4) >= rhs.lb(4)
-            else if (rhs.ub().geq(lhs.lb()))
+            else if (lhs.ub().geq(rhs.lb()))
             {
                 return IntervalValue(0, 0);
             }
