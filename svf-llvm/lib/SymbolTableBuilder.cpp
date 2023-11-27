@@ -687,7 +687,7 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val) {
                     // Analyaze annotation string and attract Arg list
                     while (std::getline(ss, token, '*')) {
                         if (token.rfind("Arg", 0) == 0) {
-                            int argIndex;
+                            u32_t argIndex;
                             std::istringstream(token.substr(3)) >> argIndex;
                             if (argIndex < callInst->getNumOperands() - 1) {
                                 args.push_back(callInst->getArgOperand(argIndex));
@@ -696,7 +696,7 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val) {
                     }
                 }
             }
-            uint64_t product = 1;
+            u64_t product = 1;
             if (args.size() > 0)
             {
                 // for annotations like "AllocSize:Arg0*Arg1"
