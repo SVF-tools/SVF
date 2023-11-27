@@ -671,56 +671,57 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 
 /*!
  * Analyze byte size of heap alloc function (e.g. malloc/calloc/...)
+ * 1) __attribute__((annotate("ALLOC_RET"), annotate("Arg0")))
+     void* safe_malloc(unsigned long size).
+     Byte Size is the size(Arg0)
+   2)__attribute__((annotate("ALLOC_RET"), annotate("Arg0"), annotate("Arg1")))
+    char* safecalloc(int a, int b)
+    Byte Size is a(Arg0) * b(Arg1)
+   3)__attribute__((annotate("ALLOC_RET"), annotate("UNKNOWN")))
+    void* __sysv_signal(int a, void *b)
+    Byte Size is Unknown
+    If all required arg values are constant, byte Size is also constant,
+    otherwise return ByteSize 0
  */
 u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val) {
     if (const llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(val))
     {
-        if (const llvm::Function* calledFunction = callInst->getCalledFunction()) {
-            const SVFFunction* svfFunction = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(calledFunction);
-            std::vector<const Value*> args;
-            // Heap alloc functions have annoation like "AllocSize:Arg1"
-            for (std::string annotation: svfFunction->getAnnotations()) {
-                if (annotation.find("AllocSize:") != std::string::npos) {
-                    std::string allocSize = annotation.substr(10);
-                    std::stringstream ss(allocSize);
-                    std::string token;
-                    // Analyaze annotation string and attract Arg list
-                    while (std::getline(ss, token, '*')) {
-                        if (token.rfind("Arg", 0) == 0) {
-                            u32_t argIndex;
-                            std::istringstream(token.substr(3)) >> argIndex;
-                            if (argIndex < callInst->getNumOperands() - 1) {
-                                args.push_back(callInst->getArgOperand(argIndex));
-                            }
-                        }
+        if (const llvm::Function* calledFunction = callInst->getCalledFunction())
+        {
+            const SVFFunction* svfFunction =
+                LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(
+                    calledFunction);
+            std::vector<const llvm::Value*> args;
+            for (const std::string& annot : svfFunction->getAnnotations())
+            {
+                if (annot == "UNKNOWN")
+                {
+                    return 0;
+                }
+                if (annot.rfind("Arg", 0) == 0)
+                {
+                    u32_t argIndex;
+                    std::istringstream(annot.substr(3)) >> argIndex;
+                    if (argIndex < callInst->getNumOperands() - 1)
+                    {
+                        args.push_back(callInst->getArgOperand(argIndex));
                     }
                 }
             }
             u64_t product = 1;
-            if (args.size() > 0)
+            for (const llvm::Value* arg : args)
             {
-                // for annotations like "AllocSize:Arg0*Arg1"
-                for (const llvm::Value* arg : args)
+                if (const llvm::ConstantInt* constIntArg =
+                        llvm::dyn_cast<llvm::ConstantInt>(arg))
                 {
-                    if (const llvm::ConstantInt* constIntArg =
-                            llvm::dyn_cast<llvm::ConstantInt>(arg))
-                    {
-                        // Multiply the constant Value if all Args are const
-                        product *= constIntArg->getZExtValue();
-                    }
-                    else
-                    {
-                        // if Arg list has non-const value, return 0 to indicate it is non const byte size
-                        return 0;
-                    }
+                    product *= constIntArg->getZExtValue();
                 }
-                // If all the Args are const, return product
-                return product;
+                else
+                {
+                    return 0;
+                }
             }
-            else {
-                // for annotations like "AllocSize:UNKNOWN"
-                return 0;
-            }
+            return product;
         }
     }
     // if it is not CallInst or CallInst has no CalledFunction, return 0 to indicate it is non const byte size
