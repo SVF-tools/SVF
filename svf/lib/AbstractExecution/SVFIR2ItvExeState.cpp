@@ -213,14 +213,14 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getBytefromGepTypePair(const Ac
     if (op)
     {
         offsetLb = offsetUb =
-                       op->getSExtValue() * type->getLLVMByteSize() > maxByteLimit
+                       op->getSExtValue() * type->getByteSize() > maxByteLimit
                        ? maxByteLimit
-                       : op->getSExtValue() * type->getLLVMByteSize();
+                       : op->getSExtValue() * type->getByteSize();
     }
     else
     {
         u32_t idx = _svfir->getValueNode(value);
-        IntervalValue idxVal = _es[idx] * IntervalValue(type->getLLVMByteSize());
+        IntervalValue idxVal = _es[idx] * IntervalValue(type->getByteSize());
         if (idxVal.isBottom() || idxVal.isTop())
             return std::make_pair(0, maxByteLimit);
         // if idxVal is a concrete value

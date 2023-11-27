@@ -264,12 +264,13 @@ private:
     getPointerToTy; /// Return a pointer to the current type
     StInfo* typeinfo;   ///< SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or
+    u32_t byteSize; ///< LLVM Byte Size
     ///< array
 
 protected:
     SVFType(bool svt, SVFTyKind k)
         : kind(k), getPointerToTy(nullptr), typeinfo(nullptr),
-          isSingleValTy(svt)
+          isSingleValTy(svt), byteSize(0)
     {
     }
 
@@ -299,7 +300,6 @@ public:
         return getPointerToTy;
     }
 
-    u32_t getLLVMByteSize() const;
 
     inline void setTypeInfo(StInfo* ti)
     {
@@ -316,6 +316,16 @@ public:
     {
         assert(typeinfo && "set the type info first");
         return typeinfo;
+    }
+
+    inline void setByteSize(u32_t sz) {
+        byteSize = sz;
+    }
+
+    /// if Type is not sized, byteSize is 0
+    /// if Type is sized, byteSize is the LLVM Byte Size.
+    inline u32_t getByteSize() const {
+        return byteSize;
     }
 
     inline bool isPointerTy() const

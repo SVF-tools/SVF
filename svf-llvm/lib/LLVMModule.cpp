@@ -1299,6 +1299,15 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         assert(svfPtrType && "this is not SVFPointerType");
         svfPtrType->setPtrElementType(getSVFType(LLVMUtil::getPtrElementType(pt)));
     }
+    // add SVFType's LLVM byte size iff T isSized(), otherwise byteSize is 0(default value)
+    if (T->isSized()) {
+        const llvm::DataLayout &DL = LLVMModuleSet::getLLVMModuleSet()->
+                getMainLLVMModule()->getDataLayout();
+        Type *mut_T = const_cast<Type *>(T);
+        u32_t sz = DL.getTypeAllocSize(mut_T);
+        svftype->setByteSize(sz);
+    }
+
     return svftype;
 }
 

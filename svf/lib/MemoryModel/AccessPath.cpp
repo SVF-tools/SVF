@@ -140,14 +140,14 @@ APOffset AccessPath::computeConstantByteOffset() const
             {
                 u32_t flattenIdx = structType->getTypeInfo()->getFlattenedFieldIdxVec()[structField];
                 type2 = structType->getTypeInfo()->getOriginalElemType(flattenIdx);
-                totalConstOffset += type2->getLLVMByteSize();
+                totalConstOffset += type2->getByteSize();
             }
         }
         else
         {
             /// for (2) i = 0, op: 0, type: [10 x i8]*(Ptr), type2: [10 x i8](Arr)
             ///         i = 1, op: 8, type: [10 x i8](Arr), type2: i8
-            totalConstOffset += op->getSExtValue() * type2->getLLVMByteSize();
+            totalConstOffset += op->getSExtValue() * type2->getByteSize();
         }
     }
     return totalConstOffset;
