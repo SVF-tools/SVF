@@ -134,7 +134,6 @@ char* safecalloc(int a, int b)
     return NULL;
 }
 
-
 __attribute__((annotate("ALLOC_RET"), annotate("AllocSize:Arg0")))
 char* safemalloc(int a, int b)
 {

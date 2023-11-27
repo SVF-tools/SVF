@@ -683,11 +683,12 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
     If all required arg values are constant, byte Size is also constant,
     otherwise return ByteSize 0
  */
-u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val) {
+u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
+{
     if(const llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(val))
     {
         if (const llvm::Function* calledFunction =
-                callInst->getCalledFunction())
+                    callInst->getCalledFunction())
         {
             const SVFFunction* svfFunction =
                 LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(
@@ -724,7 +725,7 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val) {
                 for (const llvm::Value* arg : args)
                 {
                     if (const llvm::ConstantInt* constIntArg =
-                            llvm::dyn_cast<llvm::ConstantInt>(arg))
+                                llvm::dyn_cast<llvm::ConstantInt>(arg))
                     {
                         // Multiply the constant Value if all Args are const
                         product *= constIntArg->getZExtValue();
