@@ -558,18 +558,21 @@ public:
     }
 
     /// Get the byte size of this object
-    inline u32_t getByteSizeOfObj() const {
+    inline u32_t getByteSizeOfObj() const
+    {
         assert(isConstantByteSize() && "This Obj's byte size is not constant.");
         return byteSize;
     }
 
     /// Set the byte size of this object
-    inline void setByteSizeOfObj(u32_t size)  {
+    inline void setByteSizeOfObj(u32_t size)
+    {
         byteSize = size;
     }
 
     /// Check if byte size is a const value
-    inline bool isConstantByteSize() const {
+    inline bool isConstantByteSize() const
+    {
         return byteSize != 0;
     }
 
