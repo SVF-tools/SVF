@@ -55,7 +55,8 @@ public:
     void buildMemModel(SVFModule* svfModule);
 
     /// Return size of this object based on LLVM value
-    u32_t getObjSize(const Type* type);
+    u32_t getNumOfElements(const Type* ety);
+
 
 protected:
 
@@ -92,6 +93,9 @@ protected:
     void analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val);
     /// Analyse types of heap and static objects
     void analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val);
+
+    /// Analyze byte size of heap alloc function (e.g. malloc/calloc/...)
+    u32_t analyzeHeapAllocByteSize(const Value* val);
 
     ///Get a reference to the components of struct_info.
     /// Number of flattened elements of an array or struct
