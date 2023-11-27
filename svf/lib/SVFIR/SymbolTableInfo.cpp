@@ -429,6 +429,19 @@ u32_t MemObj::getNumOfElements() const
     return typeInfo->getNumOfElements();
 }
 
+/// Get the byte size of this object
+u32_t MemObj::getByteSizeOfObj() const
+{
+    return typeInfo->getByteSizeOfObj();
+}
+
+/// Check if byte size is static determined
+bool MemObj::isConstantByteSize() const
+{
+    return typeInfo->isConstantByteSize();
+}
+
+
 /// Set the number of elements of this object
 void MemObj::setNumOfElements(u32_t num)
 {
