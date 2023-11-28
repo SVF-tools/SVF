@@ -1258,7 +1258,8 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
 
     // add SVFType's LLVM byte size iff T isSized(), otherwise byteSize is 0(default value)
     u32_t byteSize = 0;
-    if (T->isSized()) {
+    if (T->isSized())
+    {
         const llvm::DataLayout &DL = LLVMModuleSet::getLLVMModuleSet()->
                                      getMainLLVMModule()->getDataLayout();
         Type *mut_T = const_cast<Type *>(T);

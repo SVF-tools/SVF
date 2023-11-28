@@ -164,7 +164,7 @@ private:
 
     APOffset fldIdx;	///< Accumulated Constant Offsets
     IdxVarAndGepTypePairs
-        offsetVarAndGepTypePairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>s
+    offsetVarAndGepTypePairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>s
 };
 
 } // End namespace SVF

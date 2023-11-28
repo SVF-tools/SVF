@@ -210,7 +210,8 @@ IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::
         type = arrType->getTypeOfElement();
     else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type))
         type = ptrType->getPtrElementType();
-    else if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type)) {
+    else if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type))
+    {
         // If it's a struct type with a constant index, calculate byte sizes.
         if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value))
         {
@@ -223,22 +224,28 @@ IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::
         }
         else
             assert(false && "struct type can only pair with constant idx");
-    } else
+    }
+    else
         assert(false && "gep type pair only support arr/ptr/struct");
 
     u32_t typeSz = type->getByteSize();
 
     // Calculate byte size based on the type and value, considering MaxFieldLimit option.
-    if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value)) {
+    if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value))
+    {
         u32_t lb = (double)Options::MaxFieldLimit() / typeSz >= op->getSExtValue() ? op->getSExtValue() * typeSz: Options::MaxFieldLimit();
         res = IntervalValue(lb, lb);
     }
-    else {
+    else
+    {
         u32_t idx = _svfir->getValueNode(value);
         IntervalValue idxVal = _es[idx] * IntervalValue(type->getByteSize());
-        if (idxVal.isBottom()) {
+        if (idxVal.isBottom())
+        {
             res = IntervalValue(0, 0);
-        } else {
+        }
+        else
+        {
             u32_t ub = (double)Options::MaxFieldLimit() / typeSz >= idxVal.ub().getNumeral() ? typeSz * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
             u32_t lb = (idxVal.lb().getNumeral() < 0) ? 0 :
                        ((double)Options::MaxFieldLimit() / typeSz >= idxVal.lb().getNumeral()) ? (typeSz * idxVal.lb().getNumeral()) : Options::MaxFieldLimit();
@@ -303,10 +310,10 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndexFromGepTypePair(const
         else
         {
             const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()
-                                               ->getTypeInfo(type)
-                                               ->getFlattenedElemIdxVec();
+                                           ->getTypeInfo(type)
+                                           ->getFlattenedElemIdxVec();
             if (so.empty() || offsetUb >= (APOffset)so.size() ||
-                offsetLb >= (APOffset)so.size())
+                    offsetLb >= (APOffset)so.size())
             {
                 offsetLb = 0;
                 offsetUb = maxFieldLimit;
@@ -347,7 +354,8 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndexFromGepTypePair(const
 IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
 {
     // Check if the GepStmt has a constant offset.
-    if (gep->isConstantOffset()) {
+    if (gep->isConstantOffset())
+    {
         // If it has a constant offset, return it as an IntervalValue.
         return IntervalValue(gep->accumulateConstantByteOffset());
     }
@@ -359,7 +367,7 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
     {
         // Calculate the byte offset for the current IdxVarAndGepTypePair.
         IntervalValue offsetIdx = getByteOffsetfromGepTypePair(
-            gep->getOffsetVarAndGepTypePairVec()[i], gep);
+                                      gep->getOffsetVarAndGepTypePairVec()[i], gep);
 
         // Accumulate the byte offset in the result 'res'.
         res = res + offsetIdx;
@@ -386,7 +394,8 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
     APOffset maxFieldLimit = Options::MaxFieldLimit();
 
     /// For instant constant index, e.g., gep arr, 1
-    if (gep->getOffsetVarAndGepTypePairVec().empty() || gep->isConstantOffset()) {
+    if (gep->getOffsetVarAndGepTypePairVec().empty() || gep->isConstantOffset())
+    {
         u32_t offsetIdx = gep->getConstantFieldIdx();
         return IntervalValue(offsetIdx, offsetIdx);
     }
@@ -395,12 +404,12 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
         for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
         {
             IntervalValue offsetIdx = getItvOfFlattenedElemIndexFromGepTypePair(
-                gep->getOffsetVarAndGepTypePairVec()[i], gep);
+                                          gep->getOffsetVarAndGepTypePairVec()[i], gep);
             totalOffsetLb += offsetIdx.lb().getNumeral();
             totalOffsetUb += offsetIdx.ub().getNumeral();
         }
         totalOffsetLb = (totalOffsetLb < minFieldLimit) ? minFieldLimit :
-                   (totalOffsetLb > maxFieldLimit) ? maxFieldLimit : totalOffsetLb;
+                        (totalOffsetLb > maxFieldLimit) ? maxFieldLimit : totalOffsetLb;
     }
 
     return IntervalValue(totalOffsetLb, totalOffsetUb); // Return a pair of APOffset values representing the offset range.
@@ -880,9 +889,9 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
     {
         VAddrs gepAddrs;
         APOffset lb = offsetPair.lb().getNumeral() < Options::MaxFieldLimit()?
-                        offsetPair.lb().getNumeral(): Options::MaxFieldLimit();
+                      offsetPair.lb().getNumeral(): Options::MaxFieldLimit();
         APOffset ub = offsetPair.ub().getNumeral() < Options::MaxFieldLimit()?
-                        offsetPair.ub().getNumeral(): Options::MaxFieldLimit();
+                      offsetPair.ub().getNumeral(): Options::MaxFieldLimit();
         for (APOffset i = lb; i <= ub; i++)
             gepAddrs.join_with(getGepObjAddress(rhs, i));
         if(gepAddrs.empty()) return;
