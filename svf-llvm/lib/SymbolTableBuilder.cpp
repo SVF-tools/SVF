@@ -818,7 +818,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
         if(const ConstantInt* sz = SVFUtil::dyn_cast<ConstantInt>(allocaInst->getArraySize()))
         {
             elemNum = sz->getZExtValue() * getNumOfElements(objTy);
-            byteSize = sz->getZExtValue() * typeinfo->getType()->getLLVMByteSize();
+            byteSize = sz->getZExtValue() * typeinfo->getType()->getByteSize();
         }
         /// if ArraySize is not constant, byteSize is not static determined.
         else
@@ -836,7 +836,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
             typeinfo->setFlag(ObjTypeInfo::CONST_GLOBAL_OBJ);
         analyzeObjType(typeinfo,val);
         elemNum = getNumOfElements(objTy);
-        byteSize = typeinfo->getType()->getLLVMByteSize();
+        byteSize = typeinfo->getType()->getByteSize();
     }
     /// if val is heap alloc
     else if (SVFUtil::isa<Instruction>(val) &&
@@ -858,13 +858,13 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
         analyzeStaticObjType(typeinfo,val);
         // user input data, label its field as infinite here
         elemNum = typeinfo->getMaxFieldOffsetLimit();
-        byteSize = typeinfo->getType()->getLLVMByteSize();
+        byteSize = typeinfo->getType()->getByteSize();
     }
     else if(LLVMUtil::isConstDataOrAggData(val))
     {
         typeinfo->setFlag(ObjTypeInfo::CONST_DATA);
         elemNum = getNumOfFlattenElements(val->getType());
-        byteSize = typeinfo->getType()->getLLVMByteSize();
+        byteSize = typeinfo->getType()->getByteSize();
     }
     else
     {
