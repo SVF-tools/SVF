@@ -77,13 +77,14 @@ LLVMModuleSet::LLVMModuleSet()
 {
 }
 
-SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
+SVFModule* LLVMModuleSet::buildSVFModule(Module &mod, std::unique_ptr<LLVMContext> context)
 {
     LLVMModuleSet* mset = getLLVMModuleSet();
 
     double startSVFModuleTime = SVFStat::getClk(true);
     SVFModule::getSVFModule()->setModuleIdentifier(mod.getModuleIdentifier());
     mset->modules.emplace_back(mod);
+    mset->loadExtAPIModules(std::move(context));
 
     mset->build();
     double endSVFModuleTime = SVFStat::getClk(true);
@@ -528,7 +529,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     }
 }
 
-void LLVMModuleSet::loadExtAPIModules()
+void LLVMModuleSet::loadExtAPIModules(std::unique_ptr<LLVMContext> context)
 {
     // Load external API module (extapi.bc)
     if (!ExtAPI::getExtAPI()->getExtBcPath().empty())
@@ -540,6 +541,9 @@ void LLVMModuleSet::loadExtAPIModules()
             abort();
         }
         SMDiagnostic Err;
+        assert(!(cxts == nullptr && context == nullptr) && "Before loading extapi module, at least one LLVMContext should be initialized !!!");
+        if (context != nullptr)
+            cxts = std::move(context);
         std::unique_ptr<Module> mod = parseIRFile(extModuleName, Err, *cxts);
         if (mod == nullptr)
         {
@@ -1252,14 +1256,24 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     assert(LLVMType2SVFType.find(T) == LLVMType2SVFType.end() &&
            "SVFType has been added before");
 
+    // add SVFType's LLVM byte size iff T isSized(), otherwise byteSize is 0(default value)
+    u32_t byteSize = 0;
+    if (T->isSized())
+    {
+        const llvm::DataLayout &DL = LLVMModuleSet::getLLVMModuleSet()->
+                                     getMainLLVMModule()->getDataLayout();
+        Type *mut_T = const_cast<Type *>(T);
+        byteSize = DL.getTypeAllocSize(mut_T);
+    }
+
     SVFType* svftype;
     if (SVFUtil::isa<PointerType>(T))
     {
-        svftype = new SVFPointerType();
+        svftype = new SVFPointerType(byteSize);
     }
     else if (const IntegerType* intT = SVFUtil::dyn_cast<IntegerType>(T))
     {
-        auto svfIntT = new SVFIntegerType();
+        auto svfIntT = new SVFIntegerType(byteSize);
         unsigned signWidth = intT->getBitWidth();
         assert(signWidth < INT16_MAX && "Integer width too big");
         svfIntT->setSignAndWidth(intT->getSignBit() ? -signWidth : signWidth);
@@ -1269,14 +1283,14 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = new SVFFunctionType(getSVFType(ft->getReturnType()));
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
     {
-        auto svfst = new SVFStructType();
+        auto svfst = new SVFStructType(byteSize);
         if (st->hasName())
             svfst->setName(st->getName().str());
         svftype = svfst;
     }
     else if (const auto at = SVFUtil::dyn_cast<ArrayType>(T))
     {
-        auto svfat = new SVFArrayType();
+        auto svfat = new SVFArrayType(byteSize);
         svfat->setNumOfElement(at->getNumElements());
         svfat->setTypeOfElement(getSVFType(at->getElementType()));
         svftype = svfat;
@@ -1284,7 +1298,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     else
     {
         std::string buffer;
-        auto ot = new SVFOtherType(T->isSingleValueType());
+        auto ot = new SVFOtherType(byteSize, T->isSingleValueType());
         llvm::raw_string_ostream(buffer) << *T;
         ot->setRepr(std::move(buffer));
         svftype = ot;
@@ -1299,6 +1313,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         assert(svfPtrType && "this is not SVFPointerType");
         svfPtrType->setPtrElementType(getSVFType(LLVMUtil::getPtrElementType(pt)));
     }
+
     return svftype;
 }
 

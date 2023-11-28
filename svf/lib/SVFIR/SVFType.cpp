@@ -5,13 +5,6 @@ namespace SVF
 {
 
 __attribute__((weak))
-u32_t SVFType::getLLVMByteSize() const
-{
-    assert("SVFType::getLLVMByteSize should be implemented or supported by fronted" && false);
-    abort();
-}
-
-__attribute__((weak))
 std::string SVFType::toString() const
 {
     std::ostringstream os;
