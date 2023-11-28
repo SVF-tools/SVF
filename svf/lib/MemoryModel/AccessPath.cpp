@@ -150,6 +150,7 @@ APOffset AccessPath::computeConstantByteOffset() const
             totalConstOffset += op->getSExtValue() * type2->getByteSize();
         }
     }
+    totalConstOffset = Options::MaxFieldLimit() > totalConstOffset? totalConstOffset: Options::MaxFieldLimit();
     return totalConstOffset;
 }
 
