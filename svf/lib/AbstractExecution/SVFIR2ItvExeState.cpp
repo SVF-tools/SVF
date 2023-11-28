@@ -177,10 +177,10 @@ SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APO
 }
 
 /**
- * This function, getBytefromGepTypePair, calculates the byte interval value
- * for a given VarAndGepTypePair and GepStmt.
+ * This function, getByteOffsetfromGepTypePair, calculates the byte interval value
+ * for a given IdxVarAndGepTypePair and GepStmt.
  *
- * @param gep_pair   The VarAndGepTypePair containing a value and its type.
+ * @param gep_pair   The IdxVarAndGepTypePair containing a value and its type.
  * @param gep        The GepStmt representing the GetElementPtr instruction.
  *
  * @return           The calculated byte interval value.
@@ -198,7 +198,7 @@ SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APO
  *      for 0th/1st/2nd pair, the SVFValue has constant value
  *      for 3rd pair, the SVFValue is variable, which needs ES table to calculate the interval.
  */
-IntervalValue SVFIR2ItvExeState::getBytefromGepTypePair(const AccessPath::VarAndGepTypePair& gep_pair, const GepStmt *gep)
+IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::IdxVarAndGepTypePair& gep_pair, const GepStmt *gep)
 {
     IntervalValue res(0); // Initialize the result interval 'res' to 0.
 
@@ -250,15 +250,15 @@ IntervalValue SVFIR2ItvExeState::getBytefromGepTypePair(const AccessPath::VarAnd
 }
 
 /**
- * This function, getIndexfromGepTypePair, calculates the index range as a pair
- * of APOffset values for a given VarAndGepTypePair and GepStmt.
+ * This function, getItvOfFlattenedElemIndexFromGepTypePair, calculates the index range as a pair
+ * of APOffset values for a given IdxVarAndGepTypePair and GepStmt.
  *
- * @param gep_pair   The VarAndGepTypePair containing a value and its type.
+ * @param gep_pair   The IdxVarAndGepTypePair containing a value and its type.
  * @param gep        The GepStmt representing the GetElementPtr instruction.
  *
  * @return           A pair of APOffset values representing the index range.
  */
-std::pair<APOffset, APOffset> SVFIR2ItvExeState::getIndexfromGepTypePair(const AccessPath::VarAndGepTypePair& gep_pair, const GepStmt *gep)
+IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndexFromGepTypePair(const AccessPath::IdxVarAndGepTypePair& gep_pair, const GepStmt *gep)
 {
     const SVFValue *value = gep_pair.first->getValue();
     const SVFType *type = gep_pair.second;
@@ -275,7 +275,7 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getIndexfromGepTypePair(const A
         u32_t idx = _svfir->getValueNode(value);
         IntervalValue &idxVal = _es[idx];
         if (idxVal.isBottom() || idxVal.isTop())
-            return std::make_pair(0, Options::MaxFieldLimit());
+            return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
         // If idxVal is a concrete value
         if (idxVal.is_numeral())
         {
@@ -319,12 +319,12 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getIndexfromGepTypePair(const A
         }
     }
 
-    return {offsetLb, offsetUb}; // Return a pair of APOffset values representing the index range.
+    return IntervalValue(offsetLb, offsetUb); // Return a pair of APOffset values representing the index range.
 }
 
 
 /**
- * This function, getGepByteOffset, calculates the byte offset for a given GepStmt.
+ * This function, getByteOffset, calculates the byte offset for a given GepStmt.
  *
  * @param gep   The GepStmt representing the GetElementPtr instruction.
  *
@@ -336,7 +336,7 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getIndexfromGepTypePair(const A
 * %struct.OuterStruct = type { i32, i32, %struct.InnerStruct }
 * %struct.InnerStruct = type { [2 x i32] }
 * there are 4 GepTypePairs (<0, %struct.OuterStruct*>, <2, %struct.OuterStruct>, <0, %struct.InnerStruct>, <%var1, [2xi32]>)
-* this function calls getBytefromGepTypePair() to process each pair, and finally accumulate them.
+* this function calls getByteOffsetfromGepTypePair() to process each pair, and finally accumulate them.
 * e.g. for 0th pair <0, %struct.OuterStruct*>, it is 0* ptrSize(%struct.OuterStruct*) = 0 bytes
 *      for 1st pair <2, %struct.OuterStruct>, it is 2nd field in %struct.OuterStruct = 8 bytes
 *      for 2nd pair <0, %struct.InnerStruct>, it is 0th field in %struct.InnerStruct = 0 bytes
@@ -344,7 +344,7 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getIndexfromGepTypePair(const A
 *      ----
 *  Therefore the final byteoffset is [8+4*var1.lb(), 8+4*var1.ub()]
  */
-IntervalValue SVFIR2ItvExeState::getGepByteOffset(const GepStmt *gep)
+IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
 {
     // Check if the GepStmt has a constant offset.
     if (gep->isConstantOffset()) {
@@ -357,8 +357,8 @@ IntervalValue SVFIR2ItvExeState::getGepByteOffset(const GepStmt *gep)
     // Loop through the offsetVarAndGepTypePairVec in reverse order.
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
-        // Calculate the byte offset for the current offsetVarAndGepTypePair.
-        IntervalValue offsetIdx = getBytefromGepTypePair(
+        // Calculate the byte offset for the current IdxVarAndGepTypePair.
+        IntervalValue offsetIdx = getByteOffsetfromGepTypePair(
             gep->getOffsetVarAndGepTypePairVec()[i], gep);
 
         // Accumulate the byte offset in the result 'res'.
@@ -369,14 +369,14 @@ IntervalValue SVFIR2ItvExeState::getGepByteOffset(const GepStmt *gep)
 }
 
 /**
- * This function, getGepOffset, calculates the offset range as a pair
+ * This function, getItvOfFlattenedElemIndex, calculates the offset range as a pair
  * of APOffset values for a given GepStmt.
  *
  * @param gep   The GepStmt representing the GetElementPtr instruction.
  *
  * @return      A pair of APOffset values representing the offset range.
  */
-std::pair<APOffset, APOffset> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep)
+IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
 {
     APOffset totalOffsetLb = 0;
     APOffset totalOffsetUb = 0;
@@ -388,22 +388,22 @@ std::pair<APOffset, APOffset> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep
     /// For instant constant index, e.g., gep arr, 1
     if (gep->getOffsetVarAndGepTypePairVec().empty() || gep->isConstantOffset()) {
         u32_t offsetIdx = gep->getConstantFieldIdx();
-        return std::make_pair(offsetIdx, offsetIdx);
+        return IntervalValue(offsetIdx, offsetIdx);
     }
     else
     {
         for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
         {
-            std::pair<APOffset, APOffset> offsetIdx = getIndexfromGepTypePair(
+            IntervalValue offsetIdx = getItvOfFlattenedElemIndexFromGepTypePair(
                 gep->getOffsetVarAndGepTypePairVec()[i], gep);
-            totalOffsetLb += offsetIdx.first;
-            totalOffsetUb += offsetIdx.second;
+            totalOffsetLb += offsetIdx.lb().getNumeral();
+            totalOffsetUb += offsetIdx.ub().getNumeral();
         }
         totalOffsetLb = (totalOffsetLb < minFieldLimit) ? minFieldLimit :
                    (totalOffsetLb > maxFieldLimit) ? maxFieldLimit : totalOffsetLb;
     }
 
-    return {totalOffsetLb, totalOffsetUb}; // Return a pair of APOffset values representing the offset range.
+    return IntervalValue(totalOffsetLb, totalOffsetUb); // Return a pair of APOffset values representing the offset range.
 }
 
 /*!
@@ -873,16 +873,17 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
     assert(!getVAddrs(rhs).empty());
     VAddrs &rhsVal = getVAddrs(rhs);
     if (rhsVal.empty()) return;
-    std::pair<APOffset, APOffset> offsetPair = getGepOffset(gep);
+    IntervalValue offsetPair = getItvOfFlattenedElemIndex(gep);
     if (!isVirtualMemAddress(*rhsVal.begin()))
         return;
     else
     {
         VAddrs gepAddrs;
-        APOffset ub = offsetPair.second;
-        if (offsetPair.second > Options::MaxFieldLimit())
-            ub = Options::MaxFieldLimit();
-        for (APOffset i = offsetPair.first; i <= ub; i++)
+        APOffset lb = offsetPair.lb().getNumeral() < Options::MaxFieldLimit()?
+                        offsetPair.lb().getNumeral(): Options::MaxFieldLimit();
+        APOffset ub = offsetPair.ub().getNumeral() < Options::MaxFieldLimit()?
+                        offsetPair.ub().getNumeral(): Options::MaxFieldLimit();
+        for (APOffset i = lb; i <= ub; i++)
             gepAddrs.join_with(getGepObjAddress(rhs, i));
         if(gepAddrs.empty()) return;
         _es.getVAddrs(lhs) = gepAddrs;

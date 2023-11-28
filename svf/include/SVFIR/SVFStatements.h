@@ -492,7 +492,8 @@ public:
     {
         return ap;
     }
-    inline const AccessPath::OffsetVarAndGepTypePairs getOffsetVarAndGepTypePairVec() const
+    inline const AccessPath::IdxVarAndGepTypePairs
+    getOffsetVarAndGepTypePairVec() const
     {
         return getAccessPath().getOffsetVarAndGepTypePairVec();
     }

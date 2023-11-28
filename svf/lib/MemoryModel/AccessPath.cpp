@@ -247,14 +247,14 @@ bool AccessPath::operator< (const AccessPath& rhs) const
         return (fldIdx < rhs.fldIdx);
     else
     {
-        const OffsetVarAndGepTypePairs& pairVec = getOffsetVarAndGepTypePairVec();
-        const OffsetVarAndGepTypePairs& rhsPairVec = rhs.getOffsetVarAndGepTypePairVec();
+        const IdxVarAndGepTypePairs& pairVec = getOffsetVarAndGepTypePairVec();
+        const IdxVarAndGepTypePairs& rhsPairVec = rhs.getOffsetVarAndGepTypePairVec();
         if (pairVec.size() != rhsPairVec.size())
             return (pairVec.size() < rhsPairVec.size());
         else
         {
-            OffsetVarAndGepTypePairs::const_iterator it = pairVec.begin();
-            OffsetVarAndGepTypePairs::const_iterator rhsIt = rhsPairVec.begin();
+            IdxVarAndGepTypePairs::const_iterator it = pairVec.begin();
+            IdxVarAndGepTypePairs::const_iterator rhsIt = rhsPairVec.begin();
             for (; it != pairVec.end() && rhsIt != rhsPairVec.end(); ++it, ++rhsIt)
             {
                 return (*it) < (*rhsIt);
@@ -294,9 +294,9 @@ std::string AccessPath::dump() const
 
     rawstr << "AccessPath\tField_Index: " << getConstantFieldIdx();
     rawstr << ",\tNum-Stride: {";
-    const OffsetVarAndGepTypePairs& vec = getOffsetVarAndGepTypePairVec();
-    OffsetVarAndGepTypePairs::const_iterator it = vec.begin();
-    OffsetVarAndGepTypePairs::const_iterator eit = vec.end();
+    const IdxVarAndGepTypePairs& vec = getOffsetVarAndGepTypePairVec();
+    IdxVarAndGepTypePairs::const_iterator it = vec.begin();
+    IdxVarAndGepTypePairs::const_iterator eit = vec.end();
     for (; it != eit; ++it)
     {
         const SVFType* ty = it->second;
