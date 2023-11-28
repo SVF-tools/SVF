@@ -768,29 +768,32 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
                 _es.getVAddrs(lhs).setBottom();
             break;
         }
+        bool iValInitialized = false, addrInitialized = false;
         for (const auto &addr: addrs)
         {
             u32_t objId = getInternalID(addr);
             if (inLocToIValTable(objId))
             {
-                if (!inVarToIValTable(lhs))
+                if (inVarToIValTable(lhs) && iValInitialized)
                 {
-                    _es[lhs] = _es.load(addr);
+                    _es[lhs].join_with(_es.load(addr));
                 }
                 else
                 {
-                    _es[lhs].join_with(_es.load(addr));
+                    _es[lhs] = _es.load(addr);
+                    iValInitialized = true;
                 }
             }
             else if (inLocToAddrsTable(objId))
             {
-                if (!inVarToAddrsTable(lhs))
+                if (inVarToAddrsTable(lhs) && addrInitialized)
                 {
-                    _es.getVAddrs(lhs) = _es.loadVAddrs(addr);
+                    _es.getVAddrs(lhs).join_with(_es.loadVAddrs(addr));
                 }
                 else
                 {
-                    _es.getVAddrs(lhs).join_with(_es.loadVAddrs(addr));
+                    _es.getVAddrs(lhs) = _es.loadVAddrs(addr);
+                    addrInitialized = true;
                 }
             }
         }
@@ -911,32 +914,35 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
 void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
 {
     u32_t res = phi->getResID();
+    bool iValInitialized = false, addrInitialized = false;
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
     {
         NodeID curId = phi->getOpVarID(i);
         if (inVarToIValTable(curId))
         {
             const IntervalValue &cur = _es[curId];
-            if (!inVarToIValTable(res))
+            if (inVarToIValTable(res) && iValInitialized)
             {
-                _es[res] = cur;
+                _es[res].join_with(cur);
             }
             else
             {
-                _es[res].join_with(cur);
+                _es[res] = cur;
+                iValInitialized = true;
             }
         }
         else if (inVarToAddrsTable(curId))
         {
             assert(!getVAddrs(curId).empty());
             const VAddrs &cur = getVAddrs(curId);
-            if (!inVarToAddrsTable(res))
+            if (inVarToAddrsTable(res) && addrInitialized)
             {
-                _es.getVAddrs(res) = cur;
+                _es.getVAddrs(res).join_with(cur);
             }
             else
             {
-                _es.getVAddrs(res).join_with(cur);
+                _es.getVAddrs(res) = cur;
+                addrInitialized = true;
             }
         }
     }

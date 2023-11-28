@@ -66,7 +66,7 @@ public:
             return;
         }
 
-        O << "Writing '" << Filename << "'...";
+        O << "Writing '" << Filename << "'...\n";
 
         WriteGraph(outFile, GT, simple);
         outFile.close();
