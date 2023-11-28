@@ -38,7 +38,7 @@ SVFType* createSVFType(SVFType::GNodeK kind, bool isSingleValTy)
         ABORT_IFNOT(!isSingleValTy, "Array type must be multi-valued");
         return new SVFArrayType(0);
     case SVFType::SVFOtherTy:
-        return new SVFOtherType(isSingleValTy, 0);
+        return new SVFOtherType(0, isSingleValTy);
     }
 }
 

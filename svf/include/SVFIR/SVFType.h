@@ -514,7 +514,7 @@ private:
     std::string repr; /// Field representation for printing
 
 public:
-    SVFOtherType(bool isSingleValueTy, u32_t byteSize) : SVFType(isSingleValueTy, SVFOtherTy, byteSize) {}
+    SVFOtherType(u32_t byteSize, bool isSingleValueTy) : SVFType(isSingleValueTy, SVFOtherTy, byteSize) {}
 
     static inline bool classof(const SVFType* node)
     {

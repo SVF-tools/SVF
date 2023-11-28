@@ -1297,7 +1297,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     else
     {
         std::string buffer;
-        auto ot = new SVFOtherType(T->isSingleValueType(), byteSize);
+        auto ot = new SVFOtherType(byteSize, T->isSingleValueType());
         llvm::raw_string_ostream(buffer) << *T;
         ot->setRepr(std::move(buffer));
         svftype = ot;
