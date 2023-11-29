@@ -44,7 +44,7 @@ public:
     IntervalExeState (the last element of inputs) for RSY or bilateral solver */
 
     /// Return Z3Expr according to valToValMap
-    Z3Expr gamma_hat(IntervalExeState &exeState);
+    static Z3Expr gamma_hat(IntervalExeState &exeState);
 
     /// Return Z3Expr according to another valToValMap
     Z3Expr gamma_hat(IntervalExeState &alpha, IntervalExeState &exeState);
