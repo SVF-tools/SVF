@@ -33,6 +33,7 @@
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
+#include "AbstractExecution/RelationSolver.h"
 
 using namespace std;
 using namespace SVF;
