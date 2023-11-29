@@ -800,17 +800,24 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
             {
                 rhsAddr.join_with(_es.loadVAddrs(addr));
                 isAddr = true;
-            } else {
+            }
+            else
+            {
                 // rhs not in table
             }
         }
-        if (isItv) {
+        if (isItv)
+        {
             // lhs var is an integer
             _es[lhs] = rhsItv;
-        } else if (isAddr) {
+        }
+        else if (isAddr)
+        {
             // lhs var is an address
             _es.getVAddrs(lhs) = rhsAddr;
-        } else {
+        }
+        else
+        {
             // rhs not in table
         }
     }
@@ -940,17 +947,24 @@ void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
             assert(!getVAddrs(curId).empty());
             rhsAddr.join_with(getVAddrs(curId));
             isAddr = true;
-        } else {
+        }
+        else
+        {
             // rhs not in the table
         }
     }
-    if (isItv) {
+    if (isItv)
+    {
         // res var is an integer
         _es[res] = rhsItv;
-    } else if (isAddr) {
+    }
+    else if (isAddr)
+    {
         // res var is an address
         _es.getVAddrs(res) = rhsAddr;
-    } else {
+    }
+    else
+    {
         // rhs not in table
     }
 }
