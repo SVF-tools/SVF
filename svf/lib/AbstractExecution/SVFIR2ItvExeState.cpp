@@ -785,40 +785,33 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
     {
         VAddrs &addrs = getVAddrs(rhs);
         assert(!addrs.empty());
+        IntervalValue rhsItv = IntervalValue::bottom();
+        AddressValue rhsAddr;
+        bool isItv = false, isAddr = false;
         for (const auto &addr: addrs)
         {
             u32_t objId = getInternalID(addr);
             if (inLocToIValTable(objId))
-                _es[lhs] = IntervalValue::bottom();
+            {
+                rhsItv.join_with(_es.load(addr));
+                isItv = true;
+            }
             else if (inLocToAddrsTable(objId))
-                _es.getVAddrs(lhs).setBottom();
-            break;
+            {
+                rhsAddr.join_with(_es.loadVAddrs(addr));
+                isAddr = true;
+            } else {
+                // rhs not in table
+            }
         }
-        for (const auto &addr: addrs)
-        {
-            u32_t objId = getInternalID(addr);
-            if (inLocToIValTable(objId))
-            {
-                if (!inVarToIValTable(lhs))
-                {
-                    _es[lhs] = _es.load(addr);
-                }
-                else
-                {
-                    _es[lhs].join_with(_es.load(addr));
-                }
-            }
-            else if (inLocToAddrsTable(objId))
-            {
-                if (!inVarToAddrsTable(lhs))
-                {
-                    _es.getVAddrs(lhs) = _es.loadVAddrs(addr);
-                }
-                else
-                {
-                    _es.getVAddrs(lhs).join_with(_es.loadVAddrs(addr));
-                }
-            }
+        if (isItv) {
+            // lhs var is an integer
+            _es[lhs] = rhsItv;
+        } else if (isAddr) {
+            // lhs var is an address
+            _es.getVAddrs(lhs) = rhsAddr;
+        } else {
+            // rhs not in table
         }
     }
 }
@@ -931,34 +924,34 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
 void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
 {
     u32_t res = phi->getResID();
+    IntervalValue rhsItv = IntervalValue::bottom();
+    AddressValue rhsAddr;
+    bool isItv = false, isAddr = false;
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
     {
         NodeID curId = phi->getOpVarID(i);
         if (inVarToIValTable(curId))
         {
-            const IntervalValue &cur = _es[curId];
-            if (!inVarToIValTable(res))
-            {
-                _es[res] = cur;
-            }
-            else
-            {
-                _es[res].join_with(cur);
-            }
+            rhsItv.join_with(_es[curId]);
+            isItv = true;
         }
         else if (inVarToAddrsTable(curId))
         {
             assert(!getVAddrs(curId).empty());
-            const VAddrs &cur = getVAddrs(curId);
-            if (!inVarToAddrsTable(res))
-            {
-                _es.getVAddrs(res) = cur;
-            }
-            else
-            {
-                _es.getVAddrs(res).join_with(cur);
-            }
+            rhsAddr.join_with(getVAddrs(curId));
+            isAddr = true;
+        } else {
+            // rhs not in the table
         }
+    }
+    if (isItv) {
+        // res var is an integer
+        _es[res] = rhsItv;
+    } else if (isAddr) {
+        // res var is an address
+        _es.getVAddrs(res) = rhsAddr;
+    } else {
+        // rhs not in table
     }
 }
 
