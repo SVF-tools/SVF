@@ -161,7 +161,7 @@ SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
     : SVFValue(ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
       addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
       funcType(ft), loopAndDom(ld), realDefFun(nullptr), annotations(std::move(annos)),
-      entryBlock(nullptr), exitBlock(nullptr)
+      entryBlock(nullptr), exitBlock(nullptr), uniqueExitBlock(nullptr)
 {
 }
 
@@ -188,6 +188,33 @@ const SVFArgument* SVFFunction::getArg(u32_t idx) const
 bool SVFFunction::isVarArg() const
 {
     return varArg;
+}
+
+SVFBasicBlock* SVFFunction::getUniqueExitBlock(SVFBasicBlock* exitBB)
+{
+    assert(exitBlock && "we do not need unique exit block when exitBlock is null");
+    if (!uniqueExitBlock)
+    {
+        uniqueExitBlock = new SVFBasicBlock(exitBlock->getType(), this);
+        // connect every exit basic block to dummy exit block
+        uniqueExitBlock->addPredBasicBlock(exitBB);
+        exitBB->addSuccBasicBlock(uniqueExitBlock);
+    }
+    return uniqueExitBlock;
+}
+
+void SVFFunction::setExitBlock(SVFBasicBlock *bb)
+{
+    if (exitBlock)
+    {
+        /// multi exit basic block
+        exitBlock = getUniqueExitBlock(bb);
+    }
+    else
+    {
+        /// single exit basic block
+        exitBlock = bb;
+    }
 }
 
 SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f)

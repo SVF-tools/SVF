@@ -322,6 +322,14 @@ private:
     std::vector<std::string> annotations; /// annotations of this function
     SVFBasicBlock *entryBlock;                  /// entry BasicBlock of this function
     SVFBasicBlock *exitBlock;                   /// exit BasicBlock of this function
+    SVFBasicBlock *uniqueExitBlock;             /// multi exit BasicBlocks connect to a single unique Exit Block
+
+private:
+    /// get dummy exit basic block. if not exits, then create it, else return
+    /// @param exitBB one of multi exit Basic Blocks
+    /// @return the dummy exit basic block
+    SVFBasicBlock* getUniqueExitBlock(SVFBasicBlock* exitBB);
+
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
     inline void addBasicBlock(const SVFBasicBlock* bb)
@@ -424,14 +432,13 @@ public:
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
         assert(exitBlock && "have not yet set exit Basicblock");
+        assert((!uniqueExitBlock || uniqueExitBlock == exitBlock) && "unique exit basic block must be null or just equal to exit block");
         return exitBlock;
     }
 
-    inline void setExitBlock(SVFBasicBlock *bb)
-    {
-        assert(!exitBlock && "function already has a exit Basicblock.");
-        exitBlock = bb;
-    }
+    /// set exit basic block, if multi exit basic blocks exist,
+    /// then create a unique basic block, and set the unique exit basic block
+    void setExitBlock(SVFBasicBlock *bb);
 
     inline const SVFBasicBlock* front() const
     {
@@ -535,6 +542,7 @@ class SVFBasicBlock : public SVFValue
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class SVFIRBuilder;
+    friend class SVFFunction;
 
 public:
     typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;
