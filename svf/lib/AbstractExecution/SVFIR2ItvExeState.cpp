@@ -911,34 +911,30 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
 void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
 {
     u32_t res = phi->getResID();
+    IntervalValue itv = IntervalValue::bottom();
+    AddressValue addr;
+    bool isItv = false, isAddr = false;
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
     {
         NodeID curId = phi->getOpVarID(i);
         if (inVarToIValTable(curId))
         {
-            const IntervalValue &cur = _es[curId];
-            if (!inVarToIValTable(res))
-            {
-                _es[res] = cur;
-            }
-            else
-            {
-                _es[res].join_with(cur);
-            }
+            itv.join_with(_es[curId]);
+            isItv = true;
         }
         else if (inVarToAddrsTable(curId))
         {
             assert(!getVAddrs(curId).empty());
-            const VAddrs &cur = getVAddrs(curId);
-            if (!inVarToAddrsTable(res))
-            {
-                _es.getVAddrs(res) = cur;
-            }
-            else
-            {
-                _es.getVAddrs(res).join_with(cur);
-            }
+            addr.join_with(getVAddrs(curId));
+            isAddr = true;
+        } else {
+            // rhs not in the table
         }
+    }
+    if(isItv) _es[res] = itv;
+    else if(isAddr) _es.getVAddrs(res) = addr;
+    else {
+        // rhs not in the table
     }
 }
 
