@@ -320,7 +320,8 @@ private:
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
     std::vector<std::string> annotations; /// annotations of this function
-
+    SVFBasicBlock *entryBlock;                  /// entry BasicBlock of this function
+    SVFBasicBlock *exitBlock;                   /// exit BasicBlock of this function
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
     inline void addBasicBlock(const SVFBasicBlock* bb)
@@ -409,13 +410,27 @@ public:
     inline const SVFBasicBlock* getEntryBlock() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        return allBBs.front();
+        assert(entryBlock && "have not yet set entry Basicblock");
+        return entryBlock;
+    }
+
+    inline void setEntryBlock(SVFBasicBlock *bb)
+    {
+        assert(!entryBlock && "function already has entry Basicblock.");
+        entryBlock = bb;
     }
 
     inline const SVFBasicBlock* getExitBB() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        return allBBs.back();
+        assert(exitBlock && "have not yet set exit Basicblock");
+        return exitBlock;
+    }
+
+    inline void setExitBlock(SVFBasicBlock *bb)
+    {
+        assert(!exitBlock && "function already has a exit Basicblock.");
+        exitBlock = bb;
     }
 
     inline const SVFBasicBlock* front() const
