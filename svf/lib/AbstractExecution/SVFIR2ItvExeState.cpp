@@ -36,7 +36,18 @@ using namespace SVFUtil;
 SVF::SVFIR2ItvExeState::VAddrs SVF::SVFIR2ItvExeState::globalNullVaddrs =
     AddressValue();
 
-IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type) { //getRangeLimitFromType
+/**
+ * This function, getRangeLimitFromType, calculates the lower and upper bounds of
+ * a numeric range for a given SVFType. It is used to determine the possible value
+ * range of integer types. If the type is an SVFIntegerType, it calculates the bounds
+ * based on the size and signedness of the type. The calculated bounds are returned
+ * as an IntervalValue representing the lower (lb) and upper (ub) limits of the range.
+ *
+ * @param type   The SVFType for which to calculate the value range.
+ *
+ * @return       An IntervalValue representing the lower and upper bounds of the range.
+ */
+IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type) {
     if (const SVFIntegerType* intType = SVFUtil::dyn_cast<SVFIntegerType>(type)) {
         u32_t bits = type->getByteSize() * 8;
         s64_t ub = 0;
@@ -552,6 +563,7 @@ void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
     initSVFVar(addr->getRHSVarID());
     if (inVarToIValTable(addr->getRHSVarID()))
     {
+        // if addr RHS is integerType(i8 i32 etc), value should be limited.
         if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy) {
             IntervalExeState::globalES[addr->getRHSVarID()].meet_with(
                 getRangeLimitFromType(addr->getRHSVar()->getType()));
@@ -905,6 +917,9 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
         if (inVarToIValTable(rhs))
         {
             _es[lhs] = _es[rhs];
+            // if copy LHS is integerType(i8 i32 etc), value should be limited.
+            // this branch can handle bitcast from higher bits integer to
+            // lower bits integer. e.g. bitcast i32 to i8
             if (copy->getLHSVar()->getType()->getKind() == SVFType::SVFIntegerTy) {
                 _es[lhs].meet_with(
                     getRangeLimitFromType(copy->getLHSVar()->getType()));
