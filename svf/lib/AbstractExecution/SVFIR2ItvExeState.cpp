@@ -252,22 +252,26 @@ IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::
 {
     IntervalValue res(0); // Initialize the result interval 'res' to 0.
 
-    const SVFValue *value = gep_pair.first->getValue();
-    const SVFType *type = gep_pair.second;
-    u32_t typeSz = 1;
+    const SVFValue * idxValue; // Index Value, Only assigned when the gep pair type is arr or ptr
+    const SVFType *type; // Gep Type, Only assigned when the gep pair type is arr or ptr
+    u32_t typeSz; // Type Size, Only assigned when the gep pair type is arr or ptr
 
     // Check the type of 'gep_pair.second' and process it accordingly.
-    if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type)) {
+    if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(gep_pair.second)) {
+        // if gep pair is arrType, set value, type and typeSz
+        idxValue = gep_pair.first->getValue();
         type = arrType->getTypeOfElement();
         typeSz = type->getByteSize();
     }
-    else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type)) {
+    else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(gep_pair.second)) {
+        // if gep pair is ptrType, set value, type and typeSz
+        idxValue = gep_pair.first->getValue();
         type = ptrType->getPtrElementType();
         typeSz = type->getByteSize();
     }
-    else if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type)) {
+    else if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(gep_pair.second)) {
         // If it's a struct type with a constant index, calculate byte sizes.
-        if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value))
+        if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(gep_pair.first->getValue()))
         {
             for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField)
             {
@@ -282,12 +286,12 @@ IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::
         assert(false && "gep type pair only support arr/ptr/struct");
 
     // Calculate byte size based on the type and value, considering MaxFieldLimit option.
-    if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value)) {
+    if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue)) {
         u32_t lb = (double)Options::MaxFieldLimit() / typeSz >= op->getSExtValue() ? op->getSExtValue() * typeSz: Options::MaxFieldLimit();
         res = IntervalValue(lb, lb);
     }
     else {
-        u32_t idx = _svfir->getValueNode(value);
+        u32_t idx = _svfir->getValueNode(idxValue);
         IntervalValue idxVal = _es[idx];
         if (idxVal.isBottom()) {
             res = IntervalValue(0, 0);
