@@ -413,11 +413,12 @@ public:
         return allBBs.front();
     }
 
+    /// Carefully! when you call getExitBB, you need ensure the function has return instruction
+    /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
     inline const SVFBasicBlock* getExitBB() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        /// Carefully! exit BasicBlock may be return nullptr
-        /// more refer to: https://github.com/SVF-tools/SVF/pull/1262#issuecomment-1833400405
+        assert((!isNotRet && exitBlock) && "have not yet set exit Basicblock?");
         return exitBlock;
     }
 
