@@ -320,7 +320,7 @@ private:
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
     std::vector<std::string> annotations; /// annotations of this function
-    SVFBasicBlock *exitBlock;                   /// exit BasicBlock of this function
+    SVFBasicBlock *exitBlock;             /// exit BasicBlock of this function
 
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
@@ -416,12 +416,11 @@ public:
     inline const SVFBasicBlock* getExitBB() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        assert(exitBlock && "have not yet set exit Basicblock?");
+        /// Carefully! exit BasicBlock may be return nullptr
+        /// more refer to: https://github.com/SVF-tools/SVF/pull/1262#issuecomment-1833400405
         return exitBlock;
     }
 
-    /// set exit basic block, if multi exit basic blocks exist,
-    /// then create a unique basic block, and set the unique exit basic block
     void setExitBlock(SVFBasicBlock *bb);
 
     inline const SVFBasicBlock* front() const
@@ -431,7 +430,10 @@ public:
 
     inline const SVFBasicBlock* back() const
     {
-        return getExitBB();
+        /// Carefully! 'back' is just the last basic block of function,
+        /// but not necessarily a exit basic block
+        /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
+        return allBBs.back();
     }
 
     inline const_iterator begin() const
