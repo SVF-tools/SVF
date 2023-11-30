@@ -320,15 +320,7 @@ private:
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
     std::vector<std::string> annotations; /// annotations of this function
-    SVFBasicBlock *entryBlock;                  /// entry BasicBlock of this function
     SVFBasicBlock *exitBlock;                   /// exit BasicBlock of this function
-    SVFBasicBlock *uniqueExitBlock;             /// multi exit BasicBlocks connect to a single unique Exit Block
-
-private:
-    /// get dummy exit basic block. if not exits, then create it, else return
-    /// @param exitBB one of multi exit Basic Blocks
-    /// @return the dummy exit basic block
-    SVFBasicBlock* getUniqueExitBlock(SVFBasicBlock* exitBB);
 
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
@@ -418,21 +410,13 @@ public:
     inline const SVFBasicBlock* getEntryBlock() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        assert(entryBlock && "have not yet set entry Basicblock");
-        return entryBlock;
-    }
-
-    inline void setEntryBlock(SVFBasicBlock *bb)
-    {
-        assert(!entryBlock && "function already has entry Basicblock.");
-        entryBlock = bb;
+        return allBBs.front();
     }
 
     inline const SVFBasicBlock* getExitBB() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        assert(exitBlock && "have not yet set exit Basicblock");
-        assert((!uniqueExitBlock || uniqueExitBlock == exitBlock) && "unique exit basic block must be null or just equal to exit block");
+        assert(exitBlock && "have not yet set exit Basicblock?");
         return exitBlock;
     }
 
