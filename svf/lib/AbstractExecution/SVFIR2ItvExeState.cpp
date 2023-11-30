@@ -36,6 +36,45 @@ using namespace SVFUtil;
 SVF::SVFIR2ItvExeState::VAddrs SVF::SVFIR2ItvExeState::globalNullVaddrs =
     AddressValue();
 
+IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type) { //getRangeLimitFromType
+    if (const SVFIntegerType* intType = SVFUtil::dyn_cast<SVFIntegerType>(type)) {
+        u32_t bits = type->getByteSize() * 8;
+        s64_t ub = 0;
+        s64_t lb = 0;
+        if (bits >= 32) {
+            if (intType->isSigned()) {
+                ub = static_cast<s64_t>(std::numeric_limits<s32_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<s32_t>::min());
+            } else {
+                ub = static_cast<s64_t>(std::numeric_limits<u32_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<u32_t>::min());
+            }
+        }
+        else if (bits == 16) {
+            if (intType->isSigned()) {
+                ub = static_cast<s64_t>(std::numeric_limits<int16_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<int16_t>::min());
+            } else {
+                ub = static_cast<s64_t>(std::numeric_limits<uint16_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<uint16_t>::min());
+            }
+        }
+        else if (bits == 8) {
+            if (intType->isSigned()) {
+                ub = static_cast<s64_t>(std::numeric_limits<int8_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<int8_t>::min());
+            } else {
+                ub = static_cast<s64_t>(std::numeric_limits<u_int8_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<u_int8_t>::min());
+            }
+        }
+        return IntervalValue(lb, ub);
+    } else {
+        assert(false && "cannot support");
+    }
+}
+
+
 void SVFIR2ItvExeState::applySummary(IntervalExeState &es)
 {
     for (const auto &item: es._varToItvVal)
@@ -204,12 +243,17 @@ IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::
 
     const SVFValue *value = gep_pair.first->getValue();
     const SVFType *type = gep_pair.second;
+    u32_t typeSz = 1;
 
     // Check the type of 'gep_pair.second' and process it accordingly.
-    if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type))
+    if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type)) {
         type = arrType->getTypeOfElement();
-    else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type))
+        typeSz = type->getByteSize();
+    }
+    else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type)) {
         type = ptrType->getPtrElementType();
+        typeSz = type->getByteSize();
+    }
     else if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type)) {
         // If it's a struct type with a constant index, calculate byte sizes.
         if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value))
@@ -226,8 +270,6 @@ IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::
     } else
         assert(false && "gep type pair only support arr/ptr/struct");
 
-    u32_t typeSz = type->getByteSize();
-
     // Calculate byte size based on the type and value, considering MaxFieldLimit option.
     if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value)) {
         u32_t lb = (double)Options::MaxFieldLimit() / typeSz >= op->getSExtValue() ? op->getSExtValue() * typeSz: Options::MaxFieldLimit();
@@ -235,7 +277,7 @@ IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::
     }
     else {
         u32_t idx = _svfir->getValueNode(value);
-        IntervalValue idxVal = _es[idx] * IntervalValue(type->getByteSize());
+        IntervalValue idxVal = _es[idx];
         if (idxVal.isBottom()) {
             res = IntervalValue(0, 0);
         } else {
@@ -508,7 +550,12 @@ void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
     initSVFVar(addr->getRHSVarID());
     if (inVarToIValTable(addr->getRHSVarID()))
     {
+        if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy) {
+            IntervalExeState::globalES[addr->getRHSVarID()].meet_with(
+                getRangeLimitFromType(addr->getRHSVar()->getType()));
+        }
         IntervalExeState::globalES[addr->getLHSVarID()] = IntervalExeState::globalES[addr->getRHSVarID()];
+
     }
     else if (inVarToAddrsTable(addr->getRHSVarID()))
     {
@@ -856,6 +903,10 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
         if (inVarToIValTable(rhs))
         {
             _es[lhs] = _es[rhs];
+            if (copy->getLHSVar()->getType()->getKind() == SVFType::SVFIntegerTy) {
+                _es[lhs].meet_with(
+                    getRangeLimitFromType(copy->getLHSVar()->getType()));
+            }
         }
         else if (inVarToAddrsTable(rhs))
         {
