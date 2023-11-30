@@ -320,7 +320,8 @@ public:
 
     /// if Type is not sized, byteSize is 0
     /// if Type is sized, byteSize is the LLVM Byte Size.
-    inline u32_t getByteSize() const {
+    inline u32_t getByteSize() const
+    {
         return byteSize;
     }
 

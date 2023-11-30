@@ -163,8 +163,7 @@ private:
     NodeBS computeAllLocations() const;
 
     APOffset fldIdx;	///< Accumulated Constant Offsets
-    IdxVarAndGepTypePairs
-        offsetVarAndGepTypePairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>s
+    IdxVarAndGepTypePairs offsetVarAndGepTypePairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>
 };
 
 } // End namespace SVF
