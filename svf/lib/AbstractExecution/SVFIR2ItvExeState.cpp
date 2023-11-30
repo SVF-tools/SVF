@@ -251,32 +251,33 @@ SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APO
 IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::IdxVarAndGepTypePair& gep_pair, const GepStmt *gep)
 {
     IntervalValue res(0); // Initialize the result interval 'res' to 0.
-
-    const SVFValue * idxValue; // Index Value, Only assigned when the gep pair type is arr or ptr
-    const SVFType *type; // Gep Type, Only assigned when the gep pair type is arr or ptr
-    u32_t typeSz; // Type Size, Only assigned when the gep pair type is arr or ptr
+    // Index Value, for arr/ptr, idxVal is arr/ptr's idx, For struct, it is field idx.
+    const SVFValue * idxValue;
+    // Element Type (not IndexType), for arr/ptr, it is arr elem type or pointee type,
+    // for struct, it is field's type.
+    const SVFType *type;
 
     // Check the type of 'gep_pair.second' and process it accordingly.
     if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(gep_pair.second)) {
         // if gep pair is arrType, set value, type and typeSz
         idxValue = gep_pair.first->getValue();
         type = arrType->getTypeOfElement();
-        typeSz = type->getByteSize();
     }
     else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(gep_pair.second)) {
         // if gep pair is ptrType, set value, type and typeSz
         idxValue = gep_pair.first->getValue();
         type = ptrType->getPtrElementType();
-        typeSz = type->getByteSize();
     }
     else if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(gep_pair.second)) {
         // If it's a struct type with a constant index, calculate byte sizes.
-        if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(gep_pair.first->getValue()))
+        idxValue = gep_pair.first->getValue();
+        if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue))
         {
             for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField)
             {
                 u32_t flattenIdx = structType->getTypeInfo()->getFlattenedFieldIdxVec()[structField];
-                res = res + IntervalValue(structType->getTypeInfo()->getOriginalElemType(flattenIdx)->getByteSize());
+                type = structType->getTypeInfo()->getOriginalElemType(flattenIdx);
+                res = res + IntervalValue(type->getByteSize());
             }
             return res;
         }
@@ -287,7 +288,8 @@ IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::
 
     // Calculate byte size based on the type and value, considering MaxFieldLimit option.
     if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue)) {
-        u32_t lb = (double)Options::MaxFieldLimit() / typeSz >= op->getSExtValue() ? op->getSExtValue() * typeSz: Options::MaxFieldLimit();
+        u32_t lb = (double)Options::MaxFieldLimit() / type->getByteSize() >= op->getSExtValue() ?
+                        op->getSExtValue() * type->getByteSize(): Options::MaxFieldLimit();
         res = IntervalValue(lb, lb);
     }
     else {
@@ -296,9 +298,11 @@ IntervalValue SVFIR2ItvExeState::getByteOffsetfromGepTypePair(const AccessPath::
         if (idxVal.isBottom()) {
             res = IntervalValue(0, 0);
         } else {
-            u32_t ub = (double)Options::MaxFieldLimit() / typeSz >= idxVal.ub().getNumeral() ? typeSz * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
+            u32_t ub = (double)Options::MaxFieldLimit() / type->getByteSize() >= idxVal.ub().getNumeral() ?
+                            type->getByteSize() * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
             u32_t lb = (idxVal.lb().getNumeral() < 0) ? 0 :
-                       ((double)Options::MaxFieldLimit() / typeSz >= idxVal.lb().getNumeral()) ? (typeSz * idxVal.lb().getNumeral()) : Options::MaxFieldLimit();
+                       ((double)Options::MaxFieldLimit() / type->getByteSize() >= idxVal.lb().getNumeral()) ?
+                            (type->getByteSize() * idxVal.lb().getNumeral()) : Options::MaxFieldLimit();
             res = IntervalValue(lb, ub);
         }
     }
