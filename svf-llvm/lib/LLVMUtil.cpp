@@ -104,7 +104,7 @@ void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBas
 bool LLVMUtil::basicBlockHasRetInst(const BasicBlock* bb)
 {
     for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
-         it != eit; ++it)
+            it != eit; ++it)
     {
         if(SVFUtil::isa<ReturnInst>(*it))
             return true;
