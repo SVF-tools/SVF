@@ -101,7 +101,7 @@ void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBas
 /**
  * Return true if the basic block has a return instruction
  */
-bool LLVMUtil::basicBlockHasRet(const BasicBlock* bb)
+bool LLVMUtil::basicBlockHasRetInst(const BasicBlock* bb)
 {
     for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
          it != eit; ++it)
@@ -115,7 +115,7 @@ bool LLVMUtil::basicBlockHasRet(const BasicBlock* bb)
 /*!
  * Return true if the function has a return instruction reachable from function entry
  */
-bool LLVMUtil::functionDoesNotRet (const Function*  fun)
+bool LLVMUtil::functionDoesNotRet(const Function*  fun)
 {
     const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
     if (SVFUtil::isExtCall(svffun))
@@ -129,7 +129,7 @@ bool LLVMUtil::functionDoesNotRet (const Function*  fun)
     {
         const BasicBlock* bb = bbVec.back();
         bbVec.pop_back();
-        if (basicBlockHasRet(bb))
+        if (basicBlockHasRetInst(bb))
         {
             return false;
         }

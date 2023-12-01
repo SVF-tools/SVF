@@ -206,7 +206,7 @@ inline bool isArgOfUncalledFunction (const Value*  val)
 //@}
 
 /// Return true if the function has a return instruction
-bool basicBlockHasRet(const BasicBlock* bb);
+bool basicBlockHasRetInst(const BasicBlock* bb);
 
 /// Return true if the function has a return instruction reachable from function
 /// entry

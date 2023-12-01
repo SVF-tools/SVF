@@ -321,12 +321,11 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
             svfbb->addPredBasicBlock(svf_pred_bb);
         }
 
-        /// set exit block
+        /// set exit block: exit basic block must have no successors and have a return instruction
         if (svfbb->getSuccessors().empty())
         {
-            if (LLVMUtil::basicBlockHasRet(bb))
+            if (LLVMUtil::basicBlockHasRetInst(bb))
             {
-                // exit basic block must have no successors and have a return instruction
                 svfFun->setExitBlock(svfbb);
             }
         }
