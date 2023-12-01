@@ -463,7 +463,8 @@ public:
         return isUncalled;
     }
 
-    inline bool hasReturn() const {
+    inline bool hasReturn() const
+    {
         return  !isNotRet;
     }
 
