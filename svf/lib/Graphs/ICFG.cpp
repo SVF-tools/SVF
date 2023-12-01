@@ -54,7 +54,10 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f)
     // if function is implemented
     if (f->begin() != f->end())
     {
-        bb = f->getExitBB();
+        if (f->hasReturn())
+        {
+            bb = f->getExitBB();
+        }
     }
 }
 
