@@ -41,14 +41,14 @@ using namespace SVFUtil;
  */
 bool AccessPath::addIdxOperandVarAndSubTypePair(const SVFVar* var, const SVFType* gepIterType)
 {
-    idxOperandVarAndSubTypePairs.emplace_back(var, gepIterType);
+    idxOperandPairs.emplace_back(var, gepIterType);
     return true;
 }
 
 /// Return true if all offset values are constants
 bool AccessPath::isConstantOffset() const
 {
-    for(auto it : idxOperandVarAndSubTypePairs)
+    for(auto it : idxOperandPairs)
     {
         if(SVFUtil::isa<SVFConstantInt>(it.first->getValue()) == false)
             return false;
@@ -99,20 +99,19 @@ APOffset AccessPath::computeConstantByteOffset() const
     assert(isConstantOffset() && "not a constant offset");
 
     APOffset totalConstOffset = 0;
-    for(int i = idxOperandVarAndSubTypePairs.size() - 1; i >= 0; i--)
+    for(int i = idxOperandPairs.size() - 1; i >= 0; i--)
     {
         /// For example, there is struct DEST{int a, char b[10], int c[5]}
         /// (1) %c = getelementptr inbounds %struct.DEST, %struct.DEST* %arr, i32 0, i32 2
         //  (2) %arrayidx = getelementptr inbounds [10 x i8], [10 x i8]* %b, i64 0, i64 8
-        const SVFValue* value =
-            idxOperandVarAndSubTypePairs[i].first->getValue();
+        const SVFValue* value = idxOperandPairs[i].first->getValue();
         /// for (1) offsetVarAndGepTypePairs.size()  = 2
         ///     i = 0, type: %struct.DEST*, PtrType, op = 0
         ///     i = 1, type: %struct.DEST, StructType, op = 2
         /// for (2) offsetVarAndGepTypePairs.size()  = 2
         ///     i = 0, type: [10 x i8]*, PtrType, op = 0
         ///     i = 1, type: [10 x i8], ArrType, op = 8
-        const SVFType* type = idxOperandVarAndSubTypePairs[i].second;
+        const SVFType* type = idxOperandPairs[i].second;
         /// if offsetVarAndGepTypePairs[i].second is nullptr, it means
         ///   GepStmt comes from external API, this GepStmt is assigned in SVFIRExtAPI.cpp
         ///   at SVFIRBuilder::getBaseTypeAndFlattenedFields ls.addIdxOperandVarAndSubTypePair()
@@ -160,31 +159,20 @@ APOffset AccessPath::computeConstantByteOffset() const
 /// \param gepIdx
 /// \return Return elem byte size for ptr/arr type
 ///   Return byte offset from the beginning of the structure to the field where it is located for struct type
-u32_t AccessPath::getElementOrAggregateSize(const SVFVar* idxOperandVar, const SVFType* idxOperandType) const {
-    if (const SVFArrayType* idxArrType = SVFUtil::dyn_cast<SVFArrayType>(idxOperandType)) {
-        return idxArrType->getTypeOfElement()->getByteSize();
-    }
-    else if (const SVFPointerType* idxPtrType = SVFUtil::dyn_cast<SVFPointerType>(idxOperandType)) {
-        return idxPtrType->getPtrElementType()->getByteSize();
-    }
-    else if (const SVFStructType* idxStructType = SVFUtil::dyn_cast<SVFStructType>(idxOperandType)) {
-        const SVFValue* idxValue = idxOperandVar->getValue();
-        u32_t structByteOffset = 0;
-        if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue))
+u32_t AccessPath::getStructAggregateSize(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const {
+    const SVFValue* idxValue = idxOperandVar->getValue();
+    u32_t structByteOffset = 0;
+    if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue))
+    {
+        for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField)
         {
-            for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField)
-            {
-                u32_t flattenIdx = idxStructType->getTypeInfo()->getFlattenedFieldIdxVec()[structField];
-                structByteOffset += idxStructType->getTypeInfo()->getOriginalElemType(flattenIdx)->getByteSize();
-            }
-            return structByteOffset;
+            u32_t flattenIdx = idxOperandType->getTypeInfo()->getFlattenedFieldIdxVec()[structField];
+            structByteOffset += idxOperandType->getTypeInfo()->getOriginalElemType(flattenIdx)->getByteSize();
         }
-        else
-            assert(false && "struct type can only pair with constant idx");
+        return structByteOffset;
     }
-    else {
-        assert(false && "gep type pair only support arr/ptr/struct");
-    }
+    else
+        assert(false && "struct type can only pair with constant idx");
 }
 
 /// Return accumulated constant offset
@@ -220,15 +208,14 @@ APOffset AccessPath::computeConstantOffset() const
 
     assert(isConstantOffset() && "not a constant offset");
 
-    if(idxOperandVarAndSubTypePairs.empty())
+    if(idxOperandPairs.empty())
         return getConstantFieldIdx();
 
     APOffset totalConstOffset = 0;
-    for(int i = idxOperandVarAndSubTypePairs.size() - 1; i >= 0; i--)
+    for(int i = idxOperandPairs.size() - 1; i >= 0; i--)
     {
-        const SVFValue* value =
-            idxOperandVarAndSubTypePairs[i].first->getValue();
-        const SVFType* type = idxOperandVarAndSubTypePairs[i].second;
+        const SVFValue* value = idxOperandPairs[i].first->getValue();
+        const SVFType* type = idxOperandPairs[i].second;
         const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         assert(op && "not a constant offset?");
         if(type==nullptr)
@@ -269,7 +256,7 @@ AccessPath AccessPath::operator+(const AccessPath& rhs) const
 {
     AccessPath ap(rhs);
     ap.fldIdx += getConstantFieldIdx();
-    for (auto &p : ap.getIdxOperandVarAndSubTypePairVec())
+    for (auto &p : ap.getIdxOperandPairVec())
         ap.addIdxOperandVarAndSubTypePair(p.first, p.second);
 
     return ap;
@@ -281,16 +268,14 @@ bool AccessPath::operator< (const AccessPath& rhs) const
         return (fldIdx < rhs.fldIdx);
     else
     {
-        const IdxOperandVarAndSubTypePairs& pairVec =
-            getIdxOperandVarAndSubTypePairVec();
-        const IdxOperandVarAndSubTypePairs& rhsPairVec =
-            rhs.getIdxOperandVarAndSubTypePairVec();
+        const IdxOperandPairs& pairVec = getIdxOperandPairVec();
+        const IdxOperandPairs& rhsPairVec = rhs.getIdxOperandPairVec();
         if (pairVec.size() != rhsPairVec.size())
             return (pairVec.size() < rhsPairVec.size());
         else
         {
-            IdxOperandVarAndSubTypePairs::const_iterator it = pairVec.begin();
-            IdxOperandVarAndSubTypePairs::const_iterator rhsIt = rhsPairVec.begin();
+            IdxOperandPairs::const_iterator it = pairVec.begin();
+            IdxOperandPairs::const_iterator rhsIt = rhsPairVec.begin();
             for (; it != pairVec.end() && rhsIt != rhsPairVec.end(); ++it, ++rhsIt)
             {
                 return (*it) < (*rhsIt);
@@ -330,10 +315,9 @@ std::string AccessPath::dump() const
 
     rawstr << "AccessPath\tField_Index: " << getConstantFieldIdx();
     rawstr << ",\tNum-Stride: {";
-    const IdxOperandVarAndSubTypePairs& vec =
-        getIdxOperandVarAndSubTypePairVec();
-    IdxOperandVarAndSubTypePairs::const_iterator it = vec.begin();
-    IdxOperandVarAndSubTypePairs::const_iterator eit = vec.end();
+    const IdxOperandPairs& vec = getIdxOperandPairVec();
+    IdxOperandPairs::const_iterator it = vec.begin();
+    IdxOperandPairs::const_iterator eit = vec.end();
     for (; it != eit; ++it)
     {
         const SVFType* ty = it->second;

@@ -492,10 +492,9 @@ public:
     {
         return ap;
     }
-    inline const AccessPath::IdxOperandVarAndSubTypePairs
-    getIdxOperandVarAndSubTypePairVec() const
+    inline const AccessPath::IdxOperandPairs getIdxOperandPairVec() const
     {
-        return getAccessPath().getIdxOperandVarAndSubTypePairVec();
+        return getAccessPath().getIdxOperandPairVec();
     }
     /// Return TRUE if this is a constant location set.
     inline bool isConstantOffset() const

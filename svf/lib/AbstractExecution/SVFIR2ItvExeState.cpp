@@ -233,63 +233,60 @@ SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APO
  *
  * @return      The calculated byte offset as an IntervalValue.
  *
- * If this getelementptr has constant byte offset, directly call accumulateConstantByteOffset(),
- * otherwise, if one or more index in getelementptr is variable.
+ * It is byte offset rather than flatten index.
  * e.g. %var2 = getelementptr inbounds %struct.OuterStruct, %struct.OuterStruct* %var0, i64 0, i32 2, i32 0, i64 %var1
 * %struct.OuterStruct = type { i32, i32, %struct.InnerStruct }
 * %struct.InnerStruct = type { [2 x i32] }
 * there are 4 GepTypePairs (<0, %struct.OuterStruct*>, <2, %struct.OuterStruct>, <0, %struct.InnerStruct>, <%var1, [2xi32]>)
-* this function calls getElementOrAggregateSize() to process each pair, and finally accumulate them.
+* this function process arr/ptr subtype by calculating elemByteSize * indexOperand
+ *   and process struct subtype by calculating the byte offset from beginning to the field of struct
 * e.g. for 0th pair <0, %struct.OuterStruct*>, it is 0* ptrSize(%struct.OuterStruct*) = 0 bytes
 *      for 1st pair <2, %struct.OuterStruct>, it is 2nd field in %struct.OuterStruct = 8 bytes
 *      for 2nd pair <0, %struct.InnerStruct>, it is 0th field in %struct.InnerStruct = 0 bytes
 *      for 3rd pair <%var1, [2xi32]>, it is %var1'th element in array [2xi32] = 4bytes * %var1
 *      ----
 *  Therefore the final byteoffset is [8+4*var1.lb(), 8+4*var1.ub()]
+ *
  */
 IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
 {
-    // Check if the GepStmt has a constant offset.
-    if (gep->isConstantOffset())
-    {
-        // If it has a constant offset, return it as an IntervalValue.
-        return IntervalValue(gep->accumulateConstantByteOffset());
-    }
-
     IntervalValue res(0); // Initialize the result interval 'res' to 0.
-
     // Loop through the offsetVarAndGepTypePairVec in reverse order.
-    for (int i = gep->getIdxOperandVarAndSubTypePairVec().size() - 1; i >= 0; i--)
+    for (int i = gep->getIdxOperandPairVec().size() - 1; i >= 0; i--)
     {
-        const SVFVar* idxOperandVar =
-            gep->getIdxOperandVarAndSubTypePairVec()[i].first;
-        const SVFType* idxOperandType =
-            gep->getIdxOperandVarAndSubTypePairVec()[i].second;
-        u32_t elemOrAggregateSize = gep->getAccessPath().getElementOrAggregateSize(idxOperandVar, idxOperandType);
+        const SVFVar* idxOperandVar = gep->getIdxOperandPairVec()[i].first;
+        const SVFType* idxOperandType = gep->getIdxOperandPairVec()[i].second;
+        // calculating Array/Ptr by elemByteSize * indexOperand
         if (SVFUtil::isa<SVFArrayType>(idxOperandType) || SVFUtil::isa<SVFPointerType>(idxOperandType)) {
-            const SVFValue* idxValue =
-                gep->getIdxOperandVarAndSubTypePairVec()[i].first->getValue();
-            if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue)) {
-                s64_t lb = (double)Options::MaxFieldLimit() / elemOrAggregateSize >= op->getSExtValue() ?op->getSExtValue() * elemOrAggregateSize
+            u32_t elemByteSize;
+            if (const SVFArrayType* arrOperandType = SVFUtil::dyn_cast<SVFArrayType>(idxOperandType)) {
+                elemByteSize = arrOperandType->getTypeOfElement()->getByteSize();
+            }
+            else if (const SVFPointerType* ptrOperandType = SVFUtil::dyn_cast<SVFPointerType>(idxOperandType))  {
+                elemByteSize = ptrOperandType->getPtrElementType()->getByteSize();
+            }
+            if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue())) {
+                s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue() ?op->getSExtValue() * elemByteSize
                         : Options::MaxFieldLimit();
                 res = res + IntervalValue(lb, lb);
             } else {
-                u32_t idx = _svfir->getValueNode(idxValue);
+                u32_t idx = _svfir->getValueNode(idxOperandVar->getValue());
                 IntervalValue idxVal = _es[idx];
                 if (idxVal.isBottom()) {
                     res = res + IntervalValue(0, 0);
                 } else {
                     s64_t ub = (double)Options::MaxFieldLimit() /
-                                    elemOrAggregateSize >= idxVal.ub().getNumeral() ? elemOrAggregateSize * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
+                                           elemByteSize >= idxVal.ub().getNumeral() ? elemByteSize * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
                     s64_t lb = (idxVal.lb().getNumeral() < 0) ? 0 :
                                ((double)Options::MaxFieldLimit() /
-                               elemOrAggregateSize >= idxVal.lb().getNumeral()) ? elemOrAggregateSize * idxVal.lb().getNumeral() : Options::MaxFieldLimit();
+                                    elemByteSize >= idxVal.lb().getNumeral()) ? elemByteSize * idxVal.lb().getNumeral() : Options::MaxFieldLimit();
                     res = res + IntervalValue(lb, ub);
                 }
             }
         }
-        else if (SVFUtil::isa<SVFStructType>(idxOperandType)) {
-            res = res + IntervalValue(elemOrAggregateSize);
+        // Process struct subtype by calculating the byte offset from beginning to the field of struct
+        else if (const SVFStructType* structOperandType = SVFUtil::dyn_cast<SVFStructType>(idxOperandType)) {
+            res = res + IntervalValue(gep->getAccessPath().getStructAggregateSize(idxOperandVar, structOperandType));
         } else {
             assert(false && "gep type pair only support arr/ptr/struct");
         }
@@ -308,11 +305,11 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
 IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
 {
     IntervalValue res(0);
-    for (int i = gep->getIdxOperandVarAndSubTypePairVec().size() - 1; i >= 0; i--) {
-        AccessPath::IdxOperandVarAndSubTypePair IdxVarAndType =
-            gep->getIdxOperandVarAndSubTypePairVec()[i];
+    for (int i = gep->getIdxOperandPairVec().size() - 1; i >= 0; i--) {
+        AccessPath::IdxOperandPair IdxVarAndType =
+            gep->getIdxOperandPairVec()[i];
         const SVFValue *value =
-            gep->getIdxOperandVarAndSubTypePairVec()[i].first->getValue();
+            gep->getIdxOperandPairVec()[i].first->getValue();
         const SVFType *type = IdxVarAndType.second;
         // idxLb/Ub is the flattened offset generated by the current OffsetVarAndGepTypePair
         s64_t idxLb; s64_t idxUb;

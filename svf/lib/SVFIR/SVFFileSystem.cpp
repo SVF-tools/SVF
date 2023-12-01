@@ -1256,7 +1256,7 @@ cJSON* SVFIRWriter::toJson(const AccessPath& ap)
 {
     cJSON* root = jsonCreateObject();
     JSON_WRITE_FIELD(root, &ap, fldIdx);
-    JSON_WRITE_FIELD(root, &ap, offsetVarAndGepTypePairs);
+    JSON_WRITE_FIELD(root, &ap, idxOperandPairs);
     return root;
 }
 
@@ -1866,7 +1866,7 @@ void SVFIRReader::readJson(const cJSON* obj, AccessPath& ap)
     ABORT_IFNOT(jsonIsObject(obj), "Expected obj for AccessPath");
     obj = obj->child;
     JSON_READ_FIELD_FWD(obj, &ap, fldIdx);
-    JSON_READ_FIELD_FWD(obj, &ap, offsetVarAndGepTypePairs);
+    JSON_READ_FIELD_FWD(obj, &ap, idxOperandPairs);
     ABORT_IFNOT(!obj, "Extra field " << JSON_KEY(obj) << " in AccessPath");
 }
 
