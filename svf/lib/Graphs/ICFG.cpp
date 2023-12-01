@@ -119,7 +119,7 @@ const std::string FunExitICFGNode::toString() const
     std::stringstream rawstr(str);
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
-    if (isExtCall(getFun())==false)
+    if (!isExtCall(getFun()) && getFun()->hasReturn())
         rawstr << getFun()->getExitBB()->front()->getSourceLoc();
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
