@@ -239,7 +239,7 @@ SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APO
 * %struct.OuterStruct = type { i32, i32, %struct.InnerStruct }
 * %struct.InnerStruct = type { [2 x i32] }
 * there are 4 GepTypePairs (<0, %struct.OuterStruct*>, <2, %struct.OuterStruct>, <0, %struct.InnerStruct>, <%var1, [2xi32]>)
-* this function calls getByteOffsetfromGepTypePair() to process each pair, and finally accumulate them.
+* this function calls getElementOrAggregateSize() to process each pair, and finally accumulate them.
 * e.g. for 0th pair <0, %struct.OuterStruct*>, it is 0* ptrSize(%struct.OuterStruct*) = 0 bytes
 *      for 1st pair <2, %struct.OuterStruct>, it is 2nd field in %struct.OuterStruct = 8 bytes
 *      for 2nd pair <0, %struct.InnerStruct>, it is 0th field in %struct.InnerStruct = 0 bytes
@@ -259,14 +259,19 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
     IntervalValue res(0); // Initialize the result interval 'res' to 0.
 
     // Loop through the offsetVarAndGepTypePairVec in reverse order.
-    for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
+    for (int i = gep->getIdxOperandVarAndSubTypePairVec().size() - 1; i >= 0; i--)
     {
-        u32_t byteOffset = gep->getAccessPath().getByteOffsetfromGepTypePair(i);
-        const SVFType* idxType = gep->getOffsetVarAndGepTypePairVec()[i].second;
-        if (SVFUtil::isa<SVFArrayType>(idxType) || SVFUtil::isa<SVFPointerType>(idxType)) {
-            const SVFValue* idxValue = gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
+        const SVFVar* idxOperandVar =
+            gep->getIdxOperandVarAndSubTypePairVec()[i].first;
+        const SVFType* idxOperandType =
+            gep->getIdxOperandVarAndSubTypePairVec()[i].second;
+        u32_t elemOrAggregateSize = gep->getAccessPath().getElementOrAggregateSize(idxOperandVar, idxOperandType);
+        if (SVFUtil::isa<SVFArrayType>(idxOperandType) || SVFUtil::isa<SVFPointerType>(idxOperandType)) {
+            const SVFValue* idxValue =
+                gep->getIdxOperandVarAndSubTypePairVec()[i].first->getValue();
             if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue)) {
-                u32_t lb = (double)Options::MaxFieldLimit() / byteOffset >= op->getSExtValue() ?op->getSExtValue() * byteOffset: Options::MaxFieldLimit();
+                s64_t lb = (double)Options::MaxFieldLimit() / elemOrAggregateSize >= op->getSExtValue() ?op->getSExtValue() * elemOrAggregateSize
+                        : Options::MaxFieldLimit();
                 res = res + IntervalValue(lb, lb);
             } else {
                 u32_t idx = _svfir->getValueNode(idxValue);
@@ -274,17 +279,17 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
                 if (idxVal.isBottom()) {
                     res = res + IntervalValue(0, 0);
                 } else {
-                    u32_t ub = (double)Options::MaxFieldLimit() / byteOffset >= idxVal.ub().getNumeral() ?
-                                       byteOffset * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
-                    u32_t lb = (idxVal.lb().getNumeral() < 0) ? 0 :
-                               ((double)Options::MaxFieldLimit() / byteOffset >= idxVal.lb().getNumeral()) ?
-                                        byteOffset * idxVal.lb().getNumeral() : Options::MaxFieldLimit();
+                    s64_t ub = (double)Options::MaxFieldLimit() /
+                                    elemOrAggregateSize >= idxVal.ub().getNumeral() ? elemOrAggregateSize * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
+                    s64_t lb = (idxVal.lb().getNumeral() < 0) ? 0 :
+                               ((double)Options::MaxFieldLimit() /
+                               elemOrAggregateSize >= idxVal.lb().getNumeral()) ? elemOrAggregateSize * idxVal.lb().getNumeral() : Options::MaxFieldLimit();
                     res = res + IntervalValue(lb, ub);
                 }
             }
         }
-        else if (SVFUtil::isa<SVFStructType>(idxType)) {
-            res = res + IntervalValue(byteOffset);
+        else if (SVFUtil::isa<SVFStructType>(idxOperandType)) {
+            res = res + IntervalValue(elemOrAggregateSize);
         } else {
             assert(false && "gep type pair only support arr/ptr/struct");
         }
@@ -303,9 +308,11 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
 IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
 {
     IntervalValue res(0);
-    for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--) {
-        AccessPath::IdxVarAndGepTypePair IdxVarAndType = gep->getOffsetVarAndGepTypePairVec()[i];
-        const SVFValue *value = gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
+    for (int i = gep->getIdxOperandVarAndSubTypePairVec().size() - 1; i >= 0; i--) {
+        AccessPath::IdxOperandVarAndSubTypePair IdxVarAndType =
+            gep->getIdxOperandVarAndSubTypePairVec()[i];
+        const SVFValue *value =
+            gep->getIdxOperandVarAndSubTypePairVec()[i].first->getValue();
         const SVFType *type = IdxVarAndType.second;
         // idxLb/Ub is the flattened offset generated by the current OffsetVarAndGepTypePair
         s64_t idxLb; s64_t idxUb;
@@ -329,13 +336,24 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
         }
         // for array or struct, get flattened index from SymbolTable Info
         else {
-            const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
-            if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0) {
+            if(Options::ModelArrays())
+            {
+                const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()
+                                                   ->getTypeInfo(type)
+                                                   ->getFlattenedElemIdxVec();
+                if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0)
+                {
+                    idxLb = idxUb = 0;
+                }
+                else
+                {
+                    idxLb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
+                        type, idxLb);
+                    idxUb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
+                        type, idxUb);
+                }
+            } else
                 idxLb = idxUb = 0;
-            } else {
-                idxLb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, idxLb);
-                idxUb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, idxUb);
-            }
         }
         res = res + IntervalValue(idxLb, idxUb);
     }

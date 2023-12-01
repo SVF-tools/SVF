@@ -608,17 +608,19 @@ SVFIR2ConsExeState::VAddrs SVFIR2ConsExeState::getGepObjAddress(u32_t base, s32_
 std::pair<s32_t, s32_t> SVFIR2ConsExeState::getGepOffset(const SVF::GepStmt *gep)
 {
     /// for instant constant index, e.g.  gep arr, 1
-    if (gep->getOffsetVarAndGepTypePairVec().empty())
+    if (gep->getIdxOperandVarAndSubTypePairVec().empty())
         return std::make_pair(gep->getConstantFieldIdx(), gep->getConstantFieldIdx());
 
     s32_t totalOffset = 0;
     /// default value of MaxFieldLimit is 512
     u32_t maxFieldLimit = Options::MaxFieldLimit() - 1;
     /// for variable index and nested indexes, e.g. 1) gep arr, idx  2) gep arr idx0, idx1
-    for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
+    for (int i = gep->getIdxOperandVarAndSubTypePairVec().size() - 1; i >= 0; i--)
     {
-        const SVFValue *value = gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
-        const SVFType *type = gep->getOffsetVarAndGepTypePairVec()[i].second;
+        const SVFValue *value =
+            gep->getIdxOperandVarAndSubTypePairVec()[i].first->getValue();
+        const SVFType *type =
+            gep->getIdxOperandVarAndSubTypePairVec()[i].second;
         const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         s32_t offset = 0;
         /// offset is constant but stored in variable
