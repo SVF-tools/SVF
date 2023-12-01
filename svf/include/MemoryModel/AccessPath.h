@@ -151,6 +151,10 @@ public:
         return computeAllLocations().intersects(RHS.computeAllLocations());
     }
 
+    /// Return elem byte size for ptr/arr type,
+    /// Return byte offset from the beginning of the structure to the field where it is located for struct type
+    u32_t getByteOffsetfromGepTypePair(u32_t gepIdx) const;
+
     /// Dump location set
     std::string dump() const;
 

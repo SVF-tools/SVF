@@ -154,6 +154,41 @@ APOffset AccessPath::computeConstantByteOffset() const
     return totalConstOffset;
 }
 
+/// Return byte offset from GepTypePair
+///
+/// \param gepIdx
+/// \return Return elem byte size for ptr/arr type
+///   Return byte offset from the beginning of the structure to the field where it is located for struct type
+u32_t AccessPath::getByteOffsetfromGepTypePair(u32_t gepIdx) const {
+    IdxVarAndGepTypePair IdxVarAndType = offsetVarAndGepTypePairs[gepIdx];
+    const SVFType* idxType = IdxVarAndType.second;
+    const SVFVar* idxVar = IdxVarAndType.first;
+    if (const SVFArrayType* idxArrType = SVFUtil::dyn_cast<SVFArrayType>(idxType)) {
+        return idxArrType->getTypeOfElement()->getByteSize();
+    }
+    else if (const SVFPointerType* idxPtrType = SVFUtil::dyn_cast<SVFPointerType>(idxType)) {
+        return idxPtrType->getPtrElementType()->getByteSize();
+    }
+    else if (const SVFStructType* idxStructType = SVFUtil::dyn_cast<SVFStructType>(idxType)) {
+        const SVFValue* idxValue = idxVar->getValue();
+        u32_t structByteOffset = 0;
+        if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue))
+        {
+            for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField)
+            {
+                u32_t flattenIdx = idxStructType->getTypeInfo()->getFlattenedFieldIdxVec()[structField];
+                structByteOffset += idxStructType->getTypeInfo()->getOriginalElemType(flattenIdx)->getByteSize();
+            }
+            return structByteOffset;
+        }
+        else
+            assert(false && "struct type can only pair with constant idx");
+    }
+    else {
+        assert(false && "gep type pair only support arr/ptr/struct");
+    }
+}
+
 /// Return accumulated constant offset
 ///
 /// "value" is the offset variable (must be a constant)
