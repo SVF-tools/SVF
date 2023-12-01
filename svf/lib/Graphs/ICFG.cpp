@@ -55,7 +55,7 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f)
     if (f->begin() != f->end())
     {
         // ensure the enclosing function has exit basic block
-        if (!f->isNotRetFunction())
+        if (f->hasReturn())
         {
             bb = f->getExitBB();
         }
@@ -122,7 +122,7 @@ const std::string FunExitICFGNode::toString() const
     rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << fun->getName();
     // ensure the enclosing function has exit basic block
-    if (!isExtCall(fun) && !fun->isNotRetFunction())
+    if (!isExtCall(fun) && fun->hasReturn())
         rawstr << fun->getExitBB()->front()->getSourceLoc();
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())

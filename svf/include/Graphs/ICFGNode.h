@@ -341,13 +341,13 @@ public:
         return fun;
     }
 
-    /// Return actual return parameter
+    /// Return formal return parameter
     inline const SVFVar *getFormalRet() const
     {
         return formalRet;
     }
 
-    /// Add actual return parameter
+    /// Add formal return parameter
     inline void addFormalRet(const SVFVar *fr)
     {
         formalRet = fr;
