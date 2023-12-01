@@ -431,6 +431,7 @@ public:
 
     inline const SVFBasicBlock* back() const
     {
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
         /// Carefully! 'back' is just the last basic block of function,
         /// but not necessarily a exit basic block
         /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
