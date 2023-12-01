@@ -305,6 +305,7 @@ void LLVMModuleSet::initSVFFunction()
 
 void LLVMModuleSet::initSVFBasicBlock(const Function* func)
 {
+    SVFFunction *svfFun = getSVFFunction(func);
     for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
     {
         const BasicBlock* bb = &*bit;
@@ -319,6 +320,16 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
             const SVFBasicBlock* svf_pred_bb = getSVFBasicBlock(*pred_it);
             svfbb->addPredBasicBlock(svf_pred_bb);
         }
+
+        /// set exit block: exit basic block must have no successors and have a return instruction
+        if (svfbb->getSuccessors().empty())
+        {
+            if (LLVMUtil::basicBlockHasRetInst(bb))
+            {
+                svfFun->setExitBlock(svfbb);
+            }
+        }
+
         for (BasicBlock::const_iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
         {
             const Instruction* inst = &*iit;

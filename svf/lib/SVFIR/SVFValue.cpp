@@ -160,7 +160,8 @@ SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
                          SVFLoopAndDomInfo* ld, std::vector<std::string> annos)
     : SVFValue(ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
       addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
-      funcType(ft), loopAndDom(ld), realDefFun(nullptr), annotations(std::move(annos))
+      funcType(ft), loopAndDom(ld), realDefFun(nullptr), annotations(std::move(annos)),
+      exitBlock(nullptr)
 {
 }
 
@@ -187,6 +188,12 @@ const SVFArgument* SVFFunction::getArg(u32_t idx) const
 bool SVFFunction::isVarArg() const
 {
     return varArg;
+}
+
+void SVFFunction::setExitBlock(SVFBasicBlock *bb)
+{
+    assert(!exitBlock && "have already set exit Basicblock!");
+    exitBlock = bb;
 }
 
 SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f)
