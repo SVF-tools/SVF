@@ -320,7 +320,7 @@ private:
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
     std::vector<std::string> annotations; /// annotations of this function
-    SVFBasicBlock *exitBlock;             /// exit BasicBlock of this function
+    SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
 
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
@@ -418,7 +418,7 @@ public:
     inline const SVFBasicBlock* getExitBB() const
     {
         assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        assert((!isNotRet && exitBlock) && "have not yet set exit Basicblock?");
+        assert((hasReturn() && exitBlock) && "ensure the function has a single basic block containing a return instruction!");
         return exitBlock;
     }
 
@@ -465,6 +465,11 @@ public:
     inline bool isNotRetFunction() const
     {
         return isNotRet;
+    }
+
+    inline bool hasReturn() const
+    {
+        return !isNotRet;
     }
 
     inline const std::vector<std::string>& getAnnotations() const

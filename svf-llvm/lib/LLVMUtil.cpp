@@ -98,6 +98,20 @@ void LLVMUtil::getFunReachableBBs (const Function* fun, std::vector<const SVFBas
     }
 }
 
+/**
+ * Return true if the basic block has a return instruction
+ */
+bool LLVMUtil::basicBlockHasRet(const BasicBlock* bb)
+{
+    for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
+         it != eit; ++it)
+    {
+        if(SVFUtil::isa<ReturnInst>(*it))
+            return true;
+    }
+    return false;
+}
+
 /*!
  * Return true if the function has a return instruction reachable from function entry
  */
@@ -115,11 +129,9 @@ bool LLVMUtil::functionDoesNotRet (const Function*  fun)
     {
         const BasicBlock* bb = bbVec.back();
         bbVec.pop_back();
-        for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
-                it != eit; ++it)
+        if (basicBlockHasRet(bb))
         {
-            if(SVFUtil::isa<ReturnInst>(*it))
-                return false;
+            return false;
         }
 
         for (succ_const_iterator sit = succ_begin(bb), esit = succ_end(bb);
