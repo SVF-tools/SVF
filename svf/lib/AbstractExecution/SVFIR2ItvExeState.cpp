@@ -265,6 +265,8 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
             else if (const SVFPointerType* ptrOperandType = SVFUtil::dyn_cast<SVFPointerType>(idxOperandType))  {
                 elemByteSize = ptrOperandType->getPtrElementType()->getByteSize();
             }
+            else
+                assert(false && "idxOperandType must be ArrType or PtrType");
             if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue())) {
                 s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue() ?op->getSExtValue() * elemByteSize
                         : Options::MaxFieldLimit();
