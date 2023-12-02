@@ -512,7 +512,7 @@ void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
     else if (inVarToAddrsTable(addr->getRHSVarID()))
     {
         IntervalExeState::globalES.getAddrs(addr->getLHSVarID()) = IntervalExeState::globalES.getAddrs(
-                addr->getRHSVarID());
+                    addr->getRHSVarID());
     }
     else
     {

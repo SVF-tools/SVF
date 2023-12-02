@@ -65,10 +65,10 @@ public:
     virtual ~ExeState() = default;
 
     ExeState(const ExeState &rhs) : _varToAddrs(rhs._varToAddrs),
-                                    _locToAddrs(rhs._locToAddrs) {}
+        _locToAddrs(rhs._locToAddrs) {}
 
     ExeState(ExeState &&rhs) noexcept: _varToAddrs(std::move(rhs._varToAddrs)),
-                                       _locToAddrs(std::move(rhs._locToAddrs)) {}
+        _locToAddrs(std::move(rhs._locToAddrs)) {}
 
     ExeState &operator=(const ExeState &rhs)
     {
