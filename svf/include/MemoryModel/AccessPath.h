@@ -61,8 +61,8 @@ public:
         NonOverlap, Overlap, Subset, Superset, Same
     };
 
-    typedef std::pair<const SVFVar*, const SVFType*> IdxVarAndGepTypePair;
-    typedef std::vector<IdxVarAndGepTypePair> IdxVarAndGepTypePairs;
+    typedef std::pair<const SVFVar*, const SVFType*> IdxOperandPair;
+    typedef std::vector<IdxOperandPair> IdxOperandPairs;
 
     /// Constructor
     AccessPath(APOffset o = 0) : fldIdx(o) {}
@@ -70,7 +70,7 @@ public:
     /// Copy Constructor
     AccessPath(const AccessPath& ap)
         : fldIdx(ap.fldIdx),
-          offsetVarAndGepTypePairs(ap.getOffsetVarAndGepTypePairVec())
+          idxOperandPairs(ap.getIdxOperandPairVec())
     {
     }
 
@@ -83,13 +83,13 @@ public:
     inline const AccessPath& operator=(const AccessPath& rhs)
     {
         fldIdx = rhs.fldIdx;
-        offsetVarAndGepTypePairs = rhs.getOffsetVarAndGepTypePairVec();
+        idxOperandPairs = rhs.getIdxOperandPairVec();
         return *this;
     }
     inline bool operator==(const AccessPath& rhs) const
     {
         return this->fldIdx == rhs.fldIdx &&
-               this->offsetVarAndGepTypePairs == rhs.offsetVarAndGepTypePairs;
+               this->idxOperandPairs == rhs.idxOperandPairs;
     }
     //@}
 
@@ -103,9 +103,9 @@ public:
     {
         fldIdx = idx;
     }
-    inline const IdxVarAndGepTypePairs& getOffsetVarAndGepTypePairVec() const
+    inline const IdxOperandPairs& getIdxOperandPairVec() const
     {
-        return offsetVarAndGepTypePairs;
+        return idxOperandPairs;
     }
     //@}
 
@@ -151,6 +151,9 @@ public:
         return computeAllLocations().intersects(RHS.computeAllLocations());
     }
 
+    /// Return byte offset from the beginning of the structure to the field where it is located for struct type
+    u32_t getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const;
+
     /// Dump location set
     std::string dump() const;
 
@@ -163,8 +166,7 @@ private:
     NodeBS computeAllLocations() const;
 
     APOffset fldIdx;	///< Accumulated Constant Offsets
-    IdxVarAndGepTypePairs
-    offsetVarAndGepTypePairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>s
+    IdxOperandPairs idxOperandPairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>
 };
 
 } // End namespace SVF
@@ -174,9 +176,9 @@ template <> struct std::hash<SVF::AccessPath>
     size_t operator()(const SVF::AccessPath &ap) const
     {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
-        std::hash<SVF::AccessPath::IdxVarAndGepTypePairs> v;
+        std::hash<SVF::AccessPath::IdxOperandPairs> v;
         return h(std::make_pair(ap.getConstantFieldIdx(),
-                                v(ap.getOffsetVarAndGepTypePairVec())));
+                                v(ap.getIdxOperandPairVec())));
     }
 };
 

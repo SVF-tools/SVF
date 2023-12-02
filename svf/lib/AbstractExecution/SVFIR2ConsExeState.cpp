@@ -617,7 +617,8 @@ std::pair<s32_t, s32_t> SVFIR2ConsExeState::getGepOffset(const SVF::GepStmt *gep
     /// for variable index and nested indexes, e.g. 1) gep arr, idx  2) gep arr idx0, idx1
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
-        const SVFValue *value = gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
+        const SVFValue *value =
+            gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
         const SVFType *type = gep->getOffsetVarAndGepTypePairVec()[i].second;
         const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value);
         s32_t offset = 0;

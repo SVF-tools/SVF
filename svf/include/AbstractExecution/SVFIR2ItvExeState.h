@@ -73,11 +73,8 @@ public:
     /// Return the field address given a pointer points to a struct object and an offset
     VAddrs getGepObjAddress(u32_t pointer, APOffset offset);
 
-    /// Return the byte offset from one gep param offset
-    IntervalValue getByteOffsetfromGepTypePair(const AccessPath::IdxVarAndGepTypePair& gep_pair, const GepStmt *gep);
-
-    /// Return the Index offset from one gep param offset
-    IntervalValue getItvOfFlattenedElemIndexFromGepTypePair(const AccessPath::IdxVarAndGepTypePair& gep_pair, const GepStmt *gep);
+    /// Return the value range of Integer SVF Type, e.g. unsigned i8 Type->[0, 255], signed i8 Type->[-128, 127]
+    IntervalValue getRangeLimitFromType(const SVFType* type);
 
     /// Return the byte offset expression of a GepStmt
     /// elemBytesize is the element byte size of an static alloc or heap alloc array
