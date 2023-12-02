@@ -103,29 +103,35 @@ public:
     /// Init SVFVar
     void initSVFVar(u32_t varId);
 
-    inline VAddrs &getVAddrs(u32_t id)
+    inline VAddrs &getAddrs(u32_t id)
     {
-        if (inAddrsTable(id))
-            return _es.getVAddrs(id);
+        if (inVarToAddrsTable(id))
+            return _es.getAddrs(id);
         else
             return globalNullVaddrs;
     }
 
-    inline bool inItvTable(u32_t id) const
+
+    /// whether the variable is in varToVal table
+    inline bool inVarToValTable(u32_t id) const
     {
-        return _es.inItvTable(id);
+        return _es.inVarToValTable(id);
     }
 
-    inline bool locStoredItv(u32_t id) const
+    /// whether the variable is in varToAddrs table
+    inline bool inVarToAddrsTable(u32_t id) const
     {
-        return _es.locStoredItv(id);
+        return _es.inVarToAddrsTable(id);
     }
 
-    inline bool inAddrsTable(u32_t id) const
+
+    /// whether the memory address stores a interval value
+    inline bool locStoredVal(u32_t id) const
     {
-        return _es.inAddrsTable(id);
+        return _es.locStoredVal(id);
     }
 
+    /// whether the memory address stores memory addresses
     inline bool locStoredAddrs(u32_t id) const
     {
         return _es.locStoredAddrs(id);

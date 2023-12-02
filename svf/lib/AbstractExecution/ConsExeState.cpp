@@ -129,7 +129,7 @@ void ConsExeState::buildGlobES(ConsExeState &globES, Set<u32_t> &vars)
         SingleAbsValue &expr = globES[varId];
         if (expr.is_numeral() && isVirtualMemAddress(expr.get_numeral_int()))
         {
-            if (globES.inLocalLocToVal(expr))
+            if (globES.localLocStoredVal(expr))
             {
                 store(expr, globES.load(expr));
             }
@@ -445,18 +445,18 @@ std::string ConsExeState::toString() const
 
 bool ConsExeState::applySelect(u32_t res, u32_t cond, u32_t top, u32_t fop)
 {
-    if (inVarToVal(top) && inVarToVal(fop) && inVarToVal(cond))
+    if (inVarToValTable(top) && inVarToValTable(fop) && inVarToValTable(cond))
     {
         SingleAbsValue &tExpr = (*this)[top], &fExpr = (*this)[fop], &condExpr = (*this)[cond];
 
         return assign((*this)[res], ite(condExpr == 1, tExpr, fExpr));
     }
-    else if (inAddrsTable(top) && inAddrsTable(fop) && inVarToVal(cond))
+    else if (inVarToAddrsTable(top) && inVarToAddrsTable(fop) && inVarToValTable(cond))
     {
         SingleAbsValue &condExpr = (*this)[cond];
         if (condExpr.is_numeral())
         {
-            getVAddrs(res) = condExpr.is_zero() ? getVAddrs(fop) : getVAddrs(top);
+            getAddrs(res) = condExpr.is_zero() ? getAddrs(fop) : getAddrs(top);
         }
     }
     return false;
@@ -467,10 +467,10 @@ bool ConsExeState::applyPhi(u32_t res, std::vector<u32_t> &ops)
     for (u32_t i = 0; i < ops.size(); i++)
     {
         NodeID curId = ops[i];
-        if (inVarToVal(curId))
+        if (inVarToValTable(curId))
         {
             const SingleAbsValue &cur = (*this)[curId];
-            if (!inVarToVal(res))
+            if (!inVarToValTable(res))
             {
                 (*this)[res] = cur;
             }
@@ -479,16 +479,16 @@ bool ConsExeState::applyPhi(u32_t res, std::vector<u32_t> &ops)
                 (*this)[res].join_with(cur);
             }
         }
-        else if (inAddrsTable(curId))
+        else if (inVarToAddrsTable(curId))
         {
-            const VAddrs &cur = getVAddrs(curId);
-            if (!inAddrsTable(res))
+            const VAddrs &cur = getAddrs(curId);
+            if (!inVarToAddrsTable(res))
             {
-                getVAddrs(res) = cur;
+                getAddrs(res) = cur;
             }
             else
             {
-                getVAddrs(res).join_with(cur);
+                getAddrs(res).join_with(cur);
             }
         }
     }

@@ -51,7 +51,7 @@ public:
 
     typedef AddressValue VAddrs;
     typedef Map<u32_t, VAddrs> VarToVAddrs;
-    /// Execution state kind
+    /// Execution state type
     enum ExeState_TYPE
     {
         IntervalK, SingleValueK
@@ -90,18 +90,43 @@ public:
         return *this;
     }
 
-    virtual bool operator==(const ExeState &rhs) const;
 
-    inline virtual bool operator!=(const ExeState &rhs) const
+protected:
+    VarToVAddrs _varToVAddrs{{0, getVirtualMemAddress(0)}}; ///< Map a variable (symbol) to its memory addresses
+    VarToVAddrs _locToVAddrs;                               ///< Map a memory address to its stored memory addresses
+
+public:
+
+    /// get memory addresses of variable
+    virtual VAddrs &getAddrs(u32_t id)
     {
-        return !(*this == rhs);
+        return _varToVAddrs[id];
     }
 
-    bool equals(const ExeState *other) const
+    /// whether the variable is in varToAddrs table
+    inline virtual bool inVarToAddrsTable(u32_t id) const
     {
-        return false;
+        return _varToVAddrs.find(id) != _varToVAddrs.end();
     }
 
+    /// whether the memory address stores memory addresses
+    inline virtual bool locStoredAddrs(u32_t id) const
+    {
+        return _locToVAddrs.find(id) != _locToVAddrs.end();
+    }
+
+
+    inline virtual const VarToVAddrs &getVarToVAddrs() const
+    {
+        return _varToVAddrs;
+    }
+
+    inline virtual const VarToVAddrs &getLocToVAddrs() const
+    {
+        return _locToVAddrs;
+    }
+
+public:
     /// Make all value join with the other
     bool joinWith(const ExeState &other);
 
@@ -123,31 +148,9 @@ public:
         return _kind;
     }
 
-    inline virtual const VarToVAddrs &getVarToVAddrs() const
-    {
-        return _varToVAddrs;
-    }
 
-    inline virtual const VarToVAddrs &getLocToVAddrs() const
-    {
-        return _locToVAddrs;
-    }
 
-    inline virtual bool inAddrsTable(u32_t id) const
-    {
-        return _varToVAddrs.find(id) != _varToVAddrs.end();
-    }
-
-    inline virtual bool locStoredAddrs(u32_t id) const
-    {
-        return _locToVAddrs.find(id) != _locToVAddrs.end();
-    }
-
-    virtual VAddrs &getVAddrs(u32_t id)
-    {
-        return _varToVAddrs[id];
-    }
-
+public:
     inline virtual void storeVAddrs(u32_t addr, const VAddrs &vaddrs)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
@@ -156,7 +159,7 @@ public:
         _locToVAddrs[objId] = vaddrs;
     }
 
-    inline virtual VAddrs &loadVAddrs(u32_t addr)
+    inline virtual VAddrs &loadAddrs(u32_t addr)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getInternalID(addr);
@@ -168,9 +171,19 @@ public:
         return getInternalID(addr) == 0;
     }
 
-protected:
-    VarToVAddrs _varToVAddrs{{0, getVirtualMemAddress(0)}};
-    VarToVAddrs _locToVAddrs;
+public:
+
+    virtual bool operator==(const ExeState &rhs) const;
+
+    inline virtual bool operator!=(const ExeState &rhs) const
+    {
+        return !(*this == rhs);
+    }
+
+    bool equals(const ExeState *other) const
+    {
+        return false;
+    }
 
 protected:
 

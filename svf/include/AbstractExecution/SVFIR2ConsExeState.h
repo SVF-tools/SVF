@@ -123,20 +123,20 @@ public:
 
     inline bool inVarToValTable(u32_t id) const
     {
-        return _es->inVarToVal(id);
-    }
-
-    inline bool inLocToValTable(u32_t id) const
-    {
-        return _es->inLocToVal(id);
+        return _es->inVarToValTable(id);
     }
 
     inline bool inVarToAddrsTable(u32_t id) const
     {
-        return _es->inAddrsTable(id);
+        return _es->inVarToAddrsTable(id);
     }
 
-    inline bool inLocToAddrsTable(u32_t id) const
+    inline bool locStoredVal(u32_t id) const
+    {
+        return _es->locStoredVal(id);
+    }
+
+    inline bool locStoredAddrs(u32_t id) const
     {
         return _es->locStoredAddrs(id);
     }

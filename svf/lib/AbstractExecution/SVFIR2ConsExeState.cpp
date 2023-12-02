@@ -74,7 +74,7 @@ void SVFIR2ConsExeState::translateBinary(const BinaryOPStmt *binary)
     u32_t op1 = binary->getOpVarID(1);
     u32_t res = binary->getResID();
     // rhs is not initialized
-    if (!_es->inVarToVal(op0) || !_es->inVarToVal(op1))
+    if (!_es->inVarToValTable(op0) || !_es->inVarToValTable(op1))
         return;
 
     SingleAbsValue &lhs = (*_es)[op0], &rhs = (*_es)[op1];
@@ -196,7 +196,7 @@ void SVFIR2ConsExeState::translateCmp(const CmpStmt *cmp)
     else if (inVarToAddrsTable(op0) && inVarToAddrsTable(op1))
     {
 
-        VAddrs &lhs = _es->getVAddrs(op0), &rhs = _es->getVAddrs(op1);
+        VAddrs &lhs = _es->getAddrs(op0), &rhs = _es->getAddrs(op1);
         if (lhs.size() == 1)
         {
             (*_es)[res] = SingleAbsValue::topConstant();
@@ -346,25 +346,25 @@ void SVFIR2ConsExeState::translateLoad(const LoadStmt *load)
     u32_t lhs = load->getLHSVarID();
     if (inVarToAddrsTable(rhs))
     {
-        const VAddrs &addrs = _es->getVAddrs(rhs);
+        const VAddrs &addrs = _es->getAddrs(rhs);
         for (const auto &addr: addrs)
         {
             assert(isVirtualMemAddress(addr) && "not addr?");
             u32_t objId = getInternalID(addr);
             if (load->getLHSVar()->getType() && load->getLHSVar()->getType()->isPointerTy())
             {
-                if (inLocToAddrsTable(objId))
+                if (locStoredAddrs(objId))
                 {
-                    _es->getVAddrs(lhs).setBottom();
+                    _es->getAddrs(lhs).setBottom();
                 }
                 break;
             }
-            else if (!load->getLHSVar()->getType() && inLocToAddrsTable(objId))
+            else if (!load->getLHSVar()->getType() && locStoredAddrs(objId))
             {
-                _es->getVAddrs(lhs).setBottom();
+                _es->getAddrs(lhs).setBottom();
                 break;
             }
-            else if (inLocToValTable(objId))
+            else if (locStoredVal(objId))
             {
                 (*_es)[lhs] = SingleAbsValue::bottomConstant();
                 break;
@@ -377,30 +377,30 @@ void SVFIR2ConsExeState::translateLoad(const LoadStmt *load)
             u32_t objId = getInternalID(addr);
             if (load->getLHSVar()->getType() && load->getLHSVar()->getType()->isPointerTy())
             {
-                if (inLocToAddrsTable(objId))
+                if (locStoredAddrs(objId))
                 {
                     if (!inVarToAddrsTable(lhs))
                     {
-                        _es->getVAddrs(lhs) = _es->loadVAddrs(addr);
+                        _es->getAddrs(lhs) = _es->loadAddrs(addr);
                     }
                     else
                     {
-                        _es->getVAddrs(lhs).join_with(_es->loadVAddrs(addr));
+                        _es->getAddrs(lhs).join_with(_es->loadAddrs(addr));
                     }
                 }
             }
-            else if (!load->getLHSVar()->getType() && inLocToAddrsTable(objId))
+            else if (!load->getLHSVar()->getType() && locStoredAddrs(objId))
             {
                 if (!inVarToAddrsTable(lhs))
                 {
-                    _es->getVAddrs(lhs) = _es->loadVAddrs(addr);
+                    _es->getAddrs(lhs) = _es->loadAddrs(addr);
                 }
                 else
                 {
-                    _es->getVAddrs(lhs).join_with(_es->loadVAddrs(addr));
+                    _es->getAddrs(lhs).join_with(_es->loadAddrs(addr));
                 }
             }
-            else if (inLocToValTable(objId))
+            else if (locStoredVal(objId))
             {
                 if (!inVarToValTable(lhs))
                 {
@@ -428,7 +428,7 @@ void SVFIR2ConsExeState::translateStore(const StoreStmt *store)
     {
         if (inVarToValTable(rhs))
         {
-            const VAddrs &addrs = _es->getVAddrs(lhs);
+            const VAddrs &addrs = _es->getAddrs(lhs);
             for (const auto &addr: addrs)
             {
                 assert(isVirtualMemAddress(addr) && "not addr?");
@@ -437,11 +437,11 @@ void SVFIR2ConsExeState::translateStore(const StoreStmt *store)
         }
         else if (inVarToAddrsTable(rhs))
         {
-            const VAddrs &addrs = _es->getVAddrs(lhs);
+            const VAddrs &addrs = _es->getAddrs(lhs);
             for (const auto &addr: addrs)
             {
                 assert(isVirtualMemAddress(addr) && "not addr?");
-                _es->storeVAddrs(addr, _es->getVAddrs(rhs));
+                _es->storeVAddrs(addr, _es->getAddrs(rhs));
             }
         }
     }
@@ -468,7 +468,7 @@ void SVFIR2ConsExeState::translateCopy(const CopyStmt *copy)
         }
         else if (inVarToAddrsTable(rhs))
         {
-            _es->getVAddrs(lhs) = _es->getVAddrs(rhs);
+            _es->getAddrs(lhs) = _es->getAddrs(rhs);
         }
     }
 }
@@ -488,7 +488,7 @@ void SVFIR2ConsExeState::translateCall(const CallPE *callPE)
     }
     else if (inVarToAddrsTable(rhs))
     {
-        _es->getVAddrs(lhs) = _es->getVAddrs(rhs);
+        _es->getAddrs(lhs) = _es->getAddrs(rhs);
     }
 }
 
@@ -502,7 +502,7 @@ void SVFIR2ConsExeState::translateRet(const RetPE *retPE)
     }
     else if (inVarToAddrsTable(rhs))
     {
-        _es->getVAddrs(lhs) = _es->getVAddrs(rhs);
+        _es->getAddrs(lhs) = _es->getAddrs(rhs);
     }
 }
 
@@ -517,7 +517,7 @@ void SVFIR2ConsExeState::translateGep(const GepStmt *gep, bool isGlobal)
     u32_t lhs = gep->getLHSVarID();
     // rhs is not initialized
     if (!inVarToAddrsTable(rhs)) return;
-    const VAddrs &rhsVal = _es->getVAddrs(rhs);
+    const VAddrs &rhsVal = _es->getAddrs(rhs);
     if (rhsVal.empty()) return;
     std::pair<s32_t, s32_t> offset = getGepOffset(gep);
     if (offset.first == -1 && offset.second == -1) return;
@@ -536,7 +536,7 @@ void SVFIR2ConsExeState::translateGep(const GepStmt *gep, bool isGlobal)
         gepAddrs.join_with(getGepObjAddress(rhs, i));
     }
     if (gepAddrs.empty()) return;
-    _es->getVAddrs(lhs) = gepAddrs;
+    _es->getAddrs(lhs) = gepAddrs;
     return;
 }
 
@@ -581,7 +581,7 @@ void SVFIR2ConsExeState::translatePhi(const PhiStmt *phi)
  */
 SVFIR2ConsExeState::VAddrs SVFIR2ConsExeState::getGepObjAddress(u32_t base, s32_t offset)
 {
-    const VAddrs &addrs = _es->getVAddrs(base);
+    const VAddrs &addrs = _es->getAddrs(base);
     VAddrs ret;
     for (const auto &addr: addrs)
     {
@@ -594,7 +594,7 @@ SVFIR2ConsExeState::VAddrs SVFIR2ConsExeState::getGepObjAddress(u32_t base, s32_
         assert(SVFUtil::isa<ObjVar>(PAG::getPAG()->getGNode(baseObj)) && "Fail to get the base object address!");
         NodeID gepObj = PAG::getPAG()->getGepObjVar(baseObj, offset);
         initSVFVar(gepObj);
-        if (offset == 0 && baseObj != gepObj) _es->getVAddrs(gepObj) = _es->getVAddrs(base);
+        if (offset == 0 && baseObj != gepObj) _es->getAddrs(gepObj) = _es->getAddrs(base);
         ret.insert(getVirtualMemAddress(gepObj));
     }
     return ret;
@@ -762,7 +762,7 @@ void SVFIR2ConsExeState::initObjVar(const ObjVar *objVar, u32_t varId)
 
 void SVFIR2ConsExeState::initSVFVar(u32_t varId)
 {
-    if (_es->inVarToVal(varId)) return;
+    if (_es->inVarToValTable(varId)) return;
     SVFIR *svfir = PAG::getPAG();
     SVFVar *svfVar = svfir->getGNode(varId);
     // write objvar into cache instead of exestate
