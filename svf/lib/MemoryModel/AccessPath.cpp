@@ -159,7 +159,8 @@ APOffset AccessPath::computeConstantByteOffset() const
 // e.g. idxOperandVar: i32 2  idxOperandType: %struct.Student = type { i32, [i8 x 12], i32 }
 //  we accumulate field 0 (i32) byte size (4 Bytes), and field 1 ([i8x12]) byte size (12 Bytes)
 //  then the return byte offset is 16 Bytes.
-u32_t AccessPath::getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const {
+u32_t AccessPath::getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const
+{
     const SVFValue* idxValue = idxOperandVar->getValue();
     u32_t structByteOffset = 0;
     if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue))

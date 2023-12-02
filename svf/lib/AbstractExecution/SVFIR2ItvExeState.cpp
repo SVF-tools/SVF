@@ -47,40 +47,56 @@ SVF::SVFIR2ItvExeState::VAddrs SVF::SVFIR2ItvExeState::globalNullVaddrs =
  *
  * @return       An IntervalValue representing the lower and upper bounds of the range.
  */
-IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type) {
-    if (const SVFIntegerType* intType = SVFUtil::dyn_cast<SVFIntegerType>(type)) {
+IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
+{
+    if (const SVFIntegerType* intType = SVFUtil::dyn_cast<SVFIntegerType>(type))
+    {
         u32_t bits = type->getByteSize() * 8;
         s64_t ub = 0;
         s64_t lb = 0;
-        if (bits >= 32) {
-            if (intType->isSigned()) {
+        if (bits >= 32)
+        {
+            if (intType->isSigned())
+            {
                 ub = static_cast<s64_t>(std::numeric_limits<s32_t>::max());
                 lb = static_cast<s64_t>(std::numeric_limits<s32_t>::min());
-            } else {
+            }
+            else
+            {
                 ub = static_cast<s64_t>(std::numeric_limits<u32_t>::max());
                 lb = static_cast<s64_t>(std::numeric_limits<u32_t>::min());
             }
         }
-        else if (bits == 16) {
-            if (intType->isSigned()) {
+        else if (bits == 16)
+        {
+            if (intType->isSigned())
+            {
                 ub = static_cast<s64_t>(std::numeric_limits<int16_t>::max());
                 lb = static_cast<s64_t>(std::numeric_limits<int16_t>::min());
-            } else {
+            }
+            else
+            {
                 ub = static_cast<s64_t>(std::numeric_limits<uint16_t>::max());
                 lb = static_cast<s64_t>(std::numeric_limits<uint16_t>::min());
             }
         }
-        else if (bits == 8) {
-            if (intType->isSigned()) {
+        else if (bits == 8)
+        {
+            if (intType->isSigned())
+            {
                 ub = static_cast<s64_t>(std::numeric_limits<int8_t>::max());
                 lb = static_cast<s64_t>(std::numeric_limits<int8_t>::min());
-            } else {
+            }
+            else
+            {
                 ub = static_cast<s64_t>(std::numeric_limits<u_int8_t>::max());
                 lb = static_cast<s64_t>(std::numeric_limits<u_int8_t>::min());
             }
         }
         return IntervalValue(lb, ub);
-    } else {
+    }
+    else
+    {
         assert(false && "cannot support");
     }
 }
@@ -259,40 +275,52 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
         const SVFType* idxOperandType =
             gep->getOffsetVarAndGepTypePairVec()[i].second;
         // calculating Array/Ptr by elemByteSize * indexOperand
-        if (SVFUtil::isa<SVFArrayType>(idxOperandType) || SVFUtil::isa<SVFPointerType>(idxOperandType)) {
+        if (SVFUtil::isa<SVFArrayType>(idxOperandType) || SVFUtil::isa<SVFPointerType>(idxOperandType))
+        {
             u32_t elemByteSize = 1;
-            if (const SVFArrayType* arrOperandType = SVFUtil::dyn_cast<SVFArrayType>(idxOperandType)) {
+            if (const SVFArrayType* arrOperandType = SVFUtil::dyn_cast<SVFArrayType>(idxOperandType))
+            {
                 elemByteSize = arrOperandType->getTypeOfElement()->getByteSize();
             }
-            else if (const SVFPointerType* ptrOperandType = SVFUtil::dyn_cast<SVFPointerType>(idxOperandType))  {
+            else if (const SVFPointerType* ptrOperandType = SVFUtil::dyn_cast<SVFPointerType>(idxOperandType))
+            {
                 elemByteSize = ptrOperandType->getPtrElementType()->getByteSize();
             }
             else
                 assert(false && "idxOperandType must be ArrType or PtrType");
-            if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue())) {
+            if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue()))
+            {
                 s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue() ?op->getSExtValue() * elemByteSize
-                        : Options::MaxFieldLimit();
+                           : Options::MaxFieldLimit();
                 res = res + IntervalValue(lb, lb);
-            } else {
+            }
+            else
+            {
                 u32_t idx = _svfir->getValueNode(idxOperandVar->getValue());
                 IntervalValue idxVal = _es[idx];
-                if (idxVal.isBottom()) {
+                if (idxVal.isBottom())
+                {
                     res = res + IntervalValue(0, 0);
-                } else {
+                }
+                else
+                {
                     s64_t ub = (double)Options::MaxFieldLimit() /
-                                           elemByteSize >= idxVal.ub().getNumeral() ? elemByteSize * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
+                               elemByteSize >= idxVal.ub().getNumeral() ? elemByteSize * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
                     s64_t lb = (idxVal.lb().getNumeral() < 0) ? 0 :
                                ((double)Options::MaxFieldLimit() /
-                                    elemByteSize >= idxVal.lb().getNumeral()) ? elemByteSize * idxVal.lb().getNumeral() : Options::MaxFieldLimit();
+                                elemByteSize >= idxVal.lb().getNumeral()) ? elemByteSize * idxVal.lb().getNumeral() : Options::MaxFieldLimit();
                     res = res + IntervalValue(lb, ub);
                 }
             }
         }
         // Process struct subtype by calculating the byte offset from beginning to the field of struct
-        else if (const SVFStructType* structOperandType = SVFUtil::dyn_cast<SVFStructType>(idxOperandType)) {
+        else if (const SVFStructType* structOperandType = SVFUtil::dyn_cast<SVFStructType>(idxOperandType))
+        {
             res = res + IntervalValue(gep->getAccessPath().getStructFieldOffset(
-                            idxOperandVar, structOperandType));
-        } else {
+                                          idxOperandVar, structOperandType));
+        }
+        else
+        {
             assert(false && "gep type pair only support arr/ptr/struct");
         }
     }
@@ -310,39 +338,45 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
 IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
 {
     IntervalValue res(0);
-    for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--) {
+    for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
+    {
         AccessPath::IdxOperandPair IdxVarAndType =
             gep->getOffsetVarAndGepTypePairVec()[i];
         const SVFValue *value =
             gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
         const SVFType *type = IdxVarAndType.second;
         // idxLb/Ub is the flattened offset generated by the current OffsetVarAndGepTypePair
-        s64_t idxLb; s64_t idxUb;
+        s64_t idxLb;
+        s64_t idxUb;
         // get lb and ub of the index value
         if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(value))
             idxLb = idxUb = constInt->getSExtValue();
-        else {
+        else
+        {
             IntervalValue idxItv = _es[_svfir->getValueNode(value)];
             if (idxItv.isBottom())
                 idxLb = idxUb = 0;
-            else {
+            else
+            {
                 idxLb = idxItv.lb().getNumeral();
                 idxUb = idxItv.ub().getNumeral();
             }
         }
         // for pointer type, flattened index = elemNum * idx
-        if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type)) {
+        if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+        {
             u32_t elemNum = gep->getAccessPath().getElementNum(pty->getPtrElementType());
             idxLb = (double)Options::MaxFieldLimit() / elemNum < idxLb? Options::MaxFieldLimit(): idxLb * elemNum;
             idxUb = (double)Options::MaxFieldLimit() / elemNum < idxUb? Options::MaxFieldLimit(): idxUb * elemNum;
         }
         // for array or struct, get flattened index from SymbolTable Info
-        else {
+        else
+        {
             if(Options::ModelArrays())
             {
                 const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()
-                                                   ->getTypeInfo(type)
-                                                   ->getFlattenedElemIdxVec();
+                                               ->getTypeInfo(type)
+                                               ->getFlattenedElemIdxVec();
                 if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0)
                 {
                     idxLb = idxUb = 0;
@@ -350,11 +384,12 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
                 else
                 {
                     idxLb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
-                        type, idxLb);
+                                type, idxLb);
                     idxUb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
-                        type, idxUb);
+                                type, idxUb);
                 }
-            } else
+            }
+            else
                 idxLb = idxUb = 0;
         }
         res = res + IntervalValue(idxLb, idxUb);
@@ -466,7 +501,8 @@ void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
     if (inVarToIValTable(addr->getRHSVarID()))
     {
         // if addr RHS is integerType(i8 i32 etc), value should be limited.
-        if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy) {
+        if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
+        {
             IntervalExeState::globalES[addr->getRHSVarID()].meet_with(
                 getRangeLimitFromType(addr->getRHSVar()->getType()));
         }
@@ -822,7 +858,8 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
             // if copy LHS is integerType(i8 i32 etc), value should be limited.
             // this branch can handle bitcast from higher bits integer to
             // lower bits integer. e.g. bitcast i32 to i8
-            if (copy->getLHSVar()->getType()->getKind() == SVFType::SVFIntegerTy) {
+            if (copy->getLHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
+            {
                 _es[lhs].meet_with(
                     getRangeLimitFromType(copy->getLHSVar()->getType()));
             }
