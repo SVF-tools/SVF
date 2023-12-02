@@ -41,8 +41,8 @@ namespace SVF
 class SVFIR2ItvExeState
 {
 public:
-    typedef ExeState::VAddrs VAddrs;
-    static VAddrs globalNullVaddrs;
+    typedef ExeState::Addrs Addrs;
+    static Addrs globalNulladdrs;
 public:
     SVFIR2ItvExeState(SVFIR *ir) : _svfir(ir) {}
 
@@ -66,12 +66,12 @@ public:
         return _relEs;
     }
 
-    void widenVAddrs(IntervalExeState &lhs, const IntervalExeState &rhs);
+    void widenAddrs(IntervalExeState &lhs, const IntervalExeState &rhs);
 
-    void narrowVAddrs(IntervalExeState &lhs, const IntervalExeState &rhs);
+    void narrowAddrs(IntervalExeState &lhs, const IntervalExeState &rhs);
 
     /// Return the field address given a pointer points to a struct object and an offset
-    VAddrs getGepObjAddress(u32_t pointer, APOffset offset);
+    Addrs getGepObjAddress(u32_t pointer, APOffset offset);
 
     /// Return the value range of Integer SVF Type, e.g. unsigned i8 Type->[0, 255], signed i8 Type->[-128, 127]
     IntervalValue getRangeLimitFromType(const SVFType* type);
@@ -103,29 +103,35 @@ public:
     /// Init SVFVar
     void initSVFVar(u32_t varId);
 
-    inline VAddrs &getVAddrs(u32_t id)
+    inline Addrs &getAddrs(u32_t id)
     {
         if (inVarToAddrsTable(id))
-            return _es.getVAddrs(id);
+            return _es.getAddrs(id);
         else
-            return globalNullVaddrs;
+            return globalNulladdrs;
     }
 
-    inline bool inVarToIValTable(u32_t id) const
+
+    /// whether the variable is in varToVal table
+    inline bool inVarToValTable(u32_t id) const
     {
-        return _es.inVarToIValTable(id);
+        return _es.inVarToValTable(id);
     }
 
-    inline bool inLocToIValTable(u32_t id) const
-    {
-        return _es.inLocToIValTable(id);
-    }
-
+    /// whether the variable is in varToAddrs table
     inline bool inVarToAddrsTable(u32_t id) const
     {
         return _es.inVarToAddrsTable(id);
     }
 
+
+    /// whether the memory address stores a interval value
+    inline bool inLocToValTable(u32_t id) const
+    {
+        return _es.inLocToValTable(id);
+    }
+
+    /// whether the memory address stores memory addresses
     inline bool inLocToAddrsTable(u32_t id) const
     {
         return _es.inLocToAddrsTable(id);

@@ -35,9 +35,9 @@ using namespace std;
 SVFIR2ConsExeState::~SVFIR2ConsExeState()
 {
     ConsExeState::globalConsES._varToVal.clear();
-    ConsExeState::globalConsES._varToVAddrs.clear();
+    ConsExeState::globalConsES._varToAddrs.clear();
     ConsExeState::globalConsES._locToVal.clear();
-    ConsExeState::globalConsES._locToVAddrs.clear();
+    ConsExeState::globalConsES._locToAddrs.clear();
 }
 /// Translator for llvm ir
 //{%
@@ -55,7 +55,7 @@ void SVFIR2ConsExeState::translateAddr(const AddrStmt *addr)
     }
     else if (inVarToAddrsTable(addr->getRHSVarID()))
     {
-        _es->globalConsES._varToVAddrs[addr->getLHSVarID()] = _es->globalConsES._varToVAddrs[addr->getRHSVarID()];
+        _es->globalConsES._varToAddrs[addr->getLHSVarID()] = _es->globalConsES._varToAddrs[addr->getRHSVarID()];
     }
     else
     {
@@ -74,7 +74,7 @@ void SVFIR2ConsExeState::translateBinary(const BinaryOPStmt *binary)
     u32_t op1 = binary->getOpVarID(1);
     u32_t res = binary->getResID();
     // rhs is not initialized
-    if (!_es->inVarToVal(op0) || !_es->inVarToVal(op1))
+    if (!_es->inVarToValTable(op0) || !_es->inVarToValTable(op1))
         return;
 
     SingleAbsValue &lhs = (*_es)[op0], &rhs = (*_es)[op1];
@@ -196,7 +196,7 @@ void SVFIR2ConsExeState::translateCmp(const CmpStmt *cmp)
     else if (inVarToAddrsTable(op0) && inVarToAddrsTable(op1))
     {
 
-        VAddrs &lhs = _es->getVAddrs(op0), &rhs = _es->getVAddrs(op1);
+        Addrs &lhs = _es->getAddrs(op0), &rhs = _es->getAddrs(op1);
         if (lhs.size() == 1)
         {
             (*_es)[res] = SingleAbsValue::topConstant();
@@ -346,7 +346,7 @@ void SVFIR2ConsExeState::translateLoad(const LoadStmt *load)
     u32_t lhs = load->getLHSVarID();
     if (inVarToAddrsTable(rhs))
     {
-        const VAddrs &addrs = _es->getVAddrs(rhs);
+        const Addrs &addrs = _es->getAddrs(rhs);
         for (const auto &addr: addrs)
         {
             assert(isVirtualMemAddress(addr) && "not addr?");
@@ -355,13 +355,13 @@ void SVFIR2ConsExeState::translateLoad(const LoadStmt *load)
             {
                 if (inLocToAddrsTable(objId))
                 {
-                    _es->getVAddrs(lhs).setBottom();
+                    _es->getAddrs(lhs).setBottom();
                 }
                 break;
             }
             else if (!load->getLHSVar()->getType() && inLocToAddrsTable(objId))
             {
-                _es->getVAddrs(lhs).setBottom();
+                _es->getAddrs(lhs).setBottom();
                 break;
             }
             else if (inLocToValTable(objId))
@@ -381,11 +381,11 @@ void SVFIR2ConsExeState::translateLoad(const LoadStmt *load)
                 {
                     if (!inVarToAddrsTable(lhs))
                     {
-                        _es->getVAddrs(lhs) = _es->loadVAddrs(addr);
+                        _es->getAddrs(lhs) = _es->loadAddrs(addr);
                     }
                     else
                     {
-                        _es->getVAddrs(lhs).join_with(_es->loadVAddrs(addr));
+                        _es->getAddrs(lhs).join_with(_es->loadAddrs(addr));
                     }
                 }
             }
@@ -393,11 +393,11 @@ void SVFIR2ConsExeState::translateLoad(const LoadStmt *load)
             {
                 if (!inVarToAddrsTable(lhs))
                 {
-                    _es->getVAddrs(lhs) = _es->loadVAddrs(addr);
+                    _es->getAddrs(lhs) = _es->loadAddrs(addr);
                 }
                 else
                 {
-                    _es->getVAddrs(lhs).join_with(_es->loadVAddrs(addr));
+                    _es->getAddrs(lhs).join_with(_es->loadAddrs(addr));
                 }
             }
             else if (inLocToValTable(objId))
@@ -428,7 +428,7 @@ void SVFIR2ConsExeState::translateStore(const StoreStmt *store)
     {
         if (inVarToValTable(rhs))
         {
-            const VAddrs &addrs = _es->getVAddrs(lhs);
+            const Addrs &addrs = _es->getAddrs(lhs);
             for (const auto &addr: addrs)
             {
                 assert(isVirtualMemAddress(addr) && "not addr?");
@@ -437,11 +437,11 @@ void SVFIR2ConsExeState::translateStore(const StoreStmt *store)
         }
         else if (inVarToAddrsTable(rhs))
         {
-            const VAddrs &addrs = _es->getVAddrs(lhs);
+            const Addrs &addrs = _es->getAddrs(lhs);
             for (const auto &addr: addrs)
             {
                 assert(isVirtualMemAddress(addr) && "not addr?");
-                _es->storeVAddrs(addr, _es->getVAddrs(rhs));
+                _es->storeAddrs(addr, _es->getAddrs(rhs));
             }
         }
     }
@@ -468,7 +468,7 @@ void SVFIR2ConsExeState::translateCopy(const CopyStmt *copy)
         }
         else if (inVarToAddrsTable(rhs))
         {
-            _es->getVAddrs(lhs) = _es->getVAddrs(rhs);
+            _es->getAddrs(lhs) = _es->getAddrs(rhs);
         }
     }
 }
@@ -488,7 +488,7 @@ void SVFIR2ConsExeState::translateCall(const CallPE *callPE)
     }
     else if (inVarToAddrsTable(rhs))
     {
-        _es->getVAddrs(lhs) = _es->getVAddrs(rhs);
+        _es->getAddrs(lhs) = _es->getAddrs(rhs);
     }
 }
 
@@ -502,7 +502,7 @@ void SVFIR2ConsExeState::translateRet(const RetPE *retPE)
     }
     else if (inVarToAddrsTable(rhs))
     {
-        _es->getVAddrs(lhs) = _es->getVAddrs(rhs);
+        _es->getAddrs(lhs) = _es->getAddrs(rhs);
     }
 }
 
@@ -517,7 +517,7 @@ void SVFIR2ConsExeState::translateGep(const GepStmt *gep, bool isGlobal)
     u32_t lhs = gep->getLHSVarID();
     // rhs is not initialized
     if (!inVarToAddrsTable(rhs)) return;
-    const VAddrs &rhsVal = _es->getVAddrs(rhs);
+    const Addrs &rhsVal = _es->getAddrs(rhs);
     if (rhsVal.empty()) return;
     std::pair<s32_t, s32_t> offset = getGepOffset(gep);
     if (offset.first == -1 && offset.second == -1) return;
@@ -525,7 +525,7 @@ void SVFIR2ConsExeState::translateGep(const GepStmt *gep, bool isGlobal)
     {
         return;
     }
-    VAddrs gepAddrs;
+    Addrs gepAddrs;
     s32_t ub = offset.second;
     if (offset.second > (s32_t) Options::MaxFieldLimit() - 1)
     {
@@ -536,7 +536,7 @@ void SVFIR2ConsExeState::translateGep(const GepStmt *gep, bool isGlobal)
         gepAddrs.join_with(getGepObjAddress(rhs, i));
     }
     if (gepAddrs.empty()) return;
-    _es->getVAddrs(lhs) = gepAddrs;
+    _es->getAddrs(lhs) = gepAddrs;
     return;
 }
 
@@ -579,10 +579,10 @@ void SVFIR2ConsExeState::translatePhi(const PhiStmt *phi)
  * @param offset
  * @return
  */
-SVFIR2ConsExeState::VAddrs SVFIR2ConsExeState::getGepObjAddress(u32_t base, s32_t offset)
+SVFIR2ConsExeState::Addrs SVFIR2ConsExeState::getGepObjAddress(u32_t base, s32_t offset)
 {
-    const VAddrs &addrs = _es->getVAddrs(base);
-    VAddrs ret;
+    const Addrs &addrs = _es->getAddrs(base);
+    Addrs ret;
     for (const auto &addr: addrs)
     {
         int64_t baseObj = getInternalID(addr);
@@ -594,7 +594,7 @@ SVFIR2ConsExeState::VAddrs SVFIR2ConsExeState::getGepObjAddress(u32_t base, s32_
         assert(SVFUtil::isa<ObjVar>(PAG::getPAG()->getGNode(baseObj)) && "Fail to get the base object address!");
         NodeID gepObj = PAG::getPAG()->getGepObjVar(baseObj, offset);
         initSVFVar(gepObj);
-        if (offset == 0 && baseObj != gepObj) _es->getVAddrs(gepObj) = _es->getVAddrs(base);
+        if (offset == 0 && baseObj != gepObj) _es->getAddrs(gepObj) = _es->getAddrs(base);
         ret.insert(getVirtualMemAddress(gepObj));
     }
     return ret;
@@ -736,7 +736,7 @@ void SVFIR2ConsExeState::initObjVar(const ObjVar *objVar, u32_t varId)
             else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue()))
                 _es->globalConsES._varToVal[varId] = 0;
             else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue()))
-                _es->globalConsES._varToVAddrs[varId] = getVirtualMemAddress(varId);
+                _es->globalConsES._varToAddrs[varId] = getVirtualMemAddress(varId);
             else if (obj->isConstDataOrAggData())
             {
                 // TODO
@@ -750,19 +750,19 @@ void SVFIR2ConsExeState::initObjVar(const ObjVar *objVar, u32_t varId)
         }
         else
         {
-            _es->globalConsES._varToVAddrs[varId] = getVirtualMemAddress(varId);
+            _es->globalConsES._varToAddrs[varId] = getVirtualMemAddress(varId);
         }
     }
     else
     {
-        _es->globalConsES._varToVAddrs[varId] = getVirtualMemAddress(varId);
+        _es->globalConsES._varToAddrs[varId] = getVirtualMemAddress(varId);
     }
 }
 
 
 void SVFIR2ConsExeState::initSVFVar(u32_t varId)
 {
-    if (_es->inVarToVal(varId)) return;
+    if (_es->inVarToValTable(varId)) return;
     SVFIR *svfir = PAG::getPAG();
     SVFVar *svfVar = svfir->getGNode(varId);
     // write objvar into cache instead of exestate
@@ -793,17 +793,17 @@ void SVFIR2ConsExeState::moveToGlobal()
     {
         ConsExeState::globalConsES._locToVal.insert(it);
     }
-    for (const auto &it: _es->_varToVAddrs)
+    for (const auto &it: _es->_varToAddrs)
     {
-        ConsExeState::globalConsES._varToVAddrs.insert(it);
+        ConsExeState::globalConsES._varToAddrs.insert(it);
     }
-    for (const auto &it: _es->_locToVAddrs)
+    for (const auto &it: _es->_locToAddrs)
     {
-        ConsExeState::globalConsES._locToVAddrs.insert(it);
+        ConsExeState::globalConsES._locToAddrs.insert(it);
     }
-    ConsExeState::globalConsES._varToVAddrs[0] = ConsExeState::getVirtualMemAddress(0);
+    ConsExeState::globalConsES._varToAddrs[0] = ConsExeState::getVirtualMemAddress(0);
     _es->_varToVal.clear();
     _es->_locToVal.clear();
-    _es->_varToVAddrs.clear();
-    _es->_locToVAddrs.clear();
+    _es->_varToAddrs.clear();
+    _es->_locToAddrs.clear();
 }
