@@ -290,7 +290,8 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
         }
         // Process struct subtype by calculating the byte offset from beginning to the field of struct
         else if (const SVFStructType* structOperandType = SVFUtil::dyn_cast<SVFStructType>(idxOperandType)) {
-            res = res + IntervalValue(gep->getAccessPath().getStructAggregateSize(idxOperandVar, structOperandType));
+            res = res + IntervalValue(gep->getAccessPath().getStructFieldOffset(
+                            idxOperandVar, structOperandType));
         } else {
             assert(false && "gep type pair only support arr/ptr/struct");
         }

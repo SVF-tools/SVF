@@ -757,8 +757,7 @@ void VFG::connectDirectVFGEdges()
                 addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()), nodeId);
             if (const GepStmt* gepStmt = SVFUtil::dyn_cast<GepStmt>(stmtNode->getPAGEdge()))
             {
-                for (const auto &varType:
-                     gepStmt->getOffsetVarAndGepTypePairVec())
+                for (const auto &varType: gepStmt->getOffsetVarAndGepTypePairVec())
                 {
                     if(varType.first->isConstDataOrAggDataButNotNullPtr() || isInterestedPAGNode(varType.first) == false)
                         continue;

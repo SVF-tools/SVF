@@ -151,8 +151,8 @@ public:
         return computeAllLocations().intersects(RHS.computeAllLocations());
     }
 
-    /// Return byte size from the beginning of the structure to the field where it is located for struct type
-    u32_t getStructAggregateSize(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const;
+    /// Return byte offset from the beginning of the structure to the field where it is located for struct type
+    u32_t getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const;
 
     /// Dump location set
     std::string dump() const;
