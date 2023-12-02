@@ -55,6 +55,7 @@ namespace SVF
 class IntervalExeState : public ExeState
 {
     friend class SVFIR2ItvExeState;
+    friend class RelationSolver;
 
 public:
     typedef Map<u32_t, IntervalValue> VarToValMap;

@@ -140,8 +140,8 @@ IntervalExeState RelationSolver::RSY(IntervalExeState domain, const Z3Expr &phi)
             solver.pop();
             IntervalExeState newLower = domain.bottom();
             newLower.joinWith(lower);
-            IntervalExeState rhs = beta(solution, domain);
-            newLower.joinWith(rhs);
+            // IntervalExeState rhs = beta(solution, domain);
+            newLower.joinWith(beta(solution, domain));
             lower = newLower;
         }
         else     /// unknown or unsat
@@ -228,7 +228,7 @@ IntervalExeState RelationSolver::beta(Map<u32_t, double> &sigma, IntervalExeStat
     IntervalExeState res;
     for (const auto &item: exeState.getVarToVal())
     {
-        res[item.first] = IntervalValue(sigma[item.first], sigma[item.first]);
+        res._varToItvVal[item.first] = IntervalValue(sigma[item.first], sigma[item.first]);
     }
     return res;
 }
