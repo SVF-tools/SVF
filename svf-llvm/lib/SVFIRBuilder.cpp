@@ -290,7 +290,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
         const Value* offsetVal = gi.getOperand();
         const SVFValue* offsetSvfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offsetVal);
         assert(gepTy != offsetVal->getType() && "iteration and operand have the same type?");
-        ap.addIdxOperandVarAndSubTypePair(
+        ap.addOffsetVarAndGepTypePair(
             getPAG()->getGNode(getPAG()->getValueNode(offsetSvfVal)), svfGepTy);
 
         //The int value of the current index operand

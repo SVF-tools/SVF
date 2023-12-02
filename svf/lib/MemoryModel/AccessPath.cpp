@@ -39,7 +39,7 @@ using namespace SVFUtil;
 /*!
  * Add offset value to vector offsetVarAndGepTypePairs
  */
-bool AccessPath::addIdxOperandVarAndSubTypePair(const SVFVar* var, const SVFType* gepIterType)
+bool AccessPath::addOffsetVarAndGepTypePair(const SVFVar* var, const SVFType* gepIterType)
 {
     idxOperandPairs.emplace_back(var, gepIterType);
     return true;
@@ -114,7 +114,7 @@ APOffset AccessPath::computeConstantByteOffset() const
         const SVFType* type = idxOperandPairs[i].second;
         /// if offsetVarAndGepTypePairs[i].second is nullptr, it means
         ///   GepStmt comes from external API, this GepStmt is assigned in SVFIRExtAPI.cpp
-        ///   at SVFIRBuilder::getBaseTypeAndFlattenedFields ls.addIdxOperandVarAndSubTypePair()
+        ///   at SVFIRBuilder::getBaseTypeAndFlattenedFields ls.addOffsetVarAndGepTypePair()
         assert(type && "this GepStmt comes from ExternalAPI cannot call this api");
         const SVFType* type2 = type;
         if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type))
@@ -154,11 +154,10 @@ APOffset AccessPath::computeConstantByteOffset() const
     return totalConstOffset;
 }
 
-/// Return byte offset from GepTypePair
+/// Return byte size from the beginning of the structure to the field where it is located for struct type
 ///
-/// \param gepIdx
-/// \return Return elem byte size for ptr/arr type
-///   Return byte offset from the beginning of the structure to the field where it is located for struct type
+/// \param idxOperandVar, idxOperandType
+/// \return Return byte offset from the beginning of the structure to the field where it is located for struct type
 u32_t AccessPath::getStructAggregateSize(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const {
     const SVFValue* idxValue = idxOperandVar->getValue();
     u32_t structByteOffset = 0;
@@ -257,7 +256,7 @@ AccessPath AccessPath::operator+(const AccessPath& rhs) const
     AccessPath ap(rhs);
     ap.fldIdx += getConstantFieldIdx();
     for (auto &p : ap.getIdxOperandPairVec())
-        ap.addIdxOperandVarAndSubTypePair(p.first, p.second);
+        ap.addOffsetVarAndGepTypePair(p.first, p.second);
 
     return ap;
 }

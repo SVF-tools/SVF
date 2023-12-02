@@ -140,7 +140,7 @@ public:
     u32_t getElementNum(const SVFType* type) const;
 
 
-    bool addIdxOperandVarAndSubTypePair(const SVFVar* var, const SVFType* gepIterType);
+    bool addOffsetVarAndGepTypePair(const SVFVar* var, const SVFType* gepIterType);
 
     /// Return TRUE if this is a constant location set.
     bool isConstantOffset() const;
@@ -151,8 +151,7 @@ public:
         return computeAllLocations().intersects(RHS.computeAllLocations());
     }
 
-    /// Return elem byte size for ptr/arr type,
-    /// Return byte offset from the beginning of the structure to the field where it is located for struct type
+    /// Return byte size from the beginning of the structure to the field where it is located for struct type
     u32_t getStructAggregateSize(const SVFVar* idxOperandVar, const SVFStructType* idxOperandType) const;
 
     /// Dump location set

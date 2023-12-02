@@ -492,7 +492,7 @@ public:
     {
         return ap;
     }
-    inline const AccessPath::IdxOperandPairs getIdxOperandPairVec() const
+    inline const AccessPath::IdxOperandPairs getOffsetVarAndGepTypePairVec() const
     {
         return getAccessPath().getIdxOperandPairVec();
     }
