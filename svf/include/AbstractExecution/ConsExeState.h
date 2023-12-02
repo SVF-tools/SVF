@@ -117,11 +117,11 @@ protected:
 public:
 
     /// get memory addresses of variable
-    virtual VAddrs &getAddrs(u32_t id) override
+    virtual Addrs &getAddrs(u32_t id) override
     {
-        auto it = globalConsES._varToVAddrs.find(id);
-        if (it != globalConsES._varToVAddrs.end()) return it->second;
-        return _varToVAddrs[id];
+        auto it = globalConsES._varToAddrs.find(id);
+        if (it != globalConsES._varToAddrs.end()) return it->second;
+        return _varToAddrs[id];
     }
 
     /// get constant value of variable
@@ -137,8 +137,8 @@ public:
     /// whether the variable is in varToAddrs table
     virtual inline bool inVarToAddrsTable(u32_t id) const override
     {
-        return _varToVAddrs.find(id) != _varToVAddrs.end() ||
-               globalConsES._varToVAddrs.find(id) != globalConsES._varToVAddrs.end();
+        return _varToAddrs.find(id) != _varToAddrs.end() ||
+               globalConsES._varToAddrs.find(id) != globalConsES._varToAddrs.end();
     }
 
     /// whether the variable is in varToVal table
@@ -148,15 +148,15 @@ public:
     }
 
     /// whether the memory address stores memory addresses
-    virtual inline bool locStoredAddrs(u32_t id) const override
+    virtual inline bool inLocToAddrsTable(u32_t id) const override
     {
-        return globalConsES._locToVAddrs.find(id) != globalConsES._locToVAddrs.end() || localLocStoredAddrs(id);
+        return globalConsES._locToAddrs.find(id) != globalConsES._locToAddrs.end() || inLocalLocToAddrsTable(id);
     }
 
     /// whether the memory address stores constant value
-    inline bool locStoredVal(u32_t varId) const
+    inline bool inLocToValTable(u32_t varId) const
     {
-        return localLocStoredVal(varId) || globalConsES._locToVal.count(varId);
+        return inLocalLocToValTable(varId) || globalConsES._locToVal.count(varId);
     }
 
     inline const VarToValMap &getVarToVal() const
@@ -169,17 +169,17 @@ public:
         return _locToVal;
     }
 
-    virtual inline bool localLocStoredAddrs(u32_t id) const
+    virtual inline bool inLocalLocToAddrsTable(u32_t id) const
     {
-        return _locToVAddrs.find(id) != _locToVAddrs.end();
+        return _locToAddrs.find(id) != _locToAddrs.end();
     }
 
-    inline bool localLocStoredVal(u32_t varId) const
+    inline bool inLocalLocToValTable(u32_t varId) const
     {
         return _locToVal.count(varId);
     }
 
-    inline bool localLocStoredVal(const SingleAbsValue& addr) const
+    inline bool inLocalLocToValTable(const SingleAbsValue& addr) const
     {
         return _locToVal.count(getInternalID(addr.getNumeral()));
     }
@@ -225,19 +225,19 @@ public:
 
     bool applyPhi(u32_t res, std::vector<u32_t> &ops);
 
-    virtual VAddrs &loadAddrs(u32_t addr) override
+    virtual Addrs &loadAddrs(u32_t addr) override
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getInternalID(addr);
-        auto it = _locToVAddrs.find(objId);
-        if (it != _locToVAddrs.end())
+        auto it = _locToAddrs.find(objId);
+        if (it != _locToAddrs.end())
         {
             return it->second;
         }
         else
         {
-            auto globIt = globalConsES._locToVAddrs.find(objId);
-            if (globIt != globalConsES._locToVAddrs.end())
+            auto globIt = globalConsES._locToAddrs.find(objId);
+            if (globIt != globalConsES._locToAddrs.end())
             {
                 return globIt->second;
             }
@@ -251,15 +251,15 @@ public:
     virtual std::string varToAddrs(u32_t varId) const override
     {
         std::stringstream exprName;
-        auto it = _varToVAddrs.find(varId);
-        if (it == _varToVAddrs.end())
+        auto it = _varToAddrs.find(varId);
+        if (it == _varToAddrs.end())
         {
-            auto git = globalConsES._varToVAddrs.find(varId);
-            if (git == globalConsES._varToVAddrs.end())
+            auto git = globalConsES._varToAddrs.find(varId);
+            if (git == globalConsES._varToAddrs.end())
                 exprName << "Var not in varToAddrs!\n";
             else
             {
-                const VAddrs &vaddrs = git->second;
+                const Addrs &vaddrs = git->second;
                 if (vaddrs.size() == 1)
                 {
                     exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
@@ -277,7 +277,7 @@ public:
         }
         else
         {
-            const VAddrs &vaddrs = it->second;
+            const Addrs &vaddrs = it->second;
             if (vaddrs.size() == 1)
             {
                 exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
@@ -298,15 +298,15 @@ public:
     virtual std::string locToAddrs(u32_t objId) const override
     {
         std::stringstream exprName;
-        auto it = _locToVAddrs.find(objId);
-        if (it == _locToVAddrs.end())
+        auto it = _locToAddrs.find(objId);
+        if (it == _locToAddrs.end())
         {
-            auto git = globalConsES._locToVAddrs.find(objId);
-            if (git == globalConsES._locToVAddrs.end())
+            auto git = globalConsES._locToAddrs.find(objId);
+            if (git == globalConsES._locToAddrs.end())
                 exprName << "Obj not in locToVal!\n";
             else
             {
-                const VAddrs &vaddrs = git->second;
+                const Addrs &vaddrs = git->second;
                 if (vaddrs.size() == 1)
                 {
                     exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
@@ -324,7 +324,7 @@ public:
         }
         else
         {
-            const VAddrs &vaddrs = it->second;
+            const Addrs &vaddrs = it->second;
             if (vaddrs.size() == 1)
             {
                 exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";

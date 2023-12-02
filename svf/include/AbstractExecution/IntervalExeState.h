@@ -153,13 +153,13 @@ protected:
 public:
 
     /// get memory addresses of variable
-    VAddrs &getAddrs(u32_t id) override
+    Addrs &getAddrs(u32_t id) override
     {
-        auto it = _varToVAddrs.find(id);
-        if (it != _varToVAddrs.end())
+        auto it = _varToAddrs.find(id);
+        if (it != _varToAddrs.end())
             return it->second;
         else
-            return globalES._varToVAddrs[id];
+            return globalES._varToAddrs[id];
     }
 
     /// get interval value of variable
@@ -177,8 +177,8 @@ public:
     /// whether the variable is in varToAddrs table
     inline bool inVarToAddrsTable(u32_t id) const override
     {
-        return _varToVAddrs.find(id) != _varToVAddrs.end() ||
-               globalES._varToVAddrs.find(id) != globalES._varToVAddrs.end();
+        return _varToAddrs.find(id) != _varToAddrs.end() ||
+               globalES._varToAddrs.find(id) != globalES._varToAddrs.end();
     }
 
     /// whether the variable is in varToVal table
@@ -189,14 +189,14 @@ public:
     }
 
     /// whether the memory address stores memory addresses
-    inline bool locStoredAddrs(u32_t id) const override
+    inline bool inLocToAddrsTable(u32_t id) const override
     {
-        return _locToVAddrs.find(id) != _locToVAddrs.end() ||
-               globalES._locToVAddrs.find(id) != globalES._locToVAddrs.end();
+        return _locToAddrs.find(id) != _locToAddrs.end() ||
+               globalES._locToAddrs.find(id) != globalES._locToAddrs.end();
     }
 
     /// whether the memory address stores interval value
-    inline bool locStoredVal(u32_t id) const
+    inline bool inLocToValTable(u32_t id) const
     {
         return _locToItvVal.find(id) != _locToItvVal.end() ||
                globalES._locToItvVal.find(id) != globalES._locToItvVal.end();
@@ -214,14 +214,14 @@ public:
         return _locToItvVal;
     }
 
-    inline bool localLocStoredVal(u32_t id) const
+    inline bool inLocalLocToValTable(u32_t id) const
     {
         return _locToItvVal.find(id) != _locToItvVal.end();
     }
 
-    inline bool localLocStoredAddrs(u32_t id) const
+    inline bool inLocalLocToAddrsTable(u32_t id) const
     {
-        return _locToVAddrs.find(id) != _locToVAddrs.end();
+        return _locToAddrs.find(id) != _locToAddrs.end();
     }
 
 public:
@@ -322,24 +322,24 @@ public:
         }
     }
 
-    inline VAddrs &loadAddrs(u32_t addr) override
+    inline Addrs &loadAddrs(u32_t addr) override
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getInternalID(addr);
-        auto it = _locToVAddrs.find(objId);
-        if(it != _locToVAddrs.end())
+        auto it = _locToAddrs.find(objId);
+        if(it != _locToAddrs.end())
             return it->second;
         else
         {
-            auto globIt = globalES._locToVAddrs.find(objId);
-            if(globIt != globalES._locToVAddrs.end())
+            auto globIt = globalES._locToAddrs.find(objId);
+            if(globIt != globalES._locToAddrs.end())
                 return globIt->second;
             else
-                return _locToVAddrs[objId];
+                return _locToAddrs[objId];
         }
     }
 
-    inline IntervalValue& getLocToItv(u32_t id)
+    inline IntervalValue& getLocToVal(u32_t id)
     {
         auto it = _locToItvVal.find(id);
         if(it != _locToItvVal.end())
@@ -354,18 +354,18 @@ public:
         }
     }
 
-    inline VAddrs& getLocVAddrs(u32_t id)
+    inline Addrs& getLocAddrs(u32_t id)
     {
-        auto it = _locToVAddrs.find(id);
-        if(it != _locToVAddrs.end())
+        auto it = _locToAddrs.find(id);
+        if(it != _locToAddrs.end())
             return it->second;
         else
         {
-            auto globIt = globalES._locToVAddrs.find(id);
-            if(globIt != globalES._locToVAddrs.end())
+            auto globIt = globalES._locToAddrs.find(id);
+            if(globIt != globalES._locToAddrs.end())
                 return globIt->second;
             else
-                return _locToVAddrs[id];
+                return _locToAddrs[id];
         }
     }
 
@@ -451,15 +451,15 @@ public:
     {
         _locToItvVal.clear();
         _varToItvVal.clear();
-        _locToVAddrs.clear();
-        _varToVAddrs.clear();
+        _locToAddrs.clear();
+        _varToAddrs.clear();
     }
 
 
 private:
     void printTable(const VarToValMap &table, std::ostream &oss) const;
 
-    void printTable(const VarToVAddrs &table, std::ostream &oss) const;
+    void printTable(const VarToAddrs &table, std::ostream &oss) const;
 };
 }
 

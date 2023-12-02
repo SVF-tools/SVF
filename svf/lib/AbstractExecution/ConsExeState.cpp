@@ -129,7 +129,7 @@ void ConsExeState::buildGlobES(ConsExeState &globES, Set<u32_t> &vars)
         SingleAbsValue &expr = globES[varId];
         if (expr.is_numeral() && isVirtualMemAddress(expr.get_numeral_int()))
         {
-            if (globES.localLocStoredVal(expr))
+            if (globES.inLocalLocToValTable(expr))
             {
                 store(expr, globES.load(expr));
             }
@@ -236,13 +236,13 @@ void ConsExeState::applySummary(const ConsExeState &summary)
     {
         _locToVal[item.first] = item.second;
     }
-    for (const auto &item: summary._varToVAddrs)
+    for (const auto &item: summary._varToAddrs)
     {
-        _varToVAddrs[item.first] = item.second;
+        _varToAddrs[item.first] = item.second;
     }
-    for (const auto &item: summary._locToVAddrs)
+    for (const auto &item: summary._locToAddrs)
     {
-        _locToVAddrs[item.first] = item.second;
+        _locToAddrs[item.first] = item.second;
     }
 }
 
@@ -481,7 +481,7 @@ bool ConsExeState::applyPhi(u32_t res, std::vector<u32_t> &ops)
         }
         else if (inVarToAddrsTable(curId))
         {
-            const VAddrs &cur = getAddrs(curId);
+            const Addrs &cur = getAddrs(curId);
             if (!inVarToAddrsTable(res))
             {
                 getAddrs(res) = cur;
