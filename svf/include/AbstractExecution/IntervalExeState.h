@@ -160,19 +160,19 @@ public:
             return globalES._varToVAddrs[id];
     }
 
-    inline bool inVarToIValTable(u32_t id) const
+    inline bool inItvTable(u32_t id) const
     {
         return _varToItvVal.find(id) != _varToItvVal.end() ||
                globalES._varToItvVal.find(id) != globalES._varToItvVal.end();
     }
 
-    inline bool inVarToAddrsTable(u32_t id) const override
+    inline bool inAddrsTable(u32_t id) const override
     {
         return _varToVAddrs.find(id) != _varToVAddrs.end() ||
                globalES._varToVAddrs.find(id) != globalES._varToVAddrs.end();
     }
 
-    inline bool inLocToIValTable(u32_t id) const
+    inline bool locStoredItv(u32_t id) const
     {
         return _locToItvVal.find(id) != _locToItvVal.end() ||
                globalES._locToItvVal.find(id) != globalES._locToItvVal.end();
@@ -183,7 +183,7 @@ public:
         return _locToItvVal.find(id) != _locToItvVal.end();
     }
 
-    inline bool inLocToAddrsTable(u32_t id) const override
+    inline bool locStoredAddrs(u32_t id) const override
     {
         return _locToVAddrs.find(id) != _locToVAddrs.end() ||
                globalES._locToVAddrs.find(id) != globalES._locToVAddrs.end();

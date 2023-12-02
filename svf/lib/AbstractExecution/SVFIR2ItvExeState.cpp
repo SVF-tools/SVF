@@ -473,7 +473,7 @@ void SVFIR2ItvExeState::initObjVar(const ObjVar *objVar, u32_t varId)
 
 void SVFIR2ItvExeState::initSVFVar(u32_t varId)
 {
-    if (inVarToIValTable(varId) || _es.inVarToAddrsTable(varId)) return;
+    if (inItvTable(varId) || _es.inAddrsTable(varId)) return;
     SVFIR *svfir = PAG::getPAG();
     SVFVar *svfVar = svfir->getGNode(varId);
     // write objvar into cache instead of exestate
@@ -498,7 +498,7 @@ void SVFIR2ItvExeState::initSVFVar(u32_t varId)
 void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
 {
     initSVFVar(addr->getRHSVarID());
-    if (inVarToIValTable(addr->getRHSVarID()))
+    if (inItvTable(addr->getRHSVarID()))
     {
         // if addr RHS is integerType(i8 i32 etc), value should be limited.
         if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
@@ -509,7 +509,7 @@ void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
         IntervalExeState::globalES[addr->getLHSVarID()] = IntervalExeState::globalES[addr->getRHSVarID()];
 
     }
-    else if (inVarToAddrsTable(addr->getRHSVarID()))
+    else if (inAddrsTable(addr->getRHSVarID()))
     {
         IntervalExeState::globalES.getVAddrs(addr->getLHSVarID()) = IntervalExeState::globalES.getVAddrs(
                     addr->getRHSVarID());
@@ -526,9 +526,9 @@ void SVFIR2ItvExeState::translateBinary(const BinaryOPStmt *binary)
     u32_t op0 = binary->getOpVarID(0);
     u32_t op1 = binary->getOpVarID(1);
     u32_t res = binary->getResID();
-    if (!inVarToIValTable(op0)) _es[op0] = IntervalValue::top();
-    if (!inVarToIValTable(op1)) _es[op1] = IntervalValue::top();
-    if (inVarToIValTable(op0) && inVarToIValTable(op1))
+    if (!inItvTable(op0)) _es[op0] = IntervalValue::top();
+    if (!inItvTable(op1)) _es[op1] = IntervalValue::top();
+    if (inItvTable(op0) && inItvTable(op1))
     {
         IntervalValue &lhs = _es[op0], &rhs = _es[op1];
         IntervalValue resVal;
@@ -588,7 +588,7 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
     u32_t res = cmp->getResID();
-    if (inVarToIValTable(op0) && inVarToIValTable(op1))
+    if (inItvTable(op0) && inItvTable(op1))
     {
         IntervalValue resVal;
         IntervalValue &lhs = _es[op0], &rhs = _es[op1];
@@ -642,7 +642,7 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
         }
         _es[res] = resVal;
     }
-    else if (inVarToAddrsTable(op0) && inVarToAddrsTable(op1))
+    else if (inAddrsTable(op0) && inAddrsTable(op1))
     {
         IntervalValue resVal;
         VAddrs &lhs = getVAddrs(op0), &rhs = getVAddrs(op1);
@@ -771,7 +771,7 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
 {
     u32_t rhs = load->getRHSVarID();
     u32_t lhs = load->getLHSVarID();
-    if (inVarToAddrsTable(rhs))
+    if (inAddrsTable(rhs))
     {
         VAddrs &addrs = getVAddrs(rhs);
         assert(!addrs.empty());
@@ -781,19 +781,15 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
         for (const auto &addr: addrs)
         {
             u32_t objId = getInternalID(addr);
-            if (inLocToIValTable(objId))
+            if (locStoredItv(objId))
             {
                 rhsItv.join_with(_es.load(addr));
                 isItv = true;
             }
-            else if (inLocToAddrsTable(objId))
+            else if (locStoredAddrs(objId))
             {
                 rhsAddr.join_with(_es.loadVAddrs(addr));
                 isAddr = true;
-            }
-            else
-            {
-                // rhs not in table
             }
         }
         if (isItv)
@@ -808,7 +804,7 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
         }
         else
         {
-            // rhs not in table
+            // rhs not initialized, e.g., absence of a store before load
         }
     }
 }
@@ -817,9 +813,9 @@ void SVFIR2ItvExeState::translateStore(const StoreStmt *store)
 {
     u32_t rhs = store->getRHSVarID();
     u32_t lhs = store->getLHSVarID();
-    if (inVarToAddrsTable(lhs))
+    if (inAddrsTable(lhs))
     {
-        if (inVarToIValTable(rhs))
+        if (inItvTable(rhs))
         {
             assert(!getVAddrs(lhs).empty());
             VAddrs &addrs = getVAddrs(lhs);
@@ -828,7 +824,7 @@ void SVFIR2ItvExeState::translateStore(const StoreStmt *store)
                 _es.store(addr, _es[rhs]);
             }
         }
-        else if (inVarToAddrsTable(rhs))
+        else if (inAddrsTable(rhs))
         {
             assert(!getVAddrs(lhs).empty());
             VAddrs &addrs = getVAddrs(lhs);
@@ -852,7 +848,7 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
     }
     else
     {
-        if (inVarToIValTable(rhs))
+        if (inItvTable(rhs))
         {
             _es[lhs] = _es[rhs];
             // if copy LHS is integerType(i8 i32 etc), value should be limited.
@@ -864,7 +860,7 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
                     getRangeLimitFromType(copy->getLHSVar()->getType()));
             }
         }
-        else if (inVarToAddrsTable(rhs))
+        else if (inAddrsTable(rhs))
         {
             assert(!getVAddrs(rhs).empty());
             _es.getVAddrs(lhs) = getVAddrs(rhs);
@@ -876,7 +872,7 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
 {
     u32_t rhs = gep->getRHSVarID();
     u32_t lhs = gep->getLHSVarID();
-    if (!inVarToAddrsTable(rhs)) return;
+    if (!inAddrsTable(rhs)) return;
     assert(!getVAddrs(rhs).empty());
     VAddrs &rhsVal = getVAddrs(rhs);
     if (rhsVal.empty()) return;
@@ -904,7 +900,7 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
     u32_t tval = select->getTrueValue()->getId();
     u32_t fval = select->getFalseValue()->getId();
     u32_t cond = select->getCondition()->getId();
-    if (inVarToIValTable(tval) && inVarToIValTable(fval) && inVarToIValTable(cond))
+    if (inItvTable(tval) && inItvTable(fval) && inItvTable(cond))
     {
         if (_es[cond].is_numeral())
         {
@@ -915,7 +911,7 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
             _es[res] = _es[cond];
         }
     }
-    else if (inVarToAddrsTable(tval) && inVarToAddrsTable(fval) && inVarToIValTable(cond))
+    else if (inAddrsTable(tval) && inAddrsTable(fval) && inItvTable(cond))
     {
         if (_es[cond].is_numeral())
         {
@@ -935,20 +931,16 @@ void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
     {
         NodeID curId = phi->getOpVarID(i);
-        if (inVarToIValTable(curId))
+        if (inItvTable(curId))
         {
             rhsItv.join_with(_es[curId]);
             isItv = true;
         }
-        else if (inVarToAddrsTable(curId))
+        else if (inAddrsTable(curId))
         {
             assert(!getVAddrs(curId).empty());
             rhsAddr.join_with(getVAddrs(curId));
             isAddr = true;
-        }
-        else
-        {
-            // rhs not in the table
         }
     }
     if (isItv)
@@ -961,10 +953,6 @@ void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
         // res var is an address
         _es.getVAddrs(res) = rhsAddr;
     }
-    else
-    {
-        // rhs not in table
-    }
 }
 
 
@@ -972,11 +960,11 @@ void SVFIR2ItvExeState::translateCall(const CallPE *callPE)
 {
     NodeID lhs = callPE->getLHSVarID();
     NodeID rhs = callPE->getRHSVarID();
-    if (inVarToIValTable(rhs))
+    if (inItvTable(rhs))
     {
         _es[lhs] = _es[rhs];
     }
-    else if (inVarToAddrsTable(rhs))
+    else if (inAddrsTable(rhs))
     {
         assert(!getVAddrs(rhs).empty());
         _es.getVAddrs(lhs) = getVAddrs(rhs);
@@ -987,11 +975,11 @@ void SVFIR2ItvExeState::translateRet(const RetPE *retPE)
 {
     NodeID lhs = retPE->getLHSVarID();
     NodeID rhs = retPE->getRHSVarID();
-    if (inVarToIValTable(rhs))
+    if (inItvTable(rhs))
     {
         _es[lhs] = _es[rhs];
     }
-    else if (inVarToAddrsTable(rhs))
+    else if (inAddrsTable(rhs))
     {
         assert(!getVAddrs(rhs).empty());
         _es.getVAddrs(lhs) = getVAddrs(rhs);

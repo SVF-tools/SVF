@@ -451,7 +451,7 @@ bool ConsExeState::applySelect(u32_t res, u32_t cond, u32_t top, u32_t fop)
 
         return assign((*this)[res], ite(condExpr == 1, tExpr, fExpr));
     }
-    else if (inVarToAddrsTable(top) && inVarToAddrsTable(fop) && inVarToVal(cond))
+    else if (inAddrsTable(top) && inAddrsTable(fop) && inVarToVal(cond))
     {
         SingleAbsValue &condExpr = (*this)[cond];
         if (condExpr.is_numeral())
@@ -479,10 +479,10 @@ bool ConsExeState::applyPhi(u32_t res, std::vector<u32_t> &ops)
                 (*this)[res].join_with(cur);
             }
         }
-        else if (inVarToAddrsTable(curId))
+        else if (inAddrsTable(curId))
         {
             const VAddrs &cur = getVAddrs(curId);
-            if (!inVarToAddrsTable(res))
+            if (!inAddrsTable(res))
             {
                 getVAddrs(res) = cur;
             }

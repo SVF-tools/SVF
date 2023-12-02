@@ -133,12 +133,12 @@ public:
         return _locToVAddrs;
     }
 
-    inline virtual bool inVarToAddrsTable(u32_t id) const
+    inline virtual bool inAddrsTable(u32_t id) const
     {
         return _varToVAddrs.find(id) != _varToVAddrs.end();
     }
 
-    inline virtual bool inLocToAddrsTable(u32_t id) const
+    inline virtual bool locStoredAddrs(u32_t id) const
     {
         return _locToVAddrs.find(id) != _locToVAddrs.end();
     }

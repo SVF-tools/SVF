@@ -179,13 +179,13 @@ public:
     }
     //%}
 
-    virtual inline bool inVarToAddrsTable(u32_t id) const override
+    virtual inline bool inAddrsTable(u32_t id) const override
     {
         return _varToVAddrs.find(id) != _varToVAddrs.end() ||
                globalConsES._varToVAddrs.find(id) != globalConsES._varToVAddrs.end();
     }
 
-    virtual inline bool inLocToAddrsTable(u32_t id) const override
+    virtual inline bool locStoredAddrs(u32_t id) const override
     {
         return globalConsES._locToVAddrs.find(id) != globalConsES._locToVAddrs.end() || inLocalLocToAddrsTable(id);
     }

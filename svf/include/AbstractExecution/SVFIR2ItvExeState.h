@@ -105,30 +105,30 @@ public:
 
     inline VAddrs &getVAddrs(u32_t id)
     {
-        if (inVarToAddrsTable(id))
+        if (inAddrsTable(id))
             return _es.getVAddrs(id);
         else
             return globalNullVaddrs;
     }
 
-    inline bool inVarToIValTable(u32_t id) const
+    inline bool inItvTable(u32_t id) const
     {
-        return _es.inVarToIValTable(id);
+        return _es.inItvTable(id);
     }
 
-    inline bool inLocToIValTable(u32_t id) const
+    inline bool locStoredItv(u32_t id) const
     {
-        return _es.inLocToIValTable(id);
+        return _es.locStoredItv(id);
     }
 
-    inline bool inVarToAddrsTable(u32_t id) const
+    inline bool inAddrsTable(u32_t id) const
     {
-        return _es.inVarToAddrsTable(id);
+        return _es.inAddrsTable(id);
     }
 
-    inline bool inLocToAddrsTable(u32_t id) const
+    inline bool locStoredAddrs(u32_t id) const
     {
-        return _es.inLocToAddrsTable(id);
+        return _es.locStoredAddrs(id);
     }
 
     void moveToGlobal();

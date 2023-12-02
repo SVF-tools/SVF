@@ -133,12 +133,12 @@ public:
 
     inline bool inVarToAddrsTable(u32_t id) const
     {
-        return _es->inVarToAddrsTable(id);
+        return _es->inAddrsTable(id);
     }
 
     inline bool inLocToAddrsTable(u32_t id) const
     {
-        return _es->inLocToAddrsTable(id);
+        return _es->locStoredAddrs(id);
     }
 
 protected:
