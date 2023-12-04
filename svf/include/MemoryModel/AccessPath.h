@@ -95,7 +95,7 @@ public:
 
     /// Get methods
     //@{
-    inline APOffset getConstantFieldIdx() const
+    inline APOffset getConstantStructFldIdx() const
     {
         return fldIdx;
     }
@@ -177,7 +177,7 @@ template <> struct std::hash<SVF::AccessPath>
     {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
         std::hash<SVF::AccessPath::IdxOperandPairs> v;
-        return h(std::make_pair(ap.getConstantFieldIdx(),
+        return h(std::make_pair(ap.getConstantStructFldIdx(),
                                 v(ap.getIdxOperandPairVec())));
     }
 };

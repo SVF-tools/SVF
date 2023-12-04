@@ -266,6 +266,8 @@ SVFIR2ItvExeState::Addrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APOf
  */
 IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
 {
+    if (gep->isConstantOffset())
+        return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
     IntervalValue res(0); // Initialize the result interval 'res' to 0.
     // Loop through the offsetVarAndGepTypePairVec in reverse order.
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
@@ -337,6 +339,8 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
  */
 IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
 {
+    if (gep->isConstantOffset())
+        return IntervalValue((s64_t)gep->accumulateConstantOffset());
     IntervalValue res(0);
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {

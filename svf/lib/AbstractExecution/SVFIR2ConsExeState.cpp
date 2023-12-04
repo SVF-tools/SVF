@@ -609,7 +609,8 @@ std::pair<s32_t, s32_t> SVFIR2ConsExeState::getGepOffset(const SVF::GepStmt *gep
 {
     /// for instant constant index, e.g.  gep arr, 1
     if (gep->getOffsetVarAndGepTypePairVec().empty())
-        return std::make_pair(gep->getConstantFieldIdx(), gep->getConstantFieldIdx());
+        return std::make_pair(gep->getConstantStructFldIdx(),
+                              gep->getConstantStructFldIdx());
 
     s32_t totalOffset = 0;
     /// default value of MaxFieldLimit is 512

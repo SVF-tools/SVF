@@ -517,10 +517,10 @@ public:
         return getAccessPath().computeConstantOffset();
     }
     /// Field index of the gep statement if it access the field of a struct
-    inline APOffset getConstantFieldIdx() const
+    inline APOffset getConstantStructFldIdx() const
     {
         assert(isVariantFieldGep()==false && "Can't retrieve the AccessPath if using a variable field index (pointer arithmetic) for struct field access ");
-        return getAccessPath().getConstantFieldIdx();
+        return getAccessPath().getConstantStructFldIdx();
     }
     /// Gep statement with a variant field index (pointer arithmetic) for struct field access
     inline bool isVariantFieldGep() const
