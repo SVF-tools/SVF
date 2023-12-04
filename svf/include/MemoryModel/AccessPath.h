@@ -65,13 +65,13 @@ public:
     typedef std::vector<IdxOperandPair> IdxOperandPairs;
 
     /// Constructor
-    AccessPath(APOffset o = 0, const SVFType* srcTy = nullptr) : fldIdx(o), sourceElementType(srcTy) {}
+    AccessPath(APOffset o = 0, const SVFType* srcTy = nullptr) : fldIdx(o), gepSourceElementType(srcTy) {}
 
     /// Copy Constructor
     AccessPath(const AccessPath& ap)
             : fldIdx(ap.fldIdx),
               idxOperandPairs(ap.getIdxOperandPairVec()),
-              sourceElementType(ap.getSourceElementType())
+              gepSourceElementType(ap.getGepSourceElementType())
     {
     }
 
@@ -85,13 +85,13 @@ public:
     {
         fldIdx = rhs.fldIdx;
         idxOperandPairs = rhs.getIdxOperandPairVec();
-        sourceElementType = rhs.sourceElementType;
+        gepSourceElementType = rhs.gepSourceElementType;
         return *this;
     }
     inline bool operator==(const AccessPath& rhs) const
     {
         return this->fldIdx == rhs.fldIdx &&
-               this->idxOperandPairs == rhs.idxOperandPairs && this->sourceElementType == rhs.sourceElementType;
+               this->idxOperandPairs == rhs.idxOperandPairs && this->gepSourceElementType == rhs.gepSourceElementType;
     }
     //@}
 
@@ -109,9 +109,9 @@ public:
     {
         return idxOperandPairs;
     }
-    inline const SVFType* getSourceElementType() const
+    inline const SVFType* getGepSourceElementType() const
     {
-        return sourceElementType;
+        return gepSourceElementType;
     }
     //@}
 
@@ -173,7 +173,7 @@ private:
 
     APOffset fldIdx;	///< Accumulated Constant Offsets
     IdxOperandPairs idxOperandPairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>
-    const SVFType* sourceElementType;   /// source element type in gep instruction,
+    const SVFType* gepSourceElementType;   /// source element type in gep instruction,
                                         /// e.g., %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %arrayidx, i32 0, i32 0
                                         /// the source element type is %struct.MyStruct
 };

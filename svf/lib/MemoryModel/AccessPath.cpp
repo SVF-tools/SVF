@@ -210,7 +210,7 @@ APOffset AccessPath::computeConstantOffset() const
     assert(isConstantOffset() && "not a constant offset");
 
     // source element type is struct
-    if(sourceElementType && sourceElementType->isStructTy())
+    if(gepSourceElementType && gepSourceElementType->isStructTy())
         return getConstantStructFldIdx();
 
     APOffset totalConstOffset = 0;
@@ -256,7 +256,7 @@ NodeBS AccessPath::computeAllLocations() const
 
 AccessPath AccessPath::operator+(const AccessPath& rhs) const
 {
-    assert(sourceElementType == rhs.getSourceElementType() && "source element type not match");
+    assert(gepSourceElementType == rhs.getGepSourceElementType() && "source element type not match");
     AccessPath ap(rhs);
     ap.fldIdx += getConstantStructFldIdx();
     for (auto &p : ap.getIdxOperandPairVec())
