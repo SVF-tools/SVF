@@ -633,7 +633,7 @@ void SVFIR::print()
             outs() << (*iter)->getSrcID() << " -- VariantGep --> "
                    << (*iter)->getDstID() << "\n";
         else
-            outs() << gep->getRHSVarID() << " -- Gep (" << gep->getConstantFieldIdx()
+            outs() << gep->getRHSVarID() << " -- Gep (" << gep->getConstantStructFldIdx()
                    << ") --> " << gep->getLHSVarID() << "\n";
     }
 

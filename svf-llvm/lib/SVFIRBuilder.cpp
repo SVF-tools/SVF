@@ -303,7 +303,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
                 continue;
             APOffset idx = op->getSExtValue();
             u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(arrTy), idx);
-            ap.setFldIdx(ap.getConstantFieldIdx() + offset);
+            ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
         }
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
         {
@@ -311,7 +311,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
             //The actual index
             APOffset idx = op->getSExtValue();
             u32_t offset = pag->getSymbolInfo()->getFlattenedElemIdx(LLVMModuleSet::getLLVMModuleSet()->getSVFType(ST), idx);
-            ap.setFldIdx(ap.getConstantFieldIdx() + offset);
+            ap.setFldIdx(ap.getConstantStructFldIdx() + offset);
         }
         else if (gepTy->isSingleValueType())
         {

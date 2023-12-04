@@ -210,7 +210,7 @@ APOffset AccessPath::computeConstantOffset() const
     assert(isConstantOffset() && "not a constant offset");
 
     if(idxOperandPairs.empty())
-        return getConstantFieldIdx();
+        return getConstantStructFldIdx();
 
     APOffset totalConstOffset = 0;
     for(int i = idxOperandPairs.size() - 1; i >= 0; i--)
@@ -249,14 +249,14 @@ APOffset AccessPath::computeConstantOffset() const
 NodeBS AccessPath::computeAllLocations() const
 {
     NodeBS result;
-    result.set(getConstantFieldIdx());
+    result.set(getConstantStructFldIdx());
     return result;
 }
 
 AccessPath AccessPath::operator+(const AccessPath& rhs) const
 {
     AccessPath ap(rhs);
-    ap.fldIdx += getConstantFieldIdx();
+    ap.fldIdx += getConstantStructFldIdx();
     for (auto &p : ap.getIdxOperandPairVec())
         ap.addOffsetVarAndGepTypePair(p.first, p.second);
 
@@ -314,7 +314,7 @@ std::string AccessPath::dump() const
     std::string str;
     std::stringstream rawstr(str);
 
-    rawstr << "AccessPath\tField_Index: " << getConstantFieldIdx();
+    rawstr << "AccessPath\tField_Index: " << getConstantStructFldIdx();
     rawstr << ",\tNum-Stride: {";
     const IdxOperandPairs& vec = getIdxOperandPairVec();
     IdxOperandPairs::const_iterator it = vec.begin();
