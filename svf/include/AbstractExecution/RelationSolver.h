@@ -64,6 +64,8 @@ public:
 
     Map<u32_t, NumericLiteral> BS(IntervalExeState domain, const Z3Expr &phi);
 
+    void updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const NumericLiteral& value);
+
     void decide_cpa_ext(IntervalExeState& domain, const Z3Expr &phi, Map<u32_t, Z3Expr>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&);
 };
 }

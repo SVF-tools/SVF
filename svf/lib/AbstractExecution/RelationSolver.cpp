@@ -249,6 +249,18 @@ IntervalExeState RelationSolver::beta(Map<u32_t, double>& sigma,
     return res;
 }
 
+void RelationSolver::updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const NumericLiteral& value)
+{
+    auto it = map.find(key);
+    if (it == map.end())
+    {
+        map.emplace(key, value);
+    }
+    else
+    {
+        it->second = value;
+    }
+}
 
 Map<u32_t, NumericLiteral> RelationSolver::BS(IntervalExeState domain, const Z3Expr& phi)
 {
@@ -257,7 +269,8 @@ Map<u32_t, NumericLiteral> RelationSolver::BS(IntervalExeState domain, const Z3E
     Map<u32_t, NumericLiteral> mid_values, ret;
     for (auto& item: domain.getVarToVal())
     {
-        ret[item.first] = item.second.ub();
+        updateMap(ret, item.first, item.second.ub());
+        // ret[item.first] = item.second.ub();
     }
     // const u32_t infinity_value = 4000000;
     while (1)
@@ -277,7 +290,9 @@ Map<u32_t, NumericLiteral> RelationSolver::BS(IntervalExeState domain, const Z3E
                 outs() << item.second.toString() << "is normal !\n";
                 NumericLiteral mid = (item.second.lb().getNumeral() + item.second.ub().getNumeral()) / 2;
                 Z3Expr expr = ((int)mid.getNumeral() <= v && v <= (int)item.second.ub().getNumeral());
-                mid_values[item.first] = mid;
+                updateMap(mid_values, item.first, mid);
+
+                // mid_values[item.first] = mid;
                 L_phi[item.first] = expr;
             }
 
@@ -333,7 +348,8 @@ void RelationSolver::decide_cpa_ext(IntervalExeState& domain, const Z3Expr& phi,
                 solver.add(expr.getExpr());
                 if (solver.check() == z3::sat)
                 {
-                    ret[id] = NumericLiteral(value);
+                    updateMap(ret, id, NumericLiteral(value));
+                    // ret[id] = NumericLiteral(value);
                     domain._varToItvVal[id].setLb(
                         (NumericLiteral(value) + NumericLiteral(1)));
                     // if (domain._varToItvVal[id].lb().geq(domain._varToItvVal[id].ub()))
@@ -351,7 +367,8 @@ void RelationSolver::decide_cpa_ext(IntervalExeState& domain, const Z3Expr& phi,
                     Z3Expr expr = (
                         (int)mid.getNumeral() <= v && v <= (int)domain.
                         _varToItvVal[id].ub().getNumeral());
-                    mid_values[id] = mid;
+                    updateMap(mid_values, id, mid);
+                    // mid_values[id] = mid;
                     L_phi[id] = expr;
                 }
                 solver.pop();
@@ -364,7 +381,7 @@ void RelationSolver::decide_cpa_ext(IntervalExeState& domain, const Z3Expr& phi,
             for (auto& item : domain.getVarToVal())
             {
                 domain._varToItvVal[item.first].setUb(
-                    (mid_values[item.first] - NumericLiteral(1)));
+                    (mid_values.at(item.first) - NumericLiteral(1)));
                 outs() << "L365: " << domain._varToItvVal[item.first].toString() << "\n";
                 // if (domain._varToItvVal[item.first].lb().geq(domain._varToItvVal[item.first].ub()))
                 //     domain._varToItvVal.erase(item.first);
