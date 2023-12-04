@@ -345,7 +345,9 @@ void SVFIRBuilder::processCE(const Value* val)
             const Constant* opnd = gepce->getOperand(0);
             // handle recursive constant express case (gep (bitcast (gep X 1)) 1)
             processCE(opnd);
-            AccessPath ap;
+            auto &GEPOp = llvm::cast<llvm::GEPOperator>(*gepce);
+            Type *pType = GEPOp.getSourceElementType();
+            AccessPath ap(0, LLVMModuleSet::getLLVMModuleSet()->getSVFType(pType));
             bool constGep = computeGepOffset(gepce, ap);
             // must invoke pag methods here, otherwise it will be a dead recursion cycle
             const SVFValue* cval = getCurrentValue();
@@ -710,7 +712,7 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 
     NodeID src = getValueNode(inst.getPointerOperand());
 
-    AccessPath ap;
+    AccessPath ap(0, LLVMModuleSet::getLLVMModuleSet()->getSVFType(inst.getSourceElementType()));
     bool constGep = computeGepOffset(&inst, ap);
     addGepEdge(src, dst, ap, constGep);
 }
