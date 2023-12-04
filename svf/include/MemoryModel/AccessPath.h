@@ -69,9 +69,9 @@ public:
 
     /// Copy Constructor
     AccessPath(const AccessPath& ap)
-            : fldIdx(ap.fldIdx),
-              idxOperandPairs(ap.getIdxOperandPairVec()),
-              gepSourceElementType(ap.getGepSourceElementType())
+        : fldIdx(ap.fldIdx),
+          idxOperandPairs(ap.getIdxOperandPairVec()),
+          gepSourceElementType(ap.getGepSourceElementType())
     {
     }
 
@@ -174,8 +174,8 @@ private:
     APOffset fldIdx;	///< Accumulated Constant Offsets
     IdxOperandPairs idxOperandPairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>
     const SVFType* gepSourceElementType;   /// source element type in gep instruction,
-                                        /// e.g., %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %arrayidx, i32 0, i32 0
-                                        /// the source element type is %struct.MyStruct
+    /// e.g., %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %arrayidx, i32 0, i32 0
+    /// the source element type is %struct.MyStruct
 };
 
 } // End namespace SVF
