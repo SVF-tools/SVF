@@ -157,7 +157,7 @@ public:
         SVFUtil::outs() << "test start\n";
         // var0 := [0, 1];
         RelExeState::_varToVal[0] = getContext().int_const("0");
-        IntervalExeState::_varToItvVal[0] = IntervalValue(0, 100);
+        IntervalExeState::_varToItvVal[0] = IntervalValue(0, 10);
         // var1 := var0;
         RelExeState::_varToVal[1] =
             getContext().int_const("1") == getContext().int_const("0");
@@ -191,7 +191,7 @@ public:
         // {
             // std::cout << item.first << ": " << item.second << "\n";
         // }
-        IntervalExeState resBS = rs.BS(inv, phi);
+        Map<u32_t, NumericLiteral> resBS = rs.BS(inv, phi);
 
         //     //        IntervalExeState::VarToValMap intendedRes = Map<u32_t,
         //     IntervalValue>({{0, IntervalValue(0,3)},{1,

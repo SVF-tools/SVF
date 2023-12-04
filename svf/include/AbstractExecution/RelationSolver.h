@@ -62,9 +62,9 @@ public:
 
     IntervalExeState RSY(IntervalExeState domain, const Z3Expr &phi);
 
-    IntervalExeState BS(IntervalExeState domain, const Z3Expr &phi);
+    Map<u32_t, NumericLiteral> BS(IntervalExeState domain, const Z3Expr &phi);
 
-    void decide_cpa_ext(IntervalExeState domain, const Z3Expr &phi, Map<u32_t, Z3Expr>, Map<u32_t, NumericLiteral>, Map<u32_t, NumericLiteral>);
+    void decide_cpa_ext(IntervalExeState& domain, const Z3Expr &phi, Map<u32_t, Z3Expr>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&);
 };
 }
 

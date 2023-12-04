@@ -44,7 +44,7 @@ private:
 
 public:
     /// Default constructor
-    NumericLiteral() = default;
+    NumericLiteral() = delete;
 
     /// Create a new NumericLiteral from s32_t
 

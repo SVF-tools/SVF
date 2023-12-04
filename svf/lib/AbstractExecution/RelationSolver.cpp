@@ -250,21 +250,32 @@ IntervalExeState RelationSolver::beta(Map<u32_t, double>& sigma,
 }
 
 
-IntervalExeState RelationSolver::BS(IntervalExeState domain, const Z3Expr& phi)
+Map<u32_t, NumericLiteral> RelationSolver::BS(IntervalExeState domain, const Z3Expr& phi)
 {
     Map<u32_t, Z3Expr> L_phi;
     IntervalExeState copy = domain;
     Map<u32_t, NumericLiteral> mid_values, ret;
+    for (auto& item: domain.getVarToVal())
+    {
+        ret[item.first] = item.second.ub();
+    }
     // const u32_t infinity_value = 4000000;
     while (1)
     {
         L_phi.clear();
-        for (auto item : domain.getVarToVal())
+        for (auto& item : copy.getVarToVal())
         {
+            Z3Expr v = Z3Expr::getContext().int_const(std::to_string(item.first).c_str());
+            if (item.second.isBottom())
+            {
+                outs() << item.second.toString() << "is bottom !\n";
+                L_phi[item.first] = (1 <= v && v <= -1);
+                continue;
+            }
             if (item.second.lb().leq(item.second.ub()))
             {
+                outs() << item.second.toString() << "is normal !\n";
                 NumericLiteral mid = (item.second.lb().getNumeral() + item.second.ub().getNumeral()) / 2;
-                Z3Expr v = Z3Expr::getContext().int_const(std::to_string(item.first).c_str());
                 Z3Expr expr = ((int)mid.getNumeral() <= v && v <= (int)item.second.ub().getNumeral());
                 mid_values[item.first] = mid;
                 L_phi[item.first] = expr;
@@ -275,22 +286,27 @@ IntervalExeState RelationSolver::BS(IntervalExeState domain, const Z3Expr& phi)
             break;
         else
             decide_cpa_ext(copy, phi, L_phi, mid_values, ret);
+        for (auto item : copy.getVarToVal())
+        {
+            outs() << "L280: "<< item.first << " " << copy._varToItvVal[item.first].toString() << "\n";
+        }
+        // return copy;
     }
-    return copy;
+    return ret;
 }
 
 
-void RelationSolver::decide_cpa_ext(IntervalExeState domain, const Z3Expr& phi,
-                                    Map<u32_t, Z3Expr> L_phi,
-                                    Map<u32_t, NumericLiteral> mid_values,
-                                    Map<u32_t, NumericLiteral> ret)
+void RelationSolver::decide_cpa_ext(IntervalExeState& domain, const Z3Expr& phi,
+                                    Map<u32_t, Z3Expr>& L_phi,
+                                    Map<u32_t, NumericLiteral>& mid_values,
+                                    Map<u32_t, NumericLiteral>& ret)
 {
+    // Map<u32_t, Z3Expr> copied_L_phi(L_phi.begin(), L_phi.end());
+    // L_phi.clear();
     while (1)
     {
-        Map<u32_t, Z3Expr> copied_L_phi(L_phi.begin(), L_phi.end());
-        L_phi.clear();
         Z3Expr join_expr(Z3Expr::getContext().bool_val(false));
-        for (auto item : copied_L_phi)
+        for (auto& item : L_phi)
             join_expr = (join_expr || item.second);
         join_expr = (join_expr && phi).simplify();
         z3::solver& solver = Z3Expr::getSolver();
@@ -310,9 +326,9 @@ void RelationSolver::decide_cpa_ext(IntervalExeState domain, const Z3Expr& phi,
                     continue;
                 u32_t id = std::stoi(v.name().str());
                 int value = m.get_const_interp(v).get_numeral_int();
-                Z3Expr expr = (copied_L_phi[id] && Z3Expr::getContext().int_const(
+                outs() << "L329: " << L_phi[id].to_string() << "\n";
+                Z3Expr expr = (L_phi[id] && Z3Expr::getContext().int_const(
                                    std::to_string(id).c_str()) == value);
-                outs() << id << " " << value << "\n";
                 solver.push();
                 solver.add(expr.getExpr());
                 if (solver.check() == z3::sat)
@@ -320,17 +336,21 @@ void RelationSolver::decide_cpa_ext(IntervalExeState domain, const Z3Expr& phi,
                     ret[id] = NumericLiteral(value);
                     domain._varToItvVal[id].setLb(
                         (NumericLiteral(value) + NumericLiteral(1)));
+                    // if (domain._varToItvVal[id].lb().geq(domain._varToItvVal[id].ub()))
+                    //     domain._varToItvVal.erase(id);
+                    Z3Expr v = Z3Expr::getContext().int_const(
+                        std::to_string(id).c_str());
+                    if (domain._varToItvVal[id].isBottom())
+                    {
+                        L_phi[id] = (1 <= v && v <= -1);;
+                        continue;
+                    }
                     NumericLiteral mid = NumericLiteral(
                     (domain._varToItvVal[id].lb().getNumeral() + domain.
                      _varToItvVal[id].ub().getNumeral()) / 2);
-                    outs() << "Interval is changed to :" << id << ": " << (int)domain._varToItvVal[id].lb().getNumeral() << " " << (int)domain._varToItvVal[id].ub().getNumeral() << "\n";
-                    outs()<< (int)mid.getNumeral() << "\n";
-                    Z3Expr v = Z3Expr::getContext().int_const(
-                        std::to_string(id).c_str());
                     Z3Expr expr = (
                         (int)mid.getNumeral() <= v && v <= (int)domain.
                         _varToItvVal[id].ub().getNumeral());
-                    outs() << expr.to_string();
                     mid_values[id] = mid;
                     L_phi[id] = expr;
                 }
@@ -339,12 +359,16 @@ void RelationSolver::decide_cpa_ext(IntervalExeState domain, const Z3Expr& phi,
         }
         else /// unknown or unsat
         {
+            outs() << "unsat\n";
             solver.pop();
-            for (auto item : domain.getVarToVal())
+            for (auto& item : domain.getVarToVal())
             {
                 domain._varToItvVal[item.first].setUb(
                     (mid_values[item.first] - NumericLiteral(1)));
-                outs() << domain[item.first].toString() <<std::endl;
+                outs() << "L365: " << domain._varToItvVal[item.first].toString() << "\n";
+                // if (domain._varToItvVal[item.first].lb().geq(domain._varToItvVal[item.first].ub()))
+                //     domain._varToItvVal.erase(item.first);
+                // outs() << domain[item.first].toString() <<std::endl;
             }
             return;
         }
