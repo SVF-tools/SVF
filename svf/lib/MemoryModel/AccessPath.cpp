@@ -232,6 +232,15 @@ APOffset AccessPath::computeConstantOffset() const
             APOffset offset = op->getSExtValue();
             if (offset >= 0)
             {
+                const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
+                if (offset >= (APOffset)so.size())
+                {
+                    SVFUtil::errs() << "It is overflow access, we access the last idx\n";
+                    offset = so.size() - 1;
+                } else {
+
+                }
+
                 u32_t flattenOffset =
                     SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type,
                             offset);

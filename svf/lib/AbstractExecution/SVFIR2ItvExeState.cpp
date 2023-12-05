@@ -306,7 +306,8 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
                 }
                 else
                 {
-                    s64_t ub = (double)Options::MaxFieldLimit() /
+                    s64_t ub = (idxVal.ub().getNumeral() < 0) ? 0 :
+                               (double)Options::MaxFieldLimit() /
                                elemByteSize >= idxVal.ub().getNumeral() ? elemByteSize * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
                     s64_t lb = (idxVal.lb().getNumeral() < 0) ? 0 :
                                ((double)Options::MaxFieldLimit() /
