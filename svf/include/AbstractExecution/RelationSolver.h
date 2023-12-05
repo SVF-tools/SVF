@@ -44,7 +44,7 @@ public:
     IntervalExeState (the last element of inputs) for RSY or bilateral solver */
 
     /// Return Z3Expr according to valToValMap
-    Z3Expr gamma_hat(IntervalExeState &exeState);
+    static Z3Expr gamma_hat(IntervalExeState &exeState);
 
     /// Return Z3Expr according to another valToValMap
     Z3Expr gamma_hat(IntervalExeState &alpha, IntervalExeState &exeState);
@@ -62,6 +62,13 @@ public:
 
     IntervalExeState RSY(IntervalExeState domain, const Z3Expr &phi);
 
+    Map<u32_t, NumericLiteral> BoxedOptSolver(const Z3Expr& phi, Map<u32_t, NumericLiteral>& ret, Map<u32_t, NumericLiteral>& low_values, Map<u32_t, NumericLiteral>& high_values);
+
+    IntervalExeState BS(IntervalExeState& domain, const Z3Expr &phi);
+
+    void updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const NumericLiteral& value);
+
+    void decide_cpa_ext(const Z3Expr &phi, Map<u32_t, Z3Expr>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&);
 };
 }
 

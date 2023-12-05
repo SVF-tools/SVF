@@ -437,4 +437,14 @@ public:
 
 }; // end class NumericLiteral
 } // end namespace SVF
+
+/// Specialise hash for NumericLiteral
+template<>
+struct std::hash<SVF::NumericLiteral>
+{
+    size_t operator()(const SVF::NumericLiteral &n) const
+    {
+        return n.getNumeral();
+    }
+};
 #endif //Z3_EXAMPLE_Number_H
