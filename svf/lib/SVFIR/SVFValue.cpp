@@ -190,6 +190,14 @@ bool SVFFunction::isVarArg() const
     return varArg;
 }
 
+const SVFBasicBlock *SVFFunction::getExitBB() const
+{
+    assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+    assert((!hasReturn() || exitBlock->back()->isRetInst()) && "last inst must be return inst");
+    assert(exitBlock && "must have an exitBlock");
+    return exitBlock;
+}
+
 void SVFFunction::setExitBlock(SVFBasicBlock *bb)
 {
     assert(!exitBlock && "have already set exit Basicblock!");

@@ -54,11 +54,7 @@ FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f)
     // if function is implemented
     if (f->begin() != f->end())
     {
-        // ensure the enclosing function has exit basic block
-        if (f->hasReturn())
-        {
-            bb = f->getExitBB();
-        }
+        bb = f->getExitBB();
     }
 }
 

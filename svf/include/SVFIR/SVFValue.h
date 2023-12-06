@@ -415,12 +415,7 @@ public:
 
     /// Carefully! when you call getExitBB, you need ensure the function has return instruction
     /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
-    inline const SVFBasicBlock* getExitBB() const
-    {
-        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        assert((hasReturn() && exitBlock) && "ensure the function has a single basic block containing a return instruction!");
-        return exitBlock;
-    }
+    const SVFBasicBlock* getExitBB() const;
 
     void setExitBlock(SVFBasicBlock *bb);
 
