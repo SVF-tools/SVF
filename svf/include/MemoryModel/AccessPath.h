@@ -65,13 +65,13 @@ public:
     typedef std::vector<IdxOperandPair> IdxOperandPairs;
 
     /// Constructor
-    AccessPath(APOffset o = 0, const SVFType* srcTy = nullptr) : fldIdx(o), gepSourceElementType(srcTy) {}
+    AccessPath(APOffset o = 0, const SVFType* srcTy = nullptr) : fldIdx(o), gepPointeeType(srcTy) {}
 
     /// Copy Constructor
     AccessPath(const AccessPath& ap)
         : fldIdx(ap.fldIdx),
           idxOperandPairs(ap.getIdxOperandPairVec()),
-          gepSourceElementType(ap.getGepSourceElementType())
+          gepPointeeType(ap.getGepPointeeType())
     {
     }
 
@@ -85,13 +85,13 @@ public:
     {
         fldIdx = rhs.fldIdx;
         idxOperandPairs = rhs.getIdxOperandPairVec();
-        gepSourceElementType = rhs.gepSourceElementType;
+        gepPointeeType = rhs.gepPointeeType;
         return *this;
     }
     inline bool operator==(const AccessPath& rhs) const
     {
         return this->fldIdx == rhs.fldIdx &&
-               this->idxOperandPairs == rhs.idxOperandPairs && this->gepSourceElementType == rhs.gepSourceElementType;
+               this->idxOperandPairs == rhs.idxOperandPairs && this->gepPointeeType == rhs.gepPointeeType;
     }
     //@}
 
@@ -109,9 +109,9 @@ public:
     {
         return idxOperandPairs;
     }
-    inline const SVFType* getGepSourceElementType() const
+    inline const SVFType* getGepPointeeType() const
     {
-        return gepSourceElementType;
+        return gepPointeeType;
     }
     //@}
 
@@ -173,7 +173,7 @@ private:
 
     APOffset fldIdx;	///< Accumulated Constant Offsets
     IdxOperandPairs idxOperandPairs;	///< a vector of actual offset in the form of <SVF Var, iterator type>
-    const SVFType* gepSourceElementType;   /// source element type in gep instruction,
+    const SVFType* gepPointeeType;   /// source element type in gep instruction,
     /// e.g., %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %arrayidx, i32 0, i32 0
     /// the source element type is %struct.MyStruct
 };
