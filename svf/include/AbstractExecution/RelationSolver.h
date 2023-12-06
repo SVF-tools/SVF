@@ -62,13 +62,13 @@ public:
 
     IntervalExeState RSY(IntervalExeState domain, const Z3Expr &phi);
 
-    Map<u32_t, NumericLiteral> BoxedOptSolver(IntervalExeState& domain, const Z3Expr &phi, Map<u32_t, NumericLiteral>&);
+    Map<u32_t, NumericLiteral> BoxedOptSolver(const Z3Expr& phi, Map<u32_t, NumericLiteral>& ret, Map<u32_t, NumericLiteral>& low_values, Map<u32_t, NumericLiteral>& high_values);
 
-    Map<u32_t, NumericLiteral> BS(IntervalExeState& domain, const Z3Expr &phi);
+    IntervalExeState BS(IntervalExeState& domain, const Z3Expr &phi);
 
     void updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const NumericLiteral& value);
 
-    void decide_cpa_ext(IntervalExeState& domain, const Z3Expr &phi, Map<u32_t, Z3Expr>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&);
+    void decide_cpa_ext(const Z3Expr &phi, Map<u32_t, Z3Expr>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&);
 };
 }
 

@@ -122,12 +122,17 @@ public:
         const Z3Expr& phi = (relExpr && initExpr).simplify();
         IntervalExeState resRSY = rs.RSY(inv, phi);
         IntervalExeState resBilateral = rs.bilateral(inv, phi);
+        IntervalExeState resBS = rs.BS(inv, phi);
         // 0:[0,1] 1:[1,2] 2:[1,2]
         for (auto& item : resRSY.getVarToVal())
         {
             std::cout << item.first << ": " << item.second << "\n";
         }
         for (auto& item : resBilateral.getVarToVal())
+        {
+            std::cout << item.first << ": " << item.second << "\n";
+        }
+        for (auto& item : resBS.getVarToVal())
         {
             std::cout << item.first << ": " << item.second << "\n";
         }
@@ -180,7 +185,7 @@ public:
                                 RelExeState::_varToVal[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        // IntervalExeState resRSY = rs.RSY(inv, phi);
+        IntervalExeState resRSY = rs.RSY(inv, phi);
         // IntervalExeState resBilateral = rs.bilateral(inv, phi);
         // 0:[0,1] 1:[1,2] 2:[1,2]
         // for (auto& item : resRSY.getVarToVal())
@@ -192,7 +197,8 @@ public:
             // std::cout << item.first << ": " << item.second << "\n";
         // }
 
-        Map<u32_t, NumericLiteral> resBS = rs.BS(inv, phi);
+        IntervalExeState resBS = rs.BS(inv, phi);
+        assert(resRSY == resBS);
 
         //     //        IntervalExeState::VarToValMap intendedRes = Map<u32_t,
         //     IntervalValue>({{0, IntervalValue(0,3)},{1,
@@ -222,7 +228,8 @@ int main(int argc, char** argv)
     // test1();
     RelExeStateExample relExeStateExample;
     relExeStateExample.test_print();
-    relExeStateExample.testRelExeState2();
+    relExeStateExample.testRelExeState();
+    // relExeStateExample.testRelExeState2();
 
     return 0;
 }
