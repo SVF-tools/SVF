@@ -281,13 +281,9 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
         {
             u32_t elemByteSize = 1;
             if (const SVFArrayType* arrOperandType = SVFUtil::dyn_cast<SVFArrayType>(idxOperandType))
-            {
                 elemByteSize = arrOperandType->getTypeOfElement()->getByteSize();
-            }
             else if (const SVFPointerType* ptrOperandType = SVFUtil::dyn_cast<SVFPointerType>(idxOperandType))
-            {
                 elemByteSize = ptrOperandType->getPtrElementType()->getByteSize();
-            }
             else
                 assert(false && "idxOperandType must be ArrType or PtrType");
             if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue()))
@@ -301,11 +297,11 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
                 u32_t idx = _svfir->getValueNode(idxOperandVar->getValue());
                 IntervalValue idxVal = _es[idx];
                 if (idxVal.isBottom())
-                {
                     res = res + IntervalValue(0, 0);
-                }
                 else
                 {
+                    // if lb or ub is negative number, set 0.
+                    // if lb or ub is positive number, guarantee lb/ub * elemByteSize <= MaxFieldLimit
                     s64_t ub = (idxVal.ub().getNumeral() < 0) ? 0 :
                                (double)Options::MaxFieldLimit() /
                                elemByteSize >= idxVal.ub().getNumeral() ? elemByteSize * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
