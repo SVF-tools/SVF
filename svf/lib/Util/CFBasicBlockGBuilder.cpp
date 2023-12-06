@@ -194,8 +194,8 @@ void CFBasicBlockGBuilder::addInterProceduralEdge(ICFG *icfg,
                 {
                     if (const RetCFGEdge *retEdge = SVFUtil::dyn_cast<RetCFGEdge>(icfgEdge))
                     {
-                        // no return function does not have an exit BB
-                        if(!retEdge->getSrcNode()->getBB()) continue;
+                        // no return function
+                        if(!retEdge->getSrcNode()->getFun()->hasReturn()) continue;
                         CFBasicBlockEdge *pEdge = new CFBasicBlockEdge(bbToNodes[retEdge->getSrcNode()->getBB()].back(),
                                 bbNodes.second[i],
                                 retEdge);

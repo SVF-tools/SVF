@@ -364,6 +364,10 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
             LLVMUtil::getPrevInsts(inst, getSVFInstruction(inst)->getPredInstructions());
         }
     }
+    // For no return functions, we set the last block as exit BB
+    // This ensures that each function that has definition must have an exit BB
+    if(svfFun->exitBlock == nullptr && svfFun->hasBasicBlock()) svfFun->setExitBlock(
+                const_cast<SVFBasicBlock *>(svfFun->back()));
 }
 
 
