@@ -209,9 +209,6 @@ APOffset AccessPath::computeConstantOffset() const
 
     assert(isConstantOffset() && "not a constant offset");
 
-    if(idxOperandPairs.empty())
-        return getConstantStructFldIdx();
-
     APOffset totalConstOffset = 0;
     for(int i = idxOperandPairs.size() - 1; i >= 0; i--)
     {
@@ -246,8 +243,6 @@ APOffset AccessPath::computeConstantOffset() const
                             offset);
                 totalConstOffset += flattenOffset;
             }
-            else
-                totalConstOffset += offset;
         }
     }
     return totalConstOffset;
@@ -264,6 +259,7 @@ NodeBS AccessPath::computeAllLocations() const
 
 AccessPath AccessPath::operator+(const AccessPath& rhs) const
 {
+    assert(gepPointeeType == rhs.getGepPointeeType() && "source element type not match");
     AccessPath ap(rhs);
     ap.fldIdx += getConstantStructFldIdx();
     for (auto &p : ap.getIdxOperandPairVec())
