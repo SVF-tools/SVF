@@ -28,6 +28,8 @@
  */
 #include "Util/CFBasicBlockGBuilder.h"
 
+#include <SVFIR/SVFIR.h>
+
 namespace SVF
 {
 
@@ -40,48 +42,73 @@ namespace SVF
 void CFBasicBlockGBuilder::initCFBasicBlockGNodes(ICFG *icfg,
         Map<const SVFBasicBlock *, std::vector<CFBasicBlockNode *>> &bbToNodes)
 {
-    for (const auto &node : *icfg)
+    for (const auto &func : *PAG::getPAG()->getModule())
     {
-        CFBasicBlockNode *pNode;
-        if (const SVFBasicBlock *bb = node.second->getBB())
+        for(const auto& bb: *func)
         {
-            if (const CallICFGNode *callNode = SVFUtil::dyn_cast<CallICFGNode>(node.second))
+            for(const auto& inst: *bb)
             {
-                // Create a new CFBasicBlockNode for the CallICFGNode
-                pNode = new CFBasicBlockNode({callNode});
-                bbToNodes[bb].push_back(pNode);
-                _CFBasicBlockG->addCFBBNode(pNode);
-
-                // Create a new CFBasicBlockNode for the corresponding RetICFGNode
-                auto *retNode = new CFBasicBlockNode({callNode->getRetICFGNode()});
-                bbToNodes[bb].push_back(retNode);
-                _CFBasicBlockG->addCFBBNode(retNode);
-            }
-            else if (!SVFUtil::isa<RetICFGNode>(node.second))
-            {
-                if (bbToNodes.find(bb) == bbToNodes.end())
+                const ICFGNode* icfgNode = icfg->getICFGNode(inst);
+                if (const CallICFGNode *callNode = SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
                 {
-                    // Create a new CFBasicBlockNode for the non-CallICFGNode
-                    pNode = new CFBasicBlockNode({node.second});
-                    bbToNodes[node.second->getBB()] = {pNode};
+                    // Create a new CFBasicBlockNode for the CallICFGNode
+                    CFBasicBlockNode* pNode = new CFBasicBlockNode({callNode});
+                    bbToNodes[bb].push_back(pNode);
                     _CFBasicBlockG->addCFBBNode(pNode);
+
+                    // Create a new CFBasicBlockNode for the corresponding RetICFGNode
+                    auto *retNode = new CFBasicBlockNode({callNode->getRetICFGNode()});
+                    bbToNodes[bb].push_back(retNode);
+                    _CFBasicBlockG->addCFBBNode(retNode);
                 }
                 else
                 {
-                    pNode = bbToNodes[node.second->getBB()].back();
-                    if (!SVFUtil::isa<RetICFGNode>(pNode->getICFGNodes()[0]))
+                    if (bbToNodes.find(bb) == bbToNodes.end())
                     {
-                        // Add the non-CallICFGNode to the existing CFBasicBlockNode
-                        pNode->addNode(node.second);
+                        // Create a new CFBasicBlockNode for the non-CallICFGNode
+                        CFBasicBlockNode* pNode = new CFBasicBlockNode({icfgNode});
+                        bbToNodes[bb] = {pNode};
+                        _CFBasicBlockG->addCFBBNode(pNode);
                     }
                     else
                     {
-                        // Create a new CFBasicBlockNode for the non-CallICFGNode
-                        pNode = new CFBasicBlockNode({node.second});
-                        bbToNodes[node.second->getBB()].push_back(pNode);
-                        _CFBasicBlockG->addCFBBNode(pNode);
+                        CFBasicBlockNode* pNode = bbToNodes[bb].back();
+                        if (!SVFUtil::isa<RetICFGNode>(pNode->getICFGNodes()[0]))
+                        {
+                            // Add the non-CallICFGNode to the existing CFBasicBlockNode
+                            pNode->addNode(icfgNode);
+                        }
+                        else
+                        {
+                            // Create a new CFBasicBlockNode for the non-CallICFGNode
+                            pNode = new CFBasicBlockNode({icfgNode});
+                            bbToNodes[bb].push_back(pNode);
+                            _CFBasicBlockG->addCFBBNode(pNode);
+                        }
                     }
                 }
+            }
+        }
+
+        if(const FunEntryICFGNode* funEntryNode = icfg->getFunEntryICFGNode(func))
+        {
+            if(const SVFBasicBlock* bb = funEntryNode->getBB())
+            {
+                std::vector<CFBasicBlockNode *>& nodes = bbToNodes[bb];
+                CFBasicBlockNode* pNode = new CFBasicBlockNode({funEntryNode});
+                nodes.insert(nodes.begin(), pNode);
+                _CFBasicBlockG->addCFBBNode(pNode);
+            }
+        }
+
+        if(const FunExitICFGNode* funExitNode = icfg->getFunExitICFGNode(func))
+        {
+            if(const SVFBasicBlock* bb = funExitNode->getBB())
+            {
+                std::vector<CFBasicBlockNode *>& nodes = bbToNodes[bb];
+                CFBasicBlockNode* pNode = new CFBasicBlockNode({funExitNode});
+                nodes.push_back(pNode);
+                _CFBasicBlockG->addCFBBNode(pNode);
             }
         }
     }
