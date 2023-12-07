@@ -236,7 +236,9 @@ APOffset AccessPath::computeConstantOffset() const
                 {
                     SVFUtil::errs() << "It is overflow access, we access the last idx\n";
                     offset = so.size() - 1;
-                } else {
+                }
+                else
+                {
 
                 }
 
