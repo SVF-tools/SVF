@@ -48,6 +48,7 @@ void CFBasicBlockGBuilder::initCFBasicBlockGNodes(ICFG *icfg,
         {
             for(const auto& inst: *bb)
             {
+                if(SVFUtil::isIntrinsicInst(inst)) continue;
                 const ICFGNode* icfgNode = icfg->getICFGNode(inst);
                 if (const CallICFGNode *callNode = SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
                 {
