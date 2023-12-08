@@ -31,7 +31,6 @@
 #define __ExtAPI_H
 
 #include "SVFIR/SVFValue.h"
-#include <Util/config.h>
 #include <string>
 #include <vector>
 #include <map>
