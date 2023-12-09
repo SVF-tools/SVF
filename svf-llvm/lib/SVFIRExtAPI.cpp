@@ -112,9 +112,9 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     {
         LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
         const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(dtype),
-                                      fields[index].getConstantFieldIdx());
+                                      fields[index].getConstantStructFldIdx());
         const SVFType* sElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(stype),
-                                      fields[index].getConstantFieldIdx());
+                                      fields[index].getConstantStructFldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
         NodeID dummy = pag->addDummyValNode();
@@ -180,7 +180,8 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         for (u32_t index = 0; index < sz; index++)
         {
             LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-            const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(dtype), dstFields[index].getConstantFieldIdx());
+            const SVFType* dElementType = pag->getSymbolInfo()->getFlatternedElemType(llvmmodule->getSVFType(dtype),
+                                          dstFields[index].getConstantStructFldIdx());
             NodeID dField = getGepValVar(cs->getArgOperand(0), dstFields[index], dElementType);
             addStoreEdge(getValueNode(cs->getArgOperand(1)),dField);
         }
@@ -233,7 +234,8 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
         // Now we calculate the offset from base to vArg3
         NodeID vnArg3 = pag->getValueNode(svfCall->getArgOperand(3));
-        APOffset offset = getAccessPathFromBaseNode(vnArg3).getConstantFieldIdx();
+        APOffset offset =
+            getAccessPathFromBaseNode(vnArg3).getConstantStructFldIdx();
 
         // We get all flattened fields of base
         vector<AccessPath> fields =  pag->getTypeLocSetsMap(vnArg3).second;
@@ -245,7 +247,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             if((u32_t)i >= fields.size())
                 break;
             const SVFType* elementType = pag->getSymbolInfo()->getFlatternedElemType(pag->getTypeLocSetsMap(vnArg3).first,
-                                         fields[i].getConstantFieldIdx());
+                                         fields[i].getConstantStructFldIdx());
             NodeID vnD = getGepValVar(cs->getArgOperand(3), fields[i], elementType);
             NodeID vnS = pag->getValueNode(svfCall->getArgOperand(1));
             if(vnD && vnS)

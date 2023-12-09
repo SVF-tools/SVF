@@ -40,7 +40,7 @@ IntervalExeState RelationSolver::bilateral(IntervalExeState domain, Z3Expr phi,
     z3::solver solver = Z3Expr::getSolver();
     z3::params p(Z3Expr::getContext());
     /// TODO: add option for timeout
-    p.set(":timeout", static_cast<unsigned>(1)); // in milliseconds
+    p.set(":timeout", static_cast<unsigned>(600)); // in milliseconds
     solver.set(p);
     IntervalExeState consequence;
 
@@ -68,7 +68,9 @@ IntervalExeState RelationSolver::bilateral(IntervalExeState domain, Z3Expr phi,
             for (u32_t i = 0; i < m.size(); i++)
             {
                 z3::func_decl v = m[i];
-                assert(v.arity() == 0);
+                // assert(v.arity() == 0);
+                if (v.arity() != 0)
+                    continue;
                 solution.emplace(std::stoi(v.name().str()),
                                  m.get_const_interp(v).get_numeral_int());
             }
@@ -266,7 +268,7 @@ IntervalExeState RelationSolver::BS(IntervalExeState& domain, const Z3Expr &phi)
 {
     /// because key of _varToItvVal is u32_t, -key may out of range for int
     /// so we do key + bias for -key
-    const u32_t bias = 10000;
+    u32_t bias = 0;
     Map<u32_t, NumericLiteral> ret;
     Map<u32_t, NumericLiteral> low_values, high_values;
     Z3Expr new_phi = phi;
@@ -277,13 +279,17 @@ IntervalExeState RelationSolver::BS(IntervalExeState& domain, const Z3Expr &phi)
         updateMap(ret, item.first, item.second.ub());
         updateMap(low_values, item.first, item.second.lb());
         updateMap(high_values, item.first, item.second.ub());
-
+        if (item.first > bias)
+            bias = item.first + 1;
+    }
+    for (auto& item: domain.getVarToVal())
+    {
         /// init objects -x
         u32_t reverse_key = item.first + bias;
         updateMap(ret, reverse_key, -item.second.lb());
         updateMap(low_values, reverse_key, -item.second.ub());
         updateMap(high_values, reverse_key, -item.second.lb());
-        /// add a relation that x == (x+bias)
+        /// add a relation that x == -(x+bias)
         new_phi = (new_phi && (Z3Expr::getContext().int_const(std::to_string(reverse_key).c_str()) == -Z3Expr::getContext().int_const(std::to_string(item.first).c_str())));
     }
     /// optimize each object
@@ -351,16 +357,13 @@ void RelationSolver::decide_cpa_ext(const Z3Expr& phi,
         {
             z3::model m = solver.get_model();
             solver.pop();
-            for (u32_t i = 0; i < m.size(); i++)
+            for(auto & item : L_phi)
             {
-                z3::func_decl v = m[i];
-                if (v.arity() != 0)
-                    continue;
+                u32_t id = item.first;
+                int value = m.eval(Z3Expr::getContext().int_const(std::to_string(id).c_str())).get_numeral_int();
                 /// id is the var id, value is the solution found for var_id
-                u32_t id = std::stoi(v.name().str());
-                int value = m.get_const_interp(v).get_numeral_int();
                 /// add a relation to check if the solution meets phi_id
-                Z3Expr expr = (L_phi[id] && Z3Expr::getContext().int_const(std::to_string(id).c_str()) == value);
+                Z3Expr expr = (item.second && Z3Expr::getContext().int_const(std::to_string(id).c_str()) == value);
                 solver.push();
                 solver.add(expr.getExpr());
                 // solution meets phi_id

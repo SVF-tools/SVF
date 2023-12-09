@@ -49,9 +49,9 @@ class ExeState
 
 public:
 
-    typedef AddressValue VAddrs;
-    typedef Map<u32_t, VAddrs> VarToVAddrs;
-    /// Execution state kind
+    typedef AddressValue Addrs;
+    typedef Map<u32_t, Addrs> VarToAddrs;
+    /// Execution state type
     enum ExeState_TYPE
     {
         IntervalK, SingleValueK
@@ -64,18 +64,18 @@ public:
 
     virtual ~ExeState() = default;
 
-    ExeState(const ExeState &rhs) : _varToVAddrs(rhs._varToVAddrs),
-        _locToVAddrs(rhs._locToVAddrs) {}
+    ExeState(const ExeState &rhs) : _varToAddrs(rhs._varToAddrs),
+        _locToAddrs(rhs._locToAddrs) {}
 
-    ExeState(ExeState &&rhs) noexcept: _varToVAddrs(std::move(rhs._varToVAddrs)),
-        _locToVAddrs(std::move(rhs._locToVAddrs)) {}
+    ExeState(ExeState &&rhs) noexcept: _varToAddrs(std::move(rhs._varToAddrs)),
+        _locToAddrs(std::move(rhs._locToAddrs)) {}
 
     ExeState &operator=(const ExeState &rhs)
     {
         if(*this != rhs)
         {
-            _varToVAddrs = rhs._varToVAddrs;
-            _locToVAddrs = rhs._locToVAddrs;
+            _varToAddrs = rhs._varToAddrs;
+            _locToAddrs = rhs._locToAddrs;
         }
         return *this;
     }
@@ -84,24 +84,49 @@ public:
     {
         if (this != &rhs)
         {
-            _varToVAddrs = std::move(rhs._varToVAddrs);
-            _locToVAddrs = std::move(rhs._locToVAddrs);
+            _varToAddrs = std::move(rhs._varToAddrs);
+            _locToAddrs = std::move(rhs._locToAddrs);
         }
         return *this;
     }
 
-    virtual bool operator==(const ExeState &rhs) const;
 
-    inline virtual bool operator!=(const ExeState &rhs) const
+protected:
+    VarToAddrs _varToAddrs{{0, getVirtualMemAddress(0)}}; ///< Map a variable (symbol) to its memory addresses
+    VarToAddrs _locToAddrs;                               ///< Map a memory address to its stored memory addresses
+
+public:
+
+    /// get memory addresses of variable
+    virtual Addrs &getAddrs(u32_t id)
     {
-        return !(*this == rhs);
+        return _varToAddrs[id];
     }
 
-    bool equals(const ExeState *other) const
+    /// whether the variable is in varToAddrs table
+    inline virtual bool inVarToAddrsTable(u32_t id) const
     {
-        return false;
+        return _varToAddrs.find(id) != _varToAddrs.end();
     }
 
+    /// whether the memory address stores memory addresses
+    inline virtual bool inLocToAddrsTable(u32_t id) const
+    {
+        return _locToAddrs.find(id) != _locToAddrs.end();
+    }
+
+
+    inline virtual const VarToAddrs &getVarToAddrs() const
+    {
+        return _varToAddrs;
+    }
+
+    inline virtual const VarToAddrs &getLocToAddrs() const
+    {
+        return _locToAddrs;
+    }
+
+public:
     /// Make all value join with the other
     bool joinWith(const ExeState &other);
 
@@ -123,44 +148,22 @@ public:
         return _kind;
     }
 
-    inline virtual const VarToVAddrs &getVarToVAddrs() const
-    {
-        return _varToVAddrs;
-    }
 
-    inline virtual const VarToVAddrs &getLocToVAddrs() const
-    {
-        return _locToVAddrs;
-    }
 
-    inline virtual bool inVarToAddrsTable(u32_t id) const
-    {
-        return _varToVAddrs.find(id) != _varToVAddrs.end();
-    }
-
-    inline virtual bool inLocToAddrsTable(u32_t id) const
-    {
-        return _locToVAddrs.find(id) != _locToVAddrs.end();
-    }
-
-    virtual VAddrs &getVAddrs(u32_t id)
-    {
-        return _varToVAddrs[id];
-    }
-
-    inline virtual void storeVAddrs(u32_t addr, const VAddrs &vaddrs)
+public:
+    inline virtual void storeAddrs(u32_t addr, const Addrs &vaddrs)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         if(isNullPtr(addr)) return;
         u32_t objId = getInternalID(addr);
-        _locToVAddrs[objId] = vaddrs;
+        _locToAddrs[objId] = vaddrs;
     }
 
-    inline virtual VAddrs &loadVAddrs(u32_t addr)
+    inline virtual Addrs &loadAddrs(u32_t addr)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getInternalID(addr);
-        return _locToVAddrs[objId];
+        return _locToAddrs[objId];
     }
 
     inline bool isNullPtr(u32_t addr)
@@ -168,13 +171,23 @@ public:
         return getInternalID(addr) == 0;
     }
 
-protected:
-    VarToVAddrs _varToVAddrs{{0, getVirtualMemAddress(0)}};
-    VarToVAddrs _locToVAddrs;
+public:
+
+    virtual bool operator==(const ExeState &rhs) const;
+
+    inline virtual bool operator!=(const ExeState &rhs) const
+    {
+        return !(*this == rhs);
+    }
+
+    bool equals(const ExeState *other) const
+    {
+        return false;
+    }
 
 protected:
 
-    static bool eqVarToVAddrs(const VarToVAddrs &lhs, const VarToVAddrs &rhs)
+    static bool eqVarToAddrs(const VarToAddrs &lhs, const VarToAddrs &rhs)
     {
         if (lhs.size() != rhs.size()) return false;
         for (const auto &item: lhs)
@@ -195,14 +208,14 @@ public:
     virtual std::string varToAddrs(u32_t varId) const
     {
         std::stringstream exprName;
-        auto it = _varToVAddrs.find(varId);
-        if (it == _varToVAddrs.end())
+        auto it = _varToAddrs.find(varId);
+        if (it == _varToAddrs.end())
         {
             exprName << "Var not in varToAddrs!\n";
         }
         else
         {
-            const VAddrs &vaddrs = it->second;
+            const Addrs &vaddrs = it->second;
             if (vaddrs.size() == 1)
             {
                 exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";
@@ -223,14 +236,14 @@ public:
     virtual std::string locToAddrs(u32_t objId) const
     {
         std::stringstream exprName;
-        auto it = _locToVAddrs.find(objId);
-        if (it == _locToVAddrs.end())
+        auto it = _locToAddrs.find(objId);
+        if (it == _locToAddrs.end())
         {
             exprName << "Var not in varToAddrs!\n";
         }
         else
         {
-            const VAddrs &vaddrs = it->second;
+            const Addrs &vaddrs = it->second;
             if (vaddrs.size() == 1)
             {
                 exprName << "addr: {" << std::dec << getInternalID(*vaddrs.begin()) << "}\n";

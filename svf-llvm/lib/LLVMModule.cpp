@@ -305,6 +305,7 @@ void LLVMModuleSet::initSVFFunction()
 
 void LLVMModuleSet::initSVFBasicBlock(const Function* func)
 {
+    SVFFunction *svfFun = getSVFFunction(func);
     for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit)
     {
         const BasicBlock* bb = &*bit;
@@ -319,6 +320,16 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
             const SVFBasicBlock* svf_pred_bb = getSVFBasicBlock(*pred_it);
             svfbb->addPredBasicBlock(svf_pred_bb);
         }
+
+        /// set exit block: exit basic block must have no successors and have a return instruction
+        if (svfbb->getSuccessors().empty())
+        {
+            if (LLVMUtil::basicBlockHasRetInst(bb))
+            {
+                svfFun->setExitBlock(svfbb);
+            }
+        }
+
         for (BasicBlock::const_iterator iit = bb->begin(), eiit = bb->end(); iit != eiit; ++iit)
         {
             const Instruction* inst = &*iit;
@@ -353,6 +364,10 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
             LLVMUtil::getPrevInsts(inst, getSVFInstruction(inst)->getPredInstructions());
         }
     }
+    // For no return functions, we set the last block as exit BB
+    // This ensures that each function that has definition must have an exit BB
+    if(svfFun->exitBlock == nullptr && svfFun->hasBasicBlock()) svfFun->setExitBlock(
+            const_cast<SVFBasicBlock *>(svfFun->back()));
 }
 
 
@@ -1256,14 +1271,24 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     assert(LLVMType2SVFType.find(T) == LLVMType2SVFType.end() &&
            "SVFType has been added before");
 
+    // add SVFType's LLVM byte size iff T isSized(), otherwise byteSize is 0(default value)
+    u32_t byteSize = 0;
+    if (T->isSized())
+    {
+        const llvm::DataLayout &DL = LLVMModuleSet::getLLVMModuleSet()->
+                                     getMainLLVMModule()->getDataLayout();
+        Type *mut_T = const_cast<Type *>(T);
+        byteSize = DL.getTypeAllocSize(mut_T);
+    }
+
     SVFType* svftype;
     if (SVFUtil::isa<PointerType>(T))
     {
-        svftype = new SVFPointerType();
+        svftype = new SVFPointerType(byteSize);
     }
     else if (const IntegerType* intT = SVFUtil::dyn_cast<IntegerType>(T))
     {
-        auto svfIntT = new SVFIntegerType();
+        auto svfIntT = new SVFIntegerType(byteSize);
         unsigned signWidth = intT->getBitWidth();
         assert(signWidth < INT16_MAX && "Integer width too big");
         svfIntT->setSignAndWidth(intT->getSignBit() ? -signWidth : signWidth);
@@ -1273,14 +1298,14 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         svftype = new SVFFunctionType(getSVFType(ft->getReturnType()));
     else if (const StructType* st = SVFUtil::dyn_cast<StructType>(T))
     {
-        auto svfst = new SVFStructType();
+        auto svfst = new SVFStructType(byteSize);
         if (st->hasName())
             svfst->setName(st->getName().str());
         svftype = svfst;
     }
     else if (const auto at = SVFUtil::dyn_cast<ArrayType>(T))
     {
-        auto svfat = new SVFArrayType();
+        auto svfat = new SVFArrayType(byteSize);
         svfat->setNumOfElement(at->getNumElements());
         svfat->setTypeOfElement(getSVFType(at->getElementType()));
         svftype = svfat;
@@ -1288,7 +1313,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     else
     {
         std::string buffer;
-        auto ot = new SVFOtherType(T->isSingleValueType());
+        auto ot = new SVFOtherType(byteSize, T->isSingleValueType());
         llvm::raw_string_ostream(buffer) << *T;
         ot->setRepr(std::move(buffer));
         svftype = ot;
@@ -1303,6 +1328,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         assert(svfPtrType && "this is not SVFPointerType");
         svfPtrType->setPtrElementType(getSVFType(LLVMUtil::getPtrElementType(pt)));
     }
+
     return svftype;
 }
 

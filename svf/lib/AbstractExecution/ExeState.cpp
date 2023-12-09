@@ -34,17 +34,17 @@ using namespace SVF;
 
 bool ExeState::operator==(const ExeState &rhs) const
 {
-    return eqVarToVAddrs(_varToVAddrs, rhs._varToVAddrs) && eqVarToVAddrs(_locToVAddrs, rhs._locToVAddrs);
+    return eqVarToAddrs(_varToAddrs, rhs._varToAddrs) && eqVarToAddrs(_locToAddrs, rhs._locToAddrs);
 }
 
 bool ExeState::joinWith(const ExeState &other)
 {
     bool changed = false;
-    for (auto it = other._varToVAddrs.begin(); it != other._varToVAddrs.end(); ++it)
+    for (auto it = other._varToAddrs.begin(); it != other._varToAddrs.end(); ++it)
     {
         auto key = it->first;
-        auto oit = _varToVAddrs.find(key);
-        if (oit != _varToVAddrs.end())
+        auto oit = _varToAddrs.find(key);
+        if (oit != _varToAddrs.end())
         {
             if(oit->second.join_with(it->second))
                 changed = true;
@@ -52,14 +52,14 @@ bool ExeState::joinWith(const ExeState &other)
         else
         {
             changed = true;
-            _varToVAddrs.emplace(key, it->second);
+            _varToAddrs.emplace(key, it->second);
         }
     }
-    for (auto it = other._locToVAddrs.begin(); it != other._locToVAddrs.end(); ++it)
+    for (auto it = other._locToAddrs.begin(); it != other._locToAddrs.end(); ++it)
     {
         auto key = it->first;
-        auto oit = _locToVAddrs.find(key);
-        if (oit != _locToVAddrs.end())
+        auto oit = _locToAddrs.find(key);
+        if (oit != _locToAddrs.end())
         {
             if(oit->second.join_with(it->second))
                 changed = true;
@@ -67,7 +67,7 @@ bool ExeState::joinWith(const ExeState &other)
         else
         {
             changed = true;
-            _locToVAddrs.emplace(key, it->second);
+            _locToAddrs.emplace(key, it->second);
         }
     }
     return changed;
@@ -76,21 +76,21 @@ bool ExeState::joinWith(const ExeState &other)
 bool ExeState::meetWith(const ExeState &other)
 {
     bool changed = false;
-    for (auto it = other._varToVAddrs.begin(); it != other._varToVAddrs.end(); ++it)
+    for (auto it = other._varToAddrs.begin(); it != other._varToAddrs.end(); ++it)
     {
         auto key = it->first;
-        auto oit = _varToVAddrs.find(key);
-        if (oit != _varToVAddrs.end())
+        auto oit = _varToAddrs.find(key);
+        if (oit != _varToAddrs.end())
         {
             if(oit->second.meet_with(it->second))
                 changed = true;
         }
     }
-    for (auto it = other._locToVAddrs.begin(); it != other._locToVAddrs.end(); ++it)
+    for (auto it = other._locToAddrs.begin(); it != other._locToAddrs.end(); ++it)
     {
         auto key = it->first;
-        auto oit = _locToVAddrs.find(key);
-        if (oit != _locToVAddrs.end())
+        auto oit = _locToAddrs.find(key);
+        if (oit != _locToAddrs.end())
         {
             if(oit->second.meet_with(it->second))
                 changed = true;
@@ -101,14 +101,14 @@ bool ExeState::meetWith(const ExeState &other)
 
 u32_t ExeState::hash() const
 {
-    size_t h = getVarToVAddrs().size() * 2;
+    size_t h = getVarToAddrs().size() * 2;
     Hash<u32_t> hf;
-    for (const auto &t: getVarToVAddrs())
+    for (const auto &t: getVarToAddrs())
     {
         h ^= hf(t.first) + 0x9e3779b9 + (h << 6) + (h >> 2);
     }
-    size_t h2 = getLocToVAddrs().size() * 2;
-    for (const auto &t: getLocToVAddrs())
+    size_t h2 = getLocToAddrs().size() * 2;
+    for (const auto &t: getLocToAddrs())
     {
         h2 ^= hf(t.first) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
     }

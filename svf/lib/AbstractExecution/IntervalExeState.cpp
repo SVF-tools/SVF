@@ -191,8 +191,8 @@ void IntervalExeState::printExprValues(std::ostream &oss) const
     oss << "-----------Var and Value-----------\n";
     printTable(_varToItvVal, oss);
     printTable(_locToItvVal, oss);
-    printTable(_varToVAddrs, oss);
-    printTable(_locToVAddrs, oss);
+    printTable(_varToAddrs, oss);
+    printTable(_locToAddrs, oss);
     oss << "-----------------------------------------\n";
 }
 
@@ -219,7 +219,7 @@ void IntervalExeState::printTable(const VarToValMap &table, std::ostream &oss) c
     }
 }
 
-void IntervalExeState::printTable(const VarToVAddrs &table, std::ostream &oss) const
+void IntervalExeState::printTable(const VarToAddrs &table, std::ostream &oss) const
 {
     oss.flags(std::ios::left);
     std::set<NodeID> ordered;
@@ -230,7 +230,7 @@ void IntervalExeState::printTable(const VarToVAddrs &table, std::ostream &oss) c
     for (const auto &item: ordered)
     {
         oss << "Var" << std::to_string(item);
-        VAddrs sim = table.at(item);
+        Addrs sim = table.at(item);
         oss << "\t Value: " << std::hex << "[ ";
         for (auto it = sim.begin(); it != sim.end(); ++it)
         {

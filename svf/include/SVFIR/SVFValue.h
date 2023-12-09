@@ -320,6 +320,7 @@ private:
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
     std::vector<std::string> annotations; /// annotations of this function
+    SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
 
 protected:
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
@@ -412,11 +413,11 @@ public:
         return allBBs.front();
     }
 
-    inline const SVFBasicBlock* getExitBB() const
-    {
-        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
-        return allBBs.back();
-    }
+    /// Carefully! when you call getExitBB, you need ensure the function has return instruction
+    /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
+    const SVFBasicBlock* getExitBB() const;
+
+    void setExitBlock(SVFBasicBlock *bb);
 
     inline const SVFBasicBlock* front() const
     {
@@ -425,7 +426,11 @@ public:
 
     inline const SVFBasicBlock* back() const
     {
-        return getExitBB();
+        assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+        /// Carefully! 'back' is just the last basic block of function,
+        /// but not necessarily a exit basic block
+        /// more refer to: https://github.com/SVF-tools/SVF/pull/1262
+        return allBBs.back();
     }
 
     inline const_iterator begin() const
@@ -453,9 +458,9 @@ public:
         return isUncalled;
     }
 
-    inline bool isNotRetFunction() const
+    inline bool hasReturn() const
     {
-        return isNotRet;
+        return  !isNotRet;
     }
 
     inline const std::vector<std::string>& getAnnotations() const
@@ -520,6 +525,7 @@ class SVFBasicBlock : public SVFValue
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class SVFIRBuilder;
+    friend class SVFFunction;
 
 public:
     typedef std::vector<const SVFInstruction*>::const_iterator const_iterator;

@@ -33,8 +33,74 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-SVF::SVFIR2ItvExeState::VAddrs SVF::SVFIR2ItvExeState::globalNullVaddrs =
+SVF::SVFIR2ItvExeState::Addrs SVF::SVFIR2ItvExeState::globalNulladdrs =
     AddressValue();
+
+/**
+ * This function, getRangeLimitFromType, calculates the lower and upper bounds of
+ * a numeric range for a given SVFType. It is used to determine the possible value
+ * range of integer types. If the type is an SVFIntegerType, it calculates the bounds
+ * based on the size and signedness of the type. The calculated bounds are returned
+ * as an IntervalValue representing the lower (lb) and upper (ub) limits of the range.
+ *
+ * @param type   The SVFType for which to calculate the value range.
+ *
+ * @return       An IntervalValue representing the lower and upper bounds of the range.
+ */
+IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
+{
+    if (const SVFIntegerType* intType = SVFUtil::dyn_cast<SVFIntegerType>(type))
+    {
+        u32_t bits = type->getByteSize() * 8;
+        s64_t ub = 0;
+        s64_t lb = 0;
+        if (bits >= 32)
+        {
+            if (intType->isSigned())
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<s32_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<s32_t>::min());
+            }
+            else
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<u32_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<u32_t>::min());
+            }
+        }
+        else if (bits == 16)
+        {
+            if (intType->isSigned())
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<int16_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<int16_t>::min());
+            }
+            else
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<uint16_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<uint16_t>::min());
+            }
+        }
+        else if (bits == 8)
+        {
+            if (intType->isSigned())
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<int8_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<int8_t>::min());
+            }
+            else
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<u_int8_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<u_int8_t>::min());
+            }
+        }
+        return IntervalValue(lb, ub);
+    }
+    else
+    {
+        assert(false && "cannot support");
+    }
+}
+
 
 void SVFIR2ItvExeState::applySummary(IntervalExeState &es)
 {
@@ -46,13 +112,13 @@ void SVFIR2ItvExeState::applySummary(IntervalExeState &es)
     {
         _es._locToItvVal[item.first] = item.second;
     }
-    for (const auto &item: es._varToVAddrs)
+    for (const auto &item: es._varToAddrs)
     {
-        _es._varToVAddrs[item.first] = item.second;
+        _es._varToAddrs[item.first] = item.second;
     }
-    for (const auto &item: es._locToVAddrs)
+    for (const auto &item: es._locToAddrs)
     {
-        _es._locToVAddrs[item.first] = item.second;
+        _es._locToAddrs[item.first] = item.second;
     }
 }
 
@@ -66,29 +132,29 @@ void SVFIR2ItvExeState::moveToGlobal()
     {
         IntervalExeState::globalES._locToItvVal.insert(it);
     }
-    for (const auto &_varToVAddr: _es._varToVAddrs)
+    for (const auto &_varToVAddr: _es._varToAddrs)
     {
-        IntervalExeState::globalES._varToVAddrs.insert(_varToVAddr);
+        IntervalExeState::globalES._varToAddrs.insert(_varToVAddr);
     }
-    for (const auto &_locToVAddr: _es._locToVAddrs)
+    for (const auto &_locToVAddr: _es._locToAddrs)
     {
-        IntervalExeState::globalES._locToVAddrs.insert(_locToVAddr);
+        IntervalExeState::globalES._locToAddrs.insert(_locToVAddr);
     }
 
     _es._varToItvVal.clear();
     IntervalExeState::globalES._varToItvVal.erase(PAG::getPAG()->getBlkPtr());
     _es._varToItvVal[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
     _es._locToItvVal.clear();
-    _es._varToVAddrs.clear();
-    _es._locToVAddrs.clear();
+    _es._varToAddrs.clear();
+    _es._locToAddrs.clear();
 }
 
-void SVFIR2ItvExeState::widenVAddrs(IntervalExeState &lhs, const IntervalExeState &rhs)
+void SVFIR2ItvExeState::widenAddrs(IntervalExeState &lhs, const IntervalExeState &rhs)
 {
-    for (const auto &rhsItem: rhs._varToVAddrs)
+    for (const auto &rhsItem: rhs._varToAddrs)
     {
-        auto lhsIter = lhs._varToVAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._varToVAddrs.end())
+        auto lhsIter = lhs._varToAddrs.find(rhsItem.first);
+        if (lhsIter != lhs._varToAddrs.end())
         {
             for (const auto &addr: rhsItem.second)
             {
@@ -102,10 +168,10 @@ void SVFIR2ItvExeState::widenVAddrs(IntervalExeState &lhs, const IntervalExeStat
             }
         }
     }
-    for (const auto &rhsItem: rhs._locToVAddrs)
+    for (const auto &rhsItem: rhs._locToAddrs)
     {
-        auto lhsIter = lhs._locToVAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._locToVAddrs.end())
+        auto lhsIter = lhs._locToAddrs.find(rhsItem.first);
+        if (lhsIter != lhs._locToAddrs.end())
         {
             for (const auto &addr: rhsItem.second)
             {
@@ -121,12 +187,12 @@ void SVFIR2ItvExeState::widenVAddrs(IntervalExeState &lhs, const IntervalExeStat
     }
 }
 
-void SVFIR2ItvExeState::narrowVAddrs(IntervalExeState &lhs, const IntervalExeState &rhs)
+void SVFIR2ItvExeState::narrowAddrs(IntervalExeState &lhs, const IntervalExeState &rhs)
 {
-    for (const auto &rhsItem: rhs._varToVAddrs)
+    for (const auto &rhsItem: rhs._varToAddrs)
     {
-        auto lhsIter = lhs._varToVAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._varToVAddrs.end())
+        auto lhsIter = lhs._varToAddrs.find(rhsItem.first);
+        if (lhsIter != lhs._varToAddrs.end())
         {
             for (const auto &addr: lhsIter->second)
             {
@@ -138,10 +204,10 @@ void SVFIR2ItvExeState::narrowVAddrs(IntervalExeState &lhs, const IntervalExeSta
             }
         }
     }
-    for (const auto &rhsItem: rhs._locToVAddrs)
+    for (const auto &rhsItem: rhs._locToAddrs)
     {
-        auto lhsIter = lhs._locToVAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._locToVAddrs.end())
+        auto lhsIter = lhs._locToAddrs.find(rhsItem.first);
+        if (lhsIter != lhs._locToAddrs.end())
         {
             for (const auto &addr: lhsIter->second)
             {
@@ -155,11 +221,11 @@ void SVFIR2ItvExeState::narrowVAddrs(IntervalExeState &lhs, const IntervalExeSta
     }
 }
 
-SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APOffset offset)
+SVFIR2ItvExeState::Addrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APOffset offset)
 {
-    assert(!getVAddrs(pointer).empty());
-    VAddrs &addrs = getVAddrs(pointer);
-    VAddrs ret;
+    assert(!getAddrs(pointer).empty());
+    Addrs &addrs = getAddrs(pointer);
+    Addrs ret;
     for (const auto &addr: addrs)
     {
         int64_t baseObj = getInternalID(addr);
@@ -176,202 +242,161 @@ SVFIR2ItvExeState::VAddrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APO
     return ret;
 }
 
-std::pair<APOffset, APOffset> SVFIR2ItvExeState::getBytefromGepTypePair(const AccessPath::VarAndGepTypePair& gep_pair, const GepStmt *gep)
+/**
+ * This function, getByteOffset, calculates the byte offset for a given GepStmt.
+ *
+ * @param gep   The GepStmt representing the GetElementPtr instruction.
+ *
+ * @return      The calculated byte offset as an IntervalValue.
+ *
+ * It is byte offset rather than flatten index.
+ * e.g. %var2 = getelementptr inbounds %struct.OuterStruct, %struct.OuterStruct* %var0, i64 0, i32 2, i32 0, i64 %var1
+* %struct.OuterStruct = type { i32, i32, %struct.InnerStruct }
+* %struct.InnerStruct = type { [2 x i32] }
+* there are 4 GepTypePairs (<0, %struct.OuterStruct*>, <2, %struct.OuterStruct>, <0, %struct.InnerStruct>, <%var1, [2xi32]>)
+* this function process arr/ptr subtype by calculating elemByteSize * indexOperand
+ *   and process struct subtype by calculating the byte offset from beginning to the field of struct
+* e.g. for 0th pair <0, %struct.OuterStruct*>, it is 0* ptrSize(%struct.OuterStruct*) = 0 bytes
+*      for 1st pair <2, %struct.OuterStruct>, it is 2nd field in %struct.OuterStruct = 8 bytes
+*      for 2nd pair <0, %struct.InnerStruct>, it is 0th field in %struct.InnerStruct = 0 bytes
+*      for 3rd pair <%var1, [2xi32]>, it is %var1'th element in array [2xi32] = 4bytes * %var1
+*      ----
+*  Therefore the final byteoffset is [8+4*var1.lb(), 8+4*var1.ub()]
+ *
+ */
+IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
 {
-    const SVFValue *value = gep_pair.first->getValue();
-    const SVFType *type = gep_pair.second;
-    if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type))
+    if (gep->isConstantOffset())
+        return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
+    IntervalValue res(0); // Initialize the result interval 'res' to 0.
+    // Loop through the offsetVarAndGepTypePairVec in reverse order.
+    for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
-        type = arrType->getTypeOfElement();
-    }
-    else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type))
-    {
-        type = ptrType->getPtrElementType();
-    }
-    const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value);
-    APOffset offsetLb = 0;
-    APOffset offsetUb = 0;
-    /// set largest byte offset is 0xFFFFFF in case of int32 overflow
-    APOffset maxByteLimit = 99999;
-    APOffset minByteLimit = -99999;
-    auto valueReshape = [&](s64_t offset)
-    {
-        if (offset < (s64_t)minByteLimit)
+        const SVFVar* idxOperandVar =
+            gep->getOffsetVarAndGepTypePairVec()[i].first;
+        const SVFType* idxOperandType =
+            gep->getOffsetVarAndGepTypePairVec()[i].second;
+        // calculating Array/Ptr by elemByteSize * indexOperand
+        if (SVFUtil::isa<SVFArrayType>(idxOperandType) || SVFUtil::isa<SVFPointerType>(idxOperandType))
         {
-            return minByteLimit;
-        }
-        else if (offset > (s64_t)maxByteLimit)
-        {
-            return maxByteLimit;
-        }
-        else
-        {
-            return offset;
-        }
-    };
-    /// offset is constant but stored in variable
-    if (op)
-    {
-        offsetLb = offsetUb =
-                       op->getSExtValue() * type->getLLVMByteSize() > maxByteLimit
-                       ? maxByteLimit
-                       : op->getSExtValue() * type->getLLVMByteSize();
-    }
-    else
-    {
-        u32_t idx = _svfir->getValueNode(value);
-        IntervalValue idxVal = _es[idx] * IntervalValue(type->getLLVMByteSize());
-        if (idxVal.isBottom() || idxVal.isTop())
-            return std::make_pair(0, maxByteLimit);
-        // if idxVal is a concrete value
-        if (idxVal.is_numeral())
-        {
-            offsetLb = offsetUb = valueReshape(idxVal.lb().getNumeral());
-        }
-        else
-        {
-            offsetLb = valueReshape(idxVal.lb().getNumeral());
-            offsetUb = valueReshape(idxVal.ub().getNumeral());
-        }
-    }
-    return {offsetLb, offsetUb};
-}
-
-
-std::pair<APOffset, APOffset> SVFIR2ItvExeState::getIndexfromGepTypePair(const AccessPath::VarAndGepTypePair& gep_pair, const GepStmt *gep)
-{
-    const SVFValue *value = gep_pair.first->getValue();
-    const SVFType *type = gep_pair.second;
-    const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(value);
-    APOffset offsetLb = 0;
-    APOffset offsetUb = 0;
-    APOffset maxFieldLimit = (APOffset)Options::MaxFieldLimit();
-    APOffset minFieldLimit = 0;
-    auto valueReshape = [&](s64_t offset)
-    {
-        if (offset < minFieldLimit)
-        {
-            return minFieldLimit;
-        }
-        else if (offset > maxFieldLimit)
-        {
-            return maxFieldLimit;
-        }
-        else
-        {
-            return offset;
-        }
-    };
-    /// offset is constant but stored in variable
-    if (op)
-    {
-        offsetLb = offsetUb = valueReshape(op->getSExtValue());
-    }
-    else
-    {
-        u32_t idx = _svfir->getValueNode(value);
-        //if (!inVarToIValTable(idx)) return std::make_pair(-1, -1);
-        IntervalValue &idxVal = _es[idx];
-        if (idxVal.isBottom() || idxVal.isTop())
-            return std::make_pair(0, Options::MaxFieldLimit());
-        // if idxVal is a concrete value
-        if (idxVal.is_numeral())
-        {
-            offsetLb = offsetUb = valueReshape(idxVal.lb().getNumeral());
-        }
-        else
-        {
-            offsetLb = valueReshape(idxVal.lb().getNumeral());
-            offsetUb = valueReshape(idxVal.ub().getNumeral());
-        }
-    }
-
-    if (type)
-    {
-        if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type))
-        {
-            offsetLb = offsetLb * gep->getAccessPath().getElementNum(pty->getPtrElementType());
-            offsetUb = offsetUb * gep->getAccessPath().getElementNum(pty->getPtrElementType());
-        }
-        else
-        {
-            const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()
-                                           ->getTypeInfo(type)
-                                           ->getFlattenedElemIdxVec();
-            if (so.empty() || offsetUb >= (APOffset)so.size() ||
-                    offsetLb >= (APOffset)so.size())
+            u32_t elemByteSize = 1;
+            if (const SVFArrayType* arrOperandType = SVFUtil::dyn_cast<SVFArrayType>(idxOperandType))
+                elemByteSize = arrOperandType->getTypeOfElement()->getByteSize();
+            else if (const SVFPointerType* ptrOperandType = SVFUtil::dyn_cast<SVFPointerType>(idxOperandType))
+                elemByteSize = ptrOperandType->getPtrElementType()->getByteSize();
+            else
+                assert(false && "idxOperandType must be ArrType or PtrType");
+            if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue()))
             {
-                offsetLb = 0;
-                offsetUb = maxFieldLimit;
+                s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue() ?op->getSExtValue() * elemByteSize
+                           : Options::MaxFieldLimit();
+                res = res + IntervalValue(lb, lb);
             }
             else
             {
-                offsetLb =
-                    SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
-                        type, offsetLb);
-                offsetUb =
-                    SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
-                        type, offsetUb);
+                u32_t idx = _svfir->getValueNode(idxOperandVar->getValue());
+                IntervalValue idxVal = _es[idx];
+                if (idxVal.isBottom())
+                    res = res + IntervalValue(0, 0);
+                else
+                {
+                    // if lb or ub is negative number, set 0.
+                    // if lb or ub is positive number, guarantee lb/ub * elemByteSize <= MaxFieldLimit
+                    s64_t ub = (idxVal.ub().getNumeral() < 0) ? 0 :
+                               (double)Options::MaxFieldLimit() /
+                               elemByteSize >= idxVal.ub().getNumeral() ? elemByteSize * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
+                    s64_t lb = (idxVal.lb().getNumeral() < 0) ? 0 :
+                               ((double)Options::MaxFieldLimit() /
+                                elemByteSize >= idxVal.lb().getNumeral()) ? elemByteSize * idxVal.lb().getNumeral() : Options::MaxFieldLimit();
+                    res = res + IntervalValue(lb, ub);
+                }
             }
         }
+        // Process struct subtype by calculating the byte offset from beginning to the field of struct
+        else if (const SVFStructType* structOperandType = SVFUtil::dyn_cast<SVFStructType>(idxOperandType))
+        {
+            res = res + IntervalValue(gep->getAccessPath().getStructFieldOffset(
+                                          idxOperandVar, structOperandType));
+        }
+        else
+        {
+            assert(false && "gep type pair only support arr/ptr/struct");
+        }
     }
-    return {offsetLb, offsetUb};
+    return res; // Return the resulting byte offset as an IntervalValue.
 }
 
-
-std::pair<APOffset, APOffset> SVFIR2ItvExeState::getGepByteOffset(const GepStmt *gep)
+/**
+ * This function, getItvOfFlattenedElemIndex, calculates the offset range as a pair
+ * of APOffset values for a given GepStmt.
+ *
+ * @param gep   The GepStmt representing the GetElementPtr instruction.
+ *
+ * @return      A pair of APOffset values representing the offset range.
+ */
+IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
 {
-    /// for instant constant index, e.g.  gep arr, 1
-    if (gep->getOffsetVarAndGepTypePairVec().empty())
-        return std::make_pair(gep->getConstantFieldIdx(), gep->getConstantFieldIdx());
-    APOffset totalOffsetLb = 0;
-    APOffset totalOffsetUb = 0;
-    /// default value of MaxFieldLimit is 512
-    APOffset maxFieldLimit = 0xFFFFFF;
+    if (gep->isConstantOffset())
+        return IntervalValue((s64_t)gep->accumulateConstantOffset());
+    IntervalValue res(0);
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
-        std::pair<APOffset, APOffset> offsetIdx = getBytefromGepTypePair(
-                    gep->getOffsetVarAndGepTypePairVec()[i], gep);
-        APOffset offsetLb = offsetIdx.first;
-        APOffset offsetUb = offsetIdx.second;
-        if (totalOffsetLb + offsetLb > maxFieldLimit)
-            totalOffsetLb = maxFieldLimit;
+        AccessPath::IdxOperandPair IdxVarAndType =
+            gep->getOffsetVarAndGepTypePairVec()[i];
+        const SVFValue *value =
+            gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
+        const SVFType *type = IdxVarAndType.second;
+        // idxLb/Ub is the flattened offset generated by the current OffsetVarAndGepTypePair
+        s64_t idxLb;
+        s64_t idxUb;
+        // get lb and ub of the index value
+        if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(value))
+            idxLb = idxUb = constInt->getSExtValue();
         else
-            totalOffsetLb += offsetLb;
-        if (totalOffsetUb + offsetUb > maxFieldLimit)
-            totalOffsetUb = maxFieldLimit;
+        {
+            IntervalValue idxItv = _es[_svfir->getValueNode(value)];
+            if (idxItv.isBottom())
+                idxLb = idxUb = 0;
+            else
+            {
+                idxLb = idxItv.lb().getNumeral();
+                idxUb = idxItv.ub().getNumeral();
+            }
+        }
+        // for pointer type, flattened index = elemNum * idx
+        if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+        {
+            u32_t elemNum = gep->getAccessPath().getElementNum(pty->getPtrElementType());
+            idxLb = (double)Options::MaxFieldLimit() / elemNum < idxLb? Options::MaxFieldLimit(): idxLb * elemNum;
+            idxUb = (double)Options::MaxFieldLimit() / elemNum < idxUb? Options::MaxFieldLimit(): idxUb * elemNum;
+        }
+        // for array or struct, get flattened index from SymbolTable Info
         else
-            totalOffsetUb += offsetUb ;
+        {
+            if(Options::ModelArrays())
+            {
+                const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()
+                                               ->getTypeInfo(type)
+                                               ->getFlattenedElemIdxVec();
+                if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0)
+                {
+                    idxLb = idxUb = 0;
+                }
+                else
+                {
+                    idxLb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
+                                type, idxLb);
+                    idxUb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
+                                type, idxUb);
+                }
+            }
+            else
+                idxLb = idxUb = 0;
+        }
+        res = res + IntervalValue(idxLb, idxUb);
     }
-    return {totalOffsetLb, totalOffsetUb};
-}
-
-
-std::pair<APOffset, APOffset> SVFIR2ItvExeState::getGepOffset(const GepStmt *gep)
-{
-    /// for instant constant index, e.g.  gep arr, 1
-    if (gep->getOffsetVarAndGepTypePairVec().empty())
-        return std::make_pair(gep->getConstantFieldIdx(), gep->getConstantFieldIdx());
-    APOffset totalOffsetLb = 0;
-    APOffset totalOffsetUb = 0;
-    /// default value of MaxFieldLimit is 512
-    APOffset maxFieldLimit = Options::MaxFieldLimit() - 1;
-    for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
-    {
-        std::pair<APOffset, APOffset> offsetIdx = getIndexfromGepTypePair(
-                    gep->getOffsetVarAndGepTypePairVec()[i], gep);
-        APOffset offsetLb = offsetIdx.first;
-        APOffset offsetUb = offsetIdx.second;
-        if ((long long) (totalOffsetLb + offsetLb) > maxFieldLimit)
-            totalOffsetLb = maxFieldLimit;
-        else
-            totalOffsetLb += offsetLb;
-        if ((long long) (totalOffsetUb + offsetUb) > maxFieldLimit)
-            totalOffsetUb = maxFieldLimit;
-        else
-            totalOffsetUb += offsetUb ;
-    }
-    return {totalOffsetLb, totalOffsetUb};
+    res.meet_with(IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit()));
+    return res;
 }
 
 /*!
@@ -383,7 +408,6 @@ void SVFIR2ItvExeState::initValVar(const ValVar *valVar, u32_t varId)
 {
 
     SVFIR *svfir = PAG::getPAG();
-
     if (const SVFType *type = valVar->getType())
     {
         // TODO:miss floatpointerty, voidty, labelty, matadataty
@@ -431,40 +455,26 @@ void SVFIR2ItvExeState::initObjVar(const ObjVar *objVar, u32_t varId)
                 IntervalExeState::globalES[varId] = IntervalValue(numeral, numeral);
             }
             else if (const SVFConstantFP* consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue()))
-            {
                 IntervalExeState::globalES[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
-            }
             else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue()))
-            {
                 IntervalExeState::globalES[varId] = IntervalValue(0, 0);
-            }
             else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue()))
-            {
-                IntervalExeState::globalES.getVAddrs(varId).insert(getVirtualMemAddress(varId));
-            }
+                IntervalExeState::globalES.getAddrs(varId).insert(getVirtualMemAddress(varId));
             else if (obj->isConstantArray() || obj->isConstantStruct())
-            {
                 IntervalExeState::globalES[varId] = IntervalValue::top();
-            }
             else
-            {
                 IntervalExeState::globalES[varId] = IntervalValue::top();
-            }
         }
         else
-        {
-            IntervalExeState::globalES.getVAddrs(varId).insert(getVirtualMemAddress(varId));
-        }
+            IntervalExeState::globalES.getAddrs(varId).insert(getVirtualMemAddress(varId));
     }
     else
-    {
-        IntervalExeState::globalES.getVAddrs(varId).insert(getVirtualMemAddress(varId));
-    }
+        IntervalExeState::globalES.getAddrs(varId).insert(getVirtualMemAddress(varId));
 }
 
 void SVFIR2ItvExeState::initSVFVar(u32_t varId)
 {
-    if (inVarToIValTable(varId) || _es.inVarToAddrsTable(varId)) return;
+    if (inVarToValTable(varId) || _es.inVarToAddrsTable(varId)) return;
     SVFIR *svfir = PAG::getPAG();
     SVFVar *svfVar = svfir->getGNode(varId);
     // write objvar into cache instead of exestate
@@ -489,13 +499,20 @@ void SVFIR2ItvExeState::initSVFVar(u32_t varId)
 void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
 {
     initSVFVar(addr->getRHSVarID());
-    if (inVarToIValTable(addr->getRHSVarID()))
+    if (inVarToValTable(addr->getRHSVarID()))
     {
+        // if addr RHS is integerType(i8 i32 etc), value should be limited.
+        if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
+        {
+            IntervalExeState::globalES[addr->getRHSVarID()].meet_with(
+                getRangeLimitFromType(addr->getRHSVar()->getType()));
+        }
         IntervalExeState::globalES[addr->getLHSVarID()] = IntervalExeState::globalES[addr->getRHSVarID()];
+
     }
     else if (inVarToAddrsTable(addr->getRHSVarID()))
     {
-        IntervalExeState::globalES.getVAddrs(addr->getLHSVarID()) = IntervalExeState::globalES.getVAddrs(
+        IntervalExeState::globalES.getAddrs(addr->getLHSVarID()) = IntervalExeState::globalES.getAddrs(
                     addr->getRHSVarID());
     }
     else
@@ -510,9 +527,9 @@ void SVFIR2ItvExeState::translateBinary(const BinaryOPStmt *binary)
     u32_t op0 = binary->getOpVarID(0);
     u32_t op1 = binary->getOpVarID(1);
     u32_t res = binary->getResID();
-    if (!inVarToIValTable(op0)) _es[op0] = IntervalValue::top();
-    if (!inVarToIValTable(op1)) _es[op1] = IntervalValue::top();
-    if (inVarToIValTable(op0) && inVarToIValTable(op1))
+    if (!inVarToValTable(op0)) _es[op0] = IntervalValue::top();
+    if (!inVarToValTable(op1)) _es[op1] = IntervalValue::top();
+    if (inVarToValTable(op0) && inVarToValTable(op1))
     {
         IntervalValue &lhs = _es[op0], &rhs = _es[op1];
         IntervalValue resVal;
@@ -572,7 +589,7 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
     u32_t res = cmp->getResID();
-    if (inVarToIValTable(op0) && inVarToIValTable(op1))
+    if (inVarToValTable(op0) && inVarToValTable(op1))
     {
         IntervalValue resVal;
         IntervalValue &lhs = _es[op0], &rhs = _es[op1];
@@ -629,7 +646,7 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
     else if (inVarToAddrsTable(op0) && inVarToAddrsTable(op1))
     {
         IntervalValue resVal;
-        VAddrs &lhs = getVAddrs(op0), &rhs = getVAddrs(op1);
+        Addrs &lhs = getAddrs(op0), &rhs = getAddrs(op1);
         assert(!lhs.empty() && !rhs.empty() && "empty address?");
         auto predicate = cmp->getPredicate();
         switch (predicate)
@@ -757,42 +774,38 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
     u32_t lhs = load->getLHSVarID();
     if (inVarToAddrsTable(rhs))
     {
-        VAddrs &addrs = getVAddrs(rhs);
+        Addrs &addrs = getAddrs(rhs);
         assert(!addrs.empty());
+        IntervalValue rhsItv = IntervalValue::bottom();
+        AddressValue rhsAddr;
+        bool isVal = false, isAddr = false;
         for (const auto &addr: addrs)
         {
             u32_t objId = getInternalID(addr);
-            if (inLocToIValTable(objId))
-                _es[lhs] = IntervalValue::bottom();
+            if (inLocToValTable(objId))
+            {
+                rhsItv.join_with(_es.load(addr));
+                isVal = true;
+            }
             else if (inLocToAddrsTable(objId))
-                _es.getVAddrs(lhs).setBottom();
-            break;
+            {
+                rhsAddr.join_with(_es.loadAddrs(addr));
+                isAddr = true;
+            }
         }
-        for (const auto &addr: addrs)
+        if (isVal)
         {
-            u32_t objId = getInternalID(addr);
-            if (inLocToIValTable(objId))
-            {
-                if (!inVarToIValTable(lhs))
-                {
-                    _es[lhs] = _es.load(addr);
-                }
-                else
-                {
-                    _es[lhs].join_with(_es.load(addr));
-                }
-            }
-            else if (inLocToAddrsTable(objId))
-            {
-                if (!inVarToAddrsTable(lhs))
-                {
-                    _es.getVAddrs(lhs) = _es.loadVAddrs(addr);
-                }
-                else
-                {
-                    _es.getVAddrs(lhs).join_with(_es.loadVAddrs(addr));
-                }
-            }
+            // lhs var is an integer
+            _es[lhs] = rhsItv;
+        }
+        else if (isAddr)
+        {
+            // lhs var is an address
+            _es.getAddrs(lhs) = rhsAddr;
+        }
+        else
+        {
+            // rhs not initialized, e.g., absence of a store before load
         }
     }
 }
@@ -803,10 +816,10 @@ void SVFIR2ItvExeState::translateStore(const StoreStmt *store)
     u32_t lhs = store->getLHSVarID();
     if (inVarToAddrsTable(lhs))
     {
-        if (inVarToIValTable(rhs))
+        if (inVarToValTable(rhs))
         {
-            assert(!getVAddrs(lhs).empty());
-            VAddrs &addrs = getVAddrs(lhs);
+            assert(!getAddrs(lhs).empty());
+            Addrs &addrs = getAddrs(lhs);
             for (const auto &addr: addrs)
             {
                 _es.store(addr, _es[rhs]);
@@ -814,12 +827,12 @@ void SVFIR2ItvExeState::translateStore(const StoreStmt *store)
         }
         else if (inVarToAddrsTable(rhs))
         {
-            assert(!getVAddrs(lhs).empty());
-            VAddrs &addrs = getVAddrs(lhs);
+            assert(!getAddrs(lhs).empty());
+            Addrs &addrs = getAddrs(lhs);
             for (const auto &addr: addrs)
             {
-                assert(!getVAddrs(rhs).empty());
-                _es.storeVAddrs(addr, getVAddrs(rhs));
+                assert(!getAddrs(rhs).empty());
+                _es.storeAddrs(addr, getAddrs(rhs));
             }
 
         }
@@ -836,14 +849,22 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
     }
     else
     {
-        if (inVarToIValTable(rhs))
+        if (inVarToValTable(rhs))
         {
             _es[lhs] = _es[rhs];
+            // if copy LHS is integerType(i8 i32 etc), value should be limited.
+            // this branch can handle bitcast from higher bits integer to
+            // lower bits integer. e.g. bitcast i32 to i8
+            if (copy->getLHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
+            {
+                _es[lhs].meet_with(
+                    getRangeLimitFromType(copy->getLHSVar()->getType()));
+            }
         }
         else if (inVarToAddrsTable(rhs))
         {
-            assert(!getVAddrs(rhs).empty());
-            _es.getVAddrs(lhs) = getVAddrs(rhs);
+            assert(!getAddrs(rhs).empty());
+            _es.getAddrs(lhs) = getAddrs(rhs);
         }
     }
 }
@@ -853,29 +874,23 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
     u32_t rhs = gep->getRHSVarID();
     u32_t lhs = gep->getLHSVarID();
     if (!inVarToAddrsTable(rhs)) return;
-    assert(!getVAddrs(rhs).empty());
-    VAddrs &rhsVal = getVAddrs(rhs);
+    assert(!getAddrs(rhs).empty());
+    Addrs &rhsVal = getAddrs(rhs);
     if (rhsVal.empty()) return;
-    std::pair<APOffset, APOffset> offsetPair = getGepOffset(gep);
-    if (offsetPair.first == -1 && offsetPair.second == -1) return;
+    IntervalValue offsetPair = getItvOfFlattenedElemIndex(gep);
     if (!isVirtualMemAddress(*rhsVal.begin()))
-    {
         return;
-    }
     else
     {
-        VAddrs gepAddrs;
-        APOffset ub = offsetPair.second;
-        if (offsetPair.second > Options::MaxFieldLimit() - 1)
-        {
-            ub = Options::MaxFieldLimit() - 1;
-        }
-        for (APOffset i = offsetPair.first; i <= ub; i++)
-        {
+        Addrs gepAddrs;
+        APOffset lb = offsetPair.lb().getNumeral() < Options::MaxFieldLimit()?
+                      offsetPair.lb().getNumeral(): Options::MaxFieldLimit();
+        APOffset ub = offsetPair.ub().getNumeral() < Options::MaxFieldLimit()?
+                      offsetPair.ub().getNumeral(): Options::MaxFieldLimit();
+        for (APOffset i = lb; i <= ub; i++)
             gepAddrs.join_with(getGepObjAddress(rhs, i));
-        }
         if(gepAddrs.empty()) return;
-        _es.getVAddrs(lhs) = gepAddrs;
+        _es.getAddrs(lhs) = gepAddrs;
         return;
     }
 }
@@ -886,7 +901,7 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
     u32_t tval = select->getTrueValue()->getId();
     u32_t fval = select->getFalseValue()->getId();
     u32_t cond = select->getCondition()->getId();
-    if (inVarToIValTable(tval) && inVarToIValTable(fval) && inVarToIValTable(cond))
+    if (inVarToValTable(tval) && inVarToValTable(fval) && inVarToValTable(cond))
     {
         if (_es[cond].is_numeral())
         {
@@ -897,13 +912,13 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
             _es[res] = _es[cond];
         }
     }
-    else if (inVarToAddrsTable(tval) && inVarToAddrsTable(fval) && inVarToIValTable(cond))
+    else if (inVarToAddrsTable(tval) && inVarToAddrsTable(fval) && inVarToValTable(cond))
     {
         if (_es[cond].is_numeral())
         {
-            assert(!getVAddrs(fval).empty());
-            assert(!getVAddrs(tval).empty());
-            _es.getVAddrs(res) = _es[cond].is_zero() ? getVAddrs(fval) : getVAddrs(tval);
+            assert(!getAddrs(fval).empty());
+            assert(!getAddrs(tval).empty());
+            _es.getAddrs(res) = _es[cond].is_zero() ? getAddrs(fval) : getAddrs(tval);
         }
     }
 }
@@ -911,34 +926,33 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
 void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
 {
     u32_t res = phi->getResID();
+    IntervalValue rhsItv = IntervalValue::bottom();
+    AddressValue rhsAddr;
+    bool isVal = false, isAddr = false;
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
     {
         NodeID curId = phi->getOpVarID(i);
-        if (inVarToIValTable(curId))
+        if (inVarToValTable(curId))
         {
-            const IntervalValue &cur = _es[curId];
-            if (!inVarToIValTable(res))
-            {
-                _es[res] = cur;
-            }
-            else
-            {
-                _es[res].join_with(cur);
-            }
+            rhsItv.join_with(_es[curId]);
+            isVal = true;
         }
         else if (inVarToAddrsTable(curId))
         {
-            assert(!getVAddrs(curId).empty());
-            const VAddrs &cur = getVAddrs(curId);
-            if (!inVarToAddrsTable(res))
-            {
-                _es.getVAddrs(res) = cur;
-            }
-            else
-            {
-                _es.getVAddrs(res).join_with(cur);
-            }
+            assert(!getAddrs(curId).empty());
+            rhsAddr.join_with(getAddrs(curId));
+            isAddr = true;
         }
+    }
+    if (isVal)
+    {
+        // res var is an integer
+        _es[res] = rhsItv;
+    }
+    else if (isAddr)
+    {
+        // res var is an address
+        _es.getAddrs(res) = rhsAddr;
     }
 }
 
@@ -947,14 +961,14 @@ void SVFIR2ItvExeState::translateCall(const CallPE *callPE)
 {
     NodeID lhs = callPE->getLHSVarID();
     NodeID rhs = callPE->getRHSVarID();
-    if (inVarToIValTable(rhs))
+    if (inVarToValTable(rhs))
     {
         _es[lhs] = _es[rhs];
     }
     else if (inVarToAddrsTable(rhs))
     {
-        assert(!getVAddrs(rhs).empty());
-        _es.getVAddrs(lhs) = getVAddrs(rhs);
+        assert(!getAddrs(rhs).empty());
+        _es.getAddrs(lhs) = getAddrs(rhs);
     }
 }
 
@@ -962,13 +976,13 @@ void SVFIR2ItvExeState::translateRet(const RetPE *retPE)
 {
     NodeID lhs = retPE->getLHSVarID();
     NodeID rhs = retPE->getRHSVarID();
-    if (inVarToIValTable(rhs))
+    if (inVarToValTable(rhs))
     {
         _es[lhs] = _es[rhs];
     }
     else if (inVarToAddrsTable(rhs))
     {
-        assert(!getVAddrs(rhs).empty());
-        _es.getVAddrs(lhs) = getVAddrs(rhs);
+        assert(!getAddrs(rhs).empty());
+        _es.getAddrs(lhs) = getAddrs(rhs);
     }
 }

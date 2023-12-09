@@ -35,7 +35,7 @@ namespace SVF
 class SVFIR2ConsExeState
 {
 public:
-    typedef ExeState::VAddrs VAddrs;
+    typedef ExeState::Addrs Addrs;
 
     SVFIR2ConsExeState() = default;
 
@@ -89,7 +89,7 @@ public:
     //%}
 
     /// Return the expr of gep object given a base and offset
-    VAddrs getGepObjAddress(u32_t base, s32_t offset);
+    Addrs getGepObjAddress(u32_t base, s32_t offset);
 
     /// Return the offset expression of a GepStmt
     std::pair<s32_t, s32_t> getGepOffset(const GepStmt *gep);
@@ -123,17 +123,17 @@ public:
 
     inline bool inVarToValTable(u32_t id) const
     {
-        return _es->inVarToVal(id);
-    }
-
-    inline bool inLocToValTable(u32_t id) const
-    {
-        return _es->inLocToVal(id);
+        return _es->inVarToValTable(id);
     }
 
     inline bool inVarToAddrsTable(u32_t id) const
     {
         return _es->inVarToAddrsTable(id);
+    }
+
+    inline bool inLocToValTable(u32_t id) const
+    {
+        return _es->inLocToValTable(id);
     }
 
     inline bool inLocToAddrsTable(u32_t id) const
