@@ -294,8 +294,18 @@ public:
 
 protected:
     BugSet bugSet;    // maintain bugs
+    double time;     // time (sec)
+    std::string mem;       // string memory (KB)
+    double coverage;  // coverage (%)
 
 public:
+    // set time, mem and coverage
+    void setStat(double time, std::string mem, double coverage)
+    {
+        this->time = time;
+        this->mem = mem;
+        this->coverage = coverage;
+    }
 
     /*
      * function: pass bug type (i.e., GenericBug::NEVERFREE) and eventStack as parameter,
