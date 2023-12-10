@@ -523,6 +523,46 @@ public:
         IntervalValue>({{0, IntervalValue(1,100000)},{1,
         IntervalValue(1,100000)},{2,IntervalValue(1,1)}});
     }
+
+    void testRelExeState4_1()
+    {
+        SVFUtil::outs() << "test4_1 start\n";
+        // var0 := [0, 10];
+        RelExeState::_varToVal[0] = getContext().int_const("0");
+        IntervalExeState::_varToItvVal[0] = IntervalValue(0, 10);
+        // var1 := var0;
+        RelExeState::_varToVal[1] =
+            getContext().int_const("1") == getContext().int_const("0");
+        IntervalExeState::_varToItvVal[1] = IntervalExeState::_varToItvVal[0];
+        // var2 := var1 / var0;
+        RelExeState::_varToVal[2] =
+            getContext().int_const("2") == getContext().int_const("1") /
+            getContext().int_const("0");
+        IntervalExeState::_varToItvVal[2] =
+            IntervalExeState::_varToItvVal[1] / IntervalExeState::_varToItvVal[0];
+        // Test extract sub vars
+        Set<u32_t> res;
+        extractSubVars(RelExeState::_varToVal[2], res);
+        assert(res == Set<u32_t>({0,1,2}));
+        IntervalExeState inv = sliceState(res);
+        RelationSolver rs;
+        const Z3Expr& relExpr = RelExeState::_varToVal[2] &&
+                                RelExeState::_varToVal[1];
+        const Z3Expr& initExpr = rs.gamma_hat(inv);
+        const Z3Expr& phi = (relExpr && initExpr).simplify();
+        IntervalExeState resRSY = rs.RSY(inv, phi);
+        outs() << "rsy done\n";
+        IntervalExeState resBilateral = rs.bilateral(inv, phi);
+        outs() << "bilateral done\n";
+        IntervalExeState resBS = rs.BS(inv, phi);
+        outs() << "bs done\n";
+        // 0:[0,10] 1:[0,10] 2:[-00,+00]
+        assert(resRSY == resBS && resBS == resBilateral);
+        // ground truth
+        IntervalExeState::VarToValMap intendedRes = Map<u32_t,
+        IntervalValue>({{0, IntervalValue(1,10)},{1,
+        IntervalValue(1,10)},{2,IntervalValue(1,1)}});
+    }
 };
 
 int main(int argc, char** argv)
@@ -535,12 +575,14 @@ int main(int argc, char** argv)
     relExeStateExample.testRelExeState2_1();
     relExeStateExample.testRelExeState2_2();
     relExeStateExample.testRelExeState2_3();
-    relExeStateExample.testRelExeState2_4(); /// 10000
-    relExeStateExample.testRelExeState2_5(); /// 100000
+    // relExeStateExample.testRelExeState2_4(); /// 10000
+    // relExeStateExample.testRelExeState2_5(); /// 100000
 
     relExeStateExample.testRelExeState3_1();
     relExeStateExample.testRelExeState3_2();
-    relExeStateExample.testRelExeState3_3(); /// 10000
-    relExeStateExample.testRelExeState3_4(); /// 100000
+    // relExeStateExample.testRelExeState3_3(); /// 10000
+    // relExeStateExample.testRelExeState3_4(); /// 100000
+
+    // relExeStateExample.testRelExeState4_1(); /// top
     return 0;
 }

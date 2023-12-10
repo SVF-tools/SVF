@@ -114,7 +114,7 @@ public:
     }
 
     /// Set all value bottom
-    IntervalExeState bottom()
+    IntervalExeState bottom() const
     {
         IntervalExeState inv = *this;
         for (auto &item: inv._varToItvVal)
@@ -125,7 +125,7 @@ public:
     }
 
     /// Set all value top
-    IntervalExeState top()
+    IntervalExeState top() const
     {
         IntervalExeState inv = *this;
         for (auto &item: inv._varToItvVal)

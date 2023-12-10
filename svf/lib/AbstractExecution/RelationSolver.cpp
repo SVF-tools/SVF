@@ -30,7 +30,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-IntervalExeState RelationSolver::bilateral(IntervalExeState domain, Z3Expr phi,
+IntervalExeState RelationSolver::bilateral(const IntervalExeState &domain, const Z3Expr& phi,
                                            u32_t descend_check)
 {
     /// init variables
@@ -108,7 +108,7 @@ IntervalExeState RelationSolver::bilateral(IntervalExeState domain, Z3Expr phi,
     return upper;
 }
 
-IntervalExeState RelationSolver::RSY(IntervalExeState domain, const Z3Expr& phi)
+IntervalExeState RelationSolver::RSY(const IntervalExeState& domain, const Z3Expr& phi)
 {
     IntervalExeState lower = domain.bottom();
     z3::solver& solver = Z3Expr::getSolver();
@@ -132,6 +132,7 @@ IntervalExeState RelationSolver::RSY(IntervalExeState domain, const Z3Expr& phi)
                 z3::func_decl v = m[i];
                 if (v.arity() != 0)
                     continue;
+                outs() << v.name().str() << ": " << m.get_const_interp(v).get_numeral_int() << "\n";
                 solution.emplace(std::stoi(v.name().str()),
                                  m.get_const_interp(v).get_numeral_int());
             }
@@ -165,7 +166,7 @@ IntervalExeState RelationSolver::RSY(IntervalExeState domain, const Z3Expr& phi)
 }
 
 IntervalExeState RelationSolver::abstract_consequence(
-    IntervalExeState& lower, IntervalExeState& upper, IntervalExeState& domain)
+    const IntervalExeState& lower, const IntervalExeState& upper, const IntervalExeState& domain) const
 {
     /*Returns the "abstract consequence" of lower and upper.
 
@@ -182,7 +183,7 @@ IntervalExeState RelationSolver::abstract_consequence(
     /// for variable in self.variables:
     {
         IntervalExeState proposed = domain.top(); /// proposed = self.top.copy()
-        proposed._varToItvVal[it->first] = lower._varToItvVal[it->first];
+        proposed._varToItvVal[it->first] = lower._varToItvVal.at(it->first);
         /// proposed.set_interval(variable, lower.interval_of(variable))
                /// proposed._locToItvVal
         if (!(proposed >= upper)) /// if not proposed >= upper:
@@ -193,7 +194,7 @@ IntervalExeState RelationSolver::abstract_consequence(
     return lower; /// return lower.copy()
 }
 
-Z3Expr RelationSolver::gamma_hat(IntervalExeState& exeState)
+Z3Expr RelationSolver::gamma_hat(const IntervalExeState& exeState) const
 {
     Z3Expr res(Z3Expr::getContext().bool_val(true));
     for (auto& item : exeState.getVarToVal())
@@ -202,51 +203,54 @@ Z3Expr RelationSolver::gamma_hat(IntervalExeState& exeState)
             return Z3Expr::getContext().bool_val(false);
         if (item.second.isTop())
             continue;
-        Z3Expr v = Z3Expr::getContext().int_const(
-            std::to_string(item.first).c_str());
+        Z3Expr v = toZ3Expr(item.first);
+        // Z3Expr v = Z3Expr::getContext().int_const(
+            // std::to_string(item.first).c_str());
         res = (res && v >= (int)item.second.lb().getNumeral() &&
                v <= (int)item.second.ub().getNumeral()).simplify();
     }
     return res;
 }
 
-Z3Expr RelationSolver::gamma_hat(IntervalExeState& alpha,
-                                 IntervalExeState& exeState)
+Z3Expr RelationSolver::gamma_hat(const IntervalExeState& alpha,
+                                 const IntervalExeState& exeState) const
 {
     Z3Expr res(Z3Expr::getContext().bool_val(true));
     for (auto& item : exeState.getVarToVal())
     {
-        IntervalValue interval = alpha._varToItvVal[item.first];
+        IntervalValue interval = alpha._varToItvVal.at(item.first);
         if (interval.isBottom())
             return Z3Expr::getContext().bool_val(false);
         if (interval.isTop())
             continue;
-        Z3Expr v = Z3Expr::getContext().int_const(
-            std::to_string(item.first).c_str());
+        Z3Expr v = toZ3Expr(item.first);
+        // Z3Expr v = Z3Expr::getContext().int_const(
+            // std::to_string(item.first).c_str());
         res = (res && v >= (int)interval.lb().getNumeral() &&
                v <= (int)interval.ub().getNumeral()).simplify();
     }
     return res;
 }
 
-Z3Expr RelationSolver::gamma_hat(u32_t id, IntervalExeState& exeState)
+Z3Expr RelationSolver::gamma_hat(u32_t id, const IntervalExeState& exeState) const
 {
     auto it = exeState.getVarToVal().find(id);
     assert(it != exeState.getVarToVal().end() && "id not in varToVal?");
-    Z3Expr v = Z3Expr::getContext().int_const(std::to_string(id).c_str());
+    Z3Expr v = toZ3Expr(id);
+    // Z3Expr v = Z3Expr::getContext().int_const(std::to_string(id).c_str());
     Z3Expr res = (v >= (int)it->second.lb().getNumeral() &&
                   v <= (int)it->second.ub().getNumeral());
     return res;
 }
 
-IntervalExeState RelationSolver::beta(Map<u32_t, double>& sigma,
-                                      IntervalExeState& exeState)
+IntervalExeState RelationSolver::beta(const Map<u32_t, double>& sigma,
+                                      const IntervalExeState& exeState) const
 {
     IntervalExeState res;
     for (const auto& item : exeState.getVarToVal())
     {
         res._varToItvVal[item.first] = IntervalValue(
-            sigma[item.first], sigma[item.first]);
+            sigma.at(item.first), sigma.at(item.first));
     }
     return res;
 }
@@ -264,7 +268,7 @@ void RelationSolver::updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const
     }
 }
 
-IntervalExeState RelationSolver::BS(IntervalExeState& domain, const Z3Expr &phi)
+IntervalExeState RelationSolver::BS(const IntervalExeState& domain, const Z3Expr &phi)
 {
     /// because key of _varToItvVal is u32_t, -key may out of range for int
     /// so we do key + bias for -key
@@ -273,7 +277,7 @@ IntervalExeState RelationSolver::BS(IntervalExeState& domain, const Z3Expr &phi)
     Map<u32_t, NumericLiteral> low_values, high_values;
     Z3Expr new_phi = phi;
     /// init low, ret, high
-    for (auto& item: domain.getVarToVal())
+    for (const auto& item: domain.getVarToVal())
     {
         /// init object x
         updateMap(ret, item.first, item.second.ub());
@@ -282,7 +286,7 @@ IntervalExeState RelationSolver::BS(IntervalExeState& domain, const Z3Expr &phi)
         if (item.first > bias)
             bias = item.first + 1;
     }
-    for (auto& item: domain.getVarToVal())
+    for (const auto& item: domain.getVarToVal())
     {
         /// init objects -x
         u32_t reverse_key = item.first + bias;
@@ -290,7 +294,9 @@ IntervalExeState RelationSolver::BS(IntervalExeState& domain, const Z3Expr &phi)
         updateMap(low_values, reverse_key, -item.second.ub());
         updateMap(high_values, reverse_key, -item.second.lb());
         /// add a relation that x == -(x+bias)
-        new_phi = (new_phi && (Z3Expr::getContext().int_const(std::to_string(reverse_key).c_str()) == -Z3Expr::getContext().int_const(std::to_string(item.first).c_str())));
+        new_phi = (new_phi && (toZ3Expr(reverse_key) == -1 * toZ3Expr(item.first)));
+
+        // new_phi = (new_phi && (Z3Expr::getContext().int_const(std::to_string(reverse_key).c_str()) == -Z3Expr::getContext().int_const(std::to_string(item.first).c_str())));
     }
     /// optimize each object
     BoxedOptSolver(new_phi.simplify(), ret, low_values, high_values);
@@ -314,9 +320,10 @@ Map<u32_t, NumericLiteral> RelationSolver::BoxedOptSolver(const Z3Expr& phi, Map
     while (1)
     {
         L_phi.clear();
-        for (auto& item : ret)
+        for (const auto& item : ret)
         {
-            Z3Expr v = Z3Expr::getContext().int_const(std::to_string(item.first).c_str());
+            Z3Expr v = toZ3Expr(item.first);
+            // Z3Expr v = Z3Expr::getContext().int_const(std::to_string(item.first).c_str());
             if (low_values.at(item.first).leq(high_values.at(item.first)))
             {
                 NumericLiteral mid = (low_values.at(item.first) + high_values.at(item.first)) / 2;
@@ -344,7 +351,7 @@ void RelationSolver::decide_cpa_ext(const Z3Expr& phi,
     while (1)
     {
         Z3Expr join_expr(Z3Expr::getContext().bool_val(false));
-        for (auto& item : L_phi)
+        for (const auto& item : L_phi)
             join_expr = (join_expr || item.second);
         join_expr = (join_expr && phi).simplify();
         z3::solver& solver = Z3Expr::getSolver();
@@ -357,13 +364,16 @@ void RelationSolver::decide_cpa_ext(const Z3Expr& phi,
         {
             z3::model m = solver.get_model();
             solver.pop();
-            for(auto & item : L_phi)
+            for(const auto & item : L_phi)
             {
                 u32_t id = item.first;
-                int value = m.eval(Z3Expr::getContext().int_const(std::to_string(id).c_str())).get_numeral_int();
+                int value = m.eval(toZ3Expr(id).getExpr()).get_numeral_int();
+                // int value = m.eval(Z3Expr::getContext().int_const(std::to_string(id).c_str())).get_numeral_int();
                 /// id is the var id, value is the solution found for var_id
                 /// add a relation to check if the solution meets phi_id
-                Z3Expr expr = (item.second && Z3Expr::getContext().int_const(std::to_string(id).c_str()) == value);
+                Z3Expr expr = (item.second && toZ3Expr(id) == value);
+
+                // Z3Expr expr = (item.second && Z3Expr::getContext().int_const(std::to_string(id).c_str()) == value);
                 solver.push();
                 solver.add(expr.getExpr());
                 // solution meets phi_id
@@ -374,8 +384,8 @@ void RelationSolver::decide_cpa_ext(const Z3Expr& phi,
 
                     NumericLiteral mid = (low_values.at(id) + high_values.at(id) + 1) / 2;
                     updateMap(mid_values, id, mid);
-
-                    Z3Expr v = Z3Expr::getContext().int_const(std::to_string(id).c_str());
+                    Z3Expr v = toZ3Expr(id);
+                    // Z3Expr v = Z3Expr::getContext().int_const(std::to_string(id).c_str());
                     Z3Expr expr = ((int)mid_values.at(id).getNumeral() <= v && v <= (int)high_values.at(id).getNumeral());
                     L_phi[id] = expr;
                 }
@@ -385,7 +395,7 @@ void RelationSolver::decide_cpa_ext(const Z3Expr& phi,
         else /// unknown or unsat, we consider unknown as unsat
         {
             solver.pop();
-            for (auto& item : L_phi)
+            for (const auto& item : L_phi)
                 high_values.at(item.first) = mid_values.at(item.first) - 1;
             return;
         }

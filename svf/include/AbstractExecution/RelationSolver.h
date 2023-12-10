@@ -44,27 +44,34 @@ public:
     IntervalExeState (the last element of inputs) for RSY or bilateral solver */
 
     /// Return Z3Expr according to valToValMap
-    static Z3Expr gamma_hat(IntervalExeState &exeState);
+    Z3Expr gamma_hat(const IntervalExeState &exeState) const;
 
     /// Return Z3Expr according to another valToValMap
-    Z3Expr gamma_hat(IntervalExeState &alpha, IntervalExeState &exeState);
+    Z3Expr gamma_hat(const IntervalExeState &alpha, const IntervalExeState &exeState) const;
 
     /// Return Z3Expr from a NodeID
-    Z3Expr gamma_hat(u32_t id, IntervalExeState &exeState);
+    Z3Expr gamma_hat(u32_t id, const IntervalExeState &exeState) const;
 
-    IntervalExeState abstract_consequence(IntervalExeState &lower, IntervalExeState &upper, IntervalExeState &domain);
+    IntervalExeState abstract_consequence(const IntervalExeState &lower, const IntervalExeState &upper, const IntervalExeState &domain) const;
 
-    IntervalExeState beta(Map<u32_t, double> &sigma, IntervalExeState &exeState);
+    IntervalExeState beta(const Map<u32_t, double> &sigma, const IntervalExeState &exeState) const;
+
+
+    /// Return Z3 expression lazily based on SVFVar ID
+    virtual inline Z3Expr toZ3Expr(u32_t varId) const
+    {
+        return Z3Expr::getContext().int_const(std::to_string(varId).c_str());
+    }
 
     /* two optional solvers: RSY and bilateral */
 
-    IntervalExeState bilateral(IntervalExeState domain, Z3Expr phi, u32_t descend_check = 0);
+    IntervalExeState bilateral(const IntervalExeState& domain, const Z3Expr &phi, u32_t descend_check = 0);
 
-    IntervalExeState RSY(IntervalExeState domain, const Z3Expr &phi);
+    IntervalExeState RSY(const IntervalExeState& domain, const Z3Expr &phi);
 
     Map<u32_t, NumericLiteral> BoxedOptSolver(const Z3Expr& phi, Map<u32_t, NumericLiteral>& ret, Map<u32_t, NumericLiteral>& low_values, Map<u32_t, NumericLiteral>& high_values);
 
-    IntervalExeState BS(IntervalExeState& domain, const Z3Expr &phi);
+    IntervalExeState BS(const IntervalExeState& domain, const Z3Expr &phi);
 
     void updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const NumericLiteral& value);
 
