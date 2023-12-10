@@ -132,7 +132,7 @@ IntervalExeState RelationSolver::RSY(const IntervalExeState& domain, const Z3Exp
                 z3::func_decl v = m[i];
                 if (v.arity() != 0)
                     continue;
-                outs() << v.name().str() << ": " << m.get_const_interp(v).get_numeral_int() << "\n";
+                // outs() << v.name().str() << ": " << m.get_const_interp(v).get_numeral_int() << "\n";
                 solution.emplace(std::stoi(v.name().str()),
                                  m.get_const_interp(v).get_numeral_int());
             }
