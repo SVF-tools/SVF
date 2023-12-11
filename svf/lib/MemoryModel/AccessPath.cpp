@@ -210,6 +210,9 @@ APOffset AccessPath::computeConstantOffset() const
     assert(isConstantOffset() && "not a constant offset");
 
     APOffset totalConstOffset = 0;
+    // model const,
+    if (idxOperandPairs.size() == 0)
+        return getConstantStructFldIdx();
     for(int i = idxOperandPairs.size() - 1; i >= 0; i--)
     {
         const SVFValue* value = idxOperandPairs[i].first->getValue();
