@@ -273,6 +273,8 @@ IntervalExeState RelationSolver::BS(const IntervalExeState& domain, const Z3Expr
     /// because key of _varToItvVal is u32_t, -key may out of range for int
     /// so we do key + bias for -key
     u32_t bias = 0;
+    int infinity = (INT32_MAX / 2) - 1;
+    // int infinity = 20;
     Map<u32_t, NumericLiteral> ret;
     Map<u32_t, NumericLiteral> low_values, high_values;
     Z3Expr new_phi = phi;
@@ -281,8 +283,14 @@ IntervalExeState RelationSolver::BS(const IntervalExeState& domain, const Z3Expr
     {
         /// init object x
         updateMap(ret, item.first, item.second.ub());
-        updateMap(low_values, item.first, item.second.lb());
-        updateMap(high_values, item.first, item.second.ub());
+        if (item.second.lb().is_minus_infinity())
+            updateMap(low_values, item.first, -infinity);
+        else
+            updateMap(low_values, item.first, item.second.lb());
+        if (item.second.ub().is_plus_infinity())
+            updateMap(high_values, item.first, infinity);
+        else
+            updateMap(high_values, item.first, item.second.ub());
         if (item.first > bias)
             bias = item.first + 1;
     }
@@ -291,8 +299,14 @@ IntervalExeState RelationSolver::BS(const IntervalExeState& domain, const Z3Expr
         /// init objects -x
         u32_t reverse_key = item.first + bias;
         updateMap(ret, reverse_key, -item.second.lb());
-        updateMap(low_values, reverse_key, -item.second.ub());
-        updateMap(high_values, reverse_key, -item.second.lb());
+        if (item.second.ub().is_plus_infinity())
+            updateMap(low_values, reverse_key, -infinity);
+        else
+            updateMap(low_values, reverse_key, -item.second.ub());
+        if (item.second.lb().is_minus_infinity())
+            updateMap(high_values, reverse_key, infinity);
+        else
+            updateMap(high_values, reverse_key, -item.second.lb());
         /// add a relation that x == -(x+bias)
         new_phi = (new_phi && (toZ3Expr(reverse_key) == -1 * toZ3Expr(item.first)));
 
@@ -308,6 +322,10 @@ IntervalExeState RelationSolver::BS(const IntervalExeState& domain, const Z3Expr
             retInv._varToItvVal[item.first - bias].setLb(-item.second);
         else
             retInv._varToItvVal[item.first].setUb(item.second);
+    }
+    for (const auto & item: retInv.getVarToVal())
+    {
+        outs() << item.first << ": " << item.second << "\n";
     }
     return retInv;
 }

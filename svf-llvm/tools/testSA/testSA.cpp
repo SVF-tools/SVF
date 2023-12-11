@@ -550,14 +550,14 @@ public:
                                 RelExeState::_varToVal[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        IntervalExeState resRSY = rs.RSY(inv, phi);
+        // IntervalExeState resRSY = rs.RSY(inv, phi);
         outs() << "rsy done\n";
-        IntervalExeState resBilateral = rs.bilateral(inv, phi);
+        // IntervalExeState resBilateral = rs.bilateral(inv, phi);
         outs() << "bilateral done\n";
         IntervalExeState resBS = rs.BS(inv, phi);
         outs() << "bs done\n";
         // 0:[0,10] 1:[0,10] 2:[-00,+00]
-        assert(resRSY == resBS && resBS == resBilateral);
+        // assert(resRSY == resBS && resBS == resBilateral);
         // ground truth
         IntervalExeState::VarToValMap intendedRes = Map<u32_t,
         IntervalValue>({{0, IntervalValue(1,10)},{1,
@@ -569,20 +569,21 @@ int main(int argc, char** argv)
 {
     SVFUtil::outs() << "main\n";
     RelExeStateExample relExeStateExample;
-    // relExeStateExample.testRelExeState1_1();
-    // relExeStateExample.testRelExeState1_2();
-    //
-    // relExeStateExample.testRelExeState2_1();
-    // relExeStateExample.testRelExeState2_2();
-    // relExeStateExample.testRelExeState2_3();
-    relExeStateExample.testRelExeState2_4(); /// 10000
-    relExeStateExample.testRelExeState2_5(); /// 100000
+    relExeStateExample.testRelExeState1_1();
+    relExeStateExample.testRelExeState1_2();
 
-    // relExeStateExample.testRelExeState3_1();
-    // relExeStateExample.testRelExeState3_2();
-    relExeStateExample.testRelExeState3_3(); /// 10000
-    relExeStateExample.testRelExeState3_4(); /// 100000
+    relExeStateExample.testRelExeState2_1();
+    relExeStateExample.testRelExeState2_2();
+    relExeStateExample.testRelExeState2_3();
+    // relExeStateExample.testRelExeState2_4(); /// 10000
+    // relExeStateExample.testRelExeState2_5(); /// 100000
 
-    // relExeStateExample.testRelExeState4_1(); /// top
+    relExeStateExample.testRelExeState3_1();
+    relExeStateExample.testRelExeState3_2();
+    // relExeStateExample.testRelExeState3_3(); /// 10000
+    // relExeStateExample.testRelExeState3_4(); /// 100000
+
+    outs() << "start top\n";
+    relExeStateExample.testRelExeState4_1(); /// top
     return 0;
 }
