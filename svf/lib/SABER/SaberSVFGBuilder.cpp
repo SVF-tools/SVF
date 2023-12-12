@@ -216,33 +216,6 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
 }
 
 /*!
- * Return TRUE if this is a strong update STORE statement.
- */
-bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, BVDataPTAImpl* pta)
-{
-    bool isSU = false;
-    if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
-    {
-        const PointsTo& dstCPSet = pta->getPts(store->getPAGDstNodeID());
-        if (dstCPSet.count() == 1)
-        {
-            /// Find the unique element in cpts
-            PointsTo::iterator it = dstCPSet.begin();
-            singleton = *it;
-
-            // Strong update can be made if this points-to target is not heap, array or field-insensitive.
-            if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton)
-                    && SVFIR::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
-                    && !pta->isLocalVarInRecursiveFun(singleton))
-            {
-                isSU = true;
-            }
-        }
-    }
-    return isSU;
-}
-
-/*!
  * Remove Incoming Edge for strong-update (SU) store instruction
  * Because the SU node does not receive indirect value
  *
@@ -264,7 +237,8 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
             if(SVFUtil::isa<StoreStmt>(stmtNode->getPAGEdge()))
             {
                 NodeID singleton;
-                if(isStrongUpdate(node, singleton, pta))
+                const PointsTo& dstCPSet = pta->getPts(stmtNode->getPAGDstNodeID());
+                if(SVFUtil::isStrongUpdate(dstCPSet, singleton, pta))
                 {
                     Set<SVFGEdge*> toRemove;
                     for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2)

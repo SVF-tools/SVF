@@ -726,7 +726,8 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     double updateStart = stat->getClk();
 
     NodeID singleton = 0;
-    bool isSU = isStrongUpdate(store, singleton);
+    const PointsTo &dstCPSet = getPts(store->getPAGDstNodeID());
+    bool isSU = SVFUtil::isStrongUpdate(dstCPSet, singleton, this);
     if (isSU) svfgHasSU.set(l);
     else svfgHasSU.reset(l);
 

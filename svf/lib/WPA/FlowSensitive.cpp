@@ -630,7 +630,8 @@ bool FlowSensitive::processStore(const StoreSVFGNode* store)
     // also merge the DFInSet to DFOutSet.
     /// check if this is a strong updates store
     NodeID singleton;
-    bool isSU = isStrongUpdate(store, singleton);
+    const PointsTo &dstCPSet = getPts(store->getPAGDstNodeID());
+    bool isSU = SVFUtil::isStrongUpdate(dstCPSet, singleton, this);
     if (isSU)
     {
         svfgHasSU.set(store->getId());
@@ -647,33 +648,6 @@ bool FlowSensitive::processStore(const StoreSVFGNode* store)
     updateTime += (updateEnd - updateStart) / TIMEINTERVAL;
 
     return changed;
-}
-
-/*!
- * Return TRUE if this is a strong update STORE statement.
- */
-bool FlowSensitive::isStrongUpdate(const SVFGNode* node, NodeID& singleton)
-{
-    bool isSU = false;
-    if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
-    {
-        const PointsTo& dstCPSet = getPts(store->getPAGDstNodeID());
-        if (dstCPSet.count() == 1)
-        {
-            /// Find the unique element in cpts
-            PointsTo::iterator it = dstCPSet.begin();
-            singleton = *it;
-
-            // Strong update can be made if this points-to target is not heap, array or field-insensitive.
-            if (!isHeapMemObj(singleton) && !isArrayMemObj(singleton)
-                    && pag->getBaseObj(singleton)->isFieldInsensitive() == false
-                    && !isLocalVarInRecursiveFun(singleton))
-            {
-                isSU = true;
-            }
-        }
-    }
-    return isSU;
 }
 
 /*!

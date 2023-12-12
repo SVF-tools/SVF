@@ -236,8 +236,6 @@ protected:
     virtual void updateConnectedNodes(const SVFGEdgeSetTy& edges);
     //@}
 
-    /// Return TRUE if this is a strong update STORE statement.
-    bool isStrongUpdate(const SVFGNode* node, NodeID& singleton);
 
     /// Fills may/noAliases for the location/pointer pairs in cmp.
     virtual void countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases);

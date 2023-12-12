@@ -671,6 +671,8 @@ template <typename... Ts>
 constexpr bool is_sequence_container_v = is_sequence_container<Ts...>::value;
 ///@}
 
+/// Return true if a strong update can apply
+bool isStrongUpdate(const PointsTo& dstCPSet, NodeID& singleton, BVDataPTAImpl* pta);
 
 } // End namespace SVFUtil
 
