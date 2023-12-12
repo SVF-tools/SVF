@@ -324,3 +324,22 @@ bool SVFUtil::matchArgs(const SVFInstruction* cs, const SVFFunction* callee)
     else
         return getSVFCallSite(cs).arg_size() == callee->arg_size();
 }
+
+bool SVFUtil::isStrongUpdate(const PointsTo &dstCPSet, NodeID &singleton, BVDataPTAImpl *pta) {
+    bool isSU = false;
+
+    if (dstCPSet.count() == 1) {
+        /// Find the unique element in cpts
+        PointsTo::iterator it = dstCPSet.begin();
+        singleton = *it;
+
+        // Strong update can be made if this points-to target is not heap, array or field-insensitive.
+        if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton)
+            && SVFIR::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
+            && !pta->isLocalVarInRecursiveFun(singleton))
+        {
+            isSU = true;
+        }
+    }
+    return isSU;
+}
