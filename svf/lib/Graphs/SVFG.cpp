@@ -595,7 +595,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
         {
             const PAGNode *cs_arg = *csArgIt;
             const PAGNode *fun_arg = *funArgIt;
-            if (fun_arg->isPointer() && cs_arg->isPointer())
+            if (isInterestedPAGNode(fun_arg) && isInterestedPAGNode(cs_arg))
                 getInterVFEdgeAtIndCSFromAPToFP(cs_arg, fun_arg, callICFGNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
@@ -603,12 +603,12 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
         {
             NodeID varFunArg = pag->getVarargNode(callee);
             const PAGNode* varFunArgNode = pag->getGNode(varFunArg);
-            if (varFunArgNode->isPointer())
+            if (isInterestedPAGNode(varFunArgNode))
             {
                 for (; csArgIt != csArgEit; csArgIt++)
                 {
                     const PAGNode *cs_arg = *csArgIt;
-                    if (cs_arg->isPointer())
+                    if (isInterestedPAGNode(cs_arg))
                         getInterVFEdgeAtIndCSFromAPToFP(cs_arg, varFunArgNode, callICFGNode, csId, edges);
                 }
             }
@@ -620,7 +620,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, 
     {
         const PAGNode* cs_return = pag->getCallSiteRet(retICFGNode);
         const PAGNode* fun_return = pag->getFunRet(callee);
-        if (cs_return->isPointer() && fun_return->isPointer())
+        if (isInterestedPAGNode(cs_return) && isInterestedPAGNode(fun_return))
             getInterVFEdgeAtIndCSFromFRToAR(fun_return, cs_return, csId, edges);
     }
 

@@ -987,7 +987,7 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
         {
             const PAGNode *cs_arg = *csArgIt;
             const PAGNode *fun_arg = *funArgIt;
-            if (fun_arg->isPointer() && cs_arg->isPointer())
+            if (isInterestedPAGNode(cs_arg) && isInterestedPAGNode(fun_arg))
                 connectAParamAndFParam(cs_arg, fun_arg, callBlockNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
@@ -996,12 +996,12 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
         {
             NodeID varFunArg = pag->getVarargNode(callee);
             const PAGNode* varFunArgNode = pag->getGNode(varFunArg);
-            if (varFunArgNode->isPointer())
+            if (isInterestedPAGNode(varFunArgNode))
             {
                 for (; csArgIt != csArgEit; csArgIt++)
                 {
                     const PAGNode *cs_arg = *csArgIt;
-                    if (cs_arg->isPointer())
+                    if (isInterestedPAGNode(cs_arg))
                         connectAParamAndFParam(cs_arg, varFunArgNode, callBlockNode, csId, edges);
                 }
             }
@@ -1013,7 +1013,7 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
     {
         const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
         const PAGNode* fun_return = pag->getFunRet(callee);
-        if (cs_return->isPointer() && fun_return->isPointer())
+        if (isInterestedPAGNode(cs_return) && isInterestedPAGNode(fun_return))
             connectFRetAndARet(fun_return, cs_return, csId, edges);
     }
 }
