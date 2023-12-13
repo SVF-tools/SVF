@@ -555,28 +555,28 @@ int XmbTextPropertyToTextList(void *a, void *b, char ***c, int *d)
     return 0;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memcpy_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memcpy_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memcpy(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memmove(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memmove_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")))
+__attribute__((annotate("MEMCPY")))
 void llvm_memmove_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")))
+__attribute__((annotate("MEMCPY")))
 void __memcpy_chk(char* dst, char* src, int sz, int flag){}
 
-__attribute__((annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")))
+__attribute__((annotate("MEMCPY")))
 void *memmove(void *str1, const void *str2, unsigned long n)
 {
     return NULL;
@@ -591,19 +591,19 @@ void *memccpy( void * restrict dest, const void * restrict src, int c, unsigned 
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")))
+__attribute__((annotate("MEMCPY")))
 void __memmove_chk(char* dst, char* src, int sz){}
 
-__attribute__((annotate("MEMSET"), annotate("BUF_CHECK:Arg0, Arg2")))
+__attribute__((annotate("MEMSET")))
 void llvm_memset(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET"), annotate("BUF_CHECK:Arg0, Arg2")))
+__attribute__((annotate("MEMSET")))
 void llvm_memset_p0i8_i32(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET"), annotate("BUF_CHECK:Arg0, Arg2")))
+__attribute__((annotate("MEMSET")))
 void llvm_memset_p0i8_i64(char* dst, char elem, int sz, int flag){}
 
-__attribute__((annotate("MEMSET"), annotate("BUF_CHECK:Arg0, Arg2")))
+__attribute__((annotate("MEMSET")))
 char *__memset_chk(char * dest, int c, unsigned long destlen, int flag)
 {
     return NULL;
@@ -615,78 +615,78 @@ char *wmemset(wchar_t * dst, wchar_t elem, int sz, int flag) {
 }
 
 
-__attribute__((annotate("MEMCPY"), annotate("STRCPY")))
+__attribute__((annotate("STRCPY")))
 char * __strcpy_chk(char * dest, const char * src, unsigned long destlen)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("STRCAT")))
+__attribute__((annotate("STRCAT")))
 char *__strcat_chk(char * dest, const char * src, unsigned long destlen)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("STRCAT")))
+__attribute__((annotate("STRCAT")))
 wchar_t* __wcscat_chk(wchar_t * dest, const wchar_t * src)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("STRCPY")))
+__attribute__((annotate("STRCPY")))
 char *stpcpy(char *restrict dst, const char *restrict src)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("STRCAT")))
+__attribute__((annotate("STRCAT")))
 char *strcat(char *dest, const char *src)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("STRCAT")))
+__attribute__((annotate("STRCAT")))
 char *wcscat(char *dest, const char *src)
 {
     return NULL;
 }
 
 
-__attribute__((annotate("MEMCPY"), annotate("STRCPY")))
+__attribute__((annotate("STRCPY")))
 char *strcpy(char *dest, const char *src)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("STRCAT")))
+__attribute__((annotate("STRCAT")))
 char *strncat(char *dest, const char *src, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("STRCAT")))
+__attribute__((annotate("STRCAT")))
 wchar_t* wcsncat(wchar_t * dest, const wchar_t * src, int n) {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("STRCAT")))
+__attribute__((annotate("STRCAT")))
 char *__strncat_chk(char *dest, const char *src, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("STRCAT")))
+__attribute__((annotate("STRCAT")))
 wchar_t* __wcsncat_chk(wchar_t * dest, const wchar_t * src, int n) {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")))
+__attribute__((annotate("MEMCPY")))
 char *strncpy(char *dest, const char *src, unsigned long n)
 {
     return NULL;
 }
 
-__attribute__((annotate("MEMCPY"), annotate("STRCPY")))
+__attribute__((annotate("STRCPY")))
 char *wcscpy(wchar_t* dest, const wchar_t* src) {
     return NULL;
 }
