@@ -396,7 +396,8 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
         res = res + IntervalValue(idxLb, idxUb);
     }
     res.meet_with(IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit()));
-    if (res.isBottom()) {
+    if (res.isBottom())
+    {
         res = IntervalValue(0);
     }
     return res;
