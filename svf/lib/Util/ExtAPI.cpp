@@ -172,10 +172,11 @@ bool ExtAPI::hasExtFuncAnnotation(const SVFFunction* fun, const std::string& fun
     return false;
 }
 
-bool ExtAPI::is_memcpy(const SVFFunction *F){
+bool ExtAPI::is_memcpy(const SVFFunction *F)
+{
     return F &&
            (hasExtFuncAnnotation(F, "MEMCPY") ||  hasExtFuncAnnotation(F, "STRCPY")
-        || hasExtFuncAnnotation(F, "STRCAT"));
+            || hasExtFuncAnnotation(F, "STRCAT"));
 }
 
 bool ExtAPI::is_memset(const SVFFunction *F)
