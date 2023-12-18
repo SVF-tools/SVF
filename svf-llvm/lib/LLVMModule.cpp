@@ -966,6 +966,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 // ExtDecl -> ExtDecl in Table 1
                 std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(extfun);
                 ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
+                break;
             }
         }
     }
@@ -996,6 +997,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 // ExtDecl -> ExtDecl in Table 1
                 std::vector<const Function*> calledFunctions = LLVMUtil::getCalledFunctions(owfunc);
                 ExtFuncsVec.insert(ExtFuncsVec.end(), calledFunctions.begin(), calledFunctions.end());
+                break;
             }
         }
     }

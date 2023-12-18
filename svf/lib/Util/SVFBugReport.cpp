@@ -347,36 +347,41 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath) const
 
     ofstream jsonFile(filePath, ios::out);
 
-    jsonFile << "[";
+    jsonFile << "{\n";
 
-    size_t commaCounter = bugSet.size() - 1;  // comma num needed
-    for(auto bugPtr : bugSet)
+    /// Add defects
+    jsonFile << "\"Defects\": [\n";
+    size_t commaCounter = bugSet.size() - 1;
+    for (auto bugPtr : bugSet)
     {
-        cJSON *singleBug = cJSON_CreateObject();
+        cJSON *singleDefect = cJSON_CreateObject();
 
-        /// add bug information to json
-        cJSON *bugType = cJSON_CreateString(GenericBug::BugType2Str.at(bugPtr->getBugType()).c_str());
-        cJSON_AddItemToObject(singleBug, "DefectType", bugType);
+        /// Add bug information to JSON
+        cJSON *bugType = cJSON_CreateString(
+                             GenericBug::BugType2Str.at(bugPtr->getBugType()).c_str());
+        cJSON_AddItemToObject(singleDefect, "DefectType", bugType);
 
         cJSON *bugLoc = cJSON_Parse(bugPtr->getLoc().c_str());
-        if(bugLoc == nullptr)
+        if (bugLoc == nullptr)
         {
             bugLoc = cJSON_CreateObject();
         }
-        cJSON_AddItemToObject(singleBug, "Location", bugLoc);
+        cJSON_AddItemToObject(singleDefect, "Location", bugLoc);
 
-        cJSON *bugFunction = cJSON_CreateString(bugPtr->getFuncName().c_str());
-        cJSON_AddItemToObject(singleBug, "Function", bugFunction);
+        cJSON *bugFunction = cJSON_CreateString(
+                                 bugPtr->getFuncName().c_str());
+        cJSON_AddItemToObject(singleDefect, "Function", bugFunction);
 
-        cJSON_AddItemToObject(singleBug, "Description", bugPtr->getBugDescription());
+        cJSON_AddItemToObject(singleDefect, "Description",
+                              bugPtr->getBugDescription());
 
-        /// add event information to json
+        /// Add event information to JSON
         cJSON *eventList = cJSON_CreateArray();
         const GenericBug::EventStack &bugEventStack = bugPtr->getEventStack();
-        if(BufferOverflowBug::classof(bugPtr))
+        if (BufferOverflowBug::classof(bugPtr))
         {
-            // add only when bug is context sensitive
-            for(const SVFBugEvent&event : bugEventStack)
+            // Add only when bug is context sensitive
+            for (const SVFBugEvent &event : bugEventStack)
             {
                 if (event.getEventType() == SVFBugEvent::SourceInst)
                 {
@@ -384,41 +389,50 @@ void SVFBugReport::dumpToJsonFile(const std::string& filePath) const
                 }
 
                 cJSON *singleEvent = cJSON_CreateObject();
-                //event type
-                cJSON *eventType = cJSON_CreateString(eventType2Str[event.getEventType()].c_str());
+                // Event type
+                cJSON *eventType = cJSON_CreateString(
+                                       eventType2Str[event.getEventType()].c_str());
                 cJSON_AddItemToObject(singleEvent, "EventType", eventType);
-                //function name
-                cJSON *eventFunc = cJSON_CreateString(event.getFuncName().c_str());
+                // Function name
+                cJSON *eventFunc = cJSON_CreateString(
+                                       event.getFuncName().c_str());
                 cJSON_AddItemToObject(singleEvent, "Function", eventFunc);
-                //event loc
+                // Event loc
                 cJSON *eventLoc = cJSON_Parse(event.getEventLoc().c_str());
-                if(eventLoc == nullptr)
+                if (eventLoc == nullptr)
                 {
                     eventLoc = cJSON_CreateObject();
                 }
                 cJSON_AddItemToObject(singleEvent, "Location", eventLoc);
-                //event description
-                cJSON *eventDescription = cJSON_CreateString(event.getEventDescription().c_str());
+                // Event description
+                cJSON *eventDescription = cJSON_CreateString(
+                                              event.getEventDescription().c_str());
                 cJSON_AddItemToObject(singleEvent, "Description", eventDescription);
 
                 cJSON_AddItemToArray(eventList, singleEvent);
             }
         }
-        cJSON_AddItemToObject(singleBug, "Events", eventList);
+        cJSON_AddItemToObject(singleDefect, "Events", eventList);
 
-        /// dump single bug to json str and write to file
-        char *singleBugStr = cJSON_Print(singleBug);
-        jsonFile << singleBugStr;
+        /// Dump single bug to JSON string and write to file
+        char *singleDefectStr = cJSON_Print(singleDefect);
+        jsonFile << singleDefectStr;
         if (commaCounter != 0)
         {
             jsonFile << ",\n";
         }
-        commaCounter --;
+        commaCounter--;
 
-        /// destroy the cJSON object
-        cJSON_Delete(singleBug);
+        /// Destroy the cJSON object
+        cJSON_Delete(singleDefect);
     }
+    jsonFile << "\n],\n";
 
-    jsonFile << "]";
+    /// Add program information
+    jsonFile << "\"Time\": " << time << ",\n";
+    jsonFile << "\"Memory\": \"" << mem << "\",\n";
+    jsonFile << "\"Coverage\": " << coverage << "\n";
+
+    jsonFile << "}";
     jsonFile.close();
 }
