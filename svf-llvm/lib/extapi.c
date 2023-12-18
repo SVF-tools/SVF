@@ -459,16 +459,20 @@ void* safexrealloc()
     return NULL;
 }
 
-__attribute__((annotate("REALLOC_RET"), annotate("AllocSize:UNKNOWN")))
+
 char *strtok(char *str, const char *delim)
 {
-    return NULL;
+    return str;
 }
 
-__attribute__((annotate("REALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 char *strtok_r(char *str, const char *delim, char **saveptr)
 {
-    return NULL;
+    return str;
+}
+
+char* strsep(char** stringp, const char* delim)
+{
+    return *stringp;
 }
 
 __attribute__((annotate("REALLOC_RET"), annotate("AllocSize:Arg1")))
@@ -727,7 +731,22 @@ char *fgets(char *str, int n, void *stream)
     return str;
 }
 
+char *fgets_unlocked(char *str, int n, void *stream)
+{
+    return str;
+}
+
+char* gets(char *str)
+{
+    return str;
+}
+
 void *memchr(const void *str, int c, unsigned long n)
+{
+    return (void *)str;
+}
+
+void *memrchr(const void *str, int c, unsigned long n)
 {
     return (void *)str;
 }
@@ -740,6 +759,26 @@ void * mremap(void * old_address, unsigned long old_size, unsigned long new_size
 char *strchr(const char *str, int c)
 {
     return (char *)str;
+}
+
+char *__strchrnull(const char *s, int c)
+{
+    return (char *)s;
+}
+
+char *strcasestr(const char *haystack, const char *needle)
+{
+    return (char *)haystack;
+}
+
+char* index(const char *s, int c)
+{
+    return (char *)s;
+}
+
+char* rindex(const char *s, int c)
+{
+    return (char *)s;
 }
 
 char *strerror_r(int errnum, char *buf, unsigned long buflen)
@@ -888,13 +927,31 @@ double strtod(const char *str, char **endptr)
     return 0.0;
 }
 
+double strtod_l(const char *str, char **endptr, void *loc)
+{
+    *endptr = (char *)str;
+    return 0.0;
+}
+
 float strtof(const char *nptr, char **endptr)
 {
     *endptr = (char *)nptr;
     return 0.0;
 }
 
+float strtof_l(const char *nptr, char **endptr, void *loc)
+{
+    *endptr = (char *)nptr;
+    return 0.0;
+}
+
 long int strtol(const char *str, char **endptr, int base)
+{
+    *endptr = (char *)str;
+    return 0;
+}
+
+long long strtoll(const char *str, char **endptr, int base)
 {
     *endptr = (char *)str;
     return 0;
@@ -910,6 +967,27 @@ unsigned long int strtoul(const char *str, char **endptr, int base)
 {
     *endptr = (char *)str;
     return 0;
+}
+
+unsigned long long strtoull(const char *str, char **endptr, int base)
+{
+    *endptr = (char *)str;
+    return 0;
+}
+
+char *gcvt(double x, int ndigit, char *buf)
+{
+    return buf;
+}
+
+void *memmem(const void *haystack, unsigned long haystacklen, const void *needle, unsigned long needlelen)
+{
+    return (void *)haystack;
+}
+
+char* ctime_r(const char *timer, char *buf)
+{
+    return buf;
 }
 
 int readdir_r(void *__restrict__dir, void *__restrict__entry, void **__restrict__result)
@@ -997,7 +1075,7 @@ char * bind_textdomain_codeset(const char * domainname, const char * codeset)
 
 char *ctermid(char *s)
 {
-    return STATIC_OBJECT;
+    return s;
 }
 
 char * dcgettext(const char * domainname, const char * msgid, int category)
