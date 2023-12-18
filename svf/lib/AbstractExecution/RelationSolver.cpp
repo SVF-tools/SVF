@@ -273,7 +273,7 @@ IntervalExeState RelationSolver::BS(const IntervalExeState& domain, const Z3Expr
     /// because key of _varToItvVal is u32_t, -key may out of range for int
     /// so we do key + bias for -key
     u32_t bias = 0;
-    int infinity = (INT32_MAX / 2) - 1;
+    int infinity = (INT32_MAX) - 1;
     // int infinity = 20;
     Map<u32_t, NumericLiteral> ret;
     Map<u32_t, NumericLiteral> low_values, high_values;
@@ -281,7 +281,7 @@ IntervalExeState RelationSolver::BS(const IntervalExeState& domain, const Z3Expr
     /// init low, ret, high
     for (const auto& item: domain.getVarToVal())
     {
-        /// init object x
+        /// i
         updateMap(ret, item.first, item.second.ub());
         if (item.second.lb().is_minus_infinity())
             updateMap(low_values, item.first, -infinity);
@@ -319,13 +319,19 @@ IntervalExeState RelationSolver::BS(const IntervalExeState& domain, const Z3Expr
     for (const auto& item: ret)
     {
         if (item.first >= bias)
-            retInv._varToItvVal[item.first - bias].setLb(-item.second);
+        {
+            if (item.second.equal(infinity))
+                retInv._varToItvVal[item.first - bias].setLb(Z3Expr::getContext().int_const("-oo"));
+            else
+                retInv._varToItvVal[item.first - bias].setLb(-item.second);
+        }
         else
-            retInv._varToItvVal[item.first].setUb(item.second);
-    }
-    for (const auto & item: retInv.getVarToVal())
-    {
-        outs() << item.first << ": " << item.second << "\n";
+        {
+            if (item.second.equal(infinity))
+                retInv._varToItvVal[item.first].setUb(Z3Expr::getContext().int_const("+oo"));
+            else
+                retInv._varToItvVal[item.first].setUb(item.second);
+        }
     }
     return retInv;
 }
@@ -344,7 +350,7 @@ Map<u32_t, NumericLiteral> RelationSolver::BoxedOptSolver(const Z3Expr& phi, Map
             // Z3Expr v = Z3Expr::getContext().int_const(std::to_string(item.first).c_str());
             if (low_values.at(item.first).leq(high_values.at(item.first)))
             {
-                NumericLiteral mid = (low_values.at(item.first) + high_values.at(item.first)) / 2;
+                NumericLiteral mid = (low_values.at(item.first) + (high_values.at(item.first) - low_values.at(item.first)) / 2);
                 updateMap(mid_values, item.first, mid);
                 Z3Expr expr = ((int)mid.getNumeral() <= v && v <= (int)high_values.at(item.first).getNumeral());
                 L_phi[item.first] = expr;

@@ -575,13 +575,13 @@ int main(int argc, char** argv)
     relExeStateExample.testRelExeState2_1();
     relExeStateExample.testRelExeState2_2();
     relExeStateExample.testRelExeState2_3();
-    // relExeStateExample.testRelExeState2_4(); /// 10000
-    // relExeStateExample.testRelExeState2_5(); /// 100000
+    relExeStateExample.testRelExeState2_4(); /// 10000
+    relExeStateExample.testRelExeState2_5(); /// 100000
 
     relExeStateExample.testRelExeState3_1();
     relExeStateExample.testRelExeState3_2();
-    // relExeStateExample.testRelExeState3_3(); /// 10000
-    // relExeStateExample.testRelExeState3_4(); /// 100000
+    relExeStateExample.testRelExeState3_3(); /// 10000
+    relExeStateExample.testRelExeState3_4(); /// 100000
 
     outs() << "start top\n";
     relExeStateExample.testRelExeState4_1(); /// top
