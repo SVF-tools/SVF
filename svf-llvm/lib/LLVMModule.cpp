@@ -982,10 +982,10 @@ void LLVMModuleSet::buildFunToFunMap()
                 Type* returnType1 = appfunc->getReturnType();
                 Type* returnType2 = owfunc->getReturnType();
 
-                // Check if the return types are compatible: 
-                // (1) The types are exactly the same, 
+                // Check if the return types are compatible:
+                // (1) The types are exactly the same,
                 // (2) Both are pointer types, and at least one of them is a void*.
-                // Note that getPointerElementType() will be deprecated in the future versions of LLVM. 
+                // Note that getPointerElementType() will be deprecated in the future versions of LLVM.
                 // Considering compatibility, avoid using getPointerElementType()->isIntegerTy(8) to determine if it is a void * type.
                 if (!(returnType1 == returnType2 || (returnType1->isPointerTy() && returnType2->isPointerTy())))
                 {
@@ -994,7 +994,7 @@ void LLVMModuleSet::buildFunToFunMap()
 
                 if (appfunc->arg_size() != owfunc->arg_size())
                     continue;
-                
+
                 bool argMismatch = false;
                 Function::const_arg_iterator argIter1 = appfunc->arg_begin();
                 Function::const_arg_iterator argIter2 = owfunc->arg_begin();
