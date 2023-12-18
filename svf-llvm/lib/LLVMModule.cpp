@@ -979,6 +979,42 @@ void LLVMModuleSet::buildFunToFunMap()
         {
             if (appfunc->getName().str().compare(owfunc->getName().str()) == 0)
             {
+                Type* returnType1 = appfunc->getReturnType();
+                Type* returnType2 = owfunc->getReturnType();
+
+                // Check if the return types are compatible: (1) The types are exactly the same, (2) Both are pointer types, and at least one of them is a void*.
+                if (!(returnType1 == returnType2 ||
+                    (returnType1->isPointerTy() && returnType2->isPointerTy() &&
+                    (returnType1->getPointerElementType()->isIntegerTy(8) || returnType2->getPointerElementType()->isIntegerTy(8)))))
+                {
+                    continue;
+                }
+
+                if (appfunc->arg_size() != owfunc->arg_size())
+                    continue;
+                
+                bool argMismatch = false;
+                Function::const_arg_iterator argIter1 = appfunc->arg_begin();
+                Function::const_arg_iterator argIter2 = owfunc->arg_begin();
+                while (argIter1 != appfunc->arg_end() && argIter2 != owfunc->arg_end())
+                {
+                    Type* argType1 = argIter1->getType();
+                    Type* argType2 = argIter2->getType();
+
+                    // Check if the parameters types are compatible: (1) The types are exactly the same, (2) Both are pointer types, and at least one of them is a void*.
+                    if (!(argType1 == argType2 ||
+                        (argType1->isPointerTy() && argType2->isPointerTy() &&
+                        (argType1->getPointerElementType()->isIntegerTy(8) || argType2->getPointerElementType()->isIntegerTy(8)))))
+                    {
+                        argMismatch = true;
+                        break;
+                    }
+                    argIter1++;
+                    argIter2++;
+                }
+                if (argMismatch)
+                    continue;
+
                 Function* fun = const_cast<Function*>(appfunc);
                 Module* mod = fun->getParent();
                 FunctionType* funType = fun->getFunctionType();
