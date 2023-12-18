@@ -31,7 +31,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 IntervalExeState RelationSolver::bilateral(const IntervalExeState &domain, const Z3Expr& phi,
-                                           u32_t descend_check)
+        u32_t descend_check)
 {
     /// init variables
     IntervalExeState upper = domain.top();
@@ -178,13 +178,13 @@ IntervalExeState RelationSolver::abstract_consequence(
     the abstract consequence will lead to better algorithm performance.*/
 
     for (auto it = domain.getVarToVal().begin();
-         it != domain.getVarToVal().end(); ++it)
-    /// for variable in self.variables:
+            it != domain.getVarToVal().end(); ++it)
+        /// for variable in self.variables:
     {
         IntervalExeState proposed = domain.top(); /// proposed = self.top.copy()
         proposed._varToItvVal[it->first] = lower._varToItvVal.at(it->first);
         /// proposed.set_interval(variable, lower.interval_of(variable))
-               /// proposed._locToItvVal
+        /// proposed._locToItvVal
         if (!(proposed >= upper)) /// if not proposed >= upper:
         {
             return proposed; /// return proposed
@@ -245,7 +245,7 @@ IntervalExeState RelationSolver::beta(const Map<u32_t, double>& sigma,
     for (const auto& item : exeState.getVarToVal())
     {
         res._varToItvVal[item.first] = IntervalValue(
-            sigma.at(item.first), sigma.at(item.first));
+                                           sigma.at(item.first), sigma.at(item.first));
     }
     return res;
 }
