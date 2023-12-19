@@ -759,10 +759,16 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
         const Type* objTy = getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(val));
-        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy));
+        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
         analyzeObjType(typeinfo,castUse);
-        if(SVFUtil::isa<StructType, ArrayType>(objTy))
+        if(SVFUtil::isa<ArrayType>(objTy))
             return getNumOfElements(objTy);
+        else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objTy))
+        {
+            /// For an C++ class, it can have variant elements depending on the vtable size, hence we only handle non-cpp-class object
+            if(getClassNameFromType(st).empty())
+                return getNumOfElements(objTy);
+        }
     }
     else
     {
@@ -847,7 +853,6 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
                  LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(
                      SVFUtil::cast<Instruction>(val))))
     {
-        // Heap object, label its field as infinite here
         elemNum = analyzeHeapObjType(typeinfo,val);
         // analyze heap alloc like (malloc/calloc/...), the alloc functions have
         // annotation like "AllocSize:Arg1". Please refer to extapi.c.

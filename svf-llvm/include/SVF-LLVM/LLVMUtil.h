@@ -496,7 +496,7 @@ const Argument* getConstructorThisPtr(const Function* fun);
 const Value* getVCallThisPtr(const CallBase* cs);
 const Value* getVCallVtblPtr(const CallBase* cs);
 s32_t getVCallIdx(const CallBase* cs);
-std::string getClassNameFromType(const Type* ty);
+std::string getClassNameFromType(const StructType* ty);
 std::string getClassNameOfThisPtr(const CallBase* cs);
 std::string getFunNameOfVCallSite(const CallBase* cs);
 bool VCallInCtorOrDtor(const CallBase* cs);
@@ -513,13 +513,10 @@ bool VCallInCtorOrDtor(const CallBase* cs);
 bool isSameThisPtrInConstructor(const Argument* thisPtr1,
                                 const Value* thisPtr2);
 
-template<typename T>
-std::string llvmToString(const T& val)
-{
-    std::string str;
-    llvm::raw_string_ostream(str) << val;
-    return str;
-}
+std::string dumpValue(const Value* val);
+
+std::string dumpType(const Type* type);
+
 
 /**
  * See more: https://github.com/SVF-tools/SVF/pull/1191
