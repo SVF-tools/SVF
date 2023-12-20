@@ -765,7 +765,7 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
             return getNumOfElements(objTy);
         else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objTy))
         {
-            /// For an C++ class, it can have variant elements depending on the vtable size, 
+            /// For an C++ class, it can have variant elements depending on the vtable size,
             /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as PointerType at the cast site
             if(getClassNameFromType(st).empty())
                 return getNumOfElements(objTy);
