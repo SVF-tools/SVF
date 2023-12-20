@@ -73,19 +73,18 @@ bool LLVMModuleSet::preProcessed = false;
 
 LLVMModuleSet::LLVMModuleSet()
     : symInfo(SymbolTableInfo::SymbolInfo()),
-      svfModule(SVFModule::getSVFModule()), cxts(nullptr)
+      svfModule(SVFModule::getSVFModule())
 {
 }
 
-SVFModule* LLVMModuleSet::buildSVFModule(Module &mod, std::unique_ptr<LLVMContext> context)
+SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     LLVMModuleSet* mset = getLLVMModuleSet();
 
     double startSVFModuleTime = SVFStat::getClk(true);
     SVFModule::getSVFModule()->setModuleIdentifier(mod.getModuleIdentifier());
-    mset->modules.emplace_back(mod);
-    mset->loadExtAPIModules(std::move(context));
-
+    mset->modules.emplace_back(mod);    // Populates `modules`; can get context via `this->getContext()`
+    mset->loadExtAPIModules();          // Uses context from module through `this->getContext()`
     mset->build();
     double endSVFModuleTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingLLVMModule = (endSVFModuleTime - startSVFModuleTime)/TIMEINTERVAL;
@@ -101,8 +100,8 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 
     LLVMModuleSet* mset = getLLVMModuleSet();
 
-    mset->loadModules(moduleNameVec);
-    mset->loadExtAPIModules();
+    mset->loadModules(moduleNameVec);   // Populates `modules`; can get context via `this->getContext()`
+    mset->loadExtAPIModules();          // Uses context from first module through `this->getContext()`
 
     if (!moduleNameVec.empty())
     {
@@ -507,9 +506,11 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         SVFModule::setPagFromTXT(Options::Graphtxt());
 
     //
-    // To avoid the following type bugs (t1 != t3) when parsing multiple modules,
-    // We should use only one LLVMContext object for multiple modules in the same thread.
-    // No such problem if only one module is processed by SVF.
+    // LLVMContext objects separate global LLVM settings (from which e.g. types are
+    // derived); multiple LLVMContext objects can coexist and each context can "own"
+    // multiple modules (modules can only have one context). Mixing contexts can lead
+    // to unintended inequalities, such as the following:
+    //
     // ------------------------------------------------------------------
     //    LLVMContext ctxa,ctxb;
     //    IntegerType * t1 = IntegerType::get(ctxa,32);
@@ -521,7 +522,16 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     //    assert(t1 != t3);
     // ------------------------------------------------------------------
     //
-    cxts = std::make_unique<LLVMContext>();
+    // When loading bytecode files, SVF will use the same LLVMContext object for all
+    // modules (i.e. the context owns all loaded modules). This applies to ExtAPI as
+    // well, which *must* be loaded using the same LLVMContext object. Hence, when
+    // loading modules from bitcode files, a new LLVMContext is created (using a
+    // `std::unique_ptr<LLVMContext>` type to ensure automatic garbage collection).
+    //
+    // This garbage collection should be avoided when building an SVF module from an LLVM
+    // module instance; see the comment(s) in `buildSVFModule` and `loadExtAPIModules()`
+
+    owned_ctx = std::make_unique<LLVMContext>();
 
     for (const std::string& moduleName : moduleNameVec)
     {
@@ -532,7 +542,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         }
 
         SMDiagnostic Err;
-        std::unique_ptr<Module> mod = parseIRFile(moduleName, Err, *cxts);
+        std::unique_ptr<Module> mod = parseIRFile(moduleName, Err, *owned_ctx);
         if (mod == nullptr)
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
@@ -544,8 +554,21 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     }
 }
 
-void LLVMModuleSet::loadExtAPIModules(std::unique_ptr<LLVMContext> context)
+void LLVMModuleSet::loadExtAPIModules()
 {
+    // This function loads the ExtAPI bitcode file as an LLVM module. Note that it is important that
+    // the same LLVMContext object is used to load this bitcode file as is used by the other modules
+    // being analysed.
+    // When the modules are loaded from bitcode files (i.e. passing filenames to files containing
+    // LLVM IR to `buildSVFModule({file1.bc, file2.bc, ...})) the context is created while loading
+    // the modules in `loadModules()`, which populates this->modules and this->owned_modules.
+    // If, however, an LLVM Module object is passed to `buildSVFModule` (e.g. from an LLVM pass),
+    // the context should be retrieved from the module itself (note that the garbage collection from
+    // `std::unique_ptr<LLVMContext> LLVMModuleSet::owned_ctx` should be avoided in this case). This
+    // function populates only this->modules.
+    // In both cases, fetching the context from the main LLVM module (through `getContext`) works
+    assert(!empty() && "LLVMModuleSet contains no modules; cannot load ExtAPI module without LLVMContext!");
+
     // Load external API module (extapi.bc)
     if (!ExtAPI::getExtAPI()->getExtBcPath().empty())
     {
@@ -556,10 +579,7 @@ void LLVMModuleSet::loadExtAPIModules(std::unique_ptr<LLVMContext> context)
             abort();
         }
         SMDiagnostic Err;
-        assert(!(cxts == nullptr && context == nullptr) && "Before loading extapi module, at least one LLVMContext should be initialized !!!");
-        if (context != nullptr)
-            cxts = std::move(context);
-        std::unique_ptr<Module> mod = parseIRFile(extModuleName, Err, *cxts);
+        std::unique_ptr<Module> mod = parseIRFile(extModuleName, Err, getContext());
         if (mod == nullptr)
         {
             SVFUtil::errs() << "load external module: " << extModuleName << "failed!!\n\n";
