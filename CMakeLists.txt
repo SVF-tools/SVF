@@ -78,7 +78,9 @@ else()
     set(CMAKE_CXX_STANDARD 14)
     message(STATUS "Got LLVM version ${LLVM_VERSION}; using C++ standard: ${CMAKE_CXX_STANDARD}")
   else()
-    message(FATAL_ERROR "Found unsupported LLVM version; need <= 15, got: ${LLVM_VERSION}")
+    set(CMAKE_CXX_STANDARD 17)
+    message(WARNING "Found unsupported LLVM version (got version ${LLVM_VERSION}; currently supported "
+                    "versions are up to 15); using C++ standard: ${CMAKE_CXX_STANDARD}")
   endif()
 
   # Always enable extensions and require a compiler that supports at least the set C++ standard
