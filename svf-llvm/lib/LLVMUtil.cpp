@@ -930,7 +930,12 @@ bool LLVMUtil::isLoadVtblInst(const LoadInst* loadInst)
     if (const FunctionType* functy = SVFUtil::dyn_cast<FunctionType>(elemTy))
     {
         const Type* paramty = functy->getParamType(0);
-        std::string className = LLVMUtil::getClassNameFromType(paramty);
+        std::string className = "";
+        if(const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(paramty))
+        {
+            if(const StructType* st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy)))
+                className = LLVMUtil::getClassNameFromType(st);
+        }
         if (className.size() > 0)
         {
             return true;
@@ -1163,25 +1168,19 @@ bool LLVMUtil::VCallInCtorOrDtor(const CallBase* cs)
     return false;
 }
 
-std::string LLVMUtil::getClassNameFromType(const Type* ty)
+std::string LLVMUtil::getClassNameFromType(const StructType* ty)
 {
     std::string className = "";
-    if (const PointerType* ptrType = SVFUtil::dyn_cast<PointerType>(ty))
+    if (!((SVFUtil::cast<StructType>(ty))->isLiteral()))
     {
-        const Type* elemType = LLVMUtil::getPtrElementType(ptrType);
-        if (SVFUtil::isa<StructType>(elemType) &&
-                !((SVFUtil::cast<StructType>(elemType))->isLiteral()))
+        std::string elemTypeName = ty->getStructName().str();
+        if (elemTypeName.compare(0, clsName.size(), clsName) == 0)
         {
-            std::string elemTypeName = elemType->getStructName().str();
-            if (elemTypeName.compare(0, clsName.size(), clsName) == 0)
-            {
-                className = elemTypeName.substr(clsName.size());
-            }
-            else if (elemTypeName.compare(0, structName.size(), structName) ==
-                     0)
-            {
-                className = elemTypeName.substr(structName.size());
-            }
+            className = elemTypeName.substr(clsName.size());
+        }
+        else if (elemTypeName.compare(0, structName.size(), structName) == 0)
+        {
+            className = elemTypeName.substr(structName.size());
         }
     }
     return className;
@@ -1189,7 +1188,7 @@ std::string LLVMUtil::getClassNameFromType(const Type* ty)
 
 std::string LLVMUtil::getClassNameOfThisPtr(const CallBase* inst)
 {
-    std::string thisPtrClassName;
+    std::string thisPtrClassName = "";
     if (const MDNode* N = inst->getMetadata("VCallPtrType"))
     {
         const MDString* mdstr = SVFUtil::cast<MDString>(N->getOperand(0).get());
@@ -1198,7 +1197,9 @@ std::string LLVMUtil::getClassNameOfThisPtr(const CallBase* inst)
     if (thisPtrClassName.size() == 0)
     {
         const Value* thisPtr = LLVMUtil::getVCallThisPtr(inst);
-        thisPtrClassName = getClassNameFromType(thisPtr->getType());
+        if(const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(thisPtr->getType()))
+            if(const StructType* st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy)))
+                thisPtrClassName = getClassNameFromType(st);
     }
 
     size_t found = thisPtrClassName.find_last_not_of("0123456789");
@@ -1284,6 +1285,29 @@ s64_t LLVMUtil::getCaseValue(const SwitchInst &switchInst, SuccBBAndCondValPair 
     }
     return val;
 }
+
+std::string LLVMUtil::dumpValue(const Value* val)
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    if (val)
+        rawstr << " " << *val << " ";
+    else
+        rawstr << " llvm Value is null";
+    return rawstr.str();
+}
+
+std::string LLVMUtil::dumpType(const Type* type)
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    if (type)
+        rawstr << " " << *type << " ";
+    else
+        rawstr << " llvm type is null";
+    return rawstr.str();
+}
+
 
 namespace SVF
 {

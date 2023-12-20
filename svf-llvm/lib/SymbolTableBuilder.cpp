@@ -753,20 +753,32 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
 /*!
  * Analyse types of heap and static objects
  */
-void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val)
+u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
     if(const Value* castUse = getFirstUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeinfo->resetTypeForHeapStaticObj(
-            LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
+        const Type* objTy = getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(val));
+        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy));
         analyzeObjType(typeinfo,castUse);
+        if(SVFUtil::isa<ArrayType>(objTy))
+            return getNumOfElements(objTy);
+        else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objTy))
+        {
+            /// For an C++ class, it can have variant elements depending on the vtable size, 
+            /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as PointerType at the cast site
+            if(getClassNameFromType(st).empty())
+                return getNumOfElements(objTy);
+            else
+                typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
+        }
     }
     else
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
         typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
+    return typeinfo->getMaxFieldOffsetLimit();
 }
 
 /*!
@@ -777,8 +789,7 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
     if(const Value* castUse = getFirstUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::STATIC_OBJ);
-        typeinfo->resetTypeForHeapStaticObj(
-            LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
+        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
         analyzeObjType(typeinfo,castUse);
     }
     else
@@ -844,9 +855,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val,
                  LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(
                      SVFUtil::cast<Instruction>(val))))
     {
-        analyzeHeapObjType(typeinfo,val);
-        // Heap object, label its field as infinite here
-        elemNum = typeinfo->getMaxFieldOffsetLimit();
+        elemNum = analyzeHeapObjType(typeinfo,val);
         // analyze heap alloc like (malloc/calloc/...), the alloc functions have
         // annotation like "AllocSize:Arg1". Please refer to extapi.c.
         // e.g. calloc(4, 10), annotation is "AllocSize:Arg0*Arg1",
