@@ -373,7 +373,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const APOffset& apOffset)
     if (hasPtrObj() == false)
         return true;
 
-    const SVFType* ety = getType();
+    const SVFType* ety = type;
 
     if (SVFUtil::isa<SVFStructType, SVFArrayType>(ety))
     {

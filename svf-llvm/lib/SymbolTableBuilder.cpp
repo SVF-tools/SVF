@@ -759,15 +759,18 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
         const Type* objTy = getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(val));
-        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
+        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy));
         analyzeObjType(typeinfo,castUse);
         if(SVFUtil::isa<ArrayType>(objTy))
             return getNumOfElements(objTy);
         else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objTy))
         {
-            /// For an C++ class, it can have variant elements depending on the vtable size, hence we only handle non-cpp-class object
+            /// For an C++ class, it can have variant elements depending on the vtable size, 
+            /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as PointerType at the cast site
             if(getClassNameFromType(st).empty())
                 return getNumOfElements(objTy);
+            else
+                typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
         }
     }
     else
@@ -786,8 +789,7 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
     if(const Value* castUse = getUniqueUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::STATIC_OBJ);
-        typeinfo->resetTypeForHeapStaticObj(
-            LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
+        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
         analyzeObjType(typeinfo,castUse);
     }
     else
