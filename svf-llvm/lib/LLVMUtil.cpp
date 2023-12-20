@@ -346,17 +346,23 @@ void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const SVFIns
  * for example, %4 = call align 16 i8* @malloc(i64 10); %5 = bitcast i8* %4 to i32*
  * return %5 whose type is i32* but not %4 whose type is i8*
  */
-const Value* LLVMUtil::getUniqueUseViaCastInst(const Value* val)
+const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
 {
     const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(type && "this value should be a pointer type!");
-    /// If type is void* (i8*) and val is only used at a bitcast instruction
+    /// If type is void* (i8*) and val is immediately used at a bitcast instruction
     if (IntegerType *IT = SVFUtil::dyn_cast<IntegerType>(getPtrElementType(type)))
     {
-        if (IT->getBitWidth() == 8 && val->getNumUses()==1)
+        if (IT->getBitWidth() == 8)
         {
-            const Use *u = &*val->use_begin();
-            return SVFUtil::dyn_cast<BitCastInst>(u->getUser());
+            const Value *latestUse = nullptr;
+            for (const auto &it : val->uses()) {
+                if (SVFUtil::isa<BitCastInst>(it.getUser()))
+                    latestUse = it.getUser();
+                else
+                    latestUse = nullptr;
+            }
+            return latestUse;
         }
     }
     return nullptr;
@@ -371,7 +377,7 @@ const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
     if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
     {
-        if(const Value* v = getUniqueUseViaCastInst(inst))
+        if(const Value* v = getFirstUseViaCastInst(inst))
         {
             if(const PointerType* newTy = SVFUtil::dyn_cast<PointerType>(v->getType()))
                 type = newTy;
