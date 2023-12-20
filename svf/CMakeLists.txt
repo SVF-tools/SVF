@@ -1,6 +1,6 @@
 # Due to a mutual dependencies, all the sub projects of the SVG are merged here
-# Otherwise it is impossible to load the dependencies in opt. 
-# NOTE: if the SVF should be linked into opt, we should probably use the 
+# Otherwise it is impossible to load the dependencies in opt.
+# NOTE: if the SVF should be linked into opt, we should probably use the
 # individual sub projects here, rather than the combined project.
 
 file(

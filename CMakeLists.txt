@@ -15,7 +15,7 @@ else()
 
   find_package(LLVM REQUIRED CONFIG HINTS ${LLVM_DIR} $ENV{LLVM_DIR})
   message(STATUS "LLVM STATUS:
-    Version       ${LLVM_PACKAGE_VERSION}
+    Version       ${LLVM_VERSION}
     Definitions   ${LLVM_DEFINITIONS}
     Includes      ${LLVM_INCLUDE_DIRS}
     Libraries     ${LLVM_LIBRARY_DIRS}
@@ -26,12 +26,9 @@ else()
     Dynamic lib   ${LLVM_LINK_LLVM_DYLIB}"
   )
 
-  if("${LLVM_PACKAGE_VERSION_MAJOR}" VERSION_GREATER "15")
-    message(FATAL_ERROR "Unsupported LLVM version (need <= 15.0.7; got ${LLVM_PACKAGE_VERSION})")
-  endif()
-
   if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT ${LLVM_BUILD_TYPE} STREQUAL "Debug")
-    message(FATAL_ERROR "Got build type 'Debug' but LLVM is not built in Debug mode!")
+    message(NOTICE "Building SVF in debug-mode but LLVM was not built in debug-mode; "
+                   "debug information could be incomplete when using SVF from LLVM")
   endif()
 
   if(NOT LLVM_ENABLE_EH)
@@ -70,12 +67,25 @@ else()
 
   # Make the "add_llvm_library()" command available
   include(AddLLVM)
-endif()
 
-# Set C++ standard; use C++14 as LLVM 15 defaults to that (doesn't need to match)
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_EXTENSIONS ON)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  # Set the default C++ standard used to build SVF; LLVM versions up to version 6 defaulted to C++98,
+  # and up to (and including) version 15 the default was C++14. From versions 16 and onwards, the
+  # default C++ standard has been C++17. Build SVF with C++14 unless the LLVM version is below 6.
+  if (LLVM_VERSION_MAJOR VERSION_LESS 6)
+    set(CMAKE_CXX_STANDARD 98)
+    message(STATUS "Got LLVM version ${LLVM_VERSION}; using C++ standard: ${CMAKE_CXX_STANDARD}")
+  elseif(LLVM_VERSION_MAJOR VERSION_LESS 16)
+    set(CMAKE_CXX_STANDARD 14)
+    message(STATUS "Got LLVM version ${LLVM_VERSION}; using C++ standard: ${CMAKE_CXX_STANDARD}")
+  else()
+    message(FATAL_ERROR "Found unsupported LLVM version; need <= 15, got: ${LLVM_VERSION}")
+  endif()
+
+  # Always enable extensions and require a compiler that supports at least the set C++ standard
+  set(CMAKE_CXX_EXTENSIONS ON)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+endif()
 
 # Treat compiler warnings as errors
 add_compile_options("-Werror" "-Wall")
