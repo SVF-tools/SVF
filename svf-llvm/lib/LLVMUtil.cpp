@@ -346,17 +346,24 @@ void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const SVFIns
  * for example, %4 = call align 16 i8* @malloc(i64 10); %5 = bitcast i8* %4 to i32*
  * return %5 whose type is i32* but not %4 whose type is i8*
  */
-const Value* LLVMUtil::getUniqueUseViaCastInst(const Value* val)
+const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
 {
     const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(type && "this value should be a pointer type!");
-    /// If type is void* (i8*) and val is only used at a bitcast instruction
+    /// If type is void* (i8*) and val is immediately used at a bitcast instruction
     if (IntegerType *IT = SVFUtil::dyn_cast<IntegerType>(getPtrElementType(type)))
     {
-        if (IT->getBitWidth() == 8 && val->getNumUses()==1)
+        if (IT->getBitWidth() == 8)
         {
-            const Use *u = &*val->use_begin();
-            return SVFUtil::dyn_cast<BitCastInst>(u->getUser());
+            const Value *latestUse = nullptr;
+            for (const auto &it : val->uses())
+            {
+                if (SVFUtil::isa<BitCastInst>(it.getUser()))
+                    latestUse = it.getUser();
+                else
+                    latestUse = nullptr;
+            }
+            return latestUse;
         }
     }
     return nullptr;
@@ -371,7 +378,7 @@ const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
     if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
     {
-        if(const Value* v = getUniqueUseViaCastInst(inst))
+        if(const Value* v = getFirstUseViaCastInst(inst))
         {
             if(const PointerType* newTy = SVFUtil::dyn_cast<PointerType>(v->getType()))
                 type = newTy;
@@ -923,7 +930,12 @@ bool LLVMUtil::isLoadVtblInst(const LoadInst* loadInst)
     if (const FunctionType* functy = SVFUtil::dyn_cast<FunctionType>(elemTy))
     {
         const Type* paramty = functy->getParamType(0);
-        std::string className = LLVMUtil::getClassNameFromType(paramty);
+        std::string className = "";
+        if(const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(paramty))
+        {
+            if(const StructType* st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy)))
+                className = LLVMUtil::getClassNameFromType(st);
+        }
         if (className.size() > 0)
         {
             return true;
@@ -1156,25 +1168,19 @@ bool LLVMUtil::VCallInCtorOrDtor(const CallBase* cs)
     return false;
 }
 
-std::string LLVMUtil::getClassNameFromType(const Type* ty)
+std::string LLVMUtil::getClassNameFromType(const StructType* ty)
 {
     std::string className = "";
-    if (const PointerType* ptrType = SVFUtil::dyn_cast<PointerType>(ty))
+    if (!((SVFUtil::cast<StructType>(ty))->isLiteral()))
     {
-        const Type* elemType = LLVMUtil::getPtrElementType(ptrType);
-        if (SVFUtil::isa<StructType>(elemType) &&
-                !((SVFUtil::cast<StructType>(elemType))->isLiteral()))
+        std::string elemTypeName = ty->getStructName().str();
+        if (elemTypeName.compare(0, clsName.size(), clsName) == 0)
         {
-            std::string elemTypeName = elemType->getStructName().str();
-            if (elemTypeName.compare(0, clsName.size(), clsName) == 0)
-            {
-                className = elemTypeName.substr(clsName.size());
-            }
-            else if (elemTypeName.compare(0, structName.size(), structName) ==
-                     0)
-            {
-                className = elemTypeName.substr(structName.size());
-            }
+            className = elemTypeName.substr(clsName.size());
+        }
+        else if (elemTypeName.compare(0, structName.size(), structName) == 0)
+        {
+            className = elemTypeName.substr(structName.size());
         }
     }
     return className;
@@ -1182,7 +1188,7 @@ std::string LLVMUtil::getClassNameFromType(const Type* ty)
 
 std::string LLVMUtil::getClassNameOfThisPtr(const CallBase* inst)
 {
-    std::string thisPtrClassName;
+    std::string thisPtrClassName = "";
     if (const MDNode* N = inst->getMetadata("VCallPtrType"))
     {
         const MDString* mdstr = SVFUtil::cast<MDString>(N->getOperand(0).get());
@@ -1191,7 +1197,9 @@ std::string LLVMUtil::getClassNameOfThisPtr(const CallBase* inst)
     if (thisPtrClassName.size() == 0)
     {
         const Value* thisPtr = LLVMUtil::getVCallThisPtr(inst);
-        thisPtrClassName = getClassNameFromType(thisPtr->getType());
+        if(const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(thisPtr->getType()))
+            if(const StructType* st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy)))
+                thisPtrClassName = getClassNameFromType(st);
     }
 
     size_t found = thisPtrClassName.find_last_not_of("0123456789");
@@ -1277,6 +1285,29 @@ s64_t LLVMUtil::getCaseValue(const SwitchInst &switchInst, SuccBBAndCondValPair 
     }
     return val;
 }
+
+std::string LLVMUtil::dumpValue(const Value* val)
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    if (val)
+        rawstr << " " << *val << " ";
+    else
+        rawstr << " llvm Value is null";
+    return rawstr.str();
+}
+
+std::string LLVMUtil::dumpType(const Type* type)
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    if (type)
+        rawstr << " " << *type << " ";
+    else
+        rawstr << " llvm type is null";
+    return rawstr.str();
+}
+
 
 namespace SVF
 {
