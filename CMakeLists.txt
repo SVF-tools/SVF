@@ -41,9 +41,6 @@ else()
     add_compile_options("-fno-rtti")
   endif()
 
-  # Load the LLVM definitions & include directories
-  separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
-
   if(NOT ${LLVM_LINK_LLVM_DYLIB})
     message(STATUS "Linking to separate LLVM static libraries")
     llvm_map_components_to_libnames(
