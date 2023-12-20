@@ -356,7 +356,8 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
         if (IT->getBitWidth() == 8)
         {
             const Value *latestUse = nullptr;
-            for (const auto &it : val->uses()) {
+            for (const auto &it : val->uses())
+            {
                 if (SVFUtil::isa<BitCastInst>(it.getUser()))
                     latestUse = it.getUser();
                 else
