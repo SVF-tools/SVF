@@ -1101,7 +1101,7 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V)
             const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cb);
             if (SVFUtil::isHeapAllocExtCallViaRet(svfInst))
             {
-                if (const Value* bitCast = getUniqueUseViaCastInst(cb))
+                if (const Value* bitCast = getFirstUseViaCastInst(cb))
                     return bitCast;
             }
         }

@@ -90,7 +90,7 @@ protected:
     /// Analyse types of all flattened fields of this object
     void analyzeObjType(ObjTypeInfo* typeinfo, const Value* val);
     /// Analyse types of heap and static objects
-    void analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val);
+    u32_t analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val);
     /// Analyse types of heap and static objects
     void analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val);
 
