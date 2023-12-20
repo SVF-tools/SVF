@@ -7,11 +7,6 @@ message(STATUS "Using CMake with generator: ${CMAKE_GENERATOR}")
 configure_file(${PROJECT_SOURCE_DIR}/.config.in
                ${PROJECT_BINARY_DIR}/include/Util/config.h)
 
-# Build SVF with C++ standard C++17
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_EXTENSIONS ON)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # Treat compiler warnings as errors
 add_compile_options("-Werror" "-Wall")
 

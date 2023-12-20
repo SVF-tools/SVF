@@ -20,4 +20,10 @@ file(
   lib/WPA/*.cpp)
 
 add_library(SvfCore ${SVF_CORE_SOURCES})
+
+# Build SVF with C++ standard C++17
+set_property(TARGET SvfCore PROPERTY CXX_STANDARD 17)
+set_property(TARGET SvfCore PROPERTY CXX_EXTENSIONS ON)
+set_property(TARGET SvfCore PROPERTY CXX_STANDARD_REQUIRED ON)
+
 target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES})
