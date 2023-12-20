@@ -755,7 +755,7 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
  */
 void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
-    if(const Value* castUse = getUniqueUseViaCastInst(val))
+    if(const Value* castUse = getFirstUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
         typeinfo->resetTypeForHeapStaticObj(
@@ -774,7 +774,7 @@ void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* 
  */
 void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
-    if(const Value* castUse = getUniqueUseViaCastInst(val))
+    if(const Value* castUse = getFirstUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::STATIC_OBJ);
         typeinfo->resetTypeForHeapStaticObj(
