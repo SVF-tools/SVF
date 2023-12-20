@@ -65,6 +65,12 @@ fi
 
 Build="${PTAOBJTY}-build"
 
-export PATH=$LLVM_DIR/bin:$PATH
-PTABIN=$SVF_DIR/$Build/bin
-export PATH=$PTABIN:$PATH
+# Add LLVM & Z3 to $PATH and $LD_LIBRARY_PATH (prepend so that selected instances will be used first)
+export PATH=$LLVM_DIR/bin:$Z3_DIR/bin:$PATH
+export LD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_BIN/lib:$LD_LIBRARY_PATH
+
+# Add compiled SVF binaries dir to $PATH
+export PATH=$SVF_DIR/$Build/bin:$PATH
+
+# Add compiled library directories to $LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$SVF_DIR/$Build/svf:$SVF_DIR/$Build/svf-llvm:$LD_LIBRARY_PATH
