@@ -1,17 +1,78 @@
 # SVF-LLVM contains LLVM Libs
 file(GLOB SVFLLVM_SOURCES lib/*.cpp)
 
+find_package(LLVM REQUIRED CONFIG HINTS ${LLVM_DIR} $ENV{LLVM_DIR})
+message(STATUS "LLVM STATUS:
+  Version       ${LLVM_VERSION}
+  Definitions   ${LLVM_DEFINITIONS}
+  Includes      ${LLVM_INCLUDE_DIRS}
+  Libraries     ${LLVM_LIBRARY_DIRS}
+  Targets       ${LLVM_TARGETS_TO_BUILD}
+  Build type    ${LLVM_BUILD_TYPE}
+  Exceptions    ${LLVM_ENABLE_EH}
+  RTTI          ${LLVM_ENABLE_RTTI}
+  Dynamic lib   ${LLVM_LINK_LLVM_DYLIB}"
+)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT ${LLVM_BUILD_TYPE} STREQUAL "Debug")
+  message(NOTICE "Building SVF in debug-mode but LLVM was not built in debug-mode; "
+                  "debug information could be incomplete when using SVF from LLVM")
+endif()
+
+include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
+link_directories(${LLVM_LIBRARY_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
+
+if(NOT LLVM_ENABLE_EH)
+  message(STATUS "Building SVF-llvm without exception handling")
+  add_compile_options("-fno-exceptions")
+endif()
+
+if(NOT LLVM_ENABLE_RTTI)
+  message(STATUS "Building SVF-llvm without RTII")
+  add_compile_options("-fno-rtti")
+endif()
+
+if(LLVM_LINK_LLVM_DYLIB)
+  message(STATUS "Linking to LLVM dynamic shared library object")
+  set(llvm_libs LLVM)
+
+  # Set which components to include in the dynamic library to include the new SvfLLVM
+  if (LLVM_DYLIB_COMPONENTS)
+    message(STATUS "Appending SvfLLVM to LLVM dynamic library components")
+    list(APPEND LLVM_DYLIB_COMPONENTS SvfLLVM)
+  else()
+    message(STATUS "Adding all;SvfLLVM to LLVM dynamic library components (was unset)")
+    set(LLVM_DYLIB_COMPONENTS all;SvfLLVM)
+  endif()
+else()
+  message(STATUS "Linking to separate LLVM static libraries")
+  llvm_map_components_to_libnames(
+    llvm_libs
+    analysis
+    bitwriter
+    core
+    instcombine
+    instrumentation
+    ipo
+    irreader
+    linker
+    scalaropts
+    support
+    target
+    transformutils)
+endif()
+
+# Make the "add_llvm_library()" command available and configure LLVM/CMake
+list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
+include(AddLLVM)
+
 add_llvm_library(SvfLLVM ${SVFLLVM_SOURCES})
-
-separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
-target_include_directories(SvfLLVM SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
-target_link_directories(SvfLLVM PUBLIC ${LLVM_LIBRARY_DIRS})
-target_compile_definitions(SvfLLVM PUBLIC ${LLVM_DEFINITIONS})
-
 target_include_directories(SvfLLVM PUBLIC include)
-target_link_libraries(SvfLLVM PUBLIC ${llvm_libs} ${Z3_LIBRARIES} SvfCore)
+target_link_libraries(SvfLLVM PUBLIC ${Z3_LIBRARIES} SvfCore)
 
-if(DEFINED IN_SOURCE_BUILD)
+# Add intrinsics_gen target if we're building as part of LLVM source build
+if(TARGET intrinsics_gen)
   add_dependencies(SvfLLVM intrinsics_gen)
 endif()
 

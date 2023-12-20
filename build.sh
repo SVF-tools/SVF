@@ -205,7 +205,10 @@ if [[ ! -d "$Z3_DIR" ]]; then
     export Z3_DIR="$SVFHOME/$Z3Home"
 fi
 
-export PATH=$LLVM_DIR/bin:$PATH
+# Add LLVM & Z3 to $PATH and $LD_LIBRARY_PATH (prepend so that selected instances will be used first)
+export PATH=$LLVM_DIR/bin:$Z3_DIR/bin:$PATH
+export LD_LIBRARY_PATH=$LLVM_DIR/lib:$Z3_BIN/lib:$LD_LIBRARY_PATH
+
 echo "LLVM_DIR=$LLVM_DIR"
 echo "Z3_DIR=$Z3_DIR"
 
