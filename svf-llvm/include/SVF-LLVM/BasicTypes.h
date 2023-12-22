@@ -177,6 +177,7 @@ typedef llvm::VAStartInst VAStartInst;
 typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
+typedef llvm::GEPOperator GEPOperator;
 
 // Related to Switch Case
 typedef std::pair<const BasicBlock*, const ConstantInt*> SuccBBAndCondValPair;

@@ -58,24 +58,16 @@ bool AccessPath::isConstantOffset() const
 
 /// Return element number of a type
 /// (1) StructType or Array, return flattened number elements.
-/// (2) PointerType, return the element number of the pointee
-/// (3) non-pointer SingleValueType, return 1
+/// (2) non-pointer SingleValueType, return 1
 u32_t AccessPath::getElementNum(const SVFType* type) const
 {
+    assert(!SVFUtil::isa<SVFPointerType>(type) && "can't be pointer type");
 
     if (SVFUtil::isa<SVFArrayType, SVFStructType>(type))
     {
         return SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(type);
     }
-    else if (type->isSingleValueType())
-    {
-        /// This is a pointer arithmetic
-        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
-            return getElementNum(pty->getPtrElementType());
-        else
-            return 1;
-    }
-    else if (SVFUtil::isa<SVFFunctionType>(type))
+    else if (type->isSingleValueType() || SVFUtil::isa<SVFFunctionType>(type))
     {
         return 1;
     }
@@ -122,11 +114,11 @@ APOffset AccessPath::computeConstantByteOffset() const
             /// for (2) i = 1, arrType: [10 x i8], type2 = i8
             type2 = arrType->getTypeOfElement();
         }
-        else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type))
+        else if (SVFUtil::isa<SVFPointerType>(type))
         {
             /// for (1) i = 0, ptrType: %struct.DEST*, type2: %struct.DEST
             /// for (2) i = 0, ptrType: [10 x i8]*, type2 = [10 x i8]
-            type2 = ptrType->getPtrElementType();
+            type2 = gepSrcPointeeType();
         }
 
         const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
@@ -227,8 +219,8 @@ APOffset AccessPath::computeConstantOffset() const
             continue;
         }
 
-        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
-            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType());
+        if(SVFUtil::isa<SVFPointerType>(type))
+            totalConstOffset += op->getSExtValue() * getElementNum(gepPointeeType);
         else
         {
             APOffset offset = op->getSExtValue();
@@ -268,7 +260,7 @@ NodeBS AccessPath::computeAllLocations() const
 
 AccessPath AccessPath::operator+(const AccessPath& rhs) const
 {
-    assert(gepPointeeType == rhs.getGepPointeeType() && "source element type not match");
+    assert(gepPointeeType == rhs.gepSrcPointeeType() && "source element type not match");
     AccessPath ap(rhs);
     ap.fldIdx += getConstantStructFldIdx();
     for (auto &p : ap.getIdxOperandPairVec())

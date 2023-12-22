@@ -258,10 +258,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
     }
     else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType>(type))
     {
-        u32_t eSize = getNumOfFlattenElements(pt->getPtrElementType());
-        outs() << "  {Type: " << *pt << "}\n"
-               << "\t [target size = " << eSize << "]\n"
-               << "\n";
+        outs() << *pt << "\n";
     }
     else if (const SVFFunctionType* fu =
                  SVFUtil::dyn_cast<SVFFunctionType>(type))

@@ -20,7 +20,7 @@ std::ostream& operator<<(std::ostream& os, const SVFType& type)
 
 void SVFPointerType::print(std::ostream& os) const
 {
-    os << *getPtrElementType() << '*';
+    os << *ptrElementType << '*';
 }
 
 void SVFIntegerType::print(std::ostream& os) const

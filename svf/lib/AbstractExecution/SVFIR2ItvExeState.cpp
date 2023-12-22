@@ -282,8 +282,8 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
             u32_t elemByteSize = 1;
             if (const SVFArrayType* arrOperandType = SVFUtil::dyn_cast<SVFArrayType>(idxOperandType))
                 elemByteSize = arrOperandType->getTypeOfElement()->getByteSize();
-            else if (const SVFPointerType* ptrOperandType = SVFUtil::dyn_cast<SVFPointerType>(idxOperandType))
-                elemByteSize = ptrOperandType->getPtrElementType()->getByteSize();
+            else if (SVFUtil::isa<SVFPointerType>(idxOperandType))
+                elemByteSize = gep->getAccessPath().gepSrcPointeeType()->getByteSize();
             else
                 assert(false && "idxOperandType must be ArrType or PtrType");
             if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue()))
@@ -364,9 +364,9 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
             }
         }
         // for pointer type, flattened index = elemNum * idx
-        if (const SVFPointerType *pty = SVFUtil::dyn_cast<SVFPointerType>(type))
+        if (SVFUtil::isa<SVFPointerType>(type))
         {
-            u32_t elemNum = gep->getAccessPath().getElementNum(pty->getPtrElementType());
+            u32_t elemNum = gep->getAccessPath().getElementNum(gep->getAccessPath().gepSrcPointeeType());
             idxLb = (double)Options::MaxFieldLimit() / elemNum < idxLb? Options::MaxFieldLimit(): idxLb * elemNum;
             idxUb = (double)Options::MaxFieldLimit() / elemNum < idxUb? Options::MaxFieldLimit(): idxUb * elemNum;
         }
