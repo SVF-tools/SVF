@@ -237,6 +237,7 @@ void SymbolTableBuilder::collectSVFTypeInfo(const Value* val)
     (void)getOrAddSVFTypeInfo(val->getType());
     if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
     {
+        // TODO: getPtrElementType to be removed
         const Type* objtype = LLVMUtil::getPtrElementType(ptrType);
         (void)getOrAddSVFTypeInfo(objtype);
     }
@@ -575,6 +576,7 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
  */
 ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
 {
+    /// TODO: getPtrElementType to be removed
     const PointerType* refTy = nullptr;
 
     const Instruction* I = SVFUtil::dyn_cast<Instruction>(val);
@@ -627,7 +629,8 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 
     const PointerType* refty = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(refty && "this value should be a pointer type!");
-    Type* elemTy = getPtrElementType(refty);
+    // TODO: getPtrElementType need type inference
+    Type *elemTy = getPtrElementType(refty);
     bool isPtrObj = false;
     // Find the inter nested array element
     while (const ArrayType* AT = SVFUtil::dyn_cast<ArrayType>(elemTy))

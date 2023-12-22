@@ -126,6 +126,10 @@ static inline Type* getPtrElementType(const PointerType* pty)
 #endif
 }
 
+/// Infer type based on llvm value, this is for the migration to opaque pointer
+/// please refer to: https://llvm.org/docs/OpaquePointers.html#migration-instructions
+Type *getPointeeType(const Value *value);
+
 /// Get the reference type of heap/static object from an allocation site.
 //@{
 inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallBase* cs)
@@ -139,6 +143,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallBase* cs)
         int argPos = SVFUtil::getHeapAllocHoldingArgPosition(svfcs);
         const Value* arg = cs->getArgOperand(argPos);
         if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
+            // TODO: getPtrElementType need type inference
             refType = SVFUtil::dyn_cast<PointerType>(getPtrElementType(argType));
     }
     // Case 2: heap object held by return value.
@@ -389,6 +394,7 @@ inline u32_t SVFType2ByteSize(const SVFType* type)
     const llvm::Type* llvm_rhs = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(type);
     const llvm::PointerType* llvm_rhs_ptr = SVFUtil::dyn_cast<PointerType>(llvm_rhs);
     assert(llvm_rhs_ptr && "not a pointer type?");
+    // TODO: getPtrElementType need type inference
     const Type *ptrElementType = getPtrElementType(llvm_rhs_ptr);
     u32_t llvm_rhs_size = LLVMUtil::getTypeSizeInBytes(ptrElementType);
     u32_t llvm_elem_size = -1;
