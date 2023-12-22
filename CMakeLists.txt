@@ -4,8 +4,7 @@ project("SVF")
 
 message(STATUS "Using CMake with generator: ${CMAKE_GENERATOR}")
 
-configure_file(${PROJECT_SOURCE_DIR}/.config.in
-               ${PROJECT_BINARY_DIR}/include/Util/config.h)
+configure_file(${PROJECT_SOURCE_DIR}/.config.in ${PROJECT_BINARY_DIR}/include/Util/config.h)
 
 # Treat compiler warnings as errors
 add_compile_options("-Werror" "-Wall")
@@ -72,27 +71,20 @@ endif()
 add_subdirectory(svf)
 add_subdirectory(svf-llvm)
 
+# Whether RTTI/Exceptions are enabled currently depends on whether the LLVM instance used to build
+# SVF had them enabled; since the LLVM instance is found in the "svf-llvm" subdirectory, it sets the
+# below variables in its parent directory (i.e. for this CMakeLists.txt) so check them here
+if(SVF_NO_RTTI)
+  add_compile_options("-fno-rtti")
+endif()
+
+if(SVF_NO_EH)
+  add_compile_options("-fno-exceptions")
+endif()
+
+# Install generated configuration header (see `configure_file()`) to top-level include dir of SVF
 include(GNUInstallDirs)
 install(
-  TARGETS SvfCore SvfLLVM
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-install(
-  DIRECTORY ${PROJECT_SOURCE_DIR}/svf/include/
-            ${PROJECT_SOURCE_DIR}/svf-llvm/include/
-  COMPONENT devel
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/include/svf
-  FILES_MATCHING
-  PATTERN "**/*.h")
-
-# Compile extapi.c to extapi.bc
-find_path(LLVM_CLANG_DIR
-        NAMES clang llvm
-        HINTS ${LLVM_DIR} ENV LLVM_DIR
-        PATH_SUFFIXES bin)
-add_custom_target(extapi_ir ALL
-    COMMAND ${LLVM_CLANG_DIR}/clang -w -S -c -Xclang -disable-O0-optnone -fno-discard-value-names -emit-llvm ${PROJECT_SOURCE_DIR}/svf-llvm/lib/extapi.c -o ${PROJECT_BINARY_DIR}/svf-llvm/extapi.bc
-    DEPENDS ${PROJECT_SOURCE_DIR}/svf-llvm/lib/extapi.c
+  FILES ${PROJECT_BINARY_DIR}/include/Util/config.h
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/svf/Util
 )

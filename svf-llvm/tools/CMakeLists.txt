@@ -12,3 +12,11 @@ set_target_properties(cfl dvf svf-ex llvm2svf mta saber wpa
                 CXX_EXTENSIONS ON
                 CXX_STANDARD_REQUIRED ON
                 RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+include(GNUInstallDirs)
+install(
+    TARGETS cfl dvf svf-ex llvm2svf mta saber wpa
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)

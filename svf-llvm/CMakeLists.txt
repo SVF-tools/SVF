@@ -24,13 +24,13 @@ link_directories(${LLVM_LIBRARY_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
 if(NOT LLVM_ENABLE_EH)
-  message(STATUS "Building SVF-llvm without exception handling")
-  add_compile_options("-fno-exceptions")
+  message(STATUS "Building SVF without exception handling")
+  set(SVF_NO_RTTI ON PARENT_SCOPE)  # Set for parent scope because this needs to be set in top-level CMakeLists.txt
 endif()
 
 if(NOT LLVM_ENABLE_RTTI)
-  message(STATUS "Building SVF-llvm without RTII")
-  add_compile_options("-fno-rtti")
+  message(STATUS "Building SVF without RTTI")
+  set(SVF_NO_EH ON PARENT_SCOPE)  # Set for parent scope because this needs to be set in top-level CMakeLists.txt
 endif()
 
 if(LLVM_LINK_LLVM_DYLIB)
@@ -60,7 +60,8 @@ else()
     scalaropts
     support
     target
-    transformutils)
+    transformutils
+)
 endif()
 
 # Make the "add_llvm_library()" command available and configure LLVM/CMake
@@ -82,3 +83,47 @@ if(TARGET intrinsics_gen)
 endif()
 
 add_subdirectory(tools)
+
+# Compile extapi.c to extapi.bc
+set(EXTAPI_TO_BC_FLAGS
+  "-w"
+  "-S"
+  "-c"
+  "-Xclang"
+  "-disable-O0-optnone"
+  "-fno-discard-value-names"
+  "-emit-llvm"
+  "${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c"
+  "-o"
+  "${CMAKE_BINARY_DIR}/svf-llvm/extapi.bc"
+)
+find_program(LLVM_CLANG
+  NAMES clang
+  HINTS ${LLVM_BINARY_DIR}
+  PATH_SUFFIXES bin
+  REQUIRED
+)
+add_custom_target(extapi_ir ALL
+  COMMAND ${LLVM_CLANG} ${EXTAPI_TO_BC_FLAGS}
+  DEPENDS ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
+)
+
+# Install the headers (as a subdirectory of the main SVF include) and the compiled library binaries
+include(GNUInstallDirs)
+install(
+  TARGETS SvfLLVM
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+install(
+  FILES ${CMAKE_BINARY_DIR}/svf-llvm/extapi.bc
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/svf/SVF-LLVM
+)
+install(
+  DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/svf
+  FILES_MATCHING
+  PATTERN "**/*.h"
+)
+

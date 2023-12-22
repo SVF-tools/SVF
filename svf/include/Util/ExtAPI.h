@@ -38,8 +38,6 @@
 
 /// For a more detailed explanation of how External APIs are handled in SVF, please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
 
-#define DEFAULT_EXTAPI_BC_PATH "/svf-llvm/extapi.bc" // Default path to extapi.bc through the SVF build method(e.g. source ./build.sh)
-
 namespace SVF
 {
 

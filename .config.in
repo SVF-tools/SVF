@@ -1,8 +1,21 @@
 #ifndef CONFIG_H_IN
 #define CONFIG_H_IN
 
-#define PROJECT_PATH "@CMAKE_CURRENT_SOURCE_DIR@"
-#define BUILD_TYPE "@CMAKE_BUILD_TYPE@-build"
-#define EXTAPI_DIR PROJECT_PATH "/@CMAKE_BUILD_TYPE@-build/svf-llvm"
+// Directory structure of SVF build
+#define SVF_ROOT "@CMAKE_CURRENT_SOURCE_DIR@"
+#define SVF_BUILD_DIR "@CMAKE_CURRENT_BINARY_DIR@"
+#define SVF_INSTALL_DIR "@CMAKE_INSTALL_PREFIX@"
+#define SVF_BIN_DIR SVF_INSTALL_DIR "/bin"
+#define SVF_LIB_DIR SVF_INSTALL_DIR "/lib"
+#define SVF_INCLUDE_DIR SVF_INSTALL_DIR "/include"
+#define SVF_EXTAPI_DIR SVF_INCLUDE_DIR "/SVF-LLVM"
+#define SVF_EXTAPI_BC SVF_EXTAPI_DIR "/extapi.bc"
+
+// Build properties of current SVF build
+#define SVF_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
+#cmakedefine SVF_ASSERT_MODE
+#cmakedefine SVF_COVERAGE
+#cmakedefine SVF_SANITIZE "@SVF_SANITIZE@"
+
 
 #endif
