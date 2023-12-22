@@ -20,8 +20,7 @@ std::ostream& operator<<(std::ostream& os, const SVFType& type)
 
 void SVFPointerType::print(std::ostream& os) const
 {
-    // TODO: getPtrElementType to be removed
-    os << *getPtrElementType() << '*';
+    os << *ptrElementType << '*';
 }
 
 void SVFIntegerType::print(std::ostream& os) const
