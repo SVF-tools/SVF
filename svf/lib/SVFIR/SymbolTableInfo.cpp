@@ -258,6 +258,7 @@ void SymbolTableInfo::printFlattenFields(const SVFType* type)
     }
     else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType>(type))
     {
+        // TODO: getPtrElementType to be removed
         u32_t eSize = getNumOfFlattenElements(pt->getPtrElementType());
         outs() << "  {Type: " << *pt << "}\n"
                << "\t [target size = " << eSize << "]\n"

@@ -241,6 +241,51 @@ const Value* LLVMUtil::stripConstantCasts(const Value* val)
     return val;
 }
 
+/// Infer type based on llvm value, this is for the migration to opaque pointer
+/// please refer to: https://llvm.org/docs/OpaquePointers.html#migration-instructions
+Type *LLVMUtil::getPointeeType(const Value *value) {
+    assert(value && "value cannot be nullptr!");
+    if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(value)) {
+        // get the pointee type of rhs based on lhs
+        // e.g., for `%lhs = load i64, ptr %rhs`, we return i64
+        return loadInst->getType();
+    } else if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(value)) {
+        // get the pointee type of op1 based on op0
+        // e.g., for `store i64 %op0, ptr %op1`, we return i64
+        return storeInst->getValueOperand()->getType();
+    } else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(value)) {
+        // get the source element type of a gep instruction
+        // e.g., for `gep %struct.foo, ptr %base, i64 0`, we return struct.foo
+        return gepInst->getSourceElementType();
+    } else if (const GEPOperator* gepOperator = SVFUtil::dyn_cast<GEPOperator>(value)) {
+        // get the source element type of a gep instruction
+        // e.g., for `gep %struct.foo, ptr %base, i64 0`, we return struct.foo
+        return gepOperator->getSourceElementType();
+    } else if (const CallInst *callInst = SVFUtil::dyn_cast<CallInst>(value)) {
+        // get the pointee type of return value
+        // e.g., for `%call = call ptr @_Znwm(i64 noundef 8)`, we return i64
+        return callInst->getFunctionType();
+    } else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(value)) {
+        // get the pointee type of return value
+        // e.g., for `%call = call ptr @_Znwm(i64 noundef 8)`, we return i64
+        return callBase->getFunctionType();
+    } else if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(value)) {
+        // get the type of the allocated memory
+        // e.g., for `%retval = alloca i64, align 4`, we return i64
+        return allocaInst->getAllocatedType();
+    } else if (const GlobalVariable *globalVar = SVFUtil::dyn_cast<GlobalVariable>(value)) {
+        // get the pointee type of the global pointer
+        return globalVar->getValueType();
+    } else if (const Function* func = SVFUtil::dyn_cast<Function>(value)) {
+        // get the pointee type of return value
+        // e.g., for `%call = call ptr @_Znwm(i64 noundef 8)`, we return i64
+        return func->getFunctionType();
+    } else {
+        assert(false && (LLVMUtil::dumpValue(value) + "Unknown llvm Type, cannot get Ptr Element Type").c_str());
+        abort();
+    }
+}
+
 void LLVMUtil::viewCFG(const Function* fun)
 {
     if (fun != nullptr)
@@ -351,6 +396,7 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
     const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(type && "this value should be a pointer type!");
     /// If type is void* (i8*) and val is immediately used at a bitcast instruction
+    // TODO: getPtrElementType to be removed
     if (IntegerType *IT = SVFUtil::dyn_cast<IntegerType>(getPtrElementType(type)))
     {
         if (IT->getBitWidth() == 8)
@@ -397,6 +443,7 @@ const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
     }
 
     assert(type && "not a pointer type?");
+    // TODO: getPtrElementType need type inference
     return getPtrElementType(type);
 }
 
@@ -922,6 +969,7 @@ bool LLVMUtil::isLoadVtblInst(const LoadInst* loadInst)
     const Type* elemTy = valTy;
     for (u32_t i = 0; i < 3; ++i)
     {
+        // TODO: getPtrElementType to be removed
         if (const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
             elemTy = LLVMUtil::getPtrElementType(ptrTy);
         else
@@ -933,6 +981,7 @@ bool LLVMUtil::isLoadVtblInst(const LoadInst* loadInst)
         std::string className = "";
         if(const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(paramty))
         {
+            // TODO: getPtrElementType need type inference
             if(const StructType* st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy)))
                 className = LLVMUtil::getClassNameFromType(st);
         }
@@ -1198,6 +1247,7 @@ std::string LLVMUtil::getClassNameOfThisPtr(const CallBase* inst)
     {
         const Value* thisPtr = LLVMUtil::getVCallThisPtr(inst);
         if(const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(thisPtr->getType()))
+            // TODO: getPtrElementType need type inference
             if(const StructType* st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy)))
                 thisPtrClassName = getClassNameFromType(st);
     }

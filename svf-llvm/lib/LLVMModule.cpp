@@ -1384,6 +1384,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         //cast svftype to SVFPointerType
         SVFPointerType* svfPtrType = SVFUtil::dyn_cast<SVFPointerType>(svftype);
         assert(svfPtrType && "this is not SVFPointerType");
+        // TODO: getPtrElementType to be removed
         svfPtrType->setPtrElementType(getSVFType(LLVMUtil::getPtrElementType(pt)));
     }
 

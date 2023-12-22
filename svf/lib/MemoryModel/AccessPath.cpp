@@ -70,6 +70,7 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
     else if (type->isSingleValueType())
     {
         /// This is a pointer arithmetic
+        // TODO: getPtrElementType to be removed
         if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
             return getElementNum(pty->getPtrElementType());
         else
@@ -122,11 +123,11 @@ APOffset AccessPath::computeConstantByteOffset() const
             /// for (2) i = 1, arrType: [10 x i8], type2 = i8
             type2 = arrType->getTypeOfElement();
         }
-        else if (const SVFPointerType* ptrType = SVFUtil::dyn_cast<SVFPointerType>(type))
+        else if (SVFUtil::isa<SVFPointerType>(type))
         {
             /// for (1) i = 0, ptrType: %struct.DEST*, type2: %struct.DEST
             /// for (2) i = 0, ptrType: [10 x i8]*, type2 = [10 x i8]
-            type2 = ptrType->getPtrElementType();
+            type2 = gepSrcPointeeType();
         }
 
         const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
@@ -227,8 +228,8 @@ APOffset AccessPath::computeConstantOffset() const
             continue;
         }
 
-        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
-            totalConstOffset += op->getSExtValue() * getElementNum(pty->getPtrElementType());
+        if(SVFUtil::isa<SVFPointerType>(type))
+            totalConstOffset += op->getSExtValue() * getElementNum(gepPointeeType);
         else
         {
             APOffset offset = op->getSExtValue();
@@ -268,7 +269,7 @@ NodeBS AccessPath::computeAllLocations() const
 
 AccessPath AccessPath::operator+(const AccessPath& rhs) const
 {
-    assert(gepPointeeType == rhs.getGepPointeeType() && "source element type not match");
+    assert(gepPointeeType == rhs.gepSrcPointeeType() && "source element type not match");
     AccessPath ap(rhs);
     ap.fldIdx += getConstantStructFldIdx();
     for (auto &p : ap.getIdxOperandPairVec())
