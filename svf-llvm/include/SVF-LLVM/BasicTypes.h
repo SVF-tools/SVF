@@ -124,6 +124,7 @@ typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantFP ConstantFP;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::GlobalAlias GlobalAlias;
+typedef llvm::GlobalIFunc GlobalIFunc;
 typedef llvm::GlobalVariable GlobalVariable;
 
 /// LLVM Dominators
@@ -176,6 +177,11 @@ typedef llvm::VAStartInst VAStartInst;
 typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
+typedef llvm::GEPOperator GEPOperator;
+
+// Related to Switch Case
+typedef std::pair<const BasicBlock*, const ConstantInt*> SuccBBAndCondValPair;
+typedef std::vector<SuccBBAndCondValPair> SuccBBAndCondValPairVec;
 
 // LLVM Intrinsic Instructions
 #if LLVM_VERSION_MAJOR >= 13

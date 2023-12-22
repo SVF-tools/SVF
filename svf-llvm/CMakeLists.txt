@@ -3,6 +3,7 @@
 # building out-of-source
 if(NOT COMMAND add_llvm_library)
   find_package(LLVM REQUIRED CONFIG HINTS "${LLVM_DIR}")
+  set(LLVM_DIR ${LLVM_BINARY_DIR} PARENT_SCOPE)
 
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -45,13 +46,13 @@ else()
   set(IN_SOURCE_BUILD 1)
 endif()
 
-# SVF-LLVM containes LLVM Libs
+# SVF-LLVM contains LLVM Libs
 file(GLOB SVFLLVM_SOURCES lib/*.cpp)
 
-add_llvm_library(SvfLLVM STATIC ${SVFLLVM_SOURCES})
+add_llvm_library(SvfLLVM ${SVFLLVM_SOURCES})
 target_include_directories(SvfLLVM SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS})
 target_include_directories(SvfLLVM PUBLIC include)
-target_link_libraries(SvfLLVM PUBLIC ${Z3_LIBRARIES} SvfCoreObj)
+target_link_libraries(SvfLLVM PUBLIC ${llvm_libs} ${Z3_LIBRARIES} SvfCore)
 
 if(DEFINED IN_SOURCE_BUILD)
   add_dependencies(SvfLLVM intrinsics_gen)

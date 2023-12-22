@@ -754,7 +754,7 @@ private:
         return false;
     }
 
-    /// Get all variables which have new pts informationin loc's IN set
+    /// Get all variables which have new pts information in loc's IN set
     inline const KeySet& getDFInUpdatedVar(LocID loc)
     {
         return inUpdatedVarMap[loc];

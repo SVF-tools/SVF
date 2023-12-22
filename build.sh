@@ -115,7 +115,7 @@ function build_llvm_from_source {
     mkdir llvm-build
     cd llvm-build
     # /*/ is a dirty hack to get llvm-project-llvmorg-version...
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SVFHOME/$LLVMHome" ../llvm-source/*/llvm
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SVFHOME/$LLVMHome" -DLLVM_ENABLE_PROJECTS=clang ../llvm-source/*/llvm
     cmake --build . -j ${jobs}
     cmake --install .
 
@@ -221,9 +221,11 @@ BUILD_DIR="./${BUILD_TYPE}-build"
 
 rm -rf "${BUILD_DIR}"
 mkdir "${BUILD_DIR}"
+# If you need shared libs, turn BUILD_SHARED_LIBS on
 cmake -D CMAKE_BUILD_TYPE:STRING="${BUILD_TYPE}" \
     -DSVF_ENABLE_ASSERTIONS:BOOL=true            \
     -DSVF_SANITIZE="${SVF_SANITIZER}"            \
+    -DBUILD_SHARED_LIBS=off                      \
     -S "${SVFHOME}" -B "${BUILD_DIR}"
 cmake --build "${BUILD_DIR}" -j ${jobs}
 

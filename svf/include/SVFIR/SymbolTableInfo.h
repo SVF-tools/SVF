@@ -32,7 +32,7 @@
 
 
 #include "Util/SVFUtil.h"
-#include "MemoryModel/LocationSet.h"
+#include "MemoryModel/AccessPath.h"
 #include "SVFIR/SVFModule.h"
 namespace SVF
 {
@@ -47,6 +47,8 @@ class StInfo;
 class SymbolTableInfo
 {
     friend class SymbolTableBuilder;
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
 
@@ -69,7 +71,7 @@ public:
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
     typedef OrderedMap<const SVFValue*, SymID> ValueToIDMapTy;
     /// sym id to memory object map
-    typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
+    typedef OrderedMap<SymID, MemObj*> IDToMemMapTy;
     /// function to sym id map
     typedef OrderedMap<const SVFFunction*, SymID> FunToIDMapTy;
     /// struct type to struct info map
@@ -77,11 +79,11 @@ public:
     //@}
 
 private:
-    ValueToIDMapTy valSymMap;	///< map a value to its sym id
-    ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
-    FunToIDMapTy returnSymMap;		///< return  map
-    FunToIDMapTy varargSymMap;	    ///< vararg map
-    IDToMemMapTy		objMap;		///< map a memory sym id to its obj
+    ValueToIDMapTy valSymMap;  ///< map a value to its sym id
+    ValueToIDMapTy objSymMap;  ///< map a obj reference to its sym id
+    FunToIDMapTy returnSymMap; ///< return map
+    FunToIDMapTy varargSymMap; ///< vararg map
+    IDToMemMapTy objMap;       ///< map a memory sym id to its obj
 
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
     static SymbolTableInfo* symInfo;
@@ -100,8 +102,9 @@ private:
 
 protected:
     /// Constructor
-    SymbolTableInfo(void) :
-        mod(nullptr), modelConstants(false), totalSymNum(0), maxStruct(nullptr), maxStSize(0)
+    SymbolTableInfo(void)
+        : mod(nullptr), modelConstants(false), totalSymNum(0),
+          maxStruct(nullptr), maxStSize(0)
     {
     }
 
@@ -197,7 +200,7 @@ public:
         return BlackHole;
     }
 
-    /// Can only be invoked by SVFIR::addDummyNode() when creaing SVFIR from file.
+    /// Can only be invoked by SVFIR::addDummyNode() when creating SVFIR from file.
     const MemObj* createDummyObj(SymID symId, const SVFType* type);
     // @}
 
@@ -269,6 +272,11 @@ public:
         return objMap;
     }
 
+    inline const IDToMemMapTy& idToObjMap() const
+    {
+        return objMap;
+    }
+
     inline FunToIDMapTy& retSyms()
     {
         return returnSymMap;
@@ -281,6 +289,19 @@ public:
 
     //@}
 
+    /// Constant reader that won't change the state of the symbol table
+    //@{
+    inline const SVFTypeSet& getSVFTypes() const
+    {
+        return svfTypes;
+    }
+
+    inline const Set<const StInfo*>& getStInfos() const
+    {
+        return stInfos;
+    }
+    //@}
+
     /// Get struct info
     //@{
     ///Get a reference to StructInfo.
@@ -291,9 +312,9 @@ public:
     }
 
     ///Get a reference to the components of struct_info.
-    /// Number of flattenned elements of an array or struct
+    /// Number of flattened elements of an array or struct
     u32_t getNumOfFlattenElements(const SVFType* T);
-    /// Flatterned element idx of an array or struct by considering stride
+    /// Flattened element idx of an array or struct by considering stride
     u32_t getFlattenedElemIdx(const SVFType* T, u32_t origId);
     /// Return the type of a flattened element given a flattened index
     const SVFType* getFlatternedElemType(const SVFType* baseType, u32_t flatten_idx);
@@ -312,7 +333,8 @@ public:
     virtual void dump();
 
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
+    virtual APOffset getModulusOffset(const MemObj* obj,
+                                      const APOffset& apOffset);
 
     ///The struct type with the most fields
     const SVFType* maxStruct;
@@ -322,8 +344,14 @@ public:
 
     inline void addTypeInfo(const SVFType* ty)
     {
-        assert(!hasSVFTypeInfo(ty) && "this type info has been added before");
-        svfTypes.insert(ty);
+        bool inserted = svfTypes.insert(ty).second;
+        if(!inserted)
+            assert(false && "this type info has been added before");
+    }
+
+    inline void addStInfo(StInfo* stInfo)
+    {
+        stInfos.insert(stInfo);
     }
 
 protected:
@@ -334,11 +362,15 @@ protected:
     /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
     ObjTypeInfo* createObjTypeInfo(const SVFType* type);
 
+    /// (owned) All SVF Types
     /// Every type T is mapped to StInfo
     /// which contains size (fsize) , offset(foffset)
     /// fsize[i] is the number of fields in the largest such struct, else fsize[i] = 1.
     /// fsize[0] is always the size of the expanded struct.
     SVFTypeSet svfTypes;
+
+    /// @brief (owned) All StInfo
+    Set<const StInfo*> stInfos;
 };
 
 
@@ -347,6 +379,8 @@ protected:
  */
 class MemObj
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     /// Type information of this object
@@ -404,6 +438,13 @@ public:
     /// Whether it is a black hole object
     bool isBlackHoleObj() const;
 
+    /// Get the byte size of this object
+    u32_t getByteSizeOfObj() const;
+
+    /// Check if byte size is a const value
+    bool isConstantByteSize() const;
+
+
     /// object attributes methods
     //@{
     bool isFunction() const;
@@ -420,11 +461,11 @@ public:
     bool isConstDataOrConstGlobal() const;
     bool isConstDataOrAggData() const;
     bool hasPtrObj() const;
-    bool isNonPtrFieldObj(const LocationSet& ls) const;
+    bool isNonPtrFieldObj(const APOffset& apOffset) const;
     //@}
 
     /// Operator overloading
-    inline bool operator==(const MemObj &mem) const
+    inline bool operator==(const MemObj& mem) const
     {
         return getValue() == mem.getValue();
     }
@@ -433,14 +474,15 @@ public:
     void destroy();
 };
 
-
-
 /*!
  * Type Info of an abstract memory object
  */
 class ObjTypeInfo
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class SymbolTableBuilder;
+
 public:
     typedef enum
     {
@@ -469,6 +511,9 @@ private:
     u32_t maxOffsetLimit;
     /// Size of the object or number of elements
     u32_t elemNum;
+
+    /// Byte size of object
+    u32_t byteSize;
 
     void resetTypeForHeapStaticObj(const SVFType* type);
 public:
@@ -510,6 +555,25 @@ public:
     inline u32_t getNumOfElements() const
     {
         return elemNum;
+    }
+
+    /// Get the byte size of this object
+    inline u32_t getByteSizeOfObj() const
+    {
+        assert(isConstantByteSize() && "This Obj's byte size is not constant.");
+        return byteSize;
+    }
+
+    /// Set the byte size of this object
+    inline void setByteSizeOfObj(u32_t size)
+    {
+        byteSize = size;
+    }
+
+    /// Check if byte size is a const value
+    inline bool isConstantByteSize() const
+    {
+        return byteSize != 0;
     }
 
     /// Flag for this object type
@@ -587,7 +651,7 @@ public:
     {
         return hasFlag(HASPTR_OBJ);
     }
-    virtual bool isNonPtrFieldObj(const LocationSet& ls);
+    virtual bool isNonPtrFieldObj(const APOffset& apOffset);
     //@}
 };
 

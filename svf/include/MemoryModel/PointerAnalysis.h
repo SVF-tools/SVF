@@ -76,7 +76,7 @@ public:
         VFS_WPA,		///< Versioned sparse flow-sensitive WPA
         FSCS_WPA,			///< Flow-, context- sensitive WPA
         CFLFICI_WPA,		///< Flow-, context-, insensitive CFL-reachability-based analysis
-        CFLFSCI_WPA,		///< Flow-insensitive, context-sensitive  CFL-reachability-based analysis
+        CFLFSCI_WPA,		///< Flow-insensitive, context-sensitive CFL-reachability-based analysis
         CFLFSCS_WPA,	///< Flow-, context-, CFL-reachability-based analysis
         TypeCPP_WPA, ///<  Type-based analysis for C++
 
@@ -338,9 +338,9 @@ public:
     {
         return pag->getFIObjVar(id);
     }
-    inline NodeID getGepObjVar(NodeID id, const LocationSet& ls)
+    inline NodeID getGepObjVar(NodeID id, const APOffset& ap)
     {
-        return pag->getGepObjVar(id,ls);
+        return pag->getGepObjVar(id, ap);
     }
     virtual inline const NodeBS& getAllFieldsObjVars(NodeID id)
     {
@@ -388,8 +388,6 @@ public:
 
     /// Resolve indirect call edges
     virtual void resolveIndCalls(const CallICFGNode* cs, const PointsTo& target, CallEdgeMap& newEdges);
-    /// Match arguments for callsite at caller and callee
-    bool matchArgs(const CallICFGNode* cs, const SVFFunction* callee);
 
     /// CallGraph SCC related methods
     //@{

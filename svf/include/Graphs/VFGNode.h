@@ -47,13 +47,13 @@ class VFGNode : public GenericVFGNodeTy
 {
 
 public:
-    /// 24 kinds of ICFG node
+    /// 25 kinds of ICFG node
     /// Gep represents offset edge for field sensitivity
     enum VFGNodeK
     {
         Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, Branch, TPhi, TIntraPhi, TInterPhi,
         MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
-        FunRet, APIN, APOUT, FPIN, FPOUT, NPtr, DummyVProp
+        APIN, APOUT, FPIN, FPOUT, NPtr, DummyVProp
     };
 
     typedef VFGEdge::VFGEdgeSetTy::iterator iterator;
@@ -841,7 +841,7 @@ public:
 };
 
 /*
- * ICFG Node stands for acutal parameter node (top level pointers)
+ * ICFG Node stands for actual parameter node (top level pointers)
  */
 class ActualParmVFGNode : public ArgumentVFGNode
 {
@@ -962,7 +962,7 @@ public:
 };
 
 /*!
- * Callsite receive paramter
+ * Callsite receive parameter
  */
 class ActualRetVFGNode: public ArgumentVFGNode
 {

@@ -22,13 +22,15 @@
 
 
 #include "SVFIR/SVFModule.h"
-#include "SVFIR/SVFModuleRW.h"
 #include "SVFIR/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFStat.h"
 #include "Util/Options.h"
 
 using namespace SVF;
+
+std::string SVFModule::pagReadFromTxt = "";
+SVFModule* SVFModule::svfModule = nullptr;
 
 SVFModule::~SVFModule()
 {
@@ -55,8 +57,18 @@ const SVFFunction* SVFModule::getSVFFunction(const std::string& name)
     return nullptr;
 }
 
-void SVFModule::writeToJson(const std::string& filePath)
+SVFModule* SVFModule::getSVFModule()
 {
-    if (!filePath.empty())
-        SVFModuleWrite(this, filePath);
+    if (svfModule == nullptr)
+    {
+        svfModule = new SVFModule;
+    }
+    return svfModule;
+}
+
+void SVFModule::releaseSVFModule()
+{
+    assert(svfModule != nullptr && "SVFModule is not initialized?");
+    delete svfModule;
+    svfModule = nullptr;
 }

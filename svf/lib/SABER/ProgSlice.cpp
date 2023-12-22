@@ -146,12 +146,26 @@ const CallICFGNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
         return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId());
 }
 
+void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack) const
+{
+    NodeBS elems = pathAllocator->exactCondElem(finalCond);
+    for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
+    {
+        const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
+        if(pathAllocator->isNegCond(*it))
+            eventStack.push_back(SVFBugEvent(
+                                     SVFBugEvent::Branch|((((u32_t)false) << 4) & BRANCHFLAGMASK), tinst));
+        else
+            eventStack.push_back(SVFBugEvent(
+                                     SVFBugEvent::Branch|((((u32_t)true) << 4) & BRANCHFLAGMASK), tinst));
+    }
+}
 
 /*!
  * Evaluate Atoms of a condition
  * TODO: for now we only evaluate one path, evaluate every single path
  *
- * Atom -- a propositional valirable: a, b, c
+ * Atom -- a propositional variable: a, b, c
  * Literal -- an atom or its negation: a, ~a
  * Clause  -- A disjunction of some literals: a \vee b
  * CNF formula -- a conjunction of some clauses:  (a \vee b ) \wedge (c \vee d)
@@ -160,8 +174,9 @@ std::string ProgSlice::evalFinalCond() const
 {
     std::string str;
     std::stringstream rawstr(str);
-    NodeBS elems = pathAllocator->exactCondElem(finalCond);
     Set<std::string> locations;
+    NodeBS elems = pathAllocator->exactCondElem(finalCond);
+
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
         const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
@@ -170,6 +185,7 @@ std::string ProgSlice::evalFinalCond() const
         else
             locations.insert(tinst->getSourceLoc()+"|True");
     }
+
     /// print leak path after eliminating duplicated element
     for(Set<std::string>::iterator iter = locations.begin(), eiter = locations.end();
             iter!=eiter; ++iter)

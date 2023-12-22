@@ -41,7 +41,7 @@ namespace SVF
 
 class SymbolTableBuilder
 {
-
+    friend class SVFIRBuilder;
 private:
     SymbolTableInfo* symInfo;
 
@@ -55,7 +55,8 @@ public:
     void buildMemModel(SVFModule* svfModule);
 
     /// Return size of this object based on LLVM value
-    u32_t getObjSize(const Type* type);
+    u32_t getNumOfElements(const Type* ety);
+
 
 protected:
 
@@ -89,12 +90,15 @@ protected:
     /// Analyse types of all flattened fields of this object
     void analyzeObjType(ObjTypeInfo* typeinfo, const Value* val);
     /// Analyse types of heap and static objects
-    void analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val);
+    u32_t analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val);
     /// Analyse types of heap and static objects
     void analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val);
 
+    /// Analyze byte size of heap alloc function (e.g. malloc/calloc/...)
+    u32_t analyzeHeapAllocByteSize(const Value* val);
+
     ///Get a reference to the components of struct_info.
-    /// Number of flattenned elements of an array or struct
+    /// Number of flattened elements of an array or struct
     u32_t getNumOfFlattenElements(const Type* T);
 
     ///Get a reference to StructInfo.

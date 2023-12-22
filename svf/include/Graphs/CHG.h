@@ -1,4 +1,4 @@
-//===----- CHG.h -- Class hirachary graph  ---------------------------//
+//===----- CHG.h -- Class hierarchy graph  ---------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -61,7 +61,8 @@ public:
     virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) = 0;
     virtual bool csHasVtblsBasedonCHA(CallSite cs) = 0;
     virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) = 0;
-    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) = 0;
+    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet& vtbls,
+                                  VFunSet& virtualFunctions) = 0;
 
     CHGKind getKind(void) const
     {
@@ -76,17 +77,20 @@ protected:
 typedef GenericEdge<CHNode> GenericCHEdgeTy;
 class CHEdge: public GenericCHEdgeTy
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
 public:
     typedef enum
     {
         INHERITANCE = 0x1, // inheritance relation
-        INSTANTCE = 0x2 // template-instance relation
+        INSTANTCE = 0x2    // template-instance relation
     } CHEDGETYPE;
 
-    typedef GenericNode<CHNode,CHEdge>::GEdgeSetTy CHEdgeSetTy;
+    typedef GenericNode<CHNode, CHEdge>::GEdgeSetTy CHEdgeSetTy;
 
-    CHEdge(CHNode *s, CHNode *d, CHEDGETYPE et, GEdgeFlag k = 0):
-        GenericCHEdgeTy(s,d,k)
+    CHEdge(CHNode* s, CHNode* d, CHEDGETYPE et, GEdgeFlag k = 0)
+        : GenericCHEdgeTy(s, d, k)
     {
         edgeType = et;
     }
@@ -100,9 +104,12 @@ private:
     CHEDGETYPE edgeType;
 };
 
-typedef GenericNode<CHNode,CHEdge> GenericCHNodeTy;
+typedef GenericNode<CHNode, CHEdge> GenericCHNodeTy;
 class CHNode: public GenericCHNodeTy
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
 public:
     typedef enum
     {
@@ -113,7 +120,7 @@ public:
 
     typedef std::vector<const SVFFunction*> FuncVector;
 
-    CHNode (const std::string name, NodeID i = 0, GNodeK k = 0):
+    CHNode (const std::string& name, NodeID i = 0, GNodeK k = 0):
         GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
     {
     }
@@ -204,9 +211,11 @@ private:
 };
 
 /// class hierarchy graph
-typedef GenericGraph<CHNode,CHEdge> GenericCHGraphTy;
+typedef GenericGraph<CHNode, CHEdge> GenericCHGraphTy;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
     friend class CHGBuilder;
 
 public:
@@ -311,7 +320,7 @@ private:
     u32_t classNum;
     u32_t vfID;
     double buildingCHGTime;
-    Map<std::string, CHNode *> classNameToNodeMap;
+    Map<std::string, CHNode*> classNameToNodeMap;
     NameToCHNodesMap classNameToDescendantsMap;
     NameToCHNodesMap classNameToAncestorsMap;
     NameToCHNodesMap classNameToInstAndDescsMap;
@@ -331,19 +340,26 @@ namespace SVF
  * GenericGraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GenericGraphTraits<SVF::CHNode*> : public GenericGraphTraits<SVF::GenericNode<SVF::CHNode,SVF::CHEdge>*  >
+template <>
+struct GenericGraphTraits<SVF::CHNode*>
+    : public GenericGraphTraits<SVF::GenericNode<SVF::CHNode, SVF::CHEdge>*>
 {
 };
 
-/// Inverse GenericGraphTraits specializations for call graph node, it is used for inverse traversal.
-template<>
-struct GenericGraphTraits<Inverse<SVF::CHNode*> > : public GenericGraphTraits<Inverse<SVF::GenericNode<SVF::CHNode,SVF::CHEdge>* > >
+/// Inverse GenericGraphTraits specializations for call graph node, it is used
+/// for inverse traversal.
+template <>
+struct GenericGraphTraits<Inverse<SVF::CHNode*>>
+            : public GenericGraphTraits<
+              Inverse<SVF::GenericNode<SVF::CHNode, SVF::CHEdge>*>>
 {
 };
 
-template<> struct GenericGraphTraits<SVF::CHGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::CHNode,SVF::CHEdge>* >
+template <>
+struct GenericGraphTraits<SVF::CHGraph*>
+    : public GenericGraphTraits<SVF::GenericGraph<SVF::CHNode, SVF::CHEdge>*>
 {
-    typedef SVF::CHNode *NodeRef;
+    typedef SVF::CHNode* NodeRef;
 };
 
 } // End namespace llvm

@@ -31,7 +31,7 @@
 #define INCLUDE_SVFIR_SVFTYPE_H_
 
 #include "Util/SparseBitVector.h"
-
+#include <cstdint>
 #include <deque>
 #include <iostream>
 #include <list>
@@ -58,6 +58,7 @@ typedef u32_t EdgeID;
 typedef unsigned SymID;
 typedef unsigned CallSiteID;
 typedef unsigned ThreadID;
+typedef s64_t APOffset;
 
 typedef SparseBitVector<> NodeBS;
 typedef unsigned PointsToID;
@@ -92,47 +93,46 @@ template <class T> struct Hash
 
 template <typename Key, typename Hash = Hash<Key>,
           typename KeyEqual = std::equal_to<Key>,
-          typename Allocator = std::allocator<Key>>
+          typename Allocator = std::allocator<Key> >
 using Set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 
 template <typename Key, typename Value, typename Hash = Hash<Key>,
           typename KeyEqual = std::equal_to<Key>,
-          typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                  using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
+          typename Allocator = std::allocator<std::pair<const Key, Value> > >
+using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
 
-          template <typename Key, typename Compare = std::less<Key>,
-                    typename Allocator = std::allocator<Key>>
-          using OrderedSet = std::set<Key, Compare, Allocator>;
+template <typename Key, typename Compare = std::less<Key>,
+          typename Allocator = std::allocator<Key> >
+using OrderedSet = std::set<Key, Compare, Allocator>;
 
-          template <typename Key, typename Value, typename Compare = std::less<Key>,
-                    typename Allocator = std::allocator<std::pair<const Key, Value>>>
-                            using OrderedMap = std::map<Key, Value, Compare, Allocator>;
+template <typename Key, typename Value, typename Compare = std::less<Key>,
+          typename Allocator = std::allocator<std::pair<const Key, Value> > >
+using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 
-                    typedef std::pair<NodeID, NodeID> NodePair;
-                    typedef OrderedSet<NodeID> OrderedNodeSet;
-                    typedef Set<NodeID> NodeSet;
-                    typedef Set<NodePair> NodePairSet;
-                    typedef Map<NodePair, NodeID> NodePairMap;
-                    typedef std::vector<NodeID> NodeVector;
-                    typedef std::vector<EdgeID> EdgeVector;
-                    typedef std::stack<NodeID> NodeStack;
-                    typedef std::list<NodeID> NodeList;
-                    typedef std::deque<NodeID> NodeDeque;
-                    typedef NodeSet EdgeSet;
-                    typedef std::vector<u32_t> CallStrCxt;
-                    typedef unsigned Version;
-                    typedef Set<Version> VersionSet;
-                    typedef std::pair<NodeID, Version> VersionedVar;
-                    typedef Set<VersionedVar> VersionedVarSet;
+typedef std::pair<NodeID, NodeID> NodePair;
+typedef OrderedSet<NodeID> OrderedNodeSet;
+typedef Set<NodeID> NodeSet;
+typedef Set<NodePair> NodePairSet;
+typedef Map<NodePair, NodeID> NodePairMap;
+typedef std::vector<NodeID> NodeVector;
+typedef std::vector<EdgeID> EdgeVector;
+typedef std::stack<NodeID> NodeStack;
+typedef std::list<NodeID> NodeList;
+typedef std::deque<NodeID> NodeDeque;
+typedef NodeSet EdgeSet;
+typedef std::vector<u32_t> CallStrCxt;
+typedef unsigned Version;
+typedef Set<Version> VersionSet;
+typedef std::pair<NodeID, Version> VersionedVar;
+typedef Set<VersionedVar> VersionedVarSet;
 
-                    /*!
-                     * Flatterned type information of StructType, ArrayType and
-                     * SingleValueType
-                     */
-                    class StInfo
+/*!
+ * Flattened type information of StructType, ArrayType and SingleValueType
+ */
+class StInfo
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     /// flattened field indices of a struct (ignoring arrays)
@@ -147,9 +147,9 @@ private:
     /// stride represents the number of repetitive elements if this StInfo
     /// represent an ArrayType. stride is 1 by default.
     u32_t stride;
-    /// number of elements after flattenning (including array elements)
+    /// number of elements after flattening (including array elements)
     u32_t numOfFlattenElements;
-    /// number of fields after flattenning (ignoring array elements)
+    /// number of fields after flattening (ignoring array elements)
     u32_t numOfFlattenFields;
     /// Type vector of fields
     std::vector<const SVFType*> flattenElementTypes;
@@ -214,20 +214,20 @@ public:
     /// Add field index and element index and their corresponding type
     void addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx);
 
-    /// Set number of fields and elements of an aggrate
+    /// Set number of fields and elements of an aggregate
     inline void setNumOfFieldsAndElems(u32_t nf, u32_t ne)
     {
         numOfFlattenFields = nf;
         numOfFlattenElements = ne;
     }
 
-    /// Return number of elements after flattenning (including array elements)
+    /// Return number of elements after flattening (including array elements)
     inline u32_t getNumOfFlattenElements() const
     {
         return numOfFlattenElements;
     }
 
-    /// Return the number of fields after flattenning (ignoring array elements)
+    /// Return the number of fields after flattening (ignoring array elements)
     inline u32_t getNumOfFlattenFields() const
     {
         return numOfFlattenFields;
@@ -241,8 +241,8 @@ public:
 
 class SVFType
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef s64_t GNodeK;
@@ -264,11 +264,13 @@ private:
     getPointerToTy; /// Return a pointer to the current type
     StInfo* typeinfo;   ///< SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or
+    u32_t byteSize; ///< LLVM Byte Size
     ///< array
+
 protected:
-    SVFType(bool svt, SVFTyKind k)
+    SVFType(bool svt, SVFTyKind k, u32_t Sz)
         : kind(k), getPointerToTy(nullptr), typeinfo(nullptr),
-          isSingleValTy(svt)
+          isSingleValTy(svt), byteSize(Sz)
     {
     }
 
@@ -281,9 +283,11 @@ public:
         return kind;
     }
 
-    /// Needs to be implemented by a specific SVF front end (e.g., the
-    /// implementation in LLVMUtil)
-    virtual const std::string toString() const;
+    /// \note Use `os<<svfType` or `svfType.print(os)` when possible to avoid
+    /// string concatenation.
+    std::string toString() const;
+
+    virtual void print(std::ostream& os) const = 0;
 
     inline void setPointerTo(const SVFPointerType* ty)
     {
@@ -295,6 +299,7 @@ public:
         assert(getPointerToTy && "set the getPointerToTy first");
         return getPointerToTy;
     }
+
 
     inline void setTypeInfo(StInfo* ti)
     {
@@ -313,9 +318,26 @@ public:
         return typeinfo;
     }
 
+    /// if Type is not sized, byteSize is 0
+    /// if Type is sized, byteSize is the LLVM Byte Size.
+    inline u32_t getByteSize() const
+    {
+        return byteSize;
+    }
+
     inline bool isPointerTy() const
     {
         return kind == SVFPointerTy;
+    }
+
+    inline bool isArrayTy() const
+    {
+        return kind == SVFArrayTy;
+    }
+
+    inline bool isStructTy() const
+    {
+        return kind == SVFStructTy;
     }
 
     inline bool isSingleValueType() const
@@ -324,50 +346,79 @@ public:
     }
 };
 
+std::ostream& operator<<(std::ostream& os, const SVFType& type);
+
 class SVFPointerType : public SVFType
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     const SVFType* ptrElementType;
 
 public:
-    SVFPointerType(const SVFType* pty)
-        : SVFType(true, SVFPointerTy), ptrElementType(pty)
+    SVFPointerType(u32_t byteSize)
+        : SVFType(true, SVFPointerTy, byteSize), ptrElementType(nullptr)
     {
     }
+
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFPointerTy;
     }
     inline const SVFType* getPtrElementType() const
     {
+        assert(ptrElementType && "ptrElementType is nullptr");
         return ptrElementType;
     }
+
+    inline void setPtrElementType(SVFType* _ptrElementType)
+    {
+        ptrElementType = _ptrElementType;
+    }
+
+    void print(std::ostream& os) const override;
 };
 
 class SVFIntegerType : public SVFType
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+private:
+    short signAndWidth; ///< For printing
+
 public:
-    SVFIntegerType() : SVFType(true, SVFIntegerTy) {}
+    SVFIntegerType(u32_t byteSize) : SVFType(true, SVFIntegerTy, byteSize) {}
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFIntegerTy;
+    }
+
+    void print(std::ostream& os) const override;
+
+    void setSignAndWidth(short sw)
+    {
+        signAndWidth = sw;
+    }
+
+    bool isSigned() const
+    {
+        return signAndWidth < 0;
     }
 };
 
 class SVFFunctionType : public SVFType
 {
-    friend class SVFModuleWrite;
-    friend class SVFModuleRead;
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 private:
     const SVFType* retTy;
 
 public:
     SVFFunctionType(const SVFType* rt)
-        : SVFType(false, SVFFunctionTy), retTy(rt)
+        : SVFType(false, SVFFunctionTy, 0), retTy(rt)
     {
     }
     static inline bool classof(const SVFType* node)
@@ -378,36 +429,115 @@ public:
     {
         return retTy;
     }
+
+    void print(std::ostream& os) const override;
 };
 
 class SVFStructType : public SVFType
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+private:
+    /// @brief Field for printing & debugging
+    std::string name;
+
 public:
-    SVFStructType() : SVFType(false, SVFStructTy) {}
+    SVFStructType(u32_t byteSize) : SVFType(false, SVFStructTy, byteSize) {}
+
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFStructTy;
+    }
+
+    void print(std::ostream& os) const override;
+
+    const std::string& getName()
+    {
+        return name;
+    }
+    void setName(const std::string& structName)
+    {
+        name = structName;
+    }
+    void setName(std::string&& structName)
+    {
+        name = std::move(structName);
     }
 };
 
 class SVFArrayType : public SVFType
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+private:
+    unsigned numOfElement; /// For printing & debugging
+    const SVFType* typeOfElement; /// For printing & debugging
+
 public:
-    SVFArrayType() : SVFType(false, SVFArrayTy) {}
+    SVFArrayType(u32_t byteSize)
+        : SVFType(false, SVFArrayTy, byteSize), numOfElement(0), typeOfElement(nullptr)
+    {
+    }
+
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFArrayTy;
     }
+
+    void print(std::ostream& os) const override;
+
+    const SVFType* getTypeOfElement() const
+    {
+        return typeOfElement;
+    }
+
+    void setTypeOfElement(const SVFType* elemType)
+    {
+        typeOfElement = elemType;
+    }
+
+    void setNumOfElement(unsigned elemNum)
+    {
+        numOfElement = elemNum;
+    }
+
+
 };
 
 class SVFOtherType : public SVFType
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+
+private:
+    std::string repr; /// Field representation for printing
+
 public:
-    SVFOtherType(bool isSingleValueTy) : SVFType(isSingleValueTy, SVFOtherTy) {}
+    SVFOtherType(u32_t byteSize, bool isSingleValueTy) : SVFType(isSingleValueTy, SVFOtherTy, byteSize) {}
+
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFOtherTy;
     }
+
+    const std::string& getRepr()
+    {
+        return repr;
+    }
+
+    void setRepr(std::string&& r)
+    {
+        repr = std::move(r);
+    }
+
+    void setRepr(const std::string& r)
+    {
+        repr = r;
+    }
+
+    void print(std::ostream& os) const override;
 };
 
 // TODO: be explicit that this is a pair of 32-bit unsigneds?

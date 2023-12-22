@@ -68,7 +68,7 @@ AndersenBase::~AndersenBase()
 }
 
 /*!
- * Initilize analysis
+ * Initialize analysis
  */
 void AndersenBase::initialize()
 {
@@ -97,64 +97,84 @@ void AndersenBase::finalize()
     BVDataPTAImpl::finalize();
 }
 
+void AndersenBase::solveConstraints()
+{
+    // Start solving constraints
+    DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
+
+    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
+
+    initWorklist();
+    do
+    {
+        numOfIteration++;
+        if (0 == numOfIteration % iterationForPrintStat)
+            printStat();
+
+        reanalyze = false;
+
+        solveWorklist();
+
+        if (updateCallGraph(getIndirectCallsites()))
+            reanalyze = true;
+
+    }
+    while (reanalyze);
+
+    // Analysis is finished, reset the alarm if we set it.
+    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
+
+    DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+}
+
 /*!
  * Andersen analysis
  */
 void AndersenBase::analyze()
 {
-    /// Initialization for the Solver
-    initialize();
-
-    bool readResultsFromFile = false;
     if(!Options::ReadAnder().empty())
     {
-        readResultsFromFile = this->readFromFile(Options::ReadAnder());
-        // Finalize the analysis
-        PointerAnalysis::finalize();
+        readPtsFromFile(Options::ReadAnder());
     }
-
-    if (!Options::WriteAnder().empty())
-        this->writeObjVarToFile(Options::WriteAnder());
-
-    if(!readResultsFromFile)
+    else
     {
-        // Start solving constraints
-        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
-
-        bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit());
-
-        initWorklist();
-        do
+        if(Options::WriteAnder().empty())
         {
-            numOfIteration++;
-            if (0 == numOfIteration % iterationForPrintStat)
-                printStat();
-
-            reanalyze = false;
-
-            solveWorklist();
-
-            if (updateCallGraph(getIndirectCallsites()))
-                reanalyze = true;
-
+            initialize();
+            solveConstraints();
+            finalize();
         }
-        while (reanalyze);
-
-        // Analysis is finished, reset the alarm if we set it.
-        SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
-
-        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
-
+        else
+        {
+            solveAndwritePtsToFile(Options::WriteAnder());
+        }
     }
+}
 
-    if (!Options::WriteAnder().empty())
-    {
-        this->writeToFile(Options::WriteAnder());
-    }
+/*!
+ * Andersen analysis: read pointer analysis result from file
+ */
+void AndersenBase::readPtsFromFile(const std::string& filename)
+{
+    initialize();
+    if (!filename.empty())
+        this->readFromFile(filename);
+    finalize();
+}
 
-    if (!readResultsFromFile)
-        // Finalize the analysis
-        finalize();
+/*!
+ * Andersen analysis: solve constraints and write pointer analysis result to file
+ */
+void AndersenBase:: solveAndwritePtsToFile(const std::string& filename)
+{
+    /// Initialization for the Solver
+    initialize();
+    if (!filename.empty())
+        this->writeObjVarToFile(filename);
+    solveConstraints();
+    if (!filename.empty())
+        this->writeToFile(filename);
+    finalize();
 }
 
 void AndersenBase::cleanConsCG(NodeID id)
@@ -170,7 +190,7 @@ void AndersenBase::cleanConsCG(NodeID id)
 void AndersenBase::normalizePointsTo()
 {
     SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    SVFIR::NodeLocationSetMap &GepObjVarMap = pag->getGepObjNodeMap();
+    SVFIR::NodeOffsetMap &GepObjVarMap = pag->getGepObjNodeMap();
 
     // clear GepObjVarMap/memToFieldsMap/nodeToSubsMap/nodeToRepMap
     // for redundant gepnodes and remove those nodes from pag
@@ -179,8 +199,8 @@ void AndersenBase::normalizePointsTo()
         NodeID base = pag->getBaseObjVar(n);
         GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
         assert(gepNode && "Not a gep node in redundantGepNodes set");
-        const LocationSet ls = gepNode->getLocationSet();
-        GepObjVarMap.erase(std::make_pair(base, ls));
+        const APOffset apOffset = gepNode->getConstantFieldIdx();
+        GepObjVarMap.erase(std::make_pair(base, apOffset));
         memToFieldsMap[base].reset(n);
         cleanConsCG(n);
 
@@ -189,7 +209,7 @@ void AndersenBase::normalizePointsTo()
 }
 
 /*!
- * Initilize analysis
+ * Initialize analysis
  */
 void Andersen::initialize()
 {
@@ -330,7 +350,7 @@ bool Andersen::processLoad(NodeID node, const ConstraintEdge* load)
 {
     /// TODO: New copy edges are also added for black hole obj node to
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
-    ///       Try to handle black hole obj in an appropiate way.
+    ///       Try to handle black hole obj in an appropriate way.
 //	if (pag->isBlkObjOrConstantObj(node) || isNonPointerObj(node))
     if (pag->isConstantObj(node) || isNonPointerObj(node))
         return false;
@@ -350,7 +370,7 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store)
 {
     /// TODO: New copy edges are also added for black hole obj node to
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
-    ///       Try to handle black hole obj in an appropiate way
+    ///       Try to handle black hole obj in an appropriate way
 //	if (pag->isBlkObjOrConstantObj(node) || isNonPointerObj(node))
     if (pag->isConstantObj(node) || isNonPointerObj(node))
         return false;
@@ -437,7 +457,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
                 continue;
             }
 
-            NodeID fieldSrcPtdNode = consCG->getGepObjVar(o, normalGepEdge->getLocationSet());
+            NodeID fieldSrcPtdNode = consCG->getGepObjVar(o, normalGepEdge->getAccessPath().getConstantStructFldIdx());
             tmpDstPts.set(fieldSrcPtdNode);
         }
     }
@@ -461,7 +481,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
  */
 inline void Andersen::collapsePWCNode(NodeID nodeId)
 {
-    // If a node is a PWC node, collapse all its points-to tarsget.
+    // If a node is a PWC node, collapse all its points-to target.
     // collapseNodePts() may change the points-to set of the nodes which have been processed
     // before, in this case, we may need to re-do the analysis.
     if (consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
@@ -844,7 +864,7 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
 
 void Andersen::cluster(void) const
 {
-    assert(Options::MaxFieldLimit() == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insesnsitive analysis");
+    assert(Options::MaxFieldLimit() == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insensitive analysis");
     Steensgaard *steens = Steensgaard::createSteensgaard(pag);
     std::vector<std::pair<unsigned, unsigned>> keys;
     for (SVFIR::iterator pit = pag->begin(); pit != pag->end(); ++pit)

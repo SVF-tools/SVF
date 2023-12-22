@@ -90,8 +90,7 @@ void CHGBuilder::buildCHGNodes(const GlobalValue *globalvalue)
 {
     if (LLVMUtil::isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
     {
-        const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
-        assert(vtblStruct && "Initializer of a vtable not a struct?");
+        const ConstantStruct *vtblStruct = LLVMUtil::getVtblStruct(globalvalue);
         string className = getClassNameFromVtblObj(globalvalue->getName().str());
         if (!chg->getNode(className))
             createNode(className);
@@ -233,7 +232,7 @@ void CHGBuilder::readInheritanceMetadataFromModule(const Module &M)
     }
 }
 
-CHNode *CHGBuilder::createNode(const std::string className)
+CHNode *CHGBuilder::createNode(const std::string& className)
 {
     assert(!chg->getNode(className) && "this node should never be created before!");
     CHNode * node = new CHNode(className, chg->classNum++);
@@ -293,8 +292,8 @@ void CHGBuilder::buildClassNameToAncestorsDescendantsMap()
     }
 }
 
-
-const CHGraph::CHNodeSetTy& CHGBuilder::getInstancesAndDescendants(const string className)
+const CHGraph::CHNodeSetTy& CHGBuilder::getInstancesAndDescendants(
+    const string& className)
 {
 
     CHGraph::NameToCHNodesMap::const_iterator it = chg->classNameToInstAndDescsMap.find(className);
@@ -367,9 +366,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
         const GlobalValue *globalvalue = SVFUtil::dyn_cast<const GlobalValue>(&(*I));
         if (LLVMUtil::isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
         {
-            const ConstantStruct *vtblStruct =
-                SVFUtil::dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
-            assert(vtblStruct && "Initializer of a vtable not a struct?");
+            const ConstantStruct *vtblStruct = LLVMUtil::getVtblStruct(globalvalue);
 
             string vtblClassName = getClassNameFromVtblObj(globalvalue->getName().str());
             CHNode *node = chg->getNode(vtblClassName);

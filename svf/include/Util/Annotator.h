@@ -112,7 +112,7 @@ public:
             values.push_back(val);
             //llvm::ArrayRef<llvm::Metadata*> ar(metavalues);
             // FIXME: delete the old MDNode
-            inst->setMetadata(str, MDNode::get(inst->getContext(), llvm::None));
+            inst->setMetadata(str, MDNode::get(inst->getContext(), nullptr));
             //inst->setMetadata(str, llvm::MDNode::get(inst->getContext(), ar));
         }
     }

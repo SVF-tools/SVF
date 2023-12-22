@@ -69,6 +69,12 @@ public:
     /// Andersen analysis
     virtual void analyze() override;
 
+    virtual void solveAndwritePtsToFile(const std::string& filename);
+
+    virtual void readPtsFromFile(const std::string& filename);
+
+    virtual void solveConstraints();
+
     /// Initialize analysis
     virtual void initialize() override;
 
@@ -321,7 +327,7 @@ protected:
     void mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes);
     void mergeSccCycle();
     //@}
-    /// Collapse a field object into its base for field insensitive anlaysis
+    /// Collapse a field object into its base for field insensitive analysis
     //@{
     virtual void collapsePWCNode(NodeID nodeId);
     void collapseFields();

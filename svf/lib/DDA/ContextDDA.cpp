@@ -171,7 +171,8 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
             }
             else
             {
-                CxtVar var(ptd.get_cond(),getGepObjVar(ptd.get_id(),gepStmt->getLocationSet()));
+                CxtVar var(ptd.get_cond(),getGepObjVar(ptd.get_id(),
+                                                       gepStmt->getAccessPath().getConstantStructFldIdx()));
                 tmpDstPts.set(var);
             }
         }
@@ -344,7 +345,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
             if (gepobj != nullptr)
             {
                 assert(SVFUtil::isa<DummyObjVar>(_pag->getGNode(gepobj->getBaseNode()))
-                       && "emtpy refVal in a gep object whose base is a non-dummy object");
+                       && "empty refVal in a gep object whose base is a non-dummy object");
             }
             else
             {

@@ -121,7 +121,7 @@ void ConstraintGraph::buildCG()
         if(edge->isVariantFieldGep())
             addVariantGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
         else
-            addNormalGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID(),edge->getLocationSet());
+            addNormalGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID(),edge->getAccessPath());
     }
 
     SVFStmt::SVFStmtSetTy& loads = getPAGEdgeSet(SVFStmt::Load);
@@ -210,14 +210,15 @@ CopyCGEdge* ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
 /*!
  * Add Gep edge
  */
-NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls)
+NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, const AccessPath& ap)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if (hasEdge(srcNode, dstNode, ConstraintEdge::NormalGep))
         return nullptr;
 
-    NormalGepCGEdge* edge = new NormalGepCGEdge(srcNode, dstNode,ls, edgeIndex++);
+    NormalGepCGEdge* edge =
+        new NormalGepCGEdge(srcNode, dstNode, ap, edgeIndex++);
 
     bool inserted = directEdgeSet.insert(edge).second;
     (void)inserted; // Suppress warning of unused variable under release build
@@ -297,7 +298,7 @@ StoreCGEdge* ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
  *
  * (1) Remove edge from old dst target,
  * (2) Change edge dst id and
- * (3) Add modifed edge into new dst
+ * (3) Add modified edge into new dst
  */
 void ConstraintGraph::reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* newDstNode)
 {
@@ -320,9 +321,9 @@ void ConstraintGraph::reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* ne
     }
     else if(NormalGepCGEdge* gep = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
     {
-        const LocationSet ls = gep->getLocationSet();
+        const AccessPath ap = gep->getAccessPath();
         removeDirectEdge(gep);
-        addNormalGepCGEdge(srcId,newDstNodeID,ls);
+        addNormalGepCGEdge(srcId,newDstNodeID, ap);
     }
     else if(VariantGepCGEdge* gep = SVFUtil::dyn_cast<VariantGepCGEdge>(edge))
     {
@@ -364,9 +365,9 @@ void ConstraintGraph::reTargetSrcOfEdge(ConstraintEdge* edge, ConstraintNode* ne
     }
     else if(NormalGepCGEdge* gep = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
     {
-        const LocationSet ls = gep->getLocationSet();
+        const AccessPath ap = gep->getAccessPath();
         removeDirectEdge(gep);
-        addNormalGepCGEdge(newSrcNodeID,dstId,ls);
+        addNormalGepCGEdge(newSrcNodeID, dstId, ap);
     }
     else if(VariantGepCGEdge* gep = SVFUtil::dyn_cast<VariantGepCGEdge>(edge))
     {

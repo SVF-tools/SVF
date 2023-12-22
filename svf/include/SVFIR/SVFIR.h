@@ -42,11 +42,13 @@ class CommonCHGraph;
  */
 class SVFIR : public IRGraph
 {
-
     friend class SVFIRBuilder;
     friend class ExternalPAG;
     friend class PAGBuilderFromFile;
     friend class TypeBasedHeapCloning;
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+    friend class BVDataPTAImpl;
 
 public:
     typedef Set<const CallICFGNode*> CallSiteSet;
@@ -63,11 +65,13 @@ public:
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
-    typedef std::pair<NodeID, s32_t> NodeOffset;
-    typedef std::pair<NodeID, LocationSet> NodeLocationSet;
+    typedef std::pair<NodeID, APOffset> NodeOffset;
+    typedef std::pair<NodeID, AccessPath> NodeAccessPath;
     typedef Map<NodeOffset,NodeID> NodeOffsetMap;
-    typedef Map<NodeLocationSet,NodeID> NodeLocationSetMap;
-    typedef Map<const SVFValue*, NodeLocationSetMap> GepValueVarMap;
+    typedef Map<NodeAccessPath,NodeID> NodeAccessPathMap;
+    typedef Map<const SVFValue*, NodeAccessPathMap> GepValueVarMap;
+    typedef std::pair<const SVFType*, std::vector<AccessPath>> SVFTypeLocSetsPair;
+    typedef Map<NodeID, SVFTypeLocSetsPair> TypeLocSetsMap;
     typedef Map<NodePair,NodeID> NodePairSetMap;
 
 private:
@@ -76,7 +80,8 @@ private:
     ICFGNode2SVFStmtsMap icfgNode2SVFStmtsMap;	///< Map an ICFGNode to its SVFStmts
     ICFGNode2SVFStmtsMap icfgNode2PTASVFStmtsMap;	///< Map an ICFGNode to its PointerAnalysis related SVFStmts
     GepValueVarMap GepValObjMap;	///< Map a pair<base,off> to a gep value node id
-    NodeLocationSetMap GepObjVarMap;	///< Map a pair<base,off> to a gep obj node id
+    TypeLocSetsMap typeLocSetsMap;	///< Map an arg to its base SVFType* and all its field location sets
+    NodeOffsetMap GepObjVarMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     SVFStmtSet globSVFStmtSet;	///< Global PAGEdges without control flow information
     PHINodeMap phiNodeMap;	///< A set of phi copy edges
@@ -84,7 +89,6 @@ private:
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
     FunToRetMap funRetMap;	///< Map a function to its unique function return PAGNodes
-    static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
     CallSiteToFunPtrMap indCallSiteToFunPtrMap; ///< Map an indirect callsite to its function pointer
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
     /// Valid pointers for pointer analysis resolution connected by SVFIR edges (constraints)
@@ -94,6 +98,9 @@ private:
     ICFG* icfg; // ICFG
     CommonCHGraph* chgraph; // class hierarchy graph
     CallSiteSet callSiteSet; /// all the callsites of a program
+
+    static std::unique_ptr<SVFIR> pag;	///< Singleton pattern here to enable instance of SVFIR can only be created once.
+
     /// Constructor
     SVFIR(bool buildFromFile);
 
@@ -123,7 +130,7 @@ public:
         return memToFieldsMap;
     }
     /// Return GepObjVarMap
-    inline NodeLocationSetMap& getGepObjNodeMap()
+    inline NodeOffsetMap& getGepObjNodeMap()
     {
         return GepObjVarMap;
     }
@@ -160,7 +167,7 @@ public:
     {
         icfg = i;
     }
-    inline ICFG* getICFG()
+    inline ICFG* getICFG() const
     {
         assert(icfg->totalICFGNode>0 && "empty ICFG! Build SVF IR first!");
         return icfg;
@@ -190,11 +197,12 @@ public:
     /// Whether this instruction has SVFIR Edge
     inline bool hasSVFStmtList(const ICFGNode* inst) const
     {
-        return icfgNode2SVFStmtsMap.find(inst)!=icfgNode2SVFStmtsMap.end();
+        return icfgNode2SVFStmtsMap.find(inst) != icfgNode2SVFStmtsMap.end();
     }
     inline bool hasPTASVFStmtList(const ICFGNode* inst) const
     {
-        return icfgNode2PTASVFStmtsMap.find(inst)!=icfgNode2PTASVFStmtsMap.end();
+        return icfgNode2PTASVFStmtsMap.find(inst) !=
+               icfgNode2PTASVFStmtsMap.end();
     }
     /// Given an instruction, get all its PAGEdges
     inline SVFStmtList& getSVFStmtList(const ICFGNode* inst)
@@ -213,6 +221,16 @@ public:
         icfgNode2SVFStmtsMap[inst].push_back(edge);
         if (edge->isPTAEdge())
             icfgNode2PTASVFStmtsMap[inst].push_back(edge);
+    }
+    /// Add a base SVFType* and all its field location sets to an arg NodeId
+    inline void addToTypeLocSetsMap(NodeID argId, SVFTypeLocSetsPair& locSets)
+    {
+        typeLocSetsMap[argId]=locSets;
+    }
+    /// Given an arg NodeId, get its base SVFType* and all its field location sets
+    inline SVFTypeLocSetsPair& getTypeLocSetsMap(NodeID argId)
+    {
+        return typeLocSetsMap[argId];
     }
     /// Get global PAGEdges (not in a procedure)
     inline SVFStmtSet& getGlobalSVFStmtSet()
@@ -310,8 +328,9 @@ public:
     }
     //@}
 
-    /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
-    NodeID getGepValVar(const SVFValue* curInst, NodeID base, const LocationSet& ls) const;
+    /// Due to constraint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
+    NodeID getGepValVar(const SVFValue* curInst, NodeID base,
+                        const AccessPath& ap) const;
 
     /// Add/get indirect callsites
     //@{
@@ -348,7 +367,7 @@ public:
     }
     inline SVFStmt* getIntraPAGEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind)
     {
-        SVFStmt edge(src,dst,kind, false);
+        SVFStmt edge(src, dst, kind, false);
         const SVFStmt::SVFStmtSetTy& edgeSet = getSVFStmtSet(kind);
         SVFStmt::SVFStmtSetTy::const_iterator it = edgeSet.find(&edge);
         assert(it != edgeSet.end() && "can not find pag edge");
@@ -360,10 +379,10 @@ public:
     /// return whole allocated memory object if this node is a gep obj node
     /// return nullptr is this node is not a ObjVar type
     //@{
-    inline const MemObj*getObject(NodeID id) const
+    inline const MemObj* getObject(NodeID id) const
     {
         const SVFVar* node = getGNode(id);
-        if(const ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(node))
+        if (const ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(node))
             return getObject(objPN);
         else
             return nullptr;
@@ -375,9 +394,9 @@ public:
     //@}
 
     /// Get a field SVFIR Object node according to base mem obj and offset
-    NodeID getGepObjVar(const MemObj* obj, const LocationSet& ls);
+    NodeID getGepObjVar(const MemObj* obj, const APOffset& ap);
     /// Get a field obj SVFIR node according to a mem obj and a given offset
-    NodeID getGepObjVar(NodeID id, const LocationSet& ls) ;
+    NodeID getGepObjVar(NodeID id, const APOffset& ap) ;
     /// Get a field-insensitive obj SVFIR node according to a mem obj
     //@{
     inline NodeID getFIObjVar(const MemObj* obj) const
@@ -412,7 +431,8 @@ public:
     {
         const MemObj* obj = getObject(id);
         assert(obj && "not an object node?");
-        return SymbolTableInfo::isConstantObj(id) || obj->isConstDataOrConstGlobal();
+        return SymbolTableInfo::isConstantObj(id) ||
+               obj->isConstDataOrConstGlobal();
     }
     /// Whether an object can point to any other object or any of its fields is a pointer type.
     bool isNonPointerObj(NodeID id) const;
@@ -522,7 +542,7 @@ private:
     inline NodeID addObjNode(const SVFValue* val, NodeID i)
     {
         const MemObj* mem = getMemObj(val);
-        assert(((mem->getId() == i)) && "not same object id?");
+        assert(mem->getId() == i && "not same object id?");
         return addFIObjNode(mem);
     }
     /// Add a unique return node for a procedure
@@ -539,9 +559,9 @@ private:
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValVar
-    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const LocationSet& ls, NodeID i, const SVFType* type);
+    NodeID addGepValNode(const SVFValue* curInst,const SVFValue* val, const AccessPath& ap, NodeID i, const SVFType* type);
     /// Add a field obj node, this method can only invoked by getGepObjVar
-    NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls);
+    NodeID addGepObjNode(const MemObj* obj, const APOffset& apOffset, const NodeID gepId);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
     NodeID addFIObjNode(const MemObj* obj);
     //@}
@@ -563,11 +583,15 @@ private:
     }
     inline NodeID addBlackholeObjNode()
     {
-        return addObjNode(nullptr, new DummyObjVar(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
+        return addObjNode(
+                   nullptr, new DummyObjVar(getBlackHoleNode(), getBlackHoleObj()),
+                   getBlackHoleNode());
     }
     inline NodeID addConstantObjNode()
     {
-        return addObjNode(nullptr, new DummyObjVar(getConstantNode(),getConstantObj()), getConstantNode());
+        return addObjNode(nullptr,
+                          new DummyObjVar(getConstantNode(), getConstantObj()),
+                          getConstantNode());
     }
     inline NodeID addBlackholePtrNode()
     {
@@ -578,14 +602,18 @@ private:
     /// Add a value (pointer) node
     inline NodeID addValNode(const SVFValue*, SVFVar *node, NodeID i)
     {
-        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DBUG to SEQ or DENSE");
-        return addNode(node,i);
+        assert(hasGNode(i) == false &&
+               "This NodeID clashes here. Please check NodeIDAllocator. Switch "
+               "Strategy::DBUG to SEQ or DENSE");
+        return addNode(node, i);
     }
     /// Add a memory obj node
     inline NodeID addObjNode(const SVFValue*, SVFVar *node, NodeID i)
     {
-        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DBUG to SEQ or DENSE");
-        return addNode(node,i);
+        assert(hasGNode(i) == false &&
+               "This NodeID clashes here. Please check NodeIDAllocator. Switch "
+               "Strategy::DBUG to SEQ or DENSE");
+        return addNode(node, i);
     }
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const SVFFunction*, SVFVar *node, NodeID i)
@@ -621,29 +649,36 @@ private:
     /// Add Copy edge
     CmpStmt* addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t predict);
     /// Add Copy edge
-    BinaryOPStmt* addBinaryOPStmt(NodeID op1, NodeID op2, NodeID dst, u32_t opcode);
+    BinaryOPStmt* addBinaryOPStmt(NodeID op1, NodeID op2, NodeID dst,
+                                  u32_t opcode);
     /// Add Unary edge
     UnaryOPStmt* addUnaryOPStmt(NodeID src, NodeID dst, u32_t opcode);
     /// Add BranchStmt
-    BranchStmt* addBranchStmt(NodeID br, NodeID cond, const BranchStmt::SuccAndCondPairVec& succs);
+    BranchStmt* addBranchStmt(NodeID br, NodeID cond,
+                              const BranchStmt::SuccAndCondPairVec& succs);
     /// Add Load edge
     LoadStmt* addLoadStmt(NodeID src, NodeID dst);
     /// Add Store edge
     StoreStmt* addStoreStmt(NodeID src, NodeID dst, const IntraICFGNode* val);
     /// Add Call edge
-    CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry);
+    CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs,
+                      const FunEntryICFGNode* entry);
     /// Add Return edge
-    RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit);
+    RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs,
+                    const FunExitICFGNode* exit);
     /// Add Gep edge
-    GepStmt* addGepStmt(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
+    GepStmt* addGepStmt(NodeID src, NodeID dst, const AccessPath& ap,
+                        bool constGep);
     /// Add Offset(Gep) edge
-    GepStmt* addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls);
+    GepStmt* addNormalGepStmt(NodeID src, NodeID dst, const AccessPath& ap);
     /// Add Variant(Gep) edge
-    GepStmt* addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls);
+    GepStmt* addVariantGepStmt(NodeID src, NodeID dst, const AccessPath& ap);
     /// Add Thread fork edge for parameter passing
-    TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry);
+    TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs,
+                              const FunEntryICFGNode* entry);
     /// Add Thread join edge for parameter passing
-    TDJoinPE* addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit);
+    TDJoinPE* addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs,
+                              const FunExitICFGNode* exit);
     //@}
 
     /// Set a pointer points-to black hole (e.g. int2ptr)

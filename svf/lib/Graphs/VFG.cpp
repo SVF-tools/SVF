@@ -463,7 +463,7 @@ void VFG::destroy()
 void VFG::addVFGNodes()
 {
 
-    // initialize dummy definition  null pointers in order to uniform the construction
+    // initialize dummy definition null pointers in order to uniform the construction
     // to be noted for black hole pointer it has already has address edge connected,
     // and its definition will be set when processing addr SVFIR edge.
     addNullPtrVFGNode(pag->getGNode(pag->getNullPtr()));
@@ -658,7 +658,7 @@ void VFG::addVFGNodes()
         if(isInterestedPAGNode(edge->getBranchInst()))
             addBranchVFGNode(edge);
     }
-    // initialize llvm cmp nodes (comparision)
+    // initialize llvm cmp nodes (comparison)
     SVFStmt::SVFStmtSetTy& cmps = getPAGEdgeSet(SVFStmt::Cmp);
     for (SVFStmt::SVFStmtSetTy::iterator iter = cmps.begin(), eiter =
                 cmps.end(); iter != eiter; ++iter)
@@ -755,7 +755,15 @@ void VFG::connectDirectVFGEdges()
             /// for all other cases, like copy/gep/load/ret, connect the RHS pointer to its def
             if (stmtNode->getPAGSrcNode()->isConstDataOrAggDataButNotNullPtr() == false)
                 addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()), nodeId);
-
+            if (const GepStmt* gepStmt = SVFUtil::dyn_cast<GepStmt>(stmtNode->getPAGEdge()))
+            {
+                for (const auto &varType: gepStmt->getOffsetVarAndGepTypePairVec())
+                {
+                    if(varType.first->isConstDataOrAggDataButNotNullPtr() || isInterestedPAGNode(varType.first) == false)
+                        continue;
+                    addIntraDirectVFEdge(getDef(varType.first), nodeId);
+                }
+            }
             /// for store, connect the RHS/LHS pointer to its def
             if(SVFUtil::isa<StoreVFGNode>(stmtNode) && (stmtNode->getPAGDstNode()->isConstDataOrAggDataButNotNullPtr() == false))
             {
@@ -968,7 +976,8 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
     RetICFGNode* retBlockNode = icfg->getRetICFGNode(callBlockNode->getCallSite());
     // connect actual and formal param
-    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee))
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee) &&
+            matchArgs(callBlockNode->getCallSite(), callee))
     {
         const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
         const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee);
@@ -978,20 +987,21 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
         {
             const PAGNode *cs_arg = *csArgIt;
             const PAGNode *fun_arg = *funArgIt;
-            if (fun_arg->isPointer() && cs_arg->isPointer())
+            if (isInterestedPAGNode(cs_arg) && isInterestedPAGNode(fun_arg))
                 connectAParamAndFParam(cs_arg, fun_arg, callBlockNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
+
         if (callee->isVarArg())
         {
             NodeID varFunArg = pag->getVarargNode(callee);
             const PAGNode* varFunArgNode = pag->getGNode(varFunArg);
-            if (varFunArgNode->isPointer())
+            if (isInterestedPAGNode(varFunArgNode))
             {
                 for (; csArgIt != csArgEit; csArgIt++)
                 {
                     const PAGNode *cs_arg = *csArgIt;
-                    if (cs_arg->isPointer())
+                    if (isInterestedPAGNode(cs_arg))
                         connectAParamAndFParam(cs_arg, varFunArgNode, callBlockNode, csId, edges);
                 }
             }
@@ -1003,7 +1013,7 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
     {
         const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
         const PAGNode* fun_return = pag->getFunRet(callee);
-        if (cs_return->isPointer() && fun_return->isPointer())
+        if (isInterestedPAGNode(cs_return) && isInterestedPAGNode(fun_return))
             connectFRetAndARet(fun_return, cs_return, csId, edges);
     }
 }
@@ -1162,6 +1172,10 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         {
             rawstr << cmp->toString();;
         }
+        else if (BranchVFGNode* branchNode = SVFUtil::dyn_cast<BranchVFGNode>(node))
+        {
+            rawstr << branchNode->toString();
+        }
         else
             assert(false && "what else kinds of nodes do we have??");
 
@@ -1217,6 +1231,10 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         else if (MRSVFGNode* mr = SVFUtil::dyn_cast<MRSVFGNode>(node))
         {
             rawstr << mr->toString();
+        }
+        else if (BranchVFGNode* branchNode = SVFUtil::dyn_cast<BranchVFGNode>(node))
+        {
+            rawstr << branchNode->toString();
         }
         else
             assert(false && "what else kinds of nodes do we have??");
@@ -1301,6 +1319,10 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         else if (SVFUtil::isa<MRSVFGNode>(node))
         {
             rawstr <<  "color=orange,penwidth=2";
+        }
+        else if (SVFUtil::isa<BranchVFGNode>(node))
+        {
+            rawstr <<  "color=gold,penwidth=2";
         }
         else
             assert(false && "no such kind of node!!");

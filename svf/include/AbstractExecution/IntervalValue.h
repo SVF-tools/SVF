@@ -82,7 +82,7 @@ public:
     /// Create the IntervalValue [-oo, +oo]
     static IntervalValue top()
     {
-        return IntervalValue(INT_MIN, INT_MAX);
+        return IntervalValue(minus_infinity(), plus_infinity());
     }
 
     /// Create the bottom IntervalValue
@@ -92,37 +92,41 @@ public:
     }
 
     /// Create default IntervalValue
-    explicit IntervalValue() : AbstractValue(AbstractValue::IntervalK), _lb(INT_MIN), _ub(INT_MAX) {}
+    explicit IntervalValue() : AbstractValue(AbstractValue::IntervalK), _lb(minus_infinity()), _ub(plus_infinity()) {}
 
     /// Create the IntervalValue [n, n]
-    explicit IntervalValue(double n) : AbstractValue(AbstractValue::IntervalK), _lb(n), _ub(n) {}
+    explicit IntervalValue(s64_t n) : AbstractValue(AbstractValue::IntervalK), _lb(n), _ub(n) {}
 
-    explicit IntervalValue(s32_t n) : IntervalValue((double) n) {}
+    explicit IntervalValue(s32_t n) : IntervalValue((s64_t) n) {}
 
-    explicit IntervalValue(u32_t n) : IntervalValue((double) n) {}
+    explicit IntervalValue(u32_t n) : IntervalValue((s64_t) n) {}
+
+    explicit IntervalValue(double n) : IntervalValue((s64_t) n) {}
+
+    explicit IntervalValue(NumericLiteral n) : IntervalValue(n, n) {}
 
     /// Create the IntervalValue [lb, ub]
     explicit IntervalValue(NumericLiteral lb, NumericLiteral ub) : AbstractValue(AbstractValue::IntervalK),
         _lb(std::move(lb)), _ub(std::move(ub)) {}
 
-    explicit IntervalValue(double lb, double ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
+    explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
 
-    explicit IntervalValue(s32_t lb, s32_t ub) : IntervalValue((double) lb, (double) ub) {}
+    explicit IntervalValue(double lb, double ub) : IntervalValue(NumericLiteral((s64_t) lb), NumericLiteral((s64_t) ub)) {}
 
-    explicit IntervalValue(u32_t lb, u32_t ub) : IntervalValue((double) lb, (double) ub) {}
+    explicit IntervalValue(s32_t lb, s32_t ub) : IntervalValue((s64_t) lb, (s64_t) ub) {}
 
-    explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue((double) lb, (double) ub) {}
+    explicit IntervalValue(u32_t lb, u32_t ub) : IntervalValue((s64_t) lb, (s64_t) ub) {}
 
-    explicit IntervalValue(u64_t lb, u64_t ub) : IntervalValue((double) lb, (double) ub) {}
+    explicit IntervalValue(u64_t lb, u64_t ub) : IntervalValue((s64_t) lb, (s64_t) ub) {}
 
     /// Copy constructor
     IntervalValue(const IntervalValue &) = default;
 
     /// Move constructor
-    IntervalValue(IntervalValue &&) noexcept = default;
+    IntervalValue(IntervalValue &&) = default;
 
     /// Copy assignment operator
-    IntervalValue &operator=(const IntervalValue &a) noexcept = default;
+    IntervalValue &operator=(const IntervalValue &a) = default;
 
     /// Move assignment operator
     IntervalValue &operator=(IntervalValue &&) = default;
@@ -256,7 +260,7 @@ public:
     }
 
     /// Return
-    double getNumeral() const
+    s64_t getNumeral() const
     {
         assert(is_numeral() && "this IntervalValue is not numeral");
         return _lb.getNumeral();
@@ -295,7 +299,7 @@ public:
         }
         else
         {
-            return this->_lb.leq(other._lb) && this->_ub.leq(other._ub);
+            return other._lb.leq(this->_lb) && this->_ub.leq(other._ub);
         }
 
     }
@@ -313,7 +317,7 @@ public:
         }
         else
         {
-            return this->_lb.geq(other._lb) && this->_ub.geq(other._ub);
+            return other._lb.geq(this->_lb) && this->_ub.geq(other._ub);
         }
     }
 
@@ -377,7 +381,7 @@ public:
         }
         else
         {
-            this->_lb = !lb().geq(other.lb()) ? minus_infinity() : this->lb();
+            this->_lb = !lb().leq(other.lb()) ? minus_infinity() : this->lb();
             this->_ub = !ub().geq(other.ub()) ? plus_infinity() : this->ub();
         }
     }
@@ -419,7 +423,7 @@ public:
     /// Return true if the IntervalValue contains n
     bool contains(int n) const
     {
-        return this->_lb.getNumeral() <= n && this->_ub.getNumeral() >= n;
+        return this->_lb.leq(n) && this->_ub.geq(n);
     }
 
     void dump(std::ostream &o) const
@@ -434,9 +438,19 @@ public:
         }
     }
 
-    std::string toString() const
+    const std::string toString() const
     {
-        return "[" + std::to_string(lb().getNumeral()) + ", " + std::to_string(ub().getNumeral()) + "]";
+        std::string str;
+        std::stringstream rawStr(str);
+        if (this->isBottom())
+        {
+            rawStr << "⊥";
+        }
+        else
+        {
+            rawStr << "[" << lb().to_string() << ", " << ub().to_string() << "]";
+        }
+        return rawStr.str();
     }
 
 }; // end class IntervalValue
@@ -459,7 +473,7 @@ inline IntervalValue operator+(const IntervalValue &lhs,
     }
 }
 
-/// Substract IntervalValues
+/// Subtract IntervalValues
 inline IntervalValue operator-(const IntervalValue &lhs,
                                const IntervalValue &rhs)
 {
@@ -491,8 +505,9 @@ inline IntervalValue operator*(const IntervalValue &lhs,
         NumericLiteral lu = lhs.lb() * rhs.ub();
         NumericLiteral ul = lhs.ub() * rhs.lb();
         NumericLiteral uu = lhs.ub() * rhs.ub();
-        return IntervalValue(std::min({ll.getNumeral(), lu.getNumeral(), ul.getNumeral(), uu.getNumeral()}),
-                             std::max({ll.getNumeral(), lu.getNumeral(), ul.getNumeral(), uu.getNumeral()}));
+        std::vector<NumericLiteral> vec{ll, lu, ul, uu};
+        return IntervalValue(NumericLiteral::min(vec),
+                             NumericLiteral::max(vec));
     }
 }
 
@@ -515,8 +530,10 @@ inline IntervalValue operator/(const IntervalValue &lhs,
         NumericLiteral lu = lhs.lb() / rhs.ub();
         NumericLiteral ul = lhs.ub() / rhs.lb();
         NumericLiteral uu = lhs.ub() / rhs.ub();
-        return IntervalValue(std::min({ll.getNumeral(), lu.getNumeral(), ul.getNumeral(), uu.getNumeral()}),
-                             std::max({ll.getNumeral(), lu.getNumeral(), ul.getNumeral(), uu.getNumeral()}));
+        std::vector<NumericLiteral> vec{ll, lu, ul, uu};
+
+        return IntervalValue(NumericLiteral::min(vec),
+                             NumericLiteral::max(vec));
     }
 }
 
@@ -538,9 +555,9 @@ inline IntervalValue operator%(const IntervalValue &lhs,
     }
     else
     {
-        double n_ub = std::max(std::abs(lhs.lb().getNumeral()), std::abs(lhs.ub().getNumeral()));
-        double d_ub = std::max(std::abs(rhs.lb().getNumeral()), std::abs(rhs.ub().getNumeral())) - 1;
-        double ub = std::min(n_ub, d_ub);
+        NumericLiteral n_ub = max(abs(lhs.lb()), abs(lhs.ub()));
+        NumericLiteral d_ub = max(abs(rhs.lb()), rhs.ub()) - 1;
+        NumericLiteral ub = min(n_ub, d_ub);
 
         if (lhs.lb().getNumeral() < 0)
         {
@@ -550,84 +567,110 @@ inline IntervalValue operator%(const IntervalValue &lhs,
             }
             else
             {
-                return IntervalValue(-ub, double(0));
+                return IntervalValue(-ub, 0);
             }
         }
         else
         {
-            return IntervalValue(double(0), ub);
+            return IntervalValue(0, ub);
         }
     }
 }
 
-/// Greater than IntervalValues
+// Compare two IntervalValues for greater than
 inline IntervalValue operator>(const IntervalValue &lhs, const IntervalValue &rhs)
 {
+    // If either lhs or rhs is bottom, the result is bottom
     if (lhs.isBottom() || rhs.isBottom())
     {
         return IntervalValue::bottom();
     }
-    else if (lhs.isTop() || lhs.isTop())
+    // If either lhs or rhs is top, the result is top
+    else if (lhs.isTop() || rhs.isTop())
     {
         return IntervalValue::top();
     }
     else
     {
+        // If both lhs and rhs are numerals (lb = ub), directly compare their values
         if (lhs.is_numeral() && rhs.is_numeral())
         {
+            // It means lhs.lb() > rhs.lb()? true: false
             return lhs.lb().leq(rhs.lb()) ? IntervalValue(0, 0) : IntervalValue(1, 1);
         }
         else
         {
-            // lhs[3,4] rhs[1,2]
-            if (lhs.lb().getNumeral() > rhs.ub().getNumeral())
+            // Return [1,1] means lhs is totally greater than rhs
+            // When lhs.lb > rhs.ub, e.g., lhs:[3, 4] rhs:[1, 2]
+            // lhs.lb(3) > rhs.ub(2)
+            // It means lhs.lb() > rhs.ub()
+            if (!lhs.lb().leq(rhs.ub()))
             {
                 return IntervalValue(1, 1);
-                // lhs[1,2] rhs[3,4]
             }
-            else if (lhs.ub().getNumeral() < rhs.lb().getNumeral())
+            // Return [0,0] means lhs is totally impossible to be greater than rhs
+            // i.e., lhs is totally less than or equal to rhs
+            // When lhs.ub <= rhs.lb, e.g., lhs:[3, 4] rhs:[4，5]
+            // lhs.ub(4) <= rhs.lb(4)
+            else if (lhs.ub().leq(rhs.lb()))
             {
                 return IntervalValue(0, 0);
             }
+            // For other cases, lhs can be greater than or not, depending on the values
+            // e.g., lhs: [2,4], rhs: [1,3],
+            // lhs can be greater than rhs if lhs is 4 and rhs is 1.
+            // lhs can also not be greater than rhs if lhs is 2 and rhs is 3
             else
             {
-                // lhs[1,3] rhs[2,4]
                 return IntervalValue(0, 1);
             }
         }
     }
 }
 
-/// Greater than IntervalValues
+// Compare two IntervalValues for less than
 inline IntervalValue operator<(const IntervalValue &lhs, const IntervalValue &rhs)
 {
+    // If either lhs or rhs is bottom, the result is bottom
     if (lhs.isBottom() || rhs.isBottom())
     {
         return IntervalValue::bottom();
     }
-    else if (lhs.isTop() || lhs.isTop())
+    // If either lhs or rhs is top, the result is top
+    else if (lhs.isTop() || rhs.isTop())
     {
         return IntervalValue::top();
     }
     else
     {
+        // If both lhs and rhs are numerals (lb = ub), directly compare their values
         if (lhs.is_numeral() && rhs.is_numeral())
         {
+            // It means lhs.lb() < rhs.lb()? true: false
             return lhs.lb().geq(rhs.lb()) ? IntervalValue(0, 0) : IntervalValue(1, 1);
         }
         else
         {
-            // lhs [1,2] rhs [3,4]
-            if (lhs.ub().getNumeral() < rhs.lb().getNumeral())
+            // Return [1,1] means lhs is totally less than rhs
+            // When lhs.ub < rhs.lb, e.g., lhs:[1, 2] rhs:[3, 4]
+            // lhs.ub(2) < rhs.lb(3)
+            // It means lhs.ub() < rhs.lb()
+            if (!lhs.ub().geq(rhs.lb()))
             {
                 return IntervalValue(1, 1);
-                // lhs [3,4] rhs [1,2]
             }
-            else if (lhs.lb().getNumeral() > rhs.ub().getNumeral())
+            // Return [0,0] means lhs is totally impossible to be less than rhs
+            // i.e., lhs is totally greater than or equal to rhs
+            // When lhs.lb >= rhs.ub, e.g., lhs:[4,5] rhs:[3，4]
+            // lhs.lb(4) >= rhs.ub(4)
+            else if (lhs.lb().geq(rhs.ub()))
             {
                 return IntervalValue(0, 0);
-                // lhs [1,3] rhs [2,4]
             }
+            // For other cases, lhs can be less than rhs or not, depending on the values
+            // e.g., lhs: [2,4], rhs: [1,3],
+            // lhs can be less than rhs if lhs is 2, rhs is 3.
+            // lhs can also not be less than rhs if lhs is 4 and rhs is 1
             else
             {
                 return IntervalValue(0, 1);
@@ -637,79 +680,101 @@ inline IntervalValue operator<(const IntervalValue &lhs, const IntervalValue &rh
 }
 
 
-/// Greater than IntervalValues
+// Compare two IntervalValues for greater than or equal to
 inline IntervalValue operator>=(const IntervalValue &lhs, const IntervalValue &rhs)
 {
+    // If either lhs or rhs is bottom, the result is bottom
     if (lhs.isBottom() || rhs.isBottom())
     {
         return IntervalValue::bottom();
     }
-    else if (lhs.isTop() || lhs.isTop())
+    // If either lhs or rhs is top, the result is top
+    else if (lhs.isTop() || rhs.isTop())
     {
         return IntervalValue::top();
     }
     else
     {
+        // If both lhs and rhs are numerals (lb = ub), directly compare their values
         if (lhs.is_numeral() && rhs.is_numeral())
         {
             return lhs.lb().geq(rhs.lb()) ? IntervalValue(1, 1) : IntervalValue(0, 0);
         }
         else
         {
-            // lhs [2,3] rhs [1,2]
-            if (lhs.lb().getNumeral() >= rhs.ub().getNumeral())
+            // Return [1,1] means lhs is totally greater than or equal to rhs
+            // When lhs.lb >= rhs.ub, e.g., lhs:[2, 3] rhs:[1, 2]
+            // lhs.lb(2) >= rhs.ub(2)
+            if (lhs.lb().geq(rhs.ub()))
             {
                 return IntervalValue(1, 1);
-                // lhs [1,2] rhs[3,4]
             }
-            else if (lhs.ub().getNumeral() < rhs.lb().getNumeral())
+            // Return [0,0] means lhs is totally impossible to be greater than or equal to rhs
+            // i.e., lhs is totally less than rhs
+            // When lhs.ub < rhs.lb, e.g., lhs:[1, 2] rhs:[3, 4]
+            // lhs.ub(2) < rhs.lb(3)
+            // It means lhs.ub() < rhs.lb()
+            else if (!lhs.ub().geq(rhs.lb()))
             {
                 return IntervalValue(0, 0);
-                // lhs [1,3] rhs [2,4]
             }
+            // For other cases, lhs can be greater than or equal to rhs or not, depending on the values
+            // e.g., lhs: [2,4], rhs: [1,3],
+            // lhs can be greater than or equal to rhs if lhs is 3, rhs is 2.
+            // lhs can also not be greater than or equal to rhs if lhs is 2 and rhs is 3
             else
             {
-                if (lhs.equals(rhs)) return IntervalValue(1, 1);
-                else return IntervalValue(0, 1);
+                return IntervalValue(0, 1);
             }
         }
     }
 }
 
-/// Greater than IntervalValues
+// Compare two IntervalValues for less than or equal to
 inline IntervalValue operator<=(const IntervalValue &lhs, const IntervalValue &rhs)
 {
+    // If either lhs or rhs is bottom, the result is bottom
     if (lhs.isBottom() || rhs.isBottom())
     {
         return IntervalValue::bottom();
     }
-    else if (lhs.isTop() || lhs.isTop())
+    // If either lhs or rhs is top, the result is top
+    else if (lhs.isTop() || rhs.isTop())
     {
         return IntervalValue::top();
     }
     else
     {
+        // If both lhs and rhs are numerals (lb = ub), directly compare their values
         if (lhs.is_numeral() && rhs.is_numeral())
         {
             return lhs.lb().leq(rhs.lb()) ? IntervalValue(1, 1) : IntervalValue(0, 0);
         }
         else
         {
-            // lhs [1,2] rhs [2,3]
-            if (lhs.ub().getNumeral() <= rhs.lb().getNumeral())
+            // Return [1,1] means lhs is totally less than or equal to rhs
+            // When lhs.ub <= rhs.lb, e.g., lhs:[1, 2] rhs:[2, 3]
+            // lhs.ub(2) <= rhs.lb(2)
+            if (lhs.ub().leq(rhs.lb()))
             {
                 return IntervalValue(1, 1);
-                // lhs [3,4] rhs[1,2]
             }
-            else if (lhs.lb().getNumeral() > rhs.ub().getNumeral())
+            // Return [0,0] means lhs is totally impossible to be less than or equal to rhs
+            // i.e., lhs is totally greater than rhs
+            // When lhs.lb > rhs.ub, e.g., lhs:[3, 4] rhs:[1, 2]
+            // lhs.lb(3) > rhs.ub(2)
+            // It means lhs.lb() > rhs.ub()
+            else if (!lhs.lb().leq(rhs.ub()))
             {
                 return IntervalValue(0, 0);
-                // lhs [1,3] rhs [2,4]
             }
+            // For other cases, lhs can be less than or equal to rhs or not, depending on the values
+            // e.g., lhs: [2,4], rhs: [1,3],
+            // lhs can be less than or equal to rhs if lhs is 3, rhs is 3.
+            // lhs can also not be less than or equal to rhs if lhs is 3 and rhs is 2
             else
             {
-                if (lhs.equals(rhs)) return IntervalValue(1, 1);
-                else return IntervalValue(0, 1);
+                return IntervalValue(0, 1);
             }
         }
     }
@@ -765,8 +830,9 @@ inline IntervalValue operator>>(const IntervalValue &lhs, const IntervalValue &r
             NumericLiteral lu = lhs.lb() >> shift.ub();
             NumericLiteral ul = lhs.ub() >> shift.lb();
             NumericLiteral uu = lhs.ub() >> shift.ub();
-            return IntervalValue(std::min({ll.getNumeral(), lu.getNumeral(), ul.getNumeral(), uu.getNumeral()}),
-                                 std::max({ll.getNumeral(), lu.getNumeral(), ul.getNumeral(), uu.getNumeral()}));
+            std::vector<NumericLiteral> vec{ll, lu, ul, uu};
+            return IntervalValue(NumericLiteral::min(vec),
+                                 NumericLiteral::max(vec));
         }
     }
 }
@@ -778,19 +844,19 @@ inline IntervalValue operator&(const IntervalValue &lhs, const IntervalValue &rh
         return IntervalValue::bottom();
     else if (lhs.is_numeral() && rhs.is_numeral())
     {
-        return IntervalValue((s32_t)lhs.getNumeral() & (s32_t)rhs.getNumeral());
+        return IntervalValue(lhs.lb() & rhs.lb());
     }
     else if (lhs.lb().getNumeral() >= 0 && rhs.lb().getNumeral() >= 0)
     {
-        return IntervalValue(0.0, std::min(lhs.ub().getNumeral(), rhs.ub().getNumeral()));
+        return IntervalValue((s64_t) 0, min(lhs.ub(), rhs.ub()));
     }
     else if (lhs.lb().getNumeral() >= 0)
     {
-        return IntervalValue(0.0, lhs.ub().getNumeral());
+        return IntervalValue((s64_t) 0, lhs.ub());
     }
     else if (rhs.lb().getNumeral() >= 0)
     {
-        return IntervalValue(0.0, rhs.ub().getNumeral());
+        return IntervalValue((s64_t) 0, rhs.ub());
     }
     else
     {
@@ -813,13 +879,13 @@ inline IntervalValue operator|(const IntervalValue &lhs, const IntervalValue &rh
     if (lhs.isBottom() || rhs.isBottom())
         return IntervalValue::bottom();
     else if (lhs.is_numeral() && rhs.is_numeral())
-        return IntervalValue((s32_t)lhs.getNumeral() | (s32_t)rhs.getNumeral());
+        return IntervalValue(lhs.lb() | rhs.lb());
     else if (lhs.lb().getNumeral() >= 0 && !lhs.ub().is_infinity() &&
              rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity())
     {
-        double m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
-        double ub = next_power_of_2(s64_t(m+1));
-        return IntervalValue(0.0, ub);
+        s64_t m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
+        s64_t ub = next_power_of_2(s64_t(m+1));
+        return IntervalValue((s64_t) 0, (s64_t) ub);
     }
     else
     {
@@ -842,13 +908,13 @@ inline IntervalValue operator^(const IntervalValue &lhs, const IntervalValue &rh
     if (lhs.isBottom() || rhs.isBottom())
         return IntervalValue::bottom();
     else if (lhs.is_numeral() && rhs.is_numeral())
-        return IntervalValue((s32_t)lhs.getNumeral() ^ (s32_t)rhs.getNumeral());
+        return IntervalValue(lhs.lb() ^ rhs.lb());
     else if (lhs.lb().getNumeral() >= 0 && !lhs.ub().is_infinity() &&
              rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity())
     {
-        double m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
-        double ub = next_power_of_2(s64_t(m+1));
-        return IntervalValue(0.0, ub);
+        s64_t m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
+        s64_t ub = next_power_of_2(s64_t(m+1));
+        return IntervalValue((s64_t) 0, (s64_t) ub);
     }
     else
     {

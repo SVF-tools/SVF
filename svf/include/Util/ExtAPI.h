@@ -31,280 +31,55 @@
 #define __ExtAPI_H
 
 #include "SVFIR/SVFValue.h"
-#include "Util/cJSON.h"
-#include "Util/config.h"
+#include <Util/config.h>
 #include <string>
+#include <vector>
 #include <map>
 
-#define EXTAPI_JSON_PATH "svf/include/Util/ExtAPI.json"
-#define JSON_OPT_OVERWRITE "overwrite_app_function"
-#define JSON_OPT_FUNCTIONTYPE "type"
+/// For a more detailed explanation of how External APIs are handled in SVF, please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
+
+#define DEFAULT_EXTAPI_BC_PATH "/svf-llvm/extapi.bc" // Default path to extapi.bc through the SVF build method(e.g. source ./build.sh)
 
 namespace SVF
 {
 
-/*
-
-** Specifications in ExtAPI.json
-
-****  Overview of the Specification Language
-The specification language of external functions is based on the JSON format. And every function defined by the Specification Language is an object that represents the specification rules. These Specification Language objects for functions contain four parts:
-1. the signature of the function, (Mandatory)
-2. the type of the function, (Mandatory)
-3. the switch that controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code, (Mandatory)
-4. the side-effect of the function. (Optional)
-
-*** [1] the signature of the function (Mandatory)
-"return": return value type (Only care about whether the return value is a pointer during analysis)
-"argument": argument types (Only care about the number of arguments during analysis)
-
-
-*** [2] the type of the function (Mandatory)
-Function type represents the properties of the function.
-For example,
-"EFT_ALLOC" represents if this external function allocates a new object and assigns it to one of its arguments,
-For the selection of function type and a more detailed explanation, please refer to the definition of enum *extType* in ExtAPI.h.
-
-
-*** [3] the switch that controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code (Mandatory)
-The switch *overwrite_app_function* controls whether the specification rules defined in the ExtAPI.json overwrite the functions defined in the user code (e.g., CPP files). When the switch *overwrite_app_function* is set to a value of 1, SVF will use the specification rules in ExtAPI.json to conduct the analysis and ignore the user-defined functions in the input CPP/bc files.
-overwrite_app_function = 0: Analyze the user-defined functions.
-overwrite_app_function = 1: Use specifications in ExtAPI.json to overwrite the user-defined functions.
-
-For example, The following is the code to be analyzed, which has a foo() function,
---------------------------------------------------------
-char* foo(char* arg)
-{
-    return arg;
-}
-
-int main()
-{
-    char* ret = foo("abc");
-    return 0;
-}
---------------------------------------------------------
-function foo() has a definition, but you want SVF not to use this definition when analyzing, and you think foo () should do nothing, Then you can add a new entry in ExtAPI.json, and set *"overwrite_app_function": 1*
- "foo": {
-        "return":  "char*",
-        "arguments":  "(char*)",
-        "type": "EFT_NOOP",
-        "overwrite_app_function": 1
- }
-When SVF is analyzing foo(), SVF will use the entry you defined in ExtAPI.json, and ignore the actual definition of foo() in the program.
-
-Most of the time, overwrite_app_function is 0, unless you want to redefine a function.
-
-
-*** [4] the side-effect of the function (Optional, if there is no side-effect of that function)
-Function side-effect indicate the relationships between input and output,
-mainly between function parameters or between parameters and return values after the execution.
-For example,
-"CopyStmt": ["Arg2", "Ret"] indicates that after this external function is executed, the value of the 2nd parameter is copied into the return value.
-
-For operators of function operation, there are the following options:
-"AddrStmt",
-"CopyStmt",
-"LoadStmt"
-"StoreStmt",
-"GepStmt",
-"BinaryOPStmt",
-"UnaryOPStmt",
-"CmpStmt",
-"memset_like": the function has similar side-effect to function "void *memset(void *str, int c, size_t n)",
-"memcpy_like": the function has similar side-effect to function "void *memcpy(void *dest, const void * src, size_t n)",
-"funptr_ops": the function has similar side-effect to function "void *dlsym(void *handle, const char *symbol)",
-"Rb_tree_ops: the function has similar side-effect to function "_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_".
-
-For operands of function operation,, there are the following options:
-"Arg": represents a parameter,
-"Obj": represents a object,
-"Ret": represents a return value,
-"Dummy": represents a dummy node.
-
-*/
-
 class ExtAPI
 {
-public:
-
-    // External Function types
-    // Assume a call in the form LHS= F(arg0, arg1, arg2, arg3).
-    enum extType
-    {
-        EFT_NOOP = 0,        // no effect on pointers
-        EFT_ALLOC,           // returns a ptr to a newly allocated object
-        EFT_REALLOC,         // like L_A0 if arg0 is a non-null ptr, else ALLOC
-        EFT_FREE,            // free memory arg0 and all pointers passing into free function
-        EFT_FREE_MULTILEVEL, // any argument with 2-level pointer passing too a free wrapper function e.g., XFree(void**) which frees memory for void* and void**
-        EFT_NOSTRUCT_ALLOC,  // like ALLOC but only allocates non-struct data
-        EFT_STAT,            // retval points to an unknown static var X
-        EFT_STAT2,           // ret -> X -> Y (X, Y - external static vars)
-        EFT_L_A0,            // copies arg0, arg1, or arg2 into LHS
-        EFT_L_A1,
-        EFT_L_A2,
-        EFT_L_A8,
-        EFT_L_A0__A0R_A1,  // stores arg1 into *arg0 and returns arg0 (currently only for memset)
-        EFT_L_A0__A0R_A1R, // copies the data that arg1 points to into the location
-        EFT_L_A1__FunPtr,  // obtain the address of a symbol based on the arg1 (char*) and parse a function to LHS (e.g., void *dlsym(void *handle, char *funname);)
-        //  arg0 points to; note that several fields may be
-        //  copied at once if both point to structs.
-        //  Returns arg0.
-        EFT_A1R_A0R,      // copies *arg0 into *arg1, with non-ptr return
-        EFT_A3R_A1R_NS,   // copies *arg1 into *arg3 (non-struct copy only)
-        EFT_A1R_A0,       // stores arg0 into *arg1
-        EFT_A2R_A1,       // stores arg1 into *arg2
-        EFT_A4R_A1,       // stores arg1 into *arg4
-        EFT_L_A0__A2R_A0, // stores arg0 into *arg2 and returns it
-        EFT_L_A0__A1_A0,  // store arg1 into arg0's base and returns arg0
-        EFT_A0R_NEW,      // stores a pointer to an allocated object in *arg0
-        EFT_A1R_NEW,      // as above, into *arg1, etc.
-        EFT_A2R_NEW,
-        EFT_A4R_NEW,
-        EFT_A11R_NEW,
-        EFT_STD_RB_TREE_INSERT_AND_REBALANCE, // Some complex effects
-        EFT_STD_RB_TREE_INCREMENT,            // Some complex effects
-        EFT_STD_LIST_HOOK,                    // Some complex effects
-
-        CPP_EFT_A0R_A1,       // stores arg1 into *arg0
-        CPP_EFT_A0R_A1R,      // copies *arg1 into *arg0
-        CPP_EFT_A1R,          // load arg1
-        EFT_CXA_BEGIN_CATCH,  //__cxa_begin_catch
-        CPP_EFT_DYNAMIC_CAST, // dynamic_cast
-        EFT_NULL              // not found in the list
-    };
-
 private:
-
-    std::map<std::string, extType> type_pair =
-    {
-        {"EFT_NOOP", EFT_NOOP},
-        {"EFT_ALLOC", EFT_ALLOC},
-        {"EFT_REALLOC", EFT_REALLOC},
-        {"EFT_FREE", EFT_FREE},
-        {"EFT_FREE_MULTILEVEL", EFT_FREE_MULTILEVEL},
-        {"EFT_NOSTRUCT_ALLOC", EFT_NOSTRUCT_ALLOC},
-        {"EFT_STAT", EFT_STAT},
-        {"EFT_STAT2", EFT_STAT2},
-        {"EFT_L_A0", EFT_L_A0},
-        {"EFT_L_A1", EFT_L_A1},
-        {"EFT_L_A2", EFT_L_A2},
-        {"EFT_L_A8", EFT_L_A8},
-        {"EFT_L_A0__A0R_A1", EFT_L_A0__A0R_A1},
-        {"EFT_L_A0__A0R_A1R", EFT_L_A0__A0R_A1R},
-        {"EFT_L_A1__FunPtr", EFT_L_A1__FunPtr},
-        {"EFT_A1R_A0R", EFT_A1R_A0R},
-        {"EFT_A3R_A1R_NS", EFT_A3R_A1R_NS},
-        {"EFT_A1R_A0", EFT_A1R_A0},
-        {"EFT_A2R_A1", EFT_A2R_A1},
-        {"EFT_A4R_A1", EFT_A4R_A1},
-        {"EFT_L_A0__A2R_A0", EFT_L_A0__A2R_A0},
-        {"EFT_L_A0__A1_A0", EFT_L_A0__A1_A0},
-        {"EFT_A0R_NEW", EFT_A0R_NEW},
-        {"EFT_A1R_NEW", EFT_A1R_NEW},
-        {"EFT_A2R_NEW", EFT_A2R_NEW},
-        {"EFT_A4R_NEW", EFT_A4R_NEW},
-        {"EFT_A11R_NEW", EFT_A11R_NEW},
-        {"EFT_STD_RB_TREE_INSERT_AND_REBALANCE", EFT_STD_RB_TREE_INSERT_AND_REBALANCE},
-        {"EFT_STD_RB_TREE_INCREMENT", EFT_STD_RB_TREE_INCREMENT},
-        {"EFT_STD_LIST_HOOK", EFT_STD_LIST_HOOK},
-        {"CPP_EFT_A0R_A1R", CPP_EFT_A0R_A1R},
-        {"CPP_EFT_A1R", CPP_EFT_A1R},
-        {"EFT_CXA_BEGIN_CATCH", EFT_CXA_BEGIN_CATCH},
-        {"CPP_EFT_DYNAMIC_CAST", CPP_EFT_DYNAMIC_CAST},
-        {"", EFT_NULL}
-    };
 
     static ExtAPI *extOp;
 
-    // Store specifications of external functions in ExtAPI.json file
-    static cJSON *root;
+    // extapi.bc file path
+    static std::string extBcPath;
 
     ExtAPI() = default;
 
 public:
 
-    class Operation
-    {
-    public:
-        Operation() {};
-
-        Operation(std::string opn, std::vector<std::string> varstr) : op(opn), operandStr(varstr) {};
-
-        std::string getOperator()
-        {
-            return op;
-        }
-
-        std::vector<std::string> getOperandStr()
-        {
-            return operandStr;
-        }
-
-        std::vector<NodeID> &getOperands()
-        {
-            return operands;
-        }
-
-        void setOperands(std::vector<NodeID> vars)
-        {
-            operands = vars;
-        }
-
-    private:
-        std::string op;
-        std::vector<std::string> operandStr;
-        std::vector<NodeID> operands;
-    };
-    static ExtAPI *getExtAPI(const std::string& = "");
+    static ExtAPI *getExtAPI();
 
     static void destory();
 
-    // Add an entry with the specified fields to the ExtAPI, which will be reflected immediately by further ExtAPI queries
-    void add_entry(const char* funName, extType type, bool overwrite_app_function);
+    // Set extapi.bc file path
+    static bool setExtBcPath(const std::string& path);
 
-    // Get numeric index of the argument in external function
-    u32_t getArgPos(const std::string& s);
+    // Get extapi.bc file path
+    std::string getExtBcPath();
 
-    // return value >= 0 is an argument node
-    // return value = -1 is an inst node
-    // return value = -2 is a Dummy node
-    // return value = -3 is an object node
-    // return value = -4 is an offset
-    // return value = -5 is an illegal operand format
-    s32_t getNodeIDType(const std::string& s);
+    // Get the annotation of (F)
+    std::string getExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
 
-    // Get the corresponding name in ext_t, e.g. "EXT_ADDR" in {"addr", EXT_ADDR},
-    std::string get_opName(const std::string& s);
-    // opposite for extType
-    const std::string& extType_toString(extType type);
-
-    // Get external function name, e.g "memcpy"
-    std::string get_name(const SVFFunction *F);
-
-    // Get arguments of the operation, e.g. ["A1R", "A0", "A2"]
-    std::vector<std::string> get_opArgs(const cJSON *value);
-
-    // Get specifications of external functions in ExtAPI.json file
-    cJSON *get_FunJson(const std::string &funName);
-
-    // Get all operations of an extern function
-    std::vector<Operation> getAllOperations(std::string funName);
-
-    // Get property of the operation, e.g. "EFT_A1R_A0R"
-    extType get_type(const SVF::SVFFunction *callee);
-    extType get_type(const std::string& funName);
-
-    // Get priority of he function, return value
-    // 0: Apply user-defined functions
-    // 1: Apply function specification in ExtAPI.json
-    u32_t isOverwrittenAppFunction(const SVF::SVFFunction *callee);
+    // Does (F) have some annotation?
+    bool hasExtFuncAnnotation(const SVFFunction* fun, const std::string& funcAnnotation);
 
     // Does (F) have a static var X (unavailable to us) that its return points to?
     bool has_static(const SVFFunction *F);
 
-    // Assuming hasStatic(F), does (F) have a second static Y where X -> Y?
-    bool has_static2(const SVFFunction *F);
+    // Does (F) have a memcpy_like operation?
+    bool is_memcpy(const SVFFunction *F);
+
+    // Does (F) have a memset_like operation?
+    bool is_memset(const SVFFunction *F);
 
     // Does (F) allocate a new object and return it?
     bool is_alloc(const SVFFunction *F);
@@ -315,20 +90,8 @@ public:
     // Get the position of argument which holds the new object
     s32_t get_alloc_arg_pos(const SVFFunction *F);
 
-    // Does (F) allocate only non-struct objects?
-    bool no_struct_alloc(const SVFFunction *F);
-
-    // Does (F) not free/release any memory?
-    bool is_dealloc(const SVFFunction *F);
-
-    // Does (F) not do anything with the known pointers?
-    bool is_noop(const SVFFunction *F);
-
     // Does (F) reallocate a new object?
     bool is_realloc(const SVFFunction *F);
-
-    // Does (F) have the same return type(pointer or nonpointer) and same number of arguments
-    bool is_sameSignature(const SVFFunction *F);
 
     // Should (F) be considered "external" (either not defined in the program
     //   or a user-defined version of a known alloc or no-op)?

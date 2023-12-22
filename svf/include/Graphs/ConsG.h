@@ -52,7 +52,7 @@ public:
     typedef FIFOWorkList<NodeID> WorkList;
 
 protected:
-    SVFIR*pag;
+    SVFIR* pag;
     NodeToRepMap nodeToRepMap;
     NodeToSubsMap nodeToSubsMap;
     WorkList nodesToBeCollapsed;
@@ -72,7 +72,7 @@ protected:
         return pag->getPTASVFStmtSet(kind);
     }
 
-    /// Wappers used internally, not expose to Andernsen Pass
+    /// Wrappers used internally, not expose to Andersen Pass
     //@{
     inline NodeID getValueNode(const SVFValue* value) const
     {
@@ -180,7 +180,7 @@ public:
     /// Add Copy edge
     CopyCGEdge* addCopyCGEdge(NodeID src, NodeID dst);
     /// Add Gep edge
-    NormalGepCGEdge*  addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls);
+    NormalGepCGEdge* addNormalGepCGEdge(NodeID src, NodeID dst, const AccessPath& ap);
     VariantGepCGEdge* addVariantGepCGEdge(NodeID src, NodeID dst);
     /// Add Load edge
     LoadCGEdge* addLoadCGEdge(NodeID src, NodeID dst);
@@ -214,9 +214,9 @@ public:
 
     /// Used for cycle elimination
     //@{
-    /// Remove edge from old dst target, change edge dst id and add modifed edge into new dst
+    /// Remove edge from old dst target, change edge dst id and add modified edge into new dst
     void reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* newDstNode);
-    /// Remove edge from old src target, change edge dst id and add modifed edge into new src
+    /// Remove edge from old src target, change edge dst id and add modified edge into new src
     void reTargetSrcOfEdge(ConstraintEdge* edge, ConstraintNode* newSrcNode);
     /// Remove addr edge from their src and dst edge sets
     void removeAddrEdge(AddrCGEdge* edge);
@@ -325,9 +325,9 @@ public:
         return (mem->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object
-    inline NodeID getGepObjVar(NodeID id, const LocationSet& ls)
+    inline NodeID getGepObjVar(NodeID id, const APOffset& apOffset)
     {
-        NodeID gep =  pag->getGepObjVar(id,ls);
+        NodeID gep =  pag->getGepObjVar(id, apOffset);
         /// Create a node when it is (1) not exist on graph and (2) not merged
         if(sccRepNode(gep)==gep && hasConstraintNode(gep)==false)
             addConstraintNode(new ConstraintNode(gep),gep);

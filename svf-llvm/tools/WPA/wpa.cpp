@@ -31,6 +31,8 @@
 #include "WPA/WPAPass.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
+#include "SVFIR/SVFFileSystem.h"
+
 
 using namespace llvm;
 using namespace std;
@@ -38,28 +40,35 @@ using namespace SVF;
 
 int main(int argc, char** argv)
 {
-
-    char** arg_value = new char*[argc];
-    std::vector<std::string> moduleNameVec;
-    moduleNameVec =
+    auto moduleNameVec =
         OptionBase::parseOptions(argc, argv, "Whole Program Points-to Analysis",
                                  "[options] <input-bitcode...>");
 
-    if (Options::WriteAnder() == "ir_annotator")
+    // Refers to content of a singleton unique_ptr<SVFIR> in SVFIR.
+    SVFIR* pag;
+
+    if (Options::ReadJson())
     {
-        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+        pag = SVFIRReader::read(moduleNameVec.front());
     }
+    else
+    {
+        if (Options::WriteAnder() == "ir_annotator")
+        {
+            LLVMModuleSet::preProcessBCs(moduleNameVec);
+        }
 
-    SVFModule* svfModule =
-        LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+        SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
 
-    /// Build SVFIR
-    SVFIRBuilder builder(svfModule);
-    SVFIR* pag = builder.build();
+        /// Build SVFIR
+        SVFIRBuilder builder(svfModule);
+        pag = builder.build();
+    }
 
     WPAPass wpa;
     wpa.runOnModule(pag);
 
-    delete[] arg_value;
+    LLVMModuleSet::releaseLLVMModuleSet();
+
     return 0;
 }

@@ -34,6 +34,7 @@
 #include "Util/CppUtil.h"
 #include "SVFIR/SVFValue.h"
 #include "SVFIR/SVFModule.h"
+#include "Util/Options.h"
 
 namespace SVF
 {
@@ -42,6 +43,7 @@ class SymbolTableInfo;
 
 class LLVMModuleSet
 {
+    friend class SVFIRBuilder;
 
 public:
 
@@ -62,9 +64,10 @@ public:
 
 private:
     static LLVMModuleSet* llvmModuleSet;
-    SymbolTableInfo *symInfo;
-    std::unique_ptr<SVFModule> svfModule;
-    std::unique_ptr<LLVMContext> cxts;
+    static bool preProcessed;
+    SymbolTableInfo* symInfo;
+    SVFModule* svfModule; ///< Borrowed from singleton SVFModule::svfModule
+    std::unique_ptr<LLVMContext> owned_ctx;
     std::vector<std::unique_ptr<Module>> owned_modules;
     std::vector<std::reference_wrapper<Module>> modules;
 
@@ -72,6 +75,8 @@ private:
     FunDeclToDefMapTy FunDeclToDefMap;
     /// Function definition to function declaration map
     FunDefToDeclsMapTy FunDefToDeclsMap;
+    /// Record some "sse_" function declarations used in other ext function definition, e.g., svf_ext_foo(), and svf_ext_foo() used in app functions
+    FunctionSetType ExtFuncsVec;
     /// Global definition to a rep definition map
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
@@ -84,39 +89,40 @@ private:
     SVFValue2LLVMValueMap SVFValue2LLVMValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
-    Set<const StInfo*> StInfos;
 
     /// Constructor
     LLVMModuleSet();
-    ~LLVMModuleSet();
 
     void build();
 
 public:
+    ~LLVMModuleSet() = default;
+
     static inline LLVMModuleSet* getLLVMModuleSet()
     {
-        if (llvmModuleSet == nullptr)
-            llvmModuleSet = new LLVMModuleSet();
+        if (!llvmModuleSet)
+            llvmModuleSet = new LLVMModuleSet;
         return llvmModuleSet;
     }
 
     static void releaseLLVMModuleSet()
     {
-        if (llvmModuleSet)
-            delete llvmModuleSet;
+        delete llvmModuleSet;
         llvmModuleSet = nullptr;
     }
 
-    SVFModule* buildSVFModule(Module& mod);
-    SVFModule* buildSVFModule(const std::vector<std::string>& moduleNameVec);
+    // Build an SVF module from a given LLVM Module instance (for use e.g. in a LLVM pass)
+    static SVFModule* buildSVFModule(Module& mod);
+
+    // Build an SVF module from the bitcode files provided in `moduleNameVec`
+    static SVFModule* buildSVFModule(const std::vector<std::string>& moduleNameVec);
 
     inline SVFModule* getSVFModule()
     {
-        assert(svfModule && "svfModule has not been built yet!");
-        return svfModule.get();
+        return svfModule;
     }
 
-    void preProcessBCs(std::vector<std::string>& moduleNameVec);
+    static void preProcessBCs(std::vector<std::string>& moduleNameVec);
 
     u32_t getModuleNum() const
     {
@@ -140,7 +146,7 @@ public:
     }
 
     // Dump modules to files
-    void dumpModulesToFile(const std::string suffix);
+    void dumpModulesToFile(const std::string& suffix);
 
     inline void addFunctionMap(const Function* func, SVFFunction* svfFunc)
     {
@@ -232,6 +238,19 @@ public:
     SVFConstant* getOtherSVFConstant(const Constant* oc);
 
     SVFOtherValue* getSVFOtherValue(const Value* ov);
+
+    /// Remove unused function in extapi.bc module
+    bool isCalledExtFunction(Function* func)
+    {
+        /// if this function func defined in extapi.bc but never used in application code (without any corresponding declared functions).
+        if (func->getParent()->getName().str() == ExtAPI::getExtAPI()->getExtBcPath()
+                && FunDefToDeclsMap.find(func) == FunDefToDeclsMap.end()
+                && std::find(ExtFuncsVec.begin(), ExtFuncsVec.end(), func) == ExtFuncsVec.end())
+        {
+            return true;
+        }
+        return false;
+    }
 
     /// Get the corresponding Function based on its name
     inline const SVFFunction* getSVFFunction(const std::string& name)
@@ -330,8 +349,8 @@ private:
     SVFType* addSVFTypeInfo(const Type* t);
     /// Collect a type info
     StInfo* collectTypeInfo(const Type* ty);
-    /// Collect the struct info; nf contains the number of fields after flattening
-    StInfo* collectStructInfo(const StructType *T, u32_t& nf);
+    /// Collect the struct info and set the number of fields after flattening
+    StInfo* collectStructInfo(const StructType* structTy, u32_t& numFields);
     /// Collect the array info
     StInfo* collectArrayInfo(const ArrayType* T);
     /// Collect simple type (non-aggregate) info
@@ -340,9 +359,12 @@ private:
     std::vector<const Function*> getLLVMGlobalFunctions(const GlobalVariable* global);
 
     void loadModules(const std::vector<std::string>& moduleNameVec);
+    // Loads ExtAPI bitcode file; uses LLVMContext made while loading module bitcode files or from Module
+    void loadExtAPIModules();
     void addSVFMain();
 
     void createSVFDataStructure();
+    void createSVFFunction(const Function* func);
     void initSVFFunction();
     void initSVFBasicBlock(const Function* func);
     void initDomTree(SVFFunction* func, const Function* f);
@@ -351,8 +373,7 @@ private:
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module
     void prePassSchedule();
-    bool preProcessed;
-    void build_symbol_table() const;
+    void buildSymbolTable() const;
 };
 
 } // End namespace SVF

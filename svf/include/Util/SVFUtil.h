@@ -200,6 +200,11 @@ inline CallSite getSVFCallSite(const SVFInstruction* inst)
     return cs;
 }
 
+/// Match arguments for callsite at caller and callee
+/// if the arg size does not match then we do not need to connect this parameter
+/// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
+bool matchArgs(const SVFInstruction* cs, const SVFFunction* callee);
+
 /// Return LLVM callsite given a value
 inline CallSite getSVFCallSite(const SVFValue* value)
 {
@@ -210,17 +215,24 @@ inline CallSite getSVFCallSite(const SVFValue* value)
 }
 
 /// Split into two substrings around the first occurrence of a separator string.
-inline std::vector<std::string> split(const std::string& s, char seperator)
+inline std::vector<std::string> split(const std::string& s, char separator)
 {
     std::vector<std::string> output;
     std::string::size_type prev_pos = 0, pos = 0;
-    while((pos = s.find(seperator, pos)) != std::string::npos)
+    while ((pos = s.find(separator, pos)) != std::string::npos)
     {
-        std::string substring( s.substr(prev_pos, pos-prev_pos) );
-        output.push_back(substring);
+        std::string substring(s.substr(prev_pos, pos - prev_pos));
+        if (!substring.empty())
+        {
+            output.push_back(substring);
+        }
         prev_pos = ++pos;
     }
-    output.push_back(s.substr(prev_pos, pos-prev_pos));
+    std::string lastSubstring(s.substr(prev_pos, pos - prev_pos));
+    if (!lastSubstring.empty())
+    {
+        output.push_back(lastSubstring);
+    }
     return output;
 }
 
@@ -292,11 +304,21 @@ bool startAnalysisLimitTimer(unsigned timeLimit);
 void stopAnalysisLimitTimer(bool limitTimerSet);
 
 /// Return true if the call is an external call (external library in function summary table)
-/// If the libary function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
+/// If the library function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
 //@{
 inline bool isExtCall(const SVFFunction* fun)
 {
     return fun && ExtAPI::getExtAPI()->is_ext(fun);
+}
+
+inline bool isMemcpyExtFun(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_memcpy(fun);
+}
+
+inline bool isMemsetExtFun(const SVFFunction* fun)
+{
+    return fun && ExtAPI::getExtAPI()->is_memset(fun);
 }
 
 /// Return true if the call is a heap allocator/reallocator
@@ -326,22 +348,6 @@ inline int getHeapAllocHoldingArgPosition(const SVFFunction* fun)
 inline bool isReallocExtFun(const SVFFunction* fun)
 {
     return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
-}
-
-/// Return true if the call is a heap dealloc or not
-//@{
-/// note that this function is not suppose to be used externally
-inline bool isDeallocExtFun(const SVFFunction* fun)
-{
-    return fun && (ExtAPI::getExtAPI()->is_dealloc(fun));
-}
-
-/// Return true if the call is a static global call
-//@{
-/// note that this function is not suppose to be used externally
-inline bool isStaticExtFun(const SVFFunction* fun)
-{
-    return fun && ExtAPI::getExtAPI()->has_static(fun);
 }
 
 /// Program entry function e.g. main
@@ -480,43 +486,6 @@ inline bool isReallocExtCall(const SVFInstruction *inst)
 }
 //@}
 
-inline bool isDeallocExtCall(const CallSite cs)
-{
-    return isDeallocExtFun(getCallee(cs));
-}
-
-inline bool isDeallocExtCall(const SVFInstruction *inst)
-{
-    return isDeallocExtFun(getCallee(inst));
-}
-//@}
-
-inline bool isStaticExtCall(const CallSite cs)
-{
-    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
-    return isPtrTy && isStaticExtFun(getCallee(cs));
-}
-
-inline bool isStaticExtCall(const SVFInstruction *inst)
-{
-    bool isPtrTy = inst->getType()->isPointerTy();
-    return isPtrTy && isStaticExtFun(getCallee(inst));
-}
-//@}
-
-/// Return true if the call is a static global call
-//@{
-inline bool isHeapAllocOrStaticExtCall(const CallSite cs)
-{
-    return isStaticExtCall(cs) || isHeapAllocExtCall(cs);
-}
-
-inline bool isHeapAllocOrStaticExtCall(const SVFInstruction *inst)
-{
-    return isStaticExtCall(inst) || isHeapAllocExtCall(inst);
-}
-//@}
-
 /// Return true if this is a thread creation call
 ///@{
 inline bool isThreadForkCall(const CallSite cs)
@@ -625,7 +594,7 @@ inline const SVFValue* getTaskFuncAtHareParForSite(const SVFInstruction *inst)
 }
 //@}
 
-/// Return the task data argument of the parallel_for rountine
+/// Return the task data argument of the parallel_for routine
 //@{
 inline const SVFValue* getTaskDataAtHareParForSite(const CallSite cs)
 {
@@ -653,6 +622,55 @@ move(T &&t) noexcept
 {
     return std::move(t);
 }
+
+/// void_t is not available until C++17. We define it here for C++11/14.
+template <typename... Ts> struct make_void
+{
+    typedef void type;
+};
+template <typename... Ts> using void_t = typename make_void<Ts...>::type;
+
+/// @brief Type trait that checks if a type is iterable
+/// (can be applied on a range-based for loop)
+///@{
+template <typename T, typename = void> struct is_iterable : std::false_type {};
+template <typename T>
+struct is_iterable<T, void_t<decltype(std::begin(std::declval<T&>()) !=
+                                      std::end(std::declval<T&>()))>>
+: std::true_type {};
+template <typename T> constexpr bool is_iterable_v = is_iterable<T>::value;
+///@}
+
+/// @brief Type trait to check if a type is a map or unordered_map.
+///@{
+template <typename T> struct is_map : std::false_type {};
+template <typename... Ts> struct is_map<std::map<Ts...>> : std::true_type {};
+template <typename... Ts>
+struct is_map<std::unordered_map<Ts...>> : std::true_type {};
+template <typename... Ts> constexpr bool is_map_v = is_map<Ts...>::value;
+///@}
+
+/// @brief Type trait to check if a type is a set or unordered_set.
+///@{
+template <typename T> struct is_set : std::false_type {};
+template <typename... Ts> struct is_set<std::set<Ts...>> : std::true_type {};
+template <typename... Ts>
+struct is_set<std::unordered_set<Ts...>> : std::true_type {};
+template <typename... Ts> constexpr bool is_set_v = is_set<Ts...>::value;
+///@}
+
+/// @brief Type trait to check if a type is vector or list.
+template <typename T> struct is_sequence_container : std::false_type {};
+template <typename... Ts>
+struct is_sequence_container<std::vector<Ts...>> : std::true_type {};
+template <typename... Ts>
+struct is_sequence_container<std::deque<Ts...>> : std::true_type {};
+template <typename... Ts>
+struct is_sequence_container<std::list<Ts...>> : std::true_type {};
+template <typename... Ts>
+constexpr bool is_sequence_container_v = is_sequence_container<Ts...>::value;
+///@}
+
 
 } // End namespace SVFUtil
 

@@ -46,6 +46,22 @@ double CFLBase::numOfStartEdges = 0;
 double CFLBase::numOfIteration = 1;
 double CFLBase::numOfChecks = 1;
 
+void CFLBase::checkParameter()
+{
+    // Check for valid grammar file before parsing other options
+    std::string filename = Options::GrammarFilename();
+    bool pagfile = (filename.rfind("PAGGrammar.txt") == filename.length() - std::string("PAGGrammar.txt").length());
+    bool pegfile = (filename.rfind("PEGGrammar.txt") == filename.length() - std::string("PEGGrammar.txt").length());
+    bool vfgfile = (filename.rfind("VFGGrammar.txt") == filename.length() - std::string("VFGGrammar.txt").length());
+    if (!Options::Customized()  && !(pagfile || pegfile || vfgfile))
+    {
+        SVFUtil::errs() << "Invalid alias grammar file: " << Options::GrammarFilename() << "\n"
+                        << "Please use a file that ends with either 'CFGrammar.txt' or 'PEGGrammar.txt', "
+                        << "or use the -customized flag to allow custom grammar files.\n";
+        assert(false && "grammar loading failed!");  // exit with error
+    }
+}
+
 void CFLBase::buildCFLGrammar()
 {
     // Start building grammar
@@ -76,8 +92,7 @@ void CFLBase::buildCFLGraph()
         delete consCG;
     }
     else
-        graph = cflGraphBuilder.buildFromDot(Options::CFLGraph(), grammarBase);
-
+        graph = cflGraphBuilder.build(Options::CFLGraph(), grammarBase);
     // Check CFL Graph and Grammar are accordance with grammar
     CFLGramGraphChecker cflChecker = CFLGramGraphChecker();
     cflChecker.check(grammarBase, &cflGraphBuilder, graph);

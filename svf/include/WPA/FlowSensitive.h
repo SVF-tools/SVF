@@ -75,7 +75,7 @@ public:
     /// Destructor
     ~FlowSensitive() override = default;
 
-    /// Create signle instance of flow-sensitive pointer analysis
+    /// Create single instance of flow-sensitive pointer analysis
     static FlowSensitive* createFSWPA(SVFIR* _pag)
     {
         if (fspta == nullptr)
@@ -100,6 +100,12 @@ public:
 
     /// Flow sensitive analysis
     void analyze() override;
+
+    virtual void solveAndwritePtsToFile(const std::string& filename);
+
+    virtual void readPtsFromFile(const std::string& filename);
+
+    virtual void solveConstraints();
 
     /// Initialize analysis
     void initialize() override;

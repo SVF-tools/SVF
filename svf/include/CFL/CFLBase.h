@@ -61,6 +61,9 @@ public:
         delete grammarBase;
     }
 
+    /// Parameter Checking
+    virtual void checkParameter();
+
     /// Build Grammar from text file
     virtual void buildCFLGrammar();
 
@@ -89,7 +92,7 @@ public:
     //@{
     // Grammar
     static double timeOfBuildCFLGrammar;            // Time of building grammarBase from text file
-    static double timeOfNormalizeGrammar;           // Time of normalizing grammarBase to CFLGrammar
+    static double timeOfNormalizeGrammar;           // Time of normalizing grammarBase to CFGrammar
     // Graph
     static double timeOfBuildCFLGraph;              // Time of building CFLGraph
     static double numOfTerminalEdges;               // Number of terminal labeled edges
@@ -106,7 +109,7 @@ protected:
     SVFIR* svfir;
     CFLGraph* graph;
     GrammarBase* grammarBase;
-    CFLGrammar* grammar;
+    CFGrammar* grammar;
     CFLSolver* solver;
 };
 

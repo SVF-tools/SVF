@@ -27,6 +27,7 @@
  */
 
 #include "SVF-LLVM/LLVMUtil.h"
+#include "AbstractExecution/SVFIR2ItvExeState.h"
 #include "Graphs/SVFG.h"
 #include "WPA/Andersen.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
@@ -70,13 +71,75 @@ std::string printPts(PointerAnalysis* pta, SVFValue* val)
 
 }
 
+/*!
+ * An example to query/collect all SVFStmt from a ICFGNode (iNode)
+ */
+void traverseOnSVFStmt(const ICFGNode* node)
+{
+    SVFIR2ItvExeState* svfir2ExeState = new SVFIR2ItvExeState(SVFIR::getPAG());
+    for (const SVFStmt* stmt: node->getSVFStmts())
+    {
+        if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
+        {
+            svfir2ExeState->translateAddr(addr);
+        }
+        else if (const BinaryOPStmt *binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
+        {
+            svfir2ExeState->translateBinary(binary);
+        }
+        else if (const CmpStmt *cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
+        {
+            svfir2ExeState->translateCmp(cmp);
+        }
+        else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt))
+        {
+            svfir2ExeState->translateLoad(load);
+        }
+        else if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
+        {
+            svfir2ExeState->translateStore(store);
+        }
+        else if (const CopyStmt *copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
+        {
+            svfir2ExeState->translateCopy(copy);
+        }
+        else if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
+        {
+            if (gep->isConstantOffset())
+            {
+                gep->accumulateConstantByteOffset();
+                gep->accumulateConstantOffset();
+            }
+            svfir2ExeState->translateGep(gep);
+        }
+        else if (const SelectStmt *select = SVFUtil::dyn_cast<SelectStmt>(stmt))
+        {
+            svfir2ExeState->translateSelect(select);
+        }
+        else if (const PhiStmt *phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
+        {
+            svfir2ExeState->translatePhi(phi);
+        }
+        else if (const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt))
+        {
+            // To handle Call Edge
+            svfir2ExeState->translateCall(callPE);
+        }
+        else if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt))
+        {
+            svfir2ExeState->translateRet(retPE);
+        }
+        else
+            assert(false && "implement this part");
+    }
+}
+
 
 /*!
  * An example to query/collect all successor nodes from a ICFGNode (iNode) along control-flow graph (ICFG)
  */
-void traverseOnICFG(ICFG* icfg, const SVFInstruction* svfInst)
+void traverseOnICFG(ICFG* icfg, const ICFGNode* iNode)
 {
-    ICFGNode* iNode = icfg->getICFGNode(svfInst);
     FIFOWorkList<const ICFGNode*> worklist;
     Set<const ICFGNode*> visited;
     worklist.push(iNode);
@@ -142,7 +205,6 @@ void traverseOnVFG(const SVFG* vfg, SVFValue* val)
 int main(int argc, char ** argv)
 {
 
-    char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
                         argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>"
@@ -150,10 +212,10 @@ int main(int argc, char ** argv)
 
     if (Options::WriteAnder() == "ir_annotator")
     {
-        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+        LLVMModuleSet::preProcessBCs(moduleNameVec);
     }
 
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
 
     /// Build Program Assignment Graph (SVFIR)
     SVFIRBuilder builder(svfModule);
@@ -186,8 +248,13 @@ int main(int argc, char ** argv)
     /// Collect uses of an LLVM Value
     /// traverseOnVFG(svfg, value);
 
+
     /// Collect all successor nodes on ICFG
-    /// traverseOnICFG(icfg, value);
+    for (const auto &it : *icfg)
+    {
+        const ICFGNode* node = it.second;
+        traverseOnICFG(icfg, node);
+    }
 
     // clean up memory
     delete vfg;
@@ -198,7 +265,6 @@ int main(int argc, char ** argv)
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
     llvm::llvm_shutdown();
-    delete[] arg_value;
     return 0;
 }
 

@@ -78,6 +78,10 @@ public:
     /// Interface expose to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const SVFValue* V1,	const SVFValue* V2);
 
+    /// Retrieve points-to set information
+    virtual const PointsTo& getPts(const SVFValue* value);
+    virtual const PointsTo& getPts(NodeID var);
+
     /// Print all alias pairs
     virtual void PrintAliasPairs(PointerAnalysis* pta);
 

@@ -142,7 +142,12 @@ public:
     //@{
     virtual void writeToFile(const std::string& filename);
     virtual void writeObjVarToFile(const std::string& filename);
+    virtual void writePtsResultToFile(std::fstream& f);
+    virtual void writeGepObjVarMapToFile(std::fstream& f);
     virtual bool readFromFile(const std::string& filename);
+    virtual void readPtsResultFromFile(std::ifstream& f);
+    virtual void readGepObjVarMapFromFile(std::ifstream& f);
+    virtual void readAndSetObjFieldSensitivity(std::ifstream& f, const std::string& delimiterStr);
     //@}
 
 protected:

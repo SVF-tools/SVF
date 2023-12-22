@@ -2,6 +2,7 @@
 
 #include "Util/Options.h"
 #include "Util/CommandLine.h"
+#include "Util/ExtAPI.h"
 
 namespace SVF
 {
@@ -214,7 +215,7 @@ const Option<bool> Options::OCGDotGraph(
 // Program Assignment Graph for pointer analysis (SVFIR.cpp)
 Option<bool> Options::HandBlackHole(
     "blk",
-    "Hanle blackhole edge",
+    "Handle blackhole edge",
     false
 );
 
@@ -253,7 +254,7 @@ const Option<bool> Options::DumpVFG(
 );
 
 
-// Location set for modeling abstract memory object (LocationSet.cpp)
+// Location set for modeling abstract memory object (AccessPath.cpp)
 const Option<bool> Options::SingleStride(
     "stride-only",
     "Only use single stride in LocMemoryModel",
@@ -313,6 +314,18 @@ const Option<bool> Options::ShowSVFIRValue(
 const Option<bool> Options::DumpICFG(
     "dump-icfg",
     "Dump dot graph of ICFG",
+    false
+);
+
+const Option<std::string> Options::DumpJson(
+    "dump-json",
+    "Dump the SVFIR in JSON format",
+    ""
+);
+
+const Option<bool> Options::ReadJson(
+    "read-json",
+    "Read the SVFIR in JSON format",
     false
 );
 
@@ -449,12 +462,12 @@ const Option<std::string> Options::MSSAFun(
 
 const OptionMap<MemSSA::MemPartition> Options::MemPar(
     "mem-par",
-    "Memory region partiion strategies (e.g., for SVFG construction)",
+    "Memory region partition strategies (e.g., for SVFG construction)",
     MemSSA::MemPartition::IntraDisjoint,
 {
     {MemSSA::MemPartition::Distinct, "distinct", "memory region per each object"},
-    {MemSSA::MemPartition::IntraDisjoint, "intra-disjoint", "memory regions partioned based on each function"},
-    {MemSSA::MemPartition::InterDisjoint, "inter-disjoint", "memory regions partioned across functions"},
+    {MemSSA::MemPartition::IntraDisjoint, "intra-disjoint", "memory regions partitioned based on each function"},
+    {MemSSA::MemPartition::InterDisjoint, "inter-disjoint", "memory regions partitioned across functions"},
 }
 );
 
@@ -493,7 +506,7 @@ const Option<bool> Options::UsePCG(
 
 const Option<bool> Options::IntraLock(
     "intra-lock-td-edge",
-    "Use simple intra-procedual lock for adding SVFG edges",
+    "Use simple intra-procedural lock for adding SVFG edges",
     true
 );
 
@@ -667,14 +680,20 @@ const Option<bool> Options::SymTabPrint(
     false
 );
 
-
-
 // Conditions.cpp
 const Option<u32_t> Options::MaxZ3Size(
     "max-z3-size",
     "Maximum size limit for Z3 expression",
     30
 );
+
+// BoundedZ3Expr.cpp
+const Option<u32_t> Options::MaxBVLen(
+    "max-bv-len",
+    "Maximum length limit for Z3 bitvector",
+    64
+);
+
 
 
 // SaberCondAllocator.cpp
@@ -751,8 +770,13 @@ const Option<bool> Options::VtableInSVFIR(
     false
 );
 
-
 //WPAPass.cpp
+const Option<std::string> Options::ExtAPIPath(
+    "extapi",
+    "External API extapi.bc",
+    ""
+);
+
 const Option<bool> Options::AnderSVFG(
     "svfg",
     "Generate SVFG after Andersen's Analysis",
@@ -776,7 +800,7 @@ OptionMultiple<PointerAnalysis::PTATY> Options::PASelected(
 {
     {PointerAnalysis::Andersen_WPA, "nander", "Standard inclusion-based analysis"},
     {PointerAnalysis::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"},
-    {PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation includion-based analysis"},
+    {PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation inclusion-based analysis"},
     {PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"},
     {PointerAnalysis::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"},
     // Disabled till further work is done.
@@ -845,7 +869,13 @@ const Option<bool> Options::POCRAlias(
 
 const Option<bool> Options::POCRHybrid(
     "pocr-hybrid",
-    "When explicit to true, POCRHybridSolver transfer CFL graph to internal hybird graph representation.",
+    "When explicit to true, POCRHybridSolver transfer CFL graph to internal hybrid graph representation.",
+    false
+);
+
+const Option<bool> Options::Customized(
+    "customized",
+    "When explicit to true, user can use any grammar file.",
     false
 );
 

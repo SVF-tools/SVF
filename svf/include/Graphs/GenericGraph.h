@@ -36,6 +36,11 @@
 
 namespace SVF
 {
+/// Forward declaration of some friend classes
+///@{
+template <typename, typename> class GenericGraphWriter;
+template <typename, typename> class GenericGraphReader;
+///@}
 
 /*!
  * Generic edge on the graph as base class
@@ -43,6 +48,8 @@ namespace SVF
 template<class NodeTy>
 class GenericEdge
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     /// Node type
@@ -133,6 +140,8 @@ protected:
 template<class NodeTy,class EdgeTy>
 class GenericNode
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
 
 public:
     typedef NodeTy NodeType;
@@ -239,7 +248,7 @@ public:
     }
     //@}
 
-    /// Iterators used for SCC detection, overwrite it in child class if necessory
+    /// Iterators used for SCC detection, overwrite it in child class if necessary
     //@{
     virtual inline iterator directOutEdgeBegin()
     {
@@ -331,9 +340,13 @@ public:
  * Generic graph for program representation
  * It is base class and needs to be instantiated
  */
-template<class NodeTy,class EdgeTy>
+template<class NodeTy, class EdgeTy>
 class GenericGraph
 {
+    friend class SVFIRWriter;
+    friend class SVFIRReader;
+    friend class GenericGraphWriter<NodeTy, EdgeTy>;
+    friend class GenericGraphReader<NodeTy, EdgeTy>;
 
 public:
     typedef NodeTy NodeType;
@@ -348,9 +361,7 @@ public:
     //@}
 
     /// Constructor
-    GenericGraph(): edgeNum(0),nodeNum(0)
-    {
-    }
+    GenericGraph() : edgeNum(0), nodeNum(0) {}
 
     /// Destructor
     virtual ~GenericGraph()
@@ -449,7 +460,7 @@ public:
 
 /* !
  * GenericGraphTraits specializations for generic graph algorithms.
- * Provide graph traits for tranversing from a node using standard graph traversals.
+ * Provide graph traits for traversing from a node using standard graph traversals.
  */
 namespace SVF
 {

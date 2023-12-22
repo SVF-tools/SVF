@@ -112,8 +112,8 @@ public:
         {
             return false;
         }
-        CFLGrammar::Kind copyKind = grammar->str2Kind("copy");
-        CFLGrammar::Kind copybarKind = grammar->str2Kind("copybar");
+        CFGrammar::Kind copyKind = grammar->strToKind("copy");
+        CFGrammar::Kind copybarKind = grammar->strToKind("copybar");
         solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(src),graph->getGNode(dst), copyKind));
         solver->pushIntoWorklist(graph->addCFLEdge(graph->getGNode(dst),graph->getGNode(src), copybarKind));
         return true;

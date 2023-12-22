@@ -61,7 +61,7 @@ public:
     /// Align identifiers in each region to a word.
     static const Option<bool> RegionAlign;
 
-    /// Predict occurences of points-to sets in the staged points-to set to
+    /// Predict occurrences of points-to sets in the staged points-to set to
     /// weigh more common points-to sets as more important.
     static const Option<bool> PredictPtOcc;
 
@@ -121,7 +121,7 @@ public:
     // Sparse value-flow graph (VFG.cpp)
     static const Option<bool> DumpVFG;
 
-    // Location set for modeling abstract memory object (LocationSet.cpp)
+    // Location set for modeling abstract memory object (AccessPath.cpp)
     static const Option<bool> SingleStride;
 
     // Base class of pointer analyses (PointerAnalysis.cpp)
@@ -134,6 +134,8 @@ public:
     static const Option<bool> PAGDotGraph;
     static const Option<bool> ShowSVFIRValue;
     static const Option<bool> DumpICFG;
+    static const Option<std::string> DumpJson;
+    static const Option<bool> ReadJson;
     static const Option<bool> CallGraphDotGraph;
     static const Option<bool> PAGPrint;
     static const Option<u32_t> IndirectCallLimit;
@@ -221,6 +223,9 @@ public:
     // Conditions.cpp
     static const Option<u32_t> MaxZ3Size;
 
+    // BoundedZ3Expr.cpp
+    static const Option<u32_t> MaxBVLen;
+
     // SaberCondAllocator.cpp
     static const Option<bool> PrintPathCond;
 
@@ -243,6 +248,7 @@ public:
     static const Option<bool> VtableInSVFIR;
 
     // WPAPass.cpp
+    static const Option<std::string> ExtAPIPath;
     static const Option<bool> AnderSVFG;
     static const Option<bool> SABERFULLSVFG;
     static const Option<bool> PrintAliases;
@@ -261,6 +267,7 @@ public:
     static const Option<bool>  CFLSVFG;
     static const Option<bool> POCRAlias;
     static const Option<bool> POCRHybrid;
+    static const Option<bool> Customized;
 
     // Loop Analysis
     static const Option<bool> LoopAnalysis;

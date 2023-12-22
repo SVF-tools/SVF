@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.13.4)
 
 project("SVF")
 
-configure_file(${CMAKE_SOURCE_DIR}/.config.in
-               ${CMAKE_BINARY_DIR}/include/Util/config.h)
+configure_file(${PROJECT_SOURCE_DIR}/.config.in
+               ${PROJECT_BINARY_DIR}/include/Util/config.h)
 
 # We need to match the build environment for LLVM: In particular, we need C++14
 # and the -fno-rtti flag
@@ -23,6 +23,9 @@ option(SVF_ENABLE_ASSERTIONS "Always enable assertions")
 if(SVF_ENABLE_ASSERTIONS)
   add_compile_options("-UNDEBUG")
 endif()
+
+# Turn this on if you need symbols (e.g., use them for backtrace debugging)
+# add_link_options("-rdynamic")
 
 option(SVF_COVERAGE "Create coverage build")
 if(SVF_COVERAGE OR DEFINED ENV{SVF_COVERAGE})
@@ -62,13 +65,13 @@ endif()
 message(STATUS "Found Z3: ${Z3_LIBRARIES}")
 message(STATUS "Z3 include dir: ${Z3_INCLUDES}")
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/svf/include
-                    ${CMAKE_BINARY_DIR}/include ${Z3_INCLUDES})
+include_directories(${PROJECT_SOURCE_DIR}/svf/include
+                    ${PROJECT_BINARY_DIR}/include ${Z3_INCLUDES})
 
 # checks if the test-suite is present, if it is then build bc files and add
 # testing to cmake build
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite")
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite)
+if(EXISTS "${PROJECT_SOURCE_DIR}/Test-Suite")
+  include_directories(${PROJECT_SOURCE_DIR}/Test-Suite)
   enable_testing()
   add_subdirectory(Test-Suite)
   include(CTest)
@@ -78,9 +81,19 @@ add_subdirectory(svf)
 add_subdirectory(svf-llvm)
 
 install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/svf/include/
-            ${CMAKE_CURRENT_SOURCE_DIR}/svf-llvm/include/
+  DIRECTORY ${PROJECT_SOURCE_DIR}/svf/include/
+            ${PROJECT_SOURCE_DIR}/svf-llvm/include/
   COMPONENT devel
   DESTINATION include/svf
   FILES_MATCHING
   PATTERN "**/*.h")
+
+# Compile extapi.c to extapi.bc
+find_path(LLVM_CLANG_DIR
+        NAMES clang llvm
+        HINTS ${LLVM_DIR} ENV LLVM_DIR
+        PATH_SUFFIXES bin)
+add_custom_target(extapi_ir ALL
+    COMMAND ${LLVM_CLANG_DIR}/clang -w -S -c -Xclang -disable-O0-optnone -fno-discard-value-names -emit-llvm ${PROJECT_SOURCE_DIR}/svf-llvm/lib/extapi.c -o ${PROJECT_BINARY_DIR}/svf-llvm/extapi.bc
+    DEPENDS ${PROJECT_SOURCE_DIR}/svf-llvm/lib/extapi.c
+)

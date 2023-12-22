@@ -26,6 +26,9 @@
  // Author: Yulei Sui,
  */
 
+// This file is a driver for Context-Free Language (CFL) Reachability Analysis. The code
+// processes command-line arguments, sets up the analysis based on these arguments, and
+// then runs the analysis.
 
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
@@ -37,26 +40,33 @@ using namespace SVF;
 
 int main(int argc, char ** argv)
 {
-    char **arg_value = new char*[argc];
+    // Parses command-line arguments and stores any module names in moduleNameVec
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
                         argc, argv, "CFL Reachability Analysis", "[options] <input-bitcode...>"
                     );
 
+    // If the WriteAnder option is set to "ir_annotator", pre-processes the bytecodes of the modules
     if (Options::WriteAnder() == "ir_annotator")
     {
-        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+        LLVMModuleSet::preProcessBCs(moduleNameVec);
     }
 
+    // Pointer to the SVF Intermediate Representation (IR) of the module
     SVFIR* svfir = nullptr;
+
+    // If no CFLGraph option is specified, the SVFIR is built from the .bc (bytecode) files of the modules
     if (Options::CFLGraph().empty())
     {
-        SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+        SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
         SVFIRBuilder builder(svfModule);
         svfir = builder.build();
     }  // if no dot form CFLGraph is specified, we use svfir from .bc.
 
+    // The CFLBase pointer that will be used to run the analysis
     std::unique_ptr<CFLBase> cfl;
+
+    // Determines which type of analysis to run based on the options and sets up cfl accordingly
     if (Options::CFLSVFG())
         cfl = std::make_unique<CFLVF>(svfir);
     else if (Options::POCRHybrid())
@@ -65,12 +75,13 @@ int main(int argc, char ** argv)
         cfl = std::make_unique<POCRAlias>(svfir);
     else
         cfl = std::make_unique<CFLAlias>(svfir); // if no svfg is specified, we use CFLAlias as the default one.
+
+    // Runs the analysis
     cfl->analyze();
 
+    // Releases the SVFIR and the LLVMModuleSet to free memory
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
-
-    delete[] arg_value;
 
     return 0;
 

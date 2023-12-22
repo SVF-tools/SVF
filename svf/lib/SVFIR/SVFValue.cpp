@@ -4,6 +4,13 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+__attribute__((weak))
+std::string SVFValue::toString() const
+{
+    assert("SVFValue::toString should be implemented or supported by fronted" && false);
+    abort();
+}
+
 /// Add field (index and offset) with its corresponding type
 void StInfo::addFldWithType(u32_t fldIdx, const SVFType* type, u32_t elemIdx)
 {
@@ -26,7 +33,7 @@ const SVFType* StInfo::getOriginalElemType(u32_t fldIdx) const
 
 const SVFLoopAndDomInfo::LoopBBs& SVFLoopAndDomInfo::getLoopInfo(const SVFBasicBlock* bb) const
 {
-    assert(hasLoopInfo(bb) && "loopinfo does not exit (bb not in a loop)");
+    assert(hasLoopInfo(bb) && "loopinfo does not exist (bb not in a loop)");
     Map<const SVFBasicBlock*, LoopBBs>::const_iterator mapIter = bb2LoopMap.find(bb);
     return mapIter->second;
 }
@@ -111,6 +118,32 @@ bool SVFLoopAndDomInfo::postDominate(const SVFBasicBlock* bbKey, const SVFBasicB
     return false;
 }
 
+const SVFBasicBlock* SVFLoopAndDomInfo::findNearestCommonPDominator(const SVFBasicBlock* A, const SVFBasicBlock* B) const
+{
+    assert(A && B && "Pointers are not valid");
+    assert(A->getParent() == B->getParent() &&
+           "Two blocks are not in same function");
+
+    // Use level information to go up the tree until the levels match. Then
+    // continue going up til we arrive at the same node.
+    while (A != B)
+    {
+        // no common PDominator
+        if(A == NULL) return NULL;
+        const auto lvA = getBBPDomLevel().find(A);
+        const auto lvB = getBBPDomLevel().find(B);
+        assert(lvA != getBBPDomLevel().end() && lvB != getBBPDomLevel().end());
+
+        if (lvA->second < lvB->second) std::swap(A, B);
+
+        const auto lvAIdom = getBB2PIdom().find(A);
+        assert(lvAIdom != getBB2PIdom().end());
+        A = lvAIdom->second;
+    }
+
+    return A;
+}
+
 bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
 {
     if (hasLoopInfo(bb))
@@ -122,12 +155,13 @@ bool SVFLoopAndDomInfo::isLoopHeader(const SVFBasicBlock* bb) const
     return false;
 }
 
-SVFFunction::SVFFunction(const std::string& f, const SVFType* ty,
-                         const SVFFunctionType* ft, bool declare, bool intrinsic,
-                         bool adt, bool varg, SVFLoopAndDomInfo* ld)
-    : SVFValue(f, ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
+SVFFunction::SVFFunction(const SVFType* ty, const SVFFunctionType* ft,
+                         bool declare, bool intrinsic, bool adt, bool varg,
+                         SVFLoopAndDomInfo* ld, std::vector<std::string> annos)
+    : SVFValue(ty, SVFValue::SVFFunc), isDecl(declare), intrinsic(intrinsic),
       addrTaken(adt), isUncalled(false), isNotRet(false), varArg(varg),
-      funcType(ft), loopAndDom(ld), realDefFun(nullptr)
+      funcType(ft), loopAndDom(ld), realDefFun(nullptr), annotations(std::move(annos)),
+      exitBlock(nullptr)
 {
 }
 
@@ -156,8 +190,22 @@ bool SVFFunction::isVarArg() const
     return varArg;
 }
 
-SVFBasicBlock::SVFBasicBlock(const std::string& b, const SVFType* ty, const SVFFunction* f):
-    SVFValue(b, ty, SVFValue::SVFBB), fun(f)
+const SVFBasicBlock *SVFFunction::getExitBB() const
+{
+    assert(hasBasicBlock() && "function does not have any Basicblock, external function?");
+    assert((!hasReturn() || exitBlock->back()->isRetInst()) && "last inst must be return inst");
+    assert(exitBlock && "must have an exitBlock");
+    return exitBlock;
+}
+
+void SVFFunction::setExitBlock(SVFBasicBlock *bb)
+{
+    assert(!exitBlock && "have already set exit Basicblock!");
+    exitBlock = bb;
+}
+
+SVFBasicBlock::SVFBasicBlock(const SVFType* ty, const SVFFunction* f)
+    : SVFValue(ty, SVFValue::SVFBB), fun(f)
 {
 }
 
@@ -179,7 +227,7 @@ u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ)
             return i;
         i++;
     }
-    assert(false && "Didn't find succesor edge?");
+    assert(false && "Didn't find successor edge?");
     return 0;
 }
 
@@ -192,7 +240,7 @@ u32_t SVFBasicBlock::getBBSuccessorPos(const SVFBasicBlock* Succ) const
             return i;
         i++;
     }
-    assert(false && "Didn't find succesor edge?");
+    assert(false && "Didn't find successor edge?");
     return 0;
 }
 
@@ -231,7 +279,8 @@ u32_t SVFBasicBlock::getBBPredecessorPos(const SVFBasicBlock* succbb) const
     return pos;
 }
 
-SVFInstruction::SVFInstruction(const std::string& i, const SVFType* ty, const SVFBasicBlock* b,  bool tm, bool isRet, SVFValKind k):
-    SVFValue(i, ty, k), bb(b), terminator(tm), ret(isRet)
+SVFInstruction::SVFInstruction(const SVFType* ty, const SVFBasicBlock* b,
+                               bool tm, bool isRet, SVFValKind k)
+    : SVFValue(ty, k), bb(b), terminator(tm), ret(isRet)
 {
 }

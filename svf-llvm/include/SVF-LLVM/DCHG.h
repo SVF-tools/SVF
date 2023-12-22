@@ -74,7 +74,7 @@ public:
 
     typedef std::vector<const Function*> FuncVector;
 
-    DCHNode(const DIType *diType, NodeID i = 0, GNodeK k = 0)
+    DCHNode(const DIType* diType, NodeID i = 0, GNodeK k = 0)
         : GenericNode<DCHNode, DCHEdge>(i, k), vtable(nullptr), flags(0)
     {
         this->diType = diType;
@@ -210,10 +210,10 @@ class DCHGraph : public CommonCHGraph, public GenericGraph<DCHNode, DCHEdge>
 {
 public:
     /// Returns the DIType beneath the qualifiers. Does not strip away "DW_TAG_members".
-    static const DIType *stripQualifiers(const DIType *);
+    static const DIType* stripQualifiers(const DIType*);
 
     /// Returns the DIType beneath all qualifiers and arrays.
-    static const DIType *stripArray(const DIType *);
+    static const DIType* stripArray(const DIType*);
 
     /// Returns true if t1 and t2 are equivalent, ignoring qualifiers.
     /// For equality...
@@ -222,13 +222,13 @@ public:
     ///   DIDerivedType:    base types (teq).
     ///   DICompositeType:  shallow pointer equality.
     ///   DISubroutineType: shallow pointer equality.
-    static bool teq(const DIType *t1, const DIType *t2);
+    static bool teq(const DIType* t1, const DIType* t2);
 
     /// Returns a human-readable version of the DIType.
     static std::string diTypeToStr(const DIType *);
 
     // Returns whether t is an array, a struct, a class, a union, or neither.
-    static bool isAgg(const DIType *t);
+    static bool isAgg(const DIType* t);
 
 public:
     DCHGraph(const SVFModule *svfMod)
@@ -293,7 +293,7 @@ public:
     /// Returns the type representing all qualifier-variations of t.
     /// This should only matter in the case of DerivedTypes where
     /// qualifiers and have qualified base types cause a mess.
-    const DIType *getCanonicalType(const DIType *t);
+    const DIType* getCanonicalType(const DIType* t);
 
     /// Returns the type of field number idx (flattened) in base.
     const DIType *getFieldType(const DIType *base, unsigned idx)
@@ -314,13 +314,14 @@ public:
 
         if (base->getTag() == dwarf::DW_TAG_array_type)
         {
-            const DICompositeType *cbase = SVFUtil::dyn_cast<DICompositeType>(base);
+            const DICompositeType* cbase =
+                SVFUtil::dyn_cast<DICompositeType>(base);
             assert(cbase && "DCHG: bad DIComposite case");
             return cbase->getBaseType();
         }
 
-        if (!(base->getTag() == dwarf::DW_TAG_class_type
-                || base->getTag() == dwarf::DW_TAG_structure_type))
+        if (!(base->getTag() == dwarf::DW_TAG_class_type ||
+                base->getTag() == dwarf::DW_TAG_structure_type))
         {
             return nullptr;
         }
@@ -355,64 +356,64 @@ public:
         return containingAggs[base];
     }
 
-    bool isFirstField(const DIType *f, const DIType *b);
+    bool isFirstField(const DIType* f, const DIType* b);
 
 protected:
     /// SVF Module this CHG is built from.
-    const SVFModule *svfModule;
+    const SVFModule* svfModule;
     /// Whether this CHG is an extended CHG (first-field). Set by buildCHG.
     bool extended = false;
     /// Maps DITypes to their nodes.
-    Map<const DIType *, DCHNode *> diTypeToNodeMap;
+    Map<const DIType*, DCHNode*> diTypeToNodeMap;
     /// Maps VTables to the DIType associated with them.
-    Map<const SVFGlobalValue *, const DIType *> vtblToTypeMap;
+    Map<const SVFGlobalValue*, const DIType*> vtblToTypeMap;
     /// Maps types to all children (i.e. CHA).
-    Map<const DIType *, NodeBS> chaMap;
+    Map<const DIType*, NodeBS> chaMap;
     /// Maps types to all children but also considering first field.
-    Map<const DIType *, NodeBS> chaFFMap;
+    Map<const DIType*, NodeBS> chaFFMap;
     /// Maps types to a set with their vtable and all their children's.
-    Map<const DIType *, VTableSet> vtblCHAMap;
+    Map<const DIType*, VTableSet> vtblCHAMap;
     /// Maps callsites to a set of potential virtual functions based on CHA.
     Map<CallSite, VFunSet> csCHAMap;
     /// Maps types to their canonical type (many-to-one).
-    Map<const DIType *, const DIType *> canonicalTypeMap;
+    Map<const DIType*, const DIType*> canonicalTypeMap;
     /// Set of all possible canonical types (i.e. values of canonicalTypeMap).
-    Set<const DIType *> canonicalTypes;
+    Set<const DIType*> canonicalTypes;
     /// Maps types to their flattened fields' types.
-    Map<const DIType *, std::vector<const DIType *>> fieldTypes;
+    Map<const DIType*, std::vector<const DIType*>> fieldTypes;
     /// Maps aggregate types to all the aggregate types it transitively contains.
-    Map<const DIType *, Set<const DIType *>> containingAggs;
+    Map<const DIType*, Set<const DIType*>> containingAggs;
 
 private:
     /// Construction helper to process DIBasicTypes.
-    void handleDIBasicType(const DIBasicType *basicType);
+    void handleDIBasicType(const DIBasicType* basicType);
     /// Construction helper to process DICompositeTypes.
-    void handleDICompositeType(const DICompositeType *compositeType);
+    void handleDICompositeType(const DICompositeType* compositeType);
     /// Construction helper to process DIDerivedTypes.
-    void handleDIDerivedType(const DIDerivedType *derivedType);
+    void handleDIDerivedType(const DIDerivedType* derivedType);
     /// Construction helper to process DISubroutineTypes.
-    void handleDISubroutineType(const DISubroutineType *subroutineType);
+    void handleDISubroutineType(const DISubroutineType* subroutineType);
 
     /// Finds all defined virtual functions and attaches them to nodes.
-    void buildVTables(const SVFModule &module);
+    void buildVTables(const SVFModule& module);
 
     /// Returns a set of all children of type (CHA). Also gradually builds chaMap.
-    const NodeBS &cha(const DIType *type, bool firstField);
+    const NodeBS& cha(const DIType* type, bool firstField);
 
     /// Attaches the typedef(s) to the base node.
-    void handleTypedef(const DIType *typedefType);
+    void handleTypedef(const DIType* typedefType);
 
     /// Populates fieldTypes for type and all its elements.
-    void flatten(const DICompositeType *type);
+    void flatten(const DICompositeType* type);
 
     /// Populates containingAggs for type and all its elements.
-    void gatherAggs(const DICompositeType *type);
+    void gatherAggs(const DICompositeType* type);
 
     /// Creates a node from type, or returns it if it exists.
-    DCHNode *getOrCreateNode(const DIType *type);
+    DCHNode* getOrCreateNode(const DIType* type);
 
     /// Retrieves the metadata associated with a *virtual* callsite.
-    const DIType *getCSStaticType(CallBase* cs) const
+    const DIType* getCSStaticType(CallBase* cs) const
     {
         MDNode *md = cs->getMetadata(cppUtil::ctir::derefMDName);
         assert(md != nullptr && "Missing type metadata at virtual callsite");
@@ -428,14 +429,14 @@ private:
     }
 
     /// Checks if a node exists for type.
-    bool hasNode(const DIType *type)
+    bool hasNode(const DIType* type)
     {
         type = getCanonicalType(type);
         return diTypeToNodeMap.find(type) != diTypeToNodeMap.end();
     }
 
     /// Returns the node for type (nullptr if it doesn't exist).
-    DCHNode *getNode(const DIType *type)
+    DCHNode* getNode(const DIType* type)
     {
         type = getCanonicalType(type);
         if (hasNode(type))
@@ -448,9 +449,9 @@ private:
 
 
     /// Creates an edge between from t1 to t2.
-    DCHEdge *addEdge(const DIType *t1, const DIType *t2, DCHEdge::GEdgeKind et);
+    DCHEdge* addEdge(const DIType* t1, const DIType* t2, DCHEdge::GEdgeKind et);
     /// Returns the edge between t1 and t2 if it exists, returns nullptr otherwise.
-    DCHEdge *hasEdge(const DIType *t1, const DIType *t2, DCHEdge::GEdgeKind et);
+    DCHEdge* hasEdge(const DIType* t1, const DIType* t2, DCHEdge::GEdgeKind et);
 
     /// Number of types (nodes) in the graph.
     NodeID numTypes;

@@ -91,14 +91,14 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 /*!
  * Get modulus offset given the type information
  */
-LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationSet& ls)
+APOffset SymbolTableInfo::getModulusOffset(const MemObj* obj, const APOffset& apOffset)
 {
 
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
 
-    s32_t offset = ls.accumulateConstantFieldIdx();
+    APOffset offset = apOffset;
     if(offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");
@@ -132,7 +132,7 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
             offset = maxOffset - 1;
     }
 
-    return LocationSet(offset);
+    return offset;
 }
 
 
@@ -143,16 +143,19 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
 void SymbolTableInfo::destroy()
 {
 
-    for (IDToMemMapTy::iterator iter = objMap.begin(); iter != objMap.end();
-            ++iter)
+    for (auto &pair: objMap)
     {
-        if (iter->second)
-            delete iter->second;
+        if (MemObj* memObj = pair.second)
+            delete memObj;
     }
 
-    for (auto * type: svfTypes)
+    for (const SVFType* type : svfTypes)
         delete type;
     svfTypes.clear();
+
+    for (const StInfo* st : stInfos)
+        delete st;
+    stInfos.clear();
 
     mod = nullptr;
 }
@@ -165,7 +168,7 @@ const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const SVFType* type)
     return memObj;
 }
 
-/// Number of flattenned elements of an array or struct
+/// Number of flattened elements of an array or struct
 u32_t SymbolTableInfo::getNumOfFlattenElements(const SVFType* T)
 {
     if(Options::ModelArrays())
@@ -174,7 +177,7 @@ u32_t SymbolTableInfo::getNumOfFlattenElements(const SVFType* T)
         return getTypeInfo(T)->getNumOfFlattenFields();
 }
 
-/// Flatterned offset information of a struct or an array including its array fields
+/// Flattened offset information of a struct or an array including its array fields
 u32_t SymbolTableInfo::getFlattenedElemIdx(const SVFType* T, u32_t origId)
 {
     if(Options::ModelArrays())
@@ -234,61 +237,50 @@ const std::vector<const SVFType*>& SymbolTableInfo::getFlattenFieldTypes(const S
 void SymbolTableInfo::printFlattenFields(const SVFType* type)
 {
 
-    if(const SVFArrayType *at = SVFUtil::dyn_cast<SVFArrayType> (type))
+    if (const SVFArrayType* at = SVFUtil::dyn_cast<SVFArrayType>(type))
     {
-        outs() <<"  {Type: ";
-        outs() << at->toString();
-        outs() << "}\n";
-        outs() << "\tarray type ";
-        outs() << "\t [element size = " << getNumOfFlattenElements(at) << "]\n";
-        outs() << "\n";
+        outs() << "  {Type: " << *at << "}\n"
+               << "\tarray type "
+               << "\t [element size = " << getNumOfFlattenElements(at) << "]\n"
+               << "\n";
     }
-
-    else if(const SVFStructType *st = SVFUtil::dyn_cast<SVFStructType> (type))
+    else if (const SVFStructType *st = SVFUtil::dyn_cast<SVFStructType>(type))
     {
-        outs() <<"  {Type: ";
-        outs() << st->toString();
-        outs() << "}\n";
+        outs() <<"  {Type: " << *st << "}\n";
         const std::vector<const SVFType*>& finfo = getTypeInfo(st)->getFlattenFieldTypes();
         int field_idx = 0;
-        for(std::vector<const SVFType*>::const_iterator it = finfo.begin(), eit = finfo.end();
-                it!=eit; ++it, field_idx++)
+        for(const SVFType* type : finfo)
         {
-            outs() << " \tField_idx = " << field_idx;
-            outs() << ", field type: ";
-            outs() << (*it)->toString();
-            outs() << "\n";
+            outs() << " \tField_idx = " << ++field_idx
+                   << ", field type: " << *type << "\n";
         }
         outs() << "\n";
     }
-
-    else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType> (type))
+    else if (const SVFPointerType* pt= SVFUtil::dyn_cast<SVFPointerType>(type))
     {
+        // TODO: getPtrElementType to be removed
         u32_t eSize = getNumOfFlattenElements(pt->getPtrElementType());
-        outs() << "  {Type: ";
-        outs() << pt->toString();
-        outs() << "}\n";
-        outs() <<"\t [target size = " << eSize << "]\n";
-        outs() << "\n";
+        outs() << "  {Type: " << *pt << "}\n"
+               << "\t [target size = " << eSize << "]\n"
+               << "\n";
     }
-
-    else if ( const SVFFunctionType* fu= SVFUtil::dyn_cast<SVFFunctionType> (type))
+    else if (const SVFFunctionType* fu =
+                 SVFUtil::dyn_cast<SVFFunctionType>(type))
     {
-        outs() << "  {Type: ";
-        outs() << fu->getReturnType()->toString();
-        outs() << "(Function)}\n\n";
+        outs() << "  {Type: " << *fu << "}\n\n";
     }
-
+    else if (const SVFOtherType* ot = SVFUtil::dyn_cast<SVFOtherType>(type))
+    {
+        outs() << "  {Type: "<< *ot << "(SVFOtherType)}\n\n";
+    }
     else
     {
         assert(type->isSingleValueType() && "not a single value type, then what else!!");
         /// All rest types are scalar type?
         u32_t eSize = getNumOfFlattenElements(type);
-        outs() <<"  {Type: ";
-        outs() << type->toString();
-        outs() << "}\n";
-        outs() <<"\t [object size = " << eSize << "]\n";
-        outs() << "\n";
+        outs() << "  {Type: " << *type << "}\n"
+               << "\t [object size = " << eSize << "]\n"
+               << "\n";
     }
 }
 
@@ -377,12 +369,12 @@ void SymbolTableInfo::dump()
 /*!
  * Whether a location set is a pointer type or not
  */
-bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
+bool ObjTypeInfo::isNonPtrFieldObj(const APOffset& apOffset)
 {
     if (hasPtrObj() == false)
         return true;
 
-    const SVFType* ety = getType();
+    const SVFType* ety = type;
 
     if (SVFUtil::isa<SVFStructType, SVFArrayType>(ety))
     {
@@ -392,13 +384,13 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         else
             sz = SymbolTableInfo::SymbolInfo()->getTypeInfo(ety)->getFlattenFieldTypes().size();
 
-        if(sz <= (u32_t)ls.accumulateConstantFieldIdx())
+        if(sz <= (u32_t) apOffset)
         {
             writeWrnMsg("out of bound error when accessing the struct/array");
             return false;
         }
 
-        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.accumulateConstantFieldIdx());
+        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, apOffset);
         return (elemTy->isPointerTy() == false);
     }
     else
@@ -437,6 +429,19 @@ u32_t MemObj::getNumOfElements() const
 {
     return typeInfo->getNumOfElements();
 }
+
+/// Get the byte size of this object
+u32_t MemObj::getByteSizeOfObj() const
+{
+    return typeInfo->getByteSizeOfObj();
+}
+
+/// Check if byte size is static determined
+bool MemObj::isConstantByteSize() const
+{
+    return typeInfo->isConstantByteSize();
+}
+
 
 /// Set the number of elements of this object
 void MemObj::setNumOfElements(u32_t num)
@@ -546,9 +551,9 @@ bool MemObj::hasPtrObj() const
     return typeInfo->hasPtrObj();
 }
 
-bool MemObj::isNonPtrFieldObj(const LocationSet& ls) const
+bool MemObj::isNonPtrFieldObj(const APOffset& apOffset) const
 {
-    return typeInfo->isNonPtrFieldObj(ls);
+    return typeInfo->isNonPtrFieldObj(apOffset);
 }
 
 const std::string MemObj::toString() const
@@ -583,4 +588,3 @@ bool SymbolTableInfo::hasValSym(const SVFValue* val)
     else
         return (valSymMap.find(val) != valSymMap.end());
 }
-

@@ -207,7 +207,7 @@ private:
     void updateSiblingThreads(NodeID tid);
     //@}
 
-    /// Thread curTid can be fully joined by parentTid recurively
+    /// Thread curTid can be fully joined by parentTid recursively
     bool isRecurFullJoin(NodeID parentTid, NodeID curTid);
 
     /// Whether a join site must join a thread t

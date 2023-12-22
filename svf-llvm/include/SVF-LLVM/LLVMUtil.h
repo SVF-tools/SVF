@@ -34,7 +34,6 @@
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVFIR/SVFValue.h"
-#include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
 
 namespace SVF
@@ -120,12 +119,16 @@ inline bool isNullPtrSym(const Value* val)
 static inline Type* getPtrElementType(const PointerType* pty)
 {
 #if (LLVM_VERSION_MAJOR < 14)
-    return pty->getElementType();
+    return pty->getPointerElementType();
 #else
     assert(!pty->isOpaque() && "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointers'");
     return pty->getNonOpaquePointerElementType();
 #endif
 }
+
+/// Infer type based on llvm value, this is for the migration to opaque pointer
+/// please refer to: https://llvm.org/docs/OpaquePointers.html#migration-instructions
+Type *getPointeeType(const Value *value);
 
 /// Get the reference type of heap/static object from an allocation site.
 //@{
@@ -140,12 +143,13 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallBase* cs)
         int argPos = SVFUtil::getHeapAllocHoldingArgPosition(svfcs);
         const Value* arg = cs->getArgOperand(argPos);
         if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
+            // TODO: getPtrElementType need type inference
             refType = SVFUtil::dyn_cast<PointerType>(getPtrElementType(argType));
     }
-    // Case 2: heap/static object held by return value.
+    // Case 2: heap object held by return value.
     else
     {
-        assert((SVFUtil::isStaticExtCall(svfcs) || SVFUtil::isHeapAllocExtCallViaRet(svfcs))
+        assert(SVFUtil::isHeapAllocExtCallViaRet(svfcs)
                && "Must be heap alloc via ret, or static allocation site");
         refType = SVFUtil::dyn_cast<PointerType>(cs->getType());
     }
@@ -206,6 +210,9 @@ inline bool isArgOfUncalledFunction (const Value*  val)
 }
 //@}
 
+/// Return true if the function has a return instruction
+bool basicBlockHasRetInst(const BasicBlock* bb);
+
 /// Return true if the function has a return instruction reachable from function
 /// entry
 bool functionDoesNotRet(const Function* fun);
@@ -223,9 +230,9 @@ const Value* stripAllCasts(const Value* val);
 /// Get the type of the heap allocation
 const Type* getTypeOfHeapAlloc(const Instruction* inst);
 
-/// Return the bitcast instruction which is val's only use site, otherwise
+/// Return the bitcast instruction right next to val, otherwise
 /// return nullptr
-const Value* getUniqueUseViaCastInst(const Value* val);
+const Value* getFirstUseViaCastInst(const Value* val);
 
 /// Return corresponding constant expression, otherwise return nullptr
 //@{
@@ -373,6 +380,36 @@ const std::string getSourceLocOfFunction(const Function* F);
 bool isIntrinsicInst(const Instruction* inst);
 bool isIntrinsicFun(const Function* func);
 
+/// Get all called funcions in a parent function
+std::vector<const Function *> getCalledFunctions(const Function *F);
+std::vector<std::string> getFunAnnotations(const Function* fun);
+void removeFunAnnotations(std::vector<Function*>& removedFuncList);
+bool isUnusedGlobalVariable(const GlobalVariable& global);
+void removeUnusedGlobalVariables(Module* module);
+/// Delete unused functions, annotations and global variables in extapi.bc
+void removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> removedFuncList);
+
+inline u32_t SVFType2ByteSize(const SVFType* type)
+{
+    const llvm::Type* llvm_rhs = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(type);
+    const llvm::PointerType* llvm_rhs_ptr = SVFUtil::dyn_cast<PointerType>(llvm_rhs);
+    assert(llvm_rhs_ptr && "not a pointer type?");
+    // TODO: getPtrElementType need type inference
+    const Type *ptrElementType = getPtrElementType(llvm_rhs_ptr);
+    u32_t llvm_rhs_size = LLVMUtil::getTypeSizeInBytes(ptrElementType);
+    u32_t llvm_elem_size = -1;
+    if (ptrElementType->isArrayTy() && llvm_rhs_size > 0)
+    {
+        size_t array_len = ptrElementType->getArrayNumElements();
+        llvm_elem_size = llvm_rhs_size / array_len;
+    }
+    else
+    {
+        llvm_elem_size =llvm_rhs_size;
+    }
+    return llvm_elem_size;
+}
+
 /// Get the corresponding Function based on its name
 inline const SVFFunction* getFunction(const std::string& name)
 {
@@ -409,6 +446,29 @@ void viewCFG(const Function* fun);
 // Dump Control Flow Graph of llvm function, without instructions
 void viewCFGOnly(const Function* fun);
 
+/*
+ * Get the vtable struct of a class.
+ *
+ * Given the class:
+ *
+ *   class A {
+ *     virtual ~A();
+ *   };
+ *   A::~A() = default;
+ *
+ *  The corresponding vtable @_ZTV1A is of type:
+ *
+ *    { [4 x i8*] }
+ *
+ *  If the program has been compiled with AddressSanitizer,
+ *  the vtable will have redzones and appear as:
+ *
+ *    { { [4 x i8*] }, [32 x i8] }
+ *
+ *  See https://github.com/SVF-tools/SVF/issues/1114 for more.
+ */
+const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
+
 bool isValVtbl(const Value* val);
 bool isLoadVtblInst(const LoadInst* loadInst);
 bool isVirtualCallSite(const CallBase* cs);
@@ -442,7 +502,7 @@ const Argument* getConstructorThisPtr(const Function* fun);
 const Value* getVCallThisPtr(const CallBase* cs);
 const Value* getVCallVtblPtr(const CallBase* cs);
 s32_t getVCallIdx(const CallBase* cs);
-std::string getClassNameFromType(const Type* ty);
+std::string getClassNameFromType(const StructType* ty);
 std::string getClassNameOfThisPtr(const CallBase* cs);
 std::string getFunNameOfVCallSite(const CallBase* cs);
 bool VCallInCtorOrDtor(const CallBase* cs);
@@ -458,6 +518,59 @@ bool VCallInCtorOrDtor(const CallBase* cs);
  */
 bool isSameThisPtrInConstructor(const Argument* thisPtr1,
                                 const Value* thisPtr2);
+
+std::string dumpValue(const Value* val);
+
+std::string dumpType(const Type* type);
+
+
+/**
+ * See more: https://github.com/SVF-tools/SVF/pull/1191
+ *
+ * Given the code:
+ *
+ * switch (a) {
+ *   case 0: printf("0\n"); break;
+ *   case 1:
+ *   case 2:
+ *   case 3: printf("a >=1 && a <= 3\n"); break;
+ *   case 4:
+ *   case 6:
+ *   case 7:  printf("a >= 4 && a <=7\n"); break;
+ *   default: printf("a < 0 || a > 7"); break;
+ * }
+ *
+ * Generate the IR:
+ *
+ * switch i32 %0, label %sw.default [
+ *  i32 0, label %sw.bb
+ *  i32 1, label %sw.bb1
+ *  i32 2, label %sw.bb1
+ *  i32 3, label %sw.bb1
+ *  i32 4, label %sw.bb3
+ *  i32 6, label %sw.bb3
+ *  i32 7, label %sw.bb3
+ * ]
+ *
+ * We can get every case basic block and related case value:
+ * [
+ *   {%sw.default, -1},
+ *   {%sw.bb, 0},
+ *   {%sw.bb1, 1},
+ *   {%sw.bb1, 2},
+ *   {%sw.bb1, 3},
+ *   {%sw.bb3, 4},
+ *   {%sw.bb3, 6},
+ *   {%sw.bb3, 7},
+ * ]
+ * Note: default case value is nullptr
+ */
+void getSuccBBandCondValPairVec(const SwitchInst &switchInst, SuccBBAndCondValPairVec &vec);
+
+/**
+ * Note: default case value is nullptr
+ */
+s64_t getCaseValue(const SwitchInst &switchInst, SuccBBAndCondValPair &succBB2CondVal);
 
 } // End namespace LLVMUtil
 
