@@ -58,25 +58,16 @@ bool AccessPath::isConstantOffset() const
 
 /// Return element number of a type
 /// (1) StructType or Array, return flattened number elements.
-/// (2) PointerType, return the element number of the pointee
-/// (3) non-pointer SingleValueType, return 1
+/// (2) non-pointer SingleValueType, return 1
 u32_t AccessPath::getElementNum(const SVFType* type) const
 {
+    assert(!SVFUtil::isa<SVFPointerType>(type) && "can't be pointer type");
 
     if (SVFUtil::isa<SVFArrayType, SVFStructType>(type))
     {
         return SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(type);
     }
-    else if (type->isSingleValueType())
-    {
-        /// This is a pointer arithmetic
-        // TODO: getPtrElementType to be removed
-        if(const SVFPointerType* pty = SVFUtil::dyn_cast<SVFPointerType>(type))
-            return getElementNum(pty->getPtrElementType());
-        else
-            return 1;
-    }
-    else if (SVFUtil::isa<SVFFunctionType>(type))
+    else if (type->isSingleValueType() || SVFUtil::isa<SVFFunctionType>(type))
     {
         return 1;
     }

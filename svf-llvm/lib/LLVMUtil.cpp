@@ -982,37 +982,6 @@ bool LLVMUtil::isValVtbl(const Value* val)
                            vtblLabelBeforeDemangle) == 0;
 }
 
-bool LLVMUtil::isLoadVtblInst(const LoadInst* loadInst)
-{
-    const Value* loadSrc = loadInst->getPointerOperand();
-    const Type* valTy = loadSrc->getType();
-    const Type* elemTy = valTy;
-    for (u32_t i = 0; i < 3; ++i)
-    {
-        // TODO: getPtrElementType to be removed
-        if (const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
-            elemTy = LLVMUtil::getPtrElementType(ptrTy);
-        else
-            return false;
-    }
-    if (const FunctionType* functy = SVFUtil::dyn_cast<FunctionType>(elemTy))
-    {
-        const Type* paramty = functy->getParamType(0);
-        std::string className = "";
-        if(const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(paramty))
-        {
-            // TODO: getPtrElementType need type inference
-            if(const StructType* st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy)))
-                className = LLVMUtil::getClassNameFromType(st);
-        }
-        if (className.size() > 0)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
 /*
  * a virtual callsite follows the following instruction sequence pattern:
  * %vtable = load this

@@ -470,7 +470,6 @@ void viewCFGOnly(const Function* fun);
 const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
 
 bool isValVtbl(const Value* val);
-bool isLoadVtblInst(const LoadInst* loadInst);
 bool isVirtualCallSite(const CallBase* cs);
 bool isConstructor(const Function* F);
 bool isDestructor(const Function* F);
