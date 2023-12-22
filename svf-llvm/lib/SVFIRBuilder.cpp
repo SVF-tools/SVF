@@ -318,7 +318,8 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
             // If it's a non-constant offset access
             // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
             // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
-            if(!op && gepTy->isPointerTy() && LLVMUtil::getPointeeType(V)->isSingleValueType()) {
+            if(!op && gepTy->isPointerTy() && LLVMUtil::getPointeeType(V)->isSingleValueType())
+            {
                 isConst = false;
             }
 
