@@ -281,7 +281,7 @@ Type *LLVMUtil::getPointeeType(const Value *value) {
         // e.g., for `%call = call ptr @_Znwm(i64 noundef 8)`, we return i64
         return func->getFunctionType();
     } else {
-        assert(false && "Unknown llvm Type, cannot get Ptr Element Type");
+        assert(false && (LLVMUtil::dumpValue(value) + "Unknown llvm Type, cannot get Ptr Element Type").c_str());
         abort();
     }
 }
