@@ -71,7 +71,7 @@ public:
     AccessPath(const AccessPath& ap)
         : fldIdx(ap.fldIdx),
           idxOperandPairs(ap.getIdxOperandPairVec()),
-          gepPointeeType(ap.getGepPointeeType())
+          gepPointeeType(ap.gepSrcPointeeType())
     {
     }
 
@@ -109,7 +109,7 @@ public:
     {
         return idxOperandPairs;
     }
-    inline const SVFType* getGepPointeeType() const
+    inline const SVFType* gepSrcPointeeType() const
     {
         return gepPointeeType;
     }

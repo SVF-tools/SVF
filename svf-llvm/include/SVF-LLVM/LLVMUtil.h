@@ -126,37 +126,13 @@ static inline Type* getPtrElementType(const PointerType* pty)
 #endif
 }
 
+/// Infer type based on llvm value, this is for the migration to opaque pointer
+/// please refer to: https://llvm.org/docs/OpaquePointers.html#migration-instructions
+Type *getPointeeType(const Value *value);
+
 /// Get the reference type of heap/static object from an allocation site.
 //@{
-inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallBase* cs)
-{
-    const PointerType *refType = nullptr;
-    const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
-    CallSite svfcs = SVFUtil::getSVFCallSite(svfcall);
-    // Case 1: heap object held by *argument, we should get its element type.
-    if (SVFUtil::isHeapAllocExtCallViaArg(svfcs))
-    {
-        int argPos = SVFUtil::getHeapAllocHoldingArgPosition(svfcs);
-        const Value* arg = cs->getArgOperand(argPos);
-        if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
-            refType = SVFUtil::dyn_cast<PointerType>(getPtrElementType(argType));
-    }
-    // Case 2: heap object held by return value.
-    else
-    {
-        assert(SVFUtil::isHeapAllocExtCallViaRet(svfcs)
-               && "Must be heap alloc via ret, or static allocation site");
-        refType = SVFUtil::dyn_cast<PointerType>(cs->getType());
-    }
-    assert(refType && "Allocated object must be held by a pointer-typed value.");
-    return refType;
-}
-
-inline const PointerType *getRefTypeOfHeapAllocOrStatic(const Instruction* inst)
-{
-    const CallBase* cs = getLLVMCallSite(inst);
-    return getRefTypeOfHeapAllocOrStatic(cs);
-}
+const Type *inferTypeOfHeapObjOrStaticObj(const Instruction* inst);
 //@}
 
 /// Return true if this value refers to a object
@@ -221,9 +197,6 @@ const Value* stripConstantCasts(const Value* val);
 
 /// Strip off the all casts
 const Value* stripAllCasts(const Value* val);
-
-/// Get the type of the heap allocation
-const Type* getTypeOfHeapAlloc(const Instruction* inst);
 
 /// Return the bitcast instruction right next to val, otherwise
 /// return nullptr
@@ -389,6 +362,7 @@ inline u32_t SVFType2ByteSize(const SVFType* type)
     const llvm::Type* llvm_rhs = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(type);
     const llvm::PointerType* llvm_rhs_ptr = SVFUtil::dyn_cast<PointerType>(llvm_rhs);
     assert(llvm_rhs_ptr && "not a pointer type?");
+    // TODO: getPtrElementType need type inference
     const Type *ptrElementType = getPtrElementType(llvm_rhs_ptr);
     u32_t llvm_rhs_size = LLVMUtil::getTypeSizeInBytes(ptrElementType);
     u32_t llvm_elem_size = -1;
@@ -464,7 +438,6 @@ void viewCFGOnly(const Function* fun);
 const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
 
 bool isValVtbl(const Value* val);
-bool isLoadVtblInst(const LoadInst* loadInst);
 bool isVirtualCallSite(const CallBase* cs);
 bool isConstructor(const Function* F);
 bool isDestructor(const Function* F);
