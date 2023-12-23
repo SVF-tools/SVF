@@ -97,7 +97,9 @@ static std::string getFilePath(const std::string& path)
     std::string bcFilePath = "";
     if (path.compare("SVF_DIR") == 0)
     {
-        bcFilePath = getenv("SVF_DIR");
+        char const* svfdir = getenv("SVF_DIR");
+        if (svfdir)
+            bcFilePath = svfdir;
     }
     else if (path.compare("npm root") == 0)
     {
