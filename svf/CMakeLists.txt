@@ -5,7 +5,7 @@ add_library(SvfCore)
 target_include_directories(SvfCore
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    $<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDE_DIR}>
 )
 
 # Get the source files (i.e. all *.c/*.cpp files) for SVF's subprojects and add them to SvfCore

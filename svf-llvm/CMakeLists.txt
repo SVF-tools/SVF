@@ -78,7 +78,7 @@ add_llvm_library(SvfLLVM ${SVFLLVM_SOURCES})
 target_include_directories(SvfLLVM
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    $<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDE_DIR}>
 )
 
 # Link LLVM's libraries to SvfLLVM, as well as the SVF core library
