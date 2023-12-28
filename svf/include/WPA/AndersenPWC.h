@@ -124,7 +124,7 @@ public:
     {
         if (sfrAndersen == nullptr)
         {
-            new AndersenSFR(_pag);
+            sfrAndersen = new AndersenSFR(_pag);
             sfrAndersen->analyze();
             return sfrAndersen;
         }
