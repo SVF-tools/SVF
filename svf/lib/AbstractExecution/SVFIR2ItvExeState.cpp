@@ -95,10 +95,7 @@ IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
         }
         return IntervalValue(lb, ub);
     }
-    else
-    {
-        assert(false && "cannot support");
-    }
+    assert(false && "cannot support");
 }
 
 
