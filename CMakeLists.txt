@@ -10,9 +10,9 @@ configure_file(${PROJECT_SOURCE_DIR}/.config.in ${PROJECT_BINARY_DIR}/include/Ut
 add_compile_options("-Werror" "-Wall" "-Wno-deprecated-declarations")
 
 # Build SVF with C++ standard C++17
-set(CXX_STANDARD 17)
-set(CXX_EXTENSIONS ON)
-set(CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Keep assertions enabled if requested
 option(SVF_ENABLE_ASSERTIONS "Always enable assertions")
