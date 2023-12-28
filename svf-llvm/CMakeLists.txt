@@ -115,20 +115,20 @@ find_program(LLVM_CLANG
 
 # Define a custom command which generates the "extapi.bc" LLVM bytecode file
 add_custom_command(
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/svf-llvm/extapi.bc
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
   COMMAND ${LLVM_CLANG} -w
                         -S
                         -c
                         -emit-llvm
                         -fno-discard-value-names
                         -Xclang -disable-O0-optnone
-                        -o ${CMAKE_CURRENT_BINARY_DIR}/svf-llvm/extapi.bc
+                        -o ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
                         ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
   DEPENDS ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
 )
 
 # Add a custom target for generating the LLVM bytecode file (and add it to the default build targets)
-add_custom_target(gen_extapi_ir ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/svf-llvm/extapi.bc)
+add_custom_target(gen_extapi_ir ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc)
 
 # Install the SvfLLVM shared library and public headers (public headers go in include/svf/SVF-LLVM)
 install(
@@ -142,6 +142,6 @@ install(
 
 # Install the generated extapi.bc bytecode file
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/svf-llvm/extapi.bc
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
   DESTINATION ${SVF_INSTALL_EXTAPI_DIR}
 )
