@@ -282,15 +282,16 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
 
     bool isConst = true;
 
-    bool addedPointerType = false;
+    bool prevPtrOperand = false;
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
             gi != ge; ++gi)
     {
         const Type* gepTy = *gi;
         const SVFType* svfGepTy = LLVMModuleSet::getLLVMModuleSet()->getSVFType(gepTy);
 
-        assert((!addedPointerType || !svfGepTy->isPointerTy()) && "multiple pointer type?");
-        if(svfGepTy->isPointerTy()) addedPointerType = true;
+        assert((prevPtrOperand && svfGepTy->isPointerTy()) == false &&
+               "Expect no more than one gep operand to be of a pointer type");
+        if(svfGepTy->isPointerTy()) prevPtrOperand = true;
         const Value* offsetVal = gi.getOperand();
         const SVFValue* offsetSvfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offsetVal);
         assert(gepTy != offsetVal->getType() && "iteration and operand have the same type?");
