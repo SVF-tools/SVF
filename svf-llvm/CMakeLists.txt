@@ -72,11 +72,6 @@ add_llvm_library(SvfLLVM ${SVFLLVM_SOURCES})
 target_include_directories(SvfLLVM PUBLIC include)
 target_link_libraries(SvfLLVM PUBLIC ${llvm_libs} ${Z3_LIBRARIES} SvfCore)
 
-# Build SVF with C++ standard C++17
-set_property(TARGET SvfLLVM PROPERTY CXX_STANDARD 17)
-set_property(TARGET SvfLLVM PROPERTY CXX_EXTENSIONS ON)
-set_property(TARGET SvfLLVM PROPERTY CXX_STANDARD_REQUIRED ON)
-
 # Add intrinsics_gen target if we're building as part of LLVM source build
 if(TARGET intrinsics_gen)
   add_dependencies(SvfLLVM intrinsics_gen)

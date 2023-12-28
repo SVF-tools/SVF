@@ -7,7 +7,12 @@ message(STATUS "Using CMake with generator: ${CMAKE_GENERATOR}")
 configure_file(${PROJECT_SOURCE_DIR}/.config.in ${PROJECT_BINARY_DIR}/include/Util/config.h)
 
 # Treat compiler warnings as errors
-add_compile_options("-Werror" "-Wall")
+add_compile_options("-Werror" "-Wall" "-Wno-deprecated-declarations")
+
+# Build SVF with C++ standard C++17
+set(CXX_STANDARD 17)
+set(CXX_EXTENSIONS ON)
+set(CXX_STANDARD_REQUIRED ON)
 
 # Keep assertions enabled if requested
 option(SVF_ENABLE_ASSERTIONS "Always enable assertions")
