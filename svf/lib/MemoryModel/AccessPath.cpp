@@ -58,19 +58,26 @@ bool AccessPath::isConstantOffset() const
 
 /// Return element number of a type
 /// (1) StructType or Array, return flattened number elements.
-/// (2) SingleValueType or Function Type, return 1
+/// (2) Pointer type, return max field limit
+/// (3) Non-pointer SingleValueType or Function Type, return 1
 u32_t AccessPath::getElementNum(const SVFType* type) const
 {
     if (SVFUtil::isa<SVFArrayType, SVFStructType>(type))
     {
         return SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(type);
-    }
-    else if (type->isSingleValueType() || SVFUtil::isa<SVFFunctionType>(type))
+    } else if (type->isPointerTy())
     {
         // if type is a pointer, should be like:
         // %2 = getelementptr inbounds i32*, i32** %1, ...
         // where gepSrcPointee is of pointer type (i32*).
-        // the element number of int* should be 1
+        // this can be transformed to:
+        // %2 = getelementptr inbounds [N x i32], [N x i32]* %1, ...
+        // However, we do not know N without context information. int** implies non-contiguous blocks of memory
+        // In this case, we conservatively return max field limit
+        return Options::MaxFieldLimit();
+    }
+    else if (type->isSingleValueType() || SVFUtil::isa<SVFFunctionType>(type))
+    {
         return 1;
     }
     else
