@@ -65,7 +65,8 @@ u32_t AccessPath::getElementNum(const SVFType* type) const
     if (SVFUtil::isa<SVFArrayType, SVFStructType>(type))
     {
         return SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(type);
-    } else if (type->isPointerTy())
+    }
+    else if (type->isPointerTy())
     {
         // if type is a pointer, should be like:
         // %2 = getelementptr inbounds i32*, i32** %1, ...
