@@ -66,25 +66,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # By default, build SVF and its targets treating all compiler warnings as errors (except deprecations)
 add_compile_options(
-  $<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wall>
-  $<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>
-  $<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>
+  "$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wall>"
+  "$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>"
+  "$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>"
 )
 
 # Keep assertions enabled if requested
-add_compile_options($<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>)
+add_compile_options("$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>")
 
 # Export dynamic symbols if requested (adds "-export-dynamic" to linkers that support it to enable backtraces)
-add_compile_options($<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-rdynamic>)
+add_compile_options("$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-rdynamic>")
 
 # Configure whether a coverage build should be created for SVF (i.e. add runtime instrumentation)
 add_compile_options(
-  $<$<BOOL:${SVF_COVERAGE}>:-fprofile-arcs>
-  $<$<BOOL:${SVF_COVERAGE}>:-ftest-coverage>
+  "$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>"
+  "$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-ftest-coverage>"
 )
 add_link_options(
-  $<$<BOOL:${SVF_COVERAGE}>:-fprofile-arcs>
-  $<$<BOOL:${SVF_COVERAGE}>:-ftest-coverage>
+  "$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>"
+  "$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-ftest-coverage>"
 )
 
 # If building with sanitiser, load the given sanitiser mode
@@ -137,8 +137,8 @@ add_subdirectory(svf-llvm)
 # SVF had them enabled; since the LLVM instance is found in the "svf-llvm" subdirectory, it sets the
 # below variables in its parent directory (i.e. for this CMakeLists.txt) so check them here
 add_compile_definitions(
-  $<$<BOOL:${SVF_NO_RTTI}>:-fno-rtti>
-  $<$<BOOL:${SVF_NO_EXCEPTIONS}>:-fno-exceptions>
+  "$<$<BOOL:${SVF_NO_RTTI}>:-fno-rtti>"
+  "$<$<BOOL:${SVF_NO_EXCEPTIONS}>:-fno-exceptions>"
 )
 
 # Export the SVF target for including SVF from CMake using find_package(SVF)
