@@ -95,6 +95,13 @@ IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
         }
         return IntervalValue(lb, ub);
     }
+    else if (SVFUtil::isa<SVFOtherType>(type))
+    {
+        // handle other type like float double, set s32_t as the range
+        s64_t ub = static_cast<s64_t>(std::numeric_limits<s32_t>::max());
+        s64_t lb = static_cast<s64_t>(std::numeric_limits<s32_t>::min());
+        return IntervalValue(lb, ub);
+    }
     else
     {
         assert(false && "cannot support");
