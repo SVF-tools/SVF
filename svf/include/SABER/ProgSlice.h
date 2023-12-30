@@ -302,7 +302,8 @@ protected:
     /// Compute invalid branch condition stemming from removed strong update value-flow edges
     Condition computeInvalidCondFromRemovedSUVFEdge(const SVFGNode * cur);
 
-    const SVFGNodeToSVFGNodeSetMap& getRemovedSUVFEdges() const {
+    const SVFGNodeToSVFGNodeSetMap& getRemovedSUVFEdges() const
+    {
         return pathAllocator->getRemovedSUVFEdges();
     }
 

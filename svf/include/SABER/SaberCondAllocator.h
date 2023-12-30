@@ -241,7 +241,8 @@ public:
         negConds.set(condition.id());
     }
 
-     SVFGNodeToSVFGNodeSetMap & getRemovedSUVFEdges() {
+    SVFGNodeToSVFGNodeSetMap & getRemovedSUVFEdges()
+    {
         return removedSUVFEdges;
     }
 

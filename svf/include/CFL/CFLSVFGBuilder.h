@@ -29,9 +29,11 @@
 
 #include "SABER/SaberSVFGBuilder.h"
 
-namespace SVF{
+namespace SVF
+{
 
-class CFLSVFGBuilder: public SaberSVFGBuilder {
+class CFLSVFGBuilder: public SaberSVFGBuilder
+{
 public:
     typedef Set<const SVFGNode*> SVFGNodeSet;
     typedef Map<NodeID, PointsTo> NodeToPTSSMap;

@@ -65,7 +65,8 @@ public:
         svfg->addActualParmVFGNode(pagNode, cs);
     }
 
-    void setSaberCondAllocator(SaberCondAllocator* allocator) {
+    void setSaberCondAllocator(SaberCondAllocator* allocator)
+    {
         saberCondAllocator = allocator;
     }
 
