@@ -46,6 +46,10 @@ public:
 protected:
     /// Re-write create SVFG method
     virtual void buildSVFG();
+
+    /// Remove Incoming Edge for strong-update (SU) store instruction
+    /// Because the SU node does not receive indirect value
+    virtual void rmIncomingEdgeForSUStore(BVDataPTAImpl* pta);
 };
 
 }

@@ -84,7 +84,7 @@ protected:
 
     /// Remove Incoming Edge for strong-update (SU) store instruction
     /// Because the SU node does not receive indirect value
-    void rmIncomingEdgeForSUStore(BVDataPTAImpl* pta);
+    virtual void rmIncomingEdgeForSUStore(BVDataPTAImpl* pta);
 
     /// Add actual parameter SVFGNode for 1st argument of a deallocation like external function
     /// In order to path sensitive leak detection
