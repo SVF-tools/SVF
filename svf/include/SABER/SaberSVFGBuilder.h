@@ -62,6 +62,10 @@ public:
         svfg->addActualParmVFGNode(pagNode, cs);
     }
 
+    const Map<const SVFGNode*, SVFGNodeSet>& getRemovedSUVFEdges() const {
+        return removedSUVFEdges;
+    }
+
 protected:
     /// Re-write create SVFG method
     virtual void buildSVFG();
@@ -97,6 +101,8 @@ private:
     PointsTo globs;
     /// Store all global SVFG nodes
     SVFGNodeSet globSVFGNodes;
+    /// Removed strong update edge
+    Map<const SVFGNode*, SVFGNodeSet> removedSUVFEdges;
 };
 
 } // End namespace SVF

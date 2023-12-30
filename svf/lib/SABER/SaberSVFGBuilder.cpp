@@ -276,6 +276,8 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
                     }
                     for (SVFGEdge* edge: toRemove)
                     {
+                        if (isa<StoreSVFGNode>(edge->getSrcNode()))
+                            removedSUVFEdges[edge->getSrcNode()].insert(edge->getDstNode());
                         svfg->removeSVFGEdge(edge);
                     }
                 }

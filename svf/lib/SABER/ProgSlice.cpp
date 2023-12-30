@@ -52,6 +52,8 @@ bool ProgSlice::AllPathReachableSolve()
     {
         const SVFGNode* node = worklist.pop();
         setCurSVFGNode(node);
+
+        Condition invalidCond = computeInvalidCondFromRemovedSUVFEdge(node);
         Condition cond = getVFCond(node);
         for(SVFGNode::const_iterator it = node->OutEdgeBegin(), eit = node->OutEdgeEnd(); it!=eit; ++it)
         {
@@ -75,7 +77,7 @@ bool ProgSlice::AllPathReachableSolve()
                 }
                 else
                     vfCond = ComputeIntraVFGGuard(nodeBB,succBB);
-
+                vfCond = condAnd(vfCond, condNeg(invalidCond));
                 Condition succPathCond = condAnd(cond, vfCond);
                 if(setVFCond(succ,  condOr(getVFCond(succ), succPathCond) ))
                     worklist.push(succ);
@@ -87,6 +89,36 @@ bool ProgSlice::AllPathReachableSolve()
     }
 
     return isSatisfiableForAll();
+}
+
+/*!
+ * Compute invalid branch condition stemming from removed strong update value-flow edges
+ * @param cur current SVFG node
+ * @return invalid branch condition
+ */
+ProgSlice::Condition ProgSlice::computeInvalidCondFromRemovedSUVFEdge(const SVFGNode * cur) {
+    Set<const SVFBasicBlock*> validOutBBs; // the BBs of valid successors
+    for(SVFGNode::const_iterator it = cur->OutEdgeBegin(), eit = cur->OutEdgeEnd(); it!=eit; ++it) {
+        const SVFGEdge* edge = (*it);
+        const SVFGNode* succ = edge->getDstNode();
+        if(inBackwardSlice(succ)) {
+            validOutBBs.insert(getSVFGNodeBB(succ));
+        }
+    }
+    Condition invalidCond = getFalseCond();
+    auto suVFEdgesIt = removedSUVFEdges.find(cur);
+    if (suVFEdgesIt != removedSUVFEdges.end()) {
+        for (const auto &succ: suVFEdgesIt->second) {
+            if (!validOutBBs.count(getSVFGNodeBB(succ))) {
+                // removed vfg node does not reside in the BBs of valid successors
+                const SVFBasicBlock *nodeBB = getSVFGNodeBB(cur);
+                const SVFBasicBlock *succBB = getSVFGNodeBB(succ);
+                clearCFCond();
+                invalidCond = condOr(invalidCond, ComputeIntraVFGGuard(nodeBB, succBB));
+            }
+        }
+    }
+    return invalidCond;
 }
 
 /*!

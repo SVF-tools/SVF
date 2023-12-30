@@ -97,6 +97,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
             if(Options::DumpSlice())
                 annotateSlice(_curSlice);
 
+            memSSA.getRemovedSUVFEdges();
             if(_curSlice->AllPathReachableSolve())
                 _curSlice->setAllReachable();
 
@@ -277,7 +278,7 @@ void SrcSnkDDA::setCurSlice(const SVFGNode* src)
         clearVisitedMap();
     }
 
-    _curSlice = new ProgSlice(src,getSaberCondAllocator(), getSVFG());
+    _curSlice = new ProgSlice(src,getSaberCondAllocator(), getSVFG(), memSSA.getRemovedSUVFEdges());
 }
 
 void SrcSnkDDA::annotateSlice(ProgSlice* slice)
