@@ -58,10 +58,13 @@ public:
     typedef FIFOWorkList<const SVFGNode*> VFWorkList;		    ///< worklist for value-flow guard computation
     typedef FIFOWorkList<const SVFBasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
 
+    typedef SaberCondAllocator::SVFGNodeToSVFGNodeSetMap SVFGNodeToSVFGNodeSetMap;
+
+
     /// Constructor
-    ProgSlice(const SVFGNode* src, SaberCondAllocator* pa, const SVFG* graph, const Map<const SVFGNode*, SVFGNodeSet>& edges):
+    ProgSlice(const SVFGNode* src, SaberCondAllocator* pa, const SVFG* graph):
         root(src), partialReachable(false), fullReachable(false), reachGlob(false),
-        pathAllocator(pa), _curSVFGNode(nullptr), finalCond(pa->getFalseCond()), svfg(graph), removedSUVFEdges(edges)
+        pathAllocator(pa), _curSVFGNode(nullptr), finalCond(pa->getFalseCond()), svfg(graph)
     {
     }
 
@@ -299,6 +302,10 @@ protected:
     /// Compute invalid branch condition stemming from removed strong update value-flow edges
     Condition computeInvalidCondFromRemovedSUVFEdge(const SVFGNode * cur);
 
+    const SVFGNodeToSVFGNodeSetMap& getRemovedSUVFEdges() const {
+        return pathAllocator->getRemovedSUVFEdges();
+    }
+
 private:
     SVFGNodeSet forwardslice;				///<  the forward slice
     SVFGNodeSet backwardslice;				///<  the backward slice
@@ -312,7 +319,6 @@ private:
     const SVFGNode* _curSVFGNode;			///<  current svfg node during guard computation
     Condition finalCond;					///<  final condition
     const SVFG* svfg;						///<  SVFG
-    const Map<const SVFGNode*, SVFGNodeSet>& removedSUVFEdges;
 };
 
 } // End namespace SVF

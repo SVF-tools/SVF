@@ -106,8 +106,8 @@ ProgSlice::Condition ProgSlice::computeInvalidCondFromRemovedSUVFEdge(const SVFG
         }
     }
     Condition invalidCond = getFalseCond();
-    auto suVFEdgesIt = removedSUVFEdges.find(cur);
-    if (suVFEdgesIt != removedSUVFEdges.end()) {
+    auto suVFEdgesIt = getRemovedSUVFEdges().find(cur);
+    if (suVFEdgesIt != getRemovedSUVFEdges().end()) {
         for (const auto &succ: suVFEdgesIt->second) {
             if (!validOutBBs.count(getSVFGNodeBB(succ))) {
                 // removed vfg node does not reside in the BBs of valid successors

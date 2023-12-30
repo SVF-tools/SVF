@@ -48,6 +48,7 @@ void SrcSnkDDA::initialize(SVFModule* module)
     else
         svfg =  memSSA.buildPTROnlySVFG(ander);
     setGraph(memSSA.getSVFG());
+    getSaberCondAllocator()->setRemovedSUVFEdges(memSSA.getRemovedSUVFEdges());
     ptaCallGraph = ander->getPTACallGraph();
     //AndersenWaveDiff::releaseAndersenWaveDiff();
     /// allocate control-flow graph branch conditions
@@ -97,7 +98,6 @@ void SrcSnkDDA::analyze(SVFModule* module)
             if(Options::DumpSlice())
                 annotateSlice(_curSlice);
 
-            memSSA.getRemovedSUVFEdges();
             if(_curSlice->AllPathReachableSolve())
                 _curSlice->setAllReachable();
 
@@ -278,7 +278,7 @@ void SrcSnkDDA::setCurSlice(const SVFGNode* src)
         clearVisitedMap();
     }
 
-    _curSlice = new ProgSlice(src,getSaberCondAllocator(), getSVFG(), memSSA.getRemovedSUVFEdges());
+    _curSlice = new ProgSlice(src,getSaberCondAllocator(), getSVFG());
 }
 
 void SrcSnkDDA::annotateSlice(ProgSlice* slice)
