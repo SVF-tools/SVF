@@ -62,6 +62,31 @@ bool ProgSlice::AllPathReachableSolve()
                 Condition vfCond;
                 const SVFBasicBlock* nodeBB = getSVFGNodeBB(node);
                 const SVFBasicBlock* succBB = getSVFGNodeBB(succ);
+
+                bool suInOtherBranch = false;
+                if (isa<IntraMSSAPHISVFGNode>(succ)) {
+                    for (const auto &e: succ->getInEdges()) {
+                        // 1 Node *p = malloc1();
+                        // 2 if(c){
+                        // 3    p = malloc2();
+                        // 4 }
+                        // 5 free(p);
+                        //
+                        // For the above case, we aim to assign a value-flow guard (\neg c) on the value flow Line 1->Line 5
+                        // The challenge is that we cannot directly compute a guard on the control flow between Line 1 and Line 5 because Line 5 post dominates Line 1
+                        // To solve this, we change succBB from Line 5 to Line 3, and perform a negation on the derived vfcond (c)
+                        //
+                        // Now, the goal is to identify what causes the case, two conditions here:
+                        // (1) Line 1 and Line 3 merge to a MSSAPhi node
+                        // (2) Line 1 dominates Line 3
+                        if (e->getSrcNode() != node &&
+                                pathAllocator->dominate(nodeBB, getSVFGNodeBB(e->getSrcNode()))) {
+                            succBB = getSVFGNodeBB(e->getSrcNode());
+                            suInOtherBranch = true;
+                        }
+                    }
+                }
+
                 /// clean up the control flow conditions for next round guard computation
                 clearCFCond();
 
@@ -75,6 +100,8 @@ bool ProgSlice::AllPathReachableSolve()
                 }
                 else
                     vfCond = ComputeIntraVFGGuard(nodeBB,succBB);
+
+                if(suInOtherBranch) vfCond = condNeg(vfCond);
 
                 Condition succPathCond = condAnd(cond, vfCond);
                 if(setVFCond(succ,  condOr(getVFCond(succ), succPathCond) ))
