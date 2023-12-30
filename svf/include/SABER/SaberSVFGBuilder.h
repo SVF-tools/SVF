@@ -33,6 +33,8 @@
 #include "MSSA/SVFGBuilder.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/WorkList.h"
+#include "SABER/SaberCondAllocator.h"
+
 
 namespace SVF
 {
@@ -62,8 +64,8 @@ public:
         svfg->addActualParmVFGNode(pagNode, cs);
     }
 
-    const Map<const SVFGNode*, SVFGNodeSet>& getRemovedSUVFEdges() const {
-        return removedSUVFEdges;
+    void setSaberCondAllocator(SaberCondAllocator* allocator) {
+        saberCondAllocator = allocator;
     }
 
 protected:
@@ -101,8 +103,8 @@ private:
     PointsTo globs;
     /// Store all global SVFG nodes
     SVFGNodeSet globSVFGNodes;
-    /// Removed strong update edge
-    Map<const SVFGNode*, SVFGNodeSet> removedSUVFEdges;
+
+    SaberCondAllocator* saberCondAllocator;
 };
 
 } // End namespace SVF

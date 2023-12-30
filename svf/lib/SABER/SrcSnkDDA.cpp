@@ -43,12 +43,12 @@ void SrcSnkDDA::initialize(SVFModule* module)
     SVFIR* pag = PAG::getPAG();
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
+    memSSA.setSaberCondAllocator(getSaberCondAllocator());
     if(Options::SABERFULLSVFG())
         svfg =  memSSA.buildFullSVFG(ander);
     else
         svfg =  memSSA.buildPTROnlySVFG(ander);
     setGraph(memSSA.getSVFG());
-    getSaberCondAllocator()->setRemovedSUVFEdges(memSSA.getRemovedSUVFEdges());
     ptaCallGraph = ander->getPTACallGraph();
     //AndersenWaveDiff::releaseAndersenWaveDiff();
     /// allocate control-flow graph branch conditions

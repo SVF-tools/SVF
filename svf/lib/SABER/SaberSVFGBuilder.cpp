@@ -254,6 +254,7 @@ bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, B
  */
 void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 {
+    assert(saberCondAllocator && "saber condition allocator not set yet!");
 
     for(SVFG::iterator it = svfg->begin(), eit = svfg->end(); it!=eit; ++it)
     {
@@ -277,7 +278,7 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
                     for (SVFGEdge* edge: toRemove)
                     {
                         if (isa<StoreSVFGNode>(edge->getSrcNode()))
-                            removedSUVFEdges[edge->getSrcNode()].insert(edge->getDstNode());
+                            saberCondAllocator->getRemovedSUVFEdges()[edge->getSrcNode()].insert(edge->getDstNode());
                         svfg->removeSVFGEdge(edge);
                     }
                 }

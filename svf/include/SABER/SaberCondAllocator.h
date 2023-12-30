@@ -241,13 +241,10 @@ public:
         negConds.set(condition.id());
     }
 
-    const SVFGNodeToSVFGNodeSetMap& getRemovedSUVFEdges() const {
+     SVFGNodeToSVFGNodeSetMap & getRemovedSUVFEdges() {
         return removedSUVFEdges;
     }
 
-    inline void setRemovedSUVFEdges(const SVFGNodeToSVFGNodeSetMap& edges) {
-        removedSUVFEdges = edges;
-    }
 private:
 
     /// Allocate path condition for every basic block
