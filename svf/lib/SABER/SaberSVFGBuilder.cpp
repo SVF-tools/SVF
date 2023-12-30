@@ -32,6 +32,8 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
 #include "Util/Options.h"
+#include "SABER/SaberCondAllocator.h"
+
 
 using namespace SVF;
 using namespace SVFUtil;

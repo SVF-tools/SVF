@@ -33,11 +33,12 @@
 #include "MSSA/SVFGBuilder.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/WorkList.h"
-#include "SABER/SaberCondAllocator.h"
 
 
 namespace SVF
 {
+
+class SaberCondAllocator;
 
 class SaberSVFGBuilder : public SVFGBuilder
 {
