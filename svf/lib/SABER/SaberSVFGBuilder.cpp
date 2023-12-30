@@ -32,6 +32,8 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
 #include "Util/Options.h"
+#include "SABER/SaberCondAllocator.h"
+
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -50,6 +52,7 @@ void SaberSVFGBuilder::buildSVFG()
 
     rmDerefDirSVFGEdges(pta);
 
+    assert(saberCondAllocator && "saber condition allocator not set yet!");
     rmIncomingEdgeForSUStore(pta);
 
     DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
@@ -276,6 +279,8 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
                     }
                     for (SVFGEdge* edge: toRemove)
                     {
+                        if (isa<StoreSVFGNode>(edge->getSrcNode()))
+                            saberCondAllocator->getRemovedSUVFEdges()[edge->getSrcNode()].insert(edge->getDstNode());
                         svfg->removeSVFGEdge(edge);
                     }
                 }
