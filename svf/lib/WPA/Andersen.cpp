@@ -897,7 +897,7 @@ void Andersen::dumpTopLevelPtsTo()
 
             if (pts.empty())
             {
-                outs() << "\t\tPointsTo: {empty}\n\n";
+                outs() << "\t\tPointsTo: {empty}\n";
             }
             else
             {
@@ -910,8 +910,13 @@ void Andersen::dumpTopLevelPtsTo()
                     line.insert(*it);
                 }
                 for (multiset<u32_t>::const_iterator it = line.begin(); it != line.end(); ++it)
-                    outs() << *it << " ";
-                outs() << "}\n\n";
+                {
+                    if (auto gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(*it)))
+                        outs() << gepNode->getBaseNode() << "_" << gepNode->getConstantFieldIdx() << " ";
+                    else
+                        outs() << *it << " ";
+                }
+                outs() << "}\n";
             }
         }
     }
