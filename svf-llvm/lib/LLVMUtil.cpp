@@ -438,7 +438,7 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
 /*!
  * Return the type of the object from a heap allocation
  */
-const Type* LLVMUtil::getTypeOfHeapAlloc(const Instruction *inst)
+const Type* LLVMUtil::inferTypeOfHeapObjOrStaticObj(const Instruction *inst)
 {
     const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);

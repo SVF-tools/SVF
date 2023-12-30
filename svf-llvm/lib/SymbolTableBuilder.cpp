@@ -577,7 +577,7 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
 ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
 {
     /// TODO: getPtrElementType to be removed
-    const PointerType* refTy = nullptr;
+    const Type* objTy = nullptr;
 
     const Instruction* I = SVFUtil::dyn_cast<Instruction>(val);
 
@@ -585,15 +585,17 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     // (1) A heap/static object from a callsite
     if (I && isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I)))
     {
-        refTy = getRefTypeOfHeapAllocOrStatic(I);
+        objTy = inferTypeOfHeapObjOrStaticObj(I);
     }
     // (2) Other objects (e.g., alloca, global, etc.)
     else
-        refTy = SVFUtil::dyn_cast<PointerType>(val->getType());
-
-    if (refTy)
     {
-        Type* objTy = getPtrElementType(refTy);
+        if(const PointerType* refTy = SVFUtil::dyn_cast<PointerType>(val->getType()))
+            objTy = getPtrElementType(refTy);
+    }
+
+    if (objTy)
+    {
         ObjTypeInfo* typeInfo = new ObjTypeInfo(
             LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy),
             Options::MaxFieldLimit());
@@ -761,9 +763,8 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
     if(const Value* castUse = getFirstUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        const Type* objTy = getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(val));
-        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy));
         analyzeObjType(typeinfo,castUse);
+        const Type* objTy = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(typeinfo->getType());
         if(SVFUtil::isa<ArrayType>(objTy))
             return getNumOfElements(objTy);
         else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objTy))
@@ -792,7 +793,6 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
     if(const Value* castUse = getFirstUseViaCastInst(val))
     {
         typeinfo->setFlag(ObjTypeInfo::STATIC_OBJ);
-        typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
         analyzeObjType(typeinfo,castUse);
     }
     else

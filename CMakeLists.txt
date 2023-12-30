@@ -2,21 +2,17 @@ cmake_minimum_required(VERSION 3.13.4)
 
 project("SVF")
 
-configure_file(${PROJECT_SOURCE_DIR}/.config.in
-               ${PROJECT_BINARY_DIR}/include/Util/config.h)
+message(STATUS "Using CMake with generator: ${CMAKE_GENERATOR}")
 
-# We need to match the build environment for LLVM: In particular, we need C++14
-# and the -fno-rtti flag
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# add -std=gnu++14
-set(CMAKE_CXX_EXTENSIONS ON)
-
-add_compile_options("-fno-rtti")
-add_compile_options("-fno-exceptions")
+configure_file(${PROJECT_SOURCE_DIR}/.config.in ${PROJECT_BINARY_DIR}/include/Util/config.h)
 
 # Treat compiler warnings as errors
-add_compile_options("-Werror" "-Wall")
+add_compile_options("-Werror" "-Wall" "-Wno-deprecated-declarations")
+
+# Build SVF with C++ standard C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Keep assertions enabled if requested
 option(SVF_ENABLE_ASSERTIONS "Always enable assertions")
@@ -80,20 +76,20 @@ endif()
 add_subdirectory(svf)
 add_subdirectory(svf-llvm)
 
-install(
-  DIRECTORY ${PROJECT_SOURCE_DIR}/svf/include/
-            ${PROJECT_SOURCE_DIR}/svf-llvm/include/
-  COMPONENT devel
-  DESTINATION include/svf
-  FILES_MATCHING
-  PATTERN "**/*.h")
+# Whether RTTI/Exceptions are enabled currently depends on whether the LLVM instance used to build
+# SVF had them enabled; since the LLVM instance is found in the "svf-llvm" subdirectory, it sets the
+# below variables in its parent directory (i.e. for this CMakeLists.txt) so check them here
+if(SVF_NO_RTTI)
+  add_compile_options("-fno-rtti")
+endif()
 
-# Compile extapi.c to extapi.bc
-find_path(LLVM_CLANG_DIR
-        NAMES clang llvm
-        HINTS ${LLVM_DIR} ENV LLVM_DIR
-        PATH_SUFFIXES bin)
-add_custom_target(extapi_ir ALL
-    COMMAND ${LLVM_CLANG_DIR}/clang -w -S -c -Xclang -disable-O0-optnone -fno-discard-value-names -emit-llvm ${PROJECT_SOURCE_DIR}/svf-llvm/lib/extapi.c -o ${PROJECT_BINARY_DIR}/svf-llvm/extapi.bc
-    DEPENDS ${PROJECT_SOURCE_DIR}/svf-llvm/lib/extapi.c
+if(SVF_NO_EH)
+  add_compile_options("-fno-exceptions")
+endif()
+
+# Install generated configuration header (see `configure_file()`) to top-level include dir of SVF
+include(GNUInstallDirs)
+install(
+  FILES ${PROJECT_BINARY_DIR}/include/Util/config.h
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/svf/Util
 )
