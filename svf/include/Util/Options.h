@@ -80,17 +80,6 @@ public:
     // ContextDDA.cpp
     static const Option<u32_t> CxtBudget;
 
-    // DDAClient.cpp
-    static const Option<bool> SingleLoad;
-    static const Option<bool> DumpFree;
-    static const Option<bool> DumpUninitVar;
-    static const Option<bool> DumpUninitPtr;
-    static const Option<bool> DumpSUPts;
-    static const Option<bool> DumpSUStore;
-    static const Option<bool> MallocOnly;
-    static const Option<bool> TaintUninitHeap;
-    static const Option<bool> TaintUninitStack;
-
     // DDAPass.cpp
     static const Option<u32_t> MaxPathLen;
     static const Option<u32_t> MaxContextLen;
@@ -121,14 +110,12 @@ public:
     // Sparse value-flow graph (VFG.cpp)
     static const Option<bool> DumpVFG;
 
-    // Location set for modeling abstract memory object (AccessPath.cpp)
-    static const Option<bool> SingleStride;
-
     // Base class of pointer analyses (PointerAnalysis.cpp)
     static const Option<bool> TypePrint;
     static const Option<bool> FuncPointerPrint;
     static const Option<bool> PTSPrint;
     static const Option<bool> PTSAllPrint;
+    static const Option<bool> PrintFieldWithBasePrefix;
     static const Option<bool> PStat;
     static const Option<u32_t> StatBudget;
     static const Option<bool> PAGDotGraph;

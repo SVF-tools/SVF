@@ -911,8 +911,11 @@ void Andersen::dumpTopLevelPtsTo()
                 }
                 for (multiset<u32_t>::const_iterator it = line.begin(); it != line.end(); ++it)
                 {
-                    if (auto gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(*it)))
-                        outs() << gepNode->getBaseNode() << "_" << gepNode->getConstantFieldIdx() << " ";
+                    if(Options::PrintFieldWithBasePrefix())
+                        if (auto gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(*it)))
+                            outs() << gepNode->getBaseNode() << "_" << gepNode->getConstantFieldIdx() << " ";
+                        else
+                            outs() << *it << " ";
                     else
                         outs() << *it << " ";
                 }
