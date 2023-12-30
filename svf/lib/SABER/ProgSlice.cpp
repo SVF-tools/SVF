@@ -93,6 +93,15 @@ bool ProgSlice::AllPathReachableSolve()
 
 /*!
  * Compute invalid branch condition stemming from removed strong update value-flow edges
+ *
+ * Fix issue: https://github.com/SVF-tools/SVF/issues/1306
+ * Line 11->13 is removed due to a strong update at Line 13, which means Line 11 is unreachable to Line 13 on the value flow graph.
+ * However on the control flow graph they are still considered as reachable,
+ * making the vf guard on Line 11 -> Line 15 a true condition (should consider the infeasible branch Line 11 -> Line 13)
+ * Therefore, we collect this infeasible branch condition (condition on Line 11 -> Line 13, `a == b`) as an invalid condition (invalidCond),
+ * and add the negation of invalidCond when computing value flow guard starting from the source of the SU.
+ * In this example, we add `a != b` on Line 11 -> Line 15.
+ *
  * @param cur current SVFG node
  * @return invalid branch condition
  */
