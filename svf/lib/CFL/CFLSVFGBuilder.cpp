@@ -1,4 +1,4 @@
-//===----- CFLVF.h -- CFL Value-Flow Client--------------//
+//===- CFLSVFGBuilder.cpp -- Building SVFG for CFL--------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -20,49 +20,38 @@
 //
 //===----------------------------------------------------------------------===//
 
-/*
- * CFLVF.h
- *
- *  Created on: September 5, 2022
- *      Author: Pei Xu
- */
-
-#ifndef INCLUDE_CFL_CFLVF_H_
-#define INCLUDE_CFL_CFLVF_H_
-
-
-#include "CFL/CFLBase.h"
-#include "CFL/CFLStat.h"
+//
+// Created by Xiao on 30/12/23.
+//
+#include "MemoryModel/PointerAnalysisImpl.h"
+#include "Graphs/SVFG.h"
+#include "Util/Options.h"
 #include "CFL/CFLSVFGBuilder.h"
-#include "WPA/Andersen.h"
 
-namespace SVF
+
+using namespace SVF;
+using namespace SVFUtil;
+
+void CFLSVFGBuilder::buildSVFG()
 {
-class CFLVF : public CFLBase
-{
 
-public:
-    CFLVF(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFSCS_WPA)
-    {
-    }
+    MemSSA* mssa = svfg->getMSSA();
+    svfg->buildSVFG();
+    BVDataPTAImpl* pta = mssa->getPTA();
+    DBOUT(DGENERAL, outs() << pasMsg("\tCollect Global Variables\n"));
 
-    /// Parameter Checking
-    virtual void checkParameter();
+    collectGlobals(pta);
 
-    /// Initialize the grammar, graph, solver
-    virtual void initialize();
+    DBOUT(DGENERAL, outs() << pasMsg("\tRemove Dereference Direct SVFG Edge\n"));
 
-    /// Print grammar and graph
-    virtual void finalize();
+    rmDerefDirSVFGEdges(pta);
 
-    /// Build CFLGraph via VFG
-    void buildCFLGraph();
+    rmIncomingEdgeForSUStore(pta);
 
-private:
-    CFLSVFGBuilder memSSA;
-    SVFG* svfg;
-};
+    DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
 
-} // End namespace SVF
+    AddExtActualParmSVFGNodes(pta->getPTACallGraph());
 
-#endif /* INCLUDE_CFL_CFLVF_H_*/
+    if(pta->printStat())
+        svfg->performStat();
+}

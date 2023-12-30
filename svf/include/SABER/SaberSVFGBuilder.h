@@ -76,7 +76,7 @@ protected:
     /// Return TRUE if this is a strong update STORE statement.
     bool isStrongUpdate(const SVFGNode* node, NodeID& singleton, BVDataPTAImpl* pta);
 
-private:
+protected:
     /// Remove direct value-flow edge to a dereference point for Saber source-sink memory error detection
     /// for example, given two statements: p = alloc; q = *p, the direct SVFG edge between them is deleted
     /// Because those edges only stand for values used at the dereference points but they can not pass the value to other definitions

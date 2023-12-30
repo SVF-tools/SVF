@@ -52,6 +52,7 @@ void SaberSVFGBuilder::buildSVFG()
 
     rmDerefDirSVFGEdges(pta);
 
+    assert(saberCondAllocator && "saber condition allocator not set yet!");
     rmIncomingEdgeForSUStore(pta);
 
     DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
@@ -256,7 +257,6 @@ bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, B
  */
 void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 {
-    assert(saberCondAllocator && "saber condition allocator not set yet!");
 
     for(SVFG::iterator it = svfg->begin(), eit = svfg->end(); it!=eit; ++it)
     {
