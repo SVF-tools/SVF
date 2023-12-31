@@ -30,8 +30,6 @@
 #ifndef SVF_SVFSTAT_H
 #define SVF_SVFSTAT_H
 
-#include <string>
-
 namespace SVF
 {
 
