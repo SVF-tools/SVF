@@ -63,6 +63,8 @@ install(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
 # By default, build SVF and its targets treating all compiler warnings as errors (except deprecations)
 add_compile_options(
@@ -137,8 +139,8 @@ add_subdirectory(svf-llvm)
 # SVF had them enabled; since the LLVM instance is found in the "svf-llvm" subdirectory, it sets the
 # below variables in its parent directory (i.e. for this CMakeLists.txt) so check them here
 add_compile_definitions(
-  "$<$<BOOL:${SVF_NO_RTTI}>:-fno-rtti>"
-  "$<$<BOOL:${SVF_NO_EXCEPTIONS}>:-fno-exceptions>"
+  $<IF:$<BOOL:${SVF_ENABLE_RTTI}>,,-fno-rtti>
+  $<IF:$<BOOL:${SVF_ENABLE_EXCEPTIONS}>,,-fno-exceptions>
 )
 
 # Export the SVF target for including SVF from CMake using find_package(SVF)

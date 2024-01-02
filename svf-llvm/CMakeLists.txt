@@ -23,17 +23,9 @@ include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
-# Check if LLVM was built without exception handling; if so, disable exception handling for SVF
-if(NOT LLVM_ENABLE_EH)
-  message(STATUS "LLVM built without exception handling; adding \"-fno-exceptions\" to compile options")
-  set(SVF_NO_RTTI ON PARENT_SCOPE)          # Checked in top-level CMakeLists.txt
-endif()
-
-# Check if LLVM was built without runtime type information (RTTI); if so, disable RTTI for SVF
-if(NOT LLVM_ENABLE_RTTI)
-  message(STATUS "LLVM built without runtime type information (RTTI); adding \"-fno-rtti\" to compile options")
-  set(SVF_NO_EXCEPTIONS ON PARENT_SCOPE)    # Checked in top-level CMakeLists.txt
-endif()
+# Ensure SVF is built with RTTI/exception handling if the used LLVM instance has them enabled
+set(SVF_ENABLE_RTTI ${LLVM_ENABLE_RTTI} PARENT_SCOPE)
+set(SVF_ENABLE_EXCEPTIONS ${LLVM_ENABLE_EH} PARENT_SCOPE)
 
 # Check if LLVM was built generating the single libLLVM.so shared library file or as separate static libraries
 if(LLVM_LINK_LLVM_DYLIB)
@@ -64,7 +56,7 @@ else()
     support
     target
     transformutils
-)
+  )
 endif()
 
 # Make the "add_llvm_library()" command available and configure LLVM/CMake
