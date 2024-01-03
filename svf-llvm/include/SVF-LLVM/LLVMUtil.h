@@ -126,10 +126,6 @@ static inline Type* getPtrElementType(const PointerType* pty)
 #endif
 }
 
-/// Infer type based on llvm value, this is for the migration to opaque pointer
-/// please refer to: https://llvm.org/docs/OpaquePointers.html#migration-instructions
-Type *getPointeeType(const Value *value);
-
 /// Get the reference type of heap/static object from an allocation site.
 //@{
 const Type *inferTypeOfHeapObjOrStaticObj(const Instruction* inst);

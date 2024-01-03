@@ -234,13 +234,8 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 
 void SymbolTableBuilder::collectSVFTypeInfo(const Value* val)
 {
-    (void)getOrAddSVFTypeInfo(val->getType());
-    if (const PointerType * ptrType = SVFUtil::dyn_cast<PointerType>(val->getType()))
-    {
-        // TODO: getPtrElementType to be removed
-        const Type* objtype = LLVMUtil::getPtrElementType(ptrType);
-        (void)getOrAddSVFTypeInfo(objtype);
-    }
+    Type *valType = val->getType();
+    (void)getOrAddSVFTypeInfo(valType);
     if(isGepConstantExpr(val) || SVFUtil::isa<GetElementPtrInst>(val))
     {
         for (bridge_gep_iterator
@@ -590,12 +585,25 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     // (2) Other objects (e.g., alloca, global, etc.)
     else
     {
-        if(const PointerType* refTy = SVFUtil::dyn_cast<PointerType>(val->getType()))
-            objTy = getPtrElementType(refTy);
+        if (SVFUtil::isa<PointerType>(val->getType())) {
+            if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
+            {
+                // get the type of the allocated memory
+                // e.g., for `%retval = alloca i64, align 4`, we return i64
+                objTy = allocaInst->getAllocatedType();
+            } else if (const GlobalValue *global = SVFUtil::dyn_cast<GlobalValue>(val)) {
+                // get the pointee type of the global pointer (begins with @ symbol in llvm)
+                objTy = global->getValueType();
+            } else {
+                SVFUtil::errs() << dumpValue(val) << "\n";
+                assert(false && "not an allocation or global?");
+            }
+        }
     }
 
     if (objTy)
     {
+        (void) getOrAddSVFTypeInfo(objTy);
         ObjTypeInfo* typeInfo = new ObjTypeInfo(
             LLVMModuleSet::getLLVMModuleSet()->getSVFType(objTy),
             Options::MaxFieldLimit());
