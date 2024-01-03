@@ -557,30 +557,33 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
     NodeID dstVar = load->getPAGDstNodeID();
 
     const PointsTo& srcPts = getPts(load->getPAGSrcNodeID());
-    for (PointsTo::iterator ptdIt = srcPts.begin(); ptdIt != srcPts.end(); ++ptdIt)
-    {
-        NodeID ptd = *ptdIt;
 
-        if (pag->isConstantObj(ptd) || pag->getGNode(load->getPAGDstNodeID())->isPointer()==false)
-            continue;
-
-        if (unionPtsFromIn(load, ptd, dstVar))
-            changed = true;
-
-        if (isFieldInsensitive(ptd))
+    // p = *q, the type of p must be a pointer
+    if(pag->getGNode(load->getPAGDstNodeID())->isPointer()) {
+        for (PointsTo::iterator ptdIt = srcPts.begin(); ptdIt != srcPts.end(); ++ptdIt)
         {
-            /// If the ptd is a field-insensitive node, we should also get all field nodes'
-            /// points-to sets and pass them to pagDst.
-            const NodeBS& allFields = getAllFieldsObjVars(ptd);
-            for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end();
-                    fieldIt != fieldEit; ++fieldIt)
+            NodeID ptd = *ptdIt;
+
+            if (pag->isConstantObj(ptd))
+                continue;
+
+            if (unionPtsFromIn(load, ptd, dstVar))
+                changed = true;
+
+            if (isFieldInsensitive(ptd))
             {
-                if (unionPtsFromIn(load, *fieldIt, dstVar))
-                    changed = true;
+                /// If the ptd is a field-insensitive node, we should also get all field nodes'
+                /// points-to sets and pass them to pagDst.
+                const NodeBS& allFields = getAllFieldsObjVars(ptd);
+                for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end();
+                     fieldIt != fieldEit; ++fieldIt)
+                {
+                    if (unionPtsFromIn(load, *fieldIt, dstVar))
+                        changed = true;
+                }
             }
         }
     }
-
     double end = stat->getClk();
     loadTime += (end - start) / TIMEINTERVAL;
     return changed;
@@ -609,13 +612,14 @@ bool FlowSensitive::processStore(const StoreSVFGNode* store)
     double start = stat->getClk();
     bool changed = false;
 
-    if(getPts(store->getPAGSrcNodeID()).empty() == false)
+    // *p = q, the type of q must be a pointer
+    if(getPts(store->getPAGSrcNodeID()).empty() == false && pag->getGNode(store->getPAGSrcNodeID())->isPointer())
     {
         for (PointsTo::iterator it = dstPts.begin(), eit = dstPts.end(); it != eit; ++it)
         {
             NodeID ptd = *it;
 
-            if (pag->isConstantObj(ptd) || pag->getGNode(store->getPAGSrcNodeID())->isPointer()==false)
+            if (pag->isConstantObj(ptd))
                 continue;
 
             if (unionPtsFromTop(store, store->getPAGSrcNodeID(), ptd))
