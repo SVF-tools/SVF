@@ -561,7 +561,7 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
     {
         NodeID ptd = *ptdIt;
 
-        if (pag->isConstantObj(ptd) || pag->isNonPointerObj(ptd))
+        if (pag->isConstantObj(ptd) || pag->getGNode(load->getPAGDstNodeID())->isPointer())
             continue;
 
         if (unionPtsFromIn(load, ptd, dstVar))
@@ -615,7 +615,7 @@ bool FlowSensitive::processStore(const StoreSVFGNode* store)
         {
             NodeID ptd = *it;
 
-            if (pag->isConstantObj(ptd) || pag->isNonPointerObj(ptd))
+            if (pag->isConstantObj(ptd) || pag->getGNode(store->getPAGSrcNodeID())->isPointer())
                 continue;
 
             if (unionPtsFromTop(store, store->getPAGSrcNodeID(), ptd))
