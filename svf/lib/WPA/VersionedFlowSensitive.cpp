@@ -658,7 +658,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
     const PointsTo& qpt = getPts(q);
     for (NodeID o : qpt)
     {
-        if (pag->isConstantObj(o) || pag->getGNode(load->getPAGDstNodeID())->isPointer()) continue;
+        if (pag->isConstantObj(o) || pag->getGNode(load->getPAGDstNodeID())->isPointer()==false) continue;
 
         const Version c = getConsume(l, o);
         if (c != invalidVersion && vPtD->unionPts(p, atKey(o, c)))
@@ -709,7 +709,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     {
         for (NodeID o : ppt)
         {
-            if (pag->isConstantObj(o) || pag->getGNode(store->getPAGSrcNodeID())->isPointer()) continue;
+            if (pag->isConstantObj(o) || pag->getGNode(store->getPAGSrcNodeID())->isPointer()==false) continue;
 
             const Version y = getYield(l, o);
             if (y != invalidVersion && vPtD->unionPts(atKey(o, y), q))
