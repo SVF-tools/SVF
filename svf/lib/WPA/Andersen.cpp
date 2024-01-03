@@ -352,7 +352,7 @@ bool Andersen::processLoad(NodeID node, const ConstraintEdge* load)
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
     ///       Try to handle black hole obj in an appropriate way.
 //	if (pag->isBlkObjOrConstantObj(node) || isNonPointerObj(node))
-    if (pag->isConstantObj(node) || isNonPointerObj(node))
+    if (pag->isConstantObj(node) || pag->getGNode(load->getDstID())->isPointer() == false)
         return false;
 
     numOfProcessedLoad++;
@@ -372,7 +372,7 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store)
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
     ///       Try to handle black hole obj in an appropriate way
 //	if (pag->isBlkObjOrConstantObj(node) || isNonPointerObj(node))
-    if (pag->isConstantObj(node) || isNonPointerObj(node))
+    if (pag->isConstantObj(node) || pag->getGNode(store->getSrcID())->isPointer() == false)
         return false;
 
     numOfProcessedStore++;
