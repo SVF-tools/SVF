@@ -460,7 +460,6 @@ public:
     bool isConstantArray() const;
     bool isConstDataOrConstGlobal() const;
     bool isConstDataOrAggData() const;
-    bool hasPtrObj() const;
     //@}
 
     /// Operator overloading
@@ -644,10 +643,6 @@ public:
     inline bool isConstDataOrAggData()
     {
         return hasFlag(CONST_DATA);
-    }
-    inline bool hasPtrObj()
-    {
-        return hasFlag(HASPTR_OBJ);
     }
     //@}
 };

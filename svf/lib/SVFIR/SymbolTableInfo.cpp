@@ -510,10 +510,6 @@ bool MemObj::isConstDataOrAggData() const
     return typeInfo->isConstDataOrAggData();
 }
 
-bool MemObj::hasPtrObj() const
-{
-    return typeInfo->hasPtrObj();
-}
 
 const std::string MemObj::toString() const
 {
