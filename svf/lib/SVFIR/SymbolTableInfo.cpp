@@ -415,6 +415,7 @@ void MemObj::setNumOfElements(u32_t num)
 /// Get obj type info
 const SVFType* MemObj::getType() const
 {
+    assert(!isHeap() && "heap object does not have a static type, need inference.");
     return typeInfo->getType();
 }
 /*
