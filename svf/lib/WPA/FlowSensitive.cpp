@@ -559,7 +559,8 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
     const PointsTo& srcPts = getPts(load->getPAGSrcNodeID());
 
     // p = *q, the type of p must be a pointer
-    if(load->getPAGDstNode()->isPointer()) {
+    if(load->getPAGDstNode()->isPointer())
+    {
         for (PointsTo::iterator ptdIt = srcPts.begin(); ptdIt != srcPts.end(); ++ptdIt)
         {
             NodeID ptd = *ptdIt;
@@ -576,7 +577,7 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
                 /// points-to sets and pass them to pagDst.
                 const NodeBS& allFields = getAllFieldsObjVars(ptd);
                 for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end();
-                     fieldIt != fieldEit; ++fieldIt)
+                        fieldIt != fieldEit; ++fieldIt)
                 {
                     if (unionPtsFromIn(load, *fieldIt, dstVar))
                         changed = true;
