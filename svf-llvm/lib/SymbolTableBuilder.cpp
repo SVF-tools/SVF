@@ -645,7 +645,7 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
     const PointerType* refty = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(refty && "this value should be a pointer type!");
     // TODO: getPtrElementType need type inference
-    Type *elemTy = getPtrElementType(refty);
+    const Type *elemTy = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(typeinfo->getType());
     // Find the inter nested array element
     while (const ArrayType* AT = SVFUtil::dyn_cast<ArrayType>(elemTy))
     {
