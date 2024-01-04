@@ -410,41 +410,6 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
     return res;
 }
 
-/*!
- * Init Z3Expr for ValVar
- * @param valVar
- * @param valExprIdToCondValPairMap
- */
-void SVFIR2ItvExeState::initValVar(const ValVar *valVar, u32_t varId)
-{
-
-    SVFIR *svfir = PAG::getPAG();
-    if (const SVFType *type = valVar->getType())
-    {
-        // TODO:miss floatpointerty, voidty, labelty, matadataty
-        if (type->getKind() == SVFType::SVFIntegerTy ||
-                type->getKind() == SVFType::SVFPointerTy ||
-                type->getKind() == SVFType::SVFFunctionTy ||
-                type->getKind() == SVFType::SVFStructTy ||
-                type->getKind() == SVFType::SVFArrayTy)
-            // continue with null expression
-            _es[varId] = IntervalValue::top();
-        else
-        {
-
-            SVFUtil::errs() << valVar->getValue()->toString() << "\n" << " type: " << *type << "\n";
-            assert(false && "what other types we have");
-        }
-    }
-    else
-    {
-        if (svfir->getNullPtr() == valVar->getId())
-            _es[varId] = IntervalValue(0, 0);
-        else
-            _es[varId] = IntervalValue::top();
-        assert(SVFUtil::isa<DummyValVar>(valVar) && "not a DummValVar if it has no type?");
-    }
-}
 
 /*!
  * Init Z3Expr for ObjVar
@@ -494,15 +459,9 @@ void SVFIR2ItvExeState::initSVFVar(u32_t varId)
         initObjVar(objVar, varId);
         return;
     }
-    else if (const ValVar *valVar = dyn_cast<ValVar>(svfVar))
-    {
-        initValVar(valVar, varId);
-        return;
-    }
     else
     {
-        initValVar(valVar, varId);
-        return;
+        assert(false && "not an obj var?");
     }
 }
 
