@@ -351,23 +351,15 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
     const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(type && "this value should be a pointer type!");
     /// If type is void* (i8*) and val is immediately used at a bitcast instruction
-    // TODO: getPtrElementType to be removed
-    if (IntegerType *IT = SVFUtil::dyn_cast<IntegerType>(getPtrElementType(type)))
+    const Value *latestUse = nullptr;
+    for (const auto &it : val->uses())
     {
-        if (IT->getBitWidth() == 8)
-        {
-            const Value *latestUse = nullptr;
-            for (const auto &it : val->uses())
-            {
-                if (SVFUtil::isa<BitCastInst>(it.getUser()))
-                    latestUse = it.getUser();
-                else
-                    latestUse = nullptr;
-            }
-            return latestUse;
-        }
+        if (SVFUtil::isa<BitCastInst>(it.getUser()))
+            latestUse = it.getUser();
+        else
+            latestUse = nullptr;
     }
-    return nullptr;
+    return latestUse;
 }
 
 /*!

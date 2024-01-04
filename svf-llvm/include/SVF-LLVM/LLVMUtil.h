@@ -353,27 +353,6 @@ void removeUnusedGlobalVariables(Module* module);
 /// Delete unused functions, annotations and global variables in extapi.bc
 void removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> removedFuncList);
 
-inline u32_t SVFType2ByteSize(const SVFType* type)
-{
-    const llvm::Type* llvm_rhs = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(type);
-    const llvm::PointerType* llvm_rhs_ptr = SVFUtil::dyn_cast<PointerType>(llvm_rhs);
-    assert(llvm_rhs_ptr && "not a pointer type?");
-    // TODO: getPtrElementType need type inference
-    const Type *ptrElementType = getPtrElementType(llvm_rhs_ptr);
-    u32_t llvm_rhs_size = LLVMUtil::getTypeSizeInBytes(ptrElementType);
-    u32_t llvm_elem_size = -1;
-    if (ptrElementType->isArrayTy() && llvm_rhs_size > 0)
-    {
-        size_t array_len = ptrElementType->getArrayNumElements();
-        llvm_elem_size = llvm_rhs_size / array_len;
-    }
-    else
-    {
-        llvm_elem_size =llvm_rhs_size;
-    }
-    return llvm_elem_size;
-}
-
 /// Get the corresponding Function based on its name
 inline const SVFFunction* getFunction(const std::string& name)
 {
