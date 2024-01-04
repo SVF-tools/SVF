@@ -657,7 +657,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
 
     const PointsTo& qpt = getPts(q);
     // p = *q, the type of p must be a pointer
-    if (pag->getGNode(load->getPAGDstNodeID())->isPointer()) {
+    if (load->getPAGDstNode()->isPointer()) {
         for (NodeID o : qpt)
         {
             if (pag->isConstantObj(o)) continue;
@@ -710,10 +710,10 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     if (!qpt.empty())
     {
         // *p = q, the type of q must be a pointer
-        if (pag->getGNode(store->getPAGSrcNodeID())->isPointer()) {
+        if (store->getPAGSrcNode()->isPointer()) {
             for (NodeID o : ppt)
             {
-                if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
+                if (pag->isConstantObj(o)) continue;
 
                 const Version y = getYield(l, o);
                 if (y != invalidVersion && vPtD->unionPts(atKey(o, y), q))
