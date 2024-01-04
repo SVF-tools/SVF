@@ -646,13 +646,10 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
     assert(refty && "this value should be a pointer type!");
     // TODO: getPtrElementType need type inference
     Type *elemTy = getPtrElementType(refty);
-    bool isPtrObj = false;
     // Find the inter nested array element
     while (const ArrayType* AT = SVFUtil::dyn_cast<ArrayType>(elemTy))
     {
         elemTy = AT->getElementType();
-        if (elemTy->isPointerTy())
-            isPtrObj = true;
         if (SVFUtil::isa<GlobalVariable>(val) &&
                 SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
                 SVFUtil::isa<ConstantArray>(
@@ -665,11 +662,6 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
     {
         const std::vector<const SVFType*>& flattenFields =
             getOrAddSVFTypeInfo(ST)->getFlattenFieldTypes();
-        isPtrObj |= std::any_of(flattenFields.begin(), flattenFields.end(),
-                                [](const SVFType* ty)
-        {
-            return ty->isPointerTy();
-        });
         if (SVFUtil::isa<GlobalVariable>(val) &&
                 SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
                 SVFUtil::isa<ConstantStruct>(
@@ -678,13 +670,6 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_STRUCT_OBJ);
     }
-    else if (elemTy->isPointerTy())
-    {
-        isPtrObj = true;
-    }
-
-    if(isPtrObj)
-        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
 }
 
 /*!
@@ -793,7 +778,6 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
     else
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
     return typeinfo->getMaxFieldOffsetLimit();
 }
@@ -811,7 +795,6 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
     else
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
 }
 

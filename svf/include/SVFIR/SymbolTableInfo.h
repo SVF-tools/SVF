@@ -496,7 +496,6 @@ public:
         CONST_ARRAY_OBJ = 0x100,  // constant array
         CONST_GLOBAL_OBJ = 0x200,  // global constant object
         CONST_DATA = 0x400,  // constant object str e.g. 5, 10, 1.0
-        HASPTR_OBJ = 0x800		// the object stores a pointer address
     } MEMTYPE;
 
 private:
