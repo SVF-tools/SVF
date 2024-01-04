@@ -70,7 +70,6 @@ ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const SVFType* type)
     if(type && type->isPointerTy())
     {
         typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
     return typeInfo;
 }
