@@ -658,10 +658,8 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_ARRAY_OBJ);
     }
-    if (const StructType* ST = SVFUtil::dyn_cast<StructType>(elemTy))
+    if (SVFUtil::isa<StructType>(elemTy))
     {
-        const std::vector<const SVFType*>& flattenFields =
-            getOrAddSVFTypeInfo(ST)->getFlattenFieldTypes();
         if (SVFUtil::isa<GlobalVariable>(val) &&
                 SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
                 SVFUtil::isa<ConstantStruct>(
