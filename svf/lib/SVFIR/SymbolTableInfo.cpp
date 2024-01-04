@@ -363,39 +363,6 @@ void SymbolTableInfo::dump()
 }
 
 /*!
- * Whether a location set is a pointer type or not
- */
-bool ObjTypeInfo::isNonPtrFieldObj(const APOffset& apOffset)
-{
-    if (hasPtrObj() == false)
-        return true;
-
-    const SVFType* ety = type;
-
-    if (SVFUtil::isa<SVFStructType, SVFArrayType>(ety))
-    {
-        u32_t sz = 0;
-        if(Options::ModelArrays())
-            sz = SymbolTableInfo::SymbolInfo()->getTypeInfo(ety)->getFlattenElementTypes().size();
-        else
-            sz = SymbolTableInfo::SymbolInfo()->getTypeInfo(ety)->getFlattenFieldTypes().size();
-
-        if(sz <= (u32_t) apOffset)
-        {
-            writeWrnMsg("out of bound error when accessing the struct/array");
-            return false;
-        }
-
-        const SVFType* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, apOffset);
-        return (elemTy->isPointerTy() == false);
-    }
-    else
-    {
-        return (hasPtrObj() == false);
-    }
-}
-
-/*!
  * Set mem object to be field sensitive (up to maximum field limit)
  */
 void MemObj::setFieldSensitive()
@@ -545,11 +512,6 @@ bool MemObj::isConstDataOrAggData() const
 bool MemObj::hasPtrObj() const
 {
     return typeInfo->hasPtrObj();
-}
-
-bool MemObj::isNonPtrFieldObj(const APOffset& apOffset) const
-{
-    return typeInfo->isNonPtrFieldObj(apOffset);
 }
 
 const std::string MemObj::toString() const

@@ -461,7 +461,6 @@ public:
     bool isConstDataOrConstGlobal() const;
     bool isConstDataOrAggData() const;
     bool hasPtrObj() const;
-    bool isNonPtrFieldObj(const APOffset& apOffset) const;
     //@}
 
     /// Operator overloading
@@ -651,7 +650,6 @@ public:
     {
         return hasFlag(HASPTR_OBJ);
     }
-    virtual bool isNonPtrFieldObj(const APOffset& apOffset);
     //@}
 };
 

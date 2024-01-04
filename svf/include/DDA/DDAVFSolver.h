@@ -189,17 +189,23 @@ protected:
             backtraceAlongDirectVF(gepPts,dpm);
             unionDDAPts(pts, processGepPts(SVFUtil::cast<GepSVFGNode>(node),gepPts));
         }
-        else if(SVFUtil::isa<LoadSVFGNode>(node))
+        else if(const LoadSVFGNode* load = SVFUtil::dyn_cast<LoadSVFGNode>(node))
         {
+            if(load->getPAGDstNode()->isPointer() == false)
+                return;
+
             CPtSet loadpts;
             startNewPTCompFromLoadSrc(loadpts,dpm);
             for(typename CPtSet::iterator it = loadpts.begin(), eit = loadpts.end(); it!=eit; ++it)
             {
-                backtraceAlongIndirectVF(pts,getDPImWithOldCond(dpm,*it,node));
+                backtraceAlongIndirectVF(pts,getDPImWithOldCond(dpm,*it,load));
             }
         }
-        else if(SVFUtil::isa<StoreSVFGNode>(node))
+        else if(const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
+            if(store->getPAGSrcNode()->isPointer() == false)
+                return;
+
             if(isMustAlias(getLoadDpm(dpm),dpm))
             {
                 DBOUT(DDDA, SVFUtil::outs() << "+++must alias for load and store:");
@@ -217,17 +223,17 @@ protected:
                 {
                     if(propagateViaObj(*it,getLoadCVar(dpm)))
                     {
-                        backtraceToStoreSrc(pts,getDPImWithOldCond(dpm,*it,node));
+                        backtraceToStoreSrc(pts,getDPImWithOldCond(dpm,*it,store));
 
-                        if(isStrongUpdate(storepts,SVFUtil::cast<StoreSVFGNode>(node)))
+                        if(isStrongUpdate(storepts,store))
                         {
                             DBOUT(DDDA, SVFUtil::outs() << "backward strong update for obj " << dpm.getCurNodeID() << "\n");
-                            DOSTAT(addSUStat(dpm,node);)
+                            DOSTAT(addSUStat(dpm,store);)
                         }
                         else
                         {
-                            DOSTAT(rmSUStat(dpm,node);)
-                            backtraceAlongIndirectVF(pts,getDPImWithOldCond(dpm,*it,node));
+                            DOSTAT(rmSUStat(dpm,store);)
+                            backtraceAlongIndirectVF(pts,getDPImWithOldCond(dpm,*it,store));
                         }
                     }
                     else
@@ -347,7 +353,7 @@ protected:
     {
         const SVFGNode* node = oldDpm.getLoc();
         NodeID obj = oldDpm.getCurNodeID();
-        if (_pag->isConstantObj(obj) || _pag->isNonPointerObj(obj))
+        if (_pag->isConstantObj(obj))
             return;
         const SVFGEdgeSet edgeSet(node->getInEdges());
         for (SVFGNode::const_iterator it = edgeSet.begin(), eit = edgeSet.end(); it != eit; ++it)
