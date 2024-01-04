@@ -301,10 +301,6 @@ public:
     {
         return pag->isBlkObjOrConstantObj(ptd);
     }
-    inline bool isNonPointerObj(NodeID ptd) const
-    {
-        return pag->isNonPointerObj(ptd);
-    }
     //@}
 
     /// Whether this object is heap or array
