@@ -585,16 +585,21 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     // (2) Other objects (e.g., alloca, global, etc.)
     else
     {
-        if (SVFUtil::isa<PointerType>(val->getType())) {
+        if (SVFUtil::isa<PointerType>(val->getType()))
+        {
             if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
             {
                 // get the type of the allocated memory
                 // e.g., for `%retval = alloca i64, align 4`, we return i64
                 objTy = allocaInst->getAllocatedType();
-            } else if (const GlobalValue *global = SVFUtil::dyn_cast<GlobalValue>(val)) {
+            }
+            else if (const GlobalValue *global = SVFUtil::dyn_cast<GlobalValue>(val))
+            {
                 // get the pointee type of the global pointer (begins with @ symbol in llvm)
                 objTy = global->getValueType();
-            } else {
+            }
+            else
+            {
                 SVFUtil::errs() << dumpValue(val) << "\n";
                 assert(false && "not an allocation or global?");
             }
