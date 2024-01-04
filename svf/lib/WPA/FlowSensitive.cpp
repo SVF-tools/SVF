@@ -559,7 +559,7 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
     const PointsTo& srcPts = getPts(load->getPAGSrcNodeID());
 
     // p = *q, the type of p must be a pointer
-    if(pag->getGNode(load->getPAGDstNodeID())->isPointer()) {
+    if(load->getPAGDstNode()->isPointer()) {
         for (PointsTo::iterator ptdIt = srcPts.begin(); ptdIt != srcPts.end(); ++ptdIt)
         {
             NodeID ptd = *ptdIt;
@@ -613,7 +613,7 @@ bool FlowSensitive::processStore(const StoreSVFGNode* store)
     bool changed = false;
 
     // *p = q, the type of q must be a pointer
-    if(getPts(store->getPAGSrcNodeID()).empty() == false && pag->getGNode(store->getPAGSrcNodeID())->isPointer())
+    if(getPts(store->getPAGSrcNodeID()).empty() == false && store->getPAGSrcNode()->isPointer())
     {
         for (PointsTo::iterator it = dstPts.begin(), eit = dstPts.end(); it != eit; ++it)
         {
