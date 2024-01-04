@@ -34,8 +34,11 @@
 #include "SVFIR/SVFValue.h"
 #include "Util/WorkList.h"
 
+
 namespace SVF
 {
+
+class SaberCondAllocator;
 
 class SaberSVFGBuilder : public SVFGBuilder
 {
@@ -62,6 +65,11 @@ public:
         svfg->addActualParmVFGNode(pagNode, cs);
     }
 
+    void setSaberCondAllocator(SaberCondAllocator* allocator)
+    {
+        saberCondAllocator = allocator;
+    }
+
 protected:
     /// Re-write create SVFG method
     virtual void buildSVFG();
@@ -69,7 +77,7 @@ protected:
     /// Return TRUE if this is a strong update STORE statement.
     bool isStrongUpdate(const SVFGNode* node, NodeID& singleton, BVDataPTAImpl* pta);
 
-private:
+protected:
     /// Remove direct value-flow edge to a dereference point for Saber source-sink memory error detection
     /// for example, given two statements: p = alloc; q = *p, the direct SVFG edge between them is deleted
     /// Because those edges only stand for values used at the dereference points but they can not pass the value to other definitions
@@ -77,7 +85,7 @@ private:
 
     /// Remove Incoming Edge for strong-update (SU) store instruction
     /// Because the SU node does not receive indirect value
-    void rmIncomingEdgeForSUStore(BVDataPTAImpl* pta);
+    virtual void rmIncomingEdgeForSUStore(BVDataPTAImpl* pta);
 
     /// Add actual parameter SVFGNode for 1st argument of a deallocation like external function
     /// In order to path sensitive leak detection
@@ -97,6 +105,8 @@ private:
     PointsTo globs;
     /// Store all global SVFG nodes
     SVFGNodeSet globSVFGNodes;
+
+    SaberCondAllocator* saberCondAllocator;
 };
 
 } // End namespace SVF

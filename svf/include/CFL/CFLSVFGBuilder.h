@@ -1,4 +1,4 @@
-//===----- CFLVF.h -- CFL Value-Flow Client--------------//
+//===- CFLSVFGBuilder.h -- Building SVFG for CFL--------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -20,49 +20,39 @@
 //
 //===----------------------------------------------------------------------===//
 
-/*
- * CFLVF.h
- *
- *  Created on: September 5, 2022
- *      Author: Pei Xu
- */
+//
+// Created by Xiao on 30/12/23.
+//
 
-#ifndef INCLUDE_CFL_CFLVF_H_
-#define INCLUDE_CFL_CFLVF_H_
+#ifndef SVF_CFLSVFGBUILDER_H
+#define SVF_CFLSVFGBUILDER_H
 
-
-#include "CFL/CFLBase.h"
-#include "CFL/CFLStat.h"
-#include "CFL/CFLSVFGBuilder.h"
-#include "WPA/Andersen.h"
+#include "SABER/SaberSVFGBuilder.h"
 
 namespace SVF
 {
-class CFLVF : public CFLBase
+
+class CFLSVFGBuilder: public SaberSVFGBuilder
 {
-
 public:
-    CFLVF(SVFIR* ir) : CFLBase(ir, PointerAnalysis::CFLFSCS_WPA)
-    {
-    }
+    typedef Set<const SVFGNode*> SVFGNodeSet;
+    typedef Map<NodeID, PointsTo> NodeToPTSSMap;
+    typedef FIFOWorkList<NodeID> WorkList;
 
-    /// Parameter Checking
-    virtual void checkParameter();
+    /// Constructor
+    CFLSVFGBuilder() = default;
 
-    /// Initialize the grammar, graph, solver
-    virtual void initialize();
+    /// Destructor
+    virtual ~CFLSVFGBuilder() = default;
 
-    /// Print grammar and graph
-    virtual void finalize();
+protected:
+    /// Re-write create SVFG method
+    virtual void buildSVFG();
 
-    /// Build CFLGraph via VFG
-    void buildCFLGraph();
-
-private:
-    CFLSVFGBuilder memSSA;
-    SVFG* svfg;
+    /// Remove Incoming Edge for strong-update (SU) store instruction
+    /// Because the SU node does not receive indirect value
+    virtual void rmIncomingEdgeForSUStore(BVDataPTAImpl* pta);
 };
 
-} // End namespace SVF
-
-#endif /* INCLUDE_CFL_CFLVF_H_*/
+}
+#endif //SVF_CFLSVFGBUILDER_H

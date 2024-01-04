@@ -656,32 +656,35 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
     NodeID q = load->getPAGSrcNodeID();
 
     const PointsTo& qpt = getPts(q);
-    for (NodeID o : qpt)
+    // p = *q, the type of p must be a pointer
+    if (load->getPAGDstNode()->isPointer())
     {
-        if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
-
-        const Version c = getConsume(l, o);
-        if (c != invalidVersion && vPtD->unionPts(p, atKey(o, c)))
+        for (NodeID o : qpt)
         {
-            changed = true;
-        }
+            if (pag->isConstantObj(o)) continue;
 
-        if (isFieldInsensitive(o))
-        {
-            /// If o is a field-insensitive object, we should also get all field nodes'
-            /// points-to sets and pass them to p.
-            const NodeBS& fields = getAllFieldsObjVars(o);
-            for (NodeID of : fields)
+            const Version c = getConsume(l, o);
+            if (c != invalidVersion && vPtD->unionPts(p, atKey(o, c)))
             {
-                const Version c = getConsume(l, of);
-                if (c != invalidVersion && vPtD->unionPts(p, atKey(of, c)))
+                changed = true;
+            }
+
+            if (isFieldInsensitive(o))
+            {
+                /// If o is a field-insensitive object, we should also get all field nodes'
+                /// points-to sets and pass them to p.
+                const NodeBS& fields = getAllFieldsObjVars(o);
+                for (NodeID of : fields)
                 {
-                    changed = true;
+                    const Version c = getConsume(l, of);
+                    if (c != invalidVersion && vPtD->unionPts(p, atKey(of, c)))
+                    {
+                        changed = true;
+                    }
                 }
             }
         }
     }
-
     double end = stat->getClk();
     loadTime += (end - start) / TIMEINTERVAL;
     return changed;
@@ -707,15 +710,19 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
 
     if (!qpt.empty())
     {
-        for (NodeID o : ppt)
+        // *p = q, the type of q must be a pointer
+        if (store->getPAGSrcNode()->isPointer())
         {
-            if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
-
-            const Version y = getYield(l, o);
-            if (y != invalidVersion && vPtD->unionPts(atKey(o, y), q))
+            for (NodeID o : ppt)
             {
-                changed = true;
-                changedObjects.set(o);
+                if (pag->isConstantObj(o)) continue;
+
+                const Version y = getYield(l, o);
+                if (y != invalidVersion && vPtD->unionPts(atKey(o, y), q))
+                {
+                    changed = true;
+                    changedObjects.set(o);
+                }
             }
         }
     }

@@ -669,31 +669,6 @@ void SVFIR::initialiseCandidatePointers()
         candidatePointers.insert(nodeId);
     }
 }
-/*!
- * Return true if FIObjVar can point to any object
- * Or a field GepObjVar can point to any object.
- */
-bool SVFIR::isNonPointerObj(NodeID id) const
-{
-    SVFVar* node = getGNode(id);
-    if (const FIObjVar* fiNode = SVFUtil::dyn_cast<FIObjVar>(node))
-    {
-        return (fiNode->getMemObj()->hasPtrObj()==false);
-    }
-    else if (const GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
-    {
-        return (gepNode->getMemObj()->isNonPtrFieldObj(gepNode->getConstantFieldIdx()));
-    }
-    else if (const DummyObjVar* dummyNode = SVFUtil::dyn_cast<DummyObjVar>(node))
-    {
-        return (dummyNode->getMemObj()->hasPtrObj()==false);
-    }
-    else
-    {
-        assert(false && "expecting a object node");
-        abort();
-    }
-}
 /*
  * If this is a dummy node or node does not have incoming edges and outgoing edges we assume it is not a pointer here.
  * However, if it is a pointer and it is an argument of a function definition, we assume it is a pointer here.

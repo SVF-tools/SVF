@@ -434,8 +434,6 @@ public:
         return SymbolTableInfo::isConstantObj(id) ||
                obj->isConstDataOrConstGlobal();
     }
-    /// Whether an object can point to any other object or any of its fields is a pointer type.
-    bool isNonPointerObj(NodeID id) const;
     //@}
 
     /// Base and Offset methods for Value and Object node

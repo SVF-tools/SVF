@@ -41,9 +41,9 @@ class SVFStat
 {
 public:
 
-    typedef OrderedMap<const char *, u32_t> NUMStatMap;
+    typedef OrderedMap<std::string, u32_t> NUMStatMap;
 
-    typedef OrderedMap<const char *, double> TIMEStatMap;
+    typedef OrderedMap<std::string, double> TIMEStatMap;
 
     enum ClockType
     {

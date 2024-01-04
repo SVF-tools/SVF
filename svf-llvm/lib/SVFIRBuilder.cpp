@@ -282,11 +282,16 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
 
     bool isConst = true;
 
+    bool prevPtrOperand = false;
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
             gi != ge; ++gi)
     {
         const Type* gepTy = *gi;
         const SVFType* svfGepTy = LLVMModuleSet::getLLVMModuleSet()->getSVFType(gepTy);
+
+        assert((prevPtrOperand && svfGepTy->isPointerTy()) == false &&
+               "Expect no more than one gep operand to be of a pointer type");
+        if(svfGepTy->isPointerTy()) prevPtrOperand = true;
         const Value* offsetVal = gi.getOperand();
         const SVFValue* offsetSvfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offsetVal);
         assert(gepTy != offsetVal->getType() && "iteration and operand have the same type?");
@@ -318,7 +323,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
             // If it's a non-constant offset access
             // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
             // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
-            if(!op && gepTy->isPointerTy() && LLVMUtil::getPointeeType(V)->isSingleValueType())
+            if(!op && gepTy->isPointerTy() && gepOp->getSourceElementType()->isSingleValueType())
             {
                 isConst = false;
             }
