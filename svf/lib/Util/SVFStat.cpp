@@ -144,7 +144,7 @@ void SVFStat::performStat()
                 numOfHasConstArray++;
             if(mem->isConstantStruct())
                 numOfHasConstStruct++;
-            if(mem->hasPtrObj() == false)
+            if(mem->getType()->isPointerTy() == false)
                 numOfScalar++;
             if(mem->isConstDataOrConstGlobal())
                 numOfConstant++;

@@ -571,7 +571,6 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
  */
 ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
 {
-    /// TODO: getPtrElementType to be removed
     const Type* objTy = nullptr;
 
     const Instruction* I = SVFUtil::dyn_cast<Instruction>(val);
@@ -641,18 +640,11 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
  */
 void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
-
-    const PointerType* refty = SVFUtil::dyn_cast<PointerType>(val->getType());
-    assert(refty && "this value should be a pointer type!");
-    // TODO: getPtrElementType need type inference
-    Type *elemTy = getPtrElementType(refty);
-    bool isPtrObj = false;
+    const Type *elemTy = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(typeinfo->getType());
     // Find the inter nested array element
     while (const ArrayType* AT = SVFUtil::dyn_cast<ArrayType>(elemTy))
     {
         elemTy = AT->getElementType();
-        if (elemTy->isPointerTy())
-            isPtrObj = true;
         if (SVFUtil::isa<GlobalVariable>(val) &&
                 SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
                 SVFUtil::isa<ConstantArray>(
@@ -661,15 +653,8 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_ARRAY_OBJ);
     }
-    if (const StructType* ST = SVFUtil::dyn_cast<StructType>(elemTy))
+    if (SVFUtil::isa<StructType>(elemTy))
     {
-        const std::vector<const SVFType*>& flattenFields =
-            getOrAddSVFTypeInfo(ST)->getFlattenFieldTypes();
-        isPtrObj |= std::any_of(flattenFields.begin(), flattenFields.end(),
-                                [](const SVFType* ty)
-        {
-            return ty->isPointerTy();
-        });
         if (SVFUtil::isa<GlobalVariable>(val) &&
                 SVFUtil::cast<GlobalVariable>(val)->hasInitializer() &&
                 SVFUtil::isa<ConstantStruct>(
@@ -678,13 +663,6 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_STRUCT_OBJ);
     }
-    else if (elemTy->isPointerTy())
-    {
-        isPtrObj = true;
-    }
-
-    if(isPtrObj)
-        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
 }
 
 /*!
@@ -793,7 +771,6 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
     else
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
     return typeinfo->getMaxFieldOffsetLimit();
 }
@@ -811,7 +788,6 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
     else
     {
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
 }
 

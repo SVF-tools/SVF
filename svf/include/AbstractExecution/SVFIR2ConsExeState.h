@@ -97,7 +97,6 @@ public:
     /// Init ConZ3Expr for ObjVar
     void initObjVar(const ObjVar *objVar, u32_t varId);
 
-    void initValVar(const ValVar *objVar, u32_t varId);
 
     void initSVFVar(u32_t varId);
 

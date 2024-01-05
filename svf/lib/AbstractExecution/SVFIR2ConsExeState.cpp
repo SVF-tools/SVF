@@ -683,38 +683,6 @@ std::pair<s32_t, s32_t> SVFIR2ConsExeState::getGepOffset(const SVF::GepStmt *gep
 }
 
 
-void SVFIR2ConsExeState::initValVar(const ValVar *valVar, u32_t varId)
-{
-
-    SVFIR *svfir = PAG::getPAG();
-
-    if (const SVFType *type = valVar->getType())
-    {
-        // TODO:miss floatpointerty, voidty, labelty, metadataty
-        if (type->getKind() == SVFType::SVFIntegerTy ||
-                type->getKind() == SVFType::SVFPointerTy ||
-                type->getKind() == SVFType::SVFFunctionTy ||
-                type->getKind() == SVFType::SVFStructTy ||
-                type->getKind() == SVFType::SVFArrayTy)
-            // continue with null expression
-            (*_es)[varId] = SingleAbsValue::topConstant();
-        else
-        {
-
-            SVFUtil::errs() << valVar->getValue()->toString() << "\n" << " type: " << type->toString() << "\n";
-            assert(false && "what other types we have");
-        }
-    }
-    else
-    {
-        if (svfir->getNullPtr() == valVar->getId())
-            (*_es)[varId] = 0;
-        else
-            (*_es)[varId] = SingleAbsValue::topConstant();
-        assert(SVFUtil::isa<DummyValVar>(valVar) && "not a DummValVar if it has no type?");
-    }
-}
-
 /*!
  * Init Z3Expr for ObjVar
  * @param objVar
@@ -772,15 +740,9 @@ void SVFIR2ConsExeState::initSVFVar(u32_t varId)
         initObjVar(objVar, varId);
         return;
     }
-    else if (const ValVar *valVar = dyn_cast<ValVar>(svfVar))
-    {
-        initValVar(valVar, varId);
-        return;
-    }
     else
     {
-        initValVar(valVar, varId);
-        return;
+        assert(false && "not an obj var?");
     }
 }
 

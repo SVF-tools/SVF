@@ -44,6 +44,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
     assert(V);
     const Value* value = getBaseValueForExtArg(V);
     const Type* T = value->getType();
+    // TODO: getPtrElementType need type inference
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
         T = getPtrElementType(ptype);
 

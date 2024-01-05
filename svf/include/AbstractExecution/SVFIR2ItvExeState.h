@@ -94,8 +94,6 @@ public:
 
     void applySummary(IntervalExeState &es);
 
-    /// Init ValVar
-    void initValVar(const ValVar *valVar, u32_t varId);
 
     /// Init ObjVar
     void initObjVar(const ObjVar *objVar, u32_t varId);

@@ -70,7 +70,6 @@ ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const SVFType* type)
     if(type && type->isPointerTy())
     {
         typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
     }
     return typeInfo;
 }
@@ -509,10 +508,6 @@ bool MemObj::isConstDataOrAggData() const
     return typeInfo->isConstDataOrAggData();
 }
 
-bool MemObj::hasPtrObj() const
-{
-    return typeInfo->hasPtrObj();
-}
 
 const std::string MemObj::toString() const
 {
