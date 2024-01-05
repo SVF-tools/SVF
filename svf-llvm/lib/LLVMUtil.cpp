@@ -42,7 +42,7 @@ const std::string vfunPreLabel = "_Z";
 
 const std::string clsName = "class.";
 const std::string structName = "struct.";
-
+const std::string vtableType = "(...)**";
 
 /*!
  * A value represents an object if it is
@@ -1129,6 +1129,21 @@ bool LLVMUtil::VCallInCtorOrDtor(const CallBase* cs)
         cppUtil::DemangledName dname = cppUtil::demangle(func->getName().str());
         if (classNameOfThisPtr.compare(dname.className) == 0)
             return true;
+    }
+    return false;
+}
+
+bool LLVMUtil::classTyHasVTable(const StructType* ty)
+{
+    if(getClassNameFromType(ty).empty()==false)
+    {
+        for(auto it = ty->element_begin(); it!=ty->element_end(); it++)
+        {
+            const Type* ety = *it;
+            std::string tystr = dumpType(ety);
+            if (tystr.find(vtableType) != std::string::npos)
+                return true;
+        }
     }
     return false;
 }
