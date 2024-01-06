@@ -131,6 +131,8 @@ static inline Type* getPtrElementType(const PointerType* pty)
 const Type *inferTypeOfHeapObjOrStaticObj(const Instruction* inst);
 //@}
 
+const CallInst *findTypeAssert(const Instruction * inst);
+
 /// Return true if this value refers to a object
 bool isObject(const Value* ref);
 

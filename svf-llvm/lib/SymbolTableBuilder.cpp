@@ -580,6 +580,9 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     if (I && isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I)))
     {
         objTy = inferTypeOfHeapObjOrStaticObj(I);
+        if (const CallInst *callInst = LLVMUtil::findTypeAssert(I)) {
+            assert(callInst);
+        }
     }
     // (2) Other objects (e.g., alloca, global, etc.)
     else

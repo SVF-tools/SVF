@@ -43,6 +43,8 @@ const std::string vfunPreLabel = "_Z";
 const std::string clsName = "class.";
 const std::string structName = "struct.";
 const std::string vtableType = "(...)**";
+const std::string typeAssert = "type_assert";
+
 
 /*!
  * A value represents an object if it is
@@ -392,6 +394,43 @@ const Type* LLVMUtil::inferTypeOfHeapObjOrStaticObj(const Instruction *inst)
     assert(type && "not a pointer type?");
     // TODO: getPtrElementType need type inference
     return getPtrElementType(type);
+}
+
+const CallInst *LLVMUtil::findTypeAssert(const Instruction * inst) {
+    FIFOWorkList<const Instruction*> instWorkList;
+    Set<const Instruction*> visited;
+    instWorkList.push(inst);
+    visited.insert(inst);
+    while (!instWorkList.empty()) {
+        const Instruction *curInst = instWorkList.pop();
+        for (const auto &it : curInst->uses())
+        {
+            if (const CallInst *callInst = SVFUtil::dyn_cast<CallInst>(it.getUser())) {
+                if (callInst->getCalledFunction()->getName().find(typeAssert) != std::string::npos) {
+                    return callInst;
+                }
+            } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
+                if (storeInst->getPointerOperand() != inst) {
+                    // store -> load
+                    for (const auto &nit : storeInst->getPointerOperand()->uses()) {
+                        if (SVFUtil::isa<LoadInst>(nit.getUser())) {
+                            const Instruction *pUser = SVFUtil::dyn_cast<Instruction>(nit.getUser());
+                            if (!visited.count(pUser)) {
+                                visited.insert(pUser);
+                                instWorkList.push(pUser);
+                            }
+                        }
+                    }
+                }
+            } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
+                if (!visited.count(bitcast)) {
+                    visited.insert(bitcast);
+                    instWorkList.push(bitcast);
+                }
+            }
+        }
+    }
+    return nullptr;
 }
 
 /*!
