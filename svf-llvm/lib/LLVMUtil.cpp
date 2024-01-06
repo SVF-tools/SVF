@@ -406,8 +406,12 @@ const CallInst *LLVMUtil::findTypeAssert(const Instruction * inst) {
         for (const auto &it : curInst->uses())
         {
             if (const CallInst *callInst = SVFUtil::dyn_cast<CallInst>(it.getUser())) {
-                if (callInst->getCalledFunction()->getName().find(typeAssert) != std::string::npos) {
-                    return callInst;
+                if (const Function* func = callInst->getCalledFunction())
+                {
+                    if (func->getName().find(typeAssert) != std::string::npos)
+                    {
+                        return callInst;
+                    }
                 }
             } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
                 if (storeInst->getPointerOperand() != inst) {
