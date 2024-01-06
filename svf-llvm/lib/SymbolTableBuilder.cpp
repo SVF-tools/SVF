@@ -581,7 +581,10 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     {
         objTy = inferTypeOfHeapObjOrStaticObj(I);
         if (const CallInst *callInst = LLVMUtil::findTypeAssert(I)) {
-            assert(callInst);
+            ConstantInt* pInt =
+                SVFUtil::dyn_cast<llvm::ConstantInt>(callInst->getOperand(1));
+            assert(pInt && "the second argument is a int");
+            assert(getNumOfElements(objTy) >= pInt->getZExtValue());
         }
     }
     // (2) Other objects (e.g., alloca, global, etc.)
