@@ -364,12 +364,17 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
     return latestUse;
 }
 
-void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const Instruction* inst) {
-    assert(inst && "not an instruction?");
+/*!
+ * Collect all possible types of a heap allocation site
+ * @param types the derived result
+ * @param heapAlloc the heap allocation site
+ */
+void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* heapAlloc) {
+    assert(heapAlloc && "not an instruction?");
     FIFOWorkList<const Instruction*> instWorkList;
     Set<const Instruction*> visited;
-    instWorkList.push(inst);
-    visited.insert(inst);
+    instWorkList.push(heapAlloc);
+    visited.insert(heapAlloc);
     while (!instWorkList.empty()) {
         const Instruction *curInst = instWorkList.pop();
         for (const auto &it : curInst->uses())
@@ -389,6 +394,15 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const Instruction
                                 instWorkList.push(pUser);
                             }
                         }
+                    }
+                    // %call1 = call i8* @TYPE_MALLOC(i32 noundef 16, i32 noundef 2), !dbg !39
+                    //  %2 = bitcast i8* %call1 to %struct.MyStruct*, !dbg !41
+                    //  %3 = load %struct.MyStruct*, %struct.MyStruct** %p, align 8, !dbg !42
+                    //  %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %3, i32 0, i32 1, !dbg !43
+                    //  store %struct.MyStruct* %2, %struct.MyStruct** %next, align 8, !dbg !44
+                    if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
+                            storeInst->getPointerOperand())) {
+                        types.insert(gepInst->getSourceElementType());
                     }
                 }
             } else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
@@ -427,20 +441,32 @@ u32_t LLVMUtil::getNumOfElements(const Type* ety)
     return numOfFields;
 }
 
+/*!
+ * Validate type inference
+ * @param cs : stub malloc function with element number label
+ */
 void LLVMUtil::validateTypeCheck(const CallBase *cs) {
     if (const Function* func = cs->getCalledFunction())
     {
         if (func->getName().find(TYPEMALLOC) != std::string::npos)
         {
             Set<const Type*> types;
-            LLVMUtil::collectAllHeapObjTypes(types, cs);
+            collectAllHeapObjTypes(types, cs);
             const Type *pType = selectLargestType(types);
-            ABORT_IFNOT(pType, "fail to infer any types:" + dumpValue(cs) + getSourceLoc(cs));
+            ABORT_IFNOT(pType, "fail to infer any types:" +
+                                dumpValue(cs) + getSourceLoc(cs) + "\n");
             ConstantInt* pInt =
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
-            ABORT_IFNOT(getNumOfElements(pType) >= pInt->getZExtValue(),
-                        dumpValue(cs) + getSourceLoc(cs) + ", inferred type: " + dumpType(pType));
+            if (getNumOfElements(pType) >= pInt->getZExtValue())
+                SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") <<
+                    dumpValue(cs) << getSourceLoc(cs) << SVFUtil::pasMsg(" TYPE: ") << dumpType(pType) << "\n";
+            else
+            {
+                SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") <<
+                    dumpValue(cs) << getSourceLoc(cs) << " TYPE: " << dumpType(pType) << "\n";
+                ABORT_IFNOT(false, "test case failed!");
+            }
         }
     }
 }
@@ -468,7 +494,8 @@ const Type* LLVMUtil::inferTypeOfHeapObjOrStaticObj(const Instruction *inst)
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
     if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
     {
-        collectAllHeapObjTypes(types, inst);
+        const CallInst *heapAlloc = SVFUtil::dyn_cast<CallInst>(inst);
+        collectAllHeapObjTypes(types, heapAlloc);
         const Type *pType = selectLargestType(types);
         if(pType)
             return pType;
