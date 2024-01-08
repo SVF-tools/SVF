@@ -580,10 +580,13 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
     if (I && isNonInstricCallSite(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I)))
     {
         objTy = inferTypeOfHeapObjOrStaticObj(I);
-        if (const CallInst *callInst = LLVMUtil::findTypeAssert(I)) {
+        if (Options::EnableTypeCheck()) {
+            const CallInst *callInst = LLVMUtil::findTypeAssert(I);
+            assert(callInst && "stub function not found?");
+            // element number ground truth
             ConstantInt* pInt =
-                SVFUtil::dyn_cast<llvm::ConstantInt>(callInst->getOperand(1));
-            assert(pInt && "the second argument is a int");
+                    SVFUtil::dyn_cast<llvm::ConstantInt>(callInst->getOperand(1));
+            assert(pInt && "the second argument is a integer");
             assert(getNumOfElements(objTy) >= pInt->getZExtValue());
         }
     }

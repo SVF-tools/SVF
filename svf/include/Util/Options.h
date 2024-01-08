@@ -128,6 +128,7 @@ public:
     static const Option<u32_t> IndirectCallLimit;
     static const Option<bool> UsePreCompFieldSensitive;
     static const Option<bool> EnableAliasCheck;
+    static const Option<bool> EnableTypeCheck;
     static const Option<bool> EnableThreadCallGraph;
     static const Option<bool> ConnectVCallOnCHA;
 
