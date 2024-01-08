@@ -45,6 +45,22 @@ const std::string structName = "struct.";
 const std::string vtableType = "(...)**";
 const std::string TYPEMALLOC = "TYPE_MALLOC";
 
+#define ABORT_MSG(reason)                                                      \
+    do                                                                         \
+    {                                                                          \
+        SVFUtil::errs() << __FILE__ << ':' << __LINE__ << ": " << reason       \
+                        << '\n';                                               \
+        abort();                                                               \
+    } while (0)
+#define ABORT_IFNOT(condition, reason)                                         \
+    do                                                                         \
+    {                                                                          \
+        if (!(condition))                                                      \
+            ABORT_MSG(reason);                                                 \
+    } while (0)
+
+#define TYPE_DEBUG 0 /* Turn this on if you're debugging type inference */
+
 
 /*!
  * A value represents an object if it is
@@ -364,6 +380,13 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
     return latestUse;
 }
 
+u32_t LLVMUtil::getArgNoInCallInst(const CallInst *callInst, const Value *arg) {
+    assert(callInst->hasArgument(arg) && "callInst does not have argument arg?");
+    auto it = std::find(callInst->arg_begin(), callInst->arg_end(), arg);
+    assert(it != callInst->arg_end() && "Didn't find argument?");
+    return std::distance(callInst->arg_begin(), it);
+}
+
 /*!
  * Collect all possible types of a heap allocation site
  * @param types the derived result
@@ -371,13 +394,19 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
  */
 void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* heapAlloc) {
     assert(heapAlloc && "not an instruction?");
-    FIFOWorkList<const Instruction*> instWorkList;
-    Set<const Instruction*> visited;
-    instWorkList.push(heapAlloc);
+    FIFOWorkList<const Value*> valueWorkList;
+    Set<const Value*> visited;
+    valueWorkList.push(heapAlloc);
     visited.insert(heapAlloc);
-    while (!instWorkList.empty()) {
-        const Instruction *curInst = instWorkList.pop();
-        for (const auto &it : curInst->uses())
+    auto pushIntoWorklist = [&visited, &valueWorkList](const auto& pUser) {
+        if (!visited.count(pUser)) {
+            visited.insert(pUser);
+            valueWorkList.push(pUser);
+        }
+    };
+    while (!valueWorkList.empty()) {
+        const Value *curValue = valueWorkList.pop();
+        for (const auto &it : curValue->uses())
         {
             if (LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
                 /*
@@ -388,7 +417,7 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                  */
                 types.insert(loadInst->getType());
             } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
-                if (storeInst->getPointerOperand() == curInst) {
+                if (storeInst->getPointerOperand() == curValue) {
                     /*
                      * infer based on store (pointer operand), e.g.,
                      %call = call i8* malloc()
@@ -406,11 +435,7 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                      */
                     for (const auto &nit : storeInst->getPointerOperand()->uses()) {
                         if (SVFUtil::isa<LoadInst>(nit.getUser())) {
-                            const Instruction *pUser = SVFUtil::dyn_cast<Instruction>(nit.getUser());
-                            if (!visited.count(pUser)) {
-                                visited.insert(pUser);
-                                instWorkList.push(pUser);
-                            }
+                            pushIntoWorklist(nit.getUser());
                         }
                     }
                     /*
@@ -427,7 +452,7 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                     }
                 }
             } else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
-                if (gepInst->getPointerOperand() == curInst) {
+                if (gepInst->getPointerOperand() == curValue) {
                     /*
                      * infer based on gep (pointer operand)
                      %call = call i8* malloc()
@@ -438,13 +463,10 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                 }
             } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
                 // continue on bitcast
-                if (!visited.count(bitcast)) {
-                    visited.insert(bitcast);
-                    instWorkList.push(bitcast);
-                }
+                pushIntoWorklist(bitcast);
             } else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
                 /*;
-                 * propagate across function
+                 * propagate from return to caller
                   Function Attrs: noinline nounwind optnone uwtable
                   define dso_local i8* @malloc_wrapper() #0 !dbg !22 {
                       entry:
@@ -455,12 +477,23 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                  ..infer based on %call..
                  */
                 for(const auto& callsite: retInst->getFunction()->uses()) {
-                    if (llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(callsite.getUser())) {
-                        if (!visited.count(callInst)) {
-                            visited.insert(callInst);
-                            instWorkList.push(callInst);
-                        }
+                    if (CallInst* callInst = SVFUtil::dyn_cast<CallInst>(callsite.getUser())) {
+                        pushIntoWorklist(callInst);
                     }
+                }
+            } else if (llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(it.getUser())) {
+                /*;
+                 * propagate from callsite to callee
+                  %call = call i8* @malloc(i32 noundef 16)
+                  %0 = bitcast i8* %call to %struct.Node*, !dbg !43
+                  call void @foo(%struct.Node* noundef %0), !dbg !45
+
+                  define dso_local void @foo(%struct.Node* noundef %param) #0 !dbg !22 {...}
+                  ..infer based on the formal param %param..
+                 */
+                u32_t pos = getArgNoInCallInst(callInst, curValue);
+                if (Function *calleeFunc = callInst->getCalledFunction()) {
+                    pushIntoWorklist(calleeFunc->getArg(pos));
                 }
             }
         }
@@ -537,16 +570,25 @@ const Type* LLVMUtil::inferTypeOfHeapObjOrStaticObj(const Instruction *inst)
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
     if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
     {
+        if(const Value* v = getFirstUseViaCastInst(inst))
+        {
+            if (const PointerType *newTy = SVFUtil::dyn_cast<PointerType>(v->getType())) {
+                type = newTy;
+            }
+        }
         const CallBase *heapAlloc = SVFUtil::dyn_cast<CallBase>(inst);
         collectAllHeapObjTypes(types, heapAlloc);
         const Type *pType = selectLargestType(types);
-        if(pType)
-            return pType;
-        if(const Value* v = getFirstUseViaCastInst(inst))
-        {
-            if(const PointerType* newTy = SVFUtil::dyn_cast<PointerType>(v->getType()))
-                type = newTy;
-        }
+
+#if TYPE_DEBUG
+        ABORT_IFNOT(pType, "fail to infer any types:" + dumpValue(inst) + getSourceLoc(inst) + "\n");
+        ABORT_IFNOT(getNumOfElements(getPtrElementType(type)) <= getNumOfElements(pType),
+                    "inferred type is not sound:" + dumpValue(inst) + getSourceLoc(inst) + "\n");
+        return pType;
+#else
+        if(pType) return pType;
+#endif
+
     }
     else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
     {
