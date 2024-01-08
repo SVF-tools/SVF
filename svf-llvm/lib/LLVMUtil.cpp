@@ -537,7 +537,7 @@ const Type* LLVMUtil::inferTypeOfHeapObjOrStaticObj(const Instruction *inst)
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
     if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
     {
-        const CallInst *heapAlloc = SVFUtil::dyn_cast<CallInst>(inst);
+        const CallBase *heapAlloc = SVFUtil::dyn_cast<CallBase>(inst);
         collectAllHeapObjTypes(types, heapAlloc);
         const Type *pType = selectLargestType(types);
         if(pType)
