@@ -481,7 +481,7 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                         pushIntoWorklist(callInst);
                     }
                 }
-            } else if (llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(it.getUser())) {
+            } else if (CallInst* callInst = SVFUtil::dyn_cast<CallInst>(it.getUser())) {
                 /*;
                  * propagate from callsite to callee
                   %call = call i8* @malloc(i32 noundef 16)
@@ -493,7 +493,7 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                  */
                 u32_t pos = getArgNoInCallInst(callInst, curValue);
                 if (Function *calleeFunc = callInst->getCalledFunction()) {
-                    pushIntoWorklist(calleeFunc->getArg(pos));
+                    if(!calleeFunc->isDeclaration()) pushIntoWorklist(calleeFunc->getArg(pos));
                 }
             }
         }
