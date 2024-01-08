@@ -380,12 +380,30 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
         for (const auto &it : curInst->uses())
         {
             if (LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
+                /*
+                 * infer based on load, e.g.,
+                 %call = call i8* malloc()
+                 %1 = bitcast i8* %call to %struct.MyStruct*
+                 %q = load %struct.MyStruct, %struct.MyStruct* %1
+                 */
                 types.insert(loadInst->getType());
             } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
                 if (storeInst->getPointerOperand() == curInst) {
+                    /*
+                     * infer based on store (pointer operand), e.g.,
+                     %call = call i8* malloc()
+                     %1 = bitcast i8* %call to %struct.MyStruct*
+                     store %struct.MyStruct .., %struct.MyStruct* %1
+                     */
                     types.insert(storeInst->getValueOperand()->getType());
                 } else {
-                    // store -> load
+                    /*
+                     * propagate across store (value operand) and load
+                     %call = call i8* malloc()
+                     store i8* %call, i8** %p
+                     %q = load i8*, i8** %p
+                     ..infer based on %q..
+                     */
                     for (const auto &nit : storeInst->getPointerOperand()->uses()) {
                         if (SVFUtil::isa<LoadInst>(nit.getUser())) {
                             const Instruction *pUser = SVFUtil::dyn_cast<Instruction>(nit.getUser());
@@ -395,11 +413,14 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                             }
                         }
                     }
-                    // %call1 = call i8* @TYPE_MALLOC(i32 noundef 16, i32 noundef 2), !dbg !39
-                    //  %2 = bitcast i8* %call1 to %struct.MyStruct*, !dbg !41
-                    //  %3 = load %struct.MyStruct*, %struct.MyStruct** %p, align 8, !dbg !42
-                    //  %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %3, i32 0, i32 1, !dbg !43
-                    //  store %struct.MyStruct* %2, %struct.MyStruct** %next, align 8, !dbg !44
+                    /*
+                     * infer based on store (value operand) <- gep (result element)
+                      %call1 = call i8* @TYPE_MALLOC(i32 noundef 16, i32 noundef 2), !dbg !39
+                      %2 = bitcast i8* %call1 to %struct.MyStruct*, !dbg !41
+                      %3 = load %struct.MyStruct*, %struct.MyStruct** %p, align 8, !dbg !42
+                      %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %3, i32 0, i32 1, !dbg !43
+                      store %struct.MyStruct* %2, %struct.MyStruct** %next, align 8, !dbg !44
+                      */
                     if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
                             storeInst->getPointerOperand())) {
                         types.insert(gepInst->getSourceElementType());
@@ -407,14 +428,32 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                 }
             } else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
                 if (gepInst->getPointerOperand() == curInst) {
+                    /*
+                     * infer based on gep (pointer operand)
+                     %call = call i8* malloc()
+                     %1 = bitcast i8* %call to %struct.MyStruct*
+                     %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %1, i32 0..
+                     */
                     types.insert(gepInst->getSourceElementType());
                 }
             } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
+                // continue on bitcast
                 if (!visited.count(bitcast)) {
                     visited.insert(bitcast);
                     instWorkList.push(bitcast);
                 }
             } else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
+                /*;
+                 * propagate across function
+                  Function Attrs: noinline nounwind optnone uwtable
+                  define dso_local i8* @malloc_wrapper() #0 !dbg !22 {
+                      entry:
+                      %call = call i8* @malloc(i32 noundef 16), !dbg !25
+                      ret i8* %call, !dbg !26
+                 }
+                 %call = call i8* @malloc_wrapper()
+                 ..infer based on %call..
+                 */
                 for(const auto& callsite: retInst->getFunction()->uses()) {
                     if (llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(callsite.getUser())) {
                         if (!visited.count(callInst)) {
