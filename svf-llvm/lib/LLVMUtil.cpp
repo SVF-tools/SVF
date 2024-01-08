@@ -493,7 +493,10 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                  */
                 u32_t pos = getArgNoInCallInst(callInst, curValue);
                 if (Function *calleeFunc = callInst->getCalledFunction()) {
-                    if(!calleeFunc->isDeclaration()) pushIntoWorklist(calleeFunc->getArg(pos));
+                    // for variable argument, conservatively collect all params
+                    if(calleeFunc->isVarArg()) pos = 0;
+                    if(!calleeFunc->isDeclaration())
+                        pushIntoWorklist(calleeFunc->getArg(pos));
                 }
             }
         }
