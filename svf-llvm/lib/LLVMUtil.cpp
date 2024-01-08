@@ -415,9 +415,13 @@ void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* h
                     instWorkList.push(bitcast);
                 }
             } else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
-                if (!visited.count(retInst)) {
-                    visited.insert(retInst);
-                    instWorkList.push(retInst);
+                for(const auto& callsite: retInst->getFunction()->uses()) {
+                    if (llvm::CallInst* callInst = llvm::dyn_cast<llvm::CallInst>(callsite.getUser())) {
+                        if (!visited.count(callInst)) {
+                            visited.insert(callInst);
+                            instWorkList.push(callInst);
+                        }
+                    }
                 }
             }
         }
