@@ -43,7 +43,7 @@ const std::string vfunPreLabel = "_Z";
 const std::string clsName = "class.";
 const std::string structName = "struct.";
 const std::string vtableType = "(...)**";
-const std::string typeAssert = "type_assert";
+const std::string TYPEMALLOC = "TYPE_MALLOC";
 
 
 /*!
@@ -364,15 +364,114 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
     return latestUse;
 }
 
+void LLVMUtil::collectAllHeapObjTypes(Set<const Type*>& types, const Instruction* inst) {
+    assert(inst && "not an instruction?");
+    FIFOWorkList<const Instruction*> instWorkList;
+    Set<const Instruction*> visited;
+    instWorkList.push(inst);
+    visited.insert(inst);
+    while (!instWorkList.empty()) {
+        const Instruction *curInst = instWorkList.pop();
+        for (const auto &it : curInst->uses())
+        {
+            if (LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
+                types.insert(loadInst->getType());
+            } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
+                if (storeInst->getPointerOperand() == curInst) {
+                    types.insert(storeInst->getValueOperand()->getType());
+                } else {
+                    // store -> load
+                    for (const auto &nit : storeInst->getPointerOperand()->uses()) {
+                        if (SVFUtil::isa<LoadInst>(nit.getUser())) {
+                            const Instruction *pUser = SVFUtil::dyn_cast<Instruction>(nit.getUser());
+                            if (!visited.count(pUser)) {
+                                visited.insert(pUser);
+                                instWorkList.push(pUser);
+                            }
+                        }
+                    }
+                }
+            } else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
+                if (gepInst->getPointerOperand() == curInst) {
+                    types.insert(gepInst->getSourceElementType());
+                }
+            } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
+                if (!visited.count(bitcast)) {
+                    visited.insert(bitcast);
+                    instWorkList.push(bitcast);
+                }
+            } else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
+                if (!visited.count(retInst)) {
+                    visited.insert(retInst);
+                    instWorkList.push(retInst);
+                }
+            }
+        }
+    }
+}
+
+/*!
+ * Return size of this Object
+ */
+u32_t LLVMUtil::getNumOfElements(const Type* ety)
+{
+    assert(ety && "type is null?");
+    u32_t numOfFields = 1;
+    if (SVFUtil::isa<StructType, ArrayType>(ety))
+    {
+        if(Options::ModelArrays())
+            return LLVMModuleSet::getLLVMModuleSet()->getSVFType(ety)->getTypeInfo()->getNumOfFlattenElements();
+        else
+            return LLVMModuleSet::getLLVMModuleSet()->getSVFType(ety)->getTypeInfo()->getNumOfFlattenFields();
+    }
+    return numOfFields;
+}
+
+void LLVMUtil::validateTypeCheck(const CallBase *cs) {
+    if (const Function* func = cs->getCalledFunction())
+    {
+        if (func->getName().find(TYPEMALLOC) != std::string::npos)
+        {
+            Set<const Type*> types;
+            LLVMUtil::collectAllHeapObjTypes(types, cs);
+            const Type *pType = selectLargestType(types);
+            ABORT_IFNOT(pType, "fail to infer any types:" + dumpValue(cs) + getSourceLoc(cs));
+            ConstantInt* pInt =
+                    SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
+            assert(pInt && "the second argument is a integer");
+            ABORT_IFNOT(getNumOfElements(pType) >= pInt->getZExtValue(),
+                        dumpValue(cs) + getSourceLoc(cs) + ", inferred type: " + dumpType(pType));
+        }
+    }
+}
+
+const Type* LLVMUtil::selectLargestType(Set<const Type*>& objTys) {
+    if(objTys.empty()) return nullptr;
+    // map type size to types from with key in descending order
+    OrderedMap<u32_t, Set<const Type*>, std::greater<int>> typeSzToTypes;
+    for (const Type *ty: objTys) {
+        typeSzToTypes[getTypeSizeInBytes(ty)].insert(ty);
+    }
+    assert(!typeSzToTypes.empty() && "typeSzToTypes cannot be empty");
+    const std::pair<u32_t, Set<const Type*>> &largestElement = *typeSzToTypes.begin();
+    assert(!largestElement.second.empty() && "largest element cannot be empty");
+    return *largestElement.second.begin();
+}
+
 /*!
  * Return the type of the object from a heap allocation
  */
 const Type* LLVMUtil::inferTypeOfHeapObjOrStaticObj(const Instruction *inst)
 {
     const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
+    Set<const Type*> types;
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
     if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
     {
+        collectAllHeapObjTypes(types, inst);
+        const Type *pType = selectLargestType(types);
+        if(pType)
+            return pType;
         if(const Value* v = getFirstUseViaCastInst(inst))
         {
             if(const PointerType* newTy = SVFUtil::dyn_cast<PointerType>(v->getType()))
@@ -394,47 +493,6 @@ const Type* LLVMUtil::inferTypeOfHeapObjOrStaticObj(const Instruction *inst)
     assert(type && "not a pointer type?");
     // TODO: getPtrElementType need type inference
     return getPtrElementType(type);
-}
-
-const CallInst *LLVMUtil::findTypeAssert(const Instruction * inst) {
-    FIFOWorkList<const Instruction*> instWorkList;
-    Set<const Instruction*> visited;
-    instWorkList.push(inst);
-    visited.insert(inst);
-    while (!instWorkList.empty()) {
-        const Instruction *curInst = instWorkList.pop();
-        for (const auto &it : curInst->uses())
-        {
-            if (const CallInst *callInst = SVFUtil::dyn_cast<CallInst>(it.getUser())) {
-                if (const Function* func = callInst->getCalledFunction())
-                {
-                    if (func->getName().find(typeAssert) != std::string::npos)
-                    {
-                        return callInst;
-                    }
-                }
-            } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
-                if (storeInst->getPointerOperand() != inst) {
-                    // store -> load
-                    for (const auto &nit : storeInst->getPointerOperand()->uses()) {
-                        if (SVFUtil::isa<LoadInst>(nit.getUser())) {
-                            const Instruction *pUser = SVFUtil::dyn_cast<Instruction>(nit.getUser());
-                            if (!visited.count(pUser)) {
-                                visited.insert(pUser);
-                                instWorkList.push(pUser);
-                            }
-                        }
-                    }
-                }
-            } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
-                if (!visited.count(bitcast)) {
-                    visited.insert(bitcast);
-                    instWorkList.push(bitcast);
-                }
-            }
-        }
-    }
-    return nullptr;
 }
 
 /*!

@@ -126,12 +126,35 @@ static inline Type* getPtrElementType(const PointerType* pty)
 #endif
 }
 
+#define ABORT_MSG(reason)                                                      \
+    do                                                                         \
+    {                                                                          \
+        SVFUtil::errs() << __FILE__ << ':' << __LINE__ << ": " << reason       \
+                        << '\n';                                               \
+        abort();                                                               \
+    } while (0)
+#define ABORT_IFNOT(condition, reason)                                         \
+    do                                                                         \
+    {                                                                          \
+        if (!(condition))                                                      \
+            ABORT_MSG(reason);                                                 \
+    } while (0)
+
+/// Return size of this object based on LLVM value
+u32_t getNumOfElements(const Type* ety);
+
+void validateTypeCheck(const CallBase* cs);
+
+/// Select the largest (conservative) type from all types
+const Type* selectLargestType(Set<const Type*>& objTys);
+
+void collectAllHeapObjTypes(Set<const Type*>& types, const Instruction* inst);
+
 /// Get the reference type of heap/static object from an allocation site.
 //@{
 const Type *inferTypeOfHeapObjOrStaticObj(const Instruction* inst);
 //@}
 
-const CallInst *findTypeAssert(const Instruction * inst);
 
 /// Return true if this value refers to a object
 bool isObject(const Value* ref);
