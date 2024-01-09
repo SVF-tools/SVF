@@ -84,8 +84,8 @@ protected:
     // @}
 
 
-    /// Collect all possible types of a heap allocation site
-    void forwardCollectAllHeapObjTypes(Set<const Type*>& types, const CallBase* heapAlloc);
+    /// Forward collect all possible types starting from a value
+    void forwardCollectAllHeapObjTypes(const Value* curValue);
 
     /// Get the reference type of heap/static object from an allocation site.
     //@{
