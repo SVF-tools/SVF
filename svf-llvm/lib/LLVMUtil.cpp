@@ -391,7 +391,7 @@ u32_t LLVMUtil::getNumOfElements(const Type* ety)
 
 
 const Type* LLVMUtil::selectLargestType(Set<const Type*>& objTys) {
-    if(objTys.empty()) return nullptr;
+    assert(!objTys.empty() && "objTys cannot be empty");
     // map type size to types from with key in descending order
     OrderedMap<u32_t, Set<const Type*>, std::greater<int>> typeSzToTypes;
     for (const Type *ty: objTys) {

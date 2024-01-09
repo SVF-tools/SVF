@@ -722,7 +722,8 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
             }
         }
         forwardCollectAllHeapObjTypes(inst);
-        const Type *pType = selectLargestType(valueTypes[inst]);
+        auto vIt = valueTypes.find(inst);
+        const Type *pType = vIt != valueTypes.end() ? selectLargestType(vIt->second) : nullptr;
 
 #if TYPE_DEBUG
         ABORT_IFNOT(pType, "fail to infer any types:" + dumpValue(inst) + getSourceLoc(inst) + "\n");
@@ -762,9 +763,10 @@ void SymbolTableBuilder::validateTypeCheck(const CallBase *cs) {
         if (func->getName().find(TYPEMALLOC) != std::string::npos)
         {
             forwardCollectAllHeapObjTypes(cs);
-            const Type *pType = selectLargestType(valueTypes[cs]);
-            ABORT_IFNOT(pType, "fail to infer any types:" +
+            auto vTyIt = valueTypes.find(cs);
+            ABORT_IFNOT(vTyIt != valueTypes.end(), "fail to infer any types:" +
                                dumpValue(cs) + getSourceLoc(cs) + "\n");
+            const Type *pType = selectLargestType(vTyIt->second);
             ConstantInt* pInt =
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
