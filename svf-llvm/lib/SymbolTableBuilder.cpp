@@ -676,7 +676,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         }
         forwardCollectAllHeapObjTypes(inst);
         auto vIt = valueTypes.find(inst);
-        const Type *pType = vIt != valueTypes.end() ? selectLargestType(vIt->second) : nullptr;
+        const Type *pType = (vIt != valueTypes.end() && !vIt->second.empty()) ? selectLargestType(vIt->second) : nullptr;
 
 #if TYPE_DEBUG
         ABORT_IFNOT(pType, "fail to infer any types:" + dumpValue(inst) + getSourceLoc(inst) + "\n");
