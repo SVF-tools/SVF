@@ -85,7 +85,7 @@ protected:
 
 
     /// Forward collect all possible types starting from a value
-    void forwardCollectAllHeapObjTypes(const Value* curValue);
+    void forwardCollectAllHeapObjTypes(const Value* startValue);
 
     /// Get the reference type of heap/static object from an allocation site.
     //@{
