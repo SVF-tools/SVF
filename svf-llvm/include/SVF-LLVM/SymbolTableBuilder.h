@@ -44,7 +44,7 @@ class SymbolTableBuilder
     friend class SVFIRBuilder;
 private:
     SymbolTableInfo* symInfo;
-    Map<const Value*, Set<const Type*>> valueTypes; // value types cache
+    Map<const Value*, Set<const Value*>> valueToInferSites; // value inference site cache
 
 public:
     /// Constructor

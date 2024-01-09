@@ -131,7 +131,7 @@ u32_t getNumOfElements(const Type* ety);
 
 
 /// Select the largest (conservative) type from all types
-const Type* selectLargestType(Set<const Type*>& objTys);
+const Type* selectLargestType(std::vector<const Type*>& objTys);
 
 u32_t getArgNoInCallInst(const CallInst* callInst, const Value* arg);
 

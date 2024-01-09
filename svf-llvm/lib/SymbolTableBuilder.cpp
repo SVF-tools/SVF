@@ -59,7 +59,38 @@ const std::string TYPEMALLOC = "TYPE_MALLOC";
             ABORT_MSG(reason);                                                 \
     } while (0)
 
-#define TYPE_DEBUG 0 /* Turn this on if you're debugging type inference */
+#define VALUE_WITH_DBGINFO(value)                                              \
+    LLVMUtil::dumpValue(value) + LLVMUtil::getSourceLoc(value)
+
+#define TYPE_DEBUG 1 /* Turn this on if you're debugging type inference */
+
+#if TYPE_DEBUG
+#define DBLOG(msg)                                                             \
+    do                                                                         \
+    {                                                                          \
+        SVFUtil::outs() << __FILE__ << ':' << __LINE__ << ": "                 \
+            << SVFUtil::wrnMsg(msg)  << '\n';                                  \
+    } while (0)
+
+#else
+#define DBLOG(msg)                                                             \
+    do                                                                         \
+    {                                                                          \
+    } while (0)
+#endif
+
+const Type *infersiteToType(const Value *val) {
+    assert(val && "value cannot be empty");
+    if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(val)) {
+        return loadInst->getType();
+    } else if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(val)) {
+        return storeInst->getValueOperand()->getType();
+    } else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val)) {
+        return gepInst->getSourceElementType();
+    } else {
+        ABORT_IFNOT(false, "unkown value:" + VALUE_WITH_DBGINFO(val));
+    }
+}
 
 MemObj* SymbolTableBuilder::createBlkObj(SymID symId)
 {
@@ -604,20 +635,22 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
         visited.insert(curPair);
         const Value *curValue = curPair.first;
         bool canUpdate = curPair.second;
-        Set<const Type*> types;
+        Set<const Value*> infersites;
 
-        auto insertType = [&types, &canUpdate] (const Type* type) {
-            if(canUpdate) types.insert(type);
+        auto insertInferSite = [&infersites, &canUpdate] (const Value* infersite) {
+            if(canUpdate) infersites.insert(infersite);
         };
-        auto insertTypesOrPushWorklist = [this, &types, &workList, &canUpdate](const auto& pUser) {
-            auto vIt = valueTypes.find(pUser);
+        auto insertInferSitesOrPushWorklist = [this, &infersites, &workList, &canUpdate](const auto& pUser) {
+            auto vIt = valueToInferSites.find(pUser);
             if(canUpdate) {
-                if(vIt != valueTypes.end()) types.insert(vIt->second.begin(), vIt->second.end());
+                if (vIt != valueToInferSites.end()) {
+                    infersites.insert(vIt->second.begin(), vIt->second.end());
+                }
             } else {
-                if(vIt == valueTypes.end()) workList.push({pUser, false});
+                if(vIt == valueToInferSites.end()) workList.push({pUser, false});
             }
         };
-        if (!canUpdate && !valueTypes.count(curValue)) {
+        if (!canUpdate && !valueToInferSites.count(curValue)) {
             workList.push({curValue, true});
         }
         for (const auto &it : curValue->uses())
@@ -629,7 +662,7 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
                  %1 = bitcast i8* %call to %struct.MyStruct*
                  %q = load %struct.MyStruct, %struct.MyStruct* %1
                  */
-                insertType(loadInst->getType());
+                insertInferSite(loadInst);
             } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
                 if (storeInst->getPointerOperand() == curValue) {
                     /*
@@ -638,7 +671,7 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
                      %1 = bitcast i8* %call to %struct.MyStruct*
                      store %struct.MyStruct .., %struct.MyStruct* %1
                      */
-                    insertType(storeInst->getValueOperand()->getType());
+                    insertInferSite(storeInst);
                 } else {
                     for (const auto &nit: storeInst->getPointerOperand()->uses()) {
                         /*
@@ -649,7 +682,7 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
                          ..infer based on %q..
                         */
                         if (SVFUtil::isa<LoadInst>(nit.getUser()))
-                            insertTypesOrPushWorklist(nit.getUser());
+                            insertInferSitesOrPushWorklist(nit.getUser());
                     }
                     /*
                      * infer based on store (value operand) <- gep (result element)
@@ -661,7 +694,7 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
                       */
                     if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
                             storeInst->getPointerOperand()))
-                        insertType(gepInst->getSourceElementType());
+                        insertInferSite(gepInst);
                 }
 
             } else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
@@ -672,10 +705,10 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
                  %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %1, i32 0..
                  */
                 if (gepInst->getPointerOperand() == curValue)
-                    insertType(gepInst->getSourceElementType());
+                    insertInferSite(gepInst);
             } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
                 // continue on bitcast
-                insertTypesOrPushWorklist(bitcast);
+                insertInferSitesOrPushWorklist(bitcast);
             } else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
                 /*
                  * propagate from return to caller
@@ -690,7 +723,7 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
                 */
                 for (const auto &callsite: retInst->getFunction()->uses()) {
                     if (CallInst *callInst = SVFUtil::dyn_cast<CallInst>(callsite.getUser()))
-                        insertTypesOrPushWorklist(callInst);
+                        insertInferSitesOrPushWorklist(callInst);
                 }
             } else if (CallInst *callInst = SVFUtil::dyn_cast<CallInst>(it.getUser())) {
                 /*
@@ -707,12 +740,14 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
                     // for variable argument, conservatively collect all params
                     if (calleeFunc->isVarArg()) pos = 0;
                     if (!calleeFunc->isDeclaration()) {
-                        insertTypesOrPushWorklist(calleeFunc->getArg(pos));
+                        insertInferSitesOrPushWorklist(calleeFunc->getArg(pos));
                     }
                 }
             }
         }
-        if(canUpdate) valueTypes[curValue] = SVFUtil::move(types);
+        if (canUpdate) {
+            valueToInferSites[curValue] = SVFUtil::move(infersites);
+        }
     }
 }
 
@@ -724,7 +759,6 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
 const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction *inst)
 {
     const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
-    Set<const Type*> types;
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
     if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
     {
@@ -735,17 +769,23 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
             }
         }
         forwardCollectAllHeapObjTypes(inst);
-        auto vIt = valueTypes.find(inst);
-        const Type *pType = (vIt != valueTypes.end() && !vIt->second.empty()) ? selectLargestType(vIt->second) : nullptr;
+        auto vIt = valueToInferSites.find(inst);
 
+        const Type *pType = nullptr;
+        if (vIt != valueToInferSites.end() && !vIt->second.empty()) {
+            std::vector<const Type*> types(vIt->second.size());
+            std::transform(vIt->second.begin(), vIt->second.end(), types.begin(), infersiteToType);
+            pType = selectLargestType(types);
+        } else {
+            // return an 8-bit integer type if the inferred type is empty
+            pType = Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
+            DBLOG("empty types, value ID is " + std::to_string(inst->getValueID()) + ":" + VALUE_WITH_DBGINFO(inst));
+        }
 #if TYPE_DEBUG
-        ABORT_IFNOT(pType, "fail to infer any types:" + dumpValue(inst) + getSourceLoc(inst) + "\n");
         ABORT_IFNOT(getNumOfElements(getPtrElementType(type)) <= getNumOfElements(pType),
-                    "inferred type is not sound:" + dumpValue(inst) + getSourceLoc(inst) + "\n");
-        return pType;
-#else
-        if(pType) return pType;
+                    "wrong type, value ID is " + std::to_string(inst->getValueID()) + ":" + VALUE_WITH_DBGINFO(inst));
 #endif
+        return pType;
 
     }
     else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
@@ -766,6 +806,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
 }
 
 
+
 /*!
  * Validate type inference
  * @param cs : stub malloc function with element number label
@@ -776,21 +817,27 @@ void SymbolTableBuilder::validateTypeCheck(const CallBase *cs) {
         if (func->getName().find(TYPEMALLOC) != std::string::npos)
         {
             forwardCollectAllHeapObjTypes(cs);
-            auto vTyIt = valueTypes.find(cs);
-            ABORT_IFNOT(vTyIt != valueTypes.end(), "fail to infer any types:" +
-                               dumpValue(cs) + getSourceLoc(cs) + "\n");
-            const Type *pType = selectLargestType(vTyIt->second);
+            auto vTyIt = valueToInferSites.find(cs);
+            if (vTyIt == valueToInferSites.end()) {
+                SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << "empty types, value ID is "
+                                << std::to_string(cs->getValueID()) << ":" << VALUE_WITH_DBGINFO(cs) << "\n";
+                abort();
+            }
+            std::vector<const Type*> types(vTyIt->second.size());
+            std::transform(vTyIt->second.begin(), vTyIt->second.end(), types.begin(), infersiteToType);
+            const Type *pType = selectLargestType(types);
             ConstantInt* pInt =
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
             if (getNumOfElements(pType) >= pInt->getZExtValue())
-                SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") <<
-                                dumpValue(cs) << getSourceLoc(cs) << SVFUtil::pasMsg(" TYPE: ") << dumpType(pType) << "\n";
+                SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") << VALUE_WITH_DBGINFO(cs) << SVFUtil::pasMsg(" TYPE: ")
+                                << dumpType(pType) << "\n";
             else
             {
-                SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") <<
-                                dumpValue(cs) << getSourceLoc(cs) << " TYPE: " << dumpType(pType) << "\n";
-                ABORT_IFNOT(false, "test case failed!");
+                SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << ", value ID is "
+                                << std::to_string(cs->getValueID()) << ":" << VALUE_WITH_DBGINFO(cs) << " TYPE: "
+                                << dumpType(pType) << "\n";
+                abort();
             }
         }
     }
@@ -829,7 +876,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
             }
             else
             {
-                SVFUtil::errs() << dumpValue(val) << "\n";
+                SVFUtil::errs() << VALUE_WITH_DBGINFO(val) << "\n";
                 assert(false && "not an allocation or global?");
             }
         }
