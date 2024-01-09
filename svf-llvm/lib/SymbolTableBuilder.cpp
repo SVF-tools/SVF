@@ -593,11 +593,16 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
  */
 void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) {
     // simulate the call stack, the second element indicates whether we should update valueTypes for current value
-    FILOWorkList<std::pair<const Value*, bool>> workList;
+    typedef std::pair<const Value*, bool> ValueBoolPair;
+    FILOWorkList<ValueBoolPair> workList;
+    Set<ValueBoolPair> visited;
     workList.push({startValue, false});
+    visited.insert({startValue, false});
 
     while (!workList.empty()) {
         auto curPair = workList.pop();
+        if(visited.count(curPair)) continue;
+        visited.insert(curPair);
         const Value *curValue = curPair.first;
         bool canUpdate = curPair.second;
         Set<const Type*> types;
