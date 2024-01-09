@@ -600,7 +600,7 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
         auto [curValue, canUpdate] = workList.pop();
         Set<const Type*> types;
 
-        auto insertType = [this, &types, &canUpdate] (const Type* type) {
+        auto insertType = [&types, &canUpdate] (const Type* type) {
             if(canUpdate) types.insert(type);
         };
         auto insertTypesOrPushWorklist = [this, &types, &workList, &canUpdate](const auto& pUser) {
