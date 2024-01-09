@@ -597,7 +597,9 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
     workList.push({startValue, false});
 
     while (!workList.empty()) {
-        auto [curValue, canUpdate] = workList.pop();
+        auto curPair = workList.pop();
+        const Value *curValue = curPair.first;
+        bool canUpdate = curPair.second;
         Set<const Type*> types;
 
         auto insertType = [&types, &canUpdate] (const Type* type) {
@@ -617,31 +619,85 @@ void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) 
         for (const auto &it : curValue->uses())
         {
             if (LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
+                /*
+                 * infer based on load, e.g.,
+                 %call = call i8* malloc()
+                 %1 = bitcast i8* %call to %struct.MyStruct*
+                 %q = load %struct.MyStruct, %struct.MyStruct* %1
+                 */
                 insertType(loadInst->getType());
             } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
                 if (storeInst->getPointerOperand() == curValue) {
+                    /*
+                     * infer based on store (pointer operand), e.g.,
+                     %call = call i8* malloc()
+                     %1 = bitcast i8* %call to %struct.MyStruct*
+                     store %struct.MyStruct .., %struct.MyStruct* %1
+                     */
                     insertType(storeInst->getValueOperand()->getType());
                 } else {
                     for (const auto &nit: storeInst->getPointerOperand()->uses()) {
+                        /*
+                         * propagate across store (value operand) and load
+                         %call = call i8* malloc()
+                         store i8* %call, i8** %p
+                         %q = load i8*, i8** %p
+                         ..infer based on %q..
+                        */
                         if (SVFUtil::isa<LoadInst>(nit.getUser()))
                             insertTypesOrPushWorklist(nit.getUser());
                     }
+                    /*
+                     * infer based on store (value operand) <- gep (result element)
+                      %call1 = call i8* @TYPE_MALLOC(i32 noundef 16, i32 noundef 2), !dbg !39
+                      %2 = bitcast i8* %call1 to %struct.MyStruct*, !dbg !41
+                      %3 = load %struct.MyStruct*, %struct.MyStruct** %p, align 8, !dbg !42
+                      %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %3, i32 0, i32 1, !dbg !43
+                      store %struct.MyStruct* %2, %struct.MyStruct** %next, align 8, !dbg !44
+                      */
                     if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
                             storeInst->getPointerOperand()))
                         insertType(gepInst->getSourceElementType());
                 }
 
             } else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
+                /*
+                 * infer based on gep (pointer operand)
+                 %call = call i8* malloc()
+                 %1 = bitcast i8* %call to %struct.MyStruct*
+                 %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %1, i32 0..
+                 */
                 if (gepInst->getPointerOperand() == curValue)
                     insertType(gepInst->getSourceElementType());
             } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
+                // continue on bitcast
                 insertTypesOrPushWorklist(bitcast);
             } else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
+                /*
+                 * propagate from return to caller
+                  Function Attrs: noinline nounwind optnone uwtable
+                  define dso_local i8* @malloc_wrapper() #0 !dbg !22 {
+                      entry:
+                      %call = call i8* @malloc(i32 noundef 16), !dbg !25
+                      ret i8* %call, !dbg !26
+                 }
+                 %call = call i8* @malloc_wrapper()
+                 ..infer based on %call..
+                */
                 for (const auto &callsite: retInst->getFunction()->uses()) {
                     if (CallInst *callInst = SVFUtil::dyn_cast<CallInst>(callsite.getUser()))
                         insertTypesOrPushWorklist(callInst);
                 }
             } else if (CallInst *callInst = SVFUtil::dyn_cast<CallInst>(it.getUser())) {
+                /*
+                 * propagate from callsite to callee
+                  %call = call i8* @malloc(i32 noundef 16)
+                  %0 = bitcast i8* %call to %struct.Node*, !dbg !43
+                  call void @foo(%struct.Node* noundef %0), !dbg !45
+
+                  define dso_local void @foo(%struct.Node* noundef %param) #0 !dbg !22 {...}
+                  ..infer based on the formal param %param..
+                 */
                 u32_t pos = getArgNoInCallInst(callInst, curValue);
                 if (Function *calleeFunc = callInst->getCalledFunction()) {
                     // for variable argument, conservatively collect all params
