@@ -43,6 +43,24 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
 
+const std::string TYPEMALLOC = "TYPE_MALLOC";
+
+#define ABORT_MSG(reason)                                                      \
+    do                                                                         \
+    {                                                                          \
+        SVFUtil::errs() << __FILE__ << ':' << __LINE__ << ": " << reason       \
+                        << '\n';                                               \
+        abort();                                                               \
+    } while (0)
+#define ABORT_IFNOT(condition, reason)                                         \
+    do                                                                         \
+    {                                                                          \
+        if (!(condition))                                                      \
+            ABORT_MSG(reason);                                                 \
+    } while (0)
+
+#define TYPE_DEBUG 0 /* Turn this on if you're debugging type inference */
+
 MemObj* SymbolTableBuilder::createBlkObj(SymID symId)
 {
     assert(symInfo->isBlkObj(symId));
@@ -220,7 +238,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
                     // TODO handle inlineAsm
                     /// if (SVFUtil::isa<InlineAsm>(Callee))
                     if (Options::EnableTypeCheck()) {
-                        LLVMUtil::validateTypeCheck(cs);
+                        validateTypeCheck(cs);
                     }
                 }
                 //@}
@@ -566,6 +584,201 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
     else
     {
         //TODO:assert(SVFUtil::isa<ConstantVector>(C),"what else do we have");
+    }
+}
+
+
+/*!
+ * Collect all possible types of a heap allocation site in a forward manner
+ * @param types the derived result
+ * @param heapAlloc the heap allocation site
+ */
+void SymbolTableBuilder::forwardCollectAllHeapObjTypes(Set<const Type*>& types, const CallBase* heapAlloc) {
+    assert(heapAlloc && "not an instruction?");
+    FILOWorkList<const Value*> valueWorkList;
+    Set<const Value*> visited;
+    valueWorkList.push(heapAlloc);
+    visited.insert(heapAlloc);
+    auto pushIntoWorklist = [&visited, &valueWorkList](const auto& pUser) {
+        if (!visited.count(pUser)) {
+            visited.insert(pUser);
+            valueWorkList.push(pUser);
+        }
+    };
+    while (!valueWorkList.empty()) {
+        const Value *curValue = valueWorkList.pop();
+        for (const auto &it : curValue->uses())
+        {
+            if (LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
+                /*
+                 * infer based on load, e.g.,
+                 %call = call i8* malloc()
+                 %1 = bitcast i8* %call to %struct.MyStruct*
+                 %q = load %struct.MyStruct, %struct.MyStruct* %1
+                 */
+                types.insert(loadInst->getType());
+            } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
+                if (storeInst->getPointerOperand() == curValue) {
+                    /*
+                     * infer based on store (pointer operand), e.g.,
+                     %call = call i8* malloc()
+                     %1 = bitcast i8* %call to %struct.MyStruct*
+                     store %struct.MyStruct .., %struct.MyStruct* %1
+                     */
+                    types.insert(storeInst->getValueOperand()->getType());
+                } else {
+                    /*
+                     * propagate across store (value operand) and load
+                     %call = call i8* malloc()
+                     store i8* %call, i8** %p
+                     %q = load i8*, i8** %p
+                     ..infer based on %q..
+                     */
+                    for (const auto &nit : storeInst->getPointerOperand()->uses()) {
+                        if (SVFUtil::isa<LoadInst>(nit.getUser())) {
+                            pushIntoWorklist(nit.getUser());
+                        }
+                    }
+                    /*
+                     * infer based on store (value operand) <- gep (result element)
+                      %call1 = call i8* @TYPE_MALLOC(i32 noundef 16, i32 noundef 2), !dbg !39
+                      %2 = bitcast i8* %call1 to %struct.MyStruct*, !dbg !41
+                      %3 = load %struct.MyStruct*, %struct.MyStruct** %p, align 8, !dbg !42
+                      %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %3, i32 0, i32 1, !dbg !43
+                      store %struct.MyStruct* %2, %struct.MyStruct** %next, align 8, !dbg !44
+                      */
+                    if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
+                            storeInst->getPointerOperand())) {
+                        types.insert(gepInst->getSourceElementType());
+                    }
+                }
+            } else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
+                if (gepInst->getPointerOperand() == curValue) {
+                    /*
+                     * infer based on gep (pointer operand)
+                     %call = call i8* malloc()
+                     %1 = bitcast i8* %call to %struct.MyStruct*
+                     %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %1, i32 0..
+                     */
+                    types.insert(gepInst->getSourceElementType());
+                }
+            } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
+                // continue on bitcast
+                pushIntoWorklist(bitcast);
+            } else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
+                /*;
+                 * propagate from return to caller
+                  Function Attrs: noinline nounwind optnone uwtable
+                  define dso_local i8* @malloc_wrapper() #0 !dbg !22 {
+                      entry:
+                      %call = call i8* @malloc(i32 noundef 16), !dbg !25
+                      ret i8* %call, !dbg !26
+                 }
+                 %call = call i8* @malloc_wrapper()
+                 ..infer based on %call..
+                 */
+                for(const auto& callsite: retInst->getFunction()->uses()) {
+                    if (CallInst* callInst = SVFUtil::dyn_cast<CallInst>(callsite.getUser())) {
+                        pushIntoWorklist(callInst);
+                    }
+                }
+            } else if (CallInst* callInst = SVFUtil::dyn_cast<CallInst>(it.getUser())) {
+                /*;
+                 * propagate from callsite to callee
+                  %call = call i8* @malloc(i32 noundef 16)
+                  %0 = bitcast i8* %call to %struct.Node*, !dbg !43
+                  call void @foo(%struct.Node* noundef %0), !dbg !45
+
+                  define dso_local void @foo(%struct.Node* noundef %param) #0 !dbg !22 {...}
+                  ..infer based on the formal param %param..
+                 */
+                u32_t pos = getArgNoInCallInst(callInst, curValue);
+                if (Function *calleeFunc = callInst->getCalledFunction()) {
+                    // for variable argument, conservatively collect all params
+                    if(calleeFunc->isVarArg()) pos = 0;
+                    if(!calleeFunc->isDeclaration())
+                        pushIntoWorklist(calleeFunc->getArg(pos));
+                }
+            }
+        }
+    }
+}
+
+/*!
+ * Return the type of the object from a heap allocation
+ */
+const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction *inst)
+{
+    const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
+    Set<const Type*> types;
+    const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
+    if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
+    {
+        if(const Value* v = getFirstUseViaCastInst(inst))
+        {
+            if (const PointerType *newTy = SVFUtil::dyn_cast<PointerType>(v->getType())) {
+                type = newTy;
+            }
+        }
+        const CallBase *heapAlloc = SVFUtil::dyn_cast<CallBase>(inst);
+        forwardCollectAllHeapObjTypes(types, heapAlloc);
+        const Type *pType = selectLargestType(types);
+
+#if TYPE_DEBUG
+        ABORT_IFNOT(pType, "fail to infer any types:" + dumpValue(inst) + getSourceLoc(inst) + "\n");
+        ABORT_IFNOT(getNumOfElements(getPtrElementType(type)) <= getNumOfElements(pType),
+                    "inferred type is not sound:" + dumpValue(inst) + getSourceLoc(inst) + "\n");
+        return pType;
+#else
+        if(pType) return pType;
+#endif
+
+    }
+    else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
+    {
+        const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
+        int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getSVFCallSite(svfinst));
+        const Value* arg = cs->getArgOperand(arg_pos);
+        type = SVFUtil::dyn_cast<PointerType>(arg->getType());
+    }
+    else
+    {
+        assert( false && "not a heap allocation instruction?");
+    }
+
+    assert(type && "not a pointer type?");
+    // TODO: getPtrElementType need type inference
+    return getPtrElementType(type);
+}
+
+
+/*!
+ * Validate type inference
+ * @param cs : stub malloc function with element number label
+ */
+void SymbolTableBuilder::validateTypeCheck(const CallBase *cs) {
+    if (const Function* func = cs->getCalledFunction())
+    {
+        if (func->getName().find(TYPEMALLOC) != std::string::npos)
+        {
+            Set<const Type*> types;
+            forwardCollectAllHeapObjTypes(types, cs);
+            const Type *pType = selectLargestType(types);
+            ABORT_IFNOT(pType, "fail to infer any types:" +
+                               dumpValue(cs) + getSourceLoc(cs) + "\n");
+            ConstantInt* pInt =
+                    SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
+            assert(pInt && "the second argument is a integer");
+            if (getNumOfElements(pType) >= pInt->getZExtValue())
+                SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") <<
+                                dumpValue(cs) << getSourceLoc(cs) << SVFUtil::pasMsg(" TYPE: ") << dumpType(pType) << "\n";
+            else
+            {
+                SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") <<
+                                dumpValue(cs) << getSourceLoc(cs) << " TYPE: " << dumpType(pType) << "\n";
+                ABORT_IFNOT(false, "test case failed!");
+            }
+        }
     }
 }
 

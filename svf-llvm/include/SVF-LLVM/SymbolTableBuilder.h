@@ -44,6 +44,7 @@ class SymbolTableBuilder
     friend class SVFIRBuilder;
 private:
     SymbolTableInfo* symInfo;
+    Map<const Value*, Set<const Type*>> valueTypes; // value types cache
 
 public:
     /// Constructor
@@ -81,6 +82,19 @@ protected:
     void handleGlobalInitializerCE(const Constant *C);
     void handleCE(const Value* val);
     // @}
+
+
+    /// Collect all possible types of a heap allocation site
+    void forwardCollectAllHeapObjTypes(Set<const Type*>& types, const CallBase* heapAlloc);
+
+    /// Get the reference type of heap/static object from an allocation site.
+    //@{
+    const Type *inferTypeOfHeapObjOrStaticObj(const Instruction* inst);
+    //@}
+
+
+    /// Validate type inference
+    void validateTypeCheck(const CallBase* cs);
 
     /// Create an objectInfo based on LLVM value
     ObjTypeInfo* createObjTypeInfo(const Value* val);

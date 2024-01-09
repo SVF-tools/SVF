@@ -129,21 +129,12 @@ static inline Type* getPtrElementType(const PointerType* pty)
 /// Return size of this object based on LLVM value
 u32_t getNumOfElements(const Type* ety);
 
-/// Validate type inference
-void validateTypeCheck(const CallBase* cs);
 
 /// Select the largest (conservative) type from all types
 const Type* selectLargestType(Set<const Type*>& objTys);
 
 u32_t getArgNoInCallInst(const CallInst* callInst, const Value* arg);
 
-/// Collect all possible types of a heap allocation site
-void collectAllHeapObjTypes(Set<const Type*>& types, const CallBase* heapAlloc);
-
-/// Get the reference type of heap/static object from an allocation site.
-//@{
-const Type *inferTypeOfHeapObjOrStaticObj(const Instruction* inst);
-//@}
 
 
 /// Return true if this value refers to a object
