@@ -84,8 +84,8 @@ protected:
     // @}
 
 
-    /// Forward collect all possible types starting from a value
-    void forwardCollectAllHeapObjTypes(const Value* startValue);
+    /// Forward collect all possible infer sites starting from a value
+    void forwardCollectAllInfersites(const Value* startValue);
 
     /// Get the reference type of heap/static object from an allocation site.
     //@{

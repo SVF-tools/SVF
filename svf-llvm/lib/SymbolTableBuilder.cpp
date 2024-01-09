@@ -79,16 +79,22 @@ const std::string TYPEMALLOC = "TYPE_MALLOC";
     } while (0)
 #endif
 
+/// Determine type based on infer site
+/// https://llvm.org/docs/OpaquePointers.html#migration-instructions
 const Type *infersiteToType(const Value *val) {
     assert(val && "value cannot be empty");
-    if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(val)) {
-        return loadInst->getType();
-    } else if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(val)) {
-        return storeInst->getValueOperand()->getType();
+    if (SVFUtil::isa<LoadInst>(val) || SVFUtil::isa<StoreInst>(val)) {
+        return llvm::getLoadStoreType(const_cast<Value *>(val));
     } else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val)) {
         return gepInst->getSourceElementType();
+    } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
+        return call->getFunctionType();
+    } else if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val)) {
+        return allocaInst->getAllocatedType();
+    } else if (const GlobalValue *globalValue = SVFUtil::dyn_cast<GlobalValue>(val)) {
+        return globalValue->getValueType();
     } else {
-        ABORT_IFNOT(false, "unkown value:" + VALUE_WITH_DBGINFO(val));
+        ABORT_IFNOT(false, "unknown value:" + VALUE_WITH_DBGINFO(val));
     }
 }
 
@@ -619,10 +625,10 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
 }
 
 /*!
- * Forward collect all possible types starting from a value
+ * Forward collect all possible infer sites starting from a value
  * @param startValue
  */
-void SymbolTableBuilder::forwardCollectAllHeapObjTypes(const Value* startValue) {
+void SymbolTableBuilder::forwardCollectAllInfersites(const Value* startValue) {
     // simulate the call stack, the second element indicates whether we should update valueTypes for current value
     typedef std::pair<const Value*, bool> ValueBoolPair;
     FILOWorkList<ValueBoolPair> workList;
@@ -770,7 +776,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
                 originalPType = newTy;
             }
         }
-        forwardCollectAllHeapObjTypes(startValue);
+        forwardCollectAllInfersites(startValue);
     }
     else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
     {
@@ -778,7 +784,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getSVFCallSite(svfinst));
         const Value* arg = cs->getArgOperand(arg_pos);
         originalPType = SVFUtil::dyn_cast<PointerType>(arg->getType());
-        forwardCollectAllHeapObjTypes(startValue = arg);
+        forwardCollectAllInfersites(startValue = arg);
     }
     else
     {
@@ -815,7 +821,7 @@ void SymbolTableBuilder::validateTypeCheck(const CallBase *cs) {
     {
         if (func->getName().find(TYPEMALLOC) != std::string::npos)
         {
-            forwardCollectAllHeapObjTypes(cs);
+            forwardCollectAllInfersites(cs);
             auto vTyIt = valueToInferSites.find(cs);
             if (vTyIt == valueToInferSites.end()) {
                 SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << "empty types, value ID is "
