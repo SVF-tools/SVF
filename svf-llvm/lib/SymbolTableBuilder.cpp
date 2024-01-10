@@ -617,7 +617,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         inferedType = getTypeInference()->defaultTy(startValue);
     }
 
-    getTypeInference()->typeDiffTest(getPtrElementType(originalPType), inferedType, startValue);
+    getTypeInference()->typeDiffTest(originalPType, inferedType, startValue);
 
     return inferedType;
 }

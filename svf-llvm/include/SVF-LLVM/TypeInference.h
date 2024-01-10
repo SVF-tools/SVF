@@ -67,7 +67,7 @@ public:
     /// Validate type inference
     void validateTypeCheck(const CallBase *cs);
 
-    void typeDiffTest(const Type *oTy, const Type *iTy, const Value *val);
+    void typeDiffTest(const Type *oPTy, const Type *iTy, const Value *val);
 
 protected:
     static const Type *infersiteToType(const Value *val);
