@@ -1126,22 +1126,6 @@ const Value* LLVMUtil::getVCallVtblPtr(const CallBase* cs)
     return vtbl;
 }
 
-/*
- * Is this virtual call inside its own constructor or destructor?
- */
-bool LLVMUtil::VCallInCtorOrDtor(const CallBase* cs)
-{
-    std::string classNameOfThisPtr = LLVMUtil::getClassNameOfThisPtr(cs);
-    const Function* func = cs->getCaller();
-    if (LLVMUtil::isConstructor(func) || LLVMUtil::isDestructor(func))
-    {
-        cppUtil::DemangledName dname = cppUtil::demangle(func->getName().str());
-        if (classNameOfThisPtr.compare(dname.className) == 0)
-            return true;
-    }
-    return false;
-}
-
 bool LLVMUtil::classTyHasVTable(const StructType* ty)
 {
     if(getClassNameFromType(ty).empty()==false)
@@ -1173,36 +1157,6 @@ std::string LLVMUtil::getClassNameFromType(const StructType* ty)
         }
     }
     return className;
-}
-
-std::string LLVMUtil::getClassNameOfThisPtr(const CallBase* inst)
-{
-    std::string thisPtrClassName = "";
-    if (const MDNode* N = inst->getMetadata("VCallPtrType"))
-    {
-        const MDString* mdstr = SVFUtil::cast<MDString>(N->getOperand(0).get());
-        thisPtrClassName = mdstr->getString().str();
-    }
-    if (thisPtrClassName.size() == 0)
-    {
-        const Value* thisPtr = LLVMUtil::getVCallThisPtr(inst);
-        if(const PointerType* ptrTy = SVFUtil::dyn_cast<PointerType>(thisPtr->getType()))
-            // TODO: getPtrElementType need type inference
-            if(const StructType* st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy)))
-                thisPtrClassName = getClassNameFromType(st);
-    }
-
-    size_t found = thisPtrClassName.find_last_not_of("0123456789");
-    if (found != std::string::npos)
-    {
-        if (found != thisPtrClassName.size() - 1 &&
-                thisPtrClassName[found] == '.')
-        {
-            return thisPtrClassName.substr(0, found);
-        }
-    }
-
-    return thisPtrClassName;
 }
 
 std::string LLVMUtil::getFunNameOfVCallSite(const CallBase* inst)

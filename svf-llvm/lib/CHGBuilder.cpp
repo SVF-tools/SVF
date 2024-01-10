@@ -44,6 +44,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/PTAStat.h"
+#include "SVF-LLVM/TypeInference.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -666,6 +667,40 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
     }
 }
 
+std::string CHGBuilder::getClassNameOfThisPtr(const CallBase* inst)
+{
+    std::string thisPtrClassName = "";
+    if (const MDNode* N = inst->getMetadata("VCallPtrType"))
+    {
+        const MDString* mdstr = SVFUtil::cast<MDString>(N->getOperand(0).get());
+        thisPtrClassName = mdstr->getString().str();
+    }
+    if (thisPtrClassName.size() == 0)
+    {
+        const Value* thisPtr = LLVMUtil::getVCallThisPtr(inst);
+        if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(thisPtr->getType())) {
+            const Type *objTy = TypeInference::getTypeInference()->getOrInferLLVMObjType(thisPtr);
+            TypeInference::getTypeInference()->typeDiffTest(ptrTy, objTy, thisPtr);
+            // TODO: getPtrElementType need type inference
+            if (const StructType *st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy))) {
+                thisPtrClassName = getClassNameFromType(st);
+            }
+        }
+    }
+
+    size_t found = thisPtrClassName.find_last_not_of("0123456789");
+    if (found != std::string::npos)
+    {
+        if (found != thisPtrClassName.size() - 1 &&
+            thisPtrClassName[found] == '.')
+        {
+            return thisPtrClassName.substr(0, found);
+        }
+    }
+
+    return thisPtrClassName;
+}
+
 const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
 {
     assert(LLVMUtil::isVirtualCallSite(cs) && "not virtual callsite!");
@@ -678,7 +713,7 @@ const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
     }
     else
     {
-        string thisPtrClassName = LLVMUtil::getClassNameOfThisPtr(cs);
+        string thisPtrClassName = getClassNameOfThisPtr(cs);
         if (const CHNode* thisNode = chg->getNode(thisPtrClassName))
         {
             const CHGraph::CHNodeSetTy& instAndDesces = getInstancesAndDescendants(thisPtrClassName);

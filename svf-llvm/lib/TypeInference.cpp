@@ -290,10 +290,21 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
     }
 }
 
-void TypeInference::typeDiffTest(const Type *oPTy, const Type *iTy, const Value *val) {
+void TypeInference::typeEleNumDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val) {
 #if TYPE_DEBUG
     Type *oTy = getPtrElementType(oPTy);
     if (getNumOfElements(oTy) > getNumOfElements(iTy)) {
+        ERR_MSG("original type is:" + dumpType(oTy));
+        ERR_MSG("infered type is:" + dumpType(iTy));
+        ABORT_MSG("wrong type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(val));
+    }
+#endif
+}
+
+void TypeInference::typeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val) {
+#if TYPE_DEBUG
+    Type *oTy = getPtrElementType(oPTy);
+    if (oTy != iTy) {
         ERR_MSG("original type is:" + dumpType(oTy));
         ERR_MSG("infered type is:" + dumpType(iTy));
         ABORT_MSG("wrong type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(val));
