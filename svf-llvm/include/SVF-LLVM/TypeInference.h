@@ -32,49 +32,17 @@
 
 #include "SVF-LLVM/LLVMUtil.h"
 
-#define ABORT_MSG(reason)                                                      \
-    do                                                                         \
-    {                                                                          \
-        SVFUtil::errs() << __FILE__ << ':' << __LINE__ << ": " << reason       \
-                        << '\n';                                               \
-        abort();                                                               \
-    } while (0)
-#define ABORT_IFNOT(condition, reason)                                         \
-    do                                                                         \
-    {                                                                          \
-        if (!(condition))                                                      \
-            ABORT_MSG(reason);                                                 \
-    } while (0)
-
-#define VALUE_WITH_DBGINFO(value)                                              \
-    LLVMUtil::dumpValue(value) + LLVMUtil::getSourceLoc(value)
-
-#define TYPE_DEBUG 1 /* Turn this on if you're debugging type inference */
-
-#if TYPE_DEBUG
-#define DBLOG(msg)                                                             \
-    do                                                                         \
-    {                                                                          \
-        SVFUtil::outs() << __FILE__ << ':' << __LINE__ << ": "                 \
-            << SVFUtil::wrnMsg(msg)  << '\n';                                  \
-    } while (0)
-
-#else
-#define DBLOG(msg)                                                             \
-    do                                                                         \
-    {                                                                          \
-    } while (0)
-#endif
-
 namespace SVF {
 class TypeInference {
 
 public:
     typedef Map<const Value *, Set<const Value *>> ValueToInferSites;
+    typedef Map<const Value *, const Type *> ValueToType;
 
 private:
     static std::unique_ptr<TypeInference> _typeInference;
     ValueToInferSites _valueToInferSites; // value inference site cache
+    ValueToType _valueToType; // value type cache
 
     explicit TypeInference() = default;
 
@@ -90,17 +58,16 @@ public:
         return _typeInference;
     }
 
-    static const Type *infersiteToType(const Value *val);
-
     /// Forward collect all possible infer sites starting from a value
-    void forwardCollectAllInfersites(const Value *startValue);
+    const Type *getOrInferLLVMObjType(const Value *startValue);
 
     /// Validate type inference
     void validateTypeCheck(const CallBase *cs);
 
-    const ValueToInferSites &getValueToInferSites() {
-        return _valueToInferSites;
-    }
+    void typeDiffTest(const Type *oTy, const Type *iTy, const Value* val);
+
+protected:
+    static const Type *infersiteToType(const Value *val);
 };
 }
 #endif //SVF_TYPEINFERENCE_H

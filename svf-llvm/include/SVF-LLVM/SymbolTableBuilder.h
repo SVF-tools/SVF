@@ -87,10 +87,8 @@ protected:
 
     std::unique_ptr<TypeInference> & getTypeInference();
 
-    const Map<const Value*, Set<const Value*>>& getValueToInferSites();
-
     /// Forward collect all possible infer sites starting from a value
-    inline void forwardCollectAllInfersites(const Value *startValue);
+    const Type* getOrInferLLVMObjType(const Value *startValue);
 
     /// Get the reference type of heap/static object from an allocation site.
     //@{

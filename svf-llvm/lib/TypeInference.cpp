@@ -29,6 +29,39 @@
 
 #include "SVF-LLVM/TypeInference.h"
 
+#define TYPE_DEBUG 1 /* Turn this on if you're debugging type inference */
+#define ABORT_MSG(msg)                                                         \
+    do                                                                         \
+    {                                                                          \
+        SVFUtil::errs() << __FILE__ << ':' << __LINE__ << ": " << msg          \
+                        << '\n';                                               \
+        abort();                                                               \
+    } while (0)
+#define ABORT_IFNOT(condition, msg)                                            \
+    do                                                                         \
+    {                                                                          \
+        if (!(condition))                                                      \
+            ABORT_MSG(msg);                                                    \
+    } while (0)
+
+#if TYPE_DEBUG
+#define WARN_MSG(msg)                                                          \
+    do                                                                         \
+    {                                                                          \
+        SVFUtil::outs() << SVFUtil::wrnMsg("Warning ") << __FILE__ << ':'      \
+            << __LINE__ << ": "  << msg   << '\n';                             \
+    } while (0)
+#define WARN_IFNOT(condition, msg)                                             \
+    do                                                                         \
+    {                                                                          \
+        if (!(condition))                                                      \
+            WARN_MSG(msg);                                                     \
+    } while (0)
+#else
+#define WARN_MSG(msg)
+#define WARN_IFNOT(condition, msg)
+#endif
+
 using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
@@ -60,7 +93,15 @@ const Type *TypeInference::infersiteToType(const Value *val) {
  * Forward collect all possible infer sites starting from a value
  * @param startValue
  */
-void TypeInference::forwardCollectAllInfersites(const Value *startValue) {
+const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
+    // consult cache
+    auto tIt = _valueToType.find(startValue);
+    if (tIt != _valueToType.end()) {
+        WARN_IFNOT(tIt->second, "empty type, value ID is " + std::to_string(startValue->getValueID()) + ":" +
+                                VALUE_WITH_DBGINFO(startValue));
+        return tIt->second;
+    }
+
     // simulate the call stack, the second element indicates whether we should update valueTypes for current value
     typedef std::pair<const Value *, bool> ValueBoolPair;
     FILOWorkList<ValueBoolPair> workList;
@@ -159,10 +200,11 @@ void TypeInference::forwardCollectAllInfersites(const Value *startValue) {
                  ..infer based on %call..
                 */
                 for (const auto &callsite: retInst->getFunction()->uses()) {
-                    if (CallInst *callInst = SVFUtil::dyn_cast<CallInst>(callsite.getUser()))
-                        insertInferSitesOrPushWorklist(callInst);
+                    if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser())) {
+                        insertInferSitesOrPushWorklist(callBase);
+                    }
                 }
-            } else if (CallInst *callInst = SVFUtil::dyn_cast<CallInst>(it.getUser())) {
+            } else if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(it.getUser())) {
                 /*
                  * propagate from callsite to callee
                   %call = call i8* @malloc(i32 noundef 16)
@@ -172,8 +214,8 @@ void TypeInference::forwardCollectAllInfersites(const Value *startValue) {
                   define dso_local void @foo(%struct.Node* noundef %param) #0 !dbg !22 {...}
                   ..infer based on the formal param %param..
                  */
-                u32_t pos = getArgNoInCallInst(callInst, curValue);
-                if (Function *calleeFunc = callInst->getCalledFunction()) {
+                u32_t pos = getArgNoInCallBase(callBase, curValue);
+                if (Function *calleeFunc = callBase->getCalledFunction()) {
                     // for variable argument, conservatively collect all params
                     if (calleeFunc->isVarArg()) pos = 0;
                     if (!calleeFunc->isDeclaration()) {
@@ -183,9 +225,18 @@ void TypeInference::forwardCollectAllInfersites(const Value *startValue) {
             }
         }
         if (canUpdate) {
+            std::vector<const Type *> types(infersites.size());
+            std::transform(infersites.begin(), infersites.end(), types.begin(), getTypeInference()->infersiteToType);
             _valueToInferSites[curValue] = SVFUtil::move(infersites);
+            _valueToType[startValue] = selectLargestType(types);
         }
     }
+    const Type* type = _valueToType[startValue];
+    if (type == nullptr) {
+        WARN_MSG("empty type, value ID is " + std::to_string(startValue->getValueID()) + ":" +
+                                VALUE_WITH_DBGINFO(startValue));
+    }
+    return type;
 }
 
 
@@ -196,29 +247,32 @@ void TypeInference::forwardCollectAllInfersites(const Value *startValue) {
 void TypeInference::validateTypeCheck(const CallBase *cs) {
     if (const Function *func = cs->getCalledFunction()) {
         if (func->getName().find(TYPEMALLOC) != std::string::npos) {
-            forwardCollectAllInfersites(cs);
-            auto vTyIt = _valueToInferSites.find(cs);
-            if (vTyIt == _valueToInferSites.end()) {
+            const Type *objType = getOrInferLLVMObjType(cs);
+            if (!objType) {
                 SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << "empty types, value ID is "
                                 << std::to_string(cs->getValueID()) << ":" << VALUE_WITH_DBGINFO(cs) << "\n";
                 abort();
             }
-            std::vector<const Type *> types(vTyIt->second.size());
-            std::transform(vTyIt->second.begin(), vTyIt->second.end(), types.begin(), infersiteToType);
-            const Type *pType = selectLargestType(types);
             ConstantInt *pInt =
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
-            if (getNumOfElements(pType) >= pInt->getZExtValue())
+            if (getNumOfElements(objType) >= pInt->getZExtValue())
                 SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") << VALUE_WITH_DBGINFO(cs)
                                 << SVFUtil::pasMsg(" TYPE: ")
-                                << dumpType(pType) << "\n";
+                                << dumpType(objType) << "\n";
             else {
                 SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << ", value ID is "
                                 << std::to_string(cs->getValueID()) << ":" << VALUE_WITH_DBGINFO(cs) << " TYPE: "
-                                << dumpType(pType) << "\n";
+                                << dumpType(objType) << "\n";
                 abort();
             }
         }
     }
+}
+
+void TypeInference::typeDiffTest(const Type *oTy, const Type *iTy, const Value *val) {
+#if TYPE_DEBUG
+    ABORT_IFNOT(getNumOfElements(oTy) <= getNumOfElements(iTy),
+                "wrong type, value ID is " + std::to_string(val->getValueID()) + ":" + VALUE_WITH_DBGINFO(val));
+#endif
 }

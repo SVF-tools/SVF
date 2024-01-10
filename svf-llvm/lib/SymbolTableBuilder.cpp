@@ -574,12 +574,9 @@ std::unique_ptr<TypeInference> & SymbolTableBuilder::getTypeInference() {
     return TypeInference::getTypeInference();
 }
 
-const Map<const Value *, Set<const Value *>> &SymbolTableBuilder::getValueToInferSites() {
-    return getTypeInference()->getValueToInferSites();
-}
 
-void SymbolTableBuilder::forwardCollectAllInfersites(const Value *startValue) {
-    getTypeInference()->forwardCollectAllInfersites(startValue);
+const Type* SymbolTableBuilder::getOrInferLLVMObjType(const Value *startValue) {
+    return getTypeInference()->getOrInferLLVMObjType(startValue);
 }
 
 /*!
@@ -589,6 +586,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
 {
     const Value* startValue = inst;
     const PointerType *originalPType = SVFUtil::dyn_cast<PointerType>(inst->getType());
+    const Type* inferedType = nullptr;
     assert(originalPType && "empty type?");
     const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
     if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
@@ -599,7 +597,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
                 originalPType = newTy;
             }
         }
-        forwardCollectAllInfersites(startValue);
+        inferedType = getOrInferLLVMObjType(startValue);
     }
     else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
     {
@@ -607,29 +605,20 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getSVFCallSite(svfinst));
         const Value* arg = cs->getArgOperand(arg_pos);
         originalPType = SVFUtil::dyn_cast<PointerType>(arg->getType());
-        forwardCollectAllInfersites(startValue = arg);
+        inferedType = getOrInferLLVMObjType(startValue = arg);
     }
     else
     {
         assert( false && "not a heap allocation instruction?");
     }
 
-    const Type* inferedType = nullptr;
-    auto vIt = getValueToInferSites().find(startValue);
-    if (vIt != getValueToInferSites().end() && !vIt->second.empty()) {
-        std::vector<const Type*> types(vIt->second.size());
-        std::transform(vIt->second.begin(), vIt->second.end(), types.begin(), getTypeInference()->infersiteToType);
-        inferedType = selectLargestType(types);
-    } else {
+    if (inferedType == nullptr) {
         // return an 8-bit integer type if the inferred type is empty
         inferedType = Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
-        DBLOG("empty types, value ID is " + std::to_string(inst->getValueID()) + ":" + VALUE_WITH_DBGINFO(inst));
     }
 
-#if TYPE_DEBUG
-    ABORT_IFNOT(getNumOfElements(getPtrElementType(originalPType)) <= getNumOfElements(inferedType),
-                "wrong type, value ID is " + std::to_string(inst->getValueID()) + ":" + VALUE_WITH_DBGINFO(inst));
-#endif
+    getTypeInference()->typeDiffTest(getPtrElementType(originalPType), inferedType, startValue);
+
     return inferedType;
 }
 

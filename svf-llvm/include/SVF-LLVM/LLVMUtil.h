@@ -36,6 +36,9 @@
 #include "SVFIR/SVFValue.h"
 #include "Util/ThreadAPI.h"
 
+#define VALUE_WITH_DBGINFO(value)                                              \
+    LLVMUtil::dumpValue(value) + LLVMUtil::getSourceLoc(value)
+
 namespace SVF
 {
 
@@ -133,7 +136,7 @@ u32_t getNumOfElements(const Type* ety);
 /// Select the largest (conservative) type from all types
 const Type* selectLargestType(std::vector<const Type*>& objTys);
 
-u32_t getArgNoInCallInst(const CallInst* callInst, const Value* arg);
+u32_t getArgNoInCallBase(const CallBase* callBase, const Value* arg);
 
 
 

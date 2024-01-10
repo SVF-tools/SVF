@@ -364,11 +364,11 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
     return latestUse;
 }
 
-u32_t LLVMUtil::getArgNoInCallInst(const CallInst *callInst, const Value *arg) {
-    assert(callInst->hasArgument(arg) && "callInst does not have argument arg?");
-    auto it = std::find(callInst->arg_begin(), callInst->arg_end(), arg);
-    assert(it != callInst->arg_end() && "Didn't find argument?");
-    return std::distance(callInst->arg_begin(), it);
+u32_t LLVMUtil::getArgNoInCallBase(const CallBase *callBase, const Value *arg) {
+    assert(callBase->hasArgument(arg) && "callInst does not have argument arg?");
+    auto it = std::find(callBase->arg_begin(), callBase->arg_end(), arg);
+    assert(it != callBase->arg_end() && "Didn't find argument?");
+    return std::distance(callBase->arg_begin(), it);
 }
 
 
@@ -391,7 +391,7 @@ u32_t LLVMUtil::getNumOfElements(const Type* ety)
 
 
 const Type* LLVMUtil::selectLargestType(std::vector<const Type*>& objTys) {
-    assert(!objTys.empty() && "objTys cannot be empty");
+    if(objTys.empty()) return nullptr;
     // map type size to types from with key in descending order
     OrderedMap<u32_t, Set<const Type*>, std::greater<int>> typeSzToTypes;
     for (const Type *ty: objTys) {
