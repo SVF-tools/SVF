@@ -1380,15 +1380,6 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
 
     symInfo->addTypeInfo(svftype);
     LLVMType2SVFType[T] = svftype;
-    if (const PointerType* pt = SVFUtil::dyn_cast<PointerType>(T))
-    {
-        //cast svftype to SVFPointerType
-        SVFPointerType* svfPtrType = SVFUtil::dyn_cast<SVFPointerType>(svftype);
-        assert(svfPtrType && "this is not SVFPointerType");
-        // TODO: getPtrElementType to be removed
-        if(!pt->isOpaque())
-            svfPtrType->setPtrElementType(getSVFType(LLVMUtil::getPtrElementType(pt)));
-    }
 
     return svftype;
 }

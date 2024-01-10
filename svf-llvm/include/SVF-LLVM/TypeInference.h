@@ -61,9 +61,6 @@ public:
     /// Forward collect all possible infer sites starting from a value
     const Type *getOrInferLLVMObjType(const Value *startValue);
 
-    /// Default type
-    const Type *defaultTy(const Value *val);
-
     /// Validate type inference
     void validateTypeCheck(const CallBase *cs);
 
@@ -74,6 +71,9 @@ public:
 
 protected:
     static const Type *infersiteToType(const Value *val);
+
+    /// Default type
+    const Type *defaultTy(const Value *val);
 };
 }
 #endif //SVF_TYPEINFERENCE_H

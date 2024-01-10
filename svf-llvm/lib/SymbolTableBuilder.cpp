@@ -612,11 +612,6 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         assert( false && "not a heap allocation instruction?");
     }
 
-    if (inferedType == nullptr) {
-        // return a default type if the inferred type is empty
-        inferedType = getTypeInference()->defaultTy(startValue);
-    }
-
     getTypeInference()->typeEleNumDiffTest(originalPType, inferedType, startValue);
 
     return inferedType;

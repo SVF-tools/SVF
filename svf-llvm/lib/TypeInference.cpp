@@ -117,7 +117,7 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
     auto tIt = _valueToType.find(startValue);
     if (tIt != _valueToType.end()) {
         WARN_IFNOT(tIt->second, "empty type:" + VALUE_WITH_DBGINFO(startValue));
-        return tIt->second;
+        return tIt->second ? tIt->second : getTypeInference()->defaultTy(startValue);
     }
 
     INC_TRACE();
@@ -152,6 +152,8 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
         if (!canUpdate && !_valueToInferSites.count(curValue)) {
             workList.push({curValue, true});
         }
+        if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
+            insertInferSite(gepInst);
         for (const auto &it: curValue->uses()) {
             if (LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
                 /*
@@ -256,6 +258,7 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
     }
     const Type* type = _valueToType[startValue];
     if (type == nullptr) {
+        type = getTypeInference()->defaultTy(startValue);
         WARN_MSG("empty type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
     }
     return type;
@@ -270,10 +273,6 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
     if (const Function *func = cs->getCalledFunction()) {
         if (func->getName().find(TYPEMALLOC) != std::string::npos) {
             const Type *objType = getOrInferLLVMObjType(cs);
-            if (!objType) {
-                // return an 8-bit integer type if the inferred type is empty
-                objType = Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
-            }
             ConstantInt *pInt =
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
