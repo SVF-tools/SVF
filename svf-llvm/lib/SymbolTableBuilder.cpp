@@ -613,8 +613,8 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
     }
 
     if (inferedType == nullptr) {
-        // return an 8-bit integer type if the inferred type is empty
-        inferedType = Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
+        // return a default type if the inferred type is empty
+        inferedType = getTypeInference()->defaultTy(startValue);
     }
 
     getTypeInference()->typeDiffTest(getPtrElementType(originalPType), inferedType, startValue);

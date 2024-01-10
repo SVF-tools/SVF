@@ -30,11 +30,16 @@
 #include "SVF-LLVM/TypeInference.h"
 
 #define TYPE_DEBUG 0 /* Turn this on if you're debugging type inference */
+#define ERR_MSG(msg)                                                           \
+    do                                                                         \
+    {                                                                          \
+        SVFUtil::errs() << SVFUtil::errMsg("Error ") << __FILE__ << ':'        \
+            << __LINE__ << ": " << msg << '\n';                                \
+    } while (0)
 #define ABORT_MSG(msg)                                                         \
     do                                                                         \
     {                                                                          \
-        SVFUtil::errs() << __FILE__ << ':' << __LINE__ << ": " << msg          \
-                        << '\n';                                               \
+        ERR_MSG(msg);                                                          \
         abort();                                                               \
     } while (0)
 #define ABORT_IFNOT(condition, msg)                                            \
@@ -91,10 +96,18 @@ const Type *TypeInference::infersiteToType(const Value *val) {
     } else if (const GlobalValue *globalValue = SVFUtil::dyn_cast<GlobalValue>(val)) {
         return globalValue->getValueType();
     } else {
-        ABORT_IFNOT(false, "unknown value:" + VALUE_WITH_DBGINFO(val));
+        ABORT_MSG("unknown value:" + VALUE_WITH_DBGINFO(val));
     }
 }
 
+const Type *TypeInference::defaultTy(const Value *val) {
+    ABORT_IFNOT(val, "val cannot be null");
+    // heap has a default type of 8-bit integer type
+    if(SVFUtil::isa<Instruction>(val) && SVFUtil::isHeapAllocExtCallViaRet(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
+        return Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
+    // otherwise we return a pointer type in the default address space
+    return PointerType::getUnqual(LLVMModuleSet::getLLVMModuleSet()->getContext());
+}
 /*!
  * Forward collect all possible infer sites starting from a value
  * @param startValue
@@ -279,7 +292,10 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
 
 void TypeInference::typeDiffTest(const Type *oTy, const Type *iTy, const Value *val) {
 #if TYPE_DEBUG
-    ABORT_IFNOT(getNumOfElements(oTy) <= getNumOfElements(iTy),
-                "wrong type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(val));
+    if (getNumOfElements(oTy) > getNumOfElements(iTy)) {
+        ERR_MSG("original type is:" + dumpType(oTy));
+        ERR_MSG("infered type is:" + dumpType(iTy));
+        ABORT_MSG("wrong type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(val));
+    }
 #endif
 }
