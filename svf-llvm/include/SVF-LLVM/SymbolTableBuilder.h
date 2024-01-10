@@ -39,12 +39,13 @@
 namespace SVF
 {
 
+class TypeInference;
+
 class SymbolTableBuilder
 {
     friend class SVFIRBuilder;
 private:
     SymbolTableInfo* symInfo;
-    Map<const Value*, Set<const Value*>> valueToInferSites; // value inference site cache
 
 public:
     /// Constructor
@@ -84,17 +85,18 @@ protected:
     // @}
 
 
+    std::unique_ptr<TypeInference> & getTypeInference();
+
+    const Map<const Value*, Set<const Value*>>& getValueToInferSites();
+
     /// Forward collect all possible infer sites starting from a value
-    void forwardCollectAllInfersites(const Value* startValue);
+    inline void forwardCollectAllInfersites(const Value *startValue);
 
     /// Get the reference type of heap/static object from an allocation site.
     //@{
     const Type *inferTypeOfHeapObjOrStaticObj(const Instruction* inst);
     //@}
 
-
-    /// Validate type inference
-    void validateTypeCheck(const CallBase* cs);
 
     /// Create an objectInfo based on LLVM value
     ObjTypeInfo* createObjTypeInfo(const Value* val);
