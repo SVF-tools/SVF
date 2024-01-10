@@ -29,7 +29,7 @@
 
 #include "SVF-LLVM/TypeInference.h"
 
-#define TYPE_DEBUG 1 /* Turn this on if you're debugging type inference */
+#define TYPE_DEBUG 0 /* Turn this on if you're debugging type inference */
 #define ABORT_MSG(msg)                                                         \
     do                                                                         \
     {                                                                          \
@@ -43,6 +43,12 @@
         if (!(condition))                                                      \
             ABORT_MSG(msg);                                                    \
     } while (0)
+
+u32_t traceId = 0; // for debug purposes
+#define INC_TRACE()                                                            \
+do {                                                                           \
+      traceId++;                                                               \
+} while (0)
 
 #if TYPE_DEBUG
 #define WARN_MSG(msg)                                                          \
@@ -97,10 +103,11 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
     // consult cache
     auto tIt = _valueToType.find(startValue);
     if (tIt != _valueToType.end()) {
-        WARN_IFNOT(tIt->second, "empty type, value ID is " + std::to_string(startValue->getValueID()) + ":" +
-                                VALUE_WITH_DBGINFO(startValue));
+        WARN_IFNOT(tIt->second, "empty type:" + VALUE_WITH_DBGINFO(startValue));
         return tIt->second;
     }
+
+    INC_TRACE();
 
     // simulate the call stack, the second element indicates whether we should update valueTypes for current value
     typedef std::pair<const Value *, bool> ValueBoolPair;
@@ -236,8 +243,7 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
     }
     const Type* type = _valueToType[startValue];
     if (type == nullptr) {
-        WARN_MSG("empty type, value ID is " + std::to_string(startValue->getValueID()) + ":" +
-                                VALUE_WITH_DBGINFO(startValue));
+        WARN_MSG("empty type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
     }
     return type;
 }
@@ -263,8 +269,7 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
                                 << SVFUtil::pasMsg(" TYPE: ")
                                 << dumpType(objType) << "\n";
             else {
-                SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << ", value ID is "
-                                << std::to_string(cs->getValueID()) << ":" << VALUE_WITH_DBGINFO(cs) << " TYPE: "
+                SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << ":" << VALUE_WITH_DBGINFO(cs) << " TYPE: "
                                 << dumpType(objType) << "\n";
                 abort();
             }
@@ -275,6 +280,6 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
 void TypeInference::typeDiffTest(const Type *oTy, const Type *iTy, const Value *val) {
 #if TYPE_DEBUG
     ABORT_IFNOT(getNumOfElements(oTy) <= getNumOfElements(iTy),
-                "wrong type, value ID is " + std::to_string(val->getValueID()) + ":" + VALUE_WITH_DBGINFO(val));
+                "wrong type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(val));
 #endif
 }
