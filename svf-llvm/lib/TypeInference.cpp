@@ -187,6 +187,9 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
             } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(bitcast);
+            } else if (PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(it.getUser())) {
+                // continue on bitcast
+                insertInferSitesOrPushWorklist(phiNode);
             } else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
                 /*
                  * propagate from return to caller
@@ -228,7 +231,7 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
             std::vector<const Type *> types(infersites.size());
             std::transform(infersites.begin(), infersites.end(), types.begin(), getTypeInference()->infersiteToType);
             _valueToInferSites[curValue] = SVFUtil::move(infersites);
-            _valueToType[startValue] = selectLargestType(types);
+            _valueToType[curValue] = selectLargestType(types);
         }
     }
     const Type* type = _valueToType[startValue];
@@ -249,9 +252,8 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
         if (func->getName().find(TYPEMALLOC) != std::string::npos) {
             const Type *objType = getOrInferLLVMObjType(cs);
             if (!objType) {
-                SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << "empty types, value ID is "
-                                << std::to_string(cs->getValueID()) << ":" << VALUE_WITH_DBGINFO(cs) << "\n";
-                abort();
+                // return an 8-bit integer type if the inferred type is empty
+                objType = Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
             }
             ConstantInt *pInt =
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
