@@ -100,13 +100,13 @@ const Type *TypeInference::infersiteToType(const Value *val) {
     }
 }
 
-Set<const Value*> TypeInference::bwGetOrfindSourceVals(const Value* startValue) {
+Set<const Value *> TypeInference::bwGetOrfindSourceVals(const Value *startValue) {
 
     // consult cache
     auto tIt = _valueToSources.find(startValue);
     if (tIt != _valueToSources.end()) {
         WARN_IFNOT(!tIt->second.empty(), "empty type:" + VALUE_WITH_DBGINFO(startValue));
-        return !tIt->second.empty() ? tIt->second : Set<const Value*>({startValue});
+        return !tIt->second.empty() ? tIt->second : Set<const Value *>({startValue});
     }
 
     // simulate the call stack, the second element indicates whether we should update valueTypes for current value
@@ -120,7 +120,7 @@ Set<const Value*> TypeInference::bwGetOrfindSourceVals(const Value* startValue) 
         const Value *curValue = curPair.first;
         bool canUpdate = curPair.second;
 
-        Set<const Value*> sources;
+        Set<const Value *> sources;
         auto insertSource = [&sources, &canUpdate](const Value *source) {
             if (canUpdate) sources.insert(source);
         };
@@ -139,7 +139,7 @@ Set<const Value*> TypeInference::bwGetOrfindSourceVals(const Value* startValue) 
             workList.push({curValue, true});
         }
 
-        if(isSourceVal(curValue)) {
+        if (isSourceVal(curValue)) {
             insertSource(curValue);
         } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
             Value *prevVal = bitCastInst->getOperand(0);
@@ -159,7 +159,8 @@ Set<const Value*> TypeInference::bwGetOrfindSourceVals(const Value* startValue) 
         } else if (const Argument *argument = SVFUtil::dyn_cast<Argument>(curValue)) {
             for (const auto &use: argument->getParent()->uses()) {
                 if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
-                    insertSourcesOrPushWorklist(callBase->getArgOperand(argument->getArgNo()));
+                    u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
+                    insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
                 }
             }
         } else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(curValue)) {
@@ -178,7 +179,7 @@ Set<const Value*> TypeInference::bwGetOrfindSourceVals(const Value* startValue) 
             _valueToSources[curValue] = SVFUtil::move(sources);
         }
     }
-    Set<const Value*> srcs = _valueToSources[startValue];
+    Set<const Value *> srcs = _valueToSources[startValue];
     if (srcs.empty()) {
         srcs = {startValue};
         WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
@@ -189,11 +190,29 @@ Set<const Value*> TypeInference::bwGetOrfindSourceVals(const Value* startValue) 
 const Type *TypeInference::defaultTy(const Value *val) {
     ABORT_IFNOT(val, "val cannot be null");
     // heap has a default type of 8-bit integer type
-    if(SVFUtil::isa<Instruction>(val) && SVFUtil::isHeapAllocExtCallViaRet(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
+    if (SVFUtil::isa<Instruction>(val) && SVFUtil::isHeapAllocExtCallViaRet(
+            LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
         return Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
     // otherwise we return a pointer type in the default address space
     return defaultPtrTy();
 }
+
+/*!
+ * get or infer type of a value
+ * if the start value is a source (alloc/global, heap, static), call fwGetOrInferLLVMObjType
+ * if not, find sources and then forward get or infer types
+ * @param startValue
+ */
+const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
+    if (isSourceVal(startValue)) return fwGetOrInferLLVMObjType(startValue);
+    Set<const Value *> sources = TypeInference::getTypeInference()->bwGetOrfindSourceVals(startValue);
+    std::vector<const Type *> types;
+    for (const auto &source: sources) {
+        types.push_back(TypeInference::getTypeInference()->fwGetOrInferLLVMObjType(source));
+    }
+    return selectLargestType(types);
+}
+
 /*!
  * Forward collect all possible infer sites starting from a value
  * @param startValue
@@ -203,7 +222,7 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
     auto tIt = _valueToType.find(startValue);
     if (tIt != _valueToType.end()) {
         WARN_IFNOT(tIt->second, "empty type:" + VALUE_WITH_DBGINFO(startValue));
-        return tIt->second ? tIt->second : getTypeInference()->defaultTy(startValue);
+        return tIt->second ? tIt->second : defaultTy(startValue);
     }
 
     INC_TRACE();
@@ -341,9 +360,9 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
             _valueToType[curValue] = selectLargestType(types);
         }
     }
-    const Type* type = _valueToType[startValue];
+    const Type *type = _valueToType[startValue];
     if (type == nullptr) {
-        type = getTypeInference()->defaultTy(startValue);
+        type = defaultTy(startValue);
         WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
     }
     return type;

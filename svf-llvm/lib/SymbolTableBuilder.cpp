@@ -575,8 +575,8 @@ std::unique_ptr<TypeInference> & SymbolTableBuilder::getTypeInference() {
 }
 
 
-const Type* SymbolTableBuilder::fwGetOrInferLLVMObjType(const Value *startValue) {
-    return getTypeInference()->fwGetOrInferLLVMObjType(startValue);
+const Type* SymbolTableBuilder::getOrInferLLVMObjType(const Value *startValue) {
+    return getTypeInference()->getOrInferLLVMObjType(startValue);
 }
 
 /*!
@@ -597,7 +597,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
                 originalPType = newTy;
             }
         }
-        inferedType = fwGetOrInferLLVMObjType(startValue);
+        inferedType = getOrInferLLVMObjType(startValue);
     }
     else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
     {
@@ -605,7 +605,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getSVFCallSite(svfinst));
         const Value* arg = cs->getArgOperand(arg_pos);
         originalPType = SVFUtil::dyn_cast<PointerType>(arg->getType());
-        inferedType = fwGetOrInferLLVMObjType(startValue = arg);
+        inferedType = getOrInferLLVMObjType(startValue = arg);
     }
     else
     {

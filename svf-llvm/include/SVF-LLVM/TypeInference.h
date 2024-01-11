@@ -64,11 +64,8 @@ public:
         return _typeInference;
     }
 
-    /// Forward collect all possible infer sites starting from a value
-    const Type *fwGetOrInferLLVMObjType(const Value *startValue);
-
-    /// Backward collect all possible sources starting from a value
-    Set<const Value*> bwGetOrfindSourceVals(const Value * startValue);
+    /// get or infer the type of a value
+    const Type *getOrInferLLVMObjType(const Value *startValue);
 
     /// Validate type inference
     void validateTypeCheck(const CallBase *cs);
@@ -78,16 +75,23 @@ public:
     void typeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
 
     /// Default type
-    const Type *defaultTy(const Value *val);
+    static const Type *defaultTy(const Value *val);
 
     inline static const Type *defaultPtrTy() {
         return PointerType::getUnqual(LLVMModuleSet::getLLVMModuleSet()->getContext());
     }
 
 private:
+
+    /// Forward collect all possible infer sites starting from a value
+    const Type *fwGetOrInferLLVMObjType(const Value *startValue);
+
+    /// Backward collect all possible sources starting from a value
+    Set<const Value *> bwGetOrfindSourceVals(const Value *startValue);
+
     static const Type *infersiteToType(const Value *val);
 
-    inline bool isSourceVal(const Value* val) const {
+    inline bool isSourceVal(const Value *val) const {
         return LLVMUtil::isObject(val) || SVFUtil::isa<GetElementPtrInst>(val);
     }
 

@@ -44,12 +44,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
 {
     assert(V);
     const Value* value = getBaseValueForExtArg(V);
-    Set<const Value *> sources = TypeInference::getTypeInference()->bwGetOrfindSourceVals(value);
-    std::vector<const Type*> types;
-    for (const auto &source: sources) {
-        types.push_back(TypeInference::getTypeInference()->fwGetOrInferLLVMObjType(source));
-    }
-    const Type *objType = selectLargestType(types);
+    const Type *objType = TypeInference::getTypeInference()->getOrInferLLVMObjType(value);
     u32_t numOfElems = pag->getSymbolInfo()->getNumOfFlattenElements(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objType));
     /// use user-specified size for this copy operation if the size is a constaint int
     if(szValue && SVFUtil::isa<ConstantInt>(szValue))
