@@ -343,6 +343,8 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                   define dso_local void @foo(%struct.Node* noundef %param) #0 !dbg !22 {...}
                   ..infer based on the formal param %param..
                  */
+                // skip global function value -> callsite
+                if(SVFUtil::isa<Function>(curValue)) continue;
                 u32_t pos = getArgNoInCallBase(callBase, curValue);
                 if (Function *calleeFunc = callBase->getCalledFunction()) {
                     // for variable argument, conservatively collect all params
