@@ -109,7 +109,7 @@ Set<const Value *> TypeInference::bwGetOrfindSourceVals(const Value *startValue)
         return !tIt->second.empty() ? tIt->second : Set<const Value *>({startValue});
     }
 
-    // simulate the call stack, the second element indicates whether we should update valueTypes for current value
+    // simulate the call stack, the second element indicates whether we should update sources for current value
     FILOWorkList<ValueBoolPair> workList;
     Set<ValueBoolPair> visited;
     workList.push({startValue, false});

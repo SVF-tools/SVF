@@ -48,7 +48,7 @@ private:
     static std::unique_ptr<TypeInference> _typeInference;
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
-    ValueToSources _valueToSources; // value type cache
+    ValueToSources _valueToSources; // value sources cache
 
     explicit TypeInference() = default;
 
