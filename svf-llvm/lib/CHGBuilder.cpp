@@ -679,7 +679,7 @@ std::string CHGBuilder::getClassNameOfThisPtr(const CallBase* inst)
     {
         const Value* thisPtr = LLVMUtil::getVCallThisPtr(inst);
         if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(thisPtr->getType())) {
-            const Type *objTy = TypeInference::getTypeInference()->getOrInferLLVMObjType(thisPtr);
+            const Type *objTy = TypeInference::getTypeInference()->fwGetOrInferLLVMObjType(thisPtr);
             TypeInference::getTypeInference()->typeDiffTest(ptrTy, objTy, thisPtr);
             // TODO: getPtrElementType need type inference
             if (const StructType *st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy))) {

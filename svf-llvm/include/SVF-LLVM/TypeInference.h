@@ -36,13 +36,19 @@ namespace SVF {
 class TypeInference {
 
 public:
-    typedef Map<const Value *, Set<const Value *>> ValueToInferSites;
+    typedef Set<const Value *> ValueSet;
+    typedef Map<const Value *, ValueSet> ValueToValueSet;
+    typedef ValueToValueSet ValueToInferSites;
+    typedef ValueToValueSet ValueToSources;
     typedef Map<const Value *, const Type *> ValueToType;
+    typedef std::pair<const Value *, bool> ValueBoolPair;
+
 
 private:
     static std::unique_ptr<TypeInference> _typeInference;
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
+    ValueToSources _valueToSources; // value type cache
 
     explicit TypeInference() = default;
 
@@ -59,7 +65,10 @@ public:
     }
 
     /// Forward collect all possible infer sites starting from a value
-    const Type *getOrInferLLVMObjType(const Value *startValue);
+    const Type *fwGetOrInferLLVMObjType(const Value *startValue);
+
+    /// Backward collect all possible sources starting from a value
+    Set<const Value*> bwGetOrfindSourceVals(const Value * startValue);
 
     /// Validate type inference
     void validateTypeCheck(const CallBase *cs);
@@ -68,12 +77,16 @@ public:
 
     void typeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
 
-
-protected:
-    static const Type *infersiteToType(const Value *val);
-
     /// Default type
     const Type *defaultTy(const Value *val);
+
+private:
+    static const Type *infersiteToType(const Value *val);
+
+    inline bool isSourceVal(const Value* val) const {
+        return LLVMUtil::isObject(val);
+    }
+
 };
 }
 #endif //SVF_TYPEINFERENCE_H

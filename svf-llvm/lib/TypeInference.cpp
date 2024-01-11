@@ -100,19 +100,101 @@ const Type *TypeInference::infersiteToType(const Value *val) {
     }
 }
 
+Set<const Value*> TypeInference::bwGetOrfindSourceVals(const Value* startValue) {
+
+    // consult cache
+    auto tIt = _valueToSources.find(startValue);
+    if (tIt != _valueToSources.end()) {
+        WARN_IFNOT(!tIt->second.empty(), "empty type:" + VALUE_WITH_DBGINFO(startValue));
+        return !tIt->second.empty() ? tIt->second : Set<const Value*>({startValue});
+    }
+
+    // simulate the call stack, the second element indicates whether we should update valueTypes for current value
+    FILOWorkList<ValueBoolPair> workList;
+    Set<ValueBoolPair> visited;
+    workList.push({startValue, false});
+    while (!workList.empty()) {
+        auto curPair = workList.pop();
+        if (visited.count(curPair)) continue;
+        visited.insert(curPair);
+        const Value *curValue = curPair.first;
+        bool canUpdate = curPair.second;
+
+        Set<const Value*> sources;
+        auto insertSource = [&sources, &canUpdate](const Value *source) {
+            if (canUpdate) sources.insert(source);
+        };
+        auto insertSourcesOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
+            auto vIt = _valueToSources.find(pUser);
+            if (canUpdate) {
+                if (vIt != _valueToSources.end()) {
+                    sources.insert(vIt->second.begin(), vIt->second.end());
+                }
+            } else {
+                if (vIt == _valueToSources.end()) workList.push({pUser, false});
+            }
+        };
+
+        if (!canUpdate && !_valueToSources.count(curValue)) {
+            workList.push({curValue, true});
+        }
+
+        if(isSourceVal(curValue)) {
+            insertSource(curValue);
+        } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
+            Value *prevVal = bitCastInst->getOperand(1);
+            insertSourcesOrPushWorklist(prevVal);
+        } else if (const PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(curValue)) {
+            for (u32_t i = 1; i < phiNode->getNumOperands(); ++i) {
+                insertSourcesOrPushWorklist(phiNode->getOperand(i));
+            }
+        } else if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue)) {
+            for (const auto &use: loadInst->getPointerOperand()->uses()) {
+                if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser())) {
+                    if (storeInst->getPointerOperand() == loadInst) {
+                        insertSourcesOrPushWorklist(storeInst->getValueOperand());
+                    }
+                }
+            }
+        } else if (const Argument *argument = SVFUtil::dyn_cast<Argument>(curValue)) {
+            for (const auto &use: argument->getParent()->uses()) {
+                if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+                    insertSourcesOrPushWorklist(callBase->getArgOperand(argument->getArgNo()));
+                }
+            }
+        } else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(curValue)) {
+            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + VALUE_WITH_DBGINFO(callBase));
+            if (Function *callee = callBase->getCalledFunction()) {
+                if (!callee->isDeclaration()) {
+                    const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+                    const Value *pValue = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()->back());
+                    const ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
+                    ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
+                    insertSourcesOrPushWorklist(retInst->getReturnValue());
+                }
+            }
+        }
+        if (canUpdate) {
+            _valueToSources[curValue] = SVFUtil::move(sources);
+        }
+    }
+    Set<const Value*> srcs = _valueToSources[startValue];
+    if (srcs.empty()) {
+        srcs = {startValue};
+        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
+    }
+    return srcs;
+}
+
 const Type *TypeInference::defaultTy(const Value *val) {
     ABORT_IFNOT(val, "val cannot be null");
-    // heap has a default type of 8-bit integer type
-    if(SVFUtil::isa<Instruction>(val) && SVFUtil::isHeapAllocExtCallViaRet(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
-        return Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
-    // otherwise we return a pointer type in the default address space
     return PointerType::getUnqual(LLVMModuleSet::getLLVMModuleSet()->getContext());
 }
 /*!
  * Forward collect all possible infer sites starting from a value
  * @param startValue
  */
-const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
+const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
     // consult cache
     auto tIt = _valueToType.find(startValue);
     if (tIt != _valueToType.end()) {
@@ -123,7 +205,6 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
     INC_TRACE();
 
     // simulate the call stack, the second element indicates whether we should update valueTypes for current value
-    typedef std::pair<const Value *, bool> ValueBoolPair;
     FILOWorkList<ValueBoolPair> workList;
     Set<ValueBoolPair> visited;
     workList.push({startValue, false});
@@ -259,7 +340,7 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
     const Type* type = _valueToType[startValue];
     if (type == nullptr) {
         type = getTypeInference()->defaultTy(startValue);
-        WARN_MSG("empty type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
+        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
     }
     return type;
 }
@@ -272,7 +353,7 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
 void TypeInference::validateTypeCheck(const CallBase *cs) {
     if (const Function *func = cs->getCalledFunction()) {
         if (func->getName().find(TYPEMALLOC) != std::string::npos) {
-            const Type *objType = getOrInferLLVMObjType(cs);
+            const Type *objType = fwGetOrInferLLVMObjType(cs);
             ConstantInt *pInt =
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");

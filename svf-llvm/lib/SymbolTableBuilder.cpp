@@ -575,8 +575,8 @@ std::unique_ptr<TypeInference> & SymbolTableBuilder::getTypeInference() {
 }
 
 
-const Type* SymbolTableBuilder::getOrInferLLVMObjType(const Value *startValue) {
-    return getTypeInference()->getOrInferLLVMObjType(startValue);
+const Type* SymbolTableBuilder::fwGetOrInferLLVMObjType(const Value *startValue) {
+    return getTypeInference()->fwGetOrInferLLVMObjType(startValue);
 }
 
 /*!
@@ -597,7 +597,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
                 originalPType = newTy;
             }
         }
-        inferedType = getOrInferLLVMObjType(startValue);
+        inferedType = fwGetOrInferLLVMObjType(startValue);
     }
     else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
     {
@@ -605,7 +605,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getSVFCallSite(svfinst));
         const Value* arg = cs->getArgOperand(arg_pos);
         originalPType = SVFUtil::dyn_cast<PointerType>(arg->getType());
-        inferedType = getOrInferLLVMObjType(startValue = arg);
+        inferedType = fwGetOrInferLLVMObjType(startValue = arg);
     }
     else
     {
@@ -802,26 +802,19 @@ u32_t SymbolTableBuilder::analyzeHeapAllocByteSize(const Value* val)
  */
 u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
-    if(const Value* castUse = getFirstUseViaCastInst(val))
+    typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
+    analyzeObjType(typeinfo, val);
+    const Type* objTy = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(typeinfo->getType());
+    if(SVFUtil::isa<ArrayType>(objTy))
+        return getNumOfElements(objTy);
+    else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objTy))
     {
-        typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-        analyzeObjType(typeinfo,castUse);
-        const Type* objTy = LLVMModuleSet::getLLVMModuleSet()->getLLVMType(typeinfo->getType());
-        if(SVFUtil::isa<ArrayType>(objTy))
+        /// For an C++ class, it can have variant elements depending on the vtable size,
+        /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
+        if(classTyHasVTable(st))
+            typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(TypeInference::getTypeInference()->defaultTy(val)));
+        else
             return getNumOfElements(objTy);
-        else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objTy))
-        {
-            /// For an C++ class, it can have variant elements depending on the vtable size,
-            /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as PointerType at the cast site
-            if(classTyHasVTable(st))
-                typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(castUse->getType()));
-            else
-                return getNumOfElements(objTy);
-        }
-    }
-    else
-    {
-        typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
     }
     return typeinfo->getMaxFieldOffsetLimit();
 }
