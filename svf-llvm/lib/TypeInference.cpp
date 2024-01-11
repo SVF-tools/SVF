@@ -142,16 +142,16 @@ Set<const Value*> TypeInference::bwGetOrfindSourceVals(const Value* startValue) 
         if(isSourceVal(curValue)) {
             insertSource(curValue);
         } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
-            Value *prevVal = bitCastInst->getOperand(1);
+            Value *prevVal = bitCastInst->getOperand(0);
             insertSourcesOrPushWorklist(prevVal);
         } else if (const PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(curValue)) {
-            for (u32_t i = 1; i < phiNode->getNumOperands(); ++i) {
+            for (u32_t i = 0; i < phiNode->getNumOperands(); ++i) {
                 insertSourcesOrPushWorklist(phiNode->getOperand(i));
             }
         } else if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue)) {
             for (const auto &use: loadInst->getPointerOperand()->uses()) {
                 if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser())) {
-                    if (storeInst->getPointerOperand() == loadInst) {
+                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand()) {
                         insertSourcesOrPushWorklist(storeInst->getValueOperand());
                     }
                 }

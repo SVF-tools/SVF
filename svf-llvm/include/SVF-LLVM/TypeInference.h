@@ -88,7 +88,7 @@ private:
     static const Type *infersiteToType(const Value *val);
 
     inline bool isSourceVal(const Value* val) const {
-        return LLVMUtil::isObject(val);
+        return LLVMUtil::isObject(val) || SVFUtil::isa<GetElementPtrInst>(val);
     }
 
 };
