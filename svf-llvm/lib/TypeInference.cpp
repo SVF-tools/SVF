@@ -159,6 +159,9 @@ Set<const Value *> TypeInference::bwGetOrfindSourceVals(const Value *startValue)
         } else if (const Argument *argument = SVFUtil::dyn_cast<Argument>(curValue)) {
             for (const auto &use: argument->getParent()->uses()) {
                 if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+                    // skip function as parameter
+                    // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
+                    if(callBase->getCalledFunction() != argument->getParent()) continue;
                     u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
                     insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
                 }
@@ -330,6 +333,9 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                 */
                 for (const auto &callsite: retInst->getFunction()->uses()) {
                     if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser())) {
+                        // skip function as parameter
+                        // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
+                        if(callBase->getCalledFunction() != retInst->getFunction()) continue;
                         insertInferSitesOrPushWorklist(callBase);
                     }
                 }
@@ -344,7 +350,9 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                   ..infer based on the formal param %param..
                  */
                 // skip global function value -> callsite
-                if(SVFUtil::isa<Function>(curValue)) continue;
+                // e.g., def @foo() -> call @foo()
+                // we don't skip function as parameter, e.g., def @foo() -> call @bar(..., @foo)
+                if(SVFUtil::isa<Function>(curValue) && curValue == callBase->getCalledFunction()) continue;
                 u32_t pos = getArgNoInCallBase(callBase, curValue);
                 if (Function *calleeFunc = callBase->getCalledFunction()) {
                     // for variable argument, conservatively collect all params
