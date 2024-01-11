@@ -80,6 +80,10 @@ public:
     /// Default type
     const Type *defaultTy(const Value *val);
 
+    inline static const Type *defaultPtrTy() {
+        return PointerType::getUnqual(LLVMModuleSet::getLLVMModuleSet()->getContext());
+    }
+
 private:
     static const Type *infersiteToType(const Value *val);
 

@@ -188,7 +188,11 @@ Set<const Value*> TypeInference::bwGetOrfindSourceVals(const Value* startValue) 
 
 const Type *TypeInference::defaultTy(const Value *val) {
     ABORT_IFNOT(val, "val cannot be null");
-    return PointerType::getUnqual(LLVMModuleSet::getLLVMModuleSet()->getContext());
+    // heap has a default type of 8-bit integer type
+    if(SVFUtil::isa<Instruction>(val) && SVFUtil::isHeapAllocExtCallViaRet(LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
+        return Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
+    // otherwise we return a pointer type in the default address space
+    return defaultPtrTy();
 }
 /*!
  * Forward collect all possible infer sites starting from a value
