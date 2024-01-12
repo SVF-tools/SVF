@@ -612,7 +612,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         assert( false && "not a heap allocation instruction?");
     }
 
-    getTypeInference()->typeEleNumDiffTest(originalPType, inferedType, startValue);
+    getTypeInference()->typeSizeDiffTest(originalPType, inferedType, startValue);
 
     return inferedType;
 }

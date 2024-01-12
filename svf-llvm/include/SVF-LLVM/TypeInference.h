@@ -70,7 +70,7 @@ public:
     /// Validate type inference
     void validateTypeCheck(const CallBase *cs);
 
-    void typeEleNumDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
+    void typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
 
     void typeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
 

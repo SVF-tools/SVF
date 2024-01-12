@@ -403,7 +403,7 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
     }
 }
 
-void TypeInference::typeEleNumDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val) {
+void TypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val) {
 #if TYPE_DEBUG
     Type *oTy = getPtrElementType(oPTy);
     if (getNumOfElements(oTy) > getNumOfElements(iTy)) {
