@@ -728,14 +728,14 @@ void LLVMModuleSet::addSVFMain()
         assert(mainMod && "Module with main function not found.");
         Module& M = *mainMod;
         // char **
-        Type* i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
+        Type* ptr = PointerType::getUnqual(M.getContext());
         Type* i32 = IntegerType::getInt32Ty(M.getContext());
         // define void @svf.main(i32, i8**, i8**)
 #if (LLVM_VERSION_MAJOR >= 9)
         FunctionCallee svfmainFn = M.getOrInsertFunction(
                                        SVF_MAIN_FUNC_NAME,
                                        Type::getVoidTy(M.getContext()),
-                                       i32,i8ptr2,i8ptr2
+                                       i32,ptr,ptr
                                    );
         Function* svfmain = SVFUtil::dyn_cast<Function>(svfmainFn.getCallee());
 #else
