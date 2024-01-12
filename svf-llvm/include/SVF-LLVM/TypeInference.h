@@ -41,6 +41,7 @@ public:
     typedef ValueToValueSet ValueToInferSites;
     typedef ValueToValueSet ValueToSources;
     typedef Map<const Value *, const Type *> ValueToType;
+    typedef Map<const Value *, std::string> ValueToClassName;
     typedef std::pair<const Value *, bool> ValueBoolPair;
 
 
@@ -49,6 +50,8 @@ private:
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
     ValueToSources _valueToSources; // value sources cache
+    ValueToClassName _thisPtrClassName; // thisptr class name cache
+    std::string _emptyClassName = "";
 
     explicit TypeInference() = default;
 
@@ -67,6 +70,9 @@ public:
     /// get or infer the type of a value
     const Type *getOrInferLLVMObjType(const Value *startValue);
 
+    /// get or infer the name of thisptr
+    const std::string& getOrInferThisPtrClassName(const Value* thisPtr);
+
     /// Validate type inference
     void validateTypeCheck(const CallBase *cs);
 
@@ -77,6 +83,7 @@ public:
     /// Default type
     static const Type *defaultTy(const Value *val);
 
+    /// Opaque pointer type
     inline static const Type *defaultPtrTy() {
         return PointerType::getUnqual(LLVMModuleSet::getLLVMModuleSet()->getContext());
     }
@@ -89,9 +96,10 @@ private:
     /// Backward collect all possible sources starting from a value
     Set<const Value *> bwGetOrfindSourceVals(const Value *startValue);
 
+    /// Determine type based on infer site
     static const Type *infersiteToType(const Value *val);
 
-    inline bool isSourceVal(const Value *val) const {
+    inline static bool isSourceVal(const Value *val) {
         return LLVMUtil::isObject(val) || SVFUtil::isa<GetElementPtrInst>(val);
     }
 

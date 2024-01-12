@@ -79,6 +79,9 @@ using namespace LLVMUtil;
 
 std::unique_ptr<TypeInference> TypeInference::_typeInference = nullptr;
 
+const std::string znwm = "_Znwm";
+const std::string zn1Label = "_ZN1";
+
 const std::string TYPEMALLOC = "TYPE_MALLOC";
 
 /// Determine type based on infer site
@@ -100,6 +103,11 @@ const Type *TypeInference::infersiteToType(const Value *val) {
     }
 }
 
+/*!
+ * Backward collect all possible sources starting from a value
+ * @param startValue 
+ * @return 
+ */
 Set<const Value *> TypeInference::bwGetOrfindSourceVals(const Value *startValue) {
 
     // consult cache
@@ -161,7 +169,7 @@ Set<const Value *> TypeInference::bwGetOrfindSourceVals(const Value *startValue)
                 if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
                     // skip function as parameter
                     // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
-                    if(callBase->getCalledFunction() != argument->getParent()) continue;
+                    if (callBase->getCalledFunction() != argument->getParent()) continue;
                     u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
                     insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
                 }
@@ -198,6 +206,67 @@ const Type *TypeInference::defaultTy(const Value *val) {
         return Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
     // otherwise we return a pointer type in the default address space
     return defaultPtrTy();
+}
+
+/*!
+ * get or infer the name of thisptr
+ * @param thisPtr
+ * @return
+ */
+const std::string& TypeInference::getOrInferThisPtrClassName(const Value *thisPtr) {
+    auto it = _thisPtrClassName.find(thisPtr);
+    if(it != _thisPtrClassName.end()) return it->second;
+
+    // backward find source and then forward find constructor or other mangler functions
+    Set<const Value *> sources = bwGetOrfindSourceVals(thisPtr);
+    for (const auto &source: sources) {
+        if(!SVFUtil::isa<CallInst>(source)) continue;
+        const CallInst *callInst = SVFUtil::dyn_cast<CallInst>(source);
+        if(!callInst->getCalledFunction()) continue;
+        const Function *func = callInst->getCalledFunction();
+        if(func->getName() != znwm) continue;
+        for (const auto &use: callInst->uses()) {
+            if(const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+                if(!callBase->getCalledFunction()) continue;
+                const Function *constructFoo = callBase->getCalledFunction();
+                if(constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
+                const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
+                return _thisPtrClassName[thisPtr] = name.className;
+            } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser())) {
+                for (const auto &use2: bitCastInst->uses()) {
+                    if(const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
+                        if (!callBase2->getCalledFunction()) continue;
+                        const Function *constructFoo = callBase2->getCalledFunction();
+                        if (constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
+                        const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
+                        return _thisPtrClassName[thisPtr] = name.className;
+                    }
+                }
+            }
+        }
+    }
+
+    // forward find constructor or other mangler functions
+    for (const auto &use: thisPtr->uses()) {
+        if(const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+            if(!callBase->getCalledFunction()) continue;
+            const Function *constructFoo = callBase->getCalledFunction();
+            if(constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
+            const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
+            return _thisPtrClassName[thisPtr] = name.className;
+        } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser())) {
+            for (const auto &use2: bitCastInst->uses()) {
+                if(const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
+                    if (!callBase2->getCalledFunction()) continue;
+                    const Function *constructFoo = callBase2->getCalledFunction();
+                    if (constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
+                    const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
+                    return _thisPtrClassName[thisPtr] = name.className;
+                }
+            }
+        }
+    }
+    ABORT_MSG(VALUE_WITH_DBGINFO(thisPtr) + "does not have a type?");
 }
 
 /*!
@@ -335,7 +404,7 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                     if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser())) {
                         // skip function as parameter
                         // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
-                        if(callBase->getCalledFunction() != retInst->getFunction()) continue;
+                        if (callBase->getCalledFunction() != retInst->getFunction()) continue;
                         insertInferSitesOrPushWorklist(callBase);
                     }
                 }
@@ -352,9 +421,14 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                 // skip global function value -> callsite
                 // e.g., def @foo() -> call @foo()
                 // we don't skip function as parameter, e.g., def @foo() -> call @bar(..., @foo)
-                if(SVFUtil::isa<Function>(curValue) && curValue == callBase->getCalledFunction()) continue;
+                if (SVFUtil::isa<Function>(curValue) && curValue == callBase->getCalledFunction()) continue;
                 u32_t pos = getArgNoInCallBase(callBase, curValue);
                 if (Function *calleeFunc = callBase->getCalledFunction()) {
+                    // TODO: for cpp constructor, early terminate, what if the type does not exist? e.g., abstract.cpp
+                    // if (calleeFunc->getName().str().compare(0, zn1Label.size(), zn1Label) == 0) {
+                    //    insertInferSite(callBase);
+                    // }
+
                     // for variable argument, conservatively collect all params
                     if (calleeFunc->isVarArg()) pos = 0;
                     if (!calleeFunc->isDeclaration()) {
