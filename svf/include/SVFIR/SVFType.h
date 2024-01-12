@@ -280,8 +280,6 @@ private:
 
 private:
     GNodeK kind; ///< used for classof
-    const SVFPointerType*
-    getPointerToTy; /// Return a pointer to the current type
     StInfo* typeinfo;   ///< SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or
     u32_t byteSize; ///< LLVM Byte Size
@@ -289,7 +287,7 @@ private:
 
 protected:
     SVFType(bool svt, SVFTyKind k, u32_t Sz = 1)
-        : kind(k), getPointerToTy(nullptr), typeinfo(nullptr),
+        : kind(k), typeinfo(nullptr),
           isSingleValTy(svt), byteSize(Sz)
     {
     }
@@ -308,17 +306,6 @@ public:
     std::string toString() const;
 
     virtual void print(std::ostream& os) const = 0;
-
-    inline void setPointerTo(const SVFPointerType* ty)
-    {
-        getPointerToTy = ty;
-    }
-
-    inline const SVFPointerType* getPointerTo() const
-    {
-        assert(getPointerToTy && "set the getPointerToTy first");
-        return getPointerToTy;
-    }
 
 
     inline void setTypeInfo(StInfo* ti)
@@ -373,28 +360,15 @@ class SVFPointerType : public SVFType
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
-private:
-    const SVFType* ptrElementType;
-
 public:
     SVFPointerType(u32_t byteSize = 1)
-        : SVFType(true, SVFPointerTy, byteSize), ptrElementType(nullptr)
+        : SVFType(true, SVFPointerTy, byteSize)
     {
     }
 
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFPointerTy;
-    }
-    inline const SVFType* getPtrElementType() const
-    {
-        assert(ptrElementType && "ptrElementType is nullptr");
-        return ptrElementType;
-    }
-
-    inline void setPtrElementType(SVFType* _ptrElementType)
-    {
-        ptrElementType = _ptrElementType;
     }
 
     void print(std::ostream& os) const override;
@@ -438,7 +412,7 @@ private:
 
 public:
     SVFFunctionType(const SVFType* rt)
-        : SVFType(false, SVFFunctionTy, 1), retTy(rt)
+        : SVFType(false, SVFFunctionTy, 0), retTy(rt)
     {
     }
     static inline bool classof(const SVFType* node)
@@ -463,7 +437,7 @@ private:
     std::string name;
 
 public:
-    SVFStructType(u32_t byteSize = 1) : SVFType(false, SVFStructTy, byteSize) {}
+    SVFStructType(u32_t byteSize) : SVFType(false, SVFStructTy, byteSize) {}
 
     static inline bool classof(const SVFType* node)
     {
@@ -496,7 +470,7 @@ private:
     const SVFType* typeOfElement; /// For printing & debugging
 
 public:
-    SVFArrayType(u32_t byteSize = 1)
+    SVFArrayType(u32_t byteSize)
         : SVFType(false, SVFArrayTy, byteSize), numOfElement(0), typeOfElement(nullptr)
     {
     }
@@ -535,7 +509,7 @@ private:
     std::string repr; /// Field representation for printing
 
 public:
-    SVFOtherType(bool isSingleValueTy, u32_t byteSize = 1) : SVFType(isSingleValueTy, SVFOtherTy, byteSize) {}
+    SVFOtherType(u32_t byteSize, bool isSingleValueTy) : SVFType(isSingleValueTy, SVFOtherTy, byteSize) {}
 
     static inline bool classof(const SVFType* node)
     {

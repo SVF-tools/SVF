@@ -478,7 +478,6 @@ cJSON* SVFIRWriter::contentToJson(const SVFType* type)
     cJSON* root = jsonCreateObject();
     JSON_WRITE_FIELD(root, type, kind);
     JSON_WRITE_FIELD(root, type, isSingleValTy);
-    JSON_WRITE_FIELD(root, type, getPointerToTy);
     JSON_WRITE_FIELD(root, type, typeinfo);
     return root;
 }
@@ -486,7 +485,6 @@ cJSON* SVFIRWriter::contentToJson(const SVFType* type)
 cJSON* SVFIRWriter::contentToJson(const SVFPointerType* type)
 {
     cJSON* root = contentToJson(static_cast<const SVFType*>(type));
-    JSON_WRITE_FIELD(root, type, ptrElementType);
     return root;
 }
 
@@ -2496,14 +2494,12 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFType* type)
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFType* type)
 {
     // kind has already been read
-    JSON_READ_FIELD_FWD(fieldJson, type, getPointerToTy);
     JSON_READ_FIELD_FWD(fieldJson, type, typeinfo);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFPointerType* type)
 {
     fill(fieldJson, static_cast<SVFType*>(type));
-    JSON_READ_FIELD_FWD(fieldJson, type, ptrElementType);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFIntegerType* type)

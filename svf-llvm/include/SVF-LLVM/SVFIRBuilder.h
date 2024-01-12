@@ -271,7 +271,7 @@ protected:
     inline NodeID addNullPtrNode()
     {
         LLVMContext& cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
-        ConstantPointerNull* constNull = ConstantPointerNull::get(Type::getInt8PtrTy(cxt));
+        ConstantPointerNull* constNull = ConstantPointerNull::get(PointerType::getUnqual(cxt));
         NodeID nullPtr = pag->addValNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(constNull),pag->getNullPtr());
         setCurrentLocation(constNull, nullptr);
         addBlackHoleAddrEdge(pag->getBlkPtr());

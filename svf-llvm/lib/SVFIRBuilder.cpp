@@ -1184,7 +1184,9 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const 
         const SVFBasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
         LLVMModuleSet* llvmmodule = LLVMModuleSet::getLLVMModuleSet();
-        NodeID gepNode= pag->addGepValNode(curVal, llvmmodule->getSVFValue(val),ap, NodeIDAllocator::get()->allocateValueId(),elementType->getPointerTo());
+        NodeID gepNode = pag->addGepValNode(curVal, llvmmodule->getSVFValue(val), ap,
+                                            NodeIDAllocator::get()->allocateValueId(),
+                                            llvmmodule->getSVFType(PointerType::getUnqual(llvmmodule->getContext())));
         addGepEdge(base, gepNode, ap, true);
         setCurrentLocation(cval, cbb);
         return gepNode;
