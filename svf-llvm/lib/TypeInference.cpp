@@ -80,7 +80,9 @@ using namespace LLVMUtil;
 std::unique_ptr<TypeInference> TypeInference::_typeInference = nullptr;
 
 const std::string znwm = "_Znwm";
-const std::string zn1Label = "_ZN1";
+const std::string zn1Label = "_ZN1"; // c++ constructor
+
+const std::string classTyPrefix = "class.";
 
 const std::string TYPEMALLOC = "TYPE_MALLOC";
 
@@ -93,7 +95,16 @@ const Type *TypeInference::infersiteToType(const Value *val) {
     } else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val)) {
         return gepInst->getSourceElementType();
     } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
-        return call->getFunctionType();
+        const std::string &name = call->getCalledFunction()->getName().str();
+        if (name.compare(0, zn1Label.size(), zn1Label) == 0) {
+            // c++ constructor
+            const std::string className = cppUtil::demangle(name).className;
+            const Type *classTy = StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className);
+            ABORT_IFNOT(classTy, "does not have a class type?");
+            return classTy;
+        } else {
+            return call->getFunctionType();
+        }
     } else if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val)) {
         return allocaInst->getAllocatedType();
     } else if (const GlobalValue *globalValue = SVFUtil::dyn_cast<GlobalValue>(val)) {
@@ -213,28 +224,28 @@ const Type *TypeInference::defaultTy(const Value *val) {
  * @param thisPtr
  * @return
  */
-const std::string& TypeInference::getOrInferThisPtrClassName(const Value *thisPtr) {
+const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPtr) {
     auto it = _thisPtrClassName.find(thisPtr);
-    if(it != _thisPtrClassName.end()) return it->second;
+    if (it != _thisPtrClassName.end()) return it->second;
 
     // backward find source and then forward find constructor or other mangler functions
     Set<const Value *> sources = bwGetOrfindSourceVals(thisPtr);
     for (const auto &source: sources) {
-        if(!SVFUtil::isa<CallInst>(source)) continue;
+        if (!SVFUtil::isa<CallInst>(source)) continue;
         const CallInst *callInst = SVFUtil::dyn_cast<CallInst>(source);
-        if(!callInst->getCalledFunction()) continue;
+        if (!callInst->getCalledFunction()) continue;
         const Function *func = callInst->getCalledFunction();
-        if(func->getName() != znwm) continue;
+        if (func->getName() != znwm) continue;
         for (const auto &use: callInst->uses()) {
-            if(const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
-                if(!callBase->getCalledFunction()) continue;
+            if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+                if (!callBase->getCalledFunction()) continue;
                 const Function *constructFoo = callBase->getCalledFunction();
-                if(constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
+                if (constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
                 const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
                 return _thisPtrClassName[thisPtr] = name.className;
             } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser())) {
                 for (const auto &use2: bitCastInst->uses()) {
-                    if(const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
+                    if (const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
                         if (!callBase2->getCalledFunction()) continue;
                         const Function *constructFoo = callBase2->getCalledFunction();
                         if (constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
@@ -248,15 +259,15 @@ const std::string& TypeInference::getOrInferThisPtrClassName(const Value *thisPt
 
     // forward find constructor or other mangler functions
     for (const auto &use: thisPtr->uses()) {
-        if(const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
-            if(!callBase->getCalledFunction()) continue;
+        if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+            if (!callBase->getCalledFunction()) continue;
             const Function *constructFoo = callBase->getCalledFunction();
-            if(constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
+            if (constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
             const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
             return _thisPtrClassName[thisPtr] = name.className;
         } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser())) {
             for (const auto &use2: bitCastInst->uses()) {
-                if(const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
+                if (const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
                     if (!callBase2->getCalledFunction()) continue;
                     const Function *constructFoo = callBase2->getCalledFunction();
                     if (constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
@@ -424,15 +435,18 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                 if (SVFUtil::isa<Function>(curValue) && curValue == callBase->getCalledFunction()) continue;
                 u32_t pos = getArgNoInCallBase(callBase, curValue);
                 if (Function *calleeFunc = callBase->getCalledFunction()) {
-                    // TODO: for cpp constructor, early terminate, what if the type does not exist? e.g., abstract.cpp
-                    // if (calleeFunc->getName().str().compare(0, zn1Label.size(), zn1Label) == 0) {
-                    //    insertInferSite(callBase);
-                    // }
-
-                    // for variable argument, conservatively collect all params
-                    if (calleeFunc->isVarArg()) pos = 0;
-                    if (!calleeFunc->isDeclaration()) {
-                        insertInferSitesOrPushWorklist(calleeFunc->getArg(pos));
+                    const std::string &name = calleeFunc->getName().str();
+                    if (name.compare(0, zn1Label.size(), zn1Label) == 0) {
+                        // c++ constructor
+                        const std::string className = cppUtil::demangle(name).className;
+                        if(StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className))
+                            insertInferSite(callBase);
+                    } else {
+                        // for variable argument, conservatively collect all params
+                        if (calleeFunc->isVarArg()) pos = 0;
+                        if (!calleeFunc->isDeclaration()) {
+                            insertInferSitesOrPushWorklist(calleeFunc->getArg(pos));
+                        }
                     }
                 }
             }

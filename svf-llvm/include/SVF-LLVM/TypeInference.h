@@ -85,7 +85,11 @@ public:
 
     /// Opaque pointer type
     inline static const Type *defaultPtrTy() {
-        return PointerType::getUnqual(LLVMModuleSet::getLLVMModuleSet()->getContext());
+        return PointerType::getUnqual(getLLVMCtx());
+    }
+
+    inline static LLVMContext& getLLVMCtx() {
+        return LLVMModuleSet::getLLVMModuleSet()->getContext();
     }
 
 private:
