@@ -438,6 +438,9 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                     const std::string &name = calleeFunc->getName().str();
                     if (name.compare(0, zn1Label.size(), zn1Label) == 0) {
                         // c++ constructor
+                        // %call = call noalias noundef nonnull i8* @_Znwm(i64 noundef 8) #7, !dbg !384, !heapallocsite !5
+                        // %0 = bitcast i8* %call to %class.B*, !dbg !384
+                        // call void @_ZN1BC2Ev(%class.B* noundef nonnull align 8 dereferenceable(8) %0) #8, !dbg !385
                         const std::string className = cppUtil::demangle(name).className;
                         if(StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className))
                             insertInferSite(callBase);
