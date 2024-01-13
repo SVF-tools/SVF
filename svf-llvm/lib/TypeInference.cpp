@@ -86,128 +86,6 @@ const std::string classTyPrefix = "class.";
 
 const std::string TYPEMALLOC = "TYPE_MALLOC";
 
-/// Determine type based on infer site
-/// https://llvm.org/docs/OpaquePointers.html#migration-instructions
-const Type *TypeInference::infersiteToType(const Value *val) {
-    assert(val && "value cannot be empty");
-    if (SVFUtil::isa<LoadInst>(val) || SVFUtil::isa<StoreInst>(val)) {
-        return llvm::getLoadStoreType(const_cast<Value *>(val));
-    } else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val)) {
-        return gepInst->getSourceElementType();
-    } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
-        const std::string &name = call->getCalledFunction()->getName().str();
-        if (name.compare(0, zn1Label.size(), zn1Label) == 0) {
-            // c++ constructor
-            const std::string className = cppUtil::demangle(name).className;
-            const Type *classTy = StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className);
-            ABORT_IFNOT(classTy, "does not have a class type?");
-            return classTy;
-        } else {
-            return call->getFunctionType();
-        }
-    } else if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val)) {
-        return allocaInst->getAllocatedType();
-    } else if (const GlobalValue *globalValue = SVFUtil::dyn_cast<GlobalValue>(val)) {
-        return globalValue->getValueType();
-    } else {
-        ABORT_MSG("unknown value:" + VALUE_WITH_DBGINFO(val));
-    }
-}
-
-/*!
- * Backward collect all possible sources starting from a value
- * @param startValue 
- * @return 
- */
-Set<const Value *> TypeInference::bwGetOrfindSourceVals(const Value *startValue) {
-
-    // consult cache
-    auto tIt = _valueToSources.find(startValue);
-    if (tIt != _valueToSources.end()) {
-        WARN_IFNOT(!tIt->second.empty(), "empty type:" + VALUE_WITH_DBGINFO(startValue));
-        return !tIt->second.empty() ? tIt->second : Set<const Value *>({startValue});
-    }
-
-    // simulate the call stack, the second element indicates whether we should update sources for current value
-    FILOWorkList<ValueBoolPair> workList;
-    Set<ValueBoolPair> visited;
-    workList.push({startValue, false});
-    while (!workList.empty()) {
-        auto curPair = workList.pop();
-        if (visited.count(curPair)) continue;
-        visited.insert(curPair);
-        const Value *curValue = curPair.first;
-        bool canUpdate = curPair.second;
-
-        Set<const Value *> sources;
-        auto insertSource = [&sources, &canUpdate](const Value *source) {
-            if (canUpdate) sources.insert(source);
-        };
-        auto insertSourcesOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
-            auto vIt = _valueToSources.find(pUser);
-            if (canUpdate) {
-                if (vIt != _valueToSources.end()) {
-                    sources.insert(vIt->second.begin(), vIt->second.end());
-                }
-            } else {
-                if (vIt == _valueToSources.end()) workList.push({pUser, false});
-            }
-        };
-
-        if (!canUpdate && !_valueToSources.count(curValue)) {
-            workList.push({curValue, true});
-        }
-
-        if (isSourceVal(curValue)) {
-            insertSource(curValue);
-        } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
-            Value *prevVal = bitCastInst->getOperand(0);
-            insertSourcesOrPushWorklist(prevVal);
-        } else if (const PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(curValue)) {
-            for (u32_t i = 0; i < phiNode->getNumOperands(); ++i) {
-                insertSourcesOrPushWorklist(phiNode->getOperand(i));
-            }
-        } else if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue)) {
-            for (const auto &use: loadInst->getPointerOperand()->uses()) {
-                if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser())) {
-                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand()) {
-                        insertSourcesOrPushWorklist(storeInst->getValueOperand());
-                    }
-                }
-            }
-        } else if (const Argument *argument = SVFUtil::dyn_cast<Argument>(curValue)) {
-            for (const auto &use: argument->getParent()->uses()) {
-                if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
-                    // skip function as parameter
-                    // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
-                    if (callBase->getCalledFunction() != argument->getParent()) continue;
-                    u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
-                    insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
-                }
-            }
-        } else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(curValue)) {
-            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + VALUE_WITH_DBGINFO(callBase));
-            if (Function *callee = callBase->getCalledFunction()) {
-                if (!callee->isDeclaration()) {
-                    const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
-                    const Value *pValue = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()->back());
-                    const ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
-                    ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
-                    insertSourcesOrPushWorklist(retInst->getReturnValue());
-                }
-            }
-        }
-        if (canUpdate) {
-            _valueToSources[curValue] = SVFUtil::move(sources);
-        }
-    }
-    Set<const Value *> srcs = _valueToSources[startValue];
-    if (srcs.empty()) {
-        srcs = {startValue};
-        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
-    }
-    return srcs;
-}
 
 const Type *TypeInference::defaultTy(const Value *val) {
     ABORT_IFNOT(val, "val cannot be null");
@@ -231,6 +109,15 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
     // backward find source and then forward find constructor or other mangler functions
     Set<const Value *> sources = bwGetOrfindSourceVals(thisPtr);
     for (const auto &source: sources) {
+        if (isInfersite(source)) {
+            const Type *type = infersiteToType(source);
+            if (const StructType *stTy = SVFUtil::dyn_cast<StructType>(type)) {
+                const std::string &typeName = stTy->getName().str();
+                const std::string &className = typeName.substr(
+                        classTyPrefix.size(), typeName.size() - classTyPrefix.size());
+                return _thisPtrClassName[thisPtr] = className;
+            }
+        }
         if (!SVFUtil::isa<CallInst>(source)) continue;
         const CallInst *callInst = SVFUtil::dyn_cast<CallInst>(source);
         if (!callInst->getCalledFunction()) continue;
@@ -442,7 +329,7 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                         // %0 = bitcast i8* %call to %class.B*, !dbg !384
                         // call void @_ZN1BC2Ev(%class.B* noundef nonnull align 8 dereferenceable(8) %0) #8, !dbg !385
                         const std::string className = cppUtil::demangle(name).className;
-                        if(StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className))
+                        if (StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className))
                             insertInferSite(callBase);
                     } else {
                         // for variable argument, conservatively collect all params
@@ -469,6 +356,100 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
     return type;
 }
 
+/*!
+ * Backward collect all possible sources starting from a value
+ * @param startValue 
+ * @return 
+ */
+Set<const Value *> TypeInference::bwGetOrfindSourceVals(const Value *startValue) {
+
+    // consult cache
+    auto tIt = _valueToSources.find(startValue);
+    if (tIt != _valueToSources.end()) {
+        WARN_IFNOT(!tIt->second.empty(), "empty type:" + VALUE_WITH_DBGINFO(startValue));
+        return !tIt->second.empty() ? tIt->second : Set<const Value *>({startValue});
+    }
+
+    // simulate the call stack, the second element indicates whether we should update sources for current value
+    FILOWorkList<ValueBoolPair> workList;
+    Set<ValueBoolPair> visited;
+    workList.push({startValue, false});
+    while (!workList.empty()) {
+        auto curPair = workList.pop();
+        if (visited.count(curPair)) continue;
+        visited.insert(curPair);
+        const Value *curValue = curPair.first;
+        bool canUpdate = curPair.second;
+
+        Set<const Value *> sources;
+        auto insertSource = [&sources, &canUpdate](const Value *source) {
+            if (canUpdate) sources.insert(source);
+        };
+        auto insertSourcesOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
+            auto vIt = _valueToSources.find(pUser);
+            if (canUpdate) {
+                if (vIt != _valueToSources.end()) {
+                    sources.insert(vIt->second.begin(), vIt->second.end());
+                }
+            } else {
+                if (vIt == _valueToSources.end()) workList.push({pUser, false});
+            }
+        };
+
+        if (!canUpdate && !_valueToSources.count(curValue)) {
+            workList.push({curValue, true});
+        }
+
+        if (isSourceVal(curValue)) {
+            insertSource(curValue);
+        } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
+            Value *prevVal = bitCastInst->getOperand(0);
+            insertSourcesOrPushWorklist(prevVal);
+        } else if (const PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(curValue)) {
+            for (u32_t i = 0; i < phiNode->getNumOperands(); ++i) {
+                insertSourcesOrPushWorklist(phiNode->getOperand(i));
+            }
+        } else if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue)) {
+            for (const auto &use: loadInst->getPointerOperand()->uses()) {
+                if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser())) {
+                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand()) {
+                        insertSourcesOrPushWorklist(storeInst->getValueOperand());
+                    }
+                }
+            }
+        } else if (const Argument *argument = SVFUtil::dyn_cast<Argument>(curValue)) {
+            for (const auto &use: argument->getParent()->uses()) {
+                if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+                    // skip function as parameter
+                    // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
+                    if (callBase->getCalledFunction() != argument->getParent()) continue;
+                    u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
+                    insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
+                }
+            }
+        } else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(curValue)) {
+            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + VALUE_WITH_DBGINFO(callBase));
+            if (Function *callee = callBase->getCalledFunction()) {
+                if (!callee->isDeclaration()) {
+                    const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+                    const Value *pValue = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()->back());
+                    const ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
+                    ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
+                    insertSourcesOrPushWorklist(retInst->getReturnValue());
+                }
+            }
+        }
+        if (canUpdate) {
+            _valueToSources[curValue] = SVFUtil::move(sources);
+        }
+    }
+    Set<const Value *> srcs = _valueToSources[startValue];
+    if (srcs.empty()) {
+        srcs = {startValue};
+        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
+    }
+    return srcs;
+}
 
 /*!
  * Validate type inference
@@ -514,4 +495,50 @@ void TypeInference::typeDiffTest(const PointerType *oPTy, const Type *iTy, const
         ABORT_MSG("wrong type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(val));
     }
 #endif
+}
+
+/// Determine type based on infer site
+/// https://llvm.org/docs/OpaquePointers.html#migration-instructions
+const Type *TypeInference::infersiteToType(const Value *val) {
+    assert(val && "value cannot be empty");
+    if (SVFUtil::isa<LoadInst, StoreInst>(val)) {
+        return llvm::getLoadStoreType(const_cast<Value *>(val));
+    } else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val)) {
+        return gepInst->getSourceElementType();
+    } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
+        const std::string &name = call->getCalledFunction()->getName().str();
+        if (name.compare(0, zn1Label.size(), zn1Label) == 0) {
+            // c++ constructor
+            const std::string className = cppUtil::demangle(name).className;
+            const Type *classTy = StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className);
+            ABORT_IFNOT(classTy, "does not have a class type?");
+            return classTy;
+        } else {
+            return call->getFunctionType();
+        }
+    } else if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val)) {
+        return allocaInst->getAllocatedType();
+    } else if (const GlobalValue *globalValue = SVFUtil::dyn_cast<GlobalValue>(val)) {
+        return globalValue->getValueType();
+    } else {
+        ABORT_MSG("unknown value:" + VALUE_WITH_DBGINFO(val));
+    }
+}
+
+bool TypeInference::isInfersite(const Value *val) {
+    assert(val && "value cannot be empty");
+    if (SVFUtil::isa<LoadInst, StoreInst, GetElementPtrInst, AllocaInst, GlobalValue>(val)) {
+        return true;
+    } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
+        const std::string &name = call->getCalledFunction()->getName().str();
+        if (name.compare(0, zn1Label.size(), zn1Label) == 0) {
+            // c++ constructor
+            const std::string className = cppUtil::demangle(name).className;
+            const Type *classTy = StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className);
+            return classTy != nullptr;
+        } else {
+            return true;
+        }
+    }
+    return false;
 }

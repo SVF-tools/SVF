@@ -103,6 +103,8 @@ private:
     /// Determine type based on infer site
     static const Type *infersiteToType(const Value *val);
 
+    static bool isInfersite(const Value *val);
+
     inline static bool isSourceVal(const Value *val) {
         return LLVMUtil::isObject(val) || SVFUtil::isa<GetElementPtrInst>(val);
     }
