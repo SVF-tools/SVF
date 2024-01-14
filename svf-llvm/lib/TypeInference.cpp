@@ -264,18 +264,29 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                       %3 = load %struct.MyStruct*, %struct.MyStruct** %p, align 8, !dbg !42
                       %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %3, i32 0, i32 1, !dbg !43
                       store %struct.MyStruct* %2, %struct.MyStruct** %next, align 8, !dbg !44
+                      %5 = load %struct.MyStruct*, %struct.MyStruct** %p, align 8, !dbg !48
+                      %next3 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %5, i32 0, i32 1, !dbg !49
+                      %6 = load %struct.MyStruct*, %struct.MyStruct** %next3, align 8, !dbg !49
+                      infer site -> %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %6, i32 0, i32 0, !dbg !50
                       */
                     if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
                             storeInst->getPointerOperand())) {
-                        bool containStruct = false;
-                        for (u32_t bit = 0, eit = gepInst->getSourceElementType()->getNumContainedTypes(); bit < eit; ++bit) {
-                            Type *pType = gepInst->getSourceElementType()->getContainedType(bit);
-                            if(SVFUtil::isa<StructType>(pType)) {
-                                containStruct = true;
-                                break;
+                        const Value *gepBase = gepInst->getPointerOperand();
+                        if(!SVFUtil::isa<LoadInst>(gepBase)) continue;
+                        const LoadInst * load = SVFUtil::dyn_cast<LoadInst>(gepBase);
+                        for(const auto& loadUse: load->getPointerOperand()->uses()) {
+                            if (loadUse.getUser() == load || !SVFUtil::isa<LoadInst>(loadUse.getUser()))
+                                continue;
+                            for (const auto &gepUse: loadUse.getUser()->uses()) {
+                                if(!SVFUtil::isa<GetElementPtrInst>(gepUse.getUser())) continue;
+                                for(const auto& loadUse2: gepUse.getUser()->uses()) {
+                                    if (SVFUtil::isa<LoadInst>(loadUse2.getUser())) {
+                                        insertInferSitesOrPushWorklist(loadUse2.getUser());
+                                    }
+                                }
                             }
                         }
-                        if(!containStruct) insertInferSite(gepInst);
+
                     }
                 }
 
