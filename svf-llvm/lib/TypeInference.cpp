@@ -339,6 +339,9 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                 // e.g., def @foo() -> call @foo()
                 // we don't skip function as parameter, e.g., def @foo() -> call @bar(..., @foo)
                 if (SVFUtil::isa<Function>(curValue) && curValue == callBase->getCalledFunction()) continue;
+                // skip indirect call
+                // e.g., %0 = ... -> call %0(...)
+                if(!callBase->hasArgument(curValue)) continue;
                 u32_t pos = getArgNoInCallBase(callBase, curValue);
                 if (Function *calleeFunc = callBase->getCalledFunction()) {
                     const std::string &name = calleeFunc->getName().str();
