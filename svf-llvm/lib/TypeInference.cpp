@@ -29,7 +29,7 @@
 
 #include "SVF-LLVM/TypeInference.h"
 
-#define TYPE_DEBUG 0 /* Turn this on if you're debugging type inference */
+#define TYPE_DEBUG 1 /* Turn this on if you're debugging type inference */
 #define ERR_MSG(msg)                                                           \
     do                                                                         \
     {                                                                          \
@@ -109,7 +109,7 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
     // backward find source and then forward find constructor or other mangler functions
     Set<const Value *> sources = bwGetOrfindSourceVals(thisPtr);
     for (const auto &source: sources) {
-        if (isInfersite(source)) {
+        if (source != thisPtr && isInfersite(source)) {
             const Type *type = infersiteToType(source);
             if (const StructType *stTy = SVFUtil::dyn_cast<StructType>(type)) {
                 const std::string &typeName = stTy->getName().str();
@@ -191,7 +191,6 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
     // consult cache
     auto tIt = _valueToType.find(startValue);
     if (tIt != _valueToType.end()) {
-        WARN_IFNOT(tIt->second, "empty type:" + VALUE_WITH_DBGINFO(startValue));
         return tIt->second ? tIt->second : defaultTy(startValue);
     }
 
@@ -267,8 +266,17 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                       store %struct.MyStruct* %2, %struct.MyStruct** %next, align 8, !dbg !44
                       */
                     if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
-                            storeInst->getPointerOperand()))
-                        insertInferSite(gepInst);
+                            storeInst->getPointerOperand())) {
+                        bool containStruct = false;
+                        for (u32_t bit = 0, eit = gepInst->getSourceElementType()->getNumContainedTypes(); bit < eit; ++bit) {
+                            Type *pType = gepInst->getSourceElementType()->getContainedType(bit);
+                            if(SVFUtil::isa<StructType>(pType)) {
+                                containStruct = true;
+                                break;
+                            }
+                        }
+                        if(!containStruct) insertInferSite(gepInst);
+                    }
                 }
 
             } else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
@@ -462,7 +470,17 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
             ConstantInt *pInt =
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
-            if (getNumOfElements(objType) >= pInt->getZExtValue())
+            u32_t iTyNum = Options::MaxFieldLimit();
+            if(SVFUtil::isa<ArrayType>(objType))
+                iTyNum = getNumOfElements(objType);
+            else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objType))
+            {
+                /// For an C++ class, it can have variant elements depending on the vtable size,
+                /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
+                if(!classTyHasVTable(st))
+                    iTyNum = getNumOfElements(st);
+            }
+            if (iTyNum >= pInt->getZExtValue())
                 SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") << VALUE_WITH_DBGINFO(cs)
                                 << SVFUtil::pasMsg(" TYPE: ")
                                 << dumpType(objType) << "\n";
@@ -478,7 +496,17 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
 void TypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val) {
 #if TYPE_DEBUG
     Type *oTy = getPtrElementType(oPTy);
-    if (getNumOfElements(oTy) > getNumOfElements(iTy)) {
+    u32_t iTyNum = Options::MaxFieldLimit();
+    if(SVFUtil::isa<ArrayType>(iTy))
+        iTyNum = getNumOfElements(iTy);
+    else if(const StructType* st = SVFUtil::dyn_cast<StructType>(iTy))
+    {
+        /// For an C++ class, it can have variant elements depending on the vtable size,
+        /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
+        if(!classTyHasVTable(st))
+            iTyNum = getNumOfElements(st);
+    }
+    if (getNumOfElements(oTy) > iTyNum) {
         ERR_MSG("original type is:" + dumpType(oTy));
         ERR_MSG("infered type is:" + dumpType(iTy));
         ABORT_MSG("wrong type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(val));
