@@ -689,9 +689,8 @@ const Type *TypeInference::infersiteToType(const Value *val) {
         return gepInst->getSourceElementType();
     } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
         if (const Function *calledFunc = call->getCalledFunction()) {
-            const std::string &className = extractClassNameViaCppCallee(calledFunc);
-            if (className != "") {
-                const Type *classTy = cppClassNameToType(className);
+            if (isCPPConstructor(calledFunc->getName().str())) {
+                const Type *classTy = cppClassNameToType(cppUtil::demangle(calledFunc->getName().str()).className);
                 ABORT_IFNOT(classTy, "does not have a class type?");
                 return classTy;
             } else {
