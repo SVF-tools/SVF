@@ -49,7 +49,8 @@ private:
     static std::unique_ptr<TypeInference> _typeInference;
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
-    ValueToSources _valueToSources; // value sources cache
+    ValueToSources _valueToAllocs; // value allocations (stack, static, heap) cache
+    ValueToSources _valueToCPPSources; // value cpp sources cache
     ValueToClassName _thisPtrClassName; // thisptr class name cache
     std::string _emptyClassName = "";
 
@@ -97,16 +98,23 @@ private:
     /// Forward collect all possible infer sites starting from a value
     const Type *fwGetOrInferLLVMObjType(const Value *startValue);
 
-    /// Backward collect all possible sources starting from a value
-    Set<const Value *> bwGetOrfindSourceVals(const Value *startValue);
+    /// Backward collect all possible allocation sites (stack, static, heap) starting from a value
+    Set<const Value *> bwGetOrfindAllocations(const Value *startValue);
+
+    /// Backward collect all possible cpp constructors starting from a value
+    Set<const Value *> bwGetOrfindCPPSources(const Value *startValue);
 
     /// Determine type based on infer site
     static const Type *infersiteToType(const Value *val);
 
     static bool isInfersite(const Value *val);
 
-    inline static bool isSourceVal(const Value *val) {
-        return LLVMUtil::isObject(val) || SVFUtil::isa<GetElementPtrInst>(val);
+    inline static bool isAllocation(const Value *val) {
+        return LLVMUtil::isObject(val);
+    }
+
+    inline static bool isCPPSource(const Value *val) {
+        return isAllocation(val) || SVFUtil::isa<GetElementPtrInst>(val);
     }
 
 };

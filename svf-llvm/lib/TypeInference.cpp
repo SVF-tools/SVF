@@ -107,7 +107,7 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
     if (it != _thisPtrClassName.end()) return it->second;
 
     // backward find source and then forward find constructor or other mangler functions
-    Set<const Value *> sources = bwGetOrfindSourceVals(thisPtr);
+    Set<const Value *> sources = bwGetOrfindCPPSources(thisPtr);
     for (const auto &source: sources) {
         if (source != thisPtr && isInfersite(source)) {
             const Type *type = infersiteToType(source);
@@ -174,8 +174,8 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
  * @param startValue
  */
 const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
-    if (isSourceVal(startValue)) return fwGetOrInferLLVMObjType(startValue);
-    Set<const Value *> sources = TypeInference::getTypeInference()->bwGetOrfindSourceVals(startValue);
+    if (isAllocation(startValue)) return fwGetOrInferLLVMObjType(startValue);
+    Set<const Value *> sources = TypeInference::getTypeInference()->bwGetOrfindAllocations(startValue);
     std::vector<const Type *> types;
     for (const auto &source: sources) {
         types.push_back(TypeInference::getTypeInference()->fwGetOrInferLLVMObjType(source));
@@ -379,15 +379,15 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
 }
 
 /*!
- * Backward collect all possible sources starting from a value
+ * Backward collect all possible allocation sites (stack, static, heap) starting from a value
  * @param startValue 
  * @return 
  */
-Set<const Value *> TypeInference::bwGetOrfindSourceVals(const Value *startValue) {
+Set<const Value *> TypeInference::bwGetOrfindAllocations(const Value *startValue) {
 
     // consult cache
-    auto tIt = _valueToSources.find(startValue);
-    if (tIt != _valueToSources.end()) {
+    auto tIt = _valueToAllocs.find(startValue);
+    if (tIt != _valueToAllocs.end()) {
         WARN_IFNOT(!tIt->second.empty(), "empty type:" + VALUE_WITH_DBGINFO(startValue));
         return !tIt->second.empty() ? tIt->second : Set<const Value *>({startValue});
     }
@@ -408,21 +408,21 @@ Set<const Value *> TypeInference::bwGetOrfindSourceVals(const Value *startValue)
             if (canUpdate) sources.insert(source);
         };
         auto insertSourcesOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
-            auto vIt = _valueToSources.find(pUser);
+            auto vIt = _valueToAllocs.find(pUser);
             if (canUpdate) {
-                if (vIt != _valueToSources.end()) {
+                if (vIt != _valueToAllocs.end()) {
                     sources.insert(vIt->second.begin(), vIt->second.end());
                 }
             } else {
-                if (vIt == _valueToSources.end()) workList.push({pUser, false});
+                if (vIt == _valueToAllocs.end()) workList.push({pUser, false});
             }
         };
 
-        if (!canUpdate && !_valueToSources.count(curValue)) {
+        if (!canUpdate && !_valueToAllocs.count(curValue)) {
             workList.push({curValue, true});
         }
 
-        if (isSourceVal(curValue)) {
+        if (isAllocation(curValue)) {
             insertSource(curValue);
         } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
             Value *prevVal = bitCastInst->getOperand(0);
@@ -462,10 +462,105 @@ Set<const Value *> TypeInference::bwGetOrfindSourceVals(const Value *startValue)
             }
         }
         if (canUpdate) {
-            _valueToSources[curValue] = SVFUtil::move(sources);
+            _valueToAllocs[curValue] = SVFUtil::move(sources);
         }
     }
-    Set<const Value *> srcs = _valueToSources[startValue];
+    Set<const Value *> srcs = _valueToAllocs[startValue];
+    if (srcs.empty()) {
+        srcs = {startValue};
+        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
+    }
+    return srcs;
+}
+
+/*!
+ * Backward collect all possible sources starting from a value
+ * @param startValue
+ * @return
+ */
+Set<const Value *> TypeInference::bwGetOrfindCPPSources(const Value *startValue) {
+
+    // consult cache
+    auto tIt = _valueToCPPSources.find(startValue);
+    if (tIt != _valueToCPPSources.end()) {
+        WARN_IFNOT(!tIt->second.empty(), "empty type:" + VALUE_WITH_DBGINFO(startValue));
+        return !tIt->second.empty() ? tIt->second : Set<const Value *>({startValue});
+    }
+
+    // simulate the call stack, the second element indicates whether we should update sources for current value
+    FILOWorkList<ValueBoolPair> workList;
+    Set<ValueBoolPair> visited;
+    workList.push({startValue, false});
+    while (!workList.empty()) {
+        auto curPair = workList.pop();
+        if (visited.count(curPair)) continue;
+        visited.insert(curPair);
+        const Value *curValue = curPair.first;
+        bool canUpdate = curPair.second;
+
+        Set<const Value *> sources;
+        auto insertSource = [&sources, &canUpdate](const Value *source) {
+            if (canUpdate) sources.insert(source);
+        };
+        auto insertSourcesOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
+            auto vIt = _valueToCPPSources.find(pUser);
+            if (canUpdate) {
+                if (vIt != _valueToCPPSources.end()) {
+                    sources.insert(vIt->second.begin(), vIt->second.end());
+                }
+            } else {
+                if (vIt == _valueToCPPSources.end()) workList.push({pUser, false});
+            }
+        };
+
+        if (!canUpdate && !_valueToCPPSources.count(curValue)) {
+            workList.push({curValue, true});
+        }
+
+        if (isCPPSource(curValue)) {
+            insertSource(curValue);
+        } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
+            Value *prevVal = bitCastInst->getOperand(0);
+            insertSourcesOrPushWorklist(prevVal);
+        } else if (const PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(curValue)) {
+            for (u32_t i = 0; i < phiNode->getNumOperands(); ++i) {
+                insertSourcesOrPushWorklist(phiNode->getOperand(i));
+            }
+        } else if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue)) {
+            for (const auto &use: loadInst->getPointerOperand()->uses()) {
+                if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser())) {
+                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand()) {
+                        insertSourcesOrPushWorklist(storeInst->getValueOperand());
+                    }
+                }
+            }
+        } else if (const Argument *argument = SVFUtil::dyn_cast<Argument>(curValue)) {
+            for (const auto &use: argument->getParent()->uses()) {
+                if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+                    // skip function as parameter
+                    // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
+                    if (callBase->getCalledFunction() != argument->getParent()) continue;
+                    u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
+                    insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
+                }
+            }
+        } else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(curValue)) {
+            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + VALUE_WITH_DBGINFO(callBase));
+            if (Function *callee = callBase->getCalledFunction()) {
+                if (!callee->isDeclaration()) {
+                    const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+                    const Value *pValue = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()->back());
+                    const ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
+                    ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
+                    insertSourcesOrPushWorklist(retInst->getReturnValue());
+                }
+            }
+        }
+        if (canUpdate) {
+            _valueToCPPSources[curValue] = SVFUtil::move(sources);
+        }
+    }
+    Set<const Value *> srcs = _valueToCPPSources[startValue];
     if (srcs.empty()) {
         srcs = {startValue};
         WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
