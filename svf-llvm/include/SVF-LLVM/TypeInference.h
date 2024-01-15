@@ -125,6 +125,8 @@ private:
 
     static bool isCPPSTLAPI(const std::string &str);
 
+    static bool isCPPDynCast(const std::string &str);
+
 };
 }
 #endif //SVF_TYPEINFERENCE_H

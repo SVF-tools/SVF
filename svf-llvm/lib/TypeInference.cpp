@@ -83,6 +83,7 @@ const std::string znwm = "_Znwm";
 const std::string zn1Label = "_ZN1"; // c++ constructor
 const std::string znstLabel = "_ZNSt"; // _ZNSt5dequeIPK1ASaIS2_EE5frontEv -> std::deque<A const*, std::allocator<A const*> >::front()
 const std::string znkst5Label = "_ZNKSt15_"; // _ZNKSt15_Deque_iteratorIPK1ARS2_PS2_EdeEv -> std::_Deque_iterator<A const*, A const*&, A const**>::operator*() const
+const std::string dyncast = "__dynamic_cast";
 
 const std::string classTyPrefix = "class.";
 
@@ -140,11 +141,17 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
                 if (className != "") {
                     return _thisPtrClassName[thisPtr] = className;
                 }
+                if (callFunc->getName() == dyncast) {
+                    Value *tgtCast = callBase->getArgOperand(2);
+
+                    assert(tgtCast);
+                }
             }
         }
 
-        if (!SVFUtil::isa<CallInst>(source)) continue;
-        const CallInst *callInst = SVFUtil::dyn_cast<CallInst>(source);
+        // start from znwm
+        if (!SVFUtil::isa<CallBase>(source)) continue;
+        const CallBase *callInst = SVFUtil::dyn_cast<CallBase>(source);
         if (!callInst->getCalledFunction()) continue;
         const Function *func = callInst->getCalledFunction();
         if (func->getName() != znwm) continue;
@@ -164,27 +171,6 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
                         if (className != "")
                             return _thisPtrClassName[thisPtr] = className;
                     }
-                }
-            }
-        }
-    }
-
-    // forward find constructor or other mangler functions
-    for (const auto &use: thisPtr->uses()) {
-        if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
-            if (!callBase->getCalledFunction()) continue;
-            const Function *constructFoo = callBase->getCalledFunction();
-            if (!isCPPConstructor(constructFoo->getName().str())) continue;
-            const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
-            return _thisPtrClassName[thisPtr] = name.className;
-        } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser())) {
-            for (const auto &use2: bitCastInst->uses()) {
-                if (const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
-                    if (!callBase2->getCalledFunction()) continue;
-                    const Function *constructFoo = callBase2->getCalledFunction();
-                    const std::string &className = extractClassNameViaCppCallee(constructFoo);
-                    if (className != "")
-                        return _thisPtrClassName[thisPtr] = className;
                 }
             }
         }
@@ -507,8 +493,7 @@ Set<const Value *> TypeInference::bwGetOrfindCPPSources(const Value *startValue)
     // consult cache
     auto tIt = _valueToCPPSources.find(startValue);
     if (tIt != _valueToCPPSources.end()) {
-        WARN_IFNOT(!tIt->second.empty(), "empty type:" + VALUE_WITH_DBGINFO(startValue));
-        return !tIt->second.empty() ? tIt->second : Set<const Value *>({startValue});
+        return tIt->second;
     }
 
     // simulate the call stack, the second element indicates whether we should update sources for current value
@@ -608,10 +593,6 @@ Set<const Value *> TypeInference::bwGetOrfindCPPSources(const Value *startValue)
         }
     }
     Set<const Value *> srcs = _valueToCPPSources[startValue];
-    if (srcs.empty()) {
-        srcs = {startValue};
-        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
-    }
     return srcs;
 }
 
@@ -758,7 +739,7 @@ bool TypeInference::isCPPSource(const Value *val) {
     if (isAllocation(val)) return true;
     if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(val)) {
         const std::string &name = callBase->getCalledFunction()->getName().str();
-        if (isCPPConstructor(name) || isCPPSTLAPI(name)) {
+        if (isCPPConstructor(name) || isCPPSTLAPI(name) || isCPPDynCast(name)) {
             return true;
         }
     }
@@ -775,4 +756,8 @@ bool TypeInference::isCPPConstructor(const std::string &str) {
 
 bool TypeInference::isCPPSTLAPI(const std::string &str) {
     return matchMangler(str, znstLabel) || matchMangler(str, znkst5Label);
+}
+
+bool TypeInference::isCPPDynCast(const std::string &str) {
+    return str == dyncast;
 }
