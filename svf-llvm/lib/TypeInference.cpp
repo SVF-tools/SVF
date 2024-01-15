@@ -73,14 +73,6 @@ using namespace LLVMUtil;
 
 std::unique_ptr<TypeInference> TypeInference::_typeInference = nullptr;
 
-const std::string znwm = "_Znwm";
-const std::string zn1Label = "_ZN1"; // c++ constructor
-const std::string znstLabel = "_ZNSt"; // _ZNSt5dequeIPK1ASaIS2_EE5frontEv -> std::deque<A const*, std::allocator<A const*> >::front()
-const std::string znkst5Label = "_ZNKSt15_"; // _ZNKSt15_Deque_iteratorIPK1ARS2_PS2_EdeEv -> std::_Deque_iterator<A const*, A const*&, A const**>::operator*() const
-const std::string dyncast = "__dynamic_cast";
-
-const std::string classTyPrefix = "class.";
-
 const std::string TYPEMALLOC = "TYPE_MALLOC";
 
 
