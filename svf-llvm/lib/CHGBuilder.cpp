@@ -683,8 +683,6 @@ std::string CHGBuilder::getClassNameOfThisPtr(const CallBase* inst)
             if (const StructType *st = SVFUtil::dyn_cast<StructType>(getPtrElementType(ptrTy))) {
                 thisPtrClassName = getClassNameFromType(st);
             }
-            // TODO: infer class name of thisptr
-//            thisPtrClassName = TypeInference::getTypeInference()->getOrInferThisPtrClassName(thisPtr);
         }
     }
 

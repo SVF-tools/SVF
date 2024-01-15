@@ -50,9 +50,6 @@ private:
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
     ValueToSources _valueToAllocs; // value allocations (stack, static, heap) cache
-    ValueToSources _valueToCPPSources; // value cpp sources cache
-    ValueToClassName _thisPtrClassName; // thisptr class name cache
-    std::string _emptyClassName = "";
 
     explicit TypeInference() = default;
 
@@ -71,15 +68,10 @@ public:
     /// get or infer the type of a value
     const Type *getOrInferLLVMObjType(const Value *startValue);
 
-    /// get or infer the name of thisptr
-    const std::string &getOrInferThisPtrClassName(const Value *thisPtr);
-
     /// Validate type inference
     void validateTypeCheck(const CallBase *cs);
 
     void typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
-
-    void typeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
 
     /// Default type
     static const Type *defaultTy(const Value *val);
@@ -101,31 +93,12 @@ private:
     /// Backward collect all possible allocation sites (stack, static, heap) starting from a value
     Set<const Value *> bwGetOrfindAllocations(const Value *startValue);
 
-    /// Backward collect all possible cpp constructors starting from a value
-    Set<const Value *> bwGetOrfindCPPSources(const Value *startValue);
-
     /// Determine type based on infer site
     static const Type *infersiteToType(const Value *val);
-
-    static const std::string extractClassNameViaCppCallee(const Function *callee);
-
-    static const Type *cppClassNameToType(const std::string &className);
-
-    static const std::string typeToCppClassName(const Type *ty);
 
     inline static bool isAllocation(const Value *val) {
         return LLVMUtil::isObject(val);
     }
-
-    inline static bool isCPPSource(const Value *val);
-
-    static bool matchMangler(const std::string &str, const std::string &label);
-
-    static bool isCPPConstructor(const std::string &str);
-
-    static bool isCPPSTLAPI(const std::string &str);
-
-    static bool isCPPDynCast(const std::string &str);
 
 };
 }
