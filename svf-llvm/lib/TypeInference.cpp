@@ -127,7 +127,7 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
             if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
                 if (!callBase->getCalledFunction()) continue;
                 const Function *constructFoo = callBase->getCalledFunction();
-                if (constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
+                if (!isCPPConstructor(constructFoo->getName().str())) continue;
                 const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
                 return _thisPtrClassName[thisPtr] = name.className;
             } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser())) {
@@ -135,7 +135,7 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
                     if (const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
                         if (!callBase2->getCalledFunction()) continue;
                         const Function *constructFoo = callBase2->getCalledFunction();
-                        if (constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
+                        if (!isCPPConstructor(constructFoo->getName().str())) continue;
                         const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
                         return _thisPtrClassName[thisPtr] = name.className;
                     }
@@ -149,7 +149,7 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
         if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
             if (!callBase->getCalledFunction()) continue;
             const Function *constructFoo = callBase->getCalledFunction();
-            if (constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
+            if (!isCPPConstructor(constructFoo->getName().str())) continue;
             const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
             return _thisPtrClassName[thisPtr] = name.className;
         } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser())) {
@@ -157,7 +157,7 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
                 if (const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
                     if (!callBase2->getCalledFunction()) continue;
                     const Function *constructFoo = callBase2->getCalledFunction();
-                    if (constructFoo->getName().str().compare(0, zn1Label.size(), zn1Label) != 0) continue;
+                    if (!isCPPConstructor(constructFoo->getName().str())) continue;
                     const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
                     return _thisPtrClassName[thisPtr] = name.className;
                 }
@@ -345,7 +345,7 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                 u32_t pos = getArgNoInCallBase(callBase, curValue);
                 if (Function *calleeFunc = callBase->getCalledFunction()) {
                     const std::string &name = calleeFunc->getName().str();
-                    if (name.compare(0, zn1Label.size(), zn1Label) == 0) {
+                    if (isCPPConstructor(name)) {
                         // c++ constructor
                         // %call = call noalias noundef nonnull i8* @_Znwm(i64 noundef 8) #7, !dbg !384, !heapallocsite !5
                         // %0 = bitcast i8* %call to %class.B*, !dbg !384
@@ -404,10 +404,10 @@ Set<const Value *> TypeInference::bwGetOrfindAllocations(const Value *startValue
         bool canUpdate = curPair.second;
 
         Set<const Value *> sources;
-        auto insertSource = [&sources, &canUpdate](const Value *source) {
+        auto insertAllocs = [&sources, &canUpdate](const Value *source) {
             if (canUpdate) sources.insert(source);
         };
-        auto insertSourcesOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
+        auto insertAllocsOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
             auto vIt = _valueToAllocs.find(pUser);
             if (canUpdate) {
                 if (vIt != _valueToAllocs.end()) {
@@ -423,19 +423,19 @@ Set<const Value *> TypeInference::bwGetOrfindAllocations(const Value *startValue
         }
 
         if (isAllocation(curValue)) {
-            insertSource(curValue);
+            insertAllocs(curValue);
         } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
             Value *prevVal = bitCastInst->getOperand(0);
-            insertSourcesOrPushWorklist(prevVal);
+            insertAllocsOrPushWorklist(prevVal);
         } else if (const PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(curValue)) {
             for (u32_t i = 0; i < phiNode->getNumOperands(); ++i) {
-                insertSourcesOrPushWorklist(phiNode->getOperand(i));
+                insertAllocsOrPushWorklist(phiNode->getOperand(i));
             }
         } else if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue)) {
             for (const auto &use: loadInst->getPointerOperand()->uses()) {
                 if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser())) {
                     if (storeInst->getPointerOperand() == loadInst->getPointerOperand()) {
-                        insertSourcesOrPushWorklist(storeInst->getValueOperand());
+                        insertAllocsOrPushWorklist(storeInst->getValueOperand());
                     }
                 }
             }
@@ -446,7 +446,7 @@ Set<const Value *> TypeInference::bwGetOrfindAllocations(const Value *startValue
                     // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
                     if (callBase->getCalledFunction() != argument->getParent()) continue;
                     u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
-                    insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
+                    insertAllocsOrPushWorklist(callBase->getArgOperand(pos));
                 }
             }
         } else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(curValue)) {
@@ -457,7 +457,7 @@ Set<const Value *> TypeInference::bwGetOrfindAllocations(const Value *startValue
                     const Value *pValue = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()->back());
                     const ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
-                    insertSourcesOrPushWorklist(retInst->getReturnValue());
+                    insertAllocsOrPushWorklist(retInst->getReturnValue());
                 }
             }
         }
@@ -644,7 +644,7 @@ const Type *TypeInference::infersiteToType(const Value *val) {
         return gepInst->getSourceElementType();
     } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
         const std::string &name = call->getCalledFunction()->getName().str();
-        if (name.compare(0, zn1Label.size(), zn1Label) == 0) {
+        if (isCPPConstructor(name)) {
             // c++ constructor
             const std::string className = cppUtil::demangle(name).className;
             const Type *classTy = StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className);
@@ -668,7 +668,7 @@ bool TypeInference::isInfersite(const Value *val) {
         return true;
     } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
         const std::string &name = call->getCalledFunction()->getName().str();
-        if (name.compare(0, zn1Label.size(), zn1Label) == 0) {
+        if (isCPPConstructor(name)) {
             // c++ constructor
             const std::string className = cppUtil::demangle(name).className;
             const Type *classTy = StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className);
@@ -678,4 +678,8 @@ bool TypeInference::isInfersite(const Value *val) {
         }
     }
     return false;
+}
+
+bool TypeInference::isCPPConstructor(const std::string &str) {
+    return str.compare(0, zn1Label.size(), zn1Label) == 0;
 }

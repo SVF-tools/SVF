@@ -117,6 +117,8 @@ private:
         return isAllocation(val) || SVFUtil::isa<GetElementPtrInst>(val);
     }
 
+    static bool isCPPConstructor(const std::string& str);
+
 };
 }
 #endif //SVF_TYPEINFERENCE_H
