@@ -684,28 +684,7 @@ std::string CHGBuilder::getClassNameOfThisPtr(const CallBase* inst)
                 thisPtrClassName = getClassNameFromType(st);
             }
             // TODO: infer class name of thisptr
-            /*
-                thisPtrClassName = TypeInference::getTypeInference()->getOrInferThisPtrClassName(thisPtr);
-                if (const CHNode *thisNode = chg->getNode(thisPtrClassName)) {
-                    std::function<const CHNode *(const CHNode *)> findbaseClass;
-                    //  CHG does not have a loop
-                    findbaseClass = [&findbaseClass](const CHNode *node) -> const CHNode * {
-                        const auto &outEdges = node->getOutEdges();
-                        if (outEdges.empty()) {
-                            return node; // This is baseClass
-                        } else {
-                            for (const auto &edge: outEdges) {
-                                // Recursively visit children
-                                if (auto res = findbaseClass(edge->getDstNode())) return res;
-                            }
-                        }
-                        return nullptr;
-                    };
-                    if (const CHNode *baseClass = findbaseClass(thisNode)) {
-                        thisPtrClassName = baseClass->getName();
-                    }
-                }
-             */
+//            thisPtrClassName = TypeInference::getTypeInference()->getOrInferThisPtrClassName(thisPtr);
         }
     }
 

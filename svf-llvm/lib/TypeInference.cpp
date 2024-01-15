@@ -81,6 +81,8 @@ std::unique_ptr<TypeInference> TypeInference::_typeInference = nullptr;
 
 const std::string znwm = "_Znwm";
 const std::string zn1Label = "_ZN1"; // c++ constructor
+const std::string znstLabel = "_ZNSt"; // _ZNSt5dequeIPK1ASaIS2_EE5frontEv -> std::deque<A const*, std::allocator<A const*> >::front()
+const std::string znkst5Label = "_ZNKSt15_"; // _ZNKSt15_Deque_iteratorIPK1ARS2_PS2_EdeEv -> std::_Deque_iterator<A const*, A const*&, A const**>::operator*() const
 
 const std::string classTyPrefix = "class.";
 
@@ -106,18 +108,41 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
     auto it = _thisPtrClassName.find(thisPtr);
     if (it != _thisPtrClassName.end()) return it->second;
 
-    // backward find source and then forward find constructor or other mangler functions
-    Set<const Value *> sources = bwGetOrfindCPPSources(thisPtr);
-    for (const auto &source: sources) {
-        if (source != thisPtr && isInfersite(source)) {
-            const Type *type = infersiteToType(source);
-            if (const StructType *stTy = SVFUtil::dyn_cast<StructType>(type)) {
-                const std::string &typeName = stTy->getName().str();
-                const std::string &className = typeName.substr(
-                        classTyPrefix.size(), typeName.size() - classTyPrefix.size());
+    // thisPtr reside in constructor
+    if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(thisPtr)) {
+        if (const Function *func = inst->getFunction()) {
+            const std::string &className = extractClassNameViaCppCallee(func);
+            if (className != "") {
                 return _thisPtrClassName[thisPtr] = className;
             }
         }
+    }
+
+    // backward find source and then forward find constructor or other mangler functions
+    Set<const Value *> sources = bwGetOrfindCPPSources(thisPtr);
+    for (const auto &source: sources) {
+        if (source == thisPtr) continue;
+
+        if (const Function *func = SVFUtil::dyn_cast<Function>(source)) {
+            const std::string &className = extractClassNameViaCppCallee(func);
+            if (className != "") {
+                return _thisPtrClassName[thisPtr] = className;
+            }
+        } else if (SVFUtil::isa<LoadInst, StoreInst, GetElementPtrInst, AllocaInst, GlobalValue>(source)) {
+            const Type *type = infersiteToType(source);
+            const std::string &className = typeToCppClassName(type);
+            if (className != "") {
+                return _thisPtrClassName[thisPtr] = className;
+            }
+        } else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(source)) {
+            if (const Function *callFunc = callBase->getCalledFunction()) {
+                const std::string &className = extractClassNameViaCppCallee(callFunc);
+                if (className != "") {
+                    return _thisPtrClassName[thisPtr] = className;
+                }
+            }
+        }
+
         if (!SVFUtil::isa<CallInst>(source)) continue;
         const CallInst *callInst = SVFUtil::dyn_cast<CallInst>(source);
         if (!callInst->getCalledFunction()) continue;
@@ -127,17 +152,17 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
             if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
                 if (!callBase->getCalledFunction()) continue;
                 const Function *constructFoo = callBase->getCalledFunction();
-                if (!isCPPConstructor(constructFoo->getName().str())) continue;
-                const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
-                return _thisPtrClassName[thisPtr] = name.className;
+                const std::string &className = extractClassNameViaCppCallee(constructFoo);
+                if (className != "")
+                    return _thisPtrClassName[thisPtr] = className;
             } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser())) {
                 for (const auto &use2: bitCastInst->uses()) {
                     if (const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
                         if (!callBase2->getCalledFunction()) continue;
                         const Function *constructFoo = callBase2->getCalledFunction();
-                        if (!isCPPConstructor(constructFoo->getName().str())) continue;
-                        const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
-                        return _thisPtrClassName[thisPtr] = name.className;
+                        const std::string &className = extractClassNameViaCppCallee(constructFoo);
+                        if (className != "")
+                            return _thisPtrClassName[thisPtr] = className;
                     }
                 }
             }
@@ -157,9 +182,9 @@ const std::string &TypeInference::getOrInferThisPtrClassName(const Value *thisPt
                 if (const CallBase *callBase2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
                     if (!callBase2->getCalledFunction()) continue;
                     const Function *constructFoo = callBase2->getCalledFunction();
-                    if (!isCPPConstructor(constructFoo->getName().str())) continue;
-                    const cppUtil::DemangledName &name = cppUtil::demangle(constructFoo->getName().str());
-                    return _thisPtrClassName[thisPtr] = name.className;
+                    const std::string &className = extractClassNameViaCppCallee(constructFoo);
+                    if (className != "")
+                        return _thisPtrClassName[thisPtr] = className;
                 }
             }
         }
@@ -272,14 +297,14 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                     if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
                             storeInst->getPointerOperand())) {
                         const Value *gepBase = gepInst->getPointerOperand();
-                        if(!SVFUtil::isa<LoadInst>(gepBase)) continue;
-                        const LoadInst * load = SVFUtil::dyn_cast<LoadInst>(gepBase);
-                        for(const auto& loadUse: load->getPointerOperand()->uses()) {
+                        if (!SVFUtil::isa<LoadInst>(gepBase)) continue;
+                        const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(gepBase);
+                        for (const auto &loadUse: load->getPointerOperand()->uses()) {
                             if (loadUse.getUser() == load || !SVFUtil::isa<LoadInst>(loadUse.getUser()))
                                 continue;
                             for (const auto &gepUse: loadUse.getUser()->uses()) {
-                                if(!SVFUtil::isa<GetElementPtrInst>(gepUse.getUser())) continue;
-                                for(const auto& loadUse2: gepUse.getUser()->uses()) {
+                                if (!SVFUtil::isa<GetElementPtrInst>(gepUse.getUser())) continue;
+                                for (const auto &loadUse2: gepUse.getUser()->uses()) {
                                     if (SVFUtil::isa<LoadInst>(loadUse2.getUser())) {
                                         insertInferSitesOrPushWorklist(loadUse2.getUser());
                                     }
@@ -341,19 +366,18 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
                 if (SVFUtil::isa<Function>(curValue) && curValue == callBase->getCalledFunction()) continue;
                 // skip indirect call
                 // e.g., %0 = ... -> call %0(...)
-                if(!callBase->hasArgument(curValue)) continue;
-                u32_t pos = getArgNoInCallBase(callBase, curValue);
+                if (!callBase->hasArgument(curValue)) continue;
                 if (Function *calleeFunc = callBase->getCalledFunction()) {
-                    const std::string &name = calleeFunc->getName().str();
-                    if (isCPPConstructor(name)) {
+                    const std::string &fooName = calleeFunc->getName().str();
+                    if (isCPPConstructor(fooName)) {
                         // c++ constructor
                         // %call = call noalias noundef nonnull i8* @_Znwm(i64 noundef 8) #7, !dbg !384, !heapallocsite !5
                         // %0 = bitcast i8* %call to %class.B*, !dbg !384
                         // call void @_ZN1BC2Ev(%class.B* noundef nonnull align 8 dereferenceable(8) %0) #8, !dbg !385
-                        const std::string className = cppUtil::demangle(name).className;
-                        if (StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className))
+                        if (cppClassNameToType(cppUtil::demangle(fooName).className))
                             insertInferSite(callBase);
                     } else {
+                        u32_t pos = getArgNoInCallBase(callBase, curValue);
                         // for variable argument, conservatively collect all params
                         if (calleeFunc->isVarArg()) pos = 0;
                         if (!calleeFunc->isDeclaration()) {
@@ -517,8 +541,23 @@ Set<const Value *> TypeInference::bwGetOrfindCPPSources(const Value *startValue)
             workList.push({curValue, true});
         }
 
+        // current inst reside in cpp interested function
+        if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(curValue)) {
+            if (const Function *fun = inst->getFunction()) {
+                if (isCPPSTLAPI(fun->getName().str()) || isCPPConstructor(fun->getName().str())) {
+                    insertSource(fun);
+                    if (canUpdate) {
+                        _valueToCPPSources[curValue] = SVFUtil::move(sources);
+                    }
+                    continue;
+                }
+            }
+        }
         if (isCPPSource(curValue)) {
             insertSource(curValue);
+        } else if (const GetElementPtrInst *getElementPtrInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue)) {
+            insertSource(getElementPtrInst);
+            insertSourcesOrPushWorklist(getElementPtrInst->getPointerOperand());
         } else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
             Value *prevVal = bitCastInst->getOperand(0);
             insertSourcesOrPushWorklist(prevVal);
@@ -532,6 +571,14 @@ Set<const Value *> TypeInference::bwGetOrfindCPPSources(const Value *startValue)
                     if (storeInst->getPointerOperand() == loadInst->getPointerOperand()) {
                         insertSourcesOrPushWorklist(storeInst->getValueOperand());
                     }
+                }
+            }
+            // array-1.cpp
+            if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(loadInst->getPointerOperand())) {
+                if (const Function *calledFunc = callBase->getCalledFunction()) {
+                    const std::string &funcName = calledFunc->getName().str();
+                    if (isCPPSTLAPI(funcName))
+                        insertSource(callBase);
                 }
             }
         } else if (const Argument *argument = SVFUtil::dyn_cast<Argument>(curValue)) {
@@ -580,13 +627,12 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
             u32_t iTyNum = Options::MaxFieldLimit();
-            if(SVFUtil::isa<ArrayType>(objType))
+            if (SVFUtil::isa<ArrayType>(objType))
                 iTyNum = getNumOfElements(objType);
-            else if(const StructType* st = SVFUtil::dyn_cast<StructType>(objType))
-            {
+            else if (const StructType *st = SVFUtil::dyn_cast<StructType>(objType)) {
                 /// For an C++ class, it can have variant elements depending on the vtable size,
                 /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
-                if(!classTyHasVTable(st))
+                if (!classTyHasVTable(st))
                     iTyNum = getNumOfElements(st);
             }
             if (iTyNum >= pInt->getZExtValue())
@@ -606,13 +652,12 @@ void TypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, c
 #if TYPE_DEBUG
     Type *oTy = getPtrElementType(oPTy);
     u32_t iTyNum = Options::MaxFieldLimit();
-    if(SVFUtil::isa<ArrayType>(iTy))
+    if (SVFUtil::isa<ArrayType>(iTy))
         iTyNum = getNumOfElements(iTy);
-    else if(const StructType* st = SVFUtil::dyn_cast<StructType>(iTy))
-    {
+    else if (const StructType *st = SVFUtil::dyn_cast<StructType>(iTy)) {
         /// For an C++ class, it can have variant elements depending on the vtable size,
         /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
-        if(!classTyHasVTable(st))
+        if (!classTyHasVTable(st))
             iTyNum = getNumOfElements(st);
     }
     if (getNumOfElements(oTy) > iTyNum) {
@@ -643,13 +688,15 @@ const Type *TypeInference::infersiteToType(const Value *val) {
     } else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val)) {
         return gepInst->getSourceElementType();
     } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
-        const std::string &name = call->getCalledFunction()->getName().str();
-        if (isCPPConstructor(name)) {
-            // c++ constructor
-            const std::string className = cppUtil::demangle(name).className;
-            const Type *classTy = StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className);
-            ABORT_IFNOT(classTy, "does not have a class type?");
-            return classTy;
+        if (const Function *calledFunc = call->getCalledFunction()) {
+            const std::string &className = extractClassNameViaCppCallee(calledFunc);
+            if (className != "") {
+                const Type *classTy = cppClassNameToType(className);
+                ABORT_IFNOT(classTy, "does not have a class type?");
+                return classTy;
+            } else {
+                return call->getFunctionType();
+            }
         } else {
             return call->getFunctionType();
         }
@@ -662,24 +709,71 @@ const Type *TypeInference::infersiteToType(const Value *val) {
     }
 }
 
-bool TypeInference::isInfersite(const Value *val) {
-    assert(val && "value cannot be empty");
-    if (SVFUtil::isa<LoadInst, StoreInst, GetElementPtrInst, AllocaInst, GlobalValue>(val)) {
-        return true;
-    } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
-        const std::string &name = call->getCalledFunction()->getName().str();
-        if (isCPPConstructor(name)) {
-            // c++ constructor
-            const std::string className = cppUtil::demangle(name).className;
-            const Type *classTy = StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className);
-            return classTy != nullptr;
-        } else {
+const std::string extractClassNameInSTL(const std::string &demangledStr) {
+    // "std::array<A const*, 2ul>" -> A
+    // "std::queue<A*, std::deque<A*, std::allocator<A*> > >" -> A
+    s32_t leftPos = 0, rightPos = 0;
+    while (leftPos < (s32_t) demangledStr.size() && demangledStr[leftPos] != '<') {
+        leftPos++;
+    }
+    rightPos = leftPos;
+    while (rightPos < (s32_t) demangledStr.size() && demangledStr[rightPos] != '*' && demangledStr[rightPos] != ',' &&
+           demangledStr[rightPos] != ' ' && demangledStr[rightPos] != '>') {
+        rightPos++;
+    }
+    if (leftPos + 1 < (s32_t) demangledStr.size() && rightPos - leftPos - 1 >= 0)
+        return demangledStr.substr(leftPos + 1, rightPos - leftPos - 1);
+    return "";
+}
+
+const std::string TypeInference::extractClassNameViaCppCallee(const Function *callee) {
+    const std::string &name = callee->getName().str();
+    if (isCPPConstructor(name)) {
+        // c++ constructor
+        return cppUtil::demangle(name).className;
+    } else if (isCPPSTLAPI(name)) {
+        // array index
+        const std::string &demangledStr = cppUtil::demangle(name).className;
+        const std::string &className = extractClassNameInSTL(demangledStr);
+        ABORT_IFNOT(className != "", demangledStr);
+        return className;
+    }
+    return "";
+}
+
+const Type *TypeInference::cppClassNameToType(const std::string &className) {
+    return StructType::getTypeByName(getLLVMCtx(), classTyPrefix + className);
+}
+
+const std::string TypeInference::typeToCppClassName(const Type *ty) {
+    if (const StructType *stTy = SVFUtil::dyn_cast<StructType>(ty)) {
+        const std::string &typeName = stTy->getName().str();
+        const std::string &className = typeName.substr(
+                classTyPrefix.size(), typeName.size() - classTyPrefix.size());
+        return className;
+    }
+    return "";
+}
+
+bool TypeInference::isCPPSource(const Value *val) {
+    if (isAllocation(val)) return true;
+    if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(val)) {
+        const std::string &name = callBase->getCalledFunction()->getName().str();
+        if (isCPPConstructor(name) || isCPPSTLAPI(name)) {
             return true;
         }
     }
     return false;
 }
 
+bool TypeInference::matchMangler(const std::string &str, const std::string &label) {
+    return str.compare(0, label.size(), label) == 0;
+}
+
 bool TypeInference::isCPPConstructor(const std::string &str) {
-    return str.compare(0, zn1Label.size(), zn1Label) == 0;
+    return matchMangler(str, zn1Label);
+}
+
+bool TypeInference::isCPPSTLAPI(const std::string &str) {
+    return matchMangler(str, znstLabel) || matchMangler(str, znkst5Label);
 }

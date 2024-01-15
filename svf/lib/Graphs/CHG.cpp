@@ -75,6 +75,8 @@ void CHGraph::addEdge(const string className, const string baseClassName,
 {
     CHNode *srcNode = getNode(className);
     CHNode *dstNode = getNode(baseClassName);
+    // cannot self inheritance
+    if(srcNode == dstNode && edgeType == CHEdge::INHERITANCE) return;
     assert(srcNode && dstNode && "node not found?");
 
     if (!hasEdge(srcNode, dstNode, edgeType))

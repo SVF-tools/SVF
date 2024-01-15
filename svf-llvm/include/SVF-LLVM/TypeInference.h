@@ -72,7 +72,7 @@ public:
     const Type *getOrInferLLVMObjType(const Value *startValue);
 
     /// get or infer the name of thisptr
-    const std::string& getOrInferThisPtrClassName(const Value* thisPtr);
+    const std::string &getOrInferThisPtrClassName(const Value *thisPtr);
 
     /// Validate type inference
     void validateTypeCheck(const CallBase *cs);
@@ -89,7 +89,7 @@ public:
         return PointerType::getUnqual(getLLVMCtx());
     }
 
-    inline static LLVMContext& getLLVMCtx() {
+    inline static LLVMContext &getLLVMCtx() {
         return LLVMModuleSet::getLLVMModuleSet()->getContext();
     }
 
@@ -107,17 +107,23 @@ private:
     /// Determine type based on infer site
     static const Type *infersiteToType(const Value *val);
 
-    static bool isInfersite(const Value *val);
+    static const std::string extractClassNameViaCppCallee(const Function *callee);
+
+    static const Type *cppClassNameToType(const std::string &className);
+
+    static const std::string typeToCppClassName(const Type *ty);
 
     inline static bool isAllocation(const Value *val) {
         return LLVMUtil::isObject(val);
     }
 
-    inline static bool isCPPSource(const Value *val) {
-        return isAllocation(val) || SVFUtil::isa<GetElementPtrInst>(val);
-    }
+    inline static bool isCPPSource(const Value *val);
 
-    static bool isCPPConstructor(const std::string& str);
+    static bool matchMangler(const std::string &str, const std::string &label);
+
+    static bool isCPPConstructor(const std::string &str);
+
+    static bool isCPPSTLAPI(const std::string &str);
 
 };
 }

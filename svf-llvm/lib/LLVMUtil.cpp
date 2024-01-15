@@ -395,7 +395,16 @@ const Type* LLVMUtil::selectLargestType(std::vector<const Type*>& objTys) {
     // map type size to types from with key in descending order
     OrderedMap<u32_t, Set<const Type*>, std::greater<int>> typeSzToTypes;
     for (const Type *ty: objTys) {
-        typeSzToTypes[getTypeSizeInBytes(ty)].insert(ty);
+        u32_t num = Options::MaxFieldLimit();
+        if (SVFUtil::isa<ArrayType>(ty))
+            num = getNumOfElements(ty);
+        else if (const StructType *st = SVFUtil::dyn_cast<StructType>(ty)) {
+            /// For an C++ class, it can have variant elements depending on the vtable size,
+            /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
+            if (!classTyHasVTable(st))
+                num = getNumOfElements(st);
+        }
+        typeSzToTypes[num].insert(ty);
     }
     assert(!typeSzToTypes.empty() && "typeSzToTypes cannot be empty");
     const std::pair<u32_t, Set<const Type*>> &largestElement = *typeSzToTypes.begin();
