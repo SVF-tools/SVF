@@ -332,6 +332,7 @@ protected:
             }
         }
         // Check if the function called is 'calloc' and process its arguments.
+        // e.g. "%5 = call i8* @calloc(1, 8)", edge should add two SVFValue (1 and 8)
         else if (functionName == "calloc") {
             if (cs->arg_size() > 1) {
                 edge->addArrSize(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getArgOperand(0)));
