@@ -19,11 +19,13 @@ ENV build_deps="wget xz-utils python git gdb tcl"
 # Fetch dependencies.
 RUN apt-get update --fix-missing
 RUN apt-get install -y $build_deps $lib_deps
+
 # Install cmake and setup PATH
 ENV cmake_version="3.28.1"
-RUN wget https://github.com/Kitware/CMake/releases/download/v$cmake_version/cmake-$cmake_version-linux-x86_64.tar.gz -O cmake.tar.gz
+ENV arch="x86_64"
+RUN wget https://github.com/Kitware/CMake/releases/download/v$cmake_version/cmake-$cmake_version-linux-$arch.tar.gz -O cmake.tar.gz
 RUN tar -xf cmake.tar.gz -C /home && rm -f cmake.tar.gz
-ENV PATH=/home/cmake-${cmake_version}-linux-x86_64/bin:${PATH}
+ENV PATH=/home/cmake-${cmake_version}-linux-${arch}/bin:${PATH}
 
 # Fetch and build SVF source.
 RUN echo "Downloading LLVM and building SVF to " ${HOME}
