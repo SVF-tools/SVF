@@ -317,7 +317,7 @@ protected:
         if (calledFunc) {
             const std::string& functionName = calledFunc->getName().str();
             if (functionName == "malloc") {
-                if (cs->getNumOperands() > 0) {
+                if (cs->arg_size() > 0) {
                     const llvm::Value* val = cs->getArgOperand(0);
                     SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
                     edge->addArrSize(svfval);
@@ -325,13 +325,13 @@ protected:
             }
             // Check if the function called is 'calloc' and process its arguments.
             else if (functionName == "calloc") {
-                if (cs->getNumOperands() > 1) {
+                if (cs->arg_size() > 1) {
                     edge->addArrSize(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getArgOperand(0)));
                     edge->addArrSize(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getArgOperand(1)));
                 }
             }
             else {
-                if (cs->getNumOperands() > 0) {
+                if (cs->arg_size() > 0) {
                     const llvm::Value* val = cs->getArgOperand(0);
                     SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
                     edge->addArrSize(svfval);
