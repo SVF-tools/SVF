@@ -312,7 +312,6 @@ protected:
     /// Add Address edge from ext call with args like "%5 = call i8* @malloc(i64 noundef 5)"
     inline AddrStmt* addAddrWithHeapSz(NodeID src, NodeID dst, const CallBase* cs) {
         // get name of called function
-        setCurrentLocation(cs->getFunction(), nullptr);
         AddrStmt* edge = addAddrEdge(src, dst);
 
         llvm::Function* calledFunc = cs->getCalledFunction();
