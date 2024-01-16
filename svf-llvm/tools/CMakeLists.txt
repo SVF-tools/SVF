@@ -5,6 +5,8 @@ add_subdirectory(DDA)
 add_subdirectory(MTA)
 add_subdirectory(CFL)
 add_subdirectory(LLVM2SVF)
+add_subdirectory(symbolicabstraction)
+
 
 # Build SvfLLVM tools with C++ standard C++17
 set_target_properties(
