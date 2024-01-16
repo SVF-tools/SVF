@@ -4,18 +4,23 @@
 // Directory structure of SVF build
 #define SVF_ROOT "@CMAKE_CURRENT_SOURCE_DIR@"
 #define SVF_BUILD_DIR "@CMAKE_CURRENT_BINARY_DIR@"
-#define SVF_INSTALL_DIR "@CMAKE_INSTALL_PREFIX@"
-#define SVF_BIN_DIR SVF_INSTALL_DIR "/bin"
-#define SVF_LIB_DIR SVF_INSTALL_DIR "/lib"
-#define SVF_INCLUDE_DIR SVF_INSTALL_DIR "/include"
-#define SVF_EXTAPI_DIR SVF_INCLUDE_DIR "/SVF-LLVM"
-#define SVF_EXTAPI_BC SVF_EXTAPI_DIR "/extapi.bc"
+#define SVF_INSTALL_DIR "@SVF_INSTALL_ROOT@"
+#define SVF_BIN_DIR "@SVF_INSTALL_BIN_DIR@"
+#define SVF_LIB_DIR "@SVF_INSTALL_LIB_DIR@"
+#define SVF_INCLUDE_DIR "@SVF_INSTALL_INCLUDE_DIR@"
+#define SVF_EXTAPI_DIR "@SVF_INSTALL_EXTAPI_DIR@"
+#define SVF_EXTAPI_BC "@SVF_INSTALL_EXTAPI_FILE@"
 
-// Build properties of current SVF build
+// Build mode used to build SVF
 #define SVF_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
-#cmakedefine SVF_ASSERT_MODE
-#cmakedefine SVF_COVERAGE
+
+// Sanitiser mode used for building SVF
 #cmakedefine SVF_SANITIZE "@SVF_SANITIZE@"
 
+// Build options used when building SVF
+#cmakedefine SVF_COVERAGE
+#cmakedefine SVF_WARN_AS_ERROR
+#cmakedefine SVF_EXPORT_DYNAMIC
+#cmakedefine SVF_ENABLE_ASSERTIONS
 
-#endif
+#endif // CONFIG_H_IN

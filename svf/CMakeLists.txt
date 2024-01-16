@@ -1,37 +1,32 @@
-# Due to a mutual dependencies, all the sub projects of the SVG are merged here
-# Otherwise it is impossible to load the dependencies in opt.
-# NOTE: if the SVF should be linked into opt, we should probably use the
-# individual sub projects here, rather than the combined project.
+# Define the core library
+add_library(SvfCore)
 
-file(
-  GLOB
-  SVF_CORE_SOURCES
-  lib/AbstractExecution/*.cpp
-  lib/CFL/*.cpp
-  lib/DDA/*.cpp
-  lib/FastCluster/*.cpp
-  lib/Graphs/*.cpp
-  lib/MemoryModel/*.cpp
-  lib/MSSA/*.cpp
-  lib/MTA/*.cpp
-  lib/SABER/*.cpp
-  lib/SVFIR/*.cpp
-  lib/Util/*.cpp
-  lib/WPA/*.cpp)
+# Add the public headers as an include directory
+target_include_directories(SvfCore
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDE_DIR}>
+)
 
-add_library(SvfCore ${SVF_CORE_SOURCES})
+# Get the source files (i.e. all *.c/*.cpp files) for SVF's subprojects and add them to SvfCore
+file(GLOB_RECURSE SVF_CORE_SOURCES lib/*.cpp)
+target_sources(SvfCore PRIVATE ${SVF_CORE_SOURCES})
 
-target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES})
+# Get all of the public header files (i.e. all *.h/*.hpp files) for SVF's subprojects and add them
+file(GLOB_RECURSE SVF_CORE_HEADERS include/*.h include/*.hpp)
+target_sources(SvfCore
+  PUBLIC
+    FILE_SET HEADERS
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
+    FILES ${SVF_CORE_HEADERS}
+)
 
-include(GNUInstallDirs)
+# Install the headers and compiled libraries (associate SvfCore with the SVF package's targets)
 install(
   TARGETS SvfCore
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  EXPORT SVFTargets
+  RUNTIME DESTINATION ${SVF_INSTALL_BIN_DIR}
+  LIBRARY DESTINATION ${SVF_INSTALL_LIB_DIR}
+  ARCHIVE DESTINATION ${SVF_INSTALL_LIB_DIR}
+  FILE_SET HEADERS DESTINATION ${SVF_INSTALL_INCLUDE_DIR}
 )
-install(
-  DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/svf
-  FILES_MATCHING
-  PATTERN "**/*.h")
