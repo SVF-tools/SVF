@@ -300,7 +300,7 @@ protected:
     }
 
     /// Add Address edge from allocinst with arraysize like "%4 = alloca i8, i64 3"
-    inline AddrStmt* addAddrWithAllocArraySz(NodeID src, NodeID dst, llvm::AllocaInst& inst) {
+    inline AddrStmt* addAddrWithStackArraySz(NodeID src, NodeID dst, llvm::AllocaInst& inst) {
         AddrStmt* edge = addAddrEdge(src, dst);
         if (inst.getArraySize()) {
             SVFValue* arrSz = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(inst.getArraySize());
@@ -310,32 +310,39 @@ protected:
     }
 
     /// Add Address edge from ext call with args like "%5 = call i8* @malloc(i64 noundef 5)"
-    inline AddrStmt* addAddrWithAllocArraySz(NodeID src, NodeID dst, const CallBase* cs) {
+    inline AddrStmt* addAddrWithHeapSz(NodeID src, NodeID dst, const CallBase* cs) {
         // get name of called function
+        setCurrentLocation(cs->getFunction(), nullptr);
         AddrStmt* edge = addAddrEdge(src, dst);
+
         llvm::Function* calledFunc = cs->getCalledFunction();
+        std::string functionName;
         if (calledFunc) {
-            const std::string& functionName = calledFunc->getName().str();
-            if (functionName == "malloc") {
-                if (cs->arg_size() > 0) {
-                    const llvm::Value* val = cs->getArgOperand(0);
-                    SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
-                    edge->addArrSize(svfval);
-                }
+            functionName = calledFunc->getName().str();
+        }
+        else
+        {
+            SVFUtil::wrnMsg("not support indirect call to add AddrStmt.\n");
+        }
+        if (functionName == "malloc") {
+            if (cs->arg_size() > 0) {
+                const llvm::Value* val = cs->getArgOperand(0);
+                SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
+                edge->addArrSize(svfval);
             }
-            // Check if the function called is 'calloc' and process its arguments.
-            else if (functionName == "calloc") {
-                if (cs->arg_size() > 1) {
-                    edge->addArrSize(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getArgOperand(0)));
-                    edge->addArrSize(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getArgOperand(1)));
-                }
+        }
+        // Check if the function called is 'calloc' and process its arguments.
+        else if (functionName == "calloc") {
+            if (cs->arg_size() > 1) {
+                edge->addArrSize(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getArgOperand(0)));
+                edge->addArrSize(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(cs->getArgOperand(1)));
             }
-            else {
-                if (cs->arg_size() > 0) {
-                    const llvm::Value* val = cs->getArgOperand(0);
-                    SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
-                    edge->addArrSize(svfval);
-                }
+        }
+        else {
+            if (cs->arg_size() > 0) {
+                const llvm::Value* val = cs->getArgOperand(0);
+                SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
+                edge->addArrSize(svfval);
             }
         }
         return edge;
