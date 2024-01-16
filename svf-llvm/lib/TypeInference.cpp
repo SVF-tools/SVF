@@ -260,7 +260,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                 // e.g., %0 = ... -> call %0(...)
                 if (!callBase->hasArgument(curValue)) continue;
                 if (Function *calleeFunc = callBase->getCalledFunction()) {
-                    u32_t pos = getArgNoInCallBase(callBase, curValue);
+                    u32_t pos = getArgPosInCall(callBase, curValue);
                     // for variable argument, conservatively collect all params
                     if (calleeFunc->isVarArg()) pos = 0;
                     if (!calleeFunc->isDeclaration()) {
@@ -451,7 +451,7 @@ const Type *TypeInference::infersiteToType(const Value *val) {
     }
 }
 
-u32_t TypeInference::getArgNoInCallBase(const CallBase *callBase, const Value *arg) {
+u32_t TypeInference::getArgPosInCall(const CallBase *callBase, const Value *arg) {
     assert(callBase->hasArgument(arg) && "callInst does not have argument arg?");
     auto it = std::find(callBase->arg_begin(), callBase->arg_end(), arg);
     assert(it != callBase->arg_end() && "Didn't find argument?");

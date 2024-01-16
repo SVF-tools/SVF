@@ -109,7 +109,7 @@ public:
     /// Select the largest (conservative) type from all types
     const Type *selectLargestType(std::vector<const Type *> &objTys);
 
-    u32_t getArgNoInCallBase(const CallBase *callBase, const Value *arg);
+    u32_t getArgPosInCall(const CallBase *callBase, const Value *arg);
 
 };
 }
