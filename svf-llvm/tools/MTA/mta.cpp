@@ -27,6 +27,8 @@
 #include "Util/Options.h"
 #include "MTAResultValidator.h"
 #include "LockResultValidator.h"
+#include "SVF-LLVM/TypeInference.h"
+
 using namespace llvm;
 using namespace std;
 using namespace SVF;
@@ -59,5 +61,6 @@ int main(int argc, char ** argv)
     lockvalidator.analyze();
 
     LLVMModuleSet::releaseLLVMModuleSet();
+    TypeInference::releaseTypeInference();
     return 0;
 }

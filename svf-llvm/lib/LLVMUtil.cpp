@@ -364,12 +364,7 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
     return latestUse;
 }
 
-u32_t LLVMUtil::getArgNoInCallBase(const CallBase *callBase, const Value *arg) {
-    assert(callBase->hasArgument(arg) && "callInst does not have argument arg?");
-    auto it = std::find(callBase->arg_begin(), callBase->arg_end(), arg);
-    assert(it != callBase->arg_end() && "Didn't find argument?");
-    return std::distance(callBase->arg_begin(), it);
-}
+
 
 
 /*!
@@ -389,28 +384,6 @@ u32_t LLVMUtil::getNumOfElements(const Type* ety)
     return numOfFields;
 }
 
-
-const Type* LLVMUtil::selectLargestType(std::vector<const Type*>& objTys) {
-    if(objTys.empty()) return nullptr;
-    // map type size to types from with key in descending order
-    OrderedMap<u32_t, Set<const Type*>, std::greater<int>> typeSzToTypes;
-    for (const Type *ty: objTys) {
-        u32_t num = Options::MaxFieldLimit();
-        if (SVFUtil::isa<ArrayType>(ty))
-            num = getNumOfElements(ty);
-        else if (const StructType *st = SVFUtil::dyn_cast<StructType>(ty)) {
-            /// For an C++ class, it can have variant elements depending on the vtable size,
-            /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
-            if (!classTyHasVTable(st))
-                num = getNumOfElements(st);
-        }
-        typeSzToTypes[num].insert(ty);
-    }
-    assert(!typeSzToTypes.empty() && "typeSzToTypes cannot be empty");
-    const std::pair<u32_t, Set<const Type*>> &largestElement = *typeSzToTypes.begin();
-    assert(!largestElement.second.empty() && "largest element cannot be empty");
-    return *largestElement.second.begin();
-}
 
 /*!
  * Get the num of BB's predecessors
@@ -1250,6 +1223,8 @@ std::string LLVMUtil::dumpValue(const Value* val)
     return rawstr.str();
 }
 
+
+
 std::string LLVMUtil::dumpType(const Type* type)
 {
     std::string str;
@@ -1261,6 +1236,15 @@ std::string LLVMUtil::dumpType(const Type* type)
     return rawstr.str();
 }
 
+std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val) {
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    if (val)
+        rawstr << dumpValue(val) << getSourceLoc(val);
+    else
+        rawstr << " llvm Value is null";
+    return rawstr.str();
+}
 
 namespace SVF
 {

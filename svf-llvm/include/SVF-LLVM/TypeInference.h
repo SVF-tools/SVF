@@ -46,7 +46,7 @@ public:
 
 
 private:
-    static std::unique_ptr<TypeInference> _typeInference;
+    static TypeInference* _typeInference;
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
     ValueToSources _valueToAllocs; // value allocations (stack, static, heap) cache
@@ -58,15 +58,20 @@ public:
     ~TypeInference() = default;
 
     /// Singleton
-    static inline std::unique_ptr<TypeInference> &getTypeInference() {
+    static inline TypeInference *getTypeInference() {
         if (_typeInference == nullptr) {
-            _typeInference = std::unique_ptr<TypeInference>(new TypeInference());
+            _typeInference = new TypeInference();
         }
         return _typeInference;
     }
 
+    static void releaseTypeInference() {
+        delete _typeInference;
+        _typeInference = nullptr;
+    }
+
     /// get or infer the type of a value
-    const Type *getOrInferLLVMObjType(const Value *startValue);
+    const Type *inferObjType(const Value *startValue);
 
     /// Validate type inference
     void validateTypeCheck(const CallBase *cs);
@@ -88,10 +93,10 @@ public:
 private:
 
     /// Forward collect all possible infer sites starting from a value
-    const Type *fwGetOrInferLLVMObjType(const Value *startValue);
+    const Type *fwInferObjType(const Value *startValue);
 
     /// Backward collect all possible allocation sites (stack, static, heap) starting from a value
-    Set<const Value *> bwGetOrfindAllocations(const Value *startValue);
+    Set<const Value *> bwfindAllocations(const Value *startValue);
 
     /// Determine type based on infer site
     static const Type *infersiteToType(const Value *val);
@@ -99,6 +104,12 @@ private:
     inline static bool isAllocation(const Value *val) {
         return LLVMUtil::isObject(val);
     }
+
+public:
+    /// Select the largest (conservative) type from all types
+    const Type *selectLargestType(std::vector<const Type *> &objTys);
+
+    u32_t getArgNoInCallBase(const CallBase *callBase, const Value *arg);
 
 };
 }

@@ -85,10 +85,10 @@ protected:
     // @}
 
 
-    std::unique_ptr<TypeInference> & getTypeInference();
+    TypeInference* getTypeInference();
 
     /// Forward collect all possible infer sites starting from a value
-    const Type* getOrInferLLVMObjType(const Value *startValue);
+    const Type* inferObjType(const Value *startValue);
 
     /// Get the reference type of heap/static object from an allocation site.
     //@{

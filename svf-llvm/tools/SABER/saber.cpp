@@ -34,6 +34,7 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "Util/Z3Expr.h"
+#include "SVF-LLVM/TypeInference.h"
 
 
 using namespace llvm;
@@ -88,7 +89,7 @@ int main(int argc, char ** argv)
     saber->runOnModule(pag);
 
     LLVMModuleSet::releaseLLVMModuleSet();
-
+    TypeInference::releaseTypeInference();
     return 0;
 
 }

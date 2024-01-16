@@ -33,6 +33,8 @@
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
+#include "SVF-LLVM/TypeInference.h"
+
 
 using namespace std;
 using namespace SVF;
@@ -263,7 +265,7 @@ int main(int argc, char ** argv)
 
     LLVMModuleSet::getLLVMModuleSet()->dumpModulesToFile(".svf.bc");
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
-
+    TypeInference::releaseTypeInference();
     llvm::llvm_shutdown();
     return 0;
 }

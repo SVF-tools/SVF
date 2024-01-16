@@ -31,6 +31,7 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "SVFIR/SVFFileSystem.h"
+#include "SVF-LLVM/TypeInference.h"
 
 
 using namespace std;
@@ -69,5 +70,6 @@ int main(int argc, char** argv)
     SVFUtil::outs() << "SVF IR is written to '" << jsonPath << "'\n";
 
     LLVMModuleSet::releaseLLVMModuleSet();
+    TypeInference::releaseTypeInference();
     return 0;
 }

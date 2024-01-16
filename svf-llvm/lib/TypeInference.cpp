@@ -71,7 +71,7 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
 
-std::unique_ptr<TypeInference> TypeInference::_typeInference = nullptr;
+TypeInference *TypeInference::_typeInference = nullptr;
 
 const std::string TYPEMALLOC = "TYPE_MALLOC";
 
@@ -88,16 +88,16 @@ const Type *TypeInference::defaultTy(const Value *val) {
 
 /*!
  * get or infer type of a value
- * if the start value is a source (alloc/global, heap, static), call fwGetOrInferLLVMObjType
+ * if the start value is a source (alloc/global, heap, static), call fwInferObjType
  * if not, find sources and then forward get or infer types
  * @param startValue
  */
-const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
-    if (isAllocation(startValue)) return fwGetOrInferLLVMObjType(startValue);
-    Set<const Value *> sources = TypeInference::getTypeInference()->bwGetOrfindAllocations(startValue);
+const Type *TypeInference::inferObjType(const Value *startValue) {
+    if (isAllocation(startValue)) return fwInferObjType(startValue);
+    Set<const Value *> sources = TypeInference::getTypeInference()->bwfindAllocations(startValue);
     std::vector<const Type *> types;
     for (const auto &source: sources) {
-        types.push_back(TypeInference::getTypeInference()->fwGetOrInferLLVMObjType(source));
+        types.push_back(TypeInference::getTypeInference()->fwInferObjType(source));
     }
     return selectLargestType(types);
 }
@@ -106,7 +106,7 @@ const Type *TypeInference::getOrInferLLVMObjType(const Value *startValue) {
  * Forward collect all possible infer sites starting from a value
  * @param startValue
  */
-const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
+const Type *TypeInference::fwInferObjType(const Value *startValue) {
     // consult cache
     auto tIt = _valueToType.find(startValue);
     if (tIt != _valueToType.end()) {
@@ -279,7 +279,7 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
     const Type *type = _valueToType[startValue];
     if (type == nullptr) {
         type = defaultTy(startValue);
-        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
+        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(startValue));
     }
     return type;
 }
@@ -289,12 +289,12 @@ const Type *TypeInference::fwGetOrInferLLVMObjType(const Value *startValue) {
  * @param startValue 
  * @return 
  */
-Set<const Value *> TypeInference::bwGetOrfindAllocations(const Value *startValue) {
+Set<const Value *> TypeInference::bwfindAllocations(const Value *startValue) {
 
     // consult cache
     auto tIt = _valueToAllocs.find(startValue);
     if (tIt != _valueToAllocs.end()) {
-        WARN_IFNOT(!tIt->second.empty(), "empty type:" + VALUE_WITH_DBGINFO(startValue));
+        WARN_IFNOT(!tIt->second.empty(), "empty type:" + dumpValueAndDbgInfo(startValue));
         return !tIt->second.empty() ? tIt->second : Set<const Value *>({startValue});
     }
 
@@ -356,7 +356,7 @@ Set<const Value *> TypeInference::bwGetOrfindAllocations(const Value *startValue
                 }
             }
         } else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(curValue)) {
-            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + VALUE_WITH_DBGINFO(callBase));
+            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
             if (Function *callee = callBase->getCalledFunction()) {
                 if (!callee->isDeclaration()) {
                     const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
@@ -374,7 +374,7 @@ Set<const Value *> TypeInference::bwGetOrfindAllocations(const Value *startValue
     Set<const Value *> srcs = _valueToAllocs[startValue];
     if (srcs.empty()) {
         srcs = {startValue};
-        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(startValue));
+        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(startValue));
     }
     return srcs;
 }
@@ -386,7 +386,7 @@ Set<const Value *> TypeInference::bwGetOrfindAllocations(const Value *startValue
 void TypeInference::validateTypeCheck(const CallBase *cs) {
     if (const Function *func = cs->getCalledFunction()) {
         if (func->getName().find(TYPEMALLOC) != std::string::npos) {
-            const Type *objType = fwGetOrInferLLVMObjType(cs);
+            const Type *objType = fwInferObjType(cs);
             ConstantInt *pInt =
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
@@ -400,11 +400,11 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
                     iTyNum = getNumOfElements(st);
             }
             if (iTyNum >= pInt->getZExtValue())
-                SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") << VALUE_WITH_DBGINFO(cs)
+                SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") << dumpValueAndDbgInfo(cs)
                                 << SVFUtil::pasMsg(" TYPE: ")
                                 << dumpType(objType) << "\n";
             else {
-                SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << ":" << VALUE_WITH_DBGINFO(cs) << " TYPE: "
+                SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << ":" << dumpValueAndDbgInfo(cs) << " TYPE: "
                                 << dumpType(objType) << "\n";
                 abort();
             }
@@ -427,7 +427,7 @@ void TypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, c
     if (getNumOfElements(oTy) > iTyNum) {
         ERR_MSG("original type is:" + dumpType(oTy));
         ERR_MSG("infered type is:" + dumpType(iTy));
-        ABORT_MSG("wrong type, trace ID is " + std::to_string(traceId) + ":" + VALUE_WITH_DBGINFO(val));
+        ABORT_MSG("wrong type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(val));
     }
 #endif
 }
@@ -447,6 +447,36 @@ const Type *TypeInference::infersiteToType(const Value *val) {
     } else if (const GlobalValue *globalValue = SVFUtil::dyn_cast<GlobalValue>(val)) {
         return globalValue->getValueType();
     } else {
-        ABORT_MSG("unknown value:" + VALUE_WITH_DBGINFO(val));
+        ABORT_MSG("unknown value:" + dumpValueAndDbgInfo(val));
     }
+}
+
+u32_t TypeInference::getArgNoInCallBase(const CallBase *callBase, const Value *arg) {
+    assert(callBase->hasArgument(arg) && "callInst does not have argument arg?");
+    auto it = std::find(callBase->arg_begin(), callBase->arg_end(), arg);
+    assert(it != callBase->arg_end() && "Didn't find argument?");
+    return std::distance(callBase->arg_begin(), it);
+}
+
+
+const Type *TypeInference::selectLargestType(std::vector<const Type *> &objTys) {
+    if (objTys.empty()) return nullptr;
+    // map type size to types from with key in descending order
+    OrderedMap<u32_t, Set<const Type *>, std::greater<int>> typeSzToTypes;
+    for (const Type *ty: objTys) {
+        u32_t num = Options::MaxFieldLimit();
+        if (SVFUtil::isa<ArrayType>(ty))
+            num = getNumOfElements(ty);
+        else if (const StructType *st = SVFUtil::dyn_cast<StructType>(ty)) {
+            /// For an C++ class, it can have variant elements depending on the vtable size,
+            /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
+            if (!classTyHasVTable(st))
+                num = getNumOfElements(st);
+        }
+        typeSzToTypes[num].insert(ty);
+    }
+    assert(!typeSzToTypes.empty() && "typeSzToTypes cannot be empty");
+    const std::pair<u32_t, Set<const Type *>> &largestElement = *typeSzToTypes.begin();
+    assert(!largestElement.second.empty() && "largest element cannot be empty");
+    return *largestElement.second.begin();
 }

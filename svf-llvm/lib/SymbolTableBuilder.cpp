@@ -570,13 +570,13 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
     }
 }
 
-std::unique_ptr<TypeInference> & SymbolTableBuilder::getTypeInference() {
+TypeInference *SymbolTableBuilder::getTypeInference() {
     return TypeInference::getTypeInference();
 }
 
 
-const Type* SymbolTableBuilder::getOrInferLLVMObjType(const Value *startValue) {
-    return getTypeInference()->getOrInferLLVMObjType(startValue);
+const Type* SymbolTableBuilder::inferObjType(const Value *startValue) {
+    return getTypeInference()->inferObjType(startValue);
 }
 
 /*!
@@ -597,7 +597,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
                 originalPType = newTy;
             }
         }
-        inferedType = getOrInferLLVMObjType(startValue);
+        inferedType = inferObjType(startValue);
     }
     else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
     {
@@ -605,7 +605,7 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
         int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getSVFCallSite(svfinst));
         const Value* arg = cs->getArgOperand(arg_pos);
         originalPType = SVFUtil::dyn_cast<PointerType>(arg->getType());
-        inferedType = getOrInferLLVMObjType(startValue = arg);
+        inferedType = inferObjType(startValue = arg);
     }
     else
     {
@@ -650,7 +650,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value* val)
             }
             else
             {
-                SVFUtil::errs() << VALUE_WITH_DBGINFO(val) << "\n";
+                SVFUtil::errs() << dumpValueAndDbgInfo(val) << "\n";
                 assert(false && "not an allocation or global?");
             }
         }
