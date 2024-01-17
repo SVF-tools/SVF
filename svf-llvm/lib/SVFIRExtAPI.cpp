@@ -133,7 +133,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
     {
         NodeID val = pag->getValueNode(svfInst);
         NodeID obj = pag->getObjectNode(svfInst);
-        addAddrEdge(obj, val);
+        addAddrWithHeapSz(obj, val, cs);
     }
     else if (isHeapAllocExtCallViaArg(svfCall))
     {
@@ -146,7 +146,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             NodeID obj = pag->addDummyObjNode(arg->getType());
             if (vnArg && dummy && obj)
             {
-                addAddrEdge(obj, dummy);
+                addAddrWithHeapSz(obj, dummy, cs);
                 addStoreEdge(dummy, vnArg);
             }
         }
