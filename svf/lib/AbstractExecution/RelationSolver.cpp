@@ -239,7 +239,7 @@ Z3Expr RelationSolver::gamma_hat(u32_t id, const IntervalESBase& exeState) const
 }
 
 IntervalESBase RelationSolver::beta(const Map<u32_t, double>& sigma,
-                                      const IntervalESBase& exeState) const
+                                    const IntervalESBase& exeState) const
 {
     IntervalESBase res;
     for (const auto& item : exeState.getVarToVal())

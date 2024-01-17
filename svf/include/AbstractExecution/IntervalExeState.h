@@ -51,7 +51,8 @@
 
 namespace SVF
 {
-class IntervalESBase: public ExeState {
+class IntervalESBase: public ExeState
+{
     friend class SVFIR2ItvExeState;
     friend class RelationSolver;
 public:
@@ -64,12 +65,12 @@ public:
     IntervalESBase() : ExeState(ExeState::IntervalK) {}
 
     IntervalESBase(VarToValMap &_varToValMap, LocToValMap &_locToValMap) : ExeState(ExeState::IntervalK),
-    _varToItvVal(_varToValMap),
-    _locToItvVal(_locToValMap) {}
+        _varToItvVal(_varToValMap),
+        _locToItvVal(_locToValMap) {}
 
     /// copy constructor
     IntervalESBase(const IntervalESBase &rhs) : ExeState(rhs), _varToItvVal(rhs.getVarToVal()),
-                                                    _locToItvVal(rhs.getLocToVal())
+        _locToItvVal(rhs.getLocToVal())
     {
 
     }
@@ -90,8 +91,8 @@ public:
 
     /// move constructor
     IntervalESBase(IntervalESBase &&rhs) : ExeState(std::move(rhs)),
-            _varToItvVal(std::move(rhs._varToItvVal)),
-    _locToItvVal(std::move(rhs._locToItvVal))
+        _varToItvVal(std::move(rhs._varToItvVal)),
+        _locToItvVal(std::move(rhs._locToItvVal))
     {
 
     }
