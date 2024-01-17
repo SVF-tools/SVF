@@ -41,20 +41,20 @@ public:
     RelationSolver() = default;
 
     /* gamma_hat, beta and abstract_consequence works on
-    IntervalExeState (the last element of inputs) for RSY or bilateral solver */
+    IntervalESBase (the last element of inputs) for RSY or bilateral solver */
 
     /// Return Z3Expr according to valToValMap
-    Z3Expr gamma_hat(const IntervalExeState &exeState) const;
+    Z3Expr gamma_hat(const IntervalESBase &exeState) const;
 
     /// Return Z3Expr according to another valToValMap
-    Z3Expr gamma_hat(const IntervalExeState &alpha, const IntervalExeState &exeState) const;
+    Z3Expr gamma_hat(const IntervalESBase &alpha, const IntervalESBase &exeState) const;
 
     /// Return Z3Expr from a NodeID
-    Z3Expr gamma_hat(u32_t id, const IntervalExeState &exeState) const;
+    Z3Expr gamma_hat(u32_t id, const IntervalESBase &exeState) const;
 
-    IntervalExeState abstract_consequence(const IntervalExeState &lower, const IntervalExeState &upper, const IntervalExeState &domain) const;
+    IntervalESBase abstract_consequence(const IntervalESBase &lower, const IntervalESBase &upper, const IntervalESBase &domain) const;
 
-    IntervalExeState beta(const Map<u32_t, double> &sigma, const IntervalExeState &exeState) const;
+    IntervalESBase beta(const Map<u32_t, double> &sigma, const IntervalESBase &exeState) const;
 
 
     /// Return Z3 expression lazily based on SVFVar ID
@@ -65,13 +65,13 @@ public:
 
     /* two optional solvers: RSY and bilateral */
 
-    IntervalExeState bilateral(const IntervalExeState& domain, const Z3Expr &phi, u32_t descend_check = 0);
+    IntervalESBase bilateral(const IntervalESBase& domain, const Z3Expr &phi, u32_t descend_check = 0);
 
-    IntervalExeState RSY(const IntervalExeState& domain, const Z3Expr &phi);
+    IntervalESBase RSY(const IntervalESBase& domain, const Z3Expr &phi);
 
     Map<u32_t, NumericLiteral> BoxedOptSolver(const Z3Expr& phi, Map<u32_t, NumericLiteral>& ret, Map<u32_t, NumericLiteral>& low_values, Map<u32_t, NumericLiteral>& high_values);
 
-    IntervalExeState BS(const IntervalExeState& domain, const Z3Expr &phi);
+    IntervalESBase BS(const IntervalESBase& domain, const Z3Expr &phi);
 
     void updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const NumericLiteral& value);
 
