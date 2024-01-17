@@ -46,7 +46,7 @@ public:
 
 
 private:
-    static TypeInference* _typeInference;
+    static TypeInference *_typeInference;
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
     ValueToSources _valueToAllocs; // value allocations (stack, static, heap) cache
@@ -108,6 +108,8 @@ private:
 public:
     /// Select the largest (conservative) type from all types
     const Type *selectLargestType(Set<const Type *> &objTys);
+
+    u32_t objTyToNumFields(const Type *objTy);
 
     u32_t getArgPosInCall(const CallBase *callBase, const Value *arg);
 

@@ -114,8 +114,8 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
     }
 
     // simulate the call stack, the second element indicates whether we should update valueTypes for current value
-    FILOWorkList <ValueBoolPair> workList;
-    Set <ValueBoolPair> visited;
+    FILOWorkList<ValueBoolPair> workList;
+    Set<ValueBoolPair> visited;
     workList.push({startValue, false});
 
     while (!workList.empty()) {
@@ -145,7 +145,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
         if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
             insertInferSite(gepInst);
         for (const auto &it: curValue->uses()) {
-            if (LoadInst * loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
+            if (LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
                 /*
                  * infer based on load, e.g.,
                  %call = call i8* malloc()
@@ -153,7 +153,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                  %q = load %struct.MyStruct, %struct.MyStruct* %1
                  */
                 insertInferSite(loadInst);
-            } else if (StoreInst * storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
+            } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
                 if (storeInst->getPointerOperand() == curValue) {
                     /*
                      * infer based on store (pointer operand), e.g.,
@@ -186,7 +186,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                       %6 = load %struct.MyStruct*, %struct.MyStruct** %next3, align 8, !dbg !49
                       infer site -> %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %6, i32 0, i32 0, !dbg !50
                       */
-                    if (GetElementPtrInst * gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
+                    if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
                             storeInst->getPointerOperand())) {
                         const Value *gepBase = gepInst->getPointerOperand();
                         if (!SVFUtil::isa<LoadInst>(gepBase)) continue;
@@ -207,7 +207,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                     }
                 }
 
-            } else if (GetElementPtrInst * gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
+            } else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
                 /*
                  * infer based on gep (pointer operand)
                  %call = call i8* malloc()
@@ -216,13 +216,13 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                  */
                 if (gepInst->getPointerOperand() == curValue)
                     insertInferSite(gepInst);
-            } else if (BitCastInst * bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
+            } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(bitcast);
-            } else if (PHINode * phiNode = SVFUtil::dyn_cast<PHINode>(it.getUser())) {
+            } else if (PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(it.getUser())) {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(phiNode);
-            } else if (ReturnInst * retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
+            } else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
                 /*
                  * propagate from return to caller
                   Function Attrs: noinline nounwind optnone uwtable
@@ -235,14 +235,14 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                  ..infer based on %call..
                 */
                 for (const auto &callsite: retInst->getFunction()->uses()) {
-                    if (CallBase * callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser())) {
+                    if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser())) {
                         // skip function as parameter
                         // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
                         if (callBase->getCalledFunction() != retInst->getFunction()) continue;
                         insertInferSitesOrPushWorklist(callBase);
                     }
                 }
-            } else if (CallBase * callBase = SVFUtil::dyn_cast<CallBase>(it.getUser())) {
+            } else if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(it.getUser())) {
                 /*
                  * propagate from callsite to callee
                   %call = call i8* @malloc(i32 noundef 16)
@@ -259,7 +259,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                 // skip indirect call
                 // e.g., %0 = ... -> call %0(...)
                 if (!callBase->hasArgument(curValue)) continue;
-                if (Function * calleeFunc = callBase->getCalledFunction()) {
+                if (Function *calleeFunc = callBase->getCalledFunction()) {
                     u32_t pos = getArgPosInCall(callBase, curValue);
                     // for variable argument, conservatively collect all params
                     if (calleeFunc->isVarArg()) pos = 0;
@@ -391,15 +391,7 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
             ConstantInt *pInt =
                     SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
-            u32_t iTyNum = Options::MaxFieldLimit();
-            if (SVFUtil::isa<ArrayType>(objType))
-                iTyNum = getNumOfElements(objType);
-            else if (const StructType *st = SVFUtil::dyn_cast<StructType>(objType)) {
-                /// For an C++ class, it can have variant elements depending on the vtable size,
-                /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
-                if (!classTyHasVTable(st))
-                    iTyNum = getNumOfElements(st);
-            }
+            u32_t iTyNum = objTyToNumFields(objType);
             if (iTyNum >= pInt->getZExtValue())
                 SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") << dumpValueAndDbgInfo(cs)
                                 << SVFUtil::pasMsg(" TYPE: ")
@@ -416,15 +408,7 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
 void TypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val) {
 #if TYPE_DEBUG
     Type *oTy = getPtrElementType(oPTy);
-    u32_t iTyNum = Options::MaxFieldLimit();
-    if (SVFUtil::isa<ArrayType>(iTy))
-        iTyNum = getNumOfElements(iTy);
-    else if (const StructType *st = SVFUtil::dyn_cast<StructType>(iTy)) {
-        /// For an C++ class, it can have variant elements depending on the vtable size,
-        /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
-        if (!classTyHasVTable(st))
-            iTyNum = getNumOfElements(st);
-    }
+    u32_t iTyNum = objTyToNumFields(iTy);
     if (getNumOfElements(oTy) > iTyNum) {
         ERR_MSG("original type is:" + dumpType(oTy));
         ERR_MSG("infered type is:" + dumpType(iTy));
@@ -465,19 +449,24 @@ const Type *TypeInference::selectLargestType(Set<const Type *> &objTys) {
     // map type size to types from with key in descending order
     OrderedMap<u32_t, Set<const Type *>, std::greater<int>> typeSzToTypes;
     for (const Type *ty: objTys) {
-        u32_t num = Options::MaxFieldLimit();
-        if (SVFUtil::isa<ArrayType>(ty))
-            num = getNumOfElements(ty);
-        else if (const StructType *st = SVFUtil::dyn_cast<StructType>(ty)) {
-            /// For an C++ class, it can have variant elements depending on the vtable size,
-            /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
-            if (!classTyHasVTable(st))
-                num = getNumOfElements(st);
-        }
-        typeSzToTypes[num].insert(ty);
+        typeSzToTypes[objTyToNumFields(ty)].insert(ty);
     }
     assert(!typeSzToTypes.empty() && "typeSzToTypes cannot be empty");
-    const std::pair<u32_t, Set<const Type *>> &largestElement = *typeSzToTypes.begin();
-    assert(!largestElement.second.empty() && "largest element cannot be empty");
-    return *largestElement.second.begin();
+    Set<const Type *> largestTypes;
+    std::tie(std::ignore, largestTypes) = *typeSzToTypes.begin();
+    assert(!largestTypes.empty() && "largest element cannot be empty");
+    return *largestTypes.begin();
+}
+
+u32_t TypeInference::objTyToNumFields(const Type *objTy) {
+    u32_t num = Options::MaxFieldLimit();
+    if (SVFUtil::isa<ArrayType>(objTy))
+        num = getNumOfElements(objTy);
+    else if (const StructType *st = SVFUtil::dyn_cast<StructType>(objTy)) {
+        /// For an C++ class, it can have variant elements depending on the vtable size,
+        /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
+        if (!classTyHasVTable(st))
+            num = getNumOfElements(st);
+    }
+    return num;
 }
