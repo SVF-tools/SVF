@@ -289,7 +289,7 @@ public:
         }
     }
 
-    inline virtual IntervalValue& getLocToVal(u32_t id)
+    inline virtual IntervalValue& getLocVal(u32_t id)
     {
         auto it = _locToItvVal.find(id);
         if(it != _locToItvVal.end())
@@ -578,7 +578,7 @@ public:
         }
     }
 
-    inline IntervalValue& getLocToVal(u32_t id) override
+    inline IntervalValue& getLocVal(u32_t id) override
     {
         auto it = _locToItvVal.find(id);
         if(it != _locToItvVal.end())
