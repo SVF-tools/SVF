@@ -114,8 +114,8 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
     }
 
     // simulate the call stack, the second element indicates whether we should update valueTypes for current value
-    FILOWorkList<ValueBoolPair> workList;
-    Set<ValueBoolPair> visited;
+    FILOWorkList <ValueBoolPair> workList;
+    Set <ValueBoolPair> visited;
     workList.push({startValue, false});
 
     while (!workList.empty()) {
@@ -145,7 +145,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
         if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
             insertInferSite(gepInst);
         for (const auto &it: curValue->uses()) {
-            if (LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
+            if (LoadInst * loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
                 /*
                  * infer based on load, e.g.,
                  %call = call i8* malloc()
@@ -153,7 +153,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                  %q = load %struct.MyStruct, %struct.MyStruct* %1
                  */
                 insertInferSite(loadInst);
-            } else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
+            } else if (StoreInst * storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
                 if (storeInst->getPointerOperand() == curValue) {
                     /*
                      * infer based on store (pointer operand), e.g.,
@@ -186,7 +186,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                       %6 = load %struct.MyStruct*, %struct.MyStruct** %next3, align 8, !dbg !49
                       infer site -> %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %6, i32 0, i32 0, !dbg !50
                       */
-                    if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
+                    if (GetElementPtrInst * gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
                             storeInst->getPointerOperand())) {
                         const Value *gepBase = gepInst->getPointerOperand();
                         if (!SVFUtil::isa<LoadInst>(gepBase)) continue;
@@ -207,7 +207,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                     }
                 }
 
-            } else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
+            } else if (GetElementPtrInst * gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
                 /*
                  * infer based on gep (pointer operand)
                  %call = call i8* malloc()
@@ -216,13 +216,13 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                  */
                 if (gepInst->getPointerOperand() == curValue)
                     insertInferSite(gepInst);
-            } else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
+            } else if (BitCastInst * bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(bitcast);
-            } else if (PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(it.getUser())) {
+            } else if (PHINode * phiNode = SVFUtil::dyn_cast<PHINode>(it.getUser())) {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(phiNode);
-            } else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
+            } else if (ReturnInst * retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
                 /*
                  * propagate from return to caller
                   Function Attrs: noinline nounwind optnone uwtable
@@ -235,14 +235,14 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                  ..infer based on %call..
                 */
                 for (const auto &callsite: retInst->getFunction()->uses()) {
-                    if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser())) {
+                    if (CallBase * callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser())) {
                         // skip function as parameter
                         // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
                         if (callBase->getCalledFunction() != retInst->getFunction()) continue;
                         insertInferSitesOrPushWorklist(callBase);
                     }
                 }
-            } else if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(it.getUser())) {
+            } else if (CallBase * callBase = SVFUtil::dyn_cast<CallBase>(it.getUser())) {
                 /*
                  * propagate from callsite to callee
                   %call = call i8* @malloc(i32 noundef 16)
@@ -259,7 +259,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
                 // skip indirect call
                 // e.g., %0 = ... -> call %0(...)
                 if (!callBase->hasArgument(curValue)) continue;
-                if (Function *calleeFunc = callBase->getCalledFunction()) {
+                if (Function * calleeFunc = callBase->getCalledFunction()) {
                     u32_t pos = getArgPosInCall(callBase, curValue);
                     // for variable argument, conservatively collect all params
                     if (calleeFunc->isVarArg()) pos = 0;
@@ -271,7 +271,8 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
         }
         if (canUpdate) {
             Set<const Type *> types;
-            std::transform(infersites.begin(), infersites.end(), std::inserter(types, types.begin()), getTypeInference()->infersiteToType);
+            std::transform(infersites.begin(), infersites.end(), std::inserter(types, types.begin()),
+                           getTypeInference()->infersiteToType);
             _valueToInferSites[curValue] = SVFUtil::move(infersites);
             _valueToType[curValue] = selectLargestType(types);
         }
