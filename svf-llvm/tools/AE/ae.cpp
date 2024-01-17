@@ -36,37 +36,37 @@ public:
     }
 
     IntervalESBase RSY_time(IntervalESBase& inv, const Z3Expr& phi,
-                              RelationSolver& rs)
+                            RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         IntervalESBase resRSY = rs.RSY(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            end_time - start_time);
+                            end_time - start_time);
         outs() << "running time of RSY      : " << duration.count()
                << " microseconds\n";
         return resRSY;
     }
     IntervalESBase Bilateral_time(IntervalESBase& inv, const Z3Expr& phi,
-                                    RelationSolver& rs)
+                                  RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         IntervalESBase resBilateral = rs.bilateral(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            end_time - start_time);
+                            end_time - start_time);
         outs() << "running time of Bilateral: " << duration.count()
                << " microseconds\n";
         return resBilateral;
     }
     IntervalESBase BS_time(IntervalESBase& inv, const Z3Expr& phi,
-                             RelationSolver& rs)
+                           RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         IntervalESBase resBS = rs.BS(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-            end_time - start_time);
+                            end_time - start_time);
         outs() << "running time of BS       : " << duration.count()
                << " microseconds\n";
         return resBS;
@@ -177,8 +177,9 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10)},
-                                                   {1, IntervalValue(0, 10)},
-                                                   {2, IntervalValue(0, 0)}};
+            {1, IntervalValue(0, 10)},
+            {2, IntervalValue(0, 0)}
+        };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -219,8 +220,9 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 100)},
-                                                   {1, IntervalValue(0, 100)},
-                                                   {2, IntervalValue(0, 0)}};
+            {1, IntervalValue(0, 100)},
+            {2, IntervalValue(0, 0)}
+        };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -262,8 +264,9 @@ public:
         // ground truth
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 1000)},
-                                                   {1, IntervalValue(0, 1000)},
-                                                   {2, IntervalValue(0, 0)}};
+            {1, IntervalValue(0, 1000)},
+            {2, IntervalValue(0, 0)}
+        };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -305,8 +308,9 @@ public:
         // ground truth
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10000)},
-                                                   {1, IntervalValue(0, 10000)},
-                                                   {2, IntervalValue(0, 0)}};
+            {1, IntervalValue(0, 10000)},
+            {2, IntervalValue(0, 0)}
+        };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -348,8 +352,9 @@ public:
         // ground truth
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 100000)},
-                                                   {1, IntervalValue(0, 100000)},
-                                                   {2, IntervalValue(0, 0)}};
+            {1, IntervalValue(0, 100000)},
+            {2, IntervalValue(0, 0)}
+        };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -389,8 +394,9 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 10)},
-                                                   {1, IntervalValue(1, 10)},
-                                                   {2, IntervalValue(1, 1)}};
+            {1, IntervalValue(1, 10)},
+            {2, IntervalValue(1, 1)}
+        };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -430,8 +436,9 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 1000)},
-                                                   {1, IntervalValue(1, 1000)},
-                                                   {2, IntervalValue(1, 1)}};
+            {1, IntervalValue(1, 1000)},
+            {2, IntervalValue(1, 1)}
+        };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -471,9 +478,9 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes =
-            Map<u32_t, IntervalValue>({{0, IntervalValue(1, 10000)},
-                                       {1, IntervalValue(1, 10000)},
-                                       {2, IntervalValue(1, 1)}});
+        Map<u32_t, IntervalValue>({{0, IntervalValue(1, 10000)},
+            {1, IntervalValue(1, 10000)},
+            {2, IntervalValue(1, 1)}});
     }
 
     void testRelExeState3_4()
@@ -512,8 +519,9 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 100000)},
-                                                   {1, IntervalValue(1, 100000)},
-                                                   {2, IntervalValue(1, 1)}};
+            {1, IntervalValue(1, 100000)},
+            {2, IntervalValue(1, 1)}
+        };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -556,12 +564,14 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10)},
-                                                   {1, IntervalValue(0, 10)},
-                                                   {2, IntervalValue(IntervalValue::minus_infinity(), IntervalValue::plus_infinity())}};
+            {1, IntervalValue(0, 10)},
+            {2, IntervalValue(IntervalValue::minus_infinity(), IntervalValue::plus_infinity())}
+        };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
-    void testsValidation(){
+    void testsValidation()
+    {
         SymblicAbstractionTest saTest;
         saTest.testRelExeState1_1();
         saTest.testRelExeState1_2();
@@ -586,9 +596,10 @@ int main(int argc, char** argv)
 {
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
-        argc, argv, "Source-Sink Bug Detector", "[options] <input-bitcode...>"
-    );
-    if (SYMABS()){
+                        argc, argv, "Source-Sink Bug Detector", "[options] <input-bitcode...>"
+                    );
+    if (SYMABS())
+    {
         SymblicAbstractionTest saTest;
         saTest.testsValidation();
     }
