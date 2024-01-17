@@ -345,12 +345,14 @@ public:
 
     virtual const std::string toString() const override;
 
-    inline void addArrSize(SVFValue* size) { //TODO:addSizeVar
+    inline void addArrSize(SVFValue* size)   //TODO:addSizeVar
+    {
         arrSize.push_back(size);
     }
 
     ///< get array size of the allocated memory
-    inline const std::vector<SVFValue*>& getArrSize() const { //TODO:getSizeVars
+    inline const std::vector<SVFValue*>& getArrSize() const   //TODO:getSizeVars
+    {
         return arrSize;
     }
 
