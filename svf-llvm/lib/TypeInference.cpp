@@ -94,10 +94,10 @@ const Type *TypeInference::defaultTy(const Value *val) {
  */
 const Type *TypeInference::inferObjType(const Value *startValue) {
     if (isAllocation(startValue)) return fwInferObjType(startValue);
-    Set<const Value *> sources = TypeInference::getTypeInference()->bwfindAllocations(startValue);
-    std::vector<const Type *> types;
+    Set<const Value *> sources = bwfindAllocations(startValue);
+    Set<const Type *> types;
     for (const auto &source: sources) {
-        types.push_back(TypeInference::getTypeInference()->fwInferObjType(source));
+        types.insert(fwInferObjType(source));
     }
     return selectLargestType(types);
 }
@@ -270,8 +270,8 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
             }
         }
         if (canUpdate) {
-            std::vector<const Type *> types(infersites.size());
-            std::transform(infersites.begin(), infersites.end(), types.begin(), getTypeInference()->infersiteToType);
+            Set<const Type *> types;
+            std::transform(infersites.begin(), infersites.end(), std::inserter(types, types.begin()), getTypeInference()->infersiteToType);
             _valueToInferSites[curValue] = SVFUtil::move(infersites);
             _valueToType[curValue] = selectLargestType(types);
         }
@@ -459,7 +459,7 @@ u32_t TypeInference::getArgPosInCall(const CallBase *callBase, const Value *arg)
 }
 
 
-const Type *TypeInference::selectLargestType(std::vector<const Type *> &objTys) {
+const Type *TypeInference::selectLargestType(Set<const Type *> &objTys) {
     if (objTys.empty()) return nullptr;
     // map type size to types from with key in descending order
     OrderedMap<u32_t, Set<const Type *>, std::greater<int>> typeSzToTypes;
