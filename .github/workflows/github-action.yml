@@ -83,6 +83,11 @@ jobs:
         run:
           ctest -R double_free -VV
 
+      - name: ctest symabs
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R symabs -VV
+
       - name: ctest cfl_tests
         working-directory: ${{github.workspace}}/Release-build
         run:
