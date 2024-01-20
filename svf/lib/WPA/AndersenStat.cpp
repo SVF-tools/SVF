@@ -352,6 +352,9 @@ void AndersenStat::performStat()
     PTNumStatMap["PointsToConstPtr"] = _NumOfConstantPtr;
     PTNumStatMap["PointsToBlkPtr"] = _NumOfBlackholePtr;
 
+    PTNumStatMap["MemoryUsageVmrss"] = _vmrssUsageAfter - _vmrssUsageBefore;
+    PTNumStatMap["MemoryUsageVmsize"] = _vmsizeUsageAfter - _vmsizeUsageBefore;
+
     PTAStat::printStat("Andersen Pointer Analysis Stats");
 }
 

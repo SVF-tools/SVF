@@ -74,11 +74,11 @@ void AndersenBase::initialize()
 {
     /// Build SVFIR
     PointerAnalysis::initialize();
+    /// Create statistic class
+    stat = new AndersenStat(this);
     /// Build Constraint Graph
     consCG = new ConstraintGraph(pag);
     setGraph(consCG);
-    /// Create statistic class
-    stat = new AndersenStat(this);
     if (Options::ConsCGDotGraph())
         consCG->dump("consCG_initial");
 }
