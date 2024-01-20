@@ -43,6 +43,10 @@ PTAStat::PTAStat(PointerAnalysis* p) : SVFStat(),
                                        _vmsizeUsageBefore(0),
                                        _vmsizeUsageAfter(0)
 {
+    u32_t vmrss = 0;
+    u32_t vmsize = 0;
+    SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
+    setMemUsageBefore(vmrss, vmsize);
 }
 
 void PTAStat::performStat()
@@ -64,6 +68,13 @@ void PTAStat::performStat()
         }
     }
     PTNumStatMap["LocalVarInRecur"] = localVarInRecursion.count();
+
+    u32_t vmrss = 0;
+    u32_t vmsize = 0;
+    SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
+    setMemUsageAfter(vmrss, vmsize);
+    PTNumStatMap["MemoryUsageVmrss"] = _vmrssUsageAfter - _vmrssUsageBefore;
+    PTNumStatMap["MemoryUsageVmsize"] = _vmsizeUsageAfter - _vmsizeUsageBefore;
 }
 
 void PTAStat::callgraphStat()
