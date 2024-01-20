@@ -37,11 +37,11 @@ using namespace SVF;
 using namespace std;
 
 PTAStat::PTAStat(PointerAnalysis* p) : SVFStat(),
-                                       pta(p),
-                                       _vmrssUsageBefore(0),
-                                       _vmrssUsageAfter(0),
-                                       _vmsizeUsageBefore(0),
-                                       _vmsizeUsageAfter(0)
+    pta(p),
+    _vmrssUsageBefore(0),
+    _vmrssUsageAfter(0),
+    _vmsizeUsageBefore(0),
+    _vmsizeUsageAfter(0)
 {
     u32_t vmrss = 0;
     u32_t vmsize = 0;
