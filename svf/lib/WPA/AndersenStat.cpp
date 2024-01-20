@@ -181,8 +181,8 @@ void AndersenStat::constraintGraphStat()
 
 
     PTNumStatMap["NumOfCGNode"] = totalNodeNumber;
-    PTNumStatMap["TotalValidNode"] = cgNodeNumber;
-    PTNumStatMap["TotalValidObjNode"] = objNodeNumber;
+    PTNumStatMap["NumOfValidNode"] = cgNodeNumber;
+    PTNumStatMap["NumOfValidObjNode"] = objNodeNumber;
     PTNumStatMap["NumOfCGEdge"] = consCG->getLoadCGEdges().size() + consCG->getStoreCGEdges().size()
                                   + numOfCopys + numOfGeps;
     PTNumStatMap["NumOfAddrs"] =  consCG->getAddrCGEdges().size();
@@ -196,9 +196,9 @@ void AndersenStat::constraintGraphStat()
     PTNumStatMap["MaxOutLoadEdge"] = loadmaxOut;
     PTNumStatMap["MaxInStoreEdge"] = storemaxIn;
     PTNumStatMap["MaxOutStoreEdge"] = storemaxOut;
-    PTNumStatMap["AvgIn/OutStoreEdge"] = storeavgIn;
     PTNumStatMap["MaxInAddrEdge"] = addrmaxIn;
     PTNumStatMap["MaxOutAddrEdge"] = addrmaxOut;
+    timeStatMap["AvgIn/OutStoreEdge"] = storeavgIn;
     timeStatMap["AvgIn/OutCopyEdge"] = copyavgIn;
     timeStatMap["AvgIn/OutLoadEdge"] = loadavgIn;
     timeStatMap["AvgIn/OutAddrEdge"] = addravgIn;
