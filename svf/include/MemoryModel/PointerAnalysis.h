@@ -48,7 +48,6 @@ namespace SVF
 
 class CommonCHGraph;
 
-class TypeSystem;
 class SVFModule;
 class ICFG;
 class PTAStat;
@@ -156,8 +155,6 @@ protected:
     ICFG* icfg;
     /// CHGraph
     CommonCHGraph *chgraph;
-    /// TypeSystem
-    TypeSystem *typeSystem;
 
 public:
     /// Get ICFG
@@ -433,12 +430,6 @@ public:
     virtual void resolveCPPIndCalls(const CallICFGNode* cs,
                                     const PointsTo& target,
                                     CallEdgeMap& newEdges);
-
-    /// get TypeSystem
-    const TypeSystem *getTypeSystem() const
-    {
-        return typeSystem;
-    }
 };
 
 } // End namespace SVF

@@ -264,8 +264,7 @@ void FlowSensitiveStat::performStat()
     timeStatMap["AverageSCCSize"] = (fspta->numOfSCC == 0) ? 0 :
                                     ((double)fspta->numOfNodesInSCC / fspta->numOfSCC);
 
-    SVFUtil::outs() << "\n****Flow-Sensitive Pointer Analysis Statistics****\n";
-    PTAStat::printStat();
+    PTAStat::printStat("Flow-Sensitive Pointer Analysis Statistics");
 }
 
 void FlowSensitiveStat::statNullPtr()

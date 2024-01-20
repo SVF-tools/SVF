@@ -36,7 +36,7 @@ using namespace std;
 double SVFStat::timeOfBuildingLLVMModule = 0;
 double SVFStat::timeOfBuildingSVFIR = 0;
 double SVFStat::timeOfBuildingSymbolTable = 0;
-
+bool SVFStat::printGeneralStats = true;
 
 SVFStat::SVFStat() : startTime(0), endTime(0)
 {
@@ -77,23 +77,28 @@ void SVFStat::printStat(string statname)
     SVFUtil::outs() << "################ (program : " << moduleName << ")###############\n";
     SVFUtil::outs().flags(std::ios::left);
     unsigned field_width = 20;
+
     for(NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it!=eit; ++it)
     {
         // format out put with width 20 space
         std::cout << std::setw(field_width) << it->first << it->second << "\n";
     }
-    SVFUtil::outs() << "-------------------------------------------------------\n";
+
+    if(!timeStatMap.empty())
+        SVFUtil::outs() << "----------------Time and memory stats--------------------\n";
     for(TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it!=eit; ++it)
     {
         // format out put with width 20 space
         SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
     }
+
+    if(!PTNumStatMap.empty())
+        SVFUtil::outs() << "----------------Numbers stats----------------------------\n";
     for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it)
     {
         // format out put with width 20 space
         SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
     }
-
     SVFUtil::outs() << "#######################################################" << std::endl;
     SVFUtil::outs().flush();
     generalNumMap.clear();
@@ -103,6 +108,10 @@ void SVFStat::printStat(string statname)
 
 void SVFStat::performStat()
 {
+
+    /// SVF's general statistics are only printed once even if you run multiple anayses
+    if(printGeneralStats == false)
+        return;
 
     SVFIR* pag = SVFIR::getPAG();
     u32_t numOfFunction = 0;
@@ -199,6 +208,7 @@ void SVFStat::performStat()
 
     printStat("General Stats");
 
+    printGeneralStats = false;
 }
 
 

@@ -490,8 +490,7 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
     PTNumStatMap["InsenRetEdge"] = insensitiveRetEdge;
 
 
-    SVFUtil::outs() << "\n****SVFG SCC Stat****\n";
-    PTAStat::printStat();
+    PTAStat::printStat("SVFG SCC Stat");
 
     delete svfgSCC;
 
@@ -499,6 +498,5 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
 
 void SVFGStat::printStat(string str)
 {
-    SVFUtil::outs() << "\n****SVFG Statistics****\n";
-    PTAStat::printStat(str);
+    PTAStat::printStat("SVFG Statistics");
 }
