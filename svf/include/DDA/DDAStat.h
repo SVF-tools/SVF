@@ -75,18 +75,6 @@ public:
 
     void getNumOfOOBQuery();
 
-    inline void setMemUsageBefore(u32_t vmrss, u32_t vmsize)
-    {
-        _vmrssUsageBefore = vmrss;
-        _vmsizeUsageBefore = vmsize;
-    }
-
-    inline void setMemUsageAfter(u32_t vmrss, u32_t vmsize)
-    {
-        _vmrssUsageAfter = vmrss;
-        _vmsizeUsageAfter = vmsize;
-    }
-
 private:
     FlowDDA* flowDDA;
     ContextDDA* contextDDA;
@@ -109,11 +97,6 @@ private:
     u32_t _NumOfNullPtr;
     u32_t _NumOfConstantPtr;
     u32_t _NumOfBlackholePtr;
-
-    u32_t _vmrssUsageBefore;
-    u32_t _vmrssUsageAfter;
-    u32_t _vmsizeUsageBefore;
-    u32_t _vmsizeUsageAfter;
 
     double _AvgNumOfDPMAtSVFGNode;
     u32_t _MaxNumOfDPMAtSVFGNode;

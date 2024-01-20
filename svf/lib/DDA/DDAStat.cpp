@@ -82,9 +82,6 @@ void DDAStat::initDefault()
     _AnaTimePerQuery = 0;
     _AnaTimeCyclePerQuery = 0;
     _TotalTimeOfQueries = 0;
-
-    _vmrssUsageBefore = _vmrssUsageAfter = 0;
-    _vmsizeUsageBefore = _vmsizeUsageAfter = 0;
 }
 
 SVFG* DDAStat::getSVFG() const

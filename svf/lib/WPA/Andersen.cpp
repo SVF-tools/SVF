@@ -74,11 +74,17 @@ void AndersenBase::initialize()
 {
     /// Build SVFIR
     PointerAnalysis::initialize();
+    /// Create statistic class
+    stat = new AndersenStat(this);
+
+    u32_t vmrss = 0;
+    u32_t vmsize = 0;
+    SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
+    stat->setMemUsageBefore(vmrss, vmsize);
     /// Build Constraint Graph
     consCG = new ConstraintGraph(pag);
     setGraph(consCG);
-    /// Create statistic class
-    stat = new AndersenStat(this);
+
     if (Options::ConsCGDotGraph())
         consCG->dump("consCG_initial");
 }
@@ -94,6 +100,12 @@ void AndersenBase::finalize()
 
     if (Options::PrintCGGraph())
         consCG->print();
+
+    u32_t vmrss = 0;
+    u32_t vmsize = 0;
+    SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
+    stat->setMemUsageAfter(vmrss, vmsize);
+
     BVDataPTAImpl::finalize();
 }
 

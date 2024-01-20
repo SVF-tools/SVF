@@ -53,11 +53,29 @@ public:
 
     NodeBS localVarInRecursion;
 
+    inline void setMemUsageBefore(u32_t vmrss, u32_t vmsize)
+    {
+        _vmrssUsageBefore = vmrss;
+        _vmsizeUsageBefore = vmsize;
+    }
+
+    inline void setMemUsageAfter(u32_t vmrss, u32_t vmsize)
+    {
+        _vmrssUsageAfter = vmrss;
+        _vmsizeUsageAfter = vmsize;
+    }
+
     void performStat() override;
 
     void callgraphStat() override;
-private:
+
+
+protected:
     PointerAnalysis* pta;
+    u32_t _vmrssUsageBefore;
+    u32_t _vmrssUsageAfter;
+    u32_t _vmsizeUsageBefore;
+    u32_t _vmsizeUsageAfter;
 };
 
 } // End namespace SVF
