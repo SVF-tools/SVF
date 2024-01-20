@@ -139,8 +139,28 @@ void ConstraintGraph::buildCG()
         StoreStmt* edge = SVFUtil::cast<StoreStmt>(*iter);
         addStoreCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
+
+    clearSolitaries();
 }
 
+/*!
+ * Remove nodes that are neither pointers nor connected with any edge
+ */
+void ConstraintGraph::clearSolitaries()
+{
+    Set<ConstraintNode*> nodesToRemove;
+    for (auto it = this->begin(); it != this->end(); ++it)
+    {
+        if (it->second->hasIncomingEdge() || it->second->hasOutgoingEdge())
+            continue;
+        if (pag->getGNode(it->first)->isPointer())
+            continue;
+        nodesToRemove.insert(it->second);
+    }
+
+    for (auto node : nodesToRemove)
+        removeConstraintNode(node);
+}
 
 /*!
  * Memory has been cleaned up at GenericGraph

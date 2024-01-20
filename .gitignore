@@ -9,6 +9,8 @@ autoconf/
 tests/result/
 doxygen/
 .*
+!.config.in
+!.config.cmake.in
 !.gitignore
 *~
 *.o

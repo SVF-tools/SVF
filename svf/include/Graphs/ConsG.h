@@ -67,6 +67,8 @@ protected:
 
     void destroy();
 
+    void clearSolitaries();  // remove nodes that are neither pointers nor connected with any edge
+
     SVFStmt::SVFStmtSetTy& getPAGEdgeSet(SVFStmt::PEDGEK kind)
     {
         return pag->getPTASVFStmtSet(kind);

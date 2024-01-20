@@ -636,7 +636,7 @@ void SVFIRBuilder::visitAllocaInst(AllocaInst &inst)
 
     NodeID src = getObjectNode(&inst);
 
-    addAddrEdge(src, dst);
+    addAddrWithStackArraySz(src, dst, inst);
 
 }
 

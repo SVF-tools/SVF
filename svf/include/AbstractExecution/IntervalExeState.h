@@ -51,38 +51,34 @@
 
 namespace SVF
 {
-
-class IntervalExeState : public ExeState
+class IntervalESBase: public ExeState
 {
     friend class SVFIR2ItvExeState;
     friend class RelationSolver;
-
 public:
     typedef Map<u32_t, IntervalValue> VarToValMap;
 
     typedef VarToValMap LocToValMap;
 
-    static IntervalExeState globalES;
-
 public:
     /// default constructor
-    IntervalExeState() : ExeState(ExeState::IntervalK) {}
+    IntervalESBase() : ExeState(ExeState::IntervalK) {}
 
-    IntervalExeState(VarToValMap &_varToValMap, LocToValMap &_locToValMap) : ExeState(ExeState::IntervalK),
+    IntervalESBase(VarToValMap &_varToValMap, LocToValMap &_locToValMap) : ExeState(ExeState::IntervalK),
         _varToItvVal(_varToValMap),
         _locToItvVal(_locToValMap) {}
 
     /// copy constructor
-    IntervalExeState(const IntervalExeState &rhs) : ExeState(rhs), _varToItvVal(rhs.getVarToVal()),
+    IntervalESBase(const IntervalESBase &rhs) : ExeState(rhs), _varToItvVal(rhs.getVarToVal()),
         _locToItvVal(rhs.getLocToVal())
     {
 
     }
 
-    virtual ~IntervalExeState() = default;
+    virtual ~IntervalESBase() = default;
 
 
-    IntervalExeState &operator=(const IntervalExeState &rhs)
+    IntervalESBase &operator=(const IntervalESBase &rhs)
     {
         if (rhs != *this)
         {
@@ -94,7 +90,7 @@ public:
     }
 
     /// move constructor
-    IntervalExeState(IntervalExeState &&rhs) : ExeState(std::move(rhs)),
+    IntervalESBase(IntervalESBase &&rhs) : ExeState(std::move(rhs)),
         _varToItvVal(std::move(rhs._varToItvVal)),
         _locToItvVal(std::move(rhs._locToItvVal))
     {
@@ -102,7 +98,7 @@ public:
     }
 
     /// operator= move constructor
-    IntervalExeState &operator=(IntervalExeState &&rhs)
+    IntervalESBase &operator=(IntervalESBase &&rhs)
     {
         if (&rhs != this)
         {
@@ -114,9 +110,9 @@ public:
     }
 
     /// Set all value bottom
-    IntervalExeState bottom() const
+    IntervalESBase bottom() const
     {
-        IntervalExeState inv = *this;
+        IntervalESBase inv = *this;
         for (auto &item: inv._varToItvVal)
         {
             item.second.set_to_bottom();
@@ -125,9 +121,9 @@ public:
     }
 
     /// Set all value top
-    IntervalExeState top() const
+    IntervalESBase top() const
     {
-        IntervalExeState inv = *this;
+        IntervalESBase inv = *this;
         for (auto &item: inv._varToItvVal)
         {
             item.second.set_to_top();
@@ -136,9 +132,9 @@ public:
     }
 
     /// Copy some values and return a new IntervalExeState
-    IntervalExeState sliceState(Set<u32_t> &sl)
+    IntervalESBase sliceState(Set<u32_t> &sl)
     {
-        IntervalExeState inv;
+        IntervalESBase inv;
         for (u32_t id: sl)
         {
             inv._varToItvVal[id] = _varToItvVal[id];
@@ -156,51 +152,37 @@ public:
     /// get memory addresses of variable
     Addrs &getAddrs(u32_t id) override
     {
-        auto it = _varToAddrs.find(id);
-        if (it != _varToAddrs.end())
-            return it->second;
-        else
-            return globalES._varToAddrs[id];
+        return _varToAddrs[id];
     }
 
     /// get interval value of variable
-    inline IntervalValue &operator[](u32_t varId)
+    inline virtual IntervalValue &operator[](u32_t varId)
     {
-        auto localIt = _varToItvVal.find(varId);
-        if(localIt != _varToItvVal.end())
-            return localIt->second;
-        else
-        {
-            return globalES._varToItvVal[varId];
-        }
+        return _varToItvVal[varId];
     }
 
     /// whether the variable is in varToAddrs table
     inline bool inVarToAddrsTable(u32_t id) const override
     {
-        return _varToAddrs.find(id) != _varToAddrs.end() ||
-               globalES._varToAddrs.find(id) != globalES._varToAddrs.end();
+        return _varToAddrs.find(id) != _varToAddrs.end();
     }
 
     /// whether the variable is in varToVal table
-    inline bool inVarToValTable(u32_t id) const
+    inline virtual bool inVarToValTable(u32_t id) const
     {
-        return _varToItvVal.find(id) != _varToItvVal.end() ||
-               globalES._varToItvVal.find(id) != globalES._varToItvVal.end();
+        return _varToItvVal.find(id) != _varToItvVal.end();
     }
 
     /// whether the memory address stores memory addresses
     inline bool inLocToAddrsTable(u32_t id) const override
     {
-        return _locToAddrs.find(id) != _locToAddrs.end() ||
-               globalES._locToAddrs.find(id) != globalES._locToAddrs.end();
+        return _locToAddrs.find(id) != _locToAddrs.end();
     }
 
     /// whether the memory address stores interval value
-    inline bool inLocToValTable(u32_t id) const
+    inline virtual bool inLocToValTable(u32_t id) const
     {
-        return _locToItvVal.find(id) != _locToItvVal.end() ||
-               globalES._locToItvVal.find(id) != globalES._locToItvVal.end();
+        return _locToItvVal.find(id) != _locToItvVal.end();
     }
 
     /// get var2val map
@@ -215,50 +197,25 @@ public:
         return _locToItvVal;
     }
 
-    inline bool inLocalLocToValTable(u32_t id) const
-    {
-        return _locToItvVal.find(id) != _locToItvVal.end();
-    }
-
-    inline bool inLocalLocToAddrsTable(u32_t id) const
-    {
-        return _locToAddrs.find(id) != _locToAddrs.end();
-    }
-
 public:
 
-    inline void cpyItvToLocal(u32_t varId)
-    {
-        auto localIt = _varToItvVal.find(varId);
-        // local already have varId
-        if (localIt != _varToItvVal.end()) return;
-        auto globIt = globalES._varToItvVal.find(varId);
-        if (globIt != globalES._varToItvVal.end())
-        {
-            _varToItvVal[varId] = globIt->second;
-        }
-    }
-
     /// domain widen with other, and return the widened domain
-    IntervalExeState widening(const IntervalExeState &other);
+    IntervalESBase widening(const IntervalESBase &other);
 
     /// domain narrow with other, and return the narrowed domain
-    IntervalExeState narrowing(const IntervalExeState &other);
+    IntervalESBase narrowing(const IntervalESBase &other);
 
     /// domain widen with other, important! other widen this.
-    void widenWith(const IntervalExeState &other);
+    void widenWith(const IntervalESBase &other);
 
     /// domain join with other, important! other widen this.
-    void joinWith(const IntervalExeState &other);
+    void joinWith(const IntervalESBase &other);
 
     /// domain narrow with other, important! other widen this.
-    void narrowWith(const IntervalExeState &other);
+    void narrowWith(const IntervalESBase &other);
 
     /// domain meet with other, important! other widen this.
-    void meetWith(const IntervalExeState &other);
-
-    /// domain meet with other varToValMap
-    void meetWith(VarToValMap *other);
+    void meetWith(const IntervalESBase &other);
 
 
     /// Return int value from an expression if it is a numeral, otherwise return an approximate value
@@ -306,7 +263,7 @@ public:
         _locToItvVal[objId] = val;
     }
 
-    inline IntervalValue &load(u32_t addr)
+    inline virtual IntervalValue &load(u32_t addr)
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getInternalID(addr);
@@ -315,15 +272,11 @@ public:
             return it->second;
         else
         {
-            auto globIt = globalES._locToItvVal.find(objId);
-            if(globIt != globalES._locToItvVal.end())
-                return globIt->second;
-            else
-                return _locToItvVal[objId];
+            return _locToItvVal[objId];
         }
     }
 
-    inline Addrs &loadAddrs(u32_t addr) override
+    inline virtual Addrs &loadAddrs(u32_t addr) override
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getInternalID(addr);
@@ -332,41 +285,29 @@ public:
             return it->second;
         else
         {
-            auto globIt = globalES._locToAddrs.find(objId);
-            if(globIt != globalES._locToAddrs.end())
-                return globIt->second;
-            else
-                return _locToAddrs[objId];
+            return _locToAddrs[objId];
         }
     }
 
-    inline IntervalValue& getLocToVal(u32_t id)
+    inline virtual IntervalValue& getLocVal(u32_t id)
     {
         auto it = _locToItvVal.find(id);
         if(it != _locToItvVal.end())
             return it->second;
         else
         {
-            auto globIt = globalES._locToItvVal.find(id);
-            if(globIt != globalES._locToItvVal.end())
-                return globIt->second;
-            else
-                return _locToItvVal[id];
+            return _locToItvVal[id];
         }
     }
 
-    inline Addrs& getLocAddrs(u32_t id)
+    inline virtual Addrs& getLocAddrs(u32_t id)
     {
         auto it = _locToAddrs.find(id);
         if(it != _locToAddrs.end())
             return it->second;
         else
         {
-            auto globIt = globalES._locToAddrs.find(id);
-            if(globIt != globalES._locToAddrs.end())
-                return globIt->second;
-            else
-                return _locToAddrs[id];
+            return _locToAddrs[id];
         }
     }
 
@@ -378,7 +319,7 @@ public:
         return "";
     }
 
-    bool equals(const IntervalExeState &other) const;
+    bool equals(const IntervalESBase &other) const;
 
     static bool eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs)
     {
@@ -426,10 +367,255 @@ public:
 
     using ExeState::operator==;
     using ExeState::operator!=;
-    bool operator==(const IntervalExeState &rhs) const
+    bool operator==(const IntervalESBase &rhs) const
     {
         return ExeState::operator==(rhs) && eqVarToValMap(_varToItvVal, rhs.getVarToVal()) &&
                eqVarToValMap(_locToItvVal, rhs.getLocToVal());
+    }
+
+    bool operator!=(const IntervalESBase &rhs) const
+    {
+        return !(*this == rhs);
+    }
+
+    bool operator<(const IntervalESBase &rhs) const
+    {
+        return !(*this >= rhs);
+    }
+
+
+    bool operator>=(const IntervalESBase &rhs) const
+    {
+        return geqVarToValMap(_varToItvVal, rhs.getVarToVal()) && geqVarToValMap(_locToItvVal, rhs.getLocToVal());
+    }
+
+    void clear()
+    {
+        _locToItvVal.clear();
+        _varToItvVal.clear();
+        _locToAddrs.clear();
+        _varToAddrs.clear();
+    }
+
+
+protected:
+    void printTable(const VarToValMap &table, std::ostream &oss) const;
+
+    void printTable(const VarToAddrs &table, std::ostream &oss) const;
+};
+
+class IntervalExeState : public IntervalESBase
+{
+    friend class SVFIR2ItvExeState;
+    friend class RelationSolver;
+
+public:
+    static IntervalExeState globalES;
+
+public:
+    /// default constructor
+    IntervalExeState() : IntervalESBase() {}
+
+    IntervalExeState(VarToValMap &_varToValMap, LocToValMap &_locToValMap) : IntervalESBase(_varToValMap, _locToValMap) {}
+
+    /// copy constructor
+    IntervalExeState(const IntervalExeState &rhs) : IntervalESBase(rhs)
+    {
+
+    }
+
+    virtual ~IntervalExeState() = default;
+
+
+    IntervalExeState &operator=(const IntervalExeState &rhs)
+    {
+        IntervalESBase::operator=(rhs);
+        return *this;
+    }
+
+    /// move constructor
+    IntervalExeState(IntervalExeState &&rhs) : IntervalESBase(std::move(rhs))
+    {
+
+    }
+
+    /// operator= move constructor
+    IntervalExeState &operator=(IntervalExeState &&rhs)
+    {
+        IntervalESBase::operator=(std::move(rhs));
+        return *this;
+    }
+
+public:
+
+    /// get memory addresses of variable
+    Addrs &getAddrs(u32_t id) override
+    {
+        auto it = _varToAddrs.find(id);
+        if (it != _varToAddrs.end())
+            return it->second;
+        else
+            return globalES._varToAddrs[id];
+    }
+
+    /// get interval value of variable
+    inline IntervalValue &operator[](u32_t varId) override
+    {
+        auto localIt = _varToItvVal.find(varId);
+        if(localIt != _varToItvVal.end())
+            return localIt->second;
+        else
+        {
+            return globalES._varToItvVal[varId];
+        }
+    }
+
+    /// whether the variable is in varToAddrs table
+    inline bool inVarToAddrsTable(u32_t id) const override
+    {
+        return _varToAddrs.find(id) != _varToAddrs.end() ||
+               globalES._varToAddrs.find(id) != globalES._varToAddrs.end();
+    }
+
+    /// whether the variable is in varToVal table
+    inline bool inVarToValTable(u32_t id) const override
+    {
+        return _varToItvVal.find(id) != _varToItvVal.end() ||
+               globalES._varToItvVal.find(id) != globalES._varToItvVal.end();
+    }
+
+    /// whether the memory address stores memory addresses
+    inline bool inLocToAddrsTable(u32_t id) const override
+    {
+        return _locToAddrs.find(id) != _locToAddrs.end() ||
+               globalES._locToAddrs.find(id) != globalES._locToAddrs.end();
+    }
+
+    /// whether the memory address stores interval value
+    inline bool inLocToValTable(u32_t id) const override
+    {
+        return _locToItvVal.find(id) != _locToItvVal.end() ||
+               globalES._locToItvVal.find(id) != globalES._locToItvVal.end();
+    }
+
+    inline bool inLocalLocToValTable(u32_t id) const
+    {
+        return _locToItvVal.find(id) != _locToItvVal.end();
+    }
+
+    inline bool inLocalLocToAddrsTable(u32_t id) const
+    {
+        return _locToAddrs.find(id) != _locToAddrs.end();
+    }
+
+public:
+
+    inline void cpyItvToLocal(u32_t varId)
+    {
+        auto localIt = _varToItvVal.find(varId);
+        // local already have varId
+        if (localIt != _varToItvVal.end()) return;
+        auto globIt = globalES._varToItvVal.find(varId);
+        if (globIt != globalES._varToItvVal.end())
+        {
+            _varToItvVal[varId] = globIt->second;
+        }
+    }
+
+    /// domain widen with other, and return the widened domain
+    IntervalExeState widening(const IntervalExeState &other);
+
+    /// domain narrow with other, and return the narrowed domain
+    IntervalExeState narrowing(const IntervalExeState &other);
+
+    /// domain widen with other, important! other widen this.
+    void widenWith(const IntervalExeState &other);
+
+    /// domain join with other, important! other widen this.
+    void joinWith(const IntervalExeState &other);
+
+    /// domain narrow with other, important! other widen this.
+    void narrowWith(const IntervalExeState &other);
+
+    /// domain meet with other, important! other widen this.
+    void meetWith(const IntervalExeState &other);
+
+    u32_t hash() const override;
+
+public:
+
+    inline IntervalValue &load(u32_t addr) override
+    {
+        assert(isVirtualMemAddress(addr) && "not virtual address?");
+        u32_t objId = getInternalID(addr);
+        auto it = _locToItvVal.find(objId);
+        if(it != _locToItvVal.end())
+            return it->second;
+        else
+        {
+            auto globIt = globalES._locToItvVal.find(objId);
+            if(globIt != globalES._locToItvVal.end())
+                return globIt->second;
+            else
+                return _locToItvVal[objId];
+        }
+    }
+
+    inline Addrs &loadAddrs(u32_t addr) override
+    {
+        assert(isVirtualMemAddress(addr) && "not virtual address?");
+        u32_t objId = getInternalID(addr);
+        auto it = _locToAddrs.find(objId);
+        if(it != _locToAddrs.end())
+            return it->second;
+        else
+        {
+            auto globIt = globalES._locToAddrs.find(objId);
+            if(globIt != globalES._locToAddrs.end())
+                return globIt->second;
+            else
+                return _locToAddrs[objId];
+        }
+    }
+
+    inline IntervalValue& getLocVal(u32_t id) override
+    {
+        auto it = _locToItvVal.find(id);
+        if(it != _locToItvVal.end())
+            return it->second;
+        else
+        {
+            auto globIt = globalES._locToItvVal.find(id);
+            if(globIt != globalES._locToItvVal.end())
+                return globIt->second;
+            else
+                return _locToItvVal[id];
+        }
+    }
+
+    inline Addrs& getLocAddrs(u32_t id) override
+    {
+        auto it = _locToAddrs.find(id);
+        if(it != _locToAddrs.end())
+            return it->second;
+        else
+        {
+            auto globIt = globalES._locToAddrs.find(id);
+            if(globIt != globalES._locToAddrs.end())
+                return globIt->second;
+            else
+                return _locToAddrs[id];
+        }
+    }
+
+    bool equals(const IntervalExeState &other) const;
+
+    using ExeState::operator==;
+    using ExeState::operator!=;
+    bool operator==(const IntervalExeState &rhs) const
+    {
+        return ExeState::operator==(rhs) && eqVarToValMap(_varToItvVal, rhs._varToItvVal) &&
+               eqVarToValMap(_locToItvVal, rhs._locToItvVal);
     }
 
     bool operator!=(const IntervalExeState &rhs) const
@@ -445,22 +631,8 @@ public:
 
     bool operator>=(const IntervalExeState &rhs) const
     {
-        return geqVarToValMap(_varToItvVal, rhs.getVarToVal()) && geqVarToValMap(_locToItvVal, rhs.getLocToVal());
+        return geqVarToValMap(_varToItvVal, rhs.getVarToVal()) && geqVarToValMap(_locToItvVal, rhs._locToItvVal);
     }
-
-    void clear()
-    {
-        _locToItvVal.clear();
-        _varToItvVal.clear();
-        _locToAddrs.clear();
-        _varToAddrs.clear();
-    }
-
-
-private:
-    void printTable(const VarToValMap &table, std::ostream &oss) const;
-
-    void printTable(const VarToAddrs &table, std::ostream &oss) const;
 };
 }
 

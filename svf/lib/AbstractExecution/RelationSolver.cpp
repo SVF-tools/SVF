@@ -30,19 +30,19 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-IntervalExeState RelationSolver::bilateral(const IntervalExeState &domain, const Z3Expr& phi,
+IntervalESBase RelationSolver::bilateral(const IntervalESBase &domain, const Z3Expr& phi,
         u32_t descend_check)
 {
     /// init variables
-    IntervalExeState upper = domain.top();
-    IntervalExeState lower = domain.bottom();
+    IntervalESBase upper = domain.top();
+    IntervalESBase lower = domain.bottom();
     u32_t meets_in_a_row = 0;
     z3::solver solver = Z3Expr::getSolver();
     z3::params p(Z3Expr::getContext());
     /// TODO: add option for timeout
     p.set(":timeout", static_cast<unsigned>(600)); // in milliseconds
     solver.set(p);
-    IntervalExeState consequence;
+    IntervalESBase consequence;
 
     /// start processing
     while (lower != upper)
@@ -82,9 +82,9 @@ IntervalExeState RelationSolver::bilateral(const IntervalExeState &domain, const
                 }
             }
             solver.pop();
-            IntervalExeState newLower = domain.bottom();
+            IntervalESBase newLower = domain.bottom();
             newLower.joinWith(lower);
-            IntervalExeState rhs = beta(solution, domain);
+            IntervalESBase rhs = beta(solution, domain);
             newLower.joinWith(rhs);
             lower = newLower;
             meets_in_a_row = 0;
@@ -98,7 +98,7 @@ IntervalExeState RelationSolver::bilateral(const IntervalExeState &domain, const
                 if (solver.reason_unknown() == "timeout")
                     return upper;
             }
-            IntervalExeState newUpper = domain.top();
+            IntervalESBase newUpper = domain.top();
             newUpper.meetWith(upper);
             newUpper.meetWith(consequence);
             upper = newUpper;
@@ -108,9 +108,9 @@ IntervalExeState RelationSolver::bilateral(const IntervalExeState &domain, const
     return upper;
 }
 
-IntervalExeState RelationSolver::RSY(const IntervalExeState& domain, const Z3Expr& phi)
+IntervalESBase RelationSolver::RSY(const IntervalESBase& domain, const Z3Expr& phi)
 {
-    IntervalExeState lower = domain.bottom();
+    IntervalESBase lower = domain.bottom();
     z3::solver& solver = Z3Expr::getSolver();
     z3::params p(Z3Expr::getContext());
     /// TODO: add option for timeout
@@ -144,7 +144,7 @@ IntervalExeState RelationSolver::RSY(const IntervalExeState& domain, const Z3Exp
                 }
             }
             solver.pop();
-            IntervalExeState newLower = domain.bottom();
+            IntervalESBase newLower = domain.bottom();
             newLower.joinWith(lower);
             newLower.joinWith(beta(solution, domain));
             lower = newLower;
@@ -164,8 +164,8 @@ IntervalExeState RelationSolver::RSY(const IntervalExeState& domain, const Z3Exp
     return lower;
 }
 
-IntervalExeState RelationSolver::abstract_consequence(
-    const IntervalExeState& lower, const IntervalExeState& upper, const IntervalExeState& domain) const
+IntervalESBase RelationSolver::abstract_consequence(
+    const IntervalESBase& lower, const IntervalESBase& upper, const IntervalESBase& domain) const
 {
     /*Returns the "abstract consequence" of lower and upper.
 
@@ -181,7 +181,7 @@ IntervalExeState RelationSolver::abstract_consequence(
             it != domain.getVarToVal().end(); ++it)
         /// for variable in self.variables:
     {
-        IntervalExeState proposed = domain.top(); /// proposed = self.top.copy()
+        IntervalESBase proposed = domain.top(); /// proposed = self.top.copy()
         proposed._varToItvVal[it->first] = lower._varToItvVal.at(it->first);
         /// proposed.set_interval(variable, lower.interval_of(variable))
         /// proposed._locToItvVal
@@ -193,7 +193,7 @@ IntervalExeState RelationSolver::abstract_consequence(
     return lower; /// return lower.copy()
 }
 
-Z3Expr RelationSolver::gamma_hat(const IntervalExeState& exeState) const
+Z3Expr RelationSolver::gamma_hat(const IntervalESBase& exeState) const
 {
     Z3Expr res(Z3Expr::getContext().bool_val(true));
     for (auto& item : exeState.getVarToVal())
@@ -209,8 +209,8 @@ Z3Expr RelationSolver::gamma_hat(const IntervalExeState& exeState) const
     return res;
 }
 
-Z3Expr RelationSolver::gamma_hat(const IntervalExeState& alpha,
-                                 const IntervalExeState& exeState) const
+Z3Expr RelationSolver::gamma_hat(const IntervalESBase& alpha,
+                                 const IntervalESBase& exeState) const
 {
     Z3Expr res(Z3Expr::getContext().bool_val(true));
     for (auto& item : exeState.getVarToVal())
@@ -227,7 +227,7 @@ Z3Expr RelationSolver::gamma_hat(const IntervalExeState& alpha,
     return res;
 }
 
-Z3Expr RelationSolver::gamma_hat(u32_t id, const IntervalExeState& exeState) const
+Z3Expr RelationSolver::gamma_hat(u32_t id, const IntervalESBase& exeState) const
 {
     auto it = exeState.getVarToVal().find(id);
     assert(it != exeState.getVarToVal().end() && "id not in varToVal?");
@@ -238,10 +238,10 @@ Z3Expr RelationSolver::gamma_hat(u32_t id, const IntervalExeState& exeState) con
     return res;
 }
 
-IntervalExeState RelationSolver::beta(const Map<u32_t, double>& sigma,
-                                      const IntervalExeState& exeState) const
+IntervalESBase RelationSolver::beta(const Map<u32_t, double>& sigma,
+                                    const IntervalESBase& exeState) const
 {
-    IntervalExeState res;
+    IntervalESBase res;
     for (const auto& item : exeState.getVarToVal())
     {
         res._varToItvVal[item.first] = IntervalValue(
@@ -263,7 +263,7 @@ void RelationSolver::updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const
     }
 }
 
-IntervalExeState RelationSolver::BS(const IntervalExeState& domain, const Z3Expr &phi)
+IntervalESBase RelationSolver::BS(const IntervalESBase& domain, const Z3Expr &phi)
 {
     /// because key of _varToItvVal is u32_t, -key may out of range for int
     /// so we do key + bias for -key
@@ -307,7 +307,7 @@ IntervalExeState RelationSolver::BS(const IntervalExeState& domain, const Z3Expr
     /// optimize each object
     BoxedOptSolver(new_phi.simplify(), ret, low_values, high_values);
     /// fill in the return values
-    IntervalExeState retInv;
+    IntervalESBase retInv;
     for (const auto& item: ret)
     {
         if (item.first >= bias)

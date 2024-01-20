@@ -613,7 +613,7 @@ char *__memset_chk(char * dest, int c, unsigned long destlen, int flag)
     return NULL;
 }
 
-__attribute__((annotate("MEMSET"), annotate("BUF_CHECK:Arg0, Arg2")))
+__attribute__((annotate("MEMSET")))
 char *wmemset(wchar_t * dst, wchar_t elem, int sz, int flag) {
     return NULL;
 }
