@@ -73,6 +73,8 @@ int main(int argc, char ** argv)
     SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
+    LLVMModuleSet::releaseLLVMModuleSet();
+
 
     std::unique_ptr<LeakChecker> saber;
 
@@ -87,7 +89,6 @@ int main(int argc, char ** argv)
 
     saber->runOnModule(pag);
 
-    LLVMModuleSet::releaseLLVMModuleSet();
     return 0;
 
 }

@@ -48,6 +48,8 @@ int main(int argc, char ** argv)
     SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
+    LLVMModuleSet::releaseLLVMModuleSet();
+
 
     MTA mta;
     mta.runOnModule(pag);
@@ -59,6 +61,5 @@ int main(int argc, char ** argv)
     LockResultValidator lockvalidator(mta.getLockAnalysis());
     lockvalidator.analyze();
 
-    LLVMModuleSet::releaseLLVMModuleSet();
     return 0;
 }

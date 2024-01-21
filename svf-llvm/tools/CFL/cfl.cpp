@@ -62,6 +62,7 @@ int main(int argc, char ** argv)
         SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
         SVFIRBuilder builder(svfModule);
         svfir = builder.build();
+        SVF::LLVMModuleSet::releaseLLVMModuleSet();
     }  // if no dot form CFLGraph is specified, we use svfir from .bc.
 
     // The CFLBase pointer that will be used to run the analysis
@@ -82,7 +83,6 @@ int main(int argc, char ** argv)
 
     // Releases the SVFIR and the LLVMModuleSet to free memory
     SVFIR::releaseSVFIR();
-    SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
 
     return 0;
