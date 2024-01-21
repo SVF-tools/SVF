@@ -73,7 +73,6 @@ int main(int argc, char ** argv)
     SVFModule* svfModule = LLVMModuleSet::buildSVFModule(moduleNameVec);
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
-    LLVMModuleSet::releaseLLVMModuleSet();
 
 
     std::unique_ptr<LeakChecker> saber;
@@ -88,6 +87,8 @@ int main(int argc, char ** argv)
         saber = std::make_unique<LeakChecker>();  // if no checker is specified, we use leak checker as the default one.
 
     saber->runOnModule(pag);
+    LLVMModuleSet::releaseLLVMModuleSet();
+    
 
     return 0;
 
