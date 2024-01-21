@@ -67,14 +67,14 @@ public:
     void typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
 
     /// Default type
-    static const Type *defaultTy(const Value *val);
+    const Type *defaultTy(const Value *val);
 
     /// Opaque pointer type
-    inline static const Type *defaultPtrTy() {
+    inline const Type *defaultPtrTy() {
         return PointerType::getUnqual(getLLVMCtx());
     }
 
-    inline static LLVMContext &getLLVMCtx() {
+    inline LLVMContext &getLLVMCtx() {
         return LLVMModuleSet::getLLVMModuleSet()->getContext();
     }
 
@@ -86,10 +86,7 @@ private:
     /// Backward collect all possible allocation sites (stack, static, heap) starting from a value
     Set<const Value *> bwfindAllocations(const Value *startValue);
 
-    /// Determine type based on infer site
-    static const Type *infersiteToType(const Value *val);
-
-    inline static bool isAllocation(const Value *val) {
+    inline bool isAllocation(const Value *val) {
         return LLVMUtil::isObject(val);
     }
 

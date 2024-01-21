@@ -812,7 +812,8 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
         /// For an C++ class, it can have variant elements depending on the vtable size,
         /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
         if(classTyHasVTable(st))
-            typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(TypeInference::defaultPtrTy()));
+            typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(
+                    LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->defaultPtrTy()));
         else
             return getNumOfElements(objTy);
     }

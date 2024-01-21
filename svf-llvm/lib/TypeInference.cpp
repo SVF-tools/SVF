@@ -74,6 +74,24 @@ using namespace LLVMUtil;
 
 const std::string TYPEMALLOC = "TYPE_MALLOC";
 
+/// Determine type based on infer site
+/// https://llvm.org/docs/OpaquePointers.html#migration-instructions
+const Type *infersiteToType(const Value *val) {
+    assert(val && "value cannot be empty");
+    if (SVFUtil::isa<LoadInst, StoreInst>(val)) {
+        return llvm::getLoadStoreType(const_cast<Value *>(val));
+    } else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val)) {
+        return gepInst->getSourceElementType();
+    } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
+        return call->getFunctionType();
+    } else if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val)) {
+        return allocaInst->getAllocatedType();
+    } else if (const GlobalValue *globalValue = SVFUtil::dyn_cast<GlobalValue>(val)) {
+        return globalValue->getValueType();
+    } else {
+        ABORT_MSG("unknown value:" + dumpValueAndDbgInfo(val));
+    }
+}
 
 const Type *TypeInference::defaultTy(const Value *val) {
     ABORT_IFNOT(val, "val cannot be null");
@@ -414,25 +432,6 @@ void TypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, c
         ABORT_MSG("wrong type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(val));
     }
 #endif
-}
-
-/// Determine type based on infer site
-/// https://llvm.org/docs/OpaquePointers.html#migration-instructions
-const Type *TypeInference::infersiteToType(const Value *val) {
-    assert(val && "value cannot be empty");
-    if (SVFUtil::isa<LoadInst, StoreInst>(val)) {
-        return llvm::getLoadStoreType(const_cast<Value *>(val));
-    } else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val)) {
-        return gepInst->getSourceElementType();
-    } else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val)) {
-        return call->getFunctionType();
-    } else if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val)) {
-        return allocaInst->getAllocatedType();
-    } else if (const GlobalValue *globalValue = SVFUtil::dyn_cast<GlobalValue>(val)) {
-        return globalValue->getValueType();
-    } else {
-        ABORT_MSG("unknown value:" + dumpValueAndDbgInfo(val));
-    }
 }
 
 u32_t TypeInference::getArgPosInCall(const CallBase *callBase, const Value *arg) {
