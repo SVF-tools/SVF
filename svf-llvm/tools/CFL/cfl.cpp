@@ -34,7 +34,6 @@
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "CFL/CFLAlias.h"
 #include "CFL/CFLVF.h"
-#include "SVF-LLVM/TypeInference.h"
 
 
 using namespace llvm;
@@ -85,7 +84,6 @@ int main(int argc, char ** argv)
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
-    TypeInference::releaseTypeInference();
 
     return 0;
 

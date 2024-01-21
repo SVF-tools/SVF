@@ -571,7 +571,7 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
 }
 
 TypeInference *SymbolTableBuilder::getTypeInference() {
-    return TypeInference::getTypeInference();
+    return LLVMModuleSet::getLLVMModuleSet()->getTypeInference();
 }
 
 

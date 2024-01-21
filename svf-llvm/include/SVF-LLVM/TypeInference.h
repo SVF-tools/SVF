@@ -46,29 +46,17 @@ public:
 
 
 private:
-    static TypeInference *_typeInference;
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
     ValueToSources _valueToAllocs; // value allocations (stack, static, heap) cache
 
-    explicit TypeInference() = default;
 
 public:
 
+    explicit TypeInference() = default;
+
     ~TypeInference() = default;
 
-    /// Singleton
-    static inline TypeInference *getTypeInference() {
-        if (_typeInference == nullptr) {
-            _typeInference = new TypeInference();
-        }
-        return _typeInference;
-    }
-
-    static void releaseTypeInference() {
-        delete _typeInference;
-        _typeInference = nullptr;
-    }
 
     /// get or infer the type of a value
     const Type *inferObjType(const Value *startValue);

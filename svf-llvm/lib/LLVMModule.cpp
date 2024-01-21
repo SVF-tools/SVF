@@ -37,6 +37,7 @@
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "MSSA/SVFGBuilder.h"
 #include "llvm/Support/FileSystem.h"
+#include "SVF-LLVM/TypeInference.h"
 
 using namespace std;
 using namespace SVF;
@@ -73,8 +74,17 @@ bool LLVMModuleSet::preProcessed = false;
 
 LLVMModuleSet::LLVMModuleSet()
     : symInfo(SymbolTableInfo::SymbolInfo()),
-      svfModule(SVFModule::getSVFModule())
+      svfModule(SVFModule::getSVFModule()), typeInference(new TypeInference())
 {
+}
+
+LLVMModuleSet::~LLVMModuleSet() {
+    delete typeInference;
+    typeInference = nullptr;
+}
+
+TypeInference* LLVMModuleSet::getTypeInference() {
+    return typeInference;
 }
 
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)

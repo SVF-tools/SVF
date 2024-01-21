@@ -32,7 +32,6 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "SVFIR/SVFFileSystem.h"
-#include "SVF-LLVM/TypeInference.h"
 
 
 using namespace llvm;
@@ -70,7 +69,6 @@ int main(int argc, char** argv)
     wpa.runOnModule(pag);
 
     LLVMModuleSet::releaseLLVMModuleSet();
-    TypeInference::releaseTypeInference();
 
     return 0;
 }

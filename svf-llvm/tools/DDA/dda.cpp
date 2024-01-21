@@ -32,7 +32,6 @@
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "DDA/DDAPass.h"
 #include "Util/Options.h"
-#include "SVF-LLVM/TypeInference.h"
 
 using namespace llvm;
 using namespace SVF;
@@ -67,7 +66,6 @@ int main(int argc, char ** argv)
 
     LLVMModuleSet::releaseLLVMModuleSet();
 
-    TypeInference::releaseTypeInference();
     return 0;
 
 }

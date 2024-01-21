@@ -40,6 +40,7 @@ namespace SVF
 {
 
 class SymbolTableInfo;
+class TypeInference;
 
 class LLVMModuleSet
 {
@@ -89,6 +90,7 @@ private:
     SVFValue2LLVMValueMap SVFValue2LLVMValue;
     LLVMType2SVFTypeMap LLVMType2SVFType;
     Type2TypeInfoMap Type2TypeInfo;
+    TypeInference* typeInference;
 
     /// Constructor
     LLVMModuleSet();
@@ -96,7 +98,7 @@ private:
     void build();
 
 public:
-    ~LLVMModuleSet() = default;
+    ~LLVMModuleSet();
 
     static inline LLVMModuleSet* getLLVMModuleSet()
     {
@@ -343,6 +345,8 @@ public:
     SVFType* getSVFType(const Type* T);
     /// Get LLVM Type
     const Type* getLLVMType(const SVFType* T) const;
+
+    TypeInference* getTypeInference();
 
 private:
     /// Create SVFTypes

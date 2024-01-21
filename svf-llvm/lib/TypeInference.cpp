@@ -71,7 +71,6 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
 
-TypeInference *TypeInference::_typeInference = nullptr;
 
 const std::string TYPEMALLOC = "TYPE_MALLOC";
 
@@ -272,7 +271,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
         if (canUpdate) {
             Set<const Type *> types;
             std::transform(infersites.begin(), infersites.end(), std::inserter(types, types.begin()),
-                           getTypeInference()->infersiteToType);
+                           infersiteToType);
             _valueToInferSites[curValue] = SVFUtil::move(infersites);
             _valueToType[curValue] = selectLargestType(types);
         }
