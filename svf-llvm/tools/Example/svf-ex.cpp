@@ -221,7 +221,6 @@ int main(int argc, char ** argv)
     /// Build Program Assignment Graph (SVFIR)
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
-    SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
 
     /// Create Andersen's pointer analysis
@@ -265,6 +264,7 @@ int main(int argc, char ** argv)
     SVFIR::releaseSVFIR();
 
     LLVMModuleSet::getLLVMModuleSet()->dumpModulesToFile(".svf.bc");
+    SVF::LLVMModuleSet::releaseLLVMModuleSet();
     llvm::llvm_shutdown();
     return 0;
 }
