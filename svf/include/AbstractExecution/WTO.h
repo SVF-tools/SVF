@@ -27,27 +27,47 @@
  * "Efficient chaotic iteration strategies with widenings", Formal
  * Methods in Programming and Their Applications, 1993, pages 128-141.
  *
- *  Created on: Jul 3, 2022
+ *  Created on: Jan 22, 2024
  *      Author: Xiao Cheng, Jiawei Wang
  *
  */
-
 #ifndef WTO_H_
 #define WTO_H_
 
+#include "Graphs/CFBasicBlockG.h"
+#include "Graphs/ICFG.h"
 #include "SVFIR/SVFType.h"
 #include "SVFIR/SVFValue.h"
-#include "Graphs/CFBasicBlockG.h"
-
 
 namespace SVF
 {
 
-class CFBasicBlockGWTO;
+template <typename GraphT> class WTO;
 
-class CFBasicBlockGWTONode;
+template <typename GraphT> class WTONode;
 
-class CFBasicBlockGWTOCycle;
+template <typename GraphT> class WTOCycle;
+
+template <typename GraphT> class WTOComponentVisitor;
+
+// Helper to test for the existence of a sub type
+template <typename T, typename = void> struct has_nodetype : std::false_type
+{
+};
+
+template <typename T>
+struct has_nodetype<T, std::void_t<typename T::NodeType>> : std::true_type
+{
+};
+
+template <typename T, typename = void> struct has_edgetype : std::false_type
+{
+};
+
+template <typename T>
+struct has_edgetype<T, std::void_t<typename T::EdgeType>> : std::true_type
+{
+};
 
 /*!
  * Cycle depth of a WTO Component
@@ -79,77 +99,85 @@ class CFBasicBlockGWTOCycle;
  *  |       6, 7      |    [1, 5]   |
  *  --------------------------------
  */
-template <typename NodeRef>
-class WTOCycleDepth
+template <typename GraphT> class WTOCycleDepth
 {
 public:
-    typedef std::vector<NodeRef> NodeRefList;
+    static_assert(has_nodetype<GraphT>::value,
+                  "GraphT must have a nested type named 'NodeType'");
+    typedef typename GraphT::NodeType NodeT;
+
+private:
+    typedef std::vector<const NodeT*> NodeRefList;
+
+public:
     typedef typename NodeRefList::const_iterator Iterator;
 
 private:
     NodeRefList _heads;
 
 public:
-    /// Default Constructor
+    /// Constructor
     WTOCycleDepth() = default;
 
-    /// Default Copy Constructor
-    WTOCycleDepth(const WTOCycleDepth &) = default;
+    /// Copy constructor
+    WTOCycleDepth(const WTOCycleDepth&) = default;
 
-    /// Default Move Constructor
-    WTOCycleDepth(WTOCycleDepth &&) = default;
+    /// Move constructor
+    WTOCycleDepth(WTOCycleDepth&&) = default;
 
-    /// Default Copy Operator=
-    WTOCycleDepth &operator=(const WTOCycleDepth &) = default;
+    /// Copy assignment operator
+    WTOCycleDepth& operator=(const WTOCycleDepth&) = default;
 
-    /// Default Move Operator=
-    WTOCycleDepth &operator=(WTOCycleDepth &&) = default;
+    /// Move assignment operator
+    WTOCycleDepth& operator=(WTOCycleDepth&&) = default;
 
-    /// Default Destructor
+    /// Destructor
     ~WTOCycleDepth() = default;
 
-    /// Add a cycle head to the end of the head list
-    void push_back(NodeRef head)
+    /// Add a cycle head in the cycleDepth
+    void add(const NodeT* head)
     {
         _heads.push_back(head);
     }
 
+    /// Begin iterator over the head of cycles
     Iterator begin() const
     {
         return _heads.cbegin();
     }
 
+    /// End iterator over the head of cycles
     Iterator end() const
     {
         return _heads.cend();
     }
 
-    /// Convert the wto-cycle-depth to a string
-    std::string toString() const
+    /// Return the common prefix of the given cycle depths
+    WTOCycleDepth operator^(const WTOCycleDepth& other) const
     {
-        std::string str;
-        std::stringstream rawstr(str);
-        rawstr << "[";
-        for (auto it = begin(), et = end(); it != et;)
+        WTOCycleDepth res;
+        for (auto this_it = begin(), other_it = other.begin();
+             this_it != end() && other_it != other.end(); ++this_it, ++other_it)
         {
-            rawstr << (*it)->getName().data();
-            ++it;
-            if (it != et)
+            if (*this_it == *other_it)
             {
-                rawstr << ", ";
+                res.add(*this_it);
+            }
+            else
+            {
+                break;
             }
         }
-        rawstr << "]";
-        return rawstr.str();
+        return res;
     }
 
 private:
-    /// Compare the given wto-cycle-depth
-    int compare(const WTOCycleDepth &other) const
+    /// Compare the given cycle depths
+    int compare(const WTOCycleDepth& other) const
     {
         if (this == &other)
         {
-            return 0; // 0 - equals
+            return 0; // equals
         }
 
         auto this_it = begin();
@@ -158,7 +186,7 @@ private:
         {
             if (other_it == other.end())
             {
-                return 1; // `this` is inside `other`
+                return 1; // `this` is nested within `other`
             }
             else if (*this_it == *other_it)
             {
@@ -176,68 +204,61 @@ private:
         }
         else
         {
-            return -1; // `other` is inside `this`
+            return -1; // `other` is nested within `this`
         }
     }
 
 public:
-
-    /// Overloading operators
-    //@{
-    /// Return the common prefix of the given wto-cycle-depth
-    WTOCycleDepth operator^(const WTOCycleDepth &other) const
-    {
-        WTOCycleDepth res;
-        for (auto this_it = begin(), other_it = other.begin();
-                this_it != end() && other_it != other.end();
-                ++this_it, ++other_it)
-        {
-            if (*this_it == *other_it)
-            {
-                res.push_back(*this_it);
-            }
-            else
-            {
-                break;
-            }
-        }
-        return res;
-    }
-
-    /// Less than other's depth - `other` is inside `this`
-    bool operator<(const WTOCycleDepth &other) const
+    bool operator<(const WTOCycleDepth& other) const
     {
         return compare(other) == -1;
     }
 
-    /// Less than or Equal with other's depth
-    bool operator<=(const WTOCycleDepth &other) const
+    bool operator<=(const WTOCycleDepth& other) const
     {
         return compare(other) <= 0;
     }
 
-    /// Equal with other's depth
-    bool operator==(const WTOCycleDepth &other) const
+    bool operator==(const WTOCycleDepth& other) const
     {
         return compare(other) == 0;
     }
 
-    /// Greater than other's depth - `this` is inside `other`
-    bool operator>(const WTOCycleDepth &other) const
+    bool operator>=(const WTOCycleDepth& other) const
+    {
+        return operator<=(other, *this);
+    }
+
+    bool operator>(const WTOCycleDepth& other) const
     {
         return compare(other) == 1;
     }
 
-    /// Greater than or Equal with other's depth
-    bool operator>=(const WTOCycleDepth &other) const
+    /// Dump the cycleDepth, for debugging purpose
+    [[nodiscard]] std::string toString() const
     {
-        return operator<=(other);
+        std::string str;
+        std::stringstream rawstr(str);
+        rawstr << "[";
+        for (auto it = begin(), et = end(); it != et;)
+        {
+            rawstr << (*it)->toString();
+            ++it;
+            if (it != et)
+            {
+                rawstr << ", ";
+            }
+        }
+        rawstr << "]";
+        return rawstr.str();
     }
 
-    /// Dump into CMD
-    friend std::ostream &operator<<(std::ostream &o, const WTOCycleDepth &CFBasicBlockGWTO)
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend std::ostream& operator<<(std::ostream& o,
+                                    const WTOCycleDepth<GraphT>& wto)
     {
-        o << CFBasicBlockGWTO.toString();
+        o << wto.toString();
         return o;
     }
     //@}
@@ -245,203 +266,193 @@ public:
 }; // end class WTOCycleDepth
 
 /*!
- * Weak topological order (WTO) visitor
- */
-class WTOVisitor
-{
-
-public:
-    /// Default Constructor
-    WTOVisitor() = default;
-
-    /// Default Copy Constructor
-    WTOVisitor(const WTOVisitor &) noexcept = default;
-
-    /// Default Move Constructor
-    WTOVisitor(WTOVisitor &&) noexcept = default;
-
-    /// Default Copy Operator=
-    WTOVisitor &operator=(const WTOVisitor &) noexcept = default;
-
-    /// Default Move Operator=
-    WTOVisitor &operator=(WTOVisitor &&) noexcept = default;
-
-    /// Default Destructor
-    virtual ~WTOVisitor() = default;
-
-    /// Visit WTO Node
-    virtual void visit(const CFBasicBlockGWTONode &) = 0;
-
-    /// Visit WTO Cycle
-    virtual void visit(const CFBasicBlockGWTOCycle &) = 0;
-
-}; // end class WTOVisitor
-
-/*!
- * Base class for a WTO component for CFBasicBlockG
+ * Base class for a WTO component
  *
  * A WTO component can be either a node or cycle
  */
-class CFBasicBlockGWTOComp
+template <typename GraphT> class WTOComponent
 {
-
 public:
-    enum WtoCT
+    enum WTOCT
     {
-        Node, Cycle
+        Node,
+        Cycle
     };
 
-public:
-    /// Default Constructor
-    CFBasicBlockGWTOComp(WtoCT k) : _type(k) {};
+    /// Default constructor
+    WTOComponent(WTOCT k) : _type(k){};
 
-    /// Copy Constructor
-    CFBasicBlockGWTOComp(const CFBasicBlockGWTOComp &) noexcept = default;
+    /// Copy constructor
+    WTOComponent(const WTOComponent&) noexcept = default;
 
-    /// Move Constructor
-    CFBasicBlockGWTOComp(CFBasicBlockGWTOComp &&) noexcept = default;
+    /// Move constructor
+    WTOComponent(WTOComponent&&) noexcept = default;
 
-    /// Copy Operator=
-    CFBasicBlockGWTOComp &operator=(const CFBasicBlockGWTOComp &) noexcept = default;
+    /// Copy assignment operator
+    WTOComponent& operator=(const WTOComponent&) noexcept = default;
 
-    /// Move Operator=
-    CFBasicBlockGWTOComp &operator=(CFBasicBlockGWTOComp &&) noexcept = default;
+    /// Move assignment operator
+    WTOComponent& operator=(WTOComponent&&) noexcept = default;
 
-    /// Default Destructor
-    virtual ~CFBasicBlockGWTOComp() = default;
+    /// Accept the given visitor
+    virtual void accept(WTOComponentVisitor<GraphT>&) const = 0;
 
-    /// Accept a visitor
-    virtual void accept(WTOVisitor *) const = 0;
+    /// Destructor
+    virtual ~WTOComponent() = default;
 
-    /// Return the WTO Kind (node or cycle)
-    inline WtoCT getKind() const
+    inline WTOCT getKind() const
     {
         return _type;
     }
 
     virtual std::string toString() const = 0;
 
-    friend std::ostream &operator<<(std::ostream &o, const CFBasicBlockGWTOComp &CFBasicBlockGWTO)
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend std::ostream& operator<<(std::ostream& o,
+                                    const WTOComponent<GraphT>& wto)
     {
-        o << CFBasicBlockGWTO.toString();
+        o << wto.toString();
         return o;
     }
+    //@}
 
-private:
+    WTOCT _type;
 
-    WtoCT _type;
-
-}; // end class CFBasicBlockGWTOComp
-
+}; // end class WTOComponent
 
 /*!
- * WTO node for CFBasicBlockG
+ * WTO node for GraphT
  */
-class CFBasicBlockGWTONode final : public CFBasicBlockGWTOComp
+template <typename GraphT> class WTONode final : public WTOComponent<GraphT>
 {
+public:
+    static_assert(has_nodetype<GraphT>::value,
+                  "GraphT must have a nested type named 'NodeType'");
+    typedef typename GraphT::NodeType NodeT;
+
 private:
-    const CFBasicBlockNode *_node;
+    const NodeT* _node;
 
 public:
     /// Constructor
-    explicit CFBasicBlockGWTONode(const CFBasicBlockNode *node) : CFBasicBlockGWTOComp(CFBasicBlockGWTOComp::Node), _node(node) {}
+    explicit WTONode(const NodeT* node)
+        : WTOComponent<GraphT>(WTOComponent<GraphT>::Node), _node(node)
+    {
+    }
 
     /// Return the graph node
-    const CFBasicBlockNode *node() const
+    const NodeT* node() const
     {
         return _node;
     }
 
-    /// Accept a visitor
-    void accept(WTOVisitor *v) const override
+    /// Accept the given visitor
+    void accept(WTOComponentVisitor<GraphT>& v) const override
     {
-        v->visit(*this);
+        v.visit(*this);
     }
 
-    /// Convert the node to string
+    /// Dump the node, for debugging purpose
     std::string toString() const override
     {
-        return std::string(_node->getName().data());
+        // return _node->toString();
+        return std::to_string(_node->getId());
     }
 
     /// ClassOf
     //@{
-    static inline bool classof(const CFBasicBlockGWTONode *)
+    static inline bool classof(const WTONode<GraphT>*)
     {
         return true;
     }
 
-    static inline bool classof(const CFBasicBlockGWTOComp *c)
+    static inline bool classof(const WTOComponent<GraphT>* c)
     {
-        return c->getKind() == CFBasicBlockGWTOComp::Node;
+        return c->getKind() == WTOComponent<GraphT>::Node;
     }
     ///@}
 
-}; // end class CFBasicBlockGWTONode
-
+}; // end class WTONode
 
 /*!
- * WTO cycle for CFBasicBlockG
+ * WTO cycle for GraphT
  */
-class CFBasicBlockGWTOCycle final : public CFBasicBlockGWTOComp
+template <typename GraphT> class WTOCycle final : public WTOComponent<GraphT>
 {
+public:
+    static_assert(has_nodetype<GraphT>::value,
+                  "GraphT must have a nested type named 'NodeType'");
+    typedef typename GraphT::NodeType NodeT;
+    typedef WTOComponent<GraphT> WTOComponentT;
+
 private:
-    typedef std::list<const CFBasicBlockGWTOComp *> WtoComponentRefList;
-    typedef WtoComponentRefList::const_iterator Iterator;
+    typedef const WTOComponentT* WTOComponentPtr;
+    typedef std::list<WTOComponentPtr> WTOComponentRefList;
+
+public:
+    /// Iterator over the components
+    typedef typename WTOComponentRefList::const_iterator Iterator;
 
 private:
     /// Head of the cycle
-    const CFBasicBlockNode *_head;
+    const NodeT* _head;
 
     /// List of components
-    WtoComponentRefList _components;
+    WTOComponentRefList _components;
 
 public:
     /// Constructor
-    CFBasicBlockGWTOCycle(const CFBasicBlockNode *head, WtoComponentRefList components)
-        : CFBasicBlockGWTOComp(CFBasicBlockGWTOComp::Cycle), _head(head), _components(std::move(components)) {}
+    WTOCycle(const NodeT* head, WTOComponentRefList components)
+        : WTOComponent<GraphT>(WTOComponent<GraphT>::Cycle), _head(head),
+          _components(std::move(components))
+    {
+    }
 
     /// Return the head of the cycle
-    const CFBasicBlockNode *head() const
+    const NodeT* head() const
     {
         return _head;
     }
 
+    /// Begin iterator over the components
     Iterator begin() const
     {
         return _components.cbegin();
     }
 
+    /// End iterator over the components
     Iterator end() const
     {
         return _components.cend();
     }
 
-    /// Accept a visitor
-    void accept(WTOVisitor *v) const override
+    /// Accept the given visitor
+    void accept(WTOComponentVisitor<GraphT>& v) const override
     {
-        v->visit(*this);
+        v.visit(*this);
     }
 
     /// ClassOf
     //@{
-    static inline bool classof(const CFBasicBlockGWTOCycle *)
+    static inline bool classof(const WTOCycle<GraphT>*)
     {
         return true;
     }
 
-    static inline bool classof(const CFBasicBlockGWTOComp *c)
+    static inline bool classof(const WTOComponent<GraphT>* c)
     {
-        return c->getKind() == CFBasicBlockGWTOComp::Cycle;
+        return c->getKind() == WTOComponent<GraphT>::Cycle;
     }
     ///@}
 
+    /// Dump the cycle, for debugging purpose
     std::string toString() const override
     {
         std::string str;
         std::stringstream rawstr(str);
         rawstr << "(";
-        rawstr << _head->getName().data() << ", ";
+        rawstr << _head->getId() << ", ";
         for (auto it = begin(), et = end(); it != et;)
         {
             rawstr << (*it)->toString();
@@ -455,126 +466,199 @@ public:
         return rawstr.str();
     }
 
-}; // end class CFBasicBlockGWTOCycle
-
+}; // end class WTOCycle
 
 /*!
- * Weak topological order for CFBasicBlockG
+ * Weak topological order (WTO) visitor
  */
-class CFBasicBlockGWTO
+template <typename GraphT> class WTOComponentVisitor
+{
+public:
+    typedef WTONode<GraphT> WTOVertexT;
+    typedef WTOCycle<GraphT> WTOCycleT;
+
+public:
+    /// Default constructor
+    WTOComponentVisitor() = default;
+
+    /// Copy constructor
+    WTOComponentVisitor(const WTOComponentVisitor&) noexcept = default;
+
+    /// Move constructor
+    WTOComponentVisitor(WTOComponentVisitor&&) noexcept = default;
+
+    /// Copy assignment operator
+    WTOComponentVisitor& operator=(const WTOComponentVisitor&) noexcept =
+        default;
+
+    /// Move assignment operator
+    WTOComponentVisitor& operator=(WTOComponentVisitor&&) noexcept = default;
+
+    /// Visit the given node
+    virtual void visit(const WTOVertexT&) = 0;
+
+    /// Visit the given cycle
+    virtual void visit(const WTOCycleT&) = 0;
+
+    /// Destructor
+    virtual ~WTOComponentVisitor() = default;
+
+}; // end class WTOComponentVisitor
+
+/*!
+ * Weak topological order for GraphT
+ */
+template <typename GraphT> class WTO
 {
 
 public:
-    typedef WTOCycleDepth<const CFBasicBlockNode*> CFBasicBlockGWTOCycleDepth;
-    typedef Set<const CFBasicBlockNode *> NodeRefSet;
+    static_assert(has_nodetype<GraphT>::value,
+                  "GraphT must have a nested type named 'NodeType'");
+    static_assert(has_edgetype<GraphT>::value,
+                  "GraphT must have a nested type named 'EdgeType'");
+    typedef typename GraphT::NodeType NodeT;
+    typedef typename GraphT::EdgeType EdgeT;
+    typedef WTOCycleDepth<GraphT> GraphTWTOCycleDepth;
+    typedef WTOComponent<GraphT> WTOComponentT;
+    typedef WTONode<GraphT> WTONodeT;
+    typedef WTOCycle<GraphT> WTOCycleT;
+    typedef Set<const NodeT*> NodeRefList;
 
 protected:
-    typedef std::list<const CFBasicBlockGWTOComp *> WTOCompRefList;
-    typedef Set <const CFBasicBlockGWTOComp *> WTOCompRefSet;
-    typedef Map<const CFBasicBlockNode *, const CFBasicBlockGWTOCycle *> NodeRefToWTOCycleMap;
-    typedef Map<const CFBasicBlockNode *, NodeRefSet> NodeRefToNodeRefSetMap;
+    typedef const WTOComponentT* WTOComponentPtr;
+    typedef std::list<WTOComponentPtr> WTOComponentRefList;
+    typedef Set<WTOComponentPtr> WTOComponentRefSet;
+    typedef Map<const NodeT*, const WTOCycleT*> NodeRefToWTOCycleMap;
+    typedef Map<const NodeT*, NodeRefList> NodeRefTONodeRefListMap;
 
     typedef u32_t CycleDepthNumber;
-    typedef Map<const CFBasicBlockNode *, CycleDepthNumber> NodeRefToCycleDepthNumber;
-    typedef std::vector<const CFBasicBlockNode *> CFBasicBlockNodes;
-    typedef std::shared_ptr<CFBasicBlockGWTOCycleDepth> CFBasicBlockGWTOCycleDepthPtr;
-    typedef Map<const CFBasicBlockNode *, CFBasicBlockGWTOCycleDepthPtr> NodeRefToWTOCycleDepthPtr;
+    typedef Map<const NodeT*, CycleDepthNumber> NodeRefToCycleDepthNumber;
+    typedef std::vector<const NodeT*> Stack;
+    typedef std::shared_ptr<GraphTWTOCycleDepth> WTOCycleDepthPtr;
+    typedef Map<const NodeT*, WTOCycleDepthPtr> NodeRefToWTOCycleDepthPtr;
+
+    struct CFBasicBlockGTag
+    {
+    };
+    struct ICFGTag
+    {
+    };
+    struct OtherGTag
+    {
+    };
+
+    using Tag = typename std::conditional<
+        std::is_same<GraphT, CFBasicBlockGraph>::value, CFBasicBlockGTag,
+        typename std::conditional<std::is_same<GraphT, ICFG>::value, ICFGTag,
+                                  OtherGTag>::type>::type;
 
 public:
-    typedef typename WTOCompRefList::const_iterator Iterator;
+    /// Iterator over the components
+    typedef typename WTOComponentRefList::const_iterator Iterator;
 
 protected:
-    WTOCompRefList _components;
-    WTOCompRefSet _allComponents;
-    NodeRefToWTOCycleMap _headToCycle;
-    NodeRefToNodeRefSetMap _headToTails;
+    WTOComponentRefList _components;
+    WTOComponentRefSet _allComponents;
+    NodeRefToWTOCycleMap headRefToCycle;
+    NodeRefTONodeRefListMap headRefToTails;
     NodeRefToWTOCycleDepthPtr _nodeToDepth;
     NodeRefToCycleDepthNumber _nodeToCDN;
     CycleDepthNumber _num;
-    CFBasicBlockNodes _stack;
-    CFBasicBlockGraph* _graph;
+    Stack _stack;
+    GraphT* _graph;
 
 public:
-    explicit CFBasicBlockGWTO() : _num(0) {}
+    /// Compute the weak topological order of the given graph
+    explicit WTO() : _num(0) {}
 
-    explicit CFBasicBlockGWTO(CFBasicBlockGraph* graph, const CFBasicBlockNode *entry) : _num(0), _graph(graph)
+    /// Compute the weak topological order of the given graph
+    explicit WTO(const NodeT* entry, GraphT* graph) : _num(0), _graph(graph)
     {
         build(entry);
     }
 
-    CFBasicBlockGWTO(const CFBasicBlockGWTO &other) = default;
+    /// No copy constructor
+    WTO(const WTO& other) = default;
 
-    CFBasicBlockGWTO(CFBasicBlockGWTO &&other) = default;
+    /// Move constructor
+    WTO(WTO&& other) = default;
 
-    CFBasicBlockGWTO &operator=(const CFBasicBlockGWTO &other) = default;
+    /// No copy assignment operator
+    WTO& operator=(const WTO& other) = default;
 
-    CFBasicBlockGWTO &operator=(CFBasicBlockGWTO &&other) = default;
+    /// Move assignment operator
+    WTO& operator=(WTO&& other) = default;
 
-    ~CFBasicBlockGWTO()
+    /// Destructor
+    ~WTO()
     {
-        for (const auto &component: _allComponents)
+        for (const auto& component : _allComponents)
         {
             delete component;
         }
     }
 
+    /// Begin iterator over the components
+    /// Begin iterator over the components
     Iterator begin() const
     {
         return _components.cbegin();
     }
 
+    /// End iterator over the components
     Iterator end() const
     {
         return _components.cend();
     }
 
-    bool isHead(const CFBasicBlockNode *node) const
+    bool isHead(const NodeT* node) const
     {
-        return _headToCycle.find(node) != _headToCycle.end();
+        return headRefToCycle.find(node) != headRefToCycle.end();
     }
 
     typename NodeRefToWTOCycleMap::const_iterator headBegin() const
     {
-        return _headToCycle.cbegin();
+        return headRefToCycle.cbegin();
     }
 
+    /// End iterator over the components
     typename NodeRefToWTOCycleMap::const_iterator headEnd() const
     {
-        return _headToCycle.cend();
+        return headRefToCycle.cend();
     }
 
-    const NodeRefSet &getTails(const CFBasicBlockNode *node) const
+    const NodeRefList& getTails(const NodeT* node) const
     {
-        auto it = _headToTails.find(node);
-        assert(it != _headToTails.end() && "node not found");
+        auto it = headRefToTails.find(node);
+        assert(it != headRefToTails.end() && "node not found");
         return it->second;
     }
 
-
-    /// Get the wto-cycle-depth of the given node
-    const CFBasicBlockGWTOCycleDepth &getWTOCycleDepth(const CFBasicBlockNode *n) const
+    /// Return the cycleDepth of the given node
+    const GraphTWTOCycleDepth& cycleDepth(const NodeT* n) const
     {
         auto it = _nodeToDepth.find(n);
         assert(it != _nodeToDepth.end() && "node not found");
         return *(it->second);
     }
 
-    /// Whether the given node is in the node to cycle getCDN
-    inline bool inNodeToCycleDepth(const CFBasicBlockNode *n) const
+    /// Return the cycleDepth of the given node
+    inline bool in_cycleDepth_table(const NodeT* n) const
     {
         auto it = _nodeToDepth.find(n);
         return it != _nodeToDepth.end();
     }
 
     /// Accept the given visitor
-    void accept(WTOVisitor* v)
+    void accept(WTOComponentVisitor<GraphT>& v)
     {
-        for (const auto &c: _components)
+        for (const auto& c : _components)
         {
             c->accept(v);
         }
     }
 
+    /// Dump the order, for debugging purpose
     std::string toString() const
     {
         std::string str;
@@ -593,51 +677,56 @@ public:
         return rawstr.str();
     }
 
-    friend std::ostream &operator<<(std::ostream &o, const CFBasicBlockGWTO &CFBasicBlockGWTO)
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend std::ostream& operator<<(std::ostream& o, const WTO<GraphT>& wto)
     {
-        o << CFBasicBlockGWTO.toString();
+        o << wto.toString();
         return o;
     }
+    //@}
 
 protected:
-
-    inline void build(const CFBasicBlockNode *entry)
+    inline void build(NodeT* entry)
     {
         visit(entry, _components);
         _nodeToCDN.clear();
         _stack.clear();
-        buildNodeToWTOCycleDepth();
-        build_tails();
+        buildNodeToDepth();
+        buildTails();
     }
 
-    /// Visitor to build the WTO cycle getCDN of each node
-    class WTOCycleDepthBuilder final
-        : public WTOVisitor
+    /// Visitor to build the cycle depths of each node
+    class WTOCycleDepthBuilder final : public WTOComponentVisitor<GraphT>
     {
     private:
-        CFBasicBlockGWTOCycleDepthPtr _wtoCycleDepth;
-        NodeRefToWTOCycleDepthPtr &_nodeToWTOCycleDepth;
+        WTOCycleDepthPtr _wtoCycleDepth;
+        NodeRefToWTOCycleDepthPtr& _nodeToWTOCycleDepth;
 
     public:
-        explicit WTOCycleDepthBuilder(NodeRefToWTOCycleDepthPtr &nodeToWTOCycleDepth)
-            : _wtoCycleDepth(std::make_shared<CFBasicBlockGWTOCycleDepth>()),
-              _nodeToWTOCycleDepth(nodeToWTOCycleDepth) {}
-
-        void visit(const CFBasicBlockGWTOCycle &cycle) override
+        explicit WTOCycleDepthBuilder(
+            NodeRefToWTOCycleDepthPtr& nodeToWTOCycleDepth)
+            : _wtoCycleDepth(std::make_shared<GraphTWTOCycleDepth>()),
+              _nodeToWTOCycleDepth(nodeToWTOCycleDepth)
         {
-            const CFBasicBlockNode *head = cycle.head();
-            CFBasicBlockGWTOCycleDepthPtr previous_nesting = _wtoCycleDepth;
-            _nodeToWTOCycleDepth.insert(std::make_pair(head, _wtoCycleDepth));
-            _wtoCycleDepth = std::make_shared<CFBasicBlockGWTOCycleDepth>(*_wtoCycleDepth);
-            _wtoCycleDepth->push_back(head);
-            for (auto it = cycle.begin(), et = cycle.end(); it != et; ++it)
-            {
-                (*it)->accept(this);
-            }
-            _wtoCycleDepth = previous_nesting;
         }
 
-        void visit(const CFBasicBlockGWTONode &node) override
+        void visit(const WTOCycleT& cycle) override
+        {
+            const NodeT* head = cycle.head();
+            WTOCycleDepthPtr previous_cycleDepth = _wtoCycleDepth;
+            _nodeToWTOCycleDepth.insert(std::make_pair(head, _wtoCycleDepth));
+            _wtoCycleDepth =
+                std::make_shared<GraphTWTOCycleDepth>(*_wtoCycleDepth);
+            _wtoCycleDepth->add(head);
+            for (auto it = cycle.begin(), et = cycle.end(); it != et; ++it)
+            {
+                (*it)->accept(*this);
+            }
+            _wtoCycleDepth = previous_cycleDepth;
+        }
+
+        void visit(const WTONodeT& node) override
         {
             _nodeToWTOCycleDepth.insert(
                 std::make_pair(node.node(), _wtoCycleDepth));
@@ -646,37 +735,43 @@ protected:
     }; // end class WTOCycleDepthBuilder
 
     /// Visitor to build the tails of each head/loop
-    class TailBuilder : public WTOVisitor
+    class TailBuilder : public WTOComponentVisitor<GraphT>
     {
     protected:
-        NodeRefSet &_tails;
-        const CFBasicBlockGWTOCycleDepth &_headWTOCycleDepth;
-        const CFBasicBlockNode *_head;
-        NodeRefToWTOCycleDepthPtr &_nodeToWTOCycleDepth;
-        CFBasicBlockGraph* _graph;
+        NodeRefList& _tails;
+        const GraphTWTOCycleDepth& _headWTOCycleDepth;
+        const NodeT* _head;
+        NodeRefToWTOCycleDepthPtr& _nodeToWTOCycleDepth;
+        GraphT* _graph;
 
     public:
-
-        explicit TailBuilder(CFBasicBlockGraph* graph, NodeRefToWTOCycleDepthPtr &nodeToWTOCycleDepth, NodeRefSet &tails, const CFBasicBlockNode *head,
-                             const CFBasicBlockGWTOCycleDepth &headWTOCycleDepth) : _tails(tails), _headWTOCycleDepth(headWTOCycleDepth), _head(head), _nodeToWTOCycleDepth(
-                                     nodeToWTOCycleDepth),  _graph(graph)
+        explicit TailBuilder(GraphT* graph,
+                             NodeRefToWTOCycleDepthPtr& cycleDepth_table,
+                             NodeRefList& tails, const NodeT* head,
+                             const GraphTWTOCycleDepth& headNesting)
+            : _nodeToWTOCycleDepth(cycleDepth_table), _head(head),
+              _tails(tails), _headWTOCycleDepth(headNesting), _graph(graph)
         {
         }
 
-        void visit(const CFBasicBlockGWTOCycle &cycle) override
+        void visit(const WTOCycleT& cycle) override
         {
             for (auto it = cycle.begin(), et = cycle.end(); it != et; ++it)
             {
-                (*it)->accept(this);
+                (*it)->accept(*this);
             }
         }
 
-        virtual void visit(const CFBasicBlockGWTONode &node) override
+        virtual void visit(const WTONodeT& node, CFBasicBlockGTag)
         {
-            if(const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node.node()->getICFGNodes().front()))
+            static_assert(std::is_same<GraphT, CFBasicBlockGraph>::value,
+                          "GraphT must be CFBasicBlockGraph.");
+            if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(
+                    node.node()->getICFGNodes().front()))
             {
-                const CFBasicBlockNode *succ = _graph->getCFBasicBlockNode(callNode->getRetICFGNode()->getId());
-                const CFBasicBlockGWTOCycleDepth &succNesting = getWTOCycleDepth(succ);
+                const CFBasicBlockNode* succ = _graph->getCFBasicBlockNode(
+                    callNode->getRetICFGNode()->getId());
+                const GraphTWTOCycleDepth& succNesting = getWTOCycleDepth(succ);
                 if (succ != _head && succNesting <= _headWTOCycleDepth)
                 {
                     _tails.insert(node.node());
@@ -684,11 +779,14 @@ protected:
             }
             else
             {
-                for (const auto &edge: node.node()->getOutEdges())
+                for (const auto& edge : node.node()->getOutEdges())
                 {
-                    if(edge->getICFGEdge() && !edge->getICFGEdge()->isIntraCFGEdge()) continue;
-                    const CFBasicBlockNode *succ = edge->getDstNode();
-                    const CFBasicBlockGWTOCycleDepth &succNesting = getWTOCycleDepth(succ);
+                    if (edge->getICFGEdge() &&
+                        !edge->getICFGEdge()->isIntraCFGEdge())
+                        continue;
+                    const CFBasicBlockNode* succ = edge->getDstNode();
+                    const GraphTWTOCycleDepth& succNesting =
+                        getWTOCycleDepth(succ);
                     if (succ != _head && succNesting <= _headWTOCycleDepth)
                     {
                         _tails.insert(node.node());
@@ -697,20 +795,68 @@ protected:
             }
         }
 
+        virtual void visit(const WTONodeT& node, ICFGTag)
+        {
+            static_assert(std::is_same<GraphT, ICFG>::value,
+                          "GraphT must be ICFG.");
+            if (const CallICFGNode* callNode =
+                    SVFUtil::dyn_cast<CallICFGNode>(node.node()))
+            {
+                const RetICFGNode* succ = callNode->getRetICFGNode();
+                const GraphTWTOCycleDepth& succNesting = getWTOCycleDepth(succ);
+                if (succ != _head && succNesting <= _headWTOCycleDepth)
+                {
+                    _tails.insert(node.node());
+                }
+            }
+            else
+            {
+                for (const auto& edge : node.node()->getOutEdges())
+                {
+                    if (!edge->isIntraCFGEdge())
+                        continue;
+                    const ICFGNode* succ = edge->getDstNode();
+                    const GraphTWTOCycleDepth& succNesting =
+                        getWTOCycleDepth(succ);
+                    if (succ != _head && succNesting <= _headWTOCycleDepth)
+                    {
+                        _tails.insert(node.node());
+                    }
+                }
+            }
+        }
+
+        virtual void visit(const WTONodeT& node, OtherGTag)
+        {
+            for (const auto& edge : node.node()->getOutEdges())
+            {
+                const NodeT* succ = edge->getDstNode();
+                const GraphTWTOCycleDepth& succNesting = getWTOCycleDepth(succ);
+                if (succ != _head && succNesting <= _headWTOCycleDepth)
+                {
+                    _tails.insert(node.node());
+                }
+            }
+        }
+
+        virtual void visit(const WTONodeT& node) override
+        {
+            visit(node, Tag());
+        }
+
     protected:
-        /// Get the wto-cycle-depth of the given node
-        const CFBasicBlockGWTOCycleDepth &getWTOCycleDepth(const CFBasicBlockNode *n) const
+        /// Return the cycleDepth of the given node
+        const GraphTWTOCycleDepth& getWTOCycleDepth(const NodeT* n) const
         {
             auto it = _nodeToWTOCycleDepth.find(n);
             assert(it != _nodeToWTOCycleDepth.end() && "node not found");
             return *(it->second);
         }
-
     };
 
 protected:
-    /// Get the cycle depth number of the given node
-    CycleDepthNumber getCDN(const CFBasicBlockNode *n) const
+    /// Return the depth-first number of the given node
+    CycleDepthNumber getCDN(const NodeT* n) const
     {
         auto it = _nodeToCDN.find(n);
         if (it != _nodeToCDN.end())
@@ -723,52 +869,56 @@ protected:
         }
     }
 
-    /// Set the cycle depth number of the given node
-    void setCDN(const CFBasicBlockNode *n, const CycleDepthNumber &Depth)
+    /// Set the depth-first number of the given node
+    void setCDN(const NodeT* n, const CycleDepthNumber& dfn)
     {
-        auto res = _nodeToCDN.insert(std::make_pair(n, Depth));
+        auto res = _nodeToCDN.insert(std::make_pair(n, dfn));
         if (!res.second)
         {
-            (res.first)->second = Depth;
+            (res.first)->second = dfn;
         }
     }
 
     /// Pop a node from the stack
-    const CFBasicBlockNode *pop()
+    const NodeT* pop()
     {
         assert(!_stack.empty() && "empty stack");
-        const CFBasicBlockNode *top = _stack.back();
+        const NodeT* top = _stack.back();
         _stack.pop_back();
         return top;
     }
 
     /// Push a node on the stack
-    void push(const CFBasicBlockNode *n)
+    void push(const NodeT* n)
     {
         _stack.push_back(n);
     }
 
-    const CFBasicBlockGWTONode *newNode(const CFBasicBlockNode *node)
+    const WTONodeT* newNode(const NodeT* node)
     {
-        const CFBasicBlockGWTONode *ptr = new CFBasicBlockGWTONode(node);
+        const WTONodeT* ptr = new WTONodeT(node);
         _allComponents.insert(ptr);
         return ptr;
     }
 
-    const CFBasicBlockGWTOCycle *newCycle(const CFBasicBlockNode *node, const WTOCompRefList &partition)
+    const WTOCycleT* newCycle(const NodeT* node,
+                              const WTOComponentRefList& partition)
     {
-        const CFBasicBlockGWTOCycle *ptr = new CFBasicBlockGWTOCycle(node, std::move(partition));
+        const WTOCycleT* ptr = new WTOCycleT(node, std::move(partition));
         _allComponents.insert(ptr);
         return ptr;
     }
 
-    /// Create the cycle component for the given node
-    const CFBasicBlockGWTOCycle *component(const CFBasicBlockNode *node)
+    void componentSucc(const NodeT* node, WTOComponentRefList& partition,
+                       CFBasicBlockGTag)
     {
-        WTOCompRefList partition;
-        if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
+        static_assert(std::is_same<GraphT, CFBasicBlockGraph>::value,
+                      "GraphT must be CFBasicBlockGraph.");
+        if (const CallICFGNode* callNode =
+                SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
         {
-            const CFBasicBlockNode *succ = _graph->getCFBasicBlockNode(callNode->getRetICFGNode()->getId());
+            const CFBasicBlockNode* succ = _graph->getCFBasicBlockNode(
+                callNode->getRetICFGNode()->getId());
             if (getCDN(succ) == 0)
             {
                 visit(succ, partition);
@@ -776,36 +926,88 @@ protected:
         }
         else
         {
-            for (auto it = node->getOutEdges().begin(), et = node->getOutEdges().end(); it != et; ++it)
+            for (auto it = node->getOutEdges().begin(),
+                      et = node->getOutEdges().end();
+                 it != et; ++it)
             {
-                if((*it)->getICFGEdge() && !(*it)->getICFGEdge()->isIntraCFGEdge()) continue;
-                const CFBasicBlockNode *succ = (*it)->getDstNode();
+                if ((*it)->getICFGEdge() &&
+                    !(*it)->getICFGEdge()->isIntraCFGEdge())
+                    continue;
+                const CFBasicBlockNode* succ = (*it)->getDstNode();
                 if (getCDN(succ) == 0)
                 {
                     visit(succ, partition);
                 }
             }
         }
-        const CFBasicBlockGWTOCycle *ptr = newCycle(node, partition);
-        _headToCycle.emplace(node, ptr);
+    }
+
+    void componentSucc(const NodeT* node, WTOComponentRefList& partition,
+                       ICFGTag)
+    {
+        static_assert(std::is_same<GraphT, ICFG>::value,
+                      "GraphT must be ICFG.");
+        if (const CallICFGNode* callNode =
+                SVFUtil::dyn_cast<CallICFGNode>(node))
+        {
+            const RetICFGNode* succ = callNode->getRetICFGNode();
+            if (getCDN(succ) == 0)
+            {
+                visit(succ, partition);
+            }
+        }
+        else
+        {
+            for (auto it = node->getOutEdges().begin(),
+                      et = node->getOutEdges().end();
+                 it != et; ++it)
+            {
+                if (!(*it)->isIntraCFGEdge())
+                    continue;
+                const ICFGNode* succ = (*it)->getDstNode();
+                if (getCDN(succ) == 0)
+                {
+                    visit(succ, partition);
+                }
+            }
+        }
+    }
+
+    void componentSucc(const NodeT* node, WTOComponentRefList& partition,
+                       OtherGTag)
+    {
+        for (auto it = node->OutEdgeBegin(), et = node->OutEdgeEnd(); it != et;
+             ++it)
+        {
+            const NodeT* succ = (*it)->getDstNode();
+            if (getCDN(succ) == 0)
+            {
+                visit(succ, partition);
+            }
+        }
+    }
+
+    /// Create the cycle component for the given node
+    const WTOCycleT* component(const NodeT* node)
+    {
+        WTOComponentRefList partition;
+        componentSucc(node, partition, Tag());
+        const WTOCycleT* ptr = newCycle(node, partition);
+        headRefToCycle.emplace(node, ptr);
         return ptr;
     }
 
-    /// Main algorithm to build WTO
-    virtual CycleDepthNumber visit(const CFBasicBlockNode *node, WTOCompRefList &partition)
+    virtual void visitSucc(const NodeT* node, WTOComponentRefList& partition,
+                           CycleDepthNumber& head, CycleDepthNumber& min,
+                           bool& loop, CFBasicBlockGTag)
     {
-        CycleDepthNumber head(0);
-        CycleDepthNumber min(0);
-        bool loop;
-
-        push(node);
-        _num += CycleDepthNumber(1);
-        head = _num;
-        setCDN(node, head);
-        loop = false;
-        if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
+        static_assert(std::is_same<GraphT, CFBasicBlockGraph>::value,
+                      "GraphT must be CFBasicBlockGraph.");
+        if (const CallICFGNode* callNode =
+                SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
         {
-            const CFBasicBlockNode *succ = _graph->getCFBasicBlockNode(callNode->getRetICFGNode()->getId());
+            const CFBasicBlockNode* succ = _graph->getCFBasicBlockNode(
+                callNode->getRetICFGNode()->getId());
             CycleDepthNumber succ_dfn = getCDN(succ);
             if (succ_dfn == CycleDepthNumber(0))
             {
@@ -823,10 +1025,14 @@ protected:
         }
         else
         {
-            for (auto it = node->getOutEdges().begin(), et = node->getOutEdges().end(); it != et; ++it)
+            for (auto it = node->getOutEdges().begin(),
+                      et = node->getOutEdges().end();
+                 it != et; ++it)
             {
-                if((*it)->getICFGEdge() && !(*it)->getICFGEdge()->isIntraCFGEdge()) continue;
-                const CFBasicBlockNode *succ = (*it)->getDstNode();
+                if ((*it)->getICFGEdge() &&
+                    !(*it)->getICFGEdge()->isIntraCFGEdge())
+                    continue;
+                const CFBasicBlockNode* succ = (*it)->getDstNode();
                 if (succ->getFunction() != node->getFunction())
                     continue;
                 CycleDepthNumber succ_dfn = getCDN(succ);
@@ -845,10 +1051,108 @@ protected:
                 }
             }
         }
+    }
+
+    virtual void visitSucc(const NodeT* node, WTOComponentRefList& partition,
+                           CycleDepthNumber& head, CycleDepthNumber& min,
+                           bool& loop, ICFGTag)
+    {
+        static_assert(std::is_same<GraphT, ICFG>::value,
+                      "GraphT must be ICFG.");
+        if (const CallICFGNode* callNode =
+                SVFUtil::dyn_cast<CallICFGNode>(node))
+        {
+            const RetICFGNode* succ = callNode->getRetICFGNode();
+            CycleDepthNumber succ_dfn = getCDN(succ);
+            if (succ_dfn == CycleDepthNumber(0))
+            {
+                min = visit(succ, partition);
+            }
+            else
+            {
+                min = succ_dfn;
+            }
+            if (min <= head)
+            {
+                head = min;
+                loop = true;
+            }
+        }
+        else
+        {
+            for (auto it = node->getOutEdges().begin(),
+                      et = node->getOutEdges().end();
+                 it != et; ++it)
+            {
+                if (!(*it)->isIntraCFGEdge())
+                    continue;
+                const ICFGNode* succ = (*it)->getDstNode();
+                if (succ->getFun() != node->getFun())
+                    continue;
+                CycleDepthNumber succ_dfn = getCDN(succ);
+                if (succ_dfn == CycleDepthNumber(0))
+                {
+                    min = visit(succ, partition);
+                }
+                else
+                {
+                    min = succ_dfn;
+                }
+                if (min <= head)
+                {
+                    head = min;
+                    loop = true;
+                }
+            }
+        }
+    }
+
+    virtual void visitSucc(const NodeT* node, WTOComponentRefList& partition,
+                           CycleDepthNumber& head, CycleDepthNumber& min,
+                           bool& loop, OtherGTag)
+    {
+        for (auto it = node->getOutEdges().begin(),
+                  et = node->getOutEdges().end();
+             it != et; ++it)
+        {
+            const NodeT* succ = (*it)->getDstNode();
+            CycleDepthNumber succ_dfn = getCDN(succ);
+            if (succ_dfn == CycleDepthNumber(0))
+            {
+                min = visit(succ, partition);
+            }
+            else
+            {
+                min = succ_dfn;
+            }
+            if (min <= head)
+            {
+                head = min;
+                loop = true;
+            }
+        }
+    }
+
+    /// Visit the given node
+    ///
+    /// Algorithm to build a weak topological order of a graph
+    virtual CycleDepthNumber visit(const NodeT* node,
+                                   WTOComponentRefList& partition)
+    {
+        CycleDepthNumber head(0);
+        CycleDepthNumber min(0);
+        bool loop;
+        visitSucc(node, partition, head, min, loop, Tag());
+        push(node);
+        _num += CycleDepthNumber(1);
+        head = _num;
+        setCDN(node, head);
+        loop = false;
+
         if (head == getCDN(node))
         {
             setCDN(node, UINT_MAX);
-            const CFBasicBlockNode *element = pop();
+            const NodeT* element = pop();
             if (loop)
             {
                 while (element != node)
@@ -867,31 +1171,34 @@ protected:
     }
 
     /// Build the node to WTO cycle depth table
-    void buildNodeToWTOCycleDepth()
+    void buildNodeToDepth()
     {
         WTOCycleDepthBuilder builder(_nodeToDepth);
         for (auto it = begin(), et = end(); it != et; ++it)
         {
-            (*it)->accept(&builder);
+            (*it)->accept(builder);
         }
     }
 
-    /// Build the tails for each cycle
-    virtual void build_tails()
+    /// Build the tails for each loop
+    virtual void buildTails()
     {
-        for (const auto &head: _headToCycle)
+        for (const auto& head : headRefToCycle)
         {
-            NodeRefSet tails;
-            TailBuilder builder(_graph, _nodeToDepth, tails, head.first, getWTOCycleDepth(head.first));
-            for (auto it = head.second->begin(), eit = head.second->end(); it != eit; ++it)
+            NodeRefList tails;
+            TailBuilder builder(_nodeToDepth, tails, head.first,
+                                cycleDepth(head.first));
+            for (auto it = head.second->begin(), eit = head.second->end();
+                 it != eit; ++it)
             {
-                (*it)->accept(&builder);
+                (*it)->accept(builder);
             }
-            _headToTails.emplace(head.first, tails);
+            headRefToTails.emplace(head.first, tails);
         }
     }
 
-}; // end class CFBasicBlockGWTO
+}; // end class WTO
 
-} // end namespace SVF
+} // namespace SVF
+
 #endif /* WTO_H_ */
