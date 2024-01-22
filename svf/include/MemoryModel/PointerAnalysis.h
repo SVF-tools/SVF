@@ -33,15 +33,15 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include "SVFIR/SVFIR.h"
-#include "MemoryModel/ConditionalPT.h"
+#include "Graphs/CHG.h"
+#include "Graphs/PTACallGraph.h"
+#include "Graphs/SCC.h"
 #include "MemoryModel/AbstractPointsToDS.h"
+#include "MemoryModel/ConditionalPT.h"
 #include "MemoryModel/MutablePointsToDS.h"
 #include "MemoryModel/PersistentPointsToDS.h"
-#include "Graphs/PTACallGraph.h"
-#include "Graphs/CHG.h"
-#include "Util/SCC.h"
 #include "MemoryModel/PointsTo.h"
+#include "SVFIR/SVFIR.h"
 
 namespace SVF
 {

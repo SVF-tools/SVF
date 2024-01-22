@@ -34,8 +34,6 @@
 #ifndef WTO_H_
 #define WTO_H_
 
-#include "Graphs/CFBasicBlockG.h"
-#include "Graphs/ICFG.h"
 #include "SVFIR/SVFType.h"
 #include "SVFIR/SVFValue.h"
 
@@ -280,7 +278,7 @@ public:
     };
 
     /// Default constructor
-    WTOComponent(WTOCT k) : _type(k){};
+    explicit WTOComponent(WTOCT k) : _type(k){};
 
     /// Copy constructor
     WTOComponent(const WTOComponent&) noexcept = default;
@@ -305,7 +303,7 @@ public:
         return _type;
     }
 
-    virtual std::string toString() const = 0;
+    [[nodiscard]] virtual std::string toString() const = 0;
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
@@ -354,7 +352,7 @@ public:
     }
 
     /// Dump the node, for debugging purpose
-    std::string toString() const override
+    [[nodiscard]] std::string toString() const override
     {
         // return _node->toString();
         return std::to_string(_node->getId());
@@ -447,7 +445,7 @@ public:
     ///@}
 
     /// Dump the cycle, for debugging purpose
-    std::string toString() const override
+    [[nodiscard]] std::string toString() const override
     {
         std::string str;
         std::stringstream rawstr(str);
@@ -474,7 +472,7 @@ public:
 template <typename GraphT> class WTOComponentVisitor
 {
 public:
-    typedef WTONode<GraphT> WTOVertexT;
+    typedef WTONode<GraphT> WTONodeT;
     typedef WTOCycle<GraphT> WTOCycleT;
 
 public:
@@ -495,7 +493,7 @@ public:
     WTOComponentVisitor& operator=(WTOComponentVisitor&&) noexcept = default;
 
     /// Visit the given node
-    virtual void visit(const WTOVertexT&) = 0;
+    virtual void visit(const WTONodeT&) = 0;
 
     /// Visit the given cycle
     virtual void visit(const WTOCycleT&) = 0;
@@ -537,21 +535,6 @@ protected:
     typedef std::shared_ptr<GraphTWTOCycleDepth> WTOCycleDepthPtr;
     typedef Map<const NodeT*, WTOCycleDepthPtr> NodeRefToWTOCycleDepthPtr;
 
-    struct CFBasicBlockGTag
-    {
-    };
-    struct ICFGTag
-    {
-    };
-    struct OtherGTag
-    {
-    };
-
-    using Tag = typename std::conditional<
-        std::is_same<GraphT, CFBasicBlockGraph>::value, CFBasicBlockGTag,
-        typename std::conditional<std::is_same<GraphT, ICFG>::value, ICFGTag,
-                                  OtherGTag>::type>::type;
-
 public:
     /// Iterator over the components
     typedef typename WTOComponentRefList::const_iterator Iterator;
@@ -572,7 +555,7 @@ public:
     explicit WTO() : _num(0) {}
 
     /// Compute the weak topological order of the given graph
-    explicit WTO(const NodeT* entry, GraphT* graph) : _num(0), _graph(graph)
+    explicit WTO(NodeT* entry, GraphT* graph) : _num(0), _graph(graph)
     {
         build(entry);
     }
@@ -659,7 +642,7 @@ public:
     }
 
     /// Dump the order, for debugging purpose
-    std::string toString() const
+    [[nodiscard]] std::string toString() const
     {
         std::string str;
         std::stringstream rawstr(str);
@@ -738,10 +721,10 @@ protected:
     class TailBuilder : public WTOComponentVisitor<GraphT>
     {
     protected:
+        NodeRefToWTOCycleDepthPtr& _nodeToWTOCycleDepth;
+        const NodeT* _head;
         NodeRefList& _tails;
         const GraphTWTOCycleDepth& _headWTOCycleDepth;
-        const NodeT* _head;
-        NodeRefToWTOCycleDepthPtr& _nodeToWTOCycleDepth;
         GraphT* _graph;
 
     public:
@@ -762,71 +745,7 @@ protected:
             }
         }
 
-        virtual void visit(const WTONodeT& node, CFBasicBlockGTag)
-        {
-            static_assert(std::is_same<GraphT, CFBasicBlockGraph>::value,
-                          "GraphT must be CFBasicBlockGraph.");
-            if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(
-                    node.node()->getICFGNodes().front()))
-            {
-                const CFBasicBlockNode* succ = _graph->getCFBasicBlockNode(
-                    callNode->getRetICFGNode()->getId());
-                const GraphTWTOCycleDepth& succNesting = getWTOCycleDepth(succ);
-                if (succ != _head && succNesting <= _headWTOCycleDepth)
-                {
-                    _tails.insert(node.node());
-                }
-            }
-            else
-            {
-                for (const auto& edge : node.node()->getOutEdges())
-                {
-                    if (edge->getICFGEdge() &&
-                        !edge->getICFGEdge()->isIntraCFGEdge())
-                        continue;
-                    const CFBasicBlockNode* succ = edge->getDstNode();
-                    const GraphTWTOCycleDepth& succNesting =
-                        getWTOCycleDepth(succ);
-                    if (succ != _head && succNesting <= _headWTOCycleDepth)
-                    {
-                        _tails.insert(node.node());
-                    }
-                }
-            }
-        }
-
-        virtual void visit(const WTONodeT& node, ICFGTag)
-        {
-            static_assert(std::is_same<GraphT, ICFG>::value,
-                          "GraphT must be ICFG.");
-            if (const CallICFGNode* callNode =
-                    SVFUtil::dyn_cast<CallICFGNode>(node.node()))
-            {
-                const RetICFGNode* succ = callNode->getRetICFGNode();
-                const GraphTWTOCycleDepth& succNesting = getWTOCycleDepth(succ);
-                if (succ != _head && succNesting <= _headWTOCycleDepth)
-                {
-                    _tails.insert(node.node());
-                }
-            }
-            else
-            {
-                for (const auto& edge : node.node()->getOutEdges())
-                {
-                    if (!edge->isIntraCFGEdge())
-                        continue;
-                    const ICFGNode* succ = edge->getDstNode();
-                    const GraphTWTOCycleDepth& succNesting =
-                        getWTOCycleDepth(succ);
-                    if (succ != _head && succNesting <= _headWTOCycleDepth)
-                    {
-                        _tails.insert(node.node());
-                    }
-                }
-            }
-        }
-
-        virtual void visit(const WTONodeT& node, OtherGTag)
+        void visit(const WTONodeT& node) override
         {
             for (const auto& edge : node.node()->getOutEdges())
             {
@@ -837,11 +756,6 @@ protected:
                     _tails.insert(node.node());
                 }
             }
-        }
-
-        virtual void visit(const WTONodeT& node) override
-        {
-            visit(node, Tag());
         }
 
     protected:
@@ -909,73 +823,10 @@ protected:
         return ptr;
     }
 
-    void componentSucc(const NodeT* node, WTOComponentRefList& partition,
-                       CFBasicBlockGTag)
+    /// Create the cycle component for the given node
+    virtual const WTOCycleT* component(const NodeT* node)
     {
-        static_assert(std::is_same<GraphT, CFBasicBlockGraph>::value,
-                      "GraphT must be CFBasicBlockGraph.");
-        if (const CallICFGNode* callNode =
-                SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
-        {
-            const CFBasicBlockNode* succ = _graph->getCFBasicBlockNode(
-                callNode->getRetICFGNode()->getId());
-            if (getCDN(succ) == 0)
-            {
-                visit(succ, partition);
-            }
-        }
-        else
-        {
-            for (auto it = node->getOutEdges().begin(),
-                      et = node->getOutEdges().end();
-                 it != et; ++it)
-            {
-                if ((*it)->getICFGEdge() &&
-                    !(*it)->getICFGEdge()->isIntraCFGEdge())
-                    continue;
-                const CFBasicBlockNode* succ = (*it)->getDstNode();
-                if (getCDN(succ) == 0)
-                {
-                    visit(succ, partition);
-                }
-            }
-        }
-    }
-
-    void componentSucc(const NodeT* node, WTOComponentRefList& partition,
-                       ICFGTag)
-    {
-        static_assert(std::is_same<GraphT, ICFG>::value,
-                      "GraphT must be ICFG.");
-        if (const CallICFGNode* callNode =
-                SVFUtil::dyn_cast<CallICFGNode>(node))
-        {
-            const RetICFGNode* succ = callNode->getRetICFGNode();
-            if (getCDN(succ) == 0)
-            {
-                visit(succ, partition);
-            }
-        }
-        else
-        {
-            for (auto it = node->getOutEdges().begin(),
-                      et = node->getOutEdges().end();
-                 it != et; ++it)
-            {
-                if (!(*it)->isIntraCFGEdge())
-                    continue;
-                const ICFGNode* succ = (*it)->getDstNode();
-                if (getCDN(succ) == 0)
-                {
-                    visit(succ, partition);
-                }
-            }
-        }
-    }
-
-    void componentSucc(const NodeT* node, WTOComponentRefList& partition,
-                       OtherGTag)
-    {
+        WTOComponentRefList partition;
         for (auto it = node->OutEdgeBegin(), et = node->OutEdgeEnd(); it != et;
              ++it)
         {
@@ -985,132 +836,26 @@ protected:
                 visit(succ, partition);
             }
         }
-    }
-
-    /// Create the cycle component for the given node
-    const WTOCycleT* component(const NodeT* node)
-    {
-        WTOComponentRefList partition;
-        componentSucc(node, partition, Tag());
         const WTOCycleT* ptr = newCycle(node, partition);
         headRefToCycle.emplace(node, ptr);
         return ptr;
     }
 
-    virtual void visitSucc(const NodeT* node, WTOComponentRefList& partition,
-                           CycleDepthNumber& head, CycleDepthNumber& min,
-                           bool& loop, CFBasicBlockGTag)
+    /// Visit the given node
+    ///
+    /// Algorithm to build a weak topological order of a graph
+    virtual CycleDepthNumber visit(const NodeT* node,
+                                   WTOComponentRefList& partition)
     {
-        static_assert(std::is_same<GraphT, CFBasicBlockGraph>::value,
-                      "GraphT must be CFBasicBlockGraph.");
-        if (const CallICFGNode* callNode =
-                SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
-        {
-            const CFBasicBlockNode* succ = _graph->getCFBasicBlockNode(
-                callNode->getRetICFGNode()->getId());
-            CycleDepthNumber succ_dfn = getCDN(succ);
-            if (succ_dfn == CycleDepthNumber(0))
-            {
-                min = visit(succ, partition);
-            }
-            else
-            {
-                min = succ_dfn;
-            }
-            if (min <= head)
-            {
-                head = min;
-                loop = true;
-            }
-        }
-        else
-        {
-            for (auto it = node->getOutEdges().begin(),
-                      et = node->getOutEdges().end();
-                 it != et; ++it)
-            {
-                if ((*it)->getICFGEdge() &&
-                    !(*it)->getICFGEdge()->isIntraCFGEdge())
-                    continue;
-                const CFBasicBlockNode* succ = (*it)->getDstNode();
-                if (succ->getFunction() != node->getFunction())
-                    continue;
-                CycleDepthNumber succ_dfn = getCDN(succ);
-                if (succ_dfn == CycleDepthNumber(0))
-                {
-                    min = visit(succ, partition);
-                }
-                else
-                {
-                    min = succ_dfn;
-                }
-                if (min <= head)
-                {
-                    head = min;
-                    loop = true;
-                }
-            }
-        }
-    }
+        CycleDepthNumber head(0);
+        CycleDepthNumber min(0);
+        bool loop;
 
-    virtual void visitSucc(const NodeT* node, WTOComponentRefList& partition,
-                           CycleDepthNumber& head, CycleDepthNumber& min,
-                           bool& loop, ICFGTag)
-    {
-        static_assert(std::is_same<GraphT, ICFG>::value,
-                      "GraphT must be ICFG.");
-        if (const CallICFGNode* callNode =
-                SVFUtil::dyn_cast<CallICFGNode>(node))
-        {
-            const RetICFGNode* succ = callNode->getRetICFGNode();
-            CycleDepthNumber succ_dfn = getCDN(succ);
-            if (succ_dfn == CycleDepthNumber(0))
-            {
-                min = visit(succ, partition);
-            }
-            else
-            {
-                min = succ_dfn;
-            }
-            if (min <= head)
-            {
-                head = min;
-                loop = true;
-            }
-        }
-        else
-        {
-            for (auto it = node->getOutEdges().begin(),
-                      et = node->getOutEdges().end();
-                 it != et; ++it)
-            {
-                if (!(*it)->isIntraCFGEdge())
-                    continue;
-                const ICFGNode* succ = (*it)->getDstNode();
-                if (succ->getFun() != node->getFun())
-                    continue;
-                CycleDepthNumber succ_dfn = getCDN(succ);
-                if (succ_dfn == CycleDepthNumber(0))
-                {
-                    min = visit(succ, partition);
-                }
-                else
-                {
-                    min = succ_dfn;
-                }
-                if (min <= head)
-                {
-                    head = min;
-                    loop = true;
-                }
-            }
-        }
-    }
-
-    virtual void visitSucc(const NodeT* node, WTOComponentRefList& partition,
-                           CycleDepthNumber& head, CycleDepthNumber& min,
-                           bool& loop, OtherGTag)
-    {
+        push(node);
+        _num += CycleDepthNumber(1);
+        head = _num;
+        setCDN(node, head);
+        loop = false;
         for (auto it = node->getOutEdges().begin(),
                   et = node->getOutEdges().end();
              it != et; ++it)
@@ -1131,23 +876,6 @@ protected:
                 loop = true;
             }
         }
-    }
-
-    /// Visit the given node
-    ///
-    /// Algorithm to build a weak topological order of a graph
-    virtual CycleDepthNumber visit(const NodeT* node,
-                                   WTOComponentRefList& partition)
-    {
-        CycleDepthNumber head(0);
-        CycleDepthNumber min(0);
-        bool loop;
-        visitSucc(node, partition, head, min, loop, Tag());
-        push(node);
-        _num += CycleDepthNumber(1);
-        head = _num;
-        setCDN(node, head);
-        loop = false;
 
         if (head == getCDN(node))
         {
@@ -1186,7 +914,7 @@ protected:
         for (const auto& head : headRefToCycle)
         {
             NodeRefList tails;
-            TailBuilder builder(_nodeToDepth, tails, head.first,
+            TailBuilder builder(_graph, _nodeToDepth, tails, head.first,
                                 cycleDepth(head.first));
             for (auto it = head.second->begin(), eit = head.second->end();
                  it != eit; ++it)

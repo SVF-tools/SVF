@@ -30,13 +30,13 @@
 #ifndef PROJECT_CSC_H
 #define PROJECT_CSC_H
 
-#include "Util/SCC.h"
-#include "SVFIR/SVFValue.h"    // for NodeBS
 #include "Graphs/ConsG.h"
+#include "Graphs/SCC.h"
+#include "SVFIR/SVFValue.h" // for NodeBS
 #include "Util/WorkList.h"
 #include <limits.h>
-#include <stack>
 #include <map>
+#include <stack>
 
 namespace SVF
 {
