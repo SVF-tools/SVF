@@ -34,11 +34,11 @@
 #ifndef MEMORYREGION_H_
 #define MEMORYREGION_H_
 
-#include "SVFIR/SVFIR.h"
-#include "Graphs/PTACallGraph.h"
-#include "Util/SCC.h"
-#include "Util/WorkList.h"
 #include "Graphs/ICFG.h"
+#include "Graphs/PTACallGraph.h"
+#include "Graphs/SCC.h"
+#include "SVFIR/SVFIR.h"
+#include "Util/WorkList.h"
 
 #include <set>
 

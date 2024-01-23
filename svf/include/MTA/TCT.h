@@ -30,10 +30,10 @@
 #ifndef TCTNodeDetector_H_
 #define TCTNodeDetector_H_
 
-#include "Util/SCC.h"
-#include "Util/SVFUtil.h"
+#include "Graphs/SCC.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/CxtStmt.h"
+#include "Util/SVFUtil.h"
 #include <set>
 #include <vector>
 
