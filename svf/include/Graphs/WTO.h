@@ -543,7 +543,6 @@ protected:
     WTOComponentRefList _components;
     WTOComponentRefSet _allComponents;
     NodeRefToWTOCycleMap headRefToCycle;
-    NodeRefTONodeRefListMap headRefToTails;
     NodeRefToWTOCycleDepthPtr _nodeToDepth;
     NodeRefToCycleDepthNumber _nodeToCDN;
     CycleDepthNumber _num;
@@ -556,7 +555,6 @@ public:
     /// Compute the weak topological order of the given graph
     explicit WTO(GraphT* graph, const NodeT* entry) : _num(0), _graph(graph), _entry(entry)
     {
-
     }
 
     /// No copy constructor
@@ -607,13 +605,6 @@ public:
     typename NodeRefToWTOCycleMap::const_iterator headEnd() const
     {
         return headRefToCycle.cend();
-    }
-
-    const NodeRefList& getTails(const NodeT* node) const
-    {
-        auto it = headRefToTails.find(node);
-        assert(it != headRefToTails.end() && "node not found");
-        return it->second;
     }
 
     /// Return the cycleDepth of the given node
@@ -669,18 +660,13 @@ public:
     //@}
 
     void init() {
-        build(_entry);
-    }
-
-protected:
-    inline virtual void build(const NodeT* entry)
-    {
-        visit(entry, _components);
+        visit(_entry, _components);
         _nodeToCDN.clear();
         _stack.clear();
         buildNodeToDepth();
-        buildTails();
     }
+
+protected:
 
     /// Visitor to build the cycle depths of each node
     class WTOCycleDepthBuilder final : public WTOComponentVisitor<GraphT>
@@ -720,56 +706,18 @@ protected:
 
     }; // end class WTOCycleDepthBuilder
 
-    /// Visitor to build the tails of each head/loop
-    class TailBuilder : public WTOComponentVisitor<GraphT>
+protected:
+
+    /// Return the successors of node
+    virtual inline Set<const NodeT *> successors(const NodeT* node) const
     {
-    protected:
-        NodeRefToWTOCycleDepthPtr& _nodeToWTOCycleDepth;
-        const NodeT* _head;
-        NodeRefList& _tails;
-        const GraphTWTOCycleDepth& _headWTOCycleDepth;
-        GraphT* _graph;
-
-    public:
-        explicit TailBuilder(GraphT* graph,
-                             NodeRefToWTOCycleDepthPtr& cycleDepth_table,
-                             NodeRefList& tails, const NodeT* head,
-                             const GraphTWTOCycleDepth& headNesting)
-            : _nodeToWTOCycleDepth(cycleDepth_table), _head(head),
-              _tails(tails), _headWTOCycleDepth(headNesting), _graph(graph)
+        Set<const NodeT*> ans;
+        for(const auto& e: node->getOutEdges())
         {
+            ans.insert(e->getDstNode());
         }
-
-        void visit(const WTOCycleT& cycle) override
-        {
-            for (auto it = cycle.begin(), et = cycle.end(); it != et; ++it)
-            {
-                (*it)->accept(*this);
-            }
-        }
-
-        void visit(const WTONodeT& node) override
-        {
-            for (const auto& edge : node.node()->getOutEdges())
-            {
-                const NodeT* succ = edge->getDstNode();
-                const GraphTWTOCycleDepth& succNesting = getWTOCycleDepth(succ);
-                if (succ != _head && succNesting <= _headWTOCycleDepth)
-                {
-                    _tails.insert(node.node());
-                }
-            }
-        }
-
-    protected:
-        /// Return the cycleDepth of the given node
-        const GraphTWTOCycleDepth& getWTOCycleDepth(const NodeT* n) const
-        {
-            auto it = _nodeToWTOCycleDepth.find(n);
-            assert(it != _nodeToWTOCycleDepth.end() && "node not found");
-            return *(it->second);
-        }
-    };
+        return ans;
+    }
 
 protected:
     /// Return the depth-first number of the given node
@@ -830,10 +778,8 @@ protected:
     virtual const WTOCycleT* component(const NodeT* node)
     {
         WTOComponentRefList partition;
-        for (auto it = node->OutEdgeBegin(), et = node->OutEdgeEnd(); it != et;
-             ++it)
+        for (const auto& succ: successors(node))
         {
-            const NodeT* succ = (*it)->getDstNode();
             if (getCDN(succ) == 0)
             {
                 visit(succ, partition);
@@ -859,11 +805,8 @@ protected:
         head = _num;
         setCDN(node, head);
         loop = false;
-        for (auto it = node->getOutEdges().begin(),
-                  et = node->getOutEdges().end();
-             it != et; ++it)
+        for (const auto& succ: successors(node))
         {
-            const NodeT* succ = (*it)->getDstNode();
             CycleDepthNumber succ_dfn = getCDN(succ);
             if (succ_dfn == CycleDepthNumber(0))
             {
@@ -908,23 +851,6 @@ protected:
         for (auto it = begin(), et = end(); it != et; ++it)
         {
             (*it)->accept(builder);
-        }
-    }
-
-    /// Build the tails for each loop
-    virtual void buildTails()
-    {
-        for (const auto& head : headRefToCycle)
-        {
-            NodeRefList tails;
-            TailBuilder builder(_graph, _nodeToDepth, tails, head.first,
-                                cycleDepth(head.first));
-            for (auto it = head.second->begin(), eit = head.second->end();
-                 it != eit; ++it)
-            {
-                (*it)->accept(builder);
-            }
-            headRefToTails.emplace(head.first, tails);
         }
     }
 

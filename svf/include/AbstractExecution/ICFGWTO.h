@@ -52,173 +52,25 @@ public:
 
     explicit ICFGWTO(ICFG* graph, const ICFGNode* node) : Base(graph, node) {}
 
-    class TailBuilder : public Base::TailBuilder
+    inline Set<const ICFGNode*> successors(const ICFGNode* node) const override
     {
-    public:
-        explicit TailBuilder(ICFG* graph,
-                             NodeRefToWTOCycleDepthPtr& cycleDepth_table,
-                             NodeRefList& tails, const ICFGNode* head,
-                             const GraphTWTOCycleDepth& headNesting)
-            : Base::TailBuilder(graph, cycleDepth_table, tails, head,
-                                headNesting)
-        {
-        }
-
-        void visit(const ICFGWTONode& node) override
-        {
-            if (const auto* callNode =
-                    SVFUtil::dyn_cast<CallICFGNode>(node.node()))
-            {
-                const ICFGNode* succ =
-                    _graph->getICFGNode(callNode->getRetICFGNode()->getId());
-                const GraphTWTOCycleDepth& succNesting = getWTOCycleDepth(succ);
-                if (succ != _head && succNesting <= _headWTOCycleDepth)
-                {
-                    _tails.insert(node.node());
-                }
-            }
-            else
-            {
-                for (const auto& edge : node.node()->getOutEdges())
-                {
-                    if (!edge->isIntraCFGEdge())
-                        continue;
-                    const ICFGNode* succ = edge->getDstNode();
-                    const GraphTWTOCycleDepth& succNesting =
-                        getWTOCycleDepth(succ);
-                    if (succ != _head && succNesting <= _headWTOCycleDepth)
-                    {
-                        _tails.insert(node.node());
-                    }
-                }
-            }
-        }
-    };
-
-    /// Create the cycle component for the given node
-    const WTOCycleT* component(const ICFGNode* node) override
-    {
-        WTOComponentRefList partition;
+        Set<const ICFGNode*> ans;
         if (const auto* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
-            const ICFGNode* succ =
-                _graph->getICFGNode(callNode->getRetICFGNode()->getId());
-            if (getCDN(succ) == 0)
-            {
-                visit(succ, partition);
-            }
+            const ICFGNode* succ = callNode->getRetICFGNode();
+            ans.insert(succ);
         }
         else
         {
-            for (const auto& edge : node->getOutEdges())
+            for (const auto& e : node->getOutEdges())
             {
-                if (!edge->isIntraCFGEdge())
+                if (!e->isIntraCFGEdge() ||
+                    node->getFun() != e->getDstNode()->getFun())
                     continue;
-                const ICFGNode* succ = edge->getDstNode();
-                if (getCDN(succ) == 0)
-                {
-                    visit(succ, partition);
-                }
+                ans.insert(e->getDstNode());
             }
         }
-        const WTOCycleT* ptr = newCycle(node, partition);
-        headRefToCycle.emplace(node, ptr);
-        return ptr;
-    }
-
-    CycleDepthNumber visit(const ICFGNode* node,
-                           Base::WTOComponentRefList& partition) override
-    {
-        CycleDepthNumber head(0);
-        CycleDepthNumber min(0);
-        bool loop;
-
-        push(node);
-        _num += CycleDepthNumber(1);
-        head = _num;
-        setCDN(node, head);
-        loop = false;
-
-        if (const auto* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
-        {
-            const ICFGNode* succ =
-                _graph->getICFGNode(callNode->getRetICFGNode()->getId());
-            CycleDepthNumber succ_dfn = getCDN(succ);
-            if (succ_dfn == CycleDepthNumber(0))
-            {
-                min = visit(succ, partition);
-            }
-            else
-            {
-                min = succ_dfn;
-            }
-            if (min <= head)
-            {
-                head = min;
-                loop = true;
-            }
-        }
-        else
-        {
-            for (const auto& edge : node->getOutEdges())
-            {
-                if (!edge->isIntraCFGEdge())
-                    continue;
-                const ICFGNode* succ = edge->getDstNode();
-                if (succ->getFun() != node->getFun())
-                    continue;
-                CycleDepthNumber succ_dfn = getCDN(succ);
-                if (succ_dfn == CycleDepthNumber(0))
-                {
-                    min = visit(succ, partition);
-                }
-                else
-                {
-                    min = succ_dfn;
-                }
-                if (min <= head)
-                {
-                    head = min;
-                    loop = true;
-                }
-            }
-        }
-
-        if (head == getCDN(node))
-        {
-            setCDN(node, UINT_MAX);
-            const NodeT* element = pop();
-            if (loop)
-            {
-                while (element != node)
-                {
-                    setCDN(element, 0);
-                    element = pop();
-                }
-                partition.push_front(component(node));
-            }
-            else
-            {
-                partition.push_front(newNode(node));
-            }
-        }
-        return head;
-    }
-
-    void buildTails() override
-    {
-        for (const auto& head : headRefToCycle)
-        {
-            NodeRefList tails;
-            TailBuilder builder(_graph, _nodeToDepth, tails,
-                                const_cast<ICFGNode*>(head.first),
-                                cycleDepth(head.first));
-            for (const auto& it : *head.second)
-            {
-                it->accept(builder);
-            }
-            headRefToTails.emplace(head.first, tails);
-        }
+        return ans;
     }
 };
 } // namespace SVF
