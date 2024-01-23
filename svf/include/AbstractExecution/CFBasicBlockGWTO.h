@@ -55,16 +55,16 @@ public:
     {
     }
 
-    inline Set<const CFBasicBlockNode*> successors(
-        const CFBasicBlockNode* node) const override
+    inline void forEachSuccessor(
+        const CFBasicBlockNode* node,
+        std::function<void(const CFBasicBlockNode*)> func) const override
     {
-        Set<const CFBasicBlockNode*> ans;
         if (const auto* callNode =
                 SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
         {
             const CFBasicBlockNode* succ = _graph->getCFBasicBlockNode(
                 callNode->getRetICFGNode()->getId());
-            ans.insert(succ);
+            func(succ);
         }
         else
         {
@@ -74,10 +74,9 @@ public:
                     (!e->getICFGEdge()->isIntraCFGEdge() ||
                      node->getFunction() != e->getDstNode()->getFunction()))
                     continue;
-                ans.insert(e->getDstNode());
+                func(e->getDstNode());
             }
         }
-        return ans;
     }
 };
 } // namespace SVF

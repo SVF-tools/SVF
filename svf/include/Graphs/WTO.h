@@ -708,15 +708,10 @@ protected:
 
 protected:
 
-    /// Return the successors of node
-    virtual inline Set<const NodeT *> successors(const NodeT* node) const
-    {
-        Set<const NodeT*> ans;
-        for(const auto& e: node->getOutEdges())
-        {
-            ans.insert(e->getDstNode());
+    inline virtual void forEachSuccessor(const NodeT* node, std::function<void(const NodeT*)> func) const {
+        for (const auto& e : node->getOutEdges()) {
+            func(e->getDstNode());
         }
-        return ans;
     }
 
 protected:
@@ -778,13 +773,12 @@ protected:
     virtual const WTOCycleT* component(const NodeT* node)
     {
         WTOComponentRefList partition;
-        for (const auto& succ: successors(node))
-        {
+        forEachSuccessor(node, [&](const NodeT* succ) {
             if (getCDN(succ) == 0)
             {
                 visit(succ, partition);
             }
-        }
+        });
         const WTOCycleT* ptr = newCycle(node, partition);
         headRefToCycle.emplace(node, ptr);
         return ptr;
@@ -805,8 +799,7 @@ protected:
         head = _num;
         setCDN(node, head);
         loop = false;
-        for (const auto& succ: successors(node))
-        {
+        forEachSuccessor(node, [&](const NodeT* succ) {
             CycleDepthNumber succ_dfn = getCDN(succ);
             if (succ_dfn == CycleDepthNumber(0))
             {
@@ -821,7 +814,7 @@ protected:
                 head = min;
                 loop = true;
             }
-        }
+        });
 
         if (head == getCDN(node))
         {

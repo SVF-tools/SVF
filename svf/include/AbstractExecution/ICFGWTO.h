@@ -52,13 +52,14 @@ public:
 
     explicit ICFGWTO(ICFG* graph, const ICFGNode* node) : Base(graph, node) {}
 
-    inline Set<const ICFGNode*> successors(const ICFGNode* node) const override
+    inline void forEachSuccessor(
+        const ICFGNode* node,
+        std::function<void(const ICFGNode*)> func) const override
     {
-        Set<const ICFGNode*> ans;
         if (const auto* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
             const ICFGNode* succ = callNode->getRetICFGNode();
-            ans.insert(succ);
+            func(succ);
         }
         else
         {
@@ -67,10 +68,9 @@ public:
                 if (!e->isIntraCFGEdge() ||
                     node->getFun() != e->getDstNode()->getFun())
                     continue;
-                ans.insert(e->getDstNode());
+                func(e->getDstNode());
             }
         }
-        return ans;
     }
 };
 } // namespace SVF
