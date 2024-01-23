@@ -38,6 +38,9 @@
 
 namespace SVF
 {
+typedef WTOComponent<CFBasicBlockGraph> CFBasicBlockGWTOComp;
+typedef WTONode<CFBasicBlockGraph> CFBasicBlockGWTONode;
+typedef WTOCycle<CFBasicBlockGraph> CFBasicBlockGWTOCycle;
 
 class CFBasicBlockGWTO : public WTO<CFBasicBlockGraph>
 {
@@ -46,9 +49,10 @@ public:
     typedef WTOComponentVisitor<CFBasicBlockGraph>::WTONodeT
         CFBasicBlockGWTONode;
 
-    explicit CFBasicBlockGWTO(CFBasicBlockNode* node, CFBasicBlockGraph* graph)
-        : Base(node, graph)
+    explicit CFBasicBlockGWTO(CFBasicBlockGraph* graph, const CFBasicBlockNode* node)
+        : Base(graph, node)
     {
+
     }
 
     class TailBuilder : public Base::TailBuilder

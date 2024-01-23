@@ -549,15 +549,14 @@ protected:
     CycleDepthNumber _num;
     Stack _stack;
     GraphT* _graph;
+    const NodeT* _entry;
 
 public:
-    /// Compute the weak topological order of the given graph
-    explicit WTO() : _num(0) {}
 
     /// Compute the weak topological order of the given graph
-    explicit WTO(NodeT* entry, GraphT* graph) : _num(0), _graph(graph)
+    explicit WTO(GraphT* graph, const NodeT* entry) : _num(0), _graph(graph), _entry(entry)
     {
-        build(entry);
+
     }
 
     /// No copy constructor
@@ -669,8 +668,12 @@ public:
     }
     //@}
 
+    void init() {
+        build(_entry);
+    }
+
 protected:
-    inline void build(NodeT* entry)
+    inline virtual void build(const NodeT* entry)
     {
         visit(entry, _components);
         _nodeToCDN.clear();

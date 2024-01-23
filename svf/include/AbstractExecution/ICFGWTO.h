@@ -40,13 +40,17 @@
 namespace SVF
 {
 
+typedef WTOComponent<ICFG> ICFGWTOComp;
+typedef WTONode<ICFG> ICFGWTONode;
+typedef WTOCycle<ICFG> ICFGWTOCycle;
+
 class ICFGWTO : public WTO<ICFG>
 {
 public:
     typedef WTO<ICFG> Base;
     typedef WTOComponentVisitor<ICFG>::WTONodeT ICFGWTONode;
 
-    explicit ICFGWTO(ICFGNode* node, ICFG* graph) : Base(node, graph) {}
+    explicit ICFGWTO(ICFG* graph, const ICFGNode* node) : Base(graph, node) {}
 
     class TailBuilder : public Base::TailBuilder
     {
