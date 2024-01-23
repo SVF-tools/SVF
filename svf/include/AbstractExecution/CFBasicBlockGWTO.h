@@ -47,7 +47,7 @@ class CFBasicBlockGWTO : public WTO<CFBasicBlockGraph>
 public:
     typedef WTO<CFBasicBlockGraph> Base;
     typedef WTOComponentVisitor<CFBasicBlockGraph>::WTONodeT
-        CFBasicBlockGWTONode;
+    CFBasicBlockGWTONode;
 
     explicit CFBasicBlockGWTO(CFBasicBlockGraph* graph,
                               const CFBasicBlockNode* node)
@@ -60,10 +60,10 @@ public:
         std::function<void(const CFBasicBlockNode*)> func) const override
     {
         if (const auto* callNode =
-                SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
+                    SVFUtil::dyn_cast<CallICFGNode>(node->getICFGNodes().front()))
         {
             const CFBasicBlockNode* succ = _graph->getCFBasicBlockNode(
-                callNode->getRetICFGNode()->getId());
+                                               callNode->getRetICFGNode()->getId());
             func(succ);
         }
         else
@@ -71,8 +71,8 @@ public:
             for (const auto& e : node->getOutEdges())
             {
                 if (e->getICFGEdge() &&
-                    (!e->getICFGEdge()->isIntraCFGEdge() ||
-                     node->getFunction() != e->getDstNode()->getFunction()))
+                        (!e->getICFGEdge()->isIntraCFGEdge() ||
+                         node->getFunction() != e->getDstNode()->getFunction()))
                     continue;
                 func(e->getDstNode());
             }

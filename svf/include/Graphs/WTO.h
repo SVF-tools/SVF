@@ -155,7 +155,7 @@ public:
     {
         WTOCycleDepth res;
         for (auto this_it = begin(), other_it = other.begin();
-             this_it != end() && other_it != other.end(); ++this_it, ++other_it)
+                this_it != end() && other_it != other.end(); ++this_it, ++other_it)
         {
             if (*this_it == *other_it)
             {
@@ -278,7 +278,7 @@ public:
     };
 
     /// Default constructor
-    explicit WTOComponent(WTOCT k) : _type(k){};
+    explicit WTOComponent(WTOCT k) : _type(k) {};
 
     /// Copy constructor
     WTOComponent(const WTOComponent&) noexcept = default;
@@ -659,7 +659,8 @@ public:
     }
     //@}
 
-    void init() {
+    void init()
+    {
         visit(_entry, _components);
         _nodeToCDN.clear();
         _stack.clear();
@@ -708,8 +709,10 @@ protected:
 
 protected:
 
-    inline virtual void forEachSuccessor(const NodeT* node, std::function<void(const NodeT*)> func) const {
-        for (const auto& e : node->getOutEdges()) {
+    inline virtual void forEachSuccessor(const NodeT* node, std::function<void(const NodeT*)> func) const
+    {
+        for (const auto& e : node->getOutEdges())
+        {
             func(e->getDstNode());
         }
     }
@@ -773,7 +776,8 @@ protected:
     virtual const WTOCycleT* component(const NodeT* node)
     {
         WTOComponentRefList partition;
-        forEachSuccessor(node, [&](const NodeT* succ) {
+        forEachSuccessor(node, [&](const NodeT* succ)
+        {
             if (getCDN(succ) == 0)
             {
                 visit(succ, partition);
@@ -799,7 +803,8 @@ protected:
         head = _num;
         setCDN(node, head);
         loop = false;
-        forEachSuccessor(node, [&](const NodeT* succ) {
+        forEachSuccessor(node, [&](const NodeT* succ)
+        {
             CycleDepthNumber succ_dfn = getCDN(succ);
             if (succ_dfn == CycleDepthNumber(0))
             {

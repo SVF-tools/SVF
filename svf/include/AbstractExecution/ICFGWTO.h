@@ -66,7 +66,7 @@ public:
             for (const auto& e : node->getOutEdges())
             {
                 if (!e->isIntraCFGEdge() ||
-                    node->getFun() != e->getDstNode()->getFun())
+                        node->getFun() != e->getDstNode()->getFun())
                     continue;
                 func(e->getDstNode());
             }
