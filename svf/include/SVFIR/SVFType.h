@@ -412,7 +412,7 @@ private:
 
 public:
     SVFFunctionType(const SVFType* rt)
-        : SVFType(false, SVFFunctionTy, 0), retTy(rt)
+        : SVFType(false, SVFFunctionTy, 1), retTy(rt)
     {
     }
     static inline bool classof(const SVFType* node)
@@ -437,7 +437,7 @@ private:
     std::string name;
 
 public:
-    SVFStructType(u32_t byteSize) : SVFType(false, SVFStructTy, byteSize) {}
+    SVFStructType(u32_t byteSize = 1) : SVFType(false, SVFStructTy, byteSize) {}
 
     static inline bool classof(const SVFType* node)
     {
@@ -470,7 +470,7 @@ private:
     const SVFType* typeOfElement; /// For printing & debugging
 
 public:
-    SVFArrayType(u32_t byteSize)
+    SVFArrayType(u32_t byteSize = 1)
         : SVFType(false, SVFArrayTy, byteSize), numOfElement(0), typeOfElement(nullptr)
     {
     }
@@ -509,7 +509,7 @@ private:
     std::string repr; /// Field representation for printing
 
 public:
-    SVFOtherType(u32_t byteSize, bool isSingleValueTy) : SVFType(isSingleValueTy, SVFOtherTy, byteSize) {}
+    SVFOtherType(bool isSingleValueTy, u32_t byteSize = 1) : SVFType(isSingleValueTy, SVFOtherTy, byteSize) {}
 
     static inline bool classof(const SVFType* node)
     {
