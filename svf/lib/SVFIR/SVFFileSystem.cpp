@@ -24,21 +24,21 @@ SVFType* createSVFType(SVFType::GNodeK kind, bool isSingleValTy)
         ABORT_MSG("Creation of RAW SVFType isn't allowed");
     case SVFType::SVFPointerTy:
         ABORT_IFNOT(isSingleValTy, "Pointer type must be single-valued");
-        return new SVFPointerType(0);
+        return new SVFPointerType();
     case SVFType::SVFIntegerTy:
         ABORT_IFNOT(isSingleValTy, "Integer type must be single-valued");
-        return new SVFIntegerType(0);
+        return new SVFIntegerType();
     case SVFType::SVFFunctionTy:
         ABORT_IFNOT(!isSingleValTy, "Function type must be multi-valued");
         return new SVFFunctionType(nullptr);
     case SVFType::SVFStructTy:
         ABORT_IFNOT(!isSingleValTy, "Struct type must be multi-valued");
-        return new SVFStructType(0);
+        return new SVFStructType();
     case SVFType::SVFArrayTy:
         ABORT_IFNOT(!isSingleValTy, "Array type must be multi-valued");
-        return new SVFArrayType(0);
+        return new SVFArrayType();
     case SVFType::SVFOtherTy:
-        return new SVFOtherType(0, isSingleValTy);
+        return new SVFOtherType(isSingleValTy);
     }
 }
 

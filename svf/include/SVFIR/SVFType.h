@@ -243,6 +243,7 @@ class SVFType
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class LLVMModuleSet;
 
 public:
     typedef s64_t GNodeK;
@@ -258,6 +259,23 @@ public:
         SVFOtherTy,
     };
 
+public:
+
+    inline static SVFType* getPtrTy() {
+        assert(ptrTy && "ptr type not set?");
+        return ptrTy;
+    }
+
+    inline static SVFType* getI8Ty() {
+        assert(i8Ty && "int8 type not set?");
+        return i8Ty;
+    }
+
+private:
+
+    static SVFType* ptrTy; ///< ptr type
+    static SVFType* i8Ty; ///< 8-bit int type
+
 private:
     GNodeK kind; ///< used for classof
     const SVFPointerType*
@@ -268,7 +286,7 @@ private:
     ///< array
 
 protected:
-    SVFType(bool svt, SVFTyKind k, u32_t Sz)
+    SVFType(bool svt, SVFTyKind k, u32_t Sz = 1)
         : kind(k), getPointerToTy(nullptr), typeinfo(nullptr),
           isSingleValTy(svt), byteSize(Sz)
     {
@@ -357,7 +375,7 @@ private:
     const SVFType* ptrElementType;
 
 public:
-    SVFPointerType(u32_t byteSize)
+    SVFPointerType(u32_t byteSize = 1)
         : SVFType(true, SVFPointerTy, byteSize), ptrElementType(nullptr)
     {
     }
@@ -389,7 +407,7 @@ private:
     short signAndWidth; ///< For printing
 
 public:
-    SVFIntegerType(u32_t byteSize) : SVFType(true, SVFIntegerTy, byteSize) {}
+    SVFIntegerType(u32_t byteSize = 1) : SVFType(true, SVFIntegerTy, byteSize) {}
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFIntegerTy;
@@ -418,7 +436,7 @@ private:
 
 public:
     SVFFunctionType(const SVFType* rt)
-        : SVFType(false, SVFFunctionTy, 0), retTy(rt)
+        : SVFType(false, SVFFunctionTy, 1), retTy(rt)
     {
     }
     static inline bool classof(const SVFType* node)
@@ -443,7 +461,7 @@ private:
     std::string name;
 
 public:
-    SVFStructType(u32_t byteSize) : SVFType(false, SVFStructTy, byteSize) {}
+    SVFStructType(u32_t byteSize = 1) : SVFType(false, SVFStructTy, byteSize) {}
 
     static inline bool classof(const SVFType* node)
     {
@@ -476,7 +494,7 @@ private:
     const SVFType* typeOfElement; /// For printing & debugging
 
 public:
-    SVFArrayType(u32_t byteSize)
+    SVFArrayType(u32_t byteSize = 1)
         : SVFType(false, SVFArrayTy, byteSize), numOfElement(0), typeOfElement(nullptr)
     {
     }
@@ -515,7 +533,7 @@ private:
     std::string repr; /// Field representation for printing
 
 public:
-    SVFOtherType(u32_t byteSize, bool isSingleValueTy) : SVFType(isSingleValueTy, SVFOtherTy, byteSize) {}
+    SVFOtherType(bool isSingleValueTy, u32_t byteSize = 1) : SVFType(isSingleValueTy, SVFOtherTy, byteSize) {}
 
     static inline bool classof(const SVFType* node)
     {

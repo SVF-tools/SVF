@@ -151,7 +151,8 @@ void LLVMModuleSet::build()
 
 void LLVMModuleSet::createSVFDataStructure()
 {
-    getSVFType(IntegerType::getInt8Ty(getContext()));
+    SVFType::i8Ty = getSVFType(IntegerType::getInt8Ty(getContext()));
+    SVFType::ptrTy = getSVFType(PointerType::getUnqual(getContext()));
     // Functions need to be retrieved in the order of insertion
     // candidateDefs is the vector for all used defined functions
     // candidateDecls is the vector for all used declared functions
@@ -1329,8 +1330,8 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     assert(LLVMType2SVFType.find(T) == LLVMType2SVFType.end() &&
            "SVFType has been added before");
 
-    // add SVFType's LLVM byte size iff T isSized(), otherwise byteSize is 0(default value)
-    u32_t byteSize = 0;
+    // add SVFType's LLVM byte size iff T isSized(), otherwise byteSize is 1 (default value)
+    u32_t byteSize = 1;
     if (T->isSized())
     {
         const llvm::DataLayout &DL = LLVMModuleSet::getLLVMModuleSet()->
@@ -1371,7 +1372,7 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
     else
     {
         std::string buffer;
-        auto ot = new SVFOtherType(byteSize, T->isSingleValueType());
+        auto ot = new SVFOtherType(T->isSingleValueType(), byteSize);
         llvm::raw_string_ostream(buffer) << *T;
         ot->setRepr(std::move(buffer));
         svftype = ot;
@@ -1385,7 +1386,8 @@ SVFType* LLVMModuleSet::addSVFTypeInfo(const Type* T)
         SVFPointerType* svfPtrType = SVFUtil::dyn_cast<SVFPointerType>(svftype);
         assert(svfPtrType && "this is not SVFPointerType");
         // TODO: getPtrElementType to be removed
-        svfPtrType->setPtrElementType(getSVFType(LLVMUtil::getPtrElementType(pt)));
+        if(!pt->isOpaque())
+            svfPtrType->setPtrElementType(getSVFType(LLVMUtil::getPtrElementType(pt)));
     }
 
     return svftype;
