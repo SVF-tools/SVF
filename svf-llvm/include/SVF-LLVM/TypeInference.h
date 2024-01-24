@@ -30,7 +30,10 @@
 #ifndef SVF_TYPEINFERENCE_H
 #define SVF_TYPEINFERENCE_H
 
-#include "SVF-LLVM/LLVMUtil.h"
+#include "Util/SVFUtil.h"
+#include "SVF-LLVM/BasicTypes.h"
+#include "SVFIR/SVFValue.h"
+#include "Util/ThreadAPI.h"
 
 namespace SVF {
 class TypeInference {
@@ -73,9 +76,7 @@ public:
         return PointerType::getUnqual(getLLVMCtx());
     }
 
-    inline LLVMContext &getLLVMCtx() {
-        return LLVMModuleSet::getLLVMModuleSet()->getContext();
-    }
+    LLVMContext &getLLVMCtx();
 
 private:
 
@@ -85,9 +86,7 @@ private:
     /// Backward collect all possible allocation sites (stack, static, heap) starting from a value
     Set<const Value *> bwfindAllocations(const Value *startValue);
 
-    inline bool isAllocation(const Value *val) {
-        return LLVMUtil::isObject(val);
-    }
+    bool isAllocation(const Value *val);
 
 public:
     /// Select the largest (conservative) type from all types

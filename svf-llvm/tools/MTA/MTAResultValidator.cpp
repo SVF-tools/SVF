@@ -10,6 +10,7 @@
 #include <sstream>
 
 #include "MTAResultValidator.h"
+#include "SVF-LLVM/LLVMModule.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -591,4 +592,122 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
         }
     }
     return res;
+}
+
+void RaceResultValidator::collectValidationTargets()
+{
+    // Collect call sites of all RC_ACCESS function calls.
+    std::vector<const CallBase*> csInsts;
+    const Function* F = nullptr;
+    for (Module &M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
+    {
+        for(auto it = M.begin(); it != M.end(); it++)
+        {
+            const std::string fName = (*it).getName().str();
+            if(fName.find(RC_ACCESS) != std::string::npos)
+            {
+                F = &(*it);
+                break;
+            }
+        }
+    }
+    if (!F)     return;
+
+    for (Value::const_use_iterator it = F->use_begin(), ie =
+                F->use_end(); it != ie; ++it)
+    {
+        const Use *u = &*it;
+        const Value *user = u->getUser();
+        if(LLVMUtil::isCallSite(user))
+        {
+            const CallBase* csInst = LLVMUtil::getLLVMCallSite(user);
+            csInsts.push_back(csInst);
+        }
+    }
+    assert(csInsts.size() % 2 == 0 && "We should have RC_ACCESS called in pairs.");
+
+    // Sort the validation sites according to their ids.
+    std::sort(csInsts.begin(), csInsts.end(), compare);
+
+    // Generate access pairs.
+    for (int i = 0, e = csInsts.size(); i != e;)
+    {
+        const CallBase* CI1 = csInsts[i++];
+        const CallBase* CI2 = csInsts[i++];
+        const ConstantInt* C = SVFUtil::dyn_cast<ConstantInt>(CI1->getArgOperand(1));
+        assert(C);
+        const Instruction* I1 = getPreviousMemoryAccessInst(CI1);
+        const Instruction* I2 = getPreviousMemoryAccessInst(CI2);
+        assert(I1 && I2 && "RC_ACCESS should be placed immediately after the target memory access.");
+        RC_FLAG flags = C->getZExtValue();
+        accessPairs.push_back(AccessPair(I1, I2, flags));
+    }
+}
+
+void RaceResultValidator::validateAll()
+{
+    SVFUtil::outs() << SVFUtil::pasMsg(" --- Analysis Result Validation ---\n");
+
+    // Iterate every memory access pair to perform the validation.
+    for (int i = 0, e = accessPairs.size(); i != e; ++i)
+    {
+        const AccessPair &ap = accessPairs[i];
+        const Instruction* I1 = ap.getInstruction1();
+        const Instruction* I2 = ap.getInstruction2();
+
+        bool mhp = mayHappenInParallel(I1, I2);
+        bool alias = mayAccessAliases(I1, I2);
+        bool protect = protectedByCommonLocks(I1, I2);
+        bool racy = mayHaveDataRace(I1, I2);
+
+        SVFUtil::outs() << "For the memory access pair at ("
+                        << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(I1)->getSourceLoc() << ", "
+                        << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(I2)->getSourceLoc() << ")\n";
+        if (selectedValidationScenarios & RC_ALIASES)
+        {
+            SVFUtil::outs() << "\t"
+                            << getOutput("ALIASES", alias, ap.isFlaged(RC_ALIASES))
+                            << "\n";
+        }
+        if (selectedValidationScenarios & RC_MHP)
+        {
+            SVFUtil::outs() << "\t"
+                            << getOutput("MHP", mhp, ap.isFlaged(RC_MHP)) << "\n";
+        }
+        if (selectedValidationScenarios & RC_PROTECTED)
+        {
+            SVFUtil::outs() << "\t"
+                            << getOutput("PROTECT", protect,
+                                         ap.isFlaged(RC_PROTECTED)) << "\n";
+        }
+        if (selectedValidationScenarios & RC_RACE)
+        {
+            SVFUtil::outs() << "\t"
+                            << getOutput("RACE", racy, ap.isFlaged(RC_RACE))
+                            << "\n";
+        }
+    }
+
+    SVFUtil::outs() << "\n";
+}
+
+const Instruction* RaceResultValidator::getPreviousMemoryAccessInst(const Instruction* I)
+{
+    I = I->getPrevNode();
+    while (I)
+    {
+        if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
+            return I;
+
+        const SVFInstruction* inst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
+
+        if (const SVFFunction *callee = SVFUtil::getCallee(inst))
+        {
+            if (callee->getName().find("llvm.memset") != std::string::npos)
+                return I;
+
+        }
+        I = I->getPrevNode();
+    }
+    return nullptr;
 }

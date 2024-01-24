@@ -43,42 +43,7 @@ private:
     {
         return _la->getTCT()->getCallICFGNode(inst);
     }
-    const Instruction* getPreviousMemoryAccessInst( const Instruction* I)
-    {
-        I = I->getPrevNode();
-        while (I)
-        {
-            if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
-                return I;
-            SVFFunction* callee = nullptr;
-
-            if(LLVMUtil::isCallSite(I))
-            {
-                PTACallGraph::FunctionSet callees;
-                const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
-                _la->getTCT()->getThreadCallGraph()->getCallees(getCBN(svfInst), callees);
-
-                for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
-                        ecit = callees.end(); cit!=ecit; cit++)
-                {
-                    if(*cit != nullptr)
-                    {
-                        callee = const_cast<SVFFunction*> (*cit);
-                        break;
-                    }
-
-                }
-            }
-
-            if (callee)
-            {
-                if (callee->getName().find("llvm.memset") != std::string::npos)
-                    return I;
-            }
-            I = I->getPrevNode();
-        }
-        return nullptr;
-    }
+    const Instruction* getPreviousMemoryAccessInst( const Instruction* I);
 
     inline bool inFilter(const std::string& name)
     {

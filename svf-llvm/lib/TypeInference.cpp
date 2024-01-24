@@ -28,6 +28,9 @@
  */
 
 #include "SVF-LLVM/TypeInference.h"
+#include "SVF-LLVM/LLVMModule.h"
+#include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/CppUtil.h"
 
 #define TYPE_DEBUG 0 /* Turn this on if you're debugging type inference */
 #define ERR_MSG(msg)                                                           \
@@ -70,6 +73,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 using namespace LLVMUtil;
+using namespace cppUtil;
 
 
 const std::string TYPEMALLOC = "TYPE_MALLOC";
@@ -101,6 +105,10 @@ const Type *TypeInference::defaultTy(const Value *val) {
         return Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
     // otherwise we return a pointer type in the default address space
     return defaultPtrTy();
+}
+
+LLVMContext &TypeInference::getLLVMCtx() {
+    return LLVMModuleSet::getLLVMModuleSet()->getContext();
 }
 
 /*!
@@ -395,6 +403,10 @@ Set<const Value *> TypeInference::bwfindAllocations(const Value *startValue) {
         WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(startValue));
     }
     return srcs;
+}
+
+bool TypeInference::isAllocation(const SVF::Value *val)  {
+    return LLVMUtil::isObject(val);
 }
 
 /*!

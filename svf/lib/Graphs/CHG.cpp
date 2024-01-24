@@ -27,7 +27,6 @@
  *      Author: Xiaokang Fan
  */
 
-#include "Util/CppUtil.h"
 #include "Graphs/CHG.h"
 #include "Util/SVFUtil.h"
 
@@ -106,7 +105,7 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
     string funName = cs.getFunNameOfVirtualCall();
     for (const SVFGlobalValue *vt : vtbls)
     {
-        const CHNode *child = getNode(cppUtil::getClassNameFromVtblObj(vt->getName()));
+        const CHNode *child = getNode(vt->getName());
         if (child == nullptr)
             continue;
         CHNode::FuncVector vfns;
@@ -124,8 +123,7 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
                 if (!checkArgTypes(cs, callee))
                     continue;
 
-                cppUtil::DemangledName dname = cppUtil::demangle(callee->getName());
-                string calleeName = dname.funcName;
+                string calleeName = callee->getName();
 
                 /*
                  * The compiler will add some special suffix (e.g.,

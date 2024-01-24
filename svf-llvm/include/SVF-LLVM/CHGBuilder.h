@@ -65,7 +65,6 @@ public:
     void analyzeVTables(const Module &M);
     void buildVirtualFunctionToIDMap();
     void buildCSToCHAVtblsAndVfnsMap();
-    std::string getClassNameOfThisPtr(const CallBase* cs);
     const CHNodeSetTy& getCSClasses(const CallBase* cs);
     void addFuncToFuncVector(CHNode::FuncVector &v, const Function *f);
 };

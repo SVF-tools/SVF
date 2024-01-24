@@ -29,15 +29,15 @@
 
 #include <memory>
 
+#include "SVF-LLVM/BasicTypes.h"
+#include "SVF-LLVM/CppUtil.h"
+#include "SVF-LLVM/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
+#include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
+#include "SVFIR/SVFModule.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/Options.h"
-#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
-#include "SVF-LLVM/BasicTypes.h"
-#include "SVF-LLVM/LLVMUtil.h"
-#include "Util/CppUtil.h"
-#include "SVF-LLVM/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 #include "SVF-LLVM/TypeInference.h"
 
 using namespace SVF;
@@ -811,7 +811,7 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
     {
         /// For an C++ class, it can have variant elements depending on the vtable size,
         /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
-        if(classTyHasVTable(st))
+        if(cppUtil::classTyHasVTable(st))
             typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(
                     LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->defaultPtrTy()));
         else
