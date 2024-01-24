@@ -112,14 +112,21 @@ jobs:
             if [ "$RUNNER_OS" == "macOS" ]; then export osVersion="osx"; fi
             echo $osVersion
             cd ./SVF-npm
+            if [ ! -d "SVF-${osVersion}/svf" ]; then mkdir -p "SVF-${osVersion}/svf"; fi
+            if [ ! -d "SVF-${osVersion}/svf-llvm" ]; then mkdir -p "SVF-${osVersion}/svf-llvm"; fi
+            if [ ! -d "SVF-${osVersion}/Release-build/svf-llvm" ]; then mkdir -p "SVF-${osVersion}/Release-build/svf-llvm"; fi
+            if [ ! -d "SVF-${osVersion}/Release-build/svf" ]; then mkdir -p "SVF-${osVersion}/Release-build/svf"; fi
             rm -rf SVF-${osVersion}/svf/*
-            cp -rf $GITHUB_WORKSPACE/svf/include SVF-${osVersion}/svf
             rm -rf SVF-${osVersion}/svf-llvm/*
+            rm -rf SVF-${osVersion}/Release-build/include/*
+            git rm --cached -rf SVF-${osVersion}/svf/*
+            git rm --cached -rf SVF-${osVersion}/svf-llvm/*
+            git rm --cached -rf SVF-${osVersion}/Release-build/include/*
+            cp -rf $GITHUB_WORKSPACE/svf/include SVF-${osVersion}/svf
             cp -rf $GITHUB_WORKSPACE/svf-llvm/include SVF-${osVersion}/svf-llvm
             cp -f $GITHUB_WORKSPACE/Release-build/svf-llvm/libSvfLLVM.a SVF-${osVersion}/Release-build/svf-llvm/libSvfLLVM.a
             cp -f $GITHUB_WORKSPACE/Release-build/svf-llvm/extapi.bc SVF-${osVersion}/Release-build/svf-llvm/extapi.bc
             cp -f $GITHUB_WORKSPACE/Release-build/svf/libSvfCore.a SVF-${osVersion}/Release-build/svf/libSvfCore.a
-            rm -rf SVF-${osVersion}/Release-build/*
             cp -rf $GITHUB_WORKSPACE/Release-build/include SVF-${osVersion}/Release-build
             git add .
             if [ -n "$(git status -s)" ]; then git commit -m'Update svflib' ; fi
