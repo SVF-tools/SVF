@@ -33,6 +33,7 @@
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/CppUtil.h"
 #include "SVF-LLVM/BreakConstantExpr.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "MSSA/SVFGBuilder.h"
@@ -260,7 +261,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             SVFInstruction* svfInst = nullptr;
             if (const CallBase* call = SVFUtil::dyn_cast<CallBase>(&inst))
             {
-                if (LLVMUtil::isVirtualCallSite(call))
+                if (cppUtil::isVirtualCallSite(call))
                     svfInst = new SVFVirtualCallInst(
                         getSVFType(call->getType()), svfBB,
                         call->getFunctionType()->isVarArg(),
@@ -350,9 +351,9 @@ void LLVMModuleSet::initSVFBasicBlock(const Function* func)
                 }
                 if(SVFVirtualCallInst* virtualCall = SVFUtil::dyn_cast<SVFVirtualCallInst>(svfcall))
                 {
-                    virtualCall->setVtablePtr(getSVFValue(LLVMUtil::getVCallVtblPtr(call)));
-                    virtualCall->setFunIdxInVtable(LLVMUtil::getVCallIdx(call));
-                    virtualCall->setFunNameOfVirtualCall(LLVMUtil::getFunNameOfVCallSite(call));
+                    virtualCall->setVtablePtr(getSVFValue(cppUtil::getVCallVtblPtr(call)));
+                    virtualCall->setFunIdxInVtable(cppUtil::getVCallIdx(call));
+                    virtualCall->setFunNameOfVirtualCall(cppUtil::getFunNameOfVCallSite(call));
                 }
                 for(u32_t i = 0; i < call->arg_size(); i++)
                 {

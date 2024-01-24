@@ -28,10 +28,8 @@
  */
 
 #include "CFL/CFLVF.h"
-#include "Util/CppUtil.h"
 
 using namespace SVF;
-using namespace cppUtil;
 using namespace SVFUtil;
 
 void CFLVF::buildCFLGraph()

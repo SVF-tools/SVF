@@ -11,9 +11,10 @@
 
 #include "Util/Options.h"
 #include "SVF-LLVM/DCHG.h"
-#include "Util/CppUtil.h"
+#include "SVF-LLVM/CppUtil.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMUtil.h"
+#include "SVF-LLVM/LLVMModule.h"
 
 using namespace SVF;
 
@@ -180,7 +181,7 @@ void DCHGraph::buildVTables(const SVFModule &module)
                 node->setVTable(svfgv);
                 vtblToTypeMap[svfgv] = getCanonicalType(type);
 
-                const ConstantStruct *vtbls = LLVMUtil::getVtblStruct(gv);
+                const ConstantStruct *vtbls = cppUtil::getVtblStruct(gv);
                 for (unsigned nthVtbl = 0; nthVtbl < vtbls->getNumOperands(); ++nthVtbl)
                 {
                     const ConstantArray *vtbl = SVFUtil::dyn_cast<ConstantArray>(vtbls->getOperand(nthVtbl));
@@ -418,6 +419,15 @@ DCHNode *DCHGraph::getOrCreateNode(const DIType *type)
     // TODO: handle templates.
 
     return node;
+}
+
+const DIType* DCHGraph::getCSStaticType(CallBase* cs) const
+{
+    MDNode *md = cs->getMetadata(cppUtil::ctir::derefMDName);
+    assert(md != nullptr && "Missing type metadata at virtual callsite");
+    DIType *diType = SVFUtil::dyn_cast<DIType>(md);
+    assert(diType != nullptr && "Incorrect metadata type at virtual callsite");
+    return diType;
 }
 
 DCHEdge *DCHGraph::addEdge(const DIType *t1, const DIType *t2, DCHEdge::GEdgeKind et)

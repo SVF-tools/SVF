@@ -28,13 +28,12 @@
  *      Author: yulei
  */
 
-#include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/ICFGBuilder.h"
-#include "SVFIR/SVFIR.h"
+#include "SVF-LLVM/LLVMModule.h"
+#include "SVF-LLVM/LLVMUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace LLVMUtil;
 
 /*!
  * Create ICFG nodes and edges
@@ -73,7 +72,7 @@ void ICFGBuilder::processFunEntry(const Function*  fun, WorkList& worklist)
 
     InstVec insts;
     if (isIntrinsicInst(svfentryInst))
-        getNextInsts(entryInst, insts);
+        LLVMUtil::getNextInsts(entryInst, insts);
     else
         insts.push_back(entryInst);
     for (InstVec::const_iterator nit = insts.begin(), enit = insts.end();
@@ -107,7 +106,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                 icfg->addIntraEdge(srcNode, FunExitICFGNode);
             }
             InstVec nextInsts;
-            getNextInsts(inst, nextInsts);
+            LLVMUtil::getNextInsts(inst, nextInsts);
             u32_t branchID = 0;
             for (InstVec::const_iterator nit = nextInsts.begin(), enit =
                         nextInsts.end(); nit != enit; ++nit)

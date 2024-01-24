@@ -32,6 +32,7 @@
 
 #include "Graphs/ICFG.h"
 #include "Util/WorkList.h"
+#include "BasicTypes.h"
 
 namespace SVF
 {

@@ -31,6 +31,7 @@
 #define CPPUtil_H_
 
 #include "SVFIR/SVFValue.h"
+#include "SVF-LLVM/BasicTypes.h"
 
 namespace SVF
 {
@@ -54,6 +55,79 @@ struct DemangledName demangle(const std::string& name);
 
 std::string getBeforeBrackets(const std::string& name);
 std::string getClassNameFromVtblObj(const std::string& vtblName);
+
+/*
+ * Get the vtable struct of a class.
+ *
+ * Given the class:
+ *
+ *   class A {
+ *     virtual ~A();
+ *   };
+ *   A::~A() = default;
+ *
+ *  The corresponding vtable @_ZTV1A is of type:
+ *
+ *    { [4 x i8*] }
+ *
+ *  If the program has been compiled with AddressSanitizer,
+ *  the vtable will have redzones and appear as:
+ *
+ *    { { [4 x i8*] }, [32 x i8] }
+ *
+ *  See https://github.com/SVF-tools/SVF/issues/1114 for more.
+ */
+const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
+
+bool isValVtbl(const Value* val);
+bool isVirtualCallSite(const CallBase* cs);
+bool isConstructor(const Function* F);
+bool isDestructor(const Function* F);
+bool isCPPThunkFunction(const Function* F);
+const Function* getThunkTarget(const Function* F);
+
+/*
+ * VtableA = {&A::foo}
+ * A::A(this){
+ *   *this = &VtableA;
+ * }
+ *
+ *
+ * A* p = new A;
+ * cs: p->foo(...)
+ * ==>
+ *  vtptr = *p;
+ *  vfn = &vtptr[i]
+ *  %funp = *vfn
+ *  call %funp(p,...)
+ * getConstructorThisPtr(A) return "this" pointer
+ * getVCallThisPtr(cs) return p (this pointer)
+ * getVCallVtblPtr(cs) return vtptr
+ * getVCallIdx(cs) return i
+ * getClassNameFromVtblObj(VtableA) return
+ * getClassNameFromType(type of p) return type A
+ */
+const Argument* getConstructorThisPtr(const Function* fun);
+const Value* getVCallThisPtr(const CallBase* cs);
+const Value* getVCallVtblPtr(const CallBase* cs);
+s32_t getVCallIdx(const CallBase* cs);
+bool classTyHasVTable(const StructType* ty);
+std::string getClassNameFromType(const StructType* ty);
+std::string getClassNameOfThisPtr(const CallBase* cs);
+std::string getFunNameOfVCallSite(const CallBase* cs);
+bool VCallInCtorOrDtor(const CallBase* cs);
+
+/*
+ *  A(A* this){
+ *      store this this.addr;
+ *      tmp = load this.addr;
+ *      this1 = bitcast(tmp);
+ *      B(this1);
+ *  }
+ *  this and this1 are the same thisPtr in the constructor
+ */
+bool isSameThisPtrInConstructor(const Argument* thisPtr1,
+                                const Value* thisPtr2);
 
 /// Constants pertaining to CTir, for C and C++.
 /// TODO: move helper functions here too?

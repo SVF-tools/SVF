@@ -32,7 +32,6 @@
 
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
-#include "SVF-LLVM/LLVMModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/ThreadAPI.h"
 
@@ -54,15 +53,7 @@ inline bool isCallSite(const Value* val)
 }
 
 /// Get the definition of a function across multiple modules
-inline const Function* getDefFunForMultipleModule(const Function* fun)
-{
-    if (fun == nullptr)
-        return nullptr;
-    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
-    if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
-        fun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
-    return fun;
-}
+const Function* getDefFunForMultipleModule(const Function* fun);
 
 /// Return LLVM callsite given a value
 inline const CallBase* getLLVMCallSite(const Value* value)
@@ -85,18 +76,7 @@ inline const Function* getLLVMFunction(const Value* val)
 }
 
 /// Get program entry function from module.
-inline const Function* getProgFunction(const std::string& funName)
-{
-    for (const Module& M : LLVMModuleSet::getLLVMModuleSet()->getLLVMModules())
-    {
-        for (const Function& fun : M)
-        {
-            if (fun.getName() == funName)
-                return &fun;
-        }
-    }
-    return nullptr;
-}
+const Function* getProgFunction(const std::string& funName);
 
 /// Check whether a function is an entry function (i.e., main)
 inline bool isProgEntryFunction(const Function* fun)
@@ -354,10 +334,7 @@ void removeUnusedGlobalVariables(Module* module);
 void removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> removedFuncList);
 
 /// Get the corresponding Function based on its name
-inline const SVFFunction* getFunction(const std::string& name)
-{
-    return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(name);
-}
+const SVFFunction* getFunction(const std::string& name);
 
 /// Return true if the value refers to constant data, e.g., i32 0
 inline bool isConstDataOrAggData(const Value* val)
@@ -367,15 +344,7 @@ inline bool isConstDataOrAggData(const Value* val)
 }
 
 /// find the unique defined global across multiple modules
-inline const Value* getGlobalRep(const Value* val)
-{
-    if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
-    {
-        if (LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(gvar))
-            val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
-    }
-    return val;
-}
+const Value* getGlobalRep(const Value* val);
 
 /// Check whether this value points-to a constant object
 bool isConstantObjSym(const SVFValue* val);
@@ -388,79 +357,6 @@ void viewCFG(const Function* fun);
 
 // Dump Control Flow Graph of llvm function, without instructions
 void viewCFGOnly(const Function* fun);
-
-/*
- * Get the vtable struct of a class.
- *
- * Given the class:
- *
- *   class A {
- *     virtual ~A();
- *   };
- *   A::~A() = default;
- *
- *  The corresponding vtable @_ZTV1A is of type:
- *
- *    { [4 x i8*] }
- *
- *  If the program has been compiled with AddressSanitizer,
- *  the vtable will have redzones and appear as:
- *
- *    { { [4 x i8*] }, [32 x i8] }
- *
- *  See https://github.com/SVF-tools/SVF/issues/1114 for more.
- */
-const ConstantStruct *getVtblStruct(const GlobalValue *vtbl);
-
-bool isValVtbl(const Value* val);
-bool isVirtualCallSite(const CallBase* cs);
-bool isConstructor(const Function* F);
-bool isDestructor(const Function* F);
-bool isCPPThunkFunction(const Function* F);
-const Function* getThunkTarget(const Function* F);
-
-/*
- * VtableA = {&A::foo}
- * A::A(this){
- *   *this = &VtableA;
- * }
- *
- *
- * A* p = new A;
- * cs: p->foo(...)
- * ==>
- *  vtptr = *p;
- *  vfn = &vtptr[i]
- *  %funp = *vfn
- *  call %funp(p,...)
- * getConstructorThisPtr(A) return "this" pointer
- * getVCallThisPtr(cs) return p (this pointer)
- * getVCallVtblPtr(cs) return vtptr
- * getVCallIdx(cs) return i
- * getClassNameFromVtblObj(VtableA) return
- * getClassNameFromType(type of p) return type A
- */
-const Argument* getConstructorThisPtr(const Function* fun);
-const Value* getVCallThisPtr(const CallBase* cs);
-const Value* getVCallVtblPtr(const CallBase* cs);
-s32_t getVCallIdx(const CallBase* cs);
-bool classTyHasVTable(const StructType* ty);
-std::string getClassNameFromType(const StructType* ty);
-std::string getClassNameOfThisPtr(const CallBase* cs);
-std::string getFunNameOfVCallSite(const CallBase* cs);
-bool VCallInCtorOrDtor(const CallBase* cs);
-
-/*
- *  A(A* this){
- *      store this this.addr;
- *      tmp = load this.addr;
- *      this1 = bitcast(tmp);
- *      B(this1);
- *  }
- *  this and this1 are the same thisPtr in the constructor
- */
-bool isSameThisPtrInConstructor(const Argument* thisPtr1,
-                                const Value* thisPtr2);
 
 std::string dumpValue(const Value* val);
 

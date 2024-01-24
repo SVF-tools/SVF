@@ -16,7 +16,6 @@
 
 #include "Graphs/GenericGraph.h"
 #include "Graphs/CHG.h"
-#include "Util/CppUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
@@ -413,14 +412,7 @@ private:
     DCHNode* getOrCreateNode(const DIType* type);
 
     /// Retrieves the metadata associated with a *virtual* callsite.
-    const DIType* getCSStaticType(CallBase* cs) const
-    {
-        MDNode *md = cs->getMetadata(cppUtil::ctir::derefMDName);
-        assert(md != nullptr && "Missing type metadata at virtual callsite");
-        DIType *diType = SVFUtil::dyn_cast<DIType>(md);
-        assert(diType != nullptr && "Incorrect metadata type at virtual callsite");
-        return diType;
-    }
+    const DIType* getCSStaticType(CallBase* cs) const;
 
     const DIType *getCSStaticType(CallSite cs) const
     {
