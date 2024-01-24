@@ -41,7 +41,6 @@ public:
     typedef ValueToValueSet ValueToInferSites;
     typedef ValueToValueSet ValueToSources;
     typedef Map<const Value *, const Type *> ValueToType;
-    typedef Map<const Value *, std::string> ValueToClassName;
     typedef std::pair<const Value *, bool> ValueBoolPair;
 
 
