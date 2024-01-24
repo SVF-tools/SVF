@@ -44,6 +44,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/PTAStat.h"
+#include "SVF-LLVM/LLVMModule.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -88,9 +89,9 @@ void CHGBuilder::buildCHG()
 
 void CHGBuilder::buildCHGNodes(const GlobalValue *globalvalue)
 {
-    if (LLVMUtil::isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
+    if (cppUtil::isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
     {
-        const ConstantStruct *vtblStruct = LLVMUtil::getVtblStruct(globalvalue);
+        const ConstantStruct *vtblStruct = cppUtil::getVtblStruct(globalvalue);
         string className = getClassNameFromVtblObj(globalvalue->getName().str());
         if (!chg->getNode(className))
             createNode(className);
@@ -168,7 +169,7 @@ void CHGBuilder::connectInheritEdgeViaCall(const Function* caller, const CallBas
     {
         if (cs->arg_size() < 1 || (cs->arg_size() < 2 && cs->paramHasAttr(0, llvm::Attribute::StructRet)))
             return;
-        const Value* csThisPtr = LLVMUtil::getVCallThisPtr(cs);
+        const Value* csThisPtr = cppUtil::getVCallThisPtr(cs);
         //const Argument* consThisPtr = getConstructorThisPtr(caller);
         //bool samePtr = isSameThisPtrInConstructor(consThisPtr, csThisPtr);
         bool samePtrTrue = true;
@@ -197,7 +198,7 @@ void CHGBuilder::connectInheritEdgeViaStore(const Function* caller, const StoreI
                 if (bcce->getOpcode() == Instruction::GetElementPtr)
                 {
                     const Value* gepval = bcce->getOperand(0);
-                    if (LLVMUtil::isValVtbl(gepval))
+                    if (cppUtil::isValVtbl(gepval))
                     {
                         string vtblClassName = getClassNameFromVtblObj(gepval->getName().str());
                         if (vtblClassName.size() > 0 && dname.className.compare(vtblClassName) != 0)
@@ -364,9 +365,9 @@ void CHGBuilder::analyzeVTables(const Module &M)
             E = M.global_end(); I != E; ++I)
     {
         const GlobalValue *globalvalue = SVFUtil::dyn_cast<const GlobalValue>(&(*I));
-        if (LLVMUtil::isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
+        if (cppUtil::isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0)
         {
-            const ConstantStruct *vtblStruct = LLVMUtil::getVtblStruct(globalvalue);
+            const ConstantStruct *vtblStruct = cppUtil::getVtblStruct(globalvalue);
 
             string vtblClassName = getClassNameFromVtblObj(globalvalue->getName().str());
             CHNode *node = chg->getNode(vtblClassName);
@@ -641,7 +642,7 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
             {
                 if(const CallBase* callInst = SVFUtil::dyn_cast<CallBase>(&*II))
                 {
-                    if (LLVMUtil::isVirtualCallSite(callInst) == false)
+                    if (cppUtil::isVirtualCallSite(callInst) == false)
                         continue;
 
                     VTableSet vtbls;
@@ -672,7 +673,7 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
 
 const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
 {
-    assert(LLVMUtil::isVirtualCallSite(cs) && "not virtual callsite!");
+    assert(cppUtil::isVirtualCallSite(cs) && "not virtual callsite!");
     const SVFInstruction* svfcall = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(cs);
 
     CHGraph::CallSiteToCHNodesMap::const_iterator it = chg->csToClassesMap.find(svfcall);
@@ -682,7 +683,7 @@ const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
     }
     else
     {
-        string thisPtrClassName = LLVMUtil::getClassNameOfThisPtr(cs);
+        string thisPtrClassName = cppUtil::getClassNameOfThisPtr(cs);
         if (const CHNode* thisNode = chg->getNode(thisPtrClassName))
         {
             const CHGraph::CHNodeSetTy& instAndDesces = getInstancesAndDescendants(thisPtrClassName);
@@ -696,9 +697,9 @@ const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
 
 void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const Function *lf)
 {
-    if (LLVMUtil::isCPPThunkFunction(lf))
+    if (cppUtil::isCPPThunkFunction(lf))
     {
-        if (const auto* tf = LLVMUtil::getThunkTarget(lf))
+        if (const auto* tf = cppUtil::getThunkTarget(lf))
         {
             SVFFunction* pFunction =
                 LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(tf);

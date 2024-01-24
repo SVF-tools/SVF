@@ -36,6 +36,8 @@
 #include "llvm/Transforms/Utils/Mem2Reg.h"
 #include "llvm/Passes/PassBuilder.h"
 
+#include "SVF-LLVM/LLVMModule.h"
+
 using namespace SVF;
 using namespace SVFUtil;
 

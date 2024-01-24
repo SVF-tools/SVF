@@ -535,7 +535,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     }
     else if (SVFUtil::isa<ConstantArray, ConstantStruct>(C))
     {
-        if(LLVMUtil::isValVtbl(gvar) && !Options::VtableInSVFIR())
+        if(cppUtil::isValVtbl(gvar) && !Options::VtableInSVFIR())
             return;
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
