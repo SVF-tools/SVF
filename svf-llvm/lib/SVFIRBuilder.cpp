@@ -28,19 +28,18 @@
  */
 
 #include "SVF-LLVM/SVFIRBuilder.h"
-#include "SVFIR/SVFModule.h"
-#include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
-#include "SVF-LLVM/LLVMUtil.h"
-#include "Util/CppUtil.h"
-#include "SVFIR/SVFValue.h"
-#include "SVFIR/PAGBuilderFromFile.h"
-#include "SVF-LLVM/LLVMLoopAnalysis.h"
-#include "Util/Options.h"
 #include "SVF-LLVM/CHGBuilder.h"
-#include "SVFIR/SVFFileSystem.h"
+#include "SVF-LLVM/CppUtil.h"
+#include "SVF-LLVM/LLVMLoopAnalysis.h"
+#include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
-
+#include "SVFIR/PAGBuilderFromFile.h"
+#include "SVFIR/SVFFileSystem.h"
+#include "SVFIR/SVFModule.h"
+#include "SVFIR/SVFValue.h"
+#include "Util/Options.h"
+#include "Util/SVFUtil.h"
 
 using namespace std;
 using namespace SVF;

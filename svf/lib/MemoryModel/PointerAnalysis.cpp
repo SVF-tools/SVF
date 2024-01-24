@@ -27,7 +27,6 @@
  *      Author: Yulei Sui
  */
 
-#include "Util/CppUtil.h"
 #include "Util/Options.h"
 #include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
@@ -46,7 +45,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace cppUtil;
 
 
 SVFIR* PointerAnalysis::pag = nullptr;

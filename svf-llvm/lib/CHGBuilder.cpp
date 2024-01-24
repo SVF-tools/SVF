@@ -38,7 +38,7 @@
 
 #include "SVF-LLVM/CHGBuilder.h"
 #include "Util/Options.h"
-#include "Util/CppUtil.h"
+#include "SVF-LLVM/CppUtil.h"
 #include "SVFIR/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMUtil.h"
@@ -372,7 +372,11 @@ void CHGBuilder::analyzeVTables(const Module &M)
             CHNode *node = chg->getNode(vtblClassName);
             assert(node && "node not found?");
 
-            node->setVTable(LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(globalvalue));
+            SVFGlobalValue* pValue =
+                LLVMModuleSet::getLLVMModuleSet()->getSVFGlobalValue(
+                    globalvalue);
+            pValue->setName(vtblClassName);
+            node->setVTable(pValue);
 
             for (unsigned int ei = 0; ei < vtblStruct->getNumOperands(); ++ei)
             {
@@ -694,11 +698,23 @@ void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const Function *lf)
 {
     if (LLVMUtil::isCPPThunkFunction(lf))
     {
-        if (const auto *tf = LLVMUtil::getThunkTarget(lf))
-            v.push_back(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(tf));
+        if (const auto* tf = LLVMUtil::getThunkTarget(lf))
+        {
+            SVFFunction* pFunction =
+                LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(tf);
+            cppUtil::DemangledName dname = cppUtil::demangle(pFunction->getName());
+            string calleeName = dname.funcName;
+            pFunction->setName(calleeName);
+            v.push_back(pFunction);
+        }
     }
     else
     {
-        v.push_back(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(lf));
+        SVFFunction* pFunction =
+            LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(lf);
+        cppUtil::DemangledName dname = cppUtil::demangle(pFunction->getName());
+        string calleeName = dname.funcName;
+        pFunction->setName(calleeName);
+        v.push_back(pFunction);
     }
 }

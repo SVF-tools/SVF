@@ -27,17 +27,15 @@
  *      Author: Yulei Sui
  */
 
-#include "Util/Options.h"
-#include "Graphs/CHG.h"
 #include "WPA/TypeAnalysis.h"
-#include "Util/PTAStat.h"
+#include "Graphs/CHG.h"
 #include "Graphs/ICFGStat.h"
 #include "Graphs/VFG.h"
-#include "Util/CppUtil.h"
+#include "Util/Options.h"
+#include "Util/PTAStat.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace cppUtil;
 using namespace std;
 
 

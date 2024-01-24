@@ -29,15 +29,15 @@
 
 #include <memory>
 
+#include "SVF-LLVM/BasicTypes.h"
+#include "SVF-LLVM/CppUtil.h"
+#include "SVF-LLVM/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
+#include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
+#include "SVFIR/SVFModule.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/Options.h"
-#include "SVFIR/SVFModule.h"
 #include "Util/SVFUtil.h"
-#include "SVF-LLVM/BasicTypes.h"
-#include "SVF-LLVM/LLVMUtil.h"
-#include "Util/CppUtil.h"
-#include "SVF-LLVM/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 
 using namespace SVF;
 using namespace SVFUtil;
