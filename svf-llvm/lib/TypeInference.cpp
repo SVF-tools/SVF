@@ -149,7 +149,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
         auto insertInferSitesOrPushWorklist = [this, &infersites, &workList, &canUpdate](const auto &pUser) {
             auto vIt = _valueToInferSites.find(pUser);
             if (canUpdate) {
-                if (vIt != _valueToInferSites.end()) {
+                if (vIt != _valueToInferSites.end() && !vIt->second.empty()) {
                     infersites.insert(vIt->second.begin(), vIt->second.end());
                 }
             } else {
@@ -334,7 +334,7 @@ Set<const Value *> TypeInference::bwfindAllocations(const Value *startValue) {
         auto insertAllocsOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
             auto vIt = _valueToAllocs.find(pUser);
             if (canUpdate) {
-                if (vIt != _valueToAllocs.end()) {
+                if (vIt != _valueToAllocs.end() && !vIt->second.empty()) {
                     sources.insert(vIt->second.begin(), vIt->second.end());
                 }
             } else {
