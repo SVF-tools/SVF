@@ -229,7 +229,7 @@ const Instruction* LockResultValidator::getPreviousMemoryAccessInst( const Instr
             _la->getTCT()->getThreadCallGraph()->getCallees(getCBN(svfInst), callees);
 
             for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
-                                                           ecit = callees.end(); cit!=ecit; cit++)
+                    ecit = callees.end(); cit!=ecit; cit++)
             {
                 if(*cit != nullptr)
                 {

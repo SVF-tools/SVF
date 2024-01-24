@@ -614,7 +614,7 @@ void RaceResultValidator::collectValidationTargets()
     if (!F)     return;
 
     for (Value::const_use_iterator it = F->use_begin(), ie =
-                                                            F->use_end(); it != ie; ++it)
+                F->use_end(); it != ie; ++it)
     {
         const Use *u = &*it;
         const Value *user = u->getUser();

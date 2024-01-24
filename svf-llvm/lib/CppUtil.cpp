@@ -230,10 +230,10 @@ const ConstantStruct *cppUtil::getVtblStruct(const GlobalValue *vtbl)
 {
     const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(vtbl->getOperand(0));
     assert(vtblStruct && "Initializer of a vtable not a struct?");
-    
+
     if (vtblStruct->getNumOperands() == 2 &&
-        SVFUtil::isa<ConstantStruct>(vtblStruct->getOperand(0)) &&
-        vtblStruct->getOperand(1)->getType()->isArrayTy())
+            SVFUtil::isa<ConstantStruct>(vtblStruct->getOperand(0)) &&
+            vtblStruct->getOperand(1)->getType()->isArrayTy())
         return SVFUtil::cast<ConstantStruct>(vtblStruct->getOperand(0));
 
     return vtblStruct;
@@ -272,7 +272,7 @@ bool cppUtil::isVirtualCallSite(const CallBase* cs)
     {
         const Value* vfuncptr = vfuncloadinst->getPointerOperand();
         if (const GetElementPtrInst* vfuncptrgepinst =
-                SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
+                    SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
         {
             if (vfuncptrgepinst->getNumIndices() != 1)
                 return false;
@@ -341,7 +341,7 @@ const Value* cppUtil::getVCallThisPtr(const CallBase* cs)
  *   call void @A::A()(%class.A* %0)
  */
 bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1,
-                                          const Value* thisPtr2)
+        const Value* thisPtr2)
 {
     if (thisPtr1 == thisPtr2)
         return true;
@@ -354,7 +354,7 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1,
                 if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(storeU))
                 {
                     if (load->getNextNode() &&
-                        SVFUtil::isa<CastInst>(load->getNextNode()))
+                            SVFUtil::isa<CastInst>(load->getNextNode()))
                         return SVFUtil::cast<CastInst>(load->getNextNode()) ==
                                (thisPtr2->stripPointerCasts());
                 }
@@ -525,7 +525,7 @@ std::string cppUtil::getClassNameOfThisPtr(const CallBase* inst)
     if (found != std::string::npos)
     {
         if (found != thisPtrClassName.size() - 1 &&
-            thisPtrClassName[found] == '.')
+                thisPtrClassName[found] == '.')
         {
             return thisPtrClassName.substr(0, found);
         }
