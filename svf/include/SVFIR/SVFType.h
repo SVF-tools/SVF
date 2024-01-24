@@ -261,12 +261,14 @@ public:
 
 public:
 
-    inline static SVFType* getPtrTy() {
+    inline static SVFType* getPtrTy()
+    {
         assert(ptrTy && "ptr type not set?");
         return ptrTy;
     }
 
-    inline static SVFType* getI8Ty() {
+    inline static SVFType* getI8Ty()
+    {
         assert(i8Ty && "int8 type not set?");
         return i8Ty;
     }
