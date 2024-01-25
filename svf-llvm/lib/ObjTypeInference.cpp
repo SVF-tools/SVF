@@ -352,8 +352,9 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
         if (canUpdate)
         {
             Set<const Type *> types;
-            std::transform(infersites.begin(), infersites.end(), std::inserter(types, types.begin()),
-                           infersiteToType);
+            for (const auto &infersite: infersites) {
+                types.insert(infersiteToType(infersite));
+            }
             _valueToInferSites[curValue] = infersites;
             _valueToType[curValue] = selectLargestType(types);
         }
