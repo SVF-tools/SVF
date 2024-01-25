@@ -38,7 +38,7 @@
 #include "Util/NodeIDAllocator.h"
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
-#include "SVF-LLVM/TypeInference.h"
+#include "SVF-LLVM/ObjTypeInference.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -570,7 +570,7 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
     }
 }
 
-TypeInference *SymbolTableBuilder::getTypeInference() {
+ObjTypeInference *SymbolTableBuilder::getTypeInference() {
     return LLVMModuleSet::getLLVMModuleSet()->getTypeInference();
 }
 

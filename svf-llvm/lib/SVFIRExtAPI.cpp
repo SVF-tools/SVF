@@ -30,7 +30,7 @@
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
-#include "SVF-LLVM/TypeInference.h"
+#include "SVF-LLVM/ObjTypeInference.h"
 
 using namespace std;
 using namespace SVF;

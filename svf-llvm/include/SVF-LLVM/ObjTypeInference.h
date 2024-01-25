@@ -27,8 +27,8 @@
  *
  */
 
-#ifndef SVF_TYPEINFERENCE_H
-#define SVF_TYPEINFERENCE_H
+#ifndef SVF_OBJTYPEINFERENCE_H
+#define SVF_OBJTYPEINFERENCE_H
 
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/BasicTypes.h"
@@ -36,7 +36,7 @@
 #include "Util/ThreadAPI.h"
 
 namespace SVF {
-class TypeInference {
+class ObjTypeInference {
 
 public:
     typedef Set<const Value *> ValueSet;
@@ -55,9 +55,9 @@ private:
 
 public:
 
-    explicit TypeInference() = default;
+    explicit ObjTypeInference() = default;
 
-    ~TypeInference() = default;
+    ~ObjTypeInference() = default;
 
 
     /// get or infer the type of a value
@@ -98,4 +98,4 @@ public:
 
 };
 }
-#endif //SVF_TYPEINFERENCE_H
+#endif //SVF_OBJTYPEINFERENCE_H

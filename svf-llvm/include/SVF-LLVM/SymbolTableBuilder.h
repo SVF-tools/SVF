@@ -39,7 +39,7 @@
 namespace SVF
 {
 
-class TypeInference;
+class ObjTypeInference;
 
 class SymbolTableBuilder
 {
@@ -85,7 +85,7 @@ protected:
     // @}
 
 
-    TypeInference* getTypeInference();
+    ObjTypeInference* getTypeInference();
 
     /// Forward collect all possible infer sites starting from a value
     const Type* inferObjType(const Value *startValue);

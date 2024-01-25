@@ -45,7 +45,7 @@
 #include "SVFIR/SVFModule.h"
 #include "Util/PTAStat.h"
 #include "SVF-LLVM/LLVMModule.h"
-#include "SVF-LLVM/TypeInference.h"
+#include "SVF-LLVM/ObjTypeInference.h"
 
 using namespace SVF;
 using namespace SVFUtil;

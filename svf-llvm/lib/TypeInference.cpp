@@ -27,7 +27,7 @@
  *
  */
 
-#include "SVF-LLVM/TypeInference.h"
+#include "SVF-LLVM/ObjTypeInference.h"
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/CppUtil.h"
@@ -97,7 +97,7 @@ const Type *infersiteToType(const Value *val) {
     }
 }
 
-const Type *TypeInference::defaultTy(const Value *val) {
+const Type *ObjTypeInference::defaultTy(const Value *val) {
     ABORT_IFNOT(val, "val cannot be null");
     // heap has a default type of 8-bit integer type
     if (SVFUtil::isa<Instruction>(val) && SVFUtil::isHeapAllocExtCallViaRet(
@@ -107,7 +107,7 @@ const Type *TypeInference::defaultTy(const Value *val) {
     return defaultPtrTy();
 }
 
-LLVMContext &TypeInference::getLLVMCtx() {
+LLVMContext &ObjTypeInference::getLLVMCtx() {
     return LLVMModuleSet::getLLVMModuleSet()->getContext();
 }
 
@@ -117,7 +117,7 @@ LLVMContext &TypeInference::getLLVMCtx() {
  * if not, find sources and then forward get or infer types
  * @param startValue
  */
-const Type *TypeInference::inferObjType(const Value *startValue) {
+const Type *ObjTypeInference::inferObjType(const Value *startValue) {
     if (isAllocation(startValue)) return fwInferObjType(startValue);
     Set<const Value *> sources = bwfindAllocations(startValue);
     Set<const Type *> types;
@@ -131,7 +131,7 @@ const Type *TypeInference::inferObjType(const Value *startValue) {
  * Forward collect all possible infer sites starting from a value
  * @param startValue
  */
-const Type *TypeInference::fwInferObjType(const Value *startValue) {
+const Type *ObjTypeInference::fwInferObjType(const Value *startValue) {
     // consult cache
     auto tIt = _valueToType.find(startValue);
     if (tIt != _valueToType.end()) {
@@ -315,7 +315,7 @@ const Type *TypeInference::fwInferObjType(const Value *startValue) {
  * @param startValue 
  * @return 
  */
-Set<const Value *> TypeInference::bwfindAllocations(const Value *startValue) {
+Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue) {
 
     // consult cache
     auto tIt = _valueToAllocs.find(startValue);
@@ -405,7 +405,7 @@ Set<const Value *> TypeInference::bwfindAllocations(const Value *startValue) {
     return srcs;
 }
 
-bool TypeInference::isAllocation(const SVF::Value *val)  {
+bool ObjTypeInference::isAllocation(const SVF::Value *val)  {
     return LLVMUtil::isObject(val);
 }
 
@@ -413,7 +413,7 @@ bool TypeInference::isAllocation(const SVF::Value *val)  {
  * Validate type inference
  * @param cs : stub malloc function with element number label
  */
-void TypeInference::validateTypeCheck(const CallBase *cs) {
+void ObjTypeInference::validateTypeCheck(const CallBase *cs) {
     if (const Function *func = cs->getCalledFunction()) {
         if (func->getName().find(TYPEMALLOC) != std::string::npos) {
             const Type *objType = fwInferObjType(cs);
@@ -434,7 +434,7 @@ void TypeInference::validateTypeCheck(const CallBase *cs) {
     }
 }
 
-void TypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val) {
+void ObjTypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val) {
 #if TYPE_DEBUG
     Type *oTy = getPtrElementType(oPTy);
     u32_t iTyNum = objTyToNumFields(iTy);
@@ -446,7 +446,7 @@ void TypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, c
 #endif
 }
 
-u32_t TypeInference::getArgPosInCall(const CallBase *callBase, const Value *arg) {
+u32_t ObjTypeInference::getArgPosInCall(const CallBase *callBase, const Value *arg) {
     assert(callBase->hasArgument(arg) && "callInst does not have argument arg?");
     auto it = std::find(callBase->arg_begin(), callBase->arg_end(), arg);
     assert(it != callBase->arg_end() && "Didn't find argument?");
@@ -454,7 +454,7 @@ u32_t TypeInference::getArgPosInCall(const CallBase *callBase, const Value *arg)
 }
 
 
-const Type *TypeInference::selectLargestType(Set<const Type *> &objTys) {
+const Type *ObjTypeInference::selectLargestType(Set<const Type *> &objTys) {
     if (objTys.empty()) return nullptr;
     // map type size to types from with key in descending order
     OrderedMap<u32_t, Set<const Type *>, std::greater<int>> typeSzToTypes;
@@ -468,7 +468,7 @@ const Type *TypeInference::selectLargestType(Set<const Type *> &objTys) {
     return *largestTypes.begin();
 }
 
-u32_t TypeInference::objTyToNumFields(const Type *objTy) {
+u32_t ObjTypeInference::objTyToNumFields(const Type *objTy) {
     u32_t num = Options::MaxFieldLimit();
     if (SVFUtil::isa<ArrayType>(objTy))
         num = getNumOfElements(objTy);
