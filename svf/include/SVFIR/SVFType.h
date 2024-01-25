@@ -261,22 +261,22 @@ public:
 
 public:
 
-    inline static SVFType* getPtrTy()
+    inline static SVFType* getSVFPtrType()
     {
-        assert(ptrTy && "ptr type not set?");
-        return ptrTy;
+        assert(svfPtrTy && "ptr type not set?");
+        return svfPtrTy;
     }
 
-    inline static SVFType* getI8Ty()
+    inline static SVFType* getSVFInt8Type()
     {
-        assert(i8Ty && "int8 type not set?");
-        return i8Ty;
+        assert(svfI8Ty && "int8 type not set?");
+        return svfI8Ty;
     }
 
 private:
 
-    static SVFType* ptrTy; ///< ptr type
-    static SVFType* i8Ty; ///< 8-bit int type
+    static SVFType* svfPtrTy; ///< ptr type
+    static SVFType* svfI8Ty; ///< 8-bit int type
 
 private:
     GNodeK kind; ///< used for classof

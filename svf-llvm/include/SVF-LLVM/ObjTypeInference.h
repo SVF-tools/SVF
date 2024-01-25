@@ -1,4 +1,4 @@
-//===- TypeInference.h -- Type inference----------------------------//
+//===- ObjTypeInference.h -- Type inference----------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * TypeInference.h
+ * ObjTypeInference.h
  *
  *  Created by Xiao Cheng on 10/01/24.
  *
@@ -69,11 +69,16 @@ public:
     void typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
 
     /// Default type
-    const Type *defaultTy(const Value *val);
+    const Type *defaultType(const Value *val);
 
-    /// Opaque pointer type
-    inline const Type *defaultPtrTy() {
+    /// Pointer type
+    inline const Type *ptrType() {
         return PointerType::getUnqual(getLLVMCtx());
+    }
+
+    /// Int8 type
+    inline const IntegerType *int8Type() {
+        return Type::getInt8Ty(getLLVMCtx());
     }
 
     LLVMContext &getLLVMCtx();

@@ -4,8 +4,8 @@
 namespace SVF
 {
 
-SVFType* SVFType::i8Ty = nullptr;
-SVFType* SVFType::ptrTy = nullptr;
+SVFType* SVFType::svfI8Ty = nullptr;
+SVFType* SVFType::svfPtrTy = nullptr;
 
 __attribute__((weak))
 std::string SVFType::toString() const

@@ -813,7 +813,7 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
         /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
         if(cppUtil::classTyHasVTable(st))
             typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(
-                    LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->defaultPtrTy()));
+                    LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType()));
         else
             return getNumOfElements(objTy);
     }

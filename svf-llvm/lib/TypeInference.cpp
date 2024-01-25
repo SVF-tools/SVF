@@ -1,4 +1,4 @@
-//===- TypeInference.cpp -- Type inference----------------------------//
+//===- ObjTypeInference.cpp -- Type inference----------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * TypeInference.cpp
+ * ObjTypeInference.cpp
  *
  *  Created by Xiao Cheng on 10/01/24.
  *
@@ -97,14 +97,14 @@ const Type *infersiteToType(const Value *val) {
     }
 }
 
-const Type *ObjTypeInference::defaultTy(const Value *val) {
+const Type *ObjTypeInference::defaultType(const Value *val) {
     ABORT_IFNOT(val, "val cannot be null");
     // heap has a default type of 8-bit integer type
     if (SVFUtil::isa<Instruction>(val) && SVFUtil::isHeapAllocExtCallViaRet(
             LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
-        return Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext());
+        return int8Type();
     // otherwise we return a pointer type in the default address space
-    return defaultPtrTy();
+    return ptrType();
 }
 
 LLVMContext &ObjTypeInference::getLLVMCtx() {
@@ -135,7 +135,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue) {
     // consult cache
     auto tIt = _valueToType.find(startValue);
     if (tIt != _valueToType.end()) {
-        return tIt->second ? tIt->second : defaultTy(startValue);
+        return tIt->second ? tIt->second : defaultType(startValue);
     }
 
     // simulate the call stack, the second element indicates whether we should update valueTypes for current value
@@ -304,7 +304,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue) {
     }
     const Type *type = _valueToType[startValue];
     if (type == nullptr) {
-        type = defaultTy(startValue);
+        type = defaultType(startValue);
         WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(startValue));
     }
     return type;
