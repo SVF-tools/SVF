@@ -352,7 +352,8 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
         if (canUpdate)
         {
             Set<const Type *> types;
-            for (const auto &infersite: infersites) {
+            for (const auto &infersite: infersites)
+            {
                 types.insert(infersiteToType(infersite));
             }
             _valueToInferSites[curValue] = infersites;
