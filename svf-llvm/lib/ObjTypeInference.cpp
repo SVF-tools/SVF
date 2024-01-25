@@ -124,7 +124,9 @@ const Type *ObjTypeInference::inferObjType(const Value *startValue) {
     for (const auto &source: sources) {
         types.insert(fwInferObjType(source));
     }
-    return selectLargestType(types);
+    const Type *largestTy = selectLargestType(types);
+    ABORT_IFNOT(largestTy, "return type cannot be null");
+    return largestTy;
 }
 
 /*!
@@ -298,7 +300,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue) {
             Set<const Type *> types;
             std::transform(infersites.begin(), infersites.end(), std::inserter(types, types.begin()),
                            infersiteToType);
-            _valueToInferSites[curValue] = SVFUtil::move(infersites);
+            _valueToInferSites[curValue] = infersites;
             _valueToType[curValue] = selectLargestType(types);
         }
     }
@@ -307,6 +309,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue) {
         type = defaultType(startValue);
         WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(startValue));
     }
+    ABORT_IFNOT(type, "type cannot be a null ptr");
     return type;
 }
 
@@ -394,7 +397,7 @@ Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue) 
             }
         }
         if (canUpdate) {
-            _valueToAllocs[curValue] = SVFUtil::move(sources);
+            _valueToAllocs[curValue] = sources;
         }
     }
     Set<const Value *> srcs = _valueToAllocs[startValue];
@@ -402,6 +405,7 @@ Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue) 
         srcs = {startValue};
         WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(startValue));
     }
+    ABORT_IFNOT(!srcs.empty(), "sources cannot be empty");
     return srcs;
 }
 
