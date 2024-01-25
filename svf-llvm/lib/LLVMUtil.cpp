@@ -931,7 +931,8 @@ std::string LLVMUtil::dumpType(const Type* type)
     return rawstr.str();
 }
 
-std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val) {
+std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val)
+{
     std::string str;
     llvm::raw_string_ostream rawstr(str);
     if (val)

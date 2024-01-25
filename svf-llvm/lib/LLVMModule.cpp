@@ -79,12 +79,14 @@ LLVMModuleSet::LLVMModuleSet()
 {
 }
 
-LLVMModuleSet::~LLVMModuleSet() {
+LLVMModuleSet::~LLVMModuleSet()
+{
     delete typeInference;
     typeInference = nullptr;
 }
 
-ObjTypeInference* LLVMModuleSet::getTypeInference() {
+ObjTypeInference* LLVMModuleSet::getTypeInference()
+{
     return typeInference;
 }
 

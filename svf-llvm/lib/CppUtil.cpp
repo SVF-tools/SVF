@@ -515,9 +515,11 @@ std::string cppUtil::getClassNameOfThisPtr(const CallBase* inst)
     if (thisPtrClassName.size() == 0)
     {
         const Value* thisPtr = getVCallThisPtr(inst);
-        if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(thisPtr->getType())) {
+        if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(thisPtr->getType()))
+        {
             // TODO: getPtrElementType need type inference
-            if (const StructType *st = SVFUtil::dyn_cast<StructType>(LLVMUtil::getPtrElementType(ptrTy))) {
+            if (const StructType *st = SVFUtil::dyn_cast<StructType>(LLVMUtil::getPtrElementType(ptrTy)))
+            {
                 thisPtrClassName = getClassNameFromType(st);
             }
         }
@@ -527,7 +529,7 @@ std::string cppUtil::getClassNameOfThisPtr(const CallBase* inst)
     if (found != std::string::npos)
     {
         if (found != thisPtrClassName.size() - 1 &&
-            thisPtrClassName[found] == '.')
+                thisPtrClassName[found] == '.')
         {
             return thisPtrClassName.substr(0, found);
         }

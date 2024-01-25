@@ -35,8 +35,10 @@
 #include "SVFIR/SVFValue.h"
 #include "Util/ThreadAPI.h"
 
-namespace SVF {
-class ObjTypeInference {
+namespace SVF
+{
+class ObjTypeInference
+{
 
 public:
     typedef Set<const Value *> ValueSet;
@@ -72,12 +74,14 @@ public:
     const Type *defaultType(const Value *val);
 
     /// Pointer type
-    inline const Type *ptrType() {
+    inline const Type *ptrType()
+    {
         return PointerType::getUnqual(getLLVMCtx());
     }
 
     /// Int8 type
-    inline const IntegerType *int8Type() {
+    inline const IntegerType *int8Type()
+    {
         return Type::getInt8Ty(getLLVMCtx());
     }
 

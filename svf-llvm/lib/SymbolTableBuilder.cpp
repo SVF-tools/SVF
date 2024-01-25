@@ -220,7 +220,8 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 
                     // TODO handle inlineAsm
                     /// if (SVFUtil::isa<InlineAsm>(Callee))
-                    if (Options::EnableTypeCheck()) {
+                    if (Options::EnableTypeCheck())
+                    {
                         getTypeInference()->validateTypeCheck(cs);
                     }
                 }
@@ -570,12 +571,14 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant* C)
     }
 }
 
-ObjTypeInference *SymbolTableBuilder::getTypeInference() {
+ObjTypeInference *SymbolTableBuilder::getTypeInference()
+{
     return LLVMModuleSet::getLLVMModuleSet()->getTypeInference();
 }
 
 
-const Type* SymbolTableBuilder::inferObjType(const Value *startValue) {
+const Type* SymbolTableBuilder::inferObjType(const Value *startValue)
+{
     return getTypeInference()->inferObjType(startValue);
 }
 
@@ -593,7 +596,8 @@ const Type* SymbolTableBuilder::inferTypeOfHeapObjOrStaticObj(const Instruction 
     {
         if(const Value* v = getFirstUseViaCastInst(inst))
         {
-            if (const PointerType *newTy = SVFUtil::dyn_cast<PointerType>(v->getType())) {
+            if (const PointerType *newTy = SVFUtil::dyn_cast<PointerType>(v->getType()))
+            {
                 originalPType = newTy;
             }
         }
@@ -813,7 +817,7 @@ u32_t SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value*
         /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
         if(cppUtil::classTyHasVTable(st))
             typeinfo->resetTypeForHeapStaticObj(LLVMModuleSet::getLLVMModuleSet()->getSVFType(
-                    LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType()));
+                                                    LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType()));
         else
             return getNumOfElements(objTy);
     }
