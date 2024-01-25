@@ -27,6 +27,7 @@
 #include "Util/Options.h"
 #include "MTAResultValidator.h"
 #include "LockResultValidator.h"
+
 using namespace llvm;
 using namespace std;
 using namespace SVF;
@@ -48,6 +49,7 @@ int main(int argc, char ** argv)
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
 
+
     MTA mta;
     mta.runOnModule(pag);
 
@@ -57,7 +59,8 @@ int main(int argc, char ** argv)
     // Initialize the validator and perform validation.
     LockResultValidator lockvalidator(mta.getLockAnalysis());
     lockvalidator.analyze();
-
     LLVMModuleSet::releaseLLVMModuleSet();
+
+
     return 0;
 }

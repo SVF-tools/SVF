@@ -48,6 +48,11 @@ jobs:
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
 
+      - name: ctest objtype inference
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R objtype -VV
+
       - name: ctest wpa
         working-directory: ${{github.workspace}}/Release-build
         run:

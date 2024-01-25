@@ -63,12 +63,12 @@ int main(int argc, char** argv)
         /// Build SVFIR
         SVFIRBuilder builder(svfModule);
         pag = builder.build();
+
     }
 
     WPAPass wpa;
     wpa.runOnModule(pag);
 
     LLVMModuleSet::releaseLLVMModuleSet();
-
     return 0;
 }

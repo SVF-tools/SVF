@@ -301,6 +301,12 @@ const Option<bool> Options::EnableAliasCheck(
     true
 );
 
+const Option<bool> Options::EnableTypeCheck(
+        "type-check",
+        "Enable type check functions",
+        true
+);
+
 const Option<bool> Options::EnableThreadCallGraph(
     "enable-tcg",
     "Enable pointer analysis to use thread call graph",

@@ -378,35 +378,20 @@ const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
 }
 
 /*!
- * Return the type of the object from a heap allocation
+ * Return size of this Object
  */
-const Type* LLVMUtil::inferTypeOfHeapObjOrStaticObj(const Instruction *inst)
+u32_t LLVMUtil::getNumOfElements(const Type* ety)
 {
-    const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
-    const SVFInstruction* svfinst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(inst);
-    if(SVFUtil::isHeapAllocExtCallViaRet(svfinst))
+    assert(ety && "type is null?");
+    u32_t numOfFields = 1;
+    if (SVFUtil::isa<StructType, ArrayType>(ety))
     {
-        if(const Value* v = getFirstUseViaCastInst(inst))
-        {
-            if(const PointerType* newTy = SVFUtil::dyn_cast<PointerType>(v->getType()))
-                type = newTy;
-        }
+        if(Options::ModelArrays())
+            return LLVMModuleSet::getLLVMModuleSet()->getSVFType(ety)->getTypeInfo()->getNumOfFlattenElements();
+        else
+            return LLVMModuleSet::getLLVMModuleSet()->getSVFType(ety)->getTypeInfo()->getNumOfFlattenFields();
     }
-    else if(SVFUtil::isHeapAllocExtCallViaArg(svfinst))
-    {
-        const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
-        int arg_pos = SVFUtil::getHeapAllocHoldingArgPosition(SVFUtil::getSVFCallSite(svfinst));
-        const Value* arg = cs->getArgOperand(arg_pos);
-        type = SVFUtil::dyn_cast<PointerType>(arg->getType());
-    }
-    else
-    {
-        assert( false && "not a heap allocation instruction?");
-    }
-
-    assert(type && "not a pointer type?");
-    // TODO: getPtrElementType need type inference
-    return getPtrElementType(type);
+    return numOfFields;
 }
 
 /*!
@@ -946,6 +931,15 @@ std::string LLVMUtil::dumpType(const Type* type)
     return rawstr.str();
 }
 
+std::string LLVMUtil::dumpValueAndDbgInfo(const Value *val) {
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    if (val)
+        rawstr << dumpValue(val) << getSourceLoc(val);
+    else
+        rawstr << " llvm Value is null";
+    return rawstr.str();
+}
 
 namespace SVF
 {

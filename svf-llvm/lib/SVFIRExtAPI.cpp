@@ -30,6 +30,7 @@
 #include "SVF-LLVM/SVFIRBuilder.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/SymbolTableBuilder.h"
+#include "SVF-LLVM/ObjTypeInference.h"
 
 using namespace std;
 using namespace SVF;
@@ -43,12 +44,8 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
 {
     assert(V);
     const Value* value = getBaseValueForExtArg(V);
-    const Type* T = value->getType();
-    // TODO: getPtrElementType need type inference
-    while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
-        T = getPtrElementType(ptype);
-
-    u32_t numOfElems = pag->getSymbolInfo()->getNumOfFlattenElements(LLVMModuleSet::getLLVMModuleSet()->getSVFType(T));
+    const Type *objType = LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferObjType(value);
+    u32_t numOfElems = pag->getSymbolInfo()->getNumOfFlattenElements(LLVMModuleSet::getLLVMModuleSet()->getSVFType(objType));
     /// use user-specified size for this copy operation if the size is a constaint int
     if(szValue && SVFUtil::isa<ConstantInt>(szValue))
     {
@@ -71,7 +68,7 @@ const Type* SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value* V, std::vec
         ls.addOffsetVarAndGepTypePair(getPAG()->getGNode(getPAG()->getValueNode(svfOffset)), nullptr);
         fields.push_back(ls);
     }
-    return T;
+    return objType;
 }
 
 /*!

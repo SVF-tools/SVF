@@ -261,27 +261,25 @@ public:
 
 public:
 
-    inline static SVFType* getPtrTy()
+    inline static SVFType* getSVFPtrType()
     {
-        assert(ptrTy && "ptr type not set?");
-        return ptrTy;
+        assert(svfPtrTy && "ptr type not set?");
+        return svfPtrTy;
     }
 
-    inline static SVFType* getI8Ty()
+    inline static SVFType* getSVFInt8Type()
     {
-        assert(i8Ty && "int8 type not set?");
-        return i8Ty;
+        assert(svfI8Ty && "int8 type not set?");
+        return svfI8Ty;
     }
 
 private:
 
-    static SVFType* ptrTy; ///< ptr type
-    static SVFType* i8Ty; ///< 8-bit int type
+    static SVFType* svfPtrTy; ///< ptr type
+    static SVFType* svfI8Ty; ///< 8-bit int type
 
 private:
     GNodeK kind; ///< used for classof
-    const SVFPointerType*
-    getPointerToTy; /// Return a pointer to the current type
     StInfo* typeinfo;   ///< SVF's TypeInfo
     bool isSingleValTy; ///< The type represents a single value, not struct or
     u32_t byteSize; ///< LLVM Byte Size
@@ -289,7 +287,7 @@ private:
 
 protected:
     SVFType(bool svt, SVFTyKind k, u32_t Sz = 1)
-        : kind(k), getPointerToTy(nullptr), typeinfo(nullptr),
+        : kind(k), typeinfo(nullptr),
           isSingleValTy(svt), byteSize(Sz)
     {
     }
@@ -308,17 +306,6 @@ public:
     std::string toString() const;
 
     virtual void print(std::ostream& os) const = 0;
-
-    inline void setPointerTo(const SVFPointerType* ty)
-    {
-        getPointerToTy = ty;
-    }
-
-    inline const SVFPointerType* getPointerTo() const
-    {
-        assert(getPointerToTy && "set the getPointerToTy first");
-        return getPointerToTy;
-    }
 
 
     inline void setTypeInfo(StInfo* ti)
@@ -373,28 +360,15 @@ class SVFPointerType : public SVFType
     friend class SVFIRWriter;
     friend class SVFIRReader;
 
-private:
-    const SVFType* ptrElementType;
-
 public:
     SVFPointerType(u32_t byteSize = 1)
-        : SVFType(true, SVFPointerTy, byteSize), ptrElementType(nullptr)
+        : SVFType(true, SVFPointerTy, byteSize)
     {
     }
 
     static inline bool classof(const SVFType* node)
     {
         return node->getKind() == SVFPointerTy;
-    }
-    inline const SVFType* getPtrElementType() const
-    {
-        assert(ptrElementType && "ptrElementType is nullptr");
-        return ptrElementType;
-    }
-
-    inline void setPtrElementType(SVFType* _ptrElementType)
-    {
-        ptrElementType = _ptrElementType;
     }
 
     void print(std::ostream& os) const override;

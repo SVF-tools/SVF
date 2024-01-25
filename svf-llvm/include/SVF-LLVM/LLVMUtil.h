@@ -106,10 +106,9 @@ static inline Type* getPtrElementType(const PointerType* pty)
 #endif
 }
 
-/// Get the reference type of heap/static object from an allocation site.
-//@{
-const Type *inferTypeOfHeapObjOrStaticObj(const Instruction* inst);
-//@}
+/// Return size of this object based on LLVM value
+u32_t getNumOfElements(const Type* ety);
+
 
 /// Return true if this value refers to a object
 bool isObject(const Value* ref);
@@ -362,6 +361,7 @@ std::string dumpValue(const Value* val);
 
 std::string dumpType(const Type* type);
 
+std::string dumpValueAndDbgInfo(const Value* val);
 
 /**
  * See more: https://github.com/SVF-tools/SVF/pull/1191

@@ -35,6 +35,7 @@
 #include "CFL/CFLAlias.h"
 #include "CFL/CFLVF.h"
 
+
 using namespace llvm;
 using namespace SVF;
 
@@ -82,6 +83,7 @@ int main(int argc, char ** argv)
     // Releases the SVFIR and the LLVMModuleSet to free memory
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
+
 
     return 0;
 

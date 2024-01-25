@@ -4,8 +4,8 @@
 namespace SVF
 {
 
-SVFType* SVFType::i8Ty = nullptr;
-SVFType* SVFType::ptrTy = nullptr;
+SVFType* SVFType::svfI8Ty = nullptr;
+SVFType* SVFType::svfPtrTy = nullptr;
 
 __attribute__((weak))
 std::string SVFType::toString() const
@@ -23,7 +23,7 @@ std::ostream& operator<<(std::ostream& os, const SVFType& type)
 
 void SVFPointerType::print(std::ostream& os) const
 {
-    os << *ptrElementType << '*';
+    os << "ptr";
 }
 
 void SVFIntegerType::print(std::ostream& os) const

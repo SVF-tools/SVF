@@ -39,6 +39,8 @@
 namespace SVF
 {
 
+class ObjTypeInference;
+
 class SymbolTableBuilder
 {
     friend class SVFIRBuilder;
@@ -81,6 +83,18 @@ protected:
     void handleGlobalInitializerCE(const Constant *C);
     void handleCE(const Value* val);
     // @}
+
+
+    ObjTypeInference* getTypeInference();
+
+    /// Forward collect all possible infer sites starting from a value
+    const Type* inferObjType(const Value *startValue);
+
+    /// Get the reference type of heap/static object from an allocation site.
+    //@{
+    const Type *inferTypeOfHeapObjOrStaticObj(const Instruction* inst);
+    //@}
+
 
     /// Create an objectInfo based on LLVM value
     ObjTypeInfo* createObjTypeInfo(const Value* val);

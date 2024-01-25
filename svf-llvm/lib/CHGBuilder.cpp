@@ -45,6 +45,7 @@
 #include "SVFIR/SVFModule.h"
 #include "Util/PTAStat.h"
 #include "SVF-LLVM/LLVMModule.h"
+#include "SVF-LLVM/ObjTypeInference.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -670,6 +671,7 @@ void CHGBuilder::buildCSToCHAVtblsAndVfnsMap()
         }
     }
 }
+
 
 const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
 {

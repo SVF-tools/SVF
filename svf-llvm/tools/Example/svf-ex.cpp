@@ -34,6 +34,7 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
+
 using namespace std;
 using namespace SVF;
 
@@ -221,6 +222,7 @@ int main(int argc, char ** argv)
     SVFIRBuilder builder(svfModule);
     SVFIR* pag = builder.build();
 
+
     /// Create Andersen's pointer analysis
     Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
 
@@ -263,7 +265,6 @@ int main(int argc, char ** argv)
 
     LLVMModuleSet::getLLVMModuleSet()->dumpModulesToFile(".svf.bc");
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
-
     llvm::llvm_shutdown();
     return 0;
 }
