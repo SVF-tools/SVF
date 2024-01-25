@@ -304,7 +304,7 @@ const Option<bool> Options::EnableAliasCheck(
 const Option<bool> Options::EnableTypeCheck(
         "type-check",
         "Enable type check functions",
-        false
+        true
 );
 
 const Option<bool> Options::EnableThreadCallGraph(
