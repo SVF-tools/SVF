@@ -582,3 +582,182 @@ u32_t ObjTypeInference::objTyToNumFields(const Type *objTy)
     }
     return num;
 }
+
+
+/*!
+ * get or infer the name of thisptr
+ * @param thisPtr
+ * @return
+ */
+Set<std::string> &ObjTypeInference::inferThisPtrClassName(const Value *thisPtr) {
+    auto it = _thisPtrClassNames.find(thisPtr);
+    if (it != _thisPtrClassNames.end()) return it->second;
+
+    Set<std::string> names;
+    auto insertClassNames = [&names](Set<std::string> &classNames) {
+        if (!classNames.empty()) names.insert(classNames.begin(), classNames.end());
+    };
+
+    // backward find source and then forward find constructor or other mangler functions
+    Set<const Value *> sources = findCPPSources(thisPtr);
+    for (const auto &source: sources) {
+        if (source == thisPtr) continue;
+
+        if (const auto *func = SVFUtil::dyn_cast<Function>(source)) {
+            // source resides in cpp functions
+            Set<std::string> classNames = extractClassNameViaCppCallee(func);
+            insertClassNames(classNames);
+        } else if (SVFUtil::isa<LoadInst, StoreInst, GetElementPtrInst, AllocaInst, GlobalValue>(source)) {
+            // source contains type information
+            const Type *type = infersiteToType(source);
+            const std::string &className = typeToCppClassName(type);
+            if (className != "") {
+                Set<std::string> tgt{className};
+                insertClassNames(tgt);
+            }
+        } else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(source)) {
+            if (const Function *callFunc = callBase->getCalledFunction()) {
+                Set<std::string> classNames = extractClassNameViaCppCallee(callFunc);
+                insertClassNames(classNames);
+                if (isCPPDynCast(callFunc->getName().str())) {
+                    // dynamic cast
+                    Set<std::string> tgt{extractRealNameFromCPPDynCast(callBase)};
+                    insertClassNames(tgt);
+                } else if (isCPPNew(callFunc->getName().str())) {
+                    // start from znwm
+                    auto inferViaCppCall = [&insertClassNames](const CallBase *callBase) {
+                        if (!callBase->getCalledFunction()) return;
+                        const Function *constructFoo = callBase->getCalledFunction();
+                        Set<std::string> classNames = extractClassNameViaCppCallee(constructFoo);
+                        insertClassNames(classNames);
+                    };
+                    for (const auto &use: callBase->uses()) {
+                        if (const auto *cppCall = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+                            inferViaCppCall(cppCall);
+                        } else if (const auto *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser())) {
+                            for (const auto &use2: bitCastInst->uses()) {
+                                if (const auto *cppCall2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
+                                    inferViaCppCall(cppCall2);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return _thisPtrClassNames[thisPtr] = names;
+}
+
+/*!
+ * Backward collect all possible sources starting from a value
+ * @param startValue
+ * @return
+ */
+Set<const Value *> ObjTypeInference::findCPPSources(const Value *startValue) {
+
+    // consult cache
+    auto tIt = _valueToCPPSources.find(startValue);
+    if (tIt != _valueToCPPSources.end()) {
+        return tIt->second;
+    }
+
+    // simulate the call stack, the second element indicates whether we should update sources for current value
+    FILOWorkList<ValueBoolPair> workList;
+    Set<ValueBoolPair> visited;
+    workList.push({startValue, false});
+    while (!workList.empty()) {
+        auto curPair = workList.pop();
+        if (visited.count(curPair)) continue;
+        visited.insert(curPair);
+        const Value *curValue = curPair.first;
+        bool canUpdate = curPair.second;
+
+        Set<const Value *> sources;
+        auto insertSource = [&sources, &canUpdate](const Value *source) {
+            if (canUpdate) sources.insert(source);
+        };
+        auto insertSourcesOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
+            auto vIt = _valueToCPPSources.find(pUser);
+            if (canUpdate) {
+                if (vIt != _valueToCPPSources.end() && !vIt->second.empty()) {
+                    sources.insert(vIt->second.begin(), vIt->second.end());
+                }
+            } else {
+                if (vIt == _valueToCPPSources.end()) workList.push({pUser, false});
+            }
+        };
+
+        if (!canUpdate && !_valueToCPPSources.count(curValue)) {
+            workList.push({curValue, true});
+        }
+
+        // current inst reside in cpp interested function
+        if (const auto *inst = SVFUtil::dyn_cast<Instruction>(curValue)) {
+            if (const Function *fun = inst->getFunction()) {
+                if (isCPPTemplateAPI(fun->getName().str()) || isCPPConstructor(fun->getName().str())) {
+                    insertSource(fun);
+                    if (canUpdate) {
+                        _valueToCPPSources[curValue] = sources;
+                    }
+                    continue;
+                }
+            }
+        }
+        if (isCPPSource(curValue)) {
+            insertSource(curValue);
+        } else if (const auto *getElementPtrInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue)) {
+            insertSource(getElementPtrInst);
+            insertSourcesOrPushWorklist(getElementPtrInst->getPointerOperand());
+        } else if (const auto *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
+            Value *prevVal = bitCastInst->getOperand(0);
+            insertSourcesOrPushWorklist(prevVal);
+        } else if (const auto *phiNode = SVFUtil::dyn_cast<PHINode>(curValue)) {
+            for (u32_t i = 0; i < phiNode->getNumOperands(); ++i) {
+                insertSourcesOrPushWorklist(phiNode->getOperand(i));
+            }
+        } else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue)) {
+            for (const auto &use: loadInst->getPointerOperand()->uses()) {
+                if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser())) {
+                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand()) {
+                        insertSourcesOrPushWorklist(storeInst->getValueOperand());
+                    }
+                }
+            }
+            // array-1.cpp
+            if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(loadInst->getPointerOperand())) {
+                if (const Function *calledFunc = callBase->getCalledFunction()) {
+                    const std::string &funcName = calledFunc->getName().str();
+                    if (isCPPTemplateAPI(funcName))
+                        insertSource(callBase);
+                }
+            }
+        } else if (const auto *argument = SVFUtil::dyn_cast<Argument>(curValue)) {
+            for (const auto &use: argument->getParent()->uses()) {
+                if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+                    // skip function as parameter
+                    // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
+                    if (callBase->getCalledFunction() != argument->getParent()) continue;
+                    u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
+                    insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
+                }
+            }
+        } else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue)) {
+            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
+            if (Function *callee = callBase->getCalledFunction()) {
+                if (!callee->isDeclaration()) {
+                    const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+                    const Value *pValue = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()->back());
+                    const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
+                    ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
+                    insertSourcesOrPushWorklist(retInst->getReturnValue());
+                }
+            }
+        }
+        if (canUpdate) {
+            _valueToCPPSources[curValue] = sources;
+        }
+    }
+    Set<const Value *> srcs = _valueToCPPSources[startValue];
+    return srcs;
+}

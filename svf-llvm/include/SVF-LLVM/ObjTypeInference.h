@@ -47,12 +47,16 @@ public:
     typedef ValueToValueSet ValueToSources;
     typedef Map<const Value *, const Type *> ValueToType;
     typedef std::pair<const Value *, bool> ValueBoolPair;
+    typedef Map<const Value *, Set<std::string>> ValueToClassNames;
+
 
 
 private:
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
     ValueToSources _valueToAllocs; // value allocations (stack, static, heap) cache
+    ValueToClassNames _thisPtrClassNames; // thisptr class name cache
+    ValueToSources _valueToCPPSources; // value cpp sources cache
 
 
 public:
@@ -105,6 +109,14 @@ public:
 
     u32_t getArgPosInCall(const CallBase *callBase, const Value *arg);
 
+public:
+    /// get or infer the name of thisptr
+    Set<std::string> &inferThisPtrClassName(const Value *thisPtr);
+
+protected:
+
+    /// Backward collect all possible cpp constructors starting from a value
+    Set<const Value *> findCPPSources(const Value *startValue);
 };
 }
 #endif //SVF_OBJTYPEINFERENCE_H

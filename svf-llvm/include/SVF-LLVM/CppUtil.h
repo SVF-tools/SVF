@@ -129,6 +129,32 @@ bool VCallInCtorOrDtor(const CallBase* cs);
 bool isSameThisPtrInConstructor(const Argument* thisPtr1,
                                 const Value* thisPtr2);
 
+/// Extract class name based on the c++ callee function, e.g., constructor
+Set<std::string> extractClassNameViaCppCallee(const Function *callee);
+
+/// Extract class name in template functions
+Set<std::string> extractClassNameInTemplate(const std::string &oname);
+
+/// CPP source used to infer c++ class name
+bool isCPPSource(const Value *val);
+
+bool matchMangler(const std::string &str, const std::string &label);
+
+bool isCPPConstructor(const std::string &str);
+
+bool isCPPTemplateAPI(const std::string &str);
+
+bool isCPPDynCast(const std::string &str);
+
+bool isCPPNew(const std::string &str);
+
+std::string extractRealNameFromCPPDynCast(const CallBase* callBase);
+
+const Type *cppClassNameToType(const std::string &className);
+
+std::string typeToCppClassName(const Type *ty);
+
+
 /// Constants pertaining to CTir, for C and C++.
 /// TODO: move helper functions here too?
 namespace ctir
