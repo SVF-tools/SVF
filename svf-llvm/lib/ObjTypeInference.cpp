@@ -37,7 +37,7 @@
     do                                                                         \
     {                                                                          \
         SVFUtil::errs() << SVFUtil::errMsg("Error ") << __FILE__ << ':'        \
-            << __LINE__ << ": " << msg << '\n';                                \
+            << __LINE__ << ": " << (msg) << '\n';                              \
     } while (0)
 #define ABORT_MSG(msg)                                                         \
     do                                                                         \
@@ -87,19 +87,19 @@ const Type *infersiteToType(const Value *val)
     {
         return llvm::getLoadStoreType(const_cast<Value *>(val));
     }
-    else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val))
+    else if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val))
     {
         return gepInst->getSourceElementType();
     }
-    else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val))
+    else if (const auto *call = SVFUtil::dyn_cast<CallBase>(val))
     {
         return call->getFunctionType();
     }
-    else if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
+    else if (const auto *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
     {
         return allocaInst->getAllocatedType();
     }
-    else if (const GlobalValue *globalValue = SVFUtil::dyn_cast<GlobalValue>(val))
+    else if (const auto *globalValue = SVFUtil::dyn_cast<GlobalValue>(val))
     {
         return globalValue->getValueType();
     }
@@ -195,11 +195,11 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
         {
             workList.push({curValue, true});
         }
-        if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
+        if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
             insertInferSite(gepInst);
         for (const auto &it: curValue->uses())
         {
-            if (LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser()))
+            if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser()))
             {
                 /*
                  * infer based on load, e.g.,
@@ -209,7 +209,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                  */
                 insertInferSite(loadInst);
             }
-            else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser()))
+            else if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser()))
             {
                 if (storeInst->getPointerOperand() == curValue)
                 {
@@ -247,12 +247,12 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                       %6 = load %struct.MyStruct*, %struct.MyStruct** %next3, align 8, !dbg !49
                       infer site -> %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %6, i32 0, i32 0, !dbg !50
                       */
-                    if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
+                    if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
                                                          storeInst->getPointerOperand()))
                     {
                         const Value *gepBase = gepInst->getPointerOperand();
                         if (!SVFUtil::isa<LoadInst>(gepBase)) continue;
-                        const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(gepBase);
+                        const auto *load = SVFUtil::dyn_cast<LoadInst>(gepBase);
                         for (const auto &loadUse: load->getPointerOperand()->uses())
                         {
                             if (loadUse.getUser() == load || !SVFUtil::isa<LoadInst>(loadUse.getUser()))
@@ -274,7 +274,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                 }
 
             }
-            else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser()))
+            else if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser()))
             {
                 /*
                  * infer based on gep (pointer operand)
@@ -285,17 +285,17 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                 if (gepInst->getPointerOperand() == curValue)
                     insertInferSite(gepInst);
             }
-            else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser()))
+            else if (const auto *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser()))
             {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(bitcast);
             }
-            else if (PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(it.getUser()))
+            else if (const auto *phiNode = SVFUtil::dyn_cast<PHINode>(it.getUser()))
             {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(phiNode);
             }
-            else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser()))
+            else if (const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser()))
             {
                 /*
                  * propagate from return to caller
@@ -310,7 +310,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                 */
                 for (const auto &callsite: retInst->getFunction()->uses())
                 {
-                    if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser()))
+                    if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser()))
                     {
                         // skip function as parameter
                         // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
@@ -319,7 +319,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                     }
                 }
             }
-            else if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(it.getUser()))
+            else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(it.getUser()))
             {
                 /*
                  * propagate from callsite to callee
@@ -426,19 +426,19 @@ Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue)
         {
             insertAllocs(curValue);
         }
-        else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue))
+        else if (const auto *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue))
         {
             Value *prevVal = bitCastInst->getOperand(0);
             insertAllocsOrPushWorklist(prevVal);
         }
-        else if (const PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(curValue))
+        else if (const auto *phiNode = SVFUtil::dyn_cast<PHINode>(curValue))
         {
             for (u32_t i = 0; i < phiNode->getNumOperands(); ++i)
             {
                 insertAllocsOrPushWorklist(phiNode->getOperand(i));
             }
         }
-        else if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
+        else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
         {
             for (const auto &use: loadInst->getPointerOperand()->uses())
             {
@@ -451,7 +451,7 @@ Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue)
                 }
             }
         }
-        else if (const Argument *argument = SVFUtil::dyn_cast<Argument>(curValue))
+        else if (const auto *argument = SVFUtil::dyn_cast<Argument>(curValue))
         {
             for (const auto &use: argument->getParent()->uses())
             {
@@ -465,7 +465,7 @@ Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue)
                 }
             }
         }
-        else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
+        else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
             ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
             if (Function *callee = callBase->getCalledFunction())
@@ -474,7 +474,7 @@ Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue)
                 {
                     const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
                     const Value *pValue = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()->back());
-                    const ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
+                    const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
                     insertAllocsOrPushWorklist(retInst->getReturnValue());
                 }
@@ -511,7 +511,7 @@ void ObjTypeInference::validateTypeCheck(const CallBase *cs)
         if (func->getName().find(TYPEMALLOC) != std::string::npos)
         {
             const Type *objType = fwInferObjType(cs);
-            ConstantInt *pInt =
+            const auto *pInt =
                 SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
             u32_t iTyNum = objTyToNumFields(objType);
@@ -573,7 +573,7 @@ u32_t ObjTypeInference::objTyToNumFields(const Type *objTy)
     u32_t num = Options::MaxFieldLimit();
     if (SVFUtil::isa<ArrayType>(objTy))
         num = getNumOfElements(objTy);
-    else if (const StructType *st = SVFUtil::dyn_cast<StructType>(objTy))
+    else if (const auto *st = SVFUtil::dyn_cast<StructType>(objTy))
     {
         /// For an C++ class, it can have variant elements depending on the vtable size,
         /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
