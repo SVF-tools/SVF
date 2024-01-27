@@ -140,7 +140,7 @@ const Type *ObjTypeInference::inferObjType(const Value *startValue)
     {
         types.insert(fwInferObjType(source));
     }
-    const Type *largestTy = selectLargestType(types);
+    const Type *largestTy = selectLargestSizedType(types);
     ABORT_IFNOT(largestTy, "return type cannot be null");
     return largestTy;
 }
@@ -181,7 +181,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
             auto vIt = _valueToInferSites.find(pUser);
             if (canUpdate)
             {
-                if (vIt != _valueToInferSites.end() && !vIt->second.empty())
+                if (vIt != _valueToInferSites.end())
                 {
                     infersites.insert(vIt->second.begin(), vIt->second.end());
                 }
@@ -352,12 +352,10 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
         if (canUpdate)
         {
             Set<const Type *> types;
-            for (const auto &infersite: infersites)
-            {
-                types.insert(infersiteToType(infersite));
-            }
-            _valueToInferSites[curValue] = infersites;
-            _valueToType[curValue] = selectLargestType(types);
+            std::transform(infersites.begin(), infersites.end(), std::inserter(types, types.begin()),
+                           infersiteToType);
+            _valueToInferSites[curValue] = SVFUtil::move(infersites);
+            _valueToType[curValue] = selectLargestSizedType(types);
         }
     }
     const Type *type = _valueToType[startValue];
@@ -408,7 +406,7 @@ Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue)
             auto vIt = _valueToAllocs.find(pUser);
             if (canUpdate)
             {
-                if (vIt != _valueToAllocs.end() && !vIt->second.empty())
+                if (vIt != _valueToAllocs.end())
                 {
                     sources.insert(vIt->second.begin(), vIt->second.end());
                 }
@@ -484,7 +482,7 @@ Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue)
         }
         if (canUpdate)
         {
-            _valueToAllocs[curValue] = sources;
+            _valueToAllocs[curValue] = SVFUtil::move(sources);
         }
     }
     Set<const Value *> srcs = _valueToAllocs[startValue];
@@ -554,17 +552,17 @@ u32_t ObjTypeInference::getArgPosInCall(const CallBase *callBase, const Value *a
 }
 
 
-const Type *ObjTypeInference::selectLargestType(Set<const Type *> &objTys)
+const Type *ObjTypeInference::selectLargestSizedType(Set<const Type *> &objTys)
 {
     if (objTys.empty()) return nullptr;
     // map type size to types from with key in descending order
-    OrderedMap<u32_t, Set<const Type *>, std::greater<int>> typeSzToTypes;
+    OrderedMap<u32_t, OrderedSet<const Type *>, std::greater<int>> typeSzToTypes;
     for (const Type *ty: objTys)
     {
         typeSzToTypes[objTyToNumFields(ty)].insert(ty);
     }
     assert(!typeSzToTypes.empty() && "typeSzToTypes cannot be empty");
-    Set<const Type *> largestTypes;
+    OrderedSet<const Type *> largestTypes;
     std::tie(std::ignore, largestTypes) = *typeSzToTypes.begin();
     assert(!largestTypes.empty() && "largest element cannot be empty");
     return *largestTypes.begin();
