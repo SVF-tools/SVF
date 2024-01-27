@@ -140,7 +140,7 @@ const Type *ObjTypeInference::inferObjType(const Value *startValue)
     {
         types.insert(fwInferObjType(source));
     }
-    const Type *largestTy = selectLargestType(types);
+    const Type *largestTy = selectLargestSizedType(types);
     ABORT_IFNOT(largestTy, "return type cannot be null");
     return largestTy;
 }
@@ -355,7 +355,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
             std::transform(infersites.begin(), infersites.end(), std::inserter(types, types.begin()),
                            infersiteToType);
             _valueToInferSites[curValue] = SVFUtil::move(infersites);
-            _valueToType[curValue] = selectLargestType(types);
+            _valueToType[curValue] = selectLargestSizedType(types);
         }
     }
     const Type *type = _valueToType[startValue];
@@ -552,7 +552,7 @@ u32_t ObjTypeInference::getArgPosInCall(const CallBase *callBase, const Value *a
 }
 
 
-const Type *ObjTypeInference::selectLargestType(Set<const Type *> &objTys)
+const Type *ObjTypeInference::selectLargestSizedType(Set<const Type *> &objTys)
 {
     if (objTys.empty()) return nullptr;
     // map type size to types from with key in descending order

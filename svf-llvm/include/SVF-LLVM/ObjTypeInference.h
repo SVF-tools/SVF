@@ -99,7 +99,7 @@ private:
 
 public:
     /// Select the largest (conservative) type from all types
-    const Type *selectLargestType(Set<const Type *> &objTys);
+    const Type *selectLargestSizedType(Set<const Type *> &objTys);
 
     u32_t objTyToNumFields(const Type *objTy);
 
