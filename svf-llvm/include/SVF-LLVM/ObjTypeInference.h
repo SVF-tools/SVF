@@ -110,7 +110,7 @@ public:
     u32_t getArgPosInCall(const CallBase *callBase, const Value *arg);
 
 public:
-    /// get or infer the name of thisptr
+    /// get or infer the name(s) of thisptr
     Set<std::string> &inferThisPtrClassName(const Value *thisPtr);
 
 protected:

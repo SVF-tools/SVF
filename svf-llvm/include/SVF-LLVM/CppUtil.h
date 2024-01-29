@@ -130,25 +130,35 @@ bool isSameThisPtrInConstructor(const Argument* thisPtr1,
                                 const Value* thisPtr2);
 
 /// Extract class name based on the c++ callee function, e.g., constructor
-Set<std::string> extractClassNameViaCppCallee(const Function *callee);
+Set<std::string> extractClassNameViaCppFunc(const Function *foo);
 
 /// Extract class name in template functions
 Set<std::string> extractClassNameInTemplate(const std::string &oname);
 
 /// CPP source used to infer c++ class name
+/// sources can be heap allocation or self-inference functions (constructors/destructors or template functions)
 bool isCPPSource(const Value *val);
 
-bool matchMangler(const std::string &str, const std::string &label);
+/// whether fooName matches the mangler label
+bool matchManglerLabel(const std::string &fooName, const std::string &label);
 
-bool isCPPConstructor(const std::string &str);
+/// whether foo is a cpp self-inference function
+bool isCPPSelfInferenceFunc(const Function *foo);
 
-bool isCPPTemplateAPI(const std::string &str);
+/// whether foo is a cpp constructor
+bool isCPPConstructor(const Function *foo);
 
-bool isCPPDynCast(const std::string &str);
+/// whether foo is a cpp template function
+bool isCPPTemplateAPI(const Function *foo);
 
-bool isCPPNew(const std::string &str);
+/// whether foo is a cpp dyncast function
+bool isCPPDynCast(const Function *foo);
 
-std::string extractRealNameFromCPPDynCast(const CallBase* callBase);
+/// whether foo is a cpp heap allocation
+bool isCPPHeapAllocation(const Function *foo);
+
+/// extract class name from cpp dyncast
+std::string extractClassNameFromCPPDynCast(const CallBase* callBase);
 
 const Type *cppClassNameToType(const std::string &className);
 

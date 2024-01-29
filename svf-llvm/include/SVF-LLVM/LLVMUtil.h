@@ -100,9 +100,11 @@ static inline Type* getPtrElementType(const PointerType* pty)
 {
 #if (LLVM_VERSION_MAJOR < 14)
     return pty->getPointerElementType();
-#else
+#elif (LLVM_VERSION_MAJOR < 17)
     assert(!pty->isOpaque() && "Opaque Pointer is used, please recompile the source adding '-Xclang -no-opaque-pointers'");
     return pty->getNonOpaquePointerElementType();
+#else
+    assert(false && "llvm version 17+ only support opaque pointers!");
 #endif
 }
 

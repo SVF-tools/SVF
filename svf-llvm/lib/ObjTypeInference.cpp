@@ -585,7 +585,7 @@ u32_t ObjTypeInference::objTyToNumFields(const Type *objTy)
 
 
 /*!
- * get or infer the name of thisptr
+ * get or infer the name(s) of thisptr
  * @param thisPtr
  * @return
  */
@@ -598,14 +598,16 @@ Set<std::string> &ObjTypeInference::inferThisPtrClassName(const Value *thisPtr) 
         if (!classNames.empty()) names.insert(classNames.begin(), classNames.end());
     };
 
-    // backward find source and then forward find constructor or other mangler functions
+    // backward find cpp sources,
+    // which can be heap allocation or self-inference functions
+    // (constructors/destructors or template functions)
     Set<const Value *> sources = findCPPSources(thisPtr);
     for (const auto &source: sources) {
         if (source == thisPtr) continue;
 
         if (const auto *func = SVFUtil::dyn_cast<Function>(source)) {
-            // source resides in cpp functions
-            Set<std::string> classNames = extractClassNameViaCppCallee(func);
+            // source resides in self-inference functions
+            Set<std::string> classNames = extractClassNameViaCppFunc(func);
             insertClassNames(classNames);
         } else if (SVFUtil::isa<LoadInst, StoreInst, GetElementPtrInst, AllocaInst, GlobalValue>(source)) {
             // source contains type information
@@ -617,18 +619,18 @@ Set<std::string> &ObjTypeInference::inferThisPtrClassName(const Value *thisPtr) 
             }
         } else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(source)) {
             if (const Function *callFunc = callBase->getCalledFunction()) {
-                Set<std::string> classNames = extractClassNameViaCppCallee(callFunc);
+                Set<std::string> classNames = extractClassNameViaCppFunc(callFunc);
                 insertClassNames(classNames);
-                if (isCPPDynCast(callFunc->getName().str())) {
+                if (isCPPDynCast(callFunc)) {
                     // dynamic cast
-                    Set<std::string> tgt{extractRealNameFromCPPDynCast(callBase)};
+                    Set<std::string> tgt{extractClassNameFromCPPDynCast(callBase)};
                     insertClassNames(tgt);
-                } else if (isCPPNew(callFunc->getName().str())) {
+                } else if (isCPPHeapAllocation(callFunc)) {
                     // start from znwm
                     auto inferViaCppCall = [&insertClassNames](const CallBase *callBase) {
                         if (!callBase->getCalledFunction()) return;
                         const Function *constructFoo = callBase->getCalledFunction();
-                        Set<std::string> classNames = extractClassNameViaCppCallee(constructFoo);
+                        Set<std::string> classNames = extractClassNameViaCppFunc(constructFoo);
                         insertClassNames(classNames);
                     };
                     for (const auto &use: callBase->uses()) {
@@ -651,6 +653,7 @@ Set<std::string> &ObjTypeInference::inferThisPtrClassName(const Value *thisPtr) 
 
 /*!
  * Backward collect all possible sources starting from a value
+ * sources can be heap allocation or self-inference functions (constructors/destructors or template functions)
  * @param startValue
  * @return
  */
@@ -692,10 +695,10 @@ Set<const Value *> ObjTypeInference::findCPPSources(const Value *startValue) {
             workList.push({curValue, true});
         }
 
-        // current inst reside in cpp interested function
+        // current inst reside in cpp self-inference function
         if (const auto *inst = SVFUtil::dyn_cast<Instruction>(curValue)) {
             if (const Function *fun = inst->getFunction()) {
-                if (isCPPTemplateAPI(fun->getName().str()) || isCPPConstructor(fun->getName().str())) {
+                if (isCPPSelfInferenceFunc(fun)) {
                     insertSource(fun);
                     if (canUpdate) {
                         _valueToCPPSources[curValue] = sources;
@@ -722,14 +725,6 @@ Set<const Value *> ObjTypeInference::findCPPSources(const Value *startValue) {
                     if (storeInst->getPointerOperand() == loadInst->getPointerOperand()) {
                         insertSourcesOrPushWorklist(storeInst->getValueOperand());
                     }
-                }
-            }
-            // array-1.cpp
-            if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(loadInst->getPointerOperand())) {
-                if (const Function *calledFunc = callBase->getCalledFunction()) {
-                    const std::string &funcName = calledFunc->getName().str();
-                    if (isCPPTemplateAPI(funcName))
-                        insertSource(callBase);
                 }
             }
         } else if (const auto *argument = SVFUtil::dyn_cast<Argument>(curValue)) {

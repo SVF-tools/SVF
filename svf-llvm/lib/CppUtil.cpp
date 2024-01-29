@@ -630,15 +630,16 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
 /*!
  * Extract class name based on the c++ callee function, e.g., constructor
  *
- * @param callee
+ * @param foo
  * @return
  */
-Set<std::string> cppUtil::extractClassNameViaCppCallee(const Function *callee) {
-    const std::string &name = callee->getName().str();
-    if (isCPPConstructor(name)) {
+Set<std::string> cppUtil::extractClassNameViaCppFunc(const Function *foo) {
+    assert(foo->hasName() && "foo does not have a name? possible indirect call");
+    const std::string &name = foo->getName().str();
+    if (isCPPConstructor(foo)) {
         // c++ constructor
         return {cppUtil::demangle(name).className};
-    } else if (isCPPTemplateAPI(name)) {
+    } else if (isCPPTemplateAPI(foo)) {
         // array index
         Set<std::string> classNames = extractClassNameInTemplate(name);
         assert(!classNames.empty() && "empty class names?");
@@ -689,7 +690,11 @@ std::vector<std::string> findInnermostBrackets(const std::string &input) {
     return ans;
 }
 
-
+/*!
+ * strip the whitespaces in the beginning and ending of str
+ * @param str
+ * @return
+ */
 std::string stripWhitespaces(const std::string &str) {
     auto start = std::find_if(str.begin(), str.end(), [](unsigned char ch) {
         return !std::isspace(ch);
@@ -750,35 +755,41 @@ Set<std::string> cppUtil::extractClassNameInTemplate(const std::string &oname) {
 bool cppUtil::isCPPSource(const Value *val) {
     if (LLVMUtil::isObject(val)) return true;
     if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(val)) {
-        const std::string &name = callBase->getCalledFunction()->getName().str();
-        if (isCPPConstructor(name) || isCPPTemplateAPI(name) || isCPPDynCast(name)) {
-            return true;
-        }
+        return isCPPSelfInferenceFunc(callBase->getCalledFunction());
     }
     return false;
 }
 
-bool cppUtil::matchMangler(const std::string &str, const std::string &label) {
-    return str.compare(0, label.size(), label) == 0;
+bool cppUtil::matchManglerLabel(const std::string &foo, const std::string &label) {
+    return foo.compare(0, label.size(), label) == 0;
 }
 
-bool cppUtil::isCPPConstructor(const std::string &str) {
-    return matchMangler(str, zn1Label);
+bool cppUtil::isCPPSelfInferenceFunc(const Function *foo) {
+    return isCPPConstructor(foo) || isCPPTemplateAPI(foo) || isCPPDynCast(foo);
 }
 
-bool cppUtil::isCPPTemplateAPI(const std::string &str) {
-    return matchMangler(str, znstLabel) || matchMangler(str, znkstLabel) || matchMangler(str, znkLabel);
+bool cppUtil::isCPPConstructor(const Function *foo) {
+    assert(foo->hasName() && "foo does not have a name? possible indirect call");
+    return matchManglerLabel(foo->getName().str(), zn1Label);
 }
 
-bool cppUtil::isCPPDynCast(const std::string &str) {
-    return str == dyncast;
+bool cppUtil::isCPPTemplateAPI(const Function *foo) {
+    assert(foo->hasName() && "foo does not have a name? possible indirect call");
+    const std::string &name = foo->getName().str();
+    return matchManglerLabel(name, znstLabel) || matchManglerLabel(name, znkstLabel) || matchManglerLabel(name, znkLabel);
 }
 
-bool cppUtil::isCPPNew(const std::string &str) {
-    return str == znwm;
+bool cppUtil::isCPPDynCast(const Function *foo) {
+    assert(foo->hasName() && "foo does not have a name? possible indirect call");
+    return foo->getName().str() == dyncast;
 }
 
-std::string cppUtil::extractRealNameFromCPPDynCast(const CallBase* callBase) {
+bool cppUtil::isCPPHeapAllocation(const Function *foo) {
+    assert(foo->hasName() && "foo does not have a name? possible indirect call");
+    return foo->getName().str() == znwm;
+}
+
+std::string cppUtil::extractClassNameFromCPPDynCast(const CallBase* callBase) {
     Value *tgtCast = callBase->getArgOperand(2);
     const std::string &valueStr = LLVMUtil::dumpValue(tgtCast);
     u32_t leftPos = valueStr.find(ztilabel);
