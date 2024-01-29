@@ -613,7 +613,7 @@ Set<std::string> &ObjTypeInference::inferThisPtrClassName(const Value *thisPtr) 
             // source contains type information
             const Type *type = infersiteToType(source);
             const std::string &className = typeToCppClassName(type);
-            if (className != "") {
+            if (!className.empty()) {
                 Set<std::string> tgt{className};
                 insertClassNames(tgt);
             }

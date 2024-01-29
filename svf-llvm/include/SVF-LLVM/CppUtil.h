@@ -145,9 +145,6 @@ bool matchManglerLabel(const std::string &fooName, const std::string &label);
 /// whether foo is a cpp self-inference function
 bool isCPPSelfInferenceFunc(const Function *foo);
 
-/// whether foo is a cpp constructor
-bool isCPPConstructor(const Function *foo);
-
 /// whether foo is a cpp template function
 bool isCPPTemplateAPI(const Function *foo);
 

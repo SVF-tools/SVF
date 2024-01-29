@@ -84,19 +84,19 @@ static bool isOperOverload(const std::string& name)
     u32_t leftnum = 0, rightnum = 0;
     std::string subname = name;
     size_t leftpos, rightpos;
-    leftpos = subname.find("<");
+    leftpos = subname.find('<');
     while (leftpos != std::string::npos)
     {
         subname = subname.substr(leftpos + 1);
-        leftpos = subname.find("<");
+        leftpos = subname.find('<');
         leftnum++;
     }
     subname = name;
-    rightpos = subname.find(">");
+    rightpos = subname.find('>');
     while (rightpos != std::string::npos)
     {
         subname = subname.substr(rightpos + 1);
-        rightpos = subname.find(">");
+        rightpos = subname.find('>');
         rightnum++;
     }
     return leftnum != rightnum;
@@ -104,7 +104,7 @@ static bool isOperOverload(const std::string& name)
 
 static std::string getBeforeParenthesis(const std::string& name)
 {
-    size_t lastRightParen = name.rfind(")");
+    size_t lastRightParen = name.rfind(')');
     assert(lastRightParen > 0);
 
     s32_t paren_num = 1, pos;
@@ -122,7 +122,7 @@ static std::string getBeforeParenthesis(const std::string& name)
 
 std::string cppUtil::getBeforeBrackets(const std::string& name)
 {
-    if (name.size() == 0 || name[name.size() - 1] != '>')
+    if (name.empty() || name[name.size() - 1] != '>')
     {
         return name;
     }
@@ -391,11 +391,26 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1,
 
 const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
 {
-    assert((cppUtil::isConstructor(fun) || cppUtil::isDestructor(fun)) &&
+    assert((isConstructor(fun) || isDestructor(fun)) &&
            "not a constructor?");
     assert(fun->arg_size() >= 1 && "argument size >= 1?");
     const Argument* thisPtr = &*(fun->arg_begin());
     return thisPtr;
+}
+
+void updateClassNameBeforeBrackets(cppUtil::DemangledName& dname) {
+    dname.funcName = cppUtil::getBeforeBrackets(dname.funcName);
+    dname.className = cppUtil::getBeforeBrackets(dname.className);
+    size_t colon = dname.className.rfind("::");
+    if (colon == std::string::npos)
+    {
+        dname.className = cppUtil::getBeforeBrackets(dname.className);
+    }
+    else
+    {
+        dname.className =
+                cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
+    }
 }
 
 bool cppUtil::isConstructor(const Function* F)
@@ -412,18 +427,7 @@ bool cppUtil::isConstructor(const Function* F)
     {
         return false;
     }
-    dname.funcName = cppUtil::getBeforeBrackets(dname.funcName);
-    dname.className = cppUtil::getBeforeBrackets(dname.className);
-    size_t colon = dname.className.rfind("::");
-    if (colon == std::string::npos)
-    {
-        dname.className = cppUtil::getBeforeBrackets(dname.className);
-    }
-    else
-    {
-        dname.className =
-            cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
-    }
+    updateClassNameBeforeBrackets(dname);
     /// TODO: on mac os function name is an empty string after demangling
     return dname.className.size() > 0 &&
            dname.className.compare(dname.funcName) == 0;
@@ -443,18 +447,7 @@ bool cppUtil::isDestructor(const Function* F)
     {
         return false;
     }
-    dname.funcName = cppUtil::getBeforeBrackets(dname.funcName);
-    dname.className = cppUtil::getBeforeBrackets(dname.className);
-    size_t colon = dname.className.rfind("::");
-    if (colon == std::string::npos)
-    {
-        dname.className = cppUtil::getBeforeBrackets(dname.className);
-    }
-    else
-    {
-        dname.className =
-            cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
-    }
+    updateClassNameBeforeBrackets(dname);
     return (dname.className.size() > 0 && dname.funcName.size() > 0 &&
             dname.className.size() + 1 == dname.funcName.size() &&
             dname.funcName.compare(0, 1, "~") == 0 &&
@@ -636,9 +629,11 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
 Set<std::string> cppUtil::extractClassNameViaCppFunc(const Function *foo) {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     const std::string &name = foo->getName().str();
-    if (isCPPConstructor(foo)) {
+    if (isConstructor(foo)) {
         // c++ constructor
-        return {cppUtil::demangle(name).className};
+        DemangledName demangledName = cppUtil::demangle(name);
+        updateClassNameBeforeBrackets(demangledName);
+        return {demangledName.className};
     } else if (isCPPTemplateAPI(foo)) {
         // array index
         Set<std::string> classNames = extractClassNameInTemplate(name);
@@ -765,12 +760,7 @@ bool cppUtil::matchManglerLabel(const std::string &foo, const std::string &label
 }
 
 bool cppUtil::isCPPSelfInferenceFunc(const Function *foo) {
-    return isCPPConstructor(foo) || isCPPTemplateAPI(foo) || isCPPDynCast(foo);
-}
-
-bool cppUtil::isCPPConstructor(const Function *foo) {
-    assert(foo->hasName() && "foo does not have a name? possible indirect call");
-    return matchManglerLabel(foo->getName().str(), zn1Label);
+    return isConstructor(foo) || isDestructor(foo) || isCPPTemplateAPI(foo) || isCPPDynCast(foo);
 }
 
 bool cppUtil::isCPPTemplateAPI(const Function *foo) {
@@ -805,7 +795,9 @@ std::string cppUtil::extractClassNameFromCPPDynCast(const CallBase* callBase) {
 }
 
 const Type *cppUtil::cppClassNameToType(const std::string &className) {
-    return StructType::getTypeByName(LLVMModuleSet::getLLVMModuleSet()->getContext(), clsName + className);
+    StructType *classTy = StructType::getTypeByName(LLVMModuleSet::getLLVMModuleSet()->getContext(),
+                                                    clsName + className);
+    return classTy ? classTy : LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType();
 }
 
 std::string cppUtil::typeToCppClassName(const Type *ty) {
