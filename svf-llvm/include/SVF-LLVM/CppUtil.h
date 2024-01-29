@@ -113,7 +113,7 @@ const Value* getVCallVtblPtr(const CallBase* cs);
 s32_t getVCallIdx(const CallBase* cs);
 bool classTyHasVTable(const StructType* ty);
 std::string getClassNameFromType(const StructType* ty);
-std::string getClassNameOfThisPtr(const CallBase* cs);
+Set<std::string> getClassNameOfThisPtr(const CallBase* cs);
 std::string getFunNameOfVCallSite(const CallBase* cs);
 bool VCallInCtorOrDtor(const CallBase* cs);
 

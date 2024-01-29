@@ -31,6 +31,7 @@
 #include "SVF-LLVM/LLVMUtil.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMModule.h"
+#include "SVF-LLVM/ObjTypeInference.h"
 
 #include <cxxabi.h> // for demangling
 
@@ -485,13 +486,15 @@ const Value* cppUtil::getVCallVtblPtr(const CallBase* cs)
  */
 bool cppUtil::VCallInCtorOrDtor(const CallBase* cs)
 {
-    std::string classNameOfThisPtr = cppUtil::getClassNameOfThisPtr(cs);
+    Set<std::string> classNameOfThisPtrs = cppUtil::getClassNameOfThisPtr(cs);
     const Function* func = cs->getCaller();
-    if (cppUtil::isConstructor(func) || cppUtil::isDestructor(func))
-    {
-        cppUtil::DemangledName dname = cppUtil::demangle(func->getName().str());
-        if (classNameOfThisPtr.compare(dname.className) == 0)
-            return true;
+    for (const auto &classNameOfThisPtr: classNameOfThisPtrs) {
+        if (cppUtil::isConstructor(func) || cppUtil::isDestructor(func))
+        {
+            cppUtil::DemangledName dname = cppUtil::demangle(func->getName().str());
+            if (classNameOfThisPtr.compare(dname.className) == 0)
+                return true;
+        }
     }
     return false;
 }
@@ -528,8 +531,9 @@ std::string cppUtil::getClassNameFromType(const StructType* ty)
     return className;
 }
 
-std::string cppUtil::getClassNameOfThisPtr(const CallBase* inst)
+Set<std::string> cppUtil::getClassNameOfThisPtr(const CallBase* inst)
 {
+    Set<std::string> thisPtrNames;
     std::string thisPtrClassName = "";
     if (const MDNode* N = inst->getMetadata("VCallPtrType"))
     {
@@ -539,27 +543,23 @@ std::string cppUtil::getClassNameOfThisPtr(const CallBase* inst)
     if (thisPtrClassName.size() == 0)
     {
         const Value* thisPtr = getVCallThisPtr(inst);
-        if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(thisPtr->getType()))
-        {
-            // TODO: getPtrElementType need type inference
-            if (const StructType *st = SVFUtil::dyn_cast<StructType>(LLVMUtil::getPtrElementType(ptrTy)))
-            {
-                thisPtrClassName = getClassNameFromType(st);
-            }
-        }
+        Set<std::string> names = LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferThisPtrClassName(thisPtr);
+        thisPtrNames.insert(names.begin(), names.end());
     }
 
-    size_t found = thisPtrClassName.find_last_not_of("0123456789");
-    if (found != std::string::npos)
-    {
-        if (found != thisPtrClassName.size() - 1 &&
-                thisPtrClassName[found] == '.')
-        {
-            return thisPtrClassName.substr(0, found);
-        }
-    }
-
-    return thisPtrClassName;
+    Set<std::string> ans;
+    std::transform(thisPtrNames.begin(), thisPtrNames.end(), std::inserter(ans, ans.begin()),
+                   [](const std::string &thisPtrName) -> std::string {
+                       size_t found = thisPtrName.find_last_not_of("0123456789");
+                       if (found != std::string::npos) {
+                           if (found != thisPtrName.size() - 1 &&
+                               thisPtrName[found] == '.') {
+                               return thisPtrName.substr(0, found);
+                           }
+                       }
+                       return thisPtrName;
+                   });
+    return ans;
 }
 
 std::string cppUtil::getFunNameOfVCallSite(const CallBase* inst)
