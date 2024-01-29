@@ -115,7 +115,8 @@ public:
 
 protected:
 
-    /// Backward collect all possible cpp constructors starting from a value
+    /// Backward collect all possible sources starting from a value
+    /// sources can be heap allocation or self-inference functions (constructors/destructors or template functions)
     Set<const Value *> findCPPSources(const Value *startValue);
 };
 }
