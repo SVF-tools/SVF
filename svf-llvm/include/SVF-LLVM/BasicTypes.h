@@ -61,6 +61,7 @@
 #include <llvm/BinaryFormat/Dwarf.h> // for dwarf tags
 
 #include <llvm/Analysis/LoopInfo.h>
+#include <llvm/Demangle/Demangle.h>
 
 namespace SVF
 {

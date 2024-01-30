@@ -37,7 +37,7 @@
     do                                                                         \
     {                                                                          \
         SVFUtil::errs() << SVFUtil::errMsg("Error ") << __FILE__ << ':'        \
-            << __LINE__ << ": " << msg << '\n';                                \
+            << __LINE__ << ": " << (msg) << '\n';                              \
     } while (0)
 #define ABORT_MSG(msg)                                                         \
     do                                                                         \
@@ -80,65 +80,54 @@ const std::string TYPEMALLOC = "TYPE_MALLOC";
 
 /// Determine type based on infer site
 /// https://llvm.org/docs/OpaquePointers.html#migration-instructions
-const Type *infersiteToType(const Value *val)
-{
+const Type *infersiteToType(const Value *val) {
     assert(val && "value cannot be empty");
-    if (SVFUtil::isa<LoadInst, StoreInst>(val))
-    {
+    if (SVFUtil::isa<LoadInst, StoreInst>(val)) {
         return llvm::getLoadStoreType(const_cast<Value *>(val));
-    }
-    else if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val))
-    {
+    } else if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(val)) {
         return gepInst->getSourceElementType();
-    }
-    else if (const CallBase *call = SVFUtil::dyn_cast<CallBase>(val))
-    {
+    } else if (const auto *call = SVFUtil::dyn_cast<CallBase>(val)) {
         return call->getFunctionType();
-    }
-    else if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
-    {
+    } else if (const auto *allocaInst = SVFUtil::dyn_cast<AllocaInst>(val)) {
         return allocaInst->getAllocatedType();
-    }
-    else if (const GlobalValue *globalValue = SVFUtil::dyn_cast<GlobalValue>(val))
-    {
+    } else if (const auto *globalValue = SVFUtil::dyn_cast<GlobalValue>(val)) {
         return globalValue->getValueType();
-    }
-    else
-    {
+    } else {
         ABORT_MSG("unknown value:" + dumpValueAndDbgInfo(val));
     }
 }
 
-const Type *ObjTypeInference::defaultType(const Value *val)
-{
+const Type *ObjTypeInference::defaultType(const Value *val) {
     ABORT_IFNOT(val, "val cannot be null");
     // heap has a default type of 8-bit integer type
     if (SVFUtil::isa<Instruction>(val) && SVFUtil::isHeapAllocExtCallViaRet(
-                LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
+            LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(SVFUtil::cast<Instruction>(val))))
         return int8Type();
     // otherwise we return a pointer type in the default address space
     return ptrType();
 }
 
-LLVMContext &ObjTypeInference::getLLVMCtx()
-{
+LLVMContext &ObjTypeInference::getLLVMCtx() {
     return LLVMModuleSet::getLLVMModuleSet()->getContext();
 }
 
 /*!
- * get or infer type of a value
+ * get or infer the type of the object pointed by var
  * if the start value is a source (alloc/global, heap, static), call fwInferObjType
- * if not, find sources and then forward get or infer types
- * @param startValue
+ * if not, find allocations and then forward get or infer types
+ * @param val
  */
-const Type *ObjTypeInference::inferObjType(const Value *startValue)
-{
-    if (isAllocation(startValue)) return fwInferObjType(startValue);
-    Set<const Value *> sources = bwfindAllocations(startValue);
+const Type *ObjTypeInference::inferObjType(const Value *var) {
+    if (isAlloc(var)) return fwInferObjType(var);
+    Set<const Value *> &sources = bwfindAllocOfVar(var);
     Set<const Type *> types;
-    for (const auto &source: sources)
-    {
-        types.insert(fwInferObjType(source));
+    if (sources.empty()) {
+        // cannot find allocation, try to fw infer starting from var
+        types.insert(fwInferObjType(var));
+    } else {
+        for (const auto &source: sources) {
+            types.insert(fwInferObjType(source));
+        }
     }
     const Type *largestTy = selectLargestSizedType(types);
     ABORT_IFNOT(largestTy, "return type cannot be null");
@@ -146,25 +135,22 @@ const Type *ObjTypeInference::inferObjType(const Value *startValue)
 }
 
 /*!
- * Forward collect all possible infer sites starting from a value
- * @param startValue
+ * forward infer the type of the object pointed by var
+ * @param var
  */
-const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
-{
+const Type *ObjTypeInference::fwInferObjType(const Value *var) {
     // consult cache
-    auto tIt = _valueToType.find(startValue);
-    if (tIt != _valueToType.end())
-    {
-        return tIt->second ? tIt->second : defaultType(startValue);
+    auto tIt = _valueToType.find(var);
+    if (tIt != _valueToType.end()) {
+        return tIt->second ? tIt->second : defaultType(var);
     }
 
     // simulate the call stack, the second element indicates whether we should update valueTypes for current value
     FILOWorkList<ValueBoolPair> workList;
     Set<ValueBoolPair> visited;
-    workList.push({startValue, false});
+    workList.push({var, false});
 
-    while (!workList.empty())
-    {
+    while (!workList.empty()) {
         auto curPair = workList.pop();
         if (visited.count(curPair)) continue;
         visited.insert(curPair);
@@ -172,35 +158,26 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
         bool canUpdate = curPair.second;
         Set<const Value *> infersites;
 
-        auto insertInferSite = [&infersites, &canUpdate](const Value *infersite)
-        {
+        auto insertInferSite = [&infersites, &canUpdate](const Value *infersite) {
             if (canUpdate) infersites.insert(infersite);
         };
-        auto insertInferSitesOrPushWorklist = [this, &infersites, &workList, &canUpdate](const auto &pUser)
-        {
+        auto insertInferSitesOrPushWorklist = [this, &infersites, &workList, &canUpdate](const auto &pUser) {
             auto vIt = _valueToInferSites.find(pUser);
-            if (canUpdate)
-            {
-                if (vIt != _valueToInferSites.end())
-                {
+            if (canUpdate) {
+                if (vIt != _valueToInferSites.end()) {
                     infersites.insert(vIt->second.begin(), vIt->second.end());
                 }
-            }
-            else
-            {
+            } else {
                 if (vIt == _valueToInferSites.end()) workList.push({pUser, false});
             }
         };
-        if (!canUpdate && !_valueToInferSites.count(curValue))
-        {
+        if (!canUpdate && !_valueToInferSites.count(curValue)) {
             workList.push({curValue, true});
         }
-        if (const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
+        if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
             insertInferSite(gepInst);
-        for (const auto &it: curValue->uses())
-        {
-            if (LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser()))
-            {
+        for (const auto &it: curValue->uses()) {
+            if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser())) {
                 /*
                  * infer based on load, e.g.,
                  %call = call i8* malloc()
@@ -208,11 +185,8 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                  %q = load %struct.MyStruct, %struct.MyStruct* %1
                  */
                 insertInferSite(loadInst);
-            }
-            else if (StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser()))
-            {
-                if (storeInst->getPointerOperand() == curValue)
-                {
+            } else if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser())) {
+                if (storeInst->getPointerOperand() == curValue) {
                     /*
                      * infer based on store (pointer operand), e.g.,
                      %call = call i8* malloc()
@@ -220,11 +194,8 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                      store %struct.MyStruct .., %struct.MyStruct* %1
                      */
                     insertInferSite(storeInst);
-                }
-                else
-                {
-                    for (const auto &nit: storeInst->getPointerOperand()->uses())
-                    {
+                } else {
+                    for (const auto &nit: storeInst->getPointerOperand()->uses()) {
                         /*
                          * propagate across store (value operand) and load
                          %call = call i8* malloc()
@@ -247,23 +218,18 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                       %6 = load %struct.MyStruct*, %struct.MyStruct** %next3, align 8, !dbg !49
                       infer site -> %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %6, i32 0, i32 0, !dbg !50
                       */
-                    if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
-                                                         storeInst->getPointerOperand()))
-                    {
+                    if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
+                            storeInst->getPointerOperand())) {
                         const Value *gepBase = gepInst->getPointerOperand();
                         if (!SVFUtil::isa<LoadInst>(gepBase)) continue;
-                        const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(gepBase);
-                        for (const auto &loadUse: load->getPointerOperand()->uses())
-                        {
+                        const auto *load = SVFUtil::dyn_cast<LoadInst>(gepBase);
+                        for (const auto &loadUse: load->getPointerOperand()->uses()) {
                             if (loadUse.getUser() == load || !SVFUtil::isa<LoadInst>(loadUse.getUser()))
                                 continue;
-                            for (const auto &gepUse: loadUse.getUser()->uses())
-                            {
+                            for (const auto &gepUse: loadUse.getUser()->uses()) {
                                 if (!SVFUtil::isa<GetElementPtrInst>(gepUse.getUser())) continue;
-                                for (const auto &loadUse2: gepUse.getUser()->uses())
-                                {
-                                    if (SVFUtil::isa<LoadInst>(loadUse2.getUser()))
-                                    {
+                                for (const auto &loadUse2: gepUse.getUser()->uses()) {
+                                    if (SVFUtil::isa<LoadInst>(loadUse2.getUser())) {
                                         insertInferSitesOrPushWorklist(loadUse2.getUser());
                                     }
                                 }
@@ -273,9 +239,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                     }
                 }
 
-            }
-            else if (GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser()))
-            {
+            } else if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser())) {
                 /*
                  * infer based on gep (pointer operand)
                  %call = call i8* malloc()
@@ -284,19 +248,13 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                  */
                 if (gepInst->getPointerOperand() == curValue)
                     insertInferSite(gepInst);
-            }
-            else if (BitCastInst *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser()))
-            {
+            } else if (const auto *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser())) {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(bitcast);
-            }
-            else if (PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(it.getUser()))
-            {
+            } else if (const auto *phiNode = SVFUtil::dyn_cast<PHINode>(it.getUser())) {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(phiNode);
-            }
-            else if (ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser()))
-            {
+            } else if (const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser())) {
                 /*
                  * propagate from return to caller
                   Function Attrs: noinline nounwind optnone uwtable
@@ -308,19 +266,15 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                  %call = call i8* @malloc_wrapper()
                  ..infer based on %call..
                 */
-                for (const auto &callsite: retInst->getFunction()->uses())
-                {
-                    if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser()))
-                    {
+                for (const auto &callsite: retInst->getFunction()->uses()) {
+                    if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser())) {
                         // skip function as parameter
                         // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
                         if (callBase->getCalledFunction() != retInst->getFunction()) continue;
                         insertInferSitesOrPushWorklist(callBase);
                     }
                 }
-            }
-            else if (CallBase *callBase = SVFUtil::dyn_cast<CallBase>(it.getUser()))
-            {
+            } else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(it.getUser())) {
                 /*
                  * propagate from callsite to callee
                   %call = call i8* @malloc(i32 noundef 16)
@@ -337,20 +291,17 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
                 // skip indirect call
                 // e.g., %0 = ... -> call %0(...)
                 if (!callBase->hasArgument(curValue)) continue;
-                if (Function *calleeFunc = callBase->getCalledFunction())
-                {
+                if (Function *calleeFunc = callBase->getCalledFunction()) {
                     u32_t pos = getArgPosInCall(callBase, curValue);
                     // for variable argument, conservatively collect all params
                     if (calleeFunc->isVarArg()) pos = 0;
-                    if (!calleeFunc->isDeclaration())
-                    {
+                    if (!calleeFunc->isDeclaration()) {
                         insertInferSitesOrPushWorklist(calleeFunc->getArg(pos));
                     }
                 }
             }
         }
-        if (canUpdate)
-        {
+        if (canUpdate) {
             Set<const Type *> types;
             std::transform(infersites.begin(), infersites.end(), std::inserter(types, types.begin()),
                            infersiteToType);
@@ -358,38 +309,33 @@ const Type *ObjTypeInference::fwInferObjType(const Value *startValue)
             _valueToType[curValue] = selectLargestSizedType(types);
         }
     }
-    const Type *type = _valueToType[startValue];
-    if (type == nullptr)
-    {
-        type = defaultType(startValue);
-        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(startValue));
+    const Type *type = _valueToType[var];
+    if (type == nullptr) {
+        type = defaultType(var);
+        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(var));
     }
     ABORT_IFNOT(type, "type cannot be a null ptr");
     return type;
 }
 
 /*!
- * Backward collect all possible allocation sites (stack, static, heap) starting from a value
- * @param startValue
+ * backward collect all possible allocation sites (stack, static, heap) of var
+ * @param var
  * @return
  */
-Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue)
-{
+Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var) {
 
     // consult cache
-    auto tIt = _valueToAllocs.find(startValue);
-    if (tIt != _valueToAllocs.end())
-    {
-        WARN_IFNOT(!tIt->second.empty(), "empty type:" + dumpValueAndDbgInfo(startValue));
-        return !tIt->second.empty() ? tIt->second : Set<const Value *>({startValue});
+    auto tIt = _valueToAllocs.find(var);
+    if (tIt != _valueToAllocs.end()) {
+        return tIt->second;
     }
 
     // simulate the call stack, the second element indicates whether we should update sources for current value
     FILOWorkList<ValueBoolPair> workList;
     Set<ValueBoolPair> visited;
-    workList.push({startValue, false});
-    while (!workList.empty())
-    {
+    workList.push({var, false});
+    while (!workList.empty()) {
         auto curPair = workList.pop();
         if (visited.count(curPair)) continue;
         visited.insert(curPair);
@@ -397,66 +343,44 @@ Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue)
         bool canUpdate = curPair.second;
 
         Set<const Value *> sources;
-        auto insertAllocs = [&sources, &canUpdate](const Value *source)
-        {
+        auto insertAllocs = [&sources, &canUpdate](const Value *source) {
             if (canUpdate) sources.insert(source);
         };
-        auto insertAllocsOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser)
-        {
+        auto insertAllocsOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
             auto vIt = _valueToAllocs.find(pUser);
-            if (canUpdate)
-            {
-                if (vIt != _valueToAllocs.end())
-                {
+            if (canUpdate) {
+                if (vIt != _valueToAllocs.end()) {
                     sources.insert(vIt->second.begin(), vIt->second.end());
                 }
-            }
-            else
-            {
+            } else {
                 if (vIt == _valueToAllocs.end()) workList.push({pUser, false});
             }
         };
 
-        if (!canUpdate && !_valueToAllocs.count(curValue))
-        {
+        if (!canUpdate && !_valueToAllocs.count(curValue)) {
             workList.push({curValue, true});
         }
 
-        if (isAllocation(curValue))
-        {
+        if (isAlloc(curValue)) {
             insertAllocs(curValue);
-        }
-        else if (const BitCastInst *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue))
-        {
+        } else if (const auto *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
             Value *prevVal = bitCastInst->getOperand(0);
             insertAllocsOrPushWorklist(prevVal);
-        }
-        else if (const PHINode *phiNode = SVFUtil::dyn_cast<PHINode>(curValue))
-        {
-            for (u32_t i = 0; i < phiNode->getNumOperands(); ++i)
-            {
+        } else if (const auto *phiNode = SVFUtil::dyn_cast<PHINode>(curValue)) {
+            for (u32_t i = 0; i < phiNode->getNumOperands(); ++i) {
                 insertAllocsOrPushWorklist(phiNode->getOperand(i));
             }
-        }
-        else if (const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
-        {
-            for (const auto &use: loadInst->getPointerOperand()->uses())
-            {
-                if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser()))
-                {
-                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
-                    {
+        } else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue)) {
+            for (const auto &use: loadInst->getPointerOperand()->uses()) {
+                if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser())) {
+                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand()) {
                         insertAllocsOrPushWorklist(storeInst->getValueOperand());
                     }
                 }
             }
-        }
-        else if (const Argument *argument = SVFUtil::dyn_cast<Argument>(curValue))
-        {
-            for (const auto &use: argument->getParent()->uses())
-            {
-                if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser()))
-                {
+        } else if (const auto *argument = SVFUtil::dyn_cast<Argument>(curValue)) {
+            for (const auto &use: argument->getParent()->uses()) {
+                if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
                     // skip function as parameter
                     // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
                     if (callBase->getCalledFunction() != argument->getParent()) continue;
@@ -464,63 +388,50 @@ Set<const Value *> ObjTypeInference::bwfindAllocations(const Value *startValue)
                     insertAllocsOrPushWorklist(callBase->getArgOperand(pos));
                 }
             }
-        }
-        else if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
-        {
+        } else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue)) {
             ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
-            if (Function *callee = callBase->getCalledFunction())
-            {
-                if (!callee->isDeclaration())
-                {
+            if (Function *callee = callBase->getCalledFunction()) {
+                if (!callee->isDeclaration()) {
                     const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
                     const Value *pValue = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()->back());
-                    const ReturnInst *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
+                    const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
                     ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
                     insertAllocsOrPushWorklist(retInst->getReturnValue());
                 }
             }
         }
-        if (canUpdate)
-        {
+        if (canUpdate) {
             _valueToAllocs[curValue] = SVFUtil::move(sources);
         }
     }
-    Set<const Value *> srcs = _valueToAllocs[startValue];
-    if (srcs.empty())
-    {
-        srcs = {startValue};
-        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(startValue));
+    Set<const Value *> &srcs = _valueToAllocs[var];
+    if (srcs.empty()) {
+        WARN_MSG("Cannot find allocation: " + dumpValueAndDbgInfo(var));
     }
-    ABORT_IFNOT(!srcs.empty(), "sources cannot be empty");
     return srcs;
 }
 
-bool ObjTypeInference::isAllocation(const SVF::Value *val)
-{
+bool ObjTypeInference::isAlloc(const SVF::Value *val) {
     return LLVMUtil::isObject(val);
 }
 
 /*!
- * Validate type inference
+ * validate type inference
  * @param cs : stub malloc function with element number label
  */
-void ObjTypeInference::validateTypeCheck(const CallBase *cs)
-{
-    if (const Function *func = cs->getCalledFunction())
-    {
-        if (func->getName().find(TYPEMALLOC) != std::string::npos)
-        {
+void ObjTypeInference::validateTypeCheck(const CallBase *cs) {
+    if (const Function *func = cs->getCalledFunction()) {
+        if (func->getName().find(TYPEMALLOC) != std::string::npos) {
             const Type *objType = fwInferObjType(cs);
-            ConstantInt *pInt =
-                SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
+            const auto *pInt =
+                    SVFUtil::dyn_cast<llvm::ConstantInt>(cs->getOperand(1));
             assert(pInt && "the second argument is a integer");
             u32_t iTyNum = objTyToNumFields(objType);
             if (iTyNum >= pInt->getZExtValue())
                 SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") << dumpValueAndDbgInfo(cs)
                                 << SVFUtil::pasMsg(" TYPE: ")
                                 << dumpType(objType) << "\n";
-            else
-            {
+            else {
                 SVFUtil::errs() << SVFUtil::errMsg("\t FAILURE :") << ":" << dumpValueAndDbgInfo(cs) << " TYPE: "
                                 << dumpType(objType) << "\n";
                 abort();
@@ -529,8 +440,7 @@ void ObjTypeInference::validateTypeCheck(const CallBase *cs)
     }
 }
 
-void ObjTypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val)
-{
+void ObjTypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val) {
 #if TYPE_DEBUG
     Type *oTy = getPtrElementType(oPTy);
     u32_t iTyNum = objTyToNumFields(iTy);
@@ -543,8 +453,7 @@ void ObjTypeInference::typeSizeDiffTest(const PointerType *oPTy, const Type *iTy
 #endif
 }
 
-u32_t ObjTypeInference::getArgPosInCall(const CallBase *callBase, const Value *arg)
-{
+u32_t ObjTypeInference::getArgPosInCall(const CallBase *callBase, const Value *arg) {
     assert(callBase->hasArgument(arg) && "callInst does not have argument arg?");
     auto it = std::find(callBase->arg_begin(), callBase->arg_end(), arg);
     assert(it != callBase->arg_end() && "Didn't find argument?");
@@ -552,13 +461,11 @@ u32_t ObjTypeInference::getArgPosInCall(const CallBase *callBase, const Value *a
 }
 
 
-const Type *ObjTypeInference::selectLargestSizedType(Set<const Type *> &objTys)
-{
+const Type *ObjTypeInference::selectLargestSizedType(Set<const Type *> &objTys) {
     if (objTys.empty()) return nullptr;
     // map type size to types from with key in descending order
     OrderedMap<u32_t, OrderedSet<const Type *>, std::greater<int>> typeSzToTypes;
-    for (const Type *ty: objTys)
-    {
+    for (const Type *ty: objTys) {
         typeSzToTypes[objTyToNumFields(ty)].insert(ty);
     }
     assert(!typeSzToTypes.empty() && "typeSzToTypes cannot be empty");
@@ -568,17 +475,203 @@ const Type *ObjTypeInference::selectLargestSizedType(Set<const Type *> &objTys)
     return *largestTypes.begin();
 }
 
-u32_t ObjTypeInference::objTyToNumFields(const Type *objTy)
-{
+u32_t ObjTypeInference::objTyToNumFields(const Type *objTy) {
     u32_t num = Options::MaxFieldLimit();
     if (SVFUtil::isa<ArrayType>(objTy))
         num = getNumOfElements(objTy);
-    else if (const StructType *st = SVFUtil::dyn_cast<StructType>(objTy))
-    {
+    else if (const auto *st = SVFUtil::dyn_cast<StructType>(objTy)) {
         /// For an C++ class, it can have variant elements depending on the vtable size,
         /// Hence we only handle non-cpp-class object, the type of the cpp class is treated as default PointerType
         if (!classTyHasVTable(st))
             num = getNumOfElements(st);
     }
     return num;
+}
+
+
+/*!
+ * get or infer the class names of thisptr
+ * @param thisPtr
+ * @return
+ */
+Set<std::string> &ObjTypeInference::inferThisPtrClsName(const Value *thisPtr) {
+    auto it = _thisPtrClassNames.find(thisPtr);
+    if (it != _thisPtrClassNames.end()) return it->second;
+
+    Set<std::string> names;
+    auto insertClassNames = [&names](Set<std::string> &classNames) {
+        names.insert(classNames.begin(), classNames.end());
+    };
+
+    // backward find heap allocations or class name sources
+    Set<const Value *> &vals = bwFindAllocOrClsNameSources(thisPtr);
+    for (const auto &val: vals) {
+        if (val == thisPtr) continue;
+
+        if (const auto *func = SVFUtil::dyn_cast<Function>(val)) {
+            // extract class name from function name
+            Set<std::string> classNames = extractClsNamesFromFunc(func);
+            insertClassNames(classNames);
+        } else if (SVFUtil::isa<LoadInst, StoreInst, GetElementPtrInst, AllocaInst, GlobalValue>(val)) {
+            // extract class name from instructions
+            const Type *type = infersiteToType(val);
+            const std::string &className = typeToClsName(type);
+            if (!className.empty()) {
+                Set<std::string> tgt{className};
+                insertClassNames(tgt);
+            }
+        } else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(val)) {
+            if (const Function *callFunc = callBase->getCalledFunction()) {
+                Set<std::string> classNames = extractClsNamesFromFunc(callFunc);
+                insertClassNames(classNames);
+                if (isDynCast(callFunc)) {
+                    // dynamic cast
+                    Set<std::string> tgt{extractClsNameFromDynCast(callBase)};
+                    insertClassNames(tgt);
+                } else if (isNewAlloc(callFunc)) {
+                    // for heap allocation, we forward find class name sources
+                    Set<const Function *>& srcs = fwFindClsNameSources(callBase);
+                    for (const auto &src: srcs) {
+                        classNames = extractClsNamesFromFunc(src);
+                        insertClassNames(classNames);
+                    }
+                }
+            }
+        }
+    }
+    return _thisPtrClassNames[thisPtr] = names;
+}
+
+/*!
+ * find all possible allocations or class name sources
+ * (e.g., constructors/destructors or template functions)
+ * if we already find class name sources, we don't need to find the allocations and forward find class name sources
+ * @param startValue
+ * @return
+ */
+Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *startValue) {
+
+    // consult cache
+    auto tIt = _valueToAllocOrClsNameSources.find(startValue);
+    if (tIt != _valueToAllocOrClsNameSources.end()) {
+        return tIt->second;
+    }
+
+    // simulate the call stack, the second element indicates whether we should update sources for current value
+    FILOWorkList<ValueBoolPair> workList;
+    Set<ValueBoolPair> visited;
+    workList.push({startValue, false});
+    while (!workList.empty()) {
+        auto curPair = workList.pop();
+        if (visited.count(curPair)) continue;
+        visited.insert(curPair);
+        const Value *curValue = curPair.first;
+        bool canUpdate = curPair.second;
+
+        Set<const Value *> sources;
+        auto insertSource = [&sources, &canUpdate](const Value *source) {
+            if (canUpdate) sources.insert(source);
+        };
+        auto insertSourcesOrPushWorklist = [this, &sources, &workList, &canUpdate](const auto &pUser) {
+            auto vIt = _valueToAllocOrClsNameSources.find(pUser);
+            if (canUpdate) {
+                if (vIt != _valueToAllocOrClsNameSources.end() && !vIt->second.empty()) {
+                    sources.insert(vIt->second.begin(), vIt->second.end());
+                }
+            } else {
+                if (vIt == _valueToAllocOrClsNameSources.end()) workList.push({pUser, false});
+            }
+        };
+
+        if (!canUpdate && !_valueToAllocOrClsNameSources.count(curValue)) {
+            workList.push({curValue, true});
+        }
+
+        // current inst reside in cpp self-inference function
+        if (const auto *inst = SVFUtil::dyn_cast<Instruction>(curValue)) {
+            if (const Function *foo = inst->getFunction()) {
+                if (isConstructor(foo) || isDestructor(foo) || isTemplateFunc(foo) || isDynCast(foo)) {
+                    insertSource(foo);
+                    if (canUpdate) {
+                        _valueToAllocOrClsNameSources[curValue] = sources;
+                    }
+                    continue;
+                }
+            }
+        }
+        if (isAlloc(curValue) || isClsNameSource(curValue)) {
+            insertSource(curValue);
+        } else if (const auto *getElementPtrInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue)) {
+            insertSource(getElementPtrInst);
+            insertSourcesOrPushWorklist(getElementPtrInst->getPointerOperand());
+        } else if (const auto *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue)) {
+            Value *prevVal = bitCastInst->getOperand(0);
+            insertSourcesOrPushWorklist(prevVal);
+        } else if (const auto *phiNode = SVFUtil::dyn_cast<PHINode>(curValue)) {
+            for (u32_t i = 0; i < phiNode->getNumOperands(); ++i) {
+                insertSourcesOrPushWorklist(phiNode->getOperand(i));
+            }
+        } else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue)) {
+            for (const auto &use: loadInst->getPointerOperand()->uses()) {
+                if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser())) {
+                    if (storeInst->getPointerOperand() == loadInst->getPointerOperand()) {
+                        insertSourcesOrPushWorklist(storeInst->getValueOperand());
+                    }
+                }
+            }
+        } else if (const auto *argument = SVFUtil::dyn_cast<Argument>(curValue)) {
+            for (const auto &use: argument->getParent()->uses()) {
+                if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+                    // skip function as parameter
+                    // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
+                    if (callBase->getCalledFunction() != argument->getParent()) continue;
+                    u32_t pos = argument->getParent()->isVarArg() ? 0 : argument->getArgNo();
+                    insertSourcesOrPushWorklist(callBase->getArgOperand(pos));
+                }
+            }
+        } else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue)) {
+            ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
+            if (Function *callee = callBase->getCalledFunction()) {
+                if (!callee->isDeclaration()) {
+                    const SVFFunction *svfFunc = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+                    const Value *pValue = LLVMModuleSet::getLLVMModuleSet()->getLLVMValue(svfFunc->getExitBB()->back());
+                    const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(pValue);
+                    ABORT_IFNOT(retInst && retInst->getReturnValue(), "not return inst?");
+                    insertSourcesOrPushWorklist(retInst->getReturnValue());
+                }
+            }
+        }
+        if (canUpdate) {
+            _valueToAllocOrClsNameSources[curValue] = sources;
+        }
+    }
+    return _valueToAllocOrClsNameSources[startValue];
+}
+
+Set<const Function *> &ObjTypeInference::fwFindClsNameSources(const CallBase *alloc) {
+    // consult cache
+    auto tIt = _allocToClsNameSources.find(alloc);
+    if (tIt != _allocToClsNameSources.end()) {
+        return tIt->second;
+    }
+
+    Set<const Function *> clsSources;
+    // for heap allocation, we forward find class name sources
+    auto inferViaCppCall = [&clsSources](const CallBase *callBase) {
+        if (!callBase->getCalledFunction()) return;
+        const Function *constructFoo = callBase->getCalledFunction();
+        clsSources.insert(constructFoo);
+    };
+    for (const auto &use: alloc->uses()) {
+        if (const auto *cppCall = SVFUtil::dyn_cast<CallBase>(use.getUser())) {
+            inferViaCppCall(cppCall);
+        } else if (const auto *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser())) {
+            for (const auto &use2: bitCastInst->uses()) {
+                if (const auto *cppCall2 = SVFUtil::dyn_cast<CallBase>(use2.getUser())) {
+                    inferViaCppCall(cppCall2);
+                }
+            }
+        }
+    }
+    return _allocToClsNameSources[alloc] = SVFUtil::move(clsSources);
 }

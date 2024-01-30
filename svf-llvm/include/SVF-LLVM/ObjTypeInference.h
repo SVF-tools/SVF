@@ -35,10 +35,8 @@
 #include "SVFIR/SVFValue.h"
 #include "Util/ThreadAPI.h"
 
-namespace SVF
-{
-class ObjTypeInference
-{
+namespace SVF {
+class ObjTypeInference {
 
 public:
     typedef Set<const Value *> ValueSet;
@@ -47,12 +45,17 @@ public:
     typedef ValueToValueSet ValueToSources;
     typedef Map<const Value *, const Type *> ValueToType;
     typedef std::pair<const Value *, bool> ValueBoolPair;
+    typedef Map<const Value *, Set<std::string>> ValueToClassNames;
+    typedef Map<const CallBase *, Set<const Function *>> AllocToClsNameSources;
 
 
 private:
     ValueToInferSites _valueToInferSites; // value inference site cache
     ValueToType _valueToType; // value type cache
     ValueToSources _valueToAllocs; // value allocations (stack, static, heap) cache
+    ValueToClassNames _thisPtrClassNames; // thisptr class name cache
+    ValueToSources _valueToAllocOrClsNameSources; // value alloc/clsname sources cache
+    AllocToClsNameSources _allocToClsNameSources; // alloc clsname sources cache
 
 
 public:
@@ -62,26 +65,24 @@ public:
     ~ObjTypeInference() = default;
 
 
-    /// get or infer the type of a value
-    const Type *inferObjType(const Value *startValue);
+    /// get or infer the type of the object pointed by the value
+    const Type *inferObjType(const Value *var);
 
-    /// Validate type inference
+    /// validate type inference
     void validateTypeCheck(const CallBase *cs);
 
     void typeSizeDiffTest(const PointerType *oPTy, const Type *iTy, const Value *val);
 
-    /// Default type
+    /// default type
     const Type *defaultType(const Value *val);
 
-    /// Pointer type
-    inline const Type *ptrType()
-    {
+    /// pointer type
+    inline const Type *ptrType() {
         return PointerType::getUnqual(getLLVMCtx());
     }
 
-    /// Int8 type
-    inline const IntegerType *int8Type()
-    {
+    /// int8 type
+    inline const IntegerType *int8Type() {
         return Type::getInt8Ty(getLLVMCtx());
     }
 
@@ -89,22 +90,35 @@ public:
 
 private:
 
-    /// Forward collect all possible infer sites starting from a value
-    const Type *fwInferObjType(const Value *startValue);
+    /// forward infer the type of the object pointed by var
+    const Type *fwInferObjType(const Value *var);
 
-    /// Backward collect all possible allocation sites (stack, static, heap) starting from a value
-    Set<const Value *> bwfindAllocations(const Value *startValue);
+    /// backward collect all possible allocation sites (stack, static, heap) of var
+    Set<const Value *>& bwfindAllocOfVar(const Value *var);
 
-    bool isAllocation(const Value *val);
+    /// is allocation (stack, static, heap)
+    bool isAlloc(const SVF::Value *val);
 
 public:
-    /// Select the largest (conservative) type from all types
+    /// select the largest (conservative) type from all types
     const Type *selectLargestSizedType(Set<const Type *> &objTys);
 
     u32_t objTyToNumFields(const Type *objTy);
 
     u32_t getArgPosInCall(const CallBase *callBase, const Value *arg);
 
+public:
+    /// get or infer the class names of thisptr
+    Set<std::string> &inferThisPtrClsName(const Value *thisPtr);
+
+protected:
+
+    /// find all possible allocations or
+    /// class name sources (e.g., constructors/destructors or template functions) starting from a value
+    Set<const Value *> &bwFindAllocOrClsNameSources(const Value *startValue);
+
+    /// forward find class name sources starting from an allocation
+    Set<const Function *> &fwFindClsNameSources(const CallBase *alloc);
 };
 }
 #endif //SVF_OBJTYPEINFERENCE_H

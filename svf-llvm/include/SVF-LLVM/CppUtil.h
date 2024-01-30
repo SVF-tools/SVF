@@ -113,7 +113,7 @@ const Value* getVCallVtblPtr(const CallBase* cs);
 s32_t getVCallIdx(const CallBase* cs);
 bool classTyHasVTable(const StructType* ty);
 std::string getClassNameFromType(const StructType* ty);
-std::string getClassNameOfThisPtr(const CallBase* cs);
+Set<std::string> getClassNameOfThisPtr(const CallBase* cs);
 std::string getFunNameOfVCallSite(const CallBase* cs);
 bool VCallInCtorOrDtor(const CallBase* cs);
 
@@ -128,6 +128,36 @@ bool VCallInCtorOrDtor(const CallBase* cs);
  */
 bool isSameThisPtrInConstructor(const Argument* thisPtr1,
                                 const Value* thisPtr2);
+
+/// extract class name from the c++ function name, e.g., constructor/destructors
+Set<std::string> extractClsNamesFromFunc(const Function *foo);
+
+/// extract class names from template functions
+Set<std::string> extractClsNamesFromTemplate(const std::string &oname);
+
+/// class sources can be heap allocation
+/// or functions where we can extract the class name (constructors/destructors or template functions)
+bool isClsNameSource(const Value *val);
+
+/// whether foo matches the mangler label
+bool matchesLabel(const std::string &foo, const std::string &label);
+
+/// whether foo is a cpp template function
+bool isTemplateFunc(const Function *foo);
+
+/// whether foo is a cpp dyncast function
+bool isDynCast(const Function *foo);
+
+/// whether foo is a cpp heap allocation (new)
+bool isNewAlloc(const Function *foo);
+
+/// extract class name from cpp dyncast function
+std::string extractClsNameFromDynCast(const CallBase* callBase);
+
+const Type *cppClsNameToType(const std::string &className);
+
+std::string typeToClsName(const Type *ty);
+
 
 /// Constants pertaining to CTir, for C and C++.
 /// TODO: move helper functions here too?
