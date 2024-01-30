@@ -779,8 +779,8 @@ Set<std::string> cppUtil::extractClsNamesFromTemplate(const std::string &oname)
 
 
 /*!
- * class sources can be heap allocation
- * or functions where we can extract the class name (constructors/destructors or template functions)
+ * class sources are functions
+ * where we can extract the class name (constructors/destructors or template functions)
  * @param val
  * @return
  */
@@ -789,6 +789,8 @@ bool cppUtil::isClsNameSource(const Value *val)
     if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(val))
     {
         const Function *foo = callBase->getCalledFunction();
+        // indirect call
+        if(!foo) return false;
         return isConstructor(foo) || isDestructor(foo) || isTemplateFunc(foo) || isDynCast(foo);
     }
     return false;
@@ -807,15 +809,18 @@ bool cppUtil::matchesLabel(const std::string &foo, const std::string &label)
 
 /*!
  * whether foo is a cpp template function
+ * TODO: we only consider limited label for now (see the very beginning of CppUtil.cpp)
  * @param foo
  * @return
  */
-bool cppUtil::isTemplateFunc(const Function *foo)
-{
+bool cppUtil::isTemplateFunc(const Function *foo) {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     const std::string &name = foo->getName().str();
-    return matchesLabel(name, znstLabel) || matchesLabel(name, znkstLabel) ||
-           matchesLabel(name, znkLabel);
+    bool matchedLabel = matchesLabel(name, znstLabel) || matchesLabel(name, znkstLabel) ||
+                        matchesLabel(name, znkLabel);
+    // we exclude "_ZNK6cArray3dupEv" -> cArray::dup() const
+    const std::string &demangledName = llvm::demangle(name);
+    return matchedLabel && demangledName.find('<') != std::string::npos && demangledName.find('>') != std::string::npos;
 }
 
 /*!
