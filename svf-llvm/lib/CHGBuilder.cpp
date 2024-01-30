@@ -687,15 +687,18 @@ const CHGraph::CHNodeSetTy& CHGBuilder::getCSClasses(const CallBase* cs)
     {
         Set<string> thisPtrClassNames = getClassNameOfThisPtr(cs);
 
-        if(thisPtrClassNames.empty()) {
+        if(thisPtrClassNames.empty())
+        {
             // if we cannot infer classname, conservatively push all class nodes
-            for (const auto &node: *chg) {
+            for (const auto &node: *chg)
+            {
                 chg->csToClassesMap[svfcall].insert(node.second);
             }
             return chg->csToClassesMap[svfcall];
         }
 
-        for (const auto &thisPtrClassName: thisPtrClassNames) {
+        for (const auto &thisPtrClassName: thisPtrClassNames)
+        {
             if (const CHNode* thisNode = chg->getNode(thisPtrClassName))
             {
                 const CHGraph::CHNodeSetTy& instAndDesces = getInstancesAndDescendants(thisPtrClassName);

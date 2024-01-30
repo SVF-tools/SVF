@@ -398,7 +398,8 @@ const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
     return thisPtr;
 }
 
-void updateClassNameBeforeBrackets(cppUtil::DemangledName& dname) {
+void updateClassNameBeforeBrackets(cppUtil::DemangledName& dname)
+{
     dname.funcName = cppUtil::getBeforeBrackets(dname.funcName);
     dname.className = cppUtil::getBeforeBrackets(dname.className);
     size_t colon = dname.className.rfind("::");
@@ -409,7 +410,7 @@ void updateClassNameBeforeBrackets(cppUtil::DemangledName& dname) {
     else
     {
         dname.className =
-                cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
+            cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
     }
 }
 
@@ -481,7 +482,8 @@ bool cppUtil::VCallInCtorOrDtor(const CallBase* cs)
 {
     Set<std::string> classNameOfThisPtrs = cppUtil::getClassNameOfThisPtr(cs);
     const Function* func = cs->getCaller();
-    for (const auto &classNameOfThisPtr: classNameOfThisPtrs) {
+    for (const auto &classNameOfThisPtr: classNameOfThisPtrs)
+    {
         if (cppUtil::isConstructor(func) || cppUtil::isDestructor(func))
         {
             cppUtil::DemangledName dname = cppUtil::demangle(func->getName().str());
@@ -542,16 +544,19 @@ Set<std::string> cppUtil::getClassNameOfThisPtr(const CallBase* inst)
 
     Set<std::string> ans;
     std::transform(thisPtrNames.begin(), thisPtrNames.end(), std::inserter(ans, ans.begin()),
-                   [](const std::string &thisPtrName) -> std::string {
-                       size_t found = thisPtrName.find_last_not_of("0123456789");
-                       if (found != std::string::npos) {
-                           if (found != thisPtrName.size() - 1 &&
-                               thisPtrName[found] == '.') {
-                               return thisPtrName.substr(0, found);
-                           }
-                       }
-                       return thisPtrName;
-                   });
+                   [](const std::string &thisPtrName) -> std::string
+    {
+        size_t found = thisPtrName.find_last_not_of("0123456789");
+        if (found != std::string::npos)
+        {
+            if (found != thisPtrName.size() - 1 &&
+                    thisPtrName[found] == '.')
+            {
+                return thisPtrName.substr(0, found);
+            }
+        }
+        return thisPtrName;
+    });
     return ans;
 }
 
@@ -626,15 +631,19 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
  * @param foo
  * @return
  */
-Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo) {
+Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo)
+{
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     const std::string &name = foo->getName().str();
-    if (isConstructor(foo)) {
+    if (isConstructor(foo))
+    {
         // c++ constructor
         DemangledName demangledName = cppUtil::demangle(name);
         updateClassNameBeforeBrackets(demangledName);
         return {demangledName.className};
-    } else if (isTemplateFunc(foo)) {
+    }
+    else if (isTemplateFunc(foo))
+    {
         // array index
         Set<std::string> classNames = extractClsNamesFromTemplate(name);
         assert(!classNames.empty() && "empty class names?");
@@ -649,29 +658,38 @@ Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo) {
  * @param input
  * @return
  */
-std::vector<std::string> findInnermostBrackets(const std::string &input) {
+std::vector<std::string> findInnermostBrackets(const std::string &input)
+{
     typedef std::pair<u32_t, u32_t> StEdIdxPair;
     std::stack<int> stack;
     std::vector<StEdIdxPair> innerMostPairs;
     std::vector<bool> used(input.length(), false);
 
-    for (u32_t i = 0; i < input.length(); ++i) {
-        if (input[i] == '<') {
+    for (u32_t i = 0; i < input.length(); ++i)
+    {
+        if (input[i] == '<')
+        {
             stack.push(i);
-        } else if (input[i] == '>' && i > 0 && input[i - 1] != '-') {
-            if (!stack.empty()) {
+        }
+        else if (input[i] == '>' && i > 0 && input[i - 1] != '-')
+        {
+            if (!stack.empty())
+            {
                 int openIndex = stack.top();
                 stack.pop();
 
                 // Check if this pair is innermost
                 bool isInnermost = true;
-                for (u32_t j = openIndex + 1; j < i && isInnermost; ++j) {
-                    if (used[j]) {
+                for (u32_t j = openIndex + 1; j < i && isInnermost; ++j)
+                {
+                    if (used[j])
+                    {
                         isInnermost = false;
                     }
                 }
 
-                if (isInnermost) {
+                if (isInnermost)
+                {
                     innerMostPairs.emplace_back(openIndex, i);
                     used[openIndex] = used[i] = true; // Mark these indices as used
                 }
@@ -679,7 +697,8 @@ std::vector<std::string> findInnermostBrackets(const std::string &input) {
         }
     }
     std::vector<std::string> ans(innerMostPairs.size());
-    std::transform(innerMostPairs.begin(), innerMostPairs.end(), ans.begin(), [&input](StEdIdxPair &p) -> std::string {
+    std::transform(innerMostPairs.begin(), innerMostPairs.end(), ans.begin(), [&input](StEdIdxPair &p) -> std::string
+    {
         return input.substr(p.first + 1, p.second - p.first - 1);
     });
     return ans;
@@ -690,22 +709,27 @@ std::vector<std::string> findInnermostBrackets(const std::string &input) {
  * @param str
  * @return
  */
-std::string stripWhitespaces(const std::string &str) {
-    auto start = std::find_if(str.begin(), str.end(), [](unsigned char ch) {
+std::string stripWhitespaces(const std::string &str)
+{
+    auto start = std::find_if(str.begin(), str.end(), [](unsigned char ch)
+    {
         return !std::isspace(ch);
     });
-    auto end = std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) {
+    auto end = std::find_if(str.rbegin(), str.rend(), [](unsigned char ch)
+    {
         return !std::isspace(ch);
     }).base();
 
     return (start < end) ? std::string(start, end) : std::string();
 }
 
-std::vector<std::string> splitAndStrip(const std::string &input, char delimiter) {
+std::vector<std::string> splitAndStrip(const std::string &input, char delimiter)
+{
     std::vector<std::string> tokens;
     size_t start = 0, end = 0;
 
-    while ((end = input.find(delimiter, start)) != std::string::npos) {
+    while ((end = input.find(delimiter, start)) != std::string::npos)
+    {
         tokens.push_back(stripWhitespaces(input.substr(start, end - start)));
         start = end + 1;
     }
@@ -720,21 +744,27 @@ std::vector<std::string> splitAndStrip(const std::string &input, char delimiter)
  * @param oname
  * @return
  */
-Set<std::string> cppUtil::extractClsNamesFromTemplate(const std::string &oname) {
+Set<std::string> cppUtil::extractClsNamesFromTemplate(const std::string &oname)
+{
     // "std::array<A const*, 2ul>" -> A
     // "std::queue<A*, std::deque<A*, std::allocator<A*> > >" -> A
     // __gnu_cxx::__aligned_membuf<std::pair<int const, A> >::_M_ptr() const -> A
     Set<std::string> ans;
     std::string demangleName = llvm::demangle(oname);
     std::vector<std::string> innermosts = findInnermostBrackets(demangleName);
-    for (const auto &innermost: innermosts) {
+    for (const auto &innermost: innermosts)
+    {
         const std::vector<std::string> &allstrs = splitAndStrip(innermost, ',');
-        for (const auto &str: allstrs) {
+        for (const auto &str: allstrs)
+        {
             size_t spacePos = str.find(' ');
-            if (spacePos != std::string::npos) {
+            if (spacePos != std::string::npos)
+            {
                 // A const* -> A
                 ans.insert(str.substr(0, spacePos));
-            } else {
+            }
+            else
+            {
                 size_t starPos = str.find('*');
                 if (starPos != std::string::npos)
                     // A* -> A
@@ -754,8 +784,10 @@ Set<std::string> cppUtil::extractClsNamesFromTemplate(const std::string &oname) 
  * @param val
  * @return
  */
-bool cppUtil::isClsNameSource(const Value *val) {
-    if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(val)) {
+bool cppUtil::isClsNameSource(const Value *val)
+{
+    if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(val))
+    {
         const Function *foo = callBase->getCalledFunction();
         return isConstructor(foo) || isDestructor(foo) || isTemplateFunc(foo) || isDynCast(foo);
     }
@@ -768,7 +800,8 @@ bool cppUtil::isClsNameSource(const Value *val) {
  * @param label
  * @return
  */
-bool cppUtil::matchesLabel(const std::string &foo, const std::string &label) {
+bool cppUtil::matchesLabel(const std::string &foo, const std::string &label)
+{
     return foo.compare(0, label.size(), label) == 0;
 }
 
@@ -777,7 +810,8 @@ bool cppUtil::matchesLabel(const std::string &foo, const std::string &label) {
  * @param foo
  * @return
  */
-bool cppUtil::isTemplateFunc(const Function *foo) {
+bool cppUtil::isTemplateFunc(const Function *foo)
+{
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     const std::string &name = foo->getName().str();
     return matchesLabel(name, znstLabel) || matchesLabel(name, znkstLabel) ||
@@ -789,7 +823,8 @@ bool cppUtil::isTemplateFunc(const Function *foo) {
  * @param foo
  * @return
  */
-bool cppUtil::isDynCast(const Function *foo) {
+bool cppUtil::isDynCast(const Function *foo)
+{
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     return foo->getName().str() == dyncast;
 }
@@ -799,7 +834,8 @@ bool cppUtil::isDynCast(const Function *foo) {
  * @param foo
  * @return
  */
-bool cppUtil::isNewAlloc(const Function *foo) {
+bool cppUtil::isNewAlloc(const Function *foo)
+{
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     return foo->getName().str() == znwm;
 }
@@ -809,7 +845,8 @@ bool cppUtil::isNewAlloc(const Function *foo) {
  * @param callBase
  * @return
  */
-std::string cppUtil::extractClsNameFromDynCast(const CallBase* callBase) {
+std::string cppUtil::extractClsNameFromDynCast(const CallBase* callBase)
+{
     Value *tgtCast = callBase->getArgOperand(2);
     const std::string &valueStr = LLVMUtil::dumpValue(tgtCast);
     u32_t leftPos = valueStr.find(ztilabel);
@@ -819,22 +856,25 @@ std::string cppUtil::extractClsNameFromDynCast(const CallBase* callBase) {
     const std::string &substr = valueStr.substr(leftPos, rightPos - leftPos);
     std::string demangleName = llvm::demangle(substr);
     const std::string &realName = demangleName.substr(ztiprefix.size(),
-                                                      demangleName.size() - ztiprefix.size());
+                                  demangleName.size() - ztiprefix.size());
     assert(realName != "" && "real name for dyncast empty?");
     return realName;
 }
 
-const Type *cppUtil::cppClsNameToType(const std::string &className) {
+const Type *cppUtil::cppClsNameToType(const std::string &className)
+{
     StructType *classTy = StructType::getTypeByName(LLVMModuleSet::getLLVMModuleSet()->getContext(),
-                                                    clsName + className);
+                          clsName + className);
     return classTy ? classTy : LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType();
 }
 
-std::string cppUtil::typeToClsName(const Type *ty) {
-    if (const auto *stTy = SVFUtil::dyn_cast<StructType>(ty)) {
+std::string cppUtil::typeToClsName(const Type *ty)
+{
+    if (const auto *stTy = SVFUtil::dyn_cast<StructType>(ty))
+    {
         const std::string &typeName = stTy->getName().str();
         const std::string &className = typeName.substr(
-                clsName.size(), typeName.size() - clsName.size());
+                                           clsName.size(), typeName.size() - clsName.size());
         return className;
     }
     return "";
