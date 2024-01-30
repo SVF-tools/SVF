@@ -129,37 +129,34 @@ bool VCallInCtorOrDtor(const CallBase* cs);
 bool isSameThisPtrInConstructor(const Argument* thisPtr1,
                                 const Value* thisPtr2);
 
-/// Extract class name based on the c++ callee function, e.g., constructor
-Set<std::string> extractClassNameViaCppFunc(const Function *foo);
+/// extract class name from the c++ function name, e.g., constructor/destructors
+Set<std::string> extractClsNamesFromFunc(const Function *foo);
 
-/// Extract class name in template functions
-Set<std::string> extractClassNameInTemplate(const std::string &oname);
+/// extract class names from template functions
+Set<std::string> extractClsNamesFromTemplate(const std::string &oname);
 
-/// CPP source used to infer c++ class name
-/// sources can be heap allocation or self-inference functions (constructors/destructors or template functions)
-bool isCPPSource(const Value *val);
+/// class sources can be heap allocation
+/// or functions where we can extract the class name (constructors/destructors or template functions)
+bool isClsNameSource(const Value *val);
 
-/// whether fooName matches the mangler label
-bool matchManglerLabel(const std::string &fooName, const std::string &label);
-
-/// whether foo is a cpp self-inference function
-bool isCPPSelfInferenceFunc(const Function *foo);
+/// whether foo matches the mangler label
+bool matchesLabel(const std::string &foo, const std::string &label);
 
 /// whether foo is a cpp template function
-bool isCPPTemplateAPI(const Function *foo);
+bool isTemplateFunc(const Function *foo);
 
 /// whether foo is a cpp dyncast function
-bool isCPPDynCast(const Function *foo);
+bool isDynCast(const Function *foo);
 
-/// whether foo is a cpp heap allocation
-bool isCPPHeapAllocation(const Function *foo);
+/// whether foo is a cpp heap allocation (new)
+bool isNewAlloc(const Function *foo);
 
-/// extract class name from cpp dyncast
-std::string extractClassNameFromCPPDynCast(const CallBase* callBase);
+/// extract class name from cpp dyncast function
+std::string extractClsNameFromDynCast(const CallBase* callBase);
 
-const Type *cppClassNameToType(const std::string &className);
+const Type *cppClsNameToType(const std::string &className);
 
-std::string typeToCppClassName(const Type *ty);
+std::string typeToClsName(const Type *ty);
 
 
 /// Constants pertaining to CTir, for C and C++.

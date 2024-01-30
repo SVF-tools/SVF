@@ -536,7 +536,7 @@ Set<std::string> cppUtil::getClassNameOfThisPtr(const CallBase* inst)
     if (thisPtrClassName.size() == 0)
     {
         const Value* thisPtr = getVCallThisPtr(inst);
-        Set<std::string> names = LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferThisPtrClassName(thisPtr);
+        Set<std::string>& names = LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->inferThisPtrClsName(thisPtr);
         thisPtrNames.insert(names.begin(), names.end());
     }
 
@@ -621,12 +621,12 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
 }
 
 /*!
- * Extract class name based on the c++ callee function, e.g., constructor
+ * extract class name from the c++ function name, e.g., constructor/destructors
  *
  * @param foo
  * @return
  */
-Set<std::string> cppUtil::extractClassNameViaCppFunc(const Function *foo) {
+Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo) {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     const std::string &name = foo->getName().str();
     if (isConstructor(foo)) {
@@ -634,9 +634,9 @@ Set<std::string> cppUtil::extractClassNameViaCppFunc(const Function *foo) {
         DemangledName demangledName = cppUtil::demangle(name);
         updateClassNameBeforeBrackets(demangledName);
         return {demangledName.className};
-    } else if (isCPPTemplateAPI(foo)) {
+    } else if (isTemplateFunc(foo)) {
         // array index
-        Set<std::string> classNames = extractClassNameInTemplate(name);
+        Set<std::string> classNames = extractClsNamesFromTemplate(name);
         assert(!classNames.empty() && "empty class names?");
         return classNames;
     }
@@ -716,11 +716,11 @@ std::vector<std::string> splitAndStrip(const std::string &input, char delimiter)
 }
 
 /*!
- * Extract class name in STL functions
+ * extract class names from template functions
  * @param oname
  * @return
  */
-Set<std::string> cppUtil::extractClassNameInTemplate(const std::string &oname) {
+Set<std::string> cppUtil::extractClsNamesFromTemplate(const std::string &oname) {
     // "std::array<A const*, 2ul>" -> A
     // "std::queue<A*, std::deque<A*, std::allocator<A*> > >" -> A
     // __gnu_cxx::__aligned_membuf<std::pair<int const, A> >::_M_ptr() const -> A
@@ -747,39 +747,69 @@ Set<std::string> cppUtil::extractClassNameInTemplate(const std::string &oname) {
     return ans;
 }
 
-bool cppUtil::isCPPSource(const Value *val) {
-    if (LLVMUtil::isObject(val)) return true;
+
+/*!
+ * class sources can be heap allocation
+ * or functions where we can extract the class name (constructors/destructors or template functions)
+ * @param val
+ * @return
+ */
+bool cppUtil::isClsNameSource(const Value *val) {
     if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(val)) {
-        return isCPPSelfInferenceFunc(callBase->getCalledFunction());
+        const Function *foo = callBase->getCalledFunction();
+        return isConstructor(foo) || isDestructor(foo) || isTemplateFunc(foo) || isDynCast(foo);
     }
     return false;
 }
 
-bool cppUtil::matchManglerLabel(const std::string &foo, const std::string &label) {
+/*!
+ * whether fooName matches the mangler label
+ * @param foo
+ * @param label
+ * @return
+ */
+bool cppUtil::matchesLabel(const std::string &foo, const std::string &label) {
     return foo.compare(0, label.size(), label) == 0;
 }
 
-bool cppUtil::isCPPSelfInferenceFunc(const Function *foo) {
-    return isConstructor(foo) || isDestructor(foo) || isCPPTemplateAPI(foo) || isCPPDynCast(foo);
-}
-
-bool cppUtil::isCPPTemplateAPI(const Function *foo) {
+/*!
+ * whether foo is a cpp template function
+ * @param foo
+ * @return
+ */
+bool cppUtil::isTemplateFunc(const Function *foo) {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     const std::string &name = foo->getName().str();
-    return matchManglerLabel(name, znstLabel) || matchManglerLabel(name, znkstLabel) || matchManglerLabel(name, znkLabel);
+    return matchesLabel(name, znstLabel) || matchesLabel(name, znkstLabel) ||
+           matchesLabel(name, znkLabel);
 }
 
-bool cppUtil::isCPPDynCast(const Function *foo) {
+/*!
+ * whether foo is a cpp dyncast function
+ * @param foo
+ * @return
+ */
+bool cppUtil::isDynCast(const Function *foo) {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     return foo->getName().str() == dyncast;
 }
 
-bool cppUtil::isCPPHeapAllocation(const Function *foo) {
+/*!
+ * whether foo is a cpp heap allocation (new)
+ * @param foo
+ * @return
+ */
+bool cppUtil::isNewAlloc(const Function *foo) {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     return foo->getName().str() == znwm;
 }
 
-std::string cppUtil::extractClassNameFromCPPDynCast(const CallBase* callBase) {
+/*!
+ * extract class name from cpp dyncast function
+ * @param callBase
+ * @return
+ */
+std::string cppUtil::extractClsNameFromDynCast(const CallBase* callBase) {
     Value *tgtCast = callBase->getArgOperand(2);
     const std::string &valueStr = LLVMUtil::dumpValue(tgtCast);
     u32_t leftPos = valueStr.find(ztilabel);
@@ -794,13 +824,13 @@ std::string cppUtil::extractClassNameFromCPPDynCast(const CallBase* callBase) {
     return realName;
 }
 
-const Type *cppUtil::cppClassNameToType(const std::string &className) {
+const Type *cppUtil::cppClsNameToType(const std::string &className) {
     StructType *classTy = StructType::getTypeByName(LLVMModuleSet::getLLVMModuleSet()->getContext(),
                                                     clsName + className);
     return classTy ? classTy : LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType();
 }
 
-std::string cppUtil::typeToCppClassName(const Type *ty) {
+std::string cppUtil::typeToClsName(const Type *ty) {
     if (const auto *stTy = SVFUtil::dyn_cast<StructType>(ty)) {
         const std::string &typeName = stTy->getName().str();
         const std::string &className = typeName.substr(
