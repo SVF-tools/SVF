@@ -327,12 +327,11 @@ bool isIntrinsicFun(const Function* func);
 
 /// Get all called funcions in a parent function
 std::vector<const Function *> getCalledFunctions(const Function *F);
-std::vector<std::string> getFunAnnotations(const Function* fun);
-void removeFunAnnotations(std::vector<Function*>& removedFuncList);
+void removeFunAnnotations(Set<Function*>& removedFuncList);
 bool isUnusedGlobalVariable(const GlobalVariable& global);
 void removeUnusedGlobalVariables(Module* module);
 /// Delete unused functions, annotations and global variables in extapi.bc
-void removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> removedFuncList);
+void removeUnusedFuncsAndAnnotationsAndGlobalVariables(Set<Function*> removedFuncList);
 
 /// Get the corresponding Function based on its name
 const SVFFunction* getFunction(const std::string& name);

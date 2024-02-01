@@ -154,6 +154,7 @@ void LLVMModuleSet::build()
 
     buildFunToFunMap();
     buildGlobalDefToRepMap();
+    removeUnusedExtAPIs();
 
     if (Options::SVFMain())
         addSVFMain();
@@ -170,17 +171,13 @@ void LLVMModuleSet::createSVFDataStructure()
     // candidateDefs is the vector for all used defined functions
     // candidateDecls is the vector for all used declared functions
     std::vector<const Function*> candidateDefs, candidateDecls;
+
     for (Module& mod : modules)
     {
-        std::vector<Function*> removedFuncList;
         /// Function
         for (Function& func : mod.functions())
         {
-            if (isCalledExtFunction(&func))
-            {
-                removedFuncList.push_back(&func);
-            }
-            else if (func.isDeclaration())
+            if (func.isDeclaration())
             {
                 candidateDecls.push_back(&func);
             }
@@ -189,9 +186,8 @@ void LLVMModuleSet::createSVFDataStructure()
                 candidateDefs.push_back(&func);
             }
         }
-        /// Remove unused functions, annotations and global variables in extapi.bc
-        LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(removedFuncList);
     }
+
     for (const Function* func: candidateDefs)
     {
         createSVFFunction(func);
@@ -240,7 +236,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         SVFUtil::cast<SVFFunctionType>(
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
-        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo, LLVMUtil::getFunAnnotations(func));
+        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo, ExtFun2Anno[func]);
     svfFunc->setName(func->getName().str());
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
@@ -790,6 +786,57 @@ void LLVMModuleSet::addSVFMain()
     }
 }
 
+void LLVMModuleSet::getExtAPIAnnotations(const Module* mod)
+{
+    GlobalVariable *glob = mod->getGlobalVariable("llvm.global.annotations");
+    if (glob == nullptr || !glob->hasInitializer())
+        return;
+
+    ConstantArray *ca = SVFUtil::dyn_cast<ConstantArray>(glob->getInitializer());
+    if (ca == nullptr)
+        return;
+
+    for (unsigned i = 0; i < ca->getNumOperands(); ++i)
+    {
+        ConstantStruct *structAn = SVFUtil::dyn_cast<ConstantStruct>(ca->getOperand(i));
+        if (structAn == nullptr || structAn->getNumOperands() == 0)
+            continue;
+
+        // Check if the annotation is for a function
+        Function* fun = nullptr;
+        GlobalVariable *annotateStr = nullptr;
+        /// Non-opaque pointer 
+        if (ConstantExpr *expr = SVFUtil::dyn_cast<ConstantExpr>(structAn->getOperand(0)))
+        {
+            if (expr->getOpcode() == Instruction::BitCast && SVFUtil::isa<Function>(expr->getOperand(0)))
+                fun = SVFUtil::cast<Function>(expr->getOperand(0));
+
+            ConstantExpr *note = SVFUtil::cast<ConstantExpr>(structAn->getOperand(1));
+            if (note->getOpcode() != Instruction::GetElementPtr)
+                continue;
+            
+            annotateStr = SVFUtil::dyn_cast<GlobalVariable>(note->getOperand(0));
+        }
+        /// Opaque pointer
+        else
+        {
+            fun = SVFUtil::dyn_cast<Function>(structAn->getOperand(0));
+            annotateStr = SVFUtil::dyn_cast<GlobalVariable>(structAn->getOperand(1));
+        }
+
+        if (!fun || annotateStr == nullptr || !annotateStr->hasInitializer())
+            continue;;
+
+        ConstantDataSequential *data = SVFUtil::dyn_cast<ConstantDataSequential>(annotateStr->getInitializer());
+        if (data && data->isString())
+        {
+            std::string annotation = data->getAsString().str();
+            if (!annotation.empty())
+                ExtFun2Anno[fun].push_back(annotation);
+        }
+    }
+}
+
 /*
     For a more detailed explanation of the Function declaration and definition mapping relationships and how External APIs are handled,
     please refer to the SVF Wiki: https://github.com/SVF-tools/SVF/wiki/Handling-External-APIs-with-extapi.c
@@ -864,6 +911,7 @@ void LLVMModuleSet::buildFunToFunMap()
         // extapi.bc functions
         if (mod.getName().str() == ExtAPI::getExtAPI()->getExtBcPath())
         {
+            getExtAPIAnnotations(&mod);
             for (const Function& fun : mod.functions())
             {
                 // there is main declaration in ext bc, it should be mapped to
@@ -885,8 +933,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 {
                     extFuncs.insert(&fun);
                     // Find overwrite functions in extapi.bc
-                    std::vector<std::string> annotations =
-                        LLVMUtil::getFunAnnotations(&fun);
+                    std::vector<std::string> annotations = ExtFun2Anno[&fun];
                     auto it =
                         std::find_if(annotations.begin(), annotations.end(),
                                      [&](const std::string& annotation)
@@ -1113,6 +1160,25 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
             GlobalDefToRepMap[cur] = rep;
         }
     }
+}
+
+void LLVMModuleSet::removeUnusedExtAPIs()
+{
+    Set<Function*> removedFuncList;
+    for (Module& mod : modules)
+    {
+        if (mod.getName().str() != ExtAPI::getExtAPI()->getExtBcPath())
+            continue;
+        for (Function& func : mod.functions())
+        {
+            if (isCalledExtFunction(&func))
+            {
+                removedFuncList.insert(&func);
+                ExtFun2Anno.erase(&func);
+            }
+        }
+    }
+    LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(removedFuncList);
 }
 
 // Dump modules to files

@@ -454,53 +454,12 @@ void LLVMUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_
     }
 }
 
-std::vector<std::string> LLVMUtil::getFunAnnotations(const Function* fun)
-{
-    std::vector<std::string> annotations;
-    // Get annotation variable
-    GlobalVariable *glob = fun->getParent()->getGlobalVariable("llvm.global.annotations");
-    if (glob == nullptr || !glob->hasInitializer())
-        return annotations;
-
-    ConstantArray *ca = SVFUtil::dyn_cast<ConstantArray>(glob->getInitializer());
-    if (ca == nullptr)
-        return annotations;
-
-    for (unsigned i = 0; i < ca->getNumOperands(); ++i)
-    {
-        ConstantStruct *structAn = SVFUtil::dyn_cast<ConstantStruct>(ca->getOperand(i));
-        if (structAn == nullptr)
-            continue;
-
-        ConstantExpr *expr = SVFUtil::dyn_cast<ConstantExpr>(structAn->getOperand(0));
-        if (expr == nullptr || expr->getOpcode() != Instruction::BitCast || expr->getOperand(0) != fun)
-            continue;
-
-        ConstantExpr *note = SVFUtil::cast<ConstantExpr>(structAn->getOperand(1));
-        if (note->getOpcode() != Instruction::GetElementPtr)
-            continue;
-
-        GlobalVariable *annotateStr = SVFUtil::dyn_cast<GlobalVariable>(note->getOperand(0));
-        if (annotateStr == nullptr || !annotateStr->hasInitializer())
-            continue;
-
-        ConstantDataSequential *data = SVFUtil::dyn_cast<ConstantDataSequential>(annotateStr->getInitializer());
-        if (data->isString())
-        {
-            std::string annotation = data->getAsString().str();
-            if (!annotation.empty())
-                annotations.push_back(annotation);
-        }
-    }
-    return annotations;
-}
-
-void LLVMUtil::removeFunAnnotations(std::vector<Function*>& removedFuncList)
+void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
 {
     if (removedFuncList.empty())
         return; // No functions to remove annotations in extapi.bc module
 
-    Module* module = removedFuncList[0]->getParent();
+    Module* module = (*removedFuncList.begin())->getParent();
     GlobalVariable* glob = module->getGlobalVariable("llvm.global.annotations");
     if (glob == nullptr || !glob->hasInitializer())
         return;
@@ -516,20 +475,24 @@ void LLVMUtil::removeFunAnnotations(std::vector<Function*>& removedFuncList)
         if (structAn == nullptr)
             continue;
 
-        ConstantExpr* expr = SVFUtil::dyn_cast<ConstantExpr>(structAn->getOperand(0));
-        if (expr == nullptr || expr->getOpcode() != Instruction::BitCast)
-        {
-            // Keep the annotation if it's not created using BitCast
-            newAnnotations.push_back(structAn);
-            continue;
+        Function* annotatedFunc = nullptr;
+
+        // Non-opague pointer, try to cast to ConstantExpr and check for BitCast
+        if (ConstantExpr* expr = SVFUtil::dyn_cast<ConstantExpr>(structAn->getOperand(0))) {
+            if (expr->getOpcode() == Instruction::BitCast) {
+                annotatedFunc = SVFUtil::dyn_cast<Function>(expr->getOperand(0));
+            }
         }
 
-        Function* annotatedFunc = SVFUtil::dyn_cast<Function>(expr->getOperand(0));
-        if (annotatedFunc == nullptr || std::find(removedFuncList.begin(), removedFuncList.end(), annotatedFunc) != removedFuncList.end())
-            continue;
+        // Opague pointer, If the above method didn't work, try casting directly to Function
+        if (!annotatedFunc) {
+            annotatedFunc = SVFUtil::dyn_cast<Function>(structAn->getOperand(0));
+        }
 
-        // Keep the annotation for all other functions
-        newAnnotations.push_back(structAn);
+        // Process the annotated function if it's not in the removed list
+        if (annotatedFunc && std::find(removedFuncList.begin(), removedFuncList.end(), annotatedFunc) == removedFuncList.end()) {
+            newAnnotations.push_back(structAn);
+        }
     }
 
     if (newAnnotations.size() == ca->getNumOperands())
@@ -606,12 +569,12 @@ void LLVMUtil::removeUnusedGlobalVariables(Module* module)
 }
 
 /// Delete unused functions, annotations and global variables in extapi.bc
-void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(std::vector<Function*> removedFuncList)
+void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(Set<Function*> removedFuncList)
 {
     if (removedFuncList.empty())
         return;
 
-    Module* mod = removedFuncList[0]->getParent();
+    Module* mod = (*removedFuncList.begin())->getParent();
     if (mod->getName().str() != ExtAPI::getExtAPI()->getExtBcPath())
         return;
 
