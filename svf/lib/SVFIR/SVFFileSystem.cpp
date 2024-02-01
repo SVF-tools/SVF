@@ -54,7 +54,7 @@ static SVFValue* createSVFValue(SVFValue::GNodeK kind, const SVFType* type,
         case SVFValue::SVFVal:
             ABORT_MSG("Creation of RAW SVFValue isn't allowed");
         case SVFValue::SVFFunc:
-            return new SVFFunction(type, {}, {}, {}, {}, {}, {}, {});
+            return new SVFFunction(type, {}, {}, {}, {}, {}, {});
         case SVFValue::SVFBB:
             return new SVFBasicBlock(type, {});
         case SVFValue::SVFInst:

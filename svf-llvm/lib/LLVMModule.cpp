@@ -236,9 +236,11 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         SVFUtil::cast<SVFFunctionType>(
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
-        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo, getFunctionAnnotations(func));
+        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
     svfFunc->setName(func->getName().str());
     svfModule->addFunctionSet(svfFunc);
+    if (ExtFun2Annotations.find(func) != ExtFun2Annotations.end())
+        svfFunc->setAnnotations(ExtFun2Annotations[func]);
     addFunctionMap(func, svfFunc);
 
     for (const Argument& arg : func->args())
@@ -786,7 +788,7 @@ void LLVMModuleSet::addSVFMain()
     }
 }
 
-void LLVMModuleSet::getExtAPIAnnotations(const Module* mod)
+void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)
 {
     GlobalVariable *glob = mod->getGlobalVariable("llvm.global.annotations");
     if (glob == nullptr || !glob->hasInitializer())
@@ -832,7 +834,7 @@ void LLVMModuleSet::getExtAPIAnnotations(const Module* mod)
         {
             std::string annotation = data->getAsString().str();
             if (!annotation.empty())
-                ExtFun2Anno[fun].push_back(annotation);
+                ExtFun2Annotations[fun].push_back(annotation);
         }
     }
 }
@@ -911,7 +913,7 @@ void LLVMModuleSet::buildFunToFunMap()
         // extapi.bc functions
         if (mod.getName().str() == ExtAPI::getExtAPI()->getExtBcPath())
         {
-            getExtAPIAnnotations(&mod);
+            collectExtFunAnnotations(&mod);
             for (const Function& fun : mod.functions())
             {
                 // there is main declaration in ext bc, it should be mapped to
@@ -933,17 +935,20 @@ void LLVMModuleSet::buildFunToFunMap()
                 {
                     extFuncs.insert(&fun);
                     // Find overwrite functions in extapi.bc
-                    std::vector<std::string> annotations = getFunctionAnnotations(&fun);
-                    auto it =
-                        std::find_if(annotations.begin(), annotations.end(),
-                                     [&](const std::string& annotation)
+                    if (ExtFun2Annotations.find(&fun) != ExtFun2Annotations.end())
                     {
-                        return annotation.find("OVERWRITE") !=
-                               std::string::npos;
-                    });
-                    if (it != annotations.end())
-                    {
-                        overwriteExtFuncs.insert(&fun);
+                        std::vector<std::string> annotations = ExtFun2Annotations[&fun];
+                        auto it =
+                            std::find_if(annotations.begin(), annotations.end(),
+                                        [&](const std::string& annotation)
+                        {
+                            return annotation.find("OVERWRITE") !=
+                                std::string::npos;
+                        });
+                        if (it != annotations.end())
+                        {
+                            overwriteExtFuncs.insert(&fun);
+                        }
                     }
                 }
             }
@@ -1174,7 +1179,7 @@ void LLVMModuleSet::removeUnusedExtAPIs()
             if (isCalledExtFunction(&func))
             {
                 removedFuncList.insert(&func);
-                ExtFun2Anno.erase(&func);
+                ExtFun2Annotations.erase(&func);
             }
         }
     }

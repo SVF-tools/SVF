@@ -79,7 +79,7 @@ private:
     /// Record some "sse_" function declarations used in other ext function definition, e.g., svf_ext_foo(), and svf_ext_foo() used in app functions
     FunctionSetType ExtFuncsVec;
     /// Record annotations of function in extapi.bc
-    Fun2AnnoMap ExtFun2Anno;
+    Fun2AnnoMap ExtFun2Annotations;
     /// Global definition to a rep definition map
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
@@ -326,16 +326,6 @@ public:
         return it->second;
     }
 
-    std::vector<std::string> getFunctionAnnotations(const Function* fun)
-    {
-        Fun2AnnoMap::const_iterator it = ExtFun2Anno.find(fun);
-        if (it != ExtFun2Anno.end())
-            return it->second;
-        else
-            return std::vector<std::string>();
-    }
-
-
     Module* getMainLLVMModule() const
     {
         return getModule(0);
@@ -389,7 +379,7 @@ private:
     /// Invoke llvm passes to modify module
     void prePassSchedule();
     void buildSymbolTable() const;
-    void getExtAPIAnnotations(const Module* mod);
+    void collectExtFunAnnotations(const Module* mod);
     void removeUnusedExtAPIs();
 };
 
