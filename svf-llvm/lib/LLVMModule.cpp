@@ -236,7 +236,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
         SVFUtil::cast<SVFFunctionType>(
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
-        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo, ExtFun2Anno[func]);
+        func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo, getFunctionAnnotations(func));
     svfFunc->setName(func->getName().str());
     svfModule->addFunctionSet(svfFunc);
     addFunctionMap(func, svfFunc);
@@ -933,7 +933,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 {
                     extFuncs.insert(&fun);
                     // Find overwrite functions in extapi.bc
-                    std::vector<std::string> annotations = ExtFun2Anno[&fun];
+                    std::vector<std::string> annotations = getFunctionAnnotations(&fun);
                     auto it =
                         std::find_if(annotations.begin(), annotations.end(),
                                      [&](const std::string& annotation)

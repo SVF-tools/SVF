@@ -326,6 +326,15 @@ public:
         return it->second;
     }
 
+    std::vector<std::string> getFunctionAnnotations(const Function* fun)
+    {
+        Fun2AnnoMap::const_iterator it = ExtFun2Anno.find(fun);
+        if (it != ExtFun2Anno.end())
+            return it->second;
+        else
+            return std::vector<std::string>();
+    }
+
 
     Module* getMainLLVMModule() const
     {
