@@ -478,19 +478,23 @@ void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
         Function* annotatedFunc = nullptr;
 
         // Non-opague pointer, try to cast to ConstantExpr and check for BitCast
-        if (ConstantExpr* expr = SVFUtil::dyn_cast<ConstantExpr>(structAn->getOperand(0))) {
-            if (expr->getOpcode() == Instruction::BitCast) {
+        if (ConstantExpr* expr = SVFUtil::dyn_cast<ConstantExpr>(structAn->getOperand(0)))
+        {
+            if (expr->getOpcode() == Instruction::BitCast)
+            {
                 annotatedFunc = SVFUtil::dyn_cast<Function>(expr->getOperand(0));
             }
         }
 
         // Opague pointer, If the above method didn't work, try casting directly to Function
-        if (!annotatedFunc) {
+        if (!annotatedFunc)
+        {
             annotatedFunc = SVFUtil::dyn_cast<Function>(structAn->getOperand(0));
         }
 
         // Process the annotated function if it's not in the removed list
-        if (annotatedFunc && std::find(removedFuncList.begin(), removedFuncList.end(), annotatedFunc) == removedFuncList.end()) {
+        if (annotatedFunc && std::find(removedFuncList.begin(), removedFuncList.end(), annotatedFunc) == removedFuncList.end())
+        {
             newAnnotations.push_back(structAn);
         }
     }

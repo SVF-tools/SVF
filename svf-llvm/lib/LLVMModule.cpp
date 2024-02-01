@@ -807,7 +807,7 @@ void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)
         // Check if the annotation is for a function
         Function* fun = nullptr;
         GlobalVariable *annotateStr = nullptr;
-        /// Non-opaque pointer 
+        /// Non-opaque pointer
         if (ConstantExpr *expr = SVFUtil::dyn_cast<ConstantExpr>(structAn->getOperand(0)))
         {
             if (expr->getOpcode() == Instruction::BitCast && SVFUtil::isa<Function>(expr->getOperand(0)))
@@ -816,7 +816,7 @@ void LLVMModuleSet::collectExtFunAnnotations(const Module* mod)
             ConstantExpr *note = SVFUtil::cast<ConstantExpr>(structAn->getOperand(1));
             if (note->getOpcode() != Instruction::GetElementPtr)
                 continue;
-            
+
             annotateStr = SVFUtil::dyn_cast<GlobalVariable>(note->getOperand(0));
         }
         /// Opaque pointer
@@ -940,10 +940,10 @@ void LLVMModuleSet::buildFunToFunMap()
                         std::vector<std::string> annotations = ExtFun2Annotations[&fun];
                         auto it =
                             std::find_if(annotations.begin(), annotations.end(),
-                                        [&](const std::string& annotation)
+                                         [&](const std::string& annotation)
                         {
                             return annotation.find("OVERWRITE") !=
-                                std::string::npos;
+                                   std::string::npos;
                         });
                         if (it != annotations.end())
                         {
