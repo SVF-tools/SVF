@@ -351,7 +351,7 @@ protected:
     /// @}
 
 public:
-    SVFFunction(const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld, std::vector<std::string> annos);
+    SVFFunction(const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
 
@@ -466,6 +466,11 @@ public:
     inline const std::vector<std::string>& getAnnotations() const
     {
         return annotations;
+    }
+
+    inline void setAnnotations(std::vector<std::string>& annotations)
+    {
+        this->annotations = annotations;
     }
 
     inline void getExitBlocksOfLoop(const SVFBasicBlock* bb, BBList& exitbbs) const

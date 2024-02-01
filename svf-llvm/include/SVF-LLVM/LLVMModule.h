@@ -61,6 +61,7 @@ public:
     typedef Map<const SVFValue*, const Value*> SVFValue2LLVMValueMap;
     typedef Map<const Type*, SVFType*> LLVMType2SVFTypeMap;
     typedef Map<const Type*, StInfo*> Type2TypeInfoMap;
+    typedef Map<const Function*,  std::vector<std::string>> Fun2AnnoMap;
 
 private:
     static LLVMModuleSet* llvmModuleSet;
@@ -77,6 +78,8 @@ private:
     FunDefToDeclsMapTy FunDefToDeclsMap;
     /// Record some "sse_" function declarations used in other ext function definition, e.g., svf_ext_foo(), and svf_ext_foo() used in app functions
     FunctionSetType ExtFuncsVec;
+    /// Record annotations of function in extapi.bc
+    Fun2AnnoMap ExtFun2Annotations;
     /// Global definition to a rep definition map
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
@@ -323,7 +326,6 @@ public:
         return it->second;
     }
 
-
     Module* getMainLLVMModule() const
     {
         return getModule(0);
@@ -377,6 +379,8 @@ private:
     /// Invoke llvm passes to modify module
     void prePassSchedule();
     void buildSymbolTable() const;
+    void collectExtFunAnnotations(const Module* mod);
+    void removeUnusedExtAPIs();
 };
 
 } // End namespace SVF

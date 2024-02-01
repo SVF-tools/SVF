@@ -563,7 +563,13 @@ __attribute__((annotate("MEMCPY")))
 void llvm_memcpy_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
 
 __attribute__((annotate("MEMCPY")))
+void llvm_memcpy_p0_p0_i64(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
 void llvm_memcpy_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
+void llvm_memcpy_p0_p0_i32(char* dst, char* src, int sz, int flag){}
 
 __attribute__((annotate("MEMCPY")))
 void llvm_memcpy(char* dst, char* src, int sz, int flag){}
@@ -575,7 +581,13 @@ __attribute__((annotate("MEMCPY")))
 void llvm_memmove_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
 
 __attribute__((annotate("MEMCPY")))
+void llvm_memmove_p0_p0_i64(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
 void llvm_memmove_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
+
+__attribute__((annotate("MEMCPY")))
+void llvm_memmove_p0_p0_i32(char* dst, char* src, int sz, int flag){}
 
 __attribute__((annotate("MEMCPY")))
 void __memcpy_chk(char* dst, char* src, int sz, int flag){}
@@ -605,7 +617,13 @@ __attribute__((annotate("MEMSET")))
 void llvm_memset_p0i8_i32(char* dst, char elem, int sz, int flag){}
 
 __attribute__((annotate("MEMSET")))
+void llvm_memset_p0_i32(char* dst, char elem, int sz, int flag){}
+
+__attribute__((annotate("MEMSET")))
 void llvm_memset_p0i8_i64(char* dst, char elem, int sz, int flag){}
+
+__attribute__((annotate("MEMSET")))
+void llvm_memset_p0_i64(char* dst, char elem, int sz, int flag){}
 
 __attribute__((annotate("MEMSET")))
 char *__memset_chk(char * dest, int c, unsigned long destlen, int flag)
