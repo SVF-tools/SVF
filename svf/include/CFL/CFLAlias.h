@@ -88,8 +88,18 @@ public:
             if((*outedge)->getEdgeKind() == graph->getStartKind())
             {
                 // Need to Find dst addr src
-                CFLNode *vNode = graph->getGNode((*outedge)->getDstID());
-                addPts(ptr, svfir->getBaseValVar((*outedge)->getDstID()));
+                SVFVar *vNode = svfir->getGNode((*outedge)->getDstID());
+                NodeID basevNodeID;
+                // Remove svfir->getBaseValVar, SVF IR api change
+                if (vNode->hasIncomingEdges(SVFStmt::Gep))
+                {
+                    SVFStmt::SVFStmtSetTy& geps = vNode->getIncomingEdges(SVFStmt::Gep);
+                    SVFVar::iterator it = geps.begin();
+                    basevNodeID = (*it)->getSrcID();
+                }
+                else
+                    basevNodeID = vNode->getId();
+                addPts(ptr, basevNodeID);
                 for(auto inEdge = vNode->getInEdges().begin(); inEdge!=vNode->getInEdges().end(); inEdge++)
                 {
                     if((*inEdge)->getEdgeKind() == 0)

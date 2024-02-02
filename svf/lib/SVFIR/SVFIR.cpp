@@ -385,7 +385,7 @@ GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const AccessPath& ap)
  */
 NodeID SVFIR::addGepValNode(const SVFValue* curInst,const SVFValue* gepVal, const AccessPath& ap, NodeID i, const SVFType* type)
 {
-    NodeID base = getBaseValVar(getValueNode(gepVal));
+    NodeID base = getValueNode(gepVal);
     //assert(findPAGNode(i) == false && "this node should not be created before");
     assert(0==GepValObjMap[curInst].count(std::make_pair(base, ap))
            && "this node should not be created before");
@@ -509,29 +509,6 @@ NodeBS SVFIR::getFieldsAfterCollapse(NodeID id)
     }
     else
         return getAllFieldsObjVars(mem);
-}
-
-/*!
- * Get a base pointer given a pointer
- * Return the source node of its connected gep edge if this pointer has
- * Otherwise return the node id itself
- */
-NodeID SVFIR::getBaseValVar(NodeID nodeId)
-{
-    SVFVar* node  = getGNode(nodeId);
-    if (node->hasIncomingEdges(SVFStmt::Gep))
-    {
-        SVFStmt::SVFStmtSetTy& geps = node->getIncomingEdges(SVFStmt::Gep);
-
-        assert((geps.size()==1) && "one node can only be connected by at most one gep edge!");
-
-        SVFVar::iterator it = geps.begin();
-
-        assert(SVFUtil::isa<GepStmt>(*it) && "not a gep edge??");
-        return (*it)->getSrcID();
-    }
-    else
-        return nodeId;
 }
 
 /*!

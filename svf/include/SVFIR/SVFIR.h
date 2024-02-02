@@ -439,7 +439,6 @@ public:
     /// Base and Offset methods for Value and Object node
     //@{
     /// Get a base pointer node given a field pointer
-    NodeID getBaseValVar(NodeID nodeId);
     inline NodeID getBaseObjVar(NodeID id) const
     {
         return getBaseObj(id)->getId();
