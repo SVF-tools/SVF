@@ -89,7 +89,7 @@ public:
             {
                 // Need to Find dst addr src
                 CFLNode *vNode = graph->getGNode((*outedge)->getDstID());
-                addPts(ptr, svfir->getBaseValVar((*outedge)->getDstID()));
+                addPts(ptr, (*outedge)->getDstID());
                 for(auto inEdge = vNode->getInEdges().begin(); inEdge!=vNode->getInEdges().end(); inEdge++)
                 {
                     if((*inEdge)->getEdgeKind() == 0)

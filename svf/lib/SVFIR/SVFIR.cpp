@@ -512,29 +512,6 @@ NodeBS SVFIR::getFieldsAfterCollapse(NodeID id)
 }
 
 /*!
- * Get a base pointer given a pointer
- * Return the source node of its connected gep edge if this pointer has
- * Otherwise return the node id itself
- */
-NodeID SVFIR::getBaseValVar(NodeID nodeId)
-{
-    SVFVar* node  = getGNode(nodeId);
-    if (node->hasIncomingEdges(SVFStmt::Gep))
-    {
-        SVFStmt::SVFStmtSetTy& geps = node->getIncomingEdges(SVFStmt::Gep);
-
-        assert((geps.size()==1) && "one node can only be connected by at most one gep edge!");
-
-        SVFVar::iterator it = geps.begin();
-
-        assert(SVFUtil::isa<GepStmt>(*it) && "not a gep edge??");
-        return (*it)->getSrcID();
-    }
-    else
-        return nodeId;
-}
-
-/*!
  * It is used to create a dummy GepValVar during global initialization.
  */
 NodeID SVFIR::getGepValVar(const SVFValue* curInst, NodeID base, const AccessPath& ap) const
