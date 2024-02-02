@@ -122,6 +122,24 @@ add_custom_command(
 # Add a custom target for generating the LLVM bytecode file (and add it to the default build targets)
 add_custom_target(gen_extapi_ir ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc)
 
+# Define a custom command which generates the "extapi-opaque.bc" LLVM bytecode file
+add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/extapi-opaque.bc
+        COMMAND ${LLVM_CLANG} -w
+        -S
+        -c
+        -emit-llvm
+        -fno-discard-value-names
+        -Xclang -disable-O0-optnone
+        -mllvm -opaque-pointers
+        -o ${CMAKE_CURRENT_BINARY_DIR}/extapi-opaque.bc
+        ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
+        DEPENDS ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
+)
+
+# Add a custom target for generating the LLVM bytecode file (and add it to the default build targets)
+add_custom_target(gen_extapi_ir_opaque ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/extapi-opaque.bc)
+
 # Install the SvfLLVM shared library and public headers (public headers go in include/svf/SVF-LLVM)
 install(
   TARGETS SvfLLVM

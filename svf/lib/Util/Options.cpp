@@ -839,4 +839,10 @@ const Option<u32_t> Options::LoopBound(
     1
 );
 
+const Option<bool> Options::EnableOpaque(
+    "opaque",
+    "Enable opaque pointer mode.",
+    true
+);
+
 } // namespace SVF.

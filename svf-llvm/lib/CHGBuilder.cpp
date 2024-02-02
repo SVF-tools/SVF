@@ -401,17 +401,13 @@ void CHGBuilder::analyzeVTables(const Module &M)
                     int null_ptr_num = 0;
                     for (; i < vtbl->getNumOperands(); ++i)
                     {
-                        if (SVFUtil::isa<ConstantPointerNull>(vtbl->getOperand(i)))
+                        Constant* operand = vtbl->getOperand(i);
+                        if (SVFUtil::isa<ConstantPointerNull>(operand))
                         {
                             if (i > 0 && !SVFUtil::isa<ConstantPointerNull>(vtbl->getOperand(i-1)))
                             {
-                                const ConstantExpr *ce =
-                                    SVFUtil::dyn_cast<ConstantExpr>(vtbl->getOperand(i-1));
-                                if (ce->getOpcode() == Instruction::BitCast)
-                                {
-                                    const Value* bitcastValue = ce->getOperand(0);
-                                    string bitcastValueName = bitcastValue->getName().str();
-                                    if (bitcastValueName.compare(0, ztiLabel.size(), ztiLabel) == 0)
+                                auto foo = [&is_virtual, &null_ptr_num, &vtbl, &i](const Value* val) {
+                                    if (val->getName().str().compare(0, ztiLabel.size(), ztiLabel) == 0)
                                     {
                                         is_virtual = true;
                                         null_ptr_num = 1;
@@ -423,37 +419,22 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                                 break;
                                         }
                                     }
+                                };
+                                if (const ConstantExpr *ce =
+                                        SVFUtil::dyn_cast<ConstantExpr>(vtbl->getOperand(i-1)))
+                                {
+                                    if(ce->getOpcode() == Instruction::BitCast)
+                                        foo(ce->getOperand(0));
+                                } else {
+                                    // opaque pointer mode
+                                    foo(vtbl->getOperand(i - 1));
                                 }
                             }
                             continue;
                         }
-                        const ConstantExpr *ce =
-                            SVFUtil::dyn_cast<ConstantExpr>(vtbl->getOperand(i));
-                        assert(ce != nullptr && "item in vtable not constantexp or null");
-                        u32_t opcode = ce->getOpcode();
-                        assert(opcode == Instruction::IntToPtr ||
-                               opcode == Instruction::BitCast);
-                        assert(ce->getNumOperands() == 1 &&
-                               "inttptr or bitcast operand num not 1");
-                        if (opcode == Instruction::IntToPtr)
-                        {
-                            node->setMultiInheritance();
-                            ++i;
-                            break;
-                        }
-                        if (opcode == Instruction::BitCast)
-                        {
-                            const Value* bitcastValue = ce->getOperand(0);
-                            string bitcastValueName = bitcastValue->getName().str();
-                            /*
-                             * value in bitcast:
-                             * _ZTIXXX
-                             * Function
-                             * GlobalAlias (alias to other function)
-                             */
-                            assert(SVFUtil::isa<Function>(bitcastValue) ||
-                                   SVFUtil::isa<GlobalValue>(bitcastValue));
-                            if (const Function* f = SVFUtil::dyn_cast<Function>(bitcastValue))
+
+                        auto foo = [this, &virtualFunctions, &pure_abstract, &vtblClassName](const Value* operand) {
+                            if (const Function* f = SVFUtil::dyn_cast<Function>(operand))
                             {
                                 addFuncToFuncVector(virtualFunctions, f);
                                 if (f->getName().str().compare(pureVirtualFunName) == 0)
@@ -466,7 +447,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                 }
                                 struct DemangledName dname = demangle(f->getName().str());
                                 if (dname.className.size() > 0 &&
-                                        vtblClassName.compare(dname.className) != 0)
+                                    vtblClassName.compare(dname.className) != 0)
                                 {
                                     chg->addEdge(vtblClassName, dname.className, CHEdge::INHERITANCE);
                                 }
@@ -474,11 +455,11 @@ void CHGBuilder::analyzeVTables(const Module &M)
                             else
                             {
                                 if (const GlobalAlias *alias =
-                                            SVFUtil::dyn_cast<GlobalAlias>(bitcastValue))
+                                        SVFUtil::dyn_cast<GlobalAlias>(operand))
                                 {
                                     const Constant *aliasValue = alias->getAliasee();
                                     if (const Function* aliasFunc =
-                                                SVFUtil::dyn_cast<Function>(aliasValue))
+                                            SVFUtil::dyn_cast<Function>(aliasValue))
                                     {
                                         addFuncToFuncVector(virtualFunctions, aliasFunc);
                                     }
@@ -501,8 +482,8 @@ void CHGBuilder::analyzeVTables(const Module &M)
 
                                     pure_abstract &= false;
                                 }
-                                else if (bitcastValueName.compare(0, ztiLabel.size(),
-                                                                  ztiLabel) == 0)
+                                else if (operand->getName().str().compare(0, ztiLabel.size(),
+                                                                          ztiLabel) == 0)
                                 {
                                 }
                                 else
@@ -510,6 +491,31 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                     assert("what else can be in bitcast of a vtable?");
                                 }
                             }
+                        };
+
+                        if (const ConstantExpr *ce =
+                                SVFUtil::dyn_cast<ConstantExpr>(operand))
+                        {
+                            u32_t opcode = ce->getOpcode();
+                            assert(opcode == Instruction::IntToPtr ||
+                                   opcode == Instruction::BitCast);
+                            assert(ce->getNumOperands() == 1 &&
+                                   "inttptr or bitcast operand num not 1");
+                            if (opcode == Instruction::IntToPtr)
+                            {
+                                node->setMultiInheritance();
+                                ++i;
+                                break;
+                            }
+                            if (opcode == Instruction::BitCast)
+                            {
+                                const Value* bitcastValue = ce->getOperand(0);
+                                foo(bitcastValue);
+                            }
+                        } else {
+                            // opaque pointer mode
+                            // TODO: IntToPtr?
+                            foo(operand);
                         }
                     }
                     if (is_virtual && virtualFunctions.size() > 0)

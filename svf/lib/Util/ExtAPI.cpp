@@ -148,9 +148,16 @@ std::string ExtAPI::getExtBcPath()
     if (setExtBcPath(SVF_EXTAPI_DIR "/extapi.bc"))  // Based on directory & default filename
         return extBcPath;
 
-    //  4.  Get location in build tree based from `config.h` header file (if SVF was only built)
-    if (setExtBcPath(SVF_BUILD_DIR "/svf-llvm/extapi.bc"))
-        return extBcPath;
+    if (Options::EnableOpaque())
+    {
+        //  4.  Get location in build tree based from `config.h` header file (if SVF was only built)
+        if (setExtBcPath(SVF_BUILD_DIR "/svf-llvm/extapi-opaque.bc"))
+            return extBcPath;
+    } else {
+        //  4.  Get location in build tree based from `config.h` header file (if SVF was only built)
+        if (setExtBcPath(SVF_BUILD_DIR "/svf-llvm/extapi.bc")){
+            return extBcPath;}
+    }
 
     //  5.  Get location based on environment variable $ENV{SVF_DIR}
     if (setExtBcPath(getFilePath("SVF_DIR")))
