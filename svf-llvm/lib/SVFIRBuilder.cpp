@@ -1162,7 +1162,7 @@ void SVFIRBuilder::sanityCheck()
  */
 NodeID SVFIRBuilder::getGepValVar(const Value* val, const AccessPath& ap, const SVFType* elementType)
 {
-    NodeID base = pag->getBaseValVar(getValueNode(val));
+    NodeID base = getValueNode(val);
     NodeID gepval = pag->getGepValVar(curVal, base, ap);
     if (gepval==UINT_MAX)
     {
