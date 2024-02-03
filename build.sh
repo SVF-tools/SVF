@@ -15,10 +15,10 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 SVFHOME="${SCRIPT_DIR}"
 sysOS=$(uname -s)
 arch=$(uname -m)
-MacLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.0/clang+llvm-14.0.0-x86_64-apple-darwin.tar.xz"
-UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.0/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
-UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.0/clang+llvm-14.0.0-aarch64-linux-gnu.tar.xz"
-SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-14.0.0.zip"
+MacLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.7/clang+llvm-15.0.7-x86_64-apple-darwin21.0.tar.xz"
+UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.6/clang+llvm-15.0.6-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
+UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.6/clang+llvm-15.0.6-aarch64-linux-gnu.tar.xz"
+SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-15.0.6.zip"
 MacZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-osx-10.14.6.zip"
 MacArmZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.9.1/z3-4.9.1-arm64-osx-11.0.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
@@ -26,7 +26,7 @@ SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 
 # Keep LLVM version suffix for version checking and better debugging
 # keep the version consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile
-LLVMHome="llvm-14.0.0.obj"
+LLVMHome="llvm-15.0.6.obj"
 Z3Home="z3.obj"
 
 
