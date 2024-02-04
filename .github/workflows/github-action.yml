@@ -32,6 +32,7 @@ jobs:
         run: |
           ln -sfn /Applications/Xcode_12.5.1.app /Applications/Xcode.app
           brew install llvm@16
+          brew --prefix
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
