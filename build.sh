@@ -146,10 +146,11 @@ OSDisplayName=""
 #######
 if [[ $sysOS == "Darwin" ]]; then
     check_and_install_brew
-    urlZ3="$MacArmZ3"
     if [[ "$arch" == "arm64" ]]; then
+        urlZ3="$MacArmZ3"
         OSDisplayName="macOS arm64"
     else
+        urlZ3="$MacZ3"
         OSDisplayName="macOS x86"
     fi
 elif [[ $sysOS == "Linux" ]]; then
