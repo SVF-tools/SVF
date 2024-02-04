@@ -261,7 +261,6 @@ public:
     static const Option<bool> LoopAnalysis;
     static const Option<u32_t> LoopBound;
 
-    static const Option<bool> EnableOpaque;
 };
 }  // namespace SVF
 

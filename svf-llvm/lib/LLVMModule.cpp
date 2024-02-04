@@ -544,10 +544,6 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     // module instance; see the comment(s) in `buildSVFModule` and `loadExtAPIModules()`
 
     owned_ctx = std::make_unique<LLVMContext>();
-#if LLVM_VERSION_MAJOR == 14
-    if(Options::EnableOpaque())
-        owned_ctx->enableOpaquePointers();
-#endif
     for (const std::string& moduleName : moduleNameVec)
     {
         if (!LLVMUtil::isIRFile(moduleName))

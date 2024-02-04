@@ -42,10 +42,6 @@
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Statepoint.h>
 
-#include <llvm/IR/Module.h>
-#include <llvm/Support/MemoryBuffer.h>
-#include <llvm/Support/ErrorOr.h>
-
 #include <llvm/Analysis/MemoryLocation.h>
 #include <llvm/Analysis/DominanceFrontier.h>
 #include <llvm/Analysis/PostDominators.h>
