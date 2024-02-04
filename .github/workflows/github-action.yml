@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11]
+        os: [ubuntu-20.04]
         include:
           - os: [ubuntu-20.04]
             sanitizer: address
@@ -45,7 +45,7 @@ jobs:
           echo $(pwd)
           if [ "${{matrix.sanitizer}}" != "" ]; then export SVF_SANITIZER="${{matrix.sanitizer}}"; fi
           if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ]; then export SVF_COVERAGE=1; fi
-          git clone -b opaque15 "https://github.com/jumormt/Test-Suite.git";
+          git clone -b opaque16 "https://github.com/jumormt/Test-Suite.git";
           source ${{github.workspace}}/build.sh
 
       - name: ctest objtype inference
@@ -98,17 +98,17 @@ jobs:
         run:
           ctest -R cfl_tests -VV
 
-#      - name: ctest performance tests on big cruxbc with file system diff tests
-#        working-directory: ${{github.workspace}}/Release-build
-#        if: runner.os == 'Linux' && matrix.sanitizer != 'address'
-#        run:
-#          ctest -R diff-perf-cruxbc-big -VV
-#
-#      - name: ctest performance tests on small cruxbc with file system diff tests
-#        working-directory: ${{github.workspace}}/Release-build
-#        if: runner.os == 'Linux'
-#        run:
-#          ctest -R diff-perf-cruxbc-small -VV
+      - name: ctest performance tests on big cruxbc with file system diff tests
+        working-directory: ${{github.workspace}}/Release-build
+        if: runner.os == 'Linux' && matrix.sanitizer != 'address'
+        run:
+          ctest -R diff-perf-cruxbc-big -VV
+
+      - name: ctest performance tests on small cruxbc with file system diff tests
+        working-directory: ${{github.workspace}}/Release-build
+        if: runner.os == 'Linux'
+        run:
+          ctest -R diff-perf-cruxbc-small -VV
 
       - name: create-coverage-report-and-remove-system-files
         working-directory: ${{github.workspace}}/Release-build

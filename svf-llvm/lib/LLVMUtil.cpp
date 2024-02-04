@@ -412,16 +412,19 @@ u32_t LLVMUtil::getBBPredecessorNum(const BasicBlock* BB)
  */
 bool LLVMUtil::isIRFile(const std::string &filename)
 {
-    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(filename);
-    if (FileOrErr.getError())
-        return false;
-    llvm::MemoryBufferRef Buffer = FileOrErr.get()->getMemBufferRef();
-    const unsigned char *bufferStart =
-        (const unsigned char *)Buffer.getBufferStart();
-    const unsigned char *bufferEnd =
-        (const unsigned char *)Buffer.getBufferEnd();
-    return llvm::isBitcode(bufferStart, bufferEnd) ? true :
-           Buffer.getBuffer().startswith("; ModuleID =");
+    llvm::LLVMContext context;
+    llvm::SMDiagnostic err;
+
+    // Parse the input LLVM IR file into a module
+    std::unique_ptr<llvm::Module> module = llvm::parseIRFile(filename, err, context);
+
+    // Check if the parsing succeeded
+    if (!module) {
+        err.print("isIRFile", llvm::errs());
+        return false; // Not an LLVM IR file
+    }
+
+    return true; // It is an LLVM IR file
 }
 
 
@@ -505,22 +508,7 @@ void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
     ArrayType* annotationsType = ArrayType::get(ca->getType()->getElementType(), newAnnotations.size());
     Constant* newCA = ConstantArray::get(annotationsType, newAnnotations);
 
-    // Check if a global variable with the name llvm.global.annotations already exists
-    GlobalVariable* existingGlobal = module->getGlobalVariable("llvm.global.annotations");
-    if (existingGlobal)
-        // Rename the existing llvm.global.annotations to llvm.global.annotations_old
-        existingGlobal->setName("llvm.global.annotations_old");
-
-    // Create a new global variable with the updated annotations
-    GlobalVariable* newGlobal = new GlobalVariable(*module, newCA->getType(), glob->isConstant(),
-            glob->getLinkage(), newCA, "llvm.global.annotations", glob, glob->getThreadLocalMode());
-
-    // Copy other properties from the old global variable to the new one
-    newGlobal->setSection(glob->getSection());
-    newGlobal->setAlignment(llvm::MaybeAlign(glob->getAlignment()));
-
-    // Remove the old global variable
-    glob->eraseFromParent();
+    glob->setInitializer(newCA);
 }
 
 /// Get all called funcions in a parent function
