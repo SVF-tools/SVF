@@ -170,7 +170,7 @@ fi
 #######
 if [[ ! -d "$LLVM_DIR" ]]; then
     if [[ ! -d "$LLVMHome" ]]; then
-        if [[ "$sysOS" = "Darwin"]]; then
+        if [[ "$sysOS" = "Darwin" ]]; then
             echo "Installing LLVM binary for $OSDisplayName"
             brew install llvm@16
             # check whether llvm is installed
