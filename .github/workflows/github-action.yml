@@ -31,7 +31,6 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           ln -sfn /Applications/Xcode_14.2.0.app /Applications/Xcode.app
-          brew install llvm@16
 
       - name: ubuntu-setup
         if: runner.os == 'Linux'
@@ -49,7 +48,6 @@ jobs:
           if [ "${{matrix.sanitizer}}" != "" ]; then export SVF_SANITIZER="${{matrix.sanitizer}}"; fi
           if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ]; then export SVF_COVERAGE=1; fi
           git clone -b opaque16 "https://github.com/jumormt/Test-Suite.git";
-          if [ "$RUNNER_OS" == "macOS" ]; then export LLVM_DIR="/usr/local/opt/llvm@16"; fi
           source ${{github.workspace}}/build.sh
 
       - name: ctest objtype inference
