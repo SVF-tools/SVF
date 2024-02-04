@@ -11,10 +11,10 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ ubuntu-20.04, matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [ubuntu-20.04, macos-latest]
         include:
           - os: [ubuntu-20.04]
             sanitizer: address
