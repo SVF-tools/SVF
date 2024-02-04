@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ ubuntu-20.04, matrix.os }}
     strategy:
       matrix:
         os: [macos-latest]
@@ -32,7 +32,7 @@ jobs:
         run: |
           ln -sfn /Applications/Xcode_12.5.1.app /Applications/Xcode.app
           brew install llvm@16
-          export LLVM_DIR="/usr/local/opt/llvm@16/"
+
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
@@ -49,6 +49,7 @@ jobs:
           if [ "${{matrix.sanitizer}}" != "" ]; then export SVF_SANITIZER="${{matrix.sanitizer}}"; fi
           if [ "$RUNNER_OS" == "Linux" ] && [ "${{matrix.sanitizer}}" == "" ]; then export SVF_COVERAGE=1; fi
           git clone -b opaque16 "https://github.com/jumormt/Test-Suite.git";
+          if [ "$RUNNER_OS" == "macOS"]; then export LLVM_DIR="/usr/local/opt/llvm@16/"; fi
           source ${{github.workspace}}/build.sh
 
       - name: ctest objtype inference
