@@ -15,8 +15,10 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 SVFHOME="${SCRIPT_DIR}"
 sysOS=$(uname -s)
 arch=$(uname -m)
-UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.0/clang+llvm-16.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
-SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-16.0.0.zip"
+MajorLLVMVer=16
+LLVMVer=${MajorLLVMVer}.0.0
+UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
+SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 MacZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-osx-10.14.6.zip"
 MacArmZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.9.1/z3-4.9.1-arm64-osx-11.0.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
@@ -24,7 +26,7 @@ SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 
 # Keep LLVM version suffix for version checking and better debugging
 # keep the version consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile
-LLVMHome="llvm-16.0.0.obj"
+LLVMHome="llvm-${LLVMVer}.obj"
 Z3Home="z3.obj"
 
 
@@ -131,6 +133,7 @@ function check_and_install_brew {
             echo "Homebrew installation completed."
         else
             echo "Homebrew installation failed."
+            exit 1
         fi
     fi
 }
@@ -174,7 +177,7 @@ if [[ ! -d "$LLVM_DIR" ]]; then
     if [[ ! -d "$LLVMHome" ]]; then
         if [[ "$sysOS" = "Darwin" ]]; then
             echo "Installing LLVM binary for $OSDisplayName"
-            brew install llvm@16
+            brew install llvm@${MajorLLVMVer}
             # check whether llvm is installed
             if [ $? -eq 0 ]; then
                 echo "LLVM binary installation completed."
@@ -182,7 +185,7 @@ if [[ ! -d "$LLVM_DIR" ]]; then
                 echo "LLVM binary installation failed."
                 exit 1
             fi
-            export LLVM_DIR="$(brew --prefix llvm@16)"
+            export LLVM_DIR="$(brew --prefix llvm@${MajorLLVMVer})"
         else
             # everything else downloads pre-built lib includ osx "arm64"
             echo "Downloading LLVM binary for $OSDisplayName"

@@ -493,28 +493,35 @@ void CHGBuilder::analyzeVTables(const Module &M)
                             }
                         };
 
+                        /*!
+                         * vtable in llvm 16 does not have bitcast:
+                         * e.g.,
+                         * @_ZTV1B = linkonce_odr dso_local unnamed_addr constant
+                         *      { [4 x ptr] } { [4 x ptr] [ptr null, ptr @_ZTI1B, ptr @_ZN1B1fEPi, ptr @_ZN1B1gEPi] }, comdat, align 8
+                         * compared to its llvm 13 version:
+                         * @_ZTV1B = linkonce_odr dso_local unnamed_addr constant { [4 x i8*] } { [4 x i8*] [i8* null,
+                         *      i8* bitcast ({ i8*, i8*, i8* }* @_ZTI1B to i8*), i8* bitcast (void (%class.B*, i32*)* @_ZN1B1fEPi to i8*),
+                         *              i8* bitcast (void (%class.B*, i32*)* @_ZN1B1gEPi to i8*)] }, comdat, align 8
+                         *
+                         * For llvm 13, we need to cast the operand into a constant expr and then process the first operand of that constant expr
+                         * For llvm 16, things get simpler. We can directly process each operand
+                         *
+                         * for inttoptr in llvm 16, the handling method is the same as before
+                         */
                         if (const ConstantExpr *ce =
                                 SVFUtil::dyn_cast<ConstantExpr>(operand))
                         {
                             u32_t opcode = ce->getOpcode();
-                            assert(opcode == Instruction::IntToPtr ||
-                                   opcode == Instruction::BitCast);
+                            assert(opcode == Instruction::IntToPtr);
                             assert(ce->getNumOperands() == 1 &&
-                                   "inttptr or bitcast operand num not 1");
+                                   "inttptr operand num not 1");
                             if (opcode == Instruction::IntToPtr)
                             {
                                 node->setMultiInheritance();
                                 ++i;
                                 break;
                             }
-                            if (opcode == Instruction::BitCast)
-                            {
-                                const Value* bitcastValue = ce->getOperand(0);
-                                foo(bitcastValue);
-                            }
                         } else {
-                            // opaque pointer mode
-                            // TODO: IntToPtr?
                             foo(operand);
                         }
                     }
