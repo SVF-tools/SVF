@@ -112,6 +112,8 @@ jobs:
             if [ "$RUNNER_OS" == "macOS" ]; then export osVersion="osx"; fi
             echo $osVersion
             cd ./SVF-npm
+            git fetch origin
+            git rebase origin/master
             if [ ! -d "SVF-${osVersion}/svf" ]; then mkdir -p "SVF-${osVersion}/svf"; fi
             if [ ! -d "SVF-${osVersion}/svf-llvm" ]; then mkdir -p "SVF-${osVersion}/svf-llvm"; fi
             if [ ! -d "SVF-${osVersion}/Release-build/svf-llvm" ]; then mkdir -p "SVF-${osVersion}/Release-build/svf-llvm"; fi
