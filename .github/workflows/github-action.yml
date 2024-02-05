@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11]
+        os: [ubuntu-20.04, macos-latest]
         include:
           - os: [ubuntu-20.04]
             sanitizer: address
@@ -26,10 +26,12 @@ jobs:
         if: runner.os == 'macOS'
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: 12.5.1
+          xcode-version: 14.2.0
       - name: mac-setup-workaround
         if: runner.os == 'macOS'
-        run: ln -sfn /Applications/Xcode_12.5.1.app /Applications/Xcode.app
+        run: |
+          ln -sfn /Applications/Xcode_14.2.0.app /Applications/Xcode.app
+
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |

@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN set -e
 
 # Define LLVM version.
-ENV llvm_version=14.0.0
+ENV llvm_version=16.0.0
 
 # Define home directory
 ENV HOME=/home/SVF-tools

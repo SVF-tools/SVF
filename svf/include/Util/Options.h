@@ -260,6 +260,7 @@ public:
     // Loop Analysis
     static const Option<bool> LoopAnalysis;
     static const Option<u32_t> LoopBound;
+
 };
 }  // namespace SVF
 
