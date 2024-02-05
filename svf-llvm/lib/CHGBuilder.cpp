@@ -406,7 +406,8 @@ void CHGBuilder::analyzeVTables(const Module &M)
                         {
                             if (i > 0 && !SVFUtil::isa<ConstantPointerNull>(vtbl->getOperand(i-1)))
                             {
-                                auto foo = [&is_virtual, &null_ptr_num, &vtbl, &i](const Value* val) {
+                                auto foo = [&is_virtual, &null_ptr_num, &vtbl, &i](const Value* val)
+                                {
                                     if (val->getName().str().compare(0, ztiLabel.size(), ztiLabel) == 0)
                                     {
                                         is_virtual = true;
@@ -421,11 +422,13 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                     }
                                 };
                                 if (const ConstantExpr *ce =
-                                        SVFUtil::dyn_cast<ConstantExpr>(vtbl->getOperand(i-1)))
+                                            SVFUtil::dyn_cast<ConstantExpr>(vtbl->getOperand(i-1)))
                                 {
                                     if(ce->getOpcode() == Instruction::BitCast)
                                         foo(ce->getOperand(0));
-                                } else {
+                                }
+                                else
+                                {
                                     // opaque pointer mode
                                     foo(vtbl->getOperand(i - 1));
                                 }
@@ -433,7 +436,8 @@ void CHGBuilder::analyzeVTables(const Module &M)
                             continue;
                         }
 
-                        auto foo = [this, &virtualFunctions, &pure_abstract, &vtblClassName](const Value* operand) {
+                        auto foo = [this, &virtualFunctions, &pure_abstract, &vtblClassName](const Value* operand)
+                        {
                             if (const Function* f = SVFUtil::dyn_cast<Function>(operand))
                             {
                                 addFuncToFuncVector(virtualFunctions, f);
@@ -447,7 +451,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                 }
                                 struct DemangledName dname = demangle(f->getName().str());
                                 if (dname.className.size() > 0 &&
-                                    vtblClassName.compare(dname.className) != 0)
+                                        vtblClassName.compare(dname.className) != 0)
                                 {
                                     chg->addEdge(vtblClassName, dname.className, CHEdge::INHERITANCE);
                                 }
@@ -455,11 +459,11 @@ void CHGBuilder::analyzeVTables(const Module &M)
                             else
                             {
                                 if (const GlobalAlias *alias =
-                                        SVFUtil::dyn_cast<GlobalAlias>(operand))
+                                            SVFUtil::dyn_cast<GlobalAlias>(operand))
                                 {
                                     const Constant *aliasValue = alias->getAliasee();
                                     if (const Function* aliasFunc =
-                                            SVFUtil::dyn_cast<Function>(aliasValue))
+                                                SVFUtil::dyn_cast<Function>(aliasValue))
                                     {
                                         addFuncToFuncVector(virtualFunctions, aliasFunc);
                                     }
@@ -483,7 +487,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                     pure_abstract &= false;
                                 }
                                 else if (operand->getName().str().compare(0, ztiLabel.size(),
-                                                                          ztiLabel) == 0)
+                                         ztiLabel) == 0)
                                 {
                                 }
                                 else
@@ -509,7 +513,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                          * for inttoptr in llvm 16, the handling method is the same as before
                          */
                         if (const ConstantExpr *ce =
-                                SVFUtil::dyn_cast<ConstantExpr>(operand))
+                                    SVFUtil::dyn_cast<ConstantExpr>(operand))
                         {
                             u32_t opcode = ce->getOpcode();
                             assert(opcode == Instruction::IntToPtr);
@@ -521,7 +525,9 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                 ++i;
                                 break;
                             }
-                        } else {
+                        }
+                        else
+                        {
                             foo(operand);
                         }
                     }

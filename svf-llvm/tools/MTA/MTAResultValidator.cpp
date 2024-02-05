@@ -98,7 +98,8 @@ std::vector<std::string> MTAResultValidator::getStringArg(const Instruction* ins
     const CallBase* cs = LLVMUtil::getLLVMCallSite(inst);
     assert((arg_num < cs->arg_size()) && "Does not has this argument");
     const Constant* arrayinst = SVFUtil::dyn_cast<Constant>(cs->getArgOperand(arg_num));
-    if(const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs->getArgOperand(arg_num))) {
+    if(const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs->getArgOperand(arg_num)))
+    {
         arrayinst = SVFUtil::dyn_cast<Constant>(gepinst->getOperand(0));
     }
     const ConstantDataArray* cxtarray = SVFUtil::dyn_cast<ConstantDataArray>(arrayinst->getOperand(0));

@@ -419,7 +419,8 @@ bool LLVMUtil::isIRFile(const std::string &filename)
     std::unique_ptr<llvm::Module> module = llvm::parseIRFile(filename, err, context);
 
     // Check if the parsing succeeded
-    if (!module) {
+    if (!module)
+    {
         err.print("isIRFile", llvm::errs());
         return false; // Not an LLVM IR file
     }
