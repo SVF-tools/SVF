@@ -30,7 +30,7 @@
 #ifndef Z3_EXAMPLE_RELATIONSOLVER_H
 #define Z3_EXAMPLE_RELATIONSOLVER_H
 
-#include "AbstractExecution/IntervalExeState.h"
+#include "AbstractExecution/AE-Core/IntervalExeState.h"
 #include "Util/Z3Expr.h"
 
 namespace SVF

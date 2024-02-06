@@ -43,8 +43,8 @@
 #ifndef Z3_EXAMPLE_INTERVAL_DOMAIN_H
 #define Z3_EXAMPLE_INTERVAL_DOMAIN_H
 
-#include "AbstractExecution/ExeState.h"
-#include "AbstractExecution/IntervalValue.h"
+#include "AbstractExecution/AE-Core/ExeState.h"
+#include "AbstractExecution/AE-Core/IntervalValue.h"
 #include "Util/Z3Expr.h"
 
 #include <iomanip>

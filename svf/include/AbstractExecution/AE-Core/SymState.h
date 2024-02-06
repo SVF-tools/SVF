@@ -27,7 +27,7 @@
 #ifndef SVF_SYMSTATE_H
 #define SVF_SYMSTATE_H
 
-#include "AbstractExecution/ConsExeState.h"
+#include "AbstractExecution/AE-Core/ConsExeState.h"
 
 namespace SVF
 {

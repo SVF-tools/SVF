@@ -722,7 +722,7 @@ const Option<bool> Options::VtableInSVFIR(
 const Option<std::string> Options::ExtAPIPath(
     "extapi",
     "External API extapi.bc",
-    ""
+    "/Users/z5489735/2023/0106/SVF/extapi.bc"
 );
 
 const Option<bool> Options::AnderSVFG(
@@ -838,5 +838,18 @@ const Option<u32_t> Options::LoopBound(
     "Maximum number of loop",
     1
 );
+
+const Option<u32_t> Options::WidenDelay(
+    "widen-delay", "Loop Widen Delay", 3);
+const Option<u32_t> Options::Timeout(
+    "timeout", "time out (seconds), set -1 (no timeout), default 14400s",14400);
+const Option<std::string> Options::OutputName(
+    "output","output db file","output.db");
+const Option<bool> Options::BufferOverflowCheck(
+    "overflow","Buffer Overflow Detection",false);
+const Option<bool> Options::GepUnknownIdx(
+    "gep-unknown-idx","Skip Gep Unknown Index",false);
+const Option<bool> Options::RunUncallFuncs(
+    "run-uncall-fun","Skip Gep Unknown Index",false);
 
 } // namespace SVF.

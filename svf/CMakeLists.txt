@@ -10,6 +10,7 @@ target_include_directories(SvfCore
 
 # Get the source files (i.e. all *.c/*.cpp files) for SVF's subprojects and add them to SvfCore
 file(GLOB_RECURSE SVF_CORE_SOURCES lib/*.cpp)
+message ("CORESRCS: ${SVF_CORE_SOURCES}")
 target_sources(SvfCore PRIVATE ${SVF_CORE_SOURCES})
 
 # Get all of the public header files (i.e. all *.h/*.hpp files) for SVF's subprojects and add them

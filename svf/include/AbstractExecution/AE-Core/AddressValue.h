@@ -32,9 +32,10 @@
 
 #define AddressMask 0x7f000000
 #define FlippedAddressMask (AddressMask^0xffffffff)
+// the address of the black hole, getVirtualMemAddress(2);
+#define BlackHoleAddr 0x7f000000 + 2;
 
-#include "AbstractExecution/AbstractValue.h"
-#include "SVFIR/SVFIR.h"
+#include "AbstractValue.h"
 
 namespace SVF
 {
@@ -181,7 +182,7 @@ public:
 
     inline bool isTop() const override
     {
-        return *this == getVirtualMemAddress(PAG::getPAG()->getBlackHoleObj()->getId());
+        return *this == BlackHoleAddr;
     }
 
     inline bool isBottom() const override
@@ -191,7 +192,7 @@ public:
 
     inline void setTop()
     {
-        *this = getVirtualMemAddress(PAG::getPAG()->getBlackHoleObj()->getId());
+        *this = BlackHoleAddr;
     }
 
     inline void setBottom()

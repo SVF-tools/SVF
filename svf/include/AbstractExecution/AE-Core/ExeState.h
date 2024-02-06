@@ -31,9 +31,10 @@
 #ifndef Z3_EXAMPLE_EXESTATE_H
 #define Z3_EXAMPLE_EXESTATE_H
 
-#include "AbstractExecution/AddressValue.h"
-#include "AbstractExecution/NumericLiteral.h"
+#include "AbstractExecution/AE-Core/NumericLiteral.h"
+#include "AddressValue.h"
 #include "Util/Z3Expr.h"
+#include "Util/SVFUtil.h"
 
 namespace SVF
 {

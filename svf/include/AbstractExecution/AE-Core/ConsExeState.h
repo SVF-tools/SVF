@@ -26,8 +26,10 @@
 #ifndef SVF_CONSEXESTATE_H
 #define SVF_CONSEXESTATE_H
 
-#include "AbstractExecution/SingleAbsValue.h"
-#include "AbstractExecution/ExeState.h"
+#include "ExeState.h"
+#include "SingleAbsValue.h"
+
+#define NullptrID 0
 
 namespace SVF
 {
@@ -355,7 +357,7 @@ public:
     {
         VarToValMap mp;
         ConsExeState exeState(mp, SVFUtil::move(mp));
-        exeState._varToVal[PAG::getPAG()->getNullPtr()] = -1;
+        exeState._varToVal[NullptrID] = -1;
         return SVFUtil::move(exeState);
     }
 

@@ -31,8 +31,8 @@
 #ifndef Z3_EXAMPLE_IntervalValue_H
 #define Z3_EXAMPLE_IntervalValue_H
 
-#include "AbstractExecution/NumericLiteral.h"
-#include "AbstractExecution/AbstractValue.h"
+#include "AbstractExecution/AE-Core/AbstractValue.h"
+#include "AbstractExecution/AE-Core/NumericLiteral.h"
 
 namespace SVF
 {
