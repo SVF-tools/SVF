@@ -638,6 +638,7 @@ int main(int argc, char** argv)
     moduleNameVec = OptionBase::parseOptions(
         arg_num, arg_value, "Static Symbolic Execution", "[options] <input-bitcode...>"
     );
+    delete[] arg_value;
     if (SYMABS())
     {
         SymblicAbstractionTest saTest;
