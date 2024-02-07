@@ -121,8 +121,8 @@ void AE::runOnModule(SVF::SVFIR *svfModule) {
     if (Options::PStat())
     {
         _stat->performStat();
-        _stat->reportBug();
     }
+     _stat->reportBug();
 }
 
 AE::AE() {
