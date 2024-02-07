@@ -133,6 +133,10 @@ AE::AE() {
 AE::~AE() {
     delete _stat;
     delete _api;
+    delete _svfir2ExeState;
+    for (auto it: _funcToWTO)
+        delete it.second;
+
 }
 
 void AE::markRecursiveFuns() {

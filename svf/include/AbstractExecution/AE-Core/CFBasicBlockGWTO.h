@@ -55,6 +55,8 @@ public:
     {
     }
 
+    virtual ~CFBasicBlockGWTO() = default;
+
     inline void forEachSuccessor(
         const CFBasicBlockNode* node,
         std::function<void(const CFBasicBlockNode*)> func) const override
