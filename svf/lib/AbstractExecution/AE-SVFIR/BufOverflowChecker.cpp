@@ -69,6 +69,7 @@ void BufOverflowChecker::handleSVFStatement(const SVFStmt *stmt)
 void BufOverflowCheckerAPI::initExtAPIBufOverflowCheckRules() {
     //void llvm_memcpy_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
     _extAPIBufOverflowCheckRules["llvm_memcpy_p0i8_p0i8_i64"] = {{0, 2}, {1,2}};
+    //void llvm_memcpy_p0_p0_i64(char* dst, char* src, int sz, int flag){}
     _extAPIBufOverflowCheckRules["llvm_memcpy_p0_p0_i64"] = {{0, 2}, {1,2}};
     //void llvm_memcpy_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
     _extAPIBufOverflowCheckRules["llvm_memcpy_p0i8_p0i8_i32"] = {{0, 2}, {1,2}};
@@ -78,6 +79,7 @@ void BufOverflowCheckerAPI::initExtAPIBufOverflowCheckRules() {
     _extAPIBufOverflowCheckRules["llvm_memmove"] = {{0, 2}, {1,2}};
     //void llvm_memmove_p0i8_p0i8_i64(char* dst, char* src, int sz, int flag){}
     _extAPIBufOverflowCheckRules["llvm_memmove_p0i8_p0i8_i64"] = {{0, 2}, {1,2}};
+    //void llvm_memmove_p0_p0_i64(char* dst, char* src, int sz, int flag){}
     _extAPIBufOverflowCheckRules["llvm_memmove_p0_p0_i64"] = {{0, 2}, {1,2}};
     //void llvm_memmove_p0i8_p0i8_i32(char* dst, char* src, int sz, int flag){}
     _extAPIBufOverflowCheckRules["llvm_memmove_p0i8_p0i8_i32"] = {{0, 2}, {1,2}};
@@ -97,6 +99,8 @@ void BufOverflowCheckerAPI::initExtAPIBufOverflowCheckRules() {
     _extAPIBufOverflowCheckRules["llvm_memset_p0i8_i32"] = {{0, 2}};
     //void llvm_memset_p0i8_i64(char* dst, char elem, int sz, int flag){}
     _extAPIBufOverflowCheckRules["llvm_memset_p0i8_i64"] = {{0, 2}};
+    //void llvm_memset_p0_i64(char* dst, char elem, int sz, int flag){}
+    _extAPIBufOverflowCheckRules["llvm_memset_p0_i64"] = {{0, 2}};
     //char *__memset_chk(char * dest, int c, unsigned long destlen, int flag)
     _extAPIBufOverflowCheckRules["__memset_chk"] = {{0, 2}};
     //char *wmemset(wchar_t * dst, wchar_t elem, int sz, int flag) {
