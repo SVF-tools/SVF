@@ -189,7 +189,7 @@ if [[ ! -d "$LLVM_DIR" ]]; then
             # everything else downloads pre-built lib includ osx "arm64"
             echo "Downloading LLVM binary for $OSDisplayName"
             generic_download_file "$urlLLVM" llvm.tar.xz
-            check_xzb
+            check_xz
             echo "Unzipping llvm package..."
             mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
             rm llvm.tar.xz
