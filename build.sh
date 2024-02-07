@@ -185,7 +185,8 @@ if [[ ! -d "$LLVM_DIR" ]]; then
                 echo "LLVM binary installation failed."
                 exit 1
             fi
-            export LLVM_DIR="$(brew --prefix llvm@${MajorLLVMVer})"
+            mkdir -p $SVFHOME/$LLVMHome
+            ln -s $(brew --prefix llvm@${MajorLLVMVer})/* $SVFHOME/$LLVMHome
         else
             # everything else downloads pre-built lib includ osx "arm64"
             echo "Downloading LLVM binary for $OSDisplayName"
@@ -194,8 +195,8 @@ if [[ ! -d "$LLVM_DIR" ]]; then
             echo "Unzipping llvm package..."
             mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
             rm llvm.tar.xz
-            export LLVM_DIR="$SVFHOME/$LLVMHome"
         fi
+        export LLVM_DIR="$SVFHOME/$LLVMHome"
     fi
 fi
 
