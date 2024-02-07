@@ -177,7 +177,7 @@ if [[ ! -d "$LLVM_DIR" ]]; then
     if [[ ! -d "$LLVMHome" ]]; then
         if [[ "$sysOS" = "Darwin" ]]; then
             echo "Installing LLVM binary for $OSDisplayName"
-            brew install llvm@${MajorLLVMVer} --prefix=${SVFHOME}/${LLVMHome}
+            brew install llvm@${MajorLLVMVer}
             # check whether llvm is installed
             if [ $? -eq 0 ]; then
                 echo "LLVM binary installation completed."
@@ -185,6 +185,7 @@ if [[ ! -d "$LLVM_DIR" ]]; then
                 echo "LLVM binary installation failed."
                 exit 1
             fi
+            ln -s $(brew --prefix llvm@16)/* $SVFHOME/$LLVMHome
         else
             # everything else downloads pre-built lib includ osx "arm64"
             echo "Downloading LLVM binary for $OSDisplayName"
