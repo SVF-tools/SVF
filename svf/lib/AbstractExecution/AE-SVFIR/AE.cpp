@@ -118,8 +118,11 @@ void AE::runOnModule(SVF::SVFIR *svfModule) {
     // 5. Stop clock and report bugs
     _stat->endClk();
     _stat->finializeStat();
-    _stat->performStat();
-    _stat->reportBug();
+    if (Options::PStat())
+    {
+        _stat->performStat();
+        _stat->reportBug();
+    }
 }
 
 AE::AE() {
