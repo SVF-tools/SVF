@@ -185,6 +185,7 @@ if [[ ! -d "$LLVM_DIR" ]]; then
                 echo "LLVM binary installation failed."
                 exit 1
             fi
+            mkdir -p $SVFHOME/$LLVMHome
             ln -s $(brew --prefix llvm@16)/* $SVFHOME/$LLVMHome
         else
             # everything else downloads pre-built lib includ osx "arm64"
