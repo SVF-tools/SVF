@@ -177,7 +177,7 @@ if [[ ! -d "$LLVM_DIR" ]]; then
     if [[ ! -d "$LLVMHome" ]]; then
         if [[ "$sysOS" = "Darwin" ]]; then
             echo "Installing LLVM binary for $OSDisplayName"
-            brew install llvm@${MajorLLVMVer}
+            brew install llvm@${MajorLLVMVer} --prefix=${SVFHOME}/${LLVMHome}
             # check whether llvm is installed
             if [ $? -eq 0 ]; then
                 echo "LLVM binary installation completed."
@@ -185,17 +185,16 @@ if [[ ! -d "$LLVM_DIR" ]]; then
                 echo "LLVM binary installation failed."
                 exit 1
             fi
-            export LLVM_DIR="$(brew --prefix llvm@${MajorLLVMVer})"
         else
             # everything else downloads pre-built lib includ osx "arm64"
             echo "Downloading LLVM binary for $OSDisplayName"
             generic_download_file "$urlLLVM" llvm.tar.xz
-            check_xz
+            check_xzb
             echo "Unzipping llvm package..."
             mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
             rm llvm.tar.xz
-            export LLVM_DIR="$SVFHOME/$LLVMHome"
         fi
+        export LLVM_DIR="$SVFHOME/$LLVMHome"
     fi
 fi
 
