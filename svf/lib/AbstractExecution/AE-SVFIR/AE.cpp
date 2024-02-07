@@ -129,7 +129,7 @@ AE::AE() {
 /// Destructor
 AE::~AE() {
     delete _stat;
-    //delete _api;
+    delete _api;
 }
 
 void AE::markRecursiveFuns() {

@@ -281,6 +281,7 @@ public:
         _kind = AEKind::AE;
     }
 
+    virtual ~AEAPI() {}
 
     void setModule(SVFIR* svfModule) {
         _svfir = svfModule;
