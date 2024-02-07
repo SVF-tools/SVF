@@ -447,12 +447,9 @@ void BufOverflowChecker::handleICFGNode(const SVF::ICFGNode *node) {
 //
 void BufOverflowChecker::detectBufOverflow(const ICFGNode *node) {
 
-    std::cout << "Node: " << node->toString() << std::endl;
     auto *extapi = SVFUtil::dyn_cast<BufOverflowCheckerAPI>(_api);
     for (auto* stmt: node->getSVFStmts()) {
-        std::cout << "stmt: " << stmt->toString() << std::endl;
         if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt)) {
-            std::cout << gep->toString() << std::endl;
             const SVFVar* gepRhs = gep->getRHSVar();
             if (const SVFInstruction* inst = SVFUtil::dyn_cast<SVFInstruction>(gepRhs->getValue())) {
                 const ICFGNode* icfgNode = _svfir->getICFG()->getICFGNode(inst);
