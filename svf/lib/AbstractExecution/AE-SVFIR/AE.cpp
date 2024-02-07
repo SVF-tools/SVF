@@ -444,7 +444,7 @@ bool AE::hasSwitchBranchES(const SVFVar* var, s64_t succ, IntervalExeState& es) 
     }
     while(!workList.empty()) {
         const SVFStmt* stmt = workList.pop();
-        if (const CopyStmt *copy = SVFUtil::dyn_cast<CopyStmt>(stmt)) {
+        if (SVFUtil::dyn_cast<CopyStmt>(stmt)) {
             IntervalValue& copy_cond = new_es[var->getId()];
             copy_cond.meet_with(IntervalValue(value, value));
         }
@@ -740,8 +740,8 @@ void AE::handleSVFStatement(const SVFStmt *stmt) {
         _svfir2ExeState->translateBinary(binary);
     } else if (const CmpStmt *cmp = SVFUtil::dyn_cast<CmpStmt>(stmt)) {
         _svfir2ExeState->translateCmp(cmp);
-    } else if (const UnaryOPStmt *unary = SVFUtil::dyn_cast<UnaryOPStmt>(stmt)) {
-    } else if (const BranchStmt *br = SVFUtil::dyn_cast<BranchStmt>(stmt)) {
+    } else if (SVFUtil::dyn_cast<UnaryOPStmt>(stmt)) {
+    } else if (SVFUtil::dyn_cast<BranchStmt>(stmt)) {
         // branch stmt is handled in hasBranchES
     } else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt)) {
         _svfir2ExeState->translateLoad(load);
@@ -1210,7 +1210,7 @@ IntervalValue AEAPI::traceMemoryAllocationSize(const SVFValue *value) {
         else if (const SVF::SVFGlobalValue* gvalue = SVFUtil::dyn_cast<SVF::SVFGlobalValue>(value)) {
             u32_t arr_type_size = 0;
             const SVFType* svftype = gvalue->getType();
-            if (const SVFPointerType* svfPtrType = SVFUtil::dyn_cast<SVFPointerType>(svftype)) {
+            if (SVFUtil::dyn_cast<SVFPointerType>(svftype)) {
                 if(const SVFArrayType* ptrArrType = SVFUtil::dyn_cast<SVFArrayType>(getPointeeElement(_svfir->getValueNode(value))))
                     arr_type_size = ptrArrType->getByteSize();
                 else

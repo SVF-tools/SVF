@@ -446,6 +446,7 @@ void BufOverflowChecker::handleICFGNode(const SVF::ICFGNode *node) {
 
 //
 void BufOverflowChecker::detectBufOverflow(const ICFGNode *node) {
+
     std::cout << "Node: " << node->toString() << std::endl;
     auto *extapi = SVFUtil::dyn_cast<BufOverflowCheckerAPI>(_api);
     for (auto* stmt: node->getSVFStmts()) {
@@ -457,8 +458,6 @@ void BufOverflowChecker::detectBufOverflow(const ICFGNode *node) {
                 const ICFGNode* icfgNode = _svfir->getICFG()->getICFGNode(inst);
                 for (const SVFStmt* stmt2: icfgNode->getSVFStmts()) {
                     if (const GepStmt *gep2 = SVFUtil::dyn_cast<GepStmt>(stmt2)) {
-                        std::cout << "we are //throwing 1" << std::endl;
-
                         extapi->canSafelyAccessMemory(gep2->getLHSVar()->getValue(), IntervalValue(0, 0));
                     }
                 }
@@ -667,7 +666,7 @@ bool BufOverflowCheckerAPI::canSafelyAccessMemory(const SVFValue *value, const I
         else if (const SVF::SVFGlobalValue *gvalue = SVFUtil::dyn_cast<SVF::SVFGlobalValue>(value)) {
             u32_t arr_type_size = 0;
             const SVFType *svftype = gvalue->getType();
-            if (const SVFPointerType *svfPtrType = SVFUtil::dyn_cast<SVFPointerType>(svftype)) {
+            if (SVFUtil::dyn_cast<SVFPointerType>(svftype)) {
                 if (const SVFArrayType *ptrArrType = SVFUtil::dyn_cast<SVFArrayType>(
                         getPointeeElement(_svfir->getValueNode(gvalue))))
                     arr_type_size = ptrArrType->getByteSize();
