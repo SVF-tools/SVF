@@ -666,7 +666,7 @@ bool BufOverflowCheckerAPI::canSafelyAccessMemory(const SVFValue *value, const I
         else if (const SVF::SVFGlobalValue *gvalue = SVFUtil::dyn_cast<SVF::SVFGlobalValue>(value)) {
             u32_t arr_type_size = 0;
             const SVFType *svftype = gvalue->getType();
-            if (SVFUtil::dyn_cast<SVFPointerType>(svftype)) {
+            if (SVFUtil::isa<SVFPointerType>(svftype)) {
                 if (const SVFArrayType *ptrArrType = SVFUtil::dyn_cast<SVFArrayType>(
                         getPointeeElement(_svfir->getValueNode(gvalue))))
                     arr_type_size = ptrArrType->getByteSize();
