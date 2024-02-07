@@ -101,6 +101,7 @@ public:
     /// Constructor
     AE();
 
+    virtual void initExtAPI();
 
     virtual void runOnModule(SVFIR* svfModule);
 
@@ -219,7 +220,7 @@ protected:
     PTACallGraph* _callgraph;
     /// Execution State, used to store the Interval Value of every SVF variable
     SVFIR2ItvExeState* _svfir2ExeState;
-    AEAPI* _api;
+    AEAPI* _api{nullptr};
 
     ICFG* _icfg;
     AEStat* _stat;

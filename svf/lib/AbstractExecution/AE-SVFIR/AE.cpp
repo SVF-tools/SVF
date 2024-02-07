@@ -82,6 +82,11 @@ Map<s32_t, s32_t> _switch_lhsrhs_predicate = {
         {CmpStmt::Predicate::ICMP_SGE , CmpStmt::Predicate::ICMP_SLE}, // >= -> <=
 };
 
+void AE::initExtAPI()
+{
+    _api = new AEAPI(this, _stat);
+}
+
 void AE::runOnModule(SVF::SVFIR *svfModule) {
     // 1. Start clock
     _stat->startClk();
@@ -127,7 +132,6 @@ void AE::runOnModule(SVF::SVFIR *svfModule) {
 
 AE::AE() {
     _stat = new AEStat(this);
-    _api = new AEAPI(this, _stat);
 }
 /// Destructor
 AE::~AE() {

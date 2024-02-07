@@ -654,9 +654,11 @@ int main(int argc, char** argv)
     builder.updateCallGraph(callgraph);
     if (Options::BufferOverflowCheck()) {
         BufOverflowChecker ae;
+        ae.initExtAPI();
         ae.runOnModule(pag);
     } else {
         AE ae;
+        ae.initExtAPI();
         ae.runOnModule(pag);
     }
 

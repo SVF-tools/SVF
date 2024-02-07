@@ -156,6 +156,10 @@ public:
         return ae->getKind() == AEKind::BufOverflowChecker;
     }
 
+    void initExtAPI() override {
+        _api = new BufOverflowCheckerAPI(this, _stat);
+    }
+
 private:
     /**
     * handle SVF statement regarding buffer overflow checking
