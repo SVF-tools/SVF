@@ -149,7 +149,6 @@ class BufOverflowChecker: public AE {
 public:
     BufOverflowChecker() : AE() {
         _kind = AEKind::BufOverflowChecker;
-        _api = new BufOverflowCheckerAPI(this, _stat);
     }
 
     static bool classof(const AE* ae) {
