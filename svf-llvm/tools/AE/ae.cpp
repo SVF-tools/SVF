@@ -34,10 +34,8 @@
 #include "AbstractExecution/AE-Core/RelExeState.h"
 #include "AbstractExecution/AE-Core/RelationSolver.h"
 
-
-using namespace llvm;
-using namespace std;
 using namespace SVF;
+using namespace SVFUtil;
 
 
 static Option<bool> SYMABS(
@@ -60,7 +58,7 @@ public:
 
     void test_print()
     {
-        SVFUtil::outs() << "hello print\n";
+        outs() << "hello print\n";
     }
 
     IntervalESBase RSY_time(IntervalESBase& inv, const Z3Expr& phi,
@@ -71,7 +69,7 @@ public:
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
             end_time - start_time);
-        SVFUtil::outs() << "running time of RSY      : " << duration.count()
+        outs() << "running time of RSY      : " << duration.count()
                << " microseconds\n";
         return resRSY;
     }
@@ -83,7 +81,7 @@ public:
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
             end_time - start_time);
-        SVFUtil::outs() << "running time of Bilateral: " << duration.count()
+        outs() << "running time of Bilateral: " << duration.count()
                << " microseconds\n";
         return resBilateral;
     }
@@ -95,14 +93,14 @@ public:
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
             end_time - start_time);
-        SVFUtil::outs() << "running time of BS       : " << duration.count()
+        outs() << "running time of BS       : " << duration.count()
                << " microseconds\n";
         return resBS;
     }
 
     void testRelExeState1_1()
     {
-        SVFUtil::outs() << SVFUtil::sucMsg("\t SUCCESS :") << "test1_1 start\n";
+        outs() << sucMsg("\t SUCCESS :") << "test1_1 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 1];
@@ -128,7 +126,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(1, 2)}};
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
@@ -136,7 +134,7 @@ public:
 
     void testRelExeState1_2()
     {
-        SVFUtil::outs() << "test1_2 start\n";
+        outs() << "test1_2 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 1];
@@ -163,7 +161,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(0, 2)}};
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
@@ -171,7 +169,7 @@ public:
 
     void testRelExeState2_1()
     {
-        SVFUtil::outs() << "test2_1 start\n";
+        outs() << "test2_1 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 10];
@@ -201,7 +199,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10)},
@@ -213,7 +211,7 @@ public:
 
     void testRelExeState2_2()
     {
-        SVFUtil::outs() << "test2_2 start\n";
+        outs() << "test2_2 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 100];
@@ -244,7 +242,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 100)},
@@ -256,7 +254,7 @@ public:
 
     void testRelExeState2_3()
     {
-        SVFUtil::outs() << "test2_3 start\n";
+        outs() << "test2_3 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 1000];
@@ -287,7 +285,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         // ground truth
         // ground truth
@@ -300,7 +298,7 @@ public:
 
     void testRelExeState2_4()
     {
-        SVFUtil::outs() << "test2_4 start\n";
+        outs() << "test2_4 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 10000];
@@ -331,7 +329,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         // ground truth
         // ground truth
@@ -344,7 +342,7 @@ public:
 
     void testRelExeState2_5()
     {
-        SVFUtil::outs() << "test2_5 start\n";
+        outs() << "test2_5 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 100000];
@@ -375,7 +373,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         // ground truth
         // ground truth
@@ -388,7 +386,7 @@ public:
 
     void testRelExeState3_1()
     {
-        SVFUtil::outs() << "test3_1 start\n";
+        outs() << "test3_1 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [1, 10];
@@ -418,7 +416,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 10)},
@@ -430,7 +428,7 @@ public:
 
     void testRelExeState3_2()
     {
-        SVFUtil::outs() << "test3_2 start\n";
+        outs() << "test3_2 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [1, 1000];
@@ -460,7 +458,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 1000)},
@@ -472,7 +470,7 @@ public:
 
     void testRelExeState3_3()
     {
-        SVFUtil::outs() << "test3_3 start\n";
+        outs() << "test3_3 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [1, 10000];
@@ -502,7 +500,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes =
@@ -513,7 +511,7 @@ public:
 
     void testRelExeState3_4()
     {
-        SVFUtil::outs() << "test3_4 start\n";
+        outs() << "test3_4 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [1, 100000];
@@ -543,7 +541,7 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 100000)},
@@ -555,7 +553,7 @@ public:
 
     void testRelExeState4_1()
     {
-        SVFUtil::outs() << "test4_1 start\n";
+        outs() << "test4_1 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 10];
@@ -579,16 +577,16 @@ public:
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
         // IntervalExeState resRSY = rs.RSY(inv, phi);
-        SVFUtil::outs() << "rsy done\n";
+        outs() << "rsy done\n";
         // IntervalExeState resBilateral = rs.bilateral(inv, phi);
-        SVFUtil::outs() << "bilateral done\n";
+        outs() << "bilateral done\n";
         IntervalESBase resBS = rs.BS(inv, phi);
-        SVFUtil::outs() << "bs done\n";
+        outs() << "bs done\n";
         // 0:[0,10] 1:[0,10] 2:[-00,+00]
         // assert(resRSY == resBS && resBS == resBilateral);
         for (auto r : resBS.getVarToVal())
         {
-            SVFUtil::outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second << "\n";
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10)},
@@ -615,7 +613,7 @@ public:
         //        saTest.testRelExeState3_3(); /// 10000
         //        saTest.testRelExeState3_4(); /// 100000
 
-        SVFUtil::outs() << "start top\n";
+        outs() << "start top\n";
         saTest.testRelExeState4_1(); /// top
     }
 };

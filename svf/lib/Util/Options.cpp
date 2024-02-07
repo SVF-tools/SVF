@@ -722,7 +722,7 @@ const Option<bool> Options::VtableInSVFIR(
 const Option<std::string> Options::ExtAPIPath(
     "extapi",
     "External API extapi.bc",
-    "/Users/z5489735/2023/0106/SVF/extapi.bc"
+    ""
 );
 
 const Option<bool> Options::AnderSVFG(
