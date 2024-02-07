@@ -94,6 +94,10 @@ if(TARGET intrinsics_gen)
   add_dependencies(SvfLLVM intrinsics_gen)
 endif()
 
+# Ensure extapi.bc built before libSvfLLVM such that
+# we don't have to build all when building individual tools (e.g., wpa)
+add_dependencies(SvfLLVM gen_extapi_ir)
+
 # Add the targets for compiling the SvfLLVM tool binaries
 add_subdirectory(tools)
 
