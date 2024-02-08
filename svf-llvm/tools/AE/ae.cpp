@@ -30,7 +30,7 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
-#include "AE/Checkers/BufOverflowChecker.h"
+#include "AE/Svfexe/BufOverflowChecker.h"
 #include "AE/Core/RelExeState.h"
 #include "AE/Core/RelationSolver.h"
 

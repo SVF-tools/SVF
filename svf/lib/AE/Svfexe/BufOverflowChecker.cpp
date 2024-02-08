@@ -25,7 +25,7 @@
 // Created by Jiawei Wang on 2024/1/12.
 //
 
-#include "AE/Checkers/BufOverflowChecker.h"
+#include "AE/Svfexe/BufOverflowChecker.h"
 #include "SVFIR/SVFType.h"
 #include "Util/Options.h"
 #include <climits>

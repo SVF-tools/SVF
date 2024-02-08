@@ -27,7 +27,7 @@
 #include "WPA/Andersen.h"
 #include "Util/CFBasicBlockGBuilder.h"
 #include "SVFIR/SVFIR.h"
-#include "AE/Checkers/AE.h"
+#include "AE/Svfexe/AE.h"
 #include "Util/Options.h"
 #include <cmath>
 
