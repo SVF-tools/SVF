@@ -25,7 +25,7 @@
 // Created by Jiawei Wang on 2024/1/12.
 //
 
-#include "AE.h"
+#include "AE/Svfexe/AbstractExecution.h"
 
 namespace SVF
 {
@@ -101,7 +101,7 @@ class BufOverflowCheckerAPI: public AEAPI
 {
 public:
     BufOverflowCheckerAPI() = delete;
-    BufOverflowCheckerAPI(AE * ae, AEStat * stat): AEAPI(ae, stat)
+    BufOverflowCheckerAPI(AbstractExecution * ae, AEStat * stat): AEAPI(ae, stat)
     {
         initExtFunMap();
         initExtAPIBufOverflowCheckRules();
@@ -167,17 +167,15 @@ public:
     Map<std::string, std::vector<std::pair<u32_t, u32_t>>> _extAPIBufOverflowCheckRules;
 };
 
-class BufOverflowChecker: public AE
-{
+class BufOverflowChecker: public AbstractExecution {
     friend BufOverflowCheckerAPI;
 
 public:
-    BufOverflowChecker() : AE()
-    {
+    BufOverflowChecker() : AbstractExecution() {
         _kind = AEKind::BufOverflowChecker;
     }
 
-    static bool classof(const AE* ae)
+    static bool classof(const AbstractExecution* ae)
     {
         return ae->getKind() == AEKind::BufOverflowChecker;
     }

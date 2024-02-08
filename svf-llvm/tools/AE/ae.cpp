@@ -658,10 +658,9 @@ int main(int argc, char** argv)
         BufOverflowChecker ae;
         ae.initExtAPI();
         ae.runOnModule(pag);
-    }
-    else
+    } else
     {
-        AE ae;
+        AbstractExecution ae;
         ae.initExtAPI();
         ae.runOnModule(pag);
     }

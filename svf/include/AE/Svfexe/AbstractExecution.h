@@ -35,14 +35,14 @@
 
 namespace SVF
 {
-class AE;
+class AbstractExecution;
 class AEStat;
 class AEAPI;
 
 
 enum class AEKind
 {
-    AE,
+    AbstractExecution,
     BufOverflowChecker
 };
 
@@ -51,7 +51,7 @@ class AEStat : public SVFStat
 {
 public:
     void countStateSize();
-    AEStat(AE *ae): _ae(ae)
+    AEStat(AbstractExecution *ae): _ae(ae)
     {
         startTime = getClk(true);
     }
@@ -69,7 +69,7 @@ public:
     void reportBug();
 
 public:
-    AE *_ae;
+    AbstractExecution *_ae;
     s32_t count{0};
     std::string memory_usage;
     std::string memUsage;
@@ -103,8 +103,7 @@ public:
 
 };
 
-// AE: Abstract Execution
-class AE
+class AbstractExecution
 {
     friend class AEStat;
     friend class AEAPI;
@@ -112,7 +111,7 @@ class AE
 public:
     typedef SCCDetection<PTACallGraph *> CallGraphSCC;
     /// Constructor
-    AE();
+    AbstractExecution();
 
     virtual void initExtAPI();
 
@@ -120,14 +119,14 @@ public:
 
 
     /// Destructor
-    virtual ~AE();
+    virtual ~AbstractExecution();
 
     /// Program entry
     void analyse();
 
-    static bool classof(const AE* ae)
+    static bool classof(const AbstractExecution* ae)
     {
-        return ae->getKind() == AEKind::AE;
+        return ae->getKind() == AEKind::AbstractExecution;
     }
 
     AEKind getKind() const
@@ -286,7 +285,7 @@ public:
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
     static bool classof(const AEAPI* api)
     {
-        return api->getKind() == AEKind::AE;
+        return api->getKind() == AEKind::AbstractExecution;
     }
 
     /**
@@ -295,10 +294,10 @@ public:
     * @param ae Abstract Execution or its subclass
     * @param stat AEStat
     */
-    AEAPI(AE* ae, AEStat* stat): _ae(ae), _stat(stat)
+    AEAPI(AbstractExecution* ae, AEStat* stat): _ae(ae), _stat(stat)
     {
         initExtFunMap();
-        _kind = AEKind::AE;
+        _kind = AEKind::AbstractExecution;
     }
 
     virtual ~AEAPI() {}
@@ -421,7 +420,7 @@ protected:
 
 
 protected:
-    AE* _ae;
+    AbstractExecution* _ae;
     AEStat* _stat;
     SVFIR* _svfir;
     AEKind _kind;
