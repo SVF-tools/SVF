@@ -130,7 +130,8 @@ public:
     {
     }
 
-    virtual ~CFBasicBlockNode() {
+    virtual ~CFBasicBlockNode()
+    {
         for (auto edge : OutEdges)
             delete edge;
     }

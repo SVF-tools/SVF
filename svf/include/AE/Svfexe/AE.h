@@ -33,27 +33,33 @@
 #include "WPA/Andersen.h"
 #include "Util/SVFBugReport.h"
 
-namespace SVF {
+namespace SVF
+{
 class AE;
 class AEStat;
 class AEAPI;
 
 
-enum class AEKind {
+enum class AEKind
+{
     AE,
     BufOverflowChecker
 };
 
 /// AEStat: Statistic for AE
-class AEStat : public SVFStat {
+class AEStat : public SVFStat
+{
 public:
     void countStateSize();
-    AEStat(AE *ae): _ae(ae) {
+    AEStat(AE *ae): _ae(ae)
+    {
         startTime = getClk(true);
     }
-    ~AEStat() {
+    ~AEStat()
+    {
     }
-    inline std::string getMemUsage() {
+    inline std::string getMemUsage()
+    {
         u32_t vmrss, vmsize;
         return SVFUtil::getMemoryUsageKB(&vmrss, &vmsize) ? std::to_string(vmsize) + "KB" : "cannot read memory usage";
     }
@@ -70,20 +76,26 @@ public:
     std::string bugStr;
 
 
-    u32_t& getFunctionTrace() {
-        if (generalNumMap.count("Function_Trace") == 0) {
+    u32_t& getFunctionTrace()
+    {
+        if (generalNumMap.count("Function_Trace") == 0)
+        {
             generalNumMap["Function_Trace"] = 0;
         }
         return generalNumMap["Function_Trace"];
     }
-    u32_t& getBlockTrace() {
-        if (generalNumMap.count("Block_Trace") == 0) {
+    u32_t& getBlockTrace()
+    {
+        if (generalNumMap.count("Block_Trace") == 0)
+        {
             generalNumMap["Block_Trace"] = 0;
         }
         return generalNumMap["Block_Trace"];
     }
-    u32_t& getICFGNodeTrace() {
-        if (generalNumMap.count("ICFG_Node_Trace") == 0) {
+    u32_t& getICFGNodeTrace()
+    {
+        if (generalNumMap.count("ICFG_Node_Trace") == 0)
+        {
             generalNumMap["ICFG_Node_Trace"] = 0;
         }
         return generalNumMap["ICFG_Node_Trace"];
@@ -92,7 +104,8 @@ public:
 };
 
 // AE: Abstract Execution
-class AE {
+class AE
+{
     friend class AEStat;
     friend class AEAPI;
 
@@ -112,11 +125,15 @@ public:
     /// Program entry
     void analyse();
 
-    static bool classof(const AE* ae) {
+    static bool classof(const AE* ae)
+    {
         return ae->getKind() == AEKind::AE;
     }
 
-    AEKind getKind() const { return _kind; }
+    AEKind getKind() const
+    {
+        return _kind;
+    }
 
 protected:
     /// Global ICFGNode is handled at the entry of the program,
@@ -261,12 +278,14 @@ private:
 
 };
 
-class AEAPI {
+class AEAPI
+{
 public:
 
     typedef ExeState::Addrs Addrs;
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
-    static bool classof(const AEAPI* api) {
+    static bool classof(const AEAPI* api)
+    {
         return api->getKind() == AEKind::AE;
     }
 
@@ -284,11 +303,15 @@ public:
 
     virtual ~AEAPI() {}
 
-    void setModule(SVFIR* svfModule) {
+    void setModule(SVFIR* svfModule)
+    {
         _svfir = svfModule;
     }
 
-    AEKind getKind() const { return _kind; }
+    AEKind getKind() const
+    {
+        return _kind;
+    }
 
     /**
     * handle external function call

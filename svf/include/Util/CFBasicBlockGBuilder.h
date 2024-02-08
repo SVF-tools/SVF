@@ -41,7 +41,8 @@ private:
 public:
     CFBasicBlockGBuilder() : _CFBasicBlockG() {}
 
-    ~CFBasicBlockGBuilder() {
+    ~CFBasicBlockGBuilder()
+    {
         delete _CFBasicBlockG;
     }
 

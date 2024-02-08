@@ -27,53 +27,66 @@
 
 #include "AE.h"
 
-namespace SVF {
+namespace SVF
+{
 
-struct BufOverflowException: public std::exception  {
+struct BufOverflowException: public std::exception
+{
 public:
     BufOverflowException(std::string msg, u32_t allocLb,
                          u32_t allocUb, u32_t accessLb, u32_t accessUb, const SVFValue* allocVal) :
-          _msg(msg), _allocLb(allocLb), _allocUb(allocUb),
-          _accessLb(accessLb), _accessUb(accessUb), _allocVar(allocVal)  {
+        _msg(msg), _allocLb(allocLb), _allocUb(allocUb),
+        _accessLb(accessLb), _accessUb(accessUb), _allocVar(allocVal)
+    {
     }
 
-    u32_t getAllocLb() const {
+    u32_t getAllocLb() const
+    {
         return _allocLb;
     }
 
-    void setAllocLb(u32_t allocLb) {
+    void setAllocLb(u32_t allocLb)
+    {
         _allocLb = allocLb;
     }
 
-    u32_t getAllocUb() const {
+    u32_t getAllocUb() const
+    {
         return _allocUb;
     }
 
-    void setAllocUb(u32_t allocUb) {
+    void setAllocUb(u32_t allocUb)
+    {
         _allocUb = allocUb;
     }
 
-    u32_t getAccessLb() const {
+    u32_t getAccessLb() const
+    {
         return _accessLb;
     }
 
-    void setAccessLb(u32_t accessLb) {
+    void setAccessLb(u32_t accessLb)
+    {
         _accessLb = accessLb;
     }
 
-    u32_t getAccessUb() const {
+    u32_t getAccessUb() const
+    {
         return _accessUb;
     }
 
-    void setAccessUb(u32_t accessUb) {
+    void setAccessUb(u32_t accessUb)
+    {
         _accessUb = accessUb;
     }
 
-    const SVFValue* getAllocVar() const {
+    const SVFValue* getAllocVar() const
+    {
         return _allocVar;
     }
 
-    const char* what() const noexcept override {
+    const char* what() const noexcept override
+    {
         return _msg.c_str();
     }
 
@@ -84,15 +97,18 @@ protected:
     const SVFValue* _allocVar;
 };
 
-class BufOverflowCheckerAPI: public AEAPI {
+class BufOverflowCheckerAPI: public AEAPI
+{
 public:
     BufOverflowCheckerAPI() = delete;
-    BufOverflowCheckerAPI(AE * ae, AEStat * stat): AEAPI(ae, stat) {
+    BufOverflowCheckerAPI(AE * ae, AEStat * stat): AEAPI(ae, stat)
+    {
         initExtFunMap();
         initExtAPIBufOverflowCheckRules();
         _kind = AEKind::BufOverflowChecker;
     }
-    static bool classof(const AEAPI* api) {
+    static bool classof(const AEAPI* api)
+    {
         return api->getKind() == AEKind::BufOverflowChecker;
     }
 
@@ -151,19 +167,23 @@ public:
     Map<std::string, std::vector<std::pair<u32_t, u32_t>>> _extAPIBufOverflowCheckRules;
 };
 
-class BufOverflowChecker: public AE {
+class BufOverflowChecker: public AE
+{
     friend BufOverflowCheckerAPI;
 
 public:
-    BufOverflowChecker() : AE() {
+    BufOverflowChecker() : AE()
+    {
         _kind = AEKind::BufOverflowChecker;
     }
 
-    static bool classof(const AE* ae) {
+    static bool classof(const AE* ae)
+    {
         return ae->getKind() == AEKind::BufOverflowChecker;
     }
 
-    void initExtAPI() override {
+    void initExtAPI() override
+    {
         _api = new BufOverflowCheckerAPI(this, _stat);
     }
 
