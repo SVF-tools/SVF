@@ -32,7 +32,7 @@
 #define Z3_EXAMPLE_EXESTATE_H
 
 #include "AE/Core/NumericLiteral.h"
-#include "AddressValue.h"
+#include "AE/Core/AddressValue.h"
 #include "Util/Z3Expr.h"
 #include "Util/SVFUtil.h"
 
