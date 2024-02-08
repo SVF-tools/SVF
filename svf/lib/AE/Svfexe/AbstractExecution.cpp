@@ -1,4 +1,4 @@
-//===- AE.cpp -- Abstract Execution---------------------------------//
+//===- AbstractExecution.cpp -- Abstract Execution---------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -27,7 +27,7 @@
 #include "WPA/Andersen.h"
 #include "Util/CFBasicBlockGBuilder.h"
 #include "SVFIR/SVFIR.h"
-#include "AE/Svfexe/AE.h"
+#include "AE/Svfexe/AbstractExecution.h"
 #include "Util/Options.h"
 #include <cmath>
 
@@ -84,12 +84,12 @@ Map<s32_t, s32_t> _switch_lhsrhs_predicate =
     {CmpStmt::Predicate::ICMP_SGE, CmpStmt::Predicate::ICMP_SLE},  // >= -> <=
 };
 
-void AE::initExtAPI()
+void AbstractExecution::initExtAPI()
 {
     _api = new AEAPI(this, _stat);
 }
 
-void AE::runOnModule(SVF::SVFIR *svfModule)
+void AbstractExecution::runOnModule(SVF::SVFIR *svfModule)
 {
     // 1. Start clock
     _stat->startClk();
@@ -135,12 +135,12 @@ void AE::runOnModule(SVF::SVFIR *svfModule)
     _stat->reportBug();
 }
 
-AE::AE()
+AbstractExecution::AbstractExecution()
 {
     _stat = new AEStat(this);
 }
 /// Destructor
-AE::~AE()
+AbstractExecution::~AbstractExecution()
 {
     delete _stat;
     delete _api;
@@ -150,7 +150,7 @@ AE::~AE()
 
 }
 
-void AE::markRecursiveFuns()
+void AbstractExecution::markRecursiveFuns()
 {
     // detect if callgraph has cycle
     CallGraphSCC* _callGraphScc = _ander->getCallGraphSCC();
@@ -164,7 +164,7 @@ void AE::markRecursiveFuns()
 }
 
 /// Program entry
-void AE::analyse()
+void AbstractExecution::analyse()
 {
     // handle Global ICFGNode of SVFModule
     handleGlobalNode();
@@ -175,7 +175,7 @@ void AE::analyse()
 }
 
 /// handle global node
-void AE::handleGlobalNode()
+void AbstractExecution::handleGlobalNode()
 {
     IntervalExeState es;
     const ICFGNode* node = _icfg->getGlobalICFGNode();
@@ -213,7 +213,7 @@ void AE::handleGlobalNode()
 /// get execution state by merging states of predecessor blocks
 /// Scenario 1: preblock -----(intraEdge)----> block, join the preES of inEdges
 /// Scenario 2: preblock -----(callEdge)----> block
-bool AE::hasInEdgesES(const CFBasicBlockNode *block)
+bool AbstractExecution::hasInEdgesES(const CFBasicBlockNode *block)
 {
     if (isGlobalEntry(block))
     {
@@ -267,7 +267,7 @@ bool AE::hasInEdgesES(const CFBasicBlockNode *block)
     assert(false && "implement this part");
 }
 
-bool AE::isFunEntry(const SVF::CFBasicBlockNode *block)
+bool AbstractExecution::isFunEntry(const SVF::CFBasicBlockNode *block)
 {
     if (SVFUtil::isa<FunEntryICFGNode>(*block->getICFGNodes().begin()))
     {
@@ -279,7 +279,7 @@ bool AE::isFunEntry(const SVF::CFBasicBlockNode *block)
     return false;
 }
 
-bool AE::isGlobalEntry(const SVF::CFBasicBlockNode *block)
+bool AbstractExecution::isGlobalEntry(const SVF::CFBasicBlockNode *block)
 {
     if (!block->hasIncomingEdge())
         return true;
@@ -287,7 +287,7 @@ bool AE::isGlobalEntry(const SVF::CFBasicBlockNode *block)
         return false;
 }
 
-bool AE::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, IntervalExeState& es)
+bool AbstractExecution::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, IntervalExeState& es)
 {
     IntervalExeState new_es = es;
     // get cmp stmt's op0, op1, and predicate
@@ -517,7 +517,7 @@ bool AE::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, IntervalExeState& es
     return true;
 }
 
-bool AE::hasSwitchBranchES(const SVFVar* var, s64_t succ, IntervalExeState& es)
+bool AbstractExecution::hasSwitchBranchES(const SVFVar* var, s64_t succ, IntervalExeState& es)
 {
     IntervalExeState new_es = es;
     new_es.cpyItvToLocal(var->getId());
@@ -561,7 +561,7 @@ bool AE::hasSwitchBranchES(const SVFVar* var, s64_t succ, IntervalExeState& es)
     return true;
 }
 
-bool AE::hasBranchES(const IntraCFGEdge* intraEdge, IntervalExeState& es)
+bool AbstractExecution::hasBranchES(const IntraCFGEdge* intraEdge, IntervalExeState& es)
 {
     const SVFValue *cond = intraEdge->getCondition();
     NodeID cmpID = _svfir->getValueNode(cond);
@@ -587,7 +587,7 @@ bool AE::hasBranchES(const IntraCFGEdge* intraEdge, IntervalExeState& es)
     return true;
 }
 /// handle instructions in svf basic blocks
-void AE::handleBlock(const CFBasicBlockNode *block)
+void AbstractExecution::handleBlock(const CFBasicBlockNode *block)
 {
     _stat->getBlockTrace()++;
     // Get execution states from in edges
@@ -618,7 +618,7 @@ void AE::handleBlock(const CFBasicBlockNode *block)
     _postES[block] = _svfir2ExeState->getEs();
 }
 
-void AE::handleCallSite(const ICFGNode* node)
+void AbstractExecution::handleCallSite(const ICFGNode* node)
 {
     if (const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(node))
     {
@@ -649,26 +649,26 @@ void AE::handleCallSite(const ICFGNode* node)
     }
 }
 
-bool AE::isExtCall(const SVF::CallICFGNode *callNode)
+bool AbstractExecution::isExtCall(const SVF::CallICFGNode *callNode)
 {
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     return SVFUtil::isExtCall(callfun);
 }
 
-void AE::extCallPass(const SVF::CallICFGNode *callNode)
+void AbstractExecution::extCallPass(const SVF::CallICFGNode *callNode)
 {
     _callSiteStack.push_back(callNode);
     _api->handleExtAPI(callNode);
     _callSiteStack.pop_back();
 }
 
-bool AE::isRecursiveCall(const SVF::CallICFGNode *callNode)
+bool AbstractExecution::isRecursiveCall(const SVF::CallICFGNode *callNode)
 {
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     return _recursiveFuns.find(callfun) != _recursiveFuns.end();
 }
 
-void AE::recursiveCallPass(const SVF::CallICFGNode *callNode)
+void AbstractExecution::recursiveCallPass(const SVF::CallICFGNode *callNode)
 {
     SkipRecursiveCall(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
@@ -685,12 +685,12 @@ void AE::recursiveCallPass(const SVF::CallICFGNode *callNode)
     }
 }
 
-bool AE::isDirectCall(const SVF::CallICFGNode *callNode)
+bool AbstractExecution::isDirectCall(const SVF::CallICFGNode *callNode)
 {
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     return _funcToWTO.find(callfun) != _funcToWTO.end();
 }
-void AE::directCallFunPass(const SVF::CallICFGNode *callNode)
+void AbstractExecution::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     IntervalExeState preES = _svfir2ExeState->getEs();
@@ -707,13 +707,13 @@ void AE::directCallFunPass(const SVF::CallICFGNode *callNode)
     _postES[_CFBlockG->getCFBasicBlockNode(retNode->getId())] = _postES[_CFBlockG->getCFBasicBlockNode(callNode->getId())];
 }
 
-bool AE::isIndirectCall(const SVF::CallICFGNode *callNode)
+bool AbstractExecution::isIndirectCall(const SVF::CallICFGNode *callNode)
 {
     const auto callsiteMaps = _svfir->getIndirectCallsites();
     return callsiteMaps.find(callNode) != callsiteMaps.end();
 }
 
-void AE::indirectCallFunPass(const SVF::CallICFGNode *callNode)
+void AbstractExecution::indirectCallFunPass(const SVF::CallICFGNode *callNode)
 {
     const auto callsiteMaps = _svfir->getIndirectCallsites();
     NodeID call_id = callsiteMaps.at(callNode);
@@ -743,7 +743,7 @@ void AE::indirectCallFunPass(const SVF::CallICFGNode *callNode)
 
 
 
-void AE::handleICFGNode(const ICFGNode *curICFGNode)
+void AbstractExecution::handleICFGNode(const ICFGNode *curICFGNode)
 {
     _stat->getICFGNodeTrace()++;
     // handle SVF Stmt
@@ -764,7 +764,7 @@ void AE::handleICFGNode(const ICFGNode *curICFGNode)
 }
 
 /// handle wto cycle (loop)
-void AE::handleCycle(const CFBasicBlockGWTOCycle *cycle)
+void AbstractExecution::handleCycle(const CFBasicBlockGWTOCycle *cycle)
 {
     // Get execution states from in edges
     if (!hasInEdgesES(cycle->head()))
@@ -826,7 +826,7 @@ void AE::handleCycle(const CFBasicBlockGWTOCycle *cycle)
     }
 }
 
-bool AE::widenFixpointPass(const CFBasicBlockNode* cycle_head, IntervalExeState& pre_es)
+bool AbstractExecution::widenFixpointPass(const CFBasicBlockNode* cycle_head, IntervalExeState& pre_es)
 {
     // increasing iterations
     IntervalExeState new_pre_es = pre_es.widening(_postES[cycle_head]);
@@ -848,7 +848,7 @@ bool AE::widenFixpointPass(const CFBasicBlockNode* cycle_head, IntervalExeState&
     }
 }
 
-bool AE::narrowFixpointPass(const SVF::CFBasicBlockNode *cycle_head, SVF::IntervalExeState &pre_es)
+bool AbstractExecution::narrowFixpointPass(const SVF::CFBasicBlockNode *cycle_head, SVF::IntervalExeState &pre_es)
 {
     // decreasing iterations
     IntervalExeState new_pre_es = pre_es.narrowing(_postES[cycle_head]);
@@ -872,7 +872,7 @@ bool AE::narrowFixpointPass(const SVF::CFBasicBlockNode *cycle_head, SVF::Interv
 
 
 /// handle user defined function, ext function is not included.
-void AE::handleFunc(const SVFFunction *func)
+void AbstractExecution::handleFunc(const SVFFunction *func)
 {
     _stat->getFunctionTrace()++;
     CFBasicBlockGWTO* wto = _funcToWTO[func];
@@ -896,7 +896,7 @@ void AE::handleFunc(const SVFFunction *func)
 }
 
 
-void AE::handleSVFStatement(const SVFStmt *stmt)
+void AbstractExecution::handleSVFStatement(const SVFStmt *stmt)
 {
     if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
     {
@@ -955,7 +955,7 @@ void AE::handleSVFStatement(const SVFStmt *stmt)
 }
 
 
-void AE::SkipRecursiveCall(const CallICFGNode *callNode)
+void AbstractExecution::SkipRecursiveCall(const CallICFGNode *callNode)
 {
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     const RetICFGNode *retNode = callNode->getRetICFGNode();
@@ -982,7 +982,7 @@ void AE::SkipRecursiveCall(const CallICFGNode *callNode)
     SkipRecursiveFunc(callfun);
 }
 
-void AE::SkipRecursiveFunc(const SVFFunction *func)
+void AbstractExecution::SkipRecursiveFunc(const SVFFunction *func)
 {
     // handle Recursive Funcs, go throw every relevant funcs/blocks.
     // for every Call Argv, Ret , Global Vars, we make it as Top value
