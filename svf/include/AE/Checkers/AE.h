@@ -26,10 +26,10 @@
 //
 #include <exception>
 #include <string>
-#include "AbstractExecution/AE-SVFIR/SVFIR2ItvExeState.h"
+#include "AE/Checkers/SVFIR2ItvExeState.h"
 #include "Util/WorkList.h"
 #include "MSSA/SVFGBuilder.h"
-#include "AbstractExecution/AE-Core/CFBasicBlockGWTO.h"
+#include "AE/Core/CFBasicBlockGWTO.h"
 #include "WPA/Andersen.h"
 #include "Util/SVFBugReport.h"
 

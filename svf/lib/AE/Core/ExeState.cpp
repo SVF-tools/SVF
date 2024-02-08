@@ -27,8 +27,8 @@
  *
  */
 
-#include "AbstractExecution/AE-Core/ExeState.h"
-#include "AbstractExecution/AE-Core/IntervalExeState.h"
+#include "AE/Core/ExeState.h"
+#include "AE/Core/IntervalExeState.h"
 
 using namespace SVF;
 

@@ -30,9 +30,9 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 
-#include "AbstractExecution/AE-SVFIR/BufOverflowChecker.h"
-#include "AbstractExecution/AE-Core/RelExeState.h"
-#include "AbstractExecution/AE-Core/RelationSolver.h"
+#include "AE/Checkers/BufOverflowChecker.h"
+#include "AE/Core/RelExeState.h"
+#include "AE/Core/RelationSolver.h"
 
 using namespace SVF;
 using namespace SVFUtil;
