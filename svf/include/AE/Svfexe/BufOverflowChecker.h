@@ -167,11 +167,13 @@ public:
     Map<std::string, std::vector<std::pair<u32_t, u32_t>>> _extAPIBufOverflowCheckRules;
 };
 
-class BufOverflowChecker: public AbstractExecution {
+class BufOverflowChecker: public AbstractExecution
+{
     friend BufOverflowCheckerAPI;
 
 public:
-    BufOverflowChecker() : AbstractExecution() {
+    BufOverflowChecker() : AbstractExecution()
+    {
         _kind = AEKind::BufOverflowChecker;
     }
 
