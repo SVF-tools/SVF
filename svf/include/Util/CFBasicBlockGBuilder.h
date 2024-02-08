@@ -41,6 +41,10 @@ private:
 public:
     CFBasicBlockGBuilder() : _CFBasicBlockG() {}
 
+    ~CFBasicBlockGBuilder() {
+        delete _CFBasicBlockG;
+    }
+
     virtual void build(ICFG* icfg);
 
     inline CFBasicBlockGraph* getCFBasicBlockGraph()

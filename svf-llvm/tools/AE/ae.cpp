@@ -1,16 +1,42 @@
+//===- ae.cpp -- Abstract Execution -------------------------------------//
 //
-// Created by Jiawei Ren on 11/28/23.
+//                     SVF: Static Value-Flow Analysis
 //
-#include "AbstractExecution/IntervalExeState.h"
-#include "AbstractExecution/RelExeState.h"
-#include "AbstractExecution/RelationSolver.h"
-#include "SVF-LLVM/LLVMUtil.h"
-#include "Util/Z3Expr.h"
+// Copyright (C) <2013-2017>  <Yulei Sui>
+//
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//===-----------------------------------------------------------------------===//
+
+/*
+ // Abstract Execution
+ //
+ // Author: Jiawei Wang, Xiao Cheng, Jiawei Yang, Jiawei Ren, Yulei Sui
+ */
+#include "SVF-LLVM/SVFIRBuilder.h"
+#include "WPA/WPAPass.h"
+#include "Util/CommandLine.h"
 #include "Util/Options.h"
-#include <chrono>
+
+#include "AE/Svfexe/BufOverflowChecker.h"
+#include "AE/Core/RelExeState.h"
+#include "AE/Core/RelationSolver.h"
 
 using namespace SVF;
 using namespace SVFUtil;
+
 
 static Option<bool> SYMABS(
     "symabs",
@@ -32,7 +58,7 @@ public:
 
     void test_print()
     {
-        SVFUtil::outs() << "hello print\n";
+        outs() << "hello print\n";
     }
 
     IntervalESBase RSY_time(IntervalESBase& inv, const Z3Expr& phi,
@@ -42,7 +68,7 @@ public:
         IntervalESBase resRSY = rs.RSY(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                            end_time - start_time);
+            end_time - start_time);
         outs() << "running time of RSY      : " << duration.count()
                << " microseconds\n";
         return resRSY;
@@ -54,7 +80,7 @@ public:
         IntervalESBase resBilateral = rs.bilateral(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                            end_time - start_time);
+            end_time - start_time);
         outs() << "running time of Bilateral: " << duration.count()
                << " microseconds\n";
         return resBilateral;
@@ -66,7 +92,7 @@ public:
         IntervalESBase resBS = rs.BS(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                            end_time - start_time);
+            end_time - start_time);
         outs() << "running time of BS       : " << duration.count()
                << " microseconds\n";
         return resBS;
@@ -74,7 +100,7 @@ public:
 
     void testRelExeState1_1()
     {
-        SVFUtil::outs() << sucMsg("\t SUCCESS :") << "test1_1 start\n";
+        outs() << sucMsg("\t SUCCESS :") << "test1_1 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 1];
@@ -108,7 +134,7 @@ public:
 
     void testRelExeState1_2()
     {
-        SVFUtil::outs() << "test1_2 start\n";
+        outs() << "test1_2 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 1];
@@ -143,7 +169,7 @@ public:
 
     void testRelExeState2_1()
     {
-        SVFUtil::outs() << "test2_1 start\n";
+        outs() << "test2_1 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 10];
@@ -177,15 +203,15 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10)},
-            {1, IntervalValue(0, 10)},
-            {2, IntervalValue(0, 0)}
+                                                   {1, IntervalValue(0, 10)},
+                                                   {2, IntervalValue(0, 0)}
         };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_2()
     {
-        SVFUtil::outs() << "test2_2 start\n";
+        outs() << "test2_2 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 100];
@@ -220,15 +246,15 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 100)},
-            {1, IntervalValue(0, 100)},
-            {2, IntervalValue(0, 0)}
+                                                   {1, IntervalValue(0, 100)},
+                                                   {2, IntervalValue(0, 0)}
         };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_3()
     {
-        SVFUtil::outs() << "test2_3 start\n";
+        outs() << "test2_3 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 1000];
@@ -264,15 +290,15 @@ public:
         // ground truth
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 1000)},
-            {1, IntervalValue(0, 1000)},
-            {2, IntervalValue(0, 0)}
+                                                   {1, IntervalValue(0, 1000)},
+                                                   {2, IntervalValue(0, 0)}
         };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_4()
     {
-        SVFUtil::outs() << "test2_4 start\n";
+        outs() << "test2_4 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 10000];
@@ -308,15 +334,15 @@ public:
         // ground truth
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10000)},
-            {1, IntervalValue(0, 10000)},
-            {2, IntervalValue(0, 0)}
+                                                   {1, IntervalValue(0, 10000)},
+                                                   {2, IntervalValue(0, 0)}
         };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_5()
     {
-        SVFUtil::outs() << "test2_5 start\n";
+        outs() << "test2_5 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 100000];
@@ -352,15 +378,15 @@ public:
         // ground truth
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 100000)},
-            {1, IntervalValue(0, 100000)},
-            {2, IntervalValue(0, 0)}
+                                                   {1, IntervalValue(0, 100000)},
+                                                   {2, IntervalValue(0, 0)}
         };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState3_1()
     {
-        SVFUtil::outs() << "test3_1 start\n";
+        outs() << "test3_1 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [1, 10];
@@ -394,15 +420,15 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 10)},
-            {1, IntervalValue(1, 10)},
-            {2, IntervalValue(1, 1)}
+                                                   {1, IntervalValue(1, 10)},
+                                                   {2, IntervalValue(1, 1)}
         };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState3_2()
     {
-        SVFUtil::outs() << "test3_2 start\n";
+        outs() << "test3_2 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [1, 1000];
@@ -436,15 +462,15 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 1000)},
-            {1, IntervalValue(1, 1000)},
-            {2, IntervalValue(1, 1)}
+                                                   {1, IntervalValue(1, 1000)},
+                                                   {2, IntervalValue(1, 1)}
         };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState3_3()
     {
-        SVFUtil::outs() << "test3_3 start\n";
+        outs() << "test3_3 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [1, 10000];
@@ -478,14 +504,14 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes =
-        Map<u32_t, IntervalValue>({{0, IntervalValue(1, 10000)},
-            {1, IntervalValue(1, 10000)},
-            {2, IntervalValue(1, 1)}});
+            Map<u32_t, IntervalValue>({{0, IntervalValue(1, 10000)},
+                                       {1, IntervalValue(1, 10000)},
+                                       {2, IntervalValue(1, 1)}});
     }
 
     void testRelExeState3_4()
     {
-        SVFUtil::outs() << "test3_4 start\n";
+        outs() << "test3_4 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [1, 100000];
@@ -519,15 +545,15 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 100000)},
-            {1, IntervalValue(1, 100000)},
-            {2, IntervalValue(1, 1)}
+                                                   {1, IntervalValue(1, 100000)},
+                                                   {2, IntervalValue(1, 1)}
         };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState4_1()
     {
-        SVFUtil::outs() << "test4_1 start\n";
+        outs() << "test4_1 start\n";
         IntervalESBase itv;
         RelExeState relation;
         // var0 := [0, 10];
@@ -564,8 +590,8 @@ public:
         }
         // ground truth
         IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10)},
-            {1, IntervalValue(0, 10)},
-            {2, IntervalValue(IntervalValue::minus_infinity(), IntervalValue::plus_infinity())}
+                                                   {1, IntervalValue(0, 10)},
+                                                   {2, IntervalValue(IntervalValue::minus_infinity(), IntervalValue::plus_infinity())}
         };
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
@@ -579,29 +605,64 @@ public:
         saTest.testRelExeState2_1();
         saTest.testRelExeState2_2();
         saTest.testRelExeState2_3();
-//        saTest.testRelExeState2_4(); /// 10000
-//        saTest.testRelExeState2_5(); /// 100000
+        //        saTest.testRelExeState2_4(); /// 10000
+        //        saTest.testRelExeState2_5(); /// 100000
 
         saTest.testRelExeState3_1();
         saTest.testRelExeState3_2();
-//        saTest.testRelExeState3_3(); /// 10000
-//        saTest.testRelExeState3_4(); /// 100000
+        //        saTest.testRelExeState3_3(); /// 10000
+        //        saTest.testRelExeState3_4(); /// 100000
 
         outs() << "start top\n";
         saTest.testRelExeState4_1(); /// top
     }
 };
 
+
 int main(int argc, char** argv)
 {
+    int arg_num = 0;
+    int extraArgc = 3;
+    char **arg_value = new char *[argc + extraArgc];
+    for (; arg_num < argc; ++arg_num) {
+        arg_value[arg_num] = argv[arg_num];
+    }
+    // add extra options
+    int orgArgNum = arg_num;
+    arg_value[arg_num++] = (char*) "-model-consts=true";
+    arg_value[arg_num++] = (char*) "-model-arrays=true";
+    arg_value[arg_num++] = (char*) "-pre-field-sensitive=false";
+    assert(arg_num == (orgArgNum + extraArgc) && "more extra arguments? Change the value of extraArgc");
+
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
-                        argc, argv, "Source-Sink Bug Detector", "[options] <input-bitcode...>"
-                    );
+        arg_num, arg_value, "Static Symbolic Execution", "[options] <input-bitcode...>"
+    );
+    delete[] arg_value;
     if (SYMABS())
     {
         SymblicAbstractionTest saTest;
         saTest.testsValidation();
+        return 0;
     }
+
+    SVFModule *svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    SVFIRBuilder builder(svfModule);
+    SVFIR* pag = builder.build();
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
+    PTACallGraph* callgraph = ander->getPTACallGraph();
+    builder.updateCallGraph(callgraph);
+    if (Options::BufferOverflowCheck()) {
+        BufOverflowChecker ae;
+        ae.initExtAPI();
+        ae.runOnModule(pag);
+    } else {
+        AE ae;
+        ae.initExtAPI();
+        ae.runOnModule(pag);
+    }
+
+    LLVMModuleSet::releaseLLVMModuleSet();
+
     return 0;
 }

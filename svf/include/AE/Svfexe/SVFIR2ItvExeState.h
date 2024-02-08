@@ -30,11 +30,11 @@
 #ifndef Z3_EXAMPLE_SVFIR2ITVEXESTATE_H
 #define Z3_EXAMPLE_SVFIR2ITVEXESTATE_H
 
+#include "AE/Core/ExeState.h"
+#include "AE/Core/IntervalExeState.h"
+#include "AE/Core/IntervalValue.h"
+#include "AE/Core/RelExeState.h"
 #include "SVFIR/SVFIR.h"
-#include "AbstractExecution/ExeState.h"
-#include "AbstractExecution/IntervalExeState.h"
-#include "AbstractExecution/IntervalValue.h"
-#include "AbstractExecution/RelExeState.h"
 
 namespace SVF
 {
