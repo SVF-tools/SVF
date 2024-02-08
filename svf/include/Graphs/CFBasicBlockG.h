@@ -258,49 +258,6 @@ public:
     }
     //@}
 
-    /// Iterators used for SCC detection, overwrite it in child class if necessory
-    //@{
-    virtual inline iterator directOutEdgeBegin()
-    {
-        return OutEdges.begin();
-    }
-
-    virtual inline iterator directOutEdgeEnd()
-    {
-        return OutEdges.end();
-    }
-
-    virtual inline iterator directInEdgeBegin()
-    {
-        return InEdges.begin();
-    }
-
-    virtual inline iterator directInEdgeEnd()
-    {
-        return InEdges.end();
-    }
-
-    virtual inline const_iterator directOutEdgeBegin() const
-    {
-        return OutEdges.begin();
-    }
-
-    virtual inline const_iterator directOutEdgeEnd() const
-    {
-        return OutEdges.end();
-    }
-
-    virtual inline const_iterator directInEdgeBegin() const
-    {
-        return InEdges.begin();
-    }
-
-    virtual inline const_iterator directInEdgeEnd() const
-    {
-        return InEdges.end();
-    }
-    //@}
-
     /// Add incoming and outgoing edges
     //@{
     inline bool addIncomingEdge(CFBasicBlockEdge *inEdge)

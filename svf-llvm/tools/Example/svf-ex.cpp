@@ -37,39 +37,6 @@
 using namespace std;
 using namespace SVF;
 
-/*!
- * An example to query alias results of two LLVM values
- */
-SVF::AliasResult aliasQuery(PointerAnalysis* pta, SVFValue* v1, SVFValue* v2)
-{
-    return pta->alias(v1,v2);
-}
-
-/*!
- * An example to print points-to set of an LLVM value
- */
-std::string printPts(PointerAnalysis* pta, SVFValue* val)
-{
-
-    std::string str;
-    std::stringstream rawstr(str);
-
-    NodeID pNodeId = pta->getPAG()->getValueNode(val);
-    const PointsTo& pts = pta->getPts(pNodeId);
-    for (PointsTo::iterator ii = pts.begin(), ie = pts.end();
-            ii != ie; ii++)
-    {
-        rawstr << " " << *ii << " ";
-        PAGNode* targetObj = pta->getPAG()->getGNode(*ii);
-        if(targetObj->hasValue())
-        {
-            rawstr << "(" << targetObj->getValue()->toString() << ")\t ";
-        }
-    }
-
-    return rawstr.str();
-
-}
 
 /*!
  * An example to query/collect all SVFStmt from a ICFGNode (iNode)
@@ -165,11 +132,13 @@ void traverseOnICFG(ICFG* icfg, const ICFGNode* iNode)
 /*!
  * An example to query/collect all the uses of a definition of a value along value-flow graph (VFG)
  */
-void traverseOnVFG(const SVFG* vfg, SVFValue* val)
+void traverseOnVFG(const SVFG* vfg, const SVFValue* val)
 {
     SVFIR* pag = SVFIR::getPAG();
 
     PAGNode* pNode = pag->getGNode(pag->getValueNode(val));
+    if (!vfg->hasDefSVFGNode(pNode))
+        return;
     const VFGNode* vNode = vfg->getDefSVFGNode(pNode);
     FIFOWorkList<const VFGNode*> worklist;
     Set<const VFGNode*> visited;
@@ -243,11 +212,16 @@ int main(int argc, char ** argv)
 
     /// Sparse value-flow graph (SVFG)
     SVFGBuilder svfBuilder(true);
-    //SVFG* svfg =
-    svfBuilder.buildFullSVFG(ander);
+    SVFG* svfg = svfBuilder.buildFullSVFG(ander);
+    for (const auto &it : *svfg)
+    {
+        const SVFGNode * node = it.second;
+        if (node->getValue())
+            traverseOnVFG(svfg, node->getValue());
+    }
 
     /// Collect uses of an LLVM Value
-    /// traverseOnVFG(svfg, value);
+
 
 
     /// Collect all successor nodes on ICFG
@@ -255,6 +229,7 @@ int main(int argc, char ** argv)
     {
         const ICFGNode* node = it.second;
         traverseOnICFG(icfg, node);
+        traverseOnSVFStmt(node);
     }
 
     // clean up memory
