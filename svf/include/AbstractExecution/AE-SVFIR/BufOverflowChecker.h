@@ -73,6 +73,11 @@ public:
         return _allocVar;
     }
 
+    const char* what() const noexcept override {
+        return _msg.c_str();
+    }
+
+
 protected:
     std::string _msg;
     u32_t _allocLb, _allocUb, _accessLb, _accessUb;
@@ -118,15 +123,17 @@ public:
     * e.g. strcpy(dst, src), if dst is shorter than src, we will throw buffer overflow
     *
     * @param call call node whose callee is strcpy-like external function
+    * @return true if the buffer overflow is detected
     */
-    void detectStrcpy(const CallICFGNode *call);
+    bool detectStrcpy(const CallICFGNode *call);
     /**
     * detect buffer overflow from strcat like apis
     * e.g. strcat(dst, src), if dst is shorter than src, we will throw buffer overflow
     *
     * @param call call node whose callee is strcpy-like external function
+    * @return true if the buffer overflow is detected
     */
-    void detectStrcat(const CallICFGNode *call);
+    bool detectStrcat(const CallICFGNode *call);
 
     /**
      * detect buffer overflow by giving a var and a length
@@ -135,8 +142,9 @@ public:
      *
      * @param value the value of the buffer overflow checkpoint
      * @param len the length of the buffer overflow checkpoint
+     * @return true if the buffer overflow is detected
      */
-    bool canSafelyAccessMemory(const SVFValue *value, const IntervalValue &len);
+    bool canSafelyAccessMemory(const SVFValue *value, const IntervalValue &len, const ICFGNode *curNode);
 
 
     Map<NodeID, const GepStmt*> _addrToGep;
@@ -178,17 +186,17 @@ private:
     * check buffer overflow at ICFGNode which is a checkpoint
     *
     * @param node ICFGNode
+    * @return true if the buffer overflow is detected
     */
-    void detectBufOverflow(const ICFGNode *node);
+    bool detectBufOverflow(const ICFGNode *node);
 
     /**
     * add buffer overflow bug to recoder
     *
     * @param e the exception that is thrown by BufOverflowChecker
-    * @param inst instruction that causes the exception
     * @param node ICFGNode that causes the exception
     */
-    void addBugToRecoder(const BufOverflowException& e, const SVFInstruction *inst, const ICFGNode* node);
+    void addBugToRecoder(const BufOverflowException& e, const ICFGNode* node);
 
 
 };

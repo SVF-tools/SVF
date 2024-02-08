@@ -938,7 +938,8 @@ void AEAPI::initExtFunMap() {
         u32_t rhs = _ae->_svfir2ExeState->getEs()[rhs_id].lb().getNumeral(); \
         s32_t res = FUNC_NAME(rhs);            \
         u32_t lhsId = _svfir->getValueNode(cs.getInstruction()); \
-        _ae->_svfir2ExeState->getEs()[lhsId] = IntervalValue(res); \
+        _ae->_svfir2ExeState->getEs()[lhsId] = IntervalValue(res);           \
+        return; \
     };                              \
     _func_map[#FUNC_NAME] = sse_##FUNC_NAME;  \
 
@@ -973,6 +974,7 @@ void AEAPI::initExtFunMap() {
             SVFUtil::errs() <<"svf_assert Fail. " << cs.getInstruction()->toString() << "\n";
             assert(false);
         }
+        return;
     };
     _func_map["svf_assert"] = sse_svf_assert;
 
@@ -984,6 +986,7 @@ void AEAPI::initExtFunMap() {
         assert(es.inVarToValTable(num_id) && "print() should pass integer");
         IntervalValue itv = es[num_id];
         std::cout << "Text: " << text <<", Value: " << cs.getArgument(0)->toString() << ", PrintVal: " << itv.toString() << std::endl;
+        return;
     };
     _func_map["svf_print"] = svf_print;
 
@@ -1064,6 +1067,7 @@ void AEAPI::handleExtAPI(const CallICFGNode *call) {
     else {
 
     }
+    return;
 }
 
 void AEAPI::collectCheckPoint() {

@@ -112,14 +112,14 @@ void BufOverflowCheckerAPI::initExtAPIBufOverflowCheckRules() {
 }
 
 
-void BufOverflowCheckerAPI::detectStrcpy(const CallICFGNode *call)
+bool BufOverflowCheckerAPI::detectStrcpy(const CallICFGNode *call)
 {
     CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
     const SVFValue* arg0Val = cs.getArgument(0);
     const SVFValue* arg1Val = cs.getArgument(1);
     IntervalValue strLen = getStrlen(arg1Val);
     // no need to -1, since it has \0 as the last byte
-    canSafelyAccessMemory(arg0Val, strLen);
+    return canSafelyAccessMemory(arg0Val, strLen, call);
 }
 
 void BufOverflowCheckerAPI::initExtFunMap() {
@@ -131,7 +131,9 @@ void BufOverflowCheckerAPI::initExtFunMap() {
         IntervalExeState &es = ae->_svfir2ExeState->getEs();
         u32_t dst_id = _svfir->getValueNode(cs.getArgument(1));
         if (!ae->_svfir2ExeState->inVarToAddrsTable(dst_id)) {
-            throw BufOverflowException("scanf may cause buffer overflow.\n", 0, 0, 0, 0, cs.getArgument(1));
+            BufOverflowException bug("scanf may cause buffer overflow.\n", 0, 0, 0, 0, cs.getArgument(1));
+            ae->addBugToRecoder(bug, _svfir->getICFG()->getICFGNode(cs.getInstruction()));
+            return;
         } else {
             Addrs Addrs = ae->_svfir2ExeState->getAddrs(dst_id);
             for (auto vaddr: Addrs) {
@@ -148,7 +150,9 @@ void BufOverflowCheckerAPI::initExtFunMap() {
         IntervalExeState &es = ae->_svfir2ExeState->getEs();
         u32_t dst_id = _svfir->getValueNode(cs.getArgument(2));
         if (!ae->_svfir2ExeState->inVarToAddrsTable(dst_id)) {
-             BufOverflowException("scanf may cause buffer overflow.\n", 0, 0, 0, 0, cs.getArgument(2));
+            BufOverflowException bug("scanf may cause buffer overflow.\n", 0, 0, 0, 0, cs.getArgument(2));
+            ae->addBugToRecoder(bug, _svfir->getICFG()->getICFGNode(cs.getInstruction()));
+            return;
         } else {
             Addrs Addrs = ae->_svfir2ExeState->getAddrs(dst_id);
             for (auto vaddr: Addrs) {
@@ -177,7 +181,7 @@ void BufOverflowCheckerAPI::initExtFunMap() {
         IntervalValue block_count = es[block_count_id];
         IntervalValue block_size = es[block_size_id];
         IntervalValue block_byte = block_count * block_size;
-        canSafelyAccessMemory(cs.getArgument(0), block_byte);
+        canSafelyAccessMemory(cs.getArgument(0), block_byte, _svfir->getICFG()->getICFGNode(cs.getInstruction()));
     };
     _func_map["fread"] = sse_fread;
 
@@ -204,12 +208,17 @@ void BufOverflowCheckerAPI::initExtFunMap() {
             // assert(false && "we cannot support this type");
         }
         IntervalValue size = es[size_id] * IntervalValue(elemSize) - IntervalValue(1);
-        canSafelyAccessMemory(cs.getArgument(0), size);
         if (!es.inVarToAddrsTable(dst_id)) {
-            if (Options::BufferOverflowCheck()) {}
-                throw BufOverflowException("snprintf dst_id or dst is not defined nor initializesd.\n", 0, 0, 0, 0, cs.getArgument(0));
+            if (Options::BufferOverflowCheck())
+            {
+                BufOverflowException bug(
+                    "snprintf dst_id or dst is not defined nor initializesd.\n",
+                    0, 0, 0, 0, cs.getArgument(0));
+                ae->addBugToRecoder(bug, _svfir->getICFG()->getICFGNode(cs.getInstruction()));
+                return;
+            }
         }
-        canSafelyAccessMemory(cs.getArgument(0), size);
+        canSafelyAccessMemory(cs.getArgument(0), size, _svfir->getICFG()->getICFGNode(cs.getInstruction()));
     };
     _func_map["__snprintf_chk"] = sse_snprintf;
     _func_map["__vsprintf_chk"] = sse_sprintf;
@@ -233,7 +242,7 @@ void BufOverflowCheckerAPI::initExtFunMap() {
 
         u32_t num = (u32_t) es[num_id].getNumeral();
         std::string snum = std::to_string(num);
-        canSafelyAccessMemory(cs.getArgument(1), IntervalValue((s32_t)snum.size()));
+        canSafelyAccessMemory(cs.getArgument(1), IntervalValue((s32_t)snum.size()), _svfir->getICFG()->getICFGNode(cs.getInstruction()));
     };
     _func_map["itoa"] = sse_itoa;
 
@@ -265,9 +274,9 @@ void BufOverflowCheckerAPI::initExtFunMap() {
         IntervalExeState &es = ae->_svfir2ExeState->getEs();
         u32_t len_id = _svfir->getValueNode(cs.getArgument(2));
         IntervalValue len = es[len_id] - IntervalValue(1);
-        canSafelyAccessMemory(cs.getArgument(1), len);
         u32_t lhsId = _svfir->getValueNode(cs.getInstruction());
         es[lhsId] = len;
+        canSafelyAccessMemory(cs.getArgument(1), len, _svfir->getICFG()->getICFGNode(cs.getInstruction()));;
     };
     _func_map["recv"] = sse_recv;
     _func_map["__recv"] = sse_recv;
@@ -284,18 +293,17 @@ void BufOverflowCheckerAPI::initExtFunMap() {
             val = IntervalValue(0);
             assert(false && "SAFE_BUFACCESS size is bottom");
         }
-        try {
-            canSafelyAccessMemory(cs.getArgument(0), val);
+        bool isSafe = canSafelyAccessMemory(cs.getArgument(0), val, _svfir->getICFG()->getICFGNode(cs.getInstruction()));
+        if (isSafe) {
+            std::cout << "safe buffer access success\n";
+            return;
         }
-        catch(BufOverflowException& e) {
-            // it is safe buf access label, if reach here, it is wrongly labeled.
+        else {
             std::string err_msg = "this SAFE_BUFACCESS should be a safe access but detected buffer overflow. Pos: ";
             err_msg += cs.getInstruction()->getSourceLoc();
             std::cerr << err_msg << std::endl;
             assert(false);
-            return;
         }
-        std::cout << "safe buffer access success\n";
     };
     _func_map["SAFE_BUFACCESS"] = safe_bufaccess;
 
@@ -311,19 +319,17 @@ void BufOverflowCheckerAPI::initExtFunMap() {
         if (val.isBottom()) {
             assert(false && "UNSAFE_BUFACCESS size is bottom");
         }
-        try {
-            canSafelyAccessMemory(cs.getArgument(0), val);
-        }
-        catch(BufOverflowException& e) {
-            // it is unsafe buf access label, if reach here, it is truely labeled.
+        bool isSafe = canSafelyAccessMemory(cs.getArgument(0), val, _svfir->getICFG()->getICFGNode(cs.getInstruction()));
+        if (!isSafe) {
             std::cout << "detect buffer overflow success\n";
             return;
+        } else {
+            // if it is safe, it means it is wrongly labeled, assert false.
+            std::string err_msg = "this UNSAFE_BUFACCESS should be a buffer overflow but not detected. Pos: ";
+            err_msg += cs.getInstruction()->getSourceLoc();
+            std::cerr << err_msg << std::endl;
+            assert(false);
         }
-        // if it is safe, it means it is wrongly labeled, assert false.
-        std::string err_msg = "this UNSAFE_BUFACCESS should be a buffer overflow but not detected. Pos: ";
-        err_msg += cs.getInstruction()->getSourceLoc();
-        std::cerr << err_msg << std::endl;
-        assert(false);
     };
     _func_map["UNSAFE_BUFACCESS"] = unsafe_bufaccess;
 
@@ -332,7 +338,7 @@ void BufOverflowCheckerAPI::initExtFunMap() {
     _checkpoint_names.insert("UNSAFE_BUFACCESS");
 }
 
-void BufOverflowCheckerAPI::detectStrcat(const CallICFGNode *call)
+bool BufOverflowCheckerAPI::detectStrcat(const CallICFGNode *call)
 {
     BufOverflowChecker* ae = SVFUtil::dyn_cast<BufOverflowChecker>(_ae);
     const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
@@ -351,7 +357,7 @@ void BufOverflowCheckerAPI::detectStrcat(const CallICFGNode *call)
         IntervalValue strLen0 = getStrlen(arg0Val);
         IntervalValue strLen1 = getStrlen(arg1Val);
         IntervalValue totalLen = strLen0 + strLen1;
-        canSafelyAccessMemory(arg0Val, totalLen);
+        return canSafelyAccessMemory(arg0Val, totalLen, call);
     } else if (std::find(strncatGroup.begin(), strncatGroup.end(), fun->getName()) != strncatGroup.end()) {
         CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
         const SVFValue* arg0Val = cs.getArgument(0);
@@ -359,7 +365,7 @@ void BufOverflowCheckerAPI::detectStrcat(const CallICFGNode *call)
         IntervalValue arg2Num = ae->_svfir2ExeState->getEs()[_svfir->getValueNode(arg2Val)];
         IntervalValue strLen0 = getStrlen(arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
-        canSafelyAccessMemory(arg0Val, totalLen);
+        return canSafelyAccessMemory(arg0Val, totalLen, call);
     } else {
         assert(false && "unknown strcat function, please add it to strcatGroup or strncatGroup");
     }
@@ -401,7 +407,7 @@ void BufOverflowCheckerAPI::handleExtAPI(const CallICFGNode *call) {
         // loop the args and check the offset
         for (auto arg: args) {
             IntervalValue offset = ae->_svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(arg.second))] - IntervalValue(1);
-            canSafelyAccessMemory(cs.getArgument(arg.first), offset);
+            canSafelyAccessMemory(cs.getArgument(arg.first), offset, call);
         }
     }
         // 2. memset functions like memset, memset_chk, annotate("MEMSET"), annotate("BUF_CHECK:Arg0, Arg2")
@@ -415,7 +421,7 @@ void BufOverflowCheckerAPI::handleExtAPI(const CallICFGNode *call) {
         // loop the args and check the offset
         for (auto arg: args) {
             IntervalValue offset = ae->_svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(arg.second))] - IntervalValue(1);
-            canSafelyAccessMemory(cs.getArgument(arg.first), offset);
+            canSafelyAccessMemory(cs.getArgument(arg.first), offset, call);
         }
     }
     else if (extType == STRCPY) {
@@ -427,29 +433,17 @@ void BufOverflowCheckerAPI::handleExtAPI(const CallICFGNode *call) {
     else {
 
     }
+    return;
 }
 
 
 void BufOverflowChecker::handleICFGNode(const SVF::ICFGNode *node) {
-    try {
-        AE::handleICFGNode(node);
-        detectBufOverflow(node);
-    }
-    catch (BufOverflowException &e) {
-        // Call addBugToRecoder and pass Exception, Instruction and ICFGNode to it.
-        if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node)) {
-            addBugToRecoder(e, call->getCallSite(), node);
-        }
-        else {
-            addBugToRecoder(e, node->getSVFStmts().back()->getInst(), node);
-        }
-
-    }
-
+    AE::handleICFGNode(node);
+    detectBufOverflow(node);
 }
 
 //
-void BufOverflowChecker::detectBufOverflow(const ICFGNode *node) {
+bool BufOverflowChecker::detectBufOverflow(const ICFGNode *node) {
 
     auto *extapi = SVFUtil::dyn_cast<BufOverflowCheckerAPI>(_api);
     for (auto* stmt: node->getSVFStmts()) {
@@ -459,7 +453,7 @@ void BufOverflowChecker::detectBufOverflow(const ICFGNode *node) {
                 const ICFGNode* icfgNode = _svfir->getICFG()->getICFGNode(inst);
                 for (const SVFStmt* stmt2: icfgNode->getSVFStmts()) {
                     if (const GepStmt *gep2 = SVFUtil::dyn_cast<GepStmt>(stmt2)) {
-                        extapi->canSafelyAccessMemory(gep2->getLHSVar()->getValue(), IntervalValue(0, 0));
+                        return extapi->canSafelyAccessMemory(gep2->getLHSVar()->getValue(), IntervalValue(0, 0), node);
                     }
                 }
             }
@@ -471,7 +465,7 @@ void BufOverflowChecker::detectBufOverflow(const ICFGNode *node) {
                     u32_t objId = _svfir2ExeState->getInternalID(vaddr);
                     if (extapi->_addrToGep.find(objId) != extapi->_addrToGep.end()) {
                         const GepStmt* gep = extapi->_addrToGep.at(objId);
-                        extapi->canSafelyAccessMemory(gep->getLHSVar()->getValue(), IntervalValue(0, 0));
+                        return extapi->canSafelyAccessMemory(gep->getLHSVar()->getValue(), IntervalValue(0, 0), node);
                     }
                 }
             }
@@ -483,15 +477,23 @@ void BufOverflowChecker::detectBufOverflow(const ICFGNode *node) {
                     u32_t objId = _svfir2ExeState->getInternalID(vaddr);
                     if (extapi->_addrToGep.find(objId) != extapi->_addrToGep.end()) {
                         const GepStmt* gep = extapi->_addrToGep.at(objId);
-                        extapi->canSafelyAccessMemory(gep->getLHSVar()->getValue(), IntervalValue(0, 0));
+                        return extapi->canSafelyAccessMemory(gep->getLHSVar()->getValue(), IntervalValue(0, 0), node);
                     }
                 }
             }
         }
     }
+    return true;
 }
 
-void BufOverflowChecker::addBugToRecoder(const BufOverflowException& e, const SVFInstruction *inst, const ICFGNode* node) {
+void BufOverflowChecker::addBugToRecoder(const BufOverflowException& e, const ICFGNode* node) {
+    const SVFInstruction* inst = nullptr;
+    if (const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node)) {
+        inst = call->getCallSite();
+    }
+    else {
+        inst = node->getSVFStmts().back()->getInst();
+    }
     GenericBug::EventStack eventStack;
     SVFBugEvent sourceInstEvent(SVFBugEvent::EventType::SourceInst, inst);
     for (const auto &callsite: _callSiteStack) {
@@ -512,7 +514,7 @@ void BufOverflowChecker::addBugToRecoder(const BufOverflowException& e, const SV
 }
 
 
-bool BufOverflowCheckerAPI::canSafelyAccessMemory(const SVFValue *value, const IntervalValue &len) {
+bool BufOverflowCheckerAPI::canSafelyAccessMemory(const SVFValue *value, const IntervalValue &len, const ICFGNode *curNode) {
     BufOverflowChecker* ae = static_cast<BufOverflowChecker*>(this->_ae);
     const SVFValue *firstValue = value;
     /// Usually called by a GepStmt overflow check, or external API (like memcpy) overflow check
@@ -622,10 +624,12 @@ bool BufOverflowCheckerAPI::canSafelyAccessMemory(const SVFValue *value, const I
                                 }
                                 msg += "]].\nAlloc Site: " + gep->toString() + "\n";
 
-                                throw BufOverflowException(SVFUtil::errMsg(msg), gepArrType->getByteSize(),
+                                BufOverflowException bug(SVFUtil::errMsg(msg), gepArrType->getByteSize(),
                                                    gepArrType->getByteSize(),
                                                    total_bytes.lb().getNumeral(), total_bytes.ub().getNumeral(),
                                                    firstValue);
+                                ae->addBugToRecoder(bug, curNode);
+                                return false;
                             } else {
                                 // for gep last index's type is arr, stop here.
                                 return true;
@@ -653,9 +657,10 @@ bool BufOverflowCheckerAPI::canSafelyAccessMemory(const SVFValue *value, const I
                             msg += it->first->toString() + ", Offset: " + IntervalToIntStr(it->second) + "\n";
                         }
                         msg += "]].\n Alloc Site: " + addr->toString() + "\n";
-                        throw BufOverflowException(SVFUtil::wrnMsg(msg), arr_type_size, arr_type_size,
+                        BufOverflowException bug(SVFUtil::wrnMsg(msg), arr_type_size, arr_type_size,
                                            total_bytes.lb().getNumeral(), total_bytes.ub().getNumeral(),
                                            firstValue);
+                        ae->addBugToRecoder(bug, curNode);
                         return false;
                     } else {
 
@@ -686,8 +691,10 @@ bool BufOverflowCheckerAPI::canSafelyAccessMemory(const SVFValue *value, const I
                 }
                 msg += "]]. \nAlloc Site: " + gvalue->toString() + "\n";
 
-                throw BufOverflowException(SVFUtil::wrnMsg(msg), arr_type_size, arr_type_size,
+                BufOverflowException bug(SVFUtil::wrnMsg(msg), arr_type_size, arr_type_size,
                                    total_bytes.lb().getNumeral(), total_bytes.ub().getNumeral(), firstValue);
+                ae->addBugToRecoder(bug, curNode);
+                return false;
             } else {
                 return true;
             }
