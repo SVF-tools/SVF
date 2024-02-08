@@ -28,7 +28,8 @@
  */
 
 #include "AE/Core/RelExeState.h"
-#include "SVFIR/SVFIR.h"
+#include "Util/GeneralType.h"
+#include "Util/SVFUtil.h"
 #include <iomanip>
 
 using namespace SVF;

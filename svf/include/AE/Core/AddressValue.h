@@ -36,6 +36,7 @@
 #define BlackHoleAddr 0x7f000000 + 2;
 
 #include "AbstractValue.h"
+#include "Util/GeneralType.h"
 
 namespace SVF
 {

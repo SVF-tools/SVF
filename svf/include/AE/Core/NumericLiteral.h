@@ -30,7 +30,7 @@
 #ifndef Z3_EXAMPLE_Number_H
 #define Z3_EXAMPLE_Number_H
 
-#include "SVFIR/SVFType.h"
+#include "Util/GeneralType.h"
 #include "BoundedZ3Expr.h"
 
 namespace SVF
