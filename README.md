@@ -1,3 +1,9 @@
+Static Value-Flow Analysis Framework for Source Code
+============================
+<p align="center">
+<img src="./docs/images/svf_full.png"  width="30%">
+</p>
+
 ## News
 * <b>SVF now supports LLVM-16.0.0 with opaque pointers (Contributed by [Xiao Cheng](https://github.com/jumormt)). </b>
 * <b>SVF now supports LLVM-13.0.0 (Thank [Shengjie Xu](https://github.com/xushengj) for his help!). </b>
