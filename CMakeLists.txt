@@ -23,7 +23,7 @@ option(SVF_ENABLE_ASSERTIONS "Always enable assertions")
 set(SVF_INSTALL_ROOT ${CMAKE_INSTALL_PREFIX})
 set(SVF_INSTALL_BIN_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})
 set(SVF_INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-set(SVF_INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/svf)
+set(SVF_INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR})
 
 # Set where extapi.bc is exported to in the installed CMake package
 set(SVF_INSTALL_EXTAPI_DIR ${SVF_INSTALL_INCLUDE_DIR}/SVF-LLVM)
@@ -47,17 +47,17 @@ message(STATUS "Using CMake build configuration:
   CMake current source directory:               ${CMAKE_CURRENT_SOURCE_DIR}
   CMake current binary directory:               ${CMAKE_CURRENT_BINARY_DIR}")
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/svf)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
 # Create config.h based on config.in
-configure_file(${SVF_SOURCE_DIR}/.config.in ${SVF_BINARY_DIR}/include/svf/Util/config.h)
+configure_file(${SVF_SOURCE_DIR}/.config.in ${SVF_BINARY_DIR}/include/Util/config.h)
 
 # Include the directory where the configuration header is exported for all targets
-include_directories(${SVF_BINARY_DIR}/include/svf)
+include_directories(${SVF_BINARY_DIR}/include)
 
 # Install generated configuration header (see `configure_file()`) to top-level include dir of SVF
 install(
   FILES ${SVF_BINARY_DIR}/include/Util/config.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/svf/Util
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Util
 )
 
 # Build SVF with C++ standard C++17
