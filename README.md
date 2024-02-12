@@ -1,3 +1,5 @@
+<img src="./docs/images/svf_readme.png" width="80%">
+
 ## News
 * <b>SVF now supports LLVM-16.0.0 with opaque pointers (Contributed by [Xiao Cheng](https://github.com/jumormt)). </b>
 * <b>SVF now supports LLVM-13.0.0 (Thank [Shengjie Xu](https://github.com/xushengj) for his help!). </b>
