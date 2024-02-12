@@ -1,4 +1,4 @@
-<img src="./docs/images/svf_full.png"  width="10%">Static Value-Flow Analysis Framework
+<img src="./docs/images/svf_full.png"  width="9%">Static Value-Flow Analysis Framework
 ============================
 <!-- <p align="center">
 
