@@ -88,6 +88,8 @@ target_sources(SvfLLVM PRIVATE ${SVF_LLVM_SOURCES})
 
 # Get all of the public header files (i.e. all *.h/*.hpp files) for SVF's subprojects and add them
 file(GLOB_RECURSE SVF_LLVM_HEADERS include/*.h include/*.hpp)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_BINARY_DIR}/include/svf)
+
 target_sources(SvfLLVM
   PUBLIC
     FILE_SET HEADERS
@@ -127,6 +129,11 @@ add_custom_command(
                         -o ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
                         ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
   DEPENDS ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
+)
+
+add_custom_target(copy_extapi_bc ALL
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc ${CMAKE_BINARY_DIR}/include/svf/SVF-LLVM/extapi.bc
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
 )
 
 # Add a custom target for generating the LLVM bytecode file (and add it to the default build targets)

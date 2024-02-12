@@ -47,11 +47,12 @@ message(STATUS "Using CMake build configuration:
   CMake current source directory:               ${CMAKE_CURRENT_SOURCE_DIR}
   CMake current binary directory:               ${CMAKE_CURRENT_BINARY_DIR}")
 
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/svf)
 # Create config.h based on config.in
-configure_file(${SVF_SOURCE_DIR}/.config.in ${SVF_BINARY_DIR}/include/Util/config.h)
+configure_file(${SVF_SOURCE_DIR}/.config.in ${SVF_BINARY_DIR}/include/svf/Util/config.h)
 
 # Include the directory where the configuration header is exported for all targets
-include_directories(${SVF_BINARY_DIR}/include)
+include_directories(${SVF_BINARY_DIR}/include/svf)
 
 # Install generated configuration header (see `configure_file()`) to top-level include dir of SVF
 install(
@@ -149,7 +150,7 @@ include(CMakePackageConfigHelpers)
 # Generate SVFConfig.cmake
 configure_package_config_file(
   .config.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/SVFConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake
   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SVF
   PATH_VARS
     SVF_INSTALL_ROOT
@@ -162,7 +163,7 @@ configure_package_config_file(
 
 # Generate SVFConfigVersion.cmake
 write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/SVFConfigVersion.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake"
   VERSION "${SVF_VERSION_MAJOR}.${SVF_VERSION_MINOR}"
   COMPATIBILITY AnyNewerVersion
 )
@@ -170,8 +171,8 @@ write_basic_package_version_file(
 # Install above CMake files as part of installation
 install(
   FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/SVFConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/SVFConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SVF
 )
 
@@ -183,4 +184,4 @@ install(
 )
 
 # Export targets added to SVFTargets (set by install() command)
-export(EXPORT SVFTargets FILE "${CMAKE_CURRENT_BINARY_DIR}/SVFTargets.cmake")
+export(EXPORT SVFTargets FILE "${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFTargets.cmake")
