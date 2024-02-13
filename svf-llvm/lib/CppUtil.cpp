@@ -400,8 +400,8 @@ const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
     return thisPtr;
 }
 
-/// strip brackets and namespace in classname
-/// e.g., for `namespace::A<...::...>::f', we get `A' by stripping namespace and <>
+/// strip off brackets and namespace from classname
+/// e.g., for `namespace::A<...::...>::f', we get `A' by stripping off namespace and <>
 void stripBracketsAndNamespace(cppUtil::DemangledName& dname)
 {
     dname.funcName = cppUtil::getBeforeBrackets(dname.funcName);
