@@ -48,7 +48,7 @@ public:
     typedef Map<const Value *, const Type *> ValueToType;
     typedef std::pair<const Value *, bool> ValueBoolPair;
     typedef Map<const Value *, Set<std::string>> ValueToClassNames;
-    typedef Map<const CallBase *, Set<const Function *>> AllocToClsNameSources;
+    typedef Map<const Value *, Set<const Value *>> ObjToClsNameSources;
 
 
 private:
@@ -57,7 +57,7 @@ private:
     ValueToSources _valueToAllocs; // value allocations (stack, static, heap) cache
     ValueToClassNames _thisPtrClassNames; // thisptr class name cache
     ValueToSources _valueToAllocOrClsNameSources; // value alloc/clsname sources cache
-    AllocToClsNameSources _allocToClsNameSources; // alloc clsname sources cache
+    ObjToClsNameSources _objToClsNameSources; // alloc clsname sources cache
 
 
 public:
@@ -122,7 +122,7 @@ protected:
     Set<const Value *> &bwFindAllocOrClsNameSources(const Value *startValue);
 
     /// forward find class name sources starting from an allocation
-    Set<const Function *> &fwFindClsNameSources(const CallBase *alloc);
+    Set<const Value *> &fwFindClsNameSources(const Value *startValue);
 };
 }
 #endif //SVF_OBJTYPEINFERENCE_H
