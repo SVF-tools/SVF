@@ -120,6 +120,8 @@ static std::string getBeforeParenthesis(const std::string& name)
     return name.substr(0, pos);
 }
 
+/// get class name before brackets
+/// e.g., for `namespace::A<...::...>::f', we get `namespace::A'
 std::string cppUtil::getBeforeBrackets(const std::string& name)
 {
     if (name.empty() || name[name.size() - 1] != '>')
@@ -398,7 +400,9 @@ const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
     return thisPtr;
 }
 
-void updateClassNameBeforeBrackets(cppUtil::DemangledName& dname)
+/// strip off brackets and namespace from classname
+/// e.g., for `namespace::A<...::...>::f', we get `A' by stripping off namespace and <>
+void stripBracketsAndNamespace(cppUtil::DemangledName& dname)
 {
     dname.funcName = cppUtil::getBeforeBrackets(dname.funcName);
     dname.className = cppUtil::getBeforeBrackets(dname.className);
@@ -409,6 +413,7 @@ void updateClassNameBeforeBrackets(cppUtil::DemangledName& dname)
     }
     else
     {
+        // strip off namespace
         dname.className =
             cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
     }
@@ -428,7 +433,7 @@ bool cppUtil::isConstructor(const Function* F)
     {
         return false;
     }
-    updateClassNameBeforeBrackets(dname);
+    stripBracketsAndNamespace(dname);
     /// TODO: on mac os function name is an empty string after demangling
     return dname.className.size() > 0 &&
            dname.className.compare(dname.funcName) == 0;
@@ -448,7 +453,7 @@ bool cppUtil::isDestructor(const Function* F)
     {
         return false;
     }
-    updateClassNameBeforeBrackets(dname);
+    stripBracketsAndNamespace(dname);
     return (dname.className.size() > 0 && dname.funcName.size() > 0 &&
             dname.className.size() + 1 == dname.funcName.size() &&
             dname.funcName.compare(0, 1, "~") == 0 &&
@@ -704,7 +709,7 @@ std::vector<std::string> findInnermostBrackets(const std::string &input)
 }
 
 /*!
- * strip the whitespaces in the beginning and ending of str
+ * strip off the whitespaces from the beginning and ending of str
  * @param str
  * @return
  */
