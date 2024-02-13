@@ -132,7 +132,7 @@ add_custom_command(
 )
 
 add_custom_target(copy_extapi_bc ALL
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc ${CMAKE_BINARY_DIR}/include/SVF-LLVM/extapi.bc
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc ${CMAKE_BINARY_DIR}/lib/extapi.bc
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
 )
 
