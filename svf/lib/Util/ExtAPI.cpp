@@ -149,7 +149,7 @@ std::string ExtAPI::getExtBcPath()
         return extBcPath;
 
     //  4.  Get location in build tree based from `config.h` header file (if SVF was only built)
-    if (setExtBcPath(SVF_BUILD_DIR "/svf-llvm/extapi.bc"))
+    if (setExtBcPath(SVF_BUILD_DIR "/lib/extapi.bc"))
         return extBcPath;
 
     //  5.  Get location based on environment variable $ENV{SVF_DIR}

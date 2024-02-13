@@ -73,6 +73,12 @@ target_include_directories(SvfLLVM
     $<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDE_DIR}>
 )
 
+set_target_properties(SvfLLVM PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+)
+
 # Link LLVM's libraries to SvfLLVM, as well as the SVF core library
 target_link_libraries(SvfLLVM PUBLIC ${llvm_libs} SvfCore)
 
@@ -82,12 +88,19 @@ target_sources(SvfLLVM PRIVATE ${SVF_LLVM_SOURCES})
 
 # Get all of the public header files (i.e. all *.h/*.hpp files) for SVF's subprojects and add them
 file(GLOB_RECURSE SVF_LLVM_HEADERS include/*.h include/*.hpp)
+add_custom_target(CopySVFLLVMIncludeFiles ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        ${CMAKE_BINARY_DIR}/include)
+
 target_sources(SvfLLVM
   PUBLIC
     FILE_SET HEADERS
     BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
     FILES ${SVF_LLVM_HEADERS}
 )
+
+add_dependencies(SvfCore CopySVFLLVMIncludeFiles CopySVFIncludeFiles)
 
 # Add intrinsics_gen target if we're building as part of LLVM source build
 if(TARGET intrinsics_gen)
@@ -118,7 +131,7 @@ add_custom_command(
                         -emit-llvm
                         -fno-discard-value-names
                         -Xclang -disable-O0-optnone
-                        -o ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
+                        -o ${CMAKE_BINARY_DIR}/lib/extapi.bc
                         ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
   DEPENDS ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
 )
@@ -126,7 +139,7 @@ add_custom_command(
 # Add a custom target for generating the LLVM bytecode file (and add it to the default build targets)
 add_custom_target(gen_extapi_ir ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc)
 
-# Install the SvfLLVM shared library and public headers (public headers go in include/svf/SVF-LLVM)
+# Install the SvfLLVM shared library and public headers (public headers go in include/SVF-LLVM)
 install(
   TARGETS SvfLLVM
   EXPORT SVFTargets
@@ -138,6 +151,6 @@ install(
 
 # Install the generated extapi.bc bytecode file
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
+  FILES ${CMAKE_BINARY_DIR}/lib/extapi.bc
   DESTINATION ${SVF_INSTALL_EXTAPI_DIR}
 )

@@ -23,10 +23,10 @@ option(SVF_ENABLE_ASSERTIONS "Always enable assertions")
 set(SVF_INSTALL_ROOT ${CMAKE_INSTALL_PREFIX})
 set(SVF_INSTALL_BIN_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})
 set(SVF_INSTALL_LIB_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-set(SVF_INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/svf)
+set(SVF_INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR})
 
 # Set where extapi.bc is exported to in the installed CMake package
-set(SVF_INSTALL_EXTAPI_DIR ${SVF_INSTALL_INCLUDE_DIR}/SVF-LLVM)
+set(SVF_INSTALL_EXTAPI_DIR ${SVF_INSTALL_LIB_DIR})
 set(SVF_INSTALL_EXTAPI_FILE ${SVF_INSTALL_EXTAPI_DIR}/extapi.bc)
 
 message(STATUS "Building ${PROJECT_NAME} with configuration:
@@ -47,6 +47,7 @@ message(STATUS "Using CMake build configuration:
   CMake current source directory:               ${CMAKE_CURRENT_SOURCE_DIR}
   CMake current binary directory:               ${CMAKE_CURRENT_BINARY_DIR}")
 
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
 # Create config.h based on config.in
 configure_file(${SVF_SOURCE_DIR}/.config.in ${SVF_BINARY_DIR}/include/Util/config.h)
 
@@ -56,7 +57,7 @@ include_directories(${SVF_BINARY_DIR}/include)
 # Install generated configuration header (see `configure_file()`) to top-level include dir of SVF
 install(
   FILES ${SVF_BINARY_DIR}/include/Util/config.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/svf/Util
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Util
 )
 
 # Build SVF with C++ standard C++17
@@ -149,7 +150,7 @@ include(CMakePackageConfigHelpers)
 # Generate SVFConfig.cmake
 configure_package_config_file(
   .config.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/SVFConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake
   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SVF
   PATH_VARS
     SVF_INSTALL_ROOT
@@ -162,7 +163,7 @@ configure_package_config_file(
 
 # Generate SVFConfigVersion.cmake
 write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/SVFConfigVersion.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake"
   VERSION "${SVF_VERSION_MAJOR}.${SVF_VERSION_MINOR}"
   COMPATIBILITY AnyNewerVersion
 )
@@ -170,8 +171,8 @@ write_basic_package_version_file(
 # Install above CMake files as part of installation
 install(
   FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/SVFConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/SVFConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SVF
 )
 
@@ -183,4 +184,4 @@ install(
 )
 
 # Export targets added to SVFTargets (set by install() command)
-export(EXPORT SVFTargets FILE "${CMAKE_CURRENT_BINARY_DIR}/SVFTargets.cmake")
+export(EXPORT SVFTargets FILE "${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFTargets.cmake")
