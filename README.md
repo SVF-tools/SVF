@@ -1,4 +1,5 @@
-<img src="./docs/images/svf_logo_2.png" width="11%"><img src="./docs/images/svf_logo_3.png" width="89%">
+<img src="./docs/images/svf_logo_2.png" width="15%"><img src="./docs/images/svf_logo_3.png" width="85%">
+
 
 ## News
 * <b>SVF now supports LLVM-16.0.0 with opaque pointers (Contributed by [Xiao Cheng](https://github.com/jumormt)). </b>
