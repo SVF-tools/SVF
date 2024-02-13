@@ -146,6 +146,6 @@ install(
 
 # Install the generated extapi.bc bytecode file
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
+  FILES ${CMAKE_BINARY_DIR}/lib/extapi.bc
   DESTINATION ${SVF_INSTALL_EXTAPI_DIR}
 )
