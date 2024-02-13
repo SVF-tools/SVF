@@ -413,7 +413,7 @@ void stripBracketsAndNamespace(cppUtil::DemangledName& dname)
     }
     else
     {
-        // strip namespace
+        // strip off namespace
         dname.className =
             cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
     }
@@ -709,7 +709,7 @@ std::vector<std::string> findInnermostBrackets(const std::string &input)
 }
 
 /*!
- * strip the whitespaces in the beginning and ending of str
+ * strip off the whitespaces from the beginning and ending of str
  * @param str
  * @return
  */
