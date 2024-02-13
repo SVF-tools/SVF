@@ -117,6 +117,8 @@ jobs:
             rm -rf SVF-${osVersion}/*
             git rm --cached -rf SVF-${osVersion}/*
             if [ ! -d "SVF-${osVersion}/Release-build/" ]; then mkdir -p "SVF-${osVersion}/Release-build"; fi
+            rm -rf $GITHUB_WORKSPACE/Release-build/bin/*.dot
+            rm -rf $GITHUB_WORKSPACE/Release-build/bin/*.json
             cp -rf $GITHUB_WORKSPACE/Release-build/include SVF-${osVersion}/Release-build/
             cp -rf $GITHUB_WORKSPACE/Release-build/lib SVF-${osVersion}/Release-build/
             cp -rf $GITHUB_WORKSPACE/Release-build/bin SVF-${osVersion}/Release-build/
