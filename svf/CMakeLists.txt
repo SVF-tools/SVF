@@ -20,7 +20,11 @@ target_sources(SvfCore PRIVATE ${SVF_CORE_SOURCES})
 
 # Get all of the public header files (i.e. all *.h/*.hpp files) for SVF's subprojects and add them
 file(GLOB_RECURSE SVF_CORE_HEADERS include/*.h include/*.hpp)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_BINARY_DIR}/include)
+
+add_custom_target(CopyIncludeFiles ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        ${CMAKE_BINARY_DIR}/include)
 
 target_sources(SvfCore
   PUBLIC
@@ -28,6 +32,8 @@ target_sources(SvfCore
     BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
     FILES ${SVF_CORE_HEADERS}
 )
+
+add_dependencies(SvfCore CopyIncludeFiles)
 
 # Install the headers and compiled libraries (associate SvfCore with the SVF package's targets)
 install(
