@@ -644,7 +644,6 @@ Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo)
     {
         // c++ constructor
         DemangledName demangledName = cppUtil::demangle(name);
-        stripBracketsAndNamespace(demangledName);
         return {demangledName.className};
     }
     else if (isTemplateFunc(foo))
