@@ -1,7 +1,2 @@
 add_llvm_executable(saber saber.cpp)
 target_link_libraries(saber PUBLIC ${llvm_libs} SvfLLVM)
-set_target_properties(saber PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)

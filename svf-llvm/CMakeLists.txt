@@ -126,14 +126,9 @@ add_custom_command(
                         -emit-llvm
                         -fno-discard-value-names
                         -Xclang -disable-O0-optnone
-                        -o ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
+                        -o ${CMAKE_BINARY_DIR}/lib/extapi.bc
                         ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
   DEPENDS ${CMAKE_CURRENT_LIST_DIR}/lib/extapi.c
-)
-
-add_custom_target(copy_extapi_bc ALL
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc ${CMAKE_BINARY_DIR}/lib/extapi.bc
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/extapi.bc
 )
 
 # Add a custom target for generating the LLVM bytecode file (and add it to the default build targets)
