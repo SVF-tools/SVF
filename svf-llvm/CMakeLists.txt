@@ -88,7 +88,10 @@ target_sources(SvfLLVM PRIVATE ${SVF_LLVM_SOURCES})
 
 # Get all of the public header files (i.e. all *.h/*.hpp files) for SVF's subprojects and add them
 file(GLOB_RECURSE SVF_LLVM_HEADERS include/*.h include/*.hpp)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_BINARY_DIR}/include)
+add_custom_target(CopyIncludeFiles ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        ${CMAKE_BINARY_DIR}/include)
 
 target_sources(SvfLLVM
   PUBLIC
