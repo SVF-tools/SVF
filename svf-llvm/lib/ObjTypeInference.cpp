@@ -653,7 +653,7 @@ Set<std::string> &ObjTypeInference::inferThisPtrClsName(const Value *thisPtr)
             for (const auto *src : fwFindClsNameSources(val))
             {
                 if (const auto *func = SVFUtil::dyn_cast<Function>(src)) addNamesFromFunc(func);
-                else if (const auto *call = SVFUtil::dyn_cast<CallBase>(src)) addNamesFromCall(SVFUtil::cast<CallBase>(src));
+                else if (const auto *call = SVFUtil::dyn_cast<CallBase>(src)) addNamesFromCall(call);
                 else ABORT_MSG("Source site from forward walk is invalid: " + dumpValueAndDbgInfo(src));
             }
         }
