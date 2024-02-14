@@ -120,6 +120,8 @@ jobs:
             rm -rf $GITHUB_WORKSPACE/Release-build/bin/*.dot
             rm -rf $GITHUB_WORKSPACE/Release-build/bin/*.json
             cp -rf $GITHUB_WORKSPACE/Release-build/include SVF-${osVersion}/Release-build/
+            cp -rf $GITHUB_WORKSPACE/svf/include SVF-${osVersion}/Release-build/
+            cp -rf $GITHUB_WORKSPACE/svf-llvm/include SVF-${osVersion}/Release-build/
             cp -rf $GITHUB_WORKSPACE/Release-build/lib SVF-${osVersion}/Release-build/
             cp -rf $GITHUB_WORKSPACE/Release-build/bin SVF-${osVersion}/Release-build/
             git add .

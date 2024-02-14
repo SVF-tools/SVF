@@ -96,10 +96,6 @@ target_sources(SvfLLVM
     FILES ${SVF_LLVM_HEADERS}
 )
 
-add_custom_command(TARGET SvfLLVM POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
-
 # Add intrinsics_gen target if we're building as part of LLVM source build
 if(TARGET intrinsics_gen)
   add_dependencies(SvfLLVM intrinsics_gen)
