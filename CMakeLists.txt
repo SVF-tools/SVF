@@ -175,13 +175,3 @@ install(
     ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SVF
 )
-
-# Install CMake targets from different SVF subprojects so they can be found by find_package(SVF)
-install(
-  EXPORT SVFTargets
-  FILE SVFTargets.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/SVF
-)
-
-# Export targets added to SVFTargets (set by install() command)
-export(EXPORT SVFTargets FILE "${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFTargets.cmake")
