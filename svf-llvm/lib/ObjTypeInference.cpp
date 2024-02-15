@@ -28,9 +28,11 @@
  */
 
 #include "SVF-LLVM/ObjTypeInference.h"
+#include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/CppUtil.h"
+#include "Util/Casting.h"
 
 #define TYPE_DEBUG 0 /* Turn this on if you're debugging type inference */
 #define ERR_MSG(msg)                                                           \
@@ -590,9 +592,13 @@ u32_t ObjTypeInference::objTyToNumFields(const Type *objTy)
 
 
 /*!
- * get or infer the class names of thisptr
+ * get or infer the class names of thisptr; starting from :param:`thisPtr`, will walk backwards to find
+ * all potential sources for the class name. Valid sources include global or stack variables, heap allocations,
+ * or C++ dynamic casts/constructors/destructors.
+ * If the source site is a global/stack/heap variable, find the corresponding constructor/destructor to
+ * extract the class' name from (since the type of the variable is not reliable but the demangled name is)
  * @param thisPtr
- * @return
+ * @return a set of all possible type names that :param:`thisPtr` could point to
  */
 Set<std::string> &ObjTypeInference::inferThisPtrClsName(const Value *thisPtr)
 {
@@ -600,59 +606,63 @@ Set<std::string> &ObjTypeInference::inferThisPtrClsName(const Value *thisPtr)
     if (it != _thisPtrClassNames.end()) return it->second;
 
     Set<std::string> names;
-    auto insertClassNames = [&names](Set<std::string> &classNames)
+
+    // Lambda for checking a function is a valid name source & extracting a class name from it
+    auto addNamesFromFunc = [&names](const Function *func) -> void
     {
-        names.insert(classNames.begin(), classNames.end());
+        ABORT_IFNOT(isClsNameSource(func), "Func is invalid class name source: " + dumpValueAndDbgInfo(func));
+        for (auto name : extractClsNamesFromFunc(func)) names.insert(name);
     };
 
-    // backward find heap allocations or class name sources
-    Set<const Value *> &vals = bwFindAllocOrClsNameSources(thisPtr);
-    for (const auto &val: vals)
+    // Lambda for getting callee & extracting class name for calls to constructors/destructors/template funcs
+    auto addNamesFromCall = [&names, &addNamesFromFunc](const CallBase *call) -> void
     {
+        ABORT_IFNOT(isClsNameSource(call), "Call is invalid class name source: " + dumpValueAndDbgInfo(call));
+
+        const auto *func = call->getCalledFunction();
+        if (isDynCast(func)) names.insert(extractClsNameFromDynCast(call));
+        else addNamesFromFunc(func);
+    };
+
+    // Walk backwards to find all valid source sites for the pointer (e.g. stack/global/heap variables)
+    for (const auto &val: bwFindAllocOrClsNameSources(thisPtr))
+    {
+        // A source site is either a constructor/destructor/template function from which the class name can be
+        // extracted; a call to a C++ constructor/destructor/template function from which the class name can be
+        // extracted; or an allocation site of an object (i.e. a stack/global/heap variable), from which a
+        // forward walk can be performed to find calls to C++ constructor/destructor/template functions from
+        // which the class' name can then be extracted; skip starting pointer
         if (val == thisPtr) continue;
 
         if (const auto *func = SVFUtil::dyn_cast<Function>(val))
         {
-            // extract class name from function name
-            Set<std::string> classNames = extractClsNamesFromFunc(func);
-            insertClassNames(classNames);
+            // Constructor/destructor/template func; extract name from func directly
+            addNamesFromFunc(func);
         }
-        else if (SVFUtil::isa<LoadInst, StoreInst, GetElementPtrInst, AllocaInst, GlobalValue>(val))
+        else if (isClsNameSource(val))
         {
-            // extract class name from instructions
-            const Type *type = infersiteToType(val);
-            const std::string &className = typeToClsName(type);
-            if (!className.empty())
+            // Call to constructor/destructor/template func; get callee; extract name from callee
+            ABORT_IFNOT(SVFUtil::isa<CallBase>(val), "Call source site is not a callbase: " + dumpValueAndDbgInfo(val));
+            addNamesFromCall(SVFUtil::cast<CallBase>(val));
+        }
+        else if (isAlloc(val))
+        {
+            // Stack/global/heap allocation site; walk forward; find constructor/destructor/template calls
+            ABORT_IFNOT((SVFUtil::isa<AllocaInst, CallBase, GlobalVariable>(val)),
+                        "Alloc site source is not a stack/heap/global variable: " + dumpValueAndDbgInfo(val));
+            for (const auto *src : fwFindClsNameSources(val))
             {
-                Set<std::string> tgt{className};
-                insertClassNames(tgt);
+                if (const auto *func = SVFUtil::dyn_cast<Function>(src)) addNamesFromFunc(func);
+                else if (const auto *call = SVFUtil::dyn_cast<CallBase>(src)) addNamesFromCall(call);
+                else ABORT_MSG("Source site from forward walk is invalid: " + dumpValueAndDbgInfo(src));
             }
         }
-        else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(val))
+        else
         {
-            if (const Function *callFunc = callBase->getCalledFunction())
-            {
-                Set<std::string> classNames = extractClsNamesFromFunc(callFunc);
-                insertClassNames(classNames);
-                if (isDynCast(callFunc))
-                {
-                    // dynamic cast
-                    Set<std::string> tgt{extractClsNameFromDynCast(callBase)};
-                    insertClassNames(tgt);
-                }
-                else if (isNewAlloc(callFunc))
-                {
-                    // for heap allocation, we forward find class name sources
-                    Set<const Function *>& srcs = fwFindClsNameSources(callBase);
-                    for (const auto &src: srcs)
-                    {
-                        classNames = extractClsNamesFromFunc(src);
-                        insertClassNames(classNames);
-                    }
-                }
-            }
+            ERR_MSG("Unsupported source type found:" + dumpValueAndDbgInfo(val));
         }
     }
+
     return _thisPtrClassNames[thisPtr] = names;
 }
 
@@ -711,48 +721,43 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
             workList.push({curValue, true});
         }
 
-        // current inst reside in cpp self-inference function
+        // If current value is an instruction inside a constructor/destructor/template, use it as a source
         if (const auto *inst = SVFUtil::dyn_cast<Instruction>(curValue))
         {
-            if (const Function *foo = inst->getFunction())
+            if (const auto *parent = inst->getFunction())
             {
-                if (isConstructor(foo) || isDestructor(foo) || isTemplateFunc(foo) || isDynCast(foo))
-                {
-                    insertSource(foo);
-                    if (canUpdate)
-                    {
-                        _valueToAllocOrClsNameSources[curValue] = sources;
-                    }
-                    continue;
-                }
+                if (isClsNameSource(parent)) insertSource(parent);
             }
         }
+
+        // If the current value is an object (global, heap, stack, etc) or name source (constructor/destructor,
+        // a C++ dynamic cast, or a template function), use it as a source
         if (isAlloc(curValue) || isClsNameSource(curValue))
         {
             insertSource(curValue);
         }
-        else if (const auto *getElementPtrInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
+
+        // Explore the current value further depending on the type of the value; use cached values if possible
+        if (const auto *getElementPtrInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
         {
-            insertSource(getElementPtrInst);
             insertSourcesOrPushWorklist(getElementPtrInst->getPointerOperand());
         }
         else if (const auto *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(curValue))
         {
-            Value *prevVal = bitCastInst->getOperand(0);
-            insertSourcesOrPushWorklist(prevVal);
+            insertSourcesOrPushWorklist(bitCastInst->getOperand(0));
         }
         else if (const auto *phiNode = SVFUtil::dyn_cast<PHINode>(curValue))
         {
-            for (u32_t i = 0; i < phiNode->getNumOperands(); ++i)
+            for (const auto *op : phiNode->operand_values())
             {
-                insertSourcesOrPushWorklist(phiNode->getOperand(i));
+                insertSourcesOrPushWorklist(op);
             }
         }
         else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
         {
-            for (const auto &use: loadInst->getPointerOperand()->uses())
+            for (const auto *user : loadInst->getPointerOperand()->users())
             {
-                if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser()))
+                if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(user))
                 {
                     if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
                     {
@@ -763,9 +768,9 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
         }
         else if (const auto *argument = SVFUtil::dyn_cast<Argument>(curValue))
         {
-            for (const auto &use: argument->getParent()->uses())
+            for (const auto *user: argument->getParent()->users())
             {
-                if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser()))
+                if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(user))
                 {
                     // skip function as parameter
                     // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
@@ -778,7 +783,7 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
         else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(curValue))
         {
             ABORT_IFNOT(!callBase->doesNotReturn(), "callbase does not return:" + dumpValueAndDbgInfo(callBase));
-            if (Function *callee = callBase->getCalledFunction())
+            if (const auto *callee = callBase->getCalledFunction())
             {
                 if (!callee->isDeclaration())
                 {
@@ -790,47 +795,56 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
                 }
             }
         }
+
+        // If updating is allowed; store the gathered sources as sources for the current value in the cache
         if (canUpdate)
         {
             _valueToAllocOrClsNameSources[curValue] = sources;
         }
     }
+
     return _valueToAllocOrClsNameSources[startValue];
 }
 
-Set<const Function *> &ObjTypeInference::fwFindClsNameSources(const CallBase *alloc)
+Set<const Value *> &ObjTypeInference::fwFindClsNameSources(const Value *startValue)
 {
+    assert(startValue && "startValue was null?");
+
     // consult cache
-    auto tIt = _allocToClsNameSources.find(alloc);
-    if (tIt != _allocToClsNameSources.end())
+    auto tIt = _objToClsNameSources.find(startValue);
+    if (tIt != _objToClsNameSources.end())
     {
         return tIt->second;
     }
 
-    Set<const Function *> clsSources;
-    // for heap allocation, we forward find class name sources
-    auto inferViaCppCall = [&clsSources](const CallBase *callBase)
+    Set<const Value *> sources;
+
+    // Lambda for adding a callee to the sources iff it is a constructor/destructor/template/dyncast
+    auto inferViaCppCall = [&sources](const CallBase *caller)
     {
-        if (!callBase->getCalledFunction()) return;
-        const Function *constructFoo = callBase->getCalledFunction();
-        clsSources.insert(constructFoo);
+        if (!caller) return;
+        if (isClsNameSource(caller)) sources.insert(caller);
     };
-    for (const auto &use: alloc->uses())
+    
+    // Find all calls of starting val (or through cast); add as potential source iff applicable
+    for (const auto *user : startValue->users())
     {
-        if (const auto *cppCall = SVFUtil::dyn_cast<CallBase>(use.getUser()))
+        if (const auto *caller = SVFUtil::dyn_cast<CallBase>(user))
         {
-            inferViaCppCall(cppCall);
+            inferViaCppCall(caller);
         }
-        else if (const auto *bitCastInst = SVFUtil::dyn_cast<BitCastInst>(use.getUser()))
+        else if (const auto *bitcast = SVFUtil::dyn_cast<BitCastInst>(user))
         {
-            for (const auto &use2: bitCastInst->uses())
+            for (const auto *cast_user : bitcast->users())
             {
-                if (const auto *cppCall2 = SVFUtil::dyn_cast<CallBase>(use2.getUser()))
+                if (const auto *caller = SVFUtil::dyn_cast<CallBase>(cast_user))
                 {
-                    inferViaCppCall(cppCall2);
+                    inferViaCppCall(caller);
                 }
             }
         }
     }
-    return _allocToClsNameSources[alloc] = SVFUtil::move(clsSources);
+
+    // Store sources in cache for starting value & return the found sources
+    return _objToClsNameSources[startValue] = SVFUtil::move(sources);
 }

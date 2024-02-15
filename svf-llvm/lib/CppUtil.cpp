@@ -28,7 +28,9 @@
  */
 
 #include "SVF-LLVM/CppUtil.h"
+#include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMUtil.h"
+#include "Util/Casting.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/ObjTypeInference.h"
@@ -640,9 +642,9 @@ Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo)
 {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     const std::string &name = foo->getName().str();
-    if (isConstructor(foo))
+    if (isConstructor(foo) || isDestructor(foo))
     {
-        // c++ constructor
+        // c++ constructor or destructor
         DemangledName demangledName = cppUtil::demangle(name);
         return {demangledName.className};
     }
@@ -796,6 +798,10 @@ bool cppUtil::isClsNameSource(const Value *val)
         // indirect call
         if(!foo) return false;
         return isConstructor(foo) || isDestructor(foo) || isTemplateFunc(foo) || isDynCast(foo);
+    }
+    else if (const auto *func = SVFUtil::dyn_cast<Function>(val))
+    {
+        return isConstructor(func) || isDestructor(func) || isTemplateFunc(func);
     }
     return false;
 }
