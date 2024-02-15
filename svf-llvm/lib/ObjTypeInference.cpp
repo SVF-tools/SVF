@@ -825,7 +825,7 @@ Set<const Value *> &ObjTypeInference::fwFindClsNameSources(const Value *startVal
         if (!caller) return;
         if (isClsNameSource(caller)) sources.insert(caller);
     };
-    
+
     // Find all calls of starting val (or through cast); add as potential source iff applicable
     for (const auto *user : startValue->users())
     {
