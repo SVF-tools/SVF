@@ -148,15 +148,11 @@ bool isTemplateFunc(const Function *foo);
 /// whether foo is a cpp dyncast function
 bool isDynCast(const Function *foo);
 
-/// whether foo is a cpp heap allocation (new)
-bool isNewAlloc(const Function *foo);
-
 /// extract class name from cpp dyncast function
 std::string extractClsNameFromDynCast(const CallBase* callBase);
 
 const Type *cppClsNameToType(const std::string &className);
 
-std::string typeToClsName(const Type *ty);
 
 
 /// Constants pertaining to CTir, for C and C++.

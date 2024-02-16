@@ -48,7 +48,7 @@ public:
     typedef Map<const Value *, const Type *> ValueToType;
     typedef std::pair<const Value *, bool> ValueBoolPair;
     typedef Map<const Value *, Set<std::string>> ValueToClassNames;
-    typedef Map<const Value *, Set<const Value *>> ObjToClsNameSources;
+    typedef Map<const Value *, Set<const CallBase *>> ObjToClsNameSources;
 
 
 private:
@@ -122,7 +122,7 @@ protected:
     Set<const Value *> &bwFindAllocOrClsNameSources(const Value *startValue);
 
     /// forward find class name sources starting from an allocation
-    Set<const Value *> &fwFindClsNameSources(const Value *startValue);
+    Set<const CallBase *> &fwFindClsNameSources(const Value *startValue);
 };
 }
 #endif //SVF_OBJTYPEINFERENCE_H
