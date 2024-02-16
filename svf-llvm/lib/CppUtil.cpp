@@ -846,17 +846,6 @@ bool cppUtil::isDynCast(const Function *foo)
 }
 
 /*!
- * whether foo is a cpp heap allocation (new)
- * @param foo
- * @return
- */
-bool cppUtil::isNewAlloc(const Function *foo)
-{
-    assert(foo->hasName() && "foo does not have a name? possible indirect call");
-    return foo->getName().str() == znwm;
-}
-
-/*!
  * extract class name from cpp dyncast function
  * @param callBase
  * @return
@@ -882,16 +871,4 @@ const Type *cppUtil::cppClsNameToType(const std::string &className)
     StructType *classTy = StructType::getTypeByName(LLVMModuleSet::getLLVMModuleSet()->getContext(),
                           clsName + className);
     return classTy ? classTy : LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType();
-}
-
-std::string cppUtil::typeToClsName(const Type *ty)
-{
-    if (const auto *stTy = SVFUtil::dyn_cast<StructType>(ty))
-    {
-        const std::string &typeName = stTy->getName().str();
-        const std::string &className = typeName.substr(
-                                           clsName.size(), typeName.size() - clsName.size());
-        return className;
-    }
-    return "";
 }
