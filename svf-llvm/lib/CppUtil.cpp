@@ -883,15 +883,3 @@ const Type *cppUtil::cppClsNameToType(const std::string &className)
                           clsName + className);
     return classTy ? classTy : LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType();
 }
-
-std::string cppUtil::typeToClsName(const Type *ty)
-{
-    if (const auto *stTy = SVFUtil::dyn_cast<StructType>(ty))
-    {
-        const std::string &typeName = stTy->getName().str();
-        const std::string &className = typeName.substr(
-                                           clsName.size(), typeName.size() - clsName.size());
-        return className;
-    }
-    return "";
-}

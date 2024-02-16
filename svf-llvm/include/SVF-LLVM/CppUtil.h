@@ -156,8 +156,6 @@ std::string extractClsNameFromDynCast(const CallBase* callBase);
 
 const Type *cppClsNameToType(const std::string &className);
 
-std::string typeToClsName(const Type *ty);
-
 
 /// Constants pertaining to CTir, for C and C++.
 /// TODO: move helper functions here too?

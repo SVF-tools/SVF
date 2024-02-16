@@ -611,7 +611,7 @@ Set<std::string> &ObjTypeInference::inferThisPtrClsName(const Value *thisPtr)
     auto addNamesFromFunc = [&names](const Function *func) -> void
     {
         ABORT_IFNOT(isClsNameSource(func), "Func is invalid class name source: " + dumpValueAndDbgInfo(func));
-        for (auto name : extractClsNamesFromFunc(func)) names.insert(name);
+        for (const auto &name : extractClsNamesFromFunc(func)) names.insert(name);
     };
 
     // Lambda for getting callee & extracting class name for calls to constructors/destructors/template funcs
@@ -806,7 +806,7 @@ Set<const Value *> &ObjTypeInference::bwFindAllocOrClsNameSources(const Value *s
     return _valueToAllocOrClsNameSources[startValue];
 }
 
-Set<const Value *> &ObjTypeInference::fwFindClsNameSources(const Value *startValue)
+Set<const CallBase *> &ObjTypeInference::fwFindClsNameSources(const Value *startValue)
 {
     assert(startValue && "startValue was null?");
 
@@ -817,7 +817,7 @@ Set<const Value *> &ObjTypeInference::fwFindClsNameSources(const Value *startVal
         return tIt->second;
     }
 
-    Set<const Value *> sources;
+    Set<const CallBase *> sources;
 
     // Lambda for adding a callee to the sources iff it is a constructor/destructor/template/dyncast
     auto inferViaCppCall = [&sources](const CallBase *caller)
