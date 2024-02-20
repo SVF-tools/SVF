@@ -8,12 +8,19 @@ target_include_directories(SvfCore
     $<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDE_DIR}>
 )
 
+set_target_properties(SvfCore PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+)
+
 # Get the source files (i.e. all *.c/*.cpp files) for SVF's subprojects and add them to SvfCore
 file(GLOB_RECURSE SVF_CORE_SOURCES lib/*.cpp)
 target_sources(SvfCore PRIVATE ${SVF_CORE_SOURCES})
 
 # Get all of the public header files (i.e. all *.h/*.hpp files) for SVF's subprojects and add them
 file(GLOB_RECURSE SVF_CORE_HEADERS include/*.h include/*.hpp)
+
 target_sources(SvfCore
   PUBLIC
     FILE_SET HEADERS

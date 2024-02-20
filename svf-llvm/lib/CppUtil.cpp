@@ -28,7 +28,9 @@
  */
 
 #include "SVF-LLVM/CppUtil.h"
+#include "SVF-LLVM/BasicTypes.h"
 #include "SVF-LLVM/LLVMUtil.h"
+#include "Util/Casting.h"
 #include "Util/SVFUtil.h"
 #include "SVF-LLVM/LLVMModule.h"
 #include "SVF-LLVM/ObjTypeInference.h"
@@ -120,6 +122,8 @@ static std::string getBeforeParenthesis(const std::string& name)
     return name.substr(0, pos);
 }
 
+/// get class name before brackets
+/// e.g., for `namespace::A<...::...>::f', we get `namespace::A'
 std::string cppUtil::getBeforeBrackets(const std::string& name)
 {
     if (name.empty() || name[name.size() - 1] != '>')
@@ -398,7 +402,9 @@ const Argument* cppUtil::getConstructorThisPtr(const Function* fun)
     return thisPtr;
 }
 
-void updateClassNameBeforeBrackets(cppUtil::DemangledName& dname)
+/// strip off brackets and namespace from classname
+/// e.g., for `namespace::A<...::...>::f', we get `A' by stripping off namespace and <>
+void stripBracketsAndNamespace(cppUtil::DemangledName& dname)
 {
     dname.funcName = cppUtil::getBeforeBrackets(dname.funcName);
     dname.className = cppUtil::getBeforeBrackets(dname.className);
@@ -409,6 +415,7 @@ void updateClassNameBeforeBrackets(cppUtil::DemangledName& dname)
     }
     else
     {
+        // strip off namespace
         dname.className =
             cppUtil::getBeforeBrackets(dname.className.substr(colon + 2));
     }
@@ -428,7 +435,7 @@ bool cppUtil::isConstructor(const Function* F)
     {
         return false;
     }
-    updateClassNameBeforeBrackets(dname);
+    stripBracketsAndNamespace(dname);
     /// TODO: on mac os function name is an empty string after demangling
     return dname.className.size() > 0 &&
            dname.className.compare(dname.funcName) == 0;
@@ -448,7 +455,7 @@ bool cppUtil::isDestructor(const Function* F)
     {
         return false;
     }
-    updateClassNameBeforeBrackets(dname);
+    stripBracketsAndNamespace(dname);
     return (dname.className.size() > 0 && dname.funcName.size() > 0 &&
             dname.className.size() + 1 == dname.funcName.size() &&
             dname.funcName.compare(0, 1, "~") == 0 &&
@@ -635,11 +642,10 @@ Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo)
 {
     assert(foo->hasName() && "foo does not have a name? possible indirect call");
     const std::string &name = foo->getName().str();
-    if (isConstructor(foo))
+    if (isConstructor(foo) || isDestructor(foo))
     {
-        // c++ constructor
+        // c++ constructor or destructor
         DemangledName demangledName = cppUtil::demangle(name);
-        updateClassNameBeforeBrackets(demangledName);
         return {demangledName.className};
     }
     else if (isTemplateFunc(foo))
@@ -705,7 +711,7 @@ std::vector<std::string> findInnermostBrackets(const std::string &input)
 }
 
 /*!
- * strip the whitespaces in the beginning and ending of str
+ * strip off the whitespaces from the beginning and ending of str
  * @param str
  * @return
  */
@@ -793,6 +799,10 @@ bool cppUtil::isClsNameSource(const Value *val)
         if(!foo) return false;
         return isConstructor(foo) || isDestructor(foo) || isTemplateFunc(foo) || isDynCast(foo);
     }
+    else if (const auto *func = SVFUtil::dyn_cast<Function>(val))
+    {
+        return isConstructor(func) || isDestructor(func) || isTemplateFunc(func);
+    }
     return false;
 }
 
@@ -836,17 +846,6 @@ bool cppUtil::isDynCast(const Function *foo)
 }
 
 /*!
- * whether foo is a cpp heap allocation (new)
- * @param foo
- * @return
- */
-bool cppUtil::isNewAlloc(const Function *foo)
-{
-    assert(foo->hasName() && "foo does not have a name? possible indirect call");
-    return foo->getName().str() == znwm;
-}
-
-/*!
  * extract class name from cpp dyncast function
  * @param callBase
  * @return
@@ -872,16 +871,4 @@ const Type *cppUtil::cppClsNameToType(const std::string &className)
     StructType *classTy = StructType::getTypeByName(LLVMModuleSet::getLLVMModuleSet()->getContext(),
                           clsName + className);
     return classTy ? classTy : LLVMModuleSet::getLLVMModuleSet()->getTypeInference()->ptrType();
-}
-
-std::string cppUtil::typeToClsName(const Type *ty)
-{
-    if (const auto *stTy = SVFUtil::dyn_cast<StructType>(ty))
-    {
-        const std::string &typeName = stTy->getName().str();
-        const std::string &className = typeName.substr(
-                                           clsName.size(), typeName.size() - clsName.size());
-        return className;
-    }
-    return "";
 }
