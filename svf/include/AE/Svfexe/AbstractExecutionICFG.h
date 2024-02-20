@@ -33,88 +33,21 @@
 
 #include "WPA/Andersen.h"
 #include "Util/SVFBugReport.h"
+#include "AE/Svfexe/AbstractExecution.h"
 
 namespace SVF
 {
 class AbstractExecutionICFG;
-class AEStat;
-class AEAPI;
 
 
-enum class AEKind
-{
-    AbstractExecutionICFG,
-    BufOverflowChecker
-};
-
-/// AEStat: Statistic for AE
-class AEStat : public SVFStat
-{
-public:
-    void countStateSize();
-    AEStat(AbstractExecutionICFG *ae): _ae(ae)
-    {
-        startTime = getClk(true);
-    }
-    ~AEStat()
-    {
-    }
-    inline std::string getMemUsage()
-    {
-        u32_t vmrss, vmsize;
-        return SVFUtil::getMemoryUsageKB(&vmrss, &vmsize) ? std::to_string(vmsize) + "KB" : "cannot read memory usage";
-    }
-
-    void finializeStat();
-    void performStat() override;
-    void reportBug();
-
-public:
-    AbstractExecutionICFG *_ae;
-    s32_t count{0};
-    std::string memory_usage;
-    std::string memUsage;
-    std::string bugStr;
-
-
-    u32_t& getFunctionTrace()
-    {
-        if (generalNumMap.count("Function_Trace") == 0)
-        {
-            generalNumMap["Function_Trace"] = 0;
-        }
-        return generalNumMap["Function_Trace"];
-    }
-    u32_t& getBlockTrace()
-    {
-        if (generalNumMap.count("Block_Trace") == 0)
-        {
-            generalNumMap["Block_Trace"] = 0;
-        }
-        return generalNumMap["Block_Trace"];
-    }
-    u32_t& getICFGNodeTrace()
-    {
-        if (generalNumMap.count("ICFG_Node_Trace") == 0)
-        {
-            generalNumMap["ICFG_Node_Trace"] = 0;
-        }
-        return generalNumMap["ICFG_Node_Trace"];
-    }
-
-};
-
-class AbstractExecutionICFG
+class AbstractExecutionICFG : public AbstractExecution
 {
     friend class AEStat;
     friend class AEAPI;
 
 public:
-    typedef SCCDetection<PTACallGraph *> CallGraphSCC;
     /// Constructor
     AbstractExecutionICFG();
-
-    virtual void initExtAPI();
 
     virtual void runOnModule(SVFIR* svfModule);
 
@@ -136,11 +69,6 @@ public:
     }
 
 protected:
-    /// Global ICFGNode is handled at the entry of the program,
-    virtual void handleGlobalNode();
-
-    /// mark recursive functions by detecting SCC in callgraph
-    void markRecursiveFuns();
 
     /**
      * Check if execution state exist by merging states of predecessor blocks
@@ -151,14 +79,6 @@ protected:
     bool hasInEdgesES(const ICFGNode* node);
 
     /**
-     * Check if execution state exist at the branch edge
-     *
-     * @param intraEdge the edge from CmpStmt to the next Block
-     * @return if this edge is feasible
-     */
-    bool hasBranchES(const IntraCFGEdge* intraEdge, IntervalExeState& es);
-
-    /**
      * handle one instruction in svf basic blocks
      *
      * @param node ICFGNode which has a single instruction
@@ -166,91 +86,22 @@ protected:
     virtual void handleICFGNode(const ICFGNode *node);
 
     /**
-     * handle call node in svf basic blocks
-     *
-     * @param node ICFGNode which has a single CallICFGNode
-     */
-    virtual void handleCallSite(const ICFGNode* node);
-
-    /**
      * handle wto cycle (loop)
      *
      * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
      */
-    virtual void handleCycle(const ICFGWTOCycle *cycle);
+    void handleICFGCycle(const ICFGWTOCycle *cycle);
 
     /**
      * handle user defined function, ext function is not included.
      *
      * @param func SVFFunction which has a series of basic blocks
      */
-    virtual void handleFunc(const SVFFunction *func);
+    void handleFunc(const SVFFunction *func);
 
-    /**
-     * handle SVF Statement like CmpStmt, CallStmt, GepStmt, LoadStmt, StoreStmt, etc.
-     *
-     * @param stmt SVFStatement which is a value flow of instruction
-     */
-    virtual void handleSVFStatement(const SVFStmt *stmt);
 
-    /**
-     * Check if this callnode is recursive call and skip it.
-     *
-     * @param callnode CallICFGNode which calls a recursive function
-     */
-    virtual void SkipRecursiveCall(const CallICFGNode *callnode);
-
-    /**
-    * Check if this function is recursive function and skip it.
-    *
-    * @param func SVFFunction is a recursive function
-    */
-    virtual void SkipRecursiveFunc(const SVFFunction *func);
-
-    /**
-    * Check if this cmpStmt and succ are satisfiable to the execution state.
-    *
-    * @param cmpStmt CmpStmt is a conditional branch statement
-    * @param succ the value of cmpStmt (True or False)
-    * @return if this block has preceding execution state
-    */
-    bool hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, IntervalExeState& es);
-
-    /**
-    * Check if this SwitchInst and succ are satisfiable to the execution state.
-    *
-    * @param var var in switch inst
-    * @param succ the case value of switch inst
-    * @return if this block has preceding execution state
-    */
-    bool hasSwitchBranchES(const SVFVar* var, s64_t succ, IntervalExeState& es);
-
-    /// protected data members, also used in subclasses
-    SVFIR* _svfir;
-    PTACallGraph* _callgraph;
-    /// Execution State, used to store the Interval Value of every SVF variable
-    SVFIR2ItvExeState* _svfir2ExeState;
-    AEAPI* _api{nullptr};
-
-    ICFG* _icfg;
-    AEStat* _stat;
-    AEKind _kind;
-
-    Set<std::string> _bugLoc;
-    SVFBugReport _recoder;
-    std::vector<const CallICFGNode*> _callSiteStack;
-    Map<const ICFGNode *, std::string> _nodeToBugInfo;
 
 private:
-    // helper functions in handleCallSite
-    bool isExtCall(const CallICFGNode* callNode);
-    void extCallPass(const CallICFGNode* callNode);
-    bool isRecursiveCall(const CallICFGNode* callNode);
-    void recursiveCallPass(const CallICFGNode* callNode);
-    bool isDirectCall(const CallICFGNode* callNode);
-    void directCallFunPass(const CallICFGNode* callNode);
-    bool isIndirectCall(const CallICFGNode* callNode);
-    void indirectCallFunPass(const CallICFGNode* callNode);
 
     // helper functions in hasInEdgesES
     bool isFunEntry(const ICFGNode* block);
@@ -270,157 +121,4 @@ private:
 
 };
 
-class AEAPI
-{
-public:
-
-    typedef ExeState::Addrs Addrs;
-    enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
-    static bool classof(const AEAPI* api)
-    {
-        return api->getKind() == AEKind::AbstractExecutionICFG;
-    }
-
-    /**
-    * Constructor of AEAPI
-    *
-    * @param ae Abstract Execution or its subclass
-    * @param stat AEStat
-    */
-    AEAPI(AbstractExecutionICFG* ae, AEStat* stat): _ae(ae), _stat(stat)
-    {
-        initExtFunMap();
-        _kind = AEKind::AbstractExecutionICFG;
-    }
-
-    virtual ~AEAPI() {}
-
-    void setModule(SVFIR* svfModule)
-    {
-        _svfir = svfModule;
-    }
-
-    AEKind getKind() const
-    {
-        return _kind;
-    }
-
-    /**
-    * handle external function call
-    *
-    * @param call call node whose callee is external function
-    */
-    virtual void handleExtAPI(const CallICFGNode *call);
-
-    /**
-    * the map of external function to its API type
-    *
-    * In AEAPI, this function is mainly used for abstract explanation.
-    * In subclasses, this function is mainly used to check specific bugs
-    */
-    virtual void initExtFunMap();
-
-    /**
-    * get byte size of alloca inst
-    *
-    * @param addr Address Stmt like malloc/calloc/ALLOCA/StackAlloc
-    * @return the byte size e.g. int32_t a[10] -> return 40
-    */
-    u32_t getAllocaInstByteSize(const AddrStmt *addr);
-
-    /**
-    * get byte size of alloca inst
-    * e.g. source code str = "abc", there are str value, return "abc"
-    *
-    * @param rhs SVFValue of string
-    * @return the string
-    */
-    std::string strRead(const SVFValue* rhs);
-
-    /**
-    * get length of string
-    * e.g. source code str = "abc", return 3
-    *
-    * @param strValue SVFValue of string
-    * @return IntervalValue of string length
-    */
-    IntervalValue getStrlen(const SVF::SVFValue *strValue);
-
-    /**
-    * get memory allocation size
-    * e.g  arr = new int[10]
-    *      ....
-    *      memset(arr, 1, 10* sizeof(int))
-    * when we trace the 'arr', we can get the alloc size [40, 40]
-    * @param value to be traced
-    * @return IntervalValue of allocation size
-    */
-    IntervalValue traceMemoryAllocationSize(const SVFValue *value);
-    /**
-    * execute strcpy in abstract execution
-    * e.g  arr = new char[10]
-    *      str = "abc"
-    *      strcpy(arr, str)
-    * we can set arr[0]='a', arr[1]='b', arr[2]='c', arr[3]='\0'
-    * @param call callnode of strcpy like api
-    */
-    virtual void handleStrcpy(const CallICFGNode *call);
-    /**
-    * execute strcpy in abstract execution
-    * e.g  arr[10] = "abc"
-    *      str = "de"
-    *      strcat(arr, str)
-    * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
-    * @param call callnode of strcat like api
-    */
-    virtual void handleStrcat(const CallICFGNode *call);
-    /**
-    * execute memcpy in abstract execution
-    * e.g  arr = new char[10]
-    *      str = "abcd"
-    *      memcpy(arr, str, 5)
-    * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
-    * @param call callnode of memcpy like api
-    */
-    virtual void handleMemcpy(const SVFValue* dst, const SVFValue* src, IntervalValue len, u32_t start_idx);
-    /**
-    * execute memset in abstract execution
-    * e.g  arr = new char[10]
-    *      memset(arr, 'c', 2)
-    * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
-    * @param call callnode of memset like api
-    */
-    virtual void handleMemset(const SVFValue* dst, IntervalValue elem, IntervalValue len);
-
-    /**
-    * if this NodeID in SVFIR is a pointer, get the pointee type
-    * e.g  arr = (int*) malloc(10*sizeof(int))
-    *      getPointeeType(arr) -> return int
-    * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
-    * @param call callnode of memset like api
-    */
-    const SVFType* getPointeeElement(NodeID id);
-
-    void collectCheckPoint();
-    void checkPointAllSet();
-
-protected:
-    // helper functions for traceMemoryAllocationSize and canSafelyAccessMemory
-    void AccessMemoryViaRetNode(const CallICFGNode *callnode, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-    void AccessMemoryViaCopyStmt(const CopyStmt *copy, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-    void AccessMemoryViaLoadStmt(const LoadStmt *load, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-    void AccessMemoryViaCallArgs(const SVF::SVFArgument *arg, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-
-
-protected:
-    AbstractExecutionICFG* _ae;
-    AEStat* _stat;
-    SVFIR* _svfir;
-    AEKind _kind;
-
-    Map<std::string, std::function<void(const CallSite &)>> _func_map;
-
-    Set<const CallICFGNode*> _checkpoints;
-    Set<std::string> _checkpoint_names;
-};
 }
