@@ -328,7 +328,17 @@ public:
 
     Module* getMainLLVMModule() const
     {
-        return getModule(0);
+        assert(!empty() && "empty LLVM module!!");
+        for (size_t i = 0; i < getModuleNum(); ++i)
+        {
+            Module& module = getModuleRef(i);
+            if (module.getName().str() != ExtAPI::getExtAPI()->getExtBcPath())
+            {
+                return &module;
+            }
+        }
+        assert(false && "no main module found!");
+        return nullptr;
     }
 
     LLVMContext& getContext() const
