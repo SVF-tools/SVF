@@ -47,7 +47,8 @@ enum class AEKind
 {
     AbstractExecution,
     AbstractExecutionICFG,
-    BufOverflowChecker
+    BufOverflowChecker,
+    BufOverflowCheckerICFG
 };
 
 /// AEStat: Statistic for AE
@@ -250,17 +251,20 @@ protected:
     SVFBugReport _recoder;
     std::vector<const CallICFGNode*> _callSiteStack;
     Map<const ICFGNode *, std::string> _nodeToBugInfo;
+    AndersenWaveDiff *_ander;
+    Map<const SVFFunction*, CFBasicBlockGWTO *> _funcToWTO;
+    Set<const SVFFunction*> _recursiveFuns;
 
 private:
     // helper functions in handleCallSite
-    bool isExtCall(const CallICFGNode* callNode);
-    void extCallPass(const CallICFGNode* callNode);
-    bool isRecursiveCall(const CallICFGNode* callNode);
-    void recursiveCallPass(const CallICFGNode* callNode);
-    bool isDirectCall(const CallICFGNode* callNode);
-    void directCallFunPass(const CallICFGNode* callNode);
-    bool isIndirectCall(const CallICFGNode* callNode);
-    void indirectCallFunPass(const CallICFGNode* callNode);
+    virtual bool isExtCall(const CallICFGNode* callNode);
+    virtual void extCallPass(const CallICFGNode* callNode);
+    virtual bool isRecursiveCall(const CallICFGNode* callNode);
+    virtual void recursiveCallPass(const CallICFGNode* callNode);
+    virtual bool isDirectCall(const CallICFGNode* callNode);
+    virtual void directCallFunPass(const CallICFGNode* callNode);
+    virtual bool isIndirectCall(const CallICFGNode* callNode);
+    virtual void indirectCallFunPass(const CallICFGNode* callNode);
 
     // helper functions in hasInEdgesES
     bool isFunEntry(const CFBasicBlockNode* block);
@@ -272,11 +276,8 @@ private:
 
     // private data
     CFBasicBlockGraph* _CFBlockG;
-    AndersenWaveDiff *_ander;
     Map<const CFBasicBlockNode*, IntervalExeState> _preES;
     Map<const CFBasicBlockNode*, IntervalExeState> _postES;
-    Map<const SVFFunction*, CFBasicBlockGWTO *> _funcToWTO;
-    Set<const SVFFunction*> _recursiveFuns;
     std::string _moduleName;
 
 };

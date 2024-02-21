@@ -310,3 +310,20 @@ void IntervalExeState::meetWith(const IntervalExeState& other)
 {
     IntervalESBase::meetWith(other);
 }
+
+
+/// Print values of all expressions
+void IntervalExeState::printExprValues(std::ostream &oss) const
+{
+    oss << "-----------Var and Value-----------\n";
+    printTable(_varToItvVal, oss);
+    printTable(_locToItvVal, oss);
+    printTable(_varToAddrs, oss);
+    printTable(_locToAddrs, oss);
+    oss << "------------Global---------------------\n";
+    printTable(globalES._varToItvVal, oss);
+    printTable(globalES._locToItvVal, oss);
+    printTable(globalES._varToAddrs, oss);
+    printTable(globalES._locToAddrs, oss);
+
+}

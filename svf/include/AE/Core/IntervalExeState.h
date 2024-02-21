@@ -433,6 +433,8 @@ public:
         return *this;
     }
 
+    virtual void printExprValues(std::ostream &oss) const override;
+
     /// move constructor
     IntervalExeState(IntervalExeState &&rhs) : IntervalESBase(std::move(rhs))
     {

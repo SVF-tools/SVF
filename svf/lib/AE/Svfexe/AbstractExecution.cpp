@@ -683,6 +683,7 @@ void AbstractExecution::recursiveCallPass(const SVF::CallICFGNode *callNode)
             }
         }
     }
+    _postES[_CFBlockG->getCFBasicBlockNode(retNode->getId())] = _postES[_CFBlockG->getCFBasicBlockNode(callNode->getId())];
 }
 
 bool AbstractExecution::isDirectCall(const SVF::CallICFGNode *callNode)
@@ -799,7 +800,7 @@ void AbstractExecution::handleCycle(const CFBasicBlockGWTOCycle *cycle)
                     if (is_fixpoint)
                         incresing = false;
                 }
-                if (!incresing)
+                else if (!incresing)
                 {
                     bool is_fixpoint = narrowFixpointPass(cycle_head, pre_es);
                     if (is_fixpoint)
@@ -1342,6 +1343,7 @@ void AEAPI::checkPointAllSet()
         {
             SVFUtil::errs() << SVFUtil::sucMsg(call->toString() + "\n");
         }
+        assert(false);
     }
 
 }

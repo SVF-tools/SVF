@@ -65,9 +65,18 @@ int main(int argc, char** argv)
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
     PTACallGraph* callgraph = ander->getPTACallGraph();
     builder.updateCallGraph(callgraph);
-    AbstractExecutionICFG ae;
-    ae.initExtAPI();
-    ae.runOnModule(pag);
+    if (Options::BufferOverflowCheck())
+    {
+        BufOverflowCheckerICFG ae;
+        ae.initExtAPI();
+        ae.runOnModule(pag);
+    }
+    else
+    {
+        AbstractExecutionICFG ae;
+        ae.initExtAPI();
+        ae.runOnModule(pag);
+    }
 
     LLVMModuleSet::releaseLLVMModuleSet();
 

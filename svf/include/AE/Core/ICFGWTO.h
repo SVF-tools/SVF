@@ -52,6 +52,10 @@ public:
 
     explicit ICFGWTO(ICFG* graph, const ICFGNode* node) : Base(graph, node) {}
 
+    virtual ~ICFGWTO()
+    {
+    }
+
     inline void forEachSuccessor(
         const ICFGNode* node,
         std::function<void(const ICFGNode*)> func) const override
