@@ -6,7 +6,6 @@ add_subdirectory(MTA)
 add_subdirectory(CFL)
 add_subdirectory(LLVM2SVF)
 add_subdirectory(AE)
-add_subdirectory(AE-ICFG)
 
 set_target_properties(
     cfl dvf svf-ex llvm2svf mta saber wpa ae

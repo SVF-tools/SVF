@@ -32,7 +32,7 @@
 #include "AE/Svfexe/SVFIR2ItvExeState.h"
 #include "Util/WorkList.h"
 #include "MSSA/SVFGBuilder.h"
-#include "AE/Core/CFBasicBlockGWTO.h"
+#include "AE/Core/ICFGWTO.h"
 #include "WPA/Andersen.h"
 #include "Util/SVFBugReport.h"
 
@@ -122,7 +122,6 @@ public:
 
     virtual void runOnModule(SVFIR* svfModule);
 
-
     /// Destructor
     virtual ~AbstractExecution();
 
@@ -152,7 +151,7 @@ protected:
      * @param block The basic block to analyse
      * @return if this block has preceding execution state
      */
-    bool hasInEdgesES(const CFBasicBlockNode *block);
+    bool hasInEdgesES(const ICFGNode *block);
 
     /**
      * Check if execution state exist at the branch edge
@@ -167,7 +166,7 @@ protected:
      *
      * @param block basic block that has a series of instructions
      */
-    void handleBlock(const CFBasicBlockNode *block);
+    void handleWTONode(const ICFGNode* node);
 
     /**
      * handle one instruction in svf basic blocks
@@ -188,7 +187,7 @@ protected:
      *
      * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
      */
-    virtual void handleCycle(const CFBasicBlockGWTOCycle *cycle);
+    virtual void handleCycle(const ICFGWTOCycle *cycle);
 
     /**
      * handle user defined function, ext function is not included.
@@ -252,7 +251,7 @@ protected:
     std::vector<const CallICFGNode*> _callSiteStack;
     Map<const ICFGNode *, std::string> _nodeToBugInfo;
     AndersenWaveDiff *_ander;
-    Map<const SVFFunction*, CFBasicBlockGWTO *> _funcToWTO;
+    Map<const SVFFunction*, ICFGWTO *> _funcToWTO;
     Set<const SVFFunction*> _recursiveFuns;
 
 private:
@@ -267,17 +266,16 @@ private:
     virtual void indirectCallFunPass(const CallICFGNode* callNode);
 
     // helper functions in hasInEdgesES
-    bool isFunEntry(const CFBasicBlockNode* block);
-    bool isGlobalEntry(const CFBasicBlockNode* block);
+    bool isFunEntry(const ICFGNode* block);
+    bool isGlobalEntry(const ICFGNode* block);
 
     // helper functions in handleCycle
-    bool widenFixpointPass(const CFBasicBlockNode* cycle_head, IntervalExeState& pre_es);
-    bool narrowFixpointPass(const CFBasicBlockNode* cycle_head, IntervalExeState& pre_es);
+    bool widenFixpointPass(const ICFGNode* cycle_head, IntervalExeState& pre_es);
+    bool narrowFixpointPass(const ICFGNode* cycle_head, IntervalExeState& pre_es);
 
     // private data
-    CFBasicBlockGraph* _CFBlockG;
-    Map<const CFBasicBlockNode*, IntervalExeState> _preES;
-    Map<const CFBasicBlockNode*, IntervalExeState> _postES;
+    Map<const ICFGNode*, IntervalExeState> _preES;
+    Map<const ICFGNode*, IntervalExeState> _postES;
     std::string _moduleName;
 
 };
