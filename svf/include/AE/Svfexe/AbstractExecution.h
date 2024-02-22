@@ -146,37 +146,37 @@ protected:
     void markRecursiveFuns();
 
     /**
-     * Check if execution state exist by merging states of predecessor blocks
+     * Check if execution state exist by merging states of predecessor nodes
      *
-     * @param block The basic block to analyse
-     * @return if this block has preceding execution state
+     * @param node The ICFGNode to analyse
+     * @return if this node has preceding execution state
      */
-    bool hasInEdgesES(const ICFGNode *block);
+    bool hasInEdgesES(const ICFGNode *node);
 
     /**
      * Check if execution state exist at the branch edge
      *
-     * @param intraEdge the edge from CmpStmt to the next Block
+     * @param intraEdge the edge from CmpStmt to the next node
      * @return if this edge is feasible
      */
     bool hasBranchES(const IntraCFGEdge* intraEdge, IntervalExeState& es);
 
     /**
-     * handle instructions in svf basic blocks
+     * handle instructions in ICFGNode
      *
      * @param block basic block that has a series of instructions
      */
     void handleWTONode(const ICFGNode* node);
 
     /**
-     * handle one instruction in svf basic blocks
+     * handle one instruction in ICFGNode
      *
      * @param node ICFGNode which has a single instruction
      */
     virtual void handleICFGNode(const ICFGNode *node);
 
     /**
-     * handle call node in svf basic blocks
+     * handle call node in ICFGNode
      *
      * @param node ICFGNode which has a single CallICFGNode
      */
@@ -222,7 +222,7 @@ protected:
     *
     * @param cmpStmt CmpStmt is a conditional branch statement
     * @param succ the value of cmpStmt (True or False)
-    * @return if this block has preceding execution state
+    * @return if this ICFGNode has preceding execution state
     */
     bool hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, IntervalExeState& es);
 
@@ -231,7 +231,7 @@ protected:
     *
     * @param var var in switch inst
     * @param succ the case value of switch inst
-    * @return if this block has preceding execution state
+    * @return if this ICFGNode has preceding execution state
     */
     bool hasSwitchBranchES(const SVFVar* var, s64_t succ, IntervalExeState& es);
 
@@ -266,8 +266,8 @@ private:
     virtual void indirectCallFunPass(const CallICFGNode* callNode);
 
     // helper functions in hasInEdgesES
-    bool isFunEntry(const ICFGNode* block);
-    bool isGlobalEntry(const ICFGNode* block);
+    bool isFunEntry(const ICFGNode* node);
+    bool isGlobalEntry(const ICFGNode* node);
 
     // helper functions in handleCycle
     bool widenFixpointPass(const ICFGNode* cycle_head, IntervalExeState& pre_es);
