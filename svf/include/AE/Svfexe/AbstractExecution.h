@@ -46,9 +46,7 @@ class AEAPI;
 enum class AEKind
 {
     AbstractExecution,
-    AbstractExecutionICFG,
     BufOverflowChecker,
-    BufOverflowCheckerICFG
 };
 
 /// AEStat: Statistic for AE
