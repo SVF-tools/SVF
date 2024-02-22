@@ -585,7 +585,7 @@ bool BufOverflowCheckerAPI::canSafelyAccessMemory(const SVFValue *value, const I
                             if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue))
                             {
                                 u32_t lb = (double) Options::MaxFieldLimit() / arrElemSize >= op->getSExtValue() ?
-                                                                                                                op->getSExtValue() * arrElemSize : Options::MaxFieldLimit();
+                                           op->getSExtValue() * arrElemSize : Options::MaxFieldLimit();
                                 gepArrTotalByte = gepArrTotalByte + IntervalValue(lb, lb);
                             }
                             else
@@ -600,12 +600,12 @@ bool BufOverflowCheckerAPI::canSafelyAccessMemory(const SVFValue *value, const I
                                 {
                                     u32_t ub = (idxVal.ub().getNumeral() < 0) ? 0 :
                                                (double) Options::MaxFieldLimit() / arrElemSize >=
-                                                       idxVal.ub().getNumeral() ?
-                                                   arrElemSize * idxVal.ub().getNumeral() : Options::MaxFieldLimit();
+                                               idxVal.ub().getNumeral() ?
+                                               arrElemSize * idxVal.ub().getNumeral() : Options::MaxFieldLimit();
                                     u32_t lb = (idxVal.lb().getNumeral() < 0) ? 0 :
                                                ((double) Options::MaxFieldLimit() / arrElemSize >=
                                                 idxVal.lb().getNumeral()) ?
-                                                   arrElemSize * idxVal.lb().getNumeral() : Options::MaxFieldLimit();
+                                               arrElemSize * idxVal.lb().getNumeral() : Options::MaxFieldLimit();
                                     gepArrTotalByte = gepArrTotalByte + IntervalValue(lb, ub);
                                 }
                             }
@@ -656,7 +656,7 @@ bool BufOverflowCheckerAPI::canSafelyAccessMemory(const SVFValue *value, const I
                     // addrStmt is source node.
                     u32_t arr_type_size = getAllocaInstByteSize(addr);
                     if (total_bytes.ub().getNumeral() >= arr_type_size ||
-                        total_bytes.lb().getNumeral() < 0)
+                            total_bytes.lb().getNumeral() < 0)
                     {
                         std::string msg =
                             "Buffer overflow!! Accessing buffer range: " + IntervalToIntStr(total_bytes) +

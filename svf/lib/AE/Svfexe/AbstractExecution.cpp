@@ -273,7 +273,8 @@ bool AbstractExecution::isFunEntry(const SVF::ICFGNode *block)
 
 bool AbstractExecution::isGlobalEntry(const SVF::ICFGNode *block)
 {
-    for (auto *edge : _icfg->getGlobalICFGNode()->getOutEdges()) {
+    for (auto *edge : _icfg->getGlobalICFGNode()->getOutEdges())
+    {
         if (edge->getDstNode() == block)
         {
             return true;
@@ -663,7 +664,7 @@ void AbstractExecution::recursiveCallPass(const SVF::CallICFGNode *callNode)
         if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
         {
             if (!retPE->getLHSVar()->isPointer() &&
-                !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
+                    !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
             {
                 _svfir2ExeState->getEs()[retPE->getLHSVarID()] = IntervalValue::top();
             }
