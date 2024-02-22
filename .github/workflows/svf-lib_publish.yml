@@ -53,6 +53,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo $(pwd)
+          git pull
           astyle --style=allman -n -r "*.h" "*.cpp"
           if [ ! -z $FILES_CHANGED ]; then clang-format -i $FILES_CHANGED; fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
@@ -69,7 +70,6 @@ jobs:
             cd $GITHUB_WORKSPACE
             echo $(pwd)
             git status
-            git pull
             git add .
             if [ -n "$(git status -s)" ]; then git commit -m"SVF code formatter"; fi
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF.git   HEAD:master
