@@ -69,7 +69,8 @@ jobs:
             cd $GITHUB_WORKSPACE
             echo $(pwd)
             git status
-            git pull
+            git fetch origin
+            git rebase origin/master
             git add .
             if [ -n "$(git status -s)" ]; then git commit -m"SVF code formatter"; fi
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF.git   HEAD:master
