@@ -25,7 +25,6 @@
 // Created by Jiawei Wang on 2024/1/10.
 //
 #include "WPA/Andersen.h"
-#include "Util/CFBasicBlockGBuilder.h"
 #include "SVFIR/SVFIR.h"
 #include "AE/Svfexe/AbstractExecution.h"
 #include "Util/Options.h"
@@ -103,11 +102,8 @@ void AbstractExecution::runOnModule(SVF::SVFIR *svfModule)
     // init SSE External API Handler
     _callgraph = _ander->getPTACallGraph();
     _icfg = _svfir->getICFG();
-    CFBasicBlockGBuilder CFBGBuilder;
     _icfg->updateCallGraph(_callgraph);
 
-    CFBGBuilder.build(_icfg);
-    _CFBlockG = CFBGBuilder.getCFBasicBlockGraph();
     /// collect checkpoint
     _api->collectCheckPoint();
 
@@ -115,13 +111,9 @@ void AbstractExecution::runOnModule(SVF::SVFIR *svfModule)
     markRecursiveFuns();
     for (const SVFFunction* fun: _svfir->getModule()->getFunctionSet())
     {
-        if (_CFBlockG->hasGNode(_icfg->getFunEntryICFGNode(fun)->getId()) )
-        {
-            const CFBasicBlockNode *node = _CFBlockG->getGNode(_icfg->getFunEntryICFGNode(fun)->getId());
-            auto *wto = new CFBasicBlockGWTO(_CFBlockG, node);
-            wto->init();
-            _funcToWTO[fun] = wto;
-        }
+        auto *wto = new ICFGWTO(_icfg, _icfg->getFunEntryICFGNode(fun));
+        wto->init();
+        _funcToWTO[fun] = wto;
     }
     analyse();
     _api->checkPointAllSet();
@@ -213,7 +205,7 @@ void AbstractExecution::handleGlobalNode()
 /// get execution state by merging states of predecessor blocks
 /// Scenario 1: preblock -----(intraEdge)----> block, join the preES of inEdges
 /// Scenario 2: preblock -----(callEdge)----> block
-bool AbstractExecution::hasInEdgesES(const CFBasicBlockNode *block)
+bool AbstractExecution::hasInEdgesES(const ICFGNode *block)
 {
     if (isGlobalEntry(block))
     {
@@ -229,7 +221,7 @@ bool AbstractExecution::hasInEdgesES(const CFBasicBlockNode *block)
         {
             if (_postES.find(edge->getSrcNode()) != _postES.end())
             {
-                const IntraCFGEdge *intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge->getICFGEdge());
+                const IntraCFGEdge *intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
                 if (intraCfgEdge && intraCfgEdge->getCondition())
                 {
                     IntervalExeState tmpEs = _postES[edge->getSrcNode()];
@@ -267,9 +259,9 @@ bool AbstractExecution::hasInEdgesES(const CFBasicBlockNode *block)
     assert(false && "implement this part");
 }
 
-bool AbstractExecution::isFunEntry(const SVF::CFBasicBlockNode *block)
+bool AbstractExecution::isFunEntry(const SVF::ICFGNode *block)
 {
-    if (SVFUtil::isa<FunEntryICFGNode>(*block->getICFGNodes().begin()))
+    if (SVFUtil::isa<FunEntryICFGNode>(block))
     {
         if (_preES.find(block) != _preES.end())
         {
@@ -279,12 +271,15 @@ bool AbstractExecution::isFunEntry(const SVF::CFBasicBlockNode *block)
     return false;
 }
 
-bool AbstractExecution::isGlobalEntry(const SVF::CFBasicBlockNode *block)
+bool AbstractExecution::isGlobalEntry(const SVF::ICFGNode *block)
 {
-    if (!block->hasIncomingEdge())
-        return true;
-    else
-        return false;
+    for (auto *edge : _icfg->getGlobalICFGNode()->getOutEdges()) {
+        if (edge->getDstNode() == block)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool AbstractExecution::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, IntervalExeState& es)
@@ -587,11 +582,11 @@ bool AbstractExecution::hasBranchES(const IntraCFGEdge* intraEdge, IntervalExeSt
     return true;
 }
 /// handle instructions in svf basic blocks
-void AbstractExecution::handleBlock(const CFBasicBlockNode *block)
+void AbstractExecution::handleWTONode(const ICFGNode *node)
 {
     _stat->getBlockTrace()++;
     // Get execution states from in edges
-    if (!hasInEdgesES(block))
+    if (!hasInEdgesES(node))
     {
         // No ES on the in edges - Infeasible block
         return;
@@ -600,22 +595,13 @@ void AbstractExecution::handleBlock(const CFBasicBlockNode *block)
     {
         // Has ES on the in edges - Feasible block
         // Get execution state from in edges
-        _svfir2ExeState->setEs(_preES[block]);
+        _svfir2ExeState->setEs(_preES[node]);
     }
 
     std::deque<const ICFGNode*> worklist;
-    for (auto it = block->begin(); it != block->end(); ++it)
-    {
-        worklist.push_back(*it);
-    }
-    while(!worklist.empty())
-    {
-        const ICFGNode* curICFGNode = worklist.front();
-        worklist.pop_front();
-        handleICFGNode(curICFGNode);
-    }
-    _preES.erase(block);
-    _postES[block] = _svfir2ExeState->getEs();
+    handleICFGNode(node);
+    _preES.erase(node);
+    _postES[node] = _svfir2ExeState->getEs();
 }
 
 void AbstractExecution::handleCallSite(const ICFGNode* node)
@@ -677,12 +663,13 @@ void AbstractExecution::recursiveCallPass(const SVF::CallICFGNode *callNode)
         if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
         {
             if (!retPE->getLHSVar()->isPointer() &&
-                    !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
+                !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
             {
                 _svfir2ExeState->getEs()[retPE->getLHSVarID()] = IntervalValue::top();
             }
         }
     }
+    _postES[retNode] = _svfir2ExeState->getEs();
 }
 
 bool AbstractExecution::isDirectCall(const SVF::CallICFGNode *callNode)
@@ -696,15 +683,14 @@ void AbstractExecution::directCallFunPass(const SVF::CallICFGNode *callNode)
     IntervalExeState preES = _svfir2ExeState->getEs();
     _callSiteStack.push_back(callNode);
 
-    auto* curBlockNode = _CFBlockG->getCFBasicBlockNode(callNode->getId());
-    _postES[curBlockNode] = _svfir2ExeState->getEs();
+    _postES[callNode] = _svfir2ExeState->getEs();
 
     handleFunc(callfun);
     _callSiteStack.pop_back();
     // handle Ret node
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     // resume ES to callnode
-    _postES[_CFBlockG->getCFBasicBlockNode(retNode->getId())] = _postES[_CFBlockG->getCFBasicBlockNode(callNode->getId())];
+    _postES[retNode] = _postES[callNode];
 }
 
 bool AbstractExecution::isIndirectCall(const SVF::CallICFGNode *callNode)
@@ -729,15 +715,14 @@ void AbstractExecution::indirectCallFunPass(const SVF::CallICFGNode *callNode)
     {
         IntervalExeState preES = _svfir2ExeState->getEs();
         _callSiteStack.push_back(callNode);
-        auto *curBlockNode = _CFBlockG->getCFBasicBlockNode(callNode->getId());
 
-        _postES[curBlockNode] = _svfir2ExeState->getEs();
+        _postES[callNode] = _svfir2ExeState->getEs();
 
         handleFunc(callfun);
         _callSiteStack.pop_back();
         // handle Ret node
         const RetICFGNode *retNode = callNode->getRetICFGNode();
-        _postES[_CFBlockG->getCFBasicBlockNode(retNode->getId())] = _postES[_CFBlockG->getCFBasicBlockNode(callNode->getId())];
+        _postES[retNode] = _postES[callNode];
     }
 }
 
@@ -764,7 +749,7 @@ void AbstractExecution::handleICFGNode(const ICFGNode *curICFGNode)
 }
 
 /// handle wto cycle (loop)
-void AbstractExecution::handleCycle(const CFBasicBlockGWTOCycle *cycle)
+void AbstractExecution::handleCycle(const ICFGWTOCycle *cycle)
 {
     // Get execution states from in edges
     if (!hasInEdgesES(cycle->head()))
@@ -778,9 +763,9 @@ void AbstractExecution::handleCycle(const CFBasicBlockGWTOCycle *cycle)
     bool incresing = true;
     for (int i = 0; ; i++)
     {
-        const CFBasicBlockNode* cycle_head = cycle->head();
+        const ICFGNode* cycle_head = cycle->head();
         // handle cycle head
-        handleBlock(cycle_head);
+        handleWTONode(cycle_head);
         if (i < widen_delay)
         {
             if (i> 0 && pre_es >= _postES[cycle_head])
@@ -797,9 +782,12 @@ void AbstractExecution::handleCycle(const CFBasicBlockGWTOCycle *cycle)
                 {
                     bool is_fixpoint = widenFixpointPass(cycle_head, pre_es);
                     if (is_fixpoint)
+                    {
                         incresing = false;
+                        continue;
+                    }
                 }
-                if (!incresing)
+                else if (!incresing)
                 {
                     bool is_fixpoint = narrowFixpointPass(cycle_head, pre_es);
                     if (is_fixpoint)
@@ -809,14 +797,14 @@ void AbstractExecution::handleCycle(const CFBasicBlockGWTOCycle *cycle)
         }
         for (auto it = cycle->begin(); it != cycle->end(); ++it)
         {
-            const CFBasicBlockGWTOComp* cur = *it;
-            if (const CFBasicBlockGWTONode* vertex = SVFUtil::dyn_cast<CFBasicBlockGWTONode>(cur))
+            const ICFGWTOComp* cur = *it;
+            if (const ICFGWTONode* vertex = SVFUtil::dyn_cast<ICFGWTONode>(cur))
             {
-                handleBlock(vertex->node());
+                handleWTONode(vertex->node());
             }
-            else if (const CFBasicBlockGWTOCycle* cycle = SVFUtil::dyn_cast<CFBasicBlockGWTOCycle>(cur))
+            else if (const ICFGWTOCycle* cycle2 = SVFUtil::dyn_cast<ICFGWTOCycle>(cur))
             {
-                handleCycle(cycle);
+                handleCycle(cycle2);
             }
             else
             {
@@ -826,7 +814,7 @@ void AbstractExecution::handleCycle(const CFBasicBlockGWTOCycle *cycle)
     }
 }
 
-bool AbstractExecution::widenFixpointPass(const CFBasicBlockNode* cycle_head, IntervalExeState& pre_es)
+bool AbstractExecution::widenFixpointPass(const ICFGNode* cycle_head, IntervalExeState& pre_es)
 {
     // increasing iterations
     IntervalExeState new_pre_es = pre_es.widening(_postES[cycle_head]);
@@ -848,7 +836,7 @@ bool AbstractExecution::widenFixpointPass(const CFBasicBlockNode* cycle_head, In
     }
 }
 
-bool AbstractExecution::narrowFixpointPass(const SVF::CFBasicBlockNode *cycle_head, SVF::IntervalExeState &pre_es)
+bool AbstractExecution::narrowFixpointPass(const SVF::ICFGNode *cycle_head, SVF::IntervalExeState &pre_es)
 {
     // decreasing iterations
     IntervalExeState new_pre_es = pre_es.narrowing(_postES[cycle_head]);
@@ -875,16 +863,16 @@ bool AbstractExecution::narrowFixpointPass(const SVF::CFBasicBlockNode *cycle_he
 void AbstractExecution::handleFunc(const SVFFunction *func)
 {
     _stat->getFunctionTrace()++;
-    CFBasicBlockGWTO* wto = _funcToWTO[func];
+    ICFGWTO* wto = _funcToWTO[func];
     // set function entry ES
     for (auto it = wto->begin(); it!= wto->end(); ++it)
     {
-        const CFBasicBlockGWTOComp* cur = *it;
-        if (const CFBasicBlockGWTONode* vertex = SVFUtil::dyn_cast<CFBasicBlockGWTONode>(cur))
+        const ICFGWTOComp* cur = *it;
+        if (const ICFGWTONode* vertex = SVFUtil::dyn_cast<ICFGWTONode>(cur))
         {
-            handleBlock(vertex->node());
+            handleWTONode(vertex->node());
         }
-        else if (const CFBasicBlockGWTOCycle* cycle = SVFUtil::dyn_cast<CFBasicBlockGWTOCycle>(cur))
+        else if (const ICFGWTOCycle* cycle = SVFUtil::dyn_cast<ICFGWTOCycle>(cur))
         {
             handleCycle(cycle);
         }
@@ -894,7 +882,6 @@ void AbstractExecution::handleFunc(const SVFFunction *func)
         }
     }
 }
-
 
 void AbstractExecution::handleSVFStatement(const SVFStmt *stmt)
 {
@@ -1342,6 +1329,7 @@ void AEAPI::checkPointAllSet()
         {
             SVFUtil::errs() << SVFUtil::sucMsg(call->toString() + "\n");
         }
+        assert(false);
     }
 
 }

@@ -32,7 +32,7 @@
 #include "AE/Svfexe/SVFIR2ItvExeState.h"
 #include "Util/WorkList.h"
 #include "MSSA/SVFGBuilder.h"
-#include "AE/Core/CFBasicBlockGWTO.h"
+#include "AE/Core/ICFGWTO.h"
 #include "WPA/Andersen.h"
 #include "Util/SVFBugReport.h"
 
@@ -46,7 +46,7 @@ class AEAPI;
 enum class AEKind
 {
     AbstractExecution,
-    BufOverflowChecker
+    BufOverflowChecker,
 };
 
 /// AEStat: Statistic for AE
@@ -120,7 +120,6 @@ public:
 
     virtual void runOnModule(SVFIR* svfModule);
 
-
     /// Destructor
     virtual ~AbstractExecution();
 
@@ -145,37 +144,37 @@ protected:
     void markRecursiveFuns();
 
     /**
-     * Check if execution state exist by merging states of predecessor blocks
+     * Check if execution state exist by merging states of predecessor nodes
      *
-     * @param block The basic block to analyse
-     * @return if this block has preceding execution state
+     * @param node The ICFGNode to analyse
+     * @return if this node has preceding execution state
      */
-    bool hasInEdgesES(const CFBasicBlockNode *block);
+    bool hasInEdgesES(const ICFGNode *node);
 
     /**
      * Check if execution state exist at the branch edge
      *
-     * @param intraEdge the edge from CmpStmt to the next Block
+     * @param intraEdge the edge from CmpStmt to the next node
      * @return if this edge is feasible
      */
     bool hasBranchES(const IntraCFGEdge* intraEdge, IntervalExeState& es);
 
     /**
-     * handle instructions in svf basic blocks
+     * handle instructions in ICFGNode
      *
      * @param block basic block that has a series of instructions
      */
-    void handleBlock(const CFBasicBlockNode *block);
+    void handleWTONode(const ICFGNode* node);
 
     /**
-     * handle one instruction in svf basic blocks
+     * handle one instruction in ICFGNode
      *
      * @param node ICFGNode which has a single instruction
      */
     virtual void handleICFGNode(const ICFGNode *node);
 
     /**
-     * handle call node in svf basic blocks
+     * handle call node in ICFGNode
      *
      * @param node ICFGNode which has a single CallICFGNode
      */
@@ -186,7 +185,7 @@ protected:
      *
      * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
      */
-    virtual void handleCycle(const CFBasicBlockGWTOCycle *cycle);
+    virtual void handleCycle(const ICFGWTOCycle *cycle);
 
     /**
      * handle user defined function, ext function is not included.
@@ -221,7 +220,7 @@ protected:
     *
     * @param cmpStmt CmpStmt is a conditional branch statement
     * @param succ the value of cmpStmt (True or False)
-    * @return if this block has preceding execution state
+    * @return if this ICFGNode has preceding execution state
     */
     bool hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, IntervalExeState& es);
 
@@ -230,7 +229,7 @@ protected:
     *
     * @param var var in switch inst
     * @param succ the case value of switch inst
-    * @return if this block has preceding execution state
+    * @return if this ICFGNode has preceding execution state
     */
     bool hasSwitchBranchES(const SVFVar* var, s64_t succ, IntervalExeState& es);
 
@@ -249,33 +248,32 @@ protected:
     SVFBugReport _recoder;
     std::vector<const CallICFGNode*> _callSiteStack;
     Map<const ICFGNode *, std::string> _nodeToBugInfo;
+    AndersenWaveDiff *_ander;
+    Map<const SVFFunction*, ICFGWTO *> _funcToWTO;
+    Set<const SVFFunction*> _recursiveFuns;
 
 private:
     // helper functions in handleCallSite
-    bool isExtCall(const CallICFGNode* callNode);
-    void extCallPass(const CallICFGNode* callNode);
-    bool isRecursiveCall(const CallICFGNode* callNode);
-    void recursiveCallPass(const CallICFGNode* callNode);
-    bool isDirectCall(const CallICFGNode* callNode);
-    void directCallFunPass(const CallICFGNode* callNode);
-    bool isIndirectCall(const CallICFGNode* callNode);
-    void indirectCallFunPass(const CallICFGNode* callNode);
+    virtual bool isExtCall(const CallICFGNode* callNode);
+    virtual void extCallPass(const CallICFGNode* callNode);
+    virtual bool isRecursiveCall(const CallICFGNode* callNode);
+    virtual void recursiveCallPass(const CallICFGNode* callNode);
+    virtual bool isDirectCall(const CallICFGNode* callNode);
+    virtual void directCallFunPass(const CallICFGNode* callNode);
+    virtual bool isIndirectCall(const CallICFGNode* callNode);
+    virtual void indirectCallFunPass(const CallICFGNode* callNode);
 
     // helper functions in hasInEdgesES
-    bool isFunEntry(const CFBasicBlockNode* block);
-    bool isGlobalEntry(const CFBasicBlockNode* block);
+    bool isFunEntry(const ICFGNode* node);
+    bool isGlobalEntry(const ICFGNode* node);
 
     // helper functions in handleCycle
-    bool widenFixpointPass(const CFBasicBlockNode* cycle_head, IntervalExeState& pre_es);
-    bool narrowFixpointPass(const CFBasicBlockNode* cycle_head, IntervalExeState& pre_es);
+    bool widenFixpointPass(const ICFGNode* cycle_head, IntervalExeState& pre_es);
+    bool narrowFixpointPass(const ICFGNode* cycle_head, IntervalExeState& pre_es);
 
     // private data
-    CFBasicBlockGraph* _CFBlockG;
-    AndersenWaveDiff *_ander;
-    Map<const CFBasicBlockNode*, IntervalExeState> _preES;
-    Map<const CFBasicBlockNode*, IntervalExeState> _postES;
-    Map<const SVFFunction*, CFBasicBlockGWTO *> _funcToWTO;
-    Set<const SVFFunction*> _recursiveFuns;
+    Map<const ICFGNode*, IntervalExeState> _preES;
+    Map<const ICFGNode*, IntervalExeState> _postES;
     std::string _moduleName;
 
 };
