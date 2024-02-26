@@ -253,8 +253,6 @@ protected:
     Set<const SVFFunction*> _recursiveFuns;
 
 private:
-    void compressICFGGraph();
-
     // helper functions in handleCallSite
     virtual bool isExtCall(const CallICFGNode* callNode);
     virtual void extCallPass(const CallICFGNode* callNode);
@@ -276,8 +274,7 @@ private:
     // private data
     Map<const ICFGNode*, IntervalExeState> _preES;
     Map<const ICFGNode*, IntervalExeState> _postES;
-    Map<const ICFGNode*, std::vector<const ICFGNode*>> _subICFGNode;
-    Map<const ICFGNode*, const ICFGNode*> _refICFGNode;
+
     std::string _moduleName;
 
 };
