@@ -73,8 +73,15 @@ static void simplify(ICFG* _icfg)
                     else
                     {
                         const ICFGNode* pNode = bbToNodes[bb].back();
-                        _subICFGNode[pNode].push_back(icfgNode);
-                        _refICFGNode[icfgNode] = pNode;
+                        if (!SVFUtil::isa<RetICFGNode>(pNode)) {
+                            _subICFGNode[pNode].push_back(icfgNode);
+                            _refICFGNode[icfgNode] = pNode;
+                        }
+                        else {
+                            _subICFGNode[icfgNode]  = {icfgNode};
+                            _refICFGNode[icfgNode] = icfgNode;
+                            bbToNodes[bb].push_back(icfgNode);
+                        }
                     }
                 }
             }
@@ -251,6 +258,7 @@ static void simplify(ICFG* _icfg)
             edge->getSrcNode()->removeOutgoingEdge(edge);
         }
     }
+    _icfg->dump("cICFG");
 }
 
 static const std::vector<const ICFGNode*>& getSubICFGNode(const ICFGNode* node)
