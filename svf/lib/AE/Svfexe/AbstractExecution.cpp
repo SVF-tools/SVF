@@ -144,8 +144,6 @@ AbstractExecution::~AbstractExecution()
 
 }
 
-void AbstractExecution::compressICFGGraph() {}
-
 void AbstractExecution::markRecursiveFuns()
 {
     // detect if callgraph has cycle
