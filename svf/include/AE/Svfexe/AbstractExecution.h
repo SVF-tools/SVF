@@ -35,6 +35,7 @@
 #include "AE/Core/ICFGWTO.h"
 #include "WPA/Andersen.h"
 #include "Util/SVFBugReport.h"
+#include "AE/Svfexe/ICFGSimplify.h"
 
 namespace SVF
 {
@@ -276,6 +277,8 @@ private:
     Map<const ICFGNode*, IntervalExeState> _postES;
     std::string _moduleName;
 
+    ICFGSimplify* _icfg_simplify;
+
 };
 
 class AEAPI
@@ -430,5 +433,6 @@ protected:
 
     Set<const CallICFGNode*> _checkpoints;
     Set<std::string> _checkpoint_names;
+
 };
 }

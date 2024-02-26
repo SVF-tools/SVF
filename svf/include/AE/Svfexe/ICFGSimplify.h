@@ -35,7 +35,7 @@ public:
 ICFGSimplify() = default;
 
 /// Simplify the ICFG by hiding the nodes in the same basic block
-static void simplify(ICFG* _icfg)
+void simplify(ICFG* _icfg)
 {
     Map<const SVFBasicBlock *, std::vector<const ICFGNode*>> bbToNodes;
     for (const auto &func : *PAG::getPAG()->getModule())
@@ -258,18 +258,19 @@ static void simplify(ICFG* _icfg)
             edge->getSrcNode()->removeOutgoingEdge(edge);
         }
     }
-    _icfg->dump("cICFG");
+    if (Options::DumpSimplifiedICFG())
+        _icfg->dump("ICFG.simplified");
 }
 
-static const std::vector<const ICFGNode*>& getSubICFGNode(const ICFGNode* node)
+const std::vector<const ICFGNode*>& getSubICFGNode(const ICFGNode* node)
 {
     return _subICFGNode[node];
 }
 
 
 private:
-    static Map<const ICFGNode*, std::vector<const ICFGNode*>> _subICFGNode;
-    static Map<const ICFGNode*, const ICFGNode*> _refICFGNode;
+    Map<const ICFGNode*, std::vector<const ICFGNode*>> _subICFGNode;
+    Map<const ICFGNode*, const ICFGNode*> _refICFGNode;
 };
 }
 

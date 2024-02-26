@@ -27,7 +27,6 @@
 #include "WPA/Andersen.h"
 #include "SVFIR/SVFIR.h"
 #include "AE/Svfexe/AbstractExecution.h"
-#include "AE/Svfexe/ICFGSimplify.h"
 #include "Util/Options.h"
 #include <cmath>
 
@@ -35,8 +34,6 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace z3;
 
-Map<const ICFGNode*, std::vector<const ICFGNode*>> ICFGSimplify::_subICFGNode;
-Map<const ICFGNode*, const ICFGNode*> ICFGSimplify::_refICFGNode;
 // according to varieties of cmp insts,
 // maybe var X var, var X const, const X var, const X const
 // we accept 'var X const' 'var X var' 'const X const'
@@ -162,7 +159,10 @@ void AbstractExecution::analyse()
 {
     // handle Global ICFGNode of SVFModule
     if (Options::SimplifyICFG())
-        ICFGSimplify::simplify(_icfg);
+    {
+        _icfg_simplify = new ICFGSimplify();
+        _icfg_simplify->simplify(_icfg);
+    }
     handleGlobalNode();
     if (const SVFFunction* fun = _svfir->getModule()->getSVFFunction("main"))
     {
@@ -606,7 +606,8 @@ void AbstractExecution::handleWTONode(const ICFGNode *node)
     std::deque<const ICFGNode*> worklist;
 
     if (Options::SimplifyICFG()) {
-        for (auto it = ICFGSimplify::getSubICFGNode(node).begin(); it != ICFGSimplify::getSubICFGNode(node).end(); ++it) {
+        const std::vector<const ICFGNode*>& worklist_vec = _icfg_simplify->getSubICFGNode(node);
+        for (auto it = worklist_vec.begin(); it != worklist_vec.end(); ++it) {
             const ICFGNode* curNode = *it;
             handleICFGNode(curNode);
         }

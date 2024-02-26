@@ -274,6 +274,7 @@ public:
     static const Option<bool> RunUncallFuncs;
 
     static const Option<bool> SimplifyICFG;
+    static const Option<bool> DumpSimplifiedICFG;
 };
 }  // namespace SVF
 
