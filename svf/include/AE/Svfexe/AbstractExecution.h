@@ -274,7 +274,6 @@ private:
     // private data
     Map<const ICFGNode*, IntervalExeState> _preES;
     Map<const ICFGNode*, IntervalExeState> _postES;
-
     std::string _moduleName;
 
 };

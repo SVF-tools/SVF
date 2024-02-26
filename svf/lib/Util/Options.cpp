@@ -851,6 +851,6 @@ const Option<bool> Options::GepUnknownIdx(
     "gep-unknown-idx","Skip Gep Unknown Index",false);
 const Option<bool> Options::RunUncallFuncs(
     "run-uncall-fun","Skip Gep Unknown Index",false);
-const Option<bool> Options::Sparse(
-    "sparse","Sparse",false);
+const Option<bool> Options::SimplifyICFG(
+    "simplify-icfg","Simplify ICFG Graph",false);
 } // namespace SVF.

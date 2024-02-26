@@ -273,7 +273,7 @@ public:
     static const Option<bool> GepUnknownIdx;
     static const Option<bool> RunUncallFuncs;
 
-    static const Option<bool> Sparse;
+    static const Option<bool> SimplifyICFG;
 };
 }  // namespace SVF
 

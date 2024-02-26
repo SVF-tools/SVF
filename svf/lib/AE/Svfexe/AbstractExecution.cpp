@@ -163,7 +163,7 @@ void AbstractExecution::markRecursiveFuns()
 void AbstractExecution::analyse()
 {
     // handle Global ICFGNode of SVFModule
-    if (Options::Sparse())
+    if (Options::SimplifyICFG())
         ICFGSimplify::simplify(_icfg);
     handleGlobalNode();
     if (const SVFFunction* fun = _svfir->getModule()->getSVFFunction("main"))
@@ -607,7 +607,7 @@ void AbstractExecution::handleWTONode(const ICFGNode *node)
 
     std::deque<const ICFGNode*> worklist;
 
-    if (Options::Sparse()) {
+    if (Options::SimplifyICFG()) {
         for (auto it = ICFGSimplify::getSubICFGNode(node).begin(); it != ICFGSimplify::getSubICFGNode(node).end(); ++it) {
             const ICFGNode* curNode = *it;
             handleICFGNode(curNode);
