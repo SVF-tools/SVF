@@ -547,6 +547,14 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
         return node->toString();
     }
 
+    static bool isNodeHidden(ICFGNode *node, ICFG *)
+    {
+        if (Options::ShowHiddenNode())
+            return false;
+        else
+            return node->getInEdges().empty() && node->getOutEdges().empty();
+    }
+
     static std::string getNodeAttributes(NodeType *node, ICFG*)
     {
         std::string str;

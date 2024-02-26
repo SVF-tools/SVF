@@ -147,6 +147,16 @@ public:
         return icfgNodeToSVFLoopVec;
     }
 
+    /// Add ICFG edge
+    inline bool addICFGEdge(ICFGEdge* edge)
+    {
+        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
+        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
+        bool all_added = added1 && added2;
+        assert(all_added && "ICFGEdge not added?");
+        return all_added;
+    }
+
 protected:
     /// Remove a SVFG edge
     inline void removeICFGEdge(ICFGEdge* edge)
@@ -178,16 +188,6 @@ protected:
         {
             assert((srcfun == dstfun) && "src and dst nodes of an intra edge should in the same function!" );
         }
-    }
-
-    /// Add ICFG edge
-    inline bool addICFGEdge(ICFGEdge* edge)
-    {
-        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
-        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
-        bool all_added = added1 && added2;
-        assert(all_added && "ICFGEdge not added?");
-        return all_added;
     }
 
     /// Add a ICFG node
