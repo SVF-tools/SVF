@@ -29,6 +29,7 @@
 //
 
 #include "Util/SVFBugReport.h"
+#include "AE/Core/ICFGWTO.h"
 #include "WPA/Andersen.h"
 
 namespace SVF
@@ -40,13 +41,6 @@ class SVFIR2ItvExeState;
 class IntervalValue;
 class IntervalExeState;
 class ExeState;
-class ICFGWTO;
-template<typename T> class WTONode;
-template<typename T> class WTOCycle;
-template<> class WTONode<ICFG>;
-template<> class WTOCycle<ICFG>;
-typedef WTOCycle<ICFG> ICFGWTOCycle;
-typedef WTONode<ICFG> ICFGWTONode;
 
 template<typename T> class FILOWorkList;
 
