@@ -31,15 +31,14 @@
 #include "Util/SVFBugReport.h"
 #include "AE/Core/ICFGWTO.h"
 #include "WPA/Andersen.h"
+#include "AE/Svfexe/SVFIR2ItvExeState.h"
 
 namespace SVF
 {
 class AbstractExecution;
 class AEStat;
 class AEAPI;
-class SVFIR2ItvExeState;
 class IntervalValue;
-class IntervalExeState;
 class ExeState;
 
 template<typename T> class FILOWorkList;

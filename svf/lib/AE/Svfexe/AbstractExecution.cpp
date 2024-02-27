@@ -28,7 +28,6 @@
 #include "Util/WorkList.h"
 #include "SVFIR/SVFIR.h"
 #include "AE/Svfexe/AbstractExecution.h"
-#include "AE/Svfexe/SVFIR2ItvExeState.h"
 #include "Util/Options.h"
 #include <cmath>
 

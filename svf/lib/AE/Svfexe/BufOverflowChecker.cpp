@@ -26,7 +26,6 @@
 //
 
 #include "AE/Svfexe/BufOverflowChecker.h"
-#include "AE/Svfexe/SVFIR2ItvExeState.h"
 #include "Util/WorkList.h"
 #include "SVFIR/SVFType.h"
 #include "Util/Options.h"
