@@ -173,16 +173,6 @@ protected:
         removeGNode(node);
     }
 
-    /// Add ICFG edge
-    inline bool addICFGEdge(ICFGEdge* edge)
-    {
-        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
-        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
-        bool all_added = added1 && added2;
-        assert(all_added && "ICFGEdge not added?");
-        return all_added;
-    }
-
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const ICFGNode *srcNode, const ICFGNode *dstNode)
     {
@@ -248,6 +238,15 @@ public:
     //@}
 
 private:
+    /// Add ICFG edge, only used by addIntraEdge, addCallEdge, addRetEdge etc.
+    inline bool addICFGEdge(ICFGEdge* edge)
+    {
+        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
+        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
+        bool all_added = added1 && added2;
+        assert(all_added && "ICFGEdge not added?");
+        return all_added;
+    }
 
     /// Get/Add IntraBlock ICFGNode
     inline IntraICFGNode* getIntraBlock(const SVFInstruction* inst)
