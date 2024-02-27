@@ -49,6 +49,7 @@ class ICFG : public GenericICFGTy
     friend class ICFGBuilder;
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class ICFGSimplification;
 
 public:
 
@@ -150,6 +151,7 @@ public:
         return icfgNodeToSVFLoopVec;
     }
 
+protected:
     /// Add control-flow edges for top level pointers
     //@{
     ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
@@ -164,8 +166,6 @@ public:
         edge->getSrcNode()->removeOutgoingEdge(edge);
         delete edge;
     }
-
-protected:
 
     /// Remove a ICFGNode
     inline void removeICFGNode(ICFGNode* node)
