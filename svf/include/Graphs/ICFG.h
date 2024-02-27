@@ -160,14 +160,16 @@ public:
         return all_added;
     }
 
-protected:
-    /// Remove a SVFG edge
+    /// Remove a ICFG edge
     inline void removeICFGEdge(ICFGEdge* edge)
     {
         edge->getDstNode()->removeIncomingEdge(edge);
         edge->getSrcNode()->removeOutgoingEdge(edge);
         delete edge;
     }
+
+protected:
+
     /// Remove a ICFGNode
     inline void removeICFGNode(ICFGNode* node)
     {

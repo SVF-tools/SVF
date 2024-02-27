@@ -293,13 +293,11 @@ static void mergeAdjacentNodes(ICFG* icfg)
         }
         for (ICFGEdge* edge : rm_outedges)
         {
-            node->removeOutgoingEdge(edge);
-            edge->getDstNode()->removeIncomingEdge(edge);
+            icfg->removeICFGEdge(edge);
         }
         for (ICFGEdge* edge : rm_inedges)
         {
-            node->removeIncomingEdge(edge);
-            edge->getSrcNode()->removeOutgoingEdge(edge);
+            icfg->removeICFGEdge(edge);
         }
     }
 }
