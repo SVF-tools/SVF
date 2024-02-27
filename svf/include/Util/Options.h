@@ -273,8 +273,7 @@ public:
     static const Option<bool> GepUnknownIdx;
     static const Option<bool> RunUncallFuncs;
 
-    static const Option<bool> SimplifyICFG;
-    static const Option<bool> DumpSimplifiedICFG;
+    static const Option<bool> ICFGMergeAdjacentNodes;
 };
 }  // namespace SVF
 

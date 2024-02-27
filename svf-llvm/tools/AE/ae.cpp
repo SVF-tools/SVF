@@ -30,6 +30,7 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "AE/Svfexe/ICFGSimplification.h"
+#include "WPA/Andersen.h"
 
 #include "AE/Svfexe/BufOverflowChecker.h"
 #include "AE/Core/RelExeState.h"
@@ -655,10 +656,8 @@ int main(int argc, char** argv)
     PTACallGraph* callgraph = ander->getPTACallGraph();
     builder.updateCallGraph(callgraph);
     pag->getICFG()->updateCallGraph(callgraph);
-    if (Options::SimplifyICFG()) {
-        ICFGSimplification::simplify(pag->getICFG());
-        if (Options::DumpSimplifiedICFG())
-            pag->getICFG()->dump("ICFG.simplified");
+    if (Options::ICFGMergeAdjacentNodes()) {
+        ICFGSimplification::mergeAdjacentNodes(pag->getICFG());
     }
 
     if (Options::BufferOverflowCheck())

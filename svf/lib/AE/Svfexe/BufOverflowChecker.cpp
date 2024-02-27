@@ -26,6 +26,8 @@
 //
 
 #include "AE/Svfexe/BufOverflowChecker.h"
+#include "AE/Svfexe/SVFIR2ItvExeState.h"
+#include "Util/WorkList.h"
 #include "SVFIR/SVFType.h"
 #include "Util/Options.h"
 #include <climits>
@@ -148,7 +150,7 @@ void BufOverflowCheckerAPI::initExtFunMap()
         }
         else
         {
-            Addrs Addrs = ae->_svfir2ExeState->getAddrs(dst_id);
+            ExeState::Addrs Addrs = ae->_svfir2ExeState->getAddrs(dst_id);
             for (auto vaddr: Addrs)
             {
                 u32_t objId = ae->_svfir2ExeState->getInternalID(vaddr);
@@ -172,7 +174,7 @@ void BufOverflowCheckerAPI::initExtFunMap()
         }
         else
         {
-            Addrs Addrs = ae->_svfir2ExeState->getAddrs(dst_id);
+            ExeState::Addrs Addrs = ae->_svfir2ExeState->getAddrs(dst_id);
             for (auto vaddr: Addrs)
             {
                 u32_t objId = ae->_svfir2ExeState->getInternalID(vaddr);

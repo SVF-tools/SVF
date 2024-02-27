@@ -27,11 +27,8 @@
 //
 // Created by Jiawei Wang on 2024/1/10.
 //
-#include "AE/Core/ICFGWTO.h"
-#include "AE/Svfexe/SVFIR2ItvExeState.h"
-#include "MSSA/SVFGBuilder.h"
+
 #include "Util/SVFBugReport.h"
-#include "Util/WorkList.h"
 #include "WPA/Andersen.h"
 
 namespace SVF
@@ -39,6 +36,22 @@ namespace SVF
 class AbstractExecution;
 class AEStat;
 class AEAPI;
+class SVFIR2ItvExeState;
+class IntervalValue;
+class IntervalExeState;
+class ExeState;
+class ICFGWTO;
+template<typename T> class WTONode;
+template<typename T> class WTOCycle;
+template<> class WTONode<ICFG>;
+template<> class WTOCycle<ICFG>;
+typedef WTOCycle<ICFG> ICFGWTOCycle;
+typedef WTONode<ICFG> ICFGWTONode;
+
+template<typename T> class FILOWorkList;
+
+
+
 
 
 enum class AEKind
@@ -280,8 +293,6 @@ private:
 class AEAPI
 {
 public:
-
-    typedef ExeState::Addrs Addrs;
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
     static bool classof(const AEAPI* api)
     {

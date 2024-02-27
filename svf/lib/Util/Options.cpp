@@ -851,8 +851,6 @@ const Option<bool> Options::GepUnknownIdx(
     "gep-unknown-idx","Skip Gep Unknown Index",false);
 const Option<bool> Options::RunUncallFuncs(
     "run-uncall-fun","Skip Gep Unknown Index",false);
-const Option<bool> Options::SimplifyICFG(
-    "simplify-icfg","Simplify ICFG Graph",false);
-const Option<bool> Options::DumpSimplifiedICFG(
-    "dump-simplified-icfg","Dump Simplified ICFG, filename ICFG.simplified.dot",false);
+const Option<bool> Options::ICFGMergeAdjacentNodes(
+    "icfg-merge-adjnodes","ICFG Simplification - Merge Adjacent Nodes in the Same Basic Block.",false);
 } // namespace SVF.

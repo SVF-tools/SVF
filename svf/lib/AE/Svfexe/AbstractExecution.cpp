@@ -24,9 +24,12 @@
 //
 // Created by Jiawei Wang on 2024/1/10.
 //
-#include "WPA/Andersen.h"
+
+#include "AE/Core/ICFGWTO.h"
+#include "Util/WorkList.h"
 #include "SVFIR/SVFIR.h"
 #include "AE/Svfexe/AbstractExecution.h"
+#include "AE/Svfexe/SVFIR2ItvExeState.h"
 #include "Util/Options.h"
 #include <cmath>
 
@@ -1216,7 +1219,7 @@ std::string AEAPI::strRead(const SVFValue* rhs)
     {
         // dead loop for string and break if there's a \0. If no \0, it will throw err.
         if (!es.inVarToAddrsTable(_svfir->getValueNode(rhs))) continue;
-        Addrs expr0 = _ae->_svfir2ExeState->getGepObjAddress(_svfir->getValueNode(rhs), index);
+        ExeState::Addrs expr0 = _ae->_svfir2ExeState->getGepObjAddress(_svfir->getValueNode(rhs), index);
         IntervalValue val = IntervalValue::bottom();
         for (const auto &addr: expr0)
         {
@@ -1526,7 +1529,7 @@ IntervalValue AEAPI::getStrlen(const SVF::SVFValue *strValue)
     {
         for (u32_t index = 0; index < dst_size.lb().getNumeral(); index++)
         {
-            Addrs expr0 = _ae->_svfir2ExeState->getGepObjAddress(dstid, index);
+            ExeState::Addrs expr0 = _ae->_svfir2ExeState->getGepObjAddress(dstid, index);
             IntervalValue val = IntervalValue::bottom();
             for (const auto &addr: expr0)
             {
@@ -1641,8 +1644,8 @@ void AEAPI::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFValue *src, SVF
         for (u32_t index = 0; index < range_val; index++)
         {
             // dead loop for string and break if there's a \0. If no \0, it will throw err.
-            Addrs expr_src = _ae->_svfir2ExeState->getGepObjAddress(srcId, index);
-            Addrs expr_dst = _ae->_svfir2ExeState->getGepObjAddress(dstId, index + start_idx);
+            ExeState::Addrs expr_src = _ae->_svfir2ExeState->getGepObjAddress(srcId, index);
+            ExeState::Addrs expr_dst = _ae->_svfir2ExeState->getGepObjAddress(dstId, index + start_idx);
             for (const auto &dst: expr_dst)
             {
                 for (const auto &src: expr_src)
@@ -1667,7 +1670,7 @@ const SVFType* AEAPI::getPointeeElement(NodeID id)
     assert(_ae->_svfir2ExeState->inVarToAddrsTable(id) && "id is not in varToAddrsTable");
     if (_ae->_svfir2ExeState->inVarToAddrsTable(id))
     {
-        const Addrs& addrs = _ae->_svfir2ExeState->getAddrs(id);
+        const ExeState::Addrs& addrs = _ae->_svfir2ExeState->getAddrs(id);
         for (auto addr: addrs)
         {
             NodeID addr_id = _ae->_svfir2ExeState->getInternalID(addr);
@@ -1711,7 +1714,7 @@ void AEAPI::handleMemset(const SVF::SVFValue *dst, SVF::IntervalValue elem, SVF:
         // dead loop for string and break if there's a \0. If no \0, it will throw err.
         if (_ae->_svfir2ExeState->inVarToAddrsTable(dstId))
         {
-            Addrs lhs_gep = _ae->_svfir2ExeState->getGepObjAddress(dstId, index);
+            ExeState::Addrs lhs_gep = _ae->_svfir2ExeState->getGepObjAddress(dstId, index);
             for (const auto &addr: lhs_gep)
             {
                 u32_t objId = ExeState::getInternalID(addr);

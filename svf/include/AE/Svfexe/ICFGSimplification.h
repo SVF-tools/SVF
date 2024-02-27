@@ -41,7 +41,7 @@ ICFGSimplification() = default;
 
 virtual ~ICFGSimplification() = default;
 
-static void simplify(ICFG* icfg)
+static void mergeAdjacentNodes(ICFG* icfg)
 {
     Map<const SVFBasicBlock*, std::vector<const ICFGNode*>> bbToNodes;
     Set<ICFGNode*> rm_nodes;
