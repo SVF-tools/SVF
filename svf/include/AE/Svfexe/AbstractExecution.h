@@ -28,7 +28,6 @@
 // Created by Jiawei Wang on 2024/1/10.
 //
 #include "AE/Core/ICFGWTO.h"
-#include "AE/Svfexe/ICFGSimplification.h"
 #include "AE/Svfexe/SVFIR2ItvExeState.h"
 #include "MSSA/SVFGBuilder.h"
 #include "Util/SVFBugReport.h"
