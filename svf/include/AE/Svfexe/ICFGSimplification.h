@@ -185,7 +185,10 @@ static void mergeAdjacentNodes(ICFG* icfg)
                         // avoid duplicate edges
                         if (srcblk->hasIncomingEdge(pEdge) ||
                             dstblk->hasIncomingEdge(pEdge))
+                        {
+                            delete pEdge;
                             continue;
+                        }
                         else
                             icfg->addICFGEdge(pEdge);
                     }
@@ -213,8 +216,10 @@ static void mergeAdjacentNodes(ICFG* icfg)
                 continue;
             IntraCFGEdge* pEdge = new IntraCFGEdge(srcblk, dstblk);
             if (srcblk->hasIncomingEdge(pEdge) ||
-                dstblk->hasIncomingEdge(pEdge))
+                dstblk->hasIncomingEdge(pEdge)) {
+                delete pEdge;
                 continue;
+            }
             else
                 icfg->addICFGEdge(pEdge);
         }
@@ -244,7 +249,10 @@ static void mergeAdjacentNodes(ICFG* icfg)
                             srcblk, dstblk, ICFGEdge::ICFGEdgeK::CallCF);
                         if (srcblk->hasIncomingEdge(pEdge) ||
                             dstblk->hasIncomingEdge(pEdge))
+                        {
+                            delete pEdge;
                             continue;
+                        }
                         else
                             icfg->addICFGEdge(pEdge);
                     }
@@ -268,7 +276,10 @@ static void mergeAdjacentNodes(ICFG* icfg)
                             srcblk, dstblk, ICFGEdge::ICFGEdgeK::RetCF);
                         if (srcblk->hasIncomingEdge(pEdge) ||
                             dstblk->hasIncomingEdge(pEdge))
+                        {
+                            delete pEdge;
                             continue;
+                        }
                         else
                             icfg->addICFGEdge(pEdge);
                     }
