@@ -167,7 +167,6 @@ static void mergeAdjacentNodes(ICFG* icfg)
                         ICFGEdge* tmpEdge =
                             icfg->getICFGEdge(srcblk_tail, dstblk,
                                         ICFGEdge::ICFGEdgeK::IntraCF);
-                        IntraCFGEdge* pEdge = nullptr;
                         if (icfg->hasIntraICFGEdge(srcblk, dstblk, ICFGEdge::ICFGEdgeK::IntraCF)) {
                             continue;
                         } else {
@@ -175,17 +174,15 @@ static void mergeAdjacentNodes(ICFG* icfg)
                             {
                                 IntraCFGEdge* intraEdge =
                                     SVFUtil::dyn_cast<IntraCFGEdge>(tmpEdge);
-                                pEdge = new IntraCFGEdge(srcblk, dstblk);
                                 if (intraEdge->getCondition())
-                                    pEdge->setBranchCondition(
-                                        intraEdge->getCondition(),
-                                        intraEdge->getSuccessorCondValue());
+                                    icfg->addConditionalIntraEdge(srcblk, dstblk, intraEdge->getCondition(),  intraEdge->getSuccessorCondValue());
+                                else
+                                    icfg->addIntraEdge(srcblk, dstblk);
                             }
                             else
                             {
-                                pEdge = new IntraCFGEdge(srcblk, dstblk);
+                                icfg->addIntraEdge(srcblk, dstblk);
                             }
-                            icfg->addICFGEdge(pEdge);
                         }
                     }
                 }
@@ -220,8 +217,7 @@ static void mergeAdjacentNodes(ICFG* icfg)
             }
             else
             {
-                IntraCFGEdge* pEdge = new IntraCFGEdge(srcblk, dstblk);
-                icfg->addICFGEdge(pEdge);
+                icfg->addIntraEdge(srcblk, dstblk);
             }
         }
     }
@@ -251,9 +247,7 @@ static void mergeAdjacentNodes(ICFG* icfg)
                             continue;
                         else
                         {
-                            ICFGEdge* pEdge = new ICFGEdge(
-                                srcblk, dstblk, ICFGEdge::ICFGEdgeK::CallCF);
-                            icfg->addICFGEdge(pEdge);
+                            icfg->addCallEdge(srcblk, dstblk, callICFGNode->getCallSite());
                         }
                     }
                 }
@@ -277,9 +271,7 @@ static void mergeAdjacentNodes(ICFG* icfg)
                             continue;
                         else
                         {
-                            ICFGEdge* pEdge = new ICFGEdge(
-                                srcblk, dstblk, ICFGEdge::ICFGEdgeK::RetCF);
-                            icfg->addICFGEdge(pEdge);
+                            icfg->addRetEdge(srcblk, dstblk, retICFGNode->getCallSite());
                         }
                     }
                 }
