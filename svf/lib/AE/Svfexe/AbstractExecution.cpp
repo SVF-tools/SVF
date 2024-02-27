@@ -87,12 +87,12 @@ void AbstractExecution::initExtAPI()
     _api = new AEAPI(this, _stat);
 }
 
-void AbstractExecution::runOnModule(SVF::SVFIR *svfModule)
+void AbstractExecution::runOnModule(ICFG *icfg)
 {
     // 1. Start clock
     _stat->startClk();
-
-    _svfir = svfModule;
+    _icfg = icfg;
+    _svfir = PAG::getPAG();
     _ander = AndersenWaveDiff::createAndersenWaveDiff(_svfir);
     _api->setModule(_svfir);
     // init SVF Execution States
@@ -100,8 +100,6 @@ void AbstractExecution::runOnModule(SVF::SVFIR *svfModule)
 
     // init SSE External API Handler
     _callgraph = _ander->getPTACallGraph();
-    _icfg = _svfir->getICFG();
-    _icfg->updateCallGraph(_callgraph);
 
     /// collect checkpoint
     _api->collectCheckPoint();
@@ -158,11 +156,6 @@ void AbstractExecution::markRecursiveFuns()
 void AbstractExecution::analyse()
 {
     // handle Global ICFGNode of SVFModule
-    if (Options::SimplifyICFG())
-    {
-        _icfg_simplify = new ICFGSimplify();
-        _icfg_simplify->simplify(_icfg);
-    }
     handleGlobalNode();
     if (const SVFFunction* fun = _svfir->getModule()->getSVFFunction("main"))
     {
@@ -605,15 +598,10 @@ void AbstractExecution::handleWTONode(const ICFGNode *node)
 
     std::deque<const ICFGNode*> worklist;
 
-    if (Options::SimplifyICFG()) {
-        const std::vector<const ICFGNode*>& worklist_vec = _icfg_simplify->getSubICFGNode(node);
-        for (auto it = worklist_vec.begin(); it != worklist_vec.end(); ++it) {
-            const ICFGNode* curNode = *it;
-            handleICFGNode(curNode);
-        }
-    }
-    else {
-        handleICFGNode(node);
+    const std::vector<const ICFGNode*>& worklist_vec = _icfg->getSubNodes(node);
+    for (auto it = worklist_vec.begin(); it != worklist_vec.end(); ++it) {
+        const ICFGNode* curNode = *it;
+        handleICFGNode(curNode);
     }
 
     _preES.erase(node);

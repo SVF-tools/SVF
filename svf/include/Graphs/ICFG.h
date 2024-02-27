@@ -76,6 +76,9 @@ private:
     GlobalICFGNode* globalBlockNode; ///< unique basic block for all globals
     ICFGNodeToSVFLoopVec icfgNodeToSVFLoopVec; ///< map ICFG node to the SVF loops where it resides
 
+    Map<const ICFGNode*, std::vector<const ICFGNode*>> _subNodes; ///<map a node(1st node of basicblock) to its subnodes
+    Map<const ICFGNode*, const ICFGNode*> _repNode; ///<map a subnode to its representative node(1st node of basicblock)
+
 
 public:
     /// Constructor
@@ -220,6 +223,26 @@ public:
     {
         globalBlockNode = new GlobalICFGNode(totalICFGNode++);
         addICFGNode(globalBlockNode);
+    }
+
+
+    virtual std::vector<const ICFGNode*> getSubNodes(const ICFGNode* node) const {
+        return _subNodes.find(node) == _subNodes.end()? std::vector<const ICFGNode*>({node}): _subNodes.at(node);
+    }
+
+    virtual const ICFGNode* getRepNode(const ICFGNode* node) const {
+        return _repNode.find(node) == _repNode.end()?  node: _repNode.at(node);
+    }
+
+    virtual void appendSubNode(const ICFGNode* key, const ICFGNode* value) {
+        if(_subNodes.find(key) == _subNodes.end()) {
+            _subNodes[key] = std::vector<const ICFGNode*>();
+        }
+        _subNodes[key].push_back(value);
+    }
+
+    virtual void addRepNode(const ICFGNode* key, const ICFGNode* value) {
+        _repNode[key] = value;
     }
     //@}
 

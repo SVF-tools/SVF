@@ -27,15 +27,13 @@
 //
 // Created by Jiawei Wang on 2024/1/10.
 //
-#include <exception>
-#include <string>
-#include "AE/Svfexe/SVFIR2ItvExeState.h"
-#include "Util/WorkList.h"
-#include "MSSA/SVFGBuilder.h"
 #include "AE/Core/ICFGWTO.h"
-#include "WPA/Andersen.h"
+#include "AE/Svfexe/ICFGSimplification.h"
+#include "AE/Svfexe/SVFIR2ItvExeState.h"
+#include "MSSA/SVFGBuilder.h"
 #include "Util/SVFBugReport.h"
-#include "AE/Svfexe/ICFGSimplify.h"
+#include "Util/WorkList.h"
+#include "WPA/Andersen.h"
 
 namespace SVF
 {
@@ -119,7 +117,7 @@ public:
 
     virtual void initExtAPI();
 
-    virtual void runOnModule(SVFIR* svfModule);
+    virtual void runOnModule(ICFG* icfg);
 
     /// Destructor
     virtual ~AbstractExecution();
@@ -277,7 +275,6 @@ private:
     Map<const ICFGNode*, IntervalExeState> _postES;
     std::string _moduleName;
 
-    ICFGSimplify* _icfg_simplify;
 
 };
 
