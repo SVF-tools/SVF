@@ -188,6 +188,8 @@ protected:
     virtual inline void addICFGNode(ICFGNode* node)
     {
         addGNode(node->getId(),node);
+        _repNode[node] = node;
+        _subNodes[node].push_back(node);
     }
 
 public:
@@ -216,24 +218,23 @@ public:
         addICFGNode(globalBlockNode);
     }
 
-
-    virtual std::vector<const ICFGNode*> getSubNodes(const ICFGNode* node) const {
-        return _subNodes.find(node) == _subNodes.end()? std::vector<const ICFGNode*>({node}): _subNodes.at(node);
+    const std::vector<const ICFGNode*>& getSubNodes(const ICFGNode* node) const {
+        return _subNodes.at(node);
     }
 
-    virtual const ICFGNode* getRepNode(const ICFGNode* node) const {
-        return _repNode.find(node) == _repNode.end()?  node: _repNode.at(node);
+    const ICFGNode* getRepNode(const ICFGNode* node) const {
+        return _repNode.at(node);
     }
 
-    virtual void appendSubNode(const ICFGNode* key, const ICFGNode* value) {
-        if(_subNodes.find(key) == _subNodes.end()) {
-            _subNodes[key] = std::vector<const ICFGNode*>();
-        }
-        _subNodes[key].push_back(value);
+    void addSubNode(const ICFGNode* rep, const ICFGNode* sub) {
+       std::vector<const ICFGNode*>& subNodes = _subNodes[sub];
+       if(std::find(subNodes.begin(), subNodes.end(), rep) == subNodes.end()) {
+           subNodes.push_back(rep);
+       }
     }
 
-    virtual void addRepNode(const ICFGNode* key, const ICFGNode* value) {
-        _repNode[key] = value;
+    void addRepNode(const ICFGNode* rep, const ICFGNode* sub) {
+        _repNode[sub] = rep;
     }
     //@}
 

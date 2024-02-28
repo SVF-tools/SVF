@@ -44,8 +44,7 @@ virtual ~ICFGSimplification() = default;
 static void mergeAdjacentNodes(ICFG* icfg)
 {
     Map<const SVFBasicBlock*, std::vector<const ICFGNode*>> bbToNodes;
-    Set<ICFGNode*> rm_nodes;
-    Set<const ICFGNode*> simplifiedNodes;
+    Set<const ICFGNode*> subNodes;
     for (const auto& func : *PAG::getPAG()->getModule())
     {
         for (const auto& bb : *func)
@@ -62,57 +61,52 @@ static void mergeAdjacentNodes(ICFG* icfg)
                 if (const CallICFGNode* callNode =
                         SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
                 {
-                    icfg->appendSubNode(callNode, callNode);
-                    icfg->addRepNode(callNode, callNode);
-                    bbToNodes[bb].push_back(callNode);
-                    simplifiedNodes.insert(callNode);
+                    subNodes.insert(callNode);
 
                     const RetICFGNode* retNode = callNode->getRetICFGNode();
-                    icfg->appendSubNode(retNode, retNode);
-                    icfg->addRepNode(retNode, retNode);
-                    bbToNodes[bb].push_back(retNode);
-                    simplifiedNodes.insert(retNode);
+                    subNodes.insert(retNode);
                 }
                 else
                 {
                     // For ordinary instructions, we put multiple instructions in an ICFGNode
+                    /// e.g.
+                    /// entry:
+                    ///   %add = add i32 %a, %b    ----> goto branch 1
+                    ///   %sub = sub i32 %add, %c  -----> goto branch 2
+                    ///   call void @fun()    ----> call and ret has been handled
+                    ///   %mul = mul i32 %sub, %d  -----> goto branch 3
                     if (bbToNodes.find(bb) == bbToNodes.end())
                     {
-                        icfg->appendSubNode(icfgNode, icfgNode);
-                        icfg->addRepNode(icfgNode, icfgNode);
+                        // branch 1, for the first node of basic block
                         bbToNodes[bb] = {icfgNode};
-                        simplifiedNodes.insert(icfgNode);
+                        subNodes.insert(icfgNode);
                     }
                     else
                     {
                         const ICFGNode* pNode = bbToNodes[bb].back();
                         if (!SVFUtil::isa<RetICFGNode>(pNode))
                         {
-                            icfg->appendSubNode(pNode, icfgNode);
-                            icfg->addRepNode(icfgNode, pNode);
+                            // branch 2, for the middle node of basic block
+                            // do nothing if it is not ret node
                         }
                         else
                         {
-                            icfg->appendSubNode(icfgNode, icfgNode);
-                            icfg->addRepNode(icfgNode, icfgNode);
+                            // branch 3, for the node after ret node
                             bbToNodes[bb].push_back(icfgNode);
-                            simplifiedNodes.insert(icfgNode);
+                            subNodes.insert(icfgNode);
                         }
                     }
                 }
             }
         }
 
-        if (const FunEntryICFGNode* funEntryNode =
-                icfg->getFunEntryICFGNode(func))
+        if (const FunEntryICFGNode* funEntryNode = icfg->getFunEntryICFGNode(func))
         {
             if (const SVFBasicBlock* bb = funEntryNode->getBB())
             {
                 std::vector<const ICFGNode*>& nodes = bbToNodes[bb];
-                icfg->appendSubNode(funEntryNode, funEntryNode);
-                icfg->addRepNode(funEntryNode, funEntryNode);
                 nodes.insert(nodes.begin(), funEntryNode);
-                simplifiedNodes.insert(funEntryNode);
+                subNodes.insert(funEntryNode);
             }
         }
         if (const FunExitICFGNode* funExitNode = icfg->getFunExitICFGNode(func))
@@ -120,186 +114,58 @@ static void mergeAdjacentNodes(ICFG* icfg)
             if (const SVFBasicBlock* bb = funExitNode->getBB())
             {
                 std::vector<const ICFGNode*>& nodes = bbToNodes[bb];
-                icfg->appendSubNode(funExitNode, funExitNode);
-                icfg->addRepNode(funExitNode, funExitNode);
                 nodes.push_back(funExitNode);
-                simplifiedNodes.insert(funExitNode);
+                subNodes.insert(funExitNode);
             }
         }
     }
 
-    for (auto &it: *icfg) {
-         if (simplifiedNodes.find(it.second) == simplifiedNodes.end() &&
-             !SVFUtil::isa<GlobalICFGNode>(it.second)) {
-             rm_nodes.insert(const_cast<ICFGNode*>(it.second));
-         }
-    }
-
-    /// reconnect the ICFGNodes,
-    /// 1. intraCFGEdges between different basicblocks, but in the safe function e.g. entry:
-    ///         cond = icmp eq i32 %a, 0  ---------> srcblk
-    ///         br i1 cond, label %bb1, label %bb2 ---------> srcblk_tail
-    ///      bb1:
-    ///         ... --------> dstblk
-    ///      bb2:
-    ///         ... --------> another dstblk
-    ///   tmpEdge is the edge between srcblk and dstblk, may have condition var (cond is true or false)
-    for (const auto& node : *icfg)
-    {
-        for (const auto& succ : node.second->getOutEdges())
-        {
-            if (succ->isIntraCFGEdge())
-            {
-                const SVFFunction* node_fun = node.second->getFun();
-                const SVFFunction* succ_fun = succ->getDstNode()->getFun();
-                const SVFBasicBlock* node_bb = node.second->getBB();
-                const SVFBasicBlock* succ_bb = succ->getDstNode()->getBB();
-                if (node_fun == succ_fun)
-                {
-                    if (node_bb != succ_bb)
-                    {
-                        ICFGNode* srcblk = const_cast<ICFGNode*>(
-                            bbToNodes[node_bb].back());
-                        ICFGNode* dstblk = const_cast<ICFGNode*>(
-                            bbToNodes[succ_bb].front());
-                        ICFGNode* srcblk_tail = const_cast<ICFGNode*>(
-                            icfg->getSubNodes(bbToNodes[node_bb].back()).back());
-                        ICFGEdge* tmpEdge =
-                            icfg->getICFGEdge(srcblk_tail, dstblk,
-                                        ICFGEdge::ICFGEdgeK::IntraCF);
-                        if (icfg->hasIntraICFGEdge(srcblk, dstblk, ICFGEdge::ICFGEdgeK::IntraCF)) {
-                            continue;
-                        } else {
-                            if (tmpEdge)
-                            {
-                                IntraCFGEdge* intraEdge =
-                                    SVFUtil::dyn_cast<IntraCFGEdge>(tmpEdge);
-                                if (intraEdge->getCondition())
-                                    icfg->addConditionalIntraEdge(srcblk, dstblk, intraEdge->getCondition(),  intraEdge->getSuccessorCondValue());
-                                else
-                                    icfg->addIntraEdge(srcblk, dstblk);
-                            }
-                            else
-                            {
-                                icfg->addIntraEdge(srcblk, dstblk);
-                            }
+    for (auto &it: subNodes) {
+        ICFGNode* head = const_cast<ICFGNode*>(it);
+        if (head->getOutEdges().size() != 1) {
+            // if head has more than one out edges, we don't merge any following nodes.
+            continue;
+        }
+        else {
+            ICFGNode* next = (*head->getOutEdges().begin())->getDstNode();
+            // merge the following nodes, until the next subnode
+            while (subNodes.find(next) == subNodes.end()) {
+                ICFGNode* rep_next = const_cast<ICFGNode*>(icfg->getRepNode(next));
+                assert(rep_next != head && "should not find a circle here");
+                icfg->removeICFGEdge(*head->getOutEdges().begin());
+                std::vector<ICFGEdge*> rm_edges;
+                // Step 1: merge the out edges of next to head
+                for (ICFGEdge* outEdge: next->getOutEdges()) {
+                    rm_edges.push_back(outEdge);
+                    ICFGNode* post = outEdge->getDstNode();
+                    if (outEdge->isIntraCFGEdge()) {
+                        IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(outEdge);
+                        if (intraEdge->getCondition()) {
+                            icfg->addConditionalIntraEdge(head, post, intraEdge->getCondition(), intraEdge->getSuccessorCondValue());
+                        }
+                        else {
+                            icfg->addIntraEdge(head, post);
                         }
                     }
                 }
-            }
-        }
-    }
+                // Step 2: update the sub node map and rep node map
+                icfg->addRepNode(next, head);
+                icfg->addSubNode(next, head);
+                if (next->getOutEdges().size() == 1) {
+                    // Step 3: remove the edges from next to its next, since next has been merged to head
+                    // if only one out edge, we may continue to merge the next node if it is not a subnode
+                    next = (*next->getOutEdges().begin())->getDstNode();
+                    for (ICFGEdge* edge: rm_edges)
+                        icfg->removeICFGEdge(edge);
 
-    /// 2. intraCFGEdges in the same basicblock, but seperated by callInst
-    /// e.g. entry:
-    ///         .....  --------> bbNode0
-    ///         call void @foo() --------->  callNode: bbNode1, retNode bbNode2
-    ///         .....  --------> bbNode3
-    /// entry block has 4 bbNodes. the following for loop just links bbNodes in the same basic block.
-    for (const auto& bbNodes : bbToNodes)
-    {
-        for (u32_t i = 0; i < bbNodes.second.size() - 1; ++i)
-        {
-            ICFGNode* srcblk_tail =
-                const_cast<ICFGNode*>(icfg->getSubNodes(bbNodes.second[i]).back());
-            ICFGNode* srcblk = const_cast<ICFGNode*>(bbNodes.second[i]);
-            ICFGNode* dstblk = const_cast<ICFGNode*>(bbNodes.second[i + 1]);
-            if (!icfg->hasIntraICFGEdge(srcblk_tail, dstblk,
-                                  ICFGEdge::ICFGEdgeK::IntraCF))
-            {
-                continue;
-            }
-
-            if (icfg->hasIntraICFGEdge(srcblk, dstblk,
-                                  ICFGEdge::ICFGEdgeK::IntraCF))
-            {
-                continue;
-            }
-            else
-            {
-                icfg->addIntraEdge(srcblk, dstblk);
-            }
-        }
-    }
-
-    /// 3. CallCFGEdges and RetCFGEdges
-    /// CallEdge is the edge between CallNode and FunEntryNode.
-    /// RetEdge is the edge between FunExitNode and RetNode.
-
-    for (const auto& bbNodes : bbToNodes)
-    {
-        for (u32_t i = 0; i < bbNodes.second.size(); ++i)
-        {
-            if (const CallICFGNode* callICFGNode =
-                    SVFUtil::dyn_cast<CallICFGNode>(bbNodes.second[i]))
-            {
-                for (const auto& icfgEdge : callICFGNode->getOutEdges())
-                {
-                    if (const CallCFGEdge* callEdge =
-                            SVFUtil::dyn_cast<CallCFGEdge>(icfgEdge))
-                    {
-                        ICFGNode* srcblk =
-                            const_cast<ICFGNode*>(bbNodes.second[i]);
-                        ICFGNode* dstblk =
-                            const_cast<ICFGNode*>(callEdge->getDstNode());
-                        if (icfg->hasIntraICFGEdge(srcblk, dstblk,
-                                          ICFGEdge::ICFGEdgeK::CallCF))
-                            continue;
-                        else
-                        {
-                            icfg->addCallEdge(srcblk, dstblk, callICFGNode->getCallSite());
-                        }
-                    }
+                }
+                else {
+                    // if more than one out edges, we don't merge any following nodes.
+                    for (ICFGEdge* edge: rm_edges)
+                        icfg->removeICFGEdge(edge);
+                    break;
                 }
             }
-            else if (const RetICFGNode* retICFGNode =
-                         SVFUtil::dyn_cast<RetICFGNode>(bbNodes.second[i]))
-            {
-                for (const auto& icfgEdge : retICFGNode->getInEdges())
-                {
-                    if (const RetCFGEdge* retEdge =
-                            SVFUtil::dyn_cast<RetCFGEdge>(icfgEdge))
-                    {
-                        if (!retEdge->getSrcNode()->getFun()->hasReturn())
-                            continue;
-                        ICFGNode* srcblk =
-                            const_cast<ICFGNode*>(retEdge->getSrcNode());
-                        ICFGNode* dstblk =
-                            const_cast<ICFGNode*>(bbNodes.second[i]);
-                        if (icfg->hasIntraICFGEdge(srcblk, dstblk,
-                                          ICFGEdge::ICFGEdgeK::RetCF))
-                            continue;
-                        else
-                        {
-                            icfg->addRetEdge(srcblk, dstblk, retICFGNode->getCallSite());
-                        }
-                    }
-                }
-            }
-            else
-            {
-            }
-        }
-    }
-    for (auto& it : rm_nodes)
-    {
-        ICFGNode* node = it;
-        Set<ICFGEdge*> rm_outedges, rm_inedges;
-        for (ICFGEdge* edge : node->getOutEdges())
-        {
-            rm_outedges.insert(edge);
-        }
-        for (ICFGEdge* edge : node->getInEdges())
-        {
-            rm_inedges.insert(edge);
-        }
-        for (ICFGEdge* edge : rm_outedges)
-        {
-            icfg->removeICFGEdge(edge);
-        }
-        for (ICFGEdge* edge : rm_inedges)
-        {
-            icfg->removeICFGEdge(edge);
         }
     }
 }
