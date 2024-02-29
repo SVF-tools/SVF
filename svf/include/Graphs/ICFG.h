@@ -226,19 +226,27 @@ public:
         return _repNode.at(node);
     }
 
-    void addSubNode(const ICFGNode* rep, const ICFGNode* sub) {
-       std::vector<const ICFGNode*>& subNodes = _subNodes[sub];
-       if(std::find(subNodes.begin(), subNodes.end(), rep) == subNodes.end()) {
-           subNodes.push_back(rep);
-       }
-    }
 
-    void addRepNode(const ICFGNode* rep, const ICFGNode* sub) {
-        _repNode[sub] = rep;
+    void updateSubRepNode(const ICFGNode* rep, const ICFGNode* sub) {
+        addSubNode(rep, sub);
+        addRepNode(rep, sub);
     }
     //@}
 
 private:
+    /// when ICFG is simplified, SubNode would merge repNode, then update the map
+    void addSubNode(const ICFGNode* rep, const ICFGNode* sub) {
+        std::vector<const ICFGNode*>& subNodes = _subNodes[sub];
+        if(std::find(subNodes.begin(), subNodes.end(), rep) == subNodes.end()) {
+            subNodes.push_back(rep);
+        }
+    }
+
+    /// when ICFG is simplified, some node would be removed, this map records the removed node to its rep node
+    void addRepNode(const ICFGNode* rep, const ICFGNode* sub) {
+        _repNode[rep] = sub;
+    }
+
     /// Add ICFG edge, only used by addIntraEdge, addCallEdge, addRetEdge etc.
     inline bool addICFGEdge(ICFGEdge* edge)
     {

@@ -61,9 +61,11 @@ static void mergeAdjacentNodes(ICFG* icfg)
                 if (const CallICFGNode* callNode =
                         SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
                 {
+                    bbToNodes[bb].push_back(callNode);
                     subNodes.insert(callNode);
 
                     const RetICFGNode* retNode = callNode->getRetICFGNode();
+                    bbToNodes[bb].push_back(retNode);
                     subNodes.insert(retNode);
                 }
                 else
@@ -149,6 +151,7 @@ static void mergeAdjacentNodes(ICFG* icfg)
                     }
                 }
                 // Step 2: update the sub node map and rep node map
+                icfg->update
                 icfg->addRepNode(next, head);
                 icfg->addSubNode(next, head);
                 if (next->getOutEdges().size() == 1) {
@@ -168,6 +171,7 @@ static void mergeAdjacentNodes(ICFG* icfg)
             }
         }
     }
+    icfg->dump("icfg_simp");
 }
 };
 }
