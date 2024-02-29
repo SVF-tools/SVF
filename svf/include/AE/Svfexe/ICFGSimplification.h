@@ -151,9 +151,7 @@ static void mergeAdjacentNodes(ICFG* icfg)
                     }
                 }
                 // Step 2: update the sub node map and rep node map
-                icfg->update
-                icfg->addRepNode(next, head);
-                icfg->addSubNode(next, head);
+                icfg->updateSubRepNode(next, head);
                 if (next->getOutEdges().size() == 1) {
                     // Step 3: remove the edges from next to its next, since next has been merged to head
                     // if only one out edge, we may continue to merge the next node if it is not a subnode
@@ -171,7 +169,6 @@ static void mergeAdjacentNodes(ICFG* icfg)
             }
         }
     }
-    icfg->dump("icfg_simp");
 }
 };
 }
