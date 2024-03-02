@@ -227,9 +227,9 @@ public:
     }
 
 
-    void updateSubRepNode(const ICFGNode* rep, const ICFGNode* sub) {
+    void updateSubAndRep(const ICFGNode* rep, const ICFGNode* sub) {
         addSubNode(rep, sub);
-        addRepNode(rep, sub);
+        updateRepNode(rep, sub);
     }
     //@}
 
@@ -243,7 +243,7 @@ private:
     }
 
     /// when ICFG is simplified, some node would be removed, this map records the removed node to its rep node
-    void addRepNode(const ICFGNode* rep, const ICFGNode* sub) {
+    void updateRepNode(const ICFGNode* rep, const ICFGNode* sub) {
         _repNode[rep] = sub;
     }
 
