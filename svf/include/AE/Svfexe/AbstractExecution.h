@@ -27,20 +27,24 @@
 //
 // Created by Jiawei Wang on 2024/1/10.
 //
-#include <exception>
-#include <string>
-#include "AE/Svfexe/SVFIR2ItvExeState.h"
-#include "Util/WorkList.h"
-#include "MSSA/SVFGBuilder.h"
+
+#include "Util/SVFBugReport.h"
 #include "AE/Core/ICFGWTO.h"
 #include "WPA/Andersen.h"
-#include "Util/SVFBugReport.h"
+#include "AE/Svfexe/SVFIR2ItvExeState.h"
 
 namespace SVF
 {
 class AbstractExecution;
 class AEStat;
 class AEAPI;
+class IntervalValue;
+class ExeState;
+
+template<typename T> class FILOWorkList;
+
+
+
 
 
 enum class AEKind
@@ -118,7 +122,7 @@ public:
 
     virtual void initExtAPI();
 
-    virtual void runOnModule(SVFIR* svfModule);
+    virtual void runOnModule(ICFG* icfg);
 
     /// Destructor
     virtual ~AbstractExecution();
@@ -276,13 +280,12 @@ private:
     Map<const ICFGNode*, IntervalExeState> _postES;
     std::string _moduleName;
 
+
 };
 
 class AEAPI
 {
 public:
-
-    typedef ExeState::Addrs Addrs;
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
     static bool classof(const AEAPI* api)
     {
@@ -430,5 +433,6 @@ protected:
 
     Set<const CallICFGNode*> _checkpoints;
     Set<std::string> _checkpoint_names;
+
 };
 }

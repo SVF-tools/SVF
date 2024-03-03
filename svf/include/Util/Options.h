@@ -272,6 +272,8 @@ public:
     /// if the access index of gepstmt is unknown, skip it, Default: false
     static const Option<bool> GepUnknownIdx;
     static const Option<bool> RunUncallFuncs;
+
+    static const Option<bool> ICFGMergeAdjacentNodes;
 };
 }  // namespace SVF
 

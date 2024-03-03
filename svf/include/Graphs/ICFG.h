@@ -49,6 +49,7 @@ class ICFG : public GenericICFGTy
     friend class ICFGBuilder;
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class ICFGSimplification;
 
 public:
 
@@ -75,6 +76,9 @@ private:
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
     GlobalICFGNode* globalBlockNode; ///< unique basic block for all globals
     ICFGNodeToSVFLoopVec icfgNodeToSVFLoopVec; ///< map ICFG node to the SVF loops where it resides
+
+    Map<const ICFGNode*, std::vector<const ICFGNode*>> _subNodes; ///<map a node(1st node of basicblock) to its subnodes
+    Map<const ICFGNode*, const ICFGNode*> _repNode; ///<map a subnode to its representative node(1st node of basicblock)
 
 
 public:
@@ -148,26 +152,26 @@ public:
     }
 
 protected:
-    /// Remove a SVFG edge
-    inline void removeICFGEdge(ICFGEdge* edge)
-    {
-        edge->getDstNode()->removeIncomingEdge(edge);
-        edge->getSrcNode()->removeOutgoingEdge(edge);
-        delete edge;
-    }
-    /// Remove a ICFGNode
-    inline void removeICFGNode(ICFGNode* node)
-    {
-        removeGNode(node);
-    }
-
-    /// Add control-flow edges for top level pointers
+    /// Add intraprocedural and interprocedural control-flow edges.
     //@{
     ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
     ICFGEdge* addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFValue* condition, s32_t branchCondVal);
     ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction* cs);
     ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFInstruction* cs);
     //@}
+    /// Remove a ICFG edge
+    inline void removeICFGEdge(ICFGEdge* edge)
+    {
+        edge->getDstNode()->removeIncomingEdge(edge);
+        edge->getSrcNode()->removeOutgoingEdge(edge);
+        delete edge;
+    }
+
+    /// Remove a ICFGNode
+    inline void removeICFGNode(ICFGNode* node)
+    {
+        removeGNode(node);
+    }
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const ICFGNode *srcNode, const ICFGNode *dstNode)
@@ -180,20 +184,12 @@ protected:
         }
     }
 
-    /// Add ICFG edge
-    inline bool addICFGEdge(ICFGEdge* edge)
-    {
-        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
-        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
-        bool all_added = added1 && added2;
-        assert(all_added && "ICFGEdge not added?");
-        return all_added;
-    }
-
     /// Add a ICFG node
     virtual inline void addICFGNode(ICFGNode* node)
     {
         addGNode(node->getId(),node);
+        _repNode[node] = node;
+        _subNodes[node].push_back(node);
     }
 
 public:
@@ -221,9 +217,45 @@ public:
         globalBlockNode = new GlobalICFGNode(totalICFGNode++);
         addICFGNode(globalBlockNode);
     }
+
+    const std::vector<const ICFGNode*>& getSubNodes(const ICFGNode* node) const {
+        return _subNodes.at(node);
+    }
+
+    const ICFGNode* getRepNode(const ICFGNode* node) const {
+        return _repNode.at(node);
+    }
+
+
+    void updateSubAndRep(const ICFGNode* rep, const ICFGNode* sub) {
+        addSubNode(rep, sub);
+        updateRepNode(rep, sub);
+    }
     //@}
 
 private:
+    /// when ICFG is simplified, SubNode would merge repNode, then update the map
+    void addSubNode(const ICFGNode* rep, const ICFGNode* sub) {
+        std::vector<const ICFGNode*>& subNodes = _subNodes[sub];
+        if(std::find(subNodes.begin(), subNodes.end(), rep) == subNodes.end()) {
+            subNodes.push_back(rep);
+        }
+    }
+
+    /// when ICFG is simplified, some node would be removed, this map records the removed node to its rep node
+    void updateRepNode(const ICFGNode* rep, const ICFGNode* sub) {
+        _repNode[rep] = sub;
+    }
+
+    /// Add ICFG edge, only used by addIntraEdge, addCallEdge, addRetEdge etc.
+    inline bool addICFGEdge(ICFGEdge* edge)
+    {
+        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
+        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
+        bool all_added = added1 && added2;
+        assert(all_added && "ICFGEdge not added?");
+        return all_added;
+    }
 
     /// Get/Add IntraBlock ICFGNode
     inline IntraICFGNode* getIntraBlock(const SVFInstruction* inst)
