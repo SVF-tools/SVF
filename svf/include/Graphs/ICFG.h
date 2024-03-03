@@ -152,7 +152,7 @@ public:
     }
 
 protected:
-    /// Add control-flow edges for top level pointers
+    /// Add intraprocedural and interprocedural control-flow edges.
     //@{
     ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
     ICFGEdge* addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const SVFValue* condition, s32_t branchCondVal);
