@@ -218,16 +218,19 @@ public:
         addICFGNode(globalBlockNode);
     }
 
-    const std::vector<const ICFGNode*>& getSubNodes(const ICFGNode* node) const {
+    const std::vector<const ICFGNode*>& getSubNodes(const ICFGNode* node) const
+    {
         return _subNodes.at(node);
     }
 
-    const ICFGNode* getRepNode(const ICFGNode* node) const {
+    const ICFGNode* getRepNode(const ICFGNode* node) const
+    {
         return _repNode.at(node);
     }
 
 
-    void updateSubAndRep(const ICFGNode* rep, const ICFGNode* sub) {
+    void updateSubAndRep(const ICFGNode* rep, const ICFGNode* sub)
+    {
         addSubNode(rep, sub);
         updateRepNode(rep, sub);
     }
@@ -235,15 +238,18 @@ public:
 
 private:
     /// when ICFG is simplified, SubNode would merge repNode, then update the map
-    void addSubNode(const ICFGNode* rep, const ICFGNode* sub) {
+    void addSubNode(const ICFGNode* rep, const ICFGNode* sub)
+    {
         std::vector<const ICFGNode*>& subNodes = _subNodes[sub];
-        if(std::find(subNodes.begin(), subNodes.end(), rep) == subNodes.end()) {
+        if(std::find(subNodes.begin(), subNodes.end(), rep) == subNodes.end())
+        {
             subNodes.push_back(rep);
         }
     }
 
     /// when ICFG is simplified, some node would be removed, this map records the removed node to its rep node
-    void updateRepNode(const ICFGNode* rep, const ICFGNode* sub) {
+    void updateRepNode(const ICFGNode* rep, const ICFGNode* sub)
+    {
         _repNode[rep] = sub;
     }
 

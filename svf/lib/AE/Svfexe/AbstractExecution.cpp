@@ -600,7 +600,8 @@ void AbstractExecution::handleWTONode(const ICFGNode *node)
     std::deque<const ICFGNode*> worklist;
 
     const std::vector<const ICFGNode*>& worklist_vec = _icfg->getSubNodes(node);
-    for (auto it = worklist_vec.begin(); it != worklist_vec.end(); ++it) {
+    for (auto it = worklist_vec.begin(); it != worklist_vec.end(); ++it)
+    {
         const ICFGNode* curNode = *it;
         handleICFGNode(curNode);
     }

@@ -656,7 +656,8 @@ int main(int argc, char** argv)
     PTACallGraph* callgraph = ander->getPTACallGraph();
     builder.updateCallGraph(callgraph);
     pag->getICFG()->updateCallGraph(callgraph);
-    if (Options::ICFGMergeAdjacentNodes()) {
+    if (Options::ICFGMergeAdjacentNodes())
+    {
         ICFGSimplification::mergeAdjacentNodes(pag->getICFG());
     }
 

@@ -37,10 +37,10 @@ namespace SVF
 class ICFGSimplification
 {
 public:
-ICFGSimplification() = default;
+    ICFGSimplification() = default;
 
-virtual ~ICFGSimplification() = default;
+    virtual ~ICFGSimplification() = default;
 
-static void mergeAdjacentNodes(ICFG* icfg);
+    static void mergeAdjacentNodes(ICFG* icfg);
 };
 }

@@ -29,7 +29,8 @@
 //
 #include "AE/Svfexe/ICFGSimplification.h"
 
-namespace SVF {
+namespace SVF
+{
 void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
 {
     Map<const SVFBasicBlock*, std::vector<const ICFGNode*>> bbToNodes;
@@ -48,7 +49,7 @@ void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
                 // insts: call = i32 %fun(i32 %arg)
                 // We put the callnode in an icfgnode alone, and the retnode is similar.
                 if (const CallICFGNode* callNode =
-                        SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
+                            SVFUtil::dyn_cast<CallICFGNode>(icfgNode))
                 {
                     bbToNodes[bb].push_back(callNode);
                     subNodes.insert(callNode);
@@ -111,37 +112,46 @@ void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
         }
     }
 
-    for (auto &it: subNodes) {
+    for (auto &it: subNodes)
+    {
         ICFGNode* head = const_cast<ICFGNode*>(it);
-        if (head->getOutEdges().size() != 1) {
+        if (head->getOutEdges().size() != 1)
+        {
             // if head has more than one out edges, we don't merge any following nodes.
             continue;
         }
-        else {
+        else
+        {
             ICFGNode* next = (*head->getOutEdges().begin())->getDstNode();
             // merge the following nodes, until the next subnode
-            while (subNodes.find(next) == subNodes.end()) {
+            while (subNodes.find(next) == subNodes.end())
+            {
                 ICFGNode* rep_next = const_cast<ICFGNode*>(icfg->getRepNode(next));
                 assert(rep_next != head && "should not find a circle here");
                 icfg->removeICFGEdge(*head->getOutEdges().begin());
                 std::vector<ICFGEdge*> rm_edges;
                 // Step 1: merge the out edges of next to head
-                for (ICFGEdge* outEdge: next->getOutEdges()) {
+                for (ICFGEdge* outEdge: next->getOutEdges())
+                {
                     rm_edges.push_back(outEdge);
                     ICFGNode* post = outEdge->getDstNode();
-                    if (outEdge->isIntraCFGEdge()) {
+                    if (outEdge->isIntraCFGEdge())
+                    {
                         IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(outEdge);
-                        if (intraEdge->getCondition()) {
+                        if (intraEdge->getCondition())
+                        {
                             icfg->addConditionalIntraEdge(head, post, intraEdge->getCondition(), intraEdge->getSuccessorCondValue());
                         }
-                        else {
+                        else
+                        {
                             icfg->addIntraEdge(head, post);
                         }
                     }
                 }
                 // Step 2: update the sub node map and rep node map
                 icfg->updateSubAndRep(next, head);
-                if (next->getOutEdges().size() == 1) {
+                if (next->getOutEdges().size() == 1)
+                {
                     // Step 3: remove the edges from next to its next, since next has been merged to head
                     // if only one out edge, we may continue to merge the next node if it is not a subnode
                     next = (*next->getOutEdges().begin())->getDstNode();
@@ -149,7 +159,8 @@ void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
                         icfg->removeICFGEdge(edge);
 
                 }
-                else {
+                else
+                {
                     // if more than one out edges, we don't merge any following nodes.
                     for (ICFGEdge* edge: rm_edges)
                         icfg->removeICFGEdge(edge);
