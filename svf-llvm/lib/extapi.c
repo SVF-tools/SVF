@@ -28,6 +28,12 @@ void *fopen(const char *voidname, const char *mode)
 }
 
 __attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
+void *_fopen(const char *voidname, const char *mode)
+{
+    return NULL;
+}
+
+__attribute__((annotate("ALLOC_RET"), annotate("AllocSize:UNKNOWN")))
 void *fopen64(const char *voidname, const char *mode)
 {
     return NULL;

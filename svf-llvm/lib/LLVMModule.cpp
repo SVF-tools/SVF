@@ -1040,7 +1040,7 @@ void LLVMModuleSet::buildFunToFunMap()
             std::string declName = fdecl->getName().str();
             // Since C function names cannot include '.', change the function name from llvm.memcpy.p0i8.p0i8.i64 to llvm_memcpy_p0i8_p0i8_i64."
             std::replace(declName.begin(), declName.end(), '.', '_');
-            if (extfun->getName().str().compare(declName) == 0)
+            if (extfun->getName().str().compare(LLVMUtil::processMangledName(declName)) == 0)
             {
                 // AppDecl -> ExtDef in Table 1
                 FunDeclToDefMap[fdecl] = extfun;
@@ -1062,7 +1062,7 @@ void LLVMModuleSet::buildFunToFunMap()
     {
         for (const Function* owfunc : overwriteExtFuncs)
         {
-            if (appfunc->getName().str().compare(owfunc->getName().str()) == 0)
+            if (LLVMUtil::processMangledName(appfunc->getName().str()).compare(owfunc->getName().str()) == 0)
             {
                 Type* returnType1 = appfunc->getReturnType();
                 Type* returnType2 = owfunc->getReturnType();

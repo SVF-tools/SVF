@@ -32,6 +32,7 @@
 #include <sstream>
 #include <llvm/Support/raw_ostream.h>
 #include "SVF-LLVM/LLVMModule.h"
+#include <regex>
 
 
 using namespace SVF;
@@ -608,6 +609,15 @@ void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(Set<Function*> 
         func->eraseFromParent();
     // Delete unused global variables
     removeUnusedGlobalVariables(mod);
+}
+
+std::string LLVMUtil::processMangledName(const std::string& mangledName)
+{
+    // First, remove all characters that do not conform to the C language naming rules.
+    std::string cleanedName = std::regex_replace(mangledName, std::regex("[^a-zA-Z0-9_]"), "");
+    // Then, if the result starts with a number, remove these numbers.
+    cleanedName = std::regex_replace(cleanedName, std::regex("^\\d+"), "");
+    return cleanedName;
 }
 
 const SVFFunction* LLVMUtil::getFunction(const std::string& name)
