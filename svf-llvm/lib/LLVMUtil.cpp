@@ -615,7 +615,7 @@ std::string LLVMUtil::restoreFuncName(std::string funcName)
     assert(!funcName.empty() && "Empty function name");
     // Some function names change due to mangling, such as "fopen" to "\01_fopen" on macOS.
     // Since C function names cannot include '.', change the function name from llvm.memcpy.p0i8.p0i8.i64 to llvm_memcpy_p0i8_p0i8_i64."
-    bool hasSpecialPrefix = funcName[0] == '\01'; 
+    bool hasSpecialPrefix = funcName[0] == '\01';
     bool hasDot = funcName.find('.') != std::string::npos;
 
     if (!hasDot && !hasSpecialPrefix)
@@ -632,7 +632,7 @@ std::string LLVMUtil::restoreFuncName(std::string funcName)
             funcName = funcName.substr(prefix2.length());
     }
     // Replace '.' with '_'
-    if (hasDot) 
+    if (hasDot)
         std::replace(funcName.begin(), funcName.end(), '.', '_');
 
     return funcName;
