@@ -165,13 +165,17 @@ u32_t AccessPath::getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStr
 {
     const SVFValue* idxValue = idxOperandVar->getValue();
     u32_t structByteOffset = 0;
-    if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue)) {
-        for (u32_t structField = 0; structField < (u32_t) op->getSExtValue(); ++structField) {
+    if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxValue))
+    {
+        for (u32_t structField = 0; structField < (u32_t) op->getSExtValue(); ++structField)
+        {
             u32_t flattenIdx = idxOperandType->getTypeInfo()->getFlattenedFieldIdxVec()[structField];
             structByteOffset += idxOperandType->getTypeInfo()->getOriginalElemType(flattenIdx)->getByteSize();
         }
         return structByteOffset;
-    } else {
+    }
+    else
+    {
         assert(false && "struct type can only pair with constant idx");
         abort();
     }
