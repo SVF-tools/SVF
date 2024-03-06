@@ -332,6 +332,8 @@ bool isUnusedGlobalVariable(const GlobalVariable& global);
 void removeUnusedGlobalVariables(Module* module);
 /// Delete unused functions, annotations and global variables in extapi.bc
 void removeUnusedFuncsAndAnnotationsAndGlobalVariables(Set<Function*> removedFuncList);
+// Converts a mangled name to C naming style to match functions in extapi.c.
+std::string restoreFuncName(std::string funcName);
 
 /// Get the corresponding Function based on its name
 const SVFFunction* getFunction(const std::string& name);

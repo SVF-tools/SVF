@@ -665,6 +665,7 @@ int main(int argc, char** argv)
         ae.runOnModule(pag->getICFG());
     } else {
         AbstractExecution ae;
+
         ae.runOnModule(pag->getICFG());
     }
     LLVMModuleSet::releaseLLVMModuleSet();
