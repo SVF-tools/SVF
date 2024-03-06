@@ -1035,12 +1035,13 @@ void LLVMModuleSet::buildFunToFunMap()
     /// App Func decl -> SVF extern Func def
     for (const Function* fdecl : funDecls)
     {
+        std::string declName = fdecl->getName().str();
+        // Since C function names cannot include '.', change the function name from llvm.memcpy.p0i8.p0i8.i64 to llvm_memcpy_p0i8_p0i8_i64."
+        std::replace(declName.begin(), declName.end(), '.', '_');
+        declName = LLVMUtil::restoreFuncName(declName);
         for (const Function* extfun : extFuncs)
         {
-            std::string declName = fdecl->getName().str();
-            // Since C function names cannot include '.', change the function name from llvm.memcpy.p0i8.p0i8.i64 to llvm_memcpy_p0i8_p0i8_i64."
-            std::replace(declName.begin(), declName.end(), '.', '_');
-            if (extfun->getName().str().compare(LLVMUtil::processMangledName(declName)) == 0)
+            if (extfun->getName().str().compare(declName) == 0)
             {
                 // AppDecl -> ExtDef in Table 1
                 FunDeclToDefMap[fdecl] = extfun;
@@ -1060,9 +1061,10 @@ void LLVMModuleSet::buildFunToFunMap()
     /// App Func def -> SVF extern Func def
     for (const Function* appfunc : funDefs)
     {
+        std::string appfuncName = LLVMUtil::restoreFuncName(appfunc->getName().str());
         for (const Function* owfunc : overwriteExtFuncs)
         {
-            if (LLVMUtil::processMangledName(appfunc->getName().str()).compare(owfunc->getName().str()) == 0)
+            if (appfuncName.compare(owfunc->getName().str()) == 0)
             {
                 Type* returnType1 = appfunc->getReturnType();
                 Type* returnType2 = owfunc->getReturnType();

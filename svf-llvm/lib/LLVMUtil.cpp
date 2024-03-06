@@ -32,7 +32,6 @@
 #include <sstream>
 #include <llvm/Support/raw_ostream.h>
 #include "SVF-LLVM/LLVMModule.h"
-#include <regex>
 
 
 using namespace SVF;
@@ -611,13 +610,21 @@ void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(Set<Function*> 
     removeUnusedGlobalVariables(mod);
 }
 
-std::string LLVMUtil::processMangledName(const std::string& mangledName)
+std::string LLVMUtil::restoreFuncName(const std::string& modifiedFunctionName)
 {
-    // First, remove all characters that do not conform to the C language naming rules.
-    std::string cleanedName = std::regex_replace(mangledName, std::regex("[^a-zA-Z0-9_]"), "");
-    // Then, if the result starts with a number, remove these numbers.
-    cleanedName = std::regex_replace(cleanedName, std::regex("^\\d+"), "");
-    return cleanedName;
+    assert(!modifiedFunctionName.empty() && "Empty function name");
+    if (modifiedFunctionName[0] != '\01')
+        return modifiedFunctionName;
+
+    const std::string prefix1 = "\01_";
+    const std::string prefix2 = "\01";
+    // Remove prefix "\01_"
+    if (modifiedFunctionName.substr(0, prefix1.length()) == prefix1)
+        return modifiedFunctionName.substr(prefix1.length());
+    // Remove prefix "\01"
+    else if (modifiedFunctionName.substr(0, prefix2.length()) == prefix2)
+        return modifiedFunctionName.substr(prefix2.length());
+    return modifiedFunctionName;
 }
 
 const SVFFunction* LLVMUtil::getFunction(const std::string& name)
