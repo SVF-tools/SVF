@@ -414,6 +414,7 @@ bool BufOverflowCheckerAPI::detectStrcat(const CallICFGNode *call)
     else
     {
         assert(false && "unknown strcat function, please add it to strcatGroup or strncatGroup");
+        abort();
     }
 }
 

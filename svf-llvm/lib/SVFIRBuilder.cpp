@@ -290,7 +290,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, AccessPath& ap)
 
         assert((prevPtrOperand && svfGepTy->isPointerTy()) == false &&
                "Expect no more than one gep operand to be of a pointer type");
-        if(svfGepTy->isPointerTy()) prevPtrOperand = true;
+        if(!prevPtrOperand && svfGepTy->isPointerTy()) prevPtrOperand = true;
         const Value* offsetVal = gi.getOperand();
         const SVFValue* offsetSvfVal = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(offsetVal);
         assert(gepTy != offsetVal->getType() && "iteration and operand have the same type?");

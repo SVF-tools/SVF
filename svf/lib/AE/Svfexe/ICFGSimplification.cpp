@@ -126,8 +126,7 @@ void ICFGSimplification::mergeAdjacentNodes(ICFG* icfg)
             // merge the following nodes, until the next subnode
             while (subNodes.find(next) == subNodes.end())
             {
-                ICFGNode* rep_next = const_cast<ICFGNode*>(icfg->getRepNode(next));
-                assert(rep_next != head && "should not find a circle here");
+                assert(icfg->getRepNode(next) != head && "should not find a circle here");
                 icfg->removeICFGEdge(*head->getOutEdges().begin());
                 std::vector<ICFGEdge*> rm_edges;
                 // Step 1: merge the out edges of next to head

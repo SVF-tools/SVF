@@ -631,11 +631,10 @@ int main(int argc, char** argv)
         arg_value[arg_num] = argv[arg_num];
     }
     // add extra options
-    int orgArgNum = arg_num;
     arg_value[arg_num++] = (char*) "-model-consts=true";
     arg_value[arg_num++] = (char*) "-model-arrays=true";
     arg_value[arg_num++] = (char*) "-pre-field-sensitive=false";
-    assert(arg_num == (orgArgNum + extraArgc) && "more extra arguments? Change the value of extraArgc");
+    assert(arg_num == (argc + extraArgc) && "more extra arguments? Change the value of extraArgc");
 
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
