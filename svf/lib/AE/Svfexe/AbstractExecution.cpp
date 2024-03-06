@@ -1383,6 +1383,7 @@ u32_t AEAPI::getAllocaInstByteSize(const AddrStmt *addr)
         }
     }
     assert (false && "Addr rhs value is not ObjVar");
+    abort();
 }
 
 IntervalValue AEAPI::traceMemoryAllocationSize(const SVFValue *value)

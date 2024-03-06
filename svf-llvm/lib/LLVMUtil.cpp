@@ -363,8 +363,7 @@ void LLVMUtil::getPrevInsts(const Instruction* curInst, std::vector<const SVFIns
  */
 const Value* LLVMUtil::getFirstUseViaCastInst(const Value* val)
 {
-    const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
-    assert(type && "this value should be a pointer type!");
+    assert(SVFUtil::isa<PointerType>(val->getType()) && "this value should be a pointer type!");
     /// If type is void* (i8*) and val is immediately used at a bitcast instruction
     const Value *latestUse = nullptr;
     for (const auto &it : val->uses())

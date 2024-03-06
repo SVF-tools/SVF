@@ -36,6 +36,7 @@
 
 #include "SVFIR/SVFType.h"
 #include "SVFIR/SVFValue.h"
+#include <functional>
 
 namespace SVF
 {

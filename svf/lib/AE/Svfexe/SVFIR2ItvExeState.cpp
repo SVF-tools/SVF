@@ -105,6 +105,7 @@ IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
     else
     {
         assert(false && "cannot support");
+        abort();
     }
 }
 
