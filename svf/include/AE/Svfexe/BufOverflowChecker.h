@@ -105,7 +105,9 @@ class BufOverflowChecker: public AbstractExecution
 public:
     BufOverflowChecker() : AbstractExecution()
     {
+        initExtFunMap();
         _kind = AEKind::BufOverflowChecker;
+        initExtAPIBufOverflowCheckRules();
     }
 
     static bool classof(const AbstractExecution* ae)

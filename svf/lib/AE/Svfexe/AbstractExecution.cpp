@@ -123,6 +123,7 @@ void AbstractExecution::runOnModule(ICFG *icfg)
 AbstractExecution::AbstractExecution()
 {
     _stat = new AEStat(this);
+    initExtFunMap();
 }
 /// Destructor
 AbstractExecution::~AbstractExecution()
