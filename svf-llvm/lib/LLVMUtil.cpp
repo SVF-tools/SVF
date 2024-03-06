@@ -610,6 +610,34 @@ void LLVMUtil::removeUnusedFuncsAndAnnotationsAndGlobalVariables(Set<Function*> 
     removeUnusedGlobalVariables(mod);
 }
 
+std::string LLVMUtil::restoreFuncName(std::string funcName)
+{
+    assert(!funcName.empty() && "Empty function name");
+    // Some function names change due to mangling, such as "fopen" to "\01_fopen" on macOS.
+    // Since C function names cannot include '.', change the function name from llvm.memcpy.p0i8.p0i8.i64 to llvm_memcpy_p0i8_p0i8_i64."
+    bool hasSpecialPrefix = funcName[0] == '\01'; 
+    bool hasDot = funcName.find('.') != std::string::npos;
+
+    if (!hasDot && !hasSpecialPrefix)
+        return funcName;
+
+    // Remove prefix "\01_" or "\01"
+    if (hasSpecialPrefix)
+    {
+        const std::string prefix1 = "\01_";
+        const std::string prefix2 = "\01";
+        if (funcName.substr(0, prefix1.length()) == prefix1)
+            funcName = funcName.substr(prefix1.length());
+        else if (funcName.substr(0, prefix2.length()) == prefix2)
+            funcName = funcName.substr(prefix2.length());
+    }
+    // Replace '.' with '_'
+    if (hasDot) 
+        std::replace(funcName.begin(), funcName.end(), '.', '_');
+
+    return funcName;
+}
+
 const SVFFunction* LLVMUtil::getFunction(const std::string& name)
 {
     return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(name);
