@@ -659,20 +659,14 @@ int main(int argc, char** argv)
     if (Options::ICFGMergeAdjacentNodes()) {
         ICFGSimplification::mergeAdjacentNodes(pag->getICFG());
     }
-
     if (Options::BufferOverflowCheck())
     {
         BufOverflowChecker ae;
-        ae.initExtAPI();
         ae.runOnModule(pag->getICFG());
-    }
-    else
-    {
+    } else {
         AbstractExecution ae;
-        ae.initExtAPI();
         ae.runOnModule(pag->getICFG());
     }
-
     LLVMModuleSet::releaseLLVMModuleSet();
 
     return 0;
