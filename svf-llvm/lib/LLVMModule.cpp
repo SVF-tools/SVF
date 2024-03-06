@@ -1035,10 +1035,7 @@ void LLVMModuleSet::buildFunToFunMap()
     /// App Func decl -> SVF extern Func def
     for (const Function* fdecl : funDecls)
     {
-        std::string declName = fdecl->getName().str();
-        // Since C function names cannot include '.', change the function name from llvm.memcpy.p0i8.p0i8.i64 to llvm_memcpy_p0i8_p0i8_i64."
-        std::replace(declName.begin(), declName.end(), '.', '_');
-        declName = LLVMUtil::restoreFuncName(declName);
+        std::string declName = LLVMUtil::restoreFuncName(fdecl->getName().str());
         for (const Function* extfun : extFuncs)
         {
             if (extfun->getName().str().compare(declName) == 0)
