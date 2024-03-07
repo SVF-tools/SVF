@@ -663,13 +663,12 @@ int main(int argc, char** argv)
     if (Options::BufferOverflowCheck())
     {
         BufOverflowChecker ae;
-        ae.initExtAPI();
         ae.runOnModule(pag->getICFG());
     }
     else
     {
         AbstractExecution ae;
-        ae.initExtAPI();
+
         ae.runOnModule(pag->getICFG());
     }
 

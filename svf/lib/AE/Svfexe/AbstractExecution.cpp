@@ -83,10 +83,6 @@ Map<s32_t, s32_t> _switch_lhsrhs_predicate =
     {CmpStmt::Predicate::ICMP_SGE, CmpStmt::Predicate::ICMP_SLE},  // >= -> <=
 };
 
-void AbstractExecution::initExtAPI()
-{
-    _api = new AEAPI(this, _stat);
-}
 
 void AbstractExecution::runOnModule(ICFG *icfg)
 {
@@ -95,7 +91,6 @@ void AbstractExecution::runOnModule(ICFG *icfg)
     _icfg = icfg;
     _svfir = PAG::getPAG();
     _ander = AndersenWaveDiff::createAndersenWaveDiff(_svfir);
-    _api->setModule(_svfir);
     // init SVF Execution States
     _svfir2ExeState = new SVFIR2ItvExeState(_svfir);
 
@@ -103,7 +98,7 @@ void AbstractExecution::runOnModule(ICFG *icfg)
     _callgraph = _ander->getPTACallGraph();
 
     /// collect checkpoint
-    _api->collectCheckPoint();
+    collectCheckPoint();
 
     /// if function contains callInst that call itself, it is a recursive function.
     markRecursiveFuns();
@@ -114,7 +109,7 @@ void AbstractExecution::runOnModule(ICFG *icfg)
         _funcToWTO[fun] = wto;
     }
     analyse();
-    _api->checkPointAllSet();
+    checkPointAllSet();
     // 5. Stop clock and report bugs
     _stat->endClk();
     _stat->finializeStat();
@@ -128,12 +123,12 @@ void AbstractExecution::runOnModule(ICFG *icfg)
 AbstractExecution::AbstractExecution()
 {
     _stat = new AEStat(this);
+    initExtFunMap();
 }
 /// Destructor
 AbstractExecution::~AbstractExecution()
 {
     delete _stat;
-    delete _api;
     delete _svfir2ExeState;
     for (auto it: _funcToWTO)
         delete it.second;
@@ -650,7 +645,7 @@ bool AbstractExecution::isExtCall(const SVF::CallICFGNode *callNode)
 void AbstractExecution::extCallPass(const SVF::CallICFGNode *callNode)
 {
     _callSiteStack.push_back(callNode);
-    _api->handleExtAPI(callNode);
+    handleExtAPI(callNode);
     _callSiteStack.pop_back();
 }
 
@@ -1136,18 +1131,18 @@ void AEStat::reportBug()
     }
 }
 
-void AEAPI::initExtFunMap()
+void AbstractExecution::initExtFunMap()
 {
 #define SSE_FUNC_PROCESS(LLVM_NAME ,FUNC_NAME) \
         auto sse_##FUNC_NAME = [this](const CallSite &cs) { \
         /* run real ext function */ \
-        IntervalExeState &es = _ae->_svfir2ExeState->getEs(); \
+        IntervalExeState &es = _svfir2ExeState->getEs(); \
         u32_t rhs_id = _svfir->getValueNode(cs.getArgument(0)); \
         if (!es.inVarToValTable(rhs_id)) return; \
-        u32_t rhs = _ae->_svfir2ExeState->getEs()[rhs_id].lb().getNumeral(); \
+        u32_t rhs = _svfir2ExeState->getEs()[rhs_id].lb().getNumeral(); \
         s32_t res = FUNC_NAME(rhs);            \
         u32_t lhsId = _svfir->getValueNode(cs.getInstruction()); \
-        _ae->_svfir2ExeState->getEs()[lhsId] = IntervalValue(res);           \
+        _svfir2ExeState->getEs()[lhsId] = IntervalValue(res);           \
         return; \
     };                              \
     _func_map[#FUNC_NAME] = sse_##FUNC_NAME;  \
@@ -1176,7 +1171,7 @@ void AEAPI::initExtFunMap()
         const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(_svfir->getICFG()->getICFGNode(cs.getInstruction()));
         _checkpoints.erase(callNode);
         u32_t arg0 = _svfir->getValueNode(cs.getArgument(0));
-        IntervalExeState &es = _ae->_svfir2ExeState->getEs();
+        IntervalExeState &es = _svfir2ExeState->getEs();
         es[arg0].meet_with(IntervalValue(1, 1));
         if (es[arg0].equals(IntervalValue(1, 1)))
         {
@@ -1194,7 +1189,7 @@ void AEAPI::initExtFunMap()
     auto svf_print = [&](const CallSite &cs)
     {
         if (cs.arg_size() < 2) return;
-        IntervalExeState &es = _ae->_svfir2ExeState->getEs();
+        IntervalExeState &es = _svfir2ExeState->getEs();
         u32_t num_id = _svfir->getValueNode(cs.getArgument(0));
         std::string text = strRead(cs.getArgument(1));
         assert(es.inVarToValTable(num_id) && "print() should pass integer");
@@ -1208,17 +1203,17 @@ void AEAPI::initExtFunMap()
     _checkpoint_names.insert("svf_assert");
 };
 
-std::string AEAPI::strRead(const SVFValue* rhs)
+std::string AbstractExecution::strRead(const SVFValue* rhs)
 {
     // sse read string nodeID->string
-    IntervalExeState &es = _ae->_svfir2ExeState->getEs();
+    IntervalExeState &es = _svfir2ExeState->getEs();
     std::string str0;
 
     for (u32_t index = 0; index < Options::MaxFieldLimit(); index++)
     {
         // dead loop for string and break if there's a \0. If no \0, it will throw err.
         if (!es.inVarToAddrsTable(_svfir->getValueNode(rhs))) continue;
-        ExeState::Addrs expr0 = _ae->_svfir2ExeState->getGepObjAddress(_svfir->getValueNode(rhs), index);
+        ExeState::Addrs expr0 = _svfir2ExeState->getGepObjAddress(_svfir->getValueNode(rhs), index);
         IntervalValue val = IntervalValue::bottom();
         for (const auto &addr: expr0)
         {
@@ -1237,7 +1232,7 @@ std::string AEAPI::strRead(const SVFValue* rhs)
     return str0;
 }
 
-void AEAPI::handleExtAPI(const CallICFGNode *call)
+void AbstractExecution::handleExtAPI(const CallICFGNode *call)
 {
     const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
     assert(fun && "SVFFunction* is nullptr");
@@ -1264,13 +1259,13 @@ void AEAPI::handleExtAPI(const CallICFGNode *call)
         else
         {
             u32_t lhsId = _svfir->getValueNode(SVFUtil::getSVFCallSite(call->getCallSite()).getInstruction());
-            if (_ae->_svfir2ExeState->getEs().inVarToAddrsTable(lhsId))
+            if (_svfir2ExeState->getEs().inVarToAddrsTable(lhsId))
             {
 
             }
             else
             {
-                _ae->_svfir2ExeState->getEs()[lhsId] = IntervalValue();
+                _svfir2ExeState->getEs()[lhsId] = IntervalValue();
             }
             return;
         }
@@ -1278,14 +1273,14 @@ void AEAPI::handleExtAPI(const CallICFGNode *call)
     // 1. memcpy functions like memcpy_chk, strncpy, annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")
     else if (extType == MEMCPY)
     {
-        IntervalValue len = _ae->_svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(2))];
+        IntervalValue len = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(2))];
         handleMemcpy(cs.getArgument(0), cs.getArgument(1), len, 0);
     }
     else if (extType == MEMSET)
     {
         // memset dst is arg0, elem is arg1, size is arg2
-        IntervalValue len = _ae->_svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(2))];
-        IntervalValue elem = _ae->_svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(1))];
+        IntervalValue len = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(2))];
+        IntervalValue elem = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(1))];
         handleMemset(cs.getArgument(0), elem, len);
     }
     else if (extType == STRCPY)
@@ -1303,10 +1298,10 @@ void AEAPI::handleExtAPI(const CallICFGNode *call)
     return;
 }
 
-void AEAPI::collectCheckPoint()
+void AbstractExecution::collectCheckPoint()
 {
     // traverse every ICFGNode
-    for (auto it = _ae->_svfir->getICFG()->begin(); it != _ae->_svfir->getICFG()->end(); ++it)
+    for (auto it = _svfir->getICFG()->begin(); it != _svfir->getICFG()->end(); ++it)
     {
         const ICFGNode* node = it->second;
         if (const CallICFGNode *call = SVFUtil::dyn_cast<CallICFGNode>(node))
@@ -1322,7 +1317,7 @@ void AEAPI::collectCheckPoint()
     }
 }
 
-void AEAPI::checkPointAllSet()
+void AbstractExecution::checkPointAllSet()
 {
     if (_checkpoints.size() == 0)
     {
@@ -1341,7 +1336,7 @@ void AEAPI::checkPointAllSet()
 }
 
 
-void AEAPI::handleStrcpy(const CallICFGNode *call)
+void AbstractExecution::handleStrcpy(const CallICFGNode *call)
 {
     // strcpy, __strcpy_chk, stpcpy , wcscpy, __wcscpy_chk
     // get the dst and src
@@ -1353,7 +1348,7 @@ void AEAPI::handleStrcpy(const CallICFGNode *call)
     handleMemcpy(arg0Val, arg1Val, strLen,strLen.lb().getNumeral());
 }
 
-u32_t AEAPI::getAllocaInstByteSize(const AddrStmt *addr)
+u32_t AbstractExecution::getAllocaInstByteSize(const AddrStmt *addr)
 {
     if (const ObjVar* objvar = SVFUtil::dyn_cast<ObjVar>(addr->getRHSVar()))
     {
@@ -1372,11 +1367,11 @@ u32_t AEAPI::getAllocaInstByteSize(const AddrStmt *addr)
             u64_t res = elementSize;
             for (const SVFValue* value: sizes)
             {
-                if (!_ae->_svfir2ExeState->inVarToValTable(_svfir->getValueNode(value)))
+                if (!_svfir2ExeState->inVarToValTable(_svfir->getValueNode(value)))
                 {
-                    _ae->_svfir2ExeState->getEs()[_svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
+                    _svfir2ExeState->getEs()[_svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
                 }
-                IntervalValue itv = _ae->_svfir2ExeState->getEs()[_svfir->getValueNode(value)];
+                IntervalValue itv = _svfir2ExeState->getEs()[_svfir->getValueNode(value)];
                 res = res * itv.ub().getNumeral() > Options::MaxFieldLimit()? Options::MaxFieldLimit(): res * itv.ub().getNumeral();
             }
             return (u32_t)res;
@@ -1386,7 +1381,7 @@ u32_t AEAPI::getAllocaInstByteSize(const AddrStmt *addr)
     abort();
 }
 
-IntervalValue AEAPI::traceMemoryAllocationSize(const SVFValue *value)
+IntervalValue AbstractExecution::traceMemoryAllocationSize(const SVFValue *value)
 {
     /// Usually called by a GepStmt overflow check, or external API (like memcpy) overflow check
     /// Defitions of Terms:
@@ -1467,7 +1462,7 @@ IntervalValue AEAPI::traceMemoryAllocationSize(const SVFValue *value)
                             }
                             else
                             {
-                                IntervalValue byteOffset = _ae->_svfir2ExeState->getByteOffset(gep);
+                                IntervalValue byteOffset = _svfir2ExeState->getByteOffset(gep);
                             }
                             // for variable offset, join with accumulate gep offset
                             gep_offsets[gep->getICFGNode()] = byteOffset;
@@ -1518,18 +1513,18 @@ IntervalValue AEAPI::traceMemoryAllocationSize(const SVFValue *value)
 }
 
 
-IntervalValue AEAPI::getStrlen(const SVF::SVFValue *strValue)
+IntervalValue AbstractExecution::getStrlen(const SVF::SVFValue *strValue)
 {
-    IntervalExeState &es = _ae->_svfir2ExeState->getEs();
+    IntervalExeState &es = _svfir2ExeState->getEs();
     IntervalValue dst_size = traceMemoryAllocationSize(strValue);
     u32_t len = 0;
     NodeID dstid = _svfir->getValueNode(strValue);
     u32_t elemSize = 1;
-    if (_ae->_svfir2ExeState->inVarToAddrsTable(dstid))
+    if (_svfir2ExeState->inVarToAddrsTable(dstid))
     {
         for (u32_t index = 0; index < dst_size.lb().getNumeral(); index++)
         {
-            ExeState::Addrs expr0 = _ae->_svfir2ExeState->getGepObjAddress(dstid, index);
+            ExeState::Addrs expr0 = _svfir2ExeState->getGepObjAddress(dstid, index);
             IntervalValue val = IntervalValue::bottom();
             for (const auto &addr: expr0)
             {
@@ -1572,7 +1567,7 @@ IntervalValue AEAPI::getStrlen(const SVF::SVFValue *strValue)
 }
 
 
-void AEAPI::handleStrcat(const SVF::CallICFGNode *call)
+void AbstractExecution::handleStrcat(const SVF::CallICFGNode *call)
 {
     // __strcat_chk, strcat, __wcscat_chk, wcscat, __strncat_chk, strncat, __wcsncat_chk, wcsncat
     // to check it is  strcat group or strncat group
@@ -1596,7 +1591,7 @@ void AEAPI::handleStrcat(const SVF::CallICFGNode *call)
         const SVFValue* arg0Val = cs.getArgument(0);
         const SVFValue* arg1Val = cs.getArgument(1);
         const SVFValue* arg2Val = cs.getArgument(2);
-        IntervalValue arg2Num = _ae->_svfir2ExeState->getEs()[_svfir->getValueNode(arg2Val)];
+        IntervalValue arg2Num = _svfir2ExeState->getEs()[_svfir->getValueNode(arg2Val)];
         IntervalValue strLen0 = getStrlen(arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
         handleMemcpy(arg0Val, arg1Val, arg2Num, strLen0.lb().getNumeral());
@@ -1608,9 +1603,9 @@ void AEAPI::handleStrcat(const SVF::CallICFGNode *call)
     }
 }
 
-void AEAPI::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFValue *src, SVF::IntervalValue len,  u32_t start_idx)
+void AbstractExecution::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFValue *src, SVF::IntervalValue len,  u32_t start_idx)
 {
-    IntervalExeState &es = _ae->_svfir2ExeState->getEs();
+    IntervalExeState &es = _svfir2ExeState->getEs();
     u32_t dstId = _svfir->getValueNode(dst); // pts(dstId) = {objid}  objbar objtypeinfo->getType().
     u32_t srcId = _svfir->getValueNode(src);
     u32_t elemSize = 1;
@@ -1639,13 +1634,13 @@ void AEAPI::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFValue *src, SVF
     }
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getNumeral());
     u32_t range_val = size / elemSize;
-    if (_ae->_svfir2ExeState->inVarToAddrsTable(srcId) && _ae->_svfir2ExeState->inVarToAddrsTable(dstId))
+    if (_svfir2ExeState->inVarToAddrsTable(srcId) && _svfir2ExeState->inVarToAddrsTable(dstId))
     {
         for (u32_t index = 0; index < range_val; index++)
         {
             // dead loop for string and break if there's a \0. If no \0, it will throw err.
-            ExeState::Addrs expr_src = _ae->_svfir2ExeState->getGepObjAddress(srcId, index);
-            ExeState::Addrs expr_dst = _ae->_svfir2ExeState->getGepObjAddress(dstId, index + start_idx);
+            ExeState::Addrs expr_src = _svfir2ExeState->getGepObjAddress(srcId, index);
+            ExeState::Addrs expr_dst = _svfir2ExeState->getGepObjAddress(dstId, index + start_idx);
             for (const auto &dst: expr_dst)
             {
                 for (const auto &src: expr_src)
@@ -1665,15 +1660,15 @@ void AEAPI::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFValue *src, SVF
     }
 }
 
-const SVFType* AEAPI::getPointeeElement(NodeID id)
+const SVFType* AbstractExecution::getPointeeElement(NodeID id)
 {
-    assert(_ae->_svfir2ExeState->inVarToAddrsTable(id) && "id is not in varToAddrsTable");
-    if (_ae->_svfir2ExeState->inVarToAddrsTable(id))
+    assert(_svfir2ExeState->inVarToAddrsTable(id) && "id is not in varToAddrsTable");
+    if (_svfir2ExeState->inVarToAddrsTable(id))
     {
-        const ExeState::Addrs& addrs = _ae->_svfir2ExeState->getAddrs(id);
+        const ExeState::Addrs& addrs = _svfir2ExeState->getAddrs(id);
         for (auto addr: addrs)
         {
-            NodeID addr_id = _ae->_svfir2ExeState->getInternalID(addr);
+            NodeID addr_id = _svfir2ExeState->getInternalID(addr);
             if (addr_id == 0) // nullptr has no memobj, skip
                 continue;
             return SVFUtil::dyn_cast<ObjVar>(_svfir->getGNode(addr_id))->getMemObj()->getType();
@@ -1682,9 +1677,9 @@ const SVFType* AEAPI::getPointeeElement(NodeID id)
     return nullptr;
 }
 
-void AEAPI::handleMemset(const SVF::SVFValue *dst, SVF::IntervalValue elem, SVF::IntervalValue len)
+void AbstractExecution::handleMemset(const SVF::SVFValue *dst, SVF::IntervalValue elem, SVF::IntervalValue len)
 {
-    IntervalExeState &es = _ae->_svfir2ExeState->getEs();
+    IntervalExeState &es = _svfir2ExeState->getEs();
     u32_t dstId = _svfir->getValueNode(dst);
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getNumeral());
     u32_t elemSize = 1;
@@ -1712,9 +1707,9 @@ void AEAPI::handleMemset(const SVF::SVFValue *dst, SVF::IntervalValue elem, SVF:
     for (u32_t index = 0; index < range_val; index++)
     {
         // dead loop for string and break if there's a \0. If no \0, it will throw err.
-        if (_ae->_svfir2ExeState->inVarToAddrsTable(dstId))
+        if (_svfir2ExeState->inVarToAddrsTable(dstId))
         {
-            ExeState::Addrs lhs_gep = _ae->_svfir2ExeState->getGepObjAddress(dstId, index);
+            ExeState::Addrs lhs_gep = _svfir2ExeState->getGepObjAddress(dstId, index);
             for (const auto &addr: lhs_gep)
             {
                 u32_t objId = ExeState::getInternalID(addr);
@@ -1737,7 +1732,7 @@ void AEAPI::handleMemset(const SVF::SVFValue *dst, SVF::IntervalValue elem, SVF:
 
 
 
-void AEAPI::AccessMemoryViaRetNode(const CallICFGNode *callnode, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited)
+void AbstractExecution::AccessMemoryViaRetNode(const CallICFGNode *callnode, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited)
 {
     if (callnode->getRetICFGNode()->getSVFStmts().size() > 0)
     {
@@ -1762,7 +1757,7 @@ void AEAPI::AccessMemoryViaRetNode(const CallICFGNode *callnode, SVF::FILOWorkLi
     }
 }
 
-void AEAPI::AccessMemoryViaCopyStmt(const CopyStmt *copy, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited)
+void AbstractExecution::AccessMemoryViaCopyStmt(const CopyStmt *copy, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited)
 {
     if (!visited.count(copy->getRHSVar()->getValue()))
     {
@@ -1771,14 +1766,14 @@ void AEAPI::AccessMemoryViaCopyStmt(const CopyStmt *copy, SVF::FILOWorkList<cons
     }
 }
 
-void AEAPI::AccessMemoryViaLoadStmt(const LoadStmt *load, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited)
+void AbstractExecution::AccessMemoryViaLoadStmt(const LoadStmt *load, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited)
 {
-    if (_ae->_svfir2ExeState->inVarToAddrsTable(load->getLHSVarID()))
+    if (_svfir2ExeState->inVarToAddrsTable(load->getLHSVarID()))
     {
-        const ExeState::Addrs &Addrs = _ae->_svfir2ExeState->getAddrs(load->getLHSVarID());
+        const ExeState::Addrs &Addrs = _svfir2ExeState->getAddrs(load->getLHSVarID());
         for (auto vaddr: Addrs)
         {
-            NodeID id = _ae->_svfir2ExeState->getInternalID(vaddr);
+            NodeID id = _svfir2ExeState->getInternalID(vaddr);
             if (id == 0) // nullptr has no memobj, skip
                 continue;
             const auto *val = _svfir->getGNode(id);
@@ -1791,11 +1786,11 @@ void AEAPI::AccessMemoryViaLoadStmt(const LoadStmt *load, SVF::FILOWorkList<cons
     }
 }
 
-void AEAPI::AccessMemoryViaCallArgs(const SVF::SVFArgument *arg,
-                                    SVF::FILOWorkList<const SVFValue *> &worklist,
-                                    Set<const SVF::SVFValue *> &visited)
+void AbstractExecution::AccessMemoryViaCallArgs(const SVF::SVFArgument *arg,
+                                                SVF::FILOWorkList<const SVFValue *> &worklist,
+                                                Set<const SVF::SVFValue *> &visited)
 {
-    std::vector<const CallICFGNode *> callstack = _ae->_callSiteStack;
+    std::vector<const CallICFGNode *> callstack = _callSiteStack;
     SVF::ValVar *arg_gnode = SVFUtil::cast<ValVar>(_svfir->getGNode(_svfir->getValueNode(arg)));
     if (arg_gnode->hasIncomingEdges(SVFStmt::PEDGEK::Call))
     {
