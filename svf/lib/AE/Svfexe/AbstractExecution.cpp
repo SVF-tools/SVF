@@ -1787,8 +1787,8 @@ void AbstractExecution::AccessMemoryViaLoadStmt(const LoadStmt *load, SVF::FILOW
 }
 
 void AbstractExecution::AccessMemoryViaCallArgs(const SVF::SVFArgument *arg,
-                                                SVF::FILOWorkList<const SVFValue *> &worklist,
-                                                Set<const SVF::SVFValue *> &visited)
+        SVF::FILOWorkList<const SVFValue *> &worklist,
+        Set<const SVF::SVFValue *> &visited)
 {
     std::vector<const CallICFGNode *> callstack = _callSiteStack;
     SVF::ValVar *arg_gnode = SVFUtil::cast<ValVar>(_svfir->getGNode(_svfir->getValueNode(arg)));
