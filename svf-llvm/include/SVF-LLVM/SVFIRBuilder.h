@@ -368,6 +368,16 @@ protected:
         }
         return nullptr;
     }
+    inline CopyStmt* addCopyEdge(NodeID src, NodeID dst, CopyStmt::CopyKind kind)
+    {
+        if(CopyStmt *edge = pag->addCopyStmt(src, dst, kind))
+        {
+            setCurrentBBAndValueForPAGEdge(edge);
+            return edge;
+        }
+        return nullptr;
+    }
+
     /// Add Copy edge
     inline void addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
     {

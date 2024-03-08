@@ -61,8 +61,7 @@ AddrStmt* SVFIR::addAddrStmt(NodeID src, NodeID dst)
 /*!
  * Add Copy edge
  */
-CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst)
-{
+CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst, CopyStmt::CopyKind type) {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
     if(hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Copy))
@@ -74,6 +73,10 @@ CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst)
         addEdge(srcNode,dstNode, copyPE);
         return copyPE;
     }
+}
+CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst)
+{
+    return addCopyStmt(src, dst, CopyStmt::CopyKind::COPY);
 }
 
 /*!

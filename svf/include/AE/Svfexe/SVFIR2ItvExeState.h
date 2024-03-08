@@ -79,6 +79,8 @@ public:
     /// Return the value range of Integer SVF Type, e.g. unsigned i8 Type->[0, 255], signed i8 Type->[-128, 127]
     IntervalValue getRangeLimitFromType(const SVFType* type);
 
+    IntervalValue getZExtValue(const SVFVar* var);
+
     /// Return the byte offset expression of a GepStmt
     /// elemBytesize is the element byte size of an static alloc or heap alloc array
     /// e.g. GepStmt* gep = [i32*10], x, and x is [0,3]
@@ -206,6 +208,7 @@ private:
     RelExeState _relEs;
 
     Map<NodeID, IntervalExeState *> _br_cond;
+    IntervalValue getZExtValue(const SVFVar* var, const SVFType*);
 };
 }
 

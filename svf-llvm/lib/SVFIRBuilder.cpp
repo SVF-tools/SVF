@@ -743,7 +743,19 @@ void SVFIRBuilder::visitCastInst(CastInst &inst)
             opnd = stripAllCasts(opnd);
 
         NodeID src = getValueNode(opnd);
-        addCopyEdge(src, dst);
+        // if ZEXT
+        if(SVFUtil::isa<llvm::ZExtInst>(&inst))
+        {
+            addCopyEdge(src, dst, CopyStmt::ZEXT);
+        }
+        else if (SVFUtil::isa<llvm::SExtInst>(&inst))
+        {
+            addCopyEdge(src, dst, CopyStmt::SEXT);
+        }
+        else
+        {
+            addCopyEdge(src, dst);
+        }
     }
 }
 

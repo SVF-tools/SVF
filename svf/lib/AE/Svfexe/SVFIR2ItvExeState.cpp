@@ -108,6 +108,43 @@ IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
     }
 }
 
+IntervalValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var) {
+    const SVFType* type = var->getType();
+    if (SVFUtil::isa<SVFIntegerType>(type))
+    {
+        u32_t bits = type->getByteSize() * 8;
+        if (_es[var->getId()].is_numeral()) {
+            if (bits == 8) {
+                int8_t signed_i8_value = _es[var->getId()].getNumeral();
+                uint32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
+                return IntervalValue(unsigned_value, unsigned_value);
+            }
+            else if (bits == 16) {
+                int16_t signed_i16_value = _es[var->getId()].getNumeral();
+                uint32_t unsigned_value = static_cast<uint16_t>(signed_i16_value);
+                return IntervalValue(unsigned_value, unsigned_value);
+            }
+            else if (bits == 32) {
+                int32_t signed_i32_value = _es[var->getId()].getNumeral();
+                uint32_t unsigned_value = static_cast<uint32_t>(signed_i32_value);
+                return IntervalValue(unsigned_value, unsigned_value);
+            }
+            else if (bits == 64) {
+                int64_t signed_i64_value = _es[var->getId()].getNumeral();
+                return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
+                // we only support i64 at most
+            }
+            else {
+                assert(false && "cannot support int type other than u8/16/32/64");
+            }
+        }
+        else {
+            return IntervalValue::top(); // TODO: may have better solution
+        }
+    }
+    assert(false && "cannot support non-integer type");
+}
+
 
 void SVFIR2ItvExeState::applySummary(IntervalExeState &es)
 {
@@ -827,8 +864,15 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
             // lower bits integer. e.g. bitcast i32 to i8
             if (copy->getLHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
             {
-                _es[lhs].meet_with(
-                    getRangeLimitFromType(copy->getLHSVar()->getType()));
+                // if CopyStmt is ZextStmt
+                if (copy->getCopyKind() == CopyStmt::ZEXT)
+                {
+                    _es[lhs] = getZExtValue(copy->getRHSVar());
+                } else
+                {
+                    _es[lhs].meet_with(
+                        getRangeLimitFromType(copy->getLHSVar()->getType()));
+                }
             }
         }
         else if (inVarToAddrsTable(rhs))
