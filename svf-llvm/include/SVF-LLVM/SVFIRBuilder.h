@@ -358,16 +358,6 @@ protected:
         return edge;
     }
 
-    /// Add Copy edge
-    inline CopyStmt* addCopyEdge(NodeID src, NodeID dst)
-    {
-        if(CopyStmt *edge = pag->addCopyStmt(src, dst))
-        {
-            setCurrentBBAndValueForPAGEdge(edge);
-            return edge;
-        }
-        return nullptr;
-    }
     inline CopyStmt* addCopyEdge(NodeID src, NodeID dst, CopyStmt::CopyKind kind)
     {
         if(CopyStmt *edge = pag->addCopyStmt(src, dst, kind))

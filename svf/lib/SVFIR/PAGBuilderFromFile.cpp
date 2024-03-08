@@ -163,7 +163,7 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
         pag->addAddrStmt(srcID, dstID);
     }
     else if (edge == "copy")
-        pag->addCopyStmt(srcID, dstID);
+        pag->addCopyStmt(srcID, dstID, CopyStmt::COPY);
     else if (edge == "load")
         pag->addLoadStmt(srcID, dstID);
     else if (edge == "store")

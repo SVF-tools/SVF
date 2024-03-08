@@ -393,8 +393,6 @@ public:
     inline CopyKind getCopyKind() const { return copyKind; }
 
     /// constructor
-    CopyStmt(SVFVar* s, SVFVar* d) : AssignStmt(s, d, SVFStmt::Copy) {}
-
     CopyStmt(SVFVar* s, SVFVar* d, CopyKind k) : AssignStmt(s, d, SVFStmt::Copy), copyKind(k) {}
 
     virtual const std::string toString() const override;
