@@ -207,9 +207,9 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
         }
         if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
             insertInferSite(gepInst);
-        for (const auto &it: curValue->uses())
+        for (const auto &it: curValue->users())
         {
-            if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(it.getUser()))
+            if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(it))
             {
                 /*
                  * infer based on load, e.g.,
@@ -219,7 +219,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                  */
                 insertInferSite(loadInst);
             }
-            else if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(it.getUser()))
+            else if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(it))
             {
                 if (storeInst->getPointerOperand() == curValue)
                 {
@@ -233,7 +233,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                 }
                 else
                 {
-                    for (const auto &nit: storeInst->getPointerOperand()->uses())
+                    for (const auto &nit: storeInst->getPointerOperand()->users())
                     {
                         /*
                          * propagate across store (value operand) and load
@@ -242,8 +242,8 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                          %q = load i8*, i8** %p
                          ..infer based on %q..
                         */
-                        if (SVFUtil::isa<LoadInst>(nit.getUser()))
-                            insertInferSitesOrPushWorklist(nit.getUser());
+                        if (SVFUtil::isa<LoadInst>(nit))
+                            insertInferSitesOrPushWorklist(nit);
                     }
                     /*
                      * infer based on store (value operand) <- gep (result element)
@@ -263,18 +263,18 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                         const Value *gepBase = gepInst->getPointerOperand();
                         if (!SVFUtil::isa<LoadInst>(gepBase)) continue;
                         const auto *load = SVFUtil::dyn_cast<LoadInst>(gepBase);
-                        for (const auto &loadUse: load->getPointerOperand()->uses())
+                        for (const auto &loadUse: load->getPointerOperand()->users())
                         {
-                            if (loadUse.getUser() == load || !SVFUtil::isa<LoadInst>(loadUse.getUser()))
+                            if (loadUse == load || !SVFUtil::isa<LoadInst>(loadUse))
                                 continue;
-                            for (const auto &gepUse: loadUse.getUser()->uses())
+                            for (const auto &gepUse: loadUse->users())
                             {
-                                if (!SVFUtil::isa<GetElementPtrInst>(gepUse.getUser())) continue;
-                                for (const auto &loadUse2: gepUse.getUser()->uses())
+                                if (!SVFUtil::isa<GetElementPtrInst>(gepUse)) continue;
+                                for (const auto &loadUse2: gepUse->users())
                                 {
-                                    if (SVFUtil::isa<LoadInst>(loadUse2.getUser()))
+                                    if (SVFUtil::isa<LoadInst>(loadUse2))
                                     {
-                                        insertInferSitesOrPushWorklist(loadUse2.getUser());
+                                        insertInferSitesOrPushWorklist(loadUse2);
                                     }
                                 }
                             }
@@ -284,7 +284,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                 }
 
             }
-            else if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it.getUser()))
+            else if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it))
             {
                 /*
                  * infer based on gep (pointer operand)
@@ -295,17 +295,17 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                 if (gepInst->getPointerOperand() == curValue)
                     insertInferSite(gepInst);
             }
-            else if (const auto *bitcast = SVFUtil::dyn_cast<BitCastInst>(it.getUser()))
+            else if (const auto *bitcast = SVFUtil::dyn_cast<BitCastInst>(it))
             {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(bitcast);
             }
-            else if (const auto *phiNode = SVFUtil::dyn_cast<PHINode>(it.getUser()))
+            else if (const auto *phiNode = SVFUtil::dyn_cast<PHINode>(it))
             {
                 // continue on bitcast
                 insertInferSitesOrPushWorklist(phiNode);
             }
-            else if (const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(it.getUser()))
+            else if (const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(it))
             {
                 /*
                  * propagate from return to caller
@@ -318,9 +318,9 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                  %call = call i8* @malloc_wrapper()
                  ..infer based on %call..
                 */
-                for (const auto &callsite: retInst->getFunction()->uses())
+                for (const auto &callsite: retInst->getFunction()->users())
                 {
-                    if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(callsite.getUser()))
+                    if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(callsite))
                     {
                         // skip function as parameter
                         // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
@@ -329,7 +329,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                     }
                 }
             }
-            else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(it.getUser()))
+            else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(it))
             {
                 /*
                  * propagate from callsite to callee
@@ -449,9 +449,9 @@ Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var)
         }
         else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
         {
-            for (const auto &use: loadInst->getPointerOperand()->uses())
+            for (const auto &use: loadInst->getPointerOperand()->users())
             {
-                if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use.getUser()))
+                if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use))
                 {
                     if (storeInst->getPointerOperand() == loadInst->getPointerOperand())
                     {
@@ -462,9 +462,9 @@ Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var)
         }
         else if (const auto *argument = SVFUtil::dyn_cast<Argument>(curValue))
         {
-            for (const auto &use: argument->getParent()->uses())
+            for (const auto &use: argument->getParent()->users())
             {
-                if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use.getUser()))
+                if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use))
                 {
                     // skip function as parameter
                     // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
