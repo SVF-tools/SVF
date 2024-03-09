@@ -361,17 +361,22 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                     // it is challenging to precisely identify the forward value-flow of %arg (Line 2)
                     // because the function definition of callee (Line 2) does not have any formal args related to the actual arg %arg
                     // therefore we track all possible instructions like ``load i32, ptr %vaarg.addr''
-                    if (calleeFunc->isVarArg()) {
+                    if (calleeFunc->isVarArg())
+                    {
                         // conservatively track all var args
-                        for (auto &I: instructions(calleeFunc)) {
-                            if (auto *load = llvm::dyn_cast<llvm::LoadInst>(&I)) {
+                        for (auto &I: instructions(calleeFunc))
+                        {
+                            if (auto *load = llvm::dyn_cast<llvm::LoadInst>(&I))
+                            {
                                 llvm::Value* loadPointer = load->getPointerOperand();
-                                if (loadPointer->getName().compare("vaarg.addr") == 0) {
+                                if (loadPointer->getName().compare("vaarg.addr") == 0)
+                                {
                                     insertInferSitesOrPushWorklist(load);
                                 }
                             }
                         }
-                    } else if (!calleeFunc->isDeclaration())
+                    }
+                    else if (!calleeFunc->isDeclaration())
                     {
                         insertInferSitesOrPushWorklist(calleeFunc->getArg(pos));
                     }
