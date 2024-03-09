@@ -360,7 +360,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                                     // var arg normally has this pattern:
                                     // xx = load i32, ptr %vaarg.addr
                                     if (loadPointer->getName().compare("vaarg.addr") == 0) {
-                                        insertInferSitesOrPushWorklist(loadInst);
+                                        insertInferSitesOrPushWorklist(load);
                                     }
                                 }
                             }
