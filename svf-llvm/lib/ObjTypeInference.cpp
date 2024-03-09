@@ -350,9 +350,28 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                 if (Function *calleeFunc = callBase->getCalledFunction())
                 {
                     u32_t pos = getArgPosInCall(callBase, curValue);
-                    // for variable argument, conservatively collect all params
-                    if (calleeFunc->isVarArg()) pos = 0;
-                    if (!calleeFunc->isDeclaration())
+                    // for varargs function, we cannot directly get the value-flow between actual and formal args
+                    // e.g., consider the following vararg function @callee
+                    // 1: call void @callee(%arg)
+                    // 2: define dso_local i32 @callee(...) #0 !dbg !17 {
+                    // 3:  .......
+                    // 4:  %5 = load i32, ptr %vaarg.addr, align 4, !dbg !55
+                    // 5:  .......
+                    // 6: }
+                    // it is challenging to precisely identify the forward value-flow of %arg (Line 2)
+                    // because the function definition of callee (Line 2) does not have any formal args related to the actual arg %arg
+                    // therefore we track all possible instructions like ``load i32, ptr %vaarg.addr''
+                    if (calleeFunc->isVarArg()) {
+                        // conservatively track all var args
+                        for (auto &I: instructions(calleeFunc)) {
+                            if (auto *load = llvm::dyn_cast<llvm::LoadInst>(&I)) {
+                                llvm::Value* loadPointer = load->getPointerOperand();
+                                if (loadPointer->getName().compare("vaarg.addr") == 0) {
+                                    insertInferSitesOrPushWorklist(load);
+                                }
+                            }
+                        }
+                    } else if (!calleeFunc->isDeclaration())
                     {
                         insertInferSitesOrPushWorklist(calleeFunc->getArg(pos));
                     }

@@ -41,6 +41,7 @@
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Statepoint.h>
+#include <llvm/IR/Intrinsics.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
 #include <llvm/Analysis/DominanceFrontier.h>
