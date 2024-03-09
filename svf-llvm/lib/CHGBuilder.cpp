@@ -453,6 +453,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                 if (dname.className.size() > 0 &&
                                         vtblClassName.compare(dname.className) != 0)
                                 {
+                                    if(!chg->getNode(dname.className)) createNode(dname.className);
                                     chg->addEdge(vtblClassName, dname.className, CHEdge::INHERITANCE);
                                 }
                             }

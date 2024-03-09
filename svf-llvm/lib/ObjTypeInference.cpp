@@ -350,9 +350,22 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                 if (Function *calleeFunc = callBase->getCalledFunction())
                 {
                     u32_t pos = getArgPosInCall(callBase, curValue);
-                    // for variable argument, conservatively collect all params
-                    if (calleeFunc->isVarArg()) pos = 0;
-                    if (!calleeFunc->isDeclaration())
+                    // variable argument
+                    if (calleeFunc->isVarArg()) {
+                        // conservatively track all var args
+                        for (auto &B : *calleeFunc) {
+                            for (auto &I : B) {
+                                if (auto *load = llvm::dyn_cast<llvm::LoadInst>(&I)) {
+                                    llvm::Value* loadPointer = load->getPointerOperand();
+                                    // var arg normally has this pattern:
+                                    // xx = load i32, ptr %vaarg.addr
+                                    if (loadPointer->getName().compare("vaarg.addr") == 0) {
+                                        insertInferSitesOrPushWorklist(loadInst);
+                                    }
+                                }
+                            }
+                        }
+                    } else if (!calleeFunc->isDeclaration())
                     {
                         insertInferSitesOrPushWorklist(calleeFunc->getArg(pos));
                     }
