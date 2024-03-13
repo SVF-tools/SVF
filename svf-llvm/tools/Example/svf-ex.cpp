@@ -39,25 +39,21 @@ using namespace std;
 using namespace SVF;
 
 /*!
- * An example to query alias results of two LLVM values
+ * An example to query alias results of two SVF values
  */
-SVF::AliasResult aliasQuery(PointerAnalysis* pta, Value* v1, Value* v2)
+SVF::AliasResult aliasQuery(PointerAnalysis* pta, const SVFValue* v1, const SVFValue* v2)
 {
-    SVFValue* val1 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(v1);
-    SVFValue* val2 = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(v2);
-
-    return pta->alias(val1,val2);
+    return pta->alias(v1, v2);
 }
 
 /*!
- * An example to print points-to set of an LLVM value
+ * An example to print points-to set of an SVF value
  */
-std::string printPts(PointerAnalysis* pta, Value* val)
+std::string printPts(PointerAnalysis* pta, const SVFValue* svfval)
 {
 
     std::string str;
     raw_string_ostream rawstr(str);
-    SVFValue* svfval = LLVMModuleSet::getLLVMModuleSet()->getSVFValue(val);
 
     NodeID pNodeId = pta->getPAG()->getValueNode(svfval);
     const PointsTo& pts = pta->getPts(pNodeId);
@@ -167,7 +163,7 @@ void traverseOnICFG(ICFG* icfg, const ICFGNode* iNode)
     }
 }
 
-void skipWarning(const VFGNode* node) {
+void dummyVisit(const VFGNode* node) {
 
 }
 /*!
@@ -205,7 +201,7 @@ void traverseOnVFG(const SVFG* vfg, const SVFValue* svfval)
     for(Set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it!=eit; ++it)
     {
          const VFGNode* node = *it;
-         skipWarning(node);
+         dummyVisit(node);
         /// can only query VFGNode involving top-level pointers (starting with % or @ in LLVM IR)
         /// PAGNode* pNode = vfg->getLHSTopLevPtr(node);
         /// Value* val = pNode->getValue();
@@ -234,11 +230,6 @@ int main(int argc, char ** argv)
     /// Create Andersen's pointer analysis
     Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
 
-    /// Query aliases
-    /// aliasQuery(ander,value1,value2);
-
-    /// Print points-to information
-    /// printPts(ander, value1);
 
     /// Call Graph
     PTACallGraph* callgraph = ander->getPTACallGraph();
@@ -258,7 +249,16 @@ int main(int argc, char ** argv)
     {
         const SVFGNode* node = it.second;
         if (node->getValue())
+        {
             traverseOnVFG(svfg, node->getValue());
+            /// Print points-to information
+            printPts(ander, node->getValue());
+            for (const SVFGEdge* edge: node->getOutEdges()) {
+                const SVFGNode* node2 = edge->getDstNode();
+                if (node2->getValue())
+                    aliasQuery(ander, node->getValue(), node2->getValue());
+            }
+        }
     }
 
     /// Collect all successor nodes on ICFG
