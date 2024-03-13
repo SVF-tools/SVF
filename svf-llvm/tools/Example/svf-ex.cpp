@@ -58,7 +58,7 @@ std::string printPts(PointerAnalysis* pta, const SVFValue* svfval)
     NodeID pNodeId = pta->getPAG()->getValueNode(svfval);
     const PointsTo& pts = pta->getPts(pNodeId);
     for (PointsTo::iterator ii = pts.begin(), ie = pts.end();
-         ii != ie; ii++)
+            ii != ie; ii++)
     {
         rawstr << " " << *ii << " ";
         PAGNode* targetObj = pta->getPAG()->getGNode(*ii);
@@ -163,7 +163,8 @@ void traverseOnICFG(ICFG* icfg, const ICFGNode* iNode)
     }
 }
 
-void dummyVisit(const VFGNode* node) {
+void dummyVisit(const VFGNode* node)
+{
 
 }
 /*!
@@ -200,8 +201,8 @@ void traverseOnVFG(const SVFG* vfg, const SVFValue* svfval)
     /// Collect all LLVM Values
     for(Set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it!=eit; ++it)
     {
-         const VFGNode* node = *it;
-         dummyVisit(node);
+        const VFGNode* node = *it;
+        dummyVisit(node);
         /// can only query VFGNode involving top-level pointers (starting with % or @ in LLVM IR)
         /// PAGNode* pNode = vfg->getLHSTopLevPtr(node);
         /// Value* val = pNode->getValue();
@@ -213,8 +214,8 @@ int main(int argc, char ** argv)
 
     std::vector<std::string> moduleNameVec;
     moduleNameVec = OptionBase::parseOptions(
-        argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>"
-    );
+                        argc, argv, "Whole Program Points-to Analysis", "[options] <input-bitcode...>"
+                    );
 
     if (Options::WriteAnder() == "ir_annotator")
     {
