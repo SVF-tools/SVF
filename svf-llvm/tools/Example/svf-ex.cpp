@@ -245,27 +245,34 @@ int main(int argc, char ** argv)
     SVFG* svfg = svfBuilder.buildFullSVFG(ander);
 
     /// Collect uses of an LLVM Value
-    for (const auto &it : *svfg)
+    if (Options::PTSPrint())
     {
-        const SVFGNode* node = it.second;
-        if (node->getValue())
+        for (const auto& it : *svfg)
         {
-            traverseOnVFG(svfg, node->getValue());
-            /// Print points-to information
-            printPts(ander, node->getValue());
-            for (const SVFGEdge* edge: node->getOutEdges()) {
-                const SVFGNode* node2 = edge->getDstNode();
-                if (node2->getValue())
-                    aliasQuery(ander, node->getValue(), node2->getValue());
+            const SVFGNode* node = it.second;
+            if (node->getValue())
+            {
+                traverseOnVFG(svfg, node->getValue());
+                /// Print points-to information
+                printPts(ander, node->getValue());
+                for (const SVFGEdge* edge : node->getOutEdges())
+                {
+                    const SVFGNode* node2 = edge->getDstNode();
+                    if (node2->getValue())
+                        aliasQuery(ander, node->getValue(), node2->getValue());
+                }
             }
         }
     }
 
     /// Collect all successor nodes on ICFG
-    for (const auto &it : *icfg)
+    if (Options::PTSPrint())
     {
-        const ICFGNode* node = it.second;
-        traverseOnICFG(icfg, node);
+        for (const auto& it : *icfg)
+        {
+            const ICFGNode* node = it.second;
+            traverseOnICFG(icfg, node);
+        }
     }
 
     // clean up memory
