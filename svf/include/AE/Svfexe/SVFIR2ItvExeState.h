@@ -80,6 +80,13 @@ public:
     IntervalValue getRangeLimitFromType(const SVFType* type);
 
     IntervalValue getZExtValue(const SVFVar* var);
+    IntervalValue getSExtValue(const SVFVar* var);
+    IntervalValue getFPToSIntValue(const SVFVar* var);
+    IntervalValue getFPToUIntValue(const SVFVar* var);
+    IntervalValue getSIntToFPValue(const SVFVar* var);
+    IntervalValue getUIntToFPValue(const SVFVar* var);
+    IntervalValue getTruncValue(const SVFVar* var, const SVFType* dstType);
+    IntervalValue getFPTruncValue(const SVFVar* var, const SVFType* dstType);
 
     /// Return the byte offset expression of a GepStmt
     /// elemBytesize is the element byte size of an static alloc or heap alloc array

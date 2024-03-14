@@ -1263,8 +1263,19 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
         {
             double dval = 0;
             // TODO: Why only double is considered? What about float?
-            if(cfp->isNormalFP() &&  (&cfp->getValueAPF().getSemantics()== &llvm::APFloatBase::IEEEdouble()))
-                dval =  cfp->getValueAPF().convertToDouble();
+            if (cfp->isNormalFP()) {
+                if (&cfp->getValueAPF().getSemantics()== &llvm::APFloatBase::IEEEsingle()) {
+                    dval =  cfp->getValueAPF().convertToFloat();
+                }
+                else if (&cfp->getValueAPF().getSemantics()== &llvm::APFloatBase::IEEEdouble()) {
+                    dval =  cfp->getValueAPF().convertToDouble();
+                }
+                else {
+
+                }
+            } else {
+
+            }
             svfcd = new SVFConstantFP(getSVFType(cd->getType()), dval);
         }
         else if(SVFUtil::isa<ConstantPointerNull>(cd))

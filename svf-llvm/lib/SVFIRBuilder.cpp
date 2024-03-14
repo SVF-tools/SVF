@@ -530,7 +530,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             addStoreEdge(src, field);
             /// src should not point to anything yet
             if (C->getType()->isPtrOrPtrVectorTy() && src != pag->getNullPtr())
-                addCopyEdge(pag->getNullPtr(), src, CopyStmt::COPY);
+                addCopyEdge(pag->getNullPtr(), src, CopyStmt::COPYVAL);
         }
     }
     else if (SVFUtil::isa<ConstantArray, ConstantStruct>(C))
@@ -615,7 +615,7 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
             NodeID src = pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(alias->getAliasee()));
             processCE(alias->getAliasee());
             setCurrentLocation(alias, nullptr);
-            addCopyEdge(src, dst, CopyStmt::COPY);
+            addCopyEdge(src, dst, CopyStmt::COPYVAL);
         }
     }
 }
@@ -743,19 +743,7 @@ void SVFIRBuilder::visitCastInst(CastInst &inst)
             opnd = stripAllCasts(opnd);
 
         NodeID src = getValueNode(opnd);
-        // if ZEXT
-        if(SVFUtil::isa<llvm::ZExtInst>(&inst))
-        {
-            addCopyEdge(src, dst, CopyStmt::ZEXT);
-        }
-        else if (SVFUtil::isa<llvm::SExtInst>(&inst))
-        {
-            addCopyEdge(src, dst, CopyStmt::SEXT);
-        }
-        else
-        {
-            addCopyEdge(src, dst, CopyStmt::COPY);
-        }
+        addCopyEdge(src, dst, getCopyKind(&inst));
     }
 }
 
@@ -992,7 +980,7 @@ void SVFIRBuilder::visitVAArgInst(VAArgInst &inst)
     NodeID dst = getValueNode(&inst);
     Value* opnd = inst.getPointerOperand();
     NodeID src = getValueNode(opnd);
-    addCopyEdge(src, dst, CopyStmt::COPY);
+    addCopyEdge(src, dst, CopyStmt::COPYVAL);
 }
 
 /// <result> = freeze ty <val>
@@ -1006,7 +994,7 @@ void SVFIRBuilder::visitFreezeInst(FreezeInst &inst)
     {
         Value* opnd = inst.getOperand(i);
         NodeID src = getValueNode(opnd);
-        addCopyEdge(src, dst, CopyStmt::COPY);
+        addCopyEdge(src, dst, CopyStmt::COPYVAL);
     }
 }
 

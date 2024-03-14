@@ -278,7 +278,7 @@ SVFStmt* SVFIR::addBlackHoleAddrStmt(NodeID node)
     if(Options::HandBlackHole())
         return pag->addAddrStmt(pag->getBlackHoleNode(), node);
     else
-        return pag->addCopyStmt(pag->getNullPtr(), node, CopyStmt::COPY);
+        return pag->addCopyStmt(pag->getNullPtr(), node, CopyStmt::COPYVAL);
 }
 
 /*!
