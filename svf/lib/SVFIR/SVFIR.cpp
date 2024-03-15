@@ -61,15 +61,14 @@ AddrStmt* SVFIR::addAddrStmt(NodeID src, NodeID dst)
 /*!
  * Add Copy edge
  */
-CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst)
-{
+CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst, CopyStmt::CopyKind type) {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
     if(hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Copy))
         return nullptr;
     else
     {
-        CopyStmt* copyPE = new CopyStmt(srcNode, dstNode);
+        CopyStmt* copyPE = new CopyStmt(srcNode, dstNode, type);
         addToStmt2TypeMap(copyPE);
         addEdge(srcNode,dstNode, copyPE);
         return copyPE;
@@ -279,7 +278,7 @@ SVFStmt* SVFIR::addBlackHoleAddrStmt(NodeID node)
     if(Options::HandBlackHole())
         return pag->addAddrStmt(pag->getBlackHoleNode(), node);
     else
-        return pag->addCopyStmt(pag->getNullPtr(), node);
+        return pag->addCopyStmt(pag->getNullPtr(), node, CopyStmt::COPYVAL);
 }
 
 /*!

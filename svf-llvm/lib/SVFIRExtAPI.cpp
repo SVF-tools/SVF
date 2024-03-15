@@ -165,7 +165,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         else
             addComplexConsForExt(cs->getArgOperand(0), cs->getArgOperand(1), nullptr);
         if(SVFUtil::isa<PointerType>(cs->getType()))
-            addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs));
+            addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
     }
     else if(isMemsetExtFun(svfCallee))
     {
@@ -184,7 +184,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
             addStoreEdge(getValueNode(cs->getArgOperand(1)),dField);
         }
         if(SVFUtil::isa<PointerType>(cs->getType()))
-            addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs));
+            addCopyEdge(getValueNode(cs->getArgOperand(0)), getValueNode(cs), CopyStmt::COPYVAL);
     }
     else if(svfCallee->getName().compare("dlsym") == 0)
     {
@@ -221,7 +221,7 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         if (const Function *fn = getHookFn(src))
         {
             NodeID srcNode = getValueNode(fn);
-            addCopyEdge(srcNode,  getValueNode(cs));
+            addCopyEdge(srcNode,  getValueNode(cs), CopyStmt::COPYVAL);
         }
     }
     else if(svfCallee->getName().find("_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_") != std::string::npos)

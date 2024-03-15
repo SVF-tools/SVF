@@ -638,7 +638,8 @@ private:
     /// Add Address edge
     AddrStmt* addAddrStmt(NodeID src, NodeID dst);
     /// Add Copy edge
-    CopyStmt* addCopyStmt(NodeID src, NodeID dst);
+    CopyStmt* addCopyStmt(NodeID src, NodeID dst, CopyStmt::CopyKind type);
+
     /// Add phi node information
     PhiStmt*  addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred);
     /// Add SelectStmt
