@@ -237,7 +237,6 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(func->getFunctionType())),
         func->isDeclaration(), LLVMUtil::isIntrinsicFun(func),
         func->hasAddressTaken(), func->isVarArg(), new SVFLoopAndDomInfo);
-    svfFunc->setName(func->getName().str());
     svfModule->addFunctionSet(svfFunc);
     if (ExtFun2Annotations.find(func) != ExtFun2Annotations.end())
         svfFunc->setAnnotations(ExtFun2Annotations[func]);
@@ -249,9 +248,7 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
             getSVFType(arg.getType()), svfFunc, arg.getArgNo(),
             LLVMUtil::isArgOfUncalledFunction(&arg));
         // Setting up arg name
-        if (arg.hasName())
-            svfarg->setName(arg.getName().str());
-        else
+        if (!arg.hasName())
             svfarg->setName(std::to_string(arg.getArgNo()));
 
         svfFunc->addArgument(svfarg);
@@ -262,8 +259,6 @@ void LLVMModuleSet::createSVFFunction(const Function* func)
     {
         SVFBasicBlock* svfBB =
             new SVFBasicBlock(getSVFType(bb.getType()), svfFunc);
-        if (bb.hasName())
-            svfBB->setName(bb.getName().str());
         svfFunc->addBasicBlock(svfBB);
         addBasicBlockMap(&bb, svfBB);
         for (const Instruction& inst : bb)
@@ -1107,7 +1102,6 @@ void LLVMModuleSet::buildFunToFunMap()
                 Function* declaration = Function::Create(funType, GlobalValue::ExternalLinkage, funName, mod);
                 fun->replaceAllUsesWith(declaration);
                 fun->eraseFromParent();
-                declaration->setName(funName);
                 // AppDef -> ExtDef in Table 1, AppDef has been changed to AppDecl
                 FunDeclToDefMap[declaration] = owfunc;
                 // ExtDef -> AppDef in Table 1
@@ -1276,8 +1270,6 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
         else
             svfcd = new SVFConstantData(getSVFType(cd->getType()));
 
-        if (cd->hasName())
-            svfcd->setName(cd->getName().str());
 
         svfModule->addConstant(svfcd);
         addConstantDataMap(cd,svfcd);
