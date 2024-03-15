@@ -1214,6 +1214,8 @@ void LLVMModuleSet::setValueAttr(const Value* val, SVFValue* svfvalue)
 {
     SVFValue2LLVMValue[svfvalue] = val;
 
+    if(val->hasName())
+        svfvalue->setName(val->getName().str());
     if (LLVMUtil::isPtrInUncalledFunction(val))
         svfvalue->setPtrInUncalledFunction();
     if (LLVMUtil::isConstDataOrAggData(val))
