@@ -1272,6 +1272,7 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
                 }
                 else {
                     assert (false && "Unsupported floating point type");
+                    abort();
                 }
             } else {
                 // other cfp type, like isZero(), isInfinity(), isNegative(), etc.
