@@ -390,14 +390,14 @@ public:
     //@}
 
     /// Return the kind of the copy statement
-    inline CopyKind getCopyKind() const { return copyKind; }
+    inline u32_t getCopyKind() const { return copyKind; }
 
     /// constructor
     CopyStmt(SVFVar* s, SVFVar* d, CopyKind k) : AssignStmt(s, d, SVFStmt::Copy), copyKind(k) {}
 
     virtual const std::string toString() const override;
 private:
-    CopyKind copyKind;
+    u32_t copyKind;
 };
 
 /*!

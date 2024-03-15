@@ -692,7 +692,9 @@ cJSON* SVFIRWriter::contentToJson(const AddrStmt* edge)
 
 cJSON* SVFIRWriter::contentToJson(const CopyStmt* edge)
 {
-    return contentToJson(static_cast<const AssignStmt*>(edge));
+    cJSON* root = contentToJson(static_cast<const AssignStmt*>(edge));
+    JSON_WRITE_FIELD(root, edge, copyKind);
+    return root;
 }
 
 cJSON* SVFIRWriter::contentToJson(const StoreStmt* edge)
@@ -2055,6 +2057,7 @@ void SVFIRReader::fill(const cJSON*& fieldJson, AddrStmt* stmt)
 void SVFIRReader::fill(const cJSON*& fieldJson, CopyStmt* stmt)
 {
     fill(fieldJson, static_cast<AssignStmt*>(stmt));
+    JSON_READ_FIELD_FWD(fieldJson, stmt, copyKind);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, StoreStmt* stmt)
