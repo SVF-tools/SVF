@@ -853,4 +853,12 @@ const Option<bool> Options::RunUncallFuncs(
     "run-uncall-fun","Skip Gep Unknown Index",false);
 const Option<bool> Options::ICFGMergeAdjacentNodes(
     "icfg-merge-adjnodes","ICFG Simplification - Merge Adjacent Nodes in the Same Basic Block.",false);
+
+
+const Option<u32_t> Options::AEPrecision(
+    "precision",
+    "symbolic abstraction precision for float",
+    0
+);
+
 } // namespace SVF.

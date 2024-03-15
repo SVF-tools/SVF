@@ -54,7 +54,7 @@ public:
 
     IntervalESBase abstract_consequence(const IntervalESBase &lower, const IntervalESBase &upper, const IntervalESBase &domain) const;
 
-    IntervalESBase beta(const Map<u32_t, double> &sigma, const IntervalESBase &exeState) const;
+    IntervalESBase beta(const Map<u32_t, s32_t> &sigma, const IntervalESBase &exeState) const;
 
 
     /// Return Z3 expression lazily based on SVFVar ID

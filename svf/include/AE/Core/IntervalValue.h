@@ -101,7 +101,7 @@ public:
 
     explicit IntervalValue(u32_t n) : IntervalValue((s64_t) n) {}
 
-    explicit IntervalValue(double n) : IntervalValue((s64_t) n) {}
+    explicit IntervalValue(double n) : AbstractValue(AbstractValue::IntervalK), _lb(n), _ub(n) {}
 
     explicit IntervalValue(NumericLiteral n) : IntervalValue(n, n) {}
 

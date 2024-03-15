@@ -134,6 +134,12 @@ public:
         return _n.getNumeral();
     }
 
+    /// Return Expr
+    inline Z3Expr getExpr() const
+    {
+        return _n.getExpr();
+    }
+
     inline double getRealNumeral() const
     {
         return _n.getRealNumeral();

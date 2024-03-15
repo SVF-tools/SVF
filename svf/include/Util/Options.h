@@ -274,6 +274,9 @@ public:
     static const Option<bool> RunUncallFuncs;
 
     static const Option<bool> ICFGMergeAdjacentNodes;
+
+    // float precision for symbolic abstraction
+    static const Option<u32_t> AEPrecision;
 };
 }  // namespace SVF
 
