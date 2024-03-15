@@ -54,6 +54,8 @@ public:
 
     NumericLiteral(s64_t i) : _n(i) {}
 
+    NumericLiteral(double i) : _n(i) {}
+
     NumericLiteral(BoundedZ3Expr z3Expr) : _n(std::move(z3Expr)) {}
 
     virtual ~NumericLiteral() = default;
@@ -118,6 +120,12 @@ public:
     inline s64_t getNumeral() const
     {
         return _n.getNumeral();
+    }
+
+    /// Return Numeral
+    inline Z3Expr getExpr() const
+    {
+        return _n.getExpr();
     }
 
     /// Check two object is equal

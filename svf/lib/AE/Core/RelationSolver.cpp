@@ -27,6 +27,9 @@
  *
  */
 #include "AE/Core/RelationSolver.h"
+#include <cmath>
+#include "Util/Options.h"
+
 using namespace SVF;
 using namespace SVFUtil;
 
@@ -59,7 +62,7 @@ IntervalESBase RelationSolver::bilateral(const IntervalESBase &domain, const Z3E
         Z3Expr rhs = !(gamma_hat(consequence, domain));
         solver.push();
         solver.add(phi.getExpr() && rhs.getExpr());
-        Map<u32_t, double> solution;
+        Map<u32_t, int32_t> solution;
         z3::check_result checkRes = solver.check();
         /// find any solution, which is sat
         if (checkRes == z3::sat)
@@ -121,7 +124,7 @@ IntervalESBase RelationSolver::RSY(const IntervalESBase& domain, const Z3Expr& p
         Z3Expr rhs = !(gamma_hat(lower, domain));
         solver.push();
         solver.add(phi.getExpr() && rhs.getExpr());
-        Map<u32_t, double> solution;
+        Map<u32_t, int32_t> solution;
         z3::check_result checkRes = solver.check();
         /// find any solution, which is sat
         if (checkRes == z3::sat)
@@ -238,7 +241,7 @@ Z3Expr RelationSolver::gamma_hat(u32_t id, const IntervalESBase& exeState) const
     return res;
 }
 
-IntervalESBase RelationSolver::beta(const Map<u32_t, double>& sigma,
+IntervalESBase RelationSolver::beta(const Map<u32_t, int32_t>& sigma,
                                     const IntervalESBase& exeState) const
 {
     IntervalESBase res;
@@ -268,7 +271,9 @@ IntervalESBase RelationSolver::BS(const IntervalESBase& domain, const Z3Expr &ph
     /// because key of _varToItvVal is u32_t, -key may out of range for int
     /// so we do key + bias for -key
     u32_t bias = 0;
-    int infinity = (INT32_MAX) - 1;
+    s32_t infinity = INT32_MAX - 1;
+
+    // int infinity = (INT32_MAX) - 1;
     // int infinity = 20;
     Map<u32_t, NumericLiteral> ret;
     Map<u32_t, NumericLiteral> low_values, high_values;
@@ -343,7 +348,7 @@ Map<u32_t, NumericLiteral> RelationSolver::BoxedOptSolver(const Z3Expr& phi, Map
             {
                 NumericLiteral mid = (low_values.at(item.first) + (high_values.at(item.first) - low_values.at(item.first)) / 2);
                 updateMap(mid_values, item.first, mid);
-                Z3Expr expr = ((int)mid.getNumeral() <= v && v <= (int)high_values.at(item.first).getNumeral());
+                Z3Expr expr = (mid.getExpr() <= v && v <= high_values.at(item.first).getExpr());
                 L_phi[item.first] = expr;
             }
         }
@@ -399,7 +404,7 @@ void RelationSolver::decide_cpa_ext(const Z3Expr& phi,
                     updateMap(mid_values, id, mid);
                     Z3Expr v = toZ3Expr(id);
                     // Z3Expr v = Z3Expr::getContext().int_const(std::to_string(id).c_str());
-                    Z3Expr expr = ((int)mid_values.at(id).getNumeral() <= v && v <= (int)high_values.at(id).getNumeral());
+                    Z3Expr expr = (mid_values.at(id).getExpr() <= v && v <= high_values.at(id).getExpr());
                     L_phi[id] = expr;
                 }
                 solver.pop();

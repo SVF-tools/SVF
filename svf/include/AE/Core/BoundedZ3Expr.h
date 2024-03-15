@@ -53,6 +53,8 @@ public:
 
     BoundedZ3Expr(s64_t i) : Z3Expr(getContext().int_val((int64_t)i)) {}
 
+    BoundedZ3Expr(double i) : Z3Expr(getContext().real_val(std::to_string(i).c_str())) {}
+
     BoundedZ3Expr(const BoundedZ3Expr &z3Expr) : Z3Expr(z3Expr) {}
 
     inline BoundedZ3Expr &operator=(const BoundedZ3Expr &rhs)

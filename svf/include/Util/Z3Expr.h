@@ -44,8 +44,7 @@ public:
 private:
     z3::expr e;
 
-    Z3Expr(float f); // placeholder don't support floating point expression
-    Z3Expr(double f); // placeholder don't support floating point expression
+
 
 public:
 
@@ -62,6 +61,14 @@ public:
     }
 
     Z3Expr(const Z3Expr &z3Expr) : e(z3Expr.getExpr())
+    {
+    }
+
+    Z3Expr(float f) : Z3Expr((double) f)
+    {
+    }
+
+    Z3Expr(double f): e(getContext().real_val(std::to_string(f).c_str()))
     {
     }
 

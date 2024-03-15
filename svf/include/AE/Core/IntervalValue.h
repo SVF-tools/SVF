@@ -101,7 +101,7 @@ public:
 
     explicit IntervalValue(u32_t n) : IntervalValue((s64_t) n) {}
 
-    explicit IntervalValue(double n) : IntervalValue((s64_t) n) {}
+    explicit IntervalValue(double n) : AbstractValue(AbstractValue::IntervalK), _lb(n), _ub(n) {}
 
     explicit IntervalValue(NumericLiteral n) : IntervalValue(n, n) {}
 
@@ -111,7 +111,7 @@ public:
 
     explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
 
-    explicit IntervalValue(double lb, double ub) : IntervalValue(NumericLiteral((s64_t) lb), NumericLiteral((s64_t) ub)) {}
+    explicit IntervalValue(double lb, double ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
 
     explicit IntervalValue(s32_t lb, s32_t ub) : IntervalValue((s64_t) lb, (s64_t) ub) {}
 
