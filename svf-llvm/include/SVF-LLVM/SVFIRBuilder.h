@@ -358,16 +358,52 @@ protected:
         return edge;
     }
 
-    /// Add Copy edge
-    inline CopyStmt* addCopyEdge(NodeID src, NodeID dst)
+    inline CopyStmt* addCopyEdge(NodeID src, NodeID dst, CopyStmt::CopyKind kind)
     {
-        if(CopyStmt *edge = pag->addCopyStmt(src, dst))
+        if(CopyStmt *edge = pag->addCopyStmt(src, dst, kind))
         {
             setCurrentBBAndValueForPAGEdge(edge);
             return edge;
         }
         return nullptr;
     }
+
+    inline CopyStmt::CopyKind getCopyKind(const Value* val)
+    {
+        // COPYVAL, ZEXT, SEXT, BITCAST, FPTRUNC, FPTOUI, FPTOSI, UITOFP, SITOFP, INTTOPTR, PTRTOINT
+        if (const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
+        {
+            switch (inst->getOpcode())
+            {
+            case Instruction::ZExt:
+                return CopyStmt::ZEXT;
+            case Instruction::SExt:
+                return CopyStmt::SEXT;
+            case Instruction::BitCast:
+                return CopyStmt::BITCAST;
+            case Instruction ::Trunc:
+                return CopyStmt::TRUNC;
+            case Instruction::FPTrunc:
+                return CopyStmt::FPTRUNC;
+            case Instruction::FPToUI:
+                return CopyStmt::FPTOUI;
+            case Instruction::FPToSI:
+                return CopyStmt::FPTOSI;
+            case Instruction::UIToFP:
+                return CopyStmt::UITOFP;
+            case Instruction::SIToFP:
+                return CopyStmt::SITOFP;
+            case Instruction::IntToPtr:
+                return CopyStmt::INTTOPTR;
+            case Instruction::PtrToInt:
+                return CopyStmt::PTRTOINT;
+            default:
+                return CopyStmt::COPYVAL;
+            }
+        }
+        assert (false && "Unknown cast inst!");
+    }
+
     /// Add Copy edge
     inline void addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
     {

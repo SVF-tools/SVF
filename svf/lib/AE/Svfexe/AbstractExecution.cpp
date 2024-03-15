@@ -168,28 +168,7 @@ void AbstractExecution::handleGlobalNode()
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
-        if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
-        {
-            _svfir2ExeState->translateAddr(addr);
-        }
-        else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt))
-        {
-            _svfir2ExeState->translateLoad(load);
-        }
-        else if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
-        {
-            _svfir2ExeState->translateStore(store);
-        }
-        else if (const CopyStmt *copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
-        {
-            _svfir2ExeState->translateCopy(copy);
-        }
-        else if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
-        {
-            _svfir2ExeState->translateGep(gep);
-        }
-        else
-            assert(false && "implement this part");
+        handleSVFStatement(stmt);
     }
     // for stmts in global node, exe state will move to global state to lower memory usage
     _svfir2ExeState->moveToGlobal();
@@ -341,7 +320,7 @@ bool AbstractExecution::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, Inter
     // for const X const, we may get concrete resVal instantly
     // for var X const, we may get [0,1] if the intersection of var and const is not empty set
     IntervalValue resVal = new_es[res_id];
-    resVal.meet_with(IntervalValue((int64_t) succ, succ));
+    resVal.meet_with(IntervalValue((s64_t) succ, succ));
     // If Var X const generates bottom value, it means this branch path is not feasible.
     if (resVal.isBottom())
     {
@@ -1139,7 +1118,7 @@ void AbstractExecution::initExtFunMap()
         IntervalExeState &es = _svfir2ExeState->getEs(); \
         u32_t rhs_id = _svfir->getValueNode(cs.getArgument(0)); \
         if (!es.inVarToValTable(rhs_id)) return; \
-        u32_t rhs = _svfir2ExeState->getEs()[rhs_id].lb().getNumeral(); \
+        u32_t rhs = _svfir2ExeState->getEs()[rhs_id].lb().getIntNumeral(); \
         s32_t res = FUNC_NAME(rhs);            \
         u32_t lhsId = _svfir->getValueNode(cs.getInstruction()); \
         _svfir2ExeState->getEs()[lhsId] = IntervalValue(res);           \
@@ -1223,11 +1202,11 @@ std::string AbstractExecution::strRead(const SVFValue* rhs)
         {
             break;
         }
-        if ((char) val.getNumeral() == '\0')
+        if ((char) val.getIntNumeral() == '\0')
         {
             break;
         }
-        str0.push_back((char) val.getNumeral());
+        str0.push_back((char) val.getIntNumeral());
     }
     return str0;
 }
@@ -1345,7 +1324,7 @@ void AbstractExecution::handleStrcpy(const CallICFGNode *call)
     const SVFValue* arg1Val = cs.getArgument(1);
     IntervalValue strLen = getStrlen(arg1Val);
     // no need to -1, since it has \0 as the last byte
-    handleMemcpy(arg0Val, arg1Val, strLen,strLen.lb().getNumeral());
+    handleMemcpy(arg0Val, arg1Val, strLen,strLen.lb().getIntNumeral());
 }
 
 u32_t AbstractExecution::getAllocaInstByteSize(const AddrStmt *addr)
@@ -1372,7 +1351,7 @@ u32_t AbstractExecution::getAllocaInstByteSize(const AddrStmt *addr)
                     _svfir2ExeState->getEs()[_svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
                 }
                 IntervalValue itv = _svfir2ExeState->getEs()[_svfir->getValueNode(value)];
-                res = res * itv.ub().getNumeral() > Options::MaxFieldLimit()? Options::MaxFieldLimit(): res * itv.ub().getNumeral();
+                res = res * itv.ub().getIntNumeral() > Options::MaxFieldLimit()? Options::MaxFieldLimit(): res * itv.ub().getIntNumeral();
             }
             return (u32_t)res;
         }
@@ -1522,7 +1501,7 @@ IntervalValue AbstractExecution::getStrlen(const SVF::SVFValue *strValue)
     u32_t elemSize = 1;
     if (_svfir2ExeState->inVarToAddrsTable(dstid))
     {
-        for (u32_t index = 0; index < dst_size.lb().getNumeral(); index++)
+        for (u32_t index = 0; index < dst_size.lb().getIntNumeral(); index++)
         {
             ExeState::Addrs expr0 = _svfir2ExeState->getGepObjAddress(dstid, index);
             IntervalValue val = IntervalValue::bottom();
@@ -1530,7 +1509,7 @@ IntervalValue AbstractExecution::getStrlen(const SVF::SVFValue *strValue)
             {
                 val.join_with(es.load(addr));
             }
-            if (val.is_numeral() && (char) val.getNumeral() == '\0')
+            if (val.is_numeral() && (char) val.getIntNumeral() == '\0')
             {
                 break;
             }
@@ -1582,7 +1561,7 @@ void AbstractExecution::handleStrcat(const SVF::CallICFGNode *call)
         IntervalValue strLen0 = getStrlen(arg0Val);
         IntervalValue strLen1 = getStrlen(arg1Val);
         IntervalValue totalLen = strLen0 + strLen1;
-        handleMemcpy(arg0Val, arg1Val, strLen1, strLen0.lb().getNumeral());
+        handleMemcpy(arg0Val, arg1Val, strLen1, strLen0.lb().getIntNumeral());
         // do memcpy
     }
     else if (std::find(strncatGroup.begin(), strncatGroup.end(), fun->getName()) != strncatGroup.end())
@@ -1594,7 +1573,7 @@ void AbstractExecution::handleStrcat(const SVF::CallICFGNode *call)
         IntervalValue arg2Num = _svfir2ExeState->getEs()[_svfir->getValueNode(arg2Val)];
         IntervalValue strLen0 = getStrlen(arg0Val);
         IntervalValue totalLen = strLen0 + arg2Num;
-        handleMemcpy(arg0Val, arg1Val, arg2Num, strLen0.lb().getNumeral());
+        handleMemcpy(arg0Val, arg1Val, arg2Num, strLen0.lb().getIntNumeral());
         // do memcpy
     }
     else
@@ -1632,7 +1611,7 @@ void AbstractExecution::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFVal
     {
         assert(false && "we cannot support this type");
     }
-    u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getNumeral());
+    u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
     u32_t range_val = size / elemSize;
     if (_svfir2ExeState->inVarToAddrsTable(srcId) && _svfir2ExeState->inVarToAddrsTable(dstId))
     {
@@ -1681,7 +1660,7 @@ void AbstractExecution::handleMemset(const SVF::SVFValue *dst, SVF::IntervalValu
 {
     IntervalExeState &es = _svfir2ExeState->getEs();
     u32_t dstId = _svfir->getValueNode(dst);
-    u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getNumeral());
+    u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
     u32_t elemSize = 1;
     if (dst->getType()->isArrayTy())
     {

@@ -111,7 +111,9 @@ public:
 
     explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
 
-    explicit IntervalValue(double lb, double ub) : IntervalValue(NumericLiteral((s64_t) lb), NumericLiteral((s64_t) ub)) {}
+    explicit IntervalValue(double lb, double ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
+
+    explicit IntervalValue(float lb, float ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
 
     explicit IntervalValue(s32_t lb, s32_t ub) : IntervalValue((s64_t) lb, (s64_t) ub) {}
 
@@ -259,11 +261,39 @@ public:
         return _lb.is_infinity() || _ub.is_infinity();
     }
 
+    bool is_int() const
+    {
+        bool lb_int = _lb.is_int();
+        bool ub_int = _ub.is_int();
+        assert (lb_int == ub_int && "lb and ub should be both int or both float");
+        return _lb.is_int();
+    }
+
+    bool is_real() const
+    {
+        bool lb_real = _lb.is_real();
+        bool ub_real = _ub.is_real();
+        assert (lb_real == ub_real && "lb and ub should be both real or both int");
+        return _lb.is_real();
+    }
+
     /// Return
     s64_t getNumeral() const
     {
         assert(is_numeral() && "this IntervalValue is not numeral");
         return _lb.getNumeral();
+    }
+
+    s64_t getIntNumeral() const
+    {
+        assert(is_numeral() && "this IntervalValue is not numeral");
+        return _lb.getIntNumeral();
+    }
+
+    double getRealNumeral() const
+    {
+        assert(is_numeral() && "this IntervalValue is not numeral");
+        return _lb.getRealNumeral();
     }
 
     /// Return true if the IntervalValue is a number [num, num]
@@ -335,9 +365,31 @@ public:
         }
         else
         {
-            return this->_lb.equal(other._lb) && this->_ub.equal(other._ub);
-            // TODO: IntervalValueZ3Expr equals
-            // TODO: shall we consider expr and solve.
+            if (this->is_real() && other.is_real())
+            {
+                return this->_lb.equal(other._lb) && this->_ub.equal(other._ub);
+            }
+            else if (this->is_int() && other.is_int())
+            {
+                return this->_lb.equal(other._lb) && this->_ub.equal(other._ub);
+            }
+            else if (this->is_int())
+            {
+                double thislb = this->_lb.getIntNumeral();
+                double thisub = this->_ub.getIntNumeral();
+                double otherlb = other._lb.getRealNumeral();
+                double otherub = other._ub.getRealNumeral();
+                return thislb == otherlb && thisub == otherub;
+            }
+            else
+            {
+                double thislb = this->_lb.getRealNumeral();
+                double thisub = this->_ub.getRealNumeral();
+                double otherlb = other._lb.getIntNumeral();
+                double otherub = other._ub.getIntNumeral();
+                return thislb == otherlb && thisub == otherub;
+            }
+            assert(false && "not implemented");
         }
     }
 

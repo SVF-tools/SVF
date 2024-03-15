@@ -374,7 +374,7 @@ void SVFIRBuilder::processCE(const Value* val)
             const SVFValue* cval = getCurrentValue();
             const SVFBasicBlock* cbb = getCurrentBB();
             setCurrentLocation(castce, nullptr);
-            addCopyEdge(pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(opnd)), pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(castce)));
+            addCopyEdge(pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(opnd)), pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(castce)), CopyStmt::BITCAST);
             setCurrentLocation(cval, cbb);
         }
         else if (const ConstantExpr* selectce = isSelectConstantExpr(ref))
@@ -406,7 +406,7 @@ void SVFIRBuilder::processCE(const Value* val)
             const SVFBasicBlock* cbb = getCurrentBB();
             const SVFValue* cval = getCurrentValue();
             setCurrentLocation(ptr2Intce, nullptr);
-            addCopyEdge(pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(opnd)), pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ptr2Intce)));
+            addCopyEdge(pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(opnd)), pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(ptr2Intce)), CopyStmt::PTRTOINT);
             setCurrentLocation(cval, cbb);
         }
         else if(isTruncConstantExpr(ref) || isCmpConstantExpr(ref))
@@ -530,7 +530,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             addStoreEdge(src, field);
             /// src should not point to anything yet
             if (C->getType()->isPtrOrPtrVectorTy() && src != pag->getNullPtr())
-                addCopyEdge(pag->getNullPtr(), src);
+                addCopyEdge(pag->getNullPtr(), src, CopyStmt::COPYVAL);
         }
     }
     else if (SVFUtil::isa<ConstantArray, ConstantStruct>(C))
@@ -615,7 +615,7 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
             NodeID src = pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(alias->getAliasee()));
             processCE(alias->getAliasee());
             setCurrentLocation(alias, nullptr);
-            addCopyEdge(src,dst);
+            addCopyEdge(src, dst, CopyStmt::COPYVAL);
         }
     }
 }
@@ -743,7 +743,7 @@ void SVFIRBuilder::visitCastInst(CastInst &inst)
             opnd = stripAllCasts(opnd);
 
         NodeID src = getValueNode(opnd);
-        addCopyEdge(src, dst);
+        addCopyEdge(src, dst, getCopyKind(&inst));
     }
 }
 
@@ -980,7 +980,7 @@ void SVFIRBuilder::visitVAArgInst(VAArgInst &inst)
     NodeID dst = getValueNode(&inst);
     Value* opnd = inst.getPointerOperand();
     NodeID src = getValueNode(opnd);
-    addCopyEdge(src,dst);
+    addCopyEdge(src, dst, CopyStmt::COPYVAL);
 }
 
 /// <result> = freeze ty <val>
@@ -994,7 +994,7 @@ void SVFIRBuilder::visitFreezeInst(FreezeInst &inst)
     {
         Value* opnd = inst.getOperand(i);
         NodeID src = getValueNode(opnd);
-        addCopyEdge(src,dst);
+        addCopyEdge(src, dst, CopyStmt::COPYVAL);
     }
 }
 

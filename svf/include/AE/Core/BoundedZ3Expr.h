@@ -345,31 +345,42 @@ public:
         return getExpr().is_true();
     }
 
+    inline bool is_int() const
+    {
+        return getExpr().is_int();
+    }
+
+    inline bool is_real() const
+    {
+        return getExpr().is_real();
+    }
+
+    inline s64_t getIntNumeral() const
+    {
+        assert(is_int() && "not an integer");
+        int64_t i;
+        if (getExpr().is_numeral_i64(i))
+            return (s64_t)get_numeral_int64();
+        else
+            return (getExpr() < 0).simplify().is_true() ? INT64_MIN : INT64_MAX;
+    }
+
+    inline double getRealNumeral() const
+    {
+        assert(is_real() && "not a real");
+        std::string decstr = getExpr().get_decimal_string(10);
+        return std::stod(decstr);
+    }
+
     /// Return Numeral
     inline s64_t getNumeral() const
     {
-        if (is_numeral())
-        {
-            int64_t i;
-            if (getExpr().is_numeral_i64(i))
-                return (s64_t)get_numeral_int64();
-            else
-            {
-                return (getExpr() < 0).simplify().is_true() ? INT64_MIN : INT64_MAX;
-            }
-        }
-        if (is_minus_infinite())
-        {
-            return INT64_MIN;
-        }
-        else if (is_plus_infinite())
-        {
-            return INT64_MAX;
-        }
+        int64_t i;
+        if (getExpr().is_numeral_i64(i))
+            return (s64_t)get_numeral_int64();
         else
         {
-            assert(false && "other literal?");
-            abort();
+            return (getExpr() < 0).simplify().is_true() ? INT64_MIN : INT64_MAX;
         }
     }
 
