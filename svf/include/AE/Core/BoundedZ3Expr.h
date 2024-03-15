@@ -365,7 +365,8 @@ public:
             return (getExpr() < 0).simplify().is_true() ? INT64_MIN : INT64_MAX;
     }
 
-    inline double getRealNumeral() const {
+    inline double getRealNumeral() const
+    {
         assert(is_real() && "not a real");
         std::string decstr = getExpr().get_decimal_string(10);
         return std::stod(decstr);

@@ -375,30 +375,30 @@ protected:
         {
             switch (inst->getOpcode())
             {
-                case Instruction::ZExt:
-                    return CopyStmt::ZEXT;
-                case Instruction::SExt:
-                    return CopyStmt::SEXT;
-                case Instruction::BitCast:
-                    return CopyStmt::BITCAST;
-                case Instruction ::Trunc:
-                    return CopyStmt::TRUNC;
-                case Instruction::FPTrunc:
-                    return CopyStmt::FPTRUNC;
-                case Instruction::FPToUI:
-                    return CopyStmt::FPTOUI;
-                case Instruction::FPToSI:
-                    return CopyStmt::FPTOSI;
-                case Instruction::UIToFP:
-                    return CopyStmt::UITOFP;
-                case Instruction::SIToFP:
-                    return CopyStmt::SITOFP;
-                case Instruction::IntToPtr:
-                    return CopyStmt::INTTOPTR;
-                case Instruction::PtrToInt:
-                    return CopyStmt::PTRTOINT;
-                default:
-                    return CopyStmt::COPYVAL;
+            case Instruction::ZExt:
+                return CopyStmt::ZEXT;
+            case Instruction::SExt:
+                return CopyStmt::SEXT;
+            case Instruction::BitCast:
+                return CopyStmt::BITCAST;
+            case Instruction ::Trunc:
+                return CopyStmt::TRUNC;
+            case Instruction::FPTrunc:
+                return CopyStmt::FPTRUNC;
+            case Instruction::FPToUI:
+                return CopyStmt::FPTOUI;
+            case Instruction::FPToSI:
+                return CopyStmt::FPTOSI;
+            case Instruction::UIToFP:
+                return CopyStmt::UITOFP;
+            case Instruction::SIToFP:
+                return CopyStmt::SITOFP;
+            case Instruction::IntToPtr:
+                return CopyStmt::INTTOPTR;
+            case Instruction::PtrToInt:
+                return CopyStmt::PTRTOINT;
+            default:
+                return CopyStmt::COPYVAL;
             }
         }
         assert (false && "Unknown cast inst!");

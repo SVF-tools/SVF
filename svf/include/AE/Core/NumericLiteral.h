@@ -134,11 +134,13 @@ public:
         return _n.getNumeral();
     }
 
-    inline double getRealNumeral() const {
+    inline double getRealNumeral() const
+    {
         return _n.getRealNumeral();
     }
 
-    inline s64_t getIntNumeral() const {
+    inline s64_t getIntNumeral() const
+    {
         return _n.getIntNumeral();
     }
 

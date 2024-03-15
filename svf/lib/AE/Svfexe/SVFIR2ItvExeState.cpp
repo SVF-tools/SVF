@@ -109,49 +109,60 @@ IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
     }
 }
 
-IntervalValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var) {
+IntervalValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var)
+{
     const SVFType* type = var->getType();
     if (SVFUtil::isa<SVFIntegerType>(type))
     {
         u32_t bits = type->getByteSize() * 8;
-        if (_es[var->getId()].is_numeral()) {
-            if (bits == 8) {
+        if (_es[var->getId()].is_numeral())
+        {
+            if (bits == 8)
+            {
                 int8_t signed_i8_value = _es[var->getId()].getIntNumeral();
                 u32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
-            else if (bits == 16) {
+            else if (bits == 16)
+            {
                 s16_t signed_i16_value = _es[var->getId()].getIntNumeral();
                 u32_t unsigned_value = static_cast<u16_t>(signed_i16_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
-            else if (bits == 32) {
+            else if (bits == 32)
+            {
                 s32_t signed_i32_value = _es[var->getId()].getIntNumeral();
                 u32_t unsigned_value = static_cast<u32_t>(signed_i32_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
-            else if (bits == 64) {
+            else if (bits == 64)
+            {
                 s64_t signed_i64_value = _es[var->getId()].getIntNumeral();
                 return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
                 // we only support i64 at most
             }
-            else {
+            else
+            {
                 assert(false && "cannot support int type other than u8/16/32/64");
             }
         }
-        else {
+        else
+        {
             return IntervalValue::top(); // TODO: may have better solution
         }
     }
     assert(false && "cannot support non-integer type");
 }
 
-IntervalValue SVFIR2ItvExeState::getSExtValue(const SVFVar* var) {
+IntervalValue SVFIR2ItvExeState::getSExtValue(const SVFVar* var)
+{
     return _es[var->getId()];
 }
 
-IntervalValue SVFIR2ItvExeState::getFPToSIntValue(const SVF::SVFVar* var) {
-    if (_es[var->getId()].is_real()) {
+IntervalValue SVFIR2ItvExeState::getFPToSIntValue(const SVF::SVFVar* var)
+{
+    if (_es[var->getId()].is_real())
+    {
         // get the float value of ub and lb
         double float_lb = _es[var->getId()].lb().getRealNumeral();
         double float_ub = _es[var->getId()].ub().getRealNumeral();
@@ -160,12 +171,14 @@ IntervalValue SVFIR2ItvExeState::getFPToSIntValue(const SVF::SVFVar* var) {
         s64_t int_ub = static_cast<s64_t>(float_ub);
         return IntervalValue(int_lb, int_ub);
     }
-    else {
+    else
+    {
         return getSExtValue(var);
     }
 }
 
-IntervalValue SVFIR2ItvExeState::getFPToUIntValue(const SVF::SVFVar* var) {
+IntervalValue SVFIR2ItvExeState::getFPToUIntValue(const SVF::SVFVar* var)
+{
     if (_es[var->getId()].is_real())
     {
         // get the float value of ub and lb
@@ -182,7 +195,8 @@ IntervalValue SVFIR2ItvExeState::getFPToUIntValue(const SVF::SVFVar* var) {
     }
 }
 
-IntervalValue SVFIR2ItvExeState::getSIntToFPValue(const SVF::SVFVar* var) {
+IntervalValue SVFIR2ItvExeState::getSIntToFPValue(const SVF::SVFVar* var)
+{
     // get the sint value of ub and lb
     s64_t sint_lb = _es[var->getId()].lb().getIntNumeral();
     s64_t sint_ub = _es[var->getId()].ub().getIntNumeral();
@@ -192,7 +206,8 @@ IntervalValue SVFIR2ItvExeState::getSIntToFPValue(const SVF::SVFVar* var) {
     return IntervalValue(float_lb, float_ub);
 }
 
-IntervalValue SVFIR2ItvExeState::getUIntToFPValue(const SVF::SVFVar* var) {
+IntervalValue SVFIR2ItvExeState::getUIntToFPValue(const SVF::SVFVar* var)
+{
     // get the uint value of ub and lb
     u64_t uint_lb = _es[var->getId()].lb().getIntNumeral();
     u64_t uint_ub = _es[var->getId()].ub().getIntNumeral();
@@ -202,48 +217,57 @@ IntervalValue SVFIR2ItvExeState::getUIntToFPValue(const SVF::SVFVar* var) {
     return IntervalValue(float_lb, float_ub);
 }
 
-IntervalValue SVFIR2ItvExeState::getTruncValue(const SVF::SVFVar* var, const SVFType* dstType) {
+IntervalValue SVFIR2ItvExeState::getTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
+{
     // get the value of ub and lb
     s64_t int_lb = _es[var->getId()].lb().getIntNumeral();
     s64_t int_ub = _es[var->getId()].ub().getIntNumeral();
     // get dst type
     u32_t dst_bits = dstType->getByteSize() * 8;
-    if (dst_bits == 8) {
+    if (dst_bits == 8)
+    {
         // get the signed value of ub and lb
         int8_t s8_lb = static_cast<int8_t>(int_lb);
         int8_t s8_ub = static_cast<int8_t>(int_ub);
-        if (s8_lb > s8_ub) {
+        if (s8_lb > s8_ub)
+        {
             // return range of s8
             return IntervalValue::top();
         }
         return IntervalValue(s8_lb, s8_ub);
     }
-    else if (dst_bits == 16) {
+    else if (dst_bits == 16)
+    {
         // get the signed value of ub and lb
         s16_t s16_lb = static_cast<s16_t>(int_lb);
         s16_t s16_ub = static_cast<s16_t>(int_ub);
-        if (s16_lb > s16_ub) {
+        if (s16_lb > s16_ub)
+        {
             // return range of s16
             return IntervalValue::top();
         }
         return IntervalValue(s16_lb, s16_ub);
     }
-    else if (dst_bits == 32) {
+    else if (dst_bits == 32)
+    {
         // get the signed value of ub and lb
         s32_t s32_lb = static_cast<s32_t>(int_lb);
         s32_t s32_ub = static_cast<s32_t>(int_ub);
-        if (s32_lb > s32_ub) {
+        if (s32_lb > s32_ub)
+        {
             // return range of s32
             return IntervalValue::top();
         }
         return IntervalValue(s32_lb, s32_ub);
     }
-    else {
+    else
+    {
         assert(false && "cannot support dst int type other than u8/16/32");
     }
 }
 
-IntervalValue SVFIR2ItvExeState::getFPTruncValue(const SVF::SVFVar* var, const SVFType* dstType) {
+IntervalValue SVFIR2ItvExeState::getFPTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
+{
     // TODO: now we do not really handle fptrunc
     return _es[var->getId()];
 }
@@ -960,34 +984,44 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
     {
         if (inVarToValTable(rhs))
         {
-            if (copy->getCopyKind() == CopyStmt::COPYVAL) {
+            if (copy->getCopyKind() == CopyStmt::COPYVAL)
+            {
                 _es[lhs] = _es[rhs];
             }
-            else if (copy->getCopyKind() == CopyStmt::ZEXT) {
+            else if (copy->getCopyKind() == CopyStmt::ZEXT)
+            {
                 _es[lhs] = getZExtValue(copy->getRHSVar());
             }
-            else if (copy->getCopyKind() == CopyStmt::SEXT) {
+            else if (copy->getCopyKind() == CopyStmt::SEXT)
+            {
                 _es[lhs] = getSExtValue(copy->getRHSVar());
             }
-            else if (copy->getCopyKind() == CopyStmt::FPTOSI) {
+            else if (copy->getCopyKind() == CopyStmt::FPTOSI)
+            {
                 _es[lhs] = getFPToSIntValue(copy->getRHSVar());
             }
-            else if (copy->getCopyKind() == CopyStmt::FPTOUI) {
+            else if (copy->getCopyKind() == CopyStmt::FPTOUI)
+            {
                 _es[lhs] = getFPToUIntValue(copy->getRHSVar());
             }
-            else if (copy->getCopyKind() == CopyStmt::SITOFP) {
+            else if (copy->getCopyKind() == CopyStmt::SITOFP)
+            {
                 _es[lhs] = getSIntToFPValue(copy->getRHSVar());
             }
-            else if (copy->getCopyKind() == CopyStmt::UITOFP) {
+            else if (copy->getCopyKind() == CopyStmt::UITOFP)
+            {
                 _es[lhs] = getUIntToFPValue(copy->getRHSVar());
             }
-            else if (copy->getCopyKind() == CopyStmt::TRUNC) {
+            else if (copy->getCopyKind() == CopyStmt::TRUNC)
+            {
                 _es[lhs] = getTruncValue(copy->getRHSVar(), copy->getLHSVar()->getType());
             }
-            else if (copy->getCopyKind() == CopyStmt::FPTRUNC) {
+            else if (copy->getCopyKind() == CopyStmt::FPTRUNC)
+            {
                 _es[lhs] = getFPTruncValue(copy->getRHSVar(), copy->getLHSVar()->getType());
             }
-            else {
+            else
+            {
                 assert(false && "undefined copy kind");
                 abort();
             }

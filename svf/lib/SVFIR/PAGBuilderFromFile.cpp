@@ -164,45 +164,62 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     {
         pag->addAddrStmt(srcID, dstID);
     }
-    if (edge.rfind("copy-", 0) == 0) {
+    if (edge.rfind("copy-", 0) == 0)
+    {
         // the enum is COPYVAL, ZEXT, SEXT, BITCAST, TRUNC, FPTRUNC,
         ////         FPTOUI, FPTOSI, UITOFP, SITOFP, INTTOPTR, PTRTOINT, UNKNOWN
         std::string opType = edge.substr(5); // start substring from 5th char
 
-        if (opType == "COPYVAL") {
+        if (opType == "COPYVAL")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::COPYVAL);
-        } else if (opType == "ZEXT") {
+        }
+        else if (opType == "ZEXT")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::ZEXT);
-        } else if (opType == "SEXT") {
+        }
+        else if (opType == "SEXT")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::SEXT);
-        } else if (opType == "BITCAST") {
+        }
+        else if (opType == "BITCAST")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::BITCAST);
         }
-        else if (opType == "TRUNC") {
+        else if (opType == "TRUNC")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::TRUNC);
         }
-        else if (opType == "FPTRUNC") {
+        else if (opType == "FPTRUNC")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::FPTRUNC);
         }
-        else if (opType == "FPTOUI") {
+        else if (opType == "FPTOUI")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::FPTOUI);
         }
-        else if (opType == "FPTOSI") {
+        else if (opType == "FPTOSI")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::FPTOSI);
         }
-        else if (opType == "UITOFP") {
+        else if (opType == "UITOFP")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::UITOFP);
         }
-        else if (opType == "SITOFP") {
+        else if (opType == "SITOFP")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::SITOFP);
         }
-        else if (opType == "INTTOPTR") {
+        else if (opType == "INTTOPTR")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::INTTOPTR);
         }
-        else if (opType == "PTRTOINT") {
+        else if (opType == "PTRTOINT")
+        {
             pag->addCopyStmt(srcID, dstID, CopyStmt::PTRTOINT);
         }
-        else {
+        else
+        {
             assert(false && "format not support, can not create such edge");
         }
     }

@@ -261,14 +261,16 @@ public:
         return _lb.is_infinity() || _ub.is_infinity();
     }
 
-    bool is_int() const {
+    bool is_int() const
+    {
         bool lb_int = _lb.is_int();
         bool ub_int = _ub.is_int();
         assert (lb_int == ub_int && "lb and ub should be both int or both float");
         return _lb.is_int();
     }
 
-    bool is_real() const {
+    bool is_real() const
+    {
         bool lb_real = _lb.is_real();
         bool ub_real = _ub.is_real();
         assert (lb_real == ub_real && "lb and ub should be both real or both int");
@@ -363,20 +365,24 @@ public:
         }
         else
         {
-            if (this->is_real() && other.is_real()) {
+            if (this->is_real() && other.is_real())
+            {
                 return this->_lb.equal(other._lb) && this->_ub.equal(other._ub);
             }
-            else if (this->is_int() && other.is_int()) {
+            else if (this->is_int() && other.is_int())
+            {
                 return this->_lb.equal(other._lb) && this->_ub.equal(other._ub);
             }
-            else if (this->is_int()) {
+            else if (this->is_int())
+            {
                 double thislb = this->_lb.getIntNumeral();
                 double thisub = this->_ub.getIntNumeral();
                 double otherlb = other._lb.getRealNumeral();
                 double otherub = other._ub.getRealNumeral();
                 return thislb == otherlb && thisub == otherub;
             }
-            else {
+            else
+            {
                 double thislb = this->_lb.getRealNumeral();
                 double thisub = this->_ub.getRealNumeral();
                 double otherlb = other._lb.getIntNumeral();
