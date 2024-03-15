@@ -50,11 +50,13 @@ public:
 
     NumericLiteral(const z3::expr &e) : _n(e) {}
 
+    NumericLiteral(float i) : _n(getContext().real_val(std::to_string(i).c_str())) {}
+
+    NumericLiteral(double i) : _n(getContext().real_val(std::to_string(i).c_str())) {}
+
     NumericLiteral(s32_t i) : _n(i) {}
 
     NumericLiteral(s64_t i) : _n(i) {}
-
-    NumericLiteral(double i) : _n(i) {}
 
     NumericLiteral(BoundedZ3Expr z3Expr) : _n(std::move(z3Expr)) {}
 
@@ -116,16 +118,36 @@ public:
         return _n.is_zero();
     }
 
-    /// Return Numeral
+    inline bool is_int() const
+    {
+        return _n.is_int();
+    }
+
+    inline bool is_real() const
+    {
+        return _n.is_real();
+    }
+
+    /// Return Numeral, default type is double in case to support both int and float
     inline s64_t getNumeral() const
     {
         return _n.getNumeral();
     }
 
-    /// Return Numeral
+    /// Return Expr
     inline Z3Expr getExpr() const
     {
         return _n.getExpr();
+    }
+
+    inline double getRealNumeral() const
+    {
+        return _n.getRealNumeral();
+    }
+
+    inline s64_t getIntNumeral() const
+    {
+        return _n.getIntNumeral();
     }
 
     /// Check two object is equal

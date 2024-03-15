@@ -365,13 +365,15 @@ class CopyStmt: public AssignStmt
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
-
 private:
     /// Constructs empty CopyStmt (for SVFIRReader/serialization)
     CopyStmt() : AssignStmt(SVFStmt::Copy) {}
     CopyStmt(const CopyStmt&);       ///< place holder
     void operator=(const CopyStmt&); ///< place holder
 public:
+    enum CopyKind {COPYVAL, ZEXT, SEXT, BITCAST, TRUNC, FPTRUNC,
+                   FPTOUI, FPTOSI, UITOFP, SITOFP, INTTOPTR, PTRTOINT
+                  };
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const CopyStmt*)
@@ -388,10 +390,18 @@ public:
     }
     //@}
 
+    /// Return the kind of the copy statement
+    inline u32_t getCopyKind() const
+    {
+        return copyKind;
+    }
+
     /// constructor
-    CopyStmt(SVFVar* s, SVFVar* d) : AssignStmt(s, d, SVFStmt::Copy) {}
+    CopyStmt(SVFVar* s, SVFVar* d, CopyKind k) : AssignStmt(s, d, SVFStmt::Copy), copyKind(k) {}
 
     virtual const std::string toString() const override;
+private:
+    u32_t copyKind;
 };
 
 /*!

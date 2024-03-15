@@ -62,7 +62,7 @@ IntervalESBase RelationSolver::bilateral(const IntervalESBase &domain, const Z3E
         Z3Expr rhs = !(gamma_hat(consequence, domain));
         solver.push();
         solver.add(phi.getExpr() && rhs.getExpr());
-        Map<u32_t, int32_t> solution;
+        Map<u32_t, s32_t> solution;
         z3::check_result checkRes = solver.check();
         /// find any solution, which is sat
         if (checkRes == z3::sat)
@@ -124,7 +124,7 @@ IntervalESBase RelationSolver::RSY(const IntervalESBase& domain, const Z3Expr& p
         Z3Expr rhs = !(gamma_hat(lower, domain));
         solver.push();
         solver.add(phi.getExpr() && rhs.getExpr());
-        Map<u32_t, int32_t> solution;
+        Map<u32_t, s32_t> solution;
         z3::check_result checkRes = solver.check();
         /// find any solution, which is sat
         if (checkRes == z3::sat)
@@ -241,7 +241,7 @@ Z3Expr RelationSolver::gamma_hat(u32_t id, const IntervalESBase& exeState) const
     return res;
 }
 
-IntervalESBase RelationSolver::beta(const Map<u32_t, int32_t>& sigma,
+IntervalESBase RelationSolver::beta(const Map<u32_t, s32_t>& sigma,
                                     const IntervalESBase& exeState) const
 {
     IntervalESBase res;

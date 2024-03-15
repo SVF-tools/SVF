@@ -71,13 +71,13 @@ IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
         {
             if (intType->isSigned())
             {
-                ub = static_cast<s64_t>(std::numeric_limits<int16_t>::max());
-                lb = static_cast<s64_t>(std::numeric_limits<int16_t>::min());
+                ub = static_cast<s64_t>(std::numeric_limits<s16_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<s16_t>::min());
             }
             else
             {
-                ub = static_cast<s64_t>(std::numeric_limits<uint16_t>::max());
-                lb = static_cast<s64_t>(std::numeric_limits<uint16_t>::min());
+                ub = static_cast<s64_t>(std::numeric_limits<u16_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<u16_t>::min());
             }
         }
         else if (bits == 8)
@@ -109,6 +109,168 @@ IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
     }
 }
 
+IntervalValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var)
+{
+    const SVFType* type = var->getType();
+    if (SVFUtil::isa<SVFIntegerType>(type))
+    {
+        u32_t bits = type->getByteSize() * 8;
+        if (_es[var->getId()].is_numeral())
+        {
+            if (bits == 8)
+            {
+                int8_t signed_i8_value = _es[var->getId()].getIntNumeral();
+                u32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
+                return IntervalValue(unsigned_value, unsigned_value);
+            }
+            else if (bits == 16)
+            {
+                s16_t signed_i16_value = _es[var->getId()].getIntNumeral();
+                u32_t unsigned_value = static_cast<u16_t>(signed_i16_value);
+                return IntervalValue(unsigned_value, unsigned_value);
+            }
+            else if (bits == 32)
+            {
+                s32_t signed_i32_value = _es[var->getId()].getIntNumeral();
+                u32_t unsigned_value = static_cast<u32_t>(signed_i32_value);
+                return IntervalValue(unsigned_value, unsigned_value);
+            }
+            else if (bits == 64)
+            {
+                s64_t signed_i64_value = _es[var->getId()].getIntNumeral();
+                return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
+                // we only support i64 at most
+            }
+            else
+            {
+                assert(false && "cannot support int type other than u8/16/32/64");
+            }
+        }
+        else
+        {
+            return IntervalValue::top(); // TODO: may have better solution
+        }
+    }
+    assert(false && "cannot support non-integer type");
+}
+
+IntervalValue SVFIR2ItvExeState::getSExtValue(const SVFVar* var)
+{
+    return _es[var->getId()];
+}
+
+IntervalValue SVFIR2ItvExeState::getFPToSIntValue(const SVF::SVFVar* var)
+{
+    if (_es[var->getId()].is_real())
+    {
+        // get the float value of ub and lb
+        double float_lb = _es[var->getId()].lb().getRealNumeral();
+        double float_ub = _es[var->getId()].ub().getRealNumeral();
+        // get the int value of ub and lb
+        s64_t int_lb = static_cast<s64_t>(float_lb);
+        s64_t int_ub = static_cast<s64_t>(float_ub);
+        return IntervalValue(int_lb, int_ub);
+    }
+    else
+    {
+        return getSExtValue(var);
+    }
+}
+
+IntervalValue SVFIR2ItvExeState::getFPToUIntValue(const SVF::SVFVar* var)
+{
+    if (_es[var->getId()].is_real())
+    {
+        // get the float value of ub and lb
+        double float_lb = _es[var->getId()].lb().getRealNumeral();
+        double float_ub = _es[var->getId()].ub().getRealNumeral();
+        // get the int value of ub and lb
+        u64_t int_lb = static_cast<u64_t>(float_lb);
+        u64_t int_ub = static_cast<u64_t>(float_ub);
+        return IntervalValue(int_lb, int_ub);
+    }
+    else
+    {
+        return getZExtValue(var);
+    }
+}
+
+IntervalValue SVFIR2ItvExeState::getSIntToFPValue(const SVF::SVFVar* var)
+{
+    // get the sint value of ub and lb
+    s64_t sint_lb = _es[var->getId()].lb().getIntNumeral();
+    s64_t sint_ub = _es[var->getId()].ub().getIntNumeral();
+    // get the float value of ub and lb
+    double float_lb = static_cast<double>(sint_lb);
+    double float_ub = static_cast<double>(sint_ub);
+    return IntervalValue(float_lb, float_ub);
+}
+
+IntervalValue SVFIR2ItvExeState::getUIntToFPValue(const SVF::SVFVar* var)
+{
+    // get the uint value of ub and lb
+    u64_t uint_lb = _es[var->getId()].lb().getIntNumeral();
+    u64_t uint_ub = _es[var->getId()].ub().getIntNumeral();
+    // get the float value of ub and lb
+    double float_lb = static_cast<double>(uint_lb);
+    double float_ub = static_cast<double>(uint_ub);
+    return IntervalValue(float_lb, float_ub);
+}
+
+IntervalValue SVFIR2ItvExeState::getTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
+{
+    // get the value of ub and lb
+    s64_t int_lb = _es[var->getId()].lb().getIntNumeral();
+    s64_t int_ub = _es[var->getId()].ub().getIntNumeral();
+    // get dst type
+    u32_t dst_bits = dstType->getByteSize() * 8;
+    if (dst_bits == 8)
+    {
+        // get the signed value of ub and lb
+        int8_t s8_lb = static_cast<int8_t>(int_lb);
+        int8_t s8_ub = static_cast<int8_t>(int_ub);
+        if (s8_lb > s8_ub)
+        {
+            // return range of s8
+            return IntervalValue::top();
+        }
+        return IntervalValue(s8_lb, s8_ub);
+    }
+    else if (dst_bits == 16)
+    {
+        // get the signed value of ub and lb
+        s16_t s16_lb = static_cast<s16_t>(int_lb);
+        s16_t s16_ub = static_cast<s16_t>(int_ub);
+        if (s16_lb > s16_ub)
+        {
+            // return range of s16
+            return IntervalValue::top();
+        }
+        return IntervalValue(s16_lb, s16_ub);
+    }
+    else if (dst_bits == 32)
+    {
+        // get the signed value of ub and lb
+        s32_t s32_lb = static_cast<s32_t>(int_lb);
+        s32_t s32_ub = static_cast<s32_t>(int_ub);
+        if (s32_lb > s32_ub)
+        {
+            // return range of s32
+            return IntervalValue::top();
+        }
+        return IntervalValue(s32_lb, s32_ub);
+    }
+    else
+    {
+        assert(false && "cannot support dst int type other than u8/16/32");
+    }
+}
+
+IntervalValue SVFIR2ItvExeState::getFPTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
+{
+    // TODO: now we do not really handle fptrunc
+    return _es[var->getId()];
+}
 
 void SVFIR2ItvExeState::applySummary(IntervalExeState &es)
 {
@@ -236,7 +398,7 @@ SVFIR2ItvExeState::Addrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APOf
     Addrs ret;
     for (const auto &addr: addrs)
     {
-        int64_t baseObj = getInternalID(addr);
+        s64_t baseObj = getInternalID(addr);
         if (baseObj == 0)
         {
             ret.insert(getVirtualMemAddress(0));
@@ -310,12 +472,12 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
                 {
                     // if lb or ub is negative number, set 0.
                     // if lb or ub is positive number, guarantee lb/ub * elemByteSize <= MaxFieldLimit
-                    s64_t ub = (idxVal.ub().getNumeral() < 0) ? 0 :
+                    s64_t ub = (idxVal.ub().getIntNumeral() < 0) ? 0 :
                                (double)Options::MaxFieldLimit() /
-                               elemByteSize >= idxVal.ub().getNumeral() ? elemByteSize * idxVal.ub().getNumeral(): Options::MaxFieldLimit();
-                    s64_t lb = (idxVal.lb().getNumeral() < 0) ? 0 :
+                               elemByteSize >= idxVal.ub().getIntNumeral() ? elemByteSize * idxVal.ub().getIntNumeral(): Options::MaxFieldLimit();
+                    s64_t lb = (idxVal.lb().getIntNumeral() < 0) ? 0 :
                                ((double)Options::MaxFieldLimit() /
-                                elemByteSize >= idxVal.lb().getNumeral()) ? elemByteSize * idxVal.lb().getNumeral() : Options::MaxFieldLimit();
+                                elemByteSize >= idxVal.lb().getIntNumeral()) ? elemByteSize * idxVal.lb().getIntNumeral() : Options::MaxFieldLimit();
                     res = res + IntervalValue(lb, ub);
                 }
             }
@@ -367,8 +529,8 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
                 idxLb = idxUb = 0;
             else
             {
-                idxLb = idxItv.lb().getNumeral();
-                idxUb = idxItv.ub().getNumeral();
+                idxLb = idxItv.lb().getIntNumeral();
+                idxUb = idxItv.ub().getIntNumeral();
             }
         }
         // for pointer type, flattened index = elemNum * idx
@@ -428,7 +590,7 @@ void SVFIR2ItvExeState::initObjVar(const ObjVar *objVar, u32_t varId)
         {
             if (const SVFConstantInt *consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue()))
             {
-                double numeral = (double)consInt->getSExtValue();
+                s64_t numeral = consInt->getSExtValue();
                 IntervalExeState::globalES[varId] = IntervalValue(numeral, numeral);
             }
             else if (const SVFConstantFP* consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue()))
@@ -822,14 +984,46 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
     {
         if (inVarToValTable(rhs))
         {
-            _es[lhs] = _es[rhs];
-            // if copy LHS is integerType(i8 i32 etc), value should be limited.
-            // this branch can handle bitcast from higher bits integer to
-            // lower bits integer. e.g. bitcast i32 to i8
-            if (copy->getLHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
+            if (copy->getCopyKind() == CopyStmt::COPYVAL)
             {
-                _es[lhs].meet_with(
-                    getRangeLimitFromType(copy->getLHSVar()->getType()));
+                _es[lhs] = _es[rhs];
+            }
+            else if (copy->getCopyKind() == CopyStmt::ZEXT)
+            {
+                _es[lhs] = getZExtValue(copy->getRHSVar());
+            }
+            else if (copy->getCopyKind() == CopyStmt::SEXT)
+            {
+                _es[lhs] = getSExtValue(copy->getRHSVar());
+            }
+            else if (copy->getCopyKind() == CopyStmt::FPTOSI)
+            {
+                _es[lhs] = getFPToSIntValue(copy->getRHSVar());
+            }
+            else if (copy->getCopyKind() == CopyStmt::FPTOUI)
+            {
+                _es[lhs] = getFPToUIntValue(copy->getRHSVar());
+            }
+            else if (copy->getCopyKind() == CopyStmt::SITOFP)
+            {
+                _es[lhs] = getSIntToFPValue(copy->getRHSVar());
+            }
+            else if (copy->getCopyKind() == CopyStmt::UITOFP)
+            {
+                _es[lhs] = getUIntToFPValue(copy->getRHSVar());
+            }
+            else if (copy->getCopyKind() == CopyStmt::TRUNC)
+            {
+                _es[lhs] = getTruncValue(copy->getRHSVar(), copy->getLHSVar()->getType());
+            }
+            else if (copy->getCopyKind() == CopyStmt::FPTRUNC)
+            {
+                _es[lhs] = getFPTruncValue(copy->getRHSVar(), copy->getLHSVar()->getType());
+            }
+            else
+            {
+                assert(false && "undefined copy kind");
+                abort();
             }
         }
         else if (inVarToAddrsTable(rhs))
@@ -854,10 +1048,10 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
     else
     {
         Addrs gepAddrs;
-        APOffset lb = offsetPair.lb().getNumeral() < Options::MaxFieldLimit()?
-                      offsetPair.lb().getNumeral(): Options::MaxFieldLimit();
-        APOffset ub = offsetPair.ub().getNumeral() < Options::MaxFieldLimit()?
-                      offsetPair.ub().getNumeral(): Options::MaxFieldLimit();
+        APOffset lb = offsetPair.lb().getIntNumeral() < Options::MaxFieldLimit()?
+                      offsetPair.lb().getIntNumeral(): Options::MaxFieldLimit();
+        APOffset ub = offsetPair.ub().getIntNumeral() < Options::MaxFieldLimit()?
+                      offsetPair.ub().getIntNumeral(): Options::MaxFieldLimit();
         for (APOffset i = lb; i <= ub; i++)
             gepAddrs.join_with(getGepObjAddress(rhs, i));
         if(gepAddrs.empty()) return;
