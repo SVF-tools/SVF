@@ -372,7 +372,7 @@ private:
     void operator=(const CopyStmt&); ///< place holder
 public:
     enum CopyKind {COPYVAL, ZEXT, SEXT, BITCAST, TRUNC, FPTRUNC,
-         FPTOUI, FPTOSI, UITOFP, SITOFP, INTTOPTR, PTRTOINT, UNKNOWN};
+         FPTOUI, FPTOSI, UITOFP, SITOFP, INTTOPTR, PTRTOINT};
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const CopyStmt*)

@@ -1271,10 +1271,11 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
                     dval =  cfp->getValueAPF().convertToDouble();
                 }
                 else {
-
+                    assert (false && "Unsupported floating point type");
                 }
             } else {
-
+                // other cfp type, like isZero(), isInfinity(), isNegative(), etc.
+                // do nothing
             }
             svfcd = new SVFConstantFP(getSVFType(cd->getType()), dval);
         }

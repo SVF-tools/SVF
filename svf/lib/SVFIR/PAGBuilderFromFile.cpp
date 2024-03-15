@@ -202,9 +202,6 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
         else if (opType == "PTRTOINT") {
             pag->addCopyStmt(srcID, dstID, CopyStmt::PTRTOINT);
         }
-        else if (opType == "UNKNOWN") {
-            pag->addCopyStmt(srcID, dstID, CopyStmt::UNKNOWN);
-        }
         else {
             assert(false && "format not support, can not create such edge");
         }

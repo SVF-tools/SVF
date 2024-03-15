@@ -401,7 +401,7 @@ protected:
                     return CopyStmt::COPYVAL;
             }
         }
-        return CopyStmt::UNKNOWN;
+        assert (false && "Unknown cast inst!");
     }
 
     /// Add Copy edge

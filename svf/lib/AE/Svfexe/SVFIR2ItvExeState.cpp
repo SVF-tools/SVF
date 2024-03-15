@@ -959,7 +959,9 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
     {
         if (inVarToValTable(rhs))
         {
-            _es[lhs] = _es[rhs];
+            if (copy->getCopyKind() == CopyStmt::COPYVAL) {
+                _es[lhs] = _es[rhs];
+            }
             if (copy->getCopyKind() == CopyStmt::ZEXT) {
                 _es[lhs] = getZExtValue(copy->getRHSVar());
             }
@@ -984,8 +986,6 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
             else if (copy->getCopyKind() == CopyStmt::FPTRUNC) {
                 _es[lhs] = getFPTruncValue(copy->getRHSVar(), copy->getLHSVar()->getType());
             }
-
-
         }
         else if (inVarToAddrsTable(rhs))
         {
