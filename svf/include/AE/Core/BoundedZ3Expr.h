@@ -374,7 +374,6 @@ public:
     /// Return Numeral
     inline s64_t getNumeral() const
     {
-        assert(is_numeral() && "not a numeral");
         int64_t i;
         if (getExpr().is_numeral_i64(i))
             return (s64_t)get_numeral_int64();

@@ -71,13 +71,13 @@ IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
         {
             if (intType->isSigned())
             {
-                ub = static_cast<s64_t>(std::numeric_limits<int16_t>::max());
-                lb = static_cast<s64_t>(std::numeric_limits<int16_t>::min());
+                ub = static_cast<s64_t>(std::numeric_limits<s16_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<s16_t>::min());
             }
             else
             {
-                ub = static_cast<s64_t>(std::numeric_limits<uint16_t>::max());
-                lb = static_cast<s64_t>(std::numeric_limits<uint16_t>::min());
+                ub = static_cast<s64_t>(std::numeric_limits<u16_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<u16_t>::min());
             }
         }
         else if (bits == 8)
@@ -116,17 +116,17 @@ IntervalValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var) {
         if (_es[var->getId()].is_numeral()) {
             if (bits == 8) {
                 int8_t signed_i8_value = _es[var->getId()].getIntNumeral();
-                uint32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
+                u32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
             else if (bits == 16) {
-                int16_t signed_i16_value = _es[var->getId()].getIntNumeral();
-                uint32_t unsigned_value = static_cast<uint16_t>(signed_i16_value);
+                s16_t signed_i16_value = _es[var->getId()].getIntNumeral();
+                u32_t unsigned_value = static_cast<u16_t>(signed_i16_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
             else if (bits == 32) {
-                int32_t signed_i32_value = _es[var->getId()].getIntNumeral();
-                uint32_t unsigned_value = static_cast<uint32_t>(signed_i32_value);
+                s32_t signed_i32_value = _es[var->getId()].getIntNumeral();
+                u32_t unsigned_value = static_cast<u32_t>(signed_i32_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
             else if (bits == 64) {
@@ -150,23 +150,35 @@ IntervalValue SVFIR2ItvExeState::getSExtValue(const SVFVar* var) {
 }
 
 IntervalValue SVFIR2ItvExeState::getFPToSIntValue(const SVF::SVFVar* var) {
-    // get the float value of ub and lb
-    double float_lb = _es[var->getId()].lb().getRealNumeral();
-    double float_ub = _es[var->getId()].ub().getRealNumeral();
-    // get the int value of ub and lb
-    s64_t int_lb = static_cast<s64_t>(float_lb);
-    s64_t int_ub = static_cast<s64_t>(float_ub);
-    return IntervalValue(int_lb, int_ub);
+    if (_es[var->getId()].is_real()) {
+        // get the float value of ub and lb
+        double float_lb = _es[var->getId()].lb().getRealNumeral();
+        double float_ub = _es[var->getId()].ub().getRealNumeral();
+        // get the int value of ub and lb
+        s64_t int_lb = static_cast<s64_t>(float_lb);
+        s64_t int_ub = static_cast<s64_t>(float_ub);
+        return IntervalValue(int_lb, int_ub);
+    }
+    else {
+        return getSExtValue(var);
+    }
 }
 
 IntervalValue SVFIR2ItvExeState::getFPToUIntValue(const SVF::SVFVar* var) {
-    // get the float value of ub and lb
-    double float_lb = _es[var->getId()].lb().getRealNumeral();
-    double float_ub = _es[var->getId()].ub().getRealNumeral();
-    // get the int value of ub and lb
-    u64_t int_lb = static_cast<u64_t>(float_lb);
-    u64_t int_ub = static_cast<u64_t>(float_ub);
-    return IntervalValue(int_lb, int_ub);
+    if (_es[var->getId()].is_real())
+    {
+        // get the float value of ub and lb
+        double float_lb = _es[var->getId()].lb().getRealNumeral();
+        double float_ub = _es[var->getId()].ub().getRealNumeral();
+        // get the int value of ub and lb
+        u64_t int_lb = static_cast<u64_t>(float_lb);
+        u64_t int_ub = static_cast<u64_t>(float_ub);
+        return IntervalValue(int_lb, int_ub);
+    }
+    else
+    {
+        return getZExtValue(var);
+    }
 }
 
 IntervalValue SVFIR2ItvExeState::getSIntToFPValue(const SVF::SVFVar* var) {
@@ -207,8 +219,8 @@ IntervalValue SVFIR2ItvExeState::getTruncValue(const SVF::SVFVar* var, const SVF
     }
     else if (dst_bits == 16) {
         // get the signed value of ub and lb
-        int16_t s16_lb = static_cast<int16_t>(int_lb);
-        int16_t s16_ub = static_cast<int16_t>(int_ub);
+        s16_t s16_lb = static_cast<s16_t>(int_lb);
+        s16_t s16_ub = static_cast<s16_t>(int_ub);
         if (s16_lb > s16_ub) {
             // return range of s16
             return IntervalValue::top();
@@ -217,8 +229,8 @@ IntervalValue SVFIR2ItvExeState::getTruncValue(const SVF::SVFVar* var, const SVF
     }
     else if (dst_bits == 32) {
         // get the signed value of ub and lb
-        int32_t s32_lb = static_cast<int32_t>(int_lb);
-        int32_t s32_ub = static_cast<int32_t>(int_ub);
+        s32_t s32_lb = static_cast<s32_t>(int_lb);
+        s32_t s32_ub = static_cast<s32_t>(int_ub);
         if (s32_lb > s32_ub) {
             // return range of s32
             return IntervalValue::top();
