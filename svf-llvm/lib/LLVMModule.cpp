@@ -1102,6 +1102,7 @@ void LLVMModuleSet::buildFunToFunMap()
                 Function* declaration = Function::Create(funType, GlobalValue::ExternalLinkage, funName, mod);
                 fun->replaceAllUsesWith(declaration);
                 fun->eraseFromParent();
+                declaration->setName(funName);
                 // AppDef -> ExtDef in Table 1, AppDef has been changed to AppDecl
                 FunDeclToDefMap[declaration] = owfunc;
                 // ExtDef -> AppDef in Table 1
