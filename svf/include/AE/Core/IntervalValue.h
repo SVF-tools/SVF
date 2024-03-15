@@ -363,9 +363,27 @@ public:
         }
         else
         {
-            return this->_lb.equal(other._lb) && this->_ub.equal(other._ub);
-            // TODO: IntervalValueZ3Expr equals
-            // TODO: shall we consider expr and solve.
+            if (this->is_real() && other.is_real()) {
+                return this->_lb.equal(other._lb) && this->_ub.equal(other._ub);
+            }
+            else if (this->is_int() && other.is_int()) {
+                return this->_lb.equal(other._lb) && this->_ub.equal(other._ub);
+            }
+            else if (this->is_int()) {
+                double thislb = this->_lb.getIntNumeral();
+                double thisub = this->_ub.getIntNumeral();
+                double otherlb = other._lb.getRealNumeral();
+                double otherub = other._ub.getRealNumeral();
+                return thislb == otherlb && thisub == otherub;
+            }
+            else {
+                double thislb = this->_lb.getRealNumeral();
+                double thisub = this->_ub.getRealNumeral();
+                double otherlb = other._lb.getIntNumeral();
+                double otherub = other._ub.getIntNumeral();
+                return thislb == otherlb && thisub == otherub;
+            }
+            assert(false && "not implemented");
         }
     }
 
