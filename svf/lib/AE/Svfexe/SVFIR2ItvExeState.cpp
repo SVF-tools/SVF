@@ -130,7 +130,7 @@ IntervalValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var) {
                 return IntervalValue(unsigned_value, unsigned_value);
             }
             else if (bits == 64) {
-                int64_t signed_i64_value = _es[var->getId()].getIntNumeral();
+                s64_t signed_i64_value = _es[var->getId()].getIntNumeral();
                 return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
                 // we only support i64 at most
             }
@@ -373,7 +373,7 @@ SVFIR2ItvExeState::Addrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APOf
     Addrs ret;
     for (const auto &addr: addrs)
     {
-        int64_t baseObj = getInternalID(addr);
+        s64_t baseObj = getInternalID(addr);
         if (baseObj == 0)
         {
             ret.insert(getVirtualMemAddress(0));

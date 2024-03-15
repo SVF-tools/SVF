@@ -320,7 +320,7 @@ bool AbstractExecution::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, Inter
     // for const X const, we may get concrete resVal instantly
     // for var X const, we may get [0,1] if the intersection of var and const is not empty set
     IntervalValue resVal = new_es[res_id];
-    resVal.meet_with(IntervalValue((int64_t) succ, succ));
+    resVal.meet_with(IntervalValue((s64_t) succ, succ));
     // If Var X const generates bottom value, it means this branch path is not feasible.
     if (resVal.isBottom())
     {

@@ -42,17 +42,17 @@ std::string IntervalToIntStr(const IntervalValue& inv)
     }
     else
     {
-        int64_t lb_val = inv.lb().getNumeral();
-        int64_t ub_val = inv.ub().getNumeral();
+        s64_t lb_val = inv.lb().getNumeral();
+        s64_t ub_val = inv.ub().getNumeral();
 
         // check lb
-        s32_t lb_s32 = (lb_val < static_cast<int64_t>(INT_MIN)) ? INT_MIN :
-                       (lb_val > static_cast<int64_t>(INT_MAX)) ? INT_MAX :
+        s32_t lb_s32 = (lb_val < static_cast<s64_t>(INT_MIN)) ? INT_MIN :
+                       (lb_val > static_cast<s64_t>(INT_MAX)) ? INT_MAX :
                        static_cast<s32_t>(lb_val);
 
         // check ub
-        s32_t ub_s32 = (ub_val < static_cast<int64_t>(INT_MIN)) ? INT_MIN :
-                       (ub_val > static_cast<int64_t>(INT_MAX)) ? INT_MAX :
+        s32_t ub_s32 = (ub_val < static_cast<s64_t>(INT_MIN)) ? INT_MIN :
+                       (ub_val > static_cast<s64_t>(INT_MAX)) ? INT_MAX :
                        static_cast<s32_t>(ub_val);
 
         return "[" + std::to_string(lb_s32) + ", " + std::to_string(ub_s32) + "]";
