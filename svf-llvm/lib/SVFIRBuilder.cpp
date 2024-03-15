@@ -397,7 +397,13 @@ void SVFIRBuilder::processCE(const Value* val)
         // if we meet a int2ptr, then it points-to black hole
         else if (const ConstantExpr* int2Ptrce = isInt2PtrConstantExpr(ref))
         {
-            addGlobalBlackHoleAddrEdge(pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(int2Ptrce)), int2Ptrce);
+            const Constant* opnd = int2Ptrce->getOperand(0);
+            processCE(opnd);
+            const SVFBasicBlock* cbb = getCurrentBB();
+            const SVFValue* cval = getCurrentValue();
+            setCurrentLocation(int2Ptrce, nullptr);
+            addCopyEdge(pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(opnd)), pag->getValueNode(LLVMModuleSet::getLLVMModuleSet()->getSVFValue(int2Ptrce)), CopyStmt::INTTOPTR);
+            setCurrentLocation(cval, cbb);
         }
         else if (const ConstantExpr* ptr2Intce = isPtr2IntConstantExpr(ref))
         {
@@ -732,19 +738,9 @@ void SVFIRBuilder::visitCastInst(CastInst &inst)
     DBOUT(DPAGBuild, outs() << "process cast  " << LLVMModuleSet::getLLVMModuleSet()->getSVFValue(&inst)->toString() << " \n");
     NodeID dst = getValueNode(&inst);
 
-    if (SVFUtil::isa<IntToPtrInst>(&inst))
-    {
-        addBlackHoleAddrEdge(dst);
-    }
-    else
-    {
-        const Value* opnd = inst.getOperand(0);
-        if (!SVFUtil::isa<PointerType>(opnd->getType()))
-            opnd = stripAllCasts(opnd);
-
-        NodeID src = getValueNode(opnd);
-        addCopyEdge(src, dst, getCopyKind(&inst));
-    }
+    const Value* opnd = inst.getOperand(0);
+    NodeID src = getValueNode(opnd);
+    addCopyEdge(src, dst, getCopyKind(&inst));
 }
 
 /*!

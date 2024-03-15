@@ -371,9 +371,20 @@ private:
     CopyStmt(const CopyStmt&);       ///< place holder
     void operator=(const CopyStmt&); ///< place holder
 public:
-    enum CopyKind {COPYVAL, ZEXT, SEXT, BITCAST, TRUNC, FPTRUNC,
-                   FPTOUI, FPTOSI, UITOFP, SITOFP, INTTOPTR, PTRTOINT
-                  };
+    enum CopyKind {
+        COPYVAL,    // Value copies (default one)
+        ZEXT,       // Zero extend integers
+        SEXT,       // Sign extend integers
+        BITCAST,    // Type cast
+        TRUNC,      // Truncate integers
+        FPTRUNC,    // Truncate floating point
+        FPTOUI,     // floating point -> UInt
+        FPTOSI,     // floating point -> SInt
+        UITOFP,     // UInt -> floating point
+        SITOFP,     // SInt -> floating point
+        INTTOPTR,   // Integer -> Pointer
+        PTRTOINT    // Pointer -> Integer
+        };
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const CopyStmt*)
@@ -394,6 +405,36 @@ public:
     inline u32_t getCopyKind() const
     {
         return copyKind;
+    }
+
+    inline bool isBitCast() const
+    {
+        return copyKind == BITCAST;
+    }
+
+    inline bool isValueCopy() const
+    {
+        return copyKind == COPYVAL;
+    }
+
+    inline bool isInt2Ptr() const
+    {
+        return copyKind == INTTOPTR;
+    }
+
+    inline bool isPtr2Int() const
+    {
+        return copyKind == PTRTOINT;
+    }
+
+    inline bool isZext() const
+    {
+        return copyKind == ZEXT;
+    }
+
+    inline bool isSext() const
+    {
+        return copyKind == SEXT;
     }
 
     /// constructor

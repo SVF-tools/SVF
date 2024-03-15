@@ -60,7 +60,8 @@ void ConstraintGraph::buildCG()
                 copys.end(); iter != eiter; ++iter)
     {
         const CopyStmt* edge = SVFUtil::cast<CopyStmt>(*iter);
-        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        if(edge->isBitCast() || edge->isValueCopy())
+            addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
     SVFStmt::SVFStmtSetTy& phis = getPAGEdgeSet(SVFStmt::Phi);
