@@ -1262,13 +1262,14 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
             // TODO: Why only double is considered? What about float?
             if (cfp->isNormalFP())
             {
-                if (&cfp->getValueAPF().getSemantics()== &llvm::APFloatBase::IEEEsingle())
+                const llvm::fltSemantics& semantics = cfp->getValueAPF().getSemantics();
+                if (&semantics == &llvm::APFloat::IEEEhalf() ||
+                    &semantics == &llvm::APFloat::IEEEsingle() ||
+                    &semantics == &llvm::APFloat::IEEEdouble() ||
+                    &semantics == &llvm::APFloat::IEEEquad() ||
+                    &semantics == &llvm::APFloat::x87DoubleExtended())
                 {
-                    dval =  cfp->getValueAPF().convertToFloat();
-                }
-                else if (&cfp->getValueAPF().getSemantics()== &llvm::APFloatBase::IEEEdouble())
-                {
-                    dval =  cfp->getValueAPF().convertToDouble();
+                    dval = cfp->getValueAPF().convertToDouble();
                 }
                 else
                 {
