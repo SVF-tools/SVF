@@ -1264,10 +1264,10 @@ SVFConstantData* LLVMModuleSet::getSVFConstantData(const ConstantData* cd)
             {
                 const llvm::fltSemantics& semantics = cfp->getValueAPF().getSemantics();
                 if (&semantics == &llvm::APFloat::IEEEhalf() ||
-                    &semantics == &llvm::APFloat::IEEEsingle() ||
-                    &semantics == &llvm::APFloat::IEEEdouble() ||
-                    &semantics == &llvm::APFloat::IEEEquad() ||
-                    &semantics == &llvm::APFloat::x87DoubleExtended())
+                        &semantics == &llvm::APFloat::IEEEsingle() ||
+                        &semantics == &llvm::APFloat::IEEEdouble() ||
+                        &semantics == &llvm::APFloat::IEEEquad() ||
+                        &semantics == &llvm::APFloat::x87DoubleExtended())
                 {
                     dval = cfp->getValueAPF().convertToDouble();
                 }
