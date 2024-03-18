@@ -1020,10 +1020,12 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
             {
                 _es[lhs] = getFPTruncValue(copy->getRHSVar(), copy->getLHSVar()->getType());
             }
-            else if (copy->getCopyKind() == CopyStmt::INTTOPTR) {
+            else if (copy->getCopyKind() == CopyStmt::INTTOPTR)
+            {
                 _es.getAddrs(lhs).insert(getVirtualMemAddress(0)); //insert nullptr
             }
-            else if (copy->getCopyKind() == CopyStmt::PTRTOINT) {
+            else if (copy->getCopyKind() == CopyStmt::PTRTOINT)
+            {
                 _es[lhs] = IntervalValue::top();
             }
             else

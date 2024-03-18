@@ -371,7 +371,8 @@ private:
     CopyStmt(const CopyStmt&);       ///< place holder
     void operator=(const CopyStmt&); ///< place holder
 public:
-    enum CopyKind {
+    enum CopyKind
+    {
         COPYVAL,    // Value copies (default one)
         ZEXT,       // Zero extend integers
         SEXT,       // Sign extend integers
@@ -384,7 +385,7 @@ public:
         SITOFP,     // SInt -> floating point
         INTTOPTR,   // Integer -> Pointer
         PTRTOINT    // Pointer -> Integer
-        };
+    };
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const CopyStmt*)
