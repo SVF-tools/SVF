@@ -440,6 +440,8 @@ void SymbolTableBuilder::handleCE(const Value* val)
         else if (const ConstantExpr* int2Ptrce = isInt2PtrConstantExpr(ref))
         {
             collectVal(int2Ptrce);
+            const Constant* opnd = int2Ptrce->getOperand(0);
+            handleCE(opnd);
         }
         else if (const ConstantExpr* ptr2Intce = isPtr2IntConstantExpr(ref))
         {

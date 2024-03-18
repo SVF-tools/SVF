@@ -484,7 +484,8 @@ private:
         bool added = KindToSVFStmtSetMap[edge->getEdgeKind()].insert(edge).second;
         (void)added; // Suppress warning of unused variable under release build
         assert(added && "duplicated edge, not added!!!");
-        if (edge->isPTAEdge())
+        /// this is a pointer-related SVFStmt if (1) both RHS and LHS are pointers or (2) this an int2ptr statment, i.e., LHS = int2ptr RHS
+        if (edge->isPTAEdge() || (SVFUtil::isa<CopyStmt>(edge) && SVFUtil::cast<CopyStmt>(edge)->isInt2Ptr()))
         {
             totalPTAPAGEdge++;
             KindToPTASVFStmtSetMap[edge->getEdgeKind()].insert(edge);
