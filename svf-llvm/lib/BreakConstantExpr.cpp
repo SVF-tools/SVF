@@ -113,7 +113,7 @@ hasConstantBinaryOrUnaryOp (Value*  V)
 {
     if (ConstantExpr * CE = SVFUtil::dyn_cast<ConstantExpr>(V))
     {
-        if (Instruction::isCast(CE->getOpcode()) || Instruction::isBinaryOp(CE->getOpcode()) || Instruction::isUnaryOp(CE->getOpcode()))
+        if (Instruction::isBinaryOp(CE->getOpcode()) || Instruction::isUnaryOp(CE->getOpcode()))
         {
             return CE;
         }
