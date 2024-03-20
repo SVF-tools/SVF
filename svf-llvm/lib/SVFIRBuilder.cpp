@@ -36,6 +36,7 @@
 #include "SVF-LLVM/SymbolTableBuilder.h"
 #include "SVFIR/PAGBuilderFromFile.h"
 #include "SVFIR/SVFFileSystem.h"
+#include "SVFIR/SVF2Neo4J.h"
 #include "SVFIR/SVFModule.h"
 #include "SVFIR/SVFValue.h"
 #include "Util/Options.h"
@@ -173,7 +174,7 @@ SVFIR* SVFIRBuilder::build()
     if (!Options::DumpDatabase().empty())
     {
         printf("Dumping SVFIR into database! ");
-        // SVFIRDbWriter::writeToDatabase(pag, Options::DumpDatabase());
+        SVFIRDbWriter::writeToDatabase(pag, Options::DumpDatabase());
     }
 
 

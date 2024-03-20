@@ -12,6 +12,10 @@ message(STATUS "LLVM STATUS:
   Dynamic lib   ${LLVM_LINK_LLVM_DYLIB}"
 )
 
+find_package (Python COMPONENTS Interpreter Development)
+include_directories(${Python_INCLUDE_DIRS})
+
+
 # Though not necessary, check if SVF is being built in debug mode & if that matches LLVM
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT ${LLVM_BUILD_TYPE} STREQUAL "Debug")
   message(NOTICE  "Building SVF in debug-mode but LLVM was not built in debug-mode; "
