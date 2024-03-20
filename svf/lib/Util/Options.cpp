@@ -271,6 +271,12 @@ const Option<bool> Options::ReadJson(
     false
 );
 
+const Option<std::string> Options::DumpDatabase(
+    "dump-db",
+    "Dump the SVFIR into Database",
+    ""
+);
+
 const Option<bool> Options::CallGraphDotGraph(
     "dump-callgraph",
     "Dump dot graph of Call Graph",

@@ -169,6 +169,14 @@ SVFIR* SVFIRBuilder::build()
         SVFIRWriter::writeJsonToPath(pag, Options::DumpJson());
     }
 
+    // dump SVFIR into database
+    if (!Options::DumpDatabase().empty())
+    {
+        printf("Dumping SVFIR into database! ");
+        // SVFIRDbWriter::writeToDatabase(pag, Options::DumpDatabase());
+    }
+
+
     double endTime = SVFStat::getClk(true);
     SVFStat::timeOfBuildingSVFIR = (endTime - startTime) / TIMEINTERVAL;
 
