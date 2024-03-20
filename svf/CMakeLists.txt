@@ -1,5 +1,11 @@
+find_package(PythonLibs REQUIRED)
+message("Python_LIBRARIES:${PYTHON_LIBRARIES}")
+message("PYTHON_INCLUDE_DIRS:${PYTHON_INCLUDE_DIRS}")
+include_directories(${PYTHON_INCLUDE_DIRS})
+
 # Define the core library
 add_library(SvfCore)
+target_link_libraries(SvfCore ${PYTHON_LIBRARIES})
 
 # Add the public headers as an include directory
 target_include_directories(SvfCore
