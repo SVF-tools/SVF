@@ -9,7 +9,7 @@ Neo4jClient:: Neo4jClient(const char* uri = "neo4j+s://4291d08d.databases.neo4j.
     // Add the path to the Python module (/home/SVF-tools/SVF/neo4j-cpp/Neo4jClient.py)
     PyObject* sys = PyImport_ImportModule("sys");
     PyObject* path = PyObject_GetAttrString(sys, "path");
-    PyList_Append(path, PyUnicode_FromString("/home/SVF-tools/SVF/neo4j-cpp"));
+    PyList_Append(path, PyUnicode_FromString("/home/weigang/SVF/svf/lib/SVFIR"));
 
     // Import the Python module (Neo4jClient.py)
     PyObject* pModule = PyImport_ImportModule("Neo4jClient");

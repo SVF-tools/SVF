@@ -78,7 +78,7 @@ void SVFIRDbWriter::writeSVFIRToOstream(const SVFIR* svfir, std::ostream& os)
 void SVFIRDbWriter::writeToDatabase(const SVFIR* svfir, const std::string& path)
 {
 
-    // SVFIRDbWriter writer(svfir);
+    SVFIRDbWriter writer(svfir);
     // if (jsonFile.is_open())
     // {
     //     writeSVFIRToOstream(svfir, jsonFile);
