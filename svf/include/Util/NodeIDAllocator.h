@@ -21,6 +21,7 @@ class NodeIDAllocator
 {
     friend class SVFIRWriter;
     friend class SVFIRReader;
+    friend class SVFIRDbWriter;
 
 public:
     /// Allocation strategy to use.

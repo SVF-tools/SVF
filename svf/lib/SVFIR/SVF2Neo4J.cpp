@@ -17,68 +17,78 @@ namespace SVF
 {
 // TODO: 找个小的数据结构写进database
 
-
-// SVFIRDbWriter::autoJSON SVFIRDbWriter::generateItems()
+/* Internal constructor. */
+// static cITEM *cJSON_New_Item(const internal_hooks * const hooks)
 // {
-//     const IRGraph* const irGraph = svfIR;
-//     NodeIDAllocator* nodeIDAllocator = NodeIDAllocator::allocator;
-//     assert(nodeIDAllocator && "NodeIDAllocator is not initialized?");
+//     cITEM* node = (cITEM*)hooks->allocate(sizeof(cITEM));
+//     if (node)
+//     {
+//         memset(node, '\0', sizeof(cITEM));
+//     }
 
-//     cJSON* root = jsonCreateObject();
-// #define F(field) JSON_WRITE_FIELD(root, svfIR, field)
-//     F(svfModule);
-//     F(symInfo);
-//     F(icfg);
-//     F(chgraph);
-//     jsonAddJsonableToObject(root, FIELD_NAME_ITEM(irGraph));
-//     F(icfgNode2SVFStmtsMap);
-//     F(icfgNode2PTASVFStmtsMap);
-//     F(GepValObjMap);
-//     F(typeLocSetsMap);
-//     F(GepObjVarMap);
-//     F(memToFieldsMap);
-//     F(globSVFStmtSet);
-//     F(phiNodeMap);
-//     F(funArgsListMap);
-//     F(callSiteArgsListMap);
-//     F(callSiteRetMap);
-//     F(funRetMap);
-//     F(indCallSiteToFunPtrMap);
-//     F(funPtrToCallSitesMap);
-//     F(candidatePointers);
-//     F(callSiteSet);
-//     jsonAddJsonableToObject(root, FIELD_NAME_ITEM(nodeIDAllocator));
-// #undef F
-
-//     return {root, cJSON_Delete};
+//     return node;
 // }
 
+// CITEM_PUBLIC(cITEM *) cJSON_CreateRaw(const char *raw)
+// {
+//     cITEM *item = cJSON_New_Item(&global_hooks);
+//     if(item)
+//     {
+//         item->type = cITEM_Raw;
+//         item->valuestring = (char*)cJSON_strdup((const unsigned char*)raw, &global_hooks);
+//         if(!item->valuestring)
+//         {
+//             cITEM_Delete(item);
+//             return NULL;
+//         }
+//     }
+
+//     return item;
+// }
+
+// CITEM_PUBLIC(cITEM *) cJSON_CreateArray(void)
+// {
+//     cITEM *item = cJSON_New_Item(&global_hooks);
+//     if(item)
+//     {
+//         item->type=cITEM_Array;
+//     }
+
+//     return item;
+// }
+
+// CITEM_PUBLIC(cITEM *) cJSON_CreateObject(void)
+// {
+//     cITEM *item = cJSON_New_Item(&global_hooks);
+//     if (item)
+//     {
+//         item->type = cITEM_Object;
+//     }
+
+//     return item;
+// }
 
 const char*  SVFIRDbWriter::generateDataBaseItems()
 {
+    // const IRGraph* const irGraph = svfIR;
+    NodeIDAllocator* nodeIDAllocator = NodeIDAllocator::allocator;
+    assert(nodeIDAllocator && "NodeIDAllocator is not initialized?");
+
     // autoITEM object = generateItems();
-    // char* str;
-    // if (humanReadableOption()){
-    //     str = cITEM_Print(object.get());
-    // }
-    // else{
-    //     SVFUtil::errs() << "Not human readable!\n";
-    // }
+    // icfgWriter
+
+
     const char* str =  "generateDataBaseItems!\n";
     return str;
 }
 
 
-void SVFIRDbWriter::writeSVFIRToOstream(const SVFIR* svfir, std::ostream& os)
-{
-    // SVFIRDbWriter writer(svfir);
-    // os << writer.generateDataBaseItems().get() << '\n'; // 这里是一次性写入 os , 但是我们需要写入到数据库
-}
 
 void SVFIRDbWriter::writeToDatabase(const SVFIR* svfir, const std::string& path)
 {
 
     SVFIRDbWriter writer(svfir);
+    writer.generateDataBaseItems();
     // if (jsonFile.is_open())
     // {
     //     writeSVFIRToOstream(svfir, jsonFile);

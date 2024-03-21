@@ -40,6 +40,8 @@ namespace SVF
 ///@{
 template <typename, typename> class GenericGraphWriter;
 template <typename, typename> class GenericGraphReader;
+template <typename, typename>  class GenericGraphDbWriter;
+
 ///@}
 
 /*!
@@ -347,6 +349,8 @@ class GenericGraph
     friend class SVFIRReader;
     friend class GenericGraphWriter<NodeTy, EdgeTy>;
     friend class GenericGraphReader<NodeTy, EdgeTy>;
+    friend class GenericGraphDbWriter<NodeTy, EdgeTy>;
+    friend class SVFIRDbWriter;
 
 public:
     typedef NodeTy NodeType;

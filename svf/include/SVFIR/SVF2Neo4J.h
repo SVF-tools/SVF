@@ -204,6 +204,11 @@ CITEM_PUBLIC(void) cITEM_free(void *object);
 /* Render a cJSON entity to text for transfer/storage. */
 CITEM_PUBLIC(char *) cITEM_Print(const cITEM *item);
 
+/* raw json */
+CITEM_PUBLIC(cITEM *) cITEM_CreateRaw(const char *raw);
+CITEM_PUBLIC(cITEM *) cITEM_CreateArray(void);
+CITEM_PUBLIC(cITEM *) cITEM_CreateObject(void);
+
 bool itemIsBool(const cITEM* item);
 bool itemIsBool(const cITEM* item, bool& flag);
 bool itemIsNumber(const cITEM* item);
@@ -293,8 +298,7 @@ public:
     }
 };
 
-template <typename NodeTy, typename EdgeTy> 
-class GenericGraphDbWriter
+template <typename NodeTy, typename EdgeTy> class GenericGraphDbWriter
 {
     friend class SVFIRDbWriter;
 
@@ -313,15 +317,15 @@ public:
         edgePool.reserve(graph->getTotalEdgeNum());
 
 
-        // for (const auto& pair : graph->IDToNodeMap)
-        // {
-        //     const NodeType* node = pair.second;
+        for (const auto& pair : graph->IDToNodeMap)
+        {
+            const NodeType* node = pair.second;
 
-        //     for (const EdgeType* edge : node->getOutEdges())
-        //     {
-        //         edgePool.saveID(edge);
-        //     }
-        // }
+            for (const EdgeType* edge : node->getOutEdges())
+            {
+                edgePool.saveID(edge);
+            }
+        }
     }
 
     inline size_t getEdgeID(const EdgeType* edge)
@@ -406,7 +410,6 @@ public:
     /// @brief Constructor.
     SVFIRDbWriter(const SVFIR* svfir);
 
-    static void writeSVFIRToOstream(const SVFIR* svfir, std::ostream& os);
     static void writeToDatabase(const SVFIR* svfir, const std::string& path);
 
 private:

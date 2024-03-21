@@ -50,6 +50,7 @@ class ICFG : public GenericICFGTy
     friend class SVFIRWriter;
     friend class SVFIRReader;
     friend class ICFGSimplification;
+    friend class SVFIRDbWRiter;
 
 public:
 
