@@ -10,8 +10,8 @@
 #include <Python.h>
 
 
-static const Option<bool> humanReadableOption(
-    "human-readable", "Whether to output human-readable JSON", true);
+// static const Option<bool> humanReadableOption(
+//     "human-readable", "Whether to output human-readable JSON", true);
 
 namespace SVF
 {
@@ -71,14 +71,14 @@ const char*  SVFIRDbWriter::generateDataBaseItems()
 
 void SVFIRDbWriter::writeSVFIRToOstream(const SVFIR* svfir, std::ostream& os)
 {
-    SVFIRDbWriter writer(svfir);
+    // SVFIRDbWriter writer(svfir);
     // os << writer.generateDataBaseItems().get() << '\n'; // 这里是一次性写入 os , 但是我们需要写入到数据库
 }
 
 void SVFIRDbWriter::writeToDatabase(const SVFIR* svfir, const std::string& path)
 {
 
-    SVFIRDbWriter writer(svfir);
+    // SVFIRDbWriter writer(svfir);
     // if (jsonFile.is_open())
     // {
     //     writeSVFIRToOstream(svfir, jsonFile);
