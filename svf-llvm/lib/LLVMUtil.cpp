@@ -515,7 +515,6 @@ void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
     newGlob->setSection(glob->getSection());
     newGlob->setAlignment(glob->getAlign());
 
-    glob->replaceAllUsesWith(newGlob);
     glob->eraseFromParent();
 }
 
