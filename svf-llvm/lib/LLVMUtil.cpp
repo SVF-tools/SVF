@@ -513,7 +513,7 @@ void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
             glob->getLinkage(), newCA, "llvm.global.annotations", glob, glob->getThreadLocalMode());
 
     newGlob->setSection(glob->getSection());
-    newGlob->setAlignment(glob->getAlign());
+    newGlob->setAlignment(llvm::MaybeAlign(glob->getAlignment()));
 
     glob->eraseFromParent();
 }
