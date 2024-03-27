@@ -203,6 +203,8 @@ void MTA::detect(SVFModule* module)
         for (Set<const StoreStmt*>::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit)
         {
             const StoreStmt* store = *sit;
+            if(load->getInst()==nullptr || store->getInst()==nullptr)
+                continue;
             if(mhp->mayHappenInParallelInst(load->getInst(),store->getInst()) && pta->alias(load->getRHSVarID(),store->getLHSVarID()))
                 if(lsa->isProtectedByCommonLock(load->getInst(),store->getInst()) == false)
                     outs() << SVFUtil::bugMsg1("race pair(") << " store: " << store->toString() << ", load: " << load->toString() << SVFUtil::bugMsg1(")") << "\n";
