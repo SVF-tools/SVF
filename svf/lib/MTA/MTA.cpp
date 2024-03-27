@@ -64,8 +64,8 @@ bool MTA::runOnModule(SVFIR* pag)
     mhp = computeMHP(pag->getModule());
     lsa = computeLocksets(mhp->getTCT());
 
-
-
+    if(Options::RaceCheck())
+        detect(pag->getModule());
     /*
     if (Options::AndersenAnno()) {
         pta = mhp->getTCT()->getPTA();
@@ -157,9 +157,9 @@ MHP* MTA::computeMHP(SVFModule* module)
 }
 
 ///*!
-// * Check   (1) write-write race
-// * 		 (2) write-read race
-// * 		 (3) read-read race
+// * Check   (1) write-read race
+// * 		 (2) write-write race (optional)
+// * 		 (3) read-read race (optional)
 // * when two memory access may-happen in parallel and are not protected by the same lock
 // * (excluding global constraints because they are initialized before running the main function)
 // */
@@ -168,9 +168,10 @@ void MTA::detect(SVFModule* module)
 
     DBOUT(DGENERAL, outs() << pasMsg("Starting Race Detection\n"));
 
-    LoadSet loads;
-    StoreSet stores;
+    Set<const LoadStmt*> loads;
+    Set<const StoreStmt*> stores;
     SVFIR* pag = SVFIR::getPAG();
+    PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
 
     Set<const SVFInstruction*> needcheckinst;
     // Add symbols for all of the functions and the instructions in them.
@@ -181,37 +182,33 @@ void MTA::detect(SVFModule* module)
         {
             for (const SVFInstruction* svfInst : svfbb->getInstructionList())
             {
-
                 for(const SVFStmt* stmt : pag->getSVFStmtList(pag->getICFG()->getICFGNode(svfInst)))
                 {
-                    if (SVFUtil::isa<LoadStmt>(stmt))
+                    if (const LoadStmt* l = SVFUtil::dyn_cast<LoadStmt>(stmt))
                     {
-                        loads.insert(svfInst);
+                        loads.insert(l);
                     }
-                    else if (SVFUtil::isa<StoreStmt>(stmt))
+                    else if (const StoreStmt* s = SVFUtil::dyn_cast<StoreStmt>(stmt))
                     {
-                        stores.insert(svfInst);
+                        stores.insert(s);
                     }
                 }
             }
         }
     }
 
-    for (LoadSet::const_iterator lit = loads.begin(), elit = loads.end(); lit != elit; ++lit)
+    for (Set<const LoadStmt*>::const_iterator lit = loads.begin(), elit = loads.end(); lit != elit; ++lit)
     {
-        const SVFInstruction* load = *lit;
-        bool loadneedcheck = false;
-        for (StoreSet::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit)
+        const LoadStmt* load = *lit;
+        for (Set<const StoreStmt*>::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit)
         {
-            const SVFInstruction* store = *sit;
-
-            loadneedcheck = true;
-            needcheckinst.insert(store);
+            const StoreStmt* store = *sit;
+            if(load->getInst()==nullptr || store->getInst()==nullptr)
+                continue;
+            if(mhp->mayHappenInParallelInst(load->getInst(),store->getInst()) && pta->alias(load->getRHSVarID(),store->getLHSVarID()))
+                if(lsa->isProtectedByCommonLock(load->getInst(),store->getInst()) == false)
+                    outs() << SVFUtil::bugMsg1("race pair(") << " store: " << store->toString() << ", load: " << load->toString() << SVFUtil::bugMsg1(")") << "\n";
         }
-        if (loadneedcheck)
-            needcheckinst.insert(load);
     }
-
-    outs() << "HP needcheck: " << needcheckinst.size() << "\n";
 }
 
