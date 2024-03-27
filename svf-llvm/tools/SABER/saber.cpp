@@ -39,24 +39,6 @@
 using namespace llvm;
 using namespace SVF;
 
-static Option<bool> LEAKCHECKER(
-    "leak",
-    "Memory Leak Detection",
-    false
-);
-
-static Option<bool> FILECHECKER(
-    "fileck",
-    "File Open/Close Detection",
-    false
-);
-
-static Option<bool> DFREECHECKER(
-    "dfree",
-    "Double Free Detection",
-    false
-);
-
 int main(int argc, char ** argv)
 {
 
@@ -77,11 +59,11 @@ int main(int argc, char ** argv)
 
     std::unique_ptr<LeakChecker> saber;
 
-    if(LEAKCHECKER())
+    if(Options::MemoryLeakCheck())
         saber = std::make_unique<LeakChecker>();
-    else if(FILECHECKER())
+    else if(Options::FileCheck())
         saber = std::make_unique<FileChecker>();
-    else if(DFREECHECKER())
+    else if(Options::DFreeCheck())
         saber = std::make_unique<DoubleFreeChecker>();
     else
         saber = std::make_unique<LeakChecker>();  // if no checker is specified, we use leak checker as the default one.

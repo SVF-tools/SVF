@@ -267,8 +267,16 @@ public:
     static const Option<u32_t> Timeout;
     /// bug info output file, Default: output.db
     static const Option<std::string> OutputName;
-    /// open buffer overflow checker, Default: false
+    /// buffer overflow checker, Default: false
     static const Option<bool> BufferOverflowCheck;
+    /// memory leak check, Default: false
+    static const Option<bool> MemoryLeakCheck;
+    /// file open close checker, Default: false
+    static const Option<bool> FileCheck;
+    /// double free checker, Default: false
+    static const Option<bool> DFreeCheck;
+    /// data race checker, Default: false
+    static const Option<bool> RaceCheck;
     /// if the access index of gepstmt is unknown, skip it, Default: false
     static const Option<bool> GepUnknownIdx;
     static const Option<bool> RunUncallFuncs;
