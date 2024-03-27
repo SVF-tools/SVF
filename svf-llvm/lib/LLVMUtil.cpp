@@ -508,7 +508,13 @@ void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
     ArrayType* annotationsType = ArrayType::get(ca->getType()->getElementType(), newAnnotations.size());
     Constant* newCA = ConstantArray::get(annotationsType, newAnnotations);
 
-    glob->setInitializer(newCA);
+    glob->setName("llvm.global.annotations.old");
+    GlobalVariable *GV = new GlobalVariable(newCA->getType(), glob->isConstant(), glob->getLinkage(), newCA, "llvm.global.annotations");
+    GV->setSection(glob->getSection());
+    module->getGlobalList().push_back(GV);
+
+    glob->replaceAllUsesWith(GV);
+    glob->eraseFromParent();
 }
 
 /// Get all called funcions in a parent function
