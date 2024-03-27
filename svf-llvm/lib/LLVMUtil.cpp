@@ -508,13 +508,11 @@ void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
     ArrayType* annotationsType = ArrayType::get(ca->getType()->getElementType(), newAnnotations.size());
     Constant* newCA = ConstantArray::get(annotationsType, newAnnotations);
 
-    glob->setName("llvm.global.annotations_old");
-    GlobalVariable* newGlob = new GlobalVariable(*module, newCA->getType(), glob->isConstant(),
-            glob->getLinkage(), newCA, "llvm.global.annotations", glob, glob->getThreadLocalMode());
+    glob->setName("llvm.global.annotations.old");
+    auto *GV = new GlobalVariable(newCA->getType(), glob->isConstant(), glob->getLinkage(), newCA, "llvm.global.annotations");
+    GV->setSection("llvm.metadata");
 
-    newGlob->setSection(glob->getSection());
-    newGlob->setAlignment(llvm::MaybeAlign(glob->getAlignment()));
-
+    module->getGlobalList().push_back(GV);
     glob->eraseFromParent();
 }
 
