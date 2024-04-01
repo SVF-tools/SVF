@@ -191,7 +191,7 @@ typedef llvm::IntrinsicInst IntrinsicInst;
 typedef llvm::DbgInfoIntrinsic DbgInfoIntrinsic;
 typedef llvm::DbgVariableIntrinsic DbgVariableIntrinsic;
 typedef llvm::DbgDeclareInst DbgDeclareInst;
-typedef llvm::DbgAddrIntrinsic DbgAddrIntrinsic;
+typedef llvm::DbgInfoIntrinsic DbgInfoIntrinsic;
 typedef llvm::DbgValueInst DbgValueInst;
 typedef llvm::DbgLabelInst DbgLabelInst;
 typedef llvm::VPIntrinsic VPIntrinsic;
