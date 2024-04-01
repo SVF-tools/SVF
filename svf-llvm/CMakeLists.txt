@@ -59,6 +59,39 @@ else()
   )
 endif()
 
+execute_process(
+        COMMAND uname -s
+        OUTPUT_VARIABLE sysOS
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+message(STATUS "The OS is: ${sysOS}")
+
+if (sysOS STREQUAL "Darwin")
+  set(CLANG_LIBS_DIR "/Users/lishangyu/SelfProjects/SVF-T/llvm-14.0.0.obj")
+  set(clang_dynamic_libs ${CLANG_LIBS_DIR}/lib/libclang.dylib)
+elseif(sysOS STREQUAL "Linux")
+  set(CLANG_LIBS_DIR "/home/lishangyu/SourceProjects/SVF-T/llvm-14.0.0.obj")
+  set(clang_dynamic_libs ${CLANG_LIBS_DIR}/lib/libclang.so)
+endif ()
+
+# Set clang
+set(clang_static_libs
+        ${CLANG_LIBS_DIR}/lib/libclangFrontend.a
+        ${CLANG_LIBS_DIR}/lib/libclangSerialization.a
+        ${CLANG_LIBS_DIR}/lib/libclangDriver.a
+        ${CLANG_LIBS_DIR}/lib/libclangParse.a
+        ${CLANG_LIBS_DIR}/lib/libclangSema.a
+        ${CLANG_LIBS_DIR}/lib/libclangAnalysis.a
+        ${CLANG_LIBS_DIR}/lib/libclangAST.a
+        ${CLANG_LIBS_DIR}/lib/libclangBasic.a
+        ${CLANG_LIBS_DIR}/lib/libclangEdit.a
+        ${CLANG_LIBS_DIR}/lib/libclangLex.a
+        ${CLANG_LIBS_DIR}/lib/libclangTooling.a
+)
+
+set(clang_libs ${clang_static_libs} ${clang_dynamic_libs})
+
 # Make the "add_llvm_library()" command available and configure LLVM/CMake
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
@@ -74,6 +107,7 @@ target_include_directories(SvfLLVM
 )
 
 # Link LLVM's libraries to SvfLLVM, as well as the SVF core library
+target_link_libraries(SvfLLVM PRIVATE ${clang_libs})
 target_link_libraries(SvfLLVM PUBLIC ${llvm_libs} SvfCore)
 
 # Get the source files (i.e. all *.c/*.cpp files) for SVF's subprojects and add them to SvfLLVM
