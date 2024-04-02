@@ -865,7 +865,6 @@ void AbstractExecution::handleFunc(const SVFFunction *func)
 
 void AbstractExecution::handleSVFStatement(const SVFStmt *stmt)
 {
-    std::cout << "handle stmt: " << stmt->toString() << std::endl;
     if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
     {
         _svfir2ExeState->translateAddr(addr);

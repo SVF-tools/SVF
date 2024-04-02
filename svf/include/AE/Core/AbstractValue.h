@@ -1,21 +1,41 @@
+//===- AbstractValue.h ----AbstractValue-------------------------//
+//
+//                     SVF: Static Value-Flow Analysis
+//
+// Copyright (C) <2013-2022>  <Yulei Sui>
+//
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+//===----------------------------------------------------------------------===//
+
 #include "AE/Core/IntervalValue.h"
 #include "AE/Core/AddressValue.h"
 
 namespace SVF
 {
-typedef AddressValue Addrs;
 
 struct AbstractValue {
     enum DataType {
-        IntervalType, //IntervalType
-        AddressType, // AddressType
-        UnknownType, //UnknownType
+        IntervalType,
+        AddressType,
+        UnknownType,
     };
     DataType type;
     IntervalValue interval;
     AddressValue addr;
 
-    //AbstractValue() : type(Null) {}
     AbstractValue() : type(IntervalType) { interval = IntervalValue::top(); }
     AbstractValue(DataType type) : type(type) {
         switch (type) {
@@ -46,7 +66,6 @@ struct AbstractValue {
     inline bool isInterval() const { return type == IntervalType; }
     inline bool isAddr() const { return type == AddressType; }
     inline bool isUnknown() const { return type == UnknownType; }
-    // isUnknownType()
 
     inline DataType getType() const { return type; }
 
@@ -63,6 +82,7 @@ struct AbstractValue {
         }
     }
 
+    // operator overload, supporting both interval and address
     AbstractValue& operator=(const AbstractValue& other) {
         type = other.type;
         switch (type)
@@ -113,6 +133,7 @@ struct AbstractValue {
         return interval;
     }
 
+    //
     const IntervalValue getInterval() const { assert(isInterval()); return interval; }
 
     AddressValue& getAddrs() { assert(isAddr()); return addr; }
@@ -415,7 +436,7 @@ struct AbstractValue {
             return interval.toString();
         }
         else if (isAddr()) {
-            //TODO: write addr to string
+            return addr.toString();
         }
         return "";
     }
