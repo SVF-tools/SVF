@@ -510,7 +510,14 @@ void LLVMUtil::removeFunAnnotations(Set<Function*>& removedFuncList)
     glob->setName("llvm.global.annotations.old");
     GlobalVariable *GV = new GlobalVariable(newCA->getType(), glob->isConstant(), glob->getLinkage(), newCA, "llvm.global.annotations");
     GV->setSection(glob->getSection());
+
+#if (LLVM_VERSION_MAJOR < 17)
+    module->getGlobalList().push_back(GV);
+#elif (LLVM_VERSION_MAJOR >= 17)
     module->insertGlobalVariable(GV);
+#else
+    assert(false && "llvm version not supported!");
+#endif
 
     glob->replaceAllUsesWith(GV);
     glob->eraseFromParent();
