@@ -185,7 +185,7 @@ IntervalESBase RelationSolver::abstract_consequence(
         /// for variable in self.variables:
     {
         IntervalESBase proposed = domain.top(); /// proposed = self.top.copy()
-        proposed._varToItvVal[it->first] = lower._varToItvVal.at(it->first);
+        proposed[it->first] = lower[it->first].getInterval();
         /// proposed.set_interval(variable, lower.interval_of(variable))
         /// proposed._locToItvVal
         if (!(proposed >= upper)) /// if not proposed >= upper:
@@ -218,7 +218,7 @@ Z3Expr RelationSolver::gamma_hat(const IntervalESBase& alpha,
     Z3Expr res(Z3Expr::getContext().bool_val(true));
     for (auto& item : exeState.getVarToVal())
     {
-        IntervalValue interval = alpha._varToItvVal.at(item.first);
+        IntervalValue interval = alpha[item.first].getInterval();
         if (interval.isBottom())
             return Z3Expr::getContext().bool_val(false);
         if (interval.isTop())
@@ -247,7 +247,7 @@ IntervalESBase RelationSolver::beta(const Map<u32_t, s32_t>& sigma,
     IntervalESBase res;
     for (const auto& item : exeState.getVarToVal())
     {
-        res._varToItvVal[item.first] = IntervalValue(
+        res[item.first] = IntervalValue(
                                            sigma.at(item.first), sigma.at(item.first));
     }
     return res;
@@ -318,16 +318,16 @@ IntervalESBase RelationSolver::BS(const IntervalESBase& domain, const Z3Expr &ph
         if (item.first >= bias)
         {
             if (item.second.equal(infinity))
-                retInv._varToItvVal[item.first - bias].setLb(Z3Expr::getContext().int_const("-oo"));
+                retInv[item.first - bias].getInterval().setLb(Z3Expr::getContext().int_const("-oo"));
             else
-                retInv._varToItvVal[item.first - bias].setLb(-item.second);
+                retInv[item.first - bias].getInterval().setLb(-item.second);
         }
         else
         {
             if (item.second.equal(infinity))
-                retInv._varToItvVal[item.first].setUb(Z3Expr::getContext().int_const("+oo"));
+                retInv[item.first].getInterval().setUb(Z3Expr::getContext().int_const("+oo"));
             else
-                retInv._varToItvVal[item.first].setUb(item.second);
+                retInv[item.first].getInterval().setUb(item.second);
         }
     }
     return retInv;

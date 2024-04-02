@@ -128,9 +128,9 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(1, 2)}};
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(1, 2)}};
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -163,9 +163,9 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(0, 2)}};
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(0, 2)}};
         assert(IntervalESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
@@ -201,10 +201,10 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10)},
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10)},
             {1, IntervalValue(0, 10)},
             {2, IntervalValue(0, 0)}
         };
@@ -244,10 +244,10 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 100)},
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 100)},
             {1, IntervalValue(0, 100)},
             {2, IntervalValue(0, 0)}
         };
@@ -287,11 +287,10 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        // ground truth
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 1000)},
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1000)},
             {1, IntervalValue(0, 1000)},
             {2, IntervalValue(0, 0)}
         };
@@ -331,11 +330,10 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        // ground truth
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10000)},
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10000)},
             {1, IntervalValue(0, 10000)},
             {2, IntervalValue(0, 0)}
         };
@@ -375,11 +373,10 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        // ground truth
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 100000)},
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 100000)},
             {1, IntervalValue(0, 100000)},
             {2, IntervalValue(0, 0)}
         };
@@ -418,10 +415,10 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 10)},
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10)},
             {1, IntervalValue(1, 10)},
             {2, IntervalValue(1, 1)}
         };
@@ -460,10 +457,10 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 1000)},
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 1000)},
             {1, IntervalValue(1, 1000)},
             {2, IntervalValue(1, 1)}
         };
@@ -502,13 +499,12 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        IntervalESBase::VarToValMap intendedRes =
-        Map<u32_t, IntervalValue>({{0, IntervalValue(1, 10000)},
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10000)},
             {1, IntervalValue(1, 10000)},
-            {2, IntervalValue(1, 1)}});
+            {2, IntervalValue(1, 1)}};
     }
 
     void testRelExeState3_4()
@@ -543,10 +539,10 @@ public:
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(1, 100000)},
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 100000)},
             {1, IntervalValue(1, 100000)},
             {2, IntervalValue(1, 1)}
         };
@@ -588,10 +584,10 @@ public:
         // assert(resRSY == resBS && resBS == resBilateral);
         for (auto r : resBS.getVarToVal())
         {
-            outs() << r.first << " " << r.second << "\n";
+            outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        IntervalESBase::VarToValMap intendedRes = {{0, IntervalValue(0, 10)},
+        IntervalESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10)},
             {1, IntervalValue(0, 10)},
             {2, IntervalValue(IntervalValue::minus_infinity(), IntervalValue::plus_infinity())}
         };

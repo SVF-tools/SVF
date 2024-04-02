@@ -149,7 +149,7 @@ public:
         for (auto &item: inv._varToAbsVal)
         {
             if (item.second.isInterval())
-                item.second.getInterval().set_to_bottom();
+                item.second.getInterval().set_to_top();
         }
         return inv;
     }
@@ -176,6 +176,12 @@ public:
     inline virtual AbstractValue &operator[](u32_t varId)
     {
         return _varToAbsVal[varId];
+    }
+
+    /// get interval value of variable
+    inline virtual const AbstractValue &operator[](u32_t varId) const
+    {
+        return _varToAbsVal.at(varId);
     }
 
     /// whether the variable is in varToAddrs table
