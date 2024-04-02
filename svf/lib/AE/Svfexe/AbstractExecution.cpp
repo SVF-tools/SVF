@@ -319,7 +319,7 @@ bool AbstractExecution::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, Inter
     }
     // for const X const, we may get concrete resVal instantly
     // for var X const, we may get [0,1] if the intersection of var and const is not empty set
-    IntervalValue resVal = new_es[res_id];
+    IntervalValue resVal = new_es[res_id].getInterval();
     resVal.meet_with(IntervalValue((s64_t) succ, succ));
     // If Var X const generates bottom value, it means this branch path is not feasible.
     if (resVal.isBottom())
@@ -327,8 +327,8 @@ bool AbstractExecution::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, Inter
         return false;
     }
 
-    bool b0 = new_es[op0].is_numeral();
-    bool b1 = new_es[op1].is_numeral();
+    bool b0 = new_es[op0].getInterval().is_numeral();
+    bool b1 = new_es[op1].getInterval().is_numeral();
 
     // if const X var, we should reverse op0 and op1.
     if (b0 && !b1)
@@ -372,9 +372,9 @@ bool AbstractExecution::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, Inter
     // change interval range according to the compare predicate
     ExeState::Addrs addrs;
     if(load_op0 && new_es.inVarToAddrsTable(load_op0->getRHSVarID()))
-        addrs = new_es.getAddrs(load_op0->getRHSVarID());
+        addrs = new_es.getAddrs(load_op0->getRHSVarID()).getAddrs();
 
-    IntervalValue &lhs = new_es[op0], &rhs = new_es[op1];
+    IntervalValue &lhs = new_es[op0].getInterval(), &rhs = new_es[op1].getInterval();
     switch (predicate)
     {
     case CmpStmt::Predicate::ICMP_EQ:
@@ -489,7 +489,7 @@ bool AbstractExecution::hasSwitchBranchES(const SVFVar* var, s64_t succ, Interva
 {
     IntervalExeState new_es = es;
     new_es.cpyItvToLocal(var->getId());
-    IntervalValue& switch_cond = new_es[var->getId()];
+    IntervalValue& switch_cond = new_es[var->getId()].getInterval();
     s64_t value = succ;
     FIFOWorkList<const SVFStmt*> workList;
     for (SVFStmt *cmpVarInStmt: var->getInEdges())
@@ -506,14 +506,14 @@ bool AbstractExecution::hasSwitchBranchES(const SVFVar* var, s64_t succ, Interva
         const SVFStmt* stmt = workList.pop();
         if (SVFUtil::isa<CopyStmt>(stmt))
         {
-            IntervalValue& copy_cond = new_es[var->getId()];
+            IntervalValue& copy_cond = new_es[var->getId()].getInterval();
             copy_cond.meet_with(IntervalValue(value, value));
         }
         else if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(stmt))
         {
             if (new_es.inVarToAddrsTable(load->getRHSVarID()))
             {
-                ExeState::Addrs &addrs = new_es.getAddrs(load->getRHSVarID()); //3108
+                ExeState::Addrs &addrs = new_es.getAddrs(load->getRHSVarID()).getAddrs();
                 for (const auto &addr: addrs)
                 {
                     NodeID objId = new_es.getInternalID(addr);
@@ -687,8 +687,8 @@ void AbstractExecution::indirectCallFunPass(const SVF::CallICFGNode *callNode)
     {
         return;
     }
-    ExeState::Addrs Addrs = _svfir2ExeState->getAddrs(call_id);
-    NodeID addr = *Addrs.begin();
+    AbstractValue Addrs = _svfir2ExeState->getAddrs(call_id); //_svfir2ExeState->getEs()
+    NodeID addr = *Addrs.getAddrs().begin();
     SVFVar *func_var = _svfir->getGNode(_svfir2ExeState->getInternalID(addr));
     const SVFFunction *callfun = SVFUtil::dyn_cast<SVFFunction>(func_var->getValue());
     if (callfun)
@@ -865,6 +865,7 @@ void AbstractExecution::handleFunc(const SVFFunction *func)
 
 void AbstractExecution::handleSVFStatement(const SVFStmt *stmt)
 {
+    std::cout << "handle stmt: " << stmt->toString() << std::endl;
     if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
     {
         _svfir2ExeState->translateAddr(addr);
@@ -971,9 +972,8 @@ void AbstractExecution::SkipRecursiveFunc(const SVFFunction *func)
                     {
                         if (!rhsVar->isPointer() && !rhsVar->isConstDataOrAggDataButNotNullPtr())
                         {
-                            const SVFIR2ItvExeState::Addrs &addrs =curES.getAddrs(lhs);
-                            assert(!addrs.empty());
-                            for (const auto &addr: addrs)
+                            const AbstractValue &addrs =curES.getAddrs(lhs);
+                            for (const auto &addr: addrs.getAddrs())
                             {
                                 curES.store(addr, IntervalValue::top());
                             }
@@ -992,8 +992,6 @@ void AEStat::countStateSize()
     {
         generalNumMap["Global_ES_Var_AVG_Num"] = IntervalExeState::globalES.getVarToVal().size();
         generalNumMap["Global_ES_Loc_AVG_Num"] = IntervalExeState::globalES.getLocToVal().size();
-        generalNumMap["Global_ES_Var_Addr_AVG_Num"] = IntervalExeState::globalES.getVarToAddrs().size();
-        generalNumMap["Global_ES_Loc_Addr_AVG_Num"] = IntervalExeState::globalES.getLocToAddrs().size();
         generalNumMap["ES_Var_AVG_Num"] = 0;
         generalNumMap["ES_Loc_AVG_Num"] = 0;
         generalNumMap["ES_Var_Addr_AVG_Num"] = 0;
@@ -1002,8 +1000,6 @@ void AEStat::countStateSize()
     ++count;
     generalNumMap["ES_Var_AVG_Num"] += _ae->_svfir2ExeState->getEs().getVarToVal().size();
     generalNumMap["ES_Loc_AVG_Num"] += _ae->_svfir2ExeState->getEs().getLocToVal().size();
-    generalNumMap["ES_Var_Addr_AVG_Num"] += _ae->_svfir2ExeState->getEs().getVarToAddrs().size();
-    generalNumMap["ES_Loc_Addr_AVG_Num"] += _ae->_svfir2ExeState->getEs().getLocToAddrs().size();
 }
 
 void AEStat::finializeStat()
@@ -1042,8 +1038,6 @@ void AEStat::finializeStat()
     generalNumMap["Func_Num"] = funs.size();
     generalNumMap["EXT_CallSite_Num"] = extCallSiteNum;
     generalNumMap["NonEXT_CallSite_Num"] = callSiteNum;
-    generalNumMap["VarToAddrSize"] = _ae->_svfir2ExeState->getEs().getVarToAddrs().size();
-    generalNumMap["LocToAddrSize"] = _ae->_svfir2ExeState->getEs().getLocToAddrs().size();
     generalNumMap["Bug_Num"] = _ae->_nodeToBugInfo.size();
     timeStatMap["Total_Time(sec)"] = (double)(endTime - startTime) / TIMEINTERVAL;
 
@@ -1118,7 +1112,7 @@ void AbstractExecution::initExtFunMap()
         IntervalExeState &es = _svfir2ExeState->getEs(); \
         u32_t rhs_id = _svfir->getValueNode(cs.getArgument(0)); \
         if (!es.inVarToValTable(rhs_id)) return; \
-        u32_t rhs = _svfir2ExeState->getEs()[rhs_id].lb().getIntNumeral(); \
+        u32_t rhs = _svfir2ExeState->getEs()[rhs_id].getInterval().lb().getIntNumeral(); \
         s32_t res = FUNC_NAME(rhs);            \
         u32_t lhsId = _svfir->getValueNode(cs.getInstruction()); \
         _svfir2ExeState->getEs()[lhsId] = IntervalValue(res);           \
@@ -1151,8 +1145,8 @@ void AbstractExecution::initExtFunMap()
         _checkpoints.erase(callNode);
         u32_t arg0 = _svfir->getValueNode(cs.getArgument(0));
         IntervalExeState &es = _svfir2ExeState->getEs();
-        es[arg0].meet_with(IntervalValue(1, 1));
-        if (es[arg0].equals(IntervalValue(1, 1)))
+        es[arg0].getInterval().meet_with(IntervalValue(1, 1));
+        if (es[arg0].getInterval().equals(IntervalValue(1, 1)))
         {
             SVFUtil::outs() << SVFUtil::sucMsg("The assertion is successfully verified!!\n");
         }
@@ -1172,7 +1166,7 @@ void AbstractExecution::initExtFunMap()
         u32_t num_id = _svfir->getValueNode(cs.getArgument(0));
         std::string text = strRead(cs.getArgument(1));
         assert(es.inVarToValTable(num_id) && "print() should pass integer");
-        IntervalValue itv = es[num_id];
+        IntervalValue itv = es[num_id].getInterval();
         std::cout << "Text: " << text <<", Value: " << cs.getArgument(0)->toString() << ", PrintVal: " << itv.toString() << std::endl;
         return;
     };
@@ -1192,12 +1186,14 @@ std::string AbstractExecution::strRead(const SVFValue* rhs)
     {
         // dead loop for string and break if there's a \0. If no \0, it will throw err.
         if (!es.inVarToAddrsTable(_svfir->getValueNode(rhs))) continue;
-        ExeState::Addrs expr0 = _svfir2ExeState->getGepObjAddress(_svfir->getValueNode(rhs), index);
-        IntervalValue val = IntervalValue::bottom();
-        for (const auto &addr: expr0)
+        AbstractValue expr0 = _svfir2ExeState->getGepObjAddress(_svfir->getValueNode(rhs), index);
+        AbstractValue val(AbstractValue::UnknownType);
+        for (const auto &addr: expr0.getAddrs())
         {
             val.join_with(es.load(addr));
         }
+        if (val.isUnknown())
+            return str0;
         if (!val.is_numeral())
         {
             break;
@@ -1206,7 +1202,7 @@ std::string AbstractExecution::strRead(const SVFValue* rhs)
         {
             break;
         }
-        str0.push_back((char) val.getIntNumeral());
+        str0.push_back((char) val.getInterval().getIntNumeral());
     }
     return str0;
 }
@@ -1252,14 +1248,14 @@ void AbstractExecution::handleExtAPI(const CallICFGNode *call)
     // 1. memcpy functions like memcpy_chk, strncpy, annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")
     else if (extType == MEMCPY)
     {
-        IntervalValue len = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(2))];
+        AbstractValue len = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(2))];
         handleMemcpy(cs.getArgument(0), cs.getArgument(1), len, 0);
     }
     else if (extType == MEMSET)
     {
         // memset dst is arg0, elem is arg1, size is arg2
-        IntervalValue len = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(2))];
-        IntervalValue elem = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(1))];
+        AbstractValue len = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(2))];
+        AbstractValue elem = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(1))];
         handleMemset(cs.getArgument(0), elem, len);
     }
     else if (extType == STRCPY)
@@ -1322,7 +1318,7 @@ void AbstractExecution::handleStrcpy(const CallICFGNode *call)
     CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
     const SVFValue* arg0Val = cs.getArgument(0);
     const SVFValue* arg1Val = cs.getArgument(1);
-    IntervalValue strLen = getStrlen(arg1Val);
+    AbstractValue strLen = getStrlen(arg1Val);
     // no need to -1, since it has \0 as the last byte
     handleMemcpy(arg0Val, arg1Val, strLen,strLen.lb().getIntNumeral());
 }
@@ -1350,7 +1346,7 @@ u32_t AbstractExecution::getAllocaInstByteSize(const AddrStmt *addr)
                 {
                     _svfir2ExeState->getEs()[_svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
                 }
-                IntervalValue itv = _svfir2ExeState->getEs()[_svfir->getValueNode(value)];
+                AbstractValue itv = _svfir2ExeState->getEs()[_svfir->getValueNode(value)];
                 res = res * itv.ub().getIntNumeral() > Options::MaxFieldLimit()? Options::MaxFieldLimit(): res * itv.ub().getIntNumeral();
             }
             return (u32_t)res;
@@ -1360,7 +1356,7 @@ u32_t AbstractExecution::getAllocaInstByteSize(const AddrStmt *addr)
     abort();
 }
 
-IntervalValue AbstractExecution::traceMemoryAllocationSize(const SVFValue *value)
+AbstractValue AbstractExecution::traceMemoryAllocationSize(const SVFValue *value)
 {
     /// Usually called by a GepStmt overflow check, or external API (like memcpy) overflow check
     /// Defitions of Terms:
@@ -1441,7 +1437,7 @@ IntervalValue AbstractExecution::traceMemoryAllocationSize(const SVFValue *value
                             }
                             else
                             {
-                                IntervalValue byteOffset = _svfir2ExeState->getByteOffset(gep);
+                                IntervalValue byteOffset = _svfir2ExeState->getByteOffset(gep).getInterval();
                             }
                             // for variable offset, join with accumulate gep offset
                             gep_offsets[gep->getICFGNode()] = byteOffset;
@@ -1492,10 +1488,10 @@ IntervalValue AbstractExecution::traceMemoryAllocationSize(const SVFValue *value
 }
 
 
-IntervalValue AbstractExecution::getStrlen(const SVF::SVFValue *strValue)
+AbstractValue AbstractExecution::getStrlen(const SVF::SVFValue *strValue)
 {
     IntervalExeState &es = _svfir2ExeState->getEs();
-    IntervalValue dst_size = traceMemoryAllocationSize(strValue);
+    AbstractValue dst_size = traceMemoryAllocationSize(strValue);
     u32_t len = 0;
     NodeID dstid = _svfir->getValueNode(strValue);
     u32_t elemSize = 1;
@@ -1503,11 +1499,14 @@ IntervalValue AbstractExecution::getStrlen(const SVF::SVFValue *strValue)
     {
         for (u32_t index = 0; index < dst_size.lb().getIntNumeral(); index++)
         {
-            ExeState::Addrs expr0 = _svfir2ExeState->getGepObjAddress(dstid, index);
-            IntervalValue val = IntervalValue::bottom();
-            for (const auto &addr: expr0)
+            AbstractValue expr0 = _svfir2ExeState->getGepObjAddress(dstid, index);
+            AbstractValue val(AbstractValue::UnknownType);
+            for (const auto &addr: expr0.getAddrs())
             {
                 val.join_with(es.load(addr));
+            }
+            if (val.isUnknown()) {
+                return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
             }
             if (val.is_numeral() && (char) val.getIntNumeral() == '\0')
             {
@@ -1558,9 +1557,9 @@ void AbstractExecution::handleStrcat(const SVF::CallICFGNode *call)
         CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
         const SVFValue* arg0Val = cs.getArgument(0);
         const SVFValue* arg1Val = cs.getArgument(1);
-        IntervalValue strLen0 = getStrlen(arg0Val);
-        IntervalValue strLen1 = getStrlen(arg1Val);
-        IntervalValue totalLen = strLen0 + strLen1;
+        AbstractValue strLen0 = getStrlen(arg0Val);
+        AbstractValue strLen1 = getStrlen(arg1Val);
+        AbstractValue totalLen = strLen0 + strLen1;
         handleMemcpy(arg0Val, arg1Val, strLen1, strLen0.lb().getIntNumeral());
         // do memcpy
     }
@@ -1570,9 +1569,9 @@ void AbstractExecution::handleStrcat(const SVF::CallICFGNode *call)
         const SVFValue* arg0Val = cs.getArgument(0);
         const SVFValue* arg1Val = cs.getArgument(1);
         const SVFValue* arg2Val = cs.getArgument(2);
-        IntervalValue arg2Num = _svfir2ExeState->getEs()[_svfir->getValueNode(arg2Val)];
-        IntervalValue strLen0 = getStrlen(arg0Val);
-        IntervalValue totalLen = strLen0 + arg2Num;
+        AbstractValue arg2Num = _svfir2ExeState->getEs()[_svfir->getValueNode(arg2Val)];
+        AbstractValue strLen0 = getStrlen(arg0Val);
+        AbstractValue totalLen = strLen0 + arg2Num;
         handleMemcpy(arg0Val, arg1Val, arg2Num, strLen0.lb().getIntNumeral());
         // do memcpy
     }
@@ -1582,7 +1581,7 @@ void AbstractExecution::handleStrcat(const SVF::CallICFGNode *call)
     }
 }
 
-void AbstractExecution::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFValue *src, SVF::IntervalValue len,  u32_t start_idx)
+void AbstractExecution::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFValue *src, AbstractValue len,  u32_t start_idx)
 {
     IntervalExeState &es = _svfir2ExeState->getEs();
     u32_t dstId = _svfir->getValueNode(dst); // pts(dstId) = {objid}  objbar objtypeinfo->getType().
@@ -1618,11 +1617,11 @@ void AbstractExecution::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFVal
         for (u32_t index = 0; index < range_val; index++)
         {
             // dead loop for string and break if there's a \0. If no \0, it will throw err.
-            ExeState::Addrs expr_src = _svfir2ExeState->getGepObjAddress(srcId, index);
-            ExeState::Addrs expr_dst = _svfir2ExeState->getGepObjAddress(dstId, index + start_idx);
-            for (const auto &dst: expr_dst)
+            AbstractValue expr_src = _svfir2ExeState->getGepObjAddress(srcId, index);
+            AbstractValue expr_dst = _svfir2ExeState->getGepObjAddress(dstId, index + start_idx);
+            for (const auto &dst: expr_dst.getAddrs())
             {
-                for (const auto &src: expr_src)
+                for (const auto &src: expr_src.getAddrs())
                 {
                     u32_t objId = ExeState::getInternalID(src);
                     if (es.inLocToValTable(objId))
@@ -1631,7 +1630,7 @@ void AbstractExecution::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFVal
                     }
                     else if (es.inLocToAddrsTable(objId))
                     {
-                        es.storeAddrs(dst, es.loadAddrs(src));
+                        es.store(dst, es.load(src));
                     }
                 }
             }
@@ -1644,8 +1643,8 @@ const SVFType* AbstractExecution::getPointeeElement(NodeID id)
     assert(_svfir2ExeState->inVarToAddrsTable(id) && "id is not in varToAddrsTable");
     if (_svfir2ExeState->inVarToAddrsTable(id))
     {
-        const ExeState::Addrs& addrs = _svfir2ExeState->getAddrs(id);
-        for (auto addr: addrs)
+        const AbstractValue& addrs = _svfir2ExeState->getAddrs(id);
+        for (auto addr: addrs.getAddrs())
         {
             NodeID addr_id = _svfir2ExeState->getInternalID(addr);
             if (addr_id == 0) // nullptr has no memobj, skip
@@ -1656,7 +1655,7 @@ const SVFType* AbstractExecution::getPointeeElement(NodeID id)
     return nullptr;
 }
 
-void AbstractExecution::handleMemset(const SVF::SVFValue *dst, SVF::IntervalValue elem, SVF::IntervalValue len)
+void AbstractExecution::handleMemset(const SVF::SVFValue *dst, AbstractValue elem, AbstractValue len)
 {
     IntervalExeState &es = _svfir2ExeState->getEs();
     u32_t dstId = _svfir->getValueNode(dst);
@@ -1688,19 +1687,19 @@ void AbstractExecution::handleMemset(const SVF::SVFValue *dst, SVF::IntervalValu
         // dead loop for string and break if there's a \0. If no \0, it will throw err.
         if (_svfir2ExeState->inVarToAddrsTable(dstId))
         {
-            ExeState::Addrs lhs_gep = _svfir2ExeState->getGepObjAddress(dstId, index);
-            for (const auto &addr: lhs_gep)
+            AbstractValue lhs_gep = _svfir2ExeState->getGepObjAddress(dstId, index);
+            for (const auto &addr: lhs_gep.getAddrs())
             {
                 u32_t objId = ExeState::getInternalID(addr);
                 if (es.inLocToValTable(objId))
                 {
-                    IntervalValue tmp = es.load(addr);
-                    tmp.join_with(IntervalValue(elem));
+                    AbstractValue tmp = es.load(addr);
+                    tmp.join_with(elem);
                     es.store(addr, tmp);
                 }
                 else
                 {
-                    es.store(addr, IntervalValue(elem));
+                    es.store(addr, elem);
                 }
             }
         }
@@ -1749,8 +1748,8 @@ void AbstractExecution::AccessMemoryViaLoadStmt(const LoadStmt *load, SVF::FILOW
 {
     if (_svfir2ExeState->inVarToAddrsTable(load->getLHSVarID()))
     {
-        const ExeState::Addrs &Addrs = _svfir2ExeState->getAddrs(load->getLHSVarID());
-        for (auto vaddr: Addrs)
+        const AbstractValue &Addrs = _svfir2ExeState->getAddrs(load->getLHSVarID());
+        for (auto vaddr: Addrs.getAddrs())
         {
             NodeID id = _svfir2ExeState->getInternalID(vaddr);
             if (id == 0) // nullptr has no memobj, skip

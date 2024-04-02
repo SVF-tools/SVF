@@ -35,7 +35,6 @@
 
 #include "AE/Core/ExeState.h"
 #include "AE/Core/IntervalExeState.h"
-#include "AE/Core/IntervalValue.h"
 #include "AE/Core/RelExeState.h"
 #include "SVFIR/SVFIR.h"
 
@@ -44,8 +43,7 @@ namespace SVF
 class SVFIR2ItvExeState
 {
 public:
-    typedef ExeState::Addrs Addrs;
-    static Addrs globalNulladdrs;
+    static AbstractValue globalNulladdrs;
 public:
     SVFIR2ItvExeState(SVFIR *ir) : _svfir(ir) {}
 
@@ -74,29 +72,29 @@ public:
     void narrowAddrs(IntervalExeState &lhs, const IntervalExeState &rhs);
 
     /// Return the field address given a pointer points to a struct object and an offset
-    Addrs getGepObjAddress(u32_t pointer, APOffset offset);
+    AbstractValue getGepObjAddress(u32_t pointer, APOffset offset);
 
     /// Return the value range of Integer SVF Type, e.g. unsigned i8 Type->[0, 255], signed i8 Type->[-128, 127]
-    IntervalValue getRangeLimitFromType(const SVFType* type);
+    AbstractValue getRangeLimitFromType(const SVFType* type);
 
-    IntervalValue getZExtValue(const SVFVar* var);
-    IntervalValue getSExtValue(const SVFVar* var);
-    IntervalValue getFPToSIntValue(const SVFVar* var);
-    IntervalValue getFPToUIntValue(const SVFVar* var);
-    IntervalValue getSIntToFPValue(const SVFVar* var);
-    IntervalValue getUIntToFPValue(const SVFVar* var);
-    IntervalValue getTruncValue(const SVFVar* var, const SVFType* dstType);
-    IntervalValue getFPTruncValue(const SVFVar* var, const SVFType* dstType);
+    AbstractValue getZExtValue(const SVFVar* var);
+    AbstractValue getSExtValue(const SVFVar* var);
+    AbstractValue getFPToSIntValue(const SVFVar* var);
+    AbstractValue getFPToUIntValue(const SVFVar* var);
+    AbstractValue getSIntToFPValue(const SVFVar* var);
+    AbstractValue getUIntToFPValue(const SVFVar* var);
+    AbstractValue getTruncValue(const SVFVar* var, const SVFType* dstType);
+    AbstractValue getFPTruncValue(const SVFVar* var, const SVFType* dstType);
 
     /// Return the byte offset expression of a GepStmt
     /// elemBytesize is the element byte size of an static alloc or heap alloc array
     /// e.g. GepStmt* gep = [i32*10], x, and x is [0,3]
     /// std::pair<s32_t, s32_t> byteOffset = getByteOffset(gep);
     /// byteOffset should be [0, 12] since i32 is 4 bytes.
-    IntervalValue getByteOffset(const GepStmt *gep);
+    AbstractValue getByteOffset(const GepStmt *gep);
 
     /// Return the offset expression of a GepStmt
-    IntervalValue getItvOfFlattenedElemIndex(const GepStmt *gep);
+    AbstractValue getItvOfFlattenedElemIndex(const GepStmt *gep);
 
 
     static z3::context &getContext()
@@ -113,7 +111,7 @@ public:
     /// Init SVFVar
     void initSVFVar(u32_t varId);
 
-    inline Addrs &getAddrs(u32_t id)
+    inline AbstractValue &getAddrs(u32_t id)
     {
         if (inVarToAddrsTable(id))
             return _es.getAddrs(id);
@@ -215,7 +213,7 @@ private:
     RelExeState _relEs;
 
     Map<NodeID, IntervalExeState *> _br_cond;
-    IntervalValue getZExtValue(const SVFVar* var, const SVFType*);
+    AbstractValue getZExtValue(const SVFVar* var, const SVFType*);
 };
 }
 

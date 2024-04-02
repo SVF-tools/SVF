@@ -51,24 +51,28 @@ u32_t IntervalESBase::hash() const
     {
         h2 ^= hf(t.first) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
     }
-    Hash<std::pair<std::pair<u32_t, u32_t>, u32_t>> pairH;
-    return pairH(std::make_pair(std::make_pair(h, h2), (u32_t) ExeState::hash()));
+    Hash<std::pair<u32_t, u32_t>> pairH;
+    return pairH({h, h2});
 }
 
 IntervalESBase IntervalESBase::widening(const IntervalESBase& other)
 {
+    // widen interval
     IntervalESBase es = *this;
-    for (auto it = es._varToItvVal.begin(); it != es._varToItvVal.end(); ++it)
+    for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._varToItvVal.find(key) != other._varToItvVal.end())
-            it->second.widen_with(other._varToItvVal.at(key));
+        if (other._varToAbsVal.find(key) != other._varToAbsVal.end()) {
+            if (it->second.isInterval())
+                it->second.getInterval().widen_with(other._varToAbsVal.at(key).getInterval());
+        }
     }
-    for (auto it = es._locToItvVal.begin(); it != es._locToItvVal.end(); ++it)
+    for (auto it = es._locToAbsVal.begin(); it != es._locToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._locToItvVal.find(key) != other._locToItvVal.end())
-            it->second.widen_with(other._locToItvVal.at(key));
+        if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
+            if (it->second.isInterval())
+                it->second.getInterval().widen_with(other._locToAbsVal.at(key).getInterval());
     }
     return es;
 }
@@ -76,17 +80,17 @@ IntervalESBase IntervalESBase::widening(const IntervalESBase& other)
 IntervalESBase IntervalESBase::narrowing(const IntervalESBase& other)
 {
     IntervalESBase es = *this;
-    for (auto it = es._varToItvVal.begin(); it != es._varToItvVal.end(); ++it)
+    for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._varToItvVal.find(key) != other._varToItvVal.end())
-            it->second.narrow_with(other._varToItvVal.at(key));
+        if (other._varToAbsVal.find(key) != other._varToAbsVal.end())
+            it->second.getInterval().narrow_with(other._varToAbsVal.at(key).getInterval());
     }
-    for (auto it = es._locToItvVal.begin(); it != es._locToItvVal.end(); ++it)
+    for (auto it = es._locToAbsVal.begin(); it != es._locToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._locToItvVal.find(key) != other._locToItvVal.end())
-            it->second.narrow_with(other._locToItvVal.at(key));
+        if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
+            it->second.getInterval().narrow_with(other._locToAbsVal.at(key).getInterval());
     }
     return es;
 
@@ -95,48 +99,67 @@ IntervalESBase IntervalESBase::narrowing(const IntervalESBase& other)
 /// domain widen with other, important! other widen this.
 void IntervalESBase::widenWith(const IntervalESBase& other)
 {
-    for (auto it = _varToItvVal.begin(); it != _varToItvVal.end(); ++it)
+    for (auto it = _varToAbsVal.begin(); it != _varToAbsVal.end(); ++it)
     {
         auto key = it->first;
         if (other.getVarToVal().find(key) != other.getVarToVal().end())
-            it->second.widen_with(other._varToItvVal.at(key));
+            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
+                it->second.getInterval().widen_with(other._varToAbsVal.at(key).getInterval());
     }
-    for (auto it = _locToItvVal.begin(); it != _locToItvVal.end(); ++it)
+    for (auto it = _locToAbsVal.begin(); it != _locToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._locToItvVal.find(key) != other._locToItvVal.end())
-            it->second.widen_with(other._locToItvVal.at(key));
+        if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
+            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
+                it->second.getInterval().widen_with(other._locToAbsVal.at(key).getInterval());
     }
 }
 
 /// domain join with other, important! other widen this.
 void IntervalESBase::joinWith(const IntervalESBase& other)
 {
-    ExeState::joinWith(other);
-    for (auto it = other._varToItvVal.begin(); it != other._varToItvVal.end(); ++it)
+    for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        auto oit = _varToItvVal.find(key);
-        if (oit != _varToItvVal.end())
+        auto oit = _varToAbsVal.find(key);
+        if (oit != _varToAbsVal.end())
         {
-            oit->second.join_with(it->second);
+            if (oit->second.isInterval() && it->second.isInterval()) {
+                oit->second.getInterval().join_with(it->second.getInterval());
+            }
+            else if (oit->second.isAddr() && it->second.isAddr())
+            {
+                oit->second.getAddrs().join_with(it->second.getAddrs());
+            }
+            else {
+                // do nothing
+            }
         }
         else
         {
-            _varToItvVal.emplace(key, it->second);
+            _varToAbsVal.emplace(key, it->second);
         }
     }
-    for (auto it = other._locToItvVal.begin(); it != other._locToItvVal.end(); ++it)
+    for (auto it = other._locToAbsVal.begin(); it != other._locToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        auto oit = _locToItvVal.find(key);
-        if (oit != _locToItvVal.end())
+        auto oit = _locToAbsVal.find(key);
+        if (oit != _locToAbsVal.end())
         {
-            oit->second.join_with(it->second);
+            if (oit->second.isInterval() && it->second.isInterval()) {
+                oit->second.getInterval().join_with(it->second.getInterval());
+            }
+            else if (oit->second.isAddr() && it->second.isAddr())
+            {
+                oit->second.getAddrs().join_with(it->second.getAddrs());
+            }
+            else {
+                // do nothing
+            }
         }
         else
         {
-            _locToItvVal.emplace(key, it->second);
+            _locToAbsVal.emplace(key, it->second);
         }
     }
 }
@@ -144,42 +167,61 @@ void IntervalESBase::joinWith(const IntervalESBase& other)
 /// domain narrow with other, important! other widen this.
 void IntervalESBase::narrowWith(const IntervalESBase& other)
 {
-    for (auto it = _varToItvVal.begin(); it != _varToItvVal.end(); ++it)
+    for (auto it = _varToAbsVal.begin(); it != _varToAbsVal.end(); ++it)
     {
         auto key = it->first;
         auto oit = other.getVarToVal().find(key);
         if (oit != other.getVarToVal().end())
-            it->second.narrow_with(oit->second);
+            if (it->second.isInterval() && oit->second.isInterval())
+                it->second.getInterval().narrow_with(oit->second.getInterval());
     }
-    for (auto it = _locToItvVal.begin(); it != _locToItvVal.end(); ++it)
+    for (auto it = _locToAbsVal.begin(); it != _locToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        auto oit = other._locToItvVal.find(key);
-        if (oit != other._locToItvVal.end())
-            it->second.narrow_with(oit->second);
+        auto oit = other._locToAbsVal.find(key);
+        if (oit != other._locToAbsVal.end())
+            if (it->second.isInterval() && oit->second.isInterval())
+                it->second.getInterval().narrow_with(oit->second.getInterval());
     }
 }
 
 /// domain meet with other, important! other widen this.
 void IntervalESBase::meetWith(const IntervalESBase& other)
 {
-    ExeState::meetWith(other);
-    for (auto it = other._varToItvVal.begin(); it != other._varToItvVal.end(); ++it)
+    for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        auto oit = _varToItvVal.find(key);
-        if (oit != _varToItvVal.end())
+        auto oit = _varToAbsVal.find(key);
+        if (oit != _varToAbsVal.end())
         {
-            oit->second.meet_with(it->second);
+            if (oit->second.isInterval() && it->second.isInterval()) {
+                oit->second.getInterval().meet_with(it->second.getInterval());
+            }
+            else if (oit->second.isAddr() && it->second.isAddr())
+            {
+                oit->second.getAddrs().meet_with(it->second.getAddrs());
+            }
+            else {
+                // do nothing
+            }
         }
     }
-    for (auto it = other._locToItvVal.begin(); it != other._locToItvVal.end(); ++it)
+    for (auto it = other._locToAbsVal.begin(); it != other._locToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        auto oit = _locToItvVal.find(key);
-        if (oit != _locToItvVal.end())
+        auto oit = _locToAbsVal.find(key);
+        if (oit != _locToAbsVal.end())
         {
-            oit->second.meet_with(it->second);
+            if (oit->second.isInterval() && it->second.isInterval()) {
+                oit->second.getInterval().meet_with(it->second.getInterval());
+            }
+            else if (oit->second.isAddr() && it->second.isAddr())
+            {
+                oit->second.getAddrs().meet_with(it->second.getAddrs());
+            }
+            else {
+                // do nothing
+            }
         }
     }
 }
@@ -188,14 +230,12 @@ void IntervalESBase::meetWith(const IntervalESBase& other)
 void IntervalESBase::printExprValues(std::ostream &oss) const
 {
     oss << "-----------Var and Value-----------\n";
-    printTable(_varToItvVal, oss);
-    printTable(_locToItvVal, oss);
-    printTable(_varToAddrs, oss);
-    printTable(_locToAddrs, oss);
+    printTable(_varToAbsVal, oss);
+    printTable(_locToAbsVal, oss);
     oss << "-----------------------------------------\n";
 }
 
-void IntervalESBase::printTable(const VarToValMap &table, std::ostream &oss) const
+void IntervalESBase::printTable(const VarToAbsValMap&table, std::ostream &oss) const
 {
     oss.flags(std::ios::left);
     std::set<NodeID> ordered;
@@ -206,7 +246,7 @@ void IntervalESBase::printTable(const VarToValMap &table, std::ostream &oss) con
     for (const auto &item: ordered)
     {
         oss << "Var" << std::to_string(item);
-        IntervalValue sim = table.at(item);
+        IntervalValue sim = table.at(item).getInterval();
         if (sim.is_numeral() && isVirtualMemAddress(Interval2NumValue(sim)))
         {
             oss << "\t Value: " << std::hex << "0x" << Interval2NumValue(sim) << "\n";
@@ -215,27 +255,6 @@ void IntervalESBase::printTable(const VarToValMap &table, std::ostream &oss) con
         {
             oss << "\t Value: " << std::dec << sim << "\n";
         }
-    }
-}
-
-void IntervalESBase::printTable(const VarToAddrs &table, std::ostream &oss) const
-{
-    oss.flags(std::ios::left);
-    std::set<NodeID> ordered;
-    for (const auto &item: table)
-    {
-        ordered.insert(item.first);
-    }
-    for (const auto &item: ordered)
-    {
-        oss << "Var" << std::to_string(item);
-        Addrs sim = table.at(item);
-        oss << "\t Value: " << std::hex << "[ ";
-        for (auto it = sim.begin(); it != sim.end(); ++it)
-        {
-            oss << std::hex << "0x" << *it << "(" << std::to_string(*it&(0x00ffffff)) << ") ,";
-        }
-        oss << "]\n";
     }
 }
 
@@ -253,17 +272,19 @@ u32_t IntervalExeState::hash() const
 IntervalExeState IntervalExeState::widening(const IntervalExeState& other)
 {
     IntervalExeState es = *this;
-    for (auto it = es._varToItvVal.begin(); it != es._varToItvVal.end(); ++it)
+    for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._varToItvVal.find(key) != other._varToItvVal.end())
-            it->second.widen_with(other._varToItvVal.at(key));
+        if (other._varToAbsVal.find(key) != other._varToAbsVal.end())
+            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
+                it->second.getInterval().widen_with(other._varToAbsVal.at(key).getInterval());
     }
-    for (auto it = es._locToItvVal.begin(); it != es._locToItvVal.end(); ++it)
+    for (auto it = es._locToAbsVal.begin(); it != es._locToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._locToItvVal.find(key) != other._locToItvVal.end())
-            it->second.widen_with(other._locToItvVal.at(key));
+        if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
+            if (it->second.isInterval() && other._locToAbsVal.at(key).isInterval())
+                it->second.getInterval().widen_with(other._locToAbsVal.at(key).getInterval());
     }
     return es;
 }
@@ -271,17 +292,19 @@ IntervalExeState IntervalExeState::widening(const IntervalExeState& other)
 IntervalExeState IntervalExeState::narrowing(const IntervalExeState& other)
 {
     IntervalExeState es = *this;
-    for (auto it = es._varToItvVal.begin(); it != es._varToItvVal.end(); ++it)
+    for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._varToItvVal.find(key) != other._varToItvVal.end())
-            it->second.narrow_with(other._varToItvVal.at(key));
+        if (other._varToAbsVal.find(key) != other._varToAbsVal.end())
+            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
+                it->second.getInterval().narrow_with(other._varToAbsVal.at(key).getInterval());
     }
-    for (auto it = es._locToItvVal.begin(); it != es._locToItvVal.end(); ++it)
+    for (auto it = es._locToAbsVal.begin(); it != es._locToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._locToItvVal.find(key) != other._locToItvVal.end())
-            it->second.narrow_with(other._locToItvVal.at(key));
+        if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
+            if (it->second.isInterval() && other._locToAbsVal.at(key).isInterval())
+                it->second.getInterval().narrow_with(other._locToAbsVal.at(key).getInterval());
     }
     return es;
 
@@ -316,14 +339,10 @@ void IntervalExeState::meetWith(const IntervalExeState& other)
 void IntervalExeState::printExprValues(std::ostream &oss) const
 {
     oss << "-----------Var and Value-----------\n";
-    printTable(_varToItvVal, oss);
-    printTable(_locToItvVal, oss);
-    printTable(_varToAddrs, oss);
-    printTable(_locToAddrs, oss);
+    printTable(_varToAbsVal, oss);
+    printTable(_locToAbsVal, oss);
     oss << "------------Global---------------------\n";
-    printTable(globalES._varToItvVal, oss);
-    printTable(globalES._locToItvVal, oss);
-    printTable(globalES._varToAddrs, oss);
-    printTable(globalES._locToAddrs, oss);
+    printTable(globalES._varToAbsVal, oss);
+    printTable(globalES._locToAbsVal, oss);
 
 }

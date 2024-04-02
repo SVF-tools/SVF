@@ -33,14 +33,14 @@
 #define AddressMask 0x7f000000
 #define FlippedAddressMask (AddressMask^0xffffffff)
 // the address of the black hole, getVirtualMemAddress(2);
-#define BlackHoleAddr 0x7f000000 + 2;
+#define BlackHoleAddr 0x7f000000 + 2
 
-#include "AE/Core/AbstractValue.h"
 #include "Util/GeneralType.h"
+#include <sstream>
 
 namespace SVF
 {
-class AddressValue : public AbstractValue
+class AddressValue
 {
 public:
     typedef Set<u32_t> AddrSet;
@@ -48,21 +48,21 @@ private:
     AddrSet _addrs;
 public:
     /// Default constructor
-    AddressValue() : AbstractValue(AddressK) {}
+    AddressValue() {}
 
     /// Constructor
-    AddressValue(const Set<u32_t> &addrs) : AbstractValue(AddressK), _addrs(addrs) {}
+    AddressValue(const Set<u32_t> &addrs) :  _addrs(addrs) {}
 
-    AddressValue(u32_t addr) : AbstractValue(AddressK), _addrs({addr}) {}
+    AddressValue(u32_t addr) :  _addrs({addr}) {}
 
     /// Default destructor
     ~AddressValue() = default;
 
     /// Copy constructor
-    AddressValue(const AddressValue &other) : AbstractValue(AddressK), _addrs(other._addrs) {}
+    AddressValue(const AddressValue &other) : _addrs(other._addrs) {}
 
     /// Move constructor
-    AddressValue(AddressValue &&other) noexcept: AbstractValue(AddressK), _addrs(std::move(other._addrs)) {}
+    AddressValue(AddressValue &&other) noexcept: _addrs(std::move(other._addrs)) {}
 
     /// Copy operator=
     AddressValue &operator=(const AddressValue &other)
@@ -70,7 +70,6 @@ public:
         if (!this->equals(other))
         {
             _addrs = other._addrs;
-            AbstractValue::operator=(other);
         }
         return *this;
     }
@@ -81,7 +80,6 @@ public:
         if (this != &other)
         {
             _addrs = std::move(other._addrs);
-            AbstractValue::operator=(std::move(other));
         }
         return *this;
     }
@@ -89,17 +87,6 @@ public:
     bool equals(const AddressValue &rhs) const
     {
         return _addrs == rhs._addrs;
-    }
-
-    bool operator==(const AddressValue &rhs) const
-    {
-        return _addrs == rhs._addrs;
-    }
-
-    /// Operator !=
-    bool operator!=(const AddressValue &rhs) const
-    {
-        return _addrs != rhs._addrs;
     }
 
     AddrSet::const_iterator begin() const
@@ -181,24 +168,43 @@ public:
         return !v.empty();
     }
 
-    inline bool isTop() const override
+    inline bool isTop() const
     {
-        return *this == BlackHoleAddr;
+        return *this->begin() == BlackHoleAddr;
     }
 
-    inline bool isBottom() const override
+    inline bool isBottom() const
     {
         return empty();
     }
 
     inline void setTop()
     {
-        *this = BlackHoleAddr;
+        *this = AddressValue(BlackHoleAddr);
     }
 
     inline void setBottom()
     {
         _addrs.clear();
+    }
+
+    const std::string toString() const
+    {
+        std::string str;
+        std::stringstream rawStr(str);
+        if (this->isBottom())
+        {
+            rawStr << "⊥";
+        }
+        else
+        {
+            rawStr << "[";
+            for (auto it = _addrs.begin(), eit = _addrs.end(); it!= eit; ++it) {
+                rawStr << *it << ", ";
+            }
+            rawStr << "]";
+        }
+        return rawStr.str();
     }
 
     /// The physical address starts with 0x7f...... + idx

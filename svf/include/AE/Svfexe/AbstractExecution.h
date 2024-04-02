@@ -38,7 +38,6 @@ namespace SVF
 class AbstractExecution;
 class AEStat;
 class AEAPI;
-class IntervalValue;
 class ExeState;
 
 template<typename T> class FILOWorkList;
@@ -269,9 +268,9 @@ protected:
     * e.g. source code str = "abc", return 3
     *
     * @param strValue SVFValue of string
-    * @return IntervalValue of string length
+    * @return AbstractValue of string length
     */
-    IntervalValue getStrlen(const SVF::SVFValue *strValue);
+    AbstractValue getStrlen(const SVF::SVFValue *strValue);
 
     /**
     * get memory allocation size
@@ -280,9 +279,9 @@ protected:
     *      memset(arr, 1, 10* sizeof(int))
     * when we trace the 'arr', we can get the alloc size [40, 40]
     * @param value to be traced
-    * @return IntervalValue of allocation size
+    * @return AbstractValue of allocation size
     */
-    IntervalValue traceMemoryAllocationSize(const SVFValue *value);
+    AbstractValue traceMemoryAllocationSize(const SVFValue *value);
     /**
     * execute strcpy in abstract execution
     * e.g  arr = new char[10]
@@ -309,7 +308,7 @@ protected:
     * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
     * @param call callnode of memcpy like api
     */
-    virtual void handleMemcpy(const SVFValue* dst, const SVFValue* src, IntervalValue len, u32_t start_idx);
+    virtual void handleMemcpy(const SVFValue* dst, const SVFValue* src, AbstractValue len, u32_t start_idx);
     /**
     * execute memset in abstract execution
     * e.g  arr = new char[10]
@@ -317,7 +316,7 @@ protected:
     * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
     * @param call callnode of memset like api
     */
-    virtual void handleMemset(const SVFValue* dst, IntervalValue elem, IntervalValue len);
+    virtual void handleMemset(const SVFValue* dst, AbstractValue elem, AbstractValue len);
 
     /**
     * if this NodeID in SVFIR is a pointer, get the pointee type

@@ -217,7 +217,7 @@ void SVFIR2ConsExeState::translateCmp(const CmpStmt *cmp)
         {
             if (lhs.size() == 1 && rhs.size() == 1)
             {
-                (*_es)[res] = lhs == rhs;
+                (*_es)[res] = (lhs.getVals() == rhs.getVals());
             }
             else
             {
@@ -238,7 +238,7 @@ void SVFIR2ConsExeState::translateCmp(const CmpStmt *cmp)
         {
             if (lhs.size() == 1 && rhs.size() == 1)
             {
-                (*_es)[res] = lhs != rhs;
+                (*_es)[res] = (lhs.getVals() != rhs.getVals());
             }
             else
             {

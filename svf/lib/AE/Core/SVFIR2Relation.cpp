@@ -112,15 +112,15 @@ void SVFIR2ItvExeState::translateLoadRel(const LoadStmt *load)
 {
     u32_t rhs = load->getRHSVarID();
     u32_t lhs = load->getLHSVarID();
-    _relEs[lhs] = _relEs.load(Z3Expr((int) _es[rhs].lb().getNumeral()));
+    _relEs[lhs] = _relEs.load(Z3Expr((int) _es[rhs].getInterval().lb().getNumeral()));
 }
 
 void SVFIR2ItvExeState::translateStoreRel(const StoreStmt *store)
 {
     u32_t rhs = store->getRHSVarID();
     u32_t lhs = store->getLHSVarID();
-    assert(_es[lhs].is_numeral() && "loc not numeral?");
-    _relEs.store(Z3Expr((int) _es[lhs].lb().getNumeral()), _relEs.toZ3Expr(rhs));
+    assert(_es[lhs].getInterval().is_numeral() && "loc not numeral?");
+    _relEs.store(Z3Expr((int) _es[lhs].getInterval().lb().getNumeral()), _relEs.toZ3Expr(rhs));
 
 }
 
@@ -137,9 +137,10 @@ void SVFIR2ItvExeState::translateSelectRel(const SelectStmt *select)
     u32_t tval = select->getTrueValue()->getId();
     u32_t fval = select->getFalseValue()->getId();
     u32_t cond = select->getCondition()->getId();
-    if (_es[cond].is_numeral())
+    IntervalValue& condVal = _es[cond].getInterval();
+    if (condVal.is_numeral())
     {
-        _relEs[res] = _es[cond].is_zero() ? _relEs.toZ3Expr(fval) : _relEs.toZ3Expr(tval);
+        _relEs[res] = condVal.is_zero() ? _relEs.toZ3Expr(fval) : _relEs.toZ3Expr(tval);
     }
     else
     {
