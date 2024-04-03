@@ -138,7 +138,7 @@ void BufOverflowChecker::initExtFunMap()
     {
         //scanf("%d", &data);
         if (cs.arg_size() < 2) return;
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         u32_t dst_id = _svfir->getValueNode(cs.getArgument(1));
         if (!_svfir2ExeState->inVarToAddrsTable(dst_id))
         {
@@ -161,7 +161,7 @@ void BufOverflowChecker::initExtFunMap()
     {
         //fscanf(stdin, "%d", &data);
         if (cs.arg_size() < 3) return;
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         u32_t dst_id = _svfir->getValueNode(cs.getArgument(2));
         if (!_svfir2ExeState->inVarToAddrsTable(dst_id))
         {
@@ -193,7 +193,7 @@ void BufOverflowChecker::initExtFunMap()
     auto sse_fread = [&](const CallSite &cs)
     {
         if (cs.arg_size() < 3) return;
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         u32_t block_count_id = _svfir->getValueNode(cs.getArgument(2));
         u32_t block_size_id = _svfir->getValueNode(cs.getArgument(1));
         AbstractValue block_count = es[block_count_id];
@@ -211,7 +211,7 @@ void BufOverflowChecker::initExtFunMap()
     auto sse_snprintf = [&](const CallSite &cs)
     {
         if (cs.arg_size() < 2) return;
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         u32_t size_id = _svfir->getValueNode(cs.getArgument(1));
         u32_t dst_id = _svfir->getValueNode(cs.getArgument(0));
         // get elem size of arg2
@@ -260,7 +260,7 @@ void BufOverflowChecker::initExtFunMap()
         // itoa(num, ch, 10);
         // num: int, ch: char*, 10 is decimal
         if (cs.arg_size() < 3) return;
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         u32_t num_id = _svfir->getValueNode(cs.getArgument(0));
 
         u32_t num = (u32_t) es[num_id].getInterval().getNumeral();
@@ -275,7 +275,7 @@ void BufOverflowChecker::initExtFunMap()
         // check the arg size
         if (cs.arg_size() < 1) return;
         const SVFValue* strValue = cs.getArgument(0);
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         AbstractValue dst_size = getStrlen(strValue);
         u32_t elemSize = 1;
         if (strValue->getType()->isArrayTy())
@@ -299,7 +299,7 @@ void BufOverflowChecker::initExtFunMap()
     {
         // recv(sockfd, buf, len, flags);
         if (cs.arg_size() < 4) return;
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         u32_t len_id = _svfir->getValueNode(cs.getArgument(2));
         AbstractValue len = es[len_id] - IntervalValue(1);
         u32_t lhsId = _svfir->getValueNode(cs.getInstruction());
@@ -314,7 +314,7 @@ void BufOverflowChecker::initExtFunMap()
         _checkpoints.erase(callNode);
         //void SAFE_BUFACCESS(void* data, int size);
         if (cs.arg_size() < 2) return;
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         u32_t size_id = _svfir->getValueNode(cs.getArgument(1));
         AbstractValue val = es[size_id];
         if (val.isBottom())
@@ -344,7 +344,7 @@ void BufOverflowChecker::initExtFunMap()
         _checkpoints.erase(callNode);
         //void UNSAFE_BUFACCESS(void* data, int size);
         if (cs.arg_size() < 2) return;
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         u32_t size_id = _svfir->getValueNode(cs.getArgument(1));
         AbstractValue val = es[size_id];
         if (val.isBottom())

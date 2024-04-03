@@ -1,4 +1,4 @@
-//===- IntervalExeState.h ----Interval Domain-------------------------//
+//===- AbstractExeState.h ----Interval Domain-------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -52,7 +52,7 @@
 
 namespace SVF
 {
-class IntervalESBase
+class AbstractESBase
 {
     friend class SVFIR2ItvExeState;
     friend class RelationSolver;
@@ -63,19 +63,19 @@ public:
 
 public:
     /// default constructor
-    IntervalESBase() {}
+    AbstractESBase() {}
 
-    IntervalESBase(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap),
+    AbstractESBase(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap),
           _locToAbsVal(_locToValMap) {}
 
     /// copy constructor
-    IntervalESBase(const IntervalESBase &rhs) : _varToAbsVal(rhs.getVarToVal()),
+    AbstractESBase(const AbstractESBase&rhs) : _varToAbsVal(rhs.getVarToVal()),
           _locToAbsVal(rhs.getLocToVal())
     {
 
     }
 
-    virtual ~IntervalESBase() = default;
+    virtual ~AbstractESBase() = default;
 
 
     /// The physical address starts with 0x7f...... + idx
@@ -101,8 +101,7 @@ public:
         return getInternalID(addr) == 0;
     }
 
-
-    IntervalESBase &operator=(const IntervalESBase &rhs)
+    AbstractESBase&operator=(const AbstractESBase&rhs)
     {
         if (rhs != *this)
         {
@@ -113,14 +112,14 @@ public:
     }
 
     /// move constructor
-    IntervalESBase(IntervalESBase &&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
+    AbstractESBase(AbstractESBase&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
           _locToAbsVal(std::move(rhs._locToAbsVal))
     {
 
     }
 
     /// operator= move constructor
-    IntervalESBase &operator=(IntervalESBase &&rhs)
+    AbstractESBase&operator=(AbstractESBase&&rhs)
     {
         if (&rhs != this)
         {
@@ -131,9 +130,9 @@ public:
     }
 
     /// Set all value bottom
-    IntervalESBase bottom() const
+    AbstractESBase bottom() const
     {
-        IntervalESBase inv = *this;
+        AbstractESBase inv = *this;
         for (auto &item: inv._varToAbsVal)
         {
             if (item.second.isInterval())
@@ -143,9 +142,9 @@ public:
     }
 
     /// Set all value top
-    IntervalESBase top() const
+    AbstractESBase top() const
     {
-        IntervalESBase inv = *this;
+        AbstractESBase inv = *this;
         for (auto &item: inv._varToAbsVal)
         {
             if (item.second.isInterval())
@@ -155,9 +154,9 @@ public:
     }
 
     /// Copy some values and return a new IntervalExeState
-    IntervalESBase sliceState(Set<u32_t> &sl)
+    AbstractESBase sliceState(Set<u32_t> &sl)
     {
-        IntervalESBase inv;
+        AbstractESBase inv;
         for (u32_t id: sl)
         {
             inv._varToAbsVal[id] = _varToAbsVal[id];
@@ -166,19 +165,19 @@ public:
     }
 
 protected:
-    VarToAbsValMap _varToAbsVal; ///< Map a variable (symbol) to its interval value
-    LocToAbsValMap _locToAbsVal; ///< Map a memory address to its stored interval value
+    VarToAbsValMap _varToAbsVal; ///< Map a variable (symbol) to its abstract value
+    LocToAbsValMap _locToAbsVal; ///< Map a memory address to its stored abstract value
 
 public:
 
 
-    /// get interval value of variable
+    /// get abstract value of variable
     inline virtual AbstractValue &operator[](u32_t varId)
     {
         return _varToAbsVal[varId];
     }
 
-    /// get interval value of variable
+    /// get abstract value of variable
     inline virtual const AbstractValue &operator[](u32_t varId) const
     {
         return _varToAbsVal.at(varId);
@@ -217,7 +216,7 @@ public:
         return false;
     }
 
-    /// whether the memory address stores interval value
+    /// whether the memory address stores abstract value
     inline virtual bool inLocToValTable(u32_t id) const
     {
         if (_locToAbsVal.find(id) != _locToAbsVal.end()) {
@@ -243,22 +242,22 @@ public:
 public:
 
     /// domain widen with other, and return the widened domain
-    IntervalESBase widening(const IntervalESBase &other);
+    AbstractESBase widening(const AbstractESBase&other);
 
     /// domain narrow with other, and return the narrowed domain
-    IntervalESBase narrowing(const IntervalESBase &other);
+    AbstractESBase narrowing(const AbstractESBase&other);
 
     /// domain widen with other, important! other widen this.
-    void widenWith(const IntervalESBase &other);
+    void widenWith(const AbstractESBase&other);
 
     /// domain join with other, important! other widen this.
-    void joinWith(const IntervalESBase &other);
+    void joinWith(const AbstractESBase&other);
 
     /// domain narrow with other, important! other widen this.
-    void narrowWith(const IntervalESBase &other);
+    void narrowWith(const AbstractESBase&other);
 
     /// domain meet with other, important! other widen this.
-    void meetWith(const IntervalESBase &other);
+    void meetWith(const AbstractESBase&other);
 
 
     /// Return int value from an expression if it is a numeral, otherwise return an approximate value
@@ -266,13 +265,6 @@ public:
     {
         //TODO: return concrete value;
         return (s32_t) e.lb().getNumeral();
-    }
-
-    ///TODO: Create new interval value
-    IntervalValue createIntervalValue(double lb, double ub, NodeID id)
-    {
-        _varToAbsVal[id] = IntervalValue(lb, ub);
-        return _varToAbsVal[id].getInterval();
     }
 
     /// Return true if map has bottom value
@@ -335,7 +327,7 @@ public:
         return "";
     }
 
-    bool equals(const IntervalESBase &other) const;
+    bool equals(const AbstractESBase&other) const;
 
     static bool eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)
     {
@@ -401,24 +393,24 @@ public:
         return true;
     }
 
-    bool operator==(const IntervalESBase &rhs) const
+    bool operator==(const AbstractESBase&rhs) const
     {
         return  eqVarToValMap(_varToAbsVal, rhs.getVarToVal()) &&
                eqVarToValMap(_locToAbsVal, rhs.getLocToVal());
     }
 
-    bool operator!=(const IntervalESBase &rhs) const
+    bool operator!=(const AbstractESBase&rhs) const
     {
         return !(*this == rhs);
     }
 
-    bool operator<(const IntervalESBase &rhs) const
+    bool operator<(const AbstractESBase&rhs) const
     {
         return !(*this >= rhs);
     }
 
 
-    bool operator>=(const IntervalESBase &rhs) const
+    bool operator>=(const AbstractESBase&rhs) const
     {
         return geqVarToValMap(_varToAbsVal, rhs.getVarToVal()) && geqVarToValMap(_locToAbsVal, rhs.getLocToVal());
     }
@@ -435,47 +427,46 @@ protected:
 
 };
 
-class IntervalExeState : public IntervalESBase
+class AbstractExeState : public AbstractESBase
 {
     friend class SVFIR2ItvExeState;
     friend class RelationSolver;
 
 public:
-    static IntervalExeState globalES;
+    static AbstractExeState globalES;
 
 public:
     /// default constructor
-    IntervalExeState() : IntervalESBase() {}
+    AbstractExeState() : AbstractESBase() {}
 
-    IntervalExeState(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : IntervalESBase(_varToValMap, _locToValMap) {}
+    AbstractExeState(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : AbstractESBase(_varToValMap, _locToValMap) {}
 
     /// copy constructor
-    IntervalExeState(const IntervalExeState &rhs) : IntervalESBase(rhs)
+    AbstractExeState(const AbstractExeState&rhs) : AbstractESBase(rhs)
     {
 
     }
 
-    virtual ~IntervalExeState() = default;
+    virtual ~AbstractExeState() = default;
 
-
-    IntervalExeState &operator=(const IntervalExeState &rhs)
+    AbstractExeState&operator=(const AbstractExeState&rhs)
     {
-        IntervalESBase::operator=(rhs);
+        AbstractESBase::operator=(rhs);
         return *this;
     }
 
     virtual void printExprValues(std::ostream &oss) const;
 
     /// move constructor
-    IntervalExeState(IntervalExeState &&rhs) : IntervalESBase(std::move(rhs))
+    AbstractExeState(AbstractExeState&&rhs) : AbstractESBase(std::move(rhs))
     {
 
     }
 
     /// operator= move constructor
-    IntervalExeState &operator=(IntervalExeState &&rhs)
+    AbstractExeState&operator=(AbstractExeState&&rhs)
     {
-        IntervalESBase::operator=(std::move(rhs));
+        AbstractESBase::operator=(std::move(rhs));
         return *this;
     }
 
@@ -494,7 +485,7 @@ public:
         }
     }
 
-    /// get interval value of variable
+    /// get abstract value of variable
     inline AbstractValue &operator[](u32_t varId)
     {
         auto localIt = _varToAbsVal.find(varId);
@@ -578,7 +569,7 @@ public:
         }
     }
 
-    /// whether the memory address stores interval value
+    /// whether the memory address stores abstract value
     inline bool inLocToValTable(u32_t id) const
     {
         if (_locToAbsVal.find(id)!= _locToAbsVal.end()) {
@@ -635,22 +626,22 @@ public:
     }
 
     /// domain widen with other, and return the widened domain
-    IntervalExeState widening(const IntervalExeState &other);
+    AbstractExeState widening(const AbstractExeState&other);
 
     /// domain narrow with other, and return the narrowed domain
-    IntervalExeState narrowing(const IntervalExeState &other);
+    AbstractExeState narrowing(const AbstractExeState&other);
 
     /// domain widen with other, important! other widen this.
-    void widenWith(const IntervalExeState &other);
+    void widenWith(const AbstractExeState&other);
 
     /// domain join with other, important! other widen this.
-    void joinWith(const IntervalExeState &other);
+    void joinWith(const AbstractExeState&other);
 
     /// domain narrow with other, important! other widen this.
-    void narrowWith(const IntervalExeState &other);
+    void narrowWith(const AbstractExeState&other);
 
     /// domain meet with other, important! other widen this.
-    void meetWith(const IntervalExeState &other);
+    void meetWith(const AbstractExeState&other);
 
     u32_t hash() const;
 
@@ -676,26 +667,26 @@ public:
         }
     }
 
-    bool equals(const IntervalExeState &other) const;
+    bool equals(const AbstractExeState&other) const;
 
-    bool operator==(const IntervalExeState &rhs) const
+    bool operator==(const AbstractExeState&rhs) const
     {
         return eqVarToValMap(_varToAbsVal, rhs._varToAbsVal) &&
                eqVarToValMap(_locToAbsVal, rhs._locToAbsVal);
     }
 
-    bool operator!=(const IntervalExeState &rhs) const
+    bool operator!=(const AbstractExeState&rhs) const
     {
         return !(*this == rhs);
     }
 
-    bool operator<(const IntervalExeState &rhs) const
+    bool operator<(const AbstractExeState&rhs) const
     {
         return !(*this >= rhs);
     }
 
 
-    bool operator>=(const IntervalExeState &rhs) const
+    bool operator>=(const AbstractExeState&rhs) const
     {
         return geqVarToValMap(_varToAbsVal, rhs.getVarToVal()) && geqVarToValMap(_locToAbsVal, rhs._locToAbsVal);
     }
@@ -703,9 +694,9 @@ public:
 }
 
 template<>
-struct std::hash<SVF::IntervalExeState>
+struct std::hash<SVF::AbstractExeState>
 {
-    size_t operator()(const SVF::IntervalExeState &exeState) const
+    size_t operator()(const SVF::AbstractExeState&exeState) const
     {
         return exeState.hash();
     }

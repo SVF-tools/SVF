@@ -39,7 +39,7 @@
 namespace SVF
 {
 
-class IntervalExeState;
+class AbstractExeState;
 
 /*!
  * Base execution state

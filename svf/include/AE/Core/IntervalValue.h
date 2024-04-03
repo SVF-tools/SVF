@@ -1,4 +1,4 @@
-//===- IntervalValue.h ----Interval Value for Interval Domain-------------//
+//===- IntervalValue.h ----Interval Value for Abstract Domain-------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

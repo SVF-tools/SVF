@@ -33,8 +33,8 @@
 #ifndef Z3_EXAMPLE_SVFIR2ITVEXESTATE_H
 #define Z3_EXAMPLE_SVFIR2ITVEXESTATE_H
 
+#include "AE/Core/AbstractExeState.h"
 #include "AE/Core/ExeState.h"
-#include "AE/Core/IntervalExeState.h"
 #include "AE/Core/RelExeState.h"
 #include "SVFIR/SVFIR.h"
 
@@ -47,12 +47,12 @@ public:
 public:
     SVFIR2ItvExeState(SVFIR *ir) : _svfir(ir) {}
 
-    void setEs(const IntervalExeState &es)
+    void setEs(const AbstractExeState&es)
     {
         _es = es;
     }
 
-    IntervalExeState &getEs()
+    AbstractExeState&getEs()
     {
         return _es;
     }
@@ -67,9 +67,9 @@ public:
         return _relEs;
     }
 
-    void widenAddrs(IntervalExeState &lhs, const IntervalExeState &rhs);
+    void widenAddrs(AbstractExeState&lhs, const AbstractExeState&rhs);
 
-    void narrowAddrs(IntervalExeState &lhs, const IntervalExeState &rhs);
+    void narrowAddrs(AbstractExeState&lhs, const AbstractExeState&rhs);
 
     /// Return the field address given a pointer points to a struct object and an offset
     AbstractValue getGepObjAddress(u32_t pointer, APOffset offset);
@@ -102,7 +102,7 @@ public:
         return Z3Expr::getContext();
     }
 
-    void applySummary(IntervalExeState &es);
+    void applySummary(AbstractExeState&es);
 
 
     /// Init ObjVar
@@ -209,10 +209,10 @@ protected:
 
 private:
     SVFIR *_svfir;
-    IntervalExeState _es;
+    AbstractExeState _es;
     RelExeState _relEs;
 
-    Map<NodeID, IntervalExeState *> _br_cond;
+    Map<NodeID, AbstractExeState*> _br_cond;
     AbstractValue getZExtValue(const SVFVar* var, const SVFType*);
 };
 }

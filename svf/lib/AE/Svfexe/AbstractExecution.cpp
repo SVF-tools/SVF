@@ -162,7 +162,7 @@ void AbstractExecution::analyse()
 /// handle global node
 void AbstractExecution::handleGlobalNode()
 {
-    IntervalExeState es;
+    AbstractExeState es;
     const ICFGNode* node = _icfg->getGlobalICFGNode();
     _svfir2ExeState->setEs(es);
     // Global Node, we just need to handle addr, load, store, copy and gep
@@ -181,13 +181,13 @@ bool AbstractExecution::hasInEdgesES(const ICFGNode *block)
 {
     if (isGlobalEntry(block))
     {
-        _preES[block] = IntervalExeState();
+        _preES[block] = AbstractExeState();
         return true;
     }
     // is common basic block
     else
     {
-        IntervalExeState es;
+        AbstractExeState es;
         u32_t inEdgeNum = 0;
         for (auto& edge: block->getInEdges())
         {
@@ -196,7 +196,7 @@ bool AbstractExecution::hasInEdgesES(const ICFGNode *block)
                 const IntraCFGEdge *intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
                 if (intraCfgEdge && intraCfgEdge->getCondition())
                 {
-                    IntervalExeState tmpEs = _postES[edge->getSrcNode()];
+                    AbstractExeState tmpEs = _postES[edge->getSrcNode()];
                     if (hasBranchES(intraCfgEdge, tmpEs))
                     {
                         es.joinWith(tmpEs);
@@ -255,9 +255,10 @@ bool AbstractExecution::isGlobalEntry(const SVF::ICFGNode *block)
     return false;
 }
 
-bool AbstractExecution::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, IntervalExeState& es)
+bool AbstractExecution::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ,
+                                       AbstractExeState& es)
 {
-    IntervalExeState new_es = es;
+    AbstractExeState new_es = es;
     // get cmp stmt's op0, op1, and predicate
     NodeID op0 = cmpStmt->getOpVarID(0);
     NodeID op1 = cmpStmt->getOpVarID(1);
@@ -485,9 +486,10 @@ bool AbstractExecution::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, Inter
     return true;
 }
 
-bool AbstractExecution::hasSwitchBranchES(const SVFVar* var, s64_t succ, IntervalExeState& es)
+bool AbstractExecution::hasSwitchBranchES(const SVFVar* var, s64_t succ,
+                                          AbstractExeState& es)
 {
-    IntervalExeState new_es = es;
+    AbstractExeState new_es = es;
     new_es.cpyItvToLocal(var->getId());
     IntervalValue& switch_cond = new_es[var->getId()].getInterval();
     s64_t value = succ;
@@ -529,7 +531,8 @@ bool AbstractExecution::hasSwitchBranchES(const SVFVar* var, s64_t succ, Interva
     return true;
 }
 
-bool AbstractExecution::hasBranchES(const IntraCFGEdge* intraEdge, IntervalExeState& es)
+bool AbstractExecution::hasBranchES(const IntraCFGEdge* intraEdge,
+                                    AbstractExeState& es)
 {
     const SVFValue *cond = intraEdge->getCondition();
     NodeID cmpID = _svfir->getValueNode(cond);
@@ -660,7 +663,7 @@ bool AbstractExecution::isDirectCall(const SVF::CallICFGNode *callNode)
 void AbstractExecution::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
-    IntervalExeState preES = _svfir2ExeState->getEs();
+    AbstractExeState preES = _svfir2ExeState->getEs();
     _callSiteStack.push_back(callNode);
 
     _postES[callNode] = _svfir2ExeState->getEs();
@@ -693,7 +696,7 @@ void AbstractExecution::indirectCallFunPass(const SVF::CallICFGNode *callNode)
     const SVFFunction *callfun = SVFUtil::dyn_cast<SVFFunction>(func_var->getValue());
     if (callfun)
     {
-        IntervalExeState preES = _svfir2ExeState->getEs();
+        AbstractExeState preES = _svfir2ExeState->getEs();
         _callSiteStack.push_back(callNode);
 
         _postES[callNode] = _svfir2ExeState->getEs();
@@ -737,7 +740,7 @@ void AbstractExecution::handleCycle(const ICFGWTOCycle *cycle)
         // No ES on the in edges - Infeasible block
         return;
     }
-    IntervalExeState pre_es = _preES[cycle->head()];
+    AbstractExeState pre_es = _preES[cycle->head()];
     // set -widen-delay
     s32_t widen_delay = Options::WidenDelay();
     bool incresing = true;
@@ -794,11 +797,12 @@ void AbstractExecution::handleCycle(const ICFGWTOCycle *cycle)
     }
 }
 
-bool AbstractExecution::widenFixpointPass(const ICFGNode* cycle_head, IntervalExeState& pre_es)
+bool AbstractExecution::widenFixpointPass(const ICFGNode* cycle_head,
+                                          AbstractExeState& pre_es)
 {
     // increasing iterations
-    IntervalExeState new_pre_es = pre_es.widening(_postES[cycle_head]);
-    IntervalExeState new_pre_vaddr_es = new_pre_es;
+    AbstractExeState new_pre_es = pre_es.widening(_postES[cycle_head]);
+    AbstractExeState new_pre_vaddr_es = new_pre_es;
     _svfir2ExeState->widenAddrs(new_pre_es, _postES[cycle_head]);
 
     if (pre_es >= new_pre_es)
@@ -816,11 +820,11 @@ bool AbstractExecution::widenFixpointPass(const ICFGNode* cycle_head, IntervalEx
     }
 }
 
-bool AbstractExecution::narrowFixpointPass(const SVF::ICFGNode *cycle_head, SVF::IntervalExeState &pre_es)
+bool AbstractExecution::narrowFixpointPass(const SVF::ICFGNode *cycle_head, SVF::AbstractExeState&pre_es)
 {
     // decreasing iterations
-    IntervalExeState new_pre_es = pre_es.narrowing(_postES[cycle_head]);
-    IntervalExeState new_pre_vaddr_es = new_pre_es;
+    AbstractExeState new_pre_es = pre_es.narrowing(_postES[cycle_head]);
+    AbstractExeState new_pre_vaddr_es = new_pre_es;
     _svfir2ExeState->narrowAddrs(new_pre_es, _postES[cycle_head]);
     if (new_pre_es >= pre_es)
     {
@@ -930,7 +934,7 @@ void AbstractExecution::SkipRecursiveCall(const CallICFGNode *callNode)
     {
         if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(*retNode->getSVFStmts().begin()))
         {
-            IntervalExeState es;
+            AbstractExeState es;
             if (!retPE->getLHSVar()->isPointer() && !retPE->getLHSVar()->isConstDataOrAggDataButNotNullPtr())
                 _svfir2ExeState->getEs()[retPE->getLHSVarID()] = IntervalValue::top();
         }
@@ -966,7 +970,7 @@ void AbstractExecution::SkipRecursiveFunc(const SVFFunction *func)
                 {
                     const SVFVar *rhsVar = store->getRHSVar();
                     u32_t lhs = store->getLHSVarID();
-                    IntervalExeState &curES = _svfir2ExeState->getEs();
+                    AbstractExeState&curES = _svfir2ExeState->getEs();
                     if (curES.inVarToAddrsTable(lhs))
                     {
                         if (!rhsVar->isPointer() && !rhsVar->isConstDataOrAggDataButNotNullPtr())
@@ -989,8 +993,10 @@ void AEStat::countStateSize()
 {
     if (count == 0)
     {
-        generalNumMap["Global_ES_Var_AVG_Num"] = IntervalExeState::globalES.getVarToVal().size();
-        generalNumMap["Global_ES_Loc_AVG_Num"] = IntervalExeState::globalES.getLocToVal().size();
+        generalNumMap["Global_ES_Var_AVG_Num"] =
+            AbstractExeState::globalES.getVarToVal().size();
+        generalNumMap["Global_ES_Loc_AVG_Num"] =
+            AbstractExeState::globalES.getLocToVal().size();
         generalNumMap["ES_Var_AVG_Num"] = 0;
         generalNumMap["ES_Loc_AVG_Num"] = 0;
         generalNumMap["ES_Var_Addr_AVG_Num"] = 0;
@@ -1107,8 +1113,8 @@ void AbstractExecution::initExtFunMap()
 {
 #define SSE_FUNC_PROCESS(LLVM_NAME ,FUNC_NAME) \
         auto sse_##FUNC_NAME = [this](const CallSite &cs) { \
-        /* run real ext function */ \
-        IntervalExeState &es = _svfir2ExeState->getEs(); \
+        /* run real ext function */                                            \
+        AbstractExeState&es = _svfir2ExeState->getEs(); \
         u32_t rhs_id = _svfir->getValueNode(cs.getArgument(0)); \
         if (!es.inVarToValTable(rhs_id)) return; \
         u32_t rhs = _svfir2ExeState->getEs()[rhs_id].getInterval().lb().getIntNumeral(); \
@@ -1143,7 +1149,7 @@ void AbstractExecution::initExtFunMap()
         const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(_svfir->getICFG()->getICFGNode(cs.getInstruction()));
         _checkpoints.erase(callNode);
         u32_t arg0 = _svfir->getValueNode(cs.getArgument(0));
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         es[arg0].getInterval().meet_with(IntervalValue(1, 1));
         if (es[arg0].getInterval().equals(IntervalValue(1, 1)))
         {
@@ -1161,7 +1167,7 @@ void AbstractExecution::initExtFunMap()
     auto svf_print = [&](const CallSite &cs)
     {
         if (cs.arg_size() < 2) return;
-        IntervalExeState &es = _svfir2ExeState->getEs();
+        AbstractExeState&es = _svfir2ExeState->getEs();
         u32_t num_id = _svfir->getValueNode(cs.getArgument(0));
         std::string text = strRead(cs.getArgument(1));
         assert(es.inVarToValTable(num_id) && "print() should pass integer");
@@ -1178,7 +1184,7 @@ void AbstractExecution::initExtFunMap()
 std::string AbstractExecution::strRead(const SVFValue* rhs)
 {
     // sse read string nodeID->string
-    IntervalExeState &es = _svfir2ExeState->getEs();
+    AbstractExeState&es = _svfir2ExeState->getEs();
     std::string str0;
 
     for (u32_t index = 0; index < Options::MaxFieldLimit(); index++)
@@ -1489,7 +1495,7 @@ AbstractValue AbstractExecution::traceMemoryAllocationSize(const SVFValue *value
 
 AbstractValue AbstractExecution::getStrlen(const SVF::SVFValue *strValue)
 {
-    IntervalExeState &es = _svfir2ExeState->getEs();
+    AbstractExeState&es = _svfir2ExeState->getEs();
     AbstractValue dst_size = traceMemoryAllocationSize(strValue);
     u32_t len = 0;
     NodeID dstid = _svfir->getValueNode(strValue);
@@ -1582,7 +1588,7 @@ void AbstractExecution::handleStrcat(const SVF::CallICFGNode *call)
 
 void AbstractExecution::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFValue *src, AbstractValue len,  u32_t start_idx)
 {
-    IntervalExeState &es = _svfir2ExeState->getEs();
+    AbstractExeState&es = _svfir2ExeState->getEs();
     u32_t dstId = _svfir->getValueNode(dst); // pts(dstId) = {objid}  objbar objtypeinfo->getType().
     u32_t srcId = _svfir->getValueNode(src);
     u32_t elemSize = 1;
@@ -1657,7 +1663,7 @@ const SVFType* AbstractExecution::getPointeeElement(NodeID id)
 
 void AbstractExecution::handleMemset(const SVF::SVFValue *dst, AbstractValue elem, AbstractValue len)
 {
-    IntervalExeState &es = _svfir2ExeState->getEs();
+    AbstractExeState&es = _svfir2ExeState->getEs();
     u32_t dstId = _svfir->getValueNode(dst);
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
     u32_t elemSize = 1;

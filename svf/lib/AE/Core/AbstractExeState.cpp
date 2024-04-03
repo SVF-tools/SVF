@@ -20,25 +20,25 @@
 //
 //===----------------------------------------------------------------------===//
 /*
- * IntervalExeState.cpp
+ * AbstractExeState.cpp
  *
  *  Created on: Jul 9, 2022
  *      Author: Xiao Cheng, Jiawei Wang
  *
  */
 
-#include "AE/Core/IntervalExeState.h"
+#include "AE/Core/AbstractExeState.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-bool IntervalESBase::equals(const IntervalESBase &other) const
+bool AbstractESBase::equals(const AbstractESBase&other) const
 {
     return *this == other;
 }
 
-u32_t IntervalESBase::hash() const
+u32_t AbstractESBase::hash() const
 {
     size_t h = getVarToVal().size() * 2;
     Hash<u32_t> hf;
@@ -55,10 +55,10 @@ u32_t IntervalESBase::hash() const
     return pairH({h, h2});
 }
 
-IntervalESBase IntervalESBase::widening(const IntervalESBase& other)
+AbstractESBase AbstractESBase::widening(const AbstractESBase& other)
 {
     // widen interval
-    IntervalESBase es = *this;
+    AbstractESBase es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
@@ -77,9 +77,9 @@ IntervalESBase IntervalESBase::widening(const IntervalESBase& other)
     return es;
 }
 
-IntervalESBase IntervalESBase::narrowing(const IntervalESBase& other)
+AbstractESBase AbstractESBase::narrowing(const AbstractESBase& other)
 {
-    IntervalESBase es = *this;
+    AbstractESBase es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
@@ -97,7 +97,7 @@ IntervalESBase IntervalESBase::narrowing(const IntervalESBase& other)
 }
 
 /// domain widen with other, important! other widen this.
-void IntervalESBase::widenWith(const IntervalESBase& other)
+void AbstractESBase::widenWith(const AbstractESBase& other)
 {
     for (auto it = _varToAbsVal.begin(); it != _varToAbsVal.end(); ++it)
     {
@@ -116,7 +116,7 @@ void IntervalESBase::widenWith(const IntervalESBase& other)
 }
 
 /// domain join with other, important! other widen this.
-void IntervalESBase::joinWith(const IntervalESBase& other)
+void AbstractESBase::joinWith(const AbstractESBase& other)
 {
     for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
     {
@@ -165,7 +165,7 @@ void IntervalESBase::joinWith(const IntervalESBase& other)
 }
 
 /// domain narrow with other, important! other widen this.
-void IntervalESBase::narrowWith(const IntervalESBase& other)
+void AbstractESBase::narrowWith(const AbstractESBase& other)
 {
     for (auto it = _varToAbsVal.begin(); it != _varToAbsVal.end(); ++it)
     {
@@ -186,7 +186,7 @@ void IntervalESBase::narrowWith(const IntervalESBase& other)
 }
 
 /// domain meet with other, important! other widen this.
-void IntervalESBase::meetWith(const IntervalESBase& other)
+void AbstractESBase::meetWith(const AbstractESBase& other)
 {
     for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
     {
@@ -227,7 +227,7 @@ void IntervalESBase::meetWith(const IntervalESBase& other)
 }
 
 /// Print values of all expressions
-void IntervalESBase::printExprValues(std::ostream &oss) const
+void AbstractESBase::printExprValues(std::ostream &oss) const
 {
     oss << "-----------Var and Value-----------\n";
     printTable(_varToAbsVal, oss);
@@ -235,7 +235,7 @@ void IntervalESBase::printExprValues(std::ostream &oss) const
     oss << "-----------------------------------------\n";
 }
 
-void IntervalESBase::printTable(const VarToAbsValMap&table, std::ostream &oss) const
+void AbstractESBase::printTable(const VarToAbsValMap&table, std::ostream &oss) const
 {
     oss.flags(std::ios::left);
     std::set<NodeID> ordered;
@@ -258,20 +258,20 @@ void IntervalESBase::printTable(const VarToAbsValMap&table, std::ostream &oss) c
     }
 }
 
-IntervalExeState IntervalExeState::globalES;
-bool IntervalExeState::equals(const IntervalExeState &other) const
+AbstractExeState AbstractExeState::globalES;
+bool AbstractExeState::equals(const AbstractExeState&other) const
 {
     return *this == other;
 }
 
-u32_t IntervalExeState::hash() const
+u32_t AbstractExeState::hash() const
 {
-    return IntervalESBase::hash();
+    return AbstractESBase::hash();
 }
 
-IntervalExeState IntervalExeState::widening(const IntervalExeState& other)
+AbstractExeState AbstractExeState::widening(const AbstractExeState& other)
 {
-    IntervalExeState es = *this;
+    AbstractExeState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
@@ -289,9 +289,9 @@ IntervalExeState IntervalExeState::widening(const IntervalExeState& other)
     return es;
 }
 
-IntervalExeState IntervalExeState::narrowing(const IntervalExeState& other)
+AbstractExeState AbstractExeState::narrowing(const AbstractExeState& other)
 {
-    IntervalExeState es = *this;
+    AbstractExeState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
@@ -311,32 +311,32 @@ IntervalExeState IntervalExeState::narrowing(const IntervalExeState& other)
 }
 
 /// domain widen with other, important! other widen this.
-void IntervalExeState::widenWith(const IntervalExeState& other)
+void AbstractExeState::widenWith(const AbstractExeState& other)
 {
-    IntervalESBase::widenWith(other);
+    AbstractESBase::widenWith(other);
 }
 
 /// domain join with other, important! other widen this.
-void IntervalExeState::joinWith(const IntervalExeState& other)
+void AbstractExeState::joinWith(const AbstractExeState& other)
 {
-    IntervalESBase::joinWith(other);
+    AbstractESBase::joinWith(other);
 }
 
 /// domain narrow with other, important! other widen this.
-void IntervalExeState::narrowWith(const IntervalExeState& other)
+void AbstractExeState::narrowWith(const AbstractExeState& other)
 {
-    IntervalESBase::narrowWith(other);
+    AbstractESBase::narrowWith(other);
 }
 
 /// domain meet with other, important! other widen this.
-void IntervalExeState::meetWith(const IntervalExeState& other)
+void AbstractExeState::meetWith(const AbstractExeState& other)
 {
-    IntervalESBase::meetWith(other);
+    AbstractESBase::meetWith(other);
 }
 
 
 /// Print values of all expressions
-void IntervalExeState::printExprValues(std::ostream &oss) const
+void AbstractExeState::printExprValues(std::ostream &oss) const
 {
     oss << "-----------Var and Value-----------\n";
     printTable(_varToAbsVal, oss);
