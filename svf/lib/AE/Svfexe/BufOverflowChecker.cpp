@@ -284,7 +284,10 @@ void BufOverflowChecker::initExtFunMap()
         }
         else if (strValue->getType()->isPointerTy())
         {
-            elemSize = getPointeeElement(_svfir->getValueNode(strValue))->getByteSize();
+            if (const SVFType* pointee = getPointeeElement(_svfir->getValueNode(strValue)))
+                elemSize = pointee->getByteSize();
+            else
+                elemSize = 1;
         }
         u32_t lhsId = _svfir->getValueNode(cs.getInstruction());
         es[lhsId] = dst_size / IntervalValue(elemSize);

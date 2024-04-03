@@ -1639,7 +1639,6 @@ void AbstractExecution::handleMemcpy(const SVF::SVFValue *dst, const SVF::SVFVal
 
 const SVFType* AbstractExecution::getPointeeElement(NodeID id)
 {
-    assert(_svfir2ExeState->inVarToAddrsTable(id) && "id is not in varToAddrsTable");
     if (_svfir2ExeState->inVarToAddrsTable(id))
     {
         const AbstractValue& addrs = _svfir2ExeState->getAddrs(id);
@@ -1650,6 +1649,8 @@ const SVFType* AbstractExecution::getPointeeElement(NodeID id)
                 continue;
             return SVFUtil::dyn_cast<ObjVar>(_svfir->getGNode(addr_id))->getMemObj()->getType();
         }
+    } else {
+        // do nothing if no record in addrs table.
     }
     return nullptr;
 }

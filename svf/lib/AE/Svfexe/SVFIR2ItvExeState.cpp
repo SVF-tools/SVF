@@ -103,8 +103,8 @@ AbstractValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
     }
     else
     {
-        assert(false && "cannot support");
-        abort();
+        return IntervalValue::top();
+        // other types, return top interval
     }
 }
 
@@ -1003,8 +1003,17 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
             {
                 _es[lhs] = IntervalValue::top();
             }
-            else
+            else if (copy->getCopyKind() == CopyStmt::BITCAST)
             {
+                if (_es[rhs].isAddr()) {
+                    _es[lhs] = _es[rhs];
+                }
+                else
+                {
+                    // do nothing
+                }
+            }
+            else {
                 assert(false && "undefined copy kind");
                 abort();
             }
