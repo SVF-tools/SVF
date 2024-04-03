@@ -33,19 +33,19 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-AbstractESBase RelationSolver::bilateral(const AbstractESBase&domain, const Z3Expr& phi,
+AbstractState RelationSolver::bilateral(const AbstractState&domain, const Z3Expr& phi,
         u32_t descend_check)
 {
     /// init variables
-    AbstractESBase upper = domain.top();
-    AbstractESBase lower = domain.bottom();
+    AbstractState upper = domain.top();
+    AbstractState lower = domain.bottom();
     u32_t meets_in_a_row = 0;
     z3::solver solver = Z3Expr::getSolver();
     z3::params p(Z3Expr::getContext());
     /// TODO: add option for timeout
     p.set(":timeout", static_cast<unsigned>(600)); // in milliseconds
     solver.set(p);
-    AbstractESBase consequence;
+    AbstractState consequence;
 
     /// start processing
     while (lower != upper)
@@ -85,9 +85,9 @@ AbstractESBase RelationSolver::bilateral(const AbstractESBase&domain, const Z3Ex
                 }
             }
             solver.pop();
-            AbstractESBase newLower = domain.bottom();
+            AbstractState newLower = domain.bottom();
             newLower.joinWith(lower);
-            AbstractESBase rhs = beta(solution, domain);
+            AbstractState rhs = beta(solution, domain);
             newLower.joinWith(rhs);
             lower = newLower;
             meets_in_a_row = 0;
@@ -101,7 +101,7 @@ AbstractESBase RelationSolver::bilateral(const AbstractESBase&domain, const Z3Ex
                 if (solver.reason_unknown() == "timeout")
                     return upper;
             }
-            AbstractESBase newUpper = domain.top();
+            AbstractState newUpper = domain.top();
             newUpper.meetWith(upper);
             newUpper.meetWith(consequence);
             upper = newUpper;
@@ -111,9 +111,9 @@ AbstractESBase RelationSolver::bilateral(const AbstractESBase&domain, const Z3Ex
     return upper;
 }
 
-AbstractESBase RelationSolver::RSY(const AbstractESBase& domain, const Z3Expr& phi)
+AbstractState RelationSolver::RSY(const AbstractState& domain, const Z3Expr& phi)
 {
-    AbstractESBase lower = domain.bottom();
+    AbstractState lower = domain.bottom();
     z3::solver& solver = Z3Expr::getSolver();
     z3::params p(Z3Expr::getContext());
     /// TODO: add option for timeout
@@ -147,7 +147,7 @@ AbstractESBase RelationSolver::RSY(const AbstractESBase& domain, const Z3Expr& p
                 }
             }
             solver.pop();
-            AbstractESBase newLower = domain.bottom();
+            AbstractState newLower = domain.bottom();
             newLower.joinWith(lower);
             newLower.joinWith(beta(solution, domain));
             lower = newLower;
@@ -167,8 +167,8 @@ AbstractESBase RelationSolver::RSY(const AbstractESBase& domain, const Z3Expr& p
     return lower;
 }
 
-AbstractESBase RelationSolver::abstract_consequence(
-    const AbstractESBase& lower, const AbstractESBase& upper, const AbstractESBase& domain) const
+AbstractState RelationSolver::abstract_consequence(
+    const AbstractState& lower, const AbstractState& upper, const AbstractState& domain) const
 {
     /*Returns the "abstract consequence" of lower and upper.
 
@@ -184,7 +184,7 @@ AbstractESBase RelationSolver::abstract_consequence(
             it != domain.getVarToVal().end(); ++it)
         /// for variable in self.variables:
     {
-        AbstractESBase proposed = domain.top(); /// proposed = self.top.copy()
+        AbstractState proposed = domain.top(); /// proposed = self.top.copy()
         proposed[it->first] = lower[it->first].getInterval();
         /// proposed.set_interval(variable, lower.interval_of(variable))
         /// proposed._locToItvVal
@@ -196,7 +196,7 @@ AbstractESBase RelationSolver::abstract_consequence(
     return lower; /// return lower.copy()
 }
 
-Z3Expr RelationSolver::gamma_hat(const AbstractESBase& exeState) const
+Z3Expr RelationSolver::gamma_hat(const AbstractState& exeState) const
 {
     Z3Expr res(Z3Expr::getContext().bool_val(true));
     for (auto& item : exeState.getVarToVal())
@@ -212,8 +212,8 @@ Z3Expr RelationSolver::gamma_hat(const AbstractESBase& exeState) const
     return res;
 }
 
-Z3Expr RelationSolver::gamma_hat(const AbstractESBase& alpha,
-                                 const AbstractESBase& exeState) const
+Z3Expr RelationSolver::gamma_hat(const AbstractState& alpha,
+                                 const AbstractState& exeState) const
 {
     Z3Expr res(Z3Expr::getContext().bool_val(true));
     for (auto& item : exeState.getVarToVal())
@@ -230,7 +230,7 @@ Z3Expr RelationSolver::gamma_hat(const AbstractESBase& alpha,
     return res;
 }
 
-Z3Expr RelationSolver::gamma_hat(u32_t id, const AbstractESBase& exeState) const
+Z3Expr RelationSolver::gamma_hat(u32_t id, const AbstractState& exeState) const
 {
     auto it = exeState.getVarToVal().find(id);
     assert(it != exeState.getVarToVal().end() && "id not in varToVal?");
@@ -241,10 +241,10 @@ Z3Expr RelationSolver::gamma_hat(u32_t id, const AbstractESBase& exeState) const
     return res;
 }
 
-AbstractESBase RelationSolver::beta(const Map<u32_t, s32_t>& sigma,
-                                    const AbstractESBase& exeState) const
+AbstractState RelationSolver::beta(const Map<u32_t, s32_t>& sigma,
+                                    const AbstractState& exeState) const
 {
-    AbstractESBase res;
+    AbstractState res;
     for (const auto& item : exeState.getVarToVal())
     {
         res[item.first] = IntervalValue(
@@ -266,7 +266,7 @@ void RelationSolver::updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const
     }
 }
 
-AbstractESBase RelationSolver::BS(const AbstractESBase& domain, const Z3Expr &phi)
+AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
 {
     /// because key of _varToItvVal is u32_t, -key may out of range for int
     /// so we do key + bias for -key
@@ -312,7 +312,7 @@ AbstractESBase RelationSolver::BS(const AbstractESBase& domain, const Z3Expr &ph
     /// optimize each object
     BoxedOptSolver(new_phi.simplify(), ret, low_values, high_values);
     /// fill in the return values
-    AbstractESBase retInv;
+    AbstractState retInv;
     for (const auto& item: ret)
     {
         if (item.first >= bias)

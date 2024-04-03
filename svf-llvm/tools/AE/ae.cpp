@@ -63,11 +63,11 @@ public:
         outs() << "hello print\n";
     }
 
-    AbstractESBase RSY_time(AbstractESBase& inv, const Z3Expr& phi,
+    AbstractState RSY_time(AbstractState& inv, const Z3Expr& phi,
                             RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
-        AbstractESBase resRSY = rs.RSY(inv, phi);
+        AbstractState resRSY = rs.RSY(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
                             end_time - start_time);
@@ -75,11 +75,11 @@ public:
                << " microseconds\n";
         return resRSY;
     }
-    AbstractESBase Bilateral_time(AbstractESBase& inv, const Z3Expr& phi,
+    AbstractState Bilateral_time(AbstractState& inv, const Z3Expr& phi,
                                   RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
-        AbstractESBase resBilateral = rs.bilateral(inv, phi);
+        AbstractState resBilateral = rs.bilateral(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
                             end_time - start_time);
@@ -87,11 +87,11 @@ public:
                << " microseconds\n";
         return resBilateral;
     }
-    AbstractESBase BS_time(AbstractESBase& inv, const Z3Expr& phi,
+    AbstractState BS_time(AbstractState& inv, const Z3Expr& phi,
                            RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
-        AbstractESBase resBS = rs.BS(inv, phi);
+        AbstractState resBS = rs.BS(inv, phi);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
                             end_time - start_time);
@@ -103,7 +103,7 @@ public:
     void testRelExeState1_1()
     {
         outs() << sucMsg("\t SUCCESS :") << "test1_1 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [0, 1];
         itv[0] = IntervalValue(0, 1);
@@ -116,29 +116,28 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[1], res);
         assert(res == Set<u32_t>({0, 1}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = rs.RSY(inv, phi);
-        AbstractESBase resBilateral = rs.bilateral(inv, phi);
-        AbstractESBase resBS = rs.BS(inv, phi);
+        AbstractState resRSY = rs.RSY(inv, phi);
+        AbstractState resBilateral = rs.bilateral(inv, phi);
+        AbstractState resBS = rs.BS(inv, phi);
         // 0:[0,1] 1:[1,2]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(1, 2)}};
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(1, 2)}};
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState1_2()
     {
         outs() << "test1_2 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [0, 1];
         relation[0] = getContext().int_const("0");
@@ -152,29 +151,28 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[1], res);
         assert(res == Set<u32_t>({0, 1}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = rs.RSY(inv, phi);
-        AbstractESBase resBilateral = rs.bilateral(inv, phi);
-        AbstractESBase resBS = rs.BS(inv, phi);
+        AbstractState resRSY = rs.RSY(inv, phi);
+        AbstractState resBilateral = rs.bilateral(inv, phi);
+        AbstractState resBS = rs.BS(inv, phi);
         // 0:[0,1] 1:[0,2]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
         {
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(0, 2)}};
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1)}, {1, IntervalValue(0, 2)}};
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_1()
     {
         outs() << "test2_1 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [0, 10];
         relation[0] = getContext().int_const("0");
@@ -191,14 +189,14 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
         assert(res == Set<u32_t>({0, 1, 2}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[2] && relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = rs.RSY(inv, phi);
-        AbstractESBase resBilateral = rs.bilateral(inv, phi);
-        AbstractESBase resBS = rs.BS(inv, phi);
+        AbstractState resRSY = rs.RSY(inv, phi);
+        AbstractState resBilateral = rs.bilateral(inv, phi);
+        AbstractState resBS = rs.BS(inv, phi);
         // 0:[0,10] 1:[0,10] 2:[0,0]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
@@ -206,18 +204,17 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10)},
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10)},
             {1, IntervalValue(0, 10)},
             {2, IntervalValue(0, 0)}
         };
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_2()
     {
         outs() << "test2_2 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [0, 100];
         relation[0] = getContext().int_const("0");
@@ -235,14 +232,14 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
         assert(res == Set<u32_t>({0, 1, 2}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[2] && relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = rs.RSY(inv, phi);
-        AbstractESBase resBilateral = rs.bilateral(inv, phi);
-        AbstractESBase resBS = rs.BS(inv, phi);
+        AbstractState resRSY = rs.RSY(inv, phi);
+        AbstractState resBilateral = rs.bilateral(inv, phi);
+        AbstractState resBS = rs.BS(inv, phi);
         // 0:[0,100] 1:[0,100] 2:[0,0]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
@@ -250,18 +247,17 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 100)},
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 100)},
             {1, IntervalValue(0, 100)},
             {2, IntervalValue(0, 0)}
         };
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_3()
     {
         outs() << "test2_3 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [0, 1000];
         relation[0] = getContext().int_const("0");
@@ -279,14 +275,14 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
         assert(res == Set<u32_t>({0, 1, 2}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[2] && relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = rs.RSY(inv, phi);
-        AbstractESBase resBilateral = rs.bilateral(inv, phi);
-        AbstractESBase resBS = rs.BS(inv, phi);
+        AbstractState resRSY = rs.RSY(inv, phi);
+        AbstractState resBilateral = rs.bilateral(inv, phi);
+        AbstractState resBS = rs.BS(inv, phi);
         // 0:[0,1000] 1:[0,1000] 2:[0,0]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
@@ -294,18 +290,17 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1000)},
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 1000)},
             {1, IntervalValue(0, 1000)},
             {2, IntervalValue(0, 0)}
         };
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_4()
     {
         outs() << "test2_4 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [0, 10000];
         relation[0] = getContext().int_const("0");
@@ -323,14 +318,14 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
         assert(res == Set<u32_t>({0, 1, 2}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[2] && relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = RSY_time(inv, phi, rs);
-        AbstractESBase resBilateral = Bilateral_time(inv, phi, rs);
-        AbstractESBase resBS = BS_time(inv, phi, rs);
+        AbstractState resRSY = RSY_time(inv, phi, rs);
+        AbstractState resBilateral = Bilateral_time(inv, phi, rs);
+        AbstractState resBS = BS_time(inv, phi, rs);
         // 0:[0,10000] 1:[0,10000] 2:[0,0]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
@@ -338,18 +333,17 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10000)},
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10000)},
             {1, IntervalValue(0, 10000)},
             {2, IntervalValue(0, 0)}
         };
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState2_5()
     {
         outs() << "test2_5 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [0, 100000];
         relation[0] = getContext().int_const("0");
@@ -367,14 +361,14 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
         assert(res == Set<u32_t>({0, 1, 2}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[2] && relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = RSY_time(inv, phi, rs);
-        AbstractESBase resBilateral = Bilateral_time(inv, phi, rs);
-        AbstractESBase resBS = BS_time(inv, phi, rs);
+        AbstractState resRSY = RSY_time(inv, phi, rs);
+        AbstractState resBilateral = Bilateral_time(inv, phi, rs);
+        AbstractState resBS = BS_time(inv, phi, rs);
         // 0:[0,100000] 1:[0,100000] 2:[0,0]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
@@ -382,18 +376,17 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 100000)},
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 100000)},
             {1, IntervalValue(0, 100000)},
             {2, IntervalValue(0, 0)}
         };
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState3_1()
     {
         outs() << "test3_1 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [1, 10];
         relation[0] = getContext().int_const("0");
@@ -410,14 +403,14 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
         assert(res == Set<u32_t>({0, 1, 2}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[2] && relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = rs.RSY(inv, phi);
-        AbstractESBase resBilateral = rs.bilateral(inv, phi);
-        AbstractESBase resBS = rs.BS(inv, phi);
+        AbstractState resRSY = rs.RSY(inv, phi);
+        AbstractState resBilateral = rs.bilateral(inv, phi);
+        AbstractState resBS = rs.BS(inv, phi);
         // 0:[1,10] 1:[1,10] 2:[1,1]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
@@ -425,18 +418,17 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10)},
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10)},
             {1, IntervalValue(1, 10)},
             {2, IntervalValue(1, 1)}
         };
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState3_2()
     {
         outs() << "test3_2 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [1, 1000];
         relation[0] = getContext().int_const("0");
@@ -453,14 +445,14 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
         assert(res == Set<u32_t>({0, 1, 2}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[2] && relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = rs.RSY(inv, phi);
-        AbstractESBase resBilateral = rs.bilateral(inv, phi);
-        AbstractESBase resBS = rs.BS(inv, phi);
+        AbstractState resRSY = rs.RSY(inv, phi);
+        AbstractState resBilateral = rs.bilateral(inv, phi);
+        AbstractState resBS = rs.BS(inv, phi);
         // 0:[1,1000] 1:[1,1000] 2:[1,1]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
@@ -468,18 +460,17 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 1000)},
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 1000)},
             {1, IntervalValue(1, 1000)},
             {2, IntervalValue(1, 1)}
         };
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState3_3()
     {
         outs() << "test3_3 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [1, 10000];
         relation[0] = getContext().int_const("0");
@@ -496,14 +487,14 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
         assert(res == Set<u32_t>({0, 1, 2}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[2] && relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = RSY_time(inv, phi, rs);
-        AbstractESBase resBilateral = Bilateral_time(inv, phi, rs);
-        AbstractESBase resBS = BS_time(inv, phi, rs);
+        AbstractState resRSY = RSY_time(inv, phi, rs);
+        AbstractState resBilateral = Bilateral_time(inv, phi, rs);
+        AbstractState resBS = BS_time(inv, phi, rs);
         // 0:[1,10000] 1:[1,10000] 2:[1,1]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
@@ -511,7 +502,7 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10000)},
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10000)},
             {1, IntervalValue(1, 10000)},
             {2, IntervalValue(1, 1)}};
     }
@@ -519,7 +510,7 @@ public:
     void testRelExeState3_4()
     {
         outs() << "test3_4 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [1, 100000];
         relation[0] = getContext().int_const("0");
@@ -536,14 +527,14 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
         assert(res == Set<u32_t>({0, 1, 2}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[2] && relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
         const Z3Expr& phi = (relExpr && initExpr).simplify();
-        AbstractESBase resRSY = RSY_time(inv, phi, rs);
-        AbstractESBase resBilateral = Bilateral_time(inv, phi, rs);
-        AbstractESBase resBS = BS_time(inv, phi, rs);
+        AbstractState resRSY = RSY_time(inv, phi, rs);
+        AbstractState resBilateral = Bilateral_time(inv, phi, rs);
+        AbstractState resBS = BS_time(inv, phi, rs);
         // 0:[1,100000] 1:[1,100000] 2:[1,1]
         assert(resRSY == resBS && resBS == resBilateral && "inconsistency occurs");
         for (auto r : resRSY.getVarToVal())
@@ -551,18 +542,17 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 100000)},
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 100000)},
             {1, IntervalValue(1, 100000)},
             {2, IntervalValue(1, 1)}
         };
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testRelExeState4_1()
     {
         outs() << "test4_1 start\n";
-        AbstractESBase itv;
+        AbstractState itv;
         RelExeState relation;
         // var0 := [0, 10];
         relation[0] = getContext().int_const("0");
@@ -579,7 +569,7 @@ public:
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
         assert(res == Set<u32_t>({0, 1, 2}) && "inconsistency occurs");
-        AbstractESBase inv = itv.sliceState(res);
+        AbstractState inv = itv.sliceState(res);
         RelationSolver rs;
         const Z3Expr& relExpr = relation[2] && relation[1];
         const Z3Expr& initExpr = rs.gamma_hat(inv);
@@ -588,7 +578,7 @@ public:
         outs() << "rsy done\n";
         // IntervalExeState resBilateral = rs.bilateral(inv, phi);
         outs() << "bilateral done\n";
-        AbstractESBase resBS = rs.BS(inv, phi);
+        AbstractState resBS = rs.BS(inv, phi);
         outs() << "bs done\n";
         // 0:[0,10] 1:[0,10] 2:[-00,+00]
         // assert(resRSY == resBS && resBS == resBilateral);
@@ -597,12 +587,11 @@ public:
             outs() << r.first << " " << r.second.getInterval() << "\n";
         }
         // ground truth
-        AbstractESBase::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10)},
+        AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(0, 10)},
             {1, IntervalValue(0, 10)},
             {2, IntervalValue(IntervalValue::minus_infinity(), IntervalValue::plus_infinity())}
         };
-        assert(
-            AbstractESBase::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
+        assert(AbstractState::eqVarToValMap(resBS.getVarToVal(), intendedRes) && "inconsistency occurs");
     }
 
     void testsValidation()

@@ -39,7 +39,7 @@
 namespace SVF
 {
 
-class AbstractExeState;
+class SparseAbstractState;
 
 /*!
  * Base execution state

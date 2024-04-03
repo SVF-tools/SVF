@@ -52,7 +52,7 @@
 
 namespace SVF
 {
-class AbstractESBase
+class AbstractState
 {
     friend class SVFIR2ItvExeState;
     friend class RelationSolver;
@@ -63,19 +63,19 @@ public:
 
 public:
     /// default constructor
-    AbstractESBase() {}
+    AbstractState() {}
 
-    AbstractESBase(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap),
+    AbstractState(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap),
           _locToAbsVal(_locToValMap) {}
 
     /// copy constructor
-    AbstractESBase(const AbstractESBase&rhs) : _varToAbsVal(rhs.getVarToVal()),
+    AbstractState(const AbstractState&rhs) : _varToAbsVal(rhs.getVarToVal()),
           _locToAbsVal(rhs.getLocToVal())
     {
 
     }
 
-    virtual ~AbstractESBase() = default;
+    virtual ~AbstractState() = default;
 
 
     /// The physical address starts with 0x7f...... + idx
@@ -101,7 +101,7 @@ public:
         return getInternalID(addr) == 0;
     }
 
-    AbstractESBase&operator=(const AbstractESBase&rhs)
+    AbstractState&operator=(const AbstractState&rhs)
     {
         if (rhs != *this)
         {
@@ -112,14 +112,14 @@ public:
     }
 
     /// move constructor
-    AbstractESBase(AbstractESBase&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
+    AbstractState(AbstractState&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
           _locToAbsVal(std::move(rhs._locToAbsVal))
     {
 
     }
 
     /// operator= move constructor
-    AbstractESBase&operator=(AbstractESBase&&rhs)
+    AbstractState&operator=(AbstractState&&rhs)
     {
         if (&rhs != this)
         {
@@ -130,9 +130,9 @@ public:
     }
 
     /// Set all value bottom
-    AbstractESBase bottom() const
+    AbstractState bottom() const
     {
-        AbstractESBase inv = *this;
+        AbstractState inv = *this;
         for (auto &item: inv._varToAbsVal)
         {
             if (item.second.isInterval())
@@ -142,9 +142,9 @@ public:
     }
 
     /// Set all value top
-    AbstractESBase top() const
+    AbstractState top() const
     {
-        AbstractESBase inv = *this;
+        AbstractState inv = *this;
         for (auto &item: inv._varToAbsVal)
         {
             if (item.second.isInterval())
@@ -154,9 +154,9 @@ public:
     }
 
     /// Copy some values and return a new IntervalExeState
-    AbstractESBase sliceState(Set<u32_t> &sl)
+    AbstractState sliceState(Set<u32_t> &sl)
     {
-        AbstractESBase inv;
+        AbstractState inv;
         for (u32_t id: sl)
         {
             inv._varToAbsVal[id] = _varToAbsVal[id];
@@ -242,22 +242,22 @@ public:
 public:
 
     /// domain widen with other, and return the widened domain
-    AbstractESBase widening(const AbstractESBase&other);
+    AbstractState widening(const AbstractState&other);
 
     /// domain narrow with other, and return the narrowed domain
-    AbstractESBase narrowing(const AbstractESBase&other);
+    AbstractState narrowing(const AbstractState&other);
 
     /// domain widen with other, important! other widen this.
-    void widenWith(const AbstractESBase&other);
+    void widenWith(const AbstractState&other);
 
     /// domain join with other, important! other widen this.
-    void joinWith(const AbstractESBase&other);
+    void joinWith(const AbstractState&other);
 
     /// domain narrow with other, important! other widen this.
-    void narrowWith(const AbstractESBase&other);
+    void narrowWith(const AbstractState&other);
 
     /// domain meet with other, important! other widen this.
-    void meetWith(const AbstractESBase&other);
+    void meetWith(const AbstractState&other);
 
 
     /// Return int value from an expression if it is a numeral, otherwise return an approximate value
@@ -327,7 +327,7 @@ public:
         return "";
     }
 
-    bool equals(const AbstractESBase&other) const;
+    bool equals(const AbstractState&other) const;
 
     static bool eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)
     {
@@ -393,24 +393,24 @@ public:
         return true;
     }
 
-    bool operator==(const AbstractESBase&rhs) const
+    bool operator==(const AbstractState&rhs) const
     {
         return  eqVarToValMap(_varToAbsVal, rhs.getVarToVal()) &&
                eqVarToValMap(_locToAbsVal, rhs.getLocToVal());
     }
 
-    bool operator!=(const AbstractESBase&rhs) const
+    bool operator!=(const AbstractState&rhs) const
     {
         return !(*this == rhs);
     }
 
-    bool operator<(const AbstractESBase&rhs) const
+    bool operator<(const AbstractState&rhs) const
     {
         return !(*this >= rhs);
     }
 
 
-    bool operator>=(const AbstractESBase&rhs) const
+    bool operator>=(const AbstractState&rhs) const
     {
         return geqVarToValMap(_varToAbsVal, rhs.getVarToVal()) && geqVarToValMap(_locToAbsVal, rhs.getLocToVal());
     }
@@ -427,46 +427,46 @@ protected:
 
 };
 
-class AbstractExeState : public AbstractESBase
+class SparseAbstractState : public AbstractState
 {
     friend class SVFIR2ItvExeState;
     friend class RelationSolver;
 
 public:
-    static AbstractExeState globalES;
+    static SparseAbstractState globalES;
 
 public:
     /// default constructor
-    AbstractExeState() : AbstractESBase() {}
+    SparseAbstractState() : AbstractState() {}
 
-    AbstractExeState(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : AbstractESBase(_varToValMap, _locToValMap) {}
+    SparseAbstractState(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : AbstractState(_varToValMap, _locToValMap) {}
 
     /// copy constructor
-    AbstractExeState(const AbstractExeState&rhs) : AbstractESBase(rhs)
+    SparseAbstractState(const SparseAbstractState&rhs) : AbstractState(rhs)
     {
 
     }
 
-    virtual ~AbstractExeState() = default;
+    virtual ~SparseAbstractState() = default;
 
-    AbstractExeState&operator=(const AbstractExeState&rhs)
+    SparseAbstractState&operator=(const SparseAbstractState&rhs)
     {
-        AbstractESBase::operator=(rhs);
+        AbstractState::operator=(rhs);
         return *this;
     }
 
     virtual void printExprValues(std::ostream &oss) const;
 
     /// move constructor
-    AbstractExeState(AbstractExeState&&rhs) : AbstractESBase(std::move(rhs))
+    SparseAbstractState(SparseAbstractState&&rhs) : AbstractState(std::move(rhs))
     {
 
     }
 
     /// operator= move constructor
-    AbstractExeState&operator=(AbstractExeState&&rhs)
+    SparseAbstractState&operator=(SparseAbstractState&&rhs)
     {
-        AbstractESBase::operator=(std::move(rhs));
+        AbstractState::operator=(std::move(rhs));
         return *this;
     }
 
@@ -626,22 +626,22 @@ public:
     }
 
     /// domain widen with other, and return the widened domain
-    AbstractExeState widening(const AbstractExeState&other);
+    SparseAbstractState widening(const SparseAbstractState&other);
 
     /// domain narrow with other, and return the narrowed domain
-    AbstractExeState narrowing(const AbstractExeState&other);
+    SparseAbstractState narrowing(const SparseAbstractState&other);
 
     /// domain widen with other, important! other widen this.
-    void widenWith(const AbstractExeState&other);
+    void widenWith(const SparseAbstractState&other);
 
     /// domain join with other, important! other widen this.
-    void joinWith(const AbstractExeState&other);
+    void joinWith(const SparseAbstractState&other);
 
     /// domain narrow with other, important! other widen this.
-    void narrowWith(const AbstractExeState&other);
+    void narrowWith(const SparseAbstractState&other);
 
     /// domain meet with other, important! other widen this.
-    void meetWith(const AbstractExeState&other);
+    void meetWith(const SparseAbstractState&other);
 
     u32_t hash() const;
 
@@ -667,26 +667,26 @@ public:
         }
     }
 
-    bool equals(const AbstractExeState&other) const;
+    bool equals(const SparseAbstractState&other) const;
 
-    bool operator==(const AbstractExeState&rhs) const
+    bool operator==(const SparseAbstractState&rhs) const
     {
         return eqVarToValMap(_varToAbsVal, rhs._varToAbsVal) &&
                eqVarToValMap(_locToAbsVal, rhs._locToAbsVal);
     }
 
-    bool operator!=(const AbstractExeState&rhs) const
+    bool operator!=(const SparseAbstractState&rhs) const
     {
         return !(*this == rhs);
     }
 
-    bool operator<(const AbstractExeState&rhs) const
+    bool operator<(const SparseAbstractState&rhs) const
     {
         return !(*this >= rhs);
     }
 
 
-    bool operator>=(const AbstractExeState&rhs) const
+    bool operator>=(const SparseAbstractState&rhs) const
     {
         return geqVarToValMap(_varToAbsVal, rhs.getVarToVal()) && geqVarToValMap(_locToAbsVal, rhs._locToAbsVal);
     }
@@ -694,9 +694,9 @@ public:
 }
 
 template<>
-struct std::hash<SVF::AbstractExeState>
+struct std::hash<SVF::SparseAbstractState>
 {
-    size_t operator()(const SVF::AbstractExeState&exeState) const
+    size_t operator()(const SVF::SparseAbstractState&exeState) const
     {
         return exeState.hash();
     }

@@ -154,7 +154,7 @@ protected:
      * @param intraEdge the edge from CmpStmt to the next node
      * @return if this edge is feasible
      */
-    bool hasBranchES(const IntraCFGEdge* intraEdge, AbstractExeState& es);
+    bool hasBranchES(const IntraCFGEdge* intraEdge, SparseAbstractState& es);
 
     /**
      * handle instructions in ICFGNode
@@ -220,7 +220,7 @@ protected:
     * @return if this ICFGNode has preceding execution state
     */
     bool hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ,
-                        AbstractExeState& es);
+                        SparseAbstractState& es);
 
     /**
     * Check if this SwitchInst and succ are satisfiable to the execution state.
@@ -229,7 +229,8 @@ protected:
     * @param succ the case value of switch inst
     * @return if this ICFGNode has preceding execution state
     */
-    bool hasSwitchBranchES(const SVFVar* var, s64_t succ, AbstractExeState& es);
+    bool hasSwitchBranchES(const SVFVar* var, s64_t succ,
+                           SparseAbstractState& es);
 
 
     /**
@@ -373,9 +374,9 @@ private:
 
     // helper functions in handleCycle
     bool widenFixpointPass(const ICFGNode* cycle_head,
-                           AbstractExeState& pre_es);
+                           SparseAbstractState& pre_es);
     bool narrowFixpointPass(const ICFGNode* cycle_head,
-                            AbstractExeState& pre_es);
+                            SparseAbstractState& pre_es);
 
 protected:
     // there data should be shared with subclasses
@@ -384,8 +385,8 @@ protected:
     Set<std::string> _checkpoint_names;
 
 private:
-    Map<const ICFGNode*, AbstractExeState> _preES;
-    Map<const ICFGNode*, AbstractExeState> _postES;
+    Map<const ICFGNode*, SparseAbstractState> _preAbstractTrace;
+    Map<const ICFGNode*, SparseAbstractState> _postAbstractTrace;
     std::string _moduleName;
 };
 }

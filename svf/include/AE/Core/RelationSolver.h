@@ -30,7 +30,7 @@
 #ifndef Z3_EXAMPLE_RELATIONSOLVER_H
 #define Z3_EXAMPLE_RELATIONSOLVER_H
 
-#include "AE/Core/AbstractExeState.h"
+#include "AE/Core/AbstractState.h"
 #include "Util/Z3Expr.h"
 
 namespace SVF
@@ -44,17 +44,17 @@ public:
     IntervalESBase (the last element of inputs) for RSY or bilateral solver */
 
     /// Return Z3Expr according to valToValMap
-    Z3Expr gamma_hat(const AbstractESBase&exeState) const;
+    Z3Expr gamma_hat(const AbstractState&exeState) const;
 
     /// Return Z3Expr according to another valToValMap
-    Z3Expr gamma_hat(const AbstractESBase&alpha, const AbstractESBase&exeState) const;
+    Z3Expr gamma_hat(const AbstractState&alpha, const AbstractState&exeState) const;
 
     /// Return Z3Expr from a NodeID
-    Z3Expr gamma_hat(u32_t id, const AbstractESBase&exeState) const;
+    Z3Expr gamma_hat(u32_t id, const AbstractState&exeState) const;
 
-    AbstractESBase abstract_consequence(const AbstractESBase&lower, const AbstractESBase&upper, const AbstractESBase&domain) const;
+    AbstractState abstract_consequence(const AbstractState&lower, const AbstractState&upper, const AbstractState&domain) const;
 
-    AbstractESBase beta(const Map<u32_t, s32_t> &sigma, const AbstractESBase&exeState) const;
+    AbstractState beta(const Map<u32_t, s32_t> &sigma, const AbstractState&exeState) const;
 
 
     /// Return Z3 expression lazily based on SVFVar ID
@@ -65,13 +65,13 @@ public:
 
     /* two optional solvers: RSY and bilateral */
 
-    AbstractESBase bilateral(const AbstractESBase& domain, const Z3Expr &phi, u32_t descend_check = 0);
+    AbstractState bilateral(const AbstractState& domain, const Z3Expr &phi, u32_t descend_check = 0);
 
-    AbstractESBase RSY(const AbstractESBase& domain, const Z3Expr &phi);
+    AbstractState RSY(const AbstractState& domain, const Z3Expr &phi);
 
     Map<u32_t, NumericLiteral> BoxedOptSolver(const Z3Expr& phi, Map<u32_t, NumericLiteral>& ret, Map<u32_t, NumericLiteral>& low_values, Map<u32_t, NumericLiteral>& high_values);
 
-    AbstractESBase BS(const AbstractESBase& domain, const Z3Expr &phi);
+    AbstractState BS(const AbstractState& domain, const Z3Expr &phi);
 
     void updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const NumericLiteral& value);
 

@@ -271,7 +271,7 @@ AbstractValue SVFIR2ItvExeState::getFPTruncValue(const SVF::SVFVar* var, const S
     return _es[var->getId()].getInterval();
 }
 
-void SVFIR2ItvExeState::applySummary(AbstractExeState&es)
+void SVFIR2ItvExeState::applySummary(SparseAbstractState&es)
 {
     for (const auto &item: es._varToAbsVal)
     {
@@ -287,20 +287,20 @@ void SVFIR2ItvExeState::moveToGlobal()
 {
     for (const auto &it: _es._varToAbsVal)
     {
-        AbstractExeState::globalES._varToAbsVal.insert(it);
+        SparseAbstractState::globalES._varToAbsVal.insert(it);
     }
     for (const auto &it: _es._locToAbsVal)
     {
-        AbstractExeState::globalES._locToAbsVal.insert(it);
+        SparseAbstractState::globalES._locToAbsVal.insert(it);
     }
 
     _es._varToAbsVal.clear();
-    AbstractExeState::globalES._varToAbsVal.erase(PAG::getPAG()->getBlkPtr());
+    SparseAbstractState::globalES._varToAbsVal.erase(PAG::getPAG()->getBlkPtr());
     _es._varToAbsVal[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
     _es._locToAbsVal.clear();
 }
 
-void SVFIR2ItvExeState::widenAddrs(AbstractExeState&lhs, const AbstractExeState&rhs)
+void SVFIR2ItvExeState::widenAddrs(SparseAbstractState&lhs, const SparseAbstractState&rhs)
 {
     for (const auto &rhsItem: rhs._varToAbsVal)
     {
@@ -345,7 +345,7 @@ void SVFIR2ItvExeState::widenAddrs(AbstractExeState&lhs, const AbstractExeState&
     }
 }
 
-void SVFIR2ItvExeState::narrowAddrs(AbstractExeState&lhs, const AbstractExeState&rhs)
+void SVFIR2ItvExeState::narrowAddrs(SparseAbstractState&lhs, const SparseAbstractState&rhs)
 {
     for (const auto &rhsItem: rhs._varToAbsVal)
     {
@@ -585,26 +585,26 @@ void SVFIR2ItvExeState::initObjVar(const ObjVar *objVar, u32_t varId)
             if (const SVFConstantInt *consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue()))
             {
                 s64_t numeral = consInt->getSExtValue();
-                AbstractExeState::globalES[varId] = IntervalValue(numeral, numeral);
+                SparseAbstractState::globalES[varId] = IntervalValue(numeral, numeral);
             }
             else if (const SVFConstantFP* consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue()))
-                AbstractExeState::globalES[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
+                SparseAbstractState::globalES[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
             else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue()))
-                AbstractExeState::globalES[varId] = IntervalValue(0, 0);
+                SparseAbstractState::globalES[varId] = IntervalValue(0, 0);
             else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue())) {
-                AbstractExeState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
+                SparseAbstractState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
             }
 
             else if (obj->isConstantArray() || obj->isConstantStruct())
-                AbstractExeState::globalES[varId] = IntervalValue::top();
+                SparseAbstractState::globalES[varId] = IntervalValue::top();
             else
-                AbstractExeState::globalES[varId] = IntervalValue::top();
+                SparseAbstractState::globalES[varId] = IntervalValue::top();
         }
         else
-            AbstractExeState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
+            SparseAbstractState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
     }
     else
-        AbstractExeState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
+        SparseAbstractState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
 }
 
 void SVFIR2ItvExeState::initSVFVar(u32_t varId)
@@ -633,16 +633,16 @@ void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
         // if addr RHS is integerType(i8 i32 etc), value should be limited.
         if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
         {
-            AbstractExeState::globalES[addr->getRHSVarID()].meet_with(getRangeLimitFromType(addr->getRHSVar()->getType()));
+            SparseAbstractState::globalES[addr->getRHSVarID()].meet_with(getRangeLimitFromType(addr->getRHSVar()->getType()));
         }
-        AbstractExeState::globalES[addr->getLHSVarID()] =
-            AbstractExeState::globalES[addr->getRHSVarID()];
+        SparseAbstractState::globalES[addr->getLHSVarID()] =
+            SparseAbstractState::globalES[addr->getRHSVarID()];
 
     }
     else if (inVarToAddrsTable(addr->getRHSVarID()))
     {
-        AbstractExeState::globalES[addr->getLHSVarID()] =
-            AbstractExeState::globalES[addr->getRHSVarID()];
+        SparseAbstractState::globalES[addr->getLHSVarID()] =
+            SparseAbstractState::globalES[addr->getRHSVarID()];
     }
     else
     {

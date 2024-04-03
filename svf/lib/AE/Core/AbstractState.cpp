@@ -27,18 +27,18 @@
  *
  */
 
-#include "AE/Core/AbstractExeState.h"
+#include "AE/Core/AbstractState.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-bool AbstractESBase::equals(const AbstractESBase&other) const
+bool AbstractState::equals(const AbstractState&other) const
 {
     return *this == other;
 }
 
-u32_t AbstractESBase::hash() const
+u32_t AbstractState::hash() const
 {
     size_t h = getVarToVal().size() * 2;
     Hash<u32_t> hf;
@@ -55,10 +55,10 @@ u32_t AbstractESBase::hash() const
     return pairH({h, h2});
 }
 
-AbstractESBase AbstractESBase::widening(const AbstractESBase& other)
+AbstractState AbstractState::widening(const AbstractState& other)
 {
     // widen interval
-    AbstractESBase es = *this;
+    AbstractState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
@@ -77,9 +77,9 @@ AbstractESBase AbstractESBase::widening(const AbstractESBase& other)
     return es;
 }
 
-AbstractESBase AbstractESBase::narrowing(const AbstractESBase& other)
+AbstractState AbstractState::narrowing(const AbstractState& other)
 {
-    AbstractESBase es = *this;
+    AbstractState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
@@ -97,7 +97,7 @@ AbstractESBase AbstractESBase::narrowing(const AbstractESBase& other)
 }
 
 /// domain widen with other, important! other widen this.
-void AbstractESBase::widenWith(const AbstractESBase& other)
+void AbstractState::widenWith(const AbstractState& other)
 {
     for (auto it = _varToAbsVal.begin(); it != _varToAbsVal.end(); ++it)
     {
@@ -116,7 +116,7 @@ void AbstractESBase::widenWith(const AbstractESBase& other)
 }
 
 /// domain join with other, important! other widen this.
-void AbstractESBase::joinWith(const AbstractESBase& other)
+void AbstractState::joinWith(const AbstractState& other)
 {
     for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
     {
@@ -165,7 +165,7 @@ void AbstractESBase::joinWith(const AbstractESBase& other)
 }
 
 /// domain narrow with other, important! other widen this.
-void AbstractESBase::narrowWith(const AbstractESBase& other)
+void AbstractState::narrowWith(const AbstractState& other)
 {
     for (auto it = _varToAbsVal.begin(); it != _varToAbsVal.end(); ++it)
     {
@@ -186,7 +186,7 @@ void AbstractESBase::narrowWith(const AbstractESBase& other)
 }
 
 /// domain meet with other, important! other widen this.
-void AbstractESBase::meetWith(const AbstractESBase& other)
+void AbstractState::meetWith(const AbstractState& other)
 {
     for (auto it = other._varToAbsVal.begin(); it != other._varToAbsVal.end(); ++it)
     {
@@ -227,7 +227,7 @@ void AbstractESBase::meetWith(const AbstractESBase& other)
 }
 
 /// Print values of all expressions
-void AbstractESBase::printExprValues(std::ostream &oss) const
+void AbstractState::printExprValues(std::ostream &oss) const
 {
     oss << "-----------Var and Value-----------\n";
     printTable(_varToAbsVal, oss);
@@ -235,7 +235,7 @@ void AbstractESBase::printExprValues(std::ostream &oss) const
     oss << "-----------------------------------------\n";
 }
 
-void AbstractESBase::printTable(const VarToAbsValMap&table, std::ostream &oss) const
+void AbstractState::printTable(const VarToAbsValMap&table, std::ostream &oss) const
 {
     oss.flags(std::ios::left);
     std::set<NodeID> ordered;
@@ -258,20 +258,20 @@ void AbstractESBase::printTable(const VarToAbsValMap&table, std::ostream &oss) c
     }
 }
 
-AbstractExeState AbstractExeState::globalES;
-bool AbstractExeState::equals(const AbstractExeState&other) const
+SparseAbstractState SparseAbstractState::globalES;
+bool SparseAbstractState::equals(const SparseAbstractState&other) const
 {
     return *this == other;
 }
 
-u32_t AbstractExeState::hash() const
+u32_t SparseAbstractState::hash() const
 {
-    return AbstractESBase::hash();
+    return AbstractState::hash();
 }
 
-AbstractExeState AbstractExeState::widening(const AbstractExeState& other)
+SparseAbstractState SparseAbstractState::widening(const SparseAbstractState& other)
 {
-    AbstractExeState es = *this;
+    SparseAbstractState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
@@ -289,9 +289,9 @@ AbstractExeState AbstractExeState::widening(const AbstractExeState& other)
     return es;
 }
 
-AbstractExeState AbstractExeState::narrowing(const AbstractExeState& other)
+SparseAbstractState SparseAbstractState::narrowing(const SparseAbstractState& other)
 {
-    AbstractExeState es = *this;
+    SparseAbstractState es = *this;
     for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
     {
         auto key = it->first;
@@ -311,32 +311,32 @@ AbstractExeState AbstractExeState::narrowing(const AbstractExeState& other)
 }
 
 /// domain widen with other, important! other widen this.
-void AbstractExeState::widenWith(const AbstractExeState& other)
+void SparseAbstractState::widenWith(const SparseAbstractState& other)
 {
-    AbstractESBase::widenWith(other);
+    AbstractState::widenWith(other);
 }
 
 /// domain join with other, important! other widen this.
-void AbstractExeState::joinWith(const AbstractExeState& other)
+void SparseAbstractState::joinWith(const SparseAbstractState& other)
 {
-    AbstractESBase::joinWith(other);
+    AbstractState::joinWith(other);
 }
 
 /// domain narrow with other, important! other widen this.
-void AbstractExeState::narrowWith(const AbstractExeState& other)
+void SparseAbstractState::narrowWith(const SparseAbstractState& other)
 {
-    AbstractESBase::narrowWith(other);
+    AbstractState::narrowWith(other);
 }
 
 /// domain meet with other, important! other widen this.
-void AbstractExeState::meetWith(const AbstractExeState& other)
+void SparseAbstractState::meetWith(const SparseAbstractState& other)
 {
-    AbstractESBase::meetWith(other);
+    AbstractState::meetWith(other);
 }
 
 
 /// Print values of all expressions
-void AbstractExeState::printExprValues(std::ostream &oss) const
+void SparseAbstractState::printExprValues(std::ostream &oss) const
 {
     oss << "-----------Var and Value-----------\n";
     printTable(_varToAbsVal, oss);
