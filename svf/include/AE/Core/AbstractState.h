@@ -66,11 +66,11 @@ public:
     AbstractState() {}
 
     AbstractState(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap),
-          _locToAbsVal(_locToValMap) {}
+        _locToAbsVal(_locToValMap) {}
 
     /// copy constructor
     AbstractState(const AbstractState&rhs) : _varToAbsVal(rhs.getVarToVal()),
-          _locToAbsVal(rhs.getLocToVal())
+        _locToAbsVal(rhs.getLocToVal())
     {
 
     }
@@ -113,7 +113,7 @@ public:
 
     /// move constructor
     AbstractState(AbstractState&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
-          _locToAbsVal(std::move(rhs._locToAbsVal))
+        _locToAbsVal(std::move(rhs._locToAbsVal))
     {
 
     }
@@ -186,8 +186,10 @@ public:
     /// whether the variable is in varToAddrs table
     inline bool inVarToAddrsTable(u32_t id) const
     {
-        if (_varToAbsVal.find(id)!= _varToAbsVal.end()) {
-            if (_varToAbsVal.at(id).isAddr()) {
+        if (_varToAbsVal.find(id)!= _varToAbsVal.end())
+        {
+            if (_varToAbsVal.at(id).isAddr())
+            {
                 return true;
             }
         }
@@ -197,8 +199,10 @@ public:
     /// whether the variable is in varToVal table
     inline virtual bool inVarToValTable(u32_t id) const
     {
-        if (_varToAbsVal.find(id) != _varToAbsVal.end()) {
-            if (_varToAbsVal.at(id).isInterval()) {
+        if (_varToAbsVal.find(id) != _varToAbsVal.end())
+        {
+            if (_varToAbsVal.at(id).isInterval())
+            {
                 return true;
             }
         }
@@ -208,8 +212,10 @@ public:
     /// whether the memory address stores memory addresses
     inline bool inLocToAddrsTable(u32_t id) const
     {
-        if (_locToAbsVal.find(id)!= _locToAbsVal.end()) {
-            if (_locToAbsVal.at(id).isAddr()) {
+        if (_locToAbsVal.find(id)!= _locToAbsVal.end())
+        {
+            if (_locToAbsVal.at(id).isAddr())
+            {
                 return true;
             }
         }
@@ -219,8 +225,10 @@ public:
     /// whether the memory address stores abstract value
     inline virtual bool inLocToValTable(u32_t id) const
     {
-        if (_locToAbsVal.find(id) != _locToAbsVal.end()) {
-            if (_locToAbsVal.at(id).isInterval()) {
+        if (_locToAbsVal.find(id) != _locToAbsVal.end())
+        {
+            if (_locToAbsVal.at(id).isInterval())
+            {
                 return true;
             }
         }
@@ -337,7 +345,8 @@ public:
             auto it = rhs.find(item.first);
             if (it == rhs.end())
                 return false;
-            if (item.second.getType() == it->second.getType()) {
+            if (item.second.getType() == it->second.getType())
+            {
                 if (item.second.isInterval())
                 {
                     if (!item.second.getInterval().equals(it->second.getInterval()))
@@ -384,7 +393,8 @@ public:
             auto it = lhs.find(item.first);
             if (it == lhs.end()) return false;
             // judge from expr id
-            if (it->second.isInterval() && item.second.isInterval()) {
+            if (it->second.isInterval() && item.second.isInterval())
+            {
                 if (!it->second.getInterval().geq(item.second.getInterval()))
                     return false;
             }
@@ -396,7 +406,7 @@ public:
     bool operator==(const AbstractState&rhs) const
     {
         return  eqVarToValMap(_varToAbsVal, rhs.getVarToVal()) &&
-               eqVarToValMap(_locToAbsVal, rhs.getLocToVal());
+                eqVarToValMap(_locToAbsVal, rhs.getLocToVal());
     }
 
     bool operator!=(const AbstractState&rhs) const
@@ -475,11 +485,16 @@ public:
     /// get memory addresses of variable
     AbstractValue &getAddrs(u32_t id)
     {
-        if (_varToAbsVal.find(id)!= _varToAbsVal.end()) {
+        if (_varToAbsVal.find(id)!= _varToAbsVal.end())
+        {
             return _varToAbsVal[id];
-        } else if (globalES._varToAbsVal.find(id)!= globalES._varToAbsVal.end()) {
+        }
+        else if (globalES._varToAbsVal.find(id)!= globalES._varToAbsVal.end())
+        {
             return globalES._varToAbsVal[id];
-        } else {
+        }
+        else
+        {
             globalES._varToAbsVal[id] = AddressValue();
             return globalES._varToAbsVal[id];
         }
@@ -500,23 +515,30 @@ public:
     /// whether the variable is in varToAddrs table
     inline bool inVarToAddrsTable(u32_t id) const
     {
-        if (_varToAbsVal.find(id)!= _varToAbsVal.end()) {
-            if (_varToAbsVal.at(id).isAddr()) {
+        if (_varToAbsVal.find(id)!= _varToAbsVal.end())
+        {
+            if (_varToAbsVal.at(id).isAddr())
+            {
                 return true;
             }
-            else {
+            else
+            {
                 return false;
             }
         }
-        else if (globalES._varToAbsVal.find(id)!= globalES._varToAbsVal.end()) {
-            if (globalES._varToAbsVal[id].isAddr()) {
+        else if (globalES._varToAbsVal.find(id)!= globalES._varToAbsVal.end())
+        {
+            if (globalES._varToAbsVal[id].isAddr())
+            {
                 return true;
             }
-            else {
+            else
+            {
                 return false;
             }
         }
-        else {
+        else
+        {
             return false;
         }
     }
@@ -524,23 +546,30 @@ public:
     /// whether the variable is in varToVal table
     inline bool inVarToValTable(u32_t id) const
     {
-        if (_varToAbsVal.find(id)!= _varToAbsVal.end()) {
-            if (_varToAbsVal.at(id).isInterval()) {
+        if (_varToAbsVal.find(id)!= _varToAbsVal.end())
+        {
+            if (_varToAbsVal.at(id).isInterval())
+            {
                 return true;
             }
-            else {
+            else
+            {
                 return false;
             }
         }
-        else if (globalES._varToAbsVal.find(id)!= globalES._varToAbsVal.end()) {
-            if (globalES._varToAbsVal[id].isInterval()) {
+        else if (globalES._varToAbsVal.find(id)!= globalES._varToAbsVal.end())
+        {
+            if (globalES._varToAbsVal[id].isInterval())
+            {
                 return true;
             }
-            else {
+            else
+            {
                 return false;
             }
         }
-        else {
+        else
+        {
             return false;
         }
     }
@@ -548,23 +577,30 @@ public:
     /// whether the memory address stores memory addresses
     inline bool inLocToAddrsTable(u32_t id) const
     {
-        if (_locToAbsVal.find(id)!= _locToAbsVal.end()) {
-            if (_locToAbsVal.at(id).isAddr()) {
+        if (_locToAbsVal.find(id)!= _locToAbsVal.end())
+        {
+            if (_locToAbsVal.at(id).isAddr())
+            {
                 return true;
             }
-            else {
+            else
+            {
                 return false;
             }
         }
-        else if (globalES._locToAbsVal.find(id)!= globalES._locToAbsVal.end()) {
-            if (globalES._locToAbsVal[id].isAddr()) {
+        else if (globalES._locToAbsVal.find(id)!= globalES._locToAbsVal.end())
+        {
+            if (globalES._locToAbsVal[id].isAddr())
+            {
                 return true;
             }
-            else {
+            else
+            {
                 return false;
             }
         }
-        else {
+        else
+        {
             return false;
         }
     }
@@ -572,30 +608,38 @@ public:
     /// whether the memory address stores abstract value
     inline bool inLocToValTable(u32_t id) const
     {
-        if (_locToAbsVal.find(id)!= _locToAbsVal.end()) {
-            if (_locToAbsVal.at(id).isInterval()) {
+        if (_locToAbsVal.find(id)!= _locToAbsVal.end())
+        {
+            if (_locToAbsVal.at(id).isInterval())
+            {
                 return true;
             }
-            else {
+            else
+            {
                 return false;
             }
         }
-        else if (globalES._locToAbsVal.find(id)!= globalES._locToAbsVal.end()) {
-            if (globalES._locToAbsVal[id].isInterval()) {
+        else if (globalES._locToAbsVal.find(id)!= globalES._locToAbsVal.end())
+        {
+            if (globalES._locToAbsVal[id].isInterval())
+            {
                 return true;
             }
-            else {
+            else
+            {
                 return false;
             }
         }
-        else {
+        else
+        {
             return false;
         }
     }
 
     inline bool inLocalLocToValTable(u32_t id) const
     {
-        if (_locToAbsVal.find(id)!= _locToAbsVal.end()) {
+        if (_locToAbsVal.find(id)!= _locToAbsVal.end())
+        {
             return _locToAbsVal.at(id).isInterval();
         }
         else
@@ -604,7 +648,8 @@ public:
 
     inline bool inLocalLocToAddrsTable(u32_t id) const
     {
-        if (_locToAbsVal.find(id)!= _locToAbsVal.end()) {
+        if (_locToAbsVal.find(id)!= _locToAbsVal.end())
+        {
             return _locToAbsVal.at(id).isAddr();
         }
         else

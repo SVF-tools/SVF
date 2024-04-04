@@ -34,7 +34,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 AbstractState RelationSolver::bilateral(const AbstractState&domain, const Z3Expr& phi,
-        u32_t descend_check)
+                                        u32_t descend_check)
 {
     /// init variables
     AbstractState upper = domain.top();
@@ -242,13 +242,13 @@ Z3Expr RelationSolver::gamma_hat(u32_t id, const AbstractState& exeState) const
 }
 
 AbstractState RelationSolver::beta(const Map<u32_t, s32_t>& sigma,
-                                    const AbstractState& exeState) const
+                                   const AbstractState& exeState) const
 {
     AbstractState res;
     for (const auto& item : exeState.getVarToVal())
     {
         res[item.first] = IntervalValue(
-                                           sigma.at(item.first), sigma.at(item.first));
+                              sigma.at(item.first), sigma.at(item.first));
     }
     return res;
 }

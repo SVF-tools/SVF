@@ -307,7 +307,8 @@ void SVFIR2ItvExeState::widenAddrs(SparseAbstractState&lhs, const SparseAbstract
         auto lhsIter = lhs._varToAbsVal.find(rhsItem.first);
         if (lhsIter != lhs._varToAbsVal.end())
         {
-            if (rhsItem.second.isAddr()) {
+            if (rhsItem.second.isAddr())
+            {
                 for (const auto &addr: rhsItem.second.getAddrs())
                 {
                     if (!lhsIter->second.getAddrs().contains(addr))
@@ -333,7 +334,7 @@ void SVFIR2ItvExeState::widenAddrs(SparseAbstractState&lhs, const SparseAbstract
                     if (!lhsIter->second.getAddrs().contains(addr))
                     {
                         for (s32_t i = 0; i < (s32_t)Options::MaxFieldLimit();
-                             i++)
+                                i++)
                         {
                             lhsIter->second.join_with(
                                 getGepObjAddress(getInternalID(addr), i));
@@ -591,7 +592,8 @@ void SVFIR2ItvExeState::initObjVar(const ObjVar *objVar, u32_t varId)
                 SparseAbstractState::globalES[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
             else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue()))
                 SparseAbstractState::globalES[varId] = IntervalValue(0, 0);
-            else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue())) {
+            else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue()))
+            {
                 SparseAbstractState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
             }
 
@@ -939,7 +941,8 @@ void SVFIR2ItvExeState::translateStore(const StoreStmt *store)
             _es.store(addr, _es[rhs]);
         }
 
-        if (inVarToValTable(rhs) || inVarToAddrsTable(rhs)) {
+        if (inVarToValTable(rhs) || inVarToAddrsTable(rhs))
+        {
             assert(!getAddrs(lhs).getAddrs().empty());
             for (const auto &addr: _es[lhs].getAddrs())
             {
@@ -1007,7 +1010,8 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
             }
             else if (copy->getCopyKind() == CopyStmt::BITCAST)
             {
-                if (_es[rhs].isAddr()) {
+                if (_es[rhs].isAddr())
+                {
                     _es[lhs] = _es[rhs];
                 }
                 else
@@ -1015,7 +1019,8 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
                     // do nothing
                 }
             }
-            else {
+            else
+            {
                 assert(false && "undefined copy kind");
                 abort();
             }
@@ -1103,7 +1108,8 @@ void SVFIR2ItvExeState::translateCall(const CallPE *callPE)
 {
     NodeID lhs = callPE->getLHSVarID();
     NodeID rhs = callPE->getRHSVarID();
-    if (inVarToValTable(rhs) || inVarToAddrsTable(rhs)) {
+    if (inVarToValTable(rhs) || inVarToAddrsTable(rhs))
+    {
         _es[lhs] = _es[rhs];
     }
 }
@@ -1112,7 +1118,8 @@ void SVFIR2ItvExeState::translateRet(const RetPE *retPE)
 {
     NodeID lhs = retPE->getLHSVarID();
     NodeID rhs = retPE->getRHSVarID();
-    if (inVarToValTable(rhs) || inVarToAddrsTable(rhs)) {
+    if (inVarToValTable(rhs) || inVarToAddrsTable(rhs))
+    {
         _es[lhs] = _es[rhs];
     }
 }

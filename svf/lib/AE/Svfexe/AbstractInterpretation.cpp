@@ -192,7 +192,7 @@ bool AbstractInterpretation::hasInEdgesES(const ICFGNode *block)
         for (auto& edge: block->getInEdges())
         {
             if (_postAbstractTrace.find(edge->getSrcNode()) !=
-                _postAbstractTrace.end())
+                    _postAbstractTrace.end())
             {
                 const IntraCFGEdge *intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
                 if (intraCfgEdge && intraCfgEdge->getCondition())
@@ -258,7 +258,7 @@ bool AbstractInterpretation::isGlobalEntry(const SVF::ICFGNode *block)
 }
 
 bool AbstractInterpretation::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ,
-                                       SparseAbstractState& es)
+        SparseAbstractState& es)
 {
     SparseAbstractState new_es = es;
     // get cmp stmt's op0, op1, and predicate
@@ -489,7 +489,7 @@ bool AbstractInterpretation::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ,
 }
 
 bool AbstractInterpretation::hasSwitchBranchES(const SVFVar* var, s64_t succ,
-                                          SparseAbstractState& es)
+        SparseAbstractState& es)
 {
     SparseAbstractState new_es = es;
     new_es.cpyItvToLocal(var->getId());
@@ -534,7 +534,7 @@ bool AbstractInterpretation::hasSwitchBranchES(const SVFVar* var, s64_t succ,
 }
 
 bool AbstractInterpretation::hasBranchES(const IntraCFGEdge* intraEdge,
-                                    SparseAbstractState& es)
+        SparseAbstractState& es)
 {
     const SVFValue *cond = intraEdge->getCondition();
     NodeID cmpID = _svfir->getValueNode(cond);
@@ -800,7 +800,7 @@ void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
 }
 
 bool AbstractInterpretation::widenFixpointPass(const ICFGNode* cycle_head,
-                                          SparseAbstractState& pre_es)
+        SparseAbstractState& pre_es)
 {
     // increasing iterations
     SparseAbstractState new_pre_es = pre_es.widening(_postAbstractTrace[cycle_head]);
@@ -1512,7 +1512,8 @@ AbstractValue AbstractInterpretation::getStrlen(const SVF::SVFValue *strValue)
             {
                 val.join_with(es.load(addr));
             }
-            if (val.isUnknown()) {
+            if (val.isUnknown())
+            {
                 return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
             }
             if (val.is_numeral() && (char) val.getIntNumeral() == '\0')
@@ -1657,7 +1658,9 @@ const SVFType* AbstractInterpretation::getPointeeElement(NodeID id)
                 continue;
             return SVFUtil::dyn_cast<ObjVar>(_svfir->getGNode(addr_id))->getMemObj()->getType();
         }
-    } else {
+    }
+    else
+    {
         // do nothing if no record in addrs table.
     }
     return nullptr;

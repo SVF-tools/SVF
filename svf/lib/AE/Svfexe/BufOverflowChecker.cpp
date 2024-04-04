@@ -66,7 +66,7 @@ void BufOverflowChecker::handleSVFStatement(const SVFStmt *stmt)
     if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
     {
         for (NodeID addrID:
-             _svfir2ExeState->getAddrs(gep->getLHSVarID()).getAddrs())
+                _svfir2ExeState->getAddrs(gep->getLHSVarID()).getAddrs())
         {
             NodeID objId = _svfir2ExeState->getInternalID(addrID);
             _addrToGep[objId] = gep;

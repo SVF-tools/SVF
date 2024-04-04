@@ -64,7 +64,7 @@ public:
     }
 
     AbstractState RSY_time(AbstractState& inv, const Z3Expr& phi,
-                            RelationSolver& rs)
+                           RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         AbstractState resRSY = rs.RSY(inv, phi);
@@ -76,7 +76,7 @@ public:
         return resRSY;
     }
     AbstractState Bilateral_time(AbstractState& inv, const Z3Expr& phi,
-                                  RelationSolver& rs)
+                                 RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         AbstractState resBilateral = rs.bilateral(inv, phi);
@@ -88,7 +88,7 @@ public:
         return resBilateral;
     }
     AbstractState BS_time(AbstractState& inv, const Z3Expr& phi,
-                           RelationSolver& rs)
+                          RelationSolver& rs)
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         AbstractState resBS = rs.BS(inv, phi);
@@ -504,7 +504,8 @@ public:
         // ground truth
         AbstractState::VarToAbsValMap intendedRes = {{0, IntervalValue(1, 10000)},
             {1, IntervalValue(1, 10000)},
-            {2, IntervalValue(1, 1)}};
+            {2, IntervalValue(1, 1)}
+        };
     }
 
     void testRelExeState3_4()

@@ -199,7 +199,8 @@ public:
         else
         {
             rawStr << "[";
-            for (auto it = _addrs.begin(), eit = _addrs.end(); it!= eit; ++it) {
+            for (auto it = _addrs.begin(), eit = _addrs.end(); it!= eit; ++it)
+            {
                 rawStr << *it << ", ";
             }
             rawStr << "]";
