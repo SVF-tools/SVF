@@ -1,4 +1,4 @@
-//===- AE.cpp -- Abstract Execution---------------------------------//
+//===- AbstractInterpretation.h -- Abstract Execution----------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -35,10 +35,9 @@
 
 namespace SVF
 {
-class AbstractExecution;
+class AbstractInterpretation;
 class AEStat;
 class AEAPI;
-class IntervalValue;
 class ExeState;
 
 template<typename T> class FILOWorkList;
@@ -54,7 +53,7 @@ class AEStat : public SVFStat
 {
 public:
     void countStateSize();
-    AEStat(AbstractExecution* ae) : _ae(ae)
+    AEStat(AbstractInterpretation* ae) : _ae(ae)
     {
         startTime = getClk(true);
     }
@@ -72,7 +71,7 @@ public:
     void reportBug();
 
 public:
-    AbstractExecution* _ae;
+    AbstractInterpretation* _ae;
     s32_t count{0};
     std::string memory_usage;
     std::string memUsage;
@@ -105,7 +104,8 @@ public:
     }
 };
 
-class AbstractExecution
+/// AbstractInterpretation is same as Abstract Execution
+class AbstractInterpretation
 {
     friend class AEStat;
     friend class AEAPI;
@@ -114,17 +114,17 @@ public:
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     /// Constructor
-    AbstractExecution();
+    AbstractInterpretation();
 
     virtual void runOnModule(ICFG* icfg);
 
     /// Destructor
-    virtual ~AbstractExecution();
+    virtual ~AbstractInterpretation();
 
     /// Program entry
     void analyse();
 
-    static bool classof(const AbstractExecution* ae)
+    static bool classof(const AbstractInterpretation* ae)
     {
         return ae->getKind() == AEKind::AbstractExecution;
     }
@@ -155,7 +155,7 @@ protected:
      * @param intraEdge the edge from CmpStmt to the next node
      * @return if this edge is feasible
      */
-    bool hasBranchES(const IntraCFGEdge* intraEdge, IntervalExeState& es);
+    bool hasBranchES(const IntraCFGEdge* intraEdge, SparseAbstractState& es);
 
     /**
      * handle instructions in ICFGNode
@@ -220,7 +220,8 @@ protected:
     * @param succ the value of cmpStmt (True or False)
     * @return if this ICFGNode has preceding execution state
     */
-    bool hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ, IntervalExeState& es);
+    bool hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ,
+                        SparseAbstractState& es);
 
     /**
     * Check if this SwitchInst and succ are satisfiable to the execution state.
@@ -229,7 +230,8 @@ protected:
     * @param succ the case value of switch inst
     * @return if this ICFGNode has preceding execution state
     */
-    bool hasSwitchBranchES(const SVFVar* var, s64_t succ, IntervalExeState& es);
+    bool hasSwitchBranchES(const SVFVar* var, s64_t succ,
+                           SparseAbstractState& es);
 
 
     /**
@@ -269,9 +271,9 @@ protected:
     * e.g. source code str = "abc", return 3
     *
     * @param strValue SVFValue of string
-    * @return IntervalValue of string length
+    * @return AbstractValue of string length
     */
-    IntervalValue getStrlen(const SVF::SVFValue *strValue);
+    AbstractValue getStrlen(const SVF::SVFValue *strValue);
 
     /**
     * get memory allocation size
@@ -280,9 +282,9 @@ protected:
     *      memset(arr, 1, 10* sizeof(int))
     * when we trace the 'arr', we can get the alloc size [40, 40]
     * @param value to be traced
-    * @return IntervalValue of allocation size
+    * @return AbstractValue of allocation size
     */
-    IntervalValue traceMemoryAllocationSize(const SVFValue *value);
+    AbstractValue traceMemoryAllocationSize(const SVFValue *value);
     /**
     * execute strcpy in abstract execution
     * e.g  arr = new char[10]
@@ -309,7 +311,7 @@ protected:
     * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
     * @param call callnode of memcpy like api
     */
-    virtual void handleMemcpy(const SVFValue* dst, const SVFValue* src, IntervalValue len, u32_t start_idx);
+    virtual void handleMemcpy(const SVFValue* dst, const SVFValue* src, AbstractValue len, u32_t start_idx);
     /**
     * execute memset in abstract execution
     * e.g  arr = new char[10]
@@ -317,7 +319,7 @@ protected:
     * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
     * @param call callnode of memset like api
     */
-    virtual void handleMemset(const SVFValue* dst, IntervalValue elem, IntervalValue len);
+    virtual void handleMemset(const SVFValue* dst, AbstractValue elem, AbstractValue len);
 
     /**
     * if this NodeID in SVFIR is a pointer, get the pointee type
@@ -373,9 +375,9 @@ private:
 
     // helper functions in handleCycle
     bool widenFixpointPass(const ICFGNode* cycle_head,
-                           IntervalExeState& pre_es);
+                           SparseAbstractState& pre_es);
     bool narrowFixpointPass(const ICFGNode* cycle_head,
-                            IntervalExeState& pre_es);
+                            SparseAbstractState& pre_es);
 
 protected:
     // there data should be shared with subclasses
@@ -384,8 +386,8 @@ protected:
     Set<std::string> _checkpoint_names;
 
 private:
-    Map<const ICFGNode*, IntervalExeState> _preES;
-    Map<const ICFGNode*, IntervalExeState> _postES;
+    Map<const ICFGNode*, SparseAbstractState> _preAbstractTrace;
+    Map<const ICFGNode*, SparseAbstractState> _postAbstractTrace;
     std::string _moduleName;
 };
 }

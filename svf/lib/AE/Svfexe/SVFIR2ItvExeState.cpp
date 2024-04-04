@@ -33,8 +33,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-SVF::SVFIR2ItvExeState::Addrs SVF::SVFIR2ItvExeState::globalNulladdrs =
-    AddressValue();
+AbstractValue SVF::SVFIR2ItvExeState::globalNulladdrs = AddressValue();
 
 /**
  * This function, getRangeLimitFromType, calculates the lower and upper bounds of
@@ -47,7 +46,7 @@ SVF::SVFIR2ItvExeState::Addrs SVF::SVFIR2ItvExeState::globalNulladdrs =
  *
  * @return       An IntervalValue representing the lower and upper bounds of the range.
  */
-IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
+AbstractValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
 {
     if (const SVFIntegerType* intType = SVFUtil::dyn_cast<SVFIntegerType>(type))
     {
@@ -104,40 +103,40 @@ IntervalValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
     }
     else
     {
-        assert(false && "cannot support");
-        abort();
+        return IntervalValue::top();
+        // other types, return top interval
     }
 }
 
-IntervalValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var)
+AbstractValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var)
 {
     const SVFType* type = var->getType();
     if (SVFUtil::isa<SVFIntegerType>(type))
     {
         u32_t bits = type->getByteSize() * 8;
-        if (_es[var->getId()].is_numeral())
+        if (_es[var->getId()].getInterval().is_numeral())
         {
             if (bits == 8)
             {
-                int8_t signed_i8_value = _es[var->getId()].getIntNumeral();
+                int8_t signed_i8_value = _es[var->getId()].getInterval().getIntNumeral();
                 u32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
             else if (bits == 16)
             {
-                s16_t signed_i16_value = _es[var->getId()].getIntNumeral();
+                s16_t signed_i16_value = _es[var->getId()].getInterval().getIntNumeral();
                 u32_t unsigned_value = static_cast<u16_t>(signed_i16_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
             else if (bits == 32)
             {
-                s32_t signed_i32_value = _es[var->getId()].getIntNumeral();
+                s32_t signed_i32_value = _es[var->getId()].getInterval().getIntNumeral();
                 u32_t unsigned_value = static_cast<u32_t>(signed_i32_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
             else if (bits == 64)
             {
-                s64_t signed_i64_value = _es[var->getId()].getIntNumeral();
+                s64_t signed_i64_value = _es[var->getId()].getInterval().getIntNumeral();
                 return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
                 // we only support i64 at most
             }
@@ -154,18 +153,18 @@ IntervalValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var)
     assert(false && "cannot support non-integer type");
 }
 
-IntervalValue SVFIR2ItvExeState::getSExtValue(const SVFVar* var)
+AbstractValue SVFIR2ItvExeState::getSExtValue(const SVFVar* var)
 {
-    return _es[var->getId()];
+    return _es[var->getId()].getInterval();
 }
 
-IntervalValue SVFIR2ItvExeState::getFPToSIntValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2ItvExeState::getFPToSIntValue(const SVF::SVFVar* var)
 {
-    if (_es[var->getId()].is_real())
+    if (_es[var->getId()].getInterval().is_real())
     {
         // get the float value of ub and lb
-        double float_lb = _es[var->getId()].lb().getRealNumeral();
-        double float_ub = _es[var->getId()].ub().getRealNumeral();
+        double float_lb = _es[var->getId()].getInterval().lb().getRealNumeral();
+        double float_ub = _es[var->getId()].getInterval().ub().getRealNumeral();
         // get the int value of ub and lb
         s64_t int_lb = static_cast<s64_t>(float_lb);
         s64_t int_ub = static_cast<s64_t>(float_ub);
@@ -177,13 +176,13 @@ IntervalValue SVFIR2ItvExeState::getFPToSIntValue(const SVF::SVFVar* var)
     }
 }
 
-IntervalValue SVFIR2ItvExeState::getFPToUIntValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2ItvExeState::getFPToUIntValue(const SVF::SVFVar* var)
 {
-    if (_es[var->getId()].is_real())
+    if (_es[var->getId()].getInterval().is_real())
     {
         // get the float value of ub and lb
-        double float_lb = _es[var->getId()].lb().getRealNumeral();
-        double float_ub = _es[var->getId()].ub().getRealNumeral();
+        double float_lb = _es[var->getId()].getInterval().lb().getRealNumeral();
+        double float_ub = _es[var->getId()].getInterval().ub().getRealNumeral();
         // get the int value of ub and lb
         u64_t int_lb = static_cast<u64_t>(float_lb);
         u64_t int_ub = static_cast<u64_t>(float_ub);
@@ -195,33 +194,33 @@ IntervalValue SVFIR2ItvExeState::getFPToUIntValue(const SVF::SVFVar* var)
     }
 }
 
-IntervalValue SVFIR2ItvExeState::getSIntToFPValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2ItvExeState::getSIntToFPValue(const SVF::SVFVar* var)
 {
     // get the sint value of ub and lb
-    s64_t sint_lb = _es[var->getId()].lb().getIntNumeral();
-    s64_t sint_ub = _es[var->getId()].ub().getIntNumeral();
+    s64_t sint_lb = _es[var->getId()].getInterval().lb().getIntNumeral();
+    s64_t sint_ub = _es[var->getId()].getInterval().ub().getIntNumeral();
     // get the float value of ub and lb
     double float_lb = static_cast<double>(sint_lb);
     double float_ub = static_cast<double>(sint_ub);
     return IntervalValue(float_lb, float_ub);
 }
 
-IntervalValue SVFIR2ItvExeState::getUIntToFPValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2ItvExeState::getUIntToFPValue(const SVF::SVFVar* var)
 {
     // get the uint value of ub and lb
-    u64_t uint_lb = _es[var->getId()].lb().getIntNumeral();
-    u64_t uint_ub = _es[var->getId()].ub().getIntNumeral();
+    u64_t uint_lb = _es[var->getId()].getInterval().lb().getIntNumeral();
+    u64_t uint_ub = _es[var->getId()].getInterval().ub().getIntNumeral();
     // get the float value of ub and lb
     double float_lb = static_cast<double>(uint_lb);
     double float_ub = static_cast<double>(uint_ub);
     return IntervalValue(float_lb, float_ub);
 }
 
-IntervalValue SVFIR2ItvExeState::getTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
+AbstractValue SVFIR2ItvExeState::getTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
 {
     // get the value of ub and lb
-    s64_t int_lb = _es[var->getId()].lb().getIntNumeral();
-    s64_t int_ub = _es[var->getId()].ub().getIntNumeral();
+    s64_t int_lb = _es[var->getId()].getInterval().lb().getIntNumeral();
+    s64_t int_ub = _es[var->getId()].getInterval().ub().getIntNumeral();
     // get dst type
     u32_t dst_bits = dstType->getByteSize() * 8;
     if (dst_bits == 8)
@@ -266,90 +265,79 @@ IntervalValue SVFIR2ItvExeState::getTruncValue(const SVF::SVFVar* var, const SVF
     }
 }
 
-IntervalValue SVFIR2ItvExeState::getFPTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
+AbstractValue SVFIR2ItvExeState::getFPTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
 {
     // TODO: now we do not really handle fptrunc
-    return _es[var->getId()];
+    return _es[var->getId()].getInterval();
 }
 
-void SVFIR2ItvExeState::applySummary(IntervalExeState &es)
+void SVFIR2ItvExeState::applySummary(SparseAbstractState&es)
 {
-    for (const auto &item: es._varToItvVal)
+    for (const auto &item: es._varToAbsVal)
     {
-        _es._varToItvVal[item.first] = item.second;
+        _es._varToAbsVal[item.first] = item.second;
     }
-    for (const auto &item: es._locToItvVal)
+    for (const auto &item: es._locToAbsVal)
     {
-        _es._locToItvVal[item.first] = item.second;
-    }
-    for (const auto &item: es._varToAddrs)
-    {
-        _es._varToAddrs[item.first] = item.second;
-    }
-    for (const auto &item: es._locToAddrs)
-    {
-        _es._locToAddrs[item.first] = item.second;
+        _es._locToAbsVal[item.first] = item.second;
     }
 }
 
 void SVFIR2ItvExeState::moveToGlobal()
 {
-    for (const auto &it: _es._varToItvVal)
+    for (const auto &it: _es._varToAbsVal)
     {
-        IntervalExeState::globalES._varToItvVal.insert(it);
+        SparseAbstractState::globalES._varToAbsVal.insert(it);
     }
-    for (const auto &it: _es._locToItvVal)
+    for (const auto &it: _es._locToAbsVal)
     {
-        IntervalExeState::globalES._locToItvVal.insert(it);
-    }
-    for (const auto &_varToVAddr: _es._varToAddrs)
-    {
-        IntervalExeState::globalES._varToAddrs.insert(_varToVAddr);
-    }
-    for (const auto &_locToVAddr: _es._locToAddrs)
-    {
-        IntervalExeState::globalES._locToAddrs.insert(_locToVAddr);
+        SparseAbstractState::globalES._locToAbsVal.insert(it);
     }
 
-    _es._varToItvVal.clear();
-    IntervalExeState::globalES._varToItvVal.erase(PAG::getPAG()->getBlkPtr());
-    _es._varToItvVal[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
-    _es._locToItvVal.clear();
-    _es._varToAddrs.clear();
-    _es._locToAddrs.clear();
+    _es._varToAbsVal.clear();
+    SparseAbstractState::globalES._varToAbsVal.erase(PAG::getPAG()->getBlkPtr());
+    _es._varToAbsVal[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
+    _es._locToAbsVal.clear();
 }
 
-void SVFIR2ItvExeState::widenAddrs(IntervalExeState &lhs, const IntervalExeState &rhs)
+void SVFIR2ItvExeState::widenAddrs(SparseAbstractState&lhs, const SparseAbstractState&rhs)
 {
-    for (const auto &rhsItem: rhs._varToAddrs)
+    for (const auto &rhsItem: rhs._varToAbsVal)
     {
-        auto lhsIter = lhs._varToAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._varToAddrs.end())
+        auto lhsIter = lhs._varToAbsVal.find(rhsItem.first);
+        if (lhsIter != lhs._varToAbsVal.end())
         {
-            for (const auto &addr: rhsItem.second)
-            {
-                if (!lhsIter->second.contains(addr))
+            if (rhsItem.second.isAddr()) {
+                for (const auto &addr: rhsItem.second.getAddrs())
                 {
-                    for (s32_t i = 0; i < (s32_t) Options::MaxFieldLimit(); i++)
+                    if (!lhsIter->second.getAddrs().contains(addr))
                     {
-                        lhsIter->second.join_with(getGepObjAddress(getInternalID(addr), i));
+                        for (s32_t i = 0; i < (s32_t) Options::MaxFieldLimit(); i++)
+                        {
+                            lhsIter->second.join_with(getGepObjAddress(getInternalID(addr), i));
+                        }
                     }
                 }
             }
         }
     }
-    for (const auto &rhsItem: rhs._locToAddrs)
+    for (const auto &rhsItem: rhs._locToAbsVal)
     {
-        auto lhsIter = lhs._locToAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._locToAddrs.end())
+        auto lhsIter = lhs._locToAbsVal.find(rhsItem.first);
+        if (lhsIter != lhs._locToAbsVal.end())
         {
-            for (const auto &addr: rhsItem.second)
+            if (rhsItem.second.isAddr())
             {
-                if (!lhsIter->second.contains(addr))
+                for (const auto& addr : rhsItem.second.getAddrs())
                 {
-                    for (s32_t i = 0; i < (s32_t) Options::MaxFieldLimit(); i++)
+                    if (!lhsIter->second.getAddrs().contains(addr))
                     {
-                        lhsIter->second.join_with(getGepObjAddress(getInternalID(addr), i));
+                        for (s32_t i = 0; i < (s32_t)Options::MaxFieldLimit();
+                             i++)
+                        {
+                            lhsIter->second.join_with(
+                                getGepObjAddress(getInternalID(addr), i));
+                        }
                     }
                 }
             }
@@ -357,57 +345,63 @@ void SVFIR2ItvExeState::widenAddrs(IntervalExeState &lhs, const IntervalExeState
     }
 }
 
-void SVFIR2ItvExeState::narrowAddrs(IntervalExeState &lhs, const IntervalExeState &rhs)
+void SVFIR2ItvExeState::narrowAddrs(SparseAbstractState&lhs, const SparseAbstractState&rhs)
 {
-    for (const auto &rhsItem: rhs._varToAddrs)
+    for (const auto &rhsItem: rhs._varToAbsVal)
     {
-        auto lhsIter = lhs._varToAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._varToAddrs.end())
+        auto lhsIter = lhs._varToAbsVal.find(rhsItem.first);
+        if (lhsIter != lhs._varToAbsVal.end())
         {
-            for (const auto &addr: lhsIter->second)
+            if (lhsIter->second.isAddr())
             {
-                if (!rhsItem.second.contains(addr))
+                for (const auto &addr: lhsIter->second.getAddrs())
                 {
-                    lhsIter->second = rhsItem.second;
-                    break;
+                    if (!rhsItem.second.getAddrs().contains(addr))
+                    {
+                        lhsIter->second = rhsItem.second;
+                        break;
+                    }
                 }
             }
         }
     }
-    for (const auto &rhsItem: rhs._locToAddrs)
+    for (const auto &rhsItem: rhs._locToAbsVal)
     {
-        auto lhsIter = lhs._locToAddrs.find(rhsItem.first);
-        if (lhsIter != lhs._locToAddrs.end())
+        auto lhsIter = lhs._locToAbsVal.find(rhsItem.first);
+        if (lhsIter != lhs._locToAbsVal.end())
         {
-            for (const auto &addr: lhsIter->second)
+            if (lhsIter->second.isAddr())
             {
-                if (!rhsItem.second.contains(addr))
+                for (const auto& addr : lhsIter->second.getAddrs())
                 {
-                    lhsIter->second = rhsItem.second;
-                    break;
+                    if (!rhsItem.second.getAddrs().contains(addr))
+                    {
+                        lhsIter->second = rhsItem.second;
+                        break;
+                    }
                 }
             }
         }
     }
 }
 
-SVFIR2ItvExeState::Addrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APOffset offset)
+AbstractValue SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APOffset offset)
 {
-    assert(!getAddrs(pointer).empty());
-    Addrs &addrs = getAddrs(pointer);
-    Addrs ret;
-    for (const auto &addr: addrs)
+    assert(!getAddrs(pointer).getAddrs().empty());
+    AbstractValue addrs = getAddrs(pointer);
+    AbstractValue ret = AddressValue();
+    for (const auto &addr: addrs.getAddrs())
     {
         s64_t baseObj = getInternalID(addr);
         if (baseObj == 0)
         {
-            ret.insert(getVirtualMemAddress(0));
+            ret.insertAddr(getVirtualMemAddress(0));
             continue;
         }
         assert(SVFUtil::isa<ObjVar>(_svfir->getGNode(baseObj)) && "Fail to get the base object address!");
         NodeID gepObj = _svfir->getGepObjVar(baseObj, offset);
         initSVFVar(gepObj);
-        ret.insert(getVirtualMemAddress(gepObj));
+        ret.insertAddr(getVirtualMemAddress(gepObj));
     }
     return ret;
 }
@@ -434,11 +428,11 @@ SVFIR2ItvExeState::Addrs SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APOf
 *  Therefore the final byteoffset is [8+4*var1.lb(), 8+4*var1.ub()]
  *
  */
-IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
+AbstractValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
-    IntervalValue res(0); // Initialize the result interval 'res' to 0.
+    AbstractValue res = IntervalValue(0); // Initialize the result interval 'res' to 0.
     // Loop through the offsetVarAndGepTypePairVec in reverse order.
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
@@ -465,7 +459,7 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
             else
             {
                 u32_t idx = _svfir->getValueNode(idxOperandVar->getValue());
-                IntervalValue idxVal = _es[idx];
+                IntervalValue idxVal = _es[idx].getInterval();
                 if (idxVal.isBottom())
                     res = res + IntervalValue(0, 0);
                 else
@@ -504,11 +498,11 @@ IntervalValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
  *
  * @return      A pair of APOffset values representing the offset range.
  */
-IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
+AbstractValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantOffset());
-    IntervalValue res(0);
+    AbstractValue res = IntervalValue(0);
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
         AccessPath::IdxOperandPair IdxVarAndType =
@@ -524,7 +518,7 @@ IntervalValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
             idxLb = idxUb = constInt->getSExtValue();
         else
         {
-            IntervalValue idxItv = _es[_svfir->getValueNode(value)];
+            IntervalValue idxItv = _es[_svfir->getValueNode(value)].getInterval();
             if (idxItv.isBottom())
                 idxLb = idxUb = 0;
             else
@@ -591,24 +585,26 @@ void SVFIR2ItvExeState::initObjVar(const ObjVar *objVar, u32_t varId)
             if (const SVFConstantInt *consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue()))
             {
                 s64_t numeral = consInt->getSExtValue();
-                IntervalExeState::globalES[varId] = IntervalValue(numeral, numeral);
+                SparseAbstractState::globalES[varId] = IntervalValue(numeral, numeral);
             }
             else if (const SVFConstantFP* consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue()))
-                IntervalExeState::globalES[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
+                SparseAbstractState::globalES[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
             else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue()))
-                IntervalExeState::globalES[varId] = IntervalValue(0, 0);
-            else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue()))
-                IntervalExeState::globalES.getAddrs(varId).insert(getVirtualMemAddress(varId));
+                SparseAbstractState::globalES[varId] = IntervalValue(0, 0);
+            else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue())) {
+                SparseAbstractState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
+            }
+
             else if (obj->isConstantArray() || obj->isConstantStruct())
-                IntervalExeState::globalES[varId] = IntervalValue::top();
+                SparseAbstractState::globalES[varId] = IntervalValue::top();
             else
-                IntervalExeState::globalES[varId] = IntervalValue::top();
+                SparseAbstractState::globalES[varId] = IntervalValue::top();
         }
         else
-            IntervalExeState::globalES.getAddrs(varId).insert(getVirtualMemAddress(varId));
+            SparseAbstractState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
     }
     else
-        IntervalExeState::globalES.getAddrs(varId).insert(getVirtualMemAddress(varId));
+        SparseAbstractState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
 }
 
 void SVFIR2ItvExeState::initSVFVar(u32_t varId)
@@ -637,16 +633,16 @@ void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
         // if addr RHS is integerType(i8 i32 etc), value should be limited.
         if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
         {
-            IntervalExeState::globalES[addr->getRHSVarID()].meet_with(
-                getRangeLimitFromType(addr->getRHSVar()->getType()));
+            SparseAbstractState::globalES[addr->getRHSVarID()].meet_with(getRangeLimitFromType(addr->getRHSVar()->getType()));
         }
-        IntervalExeState::globalES[addr->getLHSVarID()] = IntervalExeState::globalES[addr->getRHSVarID()];
+        SparseAbstractState::globalES[addr->getLHSVarID()] =
+            SparseAbstractState::globalES[addr->getRHSVarID()];
 
     }
     else if (inVarToAddrsTable(addr->getRHSVarID()))
     {
-        IntervalExeState::globalES.getAddrs(addr->getLHSVarID()) = IntervalExeState::globalES.getAddrs(
-                    addr->getRHSVarID());
+        SparseAbstractState::globalES[addr->getLHSVarID()] =
+            SparseAbstractState::globalES[addr->getRHSVarID()];
     }
     else
     {
@@ -664,8 +660,8 @@ void SVFIR2ItvExeState::translateBinary(const BinaryOPStmt *binary)
     if (!inVarToValTable(op1)) _es[op1] = IntervalValue::top();
     if (inVarToValTable(op0) && inVarToValTable(op1))
     {
-        IntervalValue &lhs = _es[op0], &rhs = _es[op1];
-        IntervalValue resVal;
+        AbstractValue &lhs = _es[op0], &rhs = _es[op1];
+        AbstractValue resVal;
         switch (binary->getOpcode())
         {
         case BinaryOPStmt::Add:
@@ -724,8 +720,9 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
     u32_t res = cmp->getResID();
     if (inVarToValTable(op0) && inVarToValTable(op1))
     {
-        IntervalValue resVal;
-        IntervalValue &lhs = _es[op0], &rhs = _es[op1];
+        AbstractValue resVal;
+        AbstractValue &lhs = _es[op0], &rhs = _es[op1];
+        //AbstractValue
         auto predicate = cmp->getPredicate();
         switch (predicate)
         {
@@ -733,6 +730,7 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
         case CmpStmt::FCMP_OEQ:
         case CmpStmt::FCMP_UEQ:
             resVal = (lhs == rhs);
+            // resVal = (lhs.getInterval() == rhs.getInterval());
             break;
         case CmpStmt::ICMP_NE:
         case CmpStmt::FCMP_ONE:
@@ -779,8 +777,8 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
     else if (inVarToAddrsTable(op0) && inVarToAddrsTable(op1))
     {
         IntervalValue resVal;
-        Addrs &lhs = getAddrs(op0), &rhs = getAddrs(op1);
-        assert(!lhs.empty() && !rhs.empty() && "empty address?");
+        AbstractValue &lhs = getAddrs(op0), &rhs = getAddrs(op1);
+        assert(!lhs.getAddrs().empty() && !rhs.getAddrs().empty() && "empty address?");
         auto predicate = cmp->getPredicate();
         switch (predicate)
         {
@@ -788,13 +786,13 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
         case CmpStmt::FCMP_OEQ:
         case CmpStmt::FCMP_UEQ:
         {
-            if (lhs.size() == 1 && rhs.size() == 1)
+            if (lhs.getAddrs().size() == 1 && rhs.getAddrs().size() == 1)
             {
                 resVal = IntervalValue(lhs.equals(rhs));
             }
             else
             {
-                if (lhs.hasIntersect(rhs))
+                if (lhs.getAddrs().hasIntersect(rhs.getAddrs()))
                 {
                     resVal = IntervalValue::top();
                 }
@@ -809,13 +807,13 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
         case CmpStmt::FCMP_ONE:
         case CmpStmt::FCMP_UNE:
         {
-            if (lhs.size() == 1 && rhs.size() == 1)
+            if (lhs.getAddrs().size() == 1 && rhs.getAddrs().size() == 1)
             {
                 resVal = IntervalValue(!lhs.equals(rhs));
             }
             else
             {
-                if (lhs.hasIntersect(rhs))
+                if (lhs.getAddrs().hasIntersect(rhs.getAddrs()))
                 {
                     resVal = IntervalValue::top();
                 }
@@ -831,9 +829,9 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
         case CmpStmt::FCMP_OGT:
         case CmpStmt::FCMP_UGT:
         {
-            if (lhs.size() == 1 && rhs.size() == 1)
+            if (lhs.getAddrs().size() == 1 && rhs.getAddrs().size() == 1)
             {
-                resVal = IntervalValue(*lhs.begin() > *rhs.begin());
+                resVal = IntervalValue(*lhs.getAddrs().begin() > *rhs.getAddrs().begin());
             }
             else
             {
@@ -846,9 +844,9 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
         case CmpStmt::FCMP_OGE:
         case CmpStmt::FCMP_UGE:
         {
-            if (lhs.size() == 1 && rhs.size() == 1)
+            if (lhs.getAddrs().size() == 1 && rhs.getAddrs().size() == 1)
             {
-                resVal = IntervalValue(*lhs.begin() >= *rhs.begin());
+                resVal = IntervalValue(*lhs.getAddrs().begin() >= *rhs.getAddrs().begin());
             }
             else
             {
@@ -861,9 +859,9 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
         case CmpStmt::FCMP_OLT:
         case CmpStmt::FCMP_ULT:
         {
-            if (lhs.size() == 1 && rhs.size() == 1)
+            if (lhs.getAddrs().size() == 1 && rhs.getAddrs().size() == 1)
             {
-                resVal = IntervalValue(*lhs.begin() < *rhs.begin());
+                resVal = IntervalValue(*lhs.getAddrs().begin() < *rhs.getAddrs().begin());
             }
             else
             {
@@ -876,9 +874,9 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
         case CmpStmt::FCMP_OLE:
         case CmpStmt::FCMP_ULE:
         {
-            if (lhs.size() == 1 && rhs.size() == 1)
+            if (lhs.getAddrs().size() == 1 && rhs.getAddrs().size() == 1)
             {
-                resVal = IntervalValue(*lhs.begin() <= *rhs.begin());
+                resVal = IntervalValue(*lhs.getAddrs().begin() <= *rhs.getAddrs().begin());
             }
             else
             {
@@ -907,39 +905,23 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
     u32_t lhs = load->getLHSVarID();
     if (inVarToAddrsTable(rhs))
     {
-        Addrs &addrs = getAddrs(rhs);
-        assert(!addrs.empty());
-        IntervalValue rhsItv = IntervalValue::bottom();
-        AddressValue rhsAddr;
-        bool isVal = false, isAddr = false;
-        for (const auto &addr: addrs)
+        AbstractValue &addrs = getAddrs(rhs);
+        assert(!addrs.getAddrs().empty());
+        AbstractValue rhsVal(AbstractValue::UnknownType); // interval::bottom Address::bottom
+        // AbstractValue absRhs
+        for (const auto &addr: addrs.getAddrs())
         {
+            // inLocToAbsVal()
+            // absRhs.join_with
+            // es.load()
             u32_t objId = getInternalID(addr);
-            if (inLocToValTable(objId))
+            if (inLocToValTable(objId) || inLocToAddrsTable(objId))
             {
-                rhsItv.join_with(_es.load(addr));
-                isVal = true;
-            }
-            else if (inLocToAddrsTable(objId))
-            {
-                rhsAddr.join_with(_es.loadAddrs(addr));
-                isAddr = true;
+                rhsVal.join_with(_es.load(addr));
             }
         }
-        if (isVal)
-        {
-            // lhs var is an integer
-            _es[lhs] = rhsItv;
-        }
-        else if (isAddr)
-        {
-            // lhs var is an address
-            _es.getAddrs(lhs) = rhsAddr;
-        }
-        else
-        {
-            // rhs not initialized, e.g., absence of a store before load
-        }
+        if (!rhsVal.isUnknown())
+            _es[lhs] = rhsVal;
     }
 }
 
@@ -949,25 +931,20 @@ void SVFIR2ItvExeState::translateStore(const StoreStmt *store)
     u32_t lhs = store->getLHSVarID();
     if (inVarToAddrsTable(lhs))
     {
-        if (inVarToValTable(rhs))
+        //es.store()
+        assert(!getAddrs(lhs).getAddrs().empty());
+        AbstractValue &addrs = _es[lhs];
+        for (const auto &addr: addrs.getAddrs())
         {
-            assert(!getAddrs(lhs).empty());
-            Addrs &addrs = getAddrs(lhs);
-            for (const auto &addr: addrs)
+            _es.store(addr, _es[rhs]);
+        }
+
+        if (inVarToValTable(rhs) || inVarToAddrsTable(rhs)) {
+            assert(!getAddrs(lhs).getAddrs().empty());
+            for (const auto &addr: _es[lhs].getAddrs())
             {
                 _es.store(addr, _es[rhs]);
             }
-        }
-        else if (inVarToAddrsTable(rhs))
-        {
-            assert(!getAddrs(lhs).empty());
-            Addrs &addrs = getAddrs(lhs);
-            for (const auto &addr: addrs)
-            {
-                assert(!getAddrs(rhs).empty());
-                _es.storeAddrs(addr, getAddrs(rhs));
-            }
-
         }
     }
 }
@@ -1022,22 +999,31 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
             }
             else if (copy->getCopyKind() == CopyStmt::INTTOPTR)
             {
-                _es.getAddrs(lhs).insert(getVirtualMemAddress(0)); //insert nullptr
+                _es.getAddrs(lhs).getAddrs().insert(getVirtualMemAddress(0)); //insert nullptr
             }
             else if (copy->getCopyKind() == CopyStmt::PTRTOINT)
             {
                 _es[lhs] = IntervalValue::top();
             }
-            else
+            else if (copy->getCopyKind() == CopyStmt::BITCAST)
             {
+                if (_es[rhs].isAddr()) {
+                    _es[lhs] = _es[rhs];
+                }
+                else
+                {
+                    // do nothing
+                }
+            }
+            else {
                 assert(false && "undefined copy kind");
                 abort();
             }
         }
         else if (inVarToAddrsTable(rhs))
         {
-            assert(!getAddrs(rhs).empty());
-            _es.getAddrs(lhs) = getAddrs(rhs);
+            assert(!getAddrs(rhs).getAddrs().empty());
+            _es[lhs] = _es[rhs];
         }
     }
 }
@@ -1047,23 +1033,22 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
     u32_t rhs = gep->getRHSVarID();
     u32_t lhs = gep->getLHSVarID();
     if (!inVarToAddrsTable(rhs)) return;
-    assert(!getAddrs(rhs).empty());
-    Addrs &rhsVal = getAddrs(rhs);
-    if (rhsVal.empty()) return;
-    IntervalValue offsetPair = getItvOfFlattenedElemIndex(gep);
-    if (!isVirtualMemAddress(*rhsVal.begin()))
+    AbstractValue &rhsVal = _es[rhs];
+    assert(!rhsVal.getAddrs().empty());
+    AbstractValue offsetPair = getItvOfFlattenedElemIndex(gep);
+    if (!isVirtualMemAddress(*rhsVal.getAddrs().begin()))
         return;
     else
     {
-        Addrs gepAddrs;
+        AbstractValue gepAddrs(AbstractValue::UnknownType);
         APOffset lb = offsetPair.lb().getIntNumeral() < Options::MaxFieldLimit()?
                       offsetPair.lb().getIntNumeral(): Options::MaxFieldLimit();
         APOffset ub = offsetPair.ub().getIntNumeral() < Options::MaxFieldLimit()?
                       offsetPair.ub().getIntNumeral(): Options::MaxFieldLimit();
         for (APOffset i = lb; i <= ub; i++)
             gepAddrs.join_with(getGepObjAddress(rhs, i));
-        if(gepAddrs.empty()) return;
-        _es.getAddrs(lhs) = gepAddrs;
+        if (!rhsVal.isUnknown())
+            _es[lhs] = gepAddrs;
         return;
     }
 }
@@ -1076,9 +1061,9 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
     u32_t cond = select->getCondition()->getId();
     if (inVarToValTable(tval) && inVarToValTable(fval) && inVarToValTable(cond))
     {
-        if (_es[cond].is_numeral())
+        if (_es[cond].getInterval().is_numeral())
         {
-            _es[res] = _es[cond].is_zero() ? _es[fval] : _es[tval];
+            _es[res] = _es[cond].getInterval().is_zero() ? _es[fval] : _es[tval];
         }
         else
         {
@@ -1087,11 +1072,11 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
     }
     else if (inVarToAddrsTable(tval) && inVarToAddrsTable(fval) && inVarToValTable(cond))
     {
-        if (_es[cond].is_numeral())
+        if (_es[cond].getInterval().is_numeral())
         {
-            assert(!getAddrs(fval).empty());
-            assert(!getAddrs(tval).empty());
-            _es.getAddrs(res) = _es[cond].is_zero() ? getAddrs(fval) : getAddrs(tval);
+            assert(!getAddrs(fval).getAddrs().empty());
+            assert(!getAddrs(tval).getAddrs().empty());
+            _es.getAddrs(res) = _es[cond].getInterval().is_zero() ? getAddrs(fval) : getAddrs(tval);
         }
     }
 }
@@ -1099,34 +1084,18 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
 void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
 {
     u32_t res = phi->getResID();
-    IntervalValue rhsItv = IntervalValue::bottom();
-    AddressValue rhsAddr;
-    bool isVal = false, isAddr = false;
+    AbstractValue rhs(AbstractValue::UnknownType);
     for (u32_t i = 0; i < phi->getOpVarNum(); i++)
     {
         NodeID curId = phi->getOpVarID(i);
-        if (inVarToValTable(curId))
+
+        if (inVarToValTable(curId) || inVarToAddrsTable(curId))
         {
-            rhsItv.join_with(_es[curId]);
-            isVal = true;
-        }
-        else if (inVarToAddrsTable(curId))
-        {
-            assert(!getAddrs(curId).empty());
-            rhsAddr.join_with(getAddrs(curId));
-            isAddr = true;
+            rhs.join_with(_es[curId]);
         }
     }
-    if (isVal)
-    {
-        // res var is an integer
-        _es[res] = rhsItv;
-    }
-    else if (isAddr)
-    {
-        // res var is an address
-        _es.getAddrs(res) = rhsAddr;
-    }
+    if (!rhs.isUnknown())
+        _es[res] = rhs;
 }
 
 
@@ -1134,14 +1103,8 @@ void SVFIR2ItvExeState::translateCall(const CallPE *callPE)
 {
     NodeID lhs = callPE->getLHSVarID();
     NodeID rhs = callPE->getRHSVarID();
-    if (inVarToValTable(rhs))
-    {
+    if (inVarToValTable(rhs) || inVarToAddrsTable(rhs)) {
         _es[lhs] = _es[rhs];
-    }
-    else if (inVarToAddrsTable(rhs))
-    {
-        assert(!getAddrs(rhs).empty());
-        _es.getAddrs(lhs) = getAddrs(rhs);
     }
 }
 
@@ -1149,13 +1112,7 @@ void SVFIR2ItvExeState::translateRet(const RetPE *retPE)
 {
     NodeID lhs = retPE->getLHSVarID();
     NodeID rhs = retPE->getRHSVarID();
-    if (inVarToValTable(rhs))
-    {
+    if (inVarToValTable(rhs) || inVarToAddrsTable(rhs)) {
         _es[lhs] = _es[rhs];
-    }
-    else if (inVarToAddrsTable(rhs))
-    {
-        assert(!getAddrs(rhs).empty());
-        _es.getAddrs(lhs) = getAddrs(rhs);
     }
 }

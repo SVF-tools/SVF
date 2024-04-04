@@ -1,4 +1,4 @@
-//===- IntervalValue.h ----Interval Value for Interval Domain-------------//
+//===- IntervalValue.h ----Interval Value for Abstract Domain-------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -31,7 +31,6 @@
 #ifndef Z3_EXAMPLE_IntervalValue_H
 #define Z3_EXAMPLE_IntervalValue_H
 
-#include "AE/Core/AbstractValue.h"
 #include "AE/Core/NumericLiteral.h"
 
 namespace SVF
@@ -40,7 +39,7 @@ namespace SVF
 /// IntervalValue abstract value
 ///
 /// Implemented as a pair of bounds
-class IntervalValue final : public AbstractValue
+class IntervalValue
 {
 private:
     // Lower bound
@@ -52,12 +51,12 @@ private:
     // Invariant: isBottom() <=> _lb = 1 && _ub = 0
 public:
 
-    bool isTop() const override
+    bool isTop() const
     {
         return this->_lb.is_minus_infinity() && this->_ub.is_plus_infinity();
     }
 
-    bool isBottom() const override
+    bool isBottom() const
     {
         return !_ub.geq(_lb);
     }
@@ -92,22 +91,21 @@ public:
     }
 
     /// Create default IntervalValue
-    explicit IntervalValue() : AbstractValue(AbstractValue::IntervalK), _lb(minus_infinity()), _ub(plus_infinity()) {}
+    explicit IntervalValue() : _lb(minus_infinity()), _ub(plus_infinity()) {}
 
     /// Create the IntervalValue [n, n]
-    explicit IntervalValue(s64_t n) : AbstractValue(AbstractValue::IntervalK), _lb(n), _ub(n) {}
+    explicit IntervalValue(s64_t n) : _lb(n), _ub(n) {}
 
     explicit IntervalValue(s32_t n) : IntervalValue((s64_t) n) {}
 
     explicit IntervalValue(u32_t n) : IntervalValue((s64_t) n) {}
 
-    explicit IntervalValue(double n) : AbstractValue(AbstractValue::IntervalK), _lb(n), _ub(n) {}
+    explicit IntervalValue(double n) : _lb(n), _ub(n) {}
 
     explicit IntervalValue(NumericLiteral n) : IntervalValue(n, n) {}
 
     /// Create the IntervalValue [lb, ub]
-    explicit IntervalValue(NumericLiteral lb, NumericLiteral ub) : AbstractValue(AbstractValue::IntervalK),
-        _lb(std::move(lb)), _ub(std::move(ub)) {}
+    explicit IntervalValue(NumericLiteral lb, NumericLiteral ub) : _lb(std::move(lb)), _ub(std::move(ub)) {}
 
     explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(NumericLiteral(lb), NumericLiteral(ub)) {}
 
@@ -201,20 +199,7 @@ public:
     }
 
     /// Destructor
-    ~IntervalValue() override = default;
-
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const IntervalValue *)
-    {
-        return true;
-    }
-
-    static inline bool classof(const AbstractValue *v)
-    {
-        return v->getAbstractValueKind() == AbstractValue::IntervalK;
-    }
-    //@}
+    ~IntervalValue()  = default;
 
     /// Return the lower bound
     const NumericLiteral &lb() const

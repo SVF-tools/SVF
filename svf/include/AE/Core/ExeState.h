@@ -39,7 +39,7 @@
 namespace SVF
 {
 
-class IntervalExeState;
+class SparseAbstractState;
 
 /*!
  * Base execution state
@@ -196,7 +196,7 @@ protected:
             auto it = rhs.find(item.first);
             if (it == rhs.end())
                 return false;
-            if (item.second != it->second)
+            if (item.second.equals(it->second))
             {
                 return false;
             }
