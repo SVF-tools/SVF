@@ -149,7 +149,7 @@ void SVFIR2AbsState::translateSelectRel(const SelectStmt *select)
 }
 
 void SVFIR2AbsState::translatePhiRel(const PhiStmt *phi, const ICFGNode *srcNode,
-                                        const std::vector<const ICFGEdge *> &path)
+                                     const std::vector<const ICFGEdge *> &path)
 {
     u32_t res = phi->getResID();
     std::unordered_map<const ICFGNode *, NodeID> candidate_ids;
