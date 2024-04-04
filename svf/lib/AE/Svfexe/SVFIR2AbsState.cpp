@@ -1,4 +1,4 @@
-//===- SVFIR2ItvExeState.cpp -- SVF IR Translation to Interval Domain-----//
+//===- SVFIR2AbsState.cpp -- SVF IR Translation to Interval Domain-----//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -20,20 +20,20 @@
 //
 //===----------------------------------------------------------------------===//
 /*
- * SVFIR2ItvExeState.cpp
+ * SVFIR2AbsState.cpp
  *
  *  Created on: Aug 7, 2022
  *      Author: Jiawei Wang, Xiao Cheng
  *
  */
 
-#include "AE/Svfexe/SVFIR2ItvExeState.h"
+#include "AE/Svfexe/SVFIR2AbsState.h"
 #include "Util/Options.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-AbstractValue SVF::SVFIR2ItvExeState::globalNulladdrs = AddressValue();
+AbstractValue SVF::SVFIR2AbsState::globalNulladdrs = AddressValue();
 
 /**
  * This function, getRangeLimitFromType, calculates the lower and upper bounds of
@@ -46,7 +46,7 @@ AbstractValue SVF::SVFIR2ItvExeState::globalNulladdrs = AddressValue();
  *
  * @return       An IntervalValue representing the lower and upper bounds of the range.
  */
-AbstractValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
+AbstractValue SVFIR2AbsState::getRangeLimitFromType(const SVFType* type)
 {
     if (const SVFIntegerType* intType = SVFUtil::dyn_cast<SVFIntegerType>(type))
     {
@@ -108,7 +108,7 @@ AbstractValue SVFIR2ItvExeState::getRangeLimitFromType(const SVFType* type)
     }
 }
 
-AbstractValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var)
+AbstractValue SVFIR2AbsState::getZExtValue(const SVFVar* var)
 {
     const SVFType* type = var->getType();
     if (SVFUtil::isa<SVFIntegerType>(type))
@@ -153,12 +153,12 @@ AbstractValue SVFIR2ItvExeState::getZExtValue(const SVFVar* var)
     assert(false && "cannot support non-integer type");
 }
 
-AbstractValue SVFIR2ItvExeState::getSExtValue(const SVFVar* var)
+AbstractValue SVFIR2AbsState::getSExtValue(const SVFVar* var)
 {
     return _es[var->getId()].getInterval();
 }
 
-AbstractValue SVFIR2ItvExeState::getFPToSIntValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getFPToSIntValue(const SVF::SVFVar* var)
 {
     if (_es[var->getId()].getInterval().is_real())
     {
@@ -176,7 +176,7 @@ AbstractValue SVFIR2ItvExeState::getFPToSIntValue(const SVF::SVFVar* var)
     }
 }
 
-AbstractValue SVFIR2ItvExeState::getFPToUIntValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getFPToUIntValue(const SVF::SVFVar* var)
 {
     if (_es[var->getId()].getInterval().is_real())
     {
@@ -194,7 +194,7 @@ AbstractValue SVFIR2ItvExeState::getFPToUIntValue(const SVF::SVFVar* var)
     }
 }
 
-AbstractValue SVFIR2ItvExeState::getSIntToFPValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getSIntToFPValue(const SVF::SVFVar* var)
 {
     // get the sint value of ub and lb
     s64_t sint_lb = _es[var->getId()].getInterval().lb().getIntNumeral();
@@ -205,7 +205,7 @@ AbstractValue SVFIR2ItvExeState::getSIntToFPValue(const SVF::SVFVar* var)
     return IntervalValue(float_lb, float_ub);
 }
 
-AbstractValue SVFIR2ItvExeState::getUIntToFPValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getUIntToFPValue(const SVF::SVFVar* var)
 {
     // get the uint value of ub and lb
     u64_t uint_lb = _es[var->getId()].getInterval().lb().getIntNumeral();
@@ -216,7 +216,7 @@ AbstractValue SVFIR2ItvExeState::getUIntToFPValue(const SVF::SVFVar* var)
     return IntervalValue(float_lb, float_ub);
 }
 
-AbstractValue SVFIR2ItvExeState::getTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
+AbstractValue SVFIR2AbsState::getTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
 {
     // get the value of ub and lb
     s64_t int_lb = _es[var->getId()].getInterval().lb().getIntNumeral();
@@ -265,13 +265,13 @@ AbstractValue SVFIR2ItvExeState::getTruncValue(const SVF::SVFVar* var, const SVF
     }
 }
 
-AbstractValue SVFIR2ItvExeState::getFPTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
+AbstractValue SVFIR2AbsState::getFPTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
 {
     // TODO: now we do not really handle fptrunc
     return _es[var->getId()].getInterval();
 }
 
-void SVFIR2ItvExeState::applySummary(SparseAbstractState&es)
+void SVFIR2AbsState::applySummary(SparseAbstractState&es)
 {
     for (const auto &item: es._varToAbsVal)
     {
@@ -283,7 +283,7 @@ void SVFIR2ItvExeState::applySummary(SparseAbstractState&es)
     }
 }
 
-void SVFIR2ItvExeState::moveToGlobal()
+void SVFIR2AbsState::moveToGlobal()
 {
     for (const auto &it: _es._varToAbsVal)
     {
@@ -300,7 +300,7 @@ void SVFIR2ItvExeState::moveToGlobal()
     _es._locToAbsVal.clear();
 }
 
-void SVFIR2ItvExeState::widenAddrs(SparseAbstractState&lhs, const SparseAbstractState&rhs)
+void SVFIR2AbsState::widenAddrs(SparseAbstractState&lhs, const SparseAbstractState&rhs)
 {
     for (const auto &rhsItem: rhs._varToAbsVal)
     {
@@ -346,7 +346,7 @@ void SVFIR2ItvExeState::widenAddrs(SparseAbstractState&lhs, const SparseAbstract
     }
 }
 
-void SVFIR2ItvExeState::narrowAddrs(SparseAbstractState&lhs, const SparseAbstractState&rhs)
+void SVFIR2AbsState::narrowAddrs(SparseAbstractState&lhs, const SparseAbstractState&rhs)
 {
     for (const auto &rhsItem: rhs._varToAbsVal)
     {
@@ -386,7 +386,7 @@ void SVFIR2ItvExeState::narrowAddrs(SparseAbstractState&lhs, const SparseAbstrac
     }
 }
 
-AbstractValue SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APOffset offset)
+AbstractValue SVFIR2AbsState::getGepObjAddress(u32_t pointer, APOffset offset)
 {
     assert(!getAddrs(pointer).getAddrs().empty());
     AbstractValue addrs = getAddrs(pointer);
@@ -429,7 +429,7 @@ AbstractValue SVFIR2ItvExeState::getGepObjAddress(u32_t pointer, APOffset offset
 *  Therefore the final byteoffset is [8+4*var1.lb(), 8+4*var1.ub()]
  *
  */
-AbstractValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
+AbstractValue SVFIR2AbsState::getByteOffset(const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
@@ -499,7 +499,7 @@ AbstractValue SVFIR2ItvExeState::getByteOffset(const GepStmt *gep)
  *
  * @return      A pair of APOffset values representing the offset range.
  */
-AbstractValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
+AbstractValue SVFIR2AbsState::getItvOfFlattenedElemIndex(const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantOffset());
@@ -574,7 +574,7 @@ AbstractValue SVFIR2ItvExeState::getItvOfFlattenedElemIndex(const GepStmt *gep)
  * @param objVar
  * @param valExprIdToCondValPairMap
  */
-void SVFIR2ItvExeState::initObjVar(const ObjVar *objVar, u32_t varId)
+void SVFIR2AbsState::initObjVar(const ObjVar *objVar, u32_t varId)
 {
 
     if (objVar->hasValue())
@@ -609,7 +609,7 @@ void SVFIR2ItvExeState::initObjVar(const ObjVar *objVar, u32_t varId)
         SparseAbstractState::globalES[varId] = AddressValue(getVirtualMemAddress(varId));
 }
 
-void SVFIR2ItvExeState::initSVFVar(u32_t varId)
+void SVFIR2AbsState::initSVFVar(u32_t varId)
 {
     if (inVarToValTable(varId) || _es.inVarToAddrsTable(varId)) return;
     SVFIR *svfir = PAG::getPAG();
@@ -627,7 +627,7 @@ void SVFIR2ItvExeState::initSVFVar(u32_t varId)
 }
 
 
-void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
+void SVFIR2AbsState::translateAddr(const AddrStmt *addr)
 {
     initSVFVar(addr->getRHSVarID());
     if (inVarToValTable(addr->getRHSVarID()))
@@ -653,7 +653,7 @@ void SVFIR2ItvExeState::translateAddr(const AddrStmt *addr)
 }
 
 
-void SVFIR2ItvExeState::translateBinary(const BinaryOPStmt *binary)
+void SVFIR2AbsState::translateBinary(const BinaryOPStmt *binary)
 {
     u32_t op0 = binary->getOpVarID(0);
     u32_t op1 = binary->getOpVarID(1);
@@ -715,7 +715,7 @@ void SVFIR2ItvExeState::translateBinary(const BinaryOPStmt *binary)
     }
 }
 
-void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
+void SVFIR2AbsState::translateCmp(const CmpStmt *cmp)
 {
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
@@ -901,7 +901,7 @@ void SVFIR2ItvExeState::translateCmp(const CmpStmt *cmp)
     }
 }
 
-void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
+void SVFIR2AbsState::translateLoad(const LoadStmt *load)
 {
     u32_t rhs = load->getRHSVarID();
     u32_t lhs = load->getLHSVarID();
@@ -927,7 +927,7 @@ void SVFIR2ItvExeState::translateLoad(const LoadStmt *load)
     }
 }
 
-void SVFIR2ItvExeState::translateStore(const StoreStmt *store)
+void SVFIR2AbsState::translateStore(const StoreStmt *store)
 {
     u32_t rhs = store->getRHSVarID();
     u32_t lhs = store->getLHSVarID();
@@ -952,7 +952,7 @@ void SVFIR2ItvExeState::translateStore(const StoreStmt *store)
     }
 }
 
-void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
+void SVFIR2AbsState::translateCopy(const CopyStmt *copy)
 {
     u32_t lhs = copy->getLHSVarID();
     u32_t rhs = copy->getRHSVarID();
@@ -1033,7 +1033,7 @@ void SVFIR2ItvExeState::translateCopy(const CopyStmt *copy)
     }
 }
 
-void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
+void SVFIR2AbsState::translateGep(const GepStmt *gep)
 {
     u32_t rhs = gep->getRHSVarID();
     u32_t lhs = gep->getLHSVarID();
@@ -1058,7 +1058,7 @@ void SVFIR2ItvExeState::translateGep(const GepStmt *gep)
     }
 }
 
-void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
+void SVFIR2AbsState::translateSelect(const SelectStmt *select)
 {
     u32_t res = select->getResID();
     u32_t tval = select->getTrueValue()->getId();
@@ -1086,7 +1086,7 @@ void SVFIR2ItvExeState::translateSelect(const SelectStmt *select)
     }
 }
 
-void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
+void SVFIR2AbsState::translatePhi(const PhiStmt *phi)
 {
     u32_t res = phi->getResID();
     AbstractValue rhs(AbstractValue::UnknownType);
@@ -1104,7 +1104,7 @@ void SVFIR2ItvExeState::translatePhi(const PhiStmt *phi)
 }
 
 
-void SVFIR2ItvExeState::translateCall(const CallPE *callPE)
+void SVFIR2AbsState::translateCall(const CallPE *callPE)
 {
     NodeID lhs = callPE->getLHSVarID();
     NodeID rhs = callPE->getRHSVarID();
@@ -1114,7 +1114,7 @@ void SVFIR2ItvExeState::translateCall(const CallPE *callPE)
     }
 }
 
-void SVFIR2ItvExeState::translateRet(const RetPE *retPE)
+void SVFIR2AbsState::translateRet(const RetPE *retPE)
 {
     NodeID lhs = retPE->getLHSVarID();
     NodeID rhs = retPE->getRHSVarID();

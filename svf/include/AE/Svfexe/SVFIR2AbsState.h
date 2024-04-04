@@ -1,4 +1,4 @@
-//===- SVFIR2ItvExeState.h -- SVF IR Translation to Interval Domain-----//
+//===- SVFIR2AbsState.h -- SVF IR Translation to Interval Domain-----//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -23,7 +23,7 @@
 // 46th International Conference on Software Engineering. (ICSE24)
 //===----------------------------------------------------------------------===//
 /*
- * SVFIR2ItvExeState.h
+ * SVFIR2AbsState.h
  *
  *  Created on: Aug 7, 2022
  *      Author: Jiawei Wang, Xiao Cheng
@@ -34,25 +34,24 @@
 #define Z3_EXAMPLE_SVFIR2ITVEXESTATE_H
 
 #include "AE/Core/AbstractState.h"
-#include "AE/Core/ExeState.h"
 #include "AE/Core/RelExeState.h"
 #include "SVFIR/SVFIR.h"
 
 namespace SVF
 {
-class SVFIR2ItvExeState
+class SVFIR2AbsState
 {
 public:
     static AbstractValue globalNulladdrs;
 public:
-    SVFIR2ItvExeState(SVFIR *ir) : _svfir(ir) {}
+    SVFIR2AbsState(SVFIR *ir) : _svfir(ir) {}
 
     void setEs(const SparseAbstractState&es)
     {
         _es = es;
     }
 
-    SparseAbstractState&getEs()
+    SparseAbstractState& getEs()
     {
         return _es;
     }
@@ -172,19 +171,19 @@ public:
     /// Return the internal index if idx is an address otherwise return the value of idx
     static inline u32_t getInternalID(u32_t idx)
     {
-        return ExeState::getInternalID(idx);
+        return AbstractState::getInternalID(idx);
     }
 
     /// The physical address starts with 0x7f...... + idx
     static inline u32_t getVirtualMemAddress(u32_t idx)
     {
-        return ExeState::getVirtualMemAddress(idx);
+        return AbstractState::getVirtualMemAddress(idx);
     }
 
     /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
     static inline bool isVirtualMemAddress(u32_t val)
     {
-        return ExeState::isVirtualMemAddress(val);
+        return AbstractState::isVirtualMemAddress(val);
     }
 
 protected:

@@ -92,7 +92,7 @@ void AbstractInterpretation::runOnModule(ICFG *icfg)
     _svfir = PAG::getPAG();
     _ander = AndersenWaveDiff::createAndersenWaveDiff(_svfir);
     // init SVF Execution States
-    _svfir2ExeState = new SVFIR2ItvExeState(_svfir);
+    _svfir2ExeState = new SVFIR2AbsState(_svfir);
 
     // init SSE External API Handler
     _callgraph = _ander->getPTACallGraph();
@@ -373,7 +373,7 @@ bool AbstractInterpretation::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ,
     }
     else {}
     // change interval range according to the compare predicate
-    ExeState::Addrs addrs;
+    AddressValue addrs;
     if(load_op0 && new_es.inVarToAddrsTable(load_op0->getRHSVarID()))
         addrs = new_es.getAddrs(load_op0->getRHSVarID()).getAddrs();
 
@@ -517,7 +517,7 @@ bool AbstractInterpretation::hasSwitchBranchES(const SVFVar* var, s64_t succ,
         {
             if (new_es.inVarToAddrsTable(load->getRHSVarID()))
             {
-                ExeState::Addrs &addrs = new_es.getAddrs(load->getRHSVarID()).getAddrs();
+                AddressValue &addrs = new_es.getAddrs(load->getRHSVarID()).getAddrs();
                 for (const auto &addr: addrs)
                 {
                     NodeID objId = new_es.getInternalID(addr);
@@ -1631,7 +1631,7 @@ void AbstractInterpretation::handleMemcpy(const SVF::SVFValue *dst, const SVF::S
             {
                 for (const auto &src: expr_src.getAddrs())
                 {
-                    u32_t objId = ExeState::getInternalID(src);
+                    u32_t objId = AbstractState::getInternalID(src);
                     if (es.inLocToValTable(objId))
                     {
                         es.store(dst, es.load(src));
@@ -1701,7 +1701,7 @@ void AbstractInterpretation::handleMemset(const SVF::SVFValue *dst, AbstractValu
             AbstractValue lhs_gep = _svfir2ExeState->getGepObjAddress(dstId, index);
             for (const auto &addr: lhs_gep.getAddrs())
             {
-                u32_t objId = ExeState::getInternalID(addr);
+                u32_t objId = AbstractState::getInternalID(addr);
                 if (es.inLocToValTable(objId))
                 {
                     AbstractValue tmp = es.load(addr);
