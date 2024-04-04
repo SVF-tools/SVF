@@ -61,7 +61,7 @@ std::string IntervalToIntStr(const IntervalValue& inv)
 
 void BufOverflowChecker::handleSVFStatement(const SVFStmt *stmt)
 {
-    AbstractExecution::handleSVFStatement(stmt);
+    AbstractInterpretation::handleSVFStatement(stmt);
     // for gep stmt, add the gep stmt to the addrToGep map
     if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
     {
@@ -413,7 +413,7 @@ bool BufOverflowChecker::detectStrcat(const CallICFGNode *call)
 
 void BufOverflowChecker::handleExtAPI(const CallICFGNode *call)
 {
-    AbstractExecution::handleExtAPI(call);
+    AbstractInterpretation::handleExtAPI(call);
     const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
     assert(fun && "SVFFunction* is nullptr");
     CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
@@ -733,7 +733,7 @@ bool BufOverflowChecker::canSafelyAccessMemory(const SVFValue *value, const Abst
 
 void BufOverflowChecker::handleICFGNode(const SVF::ICFGNode *node)
 {
-    AbstractExecution::handleICFGNode(node);
+    AbstractInterpretation::handleICFGNode(node);
     detectBufOverflow(node);
 }
 

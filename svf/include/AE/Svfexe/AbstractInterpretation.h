@@ -1,4 +1,4 @@
-//===- AE.cpp -- Abstract Execution---------------------------------//
+//===- AbstractInterpretation.h -- Abstract Execution----------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -35,7 +35,7 @@
 
 namespace SVF
 {
-class AbstractExecution;
+class AbstractInterpretation;
 class AEStat;
 class AEAPI;
 class ExeState;
@@ -53,7 +53,7 @@ class AEStat : public SVFStat
 {
 public:
     void countStateSize();
-    AEStat(AbstractExecution* ae) : _ae(ae)
+    AEStat(AbstractInterpretation* ae) : _ae(ae)
     {
         startTime = getClk(true);
     }
@@ -71,7 +71,7 @@ public:
     void reportBug();
 
 public:
-    AbstractExecution* _ae;
+    AbstractInterpretation* _ae;
     s32_t count{0};
     std::string memory_usage;
     std::string memUsage;
@@ -104,7 +104,8 @@ public:
     }
 };
 
-class AbstractExecution
+/// AbstractInterpretation is same as Abstract Execution
+class AbstractInterpretation
 {
     friend class AEStat;
     friend class AEAPI;
@@ -113,17 +114,17 @@ public:
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     /// Constructor
-    AbstractExecution();
+    AbstractInterpretation();
 
     virtual void runOnModule(ICFG* icfg);
 
     /// Destructor
-    virtual ~AbstractExecution();
+    virtual ~AbstractInterpretation();
 
     /// Program entry
     void analyse();
 
-    static bool classof(const AbstractExecution* ae)
+    static bool classof(const AbstractInterpretation* ae)
     {
         return ae->getKind() == AEKind::AbstractExecution;
     }

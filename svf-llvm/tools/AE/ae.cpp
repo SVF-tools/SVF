@@ -663,7 +663,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        AbstractExecution ae;
+        AbstractInterpretation ae;
 
         ae.runOnModule(pag->getICFG());
     }
