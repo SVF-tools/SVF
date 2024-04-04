@@ -43,7 +43,6 @@
 #ifndef Z3_EXAMPLE_INTERVAL_DOMAIN_H
 #define Z3_EXAMPLE_INTERVAL_DOMAIN_H
 
-#include "AE/Core/ExeState.h"
 #include "AE/Core/IntervalValue.h"
 #include "AE/Core/AbstractValue.h"
 #include "Util/Z3Expr.h"
@@ -54,7 +53,7 @@ namespace SVF
 {
 class AbstractState
 {
-    friend class SVFIR2ItvExeState;
+    friend class SVFIR2AbsState;
     friend class RelationSolver;
 public:
     typedef Map<u32_t, AbstractValue> VarToAbsValMap;
@@ -439,7 +438,7 @@ protected:
 
 class SparseAbstractState : public AbstractState
 {
-    friend class SVFIR2ItvExeState;
+    friend class SVFIR2AbsState;
     friend class RelationSolver;
 
 public:

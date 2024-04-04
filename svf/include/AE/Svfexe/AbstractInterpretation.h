@@ -28,17 +28,16 @@
 // Created by Jiawei Wang on 2024/1/10.
 //
 
-#include "Util/SVFBugReport.h"
 #include "AE/Core/ICFGWTO.h"
+#include "AE/Svfexe/SVFIR2AbsState.h"
+#include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
-#include "AE/Svfexe/SVFIR2ItvExeState.h"
 
 namespace SVF
 {
 class AbstractInterpretation;
 class AEStat;
 class AEAPI;
-class ExeState;
 
 template<typename T> class FILOWorkList;
 
@@ -343,7 +342,7 @@ protected:
     SVFIR* _svfir;
     PTACallGraph* _callgraph;
     /// Execution State, used to store the Interval Value of every SVF variable
-    SVFIR2ItvExeState* _svfir2ExeState;
+    SVFIR2AbsState* _svfir2ExeState;
     AEAPI* _api{nullptr};
 
     ICFG* _icfg;

@@ -38,7 +38,7 @@ namespace SVF
 
 class RelExeState
 {
-    friend class SVFIR2ItvExeState;
+    friend class SVFIR2AbsState;
 
 public:
     typedef Map<u32_t, Z3Expr> VarToValMap;

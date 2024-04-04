@@ -26,7 +26,7 @@
  // Author: Yulei Sui,
  */
 
-#include "AE/Svfexe/SVFIR2ItvExeState.h"
+#include "AE/Svfexe/SVFIR2AbsState.h"
 #include "Graphs/SVFG.h"
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
@@ -77,7 +77,7 @@ std::string printPts(PointerAnalysis* pta, const SVFValue* svfval)
  */
 void traverseOnSVFStmt(const ICFGNode* node)
 {
-    SVFIR2ItvExeState* svfir2ExeState = new SVFIR2ItvExeState(SVFIR::getPAG());
+    SVFIR2AbsState* svfir2ExeState = new SVFIR2AbsState(SVFIR::getPAG());
     for (const SVFStmt* stmt: node->getSVFStmts())
     {
         if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))

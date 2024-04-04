@@ -32,6 +32,7 @@
 #define Z3_EXAMPLE_IntervalValue_H
 
 #include "AE/Core/NumericLiteral.h"
+#include <sstream>
 
 namespace SVF
 {
