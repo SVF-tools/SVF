@@ -2,8 +2,6 @@ Release*/
 Debug*/
 build/
 html/
-Download/
-llvm-14.0.0.obj/
 Test-Suite
 Release+Asserts/
 Debug+Asserts/
