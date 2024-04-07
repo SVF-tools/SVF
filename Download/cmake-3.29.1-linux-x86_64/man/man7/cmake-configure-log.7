@@ -1,0 +1,386 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "CMAKE-CONFIGURE-LOG" "7" "Apr 03, 2024" "3.29.1" "CMake"
+.SH NAME
+cmake-configure-log \- CMake Configure Log
+.sp
+New in version 3.26.
+
+.SH INTRODUCTION
+.sp
+CMake writes a running log, known as the \fIconfigure log\fP,
+of certain events that occur during the Configure step.
+The configure log does \fInot\fP contain a log of all output, errors,
+or messages printed while configuring a project.  It is a log of
+detailed information about specific events, such as toolchain inspection
+by \fI\%try_compile()\fP, meant for use in debugging the configuration
+of a build tree.
+.sp
+For human use, this version of CMake writes the configure log to the file:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+${CMAKE_BINARY_DIR}/CMakeFiles/CMakeConfigureLog.yaml
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+However, the \fIlocation and name of the log file may change\fP in future
+versions of CMake.  Tools that read the configure log should get its
+location using a \fI\%configureLog\fP query to
+the \fI\%cmake\-file\-api(7)\fP\&.
+See the \fI\%Log Versioning\fP section below for details.
+.SH LOG STRUCTURE
+.sp
+The configure log is designed to be both machine\- and human\-readable.
+.sp
+The log file is a YAML document stream containing zero or more YAML
+documents separated by document markers.  Each document begins
+with a \fB\-\-\-\fP document marker line, contains a single YAML mapping
+that logs events from one CMake \(dqconfigure\(dq step, and, if the configure
+step finished normally, ends with a \fB\&...\fP document marker line:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\-\-\-
+events:
+  \-
+    kind: \(dqtry_compile\-v1\(dq
+    # (other fields omitted)
+  \-
+    kind: \(dqtry_compile\-v1\(dq
+    # (other fields omitted)
+\&...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+A new document is appended to the log every time CMake configures
+the build tree and logs new events.
+.sp
+The keys of each document root mapping are:
+.INDENT 0.0
+.TP
+.B \fBevents\fP
+A YAML block sequence of nodes corresponding to events logged during
+one CMake \(dqconfigure\(dq step.  Each event is a YAML node containing one
+of the \fI\%Event Kinds\fP documented below.
+.UNINDENT
+.SS Log Versioning
+.sp
+Each of the \fI\%Event Kinds\fP is versioned independently.  The set of
+keys an event\(aqs log entry provides is specific to its major version.
+When an event is logged, the latest version of its event kind that is
+known to the running version of CMake is always written to the log.
+.sp
+Tools reading the configure log must ignore event kinds and versions
+they do not understand:
+.INDENT 0.0
+.IP \(bu 2
+A future version of CMake may introduce a new event kind or version.
+.IP \(bu 2
+If an existing build tree is re\-configured with a different version of
+CMake, the log may contain different versions of the same event kind.
+.IP \(bu 2
+If \fI\%cmake\-file\-api(7)\fP queries request one or more
+\fI\%configureLog\fP object versions,
+the log may contain multiple entries for the same event, each
+with a different version of its event kind.
+.UNINDENT
+.sp
+IDEs should write a \fI\%cmake\-file\-api(7)\fP query requesting a
+specific \fI\%configureLog\fP object version,
+before running CMake, and then read the configure log only as described
+by the file\-api reply.
+.SS Text Block Encoding
+.sp
+In order to make the log human\-readable, text blocks are always
+represented using YAML literal block scalars (\fB|\fP).
+Since literal block scalars do not support escaping, backslashes
+and non\-printable characters are encoded at the application layer:
+.INDENT 0.0
+.IP \(bu 2
+\fB\e\e\fP encodes a backslash.
+.IP \(bu 2
+\fB\exXX\fP encodes a byte using two hexadecimal digits, \fBXX\fP\&.
+.UNINDENT
+.SH EVENT KINDS
+.sp
+Every event kind is represented by a YAML mapping of the form:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+kind: \(dq<kind>\-v<major>\(dq
+backtrace:
+  \- \(dq<file>:<line> (<function>)\(dq
+checks:
+  \- \(dqChecking for something\(dq
+#...event\-specific keys...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The keys common to all events are:
+.INDENT 0.0
+.TP
+.B \fBkind\fP
+A string identifying the event kind and major version.
+.TP
+.B \fBbacktrace\fP
+A YAML block sequence reporting the call stack of CMake source
+locations at which the event occurred, from most\-recent to
+least\-recent.  Each node is a string specifying one location
+formatted as \fB<file>:<line> (<function>)\fP\&.
+.TP
+.B \fBchecks\fP
+An optional key that is present when the event occurred with
+at least one pending \fI\%message(CHECK_START)\fP\&.  Its value
+is a YAML block sequence reporting the stack of pending checks,
+from most\-recent to least\-recent.  Each node is a string containing
+a pending check message.
+.UNINDENT
+.sp
+Additional mapping keys are specific to each (versioned) event kind,
+described below.
+.SS Event Kind \fBmessage\fP
+.sp
+The \fI\%message(CONFIGURE_LOG)\fP command logs \fBmessage\fP events.
+.sp
+There is only one \fBmessage\fP event major version, version 1.
+.SS \fBmessage\-v1\fP Event
+.sp
+A \fBmessage\-v1\fP event is a YAML mapping:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+kind: \(dqmessage\-v1\(dq
+backtrace:
+  \- \(dqCMakeLists.txt:123 (message)\(dq
+checks:
+  \- \(dqChecking for something\(dq
+message: |
+  # ...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The keys specific to \fBmessage\-v1\fP mappings are:
+.INDENT 0.0
+.TP
+.B \fBmessage\fP
+A YAML literal block scalar containing the message text,
+represented using our \fI\%Text Block Encoding\fP\&.
+.UNINDENT
+.SS Event Kind \fBtry_compile\fP
+.sp
+The \fI\%try_compile()\fP command logs \fBtry_compile\fP events.
+.sp
+There is only one \fBtry_compile\fP event major version, version 1.
+.SS \fBtry_compile\-v1\fP Event
+.sp
+A \fBtry_compile\-v1\fP event is a YAML mapping:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+kind: \(dqtry_compile\-v1\(dq
+backtrace:
+  \- \(dqCMakeLists.txt:123 (try_compile)\(dq
+checks:
+  \- \(dqChecking for something\(dq
+description: \(dqExplicit LOG_DESCRIPTION\(dq
+directories:
+  source: \(dq/path/to/.../TryCompile\-01234\(dq
+  binary: \(dq/path/to/.../TryCompile\-01234\(dq
+cmakeVariables:
+  SOME_VARIABLE: \(dqSome Value\(dq
+buildResult:
+  variable: \(dqCOMPILE_RESULT\(dq
+  cached: true
+  stdout: |
+    # ...
+  exitCode: 0
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The keys specific to \fBtry_compile\-v1\fP mappings are:
+.INDENT 0.0
+.TP
+.B \fBdescription\fP
+An optional key that is present when the \fBLOG_DESCRIPTION <text>\fP option
+was used.  Its value is a string containing the description \fB<text>\fP\&.
+.TP
+.B \fBdirectories\fP
+A mapping describing the directories associated with the
+compilation attempt.  It has the following keys:
+.INDENT 7.0
+.TP
+.B \fBsource\fP
+String specifying the source directory of the
+\fI\%try_compile()\fP project.
+.TP
+.B \fBbinary\fP
+String specifying the binary directory of the
+\fI\%try_compile()\fP project.
+For non\-project invocations, this is often the same as
+the source directory.
+.UNINDENT
+.TP
+.B \fBcmakeVariables\fP
+An optional key that is present when CMake propagates variables
+into the test project, either automatically or due to the
+\fI\%CMAKE_TRY_COMPILE_PLATFORM_VARIABLES\fP variable.
+Its value is a mapping from variable names to their values.
+.TP
+.B \fBbuildResult\fP
+A mapping describing the result of compiling the test code.
+It has the following keys:
+.INDENT 7.0
+.TP
+.B \fBvariable\fP
+A string specifying the name of the CMake variable
+storing the result of trying to build the test project.
+.TP
+.B \fBcached\fP
+A boolean indicating whether the above result \fBvariable\fP
+is stored in the CMake cache.
+.TP
+.B \fBstdout\fP
+A YAML literal block scalar containing the output from building
+the test project, represented using our \fI\%Text Block Encoding\fP\&.
+This contains build output from both stdout and stderr.
+.TP
+.B \fBexitCode\fP
+An integer specifying the build tool exit code from trying
+to build the test project.
+.UNINDENT
+.UNINDENT
+.SS Event Kind \fBtry_run\fP
+.sp
+The \fI\%try_run()\fP command logs \fBtry_run\fP events.
+.sp
+There is only one \fBtry_run\fP event major version, version 1.
+.SS \fBtry_run\-v1\fP Event
+.sp
+A \fBtry_run\-v1\fP event is a YAML mapping:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+kind: \(dqtry_run\-v1\(dq
+backtrace:
+  \- \(dqCMakeLists.txt:456 (try_run)\(dq
+checks:
+  \- \(dqChecking for something\(dq
+description: \(dqExplicit LOG_DESCRIPTION\(dq
+directories:
+  source: \(dq/path/to/.../TryCompile\-56789\(dq
+  binary: \(dq/path/to/.../TryCompile\-56789\(dq
+buildResult:
+  variable: \(dqCOMPILE_RESULT\(dq
+  cached: true
+  stdout: |
+    # ...
+  exitCode: 0
+runResult:
+  variable: \(dqRUN_RESULT\(dq
+  cached: true
+  stdout: |
+    # ...
+  stderr: |
+    # ...
+  exitCode: 0
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The keys specific to \fBtry_run\-v1\fP mappings include those
+documented by the \fI\%try_compile\-v1 event\fP, plus:
+.INDENT 0.0
+.TP
+.B \fBrunResult\fP
+A mapping describing the result of running the test code.
+It has the following keys:
+.INDENT 7.0
+.TP
+.B \fBvariable\fP
+A string specifying the name of the CMake variable
+storing the result of trying to run the test executable.
+.TP
+.B \fBcached\fP
+A boolean indicating whether the above result \fBvariable\fP
+is stored in the CMake cache.
+.TP
+.B \fBstdout\fP
+An optional key that is present when the test project built successfully.
+Its value is a YAML literal block scalar containing output from running
+the test executable, represented using our \fI\%Text Block Encoding\fP\&.
+.sp
+If \fBRUN_OUTPUT_VARIABLE\fP was used, stdout and stderr are captured
+together, so this will contain both.  Otherwise, this will contain
+only the stdout output.
+.TP
+.B \fBstderr\fP
+An optional key that is present when the test project built successfully
+and the \fBRUN_OUTPUT_VARIABLE\fP option was not used.
+Its value is a YAML literal block scalar containing output from running
+the test executable, represented using our \fI\%Text Block Encoding\fP\&.
+.sp
+If \fBRUN_OUTPUT_VARIABLE\fP was used, stdout and stderr are captured
+together in the \fBstdout\fP key, and this key will not be present.
+Otherwise, this will contain the stderr output.
+.TP
+.B \fBexitCode\fP
+An optional key that is present when the test project built successfully.
+Its value is an integer specifying the exit code, or a string containing
+an error message, from trying to run the test executable.
+.UNINDENT
+.UNINDENT
+.SH COPYRIGHT
+2000-2024 Kitware, Inc. and Contributors
+.\" Generated by docutils manpage writer.
+.

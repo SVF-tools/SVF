@@ -68,10 +68,10 @@ execute_process(
 message(STATUS "The OS is: ${sysOS}")
 
 if (sysOS STREQUAL "Darwin")
-  set(CLANG_LIBS_DIR "/Users/lishangyu/SelfProjects/SVF-T/llvm-14.0.0.obj")
+  set(CLANG_LIBS_DIR "/home/spring/Work/llvm-14.0.0.obj")
   set(clang_dynamic_libs ${CLANG_LIBS_DIR}/lib/libclang.dylib)
 elseif(sysOS STREQUAL "Linux")
-  set(CLANG_LIBS_DIR "/home/lishangyu/SourceProjects/SVF-T/llvm-14.0.0.obj")
+  set(CLANG_LIBS_DIR "/home/spring/Work/llvm-14.0.0.obj")
   set(clang_dynamic_libs ${CLANG_LIBS_DIR}/lib/libclang.so)
 endif ()
 

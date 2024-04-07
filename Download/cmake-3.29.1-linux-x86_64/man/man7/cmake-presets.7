@@ -1,0 +1,1500 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "CMAKE-PRESETS" "7" "Apr 03, 2024" "3.29.1" "CMake"
+.SH NAME
+cmake-presets \- CMakePresets.json
+.SH INTRODUCTION
+.sp
+New in version 3.19.
+
+.sp
+One problem that CMake users often face is sharing settings with other people
+for common ways to configure a project. This may be done to support CI builds,
+or for users who frequently use the same build. CMake supports two main files,
+\fBCMakePresets.json\fP and \fBCMakeUserPresets.json\fP, that allow users to
+specify common configure options and share them with others. CMake also
+supports files included with the \fBinclude\fP field.
+.sp
+\fBCMakePresets.json\fP and \fBCMakeUserPresets.json\fP live in the project\(aqs root
+directory. They both have exactly the same format, and both are optional
+(though at least one must be present if \fI\%\-\-preset\fP
+is specified).  \fBCMakePresets.json\fP is meant to specify project\-wide build
+details, while \fBCMakeUserPresets.json\fP is meant for developers to specify
+their own local build details.
+.sp
+\fBCMakePresets.json\fP may be checked into a version control system, and
+\fBCMakeUserPresets.json\fP should NOT be checked in. For example, if a
+project is using Git, \fBCMakePresets.json\fP may be tracked, and
+\fBCMakeUserPresets.json\fP should be added to the \fB\&.gitignore\fP\&.
+.SH FORMAT
+.sp
+The files are a JSON document with an object as the root:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+{
+  \(dqversion\(dq: 6,
+  \(dqcmakeMinimumRequired\(dq: {
+    \(dqmajor\(dq: 3,
+    \(dqminor\(dq: 23,
+    \(dqpatch\(dq: 0
+  },
+  \(dqinclude\(dq: [
+    \(dqotherThings.json\(dq,
+    \(dqmoreThings.json\(dq
+  ],
+  \(dqconfigurePresets\(dq: [
+    {
+      \(dqname\(dq: \(dqdefault\(dq,
+      \(dqdisplayName\(dq: \(dqDefault Config\(dq,
+      \(dqdescription\(dq: \(dqDefault build using Ninja generator\(dq,
+      \(dqgenerator\(dq: \(dqNinja\(dq,
+      \(dqbinaryDir\(dq: \(dq${sourceDir}/build/default\(dq,
+      \(dqcacheVariables\(dq: {
+        \(dqFIRST_CACHE_VARIABLE\(dq: {
+          \(dqtype\(dq: \(dqBOOL\(dq,
+          \(dqvalue\(dq: \(dqOFF\(dq
+        },
+        \(dqSECOND_CACHE_VARIABLE\(dq: \(dqON\(dq
+      },
+      \(dqenvironment\(dq: {
+        \(dqMY_ENVIRONMENT_VARIABLE\(dq: \(dqTest\(dq,
+        \(dqPATH\(dq: \(dq$env{HOME}/ninja/bin:$penv{PATH}\(dq
+      },
+      \(dqvendor\(dq: {
+        \(dqexample.com/ExampleIDE/1.0\(dq: {
+          \(dqautoFormat\(dq: true
+        }
+      }
+    },
+    {
+      \(dqname\(dq: \(dqninja\-multi\(dq,
+      \(dqinherits\(dq: \(dqdefault\(dq,
+      \(dqdisplayName\(dq: \(dqNinja Multi\-Config\(dq,
+      \(dqdescription\(dq: \(dqDefault build using Ninja Multi\-Config generator\(dq,
+      \(dqgenerator\(dq: \(dqNinja Multi\-Config\(dq
+    },
+    {
+      \(dqname\(dq: \(dqwindows\-only\(dq,
+      \(dqinherits\(dq: \(dqdefault\(dq,
+      \(dqdisplayName\(dq: \(dqWindows\-only configuration\(dq,
+      \(dqdescription\(dq: \(dqThis build is only available on Windows\(dq,
+      \(dqcondition\(dq: {
+        \(dqtype\(dq: \(dqequals\(dq,
+        \(dqlhs\(dq: \(dq${hostSystemName}\(dq,
+        \(dqrhs\(dq: \(dqWindows\(dq
+      }
+    }
+  ],
+  \(dqbuildPresets\(dq: [
+    {
+      \(dqname\(dq: \(dqdefault\(dq,
+      \(dqconfigurePreset\(dq: \(dqdefault\(dq
+    }
+  ],
+  \(dqtestPresets\(dq: [
+    {
+      \(dqname\(dq: \(dqdefault\(dq,
+      \(dqconfigurePreset\(dq: \(dqdefault\(dq,
+      \(dqoutput\(dq: {\(dqoutputOnFailure\(dq: true},
+      \(dqexecution\(dq: {\(dqnoTestsAction\(dq: \(dqerror\(dq, \(dqstopOnFailure\(dq: true}
+    }
+  ],
+  \(dqpackagePresets\(dq: [
+    {
+      \(dqname\(dq: \(dqdefault\(dq,
+      \(dqconfigurePreset\(dq: \(dqdefault\(dq,
+      \(dqgenerators\(dq: [
+        \(dqTGZ\(dq
+      ]
+    }
+  ],
+  \(dqworkflowPresets\(dq: [
+    {
+      \(dqname\(dq: \(dqdefault\(dq,
+      \(dqsteps\(dq: [
+        {
+          \(dqtype\(dq: \(dqconfigure\(dq,
+          \(dqname\(dq: \(dqdefault\(dq
+        },
+        {
+          \(dqtype\(dq: \(dqbuild\(dq,
+          \(dqname\(dq: \(dqdefault\(dq
+        },
+        {
+          \(dqtype\(dq: \(dqtest\(dq,
+          \(dqname\(dq: \(dqdefault\(dq
+        },
+        {
+          \(dqtype\(dq: \(dqpackage\(dq,
+          \(dqname\(dq: \(dqdefault\(dq
+        }
+      ]
+    }
+  ],
+  \(dqvendor\(dq: {
+    \(dqexample.com/ExampleIDE/1.0\(dq: {
+      \(dqautoFormat\(dq: false
+    }
+  }
+}
+
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+The root object recognizes the following fields:
+.INDENT 0.0
+.TP
+.B \fB$schema\fP
+An optional string that provides a URI to the JSON schema that describes the
+structure of this JSON document. This field is used for validation and
+autocompletion in editors that support JSON schema. It doesn\(aqt affect the
+behavior of the document itself. If this field is not specified, the JSON
+document will still be valid, but tools that use JSON schema for validation
+and autocompletion may not function correctly.
+This is allowed in preset files specifying version \fB8\fP or above.
+.TP
+.B \fBversion\fP
+A required integer representing the version of the JSON schema.
+The supported versions are:
+.INDENT 7.0
+.TP
+.B \fB1\fP
+New in version 3.19.
+
+.TP
+.B \fB2\fP
+New in version 3.20.
+
+.TP
+.B \fB3\fP
+New in version 3.21.
+
+.TP
+.B \fB4\fP
+New in version 3.23.
+
+.TP
+.B \fB5\fP
+New in version 3.24.
+
+.TP
+.B \fB6\fP
+New in version 3.25.
+
+.TP
+.B \fB7\fP
+New in version 3.27.
+
+.TP
+.B \fB8\fP
+New in version 3.28.
+
+.UNINDENT
+.TP
+.B \fBcmakeMinimumRequired\fP
+An optional object representing the minimum version of CMake needed to
+build this project. This object consists of the following fields:
+.INDENT 7.0
+.TP
+.B \fBmajor\fP
+An optional integer representing the major version.
+.TP
+.B \fBminor\fP
+An optional integer representing the minor version.
+.TP
+.B \fBpatch\fP
+An optional integer representing the patch version.
+.UNINDENT
+.TP
+.B \fBinclude\fP
+An optional array of strings representing files to include. If the filenames
+are not absolute, they are considered relative to the current file.
+This is allowed in preset files specifying version \fB4\fP or above.
+See \fI\%Includes\fP for discussion of the constraints on included files.
+.TP
+.B \fBvendor\fP
+An optional map containing vendor\-specific information. CMake does not
+interpret the contents of this field except to verify that it is a map if
+it does exist. However, the keys should be a vendor\-specific domain name
+followed by a \fB/\fP\-separated path. For example, the Example IDE 1.0 could
+use \fBexample.com/ExampleIDE/1.0\fP\&. The value of each field can be anything
+desired by the vendor, though will typically be a map.
+.TP
+.B \fBconfigurePresets\fP
+An optional array of \fI\%Configure Preset\fP objects.
+This is allowed in preset files specifying version \fB1\fP or above.
+.TP
+.B \fBbuildPresets\fP
+An optional array of \fI\%Build Preset\fP objects.
+This is allowed in preset files specifying version \fB2\fP or above.
+.TP
+.B \fBtestPresets\fP
+An optional array of \fI\%Test Preset\fP objects.
+This is allowed in preset files specifying version \fB2\fP or above.
+.TP
+.B \fBpackagePresets\fP
+An optional array of \fI\%Package Preset\fP objects.
+This is allowed in preset files specifying version \fB6\fP or above.
+.TP
+.B \fBworkflowPresets\fP
+An optional array of \fI\%Workflow Preset\fP objects.
+This is allowed in preset files specifying version \fB6\fP or above.
+.UNINDENT
+.SS Includes
+.sp
+\fBCMakePresets.json\fP and \fBCMakeUserPresets.json\fP can include other files
+with the \fBinclude\fP field in file version \fB4\fP and later. Files included
+by these files can also include other files. If \fBCMakePresets.json\fP and
+\fBCMakeUserPresets.json\fP are both present, \fBCMakeUserPresets.json\fP
+implicitly includes \fBCMakePresets.json\fP, even with no \fBinclude\fP field,
+in all versions of the format.
+.sp
+If a preset file contains presets that inherit from presets in another file,
+the file must include the other file either directly or indirectly.
+Include cycles are not allowed among files. If \fBa.json\fP includes
+\fBb.json\fP, \fBb.json\fP cannot include \fBa.json\fP\&. However, a file may be
+included multiple times from the same file or from different files.
+.sp
+Files directly or indirectly included from \fBCMakePresets.json\fP should be
+guaranteed to be provided by the project. \fBCMakeUserPresets.json\fP may
+include files from anywhere.
+.sp
+Starting from version \fB7\fP, the \fBinclude\fP field supports
+\fI\%macro expansion\fP, but only \fB$penv{}\fP macro expansion.
+.SS Configure Preset
+.sp
+Each entry of the \fBconfigurePresets\fP array is a JSON object
+that may contain the following fields:
+.INDENT 0.0
+.TP
+.B \fBname\fP
+A required string representing the machine\-friendly name of the preset.
+This identifier is used in the \fI\%cmake \-\-preset\fP option.
+There must not be two configure presets in the union of \fBCMakePresets.json\fP
+and \fBCMakeUserPresets.json\fP in the same directory with the same name.
+However, a configure preset may have the same name as a build, test,
+package, or workflow preset.
+.TP
+.B \fBhidden\fP
+An optional boolean specifying whether or not a preset should be hidden.
+If a preset is hidden, it cannot be used in the \fB\-\-preset=\fP argument,
+will not show up in the \fI\%CMake GUI\fP, and does not
+have to have a valid \fBgenerator\fP or \fBbinaryDir\fP, even from
+inheritance. \fBhidden\fP presets are intended to be used as a base for
+other presets to inherit via the \fBinherits\fP field.
+.TP
+.B \fBinherits\fP
+An optional array of strings representing the names of presets to inherit
+from. This field can also be a string, which is equivalent to an array
+containing one string.
+.sp
+The preset will inherit all of the fields from the \fBinherits\fP
+presets by default (except \fBname\fP, \fBhidden\fP, \fBinherits\fP,
+\fBdescription\fP, and \fBdisplayName\fP), but can override them as
+desired. If multiple \fBinherits\fP presets provide conflicting values for
+the same field, the earlier preset in the \fBinherits\fP array will be
+preferred.
+.sp
+A preset can only inherit from another preset that is defined in the
+same file or in one of the files it includes (directly or indirectly).
+Presets in \fBCMakePresets.json\fP may not inherit from presets in
+\fBCMakeUserPresets.json\fP\&.
+.TP
+.B \fBcondition\fP
+An optional \fI\%Condition\fP object. This is allowed in preset files specifying
+version \fB3\fP or above.
+.TP
+.B \fBvendor\fP
+An optional map containing vendor\-specific information. CMake does not
+interpret the contents of this field except to verify that it is a map
+if it does exist. However, it should follow the same conventions as the
+root\-level \fBvendor\fP field. If vendors use their own per\-preset
+\fBvendor\fP field, they should implement inheritance in a sensible manner
+when appropriate.
+.TP
+.B \fBdisplayName\fP
+An optional string with a human\-friendly name of the preset.
+.TP
+.B \fBdescription\fP
+An optional string with a human\-friendly description of the preset.
+.TP
+.B \fBgenerator\fP
+An optional string representing the generator to use for the preset. If
+\fBgenerator\fP is not specified, it must be inherited from the
+\fBinherits\fP preset (unless this preset is \fBhidden\fP). In version \fB3\fP
+or above, this field may be omitted to fall back to regular generator
+discovery procedure.
+.sp
+Note that for Visual Studio generators, unlike in the command line
+\fI\%\-G\fP argument, you cannot include the platform name
+in the generator name. Use the \fBarchitecture\fP field instead.
+.TP
+.B \fBarchitecture\fP, \fBtoolset\fP
+Optional fields representing the platform and toolset, respectively, for
+\fI\%generators\fP that support them.
+.sp
+See \fI\%cmake \-A\fP option for possible values for \fBarchitecture\fP
+and \fI\%cmake \-T\fP for \fBtoolset\fP\&.
+.sp
+Each may be either a string or an object with the following fields:
+.INDENT 7.0
+.TP
+.B \fBvalue\fP
+An optional string representing the value.
+.TP
+.B \fBstrategy\fP
+An optional string telling CMake how to handle the \fBarchitecture\fP or
+\fBtoolset\fP field. Valid values are:
+.INDENT 7.0
+.TP
+.B \fB\(dqset\(dq\fP
+Set the respective value. This will result in an error for generators
+that do not support the respective field.
+.TP
+.B \fB\(dqexternal\(dq\fP
+Do not set the value, even if the generator supports it. This is
+useful if, for example, a preset uses the Ninja generator, and an IDE
+knows how to set up the Visual C++ environment from the
+\fBarchitecture\fP and \fBtoolset\fP fields. In that case, CMake will
+ignore the field, but the IDE can use them to set up the environment
+before invoking CMake.
+.UNINDENT
+.sp
+If no \fBstrategy\fP field is given, or if the field uses the string form
+rather than the object form, the behavior is the same as \fB\(dqset\(dq\fP\&.
+.UNINDENT
+.TP
+.B \fBtoolchainFile\fP
+An optional string representing the path to the toolchain file.
+This field supports \fI\%macro expansion\fP\&. If a relative path is specified,
+it is calculated relative to the build directory, and if not found,
+relative to the source directory. This field takes precedence over any
+\fI\%CMAKE_TOOLCHAIN_FILE\fP value. It is allowed in preset files
+specifying version \fB3\fP or above.
+.TP
+.B \fBbinaryDir\fP
+An optional string representing the path to the output binary directory.
+This field supports \fI\%macro expansion\fP\&. If a relative path is specified,
+it is calculated relative to the source directory. If \fBbinaryDir\fP is not
+specified, it must be inherited from the \fBinherits\fP preset (unless this
+preset is \fBhidden\fP). In version \fB3\fP or above, this field may be
+omitted.
+.TP
+.B \fBinstallDir\fP
+An optional string representing the path to the installation directory.
+This field supports \fI\%macro expansion\fP\&. If a relative path is specified,
+it is calculated relative to the source directory. This is allowed in
+preset files specifying version \fB3\fP or above.
+.TP
+.B \fBcmakeExecutable\fP
+An optional string representing the path to the CMake executable to use
+for this preset. This is reserved for use by IDEs, and is not used by
+CMake itself. IDEs that use this field should expand any macros in it.
+.TP
+.B \fBcacheVariables\fP
+An optional map of cache variables. The key is the variable name (which
+may not be an empty string), and the value is either \fBnull\fP, a boolean
+(which is equivalent to a value of \fB\(dqTRUE\(dq\fP or \fB\(dqFALSE\(dq\fP and a type
+of \fBBOOL\fP), a string representing the value of the variable (which
+supports \fI\%macro expansion\fP), or an object with the following fields:
+.INDENT 7.0
+.TP
+.B \fBtype\fP
+An optional string representing the type of the variable.
+.TP
+.B \fBvalue\fP
+A required string or boolean representing the value of the variable.
+A boolean is equivalent to \fB\(dqTRUE\(dq\fP or \fB\(dqFALSE\(dq\fP\&. This field
+supports \fI\%macro expansion\fP\&.
+.UNINDENT
+.sp
+Cache variables are inherited through the \fBinherits\fP field, and the
+preset\(aqs variables will be the union of its own \fBcacheVariables\fP and
+the \fBcacheVariables\fP from all its parents. If multiple presets in this
+union define the same variable, the standard rules of \fBinherits\fP are
+applied. Setting a variable to \fBnull\fP causes it to not be set, even if
+a value was inherited from another preset.
+.TP
+.B \fBenvironment\fP
+An optional map of environment variables. The key is the variable name
+(which may not be an empty string), and the value is either \fBnull\fP or
+a string representing the value of the variable. Each variable is set
+regardless of whether or not a value was given to it by the process\(aqs
+environment. This field supports \fI\%macro expansion\fP, and environment
+variables in this map may reference each other, and may be listed in any
+order, as long as such references do not cause a cycle (for example,
+if \fBENV_1\fP is \fB$env{ENV_2}\fP, \fBENV_2\fP may not be \fB$env{ENV_1}\fP\&.)
+.sp
+Environment variables are inherited through the \fBinherits\fP field, and
+the preset\(aqs environment will be the union of its own \fBenvironment\fP and
+the \fBenvironment\fP from all its parents. If multiple presets in this
+union define the same variable, the standard rules of \fBinherits\fP are
+applied. Setting a variable to \fBnull\fP causes it to not be set, even if
+a value was inherited from another preset.
+.TP
+.B \fBwarnings\fP
+An optional object specifying the warnings to enable. The object may
+contain the following fields:
+.INDENT 7.0
+.TP
+.B \fBdev\fP
+An optional boolean. Equivalent to passing \fI\%\-Wdev\fP
+or \fI\%\-Wno\-dev\fP on the command line. This may not
+be set to \fBfalse\fP if \fBerrors.dev\fP is set to \fBtrue\fP\&.
+.TP
+.B \fBdeprecated\fP
+An optional boolean. Equivalent to passing
+\fI\%\-Wdeprecated\fP or
+\fI\%\-Wno\-deprecated\fP on the command line.
+This may not be set to \fBfalse\fP if \fBerrors.deprecated\fP is set to
+\fBtrue\fP\&.
+.TP
+.B \fBuninitialized\fP
+An optional boolean. Setting this to \fBtrue\fP is equivalent to passing
+\fI\%\-\-warn\-uninitialized\fP on the command
+line.
+.TP
+.B \fBunusedCli\fP
+An optional boolean. Setting this to \fBfalse\fP is equivalent to passing
+\fI\%\-\-no\-warn\-unused\-cli\fP on the command
+line.
+.TP
+.B \fBsystemVars\fP
+An optional boolean. Setting this to \fBtrue\fP is equivalent to passing
+\fI\%\-\-check\-system\-vars\fP on the command
+line.
+.UNINDENT
+.TP
+.B \fBerrors\fP
+An optional object specifying the errors to enable. The object may
+contain the following fields:
+.INDENT 7.0
+.TP
+.B \fBdev\fP
+An optional boolean. Equivalent to passing \fI\%\-Werror=dev\fP
+or \fI\%\-Wno\-error=dev\fP on the command line.
+This may not be set to \fBtrue\fP if \fBwarnings.dev\fP is set to \fBfalse\fP\&.
+.TP
+.B \fBdeprecated\fP
+An optional boolean. Equivalent to passing
+\fI\%\-Werror=deprecated\fP or
+\fI\%\-Wno\-error=deprecated\fP on the command line.
+This may not be set to \fBtrue\fP if \fBwarnings.deprecated\fP is set to
+\fBfalse\fP\&.
+.UNINDENT
+.TP
+.B \fBdebug\fP
+An optional object specifying debug options. The object may contain the
+following fields:
+.INDENT 7.0
+.TP
+.B \fBoutput\fP
+An optional boolean. Setting this to \fBtrue\fP is equivalent to passing
+\fI\%\-\-debug\-output\fP on the command line.
+.TP
+.B \fBtryCompile\fP
+An optional boolean. Setting this to \fBtrue\fP is equivalent to passing
+\fI\%\-\-debug\-trycompile\fP on the command
+line.
+.TP
+.B \fBfind\fP
+An optional boolean. Setting this to \fBtrue\fP is equivalent to passing
+\fI\%\-\-debug\-find\fP on the command line.
+.UNINDENT
+.TP
+.B \fBtrace\fP
+An optional object specifying trace options. This is allowed in preset
+files specifying version \fB7\fP\&. The object may contain the following fields:
+.INDENT 7.0
+.TP
+.B \fBmode\fP
+An optional string that specifies the trace mode. Valid values are:
+.INDENT 7.0
+.TP
+.B \fBon\fP
+Causes a trace of all calls made and from where to be printed.
+Equivalent to passing \fI\%\-\-trace\fP on the command
+line.
+.TP
+.B \fBoff\fP
+A trace of all calls will not be printed.
+.TP
+.B \fBexpand\fP
+Causes a trace with variables expanded of all calls made and from where
+to be printed. Equivalent to passing \fI\%\-\-trace\-expand\fP
+on the command line.
+.UNINDENT
+.TP
+.B \fBformat\fP
+An optional string that specifies the format output of the trace.
+Valid values are:
+.INDENT 7.0
+.TP
+.B \fBhuman\fP
+Prints each trace line in a human\-readable format.
+This is the default format.  Equivalent to passing
+\fI\%\-\-trace\-format=human\fP
+on the command line.
+.TP
+.B \fBjson\-v1\fP
+Prints each line as a separate JSON document.  Equivalent to passing
+\fI\%\-\-trace\-format=json\-v1\fP
+on the command line.
+.UNINDENT
+.TP
+.B \fBsource\fP
+An optional array of strings representing the paths of source files to
+be traced.  This field can also be a string, which is equivalent to an
+array containing one string.  Equivalent to passing
+\fI\%\-\-trace\-source\fP on the command line.
+.TP
+.B \fBredirect\fP
+An optional string specifying a path to a trace output file.  Equivalent
+to passing \fI\%\-\-trace\-redirect\fP
+on the command line.
+.UNINDENT
+.UNINDENT
+.SS Build Preset
+.sp
+Each entry of the \fBbuildPresets\fP array is a JSON object
+that may contain the following fields:
+.INDENT 0.0
+.TP
+.B \fBname\fP
+A required string representing the machine\-friendly name of the preset.
+This identifier is used in the
+\fI\%cmake \-\-build \-\-preset\fP option.
+There must not be two build presets in the union of \fBCMakePresets.json\fP
+and \fBCMakeUserPresets.json\fP in the same directory with the same name.
+However, a build preset may have the same name as a configure, test,
+package, or workflow preset.
+.TP
+.B \fBhidden\fP
+An optional boolean specifying whether or not a preset should be hidden.
+If a preset is hidden, it cannot be used in the
+\fI\%\-\-preset\fP argument
+and does not have to have a valid \fBconfigurePreset\fP, even from
+inheritance. \fBhidden\fP presets are intended to be used as a base for
+other presets to inherit via the \fBinherits\fP field.
+.TP
+.B \fBinherits\fP
+An optional array of strings representing the names of presets to inherit
+from. This field can also be a string, which is equivalent to an array
+containing one string.
+.sp
+The preset will inherit all of the fields from the
+\fBinherits\fP presets by default (except \fBname\fP, \fBhidden\fP,
+\fBinherits\fP, \fBdescription\fP, and \fBdisplayName\fP), but can override
+them as desired. If multiple \fBinherits\fP presets provide conflicting
+values for the same field, the earlier preset in the \fBinherits\fP array
+will be preferred.
+.sp
+A preset can only inherit from another preset that is defined in the
+same file or in one of the files it includes (directly or indirectly).
+Presets in \fBCMakePresets.json\fP may not inherit from presets in
+\fBCMakeUserPresets.json\fP\&.
+.TP
+.B \fBcondition\fP
+An optional \fI\%Condition\fP object. This is allowed in preset files specifying
+version \fB3\fP or above.
+.TP
+.B \fBvendor\fP
+An optional map containing vendor\-specific information. CMake does not
+interpret the contents of this field except to verify that it is a map
+if it does exist. However, it should follow the same conventions as the
+root\-level \fBvendor\fP field. If vendors use their own per\-preset
+\fBvendor\fP field, they should implement inheritance in a sensible manner
+when appropriate.
+.TP
+.B \fBdisplayName\fP
+An optional string with a human\-friendly name of the preset.
+.TP
+.B \fBdescription\fP
+An optional string with a human\-friendly description of the preset.
+.TP
+.B \fBenvironment\fP
+An optional map of environment variables. The key is the variable name
+(which may not be an empty string), and the value is either \fBnull\fP or
+a string representing the value of the variable. Each variable is set
+regardless of whether or not a value was given to it by the process\(aqs
+environment. This field supports macro expansion, and environment
+variables in this map may reference each other, and may be listed in any
+order, as long as such references do not cause a cycle (for example, if
+\fBENV_1\fP is \fB$env{ENV_2}\fP, \fBENV_2\fP may not be \fB$env{ENV_1}\fP\&.)
+.sp
+Environment variables are inherited through the \fBinherits\fP field, and
+the preset\(aqs environment will be the union of its own \fBenvironment\fP
+and the \fBenvironment\fP from all its parents. If multiple presets in
+this union define the same variable, the standard rules of \fBinherits\fP
+are applied. Setting a variable to \fBnull\fP causes it to not be set,
+even if a value was inherited from another preset.
+.sp
+\fBNOTE:\fP
+.INDENT 7.0
+.INDENT 3.5
+For a CMake project using ExternalProject with a configuration preset
+having environment variables needed in the ExternalProject, use a build
+preset that inherits that configuration preset or the ExternalProject
+will not have the environment variables set in the configuration preset.
+Example: suppose the host defaults to one compiler (say Clang)
+and the user wishes to use another compiler (say GCC). Set configuration
+preset environment variables \fBCC\fP and \fBCXX\fP and use a build preset
+that inherits that configuration preset. Otherwise the ExternalProject
+may use a different (system default) compiler than the top\-level CMake
+project.
+.UNINDENT
+.UNINDENT
+.TP
+.B \fBconfigurePreset\fP
+An optional string specifying the name of a configure preset to
+associate with this build preset. If \fBconfigurePreset\fP is not
+specified, it must be inherited from the inherits preset (unless this
+preset is hidden). The build directory is inferred from the configure
+preset, so the build will take place in the same \fBbinaryDir\fP that the
+configuration did.
+.TP
+.B \fBinheritConfigureEnvironment\fP
+An optional boolean that defaults to true. If true, the environment
+variables from the associated configure preset are inherited after all
+inherited build preset environments, but before environment variables
+explicitly specified in this build preset.
+.TP
+.B \fBjobs\fP
+An optional integer. Equivalent to passing
+\fI\%\-\-parallel\fP or \fB\-j\fP on the command line.
+.TP
+.B \fBtargets\fP
+An optional string or array of strings. Equivalent to passing
+\fI\%\-\-target\fP or \fB\-t\fP on the command line.
+Vendors may ignore the targets property or hide build presets that
+explicitly specify targets. This field supports macro expansion.
+.TP
+.B \fBconfiguration\fP
+An optional string. Equivalent to passing
+\fI\%\-\-config\fP on the command line.
+.TP
+.B \fBcleanFirst\fP
+An optional bool. If true, equivalent to passing
+\fI\%\-\-clean\-first\fP on the command line.
+.TP
+.B \fBresolvePackageReferences\fP
+An optional string that specifies the package resolve mode. This is
+allowed in preset files specifying version \fB4\fP or above.
+.sp
+Package references are used to define dependencies to packages from
+external package managers. Currently only NuGet in combination with the
+Visual Studio generator is supported. If there are no targets that define
+package references, this option does nothing. Valid values are:
+.INDENT 7.0
+.TP
+.B \fBon\fP
+Causes package references to be resolved before attempting a build.
+.TP
+.B \fBoff\fP
+Package references will not be resolved. Note that this may cause
+errors in some build environments, such as .NET SDK style projects.
+.TP
+.B \fBonly\fP
+Only resolve package references, but do not perform a build.
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 7.0
+.INDENT 3.5
+The command line parameter
+\fI\%\-\-resolve\-package\-references\fP
+will take priority over this setting. If the command line parameter is not
+provided and this setting is not specified, an environment\-specific cache
+variable will be evaluated to decide, if package restoration should be
+performed.
+.sp
+When using the Visual Studio generator, package references are defined
+using the \fI\%VS_PACKAGE_REFERENCES\fP property. Package references
+are restored using NuGet. It can be disabled by setting the
+\fBCMAKE_VS_NUGET_PACKAGE_RESTORE\fP variable to \fBOFF\fP\&. This can also be
+done from within a configure preset.
+.UNINDENT
+.UNINDENT
+.TP
+.B \fBverbose\fP
+An optional bool. If true, equivalent to passing
+\fI\%\-\-verbose\fP on the command line.
+.TP
+.B \fBnativeToolOptions\fP
+An optional array of strings. Equivalent to passing options after \fB\-\-\fP
+on the command line. The array values support macro expansion.
+.UNINDENT
+.SS Test Preset
+.sp
+Each entry of the \fBtestPresets\fP array is a JSON object
+that may contain the following fields:
+.INDENT 0.0
+.TP
+.B \fBname\fP
+A required string representing the machine\-friendly name of the preset.
+This identifier is used in the \fI\%ctest \-\-preset\fP option.
+There must not be two test presets in the union of \fBCMakePresets.json\fP
+and \fBCMakeUserPresets.json\fP in the same directory with the same name.
+However, a test preset may have the same name as a configure, build,
+package, or workflow preset.
+.TP
+.B \fBhidden\fP
+An optional boolean specifying whether or not a preset should be hidden.
+If a preset is hidden, it cannot be used in the
+\fI\%\-\-preset\fP argument
+and does not have to have a valid \fBconfigurePreset\fP, even from
+inheritance. \fBhidden\fP presets are intended to be used as a base for
+other presets to inherit via the \fBinherits\fP field.
+.TP
+.B \fBinherits\fP
+An optional array of strings representing the names of presets to inherit
+from. This field can also be a string, which is equivalent to an array
+containing one string.
+.sp
+The preset will inherit all of the fields from the
+\fBinherits\fP presets by default (except \fBname\fP, \fBhidden\fP,
+\fBinherits\fP, \fBdescription\fP, and \fBdisplayName\fP), but can override
+them as desired. If multiple \fBinherits\fP presets provide conflicting
+values for the same field, the earlier preset in the \fBinherits\fP array
+will be preferred.
+.sp
+A preset can only inherit from another preset that is defined in the
+same file or in one of the files it includes (directly or indirectly).
+Presets in \fBCMakePresets.json\fP may not inherit from presets in
+\fBCMakeUserPresets.json\fP\&.
+.TP
+.B \fBcondition\fP
+An optional \fI\%Condition\fP object. This is allowed in preset files specifying
+version \fB3\fP or above.
+.TP
+.B \fBvendor\fP
+An optional map containing vendor\-specific information. CMake does not
+interpret the contents of this field except to verify that it is a map
+if it does exist. However, it should follow the same conventions as the
+root\-level \fBvendor\fP field. If vendors use their own per\-preset
+\fBvendor\fP field, they should implement inheritance in a sensible manner
+when appropriate.
+.TP
+.B \fBdisplayName\fP
+An optional string with a human\-friendly name of the preset.
+.TP
+.B \fBdescription\fP
+An optional string with a human\-friendly description of the preset.
+.TP
+.B \fBenvironment\fP
+An optional map of environment variables. The key is the variable name
+(which may not be an empty string), and the value is either \fBnull\fP or
+a string representing the value of the variable. Each variable is set
+regardless of whether or not a value was given to it by the process\(aqs
+environment. This field supports macro expansion, and environment
+variables in this map may reference each other, and may be listed in any
+order, as long as such references do not cause a cycle (for example, if
+\fBENV_1\fP is \fB$env{ENV_2}\fP, \fBENV_2\fP may not be \fB$env{ENV_1}\fP\&.)
+.sp
+Environment variables are inherited through the \fBinherits\fP field, and
+the preset\(aqs environment will be the union of its own \fBenvironment\fP
+and the \fBenvironment\fP from all its parents. If multiple presets in
+this union define the same variable, the standard rules of \fBinherits\fP
+are applied. Setting a variable to \fBnull\fP causes it to not be set,
+even if a value was inherited from another preset.
+.TP
+.B \fBconfigurePreset\fP
+An optional string specifying the name of a configure preset to
+associate with this test preset. If \fBconfigurePreset\fP is not
+specified, it must be inherited from the inherits preset (unless this
+preset is hidden). The build directory is inferred from the configure
+preset, so tests will run in the same \fBbinaryDir\fP that the
+configuration did and build did.
+.TP
+.B \fBinheritConfigureEnvironment\fP
+An optional boolean that defaults to true. If true, the environment
+variables from the associated configure preset are inherited after all
+inherited test preset environments, but before environment variables
+explicitly specified in this test preset.
+.TP
+.B \fBconfiguration\fP
+An optional string. Equivalent to passing
+\fI\%\-\-build\-config\fP on the command line.
+.TP
+.B \fBoverwriteConfigurationFile\fP
+An optional array of configuration options to overwrite options
+specified in the CTest configuration file. Equivalent to passing
+\fI\%\-\-overwrite\fP for each value in the array.
+The array values support macro expansion.
+.TP
+.B \fBoutput\fP
+An optional object specifying output options. The object may contain the
+following fields.
+.INDENT 7.0
+.TP
+.B \fBshortProgress\fP
+An optional bool. If true, equivalent to passing
+\fI\%\-\-progress\fP on the command line.
+.TP
+.B \fBverbosity\fP
+An optional string specifying verbosity level. Must be one of the
+following:
+.INDENT 7.0
+.TP
+.B \fBdefault\fP
+Equivalent to passing no verbosity flags on the command line.
+.TP
+.B \fBverbose\fP
+Equivalent to passing \fI\%\-\-verbose\fP on
+the command line.
+.TP
+.B \fBextra\fP
+Equivalent to passing \fI\%\-\-extra\-verbose\fP
+on the command line.
+.UNINDENT
+.TP
+.B \fBdebug\fP
+An optional bool. If true, equivalent to passing
+\fI\%\-\-debug\fP on the command line.
+.TP
+.B \fBoutputOnFailure\fP
+An optional bool. If true, equivalent to passing
+\fI\%\-\-output\-on\-failure\fP on the command
+line.
+.TP
+.B \fBquiet\fP
+An optional bool. If true, equivalent to passing
+\fI\%\-\-quiet\fP on the command line.
+.TP
+.B \fBoutputLogFile\fP
+An optional string specifying a path to a log file. Equivalent to
+passing \fI\%\-\-output\-log\fP on the command line.
+This field supports macro expansion.
+.TP
+.B \fBoutputJUnitFile\fP
+An optional string specifying a path to a JUnit file. Equivalent to
+passing \fI\%\-\-output\-junit\fP on the command line.
+This field supports macro expansion. This is allowed in preset files
+specifying version \fB6\fP or above.
+.TP
+.B \fBlabelSummary\fP
+An optional bool. If false, equivalent to passing
+\fI\%\-\-no\-label\-summary\fP on the command
+line.
+.TP
+.B \fBsubprojectSummary\fP
+An optional bool. If false, equivalent to passing
+\fI\%\-\-no\-subproject\-summary\fP
+on the command line.
+.TP
+.B \fBmaxPassedTestOutputSize\fP
+An optional integer specifying the maximum output for passed tests in
+bytes. Equivalent to passing
+\fI\%\-\-test\-output\-size\-passed\fP
+on the command line.
+.TP
+.B \fBmaxFailedTestOutputSize\fP
+An optional integer specifying the maximum output for failed tests in
+bytes. Equivalent to passing
+\fI\%\-\-test\-output\-size\-failed\fP
+on the command line.
+.TP
+.B \fBtestOutputTruncation\fP
+An optional string specifying the test output truncation mode. Equivalent
+to passing
+\fI\%\-\-test\-output\-truncation\fP on
+the command line. This is allowed in preset files specifying version
+\fB5\fP or above.
+.TP
+.B \fBmaxTestNameWidth\fP
+An optional integer specifying the maximum width of a test name to
+output. Equivalent to passing \fI\%\-\-max\-width\fP
+on the command line.
+.UNINDENT
+.TP
+.B \fBfilter\fP
+An optional object specifying how to filter the tests to run. The object
+may contain the following fields.
+.INDENT 7.0
+.TP
+.B \fBinclude\fP
+An optional object specifying which tests to include. The object may
+contain the following fields.
+.INDENT 7.0
+.TP
+.B \fBname\fP
+An optional string specifying a regex for test names. Equivalent to
+passing \fI\%\-\-tests\-regex\fP on the command
+line. This field supports macro expansion. CMake regex syntax is
+described under \fI\%string(REGEX)\fP\&.
+.TP
+.B \fBlabel\fP
+An optional string specifying a regex for test labels. Equivalent to
+passing \fI\%\-\-label\-regex\fP on the command
+line. This field supports macro expansion.
+.TP
+.B \fBuseUnion\fP
+An optional bool. Equivalent to passing \fI\%\-\-union\fP
+on the command line.
+.TP
+.B \fBindex\fP
+An optional object specifying tests to include by test index. The
+object may contain the following fields. Can also be an optional
+string specifying a file with the command line syntax for
+\fI\%\-\-tests\-information\fP\&.
+If specified as a string, this field supports macro expansion.
+.INDENT 7.0
+.TP
+.B \fBstart\fP
+An optional integer specifying a test index to start testing at.
+.TP
+.B \fBend\fP
+An optional integer specifying a test index to stop testing at.
+.TP
+.B \fBstride\fP
+An optional integer specifying the increment.
+.TP
+.B \fBspecificTests\fP
+An optional array of integers specifying specific test indices to
+run.
+.UNINDENT
+.UNINDENT
+.TP
+.B \fBexclude\fP
+An optional object specifying which tests to exclude. The object may
+contain the following fields.
+.INDENT 7.0
+.TP
+.B \fBname\fP
+An optional string specifying a regex for test names. Equivalent to
+passing \fI\%\-\-exclude\-regex\fP on the
+command line. This field supports macro expansion.
+.TP
+.B \fBlabel\fP
+An optional string specifying a regex for test labels. Equivalent to
+passing \fI\%\-\-label\-exclude\fP on the
+command line. This field supports macro expansion.
+.TP
+.B \fBfixtures\fP
+An optional object specifying which fixtures to exclude from adding
+tests. The object may contain the following fields.
+.INDENT 7.0
+.TP
+.B \fBany\fP
+An optional string specifying a regex for text fixtures to exclude
+from adding any tests. Equivalent to
+\fI\%\-\-fixture\-exclude\-any\fP on
+the command line. This field supports macro expansion.
+.TP
+.B \fBsetup\fP
+An optional string specifying a regex for text fixtures to exclude
+from adding setup tests. Equivalent to
+\fI\%\-\-fixture\-exclude\-setup\fP
+on the command line. This field supports macro expansion.
+.TP
+.B \fBcleanup\fP
+An optional string specifying a regex for text fixtures to exclude
+from adding cleanup tests. Equivalent to
+\fI\%\-\-fixture\-exclude\-cleanup\fP
+on the command line. This field supports macro expansion.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.TP
+.B \fBexecution\fP
+An optional object specifying options for test execution. The object may
+contain the following fields.
+.INDENT 7.0
+.TP
+.B \fBstopOnFailure\fP
+An optional bool. If true, equivalent to passing
+\fI\%\-\-stop\-on\-failure\fP on the command
+line.
+.TP
+.B \fBenableFailover\fP
+An optional bool. If true, equivalent to passing \fI\%\-F\fP
+on the command line.
+.TP
+.B \fBjobs\fP
+An optional integer. Equivalent to passing
+\fI\%\-\-parallel\fP on the command line.
+.TP
+.B \fBresourceSpecFile\fP
+An optional string. Equivalent to passing
+\fI\%\-\-resource\-spec\-file\fP on
+the command line. This field supports macro expansion.
+.TP
+.B \fBtestLoad\fP
+An optional integer. Equivalent to passing
+\fI\%\-\-test\-load\fP on the command line.
+.TP
+.B \fBshowOnly\fP
+An optional string. Equivalent to passing
+\fI\%\-\-show\-only\fP on the
+command line. The string must be one of the following values:
+.sp
+\fBhuman\fP
+.sp
+\fBjson\-v1\fP
+.TP
+.B \fBrepeat\fP
+An optional object specifying how to repeat tests. Equivalent to
+passing \fI\%\-\-repeat\fP on the command line.
+The object must have the following fields.
+.INDENT 7.0
+.TP
+.B \fBmode\fP
+A required string. Must be one of the following values:
+.sp
+\fBuntil\-fail\fP
+.sp
+\fBuntil\-pass\fP
+.sp
+\fBafter\-timeout\fP
+.TP
+.B \fBcount\fP
+A required integer.
+.UNINDENT
+.TP
+.B \fBinteractiveDebugging\fP
+An optional bool. If true, equivalent to passing
+\fI\%\-\-interactive\-debug\-mode 1\fP
+on the command line. If false, equivalent to passing
+\fI\%\-\-interactive\-debug\-mode 0\fP
+on the command line.
+.TP
+.B \fBscheduleRandom\fP
+An optional bool. If true, equivalent to passing
+\fI\%\-\-schedule\-random\fP on the command
+line.
+.TP
+.B \fBtimeout\fP
+An optional integer. Equivalent to passing
+\fI\%\-\-timeout\fP on the command line.
+.TP
+.B \fBnoTestsAction\fP
+An optional string specifying the behavior if no tests are found. Must
+be one of the following values:
+.INDENT 7.0
+.TP
+.B \fBdefault\fP
+Equivalent to not passing any value on the command line.
+.TP
+.B \fBerror\fP
+Equivalent to passing \fI\%\-\-no\-tests=error\fP
+on the command line.
+.TP
+.B \fBignore\fP
+Equivalent to passing \fI\%\-\-no\-tests=ignore\fP
+on the command line.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Package Preset
+.sp
+Package presets may be used in schema version \fB6\fP or above. Each entry of
+the \fBpackagePresets\fP array is a JSON object that may contain the following
+fields:
+.INDENT 0.0
+.TP
+.B \fBname\fP
+A required string representing the machine\-friendly name of the preset.
+This identifier is used in the \fI\%cpack \-\-preset\fP option.
+There must not be two package presets in the union of \fBCMakePresets.json\fP
+and \fBCMakeUserPresets.json\fP in the same directory with the same name.
+However, a package preset may have the same name as a configure, build,
+test, or workflow preset.
+.TP
+.B \fBhidden\fP
+An optional boolean specifying whether or not a preset should be hidden.
+If a preset is hidden, it cannot be used in the
+\fI\%\-\-preset\fP argument
+and does not have to have a valid \fBconfigurePreset\fP, even from
+inheritance. \fBhidden\fP presets are intended to be used as a base for
+other presets to inherit via the \fBinherits\fP field.
+.TP
+.B \fBinherits\fP
+An optional array of strings representing the names of presets to inherit
+from. This field can also be a string, which is equivalent to an array
+containing one string.
+.sp
+The preset will inherit all of the fields from the
+\fBinherits\fP presets by default (except \fBname\fP, \fBhidden\fP,
+\fBinherits\fP, \fBdescription\fP, and \fBdisplayName\fP), but can override
+them as desired. If multiple \fBinherits\fP presets provide conflicting
+values for the same field, the earlier preset in the \fBinherits\fP array
+will be preferred.
+.sp
+A preset can only inherit from another preset that is defined in the
+same file or in one of the files it includes (directly or indirectly).
+Presets in \fBCMakePresets.json\fP may not inherit from presets in
+\fBCMakeUserPresets.json\fP\&.
+.TP
+.B \fBcondition\fP
+An optional \fI\%Condition\fP object.
+.TP
+.B \fBvendor\fP
+An optional map containing vendor\-specific information. CMake does not
+interpret the contents of this field except to verify that it is a map
+if it does exist. However, it should follow the same conventions as the
+root\-level \fBvendor\fP field. If vendors use their own per\-preset
+\fBvendor\fP field, they should implement inheritance in a sensible manner
+when appropriate.
+.TP
+.B \fBdisplayName\fP
+An optional string with a human\-friendly name of the preset.
+.TP
+.B \fBdescription\fP
+An optional string with a human\-friendly description of the preset.
+.TP
+.B \fBenvironment\fP
+An optional map of environment variables. The key is the variable name
+(which may not be an empty string), and the value is either \fBnull\fP or
+a string representing the value of the variable. Each variable is set
+regardless of whether or not a value was given to it by the process\(aqs
+environment. This field supports macro expansion, and environment
+variables in this map may reference each other, and may be listed in any
+order, as long as such references do not cause a cycle (for example, if
+\fBENV_1\fP is \fB$env{ENV_2}\fP, \fBENV_2\fP may not be \fB$env{ENV_1}\fP\&.)
+.sp
+Environment variables are inherited through the \fBinherits\fP field, and
+the preset\(aqs environment will be the union of its own \fBenvironment\fP
+and the \fBenvironment\fP from all its parents. If multiple presets in
+this union define the same variable, the standard rules of \fBinherits\fP
+are applied. Setting a variable to \fBnull\fP causes it to not be set,
+even if a value was inherited from another preset.
+.TP
+.B \fBconfigurePreset\fP
+An optional string specifying the name of a configure preset to
+associate with this package preset. If \fBconfigurePreset\fP is not
+specified, it must be inherited from the inherits preset (unless this
+preset is hidden). The build directory is inferred from the configure
+preset, so packaging will run in the same \fBbinaryDir\fP that the
+configuration did and build did.
+.TP
+.B \fBinheritConfigureEnvironment\fP
+An optional boolean that defaults to true. If true, the environment
+variables from the associated configure preset are inherited after all
+inherited package preset environments, but before environment variables
+explicitly specified in this package preset.
+.TP
+.B \fBgenerators\fP
+An optional array of strings representing generators for CPack to use.
+.TP
+.B \fBconfigurations\fP
+An optional array of strings representing build configurations for CPack to
+package.
+.TP
+.B \fBvariables\fP
+An optional map of variables to pass to CPack, equivalent to
+\fI\%\-D\fP arguments. Each key is the name of a variable, and
+the value is the string to assign to that variable.
+.TP
+.B \fBconfigFile\fP
+An optional string representing the config file for CPack to use.
+.TP
+.B \fBoutput\fP
+An optional object specifying output options. Valid keys are:
+.INDENT 7.0
+.TP
+.B \fBdebug\fP
+An optional boolean specifying whether or not to print debug information.
+A value of \fBtrue\fP is equivalent to passing
+\fI\%\-\-debug\fP on the command line.
+.TP
+.B \fBverbose\fP
+An optional boolean specifying whether or not to print verbosely. A value
+of \fBtrue\fP is equivalent to passing \fI\%\-\-verbose\fP
+on the command line.
+.UNINDENT
+.TP
+.B \fBpackageName\fP
+An optional string representing the package name.
+.TP
+.B \fBpackageVersion\fP
+An optional string representing the package version.
+.TP
+.B \fBpackageDirectory\fP
+An optional string representing the directory in which to place the package.
+.TP
+.B \fBvendorName\fP
+An optional string representing the vendor name.
+.UNINDENT
+.SS Workflow Preset
+.sp
+Workflow presets may be used in schema version \fB6\fP or above. Each entry of
+the \fBworkflowPresets\fP array is a JSON object that may contain the following
+fields:
+.INDENT 0.0
+.TP
+.B \fBname\fP
+A required string representing the machine\-friendly name of the preset.
+This identifier is used in the
+\fI\%cmake \-\-workflow \-\-preset\fP option. There must not be
+two workflow presets in the union of \fBCMakePresets.json\fP and
+\fBCMakeUserPresets.json\fP in the same directory with the same name. However,
+a workflow preset may have the same name as a configure, build, test, or
+package preset.
+.TP
+.B \fBvendor\fP
+An optional map containing vendor\-specific information. CMake does not
+interpret the contents of this field except to verify that it is a map
+if it does exist. However, it should follow the same conventions as the
+root\-level \fBvendor\fP field.
+.TP
+.B \fBdisplayName\fP
+An optional string with a human\-friendly name of the preset.
+.TP
+.B \fBdescription\fP
+An optional string with a human\-friendly description of the preset.
+.TP
+.B \fBsteps\fP
+A required array of objects describing the steps of the workflow. The first
+step must be a configure preset, and all subsequent steps must be non\-
+configure presets whose \fBconfigurePreset\fP field matches the starting
+configure preset. Each object may contain the following fields:
+.INDENT 7.0
+.TP
+.B \fBtype\fP
+A required string. The first step must be \fBconfigure\fP\&. Subsequent steps
+must be either \fBbuild\fP, \fBtest\fP, or \fBpackage\fP\&.
+.TP
+.B \fBname\fP
+A required string representing the name of the configure, build, test, or
+package preset to run as this workflow step.
+.UNINDENT
+.UNINDENT
+.SS Condition
+.sp
+The \fBcondition\fP field of a preset, allowed in preset files specifying version
+\fB3\fP or above, is used to determine whether or not the preset is enabled. For
+example, this can be used to disable a preset on platforms other than Windows.
+\fBcondition\fP may be either a boolean, \fBnull\fP, or an object. If it is a
+boolean, the boolean indicates whether the preset is enabled or disabled. If it
+is \fBnull\fP, the preset is enabled, but the \fBnull\fP condition is not inherited
+by any presets that may inherit from the preset. Sub\-conditions (for example in
+a \fBnot\fP, \fBanyOf\fP, or \fBallOf\fP condition) may not be \fBnull\fP\&. If it is an
+object, it has the following fields:
+.INDENT 0.0
+.TP
+.B \fBtype\fP
+A required string with one of the following values:
+.INDENT 7.0
+.TP
+.B \fB\(dqconst\(dq\fP
+Indicates that the condition is constant. This is equivalent to using a
+boolean in place of the object. The condition object will have the
+following additional fields:
+.INDENT 7.0
+.TP
+.B \fBvalue\fP
+A required boolean which provides a constant value for the condition\(aqs
+evaluation.
+.UNINDENT
+.UNINDENT
+.sp
+\fB\(dqequals\(dq\fP
+.INDENT 7.0
+.TP
+.B \fB\(dqnotEquals\(dq\fP
+Indicates that the condition compares two strings to see if they are equal
+(or not equal). The condition object will have the following additional
+fields:
+.INDENT 7.0
+.TP
+.B \fBlhs\fP
+First string to compare. This field supports macro expansion.
+.TP
+.B \fBrhs\fP
+Second string to compare. This field supports macro expansion.
+.UNINDENT
+.UNINDENT
+.sp
+\fB\(dqinList\(dq\fP
+.INDENT 7.0
+.TP
+.B \fB\(dqnotInList\(dq\fP
+Indicates that the condition searches for a string in a list of strings.
+The condition object will have the following additional fields:
+.INDENT 7.0
+.TP
+.B \fBstring\fP
+A required string to search for. This field supports macro expansion.
+.TP
+.B \fBlist\fP
+A required array of strings to search. This field supports macro
+expansion, and uses short\-circuit evaluation.
+.UNINDENT
+.UNINDENT
+.sp
+\fB\(dqmatches\(dq\fP
+.INDENT 7.0
+.TP
+.B \fB\(dqnotMatches\(dq\fP
+Indicates that the condition searches for a regular expression in a string.
+The condition object will have the following additional fields:
+.INDENT 7.0
+.TP
+.B \fBstring\fP
+A required string to search. This field supports macro expansion.
+.TP
+.B \fBregex\fP
+A required regular expression to search for. This field supports macro
+expansion.
+.UNINDENT
+.UNINDENT
+.sp
+\fB\(dqanyOf\(dq\fP
+.sp
+\fB\(dqallOf\(dq\fP
+.INDENT 7.0
+.INDENT 3.5
+Indicates that the condition is an aggregation of zero or more nested
+conditions. The condition object will have the following additional fields:
+.INDENT 0.0
+.TP
+.B \fBconditions\fP
+A required array of condition objects. These conditions use short\-circuit
+evaluation.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.INDENT 7.0
+.TP
+.B \fB\(dqnot\(dq\fP
+Indicates that the condition is an inversion of another condition. The
+condition object will have the following additional fields:
+.INDENT 7.0
+.TP
+.B \fBcondition\fP
+A required condition object.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS Macro Expansion
+.sp
+As mentioned above, some fields support macro expansion. Macros are
+recognized in the form \fB$<macro\-namespace>{<macro\-name>}\fP\&. All macros are
+evaluated in the context of the preset being used, even if the macro is in a
+field that was inherited from another preset. For example, if the \fBBase\fP
+preset sets variable \fBPRESET_NAME\fP to \fB${presetName}\fP, and the
+\fBDerived\fP preset inherits from \fBBase\fP, \fBPRESET_NAME\fP will be set to
+\fBDerived\fP\&.
+.sp
+It is an error to not put a closing brace at the end of a macro name. For
+example, \fB${sourceDir\fP is invalid. A dollar sign (\fB$\fP) followed by
+anything other than a left curly brace (\fB{\fP) with a possible namespace is
+interpreted as a literal dollar sign.
+.sp
+Recognized macros include:
+.INDENT 0.0
+.TP
+.B \fB${sourceDir}\fP
+Path to the project source directory (i.e. the same as
+\fI\%CMAKE_SOURCE_DIR\fP).
+.TP
+.B \fB${sourceParentDir}\fP
+Path to the project source directory\(aqs parent directory.
+.TP
+.B \fB${sourceDirName}\fP
+The last filename component of \fB${sourceDir}\fP\&. For example, if
+\fB${sourceDir}\fP is \fB/path/to/source\fP, this would be \fBsource\fP\&.
+.TP
+.B \fB${presetName}\fP
+Name specified in the preset\(aqs \fBname\fP field.
+.TP
+.B \fB${generator}\fP
+Generator specified in the preset\(aqs \fBgenerator\fP field. For build and
+test presets, this will evaluate to the generator specified by
+\fBconfigurePreset\fP\&.
+.TP
+.B \fB${hostSystemName}\fP
+The name of the host operating system. Contains the same value as
+\fI\%CMAKE_HOST_SYSTEM_NAME\fP\&. This is allowed in preset files
+specifying version \fB3\fP or above.
+.TP
+.B \fB${fileDir}\fP
+Path to the directory containing the preset file which contains the macro.
+This is allowed in preset files specifying version \fB4\fP or above.
+.TP
+.B \fB${dollar}\fP
+A literal dollar sign (\fB$\fP).
+.TP
+.B \fB${pathListSep}\fP
+Native character for separating lists of paths, such as \fB:\fP or \fB;\fP\&.
+.sp
+For example, by setting \fBPATH\fP to
+\fB/path/to/ninja/bin${pathListSep}$env{PATH}\fP, \fB${pathListSep}\fP will
+expand to the underlying operating system\(aqs character used for
+concatenation in \fBPATH\fP\&.
+.sp
+This is allowed in preset files specifying version \fB5\fP or above.
+.TP
+.B \fB$env{<variable\-name>}\fP
+Environment variable with name \fB<variable\-name>\fP\&. The variable name may
+not be an empty string. If the variable is defined in the \fBenvironment\fP
+field, that value is used instead of the value from the parent environment.
+If the environment variable is not defined, this evaluates as an empty
+string.
+.sp
+Note that while Windows environment variable names are case\-insensitive,
+variable names within a preset are still case\-sensitive. This may lead to
+unexpected results when using inconsistent casing. For best results, keep
+the casing of environment variable names consistent.
+.TP
+.B \fB$penv{<variable\-name>}\fP
+Similar to \fB$env{<variable\-name>}\fP, except that the value only comes from
+the parent environment, and never from the \fBenvironment\fP field. This
+allows you to prepend or append values to existing environment variables.
+For example, setting \fBPATH\fP to \fB/path/to/ninja/bin:$penv{PATH}\fP will
+prepend \fB/path/to/ninja/bin\fP to the \fBPATH\fP environment variable. This
+is needed because \fB$env{<variable\-name>}\fP does not allow circular
+references.
+.TP
+.B \fB$vendor{<macro\-name>}\fP
+An extension point for vendors to insert their own macros. CMake will not
+be able to use presets which have a \fB$vendor{<macro\-name>}\fP macro, and
+effectively ignores such presets. However, it will still be able to use
+other presets from the same file.
+.sp
+CMake does not make any attempt to interpret \fB$vendor{<macro\-name>}\fP
+macros. However, to avoid name collisions, IDE vendors should prefix
+\fB<macro\-name>\fP with a very short (preferably <= 4 characters) vendor
+identifier prefix, followed by a \fB\&.\fP, followed by the macro name. For
+example, the Example IDE could have \fB$vendor{xide.ideInstallDir}\fP\&.
+.UNINDENT
+.SH SCHEMA
+.sp
+\fBThis file\fP provides a machine\-readable
+JSON schema for the \fBCMakePresets.json\fP format.
+.SH COPYRIGHT
+2000-2024 Kitware, Inc. and Contributors
+.\" Generated by docutils manpage writer.
+.

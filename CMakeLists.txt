@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 project(SVF
   VERSION 3.0
   DESCRIPTION "SVF is a static value-flow analysis tool for LLVM-based languages"
