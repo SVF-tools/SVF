@@ -255,14 +255,14 @@ void AbstractState::printTable(const VarToAbsValMap&table, std::ostream &oss) co
     for (const auto &item: ordered)
     {
         oss << "Var" << std::to_string(item);
-        IntervalValue sim = table.at(item).getInterval();
-        if (sim.is_numeral() && isVirtualMemAddress(Interval2NumValue(sim)))
+        if (table.at(item).isInterval())
         {
-            oss << "\t Value: " << std::hex << "0x" << Interval2NumValue(sim) << "\n";
-        }
-        else
-        {
+            IntervalValue sim = table.at(item).getInterval();
             oss << "\t Value: " << std::dec << sim << "\n";
+        }
+        else if (table.at(item).isAddr()) {
+            AbstractValue sim = table.at(item);
+            oss << "\t Value: " << sim.getAddrs().toString() << "\n";
         }
     }
 }
