@@ -46,12 +46,12 @@ public:
 public:
     SVFIR2AbsState(SVFIR *ir) : _svfir(ir) {}
 
-    void setEs(const SparseAbstractState&es)
+    void setEs(const AbstractState&es)
     {
         _es = es;
     }
 
-    SparseAbstractState& getEs()
+    AbstractState& getEs()
     {
         return _es;
     }
@@ -66,9 +66,9 @@ public:
         return _relEs;
     }
 
-    void widenAddrs(SparseAbstractState&lhs, const SparseAbstractState&rhs);
+    void widenAddrs(AbstractState&lhs, const AbstractState&rhs);
 
-    void narrowAddrs(SparseAbstractState&lhs, const SparseAbstractState&rhs);
+    void narrowAddrs(AbstractState&lhs, const AbstractState&rhs);
 
     /// Return the field address given a pointer points to a struct object and an offset
     AbstractValue getGepObjAddress(u32_t pointer, APOffset offset);
@@ -101,7 +101,7 @@ public:
         return Z3Expr::getContext();
     }
 
-    void applySummary(SparseAbstractState&es);
+    void applySummary(AbstractState&es);
 
 
     /// Init ObjVar
@@ -144,29 +144,27 @@ public:
         return _es.inLocToAddrsTable(id);
     }
 
-    void moveToGlobal();
+    void handleAddr(const AddrStmt *addr);
 
-    void translateAddr(const AddrStmt *addr);
+    void handleBinary(const BinaryOPStmt *binary);
 
-    void translateBinary(const BinaryOPStmt *binary);
+    void handleCmp(const CmpStmt *cmp);
 
-    void translateCmp(const CmpStmt *cmp);
+    void handleLoad(const LoadStmt *load);
 
-    void translateLoad(const LoadStmt *load);
+    void handleStore(const StoreStmt *store);
 
-    void translateStore(const StoreStmt *store);
+    void handleCopy(const CopyStmt *copy);
 
-    void translateCopy(const CopyStmt *copy);
+    void handleCall(const CallPE *callPE);
 
-    void translateCall(const CallPE *callPE);
+    void handleRet(const RetPE *retPE);
 
-    void translateRet(const RetPE *retPE);
+    void handleGep(const GepStmt *gep);
 
-    void translateGep(const GepStmt *gep);
+    void handleSelect(const SelectStmt *select);
 
-    void translateSelect(const SelectStmt *select);
-
-    void translatePhi(const PhiStmt *phi);
+    void handlePhi(const PhiStmt *phi);
 
     /// Return the internal index if idx is an address otherwise return the value of idx
     static inline u32_t getInternalID(u32_t idx)
@@ -188,30 +186,30 @@ public:
 
 protected:
 
-    void translateBinaryRel(const BinaryOPStmt *binary);
+    void handleBinaryRel(const BinaryOPStmt *binary);
 
-    void translateCmpRel(const CmpStmt *cmp);
+    void handleCmpRel(const CmpStmt *cmp);
 
-    void translateLoadRel(const LoadStmt *load);
+    void handleLoadRel(const LoadStmt *load);
 
-    void translateStoreRel(const StoreStmt *store);
+    void handleStoreRel(const StoreStmt *store);
 
-    void translateCopyRel(const CopyStmt *copy);
+    void handleCopyRel(const CopyStmt *copy);
 
-    void translateCallRel(const CallPE *callPE);
+    void handleCallRel(const CallPE *callPE);
 
-    void translateRetRel(const RetPE *retPE);
+    void handleRetRel(const RetPE *retPE);
 
-    void translateSelectRel(const SelectStmt *select);
+    void handleSelectRel(const SelectStmt *select);
 
-    void translatePhiRel(const PhiStmt *phi, const ICFGNode *srcNode, const std::vector<const ICFGEdge *> &path);
+    void handlePhiRel(const PhiStmt *phi, const ICFGNode *srcNode, const std::vector<const ICFGEdge *> &path);
 
 private:
     SVFIR *_svfir;
-    SparseAbstractState _es;
+    AbstractState _es;
     RelExeState _relEs;
 
-    Map<NodeID, SparseAbstractState*> _br_cond;
+    Map<NodeID, AbstractState*> _br_cond;
     AbstractValue getZExtValue(const SVFVar* var, const SVFType*);
 };
 }

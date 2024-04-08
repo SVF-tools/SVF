@@ -7,7 +7,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-void SVFIR2AbsState::translateBinaryRel(const BinaryOPStmt *binary)
+void SVFIR2AbsState::handleBinaryRel(const BinaryOPStmt *binary)
 {
     NodeID op0 = binary->getOpVarID(0);
     NodeID op1 = binary->getOpVarID(1);
@@ -57,7 +57,7 @@ void SVFIR2AbsState::translateBinaryRel(const BinaryOPStmt *binary)
     }
 }
 
-void SVFIR2AbsState::translateCmpRel(const CmpStmt *cmp)
+void SVFIR2AbsState::handleCmpRel(const CmpStmt *cmp)
 {
     NodeID op0 = cmp->getOpVarID(0);
     NodeID op1 = cmp->getOpVarID(1);
@@ -108,14 +108,14 @@ void SVFIR2AbsState::translateCmpRel(const CmpStmt *cmp)
     }
 }
 
-void SVFIR2AbsState::translateLoadRel(const LoadStmt *load)
+void SVFIR2AbsState::handleLoadRel(const LoadStmt *load)
 {
     u32_t rhs = load->getRHSVarID();
     u32_t lhs = load->getLHSVarID();
     _relEs[lhs] = _relEs.load(Z3Expr((int) _es[rhs].getInterval().lb().getNumeral()));
 }
 
-void SVFIR2AbsState::translateStoreRel(const StoreStmt *store)
+void SVFIR2AbsState::handleStoreRel(const StoreStmt *store)
 {
     u32_t rhs = store->getRHSVarID();
     u32_t lhs = store->getLHSVarID();
@@ -124,14 +124,14 @@ void SVFIR2AbsState::translateStoreRel(const StoreStmt *store)
 
 }
 
-void SVFIR2AbsState::translateCopyRel(const CopyStmt *copy)
+void SVFIR2AbsState::handleCopyRel(const CopyStmt *copy)
 {
     u32_t rhs = copy->getRHSVarID();
     u32_t lhs = copy->getLHSVarID();
     _relEs[lhs] = _relEs.toZ3Expr(rhs);
 }
 
-void SVFIR2AbsState::translateSelectRel(const SelectStmt *select)
+void SVFIR2AbsState::handleSelectRel(const SelectStmt *select)
 {
     u32_t res = select->getResID();
     u32_t tval = select->getTrueValue()->getId();
@@ -148,7 +148,7 @@ void SVFIR2AbsState::translateSelectRel(const SelectStmt *select)
     }
 }
 
-void SVFIR2AbsState::translatePhiRel(const PhiStmt *phi, const ICFGNode *srcNode,
+void SVFIR2AbsState::handlePhiRel(const PhiStmt *phi, const ICFGNode *srcNode,
                                      const std::vector<const ICFGEdge *> &path)
 {
     u32_t res = phi->getResID();
@@ -176,14 +176,14 @@ void SVFIR2AbsState::translatePhiRel(const PhiStmt *phi, const ICFGNode *srcNode
     assert(false && "predecessor ICFGNode of this PhiStmt not found?");
 }
 
-void SVFIR2AbsState::translateCallRel(const CallPE *callPE)
+void SVFIR2AbsState::handleCallRel(const CallPE *callPE)
 {
     u32_t rhs = callPE->getRHSVarID();
     u32_t lhs = callPE->getLHSVarID();
     _relEs[lhs] = _relEs.toZ3Expr(rhs);
 }
 
-void SVFIR2AbsState::translateRetRel(const RetPE *retPE)
+void SVFIR2AbsState::handleRetRel(const RetPE *retPE)
 {
     u32_t lhs = retPE->getLHSVarID();
     u32_t rhs = retPE->getRHSVarID();
