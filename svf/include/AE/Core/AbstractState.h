@@ -62,7 +62,8 @@ public:
 
 public:
     /// default constructor
-    AbstractState() {}
+    AbstractState() {
+    }
 
     AbstractState(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap),
         _locToAbsVal(_locToValMap) {}
@@ -180,6 +181,18 @@ public:
     inline virtual const AbstractValue &operator[](u32_t varId) const
     {
         return _varToAbsVal.at(varId);
+    }
+
+    /// get memory addresses of variable
+    AbstractValue &getAddrs(u32_t id)
+    {
+        if (_varToAbsVal.find(id)!= _varToAbsVal.end())
+        {
+            return _varToAbsVal[id];
+        } else {
+            _varToAbsVal[id] = AddressValue();
+            return _varToAbsVal[id];
+        }
     }
 
     /// whether the variable is in varToAddrs table
@@ -436,314 +449,7 @@ protected:
 
 };
 
-class SparseAbstractState : public AbstractState
-{
-    friend class SVFIR2AbsState;
-    friend class RelationSolver;
-
-public:
-    static SparseAbstractState globalES;
-
-public:
-    /// default constructor
-    SparseAbstractState() : AbstractState() {}
-
-    SparseAbstractState(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : AbstractState(_varToValMap, _locToValMap) {}
-
-    /// copy constructor
-    SparseAbstractState(const SparseAbstractState&rhs) : AbstractState(rhs)
-    {
-
-    }
-
-    virtual ~SparseAbstractState() = default;
-
-    SparseAbstractState&operator=(const SparseAbstractState&rhs)
-    {
-        AbstractState::operator=(rhs);
-        return *this;
-    }
-
-    virtual void printExprValues(std::ostream &oss) const;
-
-    /// move constructor
-    SparseAbstractState(SparseAbstractState&&rhs) : AbstractState(std::move(rhs))
-    {
-
-    }
-
-    /// operator= move constructor
-    SparseAbstractState&operator=(SparseAbstractState&&rhs)
-    {
-        AbstractState::operator=(std::move(rhs));
-        return *this;
-    }
-
-public:
-
-    /// get memory addresses of variable
-    AbstractValue &getAddrs(u32_t id)
-    {
-        if (_varToAbsVal.find(id)!= _varToAbsVal.end())
-        {
-            return _varToAbsVal[id];
-        }
-        else if (globalES._varToAbsVal.find(id)!= globalES._varToAbsVal.end())
-        {
-            return globalES._varToAbsVal[id];
-        }
-        else
-        {
-            globalES._varToAbsVal[id] = AddressValue();
-            return globalES._varToAbsVal[id];
-        }
-    }
-
-    /// get abstract value of variable
-    inline AbstractValue &operator[](u32_t varId)
-    {
-        auto localIt = _varToAbsVal.find(varId);
-        if(localIt != _varToAbsVal.end())
-            return localIt->second;
-        else
-        {
-            return globalES._varToAbsVal[varId];
-        }
-    }
-
-    /// whether the variable is in varToAddrs table
-    inline bool inVarToAddrsTable(u32_t id) const
-    {
-        if (_varToAbsVal.find(id)!= _varToAbsVal.end())
-        {
-            if (_varToAbsVal.at(id).isAddr())
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else if (globalES._varToAbsVal.find(id)!= globalES._varToAbsVal.end())
-        {
-            if (globalES._varToAbsVal[id].isAddr())
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    /// whether the variable is in varToVal table
-    inline bool inVarToValTable(u32_t id) const
-    {
-        if (_varToAbsVal.find(id)!= _varToAbsVal.end())
-        {
-            if (_varToAbsVal.at(id).isInterval())
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else if (globalES._varToAbsVal.find(id)!= globalES._varToAbsVal.end())
-        {
-            if (globalES._varToAbsVal[id].isInterval())
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    /// whether the memory address stores memory addresses
-    inline bool inLocToAddrsTable(u32_t id) const
-    {
-        if (_locToAbsVal.find(id)!= _locToAbsVal.end())
-        {
-            if (_locToAbsVal.at(id).isAddr())
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else if (globalES._locToAbsVal.find(id)!= globalES._locToAbsVal.end())
-        {
-            if (globalES._locToAbsVal[id].isAddr())
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    /// whether the memory address stores abstract value
-    inline bool inLocToValTable(u32_t id) const
-    {
-        if (_locToAbsVal.find(id)!= _locToAbsVal.end())
-        {
-            if (_locToAbsVal.at(id).isInterval())
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else if (globalES._locToAbsVal.find(id)!= globalES._locToAbsVal.end())
-        {
-            if (globalES._locToAbsVal[id].isInterval())
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    inline bool inLocalLocToValTable(u32_t id) const
-    {
-        if (_locToAbsVal.find(id)!= _locToAbsVal.end())
-        {
-            return _locToAbsVal.at(id).isInterval();
-        }
-        else
-            return false;
-    }
-
-    inline bool inLocalLocToAddrsTable(u32_t id) const
-    {
-        if (_locToAbsVal.find(id)!= _locToAbsVal.end())
-        {
-            return _locToAbsVal.at(id).isAddr();
-        }
-        else
-            return false;
-    }
-
-public:
-
-    inline void cpyItvToLocal(u32_t varId)
-    {
-        auto localIt = _varToAbsVal.find(varId);
-        // local already have varId
-        if (localIt != _varToAbsVal.end()) return;
-        auto globIt = globalES._varToAbsVal.find(varId);
-        if (globIt != globalES._varToAbsVal.end())
-        {
-            _varToAbsVal[varId] = globIt->second;
-        }
-    }
-
-    /// domain widen with other, and return the widened domain
-    SparseAbstractState widening(const SparseAbstractState&other);
-
-    /// domain narrow with other, and return the narrowed domain
-    SparseAbstractState narrowing(const SparseAbstractState&other);
-
-    /// domain widen with other, important! other widen this.
-    void widenWith(const SparseAbstractState&other);
-
-    /// domain join with other, important! other widen this.
-    void joinWith(const SparseAbstractState&other);
-
-    /// domain narrow with other, important! other widen this.
-    void narrowWith(const SparseAbstractState&other);
-
-    /// domain meet with other, important! other widen this.
-    void meetWith(const SparseAbstractState&other);
-
-    u32_t hash() const;
-
-public:
-
-    inline AbstractValue &load(u32_t addr)
-    {
-        assert(isVirtualMemAddress(addr) && "not virtual address?");
-        u32_t objId = getInternalID(addr);
-        auto it = _locToAbsVal.find(objId);
-        if(it != _locToAbsVal.end())
-            return it->second;
-        else
-        {
-            auto globIt = globalES._locToAbsVal.find(objId);
-            if(globIt != globalES._locToAbsVal.end())
-                return globIt->second;
-            else
-            {
-                return globalES._locToAbsVal[objId];
-            }
-
-        }
-    }
-
-    bool equals(const SparseAbstractState&other) const;
-
-    bool operator==(const SparseAbstractState&rhs) const
-    {
-        return eqVarToValMap(_varToAbsVal, rhs._varToAbsVal) &&
-               eqVarToValMap(_locToAbsVal, rhs._locToAbsVal);
-    }
-
-    bool operator!=(const SparseAbstractState&rhs) const
-    {
-        return !(*this == rhs);
-    }
-
-    bool operator<(const SparseAbstractState&rhs) const
-    {
-        return !(*this >= rhs);
-    }
-
-
-    bool operator>=(const SparseAbstractState&rhs) const
-    {
-        return geqVarToValMap(_varToAbsVal, rhs.getVarToVal()) && geqVarToValMap(_locToAbsVal, rhs._locToAbsVal);
-    }
-};
 }
 
-template<>
-struct std::hash<SVF::SparseAbstractState>
-{
-    size_t operator()(const SVF::SparseAbstractState&exeState) const
-    {
-        return exeState.hash();
-    }
-};
 
 #endif //Z3_EXAMPLE_INTERVAL_DOMAIN_H

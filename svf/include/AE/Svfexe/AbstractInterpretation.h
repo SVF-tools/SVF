@@ -143,10 +143,10 @@ protected:
     /**
      * Check if execution state exist by merging states of predecessor nodes
      *
-     * @param node The ICFGNode to analyse
+     * @param block The ICFGNode to analyse
      * @return if this node has preceding execution state
      */
-    bool hasInEdgesES(const ICFGNode* node);
+    bool propogateAbsStateToCurNode(const ICFGNode* block);
 
     /**
      * Check if execution state exist at the branch edge
@@ -154,7 +154,7 @@ protected:
      * @param intraEdge the edge from CmpStmt to the next node
      * @return if this edge is feasible
      */
-    bool hasBranchES(const IntraCFGEdge* intraEdge, SparseAbstractState& es);
+    bool hasBranchES(const IntraCFGEdge* intraEdge, AbstractState& es);
 
     /**
      * handle instructions in ICFGNode
@@ -220,7 +220,7 @@ protected:
     * @return if this ICFGNode has preceding execution state
     */
     bool hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ,
-                        SparseAbstractState& es);
+                        AbstractState& es);
 
     /**
     * Check if this SwitchInst and succ are satisfiable to the execution state.
@@ -230,7 +230,7 @@ protected:
     * @return if this ICFGNode has preceding execution state
     */
     bool hasSwitchBranchES(const SVFVar* var, s64_t succ,
-                           SparseAbstractState& es);
+                           AbstractState& es);
 
 
     /**
@@ -374,9 +374,9 @@ private:
 
     // helper functions in handleCycle
     bool widenFixpointPass(const ICFGNode* cycle_head,
-                           SparseAbstractState& pre_es);
+                           AbstractState& pre_es);
     bool narrowFixpointPass(const ICFGNode* cycle_head,
-                            SparseAbstractState& pre_es);
+                            AbstractState& pre_es);
 
 protected:
     // there data should be shared with subclasses
@@ -385,8 +385,8 @@ protected:
     Set<std::string> _checkpoint_names;
 
 private:
-    Map<const ICFGNode*, SparseAbstractState> _preAbstractTrace;
-    Map<const ICFGNode*, SparseAbstractState> _postAbstractTrace;
+    Map<const ICFGNode*, AbstractState> _preAbstractTrace;
+    Map<const ICFGNode*, AbstractState> _postAbstractTrace;
     std::string _moduleName;
 };
 }

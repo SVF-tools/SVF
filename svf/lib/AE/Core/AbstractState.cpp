@@ -63,16 +63,14 @@ AbstractState AbstractState::widening(const AbstractState& other)
     {
         auto key = it->first;
         if (other._varToAbsVal.find(key) != other._varToAbsVal.end())
-        {
-            if (it->second.isInterval())
+            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
                 it->second.getInterval().widen_with(other._varToAbsVal.at(key).getInterval());
-        }
     }
     for (auto it = es._locToAbsVal.begin(); it != es._locToAbsVal.end(); ++it)
     {
         auto key = it->first;
         if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
-            if (it->second.isInterval())
+            if (it->second.isInterval() && other._locToAbsVal.at(key).isInterval())
                 it->second.getInterval().widen_with(other._locToAbsVal.at(key).getInterval());
     }
     return es;
@@ -85,13 +83,15 @@ AbstractState AbstractState::narrowing(const AbstractState& other)
     {
         auto key = it->first;
         if (other._varToAbsVal.find(key) != other._varToAbsVal.end())
-            it->second.getInterval().narrow_with(other._varToAbsVal.at(key).getInterval());
+            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
+                it->second.getInterval().narrow_with(other._varToAbsVal.at(key).getInterval());
     }
     for (auto it = es._locToAbsVal.begin(); it != es._locToAbsVal.end(); ++it)
     {
         auto key = it->first;
         if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
-            it->second.getInterval().narrow_with(other._locToAbsVal.at(key).getInterval());
+            if (it->second.isInterval() && other._locToAbsVal.at(key).isInterval())
+                it->second.getInterval().narrow_with(other._locToAbsVal.at(key).getInterval());
     }
     return es;
 
@@ -265,93 +265,4 @@ void AbstractState::printTable(const VarToAbsValMap&table, std::ostream &oss) co
             oss << "\t Value: " << std::dec << sim << "\n";
         }
     }
-}
-
-SparseAbstractState SparseAbstractState::globalES;
-bool SparseAbstractState::equals(const SparseAbstractState&other) const
-{
-    return *this == other;
-}
-
-u32_t SparseAbstractState::hash() const
-{
-    return AbstractState::hash();
-}
-
-SparseAbstractState SparseAbstractState::widening(const SparseAbstractState& other)
-{
-    SparseAbstractState es = *this;
-    for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
-    {
-        auto key = it->first;
-        if (other._varToAbsVal.find(key) != other._varToAbsVal.end())
-            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
-                it->second.getInterval().widen_with(other._varToAbsVal.at(key).getInterval());
-    }
-    for (auto it = es._locToAbsVal.begin(); it != es._locToAbsVal.end(); ++it)
-    {
-        auto key = it->first;
-        if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
-            if (it->second.isInterval() && other._locToAbsVal.at(key).isInterval())
-                it->second.getInterval().widen_with(other._locToAbsVal.at(key).getInterval());
-    }
-    return es;
-}
-
-SparseAbstractState SparseAbstractState::narrowing(const SparseAbstractState& other)
-{
-    SparseAbstractState es = *this;
-    for (auto it = es._varToAbsVal.begin(); it != es._varToAbsVal.end(); ++it)
-    {
-        auto key = it->first;
-        if (other._varToAbsVal.find(key) != other._varToAbsVal.end())
-            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
-                it->second.getInterval().narrow_with(other._varToAbsVal.at(key).getInterval());
-    }
-    for (auto it = es._locToAbsVal.begin(); it != es._locToAbsVal.end(); ++it)
-    {
-        auto key = it->first;
-        if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
-            if (it->second.isInterval() && other._locToAbsVal.at(key).isInterval())
-                it->second.getInterval().narrow_with(other._locToAbsVal.at(key).getInterval());
-    }
-    return es;
-
-}
-
-/// domain widen with other, important! other widen this.
-void SparseAbstractState::widenWith(const SparseAbstractState& other)
-{
-    AbstractState::widenWith(other);
-}
-
-/// domain join with other, important! other widen this.
-void SparseAbstractState::joinWith(const SparseAbstractState& other)
-{
-    AbstractState::joinWith(other);
-}
-
-/// domain narrow with other, important! other widen this.
-void SparseAbstractState::narrowWith(const SparseAbstractState& other)
-{
-    AbstractState::narrowWith(other);
-}
-
-/// domain meet with other, important! other widen this.
-void SparseAbstractState::meetWith(const SparseAbstractState& other)
-{
-    AbstractState::meetWith(other);
-}
-
-
-/// Print values of all expressions
-void SparseAbstractState::printExprValues(std::ostream &oss) const
-{
-    oss << "-----------Var and Value-----------\n";
-    printTable(_varToAbsVal, oss);
-    printTable(_locToAbsVal, oss);
-    oss << "------------Global---------------------\n";
-    printTable(globalES._varToAbsVal, oss);
-    printTable(globalES._locToAbsVal, oss);
-
 }
