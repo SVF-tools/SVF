@@ -260,7 +260,8 @@ void AbstractState::printTable(const VarToAbsValMap&table, std::ostream &oss) co
             IntervalValue sim = table.at(item).getInterval();
             oss << "\t Value: " << std::dec << sim << "\n";
         }
-        else if (table.at(item).isAddr()) {
+        else if (table.at(item).isAddr())
+        {
             AbstractValue sim = table.at(item);
             oss << "\t Value: " << sim.getAddrs().toString() << "\n";
         }

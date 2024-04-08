@@ -62,7 +62,8 @@ public:
 
 public:
     /// default constructor
-    AbstractState() {
+    AbstractState()
+    {
     }
 
     AbstractState(VarToAbsValMap&_varToValMap, LocToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap),
@@ -189,7 +190,9 @@ public:
         if (_varToAbsVal.find(id)!= _varToAbsVal.end())
         {
             return _varToAbsVal[id];
-        } else {
+        }
+        else
+        {
             _varToAbsVal[id] = AddressValue();
             return _varToAbsVal[id];
         }
