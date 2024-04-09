@@ -208,9 +208,6 @@ private:
     SVFIR *_svfir;
     AbstractState _es;
     RelExeState _relEs;
-
-    Map<NodeID, AbstractState*> _br_cond;
-    AbstractValue getZExtValue(const SVFVar* var, const SVFType*);
 };
 }
 

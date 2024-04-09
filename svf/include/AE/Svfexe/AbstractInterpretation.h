@@ -161,7 +161,7 @@ protected:
      *
      * @param block basic block that has a series of instructions
      */
-    void handleWTONode(const ICFGNode* node);
+    virtual void handleWTONode(const ICFGNode* node);
 
     /**
      * handle one instruction in ICFGNode
@@ -368,10 +368,7 @@ private:
     virtual bool isIndirectCall(const CallICFGNode* callNode);
     virtual void indirectCallFunPass(const CallICFGNode* callNode);
 
-    // helper functions in hasInEdgesES
-    bool isFunEntry(const ICFGNode* node);
-    bool isGlobalEntry(const ICFGNode* node);
-
+protected:
     // helper functions in handleCycle
     bool widenFixpointPass(const ICFGNode* cycle_head,
                            AbstractState& pre_es);
@@ -383,8 +380,6 @@ protected:
     Map<std::string, std::function<void(const CallSite &)>> _func_map;
     Set<const CallICFGNode*> _checkpoints;
     Set<std::string> _checkpoint_names;
-
-private:
     Map<const ICFGNode*, AbstractState> _preAbstractTrace;
     Map<const ICFGNode*, AbstractState> _postAbstractTrace;
     std::string _moduleName;
