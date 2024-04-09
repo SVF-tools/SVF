@@ -224,29 +224,6 @@ bool AbstractInterpretation::propogateAbsStateToCurNode(const ICFGNode *block)
     assert(false && "implement this part");
 }
 
-bool AbstractInterpretation::isFunEntry(const SVF::ICFGNode *block)
-{
-    if (SVFUtil::isa<FunEntryICFGNode>(block))
-    {
-        if (_preAbstractTrace.find(block) != _preAbstractTrace.end())
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool AbstractInterpretation::isGlobalEntry(const SVF::ICFGNode *block)
-{
-    for (auto *edge : _icfg->getGlobalICFGNode()->getOutEdges())
-    {
-        if (edge->getDstNode() == block)
-        {
-            return true;
-        }
-    }
-    return false;
-}
 
 bool AbstractInterpretation::hasCmpBranchES(const CmpStmt* cmpStmt, s64_t succ,
         AbstractState& es)
@@ -851,7 +828,6 @@ void AbstractInterpretation::handleFunc(const SVFFunction *func)
 
 void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 {
-    std::cout << stmt->toString() << std::endl;
     if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
     {
         _svfir2ExeState->handleAddr(addr);
