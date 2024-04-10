@@ -112,7 +112,7 @@ public:
 
     /// move constructor
     AbstractState(AbstractState&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
-          _addrToAbsVal(std::move(rhs._addrToAbsVal))
+        _addrToAbsVal(std::move(rhs._addrToAbsVal))
     {
 
     }
@@ -166,7 +166,7 @@ public:
 protected:
     VarToAbsValMap _varToAbsVal; ///< Map a variable (symbol) to its abstract value
     AddrToAbsValMap
-        _addrToAbsVal; ///< Map a memory address to its stored abstract value
+    _addrToAbsVal; ///< Map a memory address to its stored abstract value
 
 public:
 

@@ -63,7 +63,7 @@ public:
     RelExeState &operator=(const RelExeState &rhs);
 
     RelExeState(RelExeState &&rhs) noexcept: _varToVal(std::move(rhs._varToVal)),
-          _addrToVal(std::move(rhs._addrToVal))
+        _addrToVal(std::move(rhs._addrToVal))
     {
 
     }
