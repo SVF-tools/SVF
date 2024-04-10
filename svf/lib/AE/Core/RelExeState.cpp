@@ -106,7 +106,7 @@ RelExeState &RelExeState::operator=(const RelExeState &rhs)
     if (*this != rhs)
     {
         _varToVal = rhs.getVarToVal();
-        _locToVal = rhs.getLocToVal();
+        _addrToVal = rhs.getLocToVal();
     }
     return *this;
 }
@@ -119,7 +119,7 @@ RelExeState &RelExeState::operator=(const RelExeState &rhs)
 bool RelExeState::operator==(const RelExeState &rhs) const
 {
     return eqVarToValMap(_varToVal, rhs.getVarToVal()) &&
-           eqVarToValMap(_locToVal, rhs.getLocToVal());
+           eqVarToValMap(_addrToVal, rhs.getLocToVal());
 }
 
 /*!
@@ -130,7 +130,7 @@ bool RelExeState::operator==(const RelExeState &rhs) const
 bool RelExeState::operator<(const RelExeState &rhs) const
 {
     return lessThanVarToValMap(_varToVal, rhs.getVarToVal()) ||
-           lessThanVarToValMap(_locToVal, rhs.getLocToVal());
+           lessThanVarToValMap(_addrToVal, rhs.getLocToVal());
 }
 
 bool RelExeState::eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const

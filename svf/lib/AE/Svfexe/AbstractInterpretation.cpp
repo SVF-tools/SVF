@@ -177,7 +177,7 @@ void AbstractInterpretation::handleGlobalNode()
 /// get execution state by merging states of predecessor blocks
 /// Scenario 1: preblock -----(intraEdge)----> block, join the preES of inEdges
 /// Scenario 2: preblock -----(callEdge)----> block
-bool AbstractInterpretation::propogateAbsStateToCurNode(const ICFGNode *block)
+bool AbstractInterpretation::propagateStateIfFeasible(const ICFGNode *block)
 {
     AbstractState es;
     u32_t inEdgeNum = 0;
@@ -521,7 +521,7 @@ void AbstractInterpretation::handleWTONode(const ICFGNode *node)
 {
     _stat->getBlockTrace()++;
     // Get execution states from in edges
-    if (!propogateAbsStateToCurNode(node))
+    if (!propagateStateIfFeasible(node))
     {
         // No ES on the in edges - Infeasible block
         return;
@@ -694,7 +694,7 @@ void AbstractInterpretation::handleICFGNode(const ICFGNode *curICFGNode)
 void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
 {
     // Get execution states from in edges
-    if (!propogateAbsStateToCurNode(cycle->head()))
+    if (!propagateStateIfFeasible(cycle->head()))
     {
         // No ES on the in edges - Infeasible block
         return;

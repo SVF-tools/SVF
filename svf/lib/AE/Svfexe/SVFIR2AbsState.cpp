@@ -277,9 +277,9 @@ void SVFIR2AbsState::applySummary(AbstractState&es)
     {
         _es._varToAbsVal[item.first] = item.second;
     }
-    for (const auto &item: es._locToAbsVal)
+    for (const auto &item: es._addrToAbsVal)
     {
-        _es._locToAbsVal[item.first] = item.second;
+        _es._addrToAbsVal[item.first] = item.second;
     }
 }
 
@@ -305,10 +305,10 @@ void SVFIR2AbsState::widenAddrs(AbstractState&lhs, const AbstractState&rhs)
             }
         }
     }
-    for (const auto &rhsItem: rhs._locToAbsVal)
+    for (const auto &rhsItem: rhs._addrToAbsVal)
     {
-        auto lhsIter = lhs._locToAbsVal.find(rhsItem.first);
-        if (lhsIter != lhs._locToAbsVal.end())
+        auto lhsIter = lhs._addrToAbsVal.find(rhsItem.first);
+        if (lhsIter != lhs._addrToAbsVal.end())
         {
             if (rhsItem.second.isAddr())
             {
@@ -349,10 +349,10 @@ void SVFIR2AbsState::narrowAddrs(AbstractState&lhs, const AbstractState&rhs)
             }
         }
     }
-    for (const auto &rhsItem: rhs._locToAbsVal)
+    for (const auto &rhsItem: rhs._addrToAbsVal)
     {
-        auto lhsIter = lhs._locToAbsVal.find(rhsItem.first);
-        if (lhsIter != lhs._locToAbsVal.end())
+        auto lhsIter = lhs._addrToAbsVal.find(rhsItem.first);
+        if (lhsIter != lhs._addrToAbsVal.end())
         {
             if (lhsIter->second.isAddr())
             {
