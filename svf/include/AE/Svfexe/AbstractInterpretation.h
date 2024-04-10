@@ -143,10 +143,10 @@ protected:
     /**
      * Check if execution state exist by merging states of predecessor nodes
      *
-     * @param block The ICFGNode to analyse
+     * @param curNode The ICFGNode to analyse
      * @return if this node has preceding execution state
      */
-    bool propogateAbsStateToCurNode(const ICFGNode* block);
+    bool propagateStateIfFeasible(const ICFGNode* curNode);
 
     /**
      * Check if execution state exist at the branch edge

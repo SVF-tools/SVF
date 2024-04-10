@@ -66,12 +66,12 @@ AbstractState AbstractState::widening(const AbstractState& other)
             if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
                 it->second.getInterval().widen_with(other._varToAbsVal.at(key).getInterval());
     }
-    for (auto it = es._locToAbsVal.begin(); it != es._locToAbsVal.end(); ++it)
+    for (auto it = es._addrToAbsVal.begin(); it != es._addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
-            if (it->second.isInterval() && other._locToAbsVal.at(key).isInterval())
-                it->second.getInterval().widen_with(other._locToAbsVal.at(key).getInterval());
+        if (other._addrToAbsVal.find(key) != other._addrToAbsVal.end())
+            if (it->second.isInterval() && other._addrToAbsVal.at(key).isInterval())
+                it->second.getInterval().widen_with(other._addrToAbsVal.at(key).getInterval());
     }
     return es;
 }
@@ -86,12 +86,12 @@ AbstractState AbstractState::narrowing(const AbstractState& other)
             if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
                 it->second.getInterval().narrow_with(other._varToAbsVal.at(key).getInterval());
     }
-    for (auto it = es._locToAbsVal.begin(); it != es._locToAbsVal.end(); ++it)
+    for (auto it = es._addrToAbsVal.begin(); it != es._addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
-            if (it->second.isInterval() && other._locToAbsVal.at(key).isInterval())
-                it->second.getInterval().narrow_with(other._locToAbsVal.at(key).getInterval());
+        if (other._addrToAbsVal.find(key) != other._addrToAbsVal.end())
+            if (it->second.isInterval() && other._addrToAbsVal.at(key).isInterval())
+                it->second.getInterval().narrow_with(other._addrToAbsVal.at(key).getInterval());
     }
     return es;
 
@@ -107,12 +107,12 @@ void AbstractState::widenWith(const AbstractState& other)
             if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
                 it->second.getInterval().widen_with(other._varToAbsVal.at(key).getInterval());
     }
-    for (auto it = _locToAbsVal.begin(); it != _locToAbsVal.end(); ++it)
+    for (auto it = _addrToAbsVal.begin(); it != _addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        if (other._locToAbsVal.find(key) != other._locToAbsVal.end())
+        if (other._addrToAbsVal.find(key) != other._addrToAbsVal.end())
             if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
-                it->second.getInterval().widen_with(other._locToAbsVal.at(key).getInterval());
+                it->second.getInterval().widen_with(other._addrToAbsVal.at(key).getInterval());
     }
 }
 
@@ -143,11 +143,11 @@ void AbstractState::joinWith(const AbstractState& other)
             _varToAbsVal.emplace(key, it->second);
         }
     }
-    for (auto it = other._locToAbsVal.begin(); it != other._locToAbsVal.end(); ++it)
+    for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        auto oit = _locToAbsVal.find(key);
-        if (oit != _locToAbsVal.end())
+        auto oit = _addrToAbsVal.find(key);
+        if (oit != _addrToAbsVal.end())
         {
             if (oit->second.isInterval() && it->second.isInterval())
             {
@@ -164,7 +164,7 @@ void AbstractState::joinWith(const AbstractState& other)
         }
         else
         {
-            _locToAbsVal.emplace(key, it->second);
+            _addrToAbsVal.emplace(key, it->second);
         }
     }
 }
@@ -180,11 +180,11 @@ void AbstractState::narrowWith(const AbstractState& other)
             if (it->second.isInterval() && oit->second.isInterval())
                 it->second.getInterval().narrow_with(oit->second.getInterval());
     }
-    for (auto it = _locToAbsVal.begin(); it != _locToAbsVal.end(); ++it)
+    for (auto it = _addrToAbsVal.begin(); it != _addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        auto oit = other._locToAbsVal.find(key);
-        if (oit != other._locToAbsVal.end())
+        auto oit = other._addrToAbsVal.find(key);
+        if (oit != other._addrToAbsVal.end())
             if (it->second.isInterval() && oit->second.isInterval())
                 it->second.getInterval().narrow_with(oit->second.getInterval());
     }
@@ -213,11 +213,11 @@ void AbstractState::meetWith(const AbstractState& other)
             }
         }
     }
-    for (auto it = other._locToAbsVal.begin(); it != other._locToAbsVal.end(); ++it)
+    for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
     {
         auto key = it->first;
-        auto oit = _locToAbsVal.find(key);
-        if (oit != _locToAbsVal.end())
+        auto oit = _addrToAbsVal.find(key);
+        if (oit != _addrToAbsVal.end())
         {
             if (oit->second.isInterval() && it->second.isInterval())
             {
@@ -240,7 +240,7 @@ void AbstractState::printExprValues(std::ostream &oss) const
 {
     oss << "-----------Var and Value-----------\n";
     printTable(_varToAbsVal, oss);
-    printTable(_locToAbsVal, oss);
+    printTable(_addrToAbsVal, oss);
     oss << "-----------------------------------------\n";
 }
 

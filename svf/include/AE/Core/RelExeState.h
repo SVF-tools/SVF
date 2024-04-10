@@ -42,19 +42,18 @@ class RelExeState
 
 public:
     typedef Map<u32_t, Z3Expr> VarToValMap;
-    typedef VarToValMap LocToValMap;
+    typedef VarToValMap AddrToValMap;
 
 protected:
     VarToValMap _varToVal;
-    LocToValMap _locToVal;
+    AddrToValMap _addrToVal;
 
 public:
     RelExeState() = default;
 
-    RelExeState(VarToValMap &varToVal, LocToValMap &locToVal) : _varToVal(varToVal),
-        _locToVal(locToVal) {}
+    RelExeState(VarToValMap &varToVal, AddrToValMap&locToVal) : _varToVal(varToVal), _addrToVal(locToVal) {}
 
-    RelExeState(const RelExeState &rhs) : _varToVal(rhs.getVarToVal()), _locToVal(rhs.getLocToVal())
+    RelExeState(const RelExeState &rhs) : _varToVal(rhs.getVarToVal()), _addrToVal(rhs.getLocToVal())
     {
 
     }
@@ -64,7 +63,7 @@ public:
     RelExeState &operator=(const RelExeState &rhs);
 
     RelExeState(RelExeState &&rhs) noexcept: _varToVal(std::move(rhs._varToVal)),
-        _locToVal(std::move(rhs._locToVal))
+          _addrToVal(std::move(rhs._addrToVal))
     {
 
     }
@@ -74,7 +73,7 @@ public:
         if (&rhs != this)
         {
             _varToVal = std::move(rhs._varToVal);
-            _locToVal = std::move(rhs._locToVal);
+            _addrToVal = std::move(rhs._addrToVal);
         }
         return *this;
     }
@@ -102,9 +101,9 @@ public:
         return _varToVal;
     }
 
-    const LocToValMap &getLocToVal() const
+    const AddrToValMap&getLocToVal() const
     {
-        return _locToVal;
+        return _addrToVal;
     }
 
     inline Z3Expr &operator[](u32_t varId)
@@ -203,12 +202,12 @@ private:
 protected:
     inline void store(u32_t objId, const Z3Expr &z3Expr)
     {
-        _locToVal[objId] = z3Expr.simplify();
+        _addrToVal[objId] = z3Expr.simplify();
     }
 
     inline Z3Expr &load(u32_t objId)
     {
-        return _locToVal[objId];
+        return _addrToVal[objId];
     }
 }; // end class RelExeState
 } // end namespace SVF
