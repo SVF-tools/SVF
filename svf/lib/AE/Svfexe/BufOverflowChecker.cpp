@@ -66,9 +66,9 @@ void BufOverflowChecker::handleSVFStatement(const SVFStmt *stmt)
     if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
     {
         for (NodeID addrID:
-                _svfir2ExeState->getAddrs(gep->getLHSVarID()).getAddrs())
+             _svfir2AbsState->getAddrs(gep->getLHSVarID()).getAddrs())
         {
-            NodeID objId = _svfir2ExeState->getInternalID(addrID);
+            NodeID objId = _svfir2AbsState->getInternalID(addrID);
             _addrToGep[objId] = gep;
         }
     }
@@ -138,9 +138,9 @@ void BufOverflowChecker::initExtFunMap()
     {
         //scanf("%d", &data);
         if (cs.arg_size() < 2) return;
-        AbstractState&es = _svfir2ExeState->getEs();
+        AbstractState&es = _svfir2AbsState->getAbsState();
         u32_t dst_id = _svfir->getValueNode(cs.getArgument(1));
-        if (!_svfir2ExeState->inVarToAddrsTable(dst_id))
+        if (!_svfir2AbsState->inVarToAddrsTable(dst_id))
         {
             BufOverflowException bug("scanf may cause buffer overflow.\n", 0, 0, 0, 0, cs.getArgument(1));
             addBugToRecoder(bug, _svfir->getICFG()->getICFGNode(cs.getInstruction()));
@@ -148,11 +148,11 @@ void BufOverflowChecker::initExtFunMap()
         }
         else
         {
-            AbstractValue Addrs = _svfir2ExeState->getAddrs(dst_id);
+            AbstractValue Addrs = _svfir2AbsState->getAddrs(dst_id);
             for (auto vaddr: Addrs.getAddrs())
             {
-                u32_t objId = _svfir2ExeState->getInternalID(vaddr);
-                AbstractValue range = _svfir2ExeState->getRangeLimitFromType(_svfir->getGNode(objId)->getType());
+                u32_t objId = _svfir2AbsState->getInternalID(vaddr);
+                AbstractValue range = _svfir2AbsState->getRangeLimitFromType(_svfir->getGNode(objId)->getType());
                 es.store(vaddr, range);
             }
         }
@@ -161,9 +161,9 @@ void BufOverflowChecker::initExtFunMap()
     {
         //fscanf(stdin, "%d", &data);
         if (cs.arg_size() < 3) return;
-        AbstractState&es = _svfir2ExeState->getEs();
+        AbstractState&es = _svfir2AbsState->getAbsState();
         u32_t dst_id = _svfir->getValueNode(cs.getArgument(2));
-        if (!_svfir2ExeState->inVarToAddrsTable(dst_id))
+        if (!_svfir2AbsState->inVarToAddrsTable(dst_id))
         {
             BufOverflowException bug("scanf may cause buffer overflow.\n", 0, 0, 0, 0, cs.getArgument(2));
             addBugToRecoder(bug, _svfir->getICFG()->getICFGNode(cs.getInstruction()));
@@ -171,11 +171,11 @@ void BufOverflowChecker::initExtFunMap()
         }
         else
         {
-            AbstractValue Addrs = _svfir2ExeState->getAddrs(dst_id);
+            AbstractValue Addrs = _svfir2AbsState->getAddrs(dst_id);
             for (auto vaddr: Addrs.getAddrs())
             {
-                u32_t objId = _svfir2ExeState->getInternalID(vaddr);
-                AbstractValue range = _svfir2ExeState->getRangeLimitFromType(_svfir->getGNode(objId)->getType());
+                u32_t objId = _svfir2AbsState->getInternalID(vaddr);
+                AbstractValue range = _svfir2AbsState->getRangeLimitFromType(_svfir->getGNode(objId)->getType());
                 es.store(vaddr, range);
             }
         }
@@ -193,7 +193,7 @@ void BufOverflowChecker::initExtFunMap()
     auto sse_fread = [&](const CallSite &cs)
     {
         if (cs.arg_size() < 3) return;
-        AbstractState&es = _svfir2ExeState->getEs();
+        AbstractState&es = _svfir2AbsState->getAbsState();
         u32_t block_count_id = _svfir->getValueNode(cs.getArgument(2));
         u32_t block_size_id = _svfir->getValueNode(cs.getArgument(1));
         AbstractValue block_count = es[block_count_id];
@@ -211,7 +211,7 @@ void BufOverflowChecker::initExtFunMap()
     auto sse_snprintf = [&](const CallSite &cs)
     {
         if (cs.arg_size() < 2) return;
-        AbstractState&es = _svfir2ExeState->getEs();
+        AbstractState&es = _svfir2AbsState->getAbsState();
         u32_t size_id = _svfir->getValueNode(cs.getArgument(1));
         u32_t dst_id = _svfir->getValueNode(cs.getArgument(0));
         // get elem size of arg2
@@ -260,7 +260,7 @@ void BufOverflowChecker::initExtFunMap()
         // itoa(num, ch, 10);
         // num: int, ch: char*, 10 is decimal
         if (cs.arg_size() < 3) return;
-        AbstractState&es = _svfir2ExeState->getEs();
+        AbstractState&es = _svfir2AbsState->getAbsState();
         u32_t num_id = _svfir->getValueNode(cs.getArgument(0));
 
         u32_t num = (u32_t) es[num_id].getInterval().getNumeral();
@@ -275,7 +275,7 @@ void BufOverflowChecker::initExtFunMap()
         // check the arg size
         if (cs.arg_size() < 1) return;
         const SVFValue* strValue = cs.getArgument(0);
-        AbstractState&es = _svfir2ExeState->getEs();
+        AbstractState&es = _svfir2AbsState->getAbsState();
         AbstractValue dst_size = getStrlen(strValue);
         u32_t elemSize = 1;
         if (strValue->getType()->isArrayTy())
@@ -299,7 +299,7 @@ void BufOverflowChecker::initExtFunMap()
     {
         // recv(sockfd, buf, len, flags);
         if (cs.arg_size() < 4) return;
-        AbstractState&es = _svfir2ExeState->getEs();
+        AbstractState&es = _svfir2AbsState->getAbsState();
         u32_t len_id = _svfir->getValueNode(cs.getArgument(2));
         AbstractValue len = es[len_id] - IntervalValue(1);
         u32_t lhsId = _svfir->getValueNode(cs.getInstruction());
@@ -314,7 +314,7 @@ void BufOverflowChecker::initExtFunMap()
         _checkpoints.erase(callNode);
         //void SAFE_BUFACCESS(void* data, int size);
         if (cs.arg_size() < 2) return;
-        AbstractState&es = _svfir2ExeState->getEs();
+        AbstractState&es = _svfir2AbsState->getAbsState();
         u32_t size_id = _svfir->getValueNode(cs.getArgument(1));
         AbstractValue val = es[size_id];
         if (val.isBottom())
@@ -344,7 +344,7 @@ void BufOverflowChecker::initExtFunMap()
         _checkpoints.erase(callNode);
         //void UNSAFE_BUFACCESS(void* data, int size);
         if (cs.arg_size() < 2) return;
-        AbstractState&es = _svfir2ExeState->getEs();
+        AbstractState&es = _svfir2AbsState->getAbsState();
         u32_t size_id = _svfir->getValueNode(cs.getArgument(1));
         AbstractValue val = es[size_id];
         if (val.isBottom())
@@ -399,7 +399,8 @@ bool BufOverflowChecker::detectStrcat(const CallICFGNode *call)
         CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
         const SVFValue* arg0Val = cs.getArgument(0);
         const SVFValue* arg2Val = cs.getArgument(2);
-        AbstractValue arg2Num = _svfir2ExeState->getEs()[_svfir->getValueNode(arg2Val)];
+        AbstractValue arg2Num =
+            _svfir2AbsState->getAbsState()[_svfir->getValueNode(arg2Val)];
         AbstractValue strLen0 = getStrlen(arg0Val);
         AbstractValue totalLen = strLen0 + arg2Num;
         return canSafelyAccessMemory(arg0Val, totalLen, call);
@@ -450,7 +451,8 @@ void BufOverflowChecker::handleExtAPI(const CallICFGNode *call)
         // loop the args and check the offset
         for (auto arg: args)
         {
-            AbstractValue offset = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(arg.second))] - IntervalValue(1);
+            AbstractValue offset =
+                _svfir2AbsState->getAbsState()[_svfir->getValueNode(cs.getArgument(arg.second))] - IntervalValue(1);
             canSafelyAccessMemory(cs.getArgument(arg.first), offset, call);
         }
     }
@@ -467,7 +469,8 @@ void BufOverflowChecker::handleExtAPI(const CallICFGNode *call)
         // loop the args and check the offset
         for (auto arg: args)
         {
-            AbstractValue offset = _svfir2ExeState->getEs()[_svfir->getValueNode(cs.getArgument(arg.second))] - IntervalValue(1);
+            AbstractValue offset =
+                _svfir2AbsState->getAbsState()[_svfir->getValueNode(cs.getArgument(arg.second))] - IntervalValue(1);
             canSafelyAccessMemory(cs.getArgument(arg.first), offset, call);
         }
     }
@@ -555,7 +558,8 @@ bool BufOverflowChecker::canSafelyAccessMemory(const SVFValue *value, const Abst
                     }
                     else
                     {
-                        byteOffset = _svfir2ExeState->getByteOffset(gep).getInterval();
+                        byteOffset =
+                            _svfir2AbsState->getByteOffset(gep).getInterval();
                     }
                     // for variable offset, join with accumulate gep offset
                     gep_offsets[gep->getICFGNode()] = byteOffset;
@@ -584,7 +588,8 @@ bool BufOverflowChecker::canSafelyAccessMemory(const SVFValue *value, const Abst
                             else
                             {
                                 u32_t idx = _svfir->getValueNode(idxValue);
-                                IntervalValue idxVal = _svfir2ExeState->getEs()[idx].getInterval();
+                                IntervalValue idxVal =
+                                    _svfir2AbsState->getAbsState()[idx].getInterval();
                                 if (idxVal.isBottom())
                                 {
                                     gepArrTotalByte = gepArrTotalByte + IntervalValue(0, 0);
@@ -759,12 +764,13 @@ bool BufOverflowChecker::detectBufOverflow(const ICFGNode *node)
         }
         else if (const LoadStmt* load =  SVFUtil::dyn_cast<LoadStmt>(stmt))
         {
-            if (_svfir2ExeState->inVarToAddrsTable(load->getRHSVarID()))
+            if (_svfir2AbsState->inVarToAddrsTable(load->getRHSVarID()))
             {
-                AbstractValue Addrs = _svfir2ExeState->getAddrs(load->getRHSVarID());
+                AbstractValue Addrs =
+                    _svfir2AbsState->getAddrs(load->getRHSVarID());
                 for (auto vaddr: Addrs.getAddrs())
                 {
-                    u32_t objId = _svfir2ExeState->getInternalID(vaddr);
+                    u32_t objId = _svfir2AbsState->getInternalID(vaddr);
                     if (_addrToGep.find(objId) != _addrToGep.end())
                     {
                         const GepStmt* gep = _addrToGep.at(objId);
@@ -775,12 +781,13 @@ bool BufOverflowChecker::detectBufOverflow(const ICFGNode *node)
         }
         else if (const StoreStmt* store =  SVFUtil::dyn_cast<StoreStmt>(stmt))
         {
-            if (_svfir2ExeState->inVarToAddrsTable(store->getLHSVarID()))
+            if (_svfir2AbsState->inVarToAddrsTable(store->getLHSVarID()))
             {
-                AbstractValue Addrs = _svfir2ExeState->getAddrs(store->getLHSVarID());
+                AbstractValue Addrs =
+                    _svfir2AbsState->getAddrs(store->getLHSVarID());
                 for (auto vaddr: Addrs.getAddrs())
                 {
-                    u32_t objId = _svfir2ExeState->getInternalID(vaddr);
+                    u32_t objId = _svfir2AbsState->getInternalID(vaddr);
                     if (_addrToGep.find(objId) != _addrToGep.end())
                     {
                         const GepStmt* gep = _addrToGep.at(objId);

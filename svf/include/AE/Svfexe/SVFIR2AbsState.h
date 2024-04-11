@@ -51,7 +51,7 @@ public:
         _es = es;
     }
 
-    AbstractState& getEs()
+    AbstractState& getAbsState()
     {
         return _es;
     }

@@ -342,7 +342,7 @@ protected:
     SVFIR* _svfir;
     PTACallGraph* _callgraph;
     /// Execution State, used to store the Interval Value of every SVF variable
-    SVFIR2AbsState* _svfir2ExeState;
+    SVFIR2AbsState* _svfir2AbsState;
     AEAPI* _api{nullptr};
 
     ICFG* _icfg;
