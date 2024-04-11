@@ -1214,7 +1214,7 @@ void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
     {
         AbstractValue len =
             _svfir2AbsState
-                ->getAbsState()[_svfir->getValueNode(cs.getArgument(2))];
+            ->getAbsState()[_svfir->getValueNode(cs.getArgument(2))];
         handleMemcpy(cs.getArgument(0), cs.getArgument(1), len, 0);
     }
     else if (extType == MEMSET)
@@ -1222,10 +1222,10 @@ void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
         // memset dst is arg0, elem is arg1, size is arg2
         AbstractValue len =
             _svfir2AbsState
-                ->getAbsState()[_svfir->getValueNode(cs.getArgument(2))];
+            ->getAbsState()[_svfir->getValueNode(cs.getArgument(2))];
         AbstractValue elem =
             _svfir2AbsState
-                ->getAbsState()[_svfir->getValueNode(cs.getArgument(1))];
+            ->getAbsState()[_svfir->getValueNode(cs.getArgument(1))];
         handleMemset(cs.getArgument(0), elem, len);
     }
     else if (extType == STRCPY)
@@ -1315,7 +1315,7 @@ u32_t AbstractInterpretation::getAllocaInstByteSize(const AddrStmt *addr)
                 if (!_svfir2AbsState->inVarToValTable(_svfir->getValueNode(value)))
                 {
                     _svfir2AbsState
-                        ->getAbsState()[_svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
+                    ->getAbsState()[_svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
                 }
                 AbstractValue itv =
                     _svfir2AbsState->getAbsState()[_svfir->getValueNode(value)];
@@ -1589,7 +1589,7 @@ void AbstractInterpretation::handleMemcpy(const SVF::SVFValue *dst, const SVF::S
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
     u32_t range_val = size / elemSize;
     if (_svfir2AbsState->inVarToAddrsTable(srcId) &&
-        _svfir2AbsState->inVarToAddrsTable(dstId))
+            _svfir2AbsState->inVarToAddrsTable(dstId))
     {
         for (u32_t index = 0; index < range_val; index++)
         {
