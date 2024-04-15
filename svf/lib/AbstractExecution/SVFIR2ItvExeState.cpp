@@ -931,6 +931,7 @@ void SVFIR2ItvExeState::translateCall(const CallPE *callPE)
 {
     NodeID lhs = callPE->getLHSVarID();
     NodeID rhs = callPE->getRHSVarID();
+   
     if (inVarToValTable(rhs))
     {
         _es[lhs] = _es[rhs];
