@@ -20,5 +20,6 @@ int main()
     int a = 1;
     int b = 2;
     int c = fib(a + b);
+    int d=c;
     return c;
 }
