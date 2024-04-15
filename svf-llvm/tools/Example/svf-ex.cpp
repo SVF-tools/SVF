@@ -77,32 +77,33 @@ std::string printPts(PointerAnalysis* pta, const SVFValue* svfval)
  */
 void traverseOnSVFStmt(const ICFGNode* node)
 {
+    AbstractState es;
     SVFIR2AbsState* svfir2ExeState = new SVFIR2AbsState(SVFIR::getPAG());
     for (const SVFStmt* stmt: node->getSVFStmts())
     {
         if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
         {
-            svfir2ExeState->handleAddr(addr);
+            svfir2ExeState->handleAddr(es, addr);
         }
         else if (const BinaryOPStmt *binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
         {
-            svfir2ExeState->handleBinary(binary);
+            svfir2ExeState->handleBinary(es, binary);
         }
         else if (const CmpStmt *cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
         {
-            svfir2ExeState->handleCmp(cmp);
+            svfir2ExeState->handleCmp(es, cmp);
         }
         else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt))
         {
-            svfir2ExeState->handleLoad(load);
+            svfir2ExeState->handleLoad(es, load);
         }
         else if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
         {
-            svfir2ExeState->handleStore(store);
+            svfir2ExeState->handleStore(es, store);
         }
         else if (const CopyStmt *copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
         {
-            svfir2ExeState->handleCopy(copy);
+            svfir2ExeState->handleCopy(es, copy);
         }
         else if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
         {
@@ -111,24 +112,24 @@ void traverseOnSVFStmt(const ICFGNode* node)
                 gep->accumulateConstantByteOffset();
                 gep->accumulateConstantOffset();
             }
-            svfir2ExeState->handleGep(gep);
+            svfir2ExeState->handleGep(es, gep);
         }
         else if (const SelectStmt *select = SVFUtil::dyn_cast<SelectStmt>(stmt))
         {
-            svfir2ExeState->handleSelect(select);
+            svfir2ExeState->handleSelect(es, select);
         }
         else if (const PhiStmt *phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
         {
-            svfir2ExeState->handlePhi(phi);
+            svfir2ExeState->handlePhi(es, phi);
         }
         else if (const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt))
         {
             // To handle Call Edge
-            svfir2ExeState->handleCall(callPE);
+            svfir2ExeState->handleCall(es, callPE);
         }
         else if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt))
         {
-            svfir2ExeState->handleRet(retPE);
+            svfir2ExeState->handleRet(es, retPE);
         }
         else
             assert(false && "implement this part");

@@ -46,15 +46,6 @@ public:
 public:
     SVFIR2AbsState(SVFIR *ir) : _svfir(ir) {}
 
-    void setEs(const AbstractState&es)
-    {
-        _es = es;
-    }
-
-    AbstractState& getAbsState()
-    {
-        return _es;
-    }
 
     void setRelEs(const RelExeState &relEs)
     {
@@ -66,34 +57,34 @@ public:
         return _relEs;
     }
 
-    void widenAddrs(AbstractState&lhs, const AbstractState&rhs);
+    void widenAddrs(AbstractState& es, AbstractState&lhs, const AbstractState&rhs);
 
-    void narrowAddrs(AbstractState&lhs, const AbstractState&rhs);
+    void narrowAddrs(AbstractState& es, AbstractState&lhs, const AbstractState&rhs);
 
     /// Return the field address given a pointer points to a struct object and an offset
-    AbstractValue getGepObjAddress(u32_t pointer, APOffset offset);
+    AbstractValue getGepObjAddress(AbstractState& es, u32_t pointer, APOffset offset);
 
     /// Return the value range of Integer SVF Type, e.g. unsigned i8 Type->[0, 255], signed i8 Type->[-128, 127]
     AbstractValue getRangeLimitFromType(const SVFType* type);
 
-    AbstractValue getZExtValue(const SVFVar* var);
-    AbstractValue getSExtValue(const SVFVar* var);
-    AbstractValue getFPToSIntValue(const SVFVar* var);
-    AbstractValue getFPToUIntValue(const SVFVar* var);
-    AbstractValue getSIntToFPValue(const SVFVar* var);
-    AbstractValue getUIntToFPValue(const SVFVar* var);
-    AbstractValue getTruncValue(const SVFVar* var, const SVFType* dstType);
-    AbstractValue getFPTruncValue(const SVFVar* var, const SVFType* dstType);
+    AbstractValue getZExtValue(AbstractState& es, const SVFVar* var);
+    AbstractValue getSExtValue(AbstractState& es, const SVFVar* var);
+    AbstractValue getFPToSIntValue(AbstractState& es, const SVFVar* var);
+    AbstractValue getFPToUIntValue(AbstractState& es, const SVFVar* var);
+    AbstractValue getSIntToFPValue(AbstractState& es, const SVFVar* var);
+    AbstractValue getUIntToFPValue(AbstractState& es, const SVFVar* var);
+    AbstractValue getTruncValue(AbstractState& es, const SVFVar* var, const SVFType* dstType);
+    AbstractValue getFPTruncValue(AbstractState& es, const SVFVar* var, const SVFType* dstType);
 
     /// Return the byte offset expression of a GepStmt
     /// elemBytesize is the element byte size of an static alloc or heap alloc array
     /// e.g. GepStmt* gep = [i32*10], x, and x is [0,3]
     /// std::pair<s32_t, s32_t> byteOffset = getByteOffset(gep);
     /// byteOffset should be [0, 12] since i32 is 4 bytes.
-    AbstractValue getByteOffset(const GepStmt *gep);
+    AbstractValue getByteOffset(AbstractState& es, const GepStmt *gep);
 
     /// Return the offset expression of a GepStmt
-    AbstractValue getItvOfFlattenedElemIndex(const GepStmt *gep);
+    AbstractValue getItvOfFlattenedElemIndex(AbstractState& es, const GepStmt *gep);
 
 
     static z3::context &getContext()
@@ -105,66 +96,66 @@ public:
 
 
     /// Init ObjVar
-    void initObjVar(const ObjVar *objVar, u32_t varId);
+    void initObjVar(AbstractState& es, const ObjVar *objVar, u32_t varId);
 
     /// Init SVFVar
-    void initSVFVar(u32_t varId);
+    void initSVFVar(AbstractState& es, u32_t varId);
 
-    inline AbstractValue &getAddrs(u32_t id)
+    inline AbstractValue &getAddrs(AbstractState& es, u32_t id)
     {
-        if (inVarToAddrsTable(id))
-            return _es.getAddrs(id);
+        if (inVarToAddrsTable(es, id))
+            return es.getAddrs(id);
         else
             return globalNulladdrs;
     }
 
 
     /// whether the variable is in varToVal table
-    inline bool inVarToValTable(u32_t id) const
+    inline bool inVarToValTable(AbstractState& es, u32_t id) const
     {
-        return _es.inVarToValTable(id);
+        return es.inVarToValTable(id);
     }
 
     /// whether the variable is in varToAddrs table
-    inline bool inVarToAddrsTable(u32_t id) const
+    inline bool inVarToAddrsTable(AbstractState& es, u32_t id) const
     {
-        return _es.inVarToAddrsTable(id);
+        return es.inVarToAddrsTable(id);
     }
 
 
     /// whether the memory address stores a interval value
-    inline bool inLocToValTable(u32_t id) const
+    inline bool inLocToValTable(AbstractState& es, u32_t id) const
     {
-        return _es.inLocToValTable(id);
+        return es.inLocToValTable(id);
     }
 
     /// whether the memory address stores memory addresses
-    inline bool inLocToAddrsTable(u32_t id) const
+    inline bool inLocToAddrsTable(AbstractState& es, u32_t id) const
     {
-        return _es.inLocToAddrsTable(id);
+        return es.inLocToAddrsTable(id);
     }
 
-    void handleAddr(const AddrStmt *addr);
+    void handleAddr(AbstractState& es, const AddrStmt *addr);
 
-    void handleBinary(const BinaryOPStmt *binary);
+    void handleBinary(AbstractState& es, const BinaryOPStmt *binary);
 
-    void handleCmp(const CmpStmt *cmp);
+    void handleCmp(AbstractState& es, const CmpStmt *cmp);
 
-    void handleLoad(const LoadStmt *load);
+    void handleLoad(AbstractState& es, const LoadStmt *load);
 
-    void handleStore(const StoreStmt *store);
+    void handleStore(AbstractState& es, const StoreStmt *store);
 
-    void handleCopy(const CopyStmt *copy);
+    void handleCopy(AbstractState& es, const CopyStmt *copy);
 
-    void handleCall(const CallPE *callPE);
+    void handleCall(AbstractState& es, const CallPE *callPE);
 
-    void handleRet(const RetPE *retPE);
+    void handleRet(AbstractState& es, const RetPE *retPE);
 
-    void handleGep(const GepStmt *gep);
+    void handleGep(AbstractState& es, const GepStmt *gep);
 
-    void handleSelect(const SelectStmt *select);
+    void handleSelect(AbstractState& es, const SelectStmt *select);
 
-    void handlePhi(const PhiStmt *phi);
+    void handlePhi(AbstractState& es, const PhiStmt *phi);
 
     /// Return the internal index if idx is an address otherwise return the value of idx
     static inline u32_t getInternalID(u32_t idx)
@@ -184,29 +175,8 @@ public:
         return AbstractState::isVirtualMemAddress(val);
     }
 
-protected:
-
-    void handleBinaryRel(const BinaryOPStmt *binary);
-
-    void handleCmpRel(const CmpStmt *cmp);
-
-    void handleLoadRel(const LoadStmt *load);
-
-    void handleStoreRel(const StoreStmt *store);
-
-    void handleCopyRel(const CopyStmt *copy);
-
-    void handleCallRel(const CallPE *callPE);
-
-    void handleRetRel(const RetPE *retPE);
-
-    void handleSelectRel(const SelectStmt *select);
-
-    void handlePhiRel(const PhiStmt *phi, const ICFGNode *srcNode, const std::vector<const ICFGEdge *> &path);
-
 private:
     SVFIR *_svfir;
-    AbstractState _es;
     RelExeState _relEs;
 };
 }

@@ -108,35 +108,35 @@ AbstractValue SVFIR2AbsState::getRangeLimitFromType(const SVFType* type)
     }
 }
 
-AbstractValue SVFIR2AbsState::getZExtValue(const SVFVar* var)
+AbstractValue SVFIR2AbsState::getZExtValue(AbstractState& es, const SVFVar* var)
 {
     const SVFType* type = var->getType();
     if (SVFUtil::isa<SVFIntegerType>(type))
     {
         u32_t bits = type->getByteSize() * 8;
-        if (_es[var->getId()].getInterval().is_numeral())
+        if (es[var->getId()].getInterval().is_numeral())
         {
             if (bits == 8)
             {
-                int8_t signed_i8_value = _es[var->getId()].getInterval().getIntNumeral();
+                int8_t signed_i8_value = es[var->getId()].getInterval().getIntNumeral();
                 u32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
             else if (bits == 16)
             {
-                s16_t signed_i16_value = _es[var->getId()].getInterval().getIntNumeral();
+                s16_t signed_i16_value = es[var->getId()].getInterval().getIntNumeral();
                 u32_t unsigned_value = static_cast<u16_t>(signed_i16_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
             else if (bits == 32)
             {
-                s32_t signed_i32_value = _es[var->getId()].getInterval().getIntNumeral();
+                s32_t signed_i32_value = es[var->getId()].getInterval().getIntNumeral();
                 u32_t unsigned_value = static_cast<u32_t>(signed_i32_value);
                 return IntervalValue(unsigned_value, unsigned_value);
             }
             else if (bits == 64)
             {
-                s64_t signed_i64_value = _es[var->getId()].getInterval().getIntNumeral();
+                s64_t signed_i64_value = es[var->getId()].getInterval().getIntNumeral();
                 return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
                 // we only support i64 at most
             }
@@ -153,18 +153,18 @@ AbstractValue SVFIR2AbsState::getZExtValue(const SVFVar* var)
     assert(false && "cannot support non-integer type");
 }
 
-AbstractValue SVFIR2AbsState::getSExtValue(const SVFVar* var)
+AbstractValue SVFIR2AbsState::getSExtValue(AbstractState& es, const SVFVar* var)
 {
-    return _es[var->getId()].getInterval();
+    return es[var->getId()].getInterval();
 }
 
-AbstractValue SVFIR2AbsState::getFPToSIntValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getFPToSIntValue(AbstractState& es, const SVF::SVFVar* var)
 {
-    if (_es[var->getId()].getInterval().is_real())
+    if (es[var->getId()].getInterval().is_real())
     {
         // get the float value of ub and lb
-        double float_lb = _es[var->getId()].getInterval().lb().getRealNumeral();
-        double float_ub = _es[var->getId()].getInterval().ub().getRealNumeral();
+        double float_lb = es[var->getId()].getInterval().lb().getRealNumeral();
+        double float_ub = es[var->getId()].getInterval().ub().getRealNumeral();
         // get the int value of ub and lb
         s64_t int_lb = static_cast<s64_t>(float_lb);
         s64_t int_ub = static_cast<s64_t>(float_ub);
@@ -172,17 +172,17 @@ AbstractValue SVFIR2AbsState::getFPToSIntValue(const SVF::SVFVar* var)
     }
     else
     {
-        return getSExtValue(var);
+        return getSExtValue(es, var);
     }
 }
 
-AbstractValue SVFIR2AbsState::getFPToUIntValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getFPToUIntValue(AbstractState& es, const SVF::SVFVar* var)
 {
-    if (_es[var->getId()].getInterval().is_real())
+    if (es[var->getId()].getInterval().is_real())
     {
         // get the float value of ub and lb
-        double float_lb = _es[var->getId()].getInterval().lb().getRealNumeral();
-        double float_ub = _es[var->getId()].getInterval().ub().getRealNumeral();
+        double float_lb = es[var->getId()].getInterval().lb().getRealNumeral();
+        double float_ub = es[var->getId()].getInterval().ub().getRealNumeral();
         // get the int value of ub and lb
         u64_t int_lb = static_cast<u64_t>(float_lb);
         u64_t int_ub = static_cast<u64_t>(float_ub);
@@ -190,37 +190,37 @@ AbstractValue SVFIR2AbsState::getFPToUIntValue(const SVF::SVFVar* var)
     }
     else
     {
-        return getZExtValue(var);
+        return getZExtValue(es, var);
     }
 }
 
-AbstractValue SVFIR2AbsState::getSIntToFPValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getSIntToFPValue(AbstractState& es, const SVF::SVFVar* var)
 {
     // get the sint value of ub and lb
-    s64_t sint_lb = _es[var->getId()].getInterval().lb().getIntNumeral();
-    s64_t sint_ub = _es[var->getId()].getInterval().ub().getIntNumeral();
+    s64_t sint_lb = es[var->getId()].getInterval().lb().getIntNumeral();
+    s64_t sint_ub = es[var->getId()].getInterval().ub().getIntNumeral();
     // get the float value of ub and lb
     double float_lb = static_cast<double>(sint_lb);
     double float_ub = static_cast<double>(sint_ub);
     return IntervalValue(float_lb, float_ub);
 }
 
-AbstractValue SVFIR2AbsState::getUIntToFPValue(const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getUIntToFPValue(AbstractState& es, const SVF::SVFVar* var)
 {
     // get the uint value of ub and lb
-    u64_t uint_lb = _es[var->getId()].getInterval().lb().getIntNumeral();
-    u64_t uint_ub = _es[var->getId()].getInterval().ub().getIntNumeral();
+    u64_t uint_lb = es[var->getId()].getInterval().lb().getIntNumeral();
+    u64_t uint_ub = es[var->getId()].getInterval().ub().getIntNumeral();
     // get the float value of ub and lb
     double float_lb = static_cast<double>(uint_lb);
     double float_ub = static_cast<double>(uint_ub);
     return IntervalValue(float_lb, float_ub);
 }
 
-AbstractValue SVFIR2AbsState::getTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
+AbstractValue SVFIR2AbsState::getTruncValue(AbstractState& es, const SVF::SVFVar* var, const SVFType* dstType)
 {
     // get the value of ub and lb
-    s64_t int_lb = _es[var->getId()].getInterval().lb().getIntNumeral();
-    s64_t int_ub = _es[var->getId()].getInterval().ub().getIntNumeral();
+    s64_t int_lb = es[var->getId()].getInterval().lb().getIntNumeral();
+    s64_t int_ub = es[var->getId()].getInterval().ub().getIntNumeral();
     // get dst type
     u32_t dst_bits = dstType->getByteSize() * 8;
     if (dst_bits == 8)
@@ -265,25 +265,13 @@ AbstractValue SVFIR2AbsState::getTruncValue(const SVF::SVFVar* var, const SVFTyp
     }
 }
 
-AbstractValue SVFIR2AbsState::getFPTruncValue(const SVF::SVFVar* var, const SVFType* dstType)
+AbstractValue SVFIR2AbsState::getFPTruncValue(AbstractState& es, const SVF::SVFVar* var, const SVFType* dstType)
 {
     // TODO: now we do not really handle fptrunc
-    return _es[var->getId()].getInterval();
+    return es[var->getId()].getInterval();
 }
 
-void SVFIR2AbsState::applySummary(AbstractState&es)
-{
-    for (const auto &item: es._varToAbsVal)
-    {
-        _es._varToAbsVal[item.first] = item.second;
-    }
-    for (const auto &item: es._addrToAbsVal)
-    {
-        _es._addrToAbsVal[item.first] = item.second;
-    }
-}
-
-void SVFIR2AbsState::widenAddrs(AbstractState&lhs, const AbstractState&rhs)
+void SVFIR2AbsState::widenAddrs(AbstractState& es, AbstractState&lhs, const AbstractState&rhs)
 {
     for (const auto &rhsItem: rhs._varToAbsVal)
     {
@@ -298,7 +286,7 @@ void SVFIR2AbsState::widenAddrs(AbstractState&lhs, const AbstractState&rhs)
                     {
                         for (s32_t i = 0; i < (s32_t) Options::MaxFieldLimit(); i++)
                         {
-                            lhsIter->second.join_with(getGepObjAddress(getInternalID(addr), i));
+                            lhsIter->second.join_with(getGepObjAddress(es, getInternalID(addr), i));
                         }
                     }
                 }
@@ -320,7 +308,7 @@ void SVFIR2AbsState::widenAddrs(AbstractState&lhs, const AbstractState&rhs)
                                 i++)
                         {
                             lhsIter->second.join_with(
-                                getGepObjAddress(getInternalID(addr), i));
+                                getGepObjAddress(es, getInternalID(addr), i));
                         }
                     }
                 }
@@ -329,7 +317,7 @@ void SVFIR2AbsState::widenAddrs(AbstractState&lhs, const AbstractState&rhs)
     }
 }
 
-void SVFIR2AbsState::narrowAddrs(AbstractState&lhs, const AbstractState&rhs)
+void SVFIR2AbsState::narrowAddrs(AbstractState& es, AbstractState&lhs, const AbstractState&rhs)
 {
     for (const auto &rhsItem: rhs._varToAbsVal)
     {
@@ -369,10 +357,10 @@ void SVFIR2AbsState::narrowAddrs(AbstractState&lhs, const AbstractState&rhs)
     }
 }
 
-AbstractValue SVFIR2AbsState::getGepObjAddress(u32_t pointer, APOffset offset)
+AbstractValue SVFIR2AbsState::getGepObjAddress(AbstractState& es, u32_t pointer, APOffset offset)
 {
-    assert(!getAddrs(pointer).getAddrs().empty());
-    AbstractValue addrs = getAddrs(pointer);
+    assert(!getAddrs(es, pointer).getAddrs().empty());
+    AbstractValue addrs = getAddrs(es, pointer);
     AbstractValue ret = AddressValue();
     for (const auto &addr: addrs.getAddrs())
     {
@@ -384,7 +372,7 @@ AbstractValue SVFIR2AbsState::getGepObjAddress(u32_t pointer, APOffset offset)
         }
         assert(SVFUtil::isa<ObjVar>(_svfir->getGNode(baseObj)) && "Fail to get the base object address!");
         NodeID gepObj = _svfir->getGepObjVar(baseObj, offset);
-        initSVFVar(gepObj);
+        initSVFVar(es, gepObj);
         ret.insertAddr(getVirtualMemAddress(gepObj));
     }
     return ret;
@@ -412,7 +400,7 @@ AbstractValue SVFIR2AbsState::getGepObjAddress(u32_t pointer, APOffset offset)
 *  Therefore the final byteoffset is [8+4*var1.lb(), 8+4*var1.ub()]
  *
  */
-AbstractValue SVFIR2AbsState::getByteOffset(const GepStmt *gep)
+AbstractValue SVFIR2AbsState::getByteOffset(AbstractState& es, const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
@@ -443,7 +431,7 @@ AbstractValue SVFIR2AbsState::getByteOffset(const GepStmt *gep)
             else
             {
                 u32_t idx = _svfir->getValueNode(idxOperandVar->getValue());
-                IntervalValue idxVal = _es[idx].getInterval();
+                IntervalValue idxVal = es[idx].getInterval();
                 if (idxVal.isBottom())
                     res = res + IntervalValue(0, 0);
                 else
@@ -482,7 +470,7 @@ AbstractValue SVFIR2AbsState::getByteOffset(const GepStmt *gep)
  *
  * @return      A pair of APOffset values representing the offset range.
  */
-AbstractValue SVFIR2AbsState::getItvOfFlattenedElemIndex(const GepStmt *gep)
+AbstractValue SVFIR2AbsState::getItvOfFlattenedElemIndex(AbstractState& es, const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantOffset());
@@ -502,7 +490,7 @@ AbstractValue SVFIR2AbsState::getItvOfFlattenedElemIndex(const GepStmt *gep)
             idxLb = idxUb = constInt->getSExtValue();
         else
         {
-            IntervalValue idxItv = _es[_svfir->getValueNode(value)].getInterval();
+            IntervalValue idxItv = es[_svfir->getValueNode(value)].getInterval();
             if (idxItv.isBottom())
                 idxLb = idxUb = 0;
             else
@@ -557,7 +545,7 @@ AbstractValue SVFIR2AbsState::getItvOfFlattenedElemIndex(const GepStmt *gep)
  * @param objVar
  * @param valExprIdToCondValPairMap
  */
-void SVFIR2AbsState::initObjVar(const ObjVar *objVar, u32_t varId)
+void SVFIR2AbsState::initObjVar(AbstractState& es, const ObjVar *objVar, u32_t varId)
 {
 
     if (objVar->hasValue())
@@ -569,38 +557,38 @@ void SVFIR2AbsState::initObjVar(const ObjVar *objVar, u32_t varId)
             if (const SVFConstantInt *consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue()))
             {
                 s64_t numeral = consInt->getSExtValue();
-                _es[varId] = IntervalValue(numeral, numeral);
+                es[varId] = IntervalValue(numeral, numeral);
             }
             else if (const SVFConstantFP* consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue()))
-                _es[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
+                es[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
             else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue()))
-                _es[varId] = IntervalValue(0, 0);
+                es[varId] = IntervalValue(0, 0);
             else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue()))
             {
-                _es[varId] = AddressValue(getVirtualMemAddress(varId));
+                es[varId] = AddressValue(getVirtualMemAddress(varId));
             }
 
             else if (obj->isConstantArray() || obj->isConstantStruct())
-                _es[varId] = IntervalValue::top();
+                es[varId] = IntervalValue::top();
             else
-                _es[varId] = IntervalValue::top();
+                es[varId] = IntervalValue::top();
         }
         else
-            _es[varId] = AddressValue(getVirtualMemAddress(varId));
+            es[varId] = AddressValue(getVirtualMemAddress(varId));
     }
     else
-        _es[varId] = AddressValue(getVirtualMemAddress(varId));
+        es[varId] = AddressValue(getVirtualMemAddress(varId));
 }
 
-void SVFIR2AbsState::initSVFVar(u32_t varId)
+void SVFIR2AbsState::initSVFVar(AbstractState& es, u32_t varId)
 {
-    if (inVarToValTable(varId) || _es.inVarToAddrsTable(varId)) return;
+    if (inVarToValTable(es, varId) || es.inVarToAddrsTable(varId)) return;
     SVFIR *svfir = PAG::getPAG();
     SVFVar *svfVar = svfir->getGNode(varId);
     // write objvar into cache instead of exestate
     if (const ObjVar *objVar = dyn_cast<ObjVar>(svfVar))
     {
-        initObjVar(objVar, varId);
+        initObjVar(es, objVar, varId);
         return;
     }
     else
@@ -610,23 +598,23 @@ void SVFIR2AbsState::initSVFVar(u32_t varId)
 }
 
 
-void SVFIR2AbsState::handleAddr(const AddrStmt *addr)
+void SVFIR2AbsState::handleAddr(AbstractState& es, const AddrStmt *addr)
 {
-    initSVFVar(addr->getRHSVarID());
-    if (inVarToValTable(addr->getRHSVarID()))
+    initSVFVar(es, addr->getRHSVarID());
+    if (inVarToValTable(es, addr->getRHSVarID()))
     {
         // if addr RHS is integerType(i8 i32 etc), value should be limited.
         if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
         {
-            _es[addr->getRHSVarID()].meet_with(getRangeLimitFromType(addr->getRHSVar()->getType()));
+            es[addr->getRHSVarID()].meet_with(getRangeLimitFromType(addr->getRHSVar()->getType()));
         }
-        _es[addr->getLHSVarID()] = _es[addr->getRHSVarID()];
+        es[addr->getLHSVarID()] = es[addr->getRHSVarID()];
 
     }
-    else if (inVarToAddrsTable(addr->getRHSVarID()))
+    else if (inVarToAddrsTable(es, addr->getRHSVarID()))
     {
-        _es[addr->getLHSVarID()] =
-            _es[addr->getRHSVarID()];
+        es[addr->getLHSVarID()] =
+            es[addr->getRHSVarID()];
     }
     else
     {
@@ -635,16 +623,16 @@ void SVFIR2AbsState::handleAddr(const AddrStmt *addr)
 }
 
 
-void SVFIR2AbsState::handleBinary(const BinaryOPStmt *binary)
+void SVFIR2AbsState::handleBinary(AbstractState& es, const BinaryOPStmt *binary)
 {
     u32_t op0 = binary->getOpVarID(0);
     u32_t op1 = binary->getOpVarID(1);
     u32_t res = binary->getResID();
-    if (!inVarToValTable(op0)) _es[op0] = IntervalValue::top();
-    if (!inVarToValTable(op1)) _es[op1] = IntervalValue::top();
-    if (inVarToValTable(op0) && inVarToValTable(op1))
+    if (!inVarToValTable(es, op0)) es[op0] = IntervalValue::top();
+    if (!inVarToValTable(es, op1)) es[op1] = IntervalValue::top();
+    if (inVarToValTable(es, op0) && inVarToValTable(es, op1))
     {
-        AbstractValue &lhs = _es[op0], &rhs = _es[op1];
+        AbstractValue &lhs = es[op0], &rhs = es[op1];
         AbstractValue resVal;
         switch (binary->getOpcode())
         {
@@ -693,19 +681,19 @@ void SVFIR2AbsState::handleBinary(const BinaryOPStmt *binary)
             assert(false && "undefined binary: ");
         }
         }
-        _es[res] = resVal;
+        es[res] = resVal;
     }
 }
 
-void SVFIR2AbsState::handleCmp(const CmpStmt *cmp)
+void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
 {
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
     u32_t res = cmp->getResID();
-    if (inVarToValTable(op0) && inVarToValTable(op1))
+    if (inVarToValTable(es, op0) && inVarToValTable(es, op1))
     {
         AbstractValue resVal;
-        AbstractValue &lhs = _es[op0], &rhs = _es[op1];
+        AbstractValue &lhs = es[op0], &rhs = es[op1];
         //AbstractValue
         auto predicate = cmp->getPredicate();
         switch (predicate)
@@ -756,12 +744,12 @@ void SVFIR2AbsState::handleCmp(const CmpStmt *cmp)
             assert(false && "undefined compare: ");
         }
         }
-        _es[res] = resVal;
+        es[res] = resVal;
     }
-    else if (inVarToAddrsTable(op0) && inVarToAddrsTable(op1))
+    else if (inVarToAddrsTable(es, op0) && inVarToAddrsTable(es, op1))
     {
         IntervalValue resVal;
-        AbstractValue &lhs = getAddrs(op0), &rhs = getAddrs(op1);
+        AbstractValue &lhs = getAddrs(es, op0), &rhs = getAddrs(es, op1);
         assert(!lhs.getAddrs().empty() && !rhs.getAddrs().empty() && "empty address?");
         auto predicate = cmp->getPredicate();
         switch (predicate)
@@ -879,17 +867,17 @@ void SVFIR2AbsState::handleCmp(const CmpStmt *cmp)
             assert(false && "undefined compare: ");
         }
         }
-        _es[res] = resVal;
+        es[res] = resVal;
     }
 }
 
-void SVFIR2AbsState::handleLoad(const LoadStmt *load)
+void SVFIR2AbsState::handleLoad(AbstractState& es, const LoadStmt *load)
 {
     u32_t rhs = load->getRHSVarID();
     u32_t lhs = load->getLHSVarID();
-    if (inVarToAddrsTable(rhs))
+    if (inVarToAddrsTable(es, rhs))
     {
-        AbstractValue &addrs = getAddrs(rhs);
+        AbstractValue &addrs = getAddrs(es, rhs);
         assert(!addrs.getAddrs().empty());
         AbstractValue rhsVal(AbstractValue::UnknownType); // interval::bottom Address::bottom
         // AbstractValue absRhs
@@ -899,102 +887,102 @@ void SVFIR2AbsState::handleLoad(const LoadStmt *load)
             // absRhs.join_with
             // es.load()
             u32_t objId = getInternalID(addr);
-            if (inLocToValTable(objId) || inLocToAddrsTable(objId))
+            if (inLocToValTable(es, objId) || inLocToAddrsTable(es, objId))
             {
-                rhsVal.join_with(_es.load(addr));
+                rhsVal.join_with(es.load(addr));
             }
         }
         if (!rhsVal.isUnknown())
-            _es[lhs] = rhsVal;
+            es[lhs] = rhsVal;
     }
 }
 
-void SVFIR2AbsState::handleStore(const StoreStmt *store)
+void SVFIR2AbsState::handleStore(AbstractState& es, const StoreStmt *store)
 {
     u32_t rhs = store->getRHSVarID();
     u32_t lhs = store->getLHSVarID();
-    if (inVarToAddrsTable(lhs))
+    if (inVarToAddrsTable(es, lhs))
     {
         //es.store()
-        assert(!getAddrs(lhs).getAddrs().empty());
-        AbstractValue &addrs = _es[lhs];
+        assert(!getAddrs(es, lhs).getAddrs().empty());
+        AbstractValue &addrs = es[lhs];
         for (const auto &addr: addrs.getAddrs())
         {
-            _es.store(addr, _es[rhs]);
+            es.store(addr, es[rhs]);
         }
 
-        if (inVarToValTable(rhs) || inVarToAddrsTable(rhs))
+        if (inVarToValTable(es, rhs) || inVarToAddrsTable(es, rhs))
         {
-            assert(!getAddrs(lhs).getAddrs().empty());
-            for (const auto &addr: _es[lhs].getAddrs())
+            assert(!getAddrs(es, lhs).getAddrs().empty());
+            for (const auto &addr: es[lhs].getAddrs())
             {
-                _es.store(addr, _es[rhs]);
+                es.store(addr, es[rhs]);
             }
         }
     }
 }
 
-void SVFIR2AbsState::handleCopy(const CopyStmt *copy)
+void SVFIR2AbsState::handleCopy(AbstractState& es, const CopyStmt *copy)
 {
     u32_t lhs = copy->getLHSVarID();
     u32_t rhs = copy->getRHSVarID();
     if (PAG::getPAG()->isBlkPtr(lhs))
     {
-        _es[lhs] = IntervalValue::top();
+        es[lhs] = IntervalValue::top();
     }
     else
     {
-        if (inVarToValTable(rhs))
+        if (inVarToValTable(es, rhs))
         {
             if (copy->getCopyKind() == CopyStmt::COPYVAL)
             {
-                _es[lhs] = _es[rhs];
+                es[lhs] = es[rhs];
             }
             else if (copy->getCopyKind() == CopyStmt::ZEXT)
             {
-                _es[lhs] = getZExtValue(copy->getRHSVar());
+                es[lhs] = getZExtValue(es, copy->getRHSVar());
             }
             else if (copy->getCopyKind() == CopyStmt::SEXT)
             {
-                _es[lhs] = getSExtValue(copy->getRHSVar());
+                es[lhs] = getSExtValue(es, copy->getRHSVar());
             }
             else if (copy->getCopyKind() == CopyStmt::FPTOSI)
             {
-                _es[lhs] = getFPToSIntValue(copy->getRHSVar());
+                es[lhs] = getFPToSIntValue(es, copy->getRHSVar());
             }
             else if (copy->getCopyKind() == CopyStmt::FPTOUI)
             {
-                _es[lhs] = getFPToUIntValue(copy->getRHSVar());
+                es[lhs] = getFPToUIntValue(es, copy->getRHSVar());
             }
             else if (copy->getCopyKind() == CopyStmt::SITOFP)
             {
-                _es[lhs] = getSIntToFPValue(copy->getRHSVar());
+                es[lhs] = getSIntToFPValue(es, copy->getRHSVar());
             }
             else if (copy->getCopyKind() == CopyStmt::UITOFP)
             {
-                _es[lhs] = getUIntToFPValue(copy->getRHSVar());
+                es[lhs] = getUIntToFPValue(es, copy->getRHSVar());
             }
             else if (copy->getCopyKind() == CopyStmt::TRUNC)
             {
-                _es[lhs] = getTruncValue(copy->getRHSVar(), copy->getLHSVar()->getType());
+                es[lhs] = getTruncValue(es, copy->getRHSVar(), copy->getLHSVar()->getType());
             }
             else if (copy->getCopyKind() == CopyStmt::FPTRUNC)
             {
-                _es[lhs] = getFPTruncValue(copy->getRHSVar(), copy->getLHSVar()->getType());
+                es[lhs] = getFPTruncValue(es, copy->getRHSVar(), copy->getLHSVar()->getType());
             }
             else if (copy->getCopyKind() == CopyStmt::INTTOPTR)
             {
-                _es.getAddrs(lhs).getAddrs().insert(getVirtualMemAddress(0)); //insert nullptr
+                es.getAddrs(lhs).getAddrs().insert(getVirtualMemAddress(0)); //insert nullptr
             }
             else if (copy->getCopyKind() == CopyStmt::PTRTOINT)
             {
-                _es[lhs] = IntervalValue::top();
+                es[lhs] = IntervalValue::top();
             }
             else if (copy->getCopyKind() == CopyStmt::BITCAST)
             {
-                if (_es[rhs].isAddr())
+                if (es[rhs].isAddr())
                 {
-                    _es[lhs] = _es[rhs];
+                    es[lhs] = es[rhs];
                 }
                 else
                 {
@@ -1007,22 +995,22 @@ void SVFIR2AbsState::handleCopy(const CopyStmt *copy)
                 abort();
             }
         }
-        else if (inVarToAddrsTable(rhs))
+        else if (inVarToAddrsTable(es, rhs))
         {
-            assert(!getAddrs(rhs).getAddrs().empty());
-            _es[lhs] = _es[rhs];
+            assert(!getAddrs(es, rhs).getAddrs().empty());
+            es[lhs] = es[rhs];
         }
     }
 }
 
-void SVFIR2AbsState::handleGep(const GepStmt *gep)
+void SVFIR2AbsState::handleGep(AbstractState& es, const GepStmt *gep)
 {
     u32_t rhs = gep->getRHSVarID();
     u32_t lhs = gep->getLHSVarID();
-    if (!inVarToAddrsTable(rhs)) return;
-    AbstractValue &rhsVal = _es[rhs];
+    if (!inVarToAddrsTable(es, rhs)) return;
+    AbstractValue &rhsVal = es[rhs];
     assert(!rhsVal.getAddrs().empty());
-    AbstractValue offsetPair = getItvOfFlattenedElemIndex(gep);
+    AbstractValue offsetPair = getItvOfFlattenedElemIndex(es, gep);
     if (!isVirtualMemAddress(*rhsVal.getAddrs().begin()))
         return;
     else
@@ -1033,42 +1021,42 @@ void SVFIR2AbsState::handleGep(const GepStmt *gep)
         APOffset ub = offsetPair.ub().getIntNumeral() < Options::MaxFieldLimit()?
                       offsetPair.ub().getIntNumeral(): Options::MaxFieldLimit();
         for (APOffset i = lb; i <= ub; i++)
-            gepAddrs.join_with(getGepObjAddress(rhs, i));
+            gepAddrs.join_with(getGepObjAddress(es, rhs, i));
         if (!rhsVal.isUnknown())
-            _es[lhs] = gepAddrs;
+            es[lhs] = gepAddrs;
         return;
     }
 }
 
-void SVFIR2AbsState::handleSelect(const SelectStmt *select)
+void SVFIR2AbsState::handleSelect(AbstractState& es, const SelectStmt *select)
 {
     u32_t res = select->getResID();
     u32_t tval = select->getTrueValue()->getId();
     u32_t fval = select->getFalseValue()->getId();
     u32_t cond = select->getCondition()->getId();
-    if (inVarToValTable(tval) && inVarToValTable(fval) && inVarToValTable(cond))
+    if (inVarToValTable(es, tval) && inVarToValTable(es, fval) && inVarToValTable(es, cond))
     {
-        if (_es[cond].getInterval().is_numeral())
+        if (es[cond].getInterval().is_numeral())
         {
-            _es[res] = _es[cond].getInterval().is_zero() ? _es[fval] : _es[tval];
+            es[res] = es[cond].getInterval().is_zero() ? es[fval] : es[tval];
         }
         else
         {
-            _es[res] = _es[cond];
+            es[res] = es[cond];
         }
     }
-    else if (inVarToAddrsTable(tval) && inVarToAddrsTable(fval) && inVarToValTable(cond))
+    else if (inVarToAddrsTable(es, tval) && inVarToAddrsTable(es, fval) && inVarToValTable(es, cond))
     {
-        if (_es[cond].getInterval().is_numeral())
+        if (es[cond].getInterval().is_numeral())
         {
-            assert(!getAddrs(fval).getAddrs().empty());
-            assert(!getAddrs(tval).getAddrs().empty());
-            _es.getAddrs(res) = _es[cond].getInterval().is_zero() ? getAddrs(fval) : getAddrs(tval);
+            assert(!getAddrs(es, fval).getAddrs().empty());
+            assert(!getAddrs(es, tval).getAddrs().empty());
+            es.getAddrs(res) = es[cond].getInterval().is_zero() ? getAddrs(es, fval) : getAddrs(es, tval);
         }
     }
 }
 
-void SVFIR2AbsState::handlePhi(const PhiStmt *phi)
+void SVFIR2AbsState::handlePhi(AbstractState& es, const PhiStmt *phi)
 {
     u32_t res = phi->getResID();
     AbstractValue rhs(AbstractValue::UnknownType);
@@ -1076,32 +1064,32 @@ void SVFIR2AbsState::handlePhi(const PhiStmt *phi)
     {
         NodeID curId = phi->getOpVarID(i);
 
-        if (inVarToValTable(curId) || inVarToAddrsTable(curId))
+        if (inVarToValTable(es, curId) || inVarToAddrsTable(es, curId))
         {
-            rhs.join_with(_es[curId]);
+            rhs.join_with(es[curId]);
         }
     }
     if (!rhs.isUnknown())
-        _es[res] = rhs;
+        es[res] = rhs;
 }
 
 
-void SVFIR2AbsState::handleCall(const CallPE *callPE)
+void SVFIR2AbsState::handleCall(AbstractState& es, const CallPE *callPE)
 {
     NodeID lhs = callPE->getLHSVarID();
     NodeID rhs = callPE->getRHSVarID();
-    if (inVarToValTable(rhs) || inVarToAddrsTable(rhs))
+    if (inVarToValTable(es, rhs) || inVarToAddrsTable(es, rhs))
     {
-        _es[lhs] = _es[rhs];
+        es[lhs] = es[rhs];
     }
 }
 
-void SVFIR2AbsState::handleRet(const RetPE *retPE)
+void SVFIR2AbsState::handleRet(AbstractState& es, const RetPE *retPE)
 {
     NodeID lhs = retPE->getLHSVarID();
     NodeID rhs = retPE->getRHSVarID();
-    if (inVarToValTable(rhs) || inVarToAddrsTable(rhs))
+    if (inVarToValTable(es, rhs) || inVarToAddrsTable(es, rhs))
     {
-        _es[lhs] = _es[rhs];
+        es[lhs] = es[rhs];
     }
 }

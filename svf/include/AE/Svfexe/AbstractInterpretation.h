@@ -375,13 +375,18 @@ protected:
     bool narrowFixpointPass(const ICFGNode* cycle_head,
                             AbstractState& pre_es);
 
+    AbstractState& getCurState() {
+        return _postAbsTrace[_curNode];
+    }
+
 protected:
     // there data should be shared with subclasses
     Map<std::string, std::function<void(const CallSite &)>> _func_map;
     Set<const CallICFGNode*> _checkpoints;
     Set<std::string> _checkpoint_names;
-    Map<const ICFGNode*, AbstractState> _preAbstractTrace;
-    Map<const ICFGNode*, AbstractState> _postAbstractTrace;
+    const ICFGNode* _curNode;
+    Map<const ICFGNode*, AbstractState> _preAbsTrace;
+    Map<const ICFGNode*, AbstractState> _postAbsTrace;
     std::string _moduleName;
 };
 }
