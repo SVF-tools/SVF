@@ -1304,12 +1304,7 @@ u32_t AbstractInterpretation::getAllocaInstByteSize(const AddrStmt *addr)
             {
                 if (!_svfir2AbsState->inVarToValTable(getCurState(), _svfir->getValueNode(value)))
                 {
-<<<<<<< HEAD
                     getCurState()[_svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
-=======
-                    _svfir2AbsState
-                    ->getAbsState()[_svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
->>>>>>> origin/master
                 }
                 AbstractValue itv =
                     getCurState()[_svfir->getValueNode(value)];
@@ -1582,13 +1577,8 @@ void AbstractInterpretation::handleMemcpy(const SVF::SVFValue *dst, const SVF::S
     }
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
     u32_t range_val = size / elemSize;
-<<<<<<< HEAD
     if (_svfir2AbsState->inVarToAddrsTable(getCurState(), srcId) &&
         _svfir2AbsState->inVarToAddrsTable(getCurState(), dstId))
-=======
-    if (_svfir2AbsState->inVarToAddrsTable(srcId) &&
-            _svfir2AbsState->inVarToAddrsTable(dstId))
->>>>>>> origin/master
     {
         for (u32_t index = 0; index < range_val; index++)
         {
