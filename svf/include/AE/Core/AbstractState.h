@@ -62,7 +62,8 @@ public:
 
 public:
     /// default constructor
-    AbstractState() {
+    AbstractState()
+    {
     }
 
     AbstractState(VarToAbsValMap&_varToValMap, AddrToAbsValMap&_locToValMap) : _varToAbsVal(_varToValMap), _addrToAbsVal(_locToValMap) {}
@@ -111,7 +112,7 @@ public:
 
     /// move constructor
     AbstractState(AbstractState&&rhs) : _varToAbsVal(std::move(rhs._varToAbsVal)),
-          _addrToAbsVal(std::move(rhs._addrToAbsVal))
+        _addrToAbsVal(std::move(rhs._addrToAbsVal))
     {
 
     }
@@ -165,7 +166,7 @@ public:
 protected:
     VarToAbsValMap _varToAbsVal; ///< Map a variable (symbol) to its abstract value
     AddrToAbsValMap
-        _addrToAbsVal; ///< Map a memory address to its stored abstract value
+    _addrToAbsVal; ///< Map a memory address to its stored abstract value
 
 public:
 
@@ -188,7 +189,9 @@ public:
         if (_varToAbsVal.find(id)!= _varToAbsVal.end())
         {
             return _varToAbsVal[id];
-        } else {
+        }
+        else
+        {
             _varToAbsVal[id] = AddressValue();
             return _varToAbsVal[id];
         }
