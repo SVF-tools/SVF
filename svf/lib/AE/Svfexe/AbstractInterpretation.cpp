@@ -511,7 +511,7 @@ bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* intraEdge,
         else
         {
             return isSwitchBranchFeasible(
-                cmpVar, intraEdge->getSuccessorCondValue(), es);
+                       cmpVar, intraEdge->getSuccessorCondValue(), es);
         }
     }
     return true;
@@ -1213,7 +1213,7 @@ void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
         // memset dst is arg0, elem is arg1, size is arg2
         AbstractValue len = es[_svfir->getValueNode(cs.getArgument(2))];
         AbstractValue elem = es[_svfir->getValueNode(cs.getArgument(1))];
-        handleMemset(es ,cs.getArgument(0), elem, len);
+        handleMemset(es,cs.getArgument(0), elem, len);
     }
     else if (extType == STRCPY)
     {
@@ -1574,7 +1574,7 @@ void AbstractInterpretation::handleMemcpy(AbstractState& es, const SVF::SVFValue
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
     u32_t range_val = size / elemSize;
     if (_svfir2AbsState->inVarToAddrsTable(es, srcId) &&
-        _svfir2AbsState->inVarToAddrsTable(es, dstId))
+            _svfir2AbsState->inVarToAddrsTable(es, dstId))
     {
         for (u32_t index = 0; index < range_val; index++)
         {
