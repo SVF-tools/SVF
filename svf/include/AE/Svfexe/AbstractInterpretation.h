@@ -154,7 +154,7 @@ protected:
      * @param intraEdge the edge from CmpStmt to the next node
      * @return if this edge is feasible
      */
-    bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& es);
+    bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
 
     /**
      * handle instructions in ICFGNode
@@ -214,7 +214,7 @@ protected:
     * @return if this ICFGNode has preceding execution state
     */
     bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-                             AbstractState& es);
+                            AbstractState& as);
 
     /**
     * Check if this SwitchInst and succ are satisfiable to the execution state.
@@ -224,7 +224,7 @@ protected:
     * @return if this ICFGNode has preceding execution state
     */
     bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ,
-                                AbstractState& es);
+                           AbstractState& as);
 
 
     /**
@@ -248,7 +248,7 @@ protected:
     * @param addr Address Stmt like malloc/calloc/ALLOCA/StackAlloc
     * @return the byte size e.g. int32_t a[10] -> return 40
     */
-    u32_t getAllocaInstByteSize(AbstractState& es, const AddrStmt *addr);
+    u32_t getAllocaInstByteSize(AbstractState& as, const AddrStmt *addr);
 
     /**
     * get byte size of alloca inst
@@ -257,7 +257,7 @@ protected:
     * @param rhs SVFValue of string
     * @return the string
     */
-    std::string strRead(AbstractState& es,const SVFValue* rhs);
+    std::string strRead(AbstractState& as,const SVFValue* rhs);
 
     /**
     * get length of string
@@ -266,7 +266,7 @@ protected:
     * @param strValue SVFValue of string
     * @return AbstractValue of string length
     */
-    AbstractValue getStrlen(AbstractState& es, const SVF::SVFValue *strValue);
+    AbstractValue getStrlen(AbstractState& as, const SVF::SVFValue *strValue);
 
     /**
     * get memory allocation size
@@ -277,7 +277,7 @@ protected:
     * @param value to be traced
     * @return AbstractValue of allocation size
     */
-    AbstractValue traceMemoryAllocationSize(AbstractState& es, const SVFValue *value);
+    AbstractValue traceMemoryAllocationSize(AbstractState& as, const SVFValue *value);
     /**
     * execute strcpy in abstract execution
     * e.g  arr = new char[10]
@@ -304,7 +304,7 @@ protected:
     * we can set arr[3]='d', arr[4]='e', arr[5]='\0'
     * @param call callnode of memcpy like api
     */
-    virtual void handleMemcpy(AbstractState& es, const SVFValue* dst, const SVFValue* src, AbstractValue len, u32_t start_idx);
+    virtual void handleMemcpy(AbstractState& as, const SVFValue* dst, const SVFValue* src, AbstractValue len, u32_t start_idx);
     /**
     * execute memset in abstract execution
     * e.g  arr = new char[10]
@@ -312,7 +312,7 @@ protected:
     * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
     * @param call callnode of memset like api
     */
-    virtual void handleMemset(AbstractState& es, const SVFValue* dst, AbstractValue elem, AbstractValue len);
+    virtual void handleMemset(AbstractState& as, const SVFValue* dst, AbstractValue elem, AbstractValue len);
 
     /**
     * if this NodeID in SVFIR is a pointer, get the pointee type
@@ -321,14 +321,14 @@ protected:
     * we can set arr[0]='c', arr[1]='c', arr[2]='\0'
     * @param call callnode of memset like api
     */
-    const SVFType* getPointeeElement(AbstractState& es, NodeID id);
+    const SVFType* getPointeeElement(AbstractState& as, NodeID id);
 
     void collectCheckPoint();
     void checkPointAllSet();
     // helper functions for traceMemoryAllocationSize and canSafelyAccessMemory
     void AccessMemoryViaRetNode(const CallICFGNode *callnode, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
     void AccessMemoryViaCopyStmt(const CopyStmt *copy, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
-    void AccessMemoryViaLoadStmt(AbstractState& es, const LoadStmt *load, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
+    void AccessMemoryViaLoadStmt(AbstractState& as, const LoadStmt *load, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
     void AccessMemoryViaCallArgs(const SVF::SVFArgument *arg, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
 
 
@@ -369,8 +369,7 @@ protected:
     bool narrowFixpointPass(const ICFGNode* cycle_head,
                             AbstractState& pre_es);
 
-    AbstractState& getState(const ICFGNode* node)
-    {
+    AbstractState& getAbsState(const ICFGNode* node) {
         const ICFGNode* repNode = _icfg->getRepNode(node);
         if (_postAbsTrace.count(repNode) == 0)
         {
