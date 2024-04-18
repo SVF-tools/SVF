@@ -1064,7 +1064,7 @@ void AbstractInterpretation::initExtFunMap()
         auto sse_##FUNC_NAME = [this](const CallSite &cs) { \
         /* run real ext function */            \
         const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(_svfir->getICFG()->getICFGNode(cs.getInstruction())); \
-        AbstractState& as = getState(callNode); \
+        AbstractState& as = getAbsState(callNode); \
         u32_t rhs_id = _svfir->getValueNode(cs.getArgument(0)); \
         if (!as.inVarToValTable(rhs_id)) return; \
         u32_t rhs = as[rhs_id].getInterval().lb().getIntNumeral(); \
