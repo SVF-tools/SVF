@@ -214,7 +214,7 @@ protected:
     * @return if this ICFGNode has preceding execution state
     */
     bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-                            AbstractState& as);
+                             AbstractState& as);
 
     /**
     * Check if this SwitchInst and succ are satisfiable to the execution state.
@@ -224,7 +224,7 @@ protected:
     * @return if this ICFGNode has preceding execution state
     */
     bool isSwitchBranchFeasible(const SVFVar* var, s64_t succ,
-                           AbstractState& as);
+                                AbstractState& as);
 
 
     /**
@@ -369,7 +369,8 @@ protected:
     bool narrowFixpointPass(const ICFGNode* cycle_head,
                             AbstractState& pre_es);
 
-    AbstractState& getAbsState(const ICFGNode* node) {
+    AbstractState& getAbsState(const ICFGNode* node)
+    {
         const ICFGNode* repNode = _icfg->getRepNode(node);
         if (_postAbsTrace.count(repNode) == 0)
         {
