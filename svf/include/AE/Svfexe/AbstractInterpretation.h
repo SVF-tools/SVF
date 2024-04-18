@@ -214,7 +214,7 @@ protected:
     * @return if this ICFGNode has preceding execution state
     */
     bool isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t succ,
-                        AbstractState& as);
+                            AbstractState& as);
 
     /**
     * Check if this SwitchInst and succ are satisfiable to the execution state.
@@ -371,9 +371,11 @@ protected:
 
     AbstractState& getAbsState(const ICFGNode* node) {
         const ICFGNode* repNode = _icfg->getRepNode(node);
-        if (_postAbsTrace.count(repNode) == 0) {
+        if (_postAbsTrace.count(repNode) == 0)
+        {
             assert(0 && "No preAbsTrace for this node");
-        } else
+        }
+        else
         {
             return _postAbsTrace[repNode];
         }
