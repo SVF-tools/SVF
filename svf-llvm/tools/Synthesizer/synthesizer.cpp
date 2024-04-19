@@ -91,7 +91,7 @@ void traverseOnSVFStmt(const ICFGNode* node)
         }
         else if (const BranchStmt* branch = SVFUtil::dyn_cast<BranchStmt>(stmt))
         {
-            std::string phistring = branch->getValue()->toString();
+            std::string brstring = branch->getValue()->toString();
         }
     }
 }
