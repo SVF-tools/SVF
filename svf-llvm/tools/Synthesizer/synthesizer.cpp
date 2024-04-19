@@ -61,7 +61,6 @@ void traverseOnSVFStmt(const ICFGNode* node)
         else if (const GepStmt* gep = SVFUtil::dyn_cast<GepStmt>(stmt))
         {
             std ::string gepstring = gep->getValue()->toString();
-             
         }
         else if (const SelectStmt* select = SVFUtil::dyn_cast<SelectStmt>(stmt))
         {
@@ -84,6 +83,18 @@ void traverseOnSVFStmt(const ICFGNode* node)
             SVFInstruction* cs =
                 const_cast<SVFInstruction*>(callNode->getCallSite());
             std::string m = cs->getSourceLoc();
+            //"{ \"ln\": 15, \"cl\": 12, \"fl\": \"test1.c\" }"
+             //把ln后面的数字提取出来
+            
+            //提取15
+            std::string::size_type pos = m.find("\"ln\":");
+            //后面就是15
+            int num = std::stoi(m.substr(pos + 5, m.find(",") - pos - 5));
+            printf("num = %d\n", num);
+            auto str = SOURCEPATH();
+            auto lightAnalysis = new LightAnalysis(str);
+
+            lightAnalysis->findNodeOnTree();
         }
         else if (const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt))
         {
