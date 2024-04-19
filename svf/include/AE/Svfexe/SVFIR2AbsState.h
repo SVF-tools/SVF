@@ -67,24 +67,24 @@ public:
     /// Return the value range of Integer SVF Type, e.g. unsigned i8 Type->[0, 255], signed i8 Type->[-128, 127]
     AbstractValue getRangeLimitFromType(const SVFType* type);
 
-    AbstractValue getZExtValue(AbstractState& es, const SVFVar* var);
-    AbstractValue getSExtValue(AbstractState& es, const SVFVar* var);
-    AbstractValue getFPToSIntValue(AbstractState& es, const SVFVar* var);
-    AbstractValue getFPToUIntValue(AbstractState& es, const SVFVar* var);
-    AbstractValue getSIntToFPValue(AbstractState& es, const SVFVar* var);
-    AbstractValue getUIntToFPValue(AbstractState& es, const SVFVar* var);
-    AbstractValue getTruncValue(AbstractState& es, const SVFVar* var, const SVFType* dstType);
-    AbstractValue getFPTruncValue(AbstractState& es, const SVFVar* var, const SVFType* dstType);
+    AbstractValue getZExtValue(const AbstractState& es, const SVFVar* var);
+    AbstractValue getSExtValue(const AbstractState& es, const SVFVar* var);
+    AbstractValue getFPToSIntValue(const AbstractState& es, const SVFVar* var);
+    AbstractValue getFPToUIntValue(const AbstractState& es, const SVFVar* var);
+    AbstractValue getSIntToFPValue(const AbstractState& es, const SVFVar* var);
+    AbstractValue getUIntToFPValue(const AbstractState& es, const SVFVar* var);
+    AbstractValue getTruncValue(const AbstractState& es, const SVFVar* var, const SVFType* dstType);
+    AbstractValue getFPTruncValue(const AbstractState& es, const SVFVar* var, const SVFType* dstType);
 
     /// Return the byte offset expression of a GepStmt
     /// elemBytesize is the element byte size of an static alloc or heap alloc array
     /// e.g. GepStmt* gep = [i32*10], x, and x is [0,3]
     /// std::pair<s32_t, s32_t> byteOffset = getByteOffset(gep);
     /// byteOffset should be [0, 12] since i32 is 4 bytes.
-    AbstractValue getByteOffset(AbstractState& es, const GepStmt *gep);
+    AbstractValue getByteOffset(const AbstractState& es, const GepStmt *gep);
 
     /// Return the offset expression of a GepStmt
-    AbstractValue getItvOfFlattenedElemIndex(AbstractState& es, const GepStmt *gep);
+    AbstractValue getItvOfFlattenedElemIndex(const AbstractState& es, const GepStmt *gep);
 
 
     static z3::context &getContext()
@@ -111,26 +111,26 @@ public:
 
 
     /// whether the variable is in varToVal table
-    inline bool inVarToValTable(AbstractState& es, u32_t id) const
+    inline bool inVarToValTable(const AbstractState& es, u32_t id) const
     {
         return es.inVarToValTable(id);
     }
 
     /// whether the variable is in varToAddrs table
-    inline bool inVarToAddrsTable(AbstractState& es, u32_t id) const
+    inline bool inVarToAddrsTable(const AbstractState& es, u32_t id) const
     {
         return es.inVarToAddrsTable(id);
     }
 
 
     /// whether the memory address stores a interval value
-    inline bool inLocToValTable(AbstractState& es, u32_t id) const
+    inline bool inLocToValTable(const AbstractState& es, u32_t id) const
     {
         return es.inLocToValTable(id);
     }
 
     /// whether the memory address stores memory addresses
-    inline bool inLocToAddrsTable(AbstractState& es, u32_t id) const
+    inline bool inLocToAddrsTable(const AbstractState& es, u32_t id) const
     {
         return es.inLocToAddrsTable(id);
     }
