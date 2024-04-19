@@ -108,7 +108,7 @@ AbstractValue SVFIR2AbsState::getRangeLimitFromType(const SVFType* type)
     }
 }
 
-AbstractValue SVFIR2AbsState::getZExtValue(AbstractState& es, const SVFVar* var)
+AbstractValue SVFIR2AbsState::getZExtValue(const AbstractState& es, const SVFVar* var)
 {
     const SVFType* type = var->getType();
     if (SVFUtil::isa<SVFIntegerType>(type))
@@ -153,12 +153,12 @@ AbstractValue SVFIR2AbsState::getZExtValue(AbstractState& es, const SVFVar* var)
     assert(false && "cannot support non-integer type");
 }
 
-AbstractValue SVFIR2AbsState::getSExtValue(AbstractState& es, const SVFVar* var)
+AbstractValue SVFIR2AbsState::getSExtValue(const AbstractState& es, const SVFVar* var)
 {
     return es[var->getId()].getInterval();
 }
 
-AbstractValue SVFIR2AbsState::getFPToSIntValue(AbstractState& es, const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getFPToSIntValue(const AbstractState& es, const SVF::SVFVar* var)
 {
     if (es[var->getId()].getInterval().is_real())
     {
@@ -176,7 +176,7 @@ AbstractValue SVFIR2AbsState::getFPToSIntValue(AbstractState& es, const SVF::SVF
     }
 }
 
-AbstractValue SVFIR2AbsState::getFPToUIntValue(AbstractState& es, const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getFPToUIntValue(const AbstractState& es, const SVF::SVFVar* var)
 {
     if (es[var->getId()].getInterval().is_real())
     {
@@ -194,7 +194,7 @@ AbstractValue SVFIR2AbsState::getFPToUIntValue(AbstractState& es, const SVF::SVF
     }
 }
 
-AbstractValue SVFIR2AbsState::getSIntToFPValue(AbstractState& es, const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getSIntToFPValue(const AbstractState& es, const SVF::SVFVar* var)
 {
     // get the sint value of ub and lb
     s64_t sint_lb = es[var->getId()].getInterval().lb().getIntNumeral();
@@ -205,7 +205,7 @@ AbstractValue SVFIR2AbsState::getSIntToFPValue(AbstractState& es, const SVF::SVF
     return IntervalValue(float_lb, float_ub);
 }
 
-AbstractValue SVFIR2AbsState::getUIntToFPValue(AbstractState& es, const SVF::SVFVar* var)
+AbstractValue SVFIR2AbsState::getUIntToFPValue(const AbstractState& es, const SVF::SVFVar* var)
 {
     // get the uint value of ub and lb
     u64_t uint_lb = es[var->getId()].getInterval().lb().getIntNumeral();
@@ -216,7 +216,7 @@ AbstractValue SVFIR2AbsState::getUIntToFPValue(AbstractState& es, const SVF::SVF
     return IntervalValue(float_lb, float_ub);
 }
 
-AbstractValue SVFIR2AbsState::getTruncValue(AbstractState& es, const SVF::SVFVar* var, const SVFType* dstType)
+AbstractValue SVFIR2AbsState::getTruncValue(const AbstractState& es, const SVF::SVFVar* var, const SVFType* dstType)
 {
     // get the value of ub and lb
     s64_t int_lb = es[var->getId()].getInterval().lb().getIntNumeral();
@@ -265,7 +265,7 @@ AbstractValue SVFIR2AbsState::getTruncValue(AbstractState& es, const SVF::SVFVar
     }
 }
 
-AbstractValue SVFIR2AbsState::getFPTruncValue(AbstractState& es, const SVF::SVFVar* var, const SVFType* dstType)
+AbstractValue SVFIR2AbsState::getFPTruncValue(const AbstractState& es, const SVF::SVFVar* var, const SVFType* dstType)
 {
     // TODO: now we do not really handle fptrunc
     return es[var->getId()].getInterval();
@@ -400,7 +400,7 @@ AbstractValue SVFIR2AbsState::getGepObjAddress(AbstractState& es, u32_t pointer,
 *  Therefore the final byteoffset is [8+4*var1.lb(), 8+4*var1.ub()]
  *
  */
-AbstractValue SVFIR2AbsState::getByteOffset(AbstractState& es, const GepStmt *gep)
+AbstractValue SVFIR2AbsState::getByteOffset(const AbstractState& es, const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
@@ -470,7 +470,7 @@ AbstractValue SVFIR2AbsState::getByteOffset(AbstractState& es, const GepStmt *ge
  *
  * @return      A pair of APOffset values representing the offset range.
  */
-AbstractValue SVFIR2AbsState::getItvOfFlattenedElemIndex(AbstractState& es, const GepStmt *gep)
+AbstractValue SVFIR2AbsState::getItvOfFlattenedElemIndex(const AbstractState& es, const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantOffset());
