@@ -72,6 +72,10 @@ void traverseOnSVFStmt(const ICFGNode* node)
         {
             std::string phistring = phi->getValue()->toString();
         }
+        else if (const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt))
+        {
+            std::string retstring = retPE->getValue()->toString();
+        }
         else if (const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(stmt))
         {
             // To handle Call Edge
@@ -105,25 +109,28 @@ void traverseOnSVFStmt(const ICFGNode* node)
                 std::string parameter;
                 while (std::getline(ss, parameter, ','))
                 {
-                    parameter.erase(0, parameter.find_first_not_of(
-                                           ' ')); // prefixing spaces
-                    parameter.erase(parameter.find_last_not_of(' ') +
-                                    1); // surfixing spaces
+                    parameter.erase(0, parameter.find_first_not_of(' '));
+                    parameter.erase(parameter.find_last_not_of(' ') + 1);
                     parameters.push_back(parameter);
                 }
             }
             auto lightAnalysis = new LightAnalysis(str);
-            // std::string functionName = callPE->getFunctionName();
-            //   std::vector<std::string> parameters = callPE->getParameters();
             lightAnalysis->findNodeOnTree(num, functionName, parameters);
         }
-        else if (const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt))
-        {
-            std::string retstring = retPE->getValue()->toString();
-        }
+
         else if (const BranchStmt* branch = SVFUtil::dyn_cast<BranchStmt>(stmt))
         {
             std::string brstring = branch->getValue()->toString();
+            //"   br i1 %5, label %6, label %7 "
+            SVFVar* branchVar = const_cast<SVFVar*>(branch->getBranchInst());
+            SVFValue* branchValue =
+                const_cast<SVFValue*>(branchVar->getValue());
+            std::string location = branchValue->getSourceLoc();
+            std::cout << location << std::endl;
+            std::string::size_type pos = location.find("\"ln\":");
+            unsigned int num =
+                std::stoi(location.substr(pos + 5, location.find(",") - pos - 5));
+            printf("num = %d\n", num);
         }
     }
 }

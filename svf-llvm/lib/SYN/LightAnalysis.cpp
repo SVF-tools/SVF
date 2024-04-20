@@ -59,31 +59,20 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
 {
 
     CXString current_display_name = clang_getCursorDisplayName(curCursor);
-    // Allocate a CXString representing the name of the current cursor
-
     auto str = clang_getCString(current_display_name);
     std::cout << "Visiting element " << str << "\n";
-    // Print the char* value of current_display_name
-    // 获取源代码中的位置
     CXSourceLocation loc = clang_getCursorLocation(curCursor);
     unsigned int line, column;
     CXFile file;
     clang_getSpellingLocation(loc, &file, &line, &column,
                               nullptr); // 将位置转换为行号、列号和文件名
-
-    // 打印行号、列号和元素名称
     std::cout << "Visiting element " << str << " at line " << line
               << ", column " << column << "\n";
     VisitorData* data = static_cast<VisitorData*>(client_data);
-    // 获取目标行号
     unsigned int target_line = data->target_line;
-    // 获取函数名
     std::string functionName = data->functionName;
-    //打印函数名
     std::cout << "Function name: " << functionName << "\n";
-    // 获取参数列表
     std::vector<std::string> parameters = data->parameters;
-    // 打印参数列表
     std::cout << "Parameters: ";
     for (auto& parameter : parameters)
     {
@@ -95,11 +84,27 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
             CXCursor_CallExpr)
         {
             CXString cursor_name = clang_getCursorSpelling(curCursor);
-            //  const char* cursor_name_cstr = clang_getCString(cursor_name);
+            std::string current_function_name = clang_getCString(cursor_name);
+            if (current_function_name == functionName)
+            {
+                std::cout
+                    << "Function name matches with the target function name.\n";
 
-            // 打印cursor_name
-            std::cout << "Found the target node: "
-                      << clang_getCString(cursor_name) << "\n";
+                // 找到函数返回值赋值的变量，判断这个变量是不是第一次定义，找到这个
+                // call site 所处的 scope 信息（大括号）
+                CXString var_name = clang_getCursorSpelling(parent);
+
+                if (clang_getCursorKind(parent) == CXCursor_VarDecl)
+                {
+                    std::cout << "Variable " << clang_getCString(var_name)
+                              << " is defined here.\n";
+                }
+                // 打印 scope 信息
+                CXCursor scope = clang_getCursorSemanticParent(parent);
+                CXString scope_name = clang_getCursorSpelling(scope);
+                std::cout << "The call site is in the scope of "
+                          << clang_getCString(scope_name) << ".\n";
+            }
 
             clang_disposeString(cursor_name);
         }
