@@ -10,14 +10,16 @@
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "Util/Z3Expr.h"
-#include <string>
-
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
+#include <regex>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using namespace llvm;
 using namespace SVF;
@@ -84,17 +86,36 @@ void traverseOnSVFStmt(const ICFGNode* node)
                 const_cast<SVFInstruction*>(callNode->getCallSite());
             std::string m = cs->getSourceLoc();
             //"{ \"ln\": 15, \"cl\": 12, \"fl\": \"test1.c\" }"
-             //把ln后面的数字提取出来
-            
-            //提取15
             std::string::size_type pos = m.find("\"ln\":");
-            //后面就是15
-            int num = std::stoi(m.substr(pos + 5, m.find(",") - pos - 5));
+            unsigned int num =
+                std::stoi(m.substr(pos + 5, m.find(",") - pos - 5));
             printf("num = %d\n", num);
             auto str = SOURCEPATH();
-            auto lightAnalysis = new LightAnalysis(str);
 
-            lightAnalysis->findNodeOnTree();
+            std::regex re("@(\\w+)\\((.+)\\)");
+            std::smatch match;
+            std::string functionName;
+            std::vector<std::string> parameters;
+            if (std::regex_search(callstring, match, re) && match.size() > 2)
+            {
+                functionName = match.str(1);
+                std::string parametersStr = match.str(2);
+
+                std::stringstream ss(parametersStr);
+                std::string parameter;
+                while (std::getline(ss, parameter, ','))
+                {
+                    parameter.erase(0, parameter.find_first_not_of(
+                                           ' ')); // prefixing spaces
+                    parameter.erase(parameter.find_last_not_of(' ') +
+                                    1); // surfixing spaces
+                    parameters.push_back(parameter);
+                }
+            }
+            auto lightAnalysis = new LightAnalysis(str);
+            // std::string functionName = callPE->getFunctionName();
+            //   std::vector<std::string> parameters = callPE->getParameters();
+            lightAnalysis->findNodeOnTree(num, functionName, parameters);
         }
         else if (const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(stmt))
         {

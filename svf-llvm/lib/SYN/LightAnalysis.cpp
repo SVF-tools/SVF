@@ -29,10 +29,18 @@ void LightAnalysis::runOnSrc()
 
     clang_visitChildren(cursor, &cursorVisitor, nullptr);
 }
-
-void LightAnalysis::findNodeOnTree()
+struct VisitorData
 {
- 
+    unsigned int target_line;
+    std::string functionName;
+    std::vector<std::string> parameters;
+};
+
+void LightAnalysis::findNodeOnTree(unsigned int target_line,
+                                   const std::string& functionName,
+                                   const std::vector<std::string>& parameters)
+{
+
     CXIndex index = clang_createIndex(0, 0);
 
     CXTranslationUnit unit = clang_parseTranslationUnit(
@@ -41,13 +49,13 @@ void LightAnalysis::findNodeOnTree()
     assert(unit && "unit cannot be nullptr!");
 
     CXCursor cursor = clang_getTranslationUnitCursor(unit);
-
-    clang_visitChildren(cursor, &astVisitor, nullptr);
+    VisitorData data{target_line, functionName, parameters};
+    clang_visitChildren(cursor, &astVisitor, &data);
 }
 
 enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
-                                                     CXCursor parent,
-                                                     CXClientData client_data)
+                                                  CXCursor parent,
+                                                  CXClientData client_data)
 {
 
     CXString current_display_name = clang_getCursorDisplayName(curCursor);
@@ -66,10 +74,37 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
     // 打印行号、列号和元素名称
     std::cout << "Visiting element " << str << " at line " << line
               << ", column " << column << "\n";
+    VisitorData* data = static_cast<VisitorData*>(client_data);
+    // 获取目标行号
+    unsigned int target_line = data->target_line;
+    // 获取函数名
+    std::string functionName = data->functionName;
+    //打印函数名
+    std::cout << "Function name: " << functionName << "\n";
+    // 获取参数列表
+    std::vector<std::string> parameters = data->parameters;
+    // 打印参数列表
+    std::cout << "Parameters: ";
+    for (auto& parameter : parameters)
+    {
+        std::cout << parameter << " ";
+    }
+    if (line == target_line)
+    {
+        if (static_cast<CXCursorKind>(clang_getCursorKind(curCursor)) ==
+            CXCursor_CallExpr)
+        {
+            CXString cursor_name = clang_getCursorSpelling(curCursor);
+            //  const char* cursor_name_cstr = clang_getCString(cursor_name);
 
+            // 打印cursor_name
+            std::cout << "Found the target node: "
+                      << clang_getCString(cursor_name) << "\n";
+
+            clang_disposeString(cursor_name);
+        }
+    }
     clang_disposeString(current_display_name);
-    // Since clang_getCursorDisplayName allocates a new CXString, it must be
-    // freed. This applies to all functions returning a CXString
 
     return CXChildVisit_Recurse;
 }
