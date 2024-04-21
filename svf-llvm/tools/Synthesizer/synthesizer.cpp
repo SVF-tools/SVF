@@ -29,9 +29,12 @@ static Option<std::string> SOURCEPATH("srcpath",
 
 static Option<std::string> NEWSPECPATH("newspec",
                                        "Path for new specification file", "");
-
+#define call_order 0
+#define branch_order 1
 void traverseOnSVFStmt(const ICFGNode* node)
 {
+    auto str = SOURCEPATH();
+    auto lightAnalysis = new LightAnalysis(str);
     for (const SVFStmt* stmt : node->getSVFStmts())
     {
         std::string stmtstring = stmt->getValue()->toString();
@@ -83,7 +86,6 @@ void traverseOnSVFStmt(const ICFGNode* node)
             // std::string callinfo = callPE->getValue()->getSourceLoc();
             CallICFGNode* callNode =
                 const_cast<CallICFGNode*>(callPE->getCallSite());
-
             // 希望知道是不是第一次定义 也就是有没有type
             std::string callinfo = callNode->toString();
             SVFInstruction* cs =
@@ -94,8 +96,6 @@ void traverseOnSVFStmt(const ICFGNode* node)
             unsigned int num =
                 std::stoi(m.substr(pos + 5, m.find(",") - pos - 5));
             printf("num = %d\n", num);
-            auto str = SOURCEPATH();
-
             std::regex re("@(\\w+)\\((.+)\\)");
             std::smatch match;
             std::string functionName;
@@ -104,7 +104,6 @@ void traverseOnSVFStmt(const ICFGNode* node)
             {
                 functionName = match.str(1);
                 std::string parametersStr = match.str(2);
-
                 std::stringstream ss(parametersStr);
                 std::string parameter;
                 while (std::getline(ss, parameter, ','))
@@ -114,8 +113,8 @@ void traverseOnSVFStmt(const ICFGNode* node)
                     parameters.push_back(parameter);
                 }
             }
-            auto lightAnalysis = new LightAnalysis(str);
-            lightAnalysis->findNodeOnTree(num, functionName, parameters);
+            lightAnalysis->findNodeOnTree(num, call_order, functionName,
+                                          parameters);
         }
 
         else if (const BranchStmt* branch = SVFUtil::dyn_cast<BranchStmt>(stmt))
@@ -123,14 +122,34 @@ void traverseOnSVFStmt(const ICFGNode* node)
             std::string brstring = branch->getValue()->toString();
             //"   br i1 %5, label %6, label %7 "
             SVFVar* branchVar = const_cast<SVFVar*>(branch->getBranchInst());
+
             SVFValue* branchValue =
                 const_cast<SVFValue*>(branchVar->getValue());
             std::string location = branchValue->getSourceLoc();
             std::cout << location << std::endl;
             std::string::size_type pos = location.find("\"ln\":");
-            unsigned int num =
-                std::stoi(location.substr(pos + 5, location.find(",") - pos - 5));
+            unsigned int num = std::stoi(
+                location.substr(pos + 5, location.find(",") - pos - 5));
             printf("num = %d\n", num);
+            SVFVar* conditionVar = const_cast<SVFVar*>(branch->getCondition());
+            std::string conditionstring = conditionVar->getValue()->toString();
+            std::cout << conditionstring << std::endl;
+            //   %5 = icmp slt i32 %4, 0, !dbg !17 { "ln": 7, "cl": 11, "fl":
+            //   "test1.c" }
+            std::size_t icmpPos = conditionstring.find("icmp");
+            if (icmpPos != std::string::npos)
+            {
+                std::size_t spacePos = conditionstring.find(" ", icmpPos);
+                std::size_t nextSpacePos =
+                    conditionstring.find(" ", spacePos + 1);
+                std::string operation = conditionstring.substr(
+                    spacePos + 1, nextSpacePos - spacePos - 1);
+                std::cout << operation << std::endl;
+                // 创建空的vector
+                std::vector<std::string> parameters = {};
+                lightAnalysis->findNodeOnTree(num, branch_order, operation,
+                                              parameters);
+            }
         }
     }
 }

@@ -58,7 +58,7 @@ public:
 
     void runOnSrc();
 
-    void findNodeOnTree(unsigned int target_line,
+    void findNodeOnTree(unsigned int target_line,int order_number,
                         const std::string& functionName,
                         const std::vector<std::string>& parameters);
     static int getLineFromSVFSrcLocString(const std::string&);
