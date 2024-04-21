@@ -122,28 +122,64 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
                 CXCursor_BinaryOperator)
             {
                 // | |-BinaryOperator 0x8947cd0 <line:7:9, col:13> 'int' '<'
-                if (operation == "slt")
+                CXSourceRange range = clang_getCursorExtent(curCursor);
+                CXToken* tokens = 0;
+                unsigned int numTokens = 0;
+                CXTranslationUnit TU =
+                    clang_Cursor_getTranslationUnit(curCursor);
+                clang_tokenize(TU, range, &tokens, &numTokens);
+                int flag = 0;
+                if (numTokens > 1)
                 {
-                    // 打印"<"
-                    CXSourceRange range = clang_getCursorExtent(curCursor);
-                    CXToken* tokens = 0;
-                    unsigned int numTokens = 0;
-                    CXTranslationUnit TU =
-                        clang_Cursor_getTranslationUnit(curCursor);
-                    clang_tokenize(TU, range, &tokens, &numTokens);
-                    if (numTokens > 1)
+                    CXString op_name = clang_getTokenSpelling(TU, tokens[1]);
+
+                    const char* op_string = clang_getCString(op_name);
+                    if (strcmp(op_string, "<") == 0 && operation == "slt")
                     {
-                        CXString op_name =
-                            clang_getTokenSpelling(TU, tokens[1]);
-                        if (strcmp(clang_getCString(op_name), "<") == 0)
-                        {
-                            std::cout << "<"
-                                      << "\n";
-                        }
-                        clang_disposeString(op_name);
+                        std::cout << "find <" << std::endl;
+                        flag = 1;
                     }
-                    clang_disposeTokens(TU, tokens, numTokens);
+                    if (strcmp(op_string, "<=") == 0 && operation == "sle")
+                    {
+                        std::cout << "find <=" << std::endl;
+                        flag = 1;
+                    }
+                    if (strcmp(op_string, ">") == 0 && operation == "sgt")
+                    {
+                        std::cout << "find >" << std::endl;
+                        flag = 1;
+                    }
+                    if (strcmp(op_string, ">=") == 0 && operation == "sge")
+                    {
+                        std::cout << "find >=" << std::endl;
+                        flag = 1;
+                    }
+                    if (flag == 1)
+                    {
+                        // 找到这个 condition 所在的 scope 信息，以及它所
+                        // dominate 的 scope 信息（对于 if，可以进一步找 else 的
+                        // scope 信息）
+                        CXCursor scope = clang_getCursorSemanticParent(parent);
+                        CXString scope_name = clang_getCursorSpelling(scope);
+                        std::cout << "The condition is in the scope of "
+                                  << clang_getCString(scope_name) << ".\n";
+          
+                        CXSourceRange range = clang_getCursorExtent(parent);
+                        CXSourceLocation startLoc = clang_getRangeStart(range);
+                        CXSourceLocation endLoc = clang_getRangeEnd(range);
+                        unsigned startLine, startColumn, endLine, endColumn;
+                        clang_getSpellingLocation(startLoc, NULL, &startLine,
+                                                  &startColumn, NULL);
+                        clang_getSpellingLocation(endLoc, NULL, &endLine,
+                                                  &endColumn, NULL);
+                        std::cout << "The scope starts from line " << startLine
+                                  << ", column " << startColumn << "\n";
+                        std::cout << "The scope ends at line " << endLine
+                                  << ", column " << endColumn << "\n";
+                    }
+                    clang_disposeString(op_name);
                 }
+                clang_disposeTokens(TU, tokens, numTokens);
             }
         }
         clang_disposeString(current_display_name);
