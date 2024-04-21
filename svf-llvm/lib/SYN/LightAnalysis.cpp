@@ -47,7 +47,7 @@ void LightAnalysis::findNodeOnTree(unsigned int target_line, int order_number,
     }
     else if (order_number == 1)
     {
-        VisitorData data{order_number, target_line, functionName };
+        VisitorData data{order_number, target_line, functionName};
         clang_visitChildren(cursor, &astVisitor, &data);
     }
 }
@@ -70,7 +70,7 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
     int order_number = data->order_number;
     switch (order_number)
     {
-    case 0:{
+    case 0: {
         unsigned int target_line = data->target_line;
         std::string functionName = data->functionName;
         std::cout << "Function name: " << functionName << "\n";
@@ -113,7 +113,7 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
         clang_disposeString(current_display_name);
         break;
     }
-    case 1:{
+    case 1: {
         unsigned int target_line = data->target_line;
         std::string operation = data->functionName;
         if (line == target_line)
@@ -121,25 +121,35 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
             if (static_cast<CXCursorKind>(clang_getCursorKind(curCursor)) ==
                 CXCursor_BinaryOperator)
             {
-                CXString cursor_name = clang_getCursorSpelling(curCursor);
-                std::string current_operation = clang_getCString(cursor_name);
-                if (current_operation == operation)
+                // | |-BinaryOperator 0x8947cd0 <line:7:9, col:13> 'int' '<'
+                if (operation == "slt")
                 {
-                    std::cout
-                        << "Operation matches with the target operation.\n";
-                    // 找到这个 branch 所处的 scope 信息（大括号）
-                    CXCursor scope = clang_getCursorSemanticParent(curCursor);
-                    CXString scope_name = clang_getCursorSpelling(scope);
-                    std::cout << "The branch is in the scope of "
-                              << clang_getCString(scope_name) << ".\n";
+                    // 打印"<"
+                    CXSourceRange range = clang_getCursorExtent(curCursor);
+                    CXToken* tokens = 0;
+                    unsigned int numTokens = 0;
+                    CXTranslationUnit TU =
+                        clang_Cursor_getTranslationUnit(curCursor);
+                    clang_tokenize(TU, range, &tokens, &numTokens);
+                    if (numTokens > 1)
+                    {
+                        CXString op_name =
+                            clang_getTokenSpelling(TU, tokens[1]);
+                        if (strcmp(clang_getCString(op_name), "<") == 0)
+                        {
+                            std::cout << "<"
+                                      << "\n";
+                        }
+                        clang_disposeString(op_name);
+                    }
+                    clang_disposeTokens(TU, tokens, numTokens);
                 }
-                clang_disposeString(cursor_name);
             }
         }
         clang_disposeString(current_display_name);
         break;
     }
-    default:{
+    default: {
         break;
     }
     }
