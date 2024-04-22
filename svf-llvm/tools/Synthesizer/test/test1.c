@@ -22,5 +22,9 @@ int main()
     int c = fib(a + b);
     int d=c;
     d= fib(5);
+    int m=5;
+    while (a<m){
+        a=a+1;
+    }
     return c;
 }

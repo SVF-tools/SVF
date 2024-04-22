@@ -95,7 +95,7 @@ void traverseOnSVFStmt(const ICFGNode* node)
             std::string::size_type pos = m.find("\"ln\":");
             unsigned int num =
                 std::stoi(m.substr(pos + 5, m.find(",") - pos - 5));
-            printf("num = %d\n", num);
+       //     printf("num = %d\n", num);
             std::regex re("@(\\w+)\\((.+)\\)");
             std::smatch match;
             std::string functionName;
@@ -126,14 +126,14 @@ void traverseOnSVFStmt(const ICFGNode* node)
             SVFValue* branchValue =
                 const_cast<SVFValue*>(branchVar->getValue());
             std::string location = branchValue->getSourceLoc();
-            std::cout << location << std::endl;
+         //   std::cout << location << std::endl;
             std::string::size_type pos = location.find("\"ln\":");
             unsigned int num = std::stoi(
                 location.substr(pos + 5, location.find(",") - pos - 5));
-            printf("num = %d\n", num);
+       //     printf("num = %d\n", num);
             SVFVar* conditionVar = const_cast<SVFVar*>(branch->getCondition());
             std::string conditionstring = conditionVar->getValue()->toString();
-            std::cout << conditionstring << std::endl;
+      //      std::cout << conditionstring << std::endl;
             //   %5 = icmp slt i32 %4, 0, !dbg !17 { "ln": 7, "cl": 11, "fl":
             //   "test1.c" }
             std::size_t icmpPos = conditionstring.find("icmp");
@@ -144,7 +144,7 @@ void traverseOnSVFStmt(const ICFGNode* node)
                     conditionstring.find(" ", spacePos + 1);
                 std::string operation = conditionstring.substr(
                     spacePos + 1, nextSpacePos - spacePos - 1);
-                std::cout << operation << std::endl;
+         //       std::cout << operation << std::endl;
                 // 创建空的vector
                 std::vector<std::string> parameters = {};
                 lightAnalysis->findNodeOnTree(num, branch_order, operation,
@@ -179,9 +179,9 @@ int main(int argc, char** argv)
     assert(pag && "pag cannot be nullptr!");
 
     auto str = SOURCEPATH();
-    auto lightAnalysis = new LightAnalysis(str);
+  //  auto lightAnalysis = new LightAnalysis(str);
 
-    lightAnalysis->runOnSrc();
+  //  lightAnalysis->runOnSrc();
     ICFG* icfg = pag->getICFG();
 
     for (const auto& it : *icfg)

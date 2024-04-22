@@ -56,35 +56,30 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
                                                   CXCursor parent,
                                                   CXClientData client_data)
 {
-
-    CXString current_display_name = clang_getCursorDisplayName(curCursor);
-    auto str = clang_getCString(current_display_name);
-    std::cout << "Visiting element " << str << "\n";
     CXSourceLocation loc = clang_getCursorLocation(curCursor);
     unsigned int line, column;
     CXFile file;
     clang_getSpellingLocation(loc, &file, &line, &column, nullptr);
-    std::cout << "Visiting element " << str << " at line " << line
-              << ", column " << column << "\n";
     VisitorData* data = static_cast<VisitorData*>(client_data);
-    int order_number = data->order_number;
-    switch (order_number)
+    unsigned int target_line = data->target_line;
+    if (line == target_line)
     {
-    case 0: {
-        unsigned int target_line = data->target_line;
-        std::string functionName = data->functionName;
-        std::cout << "Function name: " << functionName << "\n";
-        std::vector<std::string> parameters = data->parameters;
-        std::cout << "Parameters: ";
-        for (auto& parameter : parameters)
+        int order_number = data->order_number;
+        switch (order_number)
         {
-            std::cout << parameter << " ";
-        }
-        if (line == target_line)
-        {
+        case 0: {
+
             if (static_cast<CXCursorKind>(clang_getCursorKind(curCursor)) ==
                 CXCursor_CallExpr)
             {
+                std::string functionName = data->functionName;
+                std::cout << "Function name: " << functionName << "\n";
+                std::vector<std::string> parameters = data->parameters;
+                std::cout << "Parameters: ";
+                for (auto& parameter : parameters)
+                {
+                    std::cout << parameter << " ";
+                }
                 CXString cursor_name = clang_getCursorSpelling(curCursor);
                 std::string current_function_name =
                     clang_getCString(cursor_name);
@@ -101,27 +96,39 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
                         std::cout << "Variable " << clang_getCString(var_name)
                                   << " is defined here.\n";
                     }
-                    // 打印 scope 信息
-                    CXCursor scope = clang_getCursorSemanticParent(parent);
-                    CXString scope_name = clang_getCursorSpelling(scope);
-                    std::cout << "The call site is in the scope of "
-                              << clang_getCString(scope_name) << ".\n";
+                    auto temp_parent = parent;
+                    while (static_cast<CXCursorKind>(clang_getCursorKind(
+                               temp_parent)) != CXCursor_CompoundStmt &&
+                           static_cast<CXCursorKind>(clang_getCursorKind(
+                               temp_parent)) != CXCursor_FunctionDecl)
+                    {
+                        temp_parent = clang_getCursorSemanticParent(temp_parent);
+                    }
+                  
+
+                    CXSourceRange scope_range = clang_getCursorExtent(temp_parent);
+                    CXSourceLocation startLoc =
+                        clang_getRangeStart(scope_range);
+                    CXSourceLocation endLoc = clang_getRangeEnd(scope_range);
+                    unsigned startLine, startColumn, endLine, endColumn;
+                    clang_getSpellingLocation(startLoc, NULL, &startLine,
+                                              &startColumn, NULL);
+                    clang_getSpellingLocation(endLoc, NULL, &endLine,
+                                              &endColumn, NULL);
+                    std::cout << "The scope starts from line " << startLine
+                              << ", column " << startColumn << "\n";
+                    std::cout << "The scope ends at line " << endLine
+                              << ", column " << endColumn << "\n";
                 }
                 clang_disposeString(cursor_name);
             }
+            break;
         }
-        clang_disposeString(current_display_name);
-        break;
-    }
-    case 1: {
-        unsigned int target_line = data->target_line;
-        std::string operation = data->functionName;
-        if (line == target_line)
-        {
+        case 1: {
+            std::string operation = data->functionName;
             if (static_cast<CXCursorKind>(clang_getCursorKind(curCursor)) ==
                 CXCursor_BinaryOperator)
             {
-                // | |-BinaryOperator 0x8947cd0 <line:7:9, col:13> 'int' '<'
                 CXSourceRange range = clang_getCursorExtent(curCursor);
                 CXToken* tokens = 0;
                 unsigned int numTokens = 0;
@@ -154,16 +161,14 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
                         std::cout << "find >=" << std::endl;
                         flag = 1;
                     }
-                    if (flag == 1)
+                    if (flag == 1 &&
+                        static_cast<CXCursorKind>(
+                            clang_getCursorKind(parent)) == CXCursor_IfStmt)
                     {
                         // 找到这个 condition 所在的 scope 信息，以及它所
                         // dominate 的 scope 信息（对于 if，可以进一步找 else 的
                         // scope 信息）
-                        CXCursor scope = clang_getCursorSemanticParent(parent);
-                        CXString scope_name = clang_getCursorSpelling(scope);
-                        std::cout << "The condition is in the scope of "
-                                  << clang_getCString(scope_name) << ".\n";
-          
+
                         CXSourceRange range = clang_getCursorExtent(parent);
                         CXSourceLocation startLoc = clang_getRangeStart(range);
                         CXSourceLocation endLoc = clang_getRangeEnd(range);
@@ -172,24 +177,43 @@ enum CXChildVisitResult LightAnalysis::astVisitor(CXCursor curCursor,
                                                   &startColumn, NULL);
                         clang_getSpellingLocation(endLoc, NULL, &endLine,
                                                   &endColumn, NULL);
-                        std::cout << "The scope starts from line " << startLine
-                                  << ", column " << startColumn << "\n";
-                        std::cout << "The scope ends at line " << endLine
+                        std::cout << "The if scope starts from line "
+                                  << startLine << ", column " << startColumn
+                                  << "\n";
+                        std::cout << "The if scope ends at line " << endLine
+                                  << ", column " << endColumn << "\n";
+                    }
+                    else if (flag == 1 && static_cast<CXCursorKind>(
+                                              clang_getCursorKind(parent)) ==
+                                              CXCursor_WhileStmt)
+                    {
+                        // 找到这个 condition 所在的 scope 信息，以及它所
+                        // dominate 的 scope 信息
+                        CXSourceRange range = clang_getCursorExtent(parent);
+                        CXSourceLocation startLoc = clang_getRangeStart(range);
+                        CXSourceLocation endLoc = clang_getRangeEnd(range);
+                        unsigned startLine, startColumn, endLine, endColumn;
+                        clang_getSpellingLocation(startLoc, NULL, &startLine,
+                                                  &startColumn, NULL);
+                        clang_getSpellingLocation(endLoc, NULL, &endLine,
+                                                  &endColumn, NULL);
+                        std::cout << "The while scope starts from line "
+                                  << startLine << ", column " << startColumn
+                                  << "\n";
+                        std::cout << "The while scope ends at line " << endLine
                                   << ", column " << endColumn << "\n";
                     }
                     clang_disposeString(op_name);
                 }
                 clang_disposeTokens(TU, tokens, numTokens);
             }
+            break;
         }
-        clang_disposeString(current_display_name);
-        break;
+        default: {
+            break;
+        }
+        }
     }
-    default: {
-        break;
-    }
-    }
-
     return CXChildVisit_Recurse;
 }
 
