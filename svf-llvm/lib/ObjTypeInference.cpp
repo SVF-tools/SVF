@@ -263,7 +263,8 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                           infer site -> %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %6, i32 0, i32 0, !dbg !50
                          */
                         const Value *gepBase = gepInst->getPointerOperand();
-                        if(const auto *load = SVFUtil::dyn_cast<LoadInst>(gepBase)){
+                        if(const auto *load = SVFUtil::dyn_cast<LoadInst>(gepBase))
+                        {
                             for (const auto &loadUse: load->getPointerOperand()->users())
                             {
                                 if (loadUse == load || !SVFUtil::isa<LoadInst>(loadUse))
@@ -280,7 +281,9 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                                     }
                                 }
                             }
-                        } else if (const auto *alloc = SVFUtil::dyn_cast<AllocaInst>(gepBase)) {
+                        }
+                        else if (const auto *alloc = SVFUtil::dyn_cast<AllocaInst>(gepBase))
+                        {
                             /*
                               %2 = alloca %struct.ll, align 8
                               store i32 0, ptr %1, align 4
