@@ -754,7 +754,9 @@ void VFG::connectDirectVFGEdges()
                 continue;
             /// for all other cases, like copy/gep/load/ret, connect the RHS pointer to its def
             if (stmtNode->getPAGSrcNode()->isConstDataOrAggDataButNotNullPtr() == false)
-                addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()), nodeId);
+                // for ptr only vfg, check whether src node is interested
+                if(isInterestedPAGNode(stmtNode->getPAGSrcNode()))
+                    addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()), nodeId);
             if (const GepStmt* gepStmt = SVFUtil::dyn_cast<GepStmt>(stmtNode->getPAGEdge()))
             {
                 for (const auto &varType: gepStmt->getOffsetVarAndGepTypePairVec())
