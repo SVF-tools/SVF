@@ -133,9 +133,9 @@ jobs:
             cd $GITHUB_WORKSPACE
 
       # publish svf
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
-          node-version: 12
+          node-version: 18
           registry-url: https://registry.npmjs.org/
       - name: publish-svf
         if: |
