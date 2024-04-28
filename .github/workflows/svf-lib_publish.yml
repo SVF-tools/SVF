@@ -26,11 +26,11 @@ jobs:
         if: runner.os == 'macOS'
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: 14.3.1
+          xcode-version: 15.3.0
       - name: mac-setup-workaround
         if: runner.os == 'macOS'
         run: |
-          ln -sfn /Applications/Xcode_14.2.0.app /Applications/Xcode.app
+          ln -sfn /Applications/Xcode_15.3.0.app /Applications/Xcode.app
           brew install astyle
       - name: ubuntu-setup
         if: runner.os == 'Linux'
