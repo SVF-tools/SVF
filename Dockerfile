@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:23.04
 
 # Stop ubuntu-20 interactive options.
 ENV DEBIAN_FRONTEND noninteractive
@@ -13,7 +13,7 @@ ENV llvm_version=16.0.0
 ENV HOME=/home/SVF-tools
 
 # Define dependencies.
-ENV lib_deps="cmake g++ gcc git zlib1g-dev libncurses5-dev libtinfo6 build-essential libssl-dev libpcre2-dev zip vim"
+ENV lib_deps="cmake g++ gcc git zlib1g-dev libncurses5-dev libtinfo5 build-essential libssl-dev libpcre2-dev zip vim"
 ENV build_deps="wget xz-utils git gdb tcl python-is-python3"
 
 # Fetch dependencies.
