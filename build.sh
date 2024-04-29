@@ -20,9 +20,8 @@ LLVMVer=${MajorLLVMVer}.0.0
 UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-aarch64-linux-gnu.tar.xz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
-MacZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-osx-10.14.6.zip"
-MacArmZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.9.1/z3-4.9.1-arm64-osx-11.0.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
+UbuntuZ3Arm="https://github.com/SVF-tools/SVF-npm/archive/refs/tags/libz3-aarch64-4.8.7.zip"
 SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 
 # Keep LLVM version suffix for version checking and better debugging
@@ -151,16 +150,14 @@ OSDisplayName=""
 if [[ $sysOS == "Darwin" ]]; then
     check_and_install_brew
     if [[ "$arch" == "arm64" ]]; then
-        urlZ3="$MacArmZ3"
         OSDisplayName="macOS arm64"
     else
-        urlZ3="$MacZ3"
         OSDisplayName="macOS x86"
     fi
 elif [[ $sysOS == "Linux" ]]; then
     if [[ "$arch" == "aarch64" ]]; then
         urlLLVM="$UbuntuArmLLVM"
-        urlZ3="z3 does not have x86 arm pre-built libs"
+        urlZ3="$UbuntuZ3Arm"
         OSDisplayName="Ubuntu arm64"
     else
         urlLLVM="$UbuntuLLVM"
@@ -208,21 +205,25 @@ fi
 if [[ ! -d "$Z3_DIR" ]]; then
     if [[ ! -d "$Z3Home" ]]; then
         # M1 Macs give back arm64, some Linuxes can give aarch64.
-        if [[ "$sysOS" = "Linux" && "$arch" = "aarch64" ]]; then
-            # only linux arm build from source
-            build_z3_from_source
+        if [[ "$sysOS" = "Darwin" ]]; then
+            echo "Downloading Z3 binary for $OSDisplayName"
+            brew install z3
+            if [ $? -eq 0 ]; then
+		      echo "z3 binary installation completed."
+	        else
+		      echo "z3 binary installation failed."
+		      exit 1
+	        fi
+            mkdir -p $SVFHOME/$Z3Home
+            ln -s $(brew --prefix z3)/* $SVFHOME/$Z3Home
         else
-            # everything else downloads pre-built lib includ osx "arm64"
+            # everything else downloads pre-built lib
             echo "Downloading Z3 binary for $OSDisplayName"
             generic_download_file "$urlZ3" z3.zip
             check_unzip
             echo "Unzipping z3 package..."
             unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
             rm z3.zip
-            if [[ "$sysOS" == "Darwin" ]]; then
-              # Fix missing rpath information in libz3
-              install_name_tool -id @rpath/libz3.dylib "$Z3Home/bin/libz3.dylib"
-            fi
         fi
     fi
 
