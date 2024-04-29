@@ -13,8 +13,8 @@ ENV llvm_version=16.0.0
 ENV HOME=/home/SVF-tools
 
 # Define dependencies.
-ENV lib_deps="cmake g++-8 gcc-8 git zlib1g-dev libncurses5-dev libtinfo5 build-essential libssl-dev libpcre2-dev zip vim"
-ENV build_deps="wget xz-utils git gdb tcl python"
+ENV lib_deps="cmake g++ gcc git zlib1g-dev libncurses5-dev libtinfo5 build-essential libssl-dev libpcre2-dev zip vim"
+ENV build_deps="wget xz-utils git gdb tcl python2"
 
 # Fetch dependencies.
 RUN apt-get update --fix-missing
