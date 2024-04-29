@@ -21,7 +21,7 @@ UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
-UbuntuZ3Arm="https://github.com/SVF-tools/SVF-npm/archive/refs/tags/libz3-aarch64-4.8.7.zip"
+UbuntuZ3Arm="https://github.com/SVF-tools/SVF-npm/blob/prebuilt-libs/z3-4.8.7-aarch64-ubuntu.zip"
 SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 
 # Keep LLVM version suffix for version checking and better debugging
