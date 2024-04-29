@@ -21,6 +21,7 @@ UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVMVer}/clang+llvm-${LLVMVer}-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
 SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-${LLVMVer}.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
+UbuntuZ3Arm="https://github.com/bjjwwang/z3-aarch64/archive/refs/tags/4.8.7.zip"
 SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 
 # Keep LLVM version suffix for version checking and better debugging
@@ -156,7 +157,7 @@ if [[ $sysOS == "Darwin" ]]; then
 elif [[ $sysOS == "Linux" ]]; then
     if [[ "$arch" == "aarch64" ]]; then
         urlLLVM="$UbuntuArmLLVM"
-        urlZ3="z3 does not have x86 arm pre-built libs"
+        urlZ3="$UbuntuZ3Arm"
         OSDisplayName="Ubuntu arm64"
     else
         urlLLVM="$UbuntuLLVM"
@@ -204,10 +205,7 @@ fi
 if [[ ! -d "$Z3_DIR" ]]; then
     if [[ ! -d "$Z3Home" ]]; then
         # M1 Macs give back arm64, some Linuxes can give aarch64.
-        if [[ "$sysOS" = "Linux" && "$arch" = "aarch64" ]]; then
-            # only linux arm build from source
-            build_z3_from_source
-        elif [[ "$sysOS" = "Darwin" ]]; then
+        if [[ "$sysOS" = "Darwin" ]]; then
             echo "Downloading Z3 binary for $OSDisplayName"
             brew install z3
             if [ $? -eq 0 ]; then
