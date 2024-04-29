@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Stop ubuntu-20 interactive options.
 ENV DEBIAN_FRONTEND noninteractive
