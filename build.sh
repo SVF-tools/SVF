@@ -205,15 +205,7 @@ fi
 if [[ ! -d "$Z3_DIR" ]]; then
     if [[ ! -d "$Z3Home" ]]; then
         # M1 Macs give back arm64, some Linuxes can give aarch64.
-        if [[ "$sysOS" = "Linux" && "$arch" = "aarch64" ]]; then
-            # only linux arm build from source
-            echo "Downloading Z3 binary for $OSDisplayName"
-            generic_download_file "$urlZ3" z3.zip
-            check_unzip
-            echo "Unzipping z3 package..."
-            unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
-            rm z3.zip
-        elif [[ "$sysOS" = "Darwin" ]]; then
+        if [[ "$sysOS" = "Darwin" ]]; then
             echo "Downloading Z3 binary for $OSDisplayName"
             brew install z3
             if [ $? -eq 0 ]; then
