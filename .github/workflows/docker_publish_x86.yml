@@ -5,7 +5,7 @@ on:
     branches: [ master ]
 
 jobs:
-  docker-publish:
+  docker-x86-image:
     if: github.repository == 'SVF-tools/SVF'
     runs-on: ubuntu-latest
 
