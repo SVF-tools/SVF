@@ -106,20 +106,12 @@ static std::string getFilePath(const std::string& path)
     else if (path.compare("npm root") == 0)
     {
         bcFilePath = GetStdoutFromCommand(path);
-        // SVF installed via npm needs to determine the type of operating
-        // system, otherwise the extapi.bc path may not be found.
-#ifdef linux
-        // Linux os
-        bcFilePath.append("/svf-lib/SVF-linux");
-#else
-        // Mac os
-        bcFilePath.append("/svf-lib/SVF-osx");
-#endif
+        bcFilePath.append("/SVF");
     }
 
     if (!bcFilePath.empty() && bcFilePath.back() != '/')
         bcFilePath.push_back('/');
-    bcFilePath.append(SVF_BUILD_TYPE "-build").append("/svf-llvm/extapi.bc");
+    bcFilePath.append(SVF_BUILD_TYPE "-build").append("/lib/extapi.bc");
     return bcFilePath;
 }
 
