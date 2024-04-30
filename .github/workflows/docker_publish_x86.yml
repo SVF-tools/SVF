@@ -27,16 +27,6 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{secrets.DOCKER_USER}}/svf:latest
-          platforms: linux/amd64
-
-      - name: Build and push arm image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{secrets.DOCKER_USER}}/svf:latest-aarch64
-          platforms: linux/arm64
           
   dispatch:
       needs: docker-publish
