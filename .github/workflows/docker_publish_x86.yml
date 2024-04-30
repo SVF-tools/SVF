@@ -27,6 +27,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{secrets.DOCKER_USER}}/svf:latest
+          platforms: linux/amd64
           
   dispatch:
       needs: docker-x86-image
