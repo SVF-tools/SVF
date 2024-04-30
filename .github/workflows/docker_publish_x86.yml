@@ -29,7 +29,7 @@ jobs:
           tags: ${{secrets.DOCKER_USER}}/svf:latest
           
   dispatch:
-      needs: docker-publish
+      needs: docker-x86-image
       runs-on: ubuntu-latest
       strategy: 
         matrix:
