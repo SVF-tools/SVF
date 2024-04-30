@@ -13,7 +13,7 @@ ENV llvm_version=16.0.0
 ENV HOME=/home/SVF-tools
 
 # Define dependencies.
-ENV lib_deps="cmake g++ gcc git zlib1g-dev libncurses5-dev libtinfo5 build-essential libssl-dev libpcre2-dev zip vim"
+ENV lib_deps="cmake g++ gcc git zlib1g-dev libncurses5-dev libtinfo5 build-essential libssl-dev libpcre2-dev zip vim libzstd-dev"
 ENV build_deps="wget xz-utils git gdb tcl python-is-python3"
 
 # Fetch dependencies.
