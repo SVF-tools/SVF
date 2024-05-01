@@ -34,3 +34,4 @@ ENV PATH=${HOME}/SVF/llvm-$llvm_version.obj/bin:$PATH
 ENV SVF_DIR=${HOME}/SVF
 ENV LLVM_DIR=${HOME}/SVF/llvm-$llvm_version.obj
 ENV Z3_DIR=${HOME}/SVF/z3.obj
+RUN ln -s ${Z3_DIR}/bin/libz3.so ${Z3_DIR}/bin/libz3.so.4
