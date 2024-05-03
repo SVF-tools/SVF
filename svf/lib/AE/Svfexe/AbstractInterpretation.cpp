@@ -1053,8 +1053,8 @@ void AEStat::reportBug()
     f << "---------------------------------------------\n";
     for (auto& it: _ae->_nodeToBugInfo)
     {
-        std::cerr << it.second << "---------------------------------------------\n";
-        f << it.second << "---------------------------------------------\n";
+        std::cerr << it.second << "\n---------------------------------------------\n";
+        f << it.second << "\n---------------------------------------------\n";
     }
 }
 
@@ -1103,7 +1103,7 @@ void AbstractInterpretation::initExtFunMap()
         as[arg0].getInterval().meet_with(IntervalValue(1, 1));
         if (as[arg0].getInterval().equals(IntervalValue(1, 1)))
         {
-            SVFUtil::outs() << SVFUtil::sucMsg("The assertion is successfully verified!!\n");
+            SVFUtil::errs() << SVFUtil::sucMsg("The assertion is successfully verified!!\n");
         }
         else
         {

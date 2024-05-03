@@ -403,7 +403,7 @@ public:
         }
 
         // when add a bug, also print it to terminal
-        newBug->printBugToTerminal();
+        //newBug->printBugToTerminal();
     }
 
     /*
