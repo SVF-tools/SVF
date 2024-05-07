@@ -4,7 +4,7 @@
 // Directory structure of SVF source tree (could be moved)
 #define SVF_ROOT_DIR "@SVF_SOURCE_DIR@"
 #define SVF_SOURCE_DIR "@SVF_SOURCE_DIR@"
-#define SVF_BUILD_DIR "@CMAKE_CURRENT_BINARY_DIR@"
+#define SVF_BUILD_DIR "@CMAKE_BINARY_DIR@"
 
 // Expose the root directory SVF is installed to
 #define SVF_INSTALL_ROOT "@CMAKE_INSTALL_PREFIX@"

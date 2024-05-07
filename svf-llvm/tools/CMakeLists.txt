@@ -8,15 +8,28 @@ add_subdirectory(LLVM2SVF)
 add_subdirectory(AE)
 
 set_target_properties(
-    cfl dvf svf-ex llvm2svf mta saber wpa ae
-    PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
+    cfl
+    dvf
+    svf-ex
+    llvm2svf
+    mta
+    saber
+    wpa
+    ae
+    PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+               ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+               RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 install(
-    TARGETS cfl dvf svf-ex llvm2svf mta saber wpa ae
+    TARGETS cfl
+            dvf
+            svf-ex
+            llvm2svf
+            mta
+            saber
+            wpa
+            ae
     EXPORT SVFTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})

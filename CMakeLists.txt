@@ -75,8 +75,8 @@ message(STATUS "Using CMake build configuration:
         CMake C compiler:                             ${CMAKE_C_COMPILER_ID}
         CMake C++ compiler:                           ${CMAKE_CXX_COMPILER_ID}
         CMake current list directory:                 ${CMAKE_CURRENT_LIST_DIR}
-        CMake current source directory:               ${CMAKE_CURRENT_SOURCE_DIR}
-        CMake current binary directory:               ${CMAKE_CURRENT_BINARY_DIR}
+        CMake current source directory:               ${CMAKE_SOURCE_DIR}
+        CMake current binary directory:               ${CMAKE_BINARY_DIR}
         CMake install directory prefix:               ${CMAKE_INSTALL_PREFIX}")
 
 # =================================================================================
@@ -141,11 +141,11 @@ include_directories(SYSTEM ${Z3_INCLUDES})
 # =================================================================================
 
 # Create config.h based on config.in; export to <build_dir>/include/Util/config.h
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
-configure_file(.config.in ${CMAKE_CURRENT_BINARY_DIR}/include/Util/config.h)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
+configure_file(.config.in ${CMAKE_BINARY_DIR}/include/Util/config.h)
 
 # Ensure the include directory in the build tree is exposed/available during building
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+include_directories(${CMAKE_BINARY_DIR}/include)
 
 # =================================================================================
 # Test suite configuration & build
@@ -179,7 +179,7 @@ add_compile_definitions($<IF:$<BOOL:${SVF_ENABLE_RTTI}>,,-fno-rtti>
 
 # Generate SVFConfig.cmake
 configure_package_config_file(
-    .config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake
+    .config.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake
     INSTALL_DESTINATION ${SVF_INSTALL_LIBDIR}/cmake/SVF
     PATH_VARS SVF_SOURCE_DIR
               SVF_CORE_ROOT
@@ -197,20 +197,19 @@ configure_package_config_file(
 
 # Generate SVFConfigVersion.cmake
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake
+    ${CMAKE_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake
     VERSION "${SVF_VERSION_MAJOR}.${SVF_VERSION_MINOR}"
     COMPATIBILITY AnyNewerVersion)
 
 # Install generated configuration header (see `configure_file()`) to top-level include dir of SVF
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/Util)
+install(FILES ${CMAKE_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/Util)
 
 # Install above CMake files as part of installation
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake
-              ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake
+install(FILES ${CMAKE_BINARY_DIR}/lib/cmake/SVF/SVFConfig.cmake ${CMAKE_BINARY_DIR}/lib/cmake/SVF/SVFConfigVersion.cmake
         DESTINATION ${SVF_INSTALL_LIBDIR}/cmake/SVF)
 
 # Export the targets so that SvfCore & SvfLLVM are available after find_package(SVF)
-export(EXPORT SVFTargets FILE ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/SVF/SVFTargets.cmake)
+export(EXPORT SVFTargets FILE ${CMAKE_BINARY_DIR}/lib/cmake/SVF/SVFTargets.cmake)
 
 # Make sure to also install the SVFTargets.cmake file to the installation directory
 install(
