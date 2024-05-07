@@ -7,5 +7,4 @@ target_sources(
            BASE_DIRS
            ${SVF_LLVM_INCLUDES}
            FILES
-           ${SVF_LLVM_HEADERS}
-)
+           ${SVF_LLVM_HEADERS})

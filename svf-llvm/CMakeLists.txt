@@ -5,11 +5,8 @@ find_package(
     CONFIG
     HINTS
     ${LLVM_DIR}
-    $ENV{LLVM_DIR}
-)
-message(
-    STATUS
-        "LLVM STATUS:
+    $ENV{LLVM_DIR})
+message(STATUS "LLVM STATUS:
         Version       ${LLVM_VERSION}
         Definitions   ${LLVM_DEFINITIONS}
         Includes      ${LLVM_INCLUDE_DIRS}
@@ -18,14 +15,12 @@ message(
         Build type    ${LLVM_BUILD_TYPE}
         Exceptions    ${LLVM_ENABLE_EH}
         RTTI          ${LLVM_ENABLE_RTTI}
-        Dynamic lib   ${LLVM_LINK_LLVM_DYLIB}"
-)
+        Dynamic lib   ${LLVM_LINK_LLVM_DYLIB}")
 
 # Though not necessary, check if SVF is being built in debug mode & if that matches LLVM
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT ${LLVM_BUILD_TYPE} STREQUAL "Debug")
     message(NOTICE "Building SVF in debug-mode but LLVM was not built in debug-mode; "
-            "debug information could be incomplete when using SVF from LLVM"
-    )
+            "debug information could be incomplete when using SVF from LLVM")
 endif()
 
 # Add LLVM's include directories and link directory for all targets defined hereafter
@@ -36,12 +31,10 @@ add_definitions(${LLVM_DEFINITIONS})
 # Ensure SVF is built with RTTI/exception handling if the used LLVM instance has them enabled
 set(SVF_ENABLE_RTTI
     ${LLVM_ENABLE_RTTI}
-    PARENT_SCOPE
-)
+    PARENT_SCOPE)
 set(SVF_ENABLE_EXCEPTIONS
     ${LLVM_ENABLE_EH}
-    PARENT_SCOPE
-)
+    PARENT_SCOPE)
 
 # Check if LLVM was built generating the single libLLVM.so shared library file or as separate static libraries
 if(LLVM_LINK_LLVM_DYLIB)
@@ -71,8 +64,7 @@ else()
         scalaropts
         support
         target
-        transformutils
-    )
+        transformutils)
 endif()
 
 # Make the "add_llvm_library()" command available and configure LLVM/CMake
@@ -85,9 +77,10 @@ add_library(SVF::LLVM ALIAS SvfLLVM)
 set_target_properties(SvfLLVM PROPERTIES VERSION ${SVF_VERSION} SOVERSION ${SVF_VERSION_MAJOR})
 
 # Add the public headers as an include directory
-target_include_directories(
-    SvfLLVM PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:${SVF_INCLUDE_DIR}>
-)
+target_include_directories(SvfLLVM
+                           PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
+                                  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                                  $<INSTALL_INTERFACE:${SVF_INCLUDE_DIR}>)
 
 # Link LLVM's libraries to SvfLLVM, as well as the SVF core library
 target_link_libraries(SvfLLVM PUBLIC ${llvm_libs} SvfCore)
@@ -112,5 +105,4 @@ install(
     LIBRARY DESTINATION ${SVF_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${SVF_INSTALL_LIBDIR}
             FILE_SET HEADERS
-            DESTINATION ${SVF_INSTALL_INCLUDEDIR}
-)
+            DESTINATION ${SVF_INSTALL_INCLUDEDIR})
