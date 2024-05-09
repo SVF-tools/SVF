@@ -84,7 +84,7 @@ public:
     AbstractValue getByteOffset(const AbstractState& es, const GepStmt *gep);
 
     /// Return the offset expression of a GepStmt
-    AbstractValue getItvOfFlattenedElemIndex(const AbstractState& es, const GepStmt *gep);
+    AbstractValue getElementIndex(const AbstractState& es, const GepStmt *gep);
 
 
     static z3::context &getContext()
