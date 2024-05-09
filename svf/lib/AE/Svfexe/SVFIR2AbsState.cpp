@@ -463,14 +463,14 @@ AbstractValue SVFIR2AbsState::getByteOffset(const AbstractState& es, const GepSt
 }
 
 /**
- * This function, getItvOfFlattenedElemIndex, calculates the offset range as a pair
+ * This function, getElementIndex, calculates the offset range as a pair
  * of APOffset values for a given GepStmt.
  *
  * @param gep   The GepStmt representing the GetElementPtr instruction.
  *
  * @return      A pair of APOffset values representing the offset range.
  */
-AbstractValue SVFIR2AbsState::getItvOfFlattenedElemIndex(const AbstractState& es, const GepStmt *gep)
+AbstractValue SVFIR2AbsState::getElementIndex(const AbstractState& es, const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantOffset());
@@ -1010,7 +1010,7 @@ void SVFIR2AbsState::handleGep(AbstractState& es, const GepStmt *gep)
     if (!inVarToAddrsTable(es, rhs)) return;
     AbstractValue &rhsVal = es[rhs];
     assert(!rhsVal.getAddrs().empty());
-    AbstractValue offsetPair = getItvOfFlattenedElemIndex(es, gep);
+    AbstractValue offsetPair = getElementIndex(es, gep);
     if (!isVirtualMemAddress(*rhsVal.getAddrs().begin()))
         return;
     else

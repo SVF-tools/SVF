@@ -364,10 +364,10 @@ private:
 
 protected:
     // helper functions in handleCycle
-    bool widenFixpointPass(const ICFGNode* cycle_head,
-                           AbstractState& pre_es);
-    bool narrowFixpointPass(const ICFGNode* cycle_head,
-                            AbstractState& pre_es);
+    bool isFixPointAfterWidening(const ICFGNode* cycle_head,
+                           AbstractState& pre_as);
+    bool isFixPointAfterNarrowing(const SVF::ICFGNode* cycle_head,
+                                  SVF::AbstractState& pre_as);
 
     AbstractState& getAbsState(const ICFGNode* node)
     {
