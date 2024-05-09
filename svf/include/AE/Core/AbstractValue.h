@@ -28,6 +28,9 @@ namespace SVF
 
 class AbstractValue
 {
+
+public:
+
     enum DataType
     {
         IntervalType,
