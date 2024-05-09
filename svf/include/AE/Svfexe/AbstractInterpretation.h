@@ -365,7 +365,7 @@ private:
 protected:
     // helper functions in handleCycle
     bool isFixPointAfterWidening(const ICFGNode* cycle_head,
-                           AbstractState& pre_as);
+                                 AbstractState& pre_as);
     bool isFixPointAfterNarrowing(const SVF::ICFGNode* cycle_head,
                                   SVF::AbstractState& pre_as);
 
