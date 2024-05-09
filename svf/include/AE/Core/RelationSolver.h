@@ -63,19 +63,23 @@ public:
         return Z3Expr::getContext().int_const(std::to_string(varId).c_str());
     }
 
+    inline Z3Expr toRealVal(BoundedFloat f) const {
+        return Z3Expr::getContext().real_val(std::to_string(f.getFVal()).c_str());
+    }
+
     /* two optional solvers: RSY and bilateral */
 
     AbstractState bilateral(const AbstractState& domain, const Z3Expr &phi, u32_t descend_check = 0);
 
     AbstractState RSY(const AbstractState& domain, const Z3Expr &phi);
 
-    Map<u32_t, NumericLiteral> BoxedOptSolver(const Z3Expr& phi, Map<u32_t, NumericLiteral>& ret, Map<u32_t, NumericLiteral>& low_values, Map<u32_t, NumericLiteral>& high_values);
+    Map<u32_t, BoundedFloat> BoxedOptSolver(const Z3Expr& phi, Map<u32_t, BoundedFloat>& ret, Map<u32_t, BoundedFloat>& low_values, Map<u32_t, BoundedFloat>& high_values);
 
     AbstractState BS(const AbstractState& domain, const Z3Expr &phi);
 
-    void updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const NumericLiteral& value);
+    void updateMap(Map<u32_t, BoundedFloat>& map, u32_t key, const BoundedFloat& value);
 
-    void decide_cpa_ext(const Z3Expr &phi, Map<u32_t, Z3Expr>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&, Map<u32_t, NumericLiteral>&);
+    void decide_cpa_ext(const Z3Expr &phi, Map<u32_t, Z3Expr>&, Map<u32_t, BoundedFloat>&, Map<u32_t, BoundedFloat>&, Map<u32_t, BoundedFloat>&, Map<u32_t, BoundedFloat>&);
 };
 }
 

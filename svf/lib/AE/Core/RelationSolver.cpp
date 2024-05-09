@@ -253,7 +253,7 @@ AbstractState RelationSolver::beta(const Map<u32_t, s32_t>& sigma,
     return res;
 }
 
-void RelationSolver::updateMap(Map<u32_t, NumericLiteral>& map, u32_t key, const NumericLiteral& value)
+void RelationSolver::updateMap(Map<u32_t, BoundedFloat>& map, u32_t key, const BoundedFloat& value)
 {
     auto it = map.find(key);
     if (it == map.end())
@@ -275,8 +275,8 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
 
     // int infinity = (INT32_MAX) - 1;
     // int infinity = 20;
-    Map<u32_t, NumericLiteral> ret;
-    Map<u32_t, NumericLiteral> low_values, high_values;
+    Map<u32_t, BoundedFloat> ret;
+    Map<u32_t, BoundedFloat> low_values, high_values;
     Z3Expr new_phi = phi;
     /// init low, ret, high
     for (const auto& item: domain.getVarToVal())
@@ -318,14 +318,14 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
         if (item.first >= bias)
         {
             if (item.second.equal(infinity))
-                retInv[item.first - bias].getInterval().setLb(Z3Expr::getContext().int_const("-oo"));
+                retInv[item.first - bias].getInterval().setLb(BoundedFloat::minus_infinity());
             else
                 retInv[item.first - bias].getInterval().setLb(-item.second);
         }
         else
         {
             if (item.second.equal(infinity))
-                retInv[item.first].getInterval().setUb(Z3Expr::getContext().int_const("+oo"));
+                retInv[item.first].getInterval().setUb(BoundedFloat::plus_infinity());
             else
                 retInv[item.first].getInterval().setUb(item.second);
         }
@@ -333,11 +333,11 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
     return retInv;
 }
 
-Map<u32_t, NumericLiteral> RelationSolver::BoxedOptSolver(const Z3Expr& phi, Map<u32_t, NumericLiteral>& ret, Map<u32_t, NumericLiteral>& low_values, Map<u32_t, NumericLiteral>& high_values)
+Map<u32_t, BoundedFloat> RelationSolver::BoxedOptSolver(const Z3Expr& phi, Map<u32_t, BoundedFloat>& ret, Map<u32_t, BoundedFloat>& low_values, Map<u32_t, BoundedFloat>& high_values)
 {
     /// this is the S in the original paper
     Map<u32_t, Z3Expr> L_phi;
-    Map<u32_t, NumericLiteral> mid_values;
+    Map<u32_t, BoundedFloat> mid_values;
     while (1)
     {
         L_phi.clear();
@@ -346,9 +346,9 @@ Map<u32_t, NumericLiteral> RelationSolver::BoxedOptSolver(const Z3Expr& phi, Map
             Z3Expr v = toZ3Expr(item.first);
             if (low_values.at(item.first).leq(high_values.at(item.first)))
             {
-                NumericLiteral mid = (low_values.at(item.first) + (high_values.at(item.first) - low_values.at(item.first)) / 2);
+                BoundedFloat mid = (low_values.at(item.first) + (high_values.at(item.first) - low_values.at(item.first)) / 2);
                 updateMap(mid_values, item.first, mid);
-                Z3Expr expr = (mid.getExpr() <= v && v <= high_values.at(item.first).getExpr());
+                Z3Expr expr = (toRealVal(mid) <= v && v <= toRealVal(high_values.at(item.first)));
                 L_phi[item.first] = expr;
             }
         }
@@ -363,10 +363,10 @@ Map<u32_t, NumericLiteral> RelationSolver::BoxedOptSolver(const Z3Expr& phi, Map
 
 void RelationSolver::decide_cpa_ext(const Z3Expr& phi,
                                     Map<u32_t, Z3Expr>& L_phi,
-                                    Map<u32_t, NumericLiteral>& mid_values,
-                                    Map<u32_t, NumericLiteral>& ret,
-                                    Map<u32_t, NumericLiteral>& low_values,
-                                    Map<u32_t, NumericLiteral>& high_values)
+                                    Map<u32_t, BoundedFloat>& mid_values,
+                                    Map<u32_t, BoundedFloat>& ret,
+                                    Map<u32_t, BoundedFloat>& low_values,
+                                    Map<u32_t, BoundedFloat>& high_values)
 {
     while (1)
     {
@@ -397,14 +397,14 @@ void RelationSolver::decide_cpa_ext(const Z3Expr& phi,
                 // solution meets phi_id
                 if (solver.check() == z3::sat)
                 {
-                    updateMap(ret, id, NumericLiteral(value));
+                    updateMap(ret, id, BoundedFloat(value));
                     updateMap(low_values, id, ret.at(id) + 1);
 
-                    NumericLiteral mid = (low_values.at(id) + high_values.at(id) + 1) / 2;
+                    BoundedFloat mid = (low_values.at(id) + high_values.at(id) + 1) / 2;
                     updateMap(mid_values, id, mid);
                     Z3Expr v = toZ3Expr(id);
                     // Z3Expr v = Z3Expr::getContext().int_const(std::to_string(id).c_str());
-                    Z3Expr expr = (mid_values.at(id).getExpr() <= v && v <= high_values.at(id).getExpr());
+                    Z3Expr expr = (toRealVal(mid_values.at(id)) <= v && v <= toRealVal(high_values.at(id)));
                     L_phi[id] = expr;
                 }
                 solver.pop();

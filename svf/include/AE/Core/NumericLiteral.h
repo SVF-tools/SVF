@@ -97,13 +97,13 @@ public:
     /// Check if this is minus infinity
     inline bool is_minus_infinity() const
     {
-        return _n.is_minus_infinite();
+        return _n.is_minus_infinity();
     }
 
     /// Check if this is plus infinity
     inline bool is_plus_infinity() const
     {
-        return _n.is_plus_infinite();
+        return _n.is_plus_infinity();
     }
 
     /// Check if this is infinity (either of plus/minus)
