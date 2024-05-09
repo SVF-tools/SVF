@@ -720,7 +720,8 @@ void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
             {
                 if (incresing)
                 {
-                    bool is_fixpoint = widenFixpointPass(cycle_head, pre_es);
+                    bool is_fixpoint =
+                        isFixPointAfterWidening(cycle_head, pre_es);
                     if (is_fixpoint)
                     {
                         incresing = false;
@@ -729,7 +730,8 @@ void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
                 }
                 else if (!incresing)
                 {
-                    bool is_fixpoint = narrowFixpointPass(cycle_head, pre_es);
+                    bool is_fixpoint =
+                        isFixPointAfterNarrowing(cycle_head, pre_es);
                     if (is_fixpoint)
                         break;
                 }
@@ -754,46 +756,47 @@ void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
     }
 }
 
-bool AbstractInterpretation::widenFixpointPass(const ICFGNode* cycle_head,
-        AbstractState& pre_es)
+bool AbstractInterpretation::isFixPointAfterWidening(const ICFGNode* cycle_head,
+        AbstractState& pre_as)
 {
     // increasing iterations
-    AbstractState new_pre_es = pre_es.widening(_postAbsTrace[cycle_head]);
-    AbstractState new_pre_vaddr_es = new_pre_es;
+    AbstractState new_pre_as = pre_as.widening(_postAbsTrace[cycle_head]);
+    AbstractState new_pre_vaddr_as = new_pre_as;
     //_svfir2AbsState->widenAddrs(getCurState(), new_pre_es, _postAbsTrace[cycle_head]);
 
-    if (pre_es >= new_pre_es)
+    if (pre_as >= new_pre_as)
     {
         // increasing iterations - fixpoint reached
-        pre_es = new_pre_es;
-        _postAbsTrace[cycle_head] = pre_es;
+        pre_as = new_pre_as;
+        _postAbsTrace[cycle_head] = pre_as;
         return true;
     }
     else
     {
-        pre_es = new_pre_es;
-        _postAbsTrace[cycle_head] = pre_es;
+        pre_as = new_pre_as;
+        _postAbsTrace[cycle_head] = pre_as;
         return false;
     }
 }
 
-bool AbstractInterpretation::narrowFixpointPass(const SVF::ICFGNode *cycle_head, SVF::AbstractState&pre_es)
+bool AbstractInterpretation::isFixPointAfterNarrowing(
+    const SVF::ICFGNode* cycle_head, SVF::AbstractState& pre_as)
 {
     // decreasing iterations
-    AbstractState new_pre_es = pre_es.narrowing(_postAbsTrace[cycle_head]);
-    AbstractState new_pre_vaddr_es = new_pre_es;
+    AbstractState new_pre_as = pre_as.narrowing(_postAbsTrace[cycle_head]);
+    AbstractState new_pre_vaddr_as = new_pre_as;
     //_svfir2AbsState->narrowAddrs(getCurState(), new_pre_es, _postAbsTrace[cycle_head]);
-    if (new_pre_es >= pre_es)
+    if (new_pre_as >= pre_as)
     {
         // decreasing iterations - fixpoint reached
-        pre_es = new_pre_es;
-        _postAbsTrace[cycle_head] = pre_es;
+        pre_as = new_pre_as;
+        _postAbsTrace[cycle_head] = pre_as;
         return true;
     }
     else
     {
-        pre_es = new_pre_es;
-        _postAbsTrace[cycle_head] = pre_es;
+        pre_as = new_pre_as;
+        _postAbsTrace[cycle_head] = pre_as;
         return false;
     }
 }
