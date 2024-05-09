@@ -26,7 +26,7 @@
 namespace SVF
 {
 
-struct AbstractValue
+class AbstractValue
 {
     enum DataType
     {
