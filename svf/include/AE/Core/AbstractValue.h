@@ -122,6 +122,17 @@ struct AbstractValue
         }
         return *this;
     }
+
+    AbstractValue& operator=(const IntervalValue& other) {
+        type = IntervalType;
+        interval = other;
+    }
+
+    AbstractValue& operator=(const AddressValue& other) {
+        type = AddressType;
+        addr = other;
+    }
+
     AbstractValue operator==(const AbstractValue& other) const
     {
         assert(isInterval() && other.isInterval());
