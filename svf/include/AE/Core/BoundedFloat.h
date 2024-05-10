@@ -34,6 +34,8 @@
 #include <cmath>
 #include <cfloat> // For DBL_MAX
 
+
+#define epsilon 1e-6;
 namespace SVF
 {
 
@@ -60,6 +62,12 @@ public:
 
     BoundedFloat(BoundedFloat &&rhs) : _fVal(std::move(rhs._fVal)) {}
 
+
+    static bool floatEqual(float a, float b) {
+        if (std::isinf(a) && std::isinf(b))
+            return a == b;
+        return std::fabs(a - b) < epsilon;
+    }
 
     inline BoundedFloat &operator=(BoundedFloat &&rhs)
     {
@@ -109,17 +117,17 @@ public:
 
     bool is_zero() const
     {
-        return _fVal == 0.0f;
+        return floatEqual(_fVal, 0.0f);
     }
 
     static bool isZero(const BoundedFloat &expr)
     {
-        return expr._fVal == 0.0f;
+        return floatEqual(expr.getFVal(),0.0f);
     }
 
     bool equal(const BoundedFloat &rhs) const
     {
-        return _fVal == rhs._fVal;
+        return floatEqual(_fVal, rhs._fVal);
     }
 
     bool leq(const BoundedFloat &rhs) const
@@ -287,7 +295,7 @@ public:
      */
     static float safeMul(float lhs, float rhs)
     {
-        if (lhs == 0.0f || rhs == 0.0f)
+        if (floatEqual(lhs, 0.0f) || floatEqual(rhs, 0.0f))
             return 0.0f;
         float res = lhs * rhs;
         // Check if the result is positive infinity due to overflow
@@ -346,7 +354,7 @@ public:
     static float safeDiv(float lhs, float rhs)
     {
         // Check for division by zero
-        if (rhs == 0.0f)
+        if (floatEqual(rhs, 0.0f))
         {
             return (lhs >= 0.0f) ? std::numeric_limits<float>::infinity()
                               : -std::numeric_limits<float>::infinity();
@@ -484,7 +492,7 @@ public:
 
     friend bool eq(const BoundedFloat &lhs, const BoundedFloat &rhs)
     {
-        return lhs._fVal == rhs._fVal;
+        return floatEqual(lhs._fVal, rhs._fVal);
     }
 
     friend BoundedFloat min(const BoundedFloat &lhs, const BoundedFloat &rhs)
