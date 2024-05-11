@@ -67,6 +67,8 @@ public:
         return *this;
     }
 
+    virtual ~BoundedFloat() {}
+
 
     static bool floatEqual(float a, float b) {
         if (std::isinf(a) && std::isinf(b))
@@ -618,6 +620,8 @@ public:
     BoundedInt(const BoundedFloat& f) {
         _fVal = f.getFVal();
     }
+
+    virtual ~BoundedInt() {}
 
     inline const std::string to_string() const override
     {
