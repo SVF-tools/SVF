@@ -1,4 +1,4 @@
-//===- BoundedFloat.h ----Address Value Sets-------------------------//
+//===- NumericValue.h ----Numeric Value-------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -20,19 +20,20 @@
 //
 //===----------------------------------------------------------------------===//
 /*
- * BoundedFloat.h
+ * Numeri Value.h
  *
- *  Created on: Mar 20, 2023
- *      Author: Xiao Cheng
+ *  Created on: May 11, 2024
+ *      Author: Xiao Cheng, Jiawei Ren
  *
  */
 
-#ifndef SVF_BoundedFloat_H
-#define SVF_BoundedFloat_H
+#ifndef SVF_NUMERICVALUE_H
+#define SVF_NUMERICVALUE_H
 
 #include "SVFIR/SVFType.h"
 #include <cmath>
 #include <cfloat> // For DBL_MAX
+#include <utility>
 
 
 #define epsilon 1e-6;
@@ -40,11 +41,11 @@ namespace SVF
 {
 
 /*!
- * Atom Z3 expr for unlimited precision integers
+ * Bounded float numeric value
  */
 class BoundedFloat
 {
-private:
+protected:
 
     float _fVal;
 
@@ -54,25 +55,23 @@ public:
     BoundedFloat(float fVal) : _fVal(fVal) {}
 
     BoundedFloat(const BoundedFloat& rhs) : _fVal(rhs._fVal) {}
-    inline BoundedFloat& operator=(const BoundedFloat& rhs)
+    BoundedFloat& operator=(const BoundedFloat& rhs)
     {
         _fVal = rhs._fVal;
         return *this;
     }
 
     BoundedFloat(BoundedFloat &&rhs) : _fVal(std::move(rhs._fVal)) {}
+    BoundedFloat& operator=(BoundedFloat&& rhs) {
+        _fVal = std::move(rhs._fVal);
+        return *this;
+    }
 
 
     static bool floatEqual(float a, float b) {
         if (std::isinf(a) && std::isinf(b))
             return a == b;
         return std::fabs(a - b) < epsilon;
-    }
-
-    inline BoundedFloat &operator=(BoundedFloat &&rhs)
-    {
-        _fVal = std::move(rhs._fVal);
-        return *this;
     }
 
     const float getFVal() const {
@@ -357,7 +356,7 @@ public:
         if (floatEqual(rhs, 0.0f))
         {
             return (lhs >= 0.0f) ? std::numeric_limits<float>::infinity()
-                              : -std::numeric_limits<float>::infinity();
+                                 : -std::numeric_limits<float>::infinity();
         }
         float res = lhs / rhs;
         // Check if the result is positive infinity due to overflow
@@ -464,7 +463,7 @@ public:
         else
             return (s32_t) lhs.getNumeral() >> (s32_t) rhs.getNumeral();
     }
-    
+
     friend BoundedFloat operator<<(const BoundedFloat &lhs, const BoundedFloat &rhs)
     {
         assert(rhs.geq(0) && "rhs should be greater or equal than 0");
@@ -477,7 +476,7 @@ public:
         else
             return (s32_t) lhs.getNumeral() << (s32_t) rhs.getNumeral();
     }
-    
+
     friend BoundedFloat ite(const BoundedFloat& cond, const BoundedFloat& lhs,
                             const BoundedFloat& rhs)
     {
@@ -504,7 +503,7 @@ public:
     {
         return std::max(lhs._fVal, rhs._fVal);
     }
-    
+
     static BoundedFloat min(std::vector<BoundedFloat>& _l)
     {
         BoundedFloat ret(plus_infinity());
@@ -519,7 +518,7 @@ public:
         }
         return ret;
     }
-    
+
     static BoundedFloat max(std::vector<BoundedFloat>& _l)
     {
         BoundedFloat ret(minus_infinity());
@@ -570,13 +569,67 @@ public:
         return _fVal;
     }
 
-    inline const std::string to_string() const {
+    inline virtual const std::string to_string() const {
         return std::to_string(_fVal);
     }
 
     //%}
 }; // end class BoundedFloat
+
+class BoundedInt : public BoundedFloat
+{
+private:
+    BoundedInt() = default;
+
+public:
+
+    BoundedInt(s32_t val) {
+        _fVal = val;
+    }
+
+    BoundedInt(s64_t val) {
+        _fVal = val;
+    }
+
+    BoundedInt(const BoundedInt& rhs) {
+        _fVal = rhs._fVal;
+    }
+
+    BoundedInt& operator=(const BoundedInt& rhs)
+    {
+        _fVal = rhs._fVal;
+        return *this;
+    }
+
+    BoundedInt(BoundedInt&& rhs) {
+        _fVal = rhs._fVal;
+    }
+
+    BoundedInt& operator=(const BoundedInt&& rhs)
+    {
+        _fVal = rhs._fVal;
+        return *this;
+    }
+
+    BoundedInt(double val) {
+        _fVal = val;
+    }
+
+    BoundedInt(const BoundedFloat& f) {
+        _fVal = f.getFVal();
+    }
+
+    inline const std::string to_string() const override
+    {
+        if (is_minus_infinity())
+            return "-∞";
+        else if (is_plus_infinity())
+            return "∞";
+        else
+            return std::to_string(getIntNumeral());
+    }
+};
+
 } // end namespace SVF
 
-#endif //SVF_BoundedFloat_H
-
+#endif // SVF_NUMERICVALUE_H

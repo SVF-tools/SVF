@@ -32,7 +32,7 @@
 #define Z3_EXAMPLE_IntervalValue_H
 
 #include <sstream>
-#include "AE/Core/BoundedFloat.h"
+#include "AE/Core/NumericValue.h"
 
 namespace SVF
 {
@@ -44,10 +44,10 @@ class IntervalValue
 {
 private:
     // Lower bound
-    BoundedFloat _lb;
+    BoundedInt _lb;
 
     // Upper bound
-    BoundedFloat _ub;
+    BoundedInt _ub;
 
     // Invariant: isBottom() <=> _lb = 1 && _ub = 0
 public:
@@ -63,18 +63,18 @@ public:
     }
 
     /// Get minus infinity -oo
-    static BoundedFloat minus_infinity()
+    static BoundedInt minus_infinity()
     {
-        return BoundedFloat::minus_infinity();
+        return BoundedInt::minus_infinity();
     }
 
     /// Get plus infinity +oo
-    static BoundedFloat plus_infinity()
+    static BoundedInt plus_infinity()
     {
-        return BoundedFloat::plus_infinity();
+        return BoundedInt::plus_infinity();
     }
 
-    static bool is_infinite(const BoundedFloat &e)
+    static bool is_infinite(const BoundedInt &e)
     {
         return e.is_infinity();
     }
@@ -103,16 +103,16 @@ public:
 
     explicit IntervalValue(double n) : _lb(n), _ub(n) {}
 
-    explicit IntervalValue(BoundedFloat n) : IntervalValue(n, n) {}
+    explicit IntervalValue(BoundedInt n) : IntervalValue(n, n) {}
 
     /// Create the IntervalValue [lb, ub]
-    explicit IntervalValue(BoundedFloat lb, BoundedFloat ub) : _lb(std::move(lb)), _ub(std::move(ub)) {}
+    explicit IntervalValue(BoundedInt lb, BoundedInt ub) : _lb(std::move(lb)), _ub(std::move(ub)) {}
 
-    explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(BoundedFloat(lb), BoundedFloat(ub)) {}
+    explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(BoundedInt(lb), BoundedInt(ub)) {}
 
-    explicit IntervalValue(double lb, double ub) : IntervalValue(BoundedFloat(lb), BoundedFloat(ub)) {}
+    explicit IntervalValue(double lb, double ub) : IntervalValue(BoundedInt(lb), BoundedInt(ub)) {}
 
-    explicit IntervalValue(float lb, float ub) : IntervalValue(BoundedFloat(lb), BoundedFloat(ub)) {}
+    explicit IntervalValue(float lb, float ub) : IntervalValue(BoundedInt(lb), BoundedInt(ub)) {}
 
     explicit IntervalValue(s32_t lb, s32_t ub) : IntervalValue((s64_t) lb, (s64_t) ub) {}
 
@@ -203,33 +203,33 @@ public:
     ~IntervalValue()  = default;
 
     /// Return the lower bound
-    const BoundedFloat &lb() const
+    const BoundedInt &lb() const
     {
         assert(!this->isBottom());
         return this->_lb;
     }
 
     /// Return the upper bound
-    const BoundedFloat &ub() const
+    const BoundedInt &ub() const
     {
         assert(!this->isBottom());
         return this->_ub;
     }
 
     /// Set the lower bound
-    void setLb(const BoundedFloat &lb)
+    void setLb(const BoundedInt &lb)
     {
         this->_lb = lb;
     }
 
     /// Set the upper bound
-    void setUb(const BoundedFloat &ub)
+    void setUb(const BoundedInt &ub)
     {
         this->_ub = ub;
     }
 
     /// Set the lower bound
-    void setValue(const BoundedFloat &lb, const BoundedFloat &ub)
+    void setValue(const BoundedInt &lb, const BoundedInt &ub)
     {
         this->_lb = lb;
         this->_ub = ub;
@@ -539,13 +539,13 @@ inline IntervalValue operator*(const IntervalValue &lhs,
     }
     else
     {
-        BoundedFloat ll = lhs.lb() * rhs.lb();
-        BoundedFloat lu = lhs.lb() * rhs.ub();
-        BoundedFloat ul = lhs.ub() * rhs.lb();
-        BoundedFloat uu = lhs.ub() * rhs.ub();
+        BoundedInt ll = lhs.lb() * rhs.lb();
+        BoundedInt lu = lhs.lb() * rhs.ub();
+        BoundedInt ul = lhs.ub() * rhs.lb();
+        BoundedInt uu = lhs.ub() * rhs.ub();
         std::vector<BoundedFloat> vec{ll, lu, ul, uu};
-        return IntervalValue(BoundedFloat::min(vec),
-                             BoundedFloat::max(vec));
+        return IntervalValue(BoundedInt::min(vec),
+                             BoundedInt::max(vec));
     }
 }
 
@@ -564,14 +564,14 @@ inline IntervalValue operator/(const IntervalValue &lhs,
     else
     {
         // Neither the dividend nor the divisor contains 0
-        BoundedFloat ll = lhs.lb() / rhs.lb();
-        BoundedFloat lu = lhs.lb() / rhs.ub();
-        BoundedFloat ul = lhs.ub() / rhs.lb();
-        BoundedFloat uu = lhs.ub() / rhs.ub();
+        BoundedInt ll = lhs.lb() / rhs.lb();
+        BoundedInt lu = lhs.lb() / rhs.ub();
+        BoundedInt ul = lhs.ub() / rhs.lb();
+        BoundedInt uu = lhs.ub() / rhs.ub();
         std::vector<BoundedFloat> vec{ll, lu, ul, uu};
 
-        return IntervalValue(BoundedFloat::min(vec),
-                             BoundedFloat::max(vec));
+        return IntervalValue(BoundedInt::min(vec),
+                             BoundedInt::max(vec));
     }
 }
 
@@ -593,9 +593,9 @@ inline IntervalValue operator%(const IntervalValue &lhs,
     }
     else
     {
-        BoundedFloat n_ub = max(abs(lhs.lb()), abs(lhs.ub()));
-        BoundedFloat d_ub = max(abs(rhs.lb()), rhs.ub()) - 1;
-        BoundedFloat ub = min(n_ub, d_ub);
+        BoundedInt n_ub = max(abs(lhs.lb()), abs(lhs.ub()));
+        BoundedInt d_ub = max(abs(rhs.lb()), rhs.ub()) - 1;
+        BoundedInt ub = min(n_ub, d_ub);
 
         if (lhs.lb().getNumeral() < 0)
         {
@@ -864,13 +864,13 @@ inline IntervalValue operator>>(const IntervalValue &lhs, const IntervalValue &r
         }
         else
         {
-            BoundedFloat ll = lhs.lb() >> shift.lb();
-            BoundedFloat lu = lhs.lb() >> shift.ub();
-            BoundedFloat ul = lhs.ub() >> shift.lb();
-            BoundedFloat uu = lhs.ub() >> shift.ub();
+            BoundedInt ll = lhs.lb() >> shift.lb();
+            BoundedInt lu = lhs.lb() >> shift.ub();
+            BoundedInt ul = lhs.ub() >> shift.lb();
+            BoundedInt uu = lhs.ub() >> shift.ub();
             std::vector<BoundedFloat> vec{ll, lu, ul, uu};
-            return IntervalValue(BoundedFloat::min(vec),
-                                 BoundedFloat::max(vec));
+            return IntervalValue(BoundedInt::min(vec),
+                                 BoundedInt::max(vec));
         }
     }
 }

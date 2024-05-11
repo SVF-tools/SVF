@@ -195,31 +195,31 @@ struct AbstractValue
         return interval.isBottom();
     }
 
-    const BoundedFloat& lb() const
+    const BoundedInt& lb() const
     {
         assert(isInterval());
         return interval.lb();
     }
 
-    const BoundedFloat& ub() const
+    const BoundedInt& ub() const
     {
         assert(isInterval());
         return interval.ub();
     }
 
-    void setLb(const BoundedFloat& lb)
+    void setLb(const BoundedInt& lb)
     {
         assert(isInterval());
         interval.setLb(lb);
     }
 
-    void setUb(const BoundedFloat& ub)
+    void setUb(const BoundedInt& ub)
     {
         assert(isInterval());
         interval.setUb(ub);
     }
 
-    void setValue(const BoundedFloat &lb, const BoundedFloat &ub)
+    void setValue(const BoundedInt &lb, const BoundedInt &ub)
     {
         assert(isInterval());
         interval.setValue(lb, ub);
