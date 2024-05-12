@@ -1,13 +1,13 @@
 if(DEFINED LLVM_ROOT OR DEFINED ENV{LLVM_ROOT})
     if(NOT DEFINED LLVM_ROOT)
-        set(LLVM_ROOT "$ENV{LLVM_ROOT}")
+        set(LLVM_ROOT $ENV{LLVM_ROOT})
     endif()
 
     message(STATUS "Finding LLVM in custom LLVM root: ${LLVM_ROOT}")
     if(EXISTS "${LLVM_ROOT}/lib/cmake/llvm")
-        list(APPEND CMAKE_PREFIX_PATH "${LLVM_ROOT}/lib/cmake/llvm/")
+        list(APPEND CMAKE_PREFIX_PATH ${LLVM_ROOT}/lib/cmake/llvm/)
     else()
-        list(APPEND CMAKE_PREFIX_PATH "${LLVM_ROOT}")
+        list(APPEND CMAKE_PREFIX_PATH ${LLVM_ROOT})
     endif()
 endif()
 
@@ -17,12 +17,8 @@ find_package(
     CONFIG
     REQUIRED
     HINTS
-    "${LLVM_DIR}"
-    "$ENV{LLVM_DIR}"
-    PATH_SUFFIXES
-    "lib"
-    "lib/cmake"
-    "lib/cmake/llvm")
+    ${LLVM_DIR}
+    $ENV{LLVM_DIR})
 
 message(STATUS "LLVM STATUS:
         Found:          ${LLVM_FOUND}
@@ -88,24 +84,25 @@ else()
 endif()
 
 # Make the "add_llvm_library()" command available and configure LLVM/CMake
-list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
+list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR})
 include(AddLLVM)
 
 # Define the actual SvfLLVM library (use LLVM's functions to automatically link stuff)
 add_llvm_library(SvfLLVM)
 add_library(SVF::SvfLLVM ALIAS SvfLLVM)
-set_target_properties(SvfLLVM PROPERTIES VERSION "${SVF_VERSION}" SOVERSION "${SVF_VERSION_MAJOR}")
+set_target_properties(SvfLLVM PROPERTIES VERSION ${SVF_VERSION} SOVERSION ${SVF_VERSION_MAJOR})
 
 # Add the public headers as an include directory
-target_include_directories(SvfLLVM PUBLIC "$<BUILD_INTERFACE:${SVF_LLVM_INCLUDES}>"
-                                          "$<INSTALL_INTERFACE:${SVF_INSTALL_INCLUDEDIR}>")
+target_include_directories(SvfLLVM PRIVATE ${PROJECT_BINARY_DIR}/include)
+target_include_directories(SvfLLVM PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                                          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SVF>)
 
 # Ensure that the build artifacts are placed into lib/bin/include relative to the top of the build directory
 set_target_properties(
     SvfLLVM
-    PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
-               ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
-               RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}")
+    PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}
+               ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}
+               RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
 
 # Link LLVM's libraries to SvfLLVM, as well as the SVF core library
 target_link_libraries(SvfLLVM PUBLIC SvfCore ${llvm_libs} z3::libz3)
@@ -126,8 +123,8 @@ add_subdirectory(tools)
 install(
     TARGETS SvfLLVM
     EXPORT SVF_EXPORTED_TARGETS
-    RUNTIME DESTINATION "${SVF_INSTALL_BINDIR}"
-    LIBRARY DESTINATION "${SVF_INSTALL_LIBDIR}"
-    ARCHIVE DESTINATION "${SVF_INSTALL_LIBDIR}"
+    LIBRARY DESTINATION ${SVF_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${SVF_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${SVF_INSTALL_BINDIR}
             FILE_SET HEADERS
-            DESTINATION "${SVF_INSTALL_INCLUDEDIR}")
+            DESTINATION ${SVF_INSTALL_INCLUDEDIR})

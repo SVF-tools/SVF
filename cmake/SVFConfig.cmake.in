@@ -1,31 +1,5 @@
 @PACKAGE_INIT@
 
-include(CMakeFindDependencyMacro)
-
-find_dependency(
-    Z3
-    CONFIG
-    REQUIRED
-    HINTS
-    "${Z3_DIR}"
-    "$ENV{Z3_DIR}"
-    PATH_SUFFIXES
-    "lib"
-    "lib/cmake"
-    "lib/cmake/z3")
-
-find_dependency(
-    LLVM
-    CONFIG
-    REQUIRED
-    HINTS
-    "${LLVM_DIR}"
-    "$ENV{LLVM_DIR}"
-    PATH_SUFFIXES
-    "lib"
-    "lib/cmake"
-    "lib/cmake/llvm")
-
 include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
 
 # Build and source tree information
@@ -94,5 +68,32 @@ message(STATUS "Found SVF Package:
         SVF_ENABLE_RTTI:            ${SVF_ENABLE_RTTI}
         SVF_CXX_STANDARD:           ${SVF_CXX_STANDARD}
         SVF_ENABLE_EXCEPTIONS:      ${SVF_EABLE_EXCEPTIONS}")
+
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(
+    Z3
+    CONFIG
+    REQUIRED
+    HINTS
+    "${Z3_DIR}"
+    "$ENV{Z3_DIR}"
+    PATH_SUFFIXES
+    "lib"
+    "lib/cmake"
+    "lib/cmake/z3")
+
+find_dependency(
+    LLVM
+    CONFIG
+    REQUIRED
+    HINTS
+    "${LLVM_DIR}"
+    "$ENV{LLVM_DIR}"
+    PATH_SUFFIXES
+    "lib"
+    "lib/cmake"
+    "lib/cmake/llvm")
 
 check_required_components("@PROJECT_NAME@")

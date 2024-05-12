@@ -7,29 +7,27 @@ add_subdirectory(CFL)
 add_subdirectory(LLVM2SVF)
 add_subdirectory(AE)
 
-set_target_properties(
+set(ALL_TOOLS
+    ae
     cfl
     dvf
-    svf-ex
     llvm2svf
     mta
     saber
-    wpa
-    ae
-    PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
-               ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
-               RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}")
+    svf-ex
+    wpa)
 
-install(
-    TARGETS cfl
-            dvf
-            svf-ex
-            llvm2svf
-            mta
-            saber
-            wpa
-            ae
-    EXPORT SVF_EXPORTED_TARGETS
-    RUNTIME DESTINATION "${SVF_INSTALL_BINDIR}"
-    LIBRARY DESTINATION "${SVF_INSTALL_LIBDIR}"
-    ARCHIVE DESTINATION "${SVF_INSTALL_LIBDIR}")
+foreach(_tool IN LISTS ALL_TOOLS)
+    set_target_properties(
+        ${_tool}
+        PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}"
+                   LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}"
+                   ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
+    target_include_directories(${_tool} PRIVATE "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>")
+    install(
+        TARGETS ${_tool}
+        EXPORT SVF_EXPORTED_TARGETS
+        RUNTIME DESTINATION "${SVF_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${SVF_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${SVF_INSTALL_LIBDIR}")
+endforeach()

@@ -13,6 +13,7 @@ project(SVF
 
 # Ensure installation directories like ${CMAKE_INSTALL_LIBDIR} are available
 include(GNUInstallDirs)
+include(GenerateExportHeader)
 include(CMakeDependentOption)
 include(CMakePackageConfigHelpers)
 
@@ -21,7 +22,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
 # =================================================================================
 # SVF options & settings
@@ -40,30 +41,30 @@ option(SVF_ENABLE_ASSERTIONS "Always enable assertions")
 option(SVF_ENABLE_OPAQUE_POINTERS "Build ExtAPI.bc with opaque pointers enabled")
 
 # Store the build directory for exposing it later; ensure also available in config
-set(SVF_ROOT_DIR "${SVF_SOURCE_DIR}")
-set(SVF_SOURCE_DIR "${SVF_SOURCE_DIR}")
-set(SVF_BUILD_DIR "${PROJECT_BINARY_DIR}")
+set(SVF_ROOT_DIR ${PROJECT_SOURCE_DIR})
+set(SVF_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+set(SVF_BUILD_DIR ${PROJECT_BINARY_DIR})
 
 # Set variables to denote where different SVF structures/files are located
-set(SVF_CORE_ROOT "${SVF_SOURCE_DIR}/svf")
-set(SVF_CORE_SRCS "${SVF_CORE_ROOT}/lib")
-set(SVF_CORE_INCLUDES "${SVF_CORE_ROOT}/include")
+set(SVF_CORE_ROOT ${SVF_SOURCE_DIR}/svf)
+set(SVF_CORE_SRCS ${SVF_CORE_ROOT}/lib)
+set(SVF_CORE_INCLUDES ${SVF_CORE_ROOT}/include)
 
-set(SVF_LLVM_ROOT "${SVF_SOURCE_DIR}/svf-llvm")
-set(SVF_LLVM_SRCS "${SVF_LLVM_ROOT}/lib")
-set(SVF_LLVM_TOOLS "${SVF_LLVM_ROOT}/tools")
-set(SVF_LLVM_INCLUDES "${SVF_LLVM_ROOT}/include")
+set(SVF_LLVM_ROOT ${SVF_SOURCE_DIR}/svf-llvm)
+set(SVF_LLVM_SRCS ${SVF_LLVM_ROOT}/lib)
+set(SVF_LLVM_TOOLS ${SVF_LLVM_ROOT}/tools)
+set(SVF_LLVM_INCLUDES ${SVF_LLVM_ROOT}/include)
 
 # Set the installation tree structure
-set(SVF_INSTALL_BINDIR "${CMAKE_INSTALL_BINDIR}")
-set(SVF_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}")
-set(SVF_INSTALL_PKGDIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
-set(SVF_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/SVF")
-set(SVF_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/SVF")
+set(SVF_INSTALL_BINDIR ${CMAKE_INSTALL_BINDIR})
+set(SVF_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
+set(SVF_INSTALL_PKGDIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+set(SVF_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/SVF)
+set(SVF_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/SVF)
 
 # Set where extapi.bc is compiled and installed to
-set(SVF_EXTAPI_INSTALL_DIR lib)
-set(SVF_EXTAPI_INSTALL_FILE lib/extapi.bc)
+set(SVF_EXTAPI_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
+set(SVF_EXTAPI_INSTALL_FILE ${CMAKE_INSTALL_LIBDIR}/extapi.bc)
 
 message(STATUS "Building SVF with configuration:
         SVF version:                                ${SVF_VERSION}
@@ -111,6 +112,8 @@ message(STATUS "Using CMake build configuration:
 # Build configuration/settings
 # =================================================================================
 
+add_compile_options("-fno-discard-value-names")
+
 # By default, build SVF and its targets treating all compiler warnings as errors (except deprecations)
 add_compile_options("$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wall>" "$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>"
                     "$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>")
@@ -140,6 +143,16 @@ elseif(NOT SVF_SANITIZE STREQUAL "")
     message(FATAL_ERROR "Unknown sanitizer type: ${SVF_SANITIZE}")
 endif()
 
+# Enable debug information so that error reports are much more verbose (when using SVF)
+add_compile_options("-g3" "-fno-discard-value-names" "-fno-eliminate-unused-debug-types")
+add_link_options(
+    "-g3"
+    "-fno-discard-value-names"
+    "-fno-eliminate-unused-debug-types"
+    "-fno-eliminate-unused-debug-symbols"
+    "-Wl,--discard-none"
+    "-Wl,--export-dynamic")
+
 # =================================================================================
 # Find & load external Z3 dependencies
 # =================================================================================
@@ -150,12 +163,8 @@ find_package(
     CONFIG
     REQUIRED
     HINTS
-    "${Z3_DIR}"
-    "$ENV{Z3_DIR}"
-    PATH_SUFFIXES
-    "lib"
-    "lib/cmake"
-    "lib/cmake/z3")
+    ${Z3_DIR}
+    $ENV{Z3_DIR})
 message(STATUS "Found Z3 CMake package:
         Z3 Version Major:               ${Z3_VERSION_MAJOR}
         Z3 Version Minor:               ${Z3_VERSION_MINOR}
@@ -171,19 +180,16 @@ message(STATUS "Found Z3 CMake package:
 # =================================================================================
 
 # Create config.h based on config.in; export to <build_dir>/include/Util/config.h
-file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/include")
-configure_file("${SVF_SOURCE_DIR}/cmake/ConfigHdr.cmake.in" "${PROJECT_BINARY_DIR}/include/Util/config.h")
-
-# Ensure the include directory in the build tree is exposed/available during building
-include_directories("${PROJECT_BINARY_DIR}/include")
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
+configure_file(${PROJECT_SOURCE_DIR}/cmake/ConfigHdr.cmake.in ${PROJECT_BINARY_DIR}/include/Util/config.h)
 
 # =================================================================================
 # Test suite configuration & build
 # =================================================================================
 
 # Check if the test-suite is present, if it is then build bc files and add testing to cmake build
-if(EXISTS "${SVF_SOURCE_DIR}/Test-Suite")
-    include_directories("${SVF_SOURCE_DIR}/Test-Suite")
+if(EXISTS ${PROJECT_SOURCE_DIR}/Test-Suite)
+    include_directories(${PROJECT_SOURCE_DIR}/Test-Suite)
     enable_testing()
     add_subdirectory(Test-Suite)
     include(CTest)
@@ -211,39 +217,28 @@ add_compile_definitions("$<IF:$<BOOL:${SVF_ENABLE_RTTI}>,,-fno-rtti>"
 export(
     EXPORT SVF_EXPORTED_TARGETS
     NAMESPACE SVF::
-    FILE "${PROJECT_BINARY_DIR}/SVFTargets.cmake")
-
-# Generate SVFConfig.cmake
-configure_package_config_file(
-    "${PROJECT_SOURCE_DIR}/cmake/SVFConfig.cmake.in" "SVFConfig.cmake"
-    INSTALL_DESTINATION "${PROJECT_BINARY_DIR}"
-    PATH_VARS SVF_INSTALL_BINDIR
-              SVF_INSTALL_LIBDIR
-              SVF_INSTALL_CMAKEDIR
-              SVF_INSTALL_INCLUDEDIR
-              SVF_EXTAPI_INSTALL_DIR
-              SVF_EXTAPI_INSTALL_FILE)
+    FILE ${PROJECT_BINARY_DIR}/SVFTargets.cmake)
 
 # Generate SVFConfigVersion.cmake
 write_basic_package_version_file(
-    "${PROJECT_BINARY_DIR}/SVFConfigVersion.cmake"
+    ${PROJECT_BINARY_DIR}/SVFConfigVersion.cmake
     VERSION "${SVF_VERSION_MAJOR}.${SVF_VERSION_MINOR}"
     COMPATIBILITY AnyNewerVersion)
 
 # Generate the package config
-configure_file("${PROJECT_SOURCE_DIR}/cmake/SVF.pc.cmake.in" "${PROJECT_BINARY_DIR}/SVF.pc" @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/cmake/SVF.pc.cmake.in ${PROJECT_BINARY_DIR}/SVF.pc @ONLY)
 
 # Install the SVFTargets.cmake file along with the package
 install(
     EXPORT SVF_EXPORTED_TARGETS
-    FILE "SVFTargets.cmake"
+    FILE SVFTargets.cmake
     NAMESPACE SVF::
-    DESTINATION "${SVF_INSTALL_CMAKEDIR}")
+    DESTINATION ${SVF_INSTALL_CMAKEDIR})
 
 # Also generate a relocatable package in the install tree
 configure_package_config_file(
-    "${PROJECT_SOURCE_DIR}/cmake/SVFConfig.cmake.in" "${PROJECT_BINARY_DIR}/cmake/SVFConfig.cmake"
-    INSTALL_DESTINATION "${SVF_INSTALL_CMAKEDIR}"
+    ${PROJECT_SOURCE_DIR}/cmake/SVFConfig.cmake.in ${PROJECT_BINARY_DIR}/SVFConfig.cmake
+    INSTALL_DESTINATION ${SVF_INSTALL_CMAKEDIR}
     PATH_VARS SVF_INSTALL_BINDIR
               SVF_INSTALL_LIBDIR
               SVF_INSTALL_CMAKEDIR
@@ -252,12 +247,12 @@ configure_package_config_file(
               SVF_EXTAPI_INSTALL_FILE)
 
 # Actually install the configuration, versioning, and pkg_config files
-install(FILES "${PROJECT_BINARY_DIR}/cmake/SVFConfig.cmake" DESTINATION "${SVF_INSTALL_CMAKEDIR}")
-install(FILES "${PROJECT_BINARY_DIR}/SVFConfigVersion.cmake" DESTINATION "${SVF_INSTALL_CMAKEDIR}")
-install(FILES "${PROJECT_BINARY_DIR}/SVF.pc" DESTINATION "${SVF_INSTALL_PKGDIR}")
+install(FILES ${PROJECT_BINARY_DIR}/SVFConfigVersion.cmake DESTINATION ${SVF_INSTALL_CMAKEDIR})
+install(FILES ${PROJECT_BINARY_DIR}/SVFConfig.cmake DESTINATION ${SVF_INSTALL_CMAKEDIR})
+install(FILES ${PROJECT_BINARY_DIR}/SVF.pc DESTINATION ${SVF_INSTALL_PKGDIR})
 
 # Install generated configuration header (see `configure_file()`) to top-level include dir of SVF
-install(FILES "${PROJECT_BINARY_DIR}/include/Util/config.h" DESTINATION "${SVF_INSTALL_INCLUDEDIR}/Util")
+install(FILES ${PROJECT_BINARY_DIR}/include/Util/config.h DESTINATION ${SVF_INSTALL_INCLUDEDIR}/Util)
 
 # Package with CPack
 include(InstallRequiredSystemLibraries)
@@ -266,7 +261,7 @@ include(CPack)
 # Since SVF builds into non-standard directories; symlink the compile commands
 file(
     CREATE_LINK
-    "${PROJECT_BINARY_DIR}/compile_commands.json"
-    "${PROJECT_SOURCE_DIR}/compile_commands.json"
+    ${PROJECT_BINARY_DIR}/compile_commands.json
+    ${PROJECT_SOURCE_DIR}/compile_commands.json
     COPY_ON_ERROR
     SYMBOLIC)
