@@ -6,7 +6,6 @@ set(SVF_EXTAPI_FLAGS
     -fPIC
     -std=gnu11
     -emit-llvm
-    -fno-discard-value-names
     -Xclang
     -disable-O0-optnone)
 
