@@ -112,8 +112,6 @@ message(STATUS "Using CMake build configuration:
 # Build configuration/settings
 # =================================================================================
 
-add_compile_options("-fno-discard-value-names")
-
 # By default, build SVF and its targets treating all compiler warnings as errors (except deprecations)
 add_compile_options("$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wall>" "$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Werror>"
                     "$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wno-deprecated-declarations>")
