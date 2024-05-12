@@ -144,14 +144,8 @@ elseif(NOT SVF_SANITIZE STREQUAL "")
 endif()
 
 # Enable debug information so that error reports are much more verbose (when using SVF)
-add_compile_options("-g3" "-fno-discard-value-names" "-fno-eliminate-unused-debug-types")
-add_link_options(
-    "-g3"
-    "-fno-discard-value-names"
-    "-fno-eliminate-unused-debug-types"
-    "-fno-eliminate-unused-debug-symbols"
-    "-Wl,--discard-none"
-    "-Wl,--export-dynamic")
+add_compile_options("-g3")
+add_link_options("-g3")
 
 # =================================================================================
 # Find & load external Z3 dependencies
