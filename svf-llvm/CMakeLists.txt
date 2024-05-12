@@ -105,7 +105,7 @@ set_target_properties(
                RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
 
 # Link LLVM's libraries to SvfLLVM, as well as the SVF core library
-target_link_libraries(SvfLLVM PUBLIC SvfCore ${llvm_libs} z3::libz3)
+target_link_libraries(SvfLLVM PUBLIC SvfCore ${llvm_libs} ${Z3_LIBRARIES})
 
 # Add intrinsics_gen target if we're building as part of LLVM source build
 if(TARGET intrinsics_gen)

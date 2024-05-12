@@ -7,7 +7,7 @@ target_include_directories(SvfCore PRIVATE ${PROJECT_BINARY_DIR}/include)
 target_include_directories(SvfCore PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                                           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/SVF>)
 
-target_link_libraries(SvfCore PUBLIC z3::libz3)
+target_link_libraries(SvfCore PUBLIC ${Z3_LIBRARIES})
 
 # Ensure that the build artifacts are placed into lib/bin/include relative to the top of the build directory
 set_target_properties(

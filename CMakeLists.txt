@@ -157,15 +157,15 @@ add_link_options(
 # Find & load external Z3 dependencies
 # =================================================================================
 
-# Find Z3 and its include directory from the top-level include file
+# Find Z3 and its include directory from the top-level include file; try from CMake package first
 find_package(
     Z3
     CONFIG
-    REQUIRED
     HINTS
     ${Z3_DIR}
     $ENV{Z3_DIR})
-message(STATUS "Found Z3 CMake package:
+if(Z3_FOUND)
+    message(STATUS "Found Z3 CMake package:
         Z3 Version Major:               ${Z3_VERSION_MAJOR}
         Z3 Version Minor:               ${Z3_VERSION_MINOR}
         Z3 Version Patch:               ${Z3_VERSION_PATCH}
@@ -174,6 +174,25 @@ message(STATUS "Found Z3 CMake package:
         Z3 C Include Directories:       ${Z3_C_INCLUDE_DIRS}
         Z3 C++ Include Directories:     ${Z3_CXX_INCLUDE_DIRS}
         Z3 Libraries:                   ${Z3_LIBRARIES}")
+else()
+    find_library(
+        Z3_LIBRARIES REQUIRED
+        NAMES z3
+        HINTS ${Z3_DIR} ENV Z3_DIR
+        PATH_SUFFIXES bin lib)
+    find_path(
+        Z3_INCLUDES REQUIRED
+        NAMES z3++.h
+        HINTS ${Z3_DIR} ENV Z3_DIR
+        PATH_SUFFIXES include z3)
+    message(STATUS "Z3 STATUS:
+        Z3 library file:        ${Z3_LIBRARIES}
+        Z3 include directory:   ${Z3_INCLUDES}")
+
+    # Add the Z3 include directory and link the Z3 library to all targets of SVF
+    set(CMAKE_INSTALL_RPATH ${Z3_INCLUDES})
+    include_directories(SYSTEM ${Z3_INCLUDES})
+endif()
 
 # =================================================================================
 # Export C/C++ config.h header file
