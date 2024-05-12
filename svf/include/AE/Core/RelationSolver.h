@@ -66,7 +66,7 @@ public:
     inline Z3Expr toIntVal(s32_t f) const {
         return Z3Expr::getContext().int_val(f);
     }
-    inline Z3Expr toRealVal(BoundedFloat f) const {
+    inline Z3Expr toRealVal(BoundedDouble f) const {
         return Z3Expr::getContext().real_val(std::to_string(f.getFVal()).c_str());
     }
 

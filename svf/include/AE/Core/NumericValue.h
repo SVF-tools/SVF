@@ -36,58 +36,60 @@
 #include <utility>
 
 
-#define epsilon 1e-6;
+#define epsilon std::numeric_limits<double>::epsilon();
 namespace SVF
 {
 
 /*!
- * Bounded float numeric value
+ * Bounded double numeric value
  */
-class BoundedFloat
+class BoundedDouble
 {
 protected:
 
-    float _fVal;
+    double _fVal;
 
-    BoundedFloat() = default;
+    BoundedDouble() = default;
 
 public:
-    BoundedFloat(float fVal) : _fVal(fVal) {}
+    BoundedDouble(double fVal) : _fVal(fVal) {}
 
-    BoundedFloat(const BoundedFloat& rhs) : _fVal(rhs._fVal) {}
-    BoundedFloat& operator=(const BoundedFloat& rhs)
+    BoundedDouble(const BoundedDouble& rhs) : _fVal(rhs._fVal) {}
+
+    BoundedDouble& operator=(const BoundedDouble& rhs)
     {
         _fVal = rhs._fVal;
         return *this;
     }
 
-    BoundedFloat(BoundedFloat &&rhs) : _fVal(std::move(rhs._fVal)) {}
-    BoundedFloat& operator=(BoundedFloat&& rhs) {
+    BoundedDouble(BoundedDouble &&rhs) : _fVal(std::move(rhs._fVal)) {}
+
+    BoundedDouble& operator=(BoundedDouble&& rhs) {
         _fVal = std::move(rhs._fVal);
         return *this;
     }
 
-    virtual ~BoundedFloat() {}
+    virtual ~BoundedDouble() {}
 
 
-    static bool floatEqual(float a, float b) {
+    static bool doubleEqual(double a, double b) {
         if (std::isinf(a) && std::isinf(b))
             return a == b;
         return std::fabs(a - b) < epsilon;
     }
 
-    const float getFVal() const {
+    const double getFVal() const {
         return _fVal;
     }
 
     bool is_plus_infinity() const
     {
-        return _fVal == std::numeric_limits<float>::infinity();
+        return _fVal == std::numeric_limits<double>::infinity();
     }
 
     bool is_minus_infinity() const
     {
-        return _fVal == -std::numeric_limits<float>::infinity();
+        return _fVal == -std::numeric_limits<double>::infinity();
     }
 
     bool is_infinity() const
@@ -105,33 +107,33 @@ public:
         *this = minus_infinity();
     }
 
-    static BoundedFloat plus_infinity()
+    static BoundedDouble plus_infinity()
     {
-        return std::numeric_limits<float>::infinity();
+        return std::numeric_limits<double>::infinity();
     }
 
-    static BoundedFloat minus_infinity()
+    static BoundedDouble minus_infinity()
     {
-        return -std::numeric_limits<float>::infinity();
+        return -std::numeric_limits<double>::infinity();
     }
 
 
     bool is_zero() const
     {
-        return floatEqual(_fVal, 0.0f);
+        return doubleEqual(_fVal, 0.0f);
     }
 
-    static bool isZero(const BoundedFloat &expr)
+    static bool isZero(const BoundedDouble &expr)
     {
-        return floatEqual(expr.getFVal(),0.0f);
+        return doubleEqual(expr.getFVal(), 0.0f);
     }
 
-    bool equal(const BoundedFloat &rhs) const
+    bool equal(const BoundedDouble &rhs) const
     {
-        return floatEqual(_fVal, rhs._fVal);
+        return doubleEqual(_fVal, rhs._fVal);
     }
 
-    bool leq(const BoundedFloat &rhs) const
+    bool leq(const BoundedDouble &rhs) const
     {
         if (is_infinity() ^ rhs.is_infinity())
         {
@@ -153,7 +155,7 @@ public:
             return _fVal <= rhs._fVal;
     }
 
-    bool geq(const BoundedFloat &rhs) const
+    bool geq(const BoundedDouble &rhs) const
     {
         if (is_infinity() ^ rhs.is_infinity())
         {
@@ -177,32 +179,32 @@ public:
 
     /// Reload operator
     //{%
-    friend BoundedFloat operator==(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator==(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return lhs.equal(rhs);
     }
 
-    friend BoundedFloat operator!=(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator!=(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return !lhs.equal(rhs);
     }
 
-    friend BoundedFloat operator>(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator>(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return !lhs.leq(rhs);
     }
 
-    friend BoundedFloat operator<(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator<(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return !lhs.geq(rhs);
     }
 
-    friend BoundedFloat operator<=(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator<=(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return lhs.leq(rhs);
     }
 
-    friend BoundedFloat operator>=(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator>=(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return lhs.geq(rhs);
     }
@@ -216,19 +218,19 @@ public:
      * @return The sum of lhs and rhs. If overflow or underflow occurs, returns
      * positive or negative infinity.
      */
-    static float safeAdd(float lhs, float rhs)
+    static double safeAdd(double lhs, double rhs)
     {
-        if ((lhs == std::numeric_limits<float>::infinity() &&
-             rhs == -std::numeric_limits<float>::infinity()) ||
-            (lhs == -std::numeric_limits<float>::infinity() &&
-             rhs == std::numeric_limits<float>::infinity())) {
+        if ((lhs == std::numeric_limits<double>::infinity() &&
+             rhs == -std::numeric_limits<double>::infinity()) ||
+            (lhs == -std::numeric_limits<double>::infinity() &&
+             rhs == std::numeric_limits<double>::infinity())) {
             assert(false && "invalid add");
         }
-        float res =
+        double res =
             lhs + rhs; // Perform the addition and store the result in 'res'
 
         // Check if the result is positive infinity due to overflow
-        if (res == std::numeric_limits<float>::infinity())
+        if (res == std::numeric_limits<double>::infinity())
         {
             return res; // Positive overflow has occurred, return positive
                         // infinity
@@ -236,31 +238,31 @@ public:
 
         // Check if the result is negative infinity, which can indicate a large
         // negative overflow
-        if (res == -std::numeric_limits<float>::infinity())
+        if (res == -std::numeric_limits<double>::infinity())
         {
             return res; // Negative "overflow", effectively an underflow to
                         // negative infinity
         }
 
         // Check for positive overflow: verify if both operands are positive and
-        // their sum exceeds the maximum float value
+        // their sum exceeds the maximum double value
         if (lhs > 0 && rhs > 0 &&
-            (std::numeric_limits<float>::max() - lhs) < rhs)
+            (std::numeric_limits<double>::max() - lhs) < rhs)
         {
             res =
-                std::numeric_limits<float>::infinity(); // Set result to
+                std::numeric_limits<double>::infinity(); // Set result to
                                                         // positive infinity to
                                                         // indicate overflow
             return res;
         }
 
         // Check for an underflow scenario: both numbers are negative and their
-        // sum is more negative than what float can represent
+        // sum is more negative than what double can represent
         if (lhs < 0 && rhs < 0 &&
-            (-std::numeric_limits<float>::max() - lhs) > rhs)
+            (-std::numeric_limits<double>::max() - lhs) > rhs)
         {
             res = -std::numeric_limits<
-                float>::infinity(); // Set result to negative infinity to
+                double>::infinity(); // Set result to negative infinity to
                                     // clarify extreme negative sum
             return res;
         }
@@ -270,17 +272,17 @@ public:
         return res;
     }
 
-    friend BoundedFloat operator+(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator+(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return safeAdd(lhs._fVal, rhs._fVal);
     }
 
-    friend BoundedFloat operator-(const BoundedFloat &lhs)
+    friend BoundedDouble operator-(const BoundedDouble &lhs)
     {
         return -lhs._fVal;
     }
 
-    friend BoundedFloat operator-(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator-(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return safeAdd(lhs._fVal, -rhs._fVal);
     }
@@ -294,13 +296,13 @@ public:
      * @return The product of lhs and rhs. If overflow or underflow occurs,
      * returns positive or negative infinity accordingly.
      */
-    static float safeMul(float lhs, float rhs)
+    static double safeMul(double lhs, double rhs)
     {
-        if (floatEqual(lhs, 0.0f) || floatEqual(rhs, 0.0f))
+        if (doubleEqual(lhs, 0.0f) || doubleEqual(rhs, 0.0f))
             return 0.0f;
-        float res = lhs * rhs;
+        double res = lhs * rhs;
         // Check if the result is positive infinity due to overflow
-        if (res == std::numeric_limits<float>::infinity())
+        if (res == std::numeric_limits<double>::infinity())
         {
             return res; // Positive overflow has occurred, return positive
                         // infinity
@@ -308,37 +310,37 @@ public:
 
         // Check if the result is negative infinity, which can indicate a large
         // negative overflow
-        if (res == -std::numeric_limits<float>::infinity())
+        if (res == -std::numeric_limits<double>::infinity())
         {
             return res; // Negative "overflow", effectively an underflow to
                         // negative infinity
         }
         // Check for overflow scenarios
-        if (lhs > 0 && rhs > 0 && lhs > std::numeric_limits<float>::max() / rhs)
+        if (lhs > 0 && rhs > 0 && lhs > std::numeric_limits<double>::max() / rhs)
         {
-            return std::numeric_limits<float>::infinity();
+            return std::numeric_limits<double>::infinity();
         }
-        if (lhs < 0 && rhs < 0 && lhs < std::numeric_limits<float>::max() / rhs)
+        if (lhs < 0 && rhs < 0 && lhs < std::numeric_limits<double>::max() / rhs)
         {
-            return std::numeric_limits<float>::infinity();
+            return std::numeric_limits<double>::infinity();
         }
 
         // Check for "underflow" scenarios (negative overflow)
         if (lhs > 0 && rhs < 0 &&
-            rhs < std::numeric_limits<float>::lowest() / lhs)
+            rhs < std::numeric_limits<double>::lowest() / lhs)
         {
-            return -std::numeric_limits<float>::infinity();
+            return -std::numeric_limits<double>::infinity();
         }
         if (lhs < 0 && rhs > 0 &&
-            lhs < std::numeric_limits<float>::lowest() / rhs)
+            lhs < std::numeric_limits<double>::lowest() / rhs)
         {
-            return -std::numeric_limits<float>::infinity();
+            return -std::numeric_limits<double>::infinity();
         }
 
         return res; // If no overflow or underflow, return the product
     }
 
-    friend BoundedFloat operator*(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator*(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return safeMul(lhs._fVal, rhs._fVal);
     }
@@ -352,17 +354,17 @@ public:
      * @return The quotient of lhs and rhs. Returns positive or negative
      * infinity for division by zero, or when overflow occurs.
      */
-    static float safeDiv(float lhs, float rhs)
+    static double safeDiv(double lhs, double rhs)
     {
         // Check for division by zero
-        if (floatEqual(rhs, 0.0f))
+        if (doubleEqual(rhs, 0.0f))
         {
-            return (lhs >= 0.0f) ? std::numeric_limits<float>::infinity()
-                                 : -std::numeric_limits<float>::infinity();
+            return (lhs >= 0.0f) ? std::numeric_limits<double>::infinity()
+                                 : -std::numeric_limits<double>::infinity();
         }
-        float res = lhs / rhs;
+        double res = lhs / rhs;
         // Check if the result is positive infinity due to overflow
-        if (res == std::numeric_limits<float>::infinity())
+        if (res == std::numeric_limits<double>::infinity())
         {
             return res; // Positive overflow has occurred, return positive
                         // infinity
@@ -370,33 +372,33 @@ public:
 
         // Check if the result is negative infinity, which can indicate a large
         // negative overflow
-        if (res == -std::numeric_limits<float>::infinity())
+        if (res == -std::numeric_limits<double>::infinity())
         {
             return res; // Negative "overflow", effectively an underflow to
                         // negative infinity
         }
 
         // Check for overflow when dividing small numbers
-        if (rhs > 0 && rhs < std::numeric_limits<float>::min() &&
-            lhs > std::numeric_limits<float>::max() * rhs)
+        if (rhs > 0 && rhs < std::numeric_limits<double>::min() &&
+            lhs > std::numeric_limits<double>::max() * rhs)
         {
-            return std::numeric_limits<float>::infinity();
+            return std::numeric_limits<double>::infinity();
         }
-        if (rhs < 0 && rhs > -std::numeric_limits<float>::min() &&
-            lhs > std::numeric_limits<float>::max() * rhs)
+        if (rhs < 0 && rhs > -std::numeric_limits<double>::min() &&
+            lhs > std::numeric_limits<double>::max() * rhs)
         {
-            return -std::numeric_limits<float>::infinity();
+            return -std::numeric_limits<double>::infinity();
         }
 
         return res; // If no special cases, return the quotient
     }
 
-    friend BoundedFloat operator/(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator/(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return safeDiv(lhs._fVal, rhs._fVal);
     }
 
-    friend BoundedFloat operator%(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator%(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         if (rhs.is_zero()) assert(false && "divide by zero");
         else if (!lhs.is_infinity() && !rhs.is_infinity())
@@ -419,41 +421,41 @@ public:
         return !is_int();
     }
 
-    friend BoundedFloat operator^(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator^(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         int lInt = std::round(rhs._fVal), rInt = std::round(rhs._fVal);
         return lInt ^ rInt;
     }
 
-    friend BoundedFloat operator&(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator&(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         int lInt = std::round(rhs._fVal), rInt = std::round(rhs._fVal);
         return lInt & rInt;
     }
 
-    friend BoundedFloat operator|(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator|(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         int lInt = std::round(rhs._fVal), rInt = std::round(rhs._fVal);
         return lInt | rInt;
     }
 
 
-    friend BoundedFloat operator&&(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator&&(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return lhs._fVal && rhs._fVal;
     }
 
-    friend BoundedFloat operator||(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator||(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return lhs._fVal || rhs._fVal;
     }
 
-    friend BoundedFloat operator!(const BoundedFloat &lhs)
+    friend BoundedDouble operator!(const BoundedDouble &lhs)
     {
         return !lhs._fVal;
     }
 
-    friend BoundedFloat operator>>(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator>>(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         assert(rhs.geq(0) && "rhs should be greater or equal than 0");
         if (lhs.is_zero())
@@ -466,7 +468,7 @@ public:
             return (s32_t) lhs.getNumeral() >> (s32_t) rhs.getNumeral();
     }
 
-    friend BoundedFloat operator<<(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble operator<<(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         assert(rhs.geq(0) && "rhs should be greater or equal than 0");
         if (lhs.is_zero())
@@ -479,36 +481,36 @@ public:
             return (s32_t) lhs.getNumeral() << (s32_t) rhs.getNumeral();
     }
 
-    friend BoundedFloat ite(const BoundedFloat& cond, const BoundedFloat& lhs,
-                            const BoundedFloat& rhs)
+    friend BoundedDouble ite(const BoundedDouble& cond, const BoundedDouble& lhs,
+                            const BoundedDouble& rhs)
     {
         return cond._fVal != 0.0f ? lhs._fVal : rhs._fVal;
     }
 
-    friend std::ostream &operator<<(std::ostream &out, const BoundedFloat &expr)
+    friend std::ostream &operator<<(std::ostream &out, const BoundedDouble &expr)
     {
         out << expr._fVal;
         return out;
     }
 
-    friend bool eq(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend bool eq(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
-        return floatEqual(lhs._fVal, rhs._fVal);
+        return doubleEqual(lhs._fVal, rhs._fVal);
     }
 
-    friend BoundedFloat min(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble min(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return std::min(lhs._fVal, rhs._fVal);
     }
 
-    friend BoundedFloat max(const BoundedFloat &lhs, const BoundedFloat &rhs)
+    friend BoundedDouble max(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
         return std::max(lhs._fVal, rhs._fVal);
     }
 
-    static BoundedFloat min(std::vector<BoundedFloat>& _l)
+    static BoundedDouble min(std::vector<BoundedDouble>& _l)
     {
-        BoundedFloat ret(plus_infinity());
+        BoundedDouble ret(plus_infinity());
         for (const auto &it: _l)
         {
             if (it.is_minus_infinity())
@@ -521,9 +523,9 @@ public:
         return ret;
     }
 
-    static BoundedFloat max(std::vector<BoundedFloat>& _l)
+    static BoundedDouble max(std::vector<BoundedDouble>& _l)
     {
-        BoundedFloat ret(minus_infinity());
+        BoundedDouble ret(minus_infinity());
         for (const auto &it: _l)
         {
             if (it.is_plus_infinity())
@@ -536,7 +538,7 @@ public:
         return ret;
     }
 
-    friend BoundedFloat abs(const BoundedFloat &lhs)
+    friend BoundedDouble abs(const BoundedDouble &lhs)
     {
         return lhs.leq(0) ? -lhs : lhs;
     }
@@ -576,9 +578,9 @@ public:
     }
 
     //%}
-}; // end class BoundedFloat
+}; // end class BoundedDouble
 
-class BoundedInt : public BoundedFloat
+class BoundedInt : public BoundedDouble
 {
 private:
     BoundedInt() = default;
@@ -617,7 +619,7 @@ public:
         _fVal = val;
     }
 
-    BoundedInt(const BoundedFloat& f) {
+    BoundedInt(const BoundedDouble& f) {
         _fVal = f.getFVal();
     }
 
