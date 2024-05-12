@@ -249,18 +249,14 @@ public:
 
     bool is_int() const
     {
-        bool lb_int = _lb.is_int();
-        bool ub_int = _ub.is_int();
-        assert (lb_int == ub_int && "lb and ub should be both int or both float");
-        return _lb.is_int();
+        return !is_real();
     }
 
     bool is_real() const
     {
         bool lb_real = _lb.is_real();
         bool ub_real = _ub.is_real();
-        assert (lb_real == ub_real && "lb and ub should be both real or both int");
-        return _lb.is_real();
+        return lb_real || ub_real;
     }
 
     /// Return
