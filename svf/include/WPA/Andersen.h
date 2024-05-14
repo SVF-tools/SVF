@@ -111,6 +111,18 @@ public:
         return consCG;
     }
 
+    /// SCC methods
+    //@{
+    inline NodeID sccRepNode(NodeID id) const override
+    {
+        return consCG->sccRepNode(id);
+    }
+    inline NodeBS& sccSubNodes(NodeID repId)
+    {
+        return consCG->sccSubNodes(repId);
+    }
+    //@}
+
     /// dump statistics
     inline void printStat()
     {
@@ -200,18 +212,6 @@ public:
                 || pta->getAnalysisTy() == AndersenWaveDiff_WPA
                 || pta->getAnalysisTy() == AndersenSCD_WPA
                 || pta->getAnalysisTy() == AndersenSFR_WPA);
-    }
-    //@}
-
-    /// SCC methods
-    //@{
-    inline NodeID sccRepNode(NodeID id) const
-    {
-        return consCG->sccRepNode(id);
-    }
-    inline NodeBS& sccSubNodes(NodeID repId)
-    {
-        return consCG->sccSubNodes(repId);
     }
     //@}
 
