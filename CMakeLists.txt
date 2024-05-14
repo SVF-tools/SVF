@@ -13,8 +13,6 @@ project(SVF
 
 # Ensure installation directories like ${CMAKE_INSTALL_LIBDIR} are available
 include(GNUInstallDirs)
-include(GenerateExportHeader)
-include(CMakeDependentOption)
 include(CMakePackageConfigHelpers)
 
 # Build SVF with C++ standard C++17
@@ -22,7 +20,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+set(INSTALL_RPATH_USE_LINK_PATH ON)
 
 # =================================================================================
 # SVF options & settings
@@ -120,7 +119,8 @@ add_compile_options("$<$<BOOL:${SVF_WARN_AS_ERROR}>:-Wall>" "$<$<BOOL:${SVF_WARN
 add_compile_options("$<$<BOOL:${SVF_ENABLE_ASSERTIONS}>:-UNDEBUG>")
 
 # Export dynamic symbols if requested (adds "-export-dynamic" to linkers that support it to enable backtraces)
-add_compile_options("$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-rdynamic>")
+add_link_options("$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-rdynamic>")
+add_link_options("$<$<BOOL:${SVF_EXPORT_DYNAMIC}>:-Wl,--export-dynamic>")
 
 # Configure whether a coverage build should be created for SVF (i.e. add runtime instrumentation)
 add_compile_options("$<$<OR:$<BOOL:${SVF_COVERAGE}>,$<BOOL:$ENV{SVF_COVERAGE}>>:-fprofile-arcs>"
