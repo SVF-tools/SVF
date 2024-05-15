@@ -1260,10 +1260,10 @@ void AbstractInterpretation::checkPointAllSet()
     }
     else
     {
-        SVFUtil::errs() << SVFUtil::sucMsg("There exists checkpoints not checked!!\n");
+        SVFUtil::errs() << SVFUtil::errMsg("At least one svf_assert has not been checked!!") << "\n";
         for (const CallICFGNode* call: _checkpoints)
         {
-            SVFUtil::errs() << SVFUtil::sucMsg(call->toString() + "\n");
+            SVFUtil::errs() << call->toString() + "\n";
         }
         assert(false);
     }
