@@ -150,7 +150,7 @@ AbstractValue SVFIR2AbsState::getZExtValue(const AbstractState& es, const SVFVar
             return IntervalValue::top(); // TODO: may have better solution
         }
     }
-    assert(false && "cannot support non-integer type");
+    return IntervalValue::top(); // TODO: may have better solution
 }
 
 AbstractValue SVFIR2AbsState::getSExtValue(const AbstractState& es, const SVFVar* var)

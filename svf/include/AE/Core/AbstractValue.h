@@ -213,31 +213,31 @@ public:
         return interval.isBottom();
     }
 
-    const NumericLiteral& lb() const
+    const BoundedInt& lb() const
     {
         assert(isInterval());
         return interval.lb();
     }
 
-    const NumericLiteral& ub() const
+    const BoundedInt& ub() const
     {
         assert(isInterval());
         return interval.ub();
     }
 
-    void setLb(const NumericLiteral& lb)
+    void setLb(const BoundedInt& lb)
     {
         assert(isInterval());
         interval.setLb(lb);
     }
 
-    void setUb(const NumericLiteral& ub)
+    void setUb(const BoundedInt& ub)
     {
         assert(isInterval());
         interval.setUb(ub);
     }
 
-    void setValue(const NumericLiteral &lb, const NumericLiteral &ub)
+    void setValue(const BoundedInt &lb, const BoundedInt &ub)
     {
         assert(isInterval());
         interval.setValue(lb, ub);
