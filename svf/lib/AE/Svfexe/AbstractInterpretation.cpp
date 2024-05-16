@@ -1153,11 +1153,11 @@ std::string AbstractInterpretation::strRead(AbstractState& as, const SVFValue* r
         }
         if (val.isUnknown())
             return str0;
-        if (!val.is_numeral())
+        if (!val.getInterval().is_numeral())
         {
             break;
         }
-        if ((char) val.getIntNumeral() == '\0')
+        if ((char) val.getInterval().getIntNumeral() == '\0')
         {
             break;
         }
@@ -1208,14 +1208,14 @@ void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
     // 1. memcpy functions like memcpy_chk, strncpy, annotate("MEMCPY"), annotate("BUF_CHECK:Arg0, Arg2"), annotate("BUF_CHECK:Arg1, Arg2")
     else if (extType == MEMCPY)
     {
-        AbstractValue len = as[_svfir->getValueNode(cs.getArgument(2))];
+        IntervalValue len = as[_svfir->getValueNode(cs.getArgument(2))].getInterval();
         handleMemcpy(as, cs.getArgument(0), cs.getArgument(1), len, 0);
     }
     else if (extType == MEMSET)
     {
         // memset dst is arg0, elem is arg1, size is arg2
-        AbstractValue len = as[_svfir->getValueNode(cs.getArgument(2))];
-        AbstractValue elem = as[_svfir->getValueNode(cs.getArgument(1))];
+        IntervalValue len = as[_svfir->getValueNode(cs.getArgument(2))].getInterval();
+        IntervalValue elem = as[_svfir->getValueNode(cs.getArgument(1))].getInterval();
         handleMemset(as,cs.getArgument(0), elem, len);
     }
     else if (extType == STRCPY)
@@ -1279,9 +1279,9 @@ void AbstractInterpretation::handleStrcpy(const CallICFGNode *call)
     CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
     const SVFValue* arg0Val = cs.getArgument(0);
     const SVFValue* arg1Val = cs.getArgument(1);
-    AbstractValue strLen = getStrlen(as, arg1Val);
+    IntervalValue strLen = getStrlen(as, arg1Val);
     // no need to -1, since it has \0 as the last byte
-    handleMemcpy(as, arg0Val, arg1Val, strLen,strLen.lb().getIntNumeral());
+    handleMemcpy(as, arg0Val, arg1Val, strLen, strLen.lb().getIntNumeral());
 }
 
 u32_t AbstractInterpretation::getAllocaInstByteSize(AbstractState& as, const AddrStmt *addr)
@@ -1307,8 +1307,8 @@ u32_t AbstractInterpretation::getAllocaInstByteSize(AbstractState& as, const Add
                 {
                     as[_svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
                 }
-                AbstractValue itv =
-                    as[_svfir->getValueNode(value)];
+                IntervalValue itv =
+                    as[_svfir->getValueNode(value)].getInterval();
                 res = res * itv.ub().getIntNumeral() > Options::MaxFieldLimit()? Options::MaxFieldLimit(): res * itv.ub().getIntNumeral();
             }
             return (u32_t)res;
@@ -1318,7 +1318,7 @@ u32_t AbstractInterpretation::getAllocaInstByteSize(AbstractState& as, const Add
     abort();
 }
 
-AbstractValue AbstractInterpretation::traceMemoryAllocationSize(AbstractState& as, const SVFValue *value)
+IntervalValue AbstractInterpretation::traceMemoryAllocationSize(AbstractState& as, const SVFValue *value)
 {
     /// Usually called by a GepStmt overflow check, or external API (like memcpy) overflow check
     /// Defitions of Terms:
@@ -1400,7 +1400,7 @@ AbstractValue AbstractInterpretation::traceMemoryAllocationSize(AbstractState& a
                             else
                             {
                                 IntervalValue byteOffset =
-                                    _svfir2AbsState->getByteOffset(as, gep).getInterval();
+                                    _svfir2AbsState->getByteOffset(as, gep);
                             }
                             // for variable offset, join with accumulate gep offset
                             gep_offsets[gep->getICFGNode()] = byteOffset;
@@ -1451,9 +1451,9 @@ AbstractValue AbstractInterpretation::traceMemoryAllocationSize(AbstractState& a
 }
 
 
-AbstractValue AbstractInterpretation::getStrlen(AbstractState& as, const SVF::SVFValue *strValue)
+IntervalValue AbstractInterpretation::getStrlen(AbstractState& as, const SVF::SVFValue *strValue)
 {
-    AbstractValue dst_size = traceMemoryAllocationSize(as, strValue);
+    IntervalValue dst_size = traceMemoryAllocationSize(as, strValue);
     u32_t len = 0;
     NodeID dstid = _svfir->getValueNode(strValue);
     u32_t elemSize = 1;
@@ -1472,7 +1472,7 @@ AbstractValue AbstractInterpretation::getStrlen(AbstractState& as, const SVF::SV
             {
                 return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
             }
-            if (val.is_numeral() && (char) val.getIntNumeral() == '\0')
+            if (val.getInterval().is_numeral() && (char) val.getInterval().getIntNumeral() == '\0')
             {
                 break;
             }
@@ -1522,9 +1522,9 @@ void AbstractInterpretation::handleStrcat(const SVF::CallICFGNode *call)
         CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
         const SVFValue* arg0Val = cs.getArgument(0);
         const SVFValue* arg1Val = cs.getArgument(1);
-        AbstractValue strLen0 = getStrlen(as, arg0Val);
-        AbstractValue strLen1 = getStrlen(as, arg1Val);
-        AbstractValue totalLen = strLen0 + strLen1;
+        IntervalValue strLen0 = getStrlen(as, arg0Val);
+        IntervalValue strLen1 = getStrlen(as, arg1Val);
+        IntervalValue totalLen = strLen0 + strLen1;
         handleMemcpy(as, arg0Val, arg1Val, strLen1, strLen0.lb().getIntNumeral());
         // do memcpy
     }
@@ -1534,9 +1534,9 @@ void AbstractInterpretation::handleStrcat(const SVF::CallICFGNode *call)
         const SVFValue* arg0Val = cs.getArgument(0);
         const SVFValue* arg1Val = cs.getArgument(1);
         const SVFValue* arg2Val = cs.getArgument(2);
-        AbstractValue arg2Num = as[_svfir->getValueNode(arg2Val)];
-        AbstractValue strLen0 = getStrlen(as, arg0Val);
-        AbstractValue totalLen = strLen0 + arg2Num;
+        IntervalValue arg2Num = as[_svfir->getValueNode(arg2Val)].getInterval();
+        IntervalValue strLen0 = getStrlen(as, arg0Val);
+        IntervalValue totalLen = strLen0 + arg2Num;
         handleMemcpy(as, arg0Val, arg1Val, arg2Num, strLen0.lb().getIntNumeral());
         // do memcpy
     }
@@ -1546,7 +1546,7 @@ void AbstractInterpretation::handleStrcat(const SVF::CallICFGNode *call)
     }
 }
 
-void AbstractInterpretation::handleMemcpy(AbstractState& as, const SVF::SVFValue *dst, const SVF::SVFValue *src, AbstractValue len,  u32_t start_idx)
+void AbstractInterpretation::handleMemcpy(AbstractState& as, const SVF::SVFValue *dst, const SVF::SVFValue *src, IntervalValue len,  u32_t start_idx)
 {
     u32_t dstId = _svfir->getValueNode(dst); // pts(dstId) = {objid}  objbar objtypeinfo->getType().
     u32_t srcId = _svfir->getValueNode(src);
@@ -1625,7 +1625,7 @@ const SVFType* AbstractInterpretation::getPointeeElement(AbstractState& as, Node
     return nullptr;
 }
 
-void AbstractInterpretation::handleMemset(AbstractState& as, const SVF::SVFValue *dst, AbstractValue elem, AbstractValue len)
+void AbstractInterpretation::handleMemset(AbstractState& as, const SVF::SVFValue *dst, IntervalValue elem, IntervalValue len)
 {
     u32_t dstId = _svfir->getValueNode(dst);
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());

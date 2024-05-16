@@ -111,7 +111,7 @@ public:
         // var1 := var0 + 1;
         relation[1] =
             getContext().int_const("1") == getContext().int_const("0") + 1;
-        itv[1] = itv[0] + IntervalValue(1);
+        itv[1] = itv[0].getInterval() + IntervalValue(1);
         // Test extract sub vars
         Set<u32_t> res;
         relation.extractSubVars(relation[1], res);
@@ -145,7 +145,7 @@ public:
         // var1 := var0 + 1;
         relation[1] =
             getContext().int_const("1") == getContext().int_const("0") * 2;
-        itv[1] = itv[0] * IntervalValue(2);
+        itv[1] = itv[0].getInterval() * IntervalValue(2);
 
         // Test extract sub vars
         Set<u32_t> res;
@@ -184,7 +184,7 @@ public:
         // var2 := var1 - var0;
         relation[2] = getContext().int_const("2") ==
                       getContext().int_const("1") - getContext().int_const("0");
-        itv[2] = itv[1] - itv[0];
+        itv[2] = itv[1].getInterval() - itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
@@ -226,7 +226,7 @@ public:
         // var2 := var1 - var0;
         relation[2] = getContext().int_const("2") ==
                       getContext().int_const("1") - getContext().int_const("0");
-        itv[2] = itv[1] - itv[0];
+        itv[2] = itv[1].getInterval() - itv[0].getInterval();
 
         // Test extract sub vars
         Set<u32_t> res;
@@ -269,7 +269,7 @@ public:
         // var2 := var1 - var0;
         relation[2] = getContext().int_const("2") ==
                       getContext().int_const("1") - getContext().int_const("0");
-        itv[2] = itv[1] - itv[0];
+        itv[2] = itv[1].getInterval() - itv[0].getInterval();
 
         // Test extract sub vars
         Set<u32_t> res;
@@ -312,7 +312,7 @@ public:
         // var2 := var1 - var0;
         relation[2] = getContext().int_const("2") ==
                       getContext().int_const("1") - getContext().int_const("0");
-        itv[2] = itv[1] - itv[0];
+        itv[2] = itv[1].getInterval() - itv[0].getInterval();
 
         // Test extract sub vars
         Set<u32_t> res;
@@ -355,7 +355,7 @@ public:
         // var2 := var1 - var0;
         relation[2] = getContext().int_const("2") ==
                       getContext().int_const("1") - getContext().int_const("0");
-        itv[2] = itv[1] - itv[0];
+        itv[2] = itv[1].getInterval() - itv[0].getInterval();
 
         // Test extract sub vars
         Set<u32_t> res;
@@ -398,7 +398,7 @@ public:
         // var2 := var1 / var0;
         relation[2] = getContext().int_const("2") ==
                       getContext().int_const("1") / getContext().int_const("0");
-        itv[2] = itv[1] / itv[0];
+        itv[2] = itv[1].getInterval() / itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
@@ -440,7 +440,7 @@ public:
         // var2 := var1 / var0;
         relation[2] = getContext().int_const("2") ==
                       getContext().int_const("1") / getContext().int_const("0");
-        itv[2] = itv[1] / itv[0];
+        itv[2] = itv[1].getInterval() / itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
@@ -482,7 +482,7 @@ public:
         // var2 := var1 / var0;
         relation[2] = getContext().int_const("2") ==
                       getContext().int_const("1") / getContext().int_const("0");
-        itv[2] = itv[1] / itv[0];
+        itv[2] = itv[1].getInterval() / itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
@@ -523,7 +523,7 @@ public:
         // var2 := var1 / var0;
         relation[2] = getContext().int_const("2") ==
                       getContext().int_const("1") / getContext().int_const("0");
-        itv[2] = itv[1] / itv[0];
+        itv[2] = itv[1].getInterval() / itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);
@@ -565,7 +565,7 @@ public:
         // var2 := var1 / var0;
         relation[2] = getContext().int_const("2") ==
                       getContext().int_const("1") / getContext().int_const("0");
-        itv[2] = itv[1] / itv[0];
+        itv[2] = itv[1].getInterval() / itv[0].getInterval();
         // Test extract sub vars
         Set<u32_t> res;
         relation.extractSubVars(relation[2], res);

@@ -361,19 +361,19 @@ AbstractValue SVFIR2AbsState::getGepObjAddress(AbstractState& es, u32_t pointer,
 {
     assert(!getAddrs(es, pointer).getAddrs().empty());
     AbstractValue addrs = getAddrs(es, pointer);
-    AbstractValue ret = AddressValue();
+    AddressValue ret = AddressValue();
     for (const auto &addr: addrs.getAddrs())
     {
         s64_t baseObj = getInternalID(addr);
         if (baseObj == 0)
         {
-            ret.insertAddr(getVirtualMemAddress(0));
+            ret.insert(getVirtualMemAddress(0));
             continue;
         }
         assert(SVFUtil::isa<ObjVar>(_svfir->getGNode(baseObj)) && "Fail to get the base object address!");
         NodeID gepObj = _svfir->getGepObjVar(baseObj, offset);
         initSVFVar(es, gepObj);
-        ret.insertAddr(getVirtualMemAddress(gepObj));
+        ret.insert(getVirtualMemAddress(gepObj));
     }
     return ret;
 }
@@ -400,11 +400,11 @@ AbstractValue SVFIR2AbsState::getGepObjAddress(AbstractState& es, u32_t pointer,
 *  Therefore the final byteoffset is [8+4*var1.lb(), 8+4*var1.ub()]
  *
  */
-AbstractValue SVFIR2AbsState::getByteOffset(const AbstractState& es, const GepStmt *gep)
+IntervalValue SVFIR2AbsState::getByteOffset(const AbstractState& es, const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
-    AbstractValue res = IntervalValue(0); // Initialize the result interval 'res' to 0.
+    IntervalValue res = IntervalValue(0); // Initialize the result interval 'res' to 0.
     // Loop through the offsetVarAndGepTypePairVec in reverse order.
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
@@ -470,11 +470,11 @@ AbstractValue SVFIR2AbsState::getByteOffset(const AbstractState& es, const GepSt
  *
  * @return      A pair of APOffset values representing the offset range.
  */
-AbstractValue SVFIR2AbsState::getElementIndex(const AbstractState& es, const GepStmt *gep)
+IntervalValue SVFIR2AbsState::getElementIndex(const AbstractState& es, const GepStmt *gep)
 {
     if (gep->isConstantOffset())
         return IntervalValue((s64_t)gep->accumulateConstantOffset());
-    AbstractValue res = IntervalValue(0);
+    IntervalValue res = IntervalValue(0);
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
         AccessPath::IdxOperandPair IdxVarAndType =
@@ -632,8 +632,8 @@ void SVFIR2AbsState::handleBinary(AbstractState& es, const BinaryOPStmt *binary)
     if (!inVarToValTable(es, op1)) es[op1] = IntervalValue::top();
     if (inVarToValTable(es, op0) && inVarToValTable(es, op1))
     {
-        AbstractValue &lhs = es[op0], &rhs = es[op1];
-        AbstractValue resVal;
+        IntervalValue &lhs = es[op0].getInterval(), &rhs = es[op1].getInterval();
+        IntervalValue resVal;
         switch (binary->getOpcode())
         {
         case BinaryOPStmt::Add:
@@ -692,8 +692,8 @@ void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
     u32_t res = cmp->getResID();
     if (inVarToValTable(es, op0) && inVarToValTable(es, op1))
     {
-        AbstractValue resVal;
-        AbstractValue &lhs = es[op0], &rhs = es[op1];
+        IntervalValue resVal;
+        IntervalValue &lhs = es[op0].getInterval(), &rhs = es[op1].getInterval();
         //AbstractValue
         auto predicate = cmp->getPredicate();
         switch (predicate)
@@ -1010,7 +1010,7 @@ void SVFIR2AbsState::handleGep(AbstractState& es, const GepStmt *gep)
     if (!inVarToAddrsTable(es, rhs)) return;
     AbstractValue &rhsVal = es[rhs];
     assert(!rhsVal.getAddrs().empty());
-    AbstractValue offsetPair = getElementIndex(es, gep);
+    IntervalValue offsetPair = getElementIndex(es, gep);
     if (!isVirtualMemAddress(*rhsVal.getAddrs().begin()))
         return;
     else
