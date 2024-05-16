@@ -81,10 +81,10 @@ public:
     /// e.g. GepStmt* gep = [i32*10], x, and x is [0,3]
     /// std::pair<s32_t, s32_t> byteOffset = getByteOffset(gep);
     /// byteOffset should be [0, 12] since i32 is 4 bytes.
-    AbstractValue getByteOffset(const AbstractState& es, const GepStmt *gep);
+    IntervalValue getByteOffset(const AbstractState& es, const GepStmt *gep);
 
     /// Return the offset expression of a GepStmt
-    AbstractValue getElementIndex(const AbstractState& es, const GepStmt *gep);
+    IntervalValue getElementIndex(const AbstractState& es, const GepStmt *gep);
 
 
     static z3::context &getContext()

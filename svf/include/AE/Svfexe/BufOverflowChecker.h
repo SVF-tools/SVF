@@ -164,7 +164,7 @@ protected:
      * @param len the length of the buffer overflow checkpoint
      * @return true if the buffer overflow is detected
      */
-    bool canSafelyAccessMemory(const SVFValue *value, const AbstractValue &len, const ICFGNode *curNode);
+    bool canSafelyAccessMemory(const SVFValue *value, const IntervalValue &len, const ICFGNode *curNode);
 
 private:
     /**

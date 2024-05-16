@@ -201,13 +201,14 @@ Z3Expr RelationSolver::gamma_hat(const AbstractState& exeState) const
     Z3Expr res(Z3Expr::getContext().bool_val(true));
     for (auto& item : exeState.getVarToVal())
     {
-        if (item.second.isBottom())
+        IntervalValue interval = item.second.getInterval();
+        if (interval.isBottom())
             return Z3Expr::getContext().bool_val(false);
-        if (item.second.isTop())
+        if (interval.isTop())
             continue;
         Z3Expr v = toIntZ3Expr(item.first);
-        res = (res && v >= (int)item.second.lb().getNumeral() &&
-               v <= (int)item.second.ub().getNumeral()).simplify();
+        res = (res && v >= (int)interval.lb().getNumeral() &&
+               v <= (int)interval.ub().getNumeral()).simplify();
     }
     return res;
 }
@@ -236,8 +237,8 @@ Z3Expr RelationSolver::gamma_hat(u32_t id, const AbstractState& exeState) const
     assert(it != exeState.getVarToVal().end() && "id not in varToVal?");
     Z3Expr v = toIntZ3Expr(id);
     // Z3Expr v = Z3Expr::getContext().int_const(std::to_string(id).c_str());
-    Z3Expr res = (v >= (int)it->second.lb().getNumeral() &&
-                  v <= (int)it->second.ub().getNumeral());
+    Z3Expr res = (v >= (int)it->second.getInterval().lb().getNumeral() &&
+                  v <= (int)it->second.getInterval().ub().getNumeral());
     return res;
 }
 
@@ -281,31 +282,33 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
     /// init low, ret, high
     for (const auto& item: domain.getVarToVal())
     {
-        updateMap(ret, item.first, item.second.ub().getFVal());
-        if (item.second.lb().is_minus_infinity())
+        IntervalValue interval = item.second.getInterval();
+        updateMap(ret, item.first, interval.ub().getFVal());
+        if (interval.lb().is_minus_infinity())
             updateMap(low_values, item.first, -infinity);
         else
-            updateMap(low_values, item.first, item.second.lb().getFVal());
-        if (item.second.ub().is_plus_infinity())
+            updateMap(low_values, item.first, interval.lb().getFVal());
+        if (interval.ub().is_plus_infinity())
             updateMap(high_values, item.first, infinity);
         else
-            updateMap(high_values, item.first, item.second.ub().getFVal());
+            updateMap(high_values, item.first, interval.ub().getFVal());
         if (item.first > bias)
             bias = item.first + 1;
     }
     for (const auto& item: domain.getVarToVal())
     {
         /// init objects -x
+        IntervalValue interval = item.second.getInterval();
         u32_t reverse_key = item.first + bias;
-        updateMap(ret, reverse_key, -item.second.lb().getFVal());
-        if (item.second.ub().is_plus_infinity())
+        updateMap(ret, reverse_key, -interval.lb().getFVal());
+        if (interval.ub().is_plus_infinity())
             updateMap(low_values, reverse_key, -infinity);
         else
-            updateMap(low_values, reverse_key, -item.second.ub().getFVal());
-        if (item.second.lb().is_minus_infinity())
+            updateMap(low_values, reverse_key, -interval.ub().getFVal());
+        if (interval.lb().is_minus_infinity())
             updateMap(high_values, reverse_key, infinity);
         else
-            updateMap(high_values, reverse_key, -item.second.lb().getFVal());
+            updateMap(high_values, reverse_key, -interval.lb().getFVal());
         /// add a relation that x == -(x+bias)
         new_phi = (new_phi && (toIntZ3Expr(reverse_key) == -1 * toIntZ3Expr(item.first)));
     }

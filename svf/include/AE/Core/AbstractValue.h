@@ -168,317 +168,36 @@ public:
     AbstractValue(const IntervalValue& ival) : type(IntervalType), interval(ival) {}
 
     AbstractValue(const AddressValue& addr) : type(AddressType), addr(addr) {}
-    // TODO: move constructor
+
     IntervalValue& getInterval()
     {
         if (isUnknown())
         {
             interval = IntervalValue::top();
         }
-        assert(isInterval());
+        assert(isInterval() && "Attempting to retrieve an AbstractValue that is not an Interval!");
         return interval;
     }
 
-    //
     const IntervalValue getInterval() const
     {
-        assert(isInterval());
+        assert(isInterval() && "Attempting to retrieve an AbstractValue that is not an Interval!");
         return interval;
     }
 
     AddressValue& getAddrs()
     {
-        assert(isAddr());
+        assert(isAddr() && "Attempting to retrieve an AbstractValue that is not an Address!");
         return addr;
     }
 
     const AddressValue getAddrs() const
     {
-        assert(isAddr());
+        assert(isAddr() && "Attempting to retrieve an AbstractValue that is not an Address!");
         return addr;
     }
+
     ~AbstractValue() {};
-
-
-    // interval visit funcs
-    bool isTop() const
-    {
-        assert(isInterval());
-        return interval.isTop();
-    }
-
-    bool isBottom() const
-    {
-        assert(isInterval());
-        return interval.isBottom();
-    }
-
-    const BoundedInt& lb() const
-    {
-        assert(isInterval());
-        return interval.lb();
-    }
-
-    const BoundedInt& ub() const
-    {
-        assert(isInterval());
-        return interval.ub();
-    }
-
-    void setLb(const BoundedInt& lb)
-    {
-        assert(isInterval());
-        interval.setLb(lb);
-    }
-
-    void setUb(const BoundedInt& ub)
-    {
-        assert(isInterval());
-        interval.setUb(ub);
-    }
-
-    void setValue(const BoundedInt &lb, const BoundedInt &ub)
-    {
-        assert(isInterval());
-        interval.setValue(lb, ub);
-    }
-
-    bool is_zero() const
-    {
-        assert(isInterval());
-        return interval.is_zero();
-    }
-
-    bool is_infinite() const
-    {
-        assert(isInterval());
-        return interval.is_infinite();
-    }
-
-    bool is_int() const
-    {
-        assert(isInterval());
-        return interval.is_int();
-    }
-
-    bool is_real() const
-    {
-        assert(isInterval());
-        return interval.is_real();
-    }
-
-    s64_t getIntNumeral() const
-    {
-        assert(isInterval());
-        return interval.getIntNumeral();
-    }
-
-    double getRealNumeral() const
-    {
-        assert(isInterval());
-        return interval.getRealNumeral();
-    }
-
-    bool is_numeral() const
-    {
-        assert(isInterval());
-        return interval.is_numeral();
-    }
-
-    void set_to_bottom()
-    {
-        assert(isInterval());
-        interval.set_to_bottom();
-    }
-
-    void set_to_top()
-    {
-        assert(isInterval());
-        interval.set_to_top();
-    }
-
-    bool leq(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval.leq(other.interval);
-    }
-
-    bool geq(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval.geq(other.interval);
-    }
-
-    bool contains(s64_t n) const
-    {
-        assert(isInterval());
-        return interval.contains(n);
-    }
-    // operator +-*/%>< >= <= << >> & | ^
-    AbstractValue operator+(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval + other.interval;
-    }
-    AbstractValue operator+(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval + other;
-    }
-
-    AbstractValue operator-(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval - other.interval;
-    }
-    AbstractValue operator-(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval - other;
-    }
-
-    AbstractValue operator*(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval * other.interval;
-    }
-    AbstractValue operator*(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval * other;
-    }
-
-    AbstractValue operator/(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval / other.interval;
-    }
-    AbstractValue operator/(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval / other;
-    }
-
-    AbstractValue operator%(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval % other.interval;
-    }
-    AbstractValue operator%(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval % other;
-    }
-
-    AbstractValue operator>>(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval >> other.interval;
-    }
-    AbstractValue operator>>(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval >> other;
-    }
-
-    AbstractValue operator<<(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval << other.interval;
-    }
-    AbstractValue operator<<(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval << other;
-    }
-
-    AbstractValue operator&(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval & other.interval;
-    }
-    AbstractValue operator&(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval & other;
-    }
-
-    AbstractValue operator|(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval | other.interval;
-    }
-    AbstractValue operator|(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval | other;
-    }
-
-    AbstractValue operator^(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval ^ other.interval;
-    }
-    AbstractValue operator^(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval ^ other;
-    }
-
-    AbstractValue operator>(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval > other.interval;
-    }
-    AbstractValue operator>(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval > other;
-    }
-
-    AbstractValue operator<(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval < other.interval;
-    }
-    AbstractValue operator<(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval < other;
-    }
-
-    AbstractValue operator>=(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval >= other.interval;
-    }
-    AbstractValue operator>=(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval >= other;
-    }
-
-    AbstractValue operator<=(const AbstractValue &other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval <= other.interval;
-    }
-    AbstractValue operator<=(const IntervalValue &other) const
-    {
-        assert(isInterval());
-        return interval <= other;
-    }
-
-
-    // address visit funcs
-    std::pair<AddressValue::AddrSet::iterator, bool> insertAddr(u32_t id)   // insertAddr
-    {
-        assert(isAddr());
-        return addr.insert(id);
-    }
-
-    // TODO: equals, join_with, meet_with, widen_with, narrow_with, toString,
-    // These should be merged with AddressValue
 
     bool equals(const AbstractValue &rhs) const
     {
