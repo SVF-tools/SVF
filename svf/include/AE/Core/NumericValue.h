@@ -64,7 +64,8 @@ public:
 
     BoundedDouble(BoundedDouble &&rhs) : _fVal(std::move(rhs._fVal)) {}
 
-    BoundedDouble& operator=(BoundedDouble&& rhs) {
+    BoundedDouble& operator=(BoundedDouble&& rhs)
+    {
         _fVal = std::move(rhs._fVal);
         return *this;
     }
@@ -72,13 +73,15 @@ public:
     virtual ~BoundedDouble() {}
 
 
-    static bool doubleEqual(double a, double b) {
+    static bool doubleEqual(double a, double b)
+    {
         if (std::isinf(a) && std::isinf(b))
             return a == b;
         return std::fabs(a - b) < epsilon;
     }
 
-    const double getFVal() const {
+    const double getFVal() const
+    {
         return _fVal;
     }
 
@@ -221,9 +224,10 @@ public:
     static double safeAdd(double lhs, double rhs)
     {
         if ((lhs == std::numeric_limits<double>::infinity() &&
-             rhs == -std::numeric_limits<double>::infinity()) ||
-            (lhs == -std::numeric_limits<double>::infinity() &&
-             rhs == std::numeric_limits<double>::infinity())) {
+                rhs == -std::numeric_limits<double>::infinity()) ||
+                (lhs == -std::numeric_limits<double>::infinity() &&
+                 rhs == std::numeric_limits<double>::infinity()))
+        {
             assert(false && "invalid add");
         }
         double res =
@@ -233,7 +237,7 @@ public:
         if (res == std::numeric_limits<double>::infinity())
         {
             return res; // Positive overflow has occurred, return positive
-                        // infinity
+            // infinity
         }
 
         // Check if the result is negative infinity, which can indicate a large
@@ -241,29 +245,29 @@ public:
         if (res == -std::numeric_limits<double>::infinity())
         {
             return res; // Negative "overflow", effectively an underflow to
-                        // negative infinity
+            // negative infinity
         }
 
         // Check for positive overflow: verify if both operands are positive and
         // their sum exceeds the maximum double value
         if (lhs > 0 && rhs > 0 &&
-            (std::numeric_limits<double>::max() - lhs) < rhs)
+                (std::numeric_limits<double>::max() - lhs) < rhs)
         {
             res =
                 std::numeric_limits<double>::infinity(); // Set result to
-                                                        // positive infinity to
-                                                        // indicate overflow
+            // positive infinity to
+            // indicate overflow
             return res;
         }
 
         // Check for an underflow scenario: both numbers are negative and their
         // sum is more negative than what double can represent
         if (lhs < 0 && rhs < 0 &&
-            (-std::numeric_limits<double>::max() - lhs) > rhs)
+                (-std::numeric_limits<double>::max() - lhs) > rhs)
         {
             res = -std::numeric_limits<
-                double>::infinity(); // Set result to negative infinity to
-                                    // clarify extreme negative sum
+                  double>::infinity(); // Set result to negative infinity to
+            // clarify extreme negative sum
             return res;
         }
 
@@ -305,7 +309,7 @@ public:
         if (res == std::numeric_limits<double>::infinity())
         {
             return res; // Positive overflow has occurred, return positive
-                        // infinity
+            // infinity
         }
 
         // Check if the result is negative infinity, which can indicate a large
@@ -313,7 +317,7 @@ public:
         if (res == -std::numeric_limits<double>::infinity())
         {
             return res; // Negative "overflow", effectively an underflow to
-                        // negative infinity
+            // negative infinity
         }
         // Check for overflow scenarios
         if (lhs > 0 && rhs > 0 && lhs > std::numeric_limits<double>::max() / rhs)
@@ -327,12 +331,12 @@ public:
 
         // Check for "underflow" scenarios (negative overflow)
         if (lhs > 0 && rhs < 0 &&
-            rhs < std::numeric_limits<double>::lowest() / lhs)
+                rhs < std::numeric_limits<double>::lowest() / lhs)
         {
             return -std::numeric_limits<double>::infinity();
         }
         if (lhs < 0 && rhs > 0 &&
-            lhs < std::numeric_limits<double>::lowest() / rhs)
+                lhs < std::numeric_limits<double>::lowest() / rhs)
         {
             return -std::numeric_limits<double>::infinity();
         }
@@ -360,14 +364,14 @@ public:
         if (doubleEqual(rhs, 0.0f))
         {
             return (lhs >= 0.0f) ? std::numeric_limits<double>::infinity()
-                                 : -std::numeric_limits<double>::infinity();
+                   : -std::numeric_limits<double>::infinity();
         }
         double res = lhs / rhs;
         // Check if the result is positive infinity due to overflow
         if (res == std::numeric_limits<double>::infinity())
         {
             return res; // Positive overflow has occurred, return positive
-                        // infinity
+            // infinity
         }
 
         // Check if the result is negative infinity, which can indicate a large
@@ -375,17 +379,17 @@ public:
         if (res == -std::numeric_limits<double>::infinity())
         {
             return res; // Negative "overflow", effectively an underflow to
-                        // negative infinity
+            // negative infinity
         }
 
         // Check for overflow when dividing small numbers
         if (rhs > 0 && rhs < std::numeric_limits<double>::min() &&
-            lhs > std::numeric_limits<double>::max() * rhs)
+                lhs > std::numeric_limits<double>::max() * rhs)
         {
             return std::numeric_limits<double>::infinity();
         }
         if (rhs < 0 && rhs > -std::numeric_limits<double>::min() &&
-            lhs > std::numeric_limits<double>::max() * rhs)
+                lhs > std::numeric_limits<double>::max() * rhs)
         {
             return -std::numeric_limits<double>::infinity();
         }
@@ -414,10 +418,12 @@ public:
         abort();
     }
 
-    inline bool is_int() const {
+    inline bool is_int() const
+    {
         return _fVal == std::round(_fVal);
     }
-    inline bool is_real() const {
+    inline bool is_real() const
+    {
         return !is_int();
     }
 
@@ -482,7 +488,7 @@ public:
     }
 
     friend BoundedDouble ite(const BoundedDouble& cond, const BoundedDouble& lhs,
-                            const BoundedDouble& rhs)
+                             const BoundedDouble& rhs)
     {
         return cond._fVal != 0.0f ? lhs._fVal : rhs._fVal;
     }
@@ -565,15 +571,18 @@ public:
         }
     }
 
-    inline s64_t getIntNumeral() const {
+    inline s64_t getIntNumeral() const
+    {
         return getNumeral();
     }
 
-    inline double getRealNumeral() const {
+    inline double getRealNumeral() const
+    {
         return _fVal;
     }
 
-    inline virtual const std::string to_string() const {
+    inline virtual const std::string to_string() const
+    {
         return std::to_string(_fVal);
     }
 
@@ -587,15 +596,18 @@ private:
 
 public:
 
-    BoundedInt(s32_t val) {
+    BoundedInt(s32_t val)
+    {
         _fVal = val;
     }
 
-    BoundedInt(s64_t val) {
+    BoundedInt(s64_t val)
+    {
         _fVal = val;
     }
 
-    BoundedInt(const BoundedInt& rhs) {
+    BoundedInt(const BoundedInt& rhs)
+    {
         _fVal = rhs._fVal;
     }
 
@@ -605,7 +617,8 @@ public:
         return *this;
     }
 
-    BoundedInt(BoundedInt&& rhs) {
+    BoundedInt(BoundedInt&& rhs)
+    {
         _fVal = rhs._fVal;
     }
 
@@ -615,11 +628,13 @@ public:
         return *this;
     }
 
-    BoundedInt(double val) {
+    BoundedInt(double val)
+    {
         _fVal = val;
     }
 
-    BoundedInt(const BoundedDouble& f) {
+    BoundedInt(const BoundedDouble& f)
+    {
         _fVal = f.getFVal();
     }
 
