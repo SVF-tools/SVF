@@ -385,7 +385,7 @@ public:
 
     virtual const std::string toString() const;
 
-    /// Overloading operator << for dumping node 
+    /// Overloading operator << for dumping node
     //@{
     friend OutStream &operator<<(OutStream &o, const ConstraintNode &node)
     {
