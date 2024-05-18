@@ -383,7 +383,16 @@ public:
     }
     //@}
 
+    virtual const std::string toString() const;
 
+    /// Overloading operator << for dumping node 
+    //@{
+    friend OutStream &operator<<(OutStream &o, const ConstraintNode &node)
+    {
+        o << node.toString();
+        return o;
+    }
+    //@}
 };
 
 } // End namespace SVF

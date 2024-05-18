@@ -717,6 +717,11 @@ ConstraintNode::const_iterator ConstraintNode::directInEdgeEnd() const
 }
 //@}
 
+const std::string ConstraintNode::toString() const
+{
+    return SVFIR::getPAG()->getGNode(getId())->toString();
+}
+
 /*!
  * GraphTraits specialization for constraint graph
  */
