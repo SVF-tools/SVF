@@ -299,7 +299,8 @@ public:
     }
 
     /// Check current IntervalValue is smaller than or equal to the other
-    bool leq(const IntervalValue &other) const
+    /// this: [2,3], other: [1, 4], return true
+    bool containedWithin(const IntervalValue &other) const
     {
         if (this->isBottom())
         {
@@ -317,7 +318,8 @@ public:
     }
 
     /// Check current IntervalValue is greater than or equal to the other
-    bool geq(const IntervalValue &other) const
+    /// this: [1,4], other: [2,3], return true
+    bool contain(const IntervalValue &other) const
     {
         if (this->isBottom())
         {
@@ -330,6 +332,38 @@ public:
         else
         {
             return other._lb.geq(this->_lb) && this->_ub.geq(other._ub);
+        }
+    }
+
+    /// Check the upper bound of this Interval is less than or equal to the lower bound
+    /// e.g. [1, 3] < [3, 5] return true, lhs.ub <= rhs.lb
+    bool leq(const IntervalValue &other) const {
+        if (this->isBottom()) {
+            return true;
+        }
+        else if (other.isBottom())
+        {
+            return false;
+        }
+        else
+        {
+            return this->_ub.leq(other._lb);
+        }
+    }
+
+    /// Check the lower bound of this Interval is greater than or equal to the upper bound
+    /// e.g. [3, 5] > [1, 3] return true, lhs.lb >= rhs.ub
+    bool geq(const IntervalValue &other) const {
+        if (this->isBottom())                {
+            return true;
+        }
+        else if (other.isBottom())
+        {
+            return false;
+        }
+        else
+        {
+            return this->_lb.geq(other._ub);
         }
     }
 
