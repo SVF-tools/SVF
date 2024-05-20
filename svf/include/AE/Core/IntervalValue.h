@@ -341,8 +341,10 @@ public:
 
     /// Check the upper bound of this Interval is less than or equal to the lower bound
     /// e.g. [1, 3] < [3, 5] return true, lhs.ub <= rhs.lb
-    bool leq(const IntervalValue &other) const {
-        if (this->isBottom()) {
+    bool leq(const IntervalValue &other) const
+    {
+        if (this->isBottom())
+        {
             return true;
         }
         else if (other.isBottom())
@@ -357,8 +359,10 @@ public:
 
     /// Check the lower bound of this Interval is greater than or equal to the upper bound
     /// e.g. [3, 5] > [1, 3] return true, lhs.lb >= rhs.ub
-    bool geq(const IntervalValue &other) const {
-        if (this->isBottom())                {
+    bool geq(const IntervalValue &other) const
+    {
+        if (this->isBottom())
+        {
             return true;
         }
         else if (other.isBottom())

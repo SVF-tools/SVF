@@ -410,7 +410,7 @@ public:
             if (it->second.isInterval() && item.second.isInterval())
             {
                 if (!it->second.getInterval().contain(
-                        item.second.getInterval()))
+                            item.second.getInterval()))
                     return false;
             }
 
