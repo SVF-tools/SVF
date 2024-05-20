@@ -298,8 +298,10 @@ public:
         this->_ub = plus_infinity();
     }
 
-    /// Check current IntervalValue is smaller than or equal to the other
-    /// this: [2,3], other: [1, 4], return true
+    /// Determines if the current IntervalValue is fully contained within another IntervalValue.
+    /// Example: this: [2, 3], other: [1, 4] -> returns true
+    /// Note: If the current interval is 'bottom', it is considered contained within any interval.
+    ///       If the other interval is 'bottom', it cannot contain any interval.
     bool containedWithin(const IntervalValue &other) const
     {
         if (this->isBottom())
@@ -317,8 +319,10 @@ public:
 
     }
 
-    /// Check current IntervalValue is greater than or equal to the other
-    /// this: [1,4], other: [2,3], return true
+    /// Determines if the current IntervalValue fully contains another IntervalValue.
+    /// Example: this: [1, 4], other: [2, 3] -> returns true
+    /// Note: If the current interval is 'bottom', it is considered to contain any interval.
+    ///       If the other interval is 'bottom', it cannot be contained by any interval.
     bool contain(const IntervalValue &other) const
     {
         if (this->isBottom())
