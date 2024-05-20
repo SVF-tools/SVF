@@ -393,7 +393,7 @@ public:
             auto it = rhs.find(item.first);
             if (it == rhs.end()) return false;
             // judge from expr id
-            if (item.second.getInterval().geq(it->second.getInterval())) return false;
+            if (item.second.getInterval().contain(it->second.getInterval())) return false;
         }
         return true;
     }
@@ -409,7 +409,8 @@ public:
             // judge from expr id
             if (it->second.isInterval() && item.second.isInterval())
             {
-                if (!it->second.getInterval().geq(item.second.getInterval()))
+                if (!it->second.getInterval().contain(
+                        item.second.getInterval()))
                     return false;
             }
 
