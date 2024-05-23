@@ -175,6 +175,8 @@ public:
     /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
     static inline bool isVirtualMemAddress(u32_t val)
     {
+        if (val == 0)
+            assert(false && "val cannot be 0");
         return AddressValue::isVirtualMemAddress(val);
     }
 

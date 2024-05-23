@@ -109,6 +109,15 @@ public:
             return globalNulladdrs;
     }
 
+    inline bool inVarTable(const AbstractState& es, u32_t id) const
+    {
+        return es.inVarToValTable(id) || es.inVarToAddrsTable(id);
+    }
+
+    inline bool inAddrTable(const AbstractState& es, u32_t id) const
+    {
+        return es.inAddrToValTable(id) || es.inAddrToAddrsTable(id);
+    }
 
     /// whether the variable is in varToVal table
     inline bool inVarToValTable(const AbstractState& es, u32_t id) const
@@ -126,13 +135,13 @@ public:
     /// whether the memory address stores a interval value
     inline bool inLocToValTable(const AbstractState& es, u32_t id) const
     {
-        return es.inLocToValTable(id);
+        return es.inAddrToValTable(id);
     }
 
     /// whether the memory address stores memory addresses
     inline bool inLocToAddrsTable(const AbstractState& es, u32_t id) const
     {
-        return es.inLocToAddrsTable(id);
+        return es.inAddrToAddrsTable(id);
     }
 
     void handleAddr(AbstractState& es, const AddrStmt *addr);
@@ -166,6 +175,8 @@ public:
     /// The physical address starts with 0x7f...... + idx
     static inline u32_t getVirtualMemAddress(u32_t idx)
     {
+        if (idx == 0)
+            assert(false && "idx cannot be 0");
         return AbstractState::getVirtualMemAddress(idx);
     }
 

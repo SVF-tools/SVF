@@ -39,7 +39,7 @@ public:
     };
     DataType type;
     IntervalValue interval;
-    AddressValue addr;
+    AddressValue addrs;
 
     AbstractValue() : type(IntervalType)
     {
@@ -53,7 +53,7 @@ public:
             interval = IntervalValue::top();
             break;
         case AddressType:
-            addr = AddressValue();
+            addrs = AddressValue();
             break;
         case UnknownType:
             break;
@@ -68,7 +68,7 @@ public:
             interval = other.interval;
             break;
         case AddressType:
-            addr = other.addr;
+            addrs = other.addrs;
             break;
         case UnknownType:
             break;
@@ -101,7 +101,7 @@ public:
             interval = other.interval;
             break;
         case AddressType:
-            addr = other.addr;
+            addrs = other.addrs;
             break;
         case UnknownType:
             break;
@@ -118,7 +118,7 @@ public:
             interval = other.interval;
             break;
         case AddressType:
-            addr = other.addr;
+            addrs = other.addrs;
             break;
         case UnknownType:
             break;
@@ -136,38 +136,13 @@ public:
     AbstractValue& operator=(const AddressValue& other)
     {
         type = AddressType;
-        addr = other;
+        addrs = other;
         return *this;
     }
 
-    AbstractValue operator==(const AbstractValue& other) const
-    {
-        assert(isInterval() && other.isInterval());
-        return interval == other.interval;
-    }
-
-    AbstractValue operator==(const IntervalValue& other) const
-    {
-        assert(isInterval());
-        return interval == other;
-    }
-
-    AbstractValue operator!=(const AbstractValue& other) const
-    {
-        assert(isInterval());
-        return interval != other.interval;
-    }
-
-    AbstractValue operator!=(const IntervalValue& other) const
-    {
-        assert(isInterval());
-        return interval != other;
-    }
-
-
     AbstractValue(const IntervalValue& ival) : type(IntervalType), interval(ival) {}
 
-    AbstractValue(const AddressValue& addr) : type(AddressType), addr(addr) {}
+    AbstractValue(const AddressValue& addr) : type(AddressType), addrs(addr) {}
 
     IntervalValue& getInterval()
     {
@@ -175,26 +150,22 @@ public:
         {
             interval = IntervalValue::top();
         }
-        assert(isInterval() && "Attempting to retrieve an AbstractValue that is not an Interval!");
         return interval;
     }
 
     const IntervalValue getInterval() const
     {
-        assert(isInterval() && "Attempting to retrieve an AbstractValue that is not an Interval!");
         return interval;
     }
 
     AddressValue& getAddrs()
     {
-        assert(isAddr() && "Attempting to retrieve an AbstractValue that is not an Address!");
-        return addr;
+        return addrs;
     }
 
     const AddressValue getAddrs() const
     {
-        assert(isAddr() && "Attempting to retrieve an AbstractValue that is not an Address!");
-        return addr;
+        return addrs;
     }
 
     ~AbstractValue() {};
@@ -211,7 +182,7 @@ public:
         }
         if (isAddr())
         {
-            return addr.equals(rhs.addr);
+            return addrs.equals(rhs.addrs);
         }
         return false;
     }
@@ -233,7 +204,7 @@ public:
         }
         if (isAddr() && other.isAddr())
         {
-            addr.join_with(other.addr);
+            addrs.join_with(other.addrs);
         }
         return;
     }
@@ -250,7 +221,7 @@ public:
         }
         if (isAddr() && other.isAddr())
         {
-            addr.meet_with(other.addr);
+            addrs.meet_with(other.addrs);
         }
         return;
     }
@@ -281,7 +252,7 @@ public:
         }
         else if (isAddr())
         {
-            return addr.toString();
+            return addrs.toString();
         }
         return "";
     }

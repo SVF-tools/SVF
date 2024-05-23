@@ -80,6 +80,8 @@ public:
     /// The physical address starts with 0x7f...... + idx
     static inline u32_t getVirtualMemAddress(u32_t idx)
     {
+        if (idx == 0)
+            assert(false && "idx cannot be 0");
         return AddressValue::getVirtualMemAddress(idx);
     }
 
@@ -224,7 +226,7 @@ public:
     }
 
     /// whether the memory address stores memory addresses
-    inline bool inLocToAddrsTable(u32_t id) const
+    inline bool inAddrToAddrsTable(u32_t id) const
     {
         if (_addrToAbsVal.find(id)!= _addrToAbsVal.end())
         {
@@ -237,7 +239,7 @@ public:
     }
 
     /// whether the memory address stores abstract value
-    inline virtual bool inLocToValTable(u32_t id) const
+    inline virtual bool inAddrToValTable(u32_t id) const
     {
         if (_addrToAbsVal.find(id) != _addrToAbsVal.end())
         {
