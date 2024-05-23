@@ -570,13 +570,13 @@ void SVFIR2AbsState::initObjVar(AbstractState& as, const ObjVar* var)
 }
 
 
- void SVFIR2AbsState::handleAddr(AbstractState& as, const AddrStmt *addr)
+void SVFIR2AbsState::handleAddr(AbstractState& as, const AddrStmt *addr)
 {
-     initObjVar(as, SVFUtil::cast<ObjVar>(addr->getRHSVar()));
-     if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
-         as[addr->getRHSVarID()].getInterval().meet_with(getRangeLimitFromType(addr->getRHSVar()->getType()));
-     as[addr->getLHSVarID()] = as[addr->getRHSVarID()];
- }
+    initObjVar(as, SVFUtil::cast<ObjVar>(addr->getRHSVar()));
+    if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
+        as[addr->getRHSVarID()].getInterval().meet_with(getRangeLimitFromType(addr->getRHSVar()->getType()));
+    as[addr->getLHSVarID()] = as[addr->getRHSVarID()];
+}
 
 
 void SVFIR2AbsState::handleBinary(AbstractState& as, const BinaryOPStmt *binary)
@@ -590,48 +590,48 @@ void SVFIR2AbsState::handleBinary(AbstractState& as, const BinaryOPStmt *binary)
     IntervalValue resVal;
     switch (binary->getOpcode())
     {
-        case BinaryOPStmt::Add:
-        case BinaryOPStmt::FAdd:
-            resVal = (lhs + rhs);
-            break;
-        case BinaryOPStmt::Sub:
-        case BinaryOPStmt::FSub:
-            resVal = (lhs - rhs);
-            break;
-        case BinaryOPStmt::Mul:
-        case BinaryOPStmt::FMul:
-            resVal = (lhs * rhs);
-            break;
-        case BinaryOPStmt::SDiv:
-        case BinaryOPStmt::FDiv:
-        case BinaryOPStmt::UDiv:
-            resVal = (lhs / rhs);
-            break;
-        case BinaryOPStmt::SRem:
-        case BinaryOPStmt::FRem:
-        case BinaryOPStmt::URem:
-            resVal = (lhs % rhs);
-            break;
-        case BinaryOPStmt::Xor:
-            resVal = (lhs ^ rhs);
-            break;
-        case BinaryOPStmt::And:
-            resVal = (lhs & rhs);
-            break;
-        case BinaryOPStmt::Or:
-            resVal = (lhs | rhs);
-            break;
-        case BinaryOPStmt::AShr:
-            resVal = (lhs >> rhs);
-            break;
-        case BinaryOPStmt::Shl:
-            resVal = (lhs << rhs);
-            break;
-        case BinaryOPStmt::LShr:
-            resVal = (lhs >> rhs);
-            break;
-        default:
-            assert(false && "undefined binary: ");
+    case BinaryOPStmt::Add:
+    case BinaryOPStmt::FAdd:
+        resVal = (lhs + rhs);
+        break;
+    case BinaryOPStmt::Sub:
+    case BinaryOPStmt::FSub:
+        resVal = (lhs - rhs);
+        break;
+    case BinaryOPStmt::Mul:
+    case BinaryOPStmt::FMul:
+        resVal = (lhs * rhs);
+        break;
+    case BinaryOPStmt::SDiv:
+    case BinaryOPStmt::FDiv:
+    case BinaryOPStmt::UDiv:
+        resVal = (lhs / rhs);
+        break;
+    case BinaryOPStmt::SRem:
+    case BinaryOPStmt::FRem:
+    case BinaryOPStmt::URem:
+        resVal = (lhs % rhs);
+        break;
+    case BinaryOPStmt::Xor:
+        resVal = (lhs ^ rhs);
+        break;
+    case BinaryOPStmt::And:
+        resVal = (lhs & rhs);
+        break;
+    case BinaryOPStmt::Or:
+        resVal = (lhs | rhs);
+        break;
+    case BinaryOPStmt::AShr:
+        resVal = (lhs >> rhs);
+        break;
+    case BinaryOPStmt::Shl:
+        resVal = (lhs << rhs);
+        break;
+    case BinaryOPStmt::LShr:
+        resVal = (lhs >> rhs);
+        break;
+    default:
+        assert(false && "undefined binary: ");
     }
     as[res] = resVal;
 }
@@ -928,10 +928,12 @@ void SVFIR2AbsState::handleSelect(AbstractState& as, const SelectStmt *select)
     u32_t tval = select->getTrueValue()->getId();
     u32_t fval = select->getFalseValue()->getId();
     u32_t cond = select->getCondition()->getId();
-    if (as[cond].getInterval().is_numeral()) {
+    if (as[cond].getInterval().is_numeral())
+    {
         as[res] = as[cond].getInterval().is_zero() ? as[fval] : as[tval];
     }
-    else {
+    else
+    {
         as[res] = as[tval];
         as[res].join_with(as[fval]);
     }
