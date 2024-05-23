@@ -211,6 +211,7 @@ public:
     /// The physical address starts with 0x7f...... + idx
     static inline u32_t getVirtualMemAddress(u32_t idx)
     {
+        // 0 is the null address, should not be used as a virtual address
         assert(idx != 0 && "idx cannot be 0");
         return AddressMask + idx;
     }
