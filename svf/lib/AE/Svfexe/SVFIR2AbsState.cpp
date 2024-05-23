@@ -751,11 +751,16 @@ void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
         case CmpStmt::FCMP_OEQ:
         case CmpStmt::FCMP_UEQ:
         {
-            if (lhs.getAddrs().hasIntersect(rhs.getAddrs())) {
+            if (lhs.getAddrs().hasIntersect(rhs.getAddrs()))
+            {
                 resVal = IntervalValue(0, 1);
-            } else if (lhs.getAddrs().empty() && rhs.getAddrs().empty()) {
+            }
+            else if (lhs.getAddrs().empty() && rhs.getAddrs().empty())
+            {
                 resVal = IntervalValue(1, 1);
-            } else {
+            }
+            else
+            {
                 resVal = IntervalValue(0, 0);
             }
             break;
@@ -764,11 +769,16 @@ void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
         case CmpStmt::FCMP_ONE:
         case CmpStmt::FCMP_UNE:
         {
-            if (lhs.getAddrs().hasIntersect(rhs.getAddrs())) {
+            if (lhs.getAddrs().hasIntersect(rhs.getAddrs()))
+            {
                 resVal = IntervalValue(0, 1);
-            } else if (lhs.getAddrs().empty() && rhs.getAddrs().empty()) {
+            }
+            else if (lhs.getAddrs().empty() && rhs.getAddrs().empty())
+            {
                 resVal = IntervalValue(0, 0);
-            } else {
+            }
+            else
+            {
                 resVal = IntervalValue(1, 1);
             }
             break;
