@@ -211,13 +211,15 @@ public:
     /// The physical address starts with 0x7f...... + idx
     static inline u32_t getVirtualMemAddress(u32_t idx)
     {
+        // 0 is the null address, should not be used as a virtual address
+        assert(idx != 0 && "idx can’t be 0 because it represents a nullptr");
         return AddressMask + idx;
     }
 
     /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
     static inline bool isVirtualMemAddress(u32_t val)
     {
-        return (val & 0xff000000) == AddressMask;
+        return (val & 0xff000000) == AddressMask && val != AddressMask + 0;
     }
 
     /// Return the internal index if idx is an address otherwise return the value of idx

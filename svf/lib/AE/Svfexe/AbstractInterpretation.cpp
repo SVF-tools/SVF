@@ -166,6 +166,7 @@ void AbstractInterpretation::handleGlobalNode()
     AbstractState as;
     const ICFGNode* node = _icfg->getGlobalICFGNode();
     _postAbsTrace[node] = _preAbsTrace[node];
+    _postAbsTrace[node][SymbolTableInfo::NullPtr] = AddressValue();
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
@@ -345,7 +346,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         for (const auto &addr: addrs)
         {
             NodeID objId = new_es.getInternalID(addr);
-            if (new_es.inLocToValTable(objId))
+            if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(rhs);
             }
@@ -367,7 +368,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         for (const auto &addr: addrs)
         {
             NodeID objId = new_es.getInternalID(addr);
-            if (new_es.inLocToValTable(objId))
+            if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
                     IntervalValue(rhs.lb() + 1, IntervalValue::plus_infinity()));
@@ -385,7 +386,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         for (const auto &addr: addrs)
         {
             NodeID objId = new_es.getInternalID(addr);
-            if (new_es.inLocToValTable(objId))
+            if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
                     IntervalValue(rhs.lb(), IntervalValue::plus_infinity()));
@@ -404,7 +405,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         for (const auto &addr: addrs)
         {
             NodeID objId = new_es.getInternalID(addr);
-            if (new_es.inLocToValTable(objId))
+            if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
                     IntervalValue(IntervalValue::minus_infinity(), rhs.ub() - 1));
@@ -423,7 +424,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
         for (const auto &addr: addrs)
         {
             NodeID objId = new_es.getInternalID(addr);
-            if (new_es.inLocToValTable(objId))
+            if (new_es.inAddrToValTable(objId))
             {
                 new_es.load(addr).meet_with(
                     IntervalValue(IntervalValue::minus_infinity(), rhs.ub()));
@@ -475,7 +476,7 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const SVFVar* var, s64_t suc
                 for (const auto &addr: addrs)
                 {
                     NodeID objId = new_es.getInternalID(addr);
-                    if (new_es.inLocToValTable(objId))
+                    if (new_es.inAddrToValTable(objId))
                     {
                         new_es.load(addr).meet_with(switch_cond);
                     }
@@ -1591,11 +1592,11 @@ void AbstractInterpretation::handleMemcpy(AbstractState& as, const SVF::SVFValue
                 for (const auto &src: expr_src.getAddrs())
                 {
                     u32_t objId = AbstractState::getInternalID(src);
-                    if (as.inLocToValTable(objId))
+                    if (as.inAddrToValTable(objId))
                     {
                         as.store(dst, as.load(src));
                     }
-                    else if (as.inLocToAddrsTable(objId))
+                    else if (as.inAddrToAddrsTable(objId))
                     {
                         as.store(dst, as.load(src));
                     }
@@ -1661,7 +1662,7 @@ void AbstractInterpretation::handleMemset(AbstractState& as, const SVF::SVFValue
             for (const auto &addr: lhs_gep.getAddrs())
             {
                 u32_t objId = AbstractState::getInternalID(addr);
-                if (as.inLocToValTable(objId))
+                if (as.inAddrToValTable(objId))
                 {
                     AbstractValue tmp = as.load(addr);
                     tmp.join_with(elem);

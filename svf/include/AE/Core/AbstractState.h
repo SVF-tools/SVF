@@ -224,7 +224,7 @@ public:
     }
 
     /// whether the memory address stores memory addresses
-    inline bool inLocToAddrsTable(u32_t id) const
+    inline bool inAddrToAddrsTable(u32_t id) const
     {
         if (_addrToAbsVal.find(id)!= _addrToAbsVal.end())
         {
@@ -237,7 +237,7 @@ public:
     }
 
     /// whether the memory address stores abstract value
-    inline virtual bool inLocToValTable(u32_t id) const
+    inline virtual bool inAddrToValTable(u32_t id) const
     {
         if (_addrToAbsVal.find(id) != _addrToAbsVal.end())
         {

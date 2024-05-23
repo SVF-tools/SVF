@@ -359,17 +359,11 @@ void SVFIR2AbsState::narrowAddrs(AbstractState& es, AbstractState&lhs, const Abs
 
 AbstractValue SVFIR2AbsState::getGepObjAddress(AbstractState& es, u32_t pointer, APOffset offset)
 {
-    assert(!getAddrs(es, pointer).getAddrs().empty());
     AbstractValue addrs = getAddrs(es, pointer);
     AddressValue ret = AddressValue();
     for (const auto &addr: addrs.getAddrs())
     {
         s64_t baseObj = getInternalID(addr);
-        if (baseObj == 0)
-        {
-            ret.insert(getVirtualMemAddress(0));
-            continue;
-        }
         assert(SVFUtil::isa<ObjVar>(_svfir->getGNode(baseObj)) && "Fail to get the base object address!");
         NodeID gepObj = _svfir->getGepObjVar(baseObj, offset);
         initSVFVar(es, gepObj);
@@ -750,7 +744,6 @@ void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
     {
         IntervalValue resVal;
         AbstractValue &lhs = getAddrs(es, op0), &rhs = getAddrs(es, op1);
-        assert(!lhs.getAddrs().empty() && !rhs.getAddrs().empty() && "empty address?");
         auto predicate = cmp->getPredicate();
         switch (predicate)
         {
@@ -758,20 +751,12 @@ void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
         case CmpStmt::FCMP_OEQ:
         case CmpStmt::FCMP_UEQ:
         {
-            if (lhs.getAddrs().size() == 1 && rhs.getAddrs().size() == 1)
-            {
-                resVal = IntervalValue(lhs.equals(rhs));
-            }
-            else
-            {
-                if (lhs.getAddrs().hasIntersect(rhs.getAddrs()))
-                {
-                    resVal = IntervalValue::top();
-                }
-                else
-                {
-                    resVal = IntervalValue(0);
-                }
+            if (lhs.getAddrs().hasIntersect(rhs.getAddrs())) {
+                resVal = IntervalValue(0, 1);
+            } else if (lhs.getAddrs().empty() && rhs.getAddrs().empty()) {
+                resVal = IntervalValue(1, 1);
+            } else {
+                resVal = IntervalValue(0, 0);
             }
             break;
         }
@@ -779,20 +764,12 @@ void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
         case CmpStmt::FCMP_ONE:
         case CmpStmt::FCMP_UNE:
         {
-            if (lhs.getAddrs().size() == 1 && rhs.getAddrs().size() == 1)
-            {
-                resVal = IntervalValue(!lhs.equals(rhs));
-            }
-            else
-            {
-                if (lhs.getAddrs().hasIntersect(rhs.getAddrs()))
-                {
-                    resVal = IntervalValue::top();
-                }
-                else
-                {
-                    resVal = IntervalValue(1);
-                }
+            if (lhs.getAddrs().hasIntersect(rhs.getAddrs())) {
+                resVal = IntervalValue(0, 1);
+            } else if (lhs.getAddrs().empty() && rhs.getAddrs().empty()) {
+                resVal = IntervalValue(0, 0);
+            } else {
+                resVal = IntervalValue(1, 1);
             }
             break;
         }
@@ -807,7 +784,7 @@ void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
             }
             else
             {
-                resVal = IntervalValue::top();
+                resVal = IntervalValue(0, 1);
             }
             break;
         }
@@ -822,7 +799,7 @@ void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
             }
             else
             {
-                resVal = IntervalValue::top();
+                resVal = IntervalValue(0, 1);
             }
             break;
         }
@@ -837,7 +814,7 @@ void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
             }
             else
             {
-                resVal = IntervalValue::top();
+                resVal = IntervalValue(0, 1);
             }
             break;
         }
@@ -852,7 +829,7 @@ void SVFIR2AbsState::handleCmp(AbstractState& es, const CmpStmt *cmp)
             }
             else
             {
-                resVal = IntervalValue::top();
+                resVal = IntervalValue(0, 1);
             }
             break;
         }
@@ -878,7 +855,6 @@ void SVFIR2AbsState::handleLoad(AbstractState& es, const LoadStmt *load)
     if (inVarToAddrsTable(es, rhs))
     {
         AbstractValue &addrs = getAddrs(es, rhs);
-        assert(!addrs.getAddrs().empty());
         AbstractValue rhsVal(AbstractValue::UnknownType); // interval::bottom Address::bottom
         // AbstractValue absRhs
         for (const auto &addr: addrs.getAddrs())
@@ -887,7 +863,7 @@ void SVFIR2AbsState::handleLoad(AbstractState& es, const LoadStmt *load)
             // absRhs.join_with
             // es.load()
             u32_t objId = getInternalID(addr);
-            if (inLocToValTable(es, objId) || inLocToAddrsTable(es, objId))
+            if (inAddrTable(es, objId))
             {
                 rhsVal.join_with(es.load(addr));
             }
@@ -903,17 +879,8 @@ void SVFIR2AbsState::handleStore(AbstractState& es, const StoreStmt *store)
     u32_t lhs = store->getLHSVarID();
     if (inVarToAddrsTable(es, lhs))
     {
-        //es.store()
-        assert(!getAddrs(es, lhs).getAddrs().empty());
-        AbstractValue &addrs = es[lhs];
-        for (const auto &addr: addrs.getAddrs())
+        if (inVarTable(es, rhs))
         {
-            es.store(addr, es[rhs]);
-        }
-
-        if (inVarToValTable(es, rhs) || inVarToAddrsTable(es, rhs))
-        {
-            assert(!getAddrs(es, lhs).getAddrs().empty());
             for (const auto &addr: es[lhs].getAddrs())
             {
                 es.store(addr, es[rhs]);
@@ -926,80 +893,73 @@ void SVFIR2AbsState::handleCopy(AbstractState& es, const CopyStmt *copy)
 {
     u32_t lhs = copy->getLHSVarID();
     u32_t rhs = copy->getRHSVarID();
-    if (PAG::getPAG()->isBlkPtr(lhs))
+
+    if (inVarToValTable(es, rhs))
     {
-        es[lhs] = IntervalValue::top();
-    }
-    else
-    {
-        if (inVarToValTable(es, rhs))
+        if (copy->getCopyKind() == CopyStmt::COPYVAL)
         {
-            if (copy->getCopyKind() == CopyStmt::COPYVAL)
+            es[lhs] = es[rhs];
+        }
+        else if (copy->getCopyKind() == CopyStmt::ZEXT)
+        {
+            es[lhs] = getZExtValue(es, copy->getRHSVar());
+        }
+        else if (copy->getCopyKind() == CopyStmt::SEXT)
+        {
+            es[lhs] = getSExtValue(es, copy->getRHSVar());
+        }
+        else if (copy->getCopyKind() == CopyStmt::FPTOSI)
+        {
+            es[lhs] = getFPToSIntValue(es, copy->getRHSVar());
+        }
+        else if (copy->getCopyKind() == CopyStmt::FPTOUI)
+        {
+            es[lhs] = getFPToUIntValue(es, copy->getRHSVar());
+        }
+        else if (copy->getCopyKind() == CopyStmt::SITOFP)
+        {
+            es[lhs] = getSIntToFPValue(es, copy->getRHSVar());
+        }
+        else if (copy->getCopyKind() == CopyStmt::UITOFP)
+        {
+            es[lhs] = getUIntToFPValue(es, copy->getRHSVar());
+        }
+        else if (copy->getCopyKind() == CopyStmt::TRUNC)
+        {
+            es[lhs] = getTruncValue(es, copy->getRHSVar(), copy->getLHSVar()->getType());
+        }
+        else if (copy->getCopyKind() == CopyStmt::FPTRUNC)
+        {
+            es[lhs] = getFPTruncValue(es, copy->getRHSVar(), copy->getLHSVar()->getType());
+        }
+        else if (copy->getCopyKind() == CopyStmt::INTTOPTR)
+        {
+            //insert nullptr
+        }
+        else if (copy->getCopyKind() == CopyStmt::PTRTOINT)
+        {
+            es[lhs] = IntervalValue::top();
+        }
+        else if (copy->getCopyKind() == CopyStmt::BITCAST)
+        {
+            if (es[rhs].isAddr())
             {
                 es[lhs] = es[rhs];
             }
-            else if (copy->getCopyKind() == CopyStmt::ZEXT)
-            {
-                es[lhs] = getZExtValue(es, copy->getRHSVar());
-            }
-            else if (copy->getCopyKind() == CopyStmt::SEXT)
-            {
-                es[lhs] = getSExtValue(es, copy->getRHSVar());
-            }
-            else if (copy->getCopyKind() == CopyStmt::FPTOSI)
-            {
-                es[lhs] = getFPToSIntValue(es, copy->getRHSVar());
-            }
-            else if (copy->getCopyKind() == CopyStmt::FPTOUI)
-            {
-                es[lhs] = getFPToUIntValue(es, copy->getRHSVar());
-            }
-            else if (copy->getCopyKind() == CopyStmt::SITOFP)
-            {
-                es[lhs] = getSIntToFPValue(es, copy->getRHSVar());
-            }
-            else if (copy->getCopyKind() == CopyStmt::UITOFP)
-            {
-                es[lhs] = getUIntToFPValue(es, copy->getRHSVar());
-            }
-            else if (copy->getCopyKind() == CopyStmt::TRUNC)
-            {
-                es[lhs] = getTruncValue(es, copy->getRHSVar(), copy->getLHSVar()->getType());
-            }
-            else if (copy->getCopyKind() == CopyStmt::FPTRUNC)
-            {
-                es[lhs] = getFPTruncValue(es, copy->getRHSVar(), copy->getLHSVar()->getType());
-            }
-            else if (copy->getCopyKind() == CopyStmt::INTTOPTR)
-            {
-                es.getAddrs(lhs).getAddrs().insert(getVirtualMemAddress(0)); //insert nullptr
-            }
-            else if (copy->getCopyKind() == CopyStmt::PTRTOINT)
-            {
-                es[lhs] = IntervalValue::top();
-            }
-            else if (copy->getCopyKind() == CopyStmt::BITCAST)
-            {
-                if (es[rhs].isAddr())
-                {
-                    es[lhs] = es[rhs];
-                }
-                else
-                {
-                    // do nothing
-                }
-            }
             else
             {
-                assert(false && "undefined copy kind");
-                abort();
+                // do nothing
             }
         }
-        else if (inVarToAddrsTable(es, rhs))
+        else
         {
-            assert(!getAddrs(es, rhs).getAddrs().empty());
-            es[lhs] = es[rhs];
+            assert(false && "undefined copy kind");
+            abort();
         }
+    }
+    else if (inVarToAddrsTable(es, rhs))
+    {
+        es[lhs] = es[rhs];
     }
 }
 
@@ -1009,7 +969,6 @@ void SVFIR2AbsState::handleGep(AbstractState& es, const GepStmt *gep)
     u32_t lhs = gep->getLHSVarID();
     if (!inVarToAddrsTable(es, rhs)) return;
     AbstractValue &rhsVal = es[rhs];
-    assert(!rhsVal.getAddrs().empty());
     IntervalValue offsetPair = getElementIndex(es, gep);
     if (!isVirtualMemAddress(*rhsVal.getAddrs().begin()))
         return;
@@ -1049,8 +1008,6 @@ void SVFIR2AbsState::handleSelect(AbstractState& es, const SelectStmt *select)
     {
         if (es[cond].getInterval().is_numeral())
         {
-            assert(!getAddrs(es, fval).getAddrs().empty());
-            assert(!getAddrs(es, tval).getAddrs().empty());
             es.getAddrs(res) = es[cond].getInterval().is_zero() ? getAddrs(es, fval) : getAddrs(es, tval);
         }
     }
