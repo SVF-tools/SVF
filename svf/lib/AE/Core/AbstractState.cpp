@@ -125,18 +125,7 @@ void AbstractState::joinWith(const AbstractState& other)
         auto oit = _varToAbsVal.find(key);
         if (oit != _varToAbsVal.end())
         {
-            if (oit->second.isInterval() && it->second.isInterval())
-            {
-                oit->second.getInterval().join_with(it->second.getInterval());
-            }
-            else if (oit->second.isAddr() && it->second.isAddr())
-            {
-                oit->second.getAddrs().join_with(it->second.getAddrs());
-            }
-            else
-            {
-                // do nothing
-            }
+            oit->second.join_with(it->second);
         }
         else
         {
@@ -149,18 +138,7 @@ void AbstractState::joinWith(const AbstractState& other)
         auto oit = _addrToAbsVal.find(key);
         if (oit != _addrToAbsVal.end())
         {
-            if (oit->second.isInterval() && it->second.isInterval())
-            {
-                oit->second.getInterval().join_with(it->second.getInterval());
-            }
-            else if (oit->second.isAddr() && it->second.isAddr())
-            {
-                oit->second.getAddrs().join_with(it->second.getAddrs());
-            }
-            else
-            {
-                // do nothing
-            }
+            oit->second.join_with(it->second);
         }
         else
         {
@@ -199,18 +177,7 @@ void AbstractState::meetWith(const AbstractState& other)
         auto oit = _varToAbsVal.find(key);
         if (oit != _varToAbsVal.end())
         {
-            if (oit->second.isInterval() && it->second.isInterval())
-            {
-                oit->second.getInterval().meet_with(it->second.getInterval());
-            }
-            else if (oit->second.isAddr() && it->second.isAddr())
-            {
-                oit->second.getAddrs().meet_with(it->second.getAddrs());
-            }
-            else
-            {
-                // do nothing
-            }
+            oit->second.meet_with(it->second);
         }
     }
     for (auto it = other._addrToAbsVal.begin(); it != other._addrToAbsVal.end(); ++it)
@@ -219,18 +186,7 @@ void AbstractState::meetWith(const AbstractState& other)
         auto oit = _addrToAbsVal.find(key);
         if (oit != _addrToAbsVal.end())
         {
-            if (oit->second.isInterval() && it->second.isInterval())
-            {
-                oit->second.getInterval().meet_with(it->second.getInterval());
-            }
-            else if (oit->second.isAddr() && it->second.isAddr())
-            {
-                oit->second.getAddrs().meet_with(it->second.getAddrs());
-            }
-            else
-            {
-                // do nothing
-            }
+            oit->second.meet_with(it->second);
         }
     }
 }
@@ -255,15 +211,6 @@ void AbstractState::printTable(const VarToAbsValMap&table, std::ostream &oss) co
     for (const auto &item: ordered)
     {
         oss << "Var" << std::to_string(item);
-        if (table.at(item).isInterval())
-        {
-            IntervalValue sim = table.at(item).getInterval();
-            oss << "\t Value: " << std::dec << sim << "\n";
-        }
-        else if (table.at(item).isAddr())
-        {
-            AbstractValue sim = table.at(item);
-            oss << "\t Value: " << sim.getAddrs().toString() << "\n";
-        }
+        oss << "\t Value: " << table.at(item).toString() << "\n";
     }
 }

@@ -331,7 +331,7 @@ bool AbstractInterpretation::isCmpBranchFeasible(const CmpStmt* cmpStmt, s64_t s
     // change interval range according to the compare predicate
     AddressValue addrs;
     if(load_op0 && new_es.inVarToAddrsTable(load_op0->getRHSVarID()))
-        addrs = new_es.getAddrs(load_op0->getRHSVarID()).getAddrs();
+        addrs = new_es[load_op0->getRHSVarID()].getAddrs();
 
     IntervalValue &lhs = new_es[op0].getInterval(), &rhs = new_es[op1].getInterval();
     switch (predicate)
@@ -472,7 +472,7 @@ bool AbstractInterpretation::isSwitchBranchFeasible(const SVFVar* var, s64_t suc
         {
             if (new_es.inVarToAddrsTable(load->getRHSVarID()))
             {
-                AddressValue &addrs = new_es.getAddrs(load->getRHSVarID()).getAddrs();
+                AddressValue &addrs = new_es[load->getRHSVarID()].getAddrs();
                 for (const auto &addr: addrs)
                 {
                     NodeID objId = new_es.getInternalID(addr);
@@ -930,7 +930,7 @@ void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
                     {
                         if (!rhsVar->isPointer() && !rhsVar->isConstDataOrAggDataButNotNullPtr())
                         {
-                            const AbstractValue &addrs = as.getAddrs(lhs);
+                            const AbstractValue &addrs = as[lhs];
                             for (const auto &addr: addrs.getAddrs())
                             {
                                 as.store(addr, IntervalValue::top());
@@ -1147,13 +1147,11 @@ std::string AbstractInterpretation::strRead(AbstractState& as, const SVFValue* r
         if (!as.inVarToAddrsTable(_svfir->getValueNode(rhs))) continue;
         AbstractValue expr0 =
             _svfir2AbsState->getGepObjAddress(as, _svfir->getValueNode(rhs), index);
-        AbstractValue val(AbstractValue::UnknownType);
+        AbstractValue val;
         for (const auto &addr: expr0.getAddrs())
         {
             val.join_with(as.load(addr));
         }
-        if (val.isUnknown())
-            return str0;
         if (!val.getInterval().is_numeral())
         {
             break;
@@ -1464,14 +1462,10 @@ IntervalValue AbstractInterpretation::getStrlen(AbstractState& as, const SVF::SV
         {
             AbstractValue expr0 =
                 _svfir2AbsState->getGepObjAddress(as, dstid, index);
-            AbstractValue val(AbstractValue::UnknownType);
+            AbstractValue val;
             for (const auto &addr: expr0.getAddrs())
             {
                 val.join_with(as.load(addr));
-            }
-            if (val.isUnknown())
-            {
-                return IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit());
             }
             if (val.getInterval().is_numeral() && (char) val.getInterval().getIntNumeral() == '\0')
             {

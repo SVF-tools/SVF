@@ -62,19 +62,19 @@ public:
     void narrowAddrs(AbstractState& es, AbstractState&lhs, const AbstractState&rhs);
 
     /// Return the field address given a pointer points to a struct object and an offset
-    AbstractValue getGepObjAddress(AbstractState& es, u32_t pointer, APOffset offset);
+    AddressValue getGepObjAddress(AbstractState& es, u32_t pointer, APOffset offset);
 
     /// Return the value range of Integer SVF Type, e.g. unsigned i8 Type->[0, 255], signed i8 Type->[-128, 127]
-    AbstractValue getRangeLimitFromType(const SVFType* type);
+    IntervalValue getRangeLimitFromType(const SVFType* type);
 
-    AbstractValue getZExtValue(const AbstractState& es, const SVFVar* var);
-    AbstractValue getSExtValue(const AbstractState& es, const SVFVar* var);
-    AbstractValue getFPToSIntValue(const AbstractState& es, const SVFVar* var);
-    AbstractValue getFPToUIntValue(const AbstractState& es, const SVFVar* var);
-    AbstractValue getSIntToFPValue(const AbstractState& es, const SVFVar* var);
-    AbstractValue getUIntToFPValue(const AbstractState& es, const SVFVar* var);
-    AbstractValue getTruncValue(const AbstractState& es, const SVFVar* var, const SVFType* dstType);
-    AbstractValue getFPTruncValue(const AbstractState& es, const SVFVar* var, const SVFType* dstType);
+    IntervalValue getZExtValue(const AbstractState& es, const SVFVar* var);
+    IntervalValue getSExtValue(const AbstractState& es, const SVFVar* var);
+    IntervalValue getFPToSIntValue(const AbstractState& es, const SVFVar* var);
+    IntervalValue getFPToUIntValue(const AbstractState& es, const SVFVar* var);
+    IntervalValue getSIntToFPValue(const AbstractState& es, const SVFVar* var);
+    IntervalValue getUIntToFPValue(const AbstractState& es, const SVFVar* var);
+    IntervalValue getTruncValue(const AbstractState& es, const SVFVar* var, const SVFType* dstType);
+    IntervalValue getFPTruncValue(const AbstractState& es, const SVFVar* var, const SVFType* dstType);
 
     /// Return the byte offset expression of a GepStmt
     /// elemBytesize is the element byte size of an static alloc or heap alloc array
@@ -102,7 +102,7 @@ public:
     inline AbstractValue &getAddrs(AbstractState& es, u32_t id)
     {
         if (inVarToAddrsTable(es, id))
-            return es.getAddrs(id);
+            return es[id];
         else
             return globalNulladdrs;
     }
