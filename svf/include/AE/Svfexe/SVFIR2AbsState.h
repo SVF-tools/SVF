@@ -96,10 +96,8 @@ public:
 
 
     /// Init ObjVar
-    void initObjVar(AbstractState& es, const ObjVar *objVar, u32_t varId);
+    void initObjVar(AbstractState& as, const ObjVar* var);
 
-    /// Init SVFVar
-    void initSVFVar(AbstractState& es, u32_t varId);
 
     inline AbstractValue &getAddrs(AbstractState& es, u32_t id)
     {
