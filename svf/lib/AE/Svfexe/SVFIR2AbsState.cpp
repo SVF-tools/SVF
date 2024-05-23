@@ -364,11 +364,6 @@ AbstractValue SVFIR2AbsState::getGepObjAddress(AbstractState& es, u32_t pointer,
     for (const auto &addr: addrs.getAddrs())
     {
         s64_t baseObj = getInternalID(addr);
-        if (baseObj == 0)
-        {
-            ret.insert(getVirtualMemAddress(0));
-            continue;
-        }
         assert(SVFUtil::isa<ObjVar>(_svfir->getGNode(baseObj)) && "Fail to get the base object address!");
         NodeID gepObj = _svfir->getGepObjVar(baseObj, offset);
         initSVFVar(es, gepObj);
