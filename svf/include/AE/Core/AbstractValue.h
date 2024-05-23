@@ -22,6 +22,7 @@
 
 #include "AE/Core/IntervalValue.h"
 #include "AE/Core/AddressValue.h"
+#include "Util/SVFUtil.h"
 
 namespace SVF
 {
@@ -30,126 +31,71 @@ class AbstractValue
 {
 
 public:
-
-    enum DataType
-    {
-        IntervalType,
-        AddressType,
-        UnknownType,
-    };
-    DataType type;
     IntervalValue interval;
     AddressValue addrs;
 
-    AbstractValue() : type(IntervalType)
+    AbstractValue()
     {
-        interval = IntervalValue::top();
-    }
-    AbstractValue(DataType type) : type(type)
-    {
-        switch (type)
-        {
-        case IntervalType:
-            interval = IntervalValue::top();
-            break;
-        case AddressType:
-            addrs = AddressValue();
-            break;
-        case UnknownType:
-            break;
-        }
+        interval = IntervalValue::bottom();
+        addrs = AddressValue();
     }
 
-    AbstractValue(const AbstractValue& other): type(other.type)
+    AbstractValue(const AbstractValue& other)
     {
-        switch (type)
-        {
-        case IntervalType:
-            interval = other.interval;
-            break;
-        case AddressType:
-            addrs = other.addrs;
-            break;
-        case UnknownType:
-            break;
-        }
+        interval = other.interval;
+        addrs = other.addrs;
     }
 
     inline bool isInterval() const
     {
-        return type == IntervalType;
+        return !interval.isBottom();
     }
     inline bool isAddr() const
     {
-        return type == AddressType;
-    }
-    inline bool isUnknown() const
-    {
-        return type == UnknownType;
+        return !addrs.isBottom();
     }
 
-    inline DataType getType() const
+    AbstractValue(AbstractValue &&other)
     {
-        return type;
-    }
-
-    AbstractValue(AbstractValue &&other) : type(other.type)
-    {
-        switch (type)
-        {
-        case IntervalType:
-            interval = other.interval;
-            break;
-        case AddressType:
-            addrs = other.addrs;
-            break;
-        case UnknownType:
-            break;
-        }
+        interval = SVFUtil::move(other.interval);
+        addrs = SVFUtil::move(other.addrs);
     }
 
     // operator overload, supporting both interval and address
     AbstractValue& operator=(const AbstractValue& other)
     {
-        type = other.type;
-        switch (type)
-        {
-        case IntervalType:
-            interval = other.interval;
-            break;
-        case AddressType:
-            addrs = other.addrs;
-            break;
-        case UnknownType:
-            break;
-        }
+        interval = other.interval;
+        addrs = other.addrs;
+        return *this;
+    }
+
+    AbstractValue& operator=(const AbstractValue&& other)
+    {
+        interval = SVFUtil::move(other.interval);
+        addrs = SVFUtil::move(other.addrs);
         return *this;
     }
 
     AbstractValue& operator=(const IntervalValue& other)
     {
-        type = IntervalType;
         interval = other;
+        addrs = AddressValue();
         return *this;
     }
 
     AbstractValue& operator=(const AddressValue& other)
     {
-        type = AddressType;
         addrs = other;
+        interval = IntervalValue::bottom();
         return *this;
     }
 
-    AbstractValue(const IntervalValue& ival) : type(IntervalType), interval(ival) {}
+    AbstractValue(const IntervalValue& ival) : interval(ival), addrs(AddressValue()) {}
 
-    AbstractValue(const AddressValue& addr) : type(AddressType), addrs(addr) {}
+    AbstractValue(const AddressValue& addr) : interval(IntervalValue::bottom()), addrs(addr) {}
 
     IntervalValue& getInterval()
     {
-        if (isUnknown())
-        {
-            interval = IntervalValue::top();
-        }
         return interval;
     }
 
@@ -172,90 +118,36 @@ public:
 
     bool equals(const AbstractValue &rhs) const
     {
-        if (type != rhs.type)
-        {
-            return false;
-        }
-        if (isInterval())
-        {
-            return interval.equals(rhs.interval);
-        }
-        if (isAddr())
-        {
-            return addrs.equals(rhs.addrs);
-        }
-        return false;
+        return interval.equals(rhs.interval) && addrs.equals(rhs.addrs);
     }
 
     void join_with(const AbstractValue &other)
     {
-        if (isUnknown())
-        {
-            *this = other;
-            return;
-        }
-        else if (type != other.type)
-        {
-            return;
-        }
-        if (isInterval() && other.isInterval())
-        {
-            interval.join_with(other.interval);
-        }
-        if (isAddr() && other.isAddr())
-        {
-            addrs.join_with(other.addrs);
-        }
-        return;
+        interval.join_with(other.interval);
+        addrs.join_with(other.addrs);
     }
 
     void meet_with(const AbstractValue &other)
     {
-        if (type != other.type)
-        {
-            return;
-        }
-        if (isInterval() && other.isInterval())
-        {
-            interval.meet_with(other.interval);
-        }
-        if (isAddr() && other.isAddr())
-        {
-            addrs.meet_with(other.addrs);
-        }
-        return;
+        interval.meet_with(other.interval);
+        addrs.meet_with(other.addrs);
     }
 
     void widen_with(const AbstractValue &other)
     {
-        // widen_with only in interval
-        if (isInterval() && other.isInterval())
-        {
-            interval.widen_with(other.interval);
-        }
+        interval.widen_with(other.interval);
+        // TODO: widen Addrs
     }
 
     void narrow_with(const AbstractValue &other)
     {
-        // narrow_with only in interval
-        if (isInterval() && other.isInterval())
-        {
-            interval.narrow_with(other.interval);
-        }
+        interval.narrow_with(other.interval);
+        // TODO: narrow Addrs
     }
 
     std::string toString() const
     {
-        if (isInterval())
-        {
-            return interval.toString();
-        }
-        else if (isAddr())
-        {
-            return addrs.toString();
-        }
-        return "";
+        return "<" + interval.toString() + ", " + addrs.toString() + ">";
     }
-
 };
 }

@@ -183,20 +183,6 @@ public:
         return _varToAbsVal.at(varId);
     }
 
-    /// get memory addresses of variable
-    AbstractValue &getAddrs(u32_t id)
-    {
-        if (_varToAbsVal.find(id)!= _varToAbsVal.end())
-        {
-            return _varToAbsVal[id];
-        }
-        else
-        {
-            _varToAbsVal[id] = AddressValue();
-            return _varToAbsVal[id];
-        }
-    }
-
     /// whether the variable is in varToAddrs table
     inline bool inVarToAddrsTable(u32_t id) const
     {
@@ -289,31 +275,6 @@ public:
         return (s32_t) e.lb().getNumeral();
     }
 
-    /// Return true if map has bottom value
-    inline bool has_bottom()
-    {
-        for (auto it = _varToAbsVal.begin(); it != _varToAbsVal.end(); ++it)
-        {
-            if (it->second.isInterval())
-            {
-                if (it->second.getInterval().isBottom())
-                {
-                    return true;
-                }
-            }
-        }
-        for (auto it = _addrToAbsVal.begin(); it != _addrToAbsVal.end(); ++it)
-        {
-            if (it->second.isInterval())
-            {
-                if (it->second.getInterval().isBottom())
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     u32_t hash() const;
 
@@ -330,14 +291,8 @@ public:
     {
         assert(isVirtualMemAddress(addr) && "not virtual address?");
         u32_t objId = getInternalID(addr);
-        auto it = _addrToAbsVal.find(objId);
-        if(it != _addrToAbsVal.end())
-            return it->second;
-        else
-        {
-            _addrToAbsVal[objId] = IntervalValue::top();
-            return _addrToAbsVal[objId];
-        }
+        return _addrToAbsVal[objId];
+
     }
 
 
@@ -351,6 +306,7 @@ public:
 
     bool equals(const AbstractState&other) const;
 
+
     static bool eqVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)
     {
         if (lhs.size() != rhs.size()) return false;
@@ -359,31 +315,14 @@ public:
             auto it = rhs.find(item.first);
             if (it == rhs.end())
                 return false;
-            if (item.second.getType() == it->second.getType())
-            {
-                if (item.second.isInterval())
-                {
-                    if (!item.second.getInterval().equals(it->second.getInterval()))
-                    {
-                        return false;
-                    }
-                }
-                else if (item.second.isAddr())
-                {
-                    if (!item.second.getAddrs().equals(it->second.getAddrs()))
-                    {
-                        return false;
-                    }
-                }
-            }
+            if (!item.second.equals(it->second))
+                return false;
             else
             {
-                return false;
             }
         }
         return true;
     }
-
 
     static bool lessThanVarToValMap(const VarToAbsValMap&lhs, const VarToAbsValMap&rhs)
     {
@@ -407,12 +346,9 @@ public:
             auto it = lhs.find(item.first);
             if (it == lhs.end()) return false;
             // judge from expr id
-            if (it->second.isInterval() && item.second.isInterval())
-            {
-                if (!it->second.getInterval().contain(
-                            item.second.getInterval()))
-                    return false;
-            }
+            if (!it->second.getInterval().contain(
+                        item.second.getInterval()))
+                return false;
 
         }
         return true;
