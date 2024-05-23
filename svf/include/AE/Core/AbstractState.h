@@ -81,7 +81,7 @@ public:
     static inline u32_t getVirtualMemAddress(u32_t idx)
     {
         // 0 is the null address, should not be used as a virtual address
-        assert(idx != 0 && "idx cannot be 0");
+        assert(idx != 0 && "idx cannot be 0 because 0 represents null pointer");
         return AddressValue::getVirtualMemAddress(idx);
     }
 
