@@ -518,8 +518,9 @@ bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* intraEdge,
     return true;
 }
 /// handle instructions in svf basic blocks
-void AbstractInterpretation::handleWTONode(const ICFGNode *node)
+void AbstractInterpretation::handleWTONode(const ICFGSingletonWTO *icfgSingletonWto)
 {
+    const ICFGNode* node = icfgSingletonWto->node();
     _stat->getBlockTrace()++;
     // Get execution states from in edges
     if (!propagateStateIfFeasible(node))
@@ -690,30 +691,28 @@ void AbstractInterpretation::handleICFGNode(const ICFGNode *curICFGNode)
 }
 
 /// handle wto cycle (loop)
-void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
+void AbstractInterpretation::handleCycle(const ICFGCycleWTO*cycle)
 {
     // Get execution states from in edges
-    if (!propagateStateIfFeasible(cycle->head()))
+    if (!propagateStateIfFeasible(cycle->head()->node()))
     {
         // No ES on the in edges - Infeasible block
         return;
     }
-    AbstractState pre_es = _preAbsTrace[cycle->head()];
+    AbstractState pre_es = _preAbsTrace[cycle->head()->node()];
     // set -widen-delay
     s32_t widen_delay = Options::WidenDelay();
     bool incresing = true;
     for (int i = 0; ; i++)
     {
-        const ICFGNode* cycle_head = cycle->head();
-        // handle cycle head
-        handleWTONode(cycle_head);
+        handleWTONode(cycle->head());
         if (i < widen_delay)
         {
-            if (i> 0 && pre_es >= _postAbsTrace[cycle_head])
+            if (i> 0 && pre_es >= _postAbsTrace[cycle->head()->node()])
             {
                 break;
             }
-            pre_es = _postAbsTrace[cycle_head];
+            pre_es = _postAbsTrace[cycle->head()->node()];
         }
         else
         {
@@ -722,7 +721,7 @@ void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
                 if (incresing)
                 {
                     bool is_fixpoint =
-                        isFixPointAfterWidening(cycle_head, pre_es);
+                        isFixPointAfterWidening(cycle->head()->node(), pre_es);
                     if (is_fixpoint)
                     {
                         incresing = false;
@@ -732,7 +731,7 @@ void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
                 else if (!incresing)
                 {
                     bool is_fixpoint =
-                        isFixPointAfterNarrowing(cycle_head, pre_es);
+                        isFixPointAfterNarrowing(cycle->head()->node(), pre_es);
                     if (is_fixpoint)
                         break;
                 }
@@ -741,11 +740,11 @@ void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
         for (auto it = cycle->begin(); it != cycle->end(); ++it)
         {
             const ICFGWTOComp* cur = *it;
-            if (const ICFGWTONode* vertex = SVFUtil::dyn_cast<ICFGWTONode>(cur))
+            if (const ICFGSingletonWTO* vertex = SVFUtil::dyn_cast<ICFGSingletonWTO>(cur))
             {
-                handleWTONode(vertex->node());
+                handleWTONode(vertex);
             }
-            else if (const ICFGWTOCycle* cycle2 = SVFUtil::dyn_cast<ICFGWTOCycle>(cur))
+            else if (const ICFGCycleWTO* cycle2 = SVFUtil::dyn_cast<ICFGCycleWTO>(cur))
             {
                 handleCycle(cycle2);
             }
@@ -813,11 +812,11 @@ void AbstractInterpretation::handleFunc(const SVFFunction *func)
     for (auto it = wto->begin(); it!= wto->end(); ++it)
     {
         const ICFGWTOComp* cur = *it;
-        if (const ICFGWTONode* vertex = SVFUtil::dyn_cast<ICFGWTONode>(cur))
+        if (const ICFGSingletonWTO* vertex = SVFUtil::dyn_cast<ICFGSingletonWTO>(cur))
         {
-            handleWTONode(vertex->node());
+            handleWTONode(vertex);
         }
-        else if (const ICFGWTOCycle* cycle = SVFUtil::dyn_cast<ICFGWTOCycle>(cur))
+        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(cur))
         {
             handleCycle(cycle);
         }
