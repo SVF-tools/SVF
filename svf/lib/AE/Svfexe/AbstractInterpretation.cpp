@@ -690,7 +690,7 @@ void AbstractInterpretation::handleICFGNode(const ICFGNode *curICFGNode)
 }
 
 /// handle wto cycle (loop)
-void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
+void AbstractInterpretation::handleCycle(const ICFGCycleWTO*cycle)
 {
     // Get execution states from in edges
     if (!propagateStateIfFeasible(cycle->head()))
@@ -741,11 +741,11 @@ void AbstractInterpretation::handleCycle(const ICFGWTOCycle *cycle)
         for (auto it = cycle->begin(); it != cycle->end(); ++it)
         {
             const ICFGWTOComp* cur = *it;
-            if (const ICFGWTONode* vertex = SVFUtil::dyn_cast<ICFGWTONode>(cur))
+            if (const ICFGSingletonWTO* vertex = SVFUtil::dyn_cast<ICFGSingletonWTO>(cur))
             {
                 handleWTONode(vertex->node());
             }
-            else if (const ICFGWTOCycle* cycle2 = SVFUtil::dyn_cast<ICFGWTOCycle>(cur))
+            else if (const ICFGCycleWTO* cycle2 = SVFUtil::dyn_cast<ICFGCycleWTO>(cur))
             {
                 handleCycle(cycle2);
             }
@@ -813,11 +813,11 @@ void AbstractInterpretation::handleFunc(const SVFFunction *func)
     for (auto it = wto->begin(); it!= wto->end(); ++it)
     {
         const ICFGWTOComp* cur = *it;
-        if (const ICFGWTONode* vertex = SVFUtil::dyn_cast<ICFGWTONode>(cur))
+        if (const ICFGSingletonWTO* vertex = SVFUtil::dyn_cast<ICFGSingletonWTO>(cur))
         {
             handleWTONode(vertex->node());
         }
-        else if (const ICFGWTOCycle* cycle = SVFUtil::dyn_cast<ICFGWTOCycle>(cur))
+        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(cur))
         {
             handleCycle(cycle);
         }

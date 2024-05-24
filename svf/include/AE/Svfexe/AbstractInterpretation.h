@@ -182,7 +182,7 @@ protected:
      *
      * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
      */
-    virtual void handleCycle(const ICFGWTOCycle* cycle);
+    virtual void handleCycle(const ICFGCycleWTO* cycle);
 
     /**
      * handle user defined function, ext function is not included.

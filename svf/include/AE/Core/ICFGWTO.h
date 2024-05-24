@@ -41,8 +41,8 @@ namespace SVF
 {
 
 typedef WTOComponent<ICFG> ICFGWTOComp;
-typedef WTONode<ICFG> ICFGWTONode;
-typedef WTOCycle<ICFG> ICFGWTOCycle;
+typedef WTONode<ICFG> ICFGSingletonWTO;
+typedef WTOCycle<ICFG> ICFGCycleWTO;
 
 class ICFGWTO : public WTO<ICFG>
 {
