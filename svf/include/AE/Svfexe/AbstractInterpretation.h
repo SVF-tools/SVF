@@ -157,11 +157,11 @@ protected:
     bool isBranchFeasible(const IntraCFGEdge* intraEdge, AbstractState& as);
 
     /**
-     * handle instructions in ICFGNode
+     * handle instructions in ICFGSingletonWTO
      *
-     * @param block basic block that has a series of instructions
+     * @param block basic block that has one instruction or a series of instructions
      */
-    virtual void handleWTONode(const ICFGNode* node);
+    virtual void handleWTONode(const ICFGSingletonWTO *icfgSingletonWto);
 
     /**
      * handle one instruction in ICFGNode
