@@ -218,9 +218,11 @@ IntervalValue SVFIR2AbsState::getUIntToFPValue(const AbstractState& as, const SV
 
 IntervalValue SVFIR2AbsState::getTruncValue(const AbstractState& as, const SVF::SVFVar* var, const SVFType* dstType)
 {
+    const IntervalValue& itv = as[var->getId()].getInterval();
+    if(itv.isBottom()) return itv;
     // get the value of ub and lb
-    s64_t int_lb = as[var->getId()].getInterval().lb().getIntNumeral();
-    s64_t int_ub = as[var->getId()].getInterval().ub().getIntNumeral();
+    s64_t int_lb = itv.lb().getIntNumeral();
+    s64_t int_ub = itv.ub().getIntNumeral();
     // get dst type
     u32_t dst_bits = dstType->getByteSize() * 8;
     if (dst_bits == 8)

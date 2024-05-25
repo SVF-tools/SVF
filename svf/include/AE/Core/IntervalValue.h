@@ -205,14 +205,14 @@ public:
     /// Return the lower bound
     const BoundedInt &lb() const
     {
-        assert(!this->isBottom());
+        assert(!this->isBottom() && "bottom interval does not have lower bound");
         return this->_lb;
     }
 
     /// Return the upper bound
     const BoundedInt &ub() const
     {
-        assert(!this->isBottom());
+        assert(!this->isBottom() && "bottom interval does not have upper bound");
         return this->_ub;
     }
 
