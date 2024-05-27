@@ -24,7 +24,10 @@ RUN apt-get install -y $build_deps $lib_deps
 # Add deadsnakes PPA for multiple Python versions
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update
-RUN apt-get install -y python3.8-dev
+RUN apt-get install -y python3.8 python3.8-dev python3.8-venv
+
+# Ensure python3.8 is available and set as default for lldb
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
 
 # Fetch and build SVF source.
 RUN echo "Downloading LLVM and building SVF to " ${HOME}
