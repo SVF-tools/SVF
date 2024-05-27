@@ -255,7 +255,8 @@ configure_package_config_file(
               SVF_INSTALL_CMAKEDIR
               SVF_INSTALL_INCLUDEDIR
               SVF_EXTAPI_INSTALL_DIR
-              SVF_EXTAPI_INSTALL_FILE)
+              SVF_EXTAPI_INSTALL_FILE
+              CMAKE_INSTALL_INCLUDEDIR)
 
 # Actually install the configuration, versioning, and pkg_config files
 install(FILES ${PROJECT_BINARY_DIR}/SVFConfigVersion.cmake DESTINATION ${SVF_INSTALL_CMAKEDIR})
