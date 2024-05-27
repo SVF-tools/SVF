@@ -26,7 +26,7 @@ SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 
 # Keep LLVM version suffix for version checking and better debugging
 # keep the version consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile
-LLVMHome="llvm-${LLVMVer}.obj"
+LLVMHome="llvm-${MajorLLVMVer}.0.0.obj"
 Z3Home="z3.obj"
 
 
