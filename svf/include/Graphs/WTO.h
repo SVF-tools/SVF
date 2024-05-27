@@ -415,7 +415,8 @@ public:
     }
 
     /// Get all wto components in WTO cycle
-    const WTOComponentRefList& getWTOComponents() const {
+    const WTOComponentRefList& getWTOComponents() const
+    {
         return _components;
     }
 
@@ -585,7 +586,8 @@ public:
     }
 
     /// Get all wto components in WTO
-    const WTOComponentRefList& getWTOComponents() const {
+    const WTOComponentRefList& getWTOComponents() const
+    {
         return _components;
     }
 
