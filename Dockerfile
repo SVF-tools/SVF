@@ -15,13 +15,16 @@ ENV HOME=/home/SVF-tools
 
 # Define dependencies.
 ENV lib_deps="cmake g++ gcc git zlib1g-dev libncurses5-dev libtinfo6 build-essential libssl-dev libpcre2-dev zip vim libzstd-dev"
-ENV build_deps="wget xz-utils git gdb tcl python3.8 python3.8-dev python3.8-venv software-properties-common"
+ENV build_deps="wget xz-utils git gdb tcl software-properties-common"
 
-# Add deadsnakes PPA for multiple Python versions
-RUN add-apt-repository ppa:deadsnakes/ppa
 # Fetch dependencies.
 RUN apt-get update --fix-missing
 RUN apt-get install -y $build_deps $lib_deps
+
+# Add deadsnakes PPA for multiple Python versions
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update
+RUN apt-get install -y python3.8-dev
 
 # Fetch and build SVF source.
 RUN echo "Downloading LLVM and building SVF to " ${HOME}
