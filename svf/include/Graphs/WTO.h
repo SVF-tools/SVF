@@ -414,6 +414,10 @@ public:
         return _head;
     }
 
+    const WTOComponentRefList& getWTOComponents() const {
+        return _components;
+    }
+
     /// Begin iterator over the components
     Iterator begin() const
     {
@@ -579,7 +583,10 @@ public:
         }
     }
 
-    /// Begin iterator over the components
+    const WTOComponentRefList& getWTOComponents() const {
+        return _components;
+    }
+
     /// Begin iterator over the components
     Iterator begin() const
     {
