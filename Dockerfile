@@ -1,9 +1,8 @@
-# use ubuntu 22.04 or 24.04 to support deadsnakes-ppa
 FROM ubuntu:24.04
 
 # Stop ubuntu-20 interactive options.
 ENV DEBIAN_FRONTEND noninteractive
-
+ARG TARGETPLATFORM
 # Stop script if any individual command fails.
 RUN set -e
 
@@ -24,9 +23,16 @@ RUN apt-get install -y $build_deps $lib_deps
 # Add deadsnakes PPA for multiple Python versions 
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update
-RUN apt-get install -y python3.8-dev
-# Ensure python3.8 is available and set as default for lldb
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
+RUN set -ex; \
+    if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+        apt-get update && apt-get install -y python3.10-dev \
+        && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1; \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+        apt-get update && apt-get install -y python3.8-dev \
+        && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1; \
+    else \
+        echo "Unsupported platform: $TARGETPLATFORM" && exit 1; \
+    fi
 
 # Fetch and build SVF source.
 RUN echo "Downloading LLVM and building SVF to " ${HOME}
