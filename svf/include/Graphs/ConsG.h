@@ -382,10 +382,7 @@ public:
     void view();
 };
 
-} // End namespace SVF
 
-namespace SVF
-{
 /* !
  * GenericGraphTraits specializations for the generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
@@ -405,6 +402,6 @@ template<> struct GenericGraphTraits<SVF::ConstraintGraph*> : public GenericGrap
     typedef SVF::ConstraintNode *NodeRef;
 };
 
-} // End namespace llvm
+} // End namespace SVF
 
 #endif /* CONSG_H_ */
