@@ -166,7 +166,7 @@ private:
             if (this->rev)
             {
                 const DataSet &srcPts = ptCache.getActualPts(srcId);
-                for (const Data &d : srcPts) SVFUtil::insertKey(dstKey, revPtsMap[d]);
+                for (const Data d : srcPts) SVFUtil::insertKey(dstKey, revPtsMap[d]);
             }
         }
 
