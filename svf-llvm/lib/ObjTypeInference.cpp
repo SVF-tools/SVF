@@ -207,7 +207,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
         }
         if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
             insertInferSite(gepInst);
-        for (const auto &it: curValue->users())
+        for (const auto it: curValue->users())
         {
             if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(it))
             {
@@ -233,7 +233,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                 }
                 else
                 {
-                    for (const auto &nit: storeInst->getPointerOperand()->users())
+                    for (const auto nit: storeInst->getPointerOperand()->users())
                     {
                         /*
                          * propagate across store (value operand) and load
@@ -265,14 +265,14 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                         const Value *gepBase = gepInst->getPointerOperand();
                         if(const auto *load = SVFUtil::dyn_cast<LoadInst>(gepBase))
                         {
-                            for (const auto &loadUse: load->getPointerOperand()->users())
+                            for (const auto loadUse: load->getPointerOperand()->users())
                             {
                                 if (loadUse == load || !SVFUtil::isa<LoadInst>(loadUse))
                                     continue;
-                                for (const auto &gepUse: loadUse->users())
+                                for (const auto gepUse: loadUse->users())
                                 {
                                     if (!SVFUtil::isa<GetElementPtrInst>(gepUse)) continue;
-                                    for (const auto &loadUse2: gepUse->users())
+                                    for (const auto loadUse2: gepUse->users())
                                     {
                                         if (SVFUtil::isa<LoadInst>(loadUse2))
                                         {
@@ -294,10 +294,10 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                               %6 = load ptr, ptr %5, align 8
                               %7 = getelementptr inbounds %struct.ll, ptr %6, i32 0, i32 0
                              */
-                            for (const auto &gepUse: alloc->users())
+                            for (const auto gepUse: alloc->users())
                             {
                                 if (!SVFUtil::isa<GetElementPtrInst>(gepUse)) continue;
-                                for (const auto &loadUse2: gepUse->users())
+                                for (const auto loadUse2: gepUse->users())
                                 {
                                     if (SVFUtil::isa<LoadInst>(loadUse2))
                                     {
@@ -344,7 +344,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                  %call = call i8* @malloc_wrapper()
                  ..infer based on %call..
                 */
-                for (const auto &callsite: retInst->getFunction()->users())
+                for (const auto callsite: retInst->getFunction()->users())
                 {
                     if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(callsite))
                     {
@@ -499,7 +499,7 @@ Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var)
         }
         else if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(curValue))
         {
-            for (const auto &use: loadInst->getPointerOperand()->users())
+            for (const auto use: loadInst->getPointerOperand()->users())
             {
                 if (const StoreInst *storeInst = SVFUtil::dyn_cast<StoreInst>(use))
                 {
@@ -512,7 +512,7 @@ Set<const Value *> &ObjTypeInference::bwfindAllocOfVar(const Value *var)
         }
         else if (const auto *argument = SVFUtil::dyn_cast<Argument>(curValue))
         {
-            for (const auto &use: argument->getParent()->users())
+            for (const auto use: argument->getParent()->users())
             {
                 if (const CallBase *callBase = SVFUtil::dyn_cast<CallBase>(use))
                 {
