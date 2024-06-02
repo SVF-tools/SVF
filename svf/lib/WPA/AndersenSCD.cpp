@@ -108,7 +108,7 @@ NodeStack& AndersenSCD::SCCDetect()
     double mergeEnd = stat->getClk();
     timeOfSCCMerges +=  (mergeEnd - mergeStart)/TIMEINTERVAL;
 
-    if (Options::DetectPWC())
+    if (!Options::DetectPWC())
     {
         sccStart = stat->getClk();
         PWCDetect();
