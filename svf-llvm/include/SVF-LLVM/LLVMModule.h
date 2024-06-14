@@ -174,6 +174,11 @@ public:
     }
     inline void addGlobalValueMap(const GlobalValue* glob, SVFGlobalValue* svfglob)
     {
+        if (auto glob_var = llvm::dyn_cast<llvm::GlobalVariable>(glob);
+            hasGlobalRep(glob_var))
+        {
+            glob = getGlobalRep(glob_var);
+        }
         LLVMConst2SVFConst[glob] = svfglob;
         setValueAttr(glob,svfglob);
     }
@@ -232,6 +237,11 @@ public:
 
     inline SVFGlobalValue* getSVFGlobalValue(const GlobalValue* g) const
     {
+        if (auto glob_var = llvm::dyn_cast<llvm::GlobalVariable>(g);
+            hasGlobalRep(glob_var))
+        {
+            g = getGlobalRep(glob_var);
+        }
         LLVMConst2SVFConstMap::const_iterator it = LLVMConst2SVFConst.find(g);
         assert(it!=LLVMConst2SVFConst.end() && "SVF Global not found!");
         assert(SVFUtil::isa<SVFGlobalValue>(it->second) && "not a SVFGlobal type!");
