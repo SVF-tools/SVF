@@ -175,7 +175,7 @@ public:
     inline void addGlobalValueMap(const GlobalValue* glob, SVFGlobalValue* svfglob)
     {
         if (auto glob_var = llvm::dyn_cast<llvm::GlobalVariable>(glob);
-            hasGlobalRep(glob_var))
+                hasGlobalRep(glob_var))
         {
             glob = getGlobalRep(glob_var);
         }
@@ -238,7 +238,7 @@ public:
     inline SVFGlobalValue* getSVFGlobalValue(const GlobalValue* g) const
     {
         if (auto glob_var = llvm::dyn_cast<llvm::GlobalVariable>(g);
-            hasGlobalRep(glob_var))
+                hasGlobalRep(glob_var))
         {
             g = getGlobalRep(glob_var);
         }
