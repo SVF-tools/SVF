@@ -936,7 +936,17 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst)
     BranchStmt::SuccAndCondPairVec successors;
     for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
     {
-        const Instruction* succInst = &inst.getSuccessor(i)->front();
+        BasicBlock* succBB = inst.getSuccessor(i);
+        Instruction* succInst = nullptr;
+        for (auto& inst : *succBB)
+        {
+            if (not isIntrinsicInst(&inst))
+            {
+                succInst = &inst;
+                break;
+            }
+        }
+        assert(succInst && "no non-intrinsic instruction in the successor BB");
         const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succInst);
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfSuccInst);
         successors.push_back(std::make_pair(icfgNode, 1-i));
@@ -958,7 +968,16 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
     {
         s64_t val = LLVMUtil::getCaseValue(inst, succBB2CaseValue);
         const BasicBlock *succBB = succBB2CaseValue.first;
-        const Instruction* succInst = &succBB->front();
+        Instruction* succInst = nullptr;
+        for (auto& inst : *succBB)
+        {
+            if (not isIntrinsicInst(&inst))
+            {
+                succInst = const_cast<Instruction*>(&inst);
+                break;
+            }
+        }
+        assert(succInst && "no non-intrinsic instruction in the successor BB");
         const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succInst);
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfSuccInst);
         successors.push_back(std::make_pair(icfgNode, val));
