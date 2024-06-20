@@ -366,54 +366,6 @@ std::string dumpType(const Type* type);
 
 std::string dumpValueAndDbgInfo(const Value* val);
 
-/**
- * See more: https://github.com/SVF-tools/SVF/pull/1191
- *
- * Given the code:
- *
- * switch (a) {
- *   case 0: printf("0\n"); break;
- *   case 1:
- *   case 2:
- *   case 3: printf("a >=1 && a <= 3\n"); break;
- *   case 4:
- *   case 6:
- *   case 7:  printf("a >= 4 && a <=7\n"); break;
- *   default: printf("a < 0 || a > 7"); break;
- * }
- *
- * Generate the IR:
- *
- * switch i32 %0, label %sw.default [
- *  i32 0, label %sw.bb
- *  i32 1, label %sw.bb1
- *  i32 2, label %sw.bb1
- *  i32 3, label %sw.bb1
- *  i32 4, label %sw.bb3
- *  i32 6, label %sw.bb3
- *  i32 7, label %sw.bb3
- * ]
- *
- * We can get every case basic block and related case value:
- * [
- *   {%sw.default, -1},
- *   {%sw.bb, 0},
- *   {%sw.bb1, 1},
- *   {%sw.bb1, 2},
- *   {%sw.bb1, 3},
- *   {%sw.bb3, 4},
- *   {%sw.bb3, 6},
- *   {%sw.bb3, 7},
- * ]
- * Note: default case value is nullptr
- */
-void getSuccBBandCondValPairVec(const SwitchInst &switchInst, SuccBBAndCondValPairVec &vec);
-
-/**
- * Note: default case value is nullptr
- */
-s64_t getCaseValue(const SwitchInst &switchInst, SuccBBAndCondValPair &succBB2CondVal);
-
 } // End namespace LLVMUtil
 
 } // End namespace SVF
