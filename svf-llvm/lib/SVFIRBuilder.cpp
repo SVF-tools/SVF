@@ -934,37 +934,89 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst)
     assert(inst.getNumSuccessors() <= 2 && "if/else has more than two branches?");
 
     BranchStmt::SuccAndCondPairVec successors;
-    for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
+    std::vector<const Instruction*> nextInsts;
+    LLVMUtil::getNextInsts(&inst, nextInsts);
+    u32_t branchID = 0;
+    for (const Instruction* succInst : nextInsts)
     {
-        const Instruction* succInst = &inst.getSuccessor(i)->front();
+        assert(branchID <= 2 && "if/else has more than two branches?");
         const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succInst);
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfSuccInst);
-        successors.push_back(std::make_pair(icfgNode, 1-i));
+        successors.push_back(std::make_pair(icfgNode, 1-branchID));
+        branchID++;
     }
-    addBranchStmt(brinst, cond,successors);
+    addBranchStmt(brinst, cond, successors);
 }
 
+
+/**
+ * See more: https://github.com/SVF-tools/SVF/pull/1191
+ *
+ * Given the code:
+ *
+ * switch (a) {
+ *   case 0: printf("0\n"); break;
+ *   case 1:
+ *   case 2:
+ *   case 3: printf("a >=1 && a <= 3\n"); break;
+ *   case 4:
+ *   case 6:
+ *   case 7:  printf("a >= 4 && a <=7\n"); break;
+ *   default: printf("a < 0 || a > 7"); break;
+ * }
+ *
+ * Generate the IR:
+ *
+ * switch i32 %0, label %sw.default [
+ *  i32 0, label %sw.bb
+ *  i32 1, label %sw.bb1
+ *  i32 2, label %sw.bb1
+ *  i32 3, label %sw.bb1
+ *  i32 4, label %sw.bb3
+ *  i32 6, label %sw.bb3
+ *  i32 7, label %sw.bb3
+ * ]
+ *
+ * We can get every case basic block and related case value:
+ * [
+ *   {%sw.default, -1},
+ *   {%sw.bb, 0},
+ *   {%sw.bb1, 1},
+ *   {%sw.bb1, 2},
+ *   {%sw.bb1, 3},
+ *   {%sw.bb3, 4},
+ *   {%sw.bb3, 6},
+ *   {%sw.bb3, 7},
+ * ]
+ * Note: default case value is nullptr
+ */
+/// For larger number, we preserve case value just -1 now
+/// see more: https://github.com/SVF-tools/SVF/pull/992
+
+/// The following implementation follows ICFGBuilder::processFunBody
 void SVFIRBuilder::visitSwitchInst(SwitchInst &inst)
 {
     NodeID brinst = getValueNode(&inst);
     NodeID cond = getValueNode(inst.getCondition());
 
     BranchStmt::SuccAndCondPairVec successors;
-
-    // get case successor basic block and related case value
-    SuccBBAndCondValPairVec succBB2CondValPairVec;
-    LLVMUtil::getSuccBBandCondValPairVec(inst, succBB2CondValPairVec);
-    for (auto &succBB2CaseValue : succBB2CondValPairVec)
+    std::vector<const Instruction*> nextInsts;
+    LLVMUtil::getNextInsts(&inst, nextInsts);
+    for (const Instruction* succInst : nextInsts)
     {
-        s64_t val = LLVMUtil::getCaseValue(inst, succBB2CaseValue);
-        const BasicBlock *succBB = succBB2CaseValue.first;
-        const Instruction* succInst = &succBB->front();
+        /// branch condition value
+        const ConstantInt* condVal = inst.findCaseDest(const_cast<BasicBlock*>(succInst->getParent()));
+        /// default case is set to -1;
+        s64_t val = -1;
+        if (condVal && condVal->getBitWidth() <= 64)
+            val = condVal->getSExtValue();
         const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succInst);
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfSuccInst);
         successors.push_back(std::make_pair(icfgNode, val));
     }
     addBranchStmt(brinst, cond, successors);
 }
+
 
 ///   %ap = alloca %struct.va_list
 ///  %ap2 = bitcast %struct.va_list* %ap to i8*
