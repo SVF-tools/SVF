@@ -939,7 +939,7 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst)
     u32_t branchID = 0;
     for (const Instruction* succInst : nextInsts)
     {
-        assert(branchID <= 2 && "if/else has more than two branches?");
+        assert(branchID <= 1 && "if/else has more than two branches?");
         const SVFInstruction* svfSuccInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(succInst);
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(svfSuccInst);
         successors.push_back(std::make_pair(icfgNode, 1-branchID));

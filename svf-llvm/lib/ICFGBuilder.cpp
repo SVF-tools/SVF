@@ -122,7 +122,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
 
                 if (const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(inst))
                 {
-                    assert(branchID <= 2 && "if/else has more than two branches?");
+                    assert(branchID <= 1 && "if/else has more than two branches?");
                     if(br->isConditional())
                         icfg->addConditionalIntraEdge(srcNode, dstNode, LLVMModuleSet::getLLVMModuleSet()->getSVFValue(br->getCondition()), 1 - branchID);
                     else
