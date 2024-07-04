@@ -2,6 +2,7 @@
 
 
 ## News
+* <b>New course [Software Security Analysis](https://github.com/SVF-tools/Software-Security-Analysis) for learning code analysis with SVF for fun and expertise! </b>
 * <b>SVF now supports LLVM-16.0.0 with opaque pointers (Contributed by [Xiao Cheng](https://github.com/jumormt)). </b>
 * <b>Modernize SVF's CMake (Contributed by [Johannes](https://github.com/Johanmyst)). </b>
 * <b>SVF now supports LLVM-13.0.0 (Thank [Shengjie Xu](https://github.com/xushengj) for his help!). </b>
