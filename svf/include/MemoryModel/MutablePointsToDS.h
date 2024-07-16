@@ -212,7 +212,7 @@ private:
     {
         if (this->rev)
         {
-            for (const Data &d : pts) clearSingleRevPts(revPtsMap[d], k);
+            for (const Data d : pts) clearSingleRevPts(revPtsMap[d], k);
         }
     }
     ///@}
