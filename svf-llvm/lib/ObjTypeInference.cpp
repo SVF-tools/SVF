@@ -198,33 +198,35 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
             Set<const Value*> infersites;
 
             auto insertInferSite = [&infersites,
-                                    &canUpdate](const Value* infersite) {
+                                    &canUpdate](const Value* infersite)
+            {
                 if (canUpdate)
                     infersites.insert(infersite);
             };
             auto insertInferSitesOrPushWorklist =
-                [this, &infersites, &workList, &canUpdate](const auto& pUser) {
-                    auto vIt = _valueToInferSites.find(pUser);
-                    if (canUpdate)
+                [this, &infersites, &workList, &canUpdate](const auto& pUser)
+            {
+                auto vIt = _valueToInferSites.find(pUser);
+                if (canUpdate)
+                {
+                    if (vIt != _valueToInferSites.end())
                     {
-                        if (vIt != _valueToInferSites.end())
-                        {
-                            infersites.insert(vIt->second.begin(),
-                                              vIt->second.end());
-                        }
+                        infersites.insert(vIt->second.begin(),
+                                          vIt->second.end());
                     }
-                    else
-                    {
-                        if (vIt == _valueToInferSites.end())
-                            workList.push({pUser, false});
-                    }
-                };
+                }
+                else
+                {
+                    if (vIt == _valueToInferSites.end())
+                        workList.push({pUser, false});
+                }
+            };
             if (!canUpdate && !_valueToInferSites.count(curValue))
             {
                 workList.push({curValue, true});
             }
             if (const auto* gepInst =
-                    SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
+                        SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
                 insertInferSite(gepInst);
             for (const auto it : curValue->users())
             {
@@ -254,7 +256,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                     else
                     {
                         for (const auto nit :
-                             storeInst->getPointerOperand()->users())
+                                storeInst->getPointerOperand()->users())
                         {
                             /*
                              * propagate across store (value operand) and load
@@ -267,11 +269,11 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                                 insertInferSitesOrPushWorklist(nit);
                         }
                         /*
-                     * infer based on store (value operand) <- gep (result element)
+                        * infer based on store (value operand) <- gep (result element)
                          */
                         if (const auto* gepInst =
-                                SVFUtil::dyn_cast<GetElementPtrInst>(
-                                    storeInst->getPointerOperand()))
+                                    SVFUtil::dyn_cast<GetElementPtrInst>(
+                                        storeInst->getPointerOperand()))
                         {
                             /*
                               %call1 = call i8* @TYPE_MALLOC(i32 noundef 16, i32
@@ -293,24 +295,24 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                              */
                             const Value* gepBase = gepInst->getPointerOperand();
                             if (const auto* load =
-                                    SVFUtil::dyn_cast<LoadInst>(gepBase))
+                                        SVFUtil::dyn_cast<LoadInst>(gepBase))
                             {
                                 for (const auto loadUse :
-                                     load->getPointerOperand()->users())
+                                        load->getPointerOperand()->users())
                                 {
                                     if (loadUse == load ||
-                                        !SVFUtil::isa<LoadInst>(loadUse))
+                                            !SVFUtil::isa<LoadInst>(loadUse))
                                         continue;
                                     for (const auto gepUse : loadUse->users())
                                     {
                                         if (!SVFUtil::isa<GetElementPtrInst>(
-                                                gepUse))
+                                                    gepUse))
                                             continue;
                                         for (const auto loadUse2 :
-                                             gepUse->users())
+                                                gepUse->users())
                                         {
                                             if (SVFUtil::isa<LoadInst>(
-                                                    loadUse2))
+                                                        loadUse2))
                                             {
                                                 insertInferSitesOrPushWorklist(
                                                     loadUse2);
@@ -337,7 +339,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                                 for (const auto gepUse : alloc->users())
                                 {
                                     if (!SVFUtil::isa<GetElementPtrInst>(
-                                            gepUse))
+                                                gepUse))
                                         continue;
                                     for (const auto loadUse2 : gepUse->users())
                                     {
@@ -393,12 +395,12 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                     for (const auto callsite : retInst->getFunction()->users())
                     {
                         if (const auto* callBase =
-                                SVFUtil::dyn_cast<CallBase>(callsite))
+                                    SVFUtil::dyn_cast<CallBase>(callsite))
                         {
                             // skip function as parameter
                             // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
                             if (callBase->getCalledFunction() !=
-                                retInst->getFunction())
+                                    retInst->getFunction())
                                 continue;
                             insertInferSitesOrPushWorklist(callBase);
                         }
@@ -420,7 +422,7 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                     // e.g., def @foo() -> call @foo()
                     // we don't skip function as parameter, e.g., def @foo() -> call @bar(..., @foo)
                     if (SVFUtil::isa<Function>(curValue) &&
-                        curValue == callBase->getCalledFunction())
+                            curValue == callBase->getCalledFunction())
                         continue;
                     // skip indirect call
                     // e.g., %0 = ... -> call %0(...)
@@ -438,12 +440,12 @@ const Type *ObjTypeInference::fwInferObjType(const Value *var)
                             for (auto& I : instructions(calleeFunc))
                             {
                                 if (auto* load =
-                                        llvm::dyn_cast<llvm::LoadInst>(&I))
+                                            llvm::dyn_cast<llvm::LoadInst>(&I))
                                 {
                                     llvm::Value* loadPointer =
                                         load->getPointerOperand();
                                     if (loadPointer->getName().compare(
-                                            "vaarg.addr") == 0)
+                                                "vaarg.addr") == 0)
                                     {
                                         insertInferSitesOrPushWorklist(load);
                                     }
