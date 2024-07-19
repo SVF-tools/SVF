@@ -161,271 +161,323 @@ const Type *ObjTypeInference::inferObjType(const Value *var)
  */
 const Type *ObjTypeInference::fwInferObjType(const Value *var)
 {
-    // consult cache
-    auto tIt = _valueToType.find(var);
-    if (tIt != _valueToType.end())
+    if (const AllocaInst *allocaInst = SVFUtil::dyn_cast<AllocaInst>(var))
     {
-        return tIt->second ? tIt->second : defaultType(var);
+        // stack object
+        return infersiteToType(allocaInst);
     }
-
-    // simulate the call stack, the second element indicates whether we should update valueTypes for current value
-    FILOWorkList<ValueBoolPair> workList;
-    Set<ValueBoolPair> visited;
-    workList.push({var, false});
-
-    while (!workList.empty())
+    else if (const GlobalValue *global = SVFUtil::dyn_cast<GlobalValue>(var))
     {
-        auto curPair = workList.pop();
-        if (visited.count(curPair)) continue;
-        visited.insert(curPair);
-        const Value *curValue = curPair.first;
-        bool canUpdate = curPair.second;
-        Set<const Value *> infersites;
+        // global object
+        return infersiteToType(global);
+    }
+    else
+    {
+        // for heap or static object, we forward infer its type
 
-        auto insertInferSite = [&infersites, &canUpdate](const Value *infersite)
+        // consult cache
+        auto tIt = _valueToType.find(var);
+        if (tIt != _valueToType.end())
         {
-            if (canUpdate) infersites.insert(infersite);
-        };
-        auto insertInferSitesOrPushWorklist = [this, &infersites, &workList, &canUpdate](const auto &pUser)
-        {
-            auto vIt = _valueToInferSites.find(pUser);
-            if (canUpdate)
-            {
-                if (vIt != _valueToInferSites.end())
-                {
-                    infersites.insert(vIt->second.begin(), vIt->second.end());
-                }
-            }
-            else
-            {
-                if (vIt == _valueToInferSites.end()) workList.push({pUser, false});
-            }
-        };
-        if (!canUpdate && !_valueToInferSites.count(curValue))
-        {
-            workList.push({curValue, true});
+            return tIt->second ? tIt->second : defaultType(var);
         }
-        if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
-            insertInferSite(gepInst);
-        for (const auto it: curValue->users())
+
+        // simulate the call stack, the second element indicates whether we should update valueTypes for current value
+        FILOWorkList<ValueBoolPair> workList;
+        Set<ValueBoolPair> visited;
+        workList.push({var, false});
+
+        while (!workList.empty())
         {
-            if (const auto *loadInst = SVFUtil::dyn_cast<LoadInst>(it))
+            auto curPair = workList.pop();
+            if (visited.count(curPair))
+                continue;
+            visited.insert(curPair);
+            const Value* curValue = curPair.first;
+            bool canUpdate = curPair.second;
+            Set<const Value*> infersites;
+
+            auto insertInferSite = [&infersites,
+                                    &canUpdate](const Value* infersite) {
+                if (canUpdate)
+                    infersites.insert(infersite);
+            };
+            auto insertInferSitesOrPushWorklist =
+                [this, &infersites, &workList, &canUpdate](const auto& pUser) {
+                    auto vIt = _valueToInferSites.find(pUser);
+                    if (canUpdate)
+                    {
+                        if (vIt != _valueToInferSites.end())
+                        {
+                            infersites.insert(vIt->second.begin(),
+                                              vIt->second.end());
+                        }
+                    }
+                    else
+                    {
+                        if (vIt == _valueToInferSites.end())
+                            workList.push({pUser, false});
+                    }
+                };
+            if (!canUpdate && !_valueToInferSites.count(curValue))
             {
-                /*
-                 * infer based on load, e.g.,
-                 %call = call i8* malloc()
-                 %1 = bitcast i8* %call to %struct.MyStruct*
-                 %q = load %struct.MyStruct, %struct.MyStruct* %1
-                 */
-                insertInferSite(loadInst);
+                workList.push({curValue, true});
             }
-            else if (const auto *storeInst = SVFUtil::dyn_cast<StoreInst>(it))
+            if (const auto* gepInst =
+                    SVFUtil::dyn_cast<GetElementPtrInst>(curValue))
+                insertInferSite(gepInst);
+            for (const auto it : curValue->users())
             {
-                if (storeInst->getPointerOperand() == curValue)
+                if (const auto* loadInst = SVFUtil::dyn_cast<LoadInst>(it))
                 {
                     /*
-                     * infer based on store (pointer operand), e.g.,
+                     * infer based on load, e.g.,
                      %call = call i8* malloc()
                      %1 = bitcast i8* %call to %struct.MyStruct*
-                     store %struct.MyStruct .., %struct.MyStruct* %1
+                     %q = load %struct.MyStruct, %struct.MyStruct* %1
                      */
-                    insertInferSite(storeInst);
+                    insertInferSite(loadInst);
                 }
-                else
+                else if (const auto* storeInst =
+                             SVFUtil::dyn_cast<StoreInst>(it))
                 {
-                    for (const auto nit: storeInst->getPointerOperand()->users())
+                    if (storeInst->getPointerOperand() == curValue)
                     {
                         /*
-                         * propagate across store (value operand) and load
+                         * infer based on store (pointer operand), e.g.,
                          %call = call i8* malloc()
-                         store i8* %call, i8** %p
-                         %q = load i8*, i8** %p
-                         ..infer based on %q..
-                        */
-                        if (SVFUtil::isa<LoadInst>(nit))
-                            insertInferSitesOrPushWorklist(nit);
-                    }
-                    /*
-                     * infer based on store (value operand) <- gep (result element)
-                      */
-                    if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(
-                                                  storeInst->getPointerOperand()))
-                    {
-                        /*
-                          %call1 = call i8* @TYPE_MALLOC(i32 noundef 16, i32 noundef 2), !dbg !39
-                          %2 = bitcast i8* %call1 to %struct.MyStruct*, !dbg !41
-                          %3 = load %struct.MyStruct*, %struct.MyStruct** %p, align 8, !dbg !42
-                          %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %3, i32 0, i32 1, !dbg !43
-                          store %struct.MyStruct* %2, %struct.MyStruct** %next, align 8, !dbg !44
-                          %5 = load %struct.MyStruct*, %struct.MyStruct** %p, align 8, !dbg !48
-                          %next3 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %5, i32 0, i32 1, !dbg !49
-                          %6 = load %struct.MyStruct*, %struct.MyStruct** %next3, align 8, !dbg !49
-                          infer site -> %f1 = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %6, i32 0, i32 0, !dbg !50
+                         %1 = bitcast i8* %call to %struct.MyStruct*
+                         store %struct.MyStruct .., %struct.MyStruct* %1
                          */
-                        const Value *gepBase = gepInst->getPointerOperand();
-                        if(const auto *load = SVFUtil::dyn_cast<LoadInst>(gepBase))
+                        insertInferSite(storeInst);
+                    }
+                    else
+                    {
+                        for (const auto nit :
+                             storeInst->getPointerOperand()->users())
                         {
-                            for (const auto loadUse: load->getPointerOperand()->users())
+                            /*
+                             * propagate across store (value operand) and load
+                             %call = call i8* malloc()
+                             store i8* %call, i8** %p
+                             %q = load i8*, i8** %p
+                             ..infer based on %q..
+                            */
+                            if (SVFUtil::isa<LoadInst>(nit))
+                                insertInferSitesOrPushWorklist(nit);
+                        }
+                        /*
+                     * infer based on store (value operand) <- gep (result element)
+                         */
+                        if (const auto* gepInst =
+                                SVFUtil::dyn_cast<GetElementPtrInst>(
+                                    storeInst->getPointerOperand()))
+                        {
+                            /*
+                              %call1 = call i8* @TYPE_MALLOC(i32 noundef 16, i32
+                              noundef 2), !dbg !39 %2 = bitcast i8* %call1 to
+                              %struct.MyStruct*, !dbg !41 %3 = load
+                              %struct.MyStruct*, %struct.MyStruct** %p, align 8,
+                              !dbg !42 %next = getelementptr inbounds
+                              %struct.MyStruct, %struct.MyStruct* %3, i32 0, i32
+                              1, !dbg !43 store %struct.MyStruct* %2,
+                              %struct.MyStruct** %next, align 8, !dbg !44 %5 =
+                              load %struct.MyStruct*, %struct.MyStruct** %p,
+                              align 8, !dbg !48 %next3 = getelementptr inbounds
+                              %struct.MyStruct, %struct.MyStruct* %5, i32 0, i32
+                              1, !dbg !49 %6 = load %struct.MyStruct*,
+                              %struct.MyStruct** %next3, align 8, !dbg !49 infer
+                              site -> %f1 = getelementptr inbounds
+                              %struct.MyStruct, %struct.MyStruct* %6, i32 0, i32
+                              0, !dbg !50
+                             */
+                            const Value* gepBase = gepInst->getPointerOperand();
+                            if (const auto* load =
+                                    SVFUtil::dyn_cast<LoadInst>(gepBase))
                             {
-                                if (loadUse == load || !SVFUtil::isa<LoadInst>(loadUse))
-                                    continue;
-                                for (const auto gepUse: loadUse->users())
+                                for (const auto loadUse :
+                                     load->getPointerOperand()->users())
                                 {
-                                    if (!SVFUtil::isa<GetElementPtrInst>(gepUse)) continue;
-                                    for (const auto loadUse2: gepUse->users())
+                                    if (loadUse == load ||
+                                        !SVFUtil::isa<LoadInst>(loadUse))
+                                        continue;
+                                    for (const auto gepUse : loadUse->users())
+                                    {
+                                        if (!SVFUtil::isa<GetElementPtrInst>(
+                                                gepUse))
+                                            continue;
+                                        for (const auto loadUse2 :
+                                             gepUse->users())
+                                        {
+                                            if (SVFUtil::isa<LoadInst>(
+                                                    loadUse2))
+                                            {
+                                                insertInferSitesOrPushWorklist(
+                                                    loadUse2);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else if (const auto* alloc =
+                                         SVFUtil::dyn_cast<AllocaInst>(gepBase))
+                            {
+                                /*
+                                  %2 = alloca %struct.ll, align 8
+                                  store i32 0, ptr %1, align 4
+                                  %3 = call noalias noundef nonnull ptr
+                                  @_Znwm(i64 noundef 16) #2 %4 = getelementptr
+                                  inbounds %struct.ll, ptr %2, i32 0, i32 1
+                                  store ptr %3, ptr %4, align 8
+                                  %5 = getelementptr inbounds %struct.ll, ptr
+                                  %2, i32 0, i32 1 %6 = load ptr, ptr %5, align
+                                  8 %7 = getelementptr inbounds %struct.ll, ptr
+                                  %6, i32 0, i32 0
+                                 */
+                                for (const auto gepUse : alloc->users())
+                                {
+                                    if (!SVFUtil::isa<GetElementPtrInst>(
+                                            gepUse))
+                                        continue;
+                                    for (const auto loadUse2 : gepUse->users())
                                     {
                                         if (SVFUtil::isa<LoadInst>(loadUse2))
                                         {
-                                            insertInferSitesOrPushWorklist(loadUse2);
+                                            insertInferSitesOrPushWorklist(
+                                                loadUse2);
                                         }
                                     }
                                 }
                             }
                         }
-                        else if (const auto *alloc = SVFUtil::dyn_cast<AllocaInst>(gepBase))
+                    }
+                }
+                else if (const auto* gepInst =
+                             SVFUtil::dyn_cast<GetElementPtrInst>(it))
+                {
+                    /*
+                     * infer based on gep (pointer operand)
+                     %call = call i8* malloc()
+                     %1 = bitcast i8* %call to %struct.MyStruct*
+                     %next = getelementptr inbounds %struct.MyStruct,
+                     %struct.MyStruct* %1, i32 0..
+                     */
+                    if (gepInst->getPointerOperand() == curValue)
+                        insertInferSite(gepInst);
+                }
+                else if (const auto* bitcast =
+                             SVFUtil::dyn_cast<BitCastInst>(it))
+                {
+                    // continue on bitcast
+                    insertInferSitesOrPushWorklist(bitcast);
+                }
+                else if (const auto* phiNode = SVFUtil::dyn_cast<PHINode>(it))
+                {
+                    // continue on bitcast
+                    insertInferSitesOrPushWorklist(phiNode);
+                }
+                else if (const auto* retInst =
+                             SVFUtil::dyn_cast<ReturnInst>(it))
+                {
+                    /*
+                     * propagate from return to caller
+                      Function Attrs: noinline nounwind optnone uwtable
+                      define dso_local i8* @malloc_wrapper() #0 !dbg !22 {
+                          entry:
+                          %call = call i8* @malloc(i32 noundef 16), !dbg !25
+                          ret i8* %call, !dbg !26
+                     }
+                     %call = call i8* @malloc_wrapper()
+                     ..infer based on %call..
+                    */
+                    for (const auto callsite : retInst->getFunction()->users())
+                    {
+                        if (const auto* callBase =
+                                SVFUtil::dyn_cast<CallBase>(callsite))
                         {
-                            /*
-                              %2 = alloca %struct.ll, align 8
-                              store i32 0, ptr %1, align 4
-                              %3 = call noalias noundef nonnull ptr @_Znwm(i64 noundef 16) #2
-                              %4 = getelementptr inbounds %struct.ll, ptr %2, i32 0, i32 1
-                              store ptr %3, ptr %4, align 8
-                              %5 = getelementptr inbounds %struct.ll, ptr %2, i32 0, i32 1
-                              %6 = load ptr, ptr %5, align 8
-                              %7 = getelementptr inbounds %struct.ll, ptr %6, i32 0, i32 0
-                             */
-                            for (const auto gepUse: alloc->users())
+                            // skip function as parameter
+                            // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
+                            if (callBase->getCalledFunction() !=
+                                retInst->getFunction())
+                                continue;
+                            insertInferSitesOrPushWorklist(callBase);
+                        }
+                    }
+                }
+                else if (const auto* callBase = SVFUtil::dyn_cast<CallBase>(it))
+                {
+                    /*
+                     * propagate from callsite to callee
+                      %call = call i8* @malloc(i32 noundef 16)
+                      %0 = bitcast i8* %call to %struct.Node*, !dbg !43
+                      call void @foo(%struct.Node* noundef %0), !dbg !45
+
+                      define dso_local void @foo(%struct.Node* noundef %param)
+                     #0 !dbg !22 {...}
+                      ..infer based on the formal param %param..
+                     */
+                    // skip global function value -> callsite
+                    // e.g., def @foo() -> call @foo()
+                    // we don't skip function as parameter, e.g., def @foo() -> call @bar(..., @foo)
+                    if (SVFUtil::isa<Function>(curValue) &&
+                        curValue == callBase->getCalledFunction())
+                        continue;
+                    // skip indirect call
+                    // e.g., %0 = ... -> call %0(...)
+                    if (!callBase->hasArgument(curValue))
+                        continue;
+                    if (Function* calleeFunc = callBase->getCalledFunction())
+                    {
+                        u32_t pos = getArgPosInCall(callBase, curValue);
+                        // for varargs function, we cannot directly get the value-flow between actual and formal args e.g., consider the following vararg function @callee 1: call void @callee(%arg) 2: define dso_local i32 @callee(...) #0 !dbg !17 { 3:  ....... 4:  %5 = load i32, ptr %vaarg.addr, align 4, !dbg !55 5:  .......
+                        // 6: }
+                        // it is challenging to precisely identify the forward value-flow of %arg (Line 2) because the function definition of callee (Line 2) does not have any formal args related to the actual arg %arg therefore we track all possible instructions like ``load i32, ptr %vaarg.addr''
+                        if (calleeFunc->isVarArg())
+                        {
+                            // conservatively track all var args
+                            for (auto& I : instructions(calleeFunc))
                             {
-                                if (!SVFUtil::isa<GetElementPtrInst>(gepUse)) continue;
-                                for (const auto loadUse2: gepUse->users())
+                                if (auto* load =
+                                        llvm::dyn_cast<llvm::LoadInst>(&I))
                                 {
-                                    if (SVFUtil::isa<LoadInst>(loadUse2))
+                                    llvm::Value* loadPointer =
+                                        load->getPointerOperand();
+                                    if (loadPointer->getName().compare(
+                                            "vaarg.addr") == 0)
                                     {
-                                        insertInferSitesOrPushWorklist(loadUse2);
+                                        insertInferSitesOrPushWorklist(load);
                                     }
                                 }
                             }
                         }
-                    }
-                }
-
-            }
-            else if (const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(it))
-            {
-                /*
-                 * infer based on gep (pointer operand)
-                 %call = call i8* malloc()
-                 %1 = bitcast i8* %call to %struct.MyStruct*
-                 %next = getelementptr inbounds %struct.MyStruct, %struct.MyStruct* %1, i32 0..
-                 */
-                if (gepInst->getPointerOperand() == curValue)
-                    insertInferSite(gepInst);
-            }
-            else if (const auto *bitcast = SVFUtil::dyn_cast<BitCastInst>(it))
-            {
-                // continue on bitcast
-                insertInferSitesOrPushWorklist(bitcast);
-            }
-            else if (const auto *phiNode = SVFUtil::dyn_cast<PHINode>(it))
-            {
-                // continue on bitcast
-                insertInferSitesOrPushWorklist(phiNode);
-            }
-            else if (const auto *retInst = SVFUtil::dyn_cast<ReturnInst>(it))
-            {
-                /*
-                 * propagate from return to caller
-                  Function Attrs: noinline nounwind optnone uwtable
-                  define dso_local i8* @malloc_wrapper() #0 !dbg !22 {
-                      entry:
-                      %call = call i8* @malloc(i32 noundef 16), !dbg !25
-                      ret i8* %call, !dbg !26
-                 }
-                 %call = call i8* @malloc_wrapper()
-                 ..infer based on %call..
-                */
-                for (const auto callsite: retInst->getFunction()->users())
-                {
-                    if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(callsite))
-                    {
-                        // skip function as parameter
-                        // e.g., call void @foo(%struct.ssl_ctx_st* %9, i32 (i8*, i32, i32, i8*)* @passwd_callback)
-                        if (callBase->getCalledFunction() != retInst->getFunction()) continue;
-                        insertInferSitesOrPushWorklist(callBase);
-                    }
-                }
-            }
-            else if (const auto *callBase = SVFUtil::dyn_cast<CallBase>(it))
-            {
-                /*
-                 * propagate from callsite to callee
-                  %call = call i8* @malloc(i32 noundef 16)
-                  %0 = bitcast i8* %call to %struct.Node*, !dbg !43
-                  call void @foo(%struct.Node* noundef %0), !dbg !45
-
-                  define dso_local void @foo(%struct.Node* noundef %param) #0 !dbg !22 {...}
-                  ..infer based on the formal param %param..
-                 */
-                // skip global function value -> callsite
-                // e.g., def @foo() -> call @foo()
-                // we don't skip function as parameter, e.g., def @foo() -> call @bar(..., @foo)
-                if (SVFUtil::isa<Function>(curValue) && curValue == callBase->getCalledFunction()) continue;
-                // skip indirect call
-                // e.g., %0 = ... -> call %0(...)
-                if (!callBase->hasArgument(curValue)) continue;
-                if (Function *calleeFunc = callBase->getCalledFunction())
-                {
-                    u32_t pos = getArgPosInCall(callBase, curValue);
-                    // for varargs function, we cannot directly get the value-flow between actual and formal args
-                    // e.g., consider the following vararg function @callee
-                    // 1: call void @callee(%arg)
-                    // 2: define dso_local i32 @callee(...) #0 !dbg !17 {
-                    // 3:  .......
-                    // 4:  %5 = load i32, ptr %vaarg.addr, align 4, !dbg !55
-                    // 5:  .......
-                    // 6: }
-                    // it is challenging to precisely identify the forward value-flow of %arg (Line 2)
-                    // because the function definition of callee (Line 2) does not have any formal args related to the actual arg %arg
-                    // therefore we track all possible instructions like ``load i32, ptr %vaarg.addr''
-                    if (calleeFunc->isVarArg())
-                    {
-                        // conservatively track all var args
-                        for (auto &I: instructions(calleeFunc))
+                        else if (!calleeFunc->isDeclaration())
                         {
-                            if (auto *load = llvm::dyn_cast<llvm::LoadInst>(&I))
-                            {
-                                llvm::Value* loadPointer = load->getPointerOperand();
-                                if (loadPointer->getName().compare("vaarg.addr") == 0)
-                                {
-                                    insertInferSitesOrPushWorklist(load);
-                                }
-                            }
+                            insertInferSitesOrPushWorklist(
+                                calleeFunc->getArg(pos));
                         }
                     }
-                    else if (!calleeFunc->isDeclaration())
-                    {
-                        insertInferSitesOrPushWorklist(calleeFunc->getArg(pos));
-                    }
                 }
             }
+            if (canUpdate)
+            {
+                Set<const Type*> types;
+                std::transform(infersites.begin(), infersites.end(),
+                               std::inserter(types, types.begin()),
+                               infersiteToType);
+                _valueToInferSites[curValue] = SVFUtil::move(infersites);
+                _valueToType[curValue] = selectLargestSizedType(types);
+            }
         }
-        if (canUpdate)
+        const Type* type = _valueToType[var];
+        if (type == nullptr)
         {
-            Set<const Type *> types;
-            std::transform(infersites.begin(), infersites.end(), std::inserter(types, types.begin()),
-                           infersiteToType);
-            _valueToInferSites[curValue] = SVFUtil::move(infersites);
-            _valueToType[curValue] = selectLargestSizedType(types);
+            type = defaultType(var);
+            WARN_MSG("Using default type, trace ID is " +
+                     std::to_string(traceId) + ":" + dumpValueAndDbgInfo(var));
         }
+        ABORT_IFNOT(type, "type cannot be a null ptr");
+        return type;
     }
-    const Type *type = _valueToType[var];
-    if (type == nullptr)
-    {
-        type = defaultType(var);
-        WARN_MSG("Using default type, trace ID is " + std::to_string(traceId) + ":" + dumpValueAndDbgInfo(var));
-    }
-    ABORT_IFNOT(type, "type cannot be a null ptr");
-    return type;
 }
 
 /*!
