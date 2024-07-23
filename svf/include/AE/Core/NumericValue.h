@@ -26,6 +26,9 @@
  *      Author: Xiao Cheng, Jiawei Ren
  *
  */
+// The implementation is based on
+// Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
+// 46th International Conference on Software Engineering. (ICSE24)
 
 #ifndef SVF_NUMERICVALUE_H
 #define SVF_NUMERICVALUE_H

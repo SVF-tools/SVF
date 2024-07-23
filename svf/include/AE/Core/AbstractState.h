@@ -39,6 +39,9 @@
  *         \    \        \        /      /
  *                          ⊥
  */
+// The implementation is based on
+// Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
+// 46th International Conference on Software Engineering. (ICSE24)
 
 #ifndef Z3_EXAMPLE_INTERVAL_DOMAIN_H
 #define Z3_EXAMPLE_INTERVAL_DOMAIN_H
