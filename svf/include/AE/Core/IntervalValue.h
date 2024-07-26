@@ -108,7 +108,9 @@ public:
     explicit IntervalValue(BoundedInt n) : IntervalValue(n, n) {}
 
     /// Create the IntervalValue [lb, ub]
-    explicit IntervalValue(BoundedInt lb, BoundedInt ub) : _lb(std::move(lb)), _ub(std::move(ub)) {}
+    explicit IntervalValue(BoundedInt lb, BoundedInt ub) : _lb(std::move(lb)), _ub(std::move(ub)) {
+        assert(_lb.leq(_ub) && "lower bound should be less than or equal to upper bound");
+    }
 
     explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(BoundedInt(lb), BoundedInt(ub)) {}
 
