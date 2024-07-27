@@ -51,7 +51,7 @@ private:
     // Upper bound
     BoundedInt _ub;
 
-    // Invariant: isBottom() <=> _lb = 1 && _ub = 0
+    // Invariant: isBottom() <=> _lb = +inf && _ub = -inf
 public:
 
     bool isTop() const
@@ -61,7 +61,7 @@ public:
 
     bool isBottom() const
     {
-        return !_ub.geq(_lb);
+        return _lb.is_plus_infinity() && _ub.is_minus_infinity();
     }
 
     /// Get minus infinity -oo
@@ -70,7 +70,7 @@ public:
         return BoundedInt::minus_infinity();
     }
 
-    /// Get plus infinity +oo
+    /// Get plus infinity +inf
     static BoundedInt plus_infinity()
     {
         return BoundedInt::plus_infinity();
@@ -81,22 +81,20 @@ public:
         return e.is_infinity();
     }
 
-    /// Create the IntervalValue [-oo, +oo]
+    /// Create the IntervalValue [-inf, +inf]
     static IntervalValue top()
     {
         return IntervalValue(minus_infinity(), plus_infinity());
     }
 
-    /// Create the bottom IntervalValue
+    /// Create the bottom IntervalValue [+inf, -inf]
     static IntervalValue bottom()
     {
-        IntervalValue res;
-        res.set_to_bottom();
-        return res;
+        return IntervalValue();
     }
 
-    /// Create default IntervalValue
-    explicit IntervalValue() : _lb(minus_infinity()), _ub(plus_infinity()) {}
+    /// Create default IntervalValue to be bottom [+inf, -inf]
+    explicit IntervalValue() : _lb(plus_infinity()), _ub(minus_infinity()) {}
 
     /// Create the IntervalValue [n, n]
     explicit IntervalValue(s64_t n) : _lb(n), _ub(n) {}
@@ -111,7 +109,7 @@ public:
 
     /// Create the IntervalValue [lb, ub]
     explicit IntervalValue(BoundedInt lb, BoundedInt ub) : _lb(std::move(lb)), _ub(std::move(ub)) {
-        assert(_lb.leq(_ub) && "lower bound should be less than or equal to upper bound");
+        assert((isBottom() || _lb.leq(_ub)) && "lower bound should be less than or equal to upper bound");
     }
 
     explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(BoundedInt(lb), BoundedInt(ub)) {}
@@ -222,25 +220,6 @@ public:
         return this->_ub;
     }
 
-    /// Set the lower bound
-    void setLb(const BoundedInt &lb)
-    {
-        this->_lb = lb;
-    }
-
-    /// Set the upper bound
-    void setUb(const BoundedInt &ub)
-    {
-        this->_ub = ub;
-    }
-
-    /// Set the lower bound
-    void setValue(const BoundedInt &lb, const BoundedInt &ub)
-    {
-        this->_lb = lb;
-        this->_ub = ub;
-    }
-
     /// Return true if the IntervalValue is [0, 0]
     bool is_zero() const
     {
@@ -293,8 +272,8 @@ public:
     /// Set current IntervalValue as bottom
     void set_to_bottom()
     {
-        this->_lb = 1;
-        this->_ub = 0;
+        this->_lb = plus_infinity();
+        this->_ub = minus_infinity();
     }
 
     /// Set current IntervalValue as top
@@ -434,8 +413,7 @@ public:
             }
             else
             {
-                this->_lb = other.lb();
-                this->_ub = other.ub();
+                setValue(other.lb(), other.ub());
             }
         }
         else if (other.isBottom())
@@ -444,8 +422,7 @@ public:
         }
         else
         {
-            this->_lb = min(this->lb(), other.lb());
-            this->_ub = max(this->ub(), other.ub());
+            setValue(min(this->lb(), other.lb()), max(this->ub(), other.ub()));
         }
     }
 
@@ -454,8 +431,7 @@ public:
     {
         if (this->isBottom())
         {
-            this->_lb = other._lb;
-            this->_ub = other._ub;
+            setValue(other.lb(), other.ub());
         }
         else if (other.isBottom())
         {
@@ -463,8 +439,7 @@ public:
         }
         else
         {
-            this->_lb = !lb().leq(other.lb()) ? minus_infinity() : this->lb();
-            this->_ub = !ub().geq(other.ub()) ? plus_infinity() : this->ub();
+            setValue(!lb().leq(other.lb()) ? minus_infinity() : this->lb(), !ub().geq(other.ub()) ? plus_infinity() : this->ub());
         }
     }
 
@@ -481,8 +456,7 @@ public:
         }
         else
         {
-            this->_lb = is_infinite(this->lb()) ? other._lb : this->_lb;
-            this->_ub = is_infinite(this->ub()) ? other._ub : this->_ub;
+            setValue(is_infinite(this->lb()) ? other._lb : this->_lb, is_infinite(this->ub()) ? other._ub : this->_ub);
         }
     }
 
@@ -495,10 +469,11 @@ public:
         }
         else
         {
-            this->_lb = max(this->_lb, other.lb());
-            this->_ub = min(this->_ub, other.ub());
-            if (this->isBottom())
+            if (!(max(this->_lb, other.lb()).leq(min(this->_ub, other.ub())))) {
                 this->set_to_bottom();
+            } else {
+                setValue(max(this->_lb, other.lb()), min(this->_ub, other.ub()));
+            }
         }
     }
 
@@ -533,6 +508,15 @@ public:
             rawStr << "[" << lb().to_string() << ", " << ub().to_string() << "]";
         }
         return rawStr.str();
+    }
+
+private:
+    /// Set the lower bound
+    void setValue(const BoundedInt &lb, const BoundedInt &ub)
+    {
+        assert((isBottom() || _lb.leq(_ub)) && "lower bound should be less than or equal to upper bound");
+        this->_lb = lb;
+        this->_ub = ub;
     }
 
 }; // end class IntervalValue
