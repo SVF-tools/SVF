@@ -90,7 +90,9 @@ public:
     /// Create the bottom IntervalValue
     static IntervalValue bottom()
     {
-        return IntervalValue(1, 0);
+        IntervalValue res;
+        res.set_to_bottom();
+        return res;
     }
 
     /// Create default IntervalValue
