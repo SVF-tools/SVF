@@ -90,7 +90,7 @@ public:
     /// Create the bottom IntervalValue [+inf, -inf]
     static IntervalValue bottom()
     {
-        return IntervalValue();
+        return IntervalValue(plus_infinity(), minus_infinity());
     }
 
     /// Create default IntervalValue to be bottom [+inf, -inf]
