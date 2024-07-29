@@ -1198,7 +1198,7 @@ void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
             }
             else
             {
-                as[lhsId] = IntervalValue();
+                as[lhsId] = IntervalValue::top();
             }
             return;
         }

@@ -320,12 +320,14 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
     {
         if (item.first >= bias)
         {
+            if (!retInv.inVarToValTable(item.first-bias))
+                retInv[item.first-bias] = IntervalValue::top();
+
             if (item.second == (infinity))
                 retInv[item.first - bias] = IntervalValue(BoundedDouble::minus_infinity(),
                                                           retInv[item.first - bias].getInterval().ub());
             else
-                retInv[item.first - bias] = IntervalValue(float(-item.second),
-                                                          retInv[item.first - bias].getInterval().ub());
+                retInv[item.first - bias] = IntervalValue(float(-item.second), retInv[item.first - bias].getInterval().ub());
 
         }
         else
