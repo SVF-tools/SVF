@@ -432,19 +432,19 @@ public:
 
     friend BoundedDouble operator^(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
-        int lInt = std::round(rhs._fVal), rInt = std::round(rhs._fVal);
+        int lInt = std::round(lhs._fVal), rInt = std::round(rhs._fVal);
         return lInt ^ rInt;
     }
 
     friend BoundedDouble operator&(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
-        int lInt = std::round(rhs._fVal), rInt = std::round(rhs._fVal);
+        int lInt = std::round(lhs._fVal), rInt = std::round(rhs._fVal);
         return lInt & rInt;
     }
 
     friend BoundedDouble operator|(const BoundedDouble &lhs, const BoundedDouble &rhs)
     {
-        int lInt = std::round(rhs._fVal), rInt = std::round(rhs._fVal);
+        int lInt = std::round(lhs._fVal), rInt = std::round(rhs._fVal);
         return lInt | rInt;
     }
 
