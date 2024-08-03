@@ -1032,27 +1032,27 @@ private:
     u32_t opcode;
 
 public:
-    /// OpCode for BinaryOPStmt, enum value is same to llvm BinaryOperator
+    /// OpCode for BinaryOPStmt, enum value is same to llvm BinaryOperator (llvm/IR/Instruction.def)
     enum OpCode : unsigned
     {
-        Add = 13,
-        FAdd = 14,
-        Sub = 15,
-        FSub = 16,
-        Mul = 17,
-        FMul = 18,
-        UDiv = 19,
-        SDiv = 20,
-        FDiv = 21,
-        URem = 22,
-        SRem = 23,
-        FRem = 24,
-        Shl = 25,
-        LShr = 26,
-        AShr = 27,
-        And = 28,
-        Or = 29,
-        Xor = 30
+        Add = 13,       // Sum of integers
+        FAdd = 14,      // Sum of floats
+        Sub = 15,       // Subtraction of integers
+        FSub = 16,      // Subtraction of floats
+        Mul = 17,       // Product of integers.
+        FMul = 18,      // Product of floats.
+        UDiv = 19,      // Unsigned division.
+        SDiv = 20,      // Signed division.
+        FDiv = 21,      // Float division.
+        URem = 22,      // Unsigned remainder
+        SRem = 23,      // Signed remainder
+        FRem = 24,      // Float remainder
+        Shl = 25,       // Shift left  (logical)
+        LShr = 26,      // Shift right (logical)
+        AShr = 27,      // Shift right (arithmetic)
+        And = 28,       // Logical and
+        Or = 29,        // Logical or
+        Xor = 30        // Logical xor
     };
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
