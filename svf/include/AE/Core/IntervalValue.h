@@ -583,7 +583,7 @@ inline IntervalValue operator*(const IntervalValue &lhs,
         BoundedInt lu = lhs.lb() * rhs.ub();
         BoundedInt ul = lhs.ub() * rhs.lb();
         BoundedInt uu = lhs.ub() * rhs.ub();
-        std::vector<BoundedDouble> vec{ll, lu, ul, uu};
+        std::vector<BoundedInt> vec{ll, lu, ul, uu};
         return IntervalValue(BoundedInt::min(vec),
                              BoundedInt::max(vec));
     }
@@ -608,7 +608,7 @@ inline IntervalValue operator/(const IntervalValue &lhs,
         BoundedInt lu = lhs.lb() / rhs.ub();
         BoundedInt ul = lhs.ub() / rhs.lb();
         BoundedInt uu = lhs.ub() / rhs.ub();
-        std::vector<BoundedDouble> vec{ll, lu, ul, uu};
+        std::vector<BoundedInt> vec{ll, lu, ul, uu};
 
         return IntervalValue(BoundedInt::min(vec),
                              BoundedInt::max(vec));
@@ -908,7 +908,7 @@ inline IntervalValue operator>>(const IntervalValue &lhs, const IntervalValue &r
             BoundedInt lu = lhs.lb() >> shift.ub();
             BoundedInt ul = lhs.ub() >> shift.lb();
             BoundedInt uu = lhs.ub() >> shift.ub();
-            std::vector<BoundedDouble> vec{ll, lu, ul, uu};
+            std::vector<BoundedInt> vec{ll, lu, ul, uu};
             return IntervalValue(BoundedInt::min(vec),
                                  BoundedInt::max(vec));
         }

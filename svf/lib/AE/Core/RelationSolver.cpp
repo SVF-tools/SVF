@@ -283,15 +283,15 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
     for (const auto& item: domain.getVarToVal())
     {
         IntervalValue interval = item.second.getInterval();
-        updateMap(ret, item.first, interval.ub().getFVal());
+        updateMap(ret, item.first, interval.ub().getNumeral());
         if (interval.lb().is_minus_infinity())
             updateMap(low_values, item.first, -infinity);
         else
-            updateMap(low_values, item.first, interval.lb().getFVal());
+            updateMap(low_values, item.first, interval.lb().getNumeral());
         if (interval.ub().is_plus_infinity())
             updateMap(high_values, item.first, infinity);
         else
-            updateMap(high_values, item.first, interval.ub().getFVal());
+            updateMap(high_values, item.first, interval.ub().getNumeral());
         if (item.first > bias)
             bias = item.first + 1;
     }
@@ -300,15 +300,15 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
         /// init objects -x
         IntervalValue interval = item.second.getInterval();
         u32_t reverse_key = item.first + bias;
-        updateMap(ret, reverse_key, -interval.lb().getFVal());
+        updateMap(ret, reverse_key, -interval.lb().getNumeral());
         if (interval.ub().is_plus_infinity())
             updateMap(low_values, reverse_key, -infinity);
         else
-            updateMap(low_values, reverse_key, -interval.ub().getFVal());
+            updateMap(low_values, reverse_key, -interval.ub().getNumeral());
         if (interval.lb().is_minus_infinity())
             updateMap(high_values, reverse_key, infinity);
         else
-            updateMap(high_values, reverse_key, -interval.lb().getFVal());
+            updateMap(high_values, reverse_key, -interval.lb().getNumeral());
         /// add a relation that x == -(x+bias)
         new_phi = (new_phi && (toIntZ3Expr(reverse_key) == -1 * toIntZ3Expr(item.first)));
     }
@@ -321,14 +321,14 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
         if (item.first >= bias)
         {
             if (item.second == (infinity))
-                retInv[item.first - bias].getInterval().setLb(BoundedDouble::minus_infinity());
+                retInv[item.first - bias].getInterval().setLb(BoundedInt::minus_infinity());
             else
                 retInv[item.first - bias].getInterval().setLb(float(-item.second));
         }
         else
         {
             if (item.second == (infinity))
-                retInv[item.first].getInterval().setUb(BoundedDouble::plus_infinity());
+                retInv[item.first].getInterval().setUb(BoundedInt::plus_infinity());
             else
                 retInv[item.first].getInterval().setUb(float(item.second));
         }
