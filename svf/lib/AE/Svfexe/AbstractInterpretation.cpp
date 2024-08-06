@@ -1390,16 +1390,7 @@ IntervalValue AbstractInterpretation::traceMemoryAllocationSize(AbstractState& a
                         }
                         else
                         {
-                            IntervalValue byteOffset;
-                            if (gep->isConstantOffset())
-                            {
-                                byteOffset = IntervalValue(gep->accumulateConstantByteOffset());
-                            }
-                            else
-                            {
-                                IntervalValue byteOffset =
-                                    _svfir2AbsState->getByteOffset(as, gep);
-                            }
+                            IntervalValue byteOffset = _svfir2AbsState->getByteOffset(as, gep);
                             // for variable offset, join with accumulate gep offset
                             gep_offsets[gep->getICFGNode()] = byteOffset;
                             total_bytes = total_bytes + byteOffset;

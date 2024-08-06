@@ -416,58 +416,6 @@ public:
         return lhs._iVal * rhs._iVal;
     }
 
-    /**
-     * @brief Performs safe division of two BoundedInt objects.
-     *
-     * This function ensures that the division of two BoundedInt objects doesn't
-     * result in overflow or underflow. It returns the division result if it can
-     * be represented within the range of a 64-bit integer. If the divisor is
-     * zero, it returns positive or negative infinity depending on the sign of
-     * the dividend. If the dividend is zero, the result is zero. If either of
-     * the inputs is infinity, the result is determined by the signs of the
-     * inputs.
-     *
-     * @param lhs The dividend BoundedInt.
-     * @param rhs The divisor BoundedInt.
-     * @return The result of the division, or positive/negative infinity if the
-     * divisor is zero.
-     */
-    static BoundedInt safeDiv(const BoundedInt& lhs, const BoundedInt& rhs)
-    {
-        // If the divisor is zero, the result is infinity with the sign of the
-        // dividend.
-        if (rhs._iVal == 0)
-        {
-            return lhs._iVal >= 0 ? plus_infinity() : minus_infinity();
-        }
-
-        // If the dividend is zero, the result is zero.
-        if (lhs._iVal == 0)
-        {
-            return 0;
-        }
-
-        // If either number is infinity, the result depends on the signs of the
-        // numbers.
-        if (lhs.is_infinity() || rhs.is_infinity())
-        {
-            // If the signs of the numbers are the same, the result is positive
-            // infinity. If the signs of the numbers are different, the result
-            // is negative infinity.
-            if (lhs._iVal * rhs._iVal > 0)
-            {
-                return plus_infinity();
-            }
-            else
-            {
-                return minus_infinity();
-            }
-        }
-
-        // If none of the above conditions are met, the numbers can be safely
-        // divided.
-        return lhs._iVal / rhs._iVal;
-    }
 
     friend BoundedInt operator%(const BoundedInt& lhs, const BoundedInt& rhs)
     {
@@ -497,7 +445,16 @@ public:
     // and overflow.
     friend BoundedInt operator/(const BoundedInt& lhs, const BoundedInt& rhs)
     {
-        return safeDiv(lhs, rhs);
+        if (rhs.is_zero())
+            assert(false && "divide by zero");
+        else if (!lhs.is_infinity() && !rhs.is_infinity())
+            return lhs._iVal / rhs._iVal;
+        else if (!lhs.is_infinity() && rhs.is_infinity())
+            return 0;
+        else if (lhs.is_infinity() && !rhs.is_infinity())
+            return ite(rhs._iVal >= 0, lhs, -lhs);
+        else
+            return eq(lhs, rhs) ? plus_infinity() : minus_infinity();
     }
 
     // Overload bitwise operators for BoundedInt objects. These operators
@@ -586,7 +543,7 @@ public:
     friend BoundedInt ite(const BoundedInt& cond, const BoundedInt& lhs,
                           const BoundedInt& rhs)
     {
-        return cond._iVal != 0 ? lhs._iVal : rhs._iVal;
+        return cond._iVal != 0 ? lhs : rhs;
     }
 
     // Overloads the stream insertion operator for BoundedInt objects.
@@ -724,7 +681,14 @@ public:
 
     inline virtual const std::string to_string() const
     {
-        return std::to_string(_iVal);
+        if (is_minus_infinity()) {
+            return "-oo";
+        }
+        if (is_plus_infinity()) {
+            return "+oo";
+        }
+        else
+            return std::to_string(_iVal);
     }
 
     //%}

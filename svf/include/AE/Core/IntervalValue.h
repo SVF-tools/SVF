@@ -599,7 +599,21 @@ inline IntervalValue operator/(const IntervalValue &lhs,
     }
     else if (rhs.contains(0))
     {
-        return lhs.is_zero() ? IntervalValue(0, 0) : IntervalValue::top();
+        IntervalValue lb(rhs.lb(), -1);
+        IntervalValue ub(1, rhs.ub());
+        IntervalValue l_res = lhs / lb;
+        IntervalValue r_res = lhs / ub;
+        l_res.join_with(r_res);
+        return l_res;
+    }
+    else if (lhs.contains(0)) {
+        IntervalValue lb(lhs.lb(), -1);
+        IntervalValue ub(1, lhs.ub());
+        IntervalValue l_res = lb / rhs;
+        IntervalValue r_res = ub / rhs;
+        l_res.join_with(r_res);
+        l_res.join_with(IntervalValue(0));
+        return l_res;
     }
     else
     {
@@ -610,8 +624,9 @@ inline IntervalValue operator/(const IntervalValue &lhs,
         BoundedInt uu = lhs.ub() / rhs.ub();
         std::vector<BoundedInt> vec{ll, lu, ul, uu};
 
-        return IntervalValue(BoundedInt::min(vec),
+        IntervalValue res =  IntervalValue(BoundedInt::min(vec),
                              BoundedInt::max(vec));
+        return res;
     }
 }
 
@@ -872,9 +887,20 @@ inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &r
         shift.meet_with(IntervalValue(0, IntervalValue::plus_infinity()));
         if (shift.isBottom())
             return IntervalValue::bottom();
-        IntervalValue coeff(1 << (s32_t) shift.lb().getNumeral(),
-                            shift.ub().is_infinity() ? IntervalValue::plus_infinity() : 1
-                            << (s32_t) shift.ub().getNumeral());
+        BoundedInt lb = 0;
+        // If the shift is greater than 32, the result is always 0
+        if ((s32_t) shift.lb().getNumeral() >= 32 || shift.lb().is_infinity()) {
+            lb = IntervalValue::minus_infinity();
+        } else {
+            lb = (1 << (s32_t) shift.lb().getNumeral());
+        }
+        BoundedInt ub = 0;
+        if (shift.ub().is_infinity()) {
+            ub = IntervalValue::plus_infinity();
+        } else {
+            ub = (1 << (s32_t) shift.ub().getNumeral());
+        }
+        IntervalValue coeff(lb, ub);
         return lhs * coeff;
     }
 }
@@ -962,7 +988,7 @@ inline IntervalValue operator|(const IntervalValue &lhs, const IntervalValue &rh
              rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity())
     {
         s64_t m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
-        s64_t ub = next_power_of_2(s64_t(m+1));
+        s64_t ub = next_power_of_2(s64_t(m)) - 1;
         return IntervalValue((s64_t) 0, (s64_t) ub);
     }
     else
@@ -991,7 +1017,7 @@ inline IntervalValue operator^(const IntervalValue &lhs, const IntervalValue &rh
              rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity())
     {
         s64_t m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
-        s64_t ub = next_power_of_2(s64_t(m+1));
+        s64_t ub = next_power_of_2(s64_t(m)) - 1;
         return IntervalValue((s64_t) 0, (s64_t) ub);
     }
     else

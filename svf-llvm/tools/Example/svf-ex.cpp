@@ -109,7 +109,6 @@ void traverseOnSVFStmt(const ICFGNode* node)
         {
             if (gep->isConstantOffset())
             {
-                gep->accumulateConstantByteOffset();
                 gep->accumulateConstantOffset();
             }
             svfir2AbsState->handleGep(es, gep);
