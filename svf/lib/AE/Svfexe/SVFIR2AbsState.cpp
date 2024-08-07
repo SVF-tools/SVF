@@ -160,60 +160,26 @@ IntervalValue SVFIR2AbsState::getSExtValue(const AbstractState& as, const SVFVar
 
 IntervalValue SVFIR2AbsState::getFPToSIntValue(const AbstractState& as, const SVF::SVFVar* var)
 {
-    if (as[var->getId()].getInterval().is_real())
-    {
-        // get the float value of ub and lb
-        double float_lb = as[var->getId()].getInterval().lb().getRealNumeral();
-        double float_ub = as[var->getId()].getInterval().ub().getRealNumeral();
-        // get the int value of ub and lb
-        s64_t int_lb = static_cast<s64_t>(float_lb);
-        s64_t int_ub = static_cast<s64_t>(float_ub);
-        return IntervalValue(int_lb, int_ub);
-    }
-    else
-    {
-        return getSExtValue(as, var);
-    }
+    // IntervalValue are BoundedInt, so we can directly return the value
+    return getSExtValue(as, var);
 }
 
 IntervalValue SVFIR2AbsState::getFPToUIntValue(const AbstractState& as, const SVF::SVFVar* var)
 {
-    if (as[var->getId()].getInterval().is_real())
-    {
-        // get the float value of ub and lb
-        double float_lb = as[var->getId()].getInterval().lb().getRealNumeral();
-        double float_ub = as[var->getId()].getInterval().ub().getRealNumeral();
-        // get the int value of ub and lb
-        u64_t int_lb = static_cast<u64_t>(float_lb);
-        u64_t int_ub = static_cast<u64_t>(float_ub);
-        return IntervalValue(int_lb, int_ub);
-    }
-    else
-    {
-        return getZExtValue(as, var);
-    }
+    // IntervalValue are BoundedInt, so we can directly return the value
+    return getZExtValue(as, var);
 }
 
 IntervalValue SVFIR2AbsState::getSIntToFPValue(const AbstractState& as, const SVF::SVFVar* var)
 {
-    // get the sint value of ub and lb
-    s64_t sint_lb = as[var->getId()].getInterval().lb().getIntNumeral();
-    s64_t sint_ub = as[var->getId()].getInterval().ub().getIntNumeral();
-    // get the float value of ub and lb
-    double float_lb = static_cast<double>(sint_lb);
-    double float_ub = static_cast<double>(sint_ub);
-    return IntervalValue(float_lb, float_ub);
+    // IntervalValue are BoundedInt, so we can directly return the value
+    return getSExtValue(as, var);
 }
 
 IntervalValue SVFIR2AbsState::getUIntToFPValue(const AbstractState& as, const SVF::SVFVar* var)
 {
-    // get the uint value of ub and lb
-    u64_t uint_lb = as[var->getId()].getInterval().lb().getIntNumeral();
-    u64_t uint_ub = as[var->getId()].getInterval().ub().getIntNumeral();
-    // get the float value of ub and lb
-    double float_lb = static_cast<double>(uint_lb);
-    double float_ub = static_cast<double>(uint_ub);
-    return IntervalValue(float_lb, float_ub);
+    // IntervalValue are BoundedInt, so we can directly return the value
+    return getZExtValue(as, var);
 }
 
 IntervalValue SVFIR2AbsState::getTruncValue(const AbstractState& as, const SVF::SVFVar* var, const SVFType* dstType)
