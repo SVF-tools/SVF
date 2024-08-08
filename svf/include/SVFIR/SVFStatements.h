@@ -568,6 +568,16 @@ public:
     }
 
     /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
+    /// elemBytesize is the element byte size of an static alloc or heap alloc array
+    /// e.g. GepStmt* gep = **,
+    /// s32_t elemBytesize = LLVMUtil::SVFType2ByteSize(gep->getRHSVar()->getValue()->getType());
+    /// APOffset byteOffset = gep->accumulateConstantByteOffset(elemBytesize);
+    inline APOffset accumulateConstantByteOffset() const
+    {
+        return getAccessPath().computeConstantByteOffset();
+    }
+
+    /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
     inline APOffset accumulateConstantOffset() const
     {
         return getAccessPath().computeConstantOffset();

@@ -119,6 +119,73 @@ u32_t AccessPath::getStructFieldOffset(const SVFVar* idxOperandVar, const SVFStr
 ///
 /// "value" is the offset variable (must be a constant)
 /// "type" is the location where we want to compute offset
+/// Given a vector and elem byte size: [(value1,type1), (value2,type2), (value3,type3)], bytesize
+/// totalConstByteOffset = ByteOffset(value1,type1) * ByteOffset(value2,type2) + ByteOffset(value3,type3)
+/// For a pointer type (e.g., t1 is PointerType), we will retrieve the pointee type and times the offset, i.e., getElementNum(t1) X off1
+APOffset AccessPath::computeConstantByteOffset() const
+{
+    assert(isConstantOffset() && "not a constant offset");
+
+    APOffset totalConstOffset = 0;
+    for(int i = idxOperandPairs.size() - 1; i >= 0; i--)
+    {
+        /// For example, there is struct DEST{int a, char b[10], int c[5]}
+        /// (1) %c = getelementptr inbounds %struct.DEST, %struct.DEST* %arr, i32 0, i32 2
+        //  (2) %arrayidx = getelementptr inbounds [10 x i8], [10 x i8]* %b, i64 0, i64 8
+        const SVFValue* value = idxOperandPairs[i].first->getValue();
+        /// for (1) offsetVarAndGepTypePairs.size()  = 2
+        ///     i = 0, type: %struct.DEST*, PtrType, op = 0
+        ///     i = 1, type: %struct.DEST, StructType, op = 2
+        /// for (2) offsetVarAndGepTypePairs.size()  = 2
+        ///     i = 0, type: [10 x i8]*, PtrType, op = 0
+        ///     i = 1, type: [10 x i8], ArrType, op = 8
+        const SVFType* type = idxOperandPairs[i].second;
+        /// if offsetVarAndGepTypePairs[i].second is nullptr, it means
+        ///   GepStmt comes from external API, this GepStmt is assigned in SVFIRExtAPI.cpp
+        ///   at SVFIRBuilder::getBaseTypeAndFlattenedFields ls.addOffsetVarAndGepTypePair()
+        assert(type && "this GepStmt comes from ExternalAPI cannot call this api");
+        const SVFType* type2 = type;
+        if (const SVFArrayType* arrType = SVFUtil::dyn_cast<SVFArrayType>(type))
+        {
+            /// for (2) i = 1, arrType: [10 x i8], type2 = i8
+            type2 = arrType->getTypeOfElement();
+        }
+        else if (SVFUtil::isa<SVFPointerType>(type))
+        {
+            /// for (1) i = 0, ptrType: %struct.DEST*, type2: %struct.DEST
+            /// for (2) i = 0, ptrType: [10 x i8]*, type2 = [10 x i8]
+            type2 = gepSrcPointeeType();
+        }
+
+        const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(value);
+        if (const SVFStructType* structType = SVFUtil::dyn_cast<SVFStructType>(type))
+        {
+            /// for (1) structType: %struct.DEST
+            ///   structField = 0, flattenIdx = 0, type2: int
+            ///   structField = 1, flattenIdx = 1, type2: char[10]
+            ///   structField = 2, flattenIdx = 11, type2: int[5]
+            for (u32_t structField = 0; structField < (u32_t)op->getSExtValue(); ++structField)
+            {
+                u32_t flattenIdx = structType->getTypeInfo()->getFlattenedFieldIdxVec()[structField];
+                type2 = structType->getTypeInfo()->getOriginalElemType(flattenIdx);
+                totalConstOffset += type2->getByteSize();
+            }
+        }
+        else
+        {
+            /// for (2) i = 0, op: 0, type: [10 x i8]*(Ptr), type2: [10 x i8](Arr)
+            ///         i = 1, op: 8, type: [10 x i8](Arr), type2: i8
+            totalConstOffset += op->getSExtValue() * type2->getByteSize();
+        }
+    }
+    totalConstOffset = Options::MaxFieldLimit() > totalConstOffset? totalConstOffset: Options::MaxFieldLimit();
+    return totalConstOffset;
+}
+
+/// Return accumulated constant offset
+///
+/// "value" is the offset variable (must be a constant)
+/// "type" is the location where we want to compute offset
 /// Given a vector: [(value1,type1), (value2,type2), (value3,type3)]
 /// totalConstOffset = flattenOffset(value1,type1) * flattenOffset(value2,type2) + flattenOffset(value3,type3)
 /// For a pointer type (e.g., t1 is PointerType), we will retrieve the pointee type and times the offset, i.e., getElementNum(t1) X off1
@@ -178,7 +245,7 @@ APOffset AccessPath::computeConstantOffset() const
                 // set offset the last index of getFlattenedElemIdxVec to avoid assertion
                 if (offset >= (APOffset)so.size())
                 {
-                    SVFUtil::errs() << "It is overflow access, we access the last idx\n";
+                    SVFUtil::errs() << "It is an overflow access, hence it is the last idx\n";
                     offset = so.size() - 1;
                 }
                 else
