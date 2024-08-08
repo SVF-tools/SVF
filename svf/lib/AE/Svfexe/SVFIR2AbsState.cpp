@@ -160,60 +160,26 @@ IntervalValue SVFIR2AbsState::getSExtValue(const AbstractState& as, const SVFVar
 
 IntervalValue SVFIR2AbsState::getFPToSIntValue(const AbstractState& as, const SVF::SVFVar* var)
 {
-    if (as[var->getId()].getInterval().is_real())
-    {
-        // get the float value of ub and lb
-        double float_lb = as[var->getId()].getInterval().lb().getRealNumeral();
-        double float_ub = as[var->getId()].getInterval().ub().getRealNumeral();
-        // get the int value of ub and lb
-        s64_t int_lb = static_cast<s64_t>(float_lb);
-        s64_t int_ub = static_cast<s64_t>(float_ub);
-        return IntervalValue(int_lb, int_ub);
-    }
-    else
-    {
-        return getSExtValue(as, var);
-    }
+    // IntervalValue are BoundedInt, so we can directly return the value
+    return getSExtValue(as, var);
 }
 
 IntervalValue SVFIR2AbsState::getFPToUIntValue(const AbstractState& as, const SVF::SVFVar* var)
 {
-    if (as[var->getId()].getInterval().is_real())
-    {
-        // get the float value of ub and lb
-        double float_lb = as[var->getId()].getInterval().lb().getRealNumeral();
-        double float_ub = as[var->getId()].getInterval().ub().getRealNumeral();
-        // get the int value of ub and lb
-        u64_t int_lb = static_cast<u64_t>(float_lb);
-        u64_t int_ub = static_cast<u64_t>(float_ub);
-        return IntervalValue(int_lb, int_ub);
-    }
-    else
-    {
-        return getZExtValue(as, var);
-    }
+    // IntervalValue are BoundedInt, so we can directly return the value
+    return getZExtValue(as, var);
 }
 
 IntervalValue SVFIR2AbsState::getSIntToFPValue(const AbstractState& as, const SVF::SVFVar* var)
 {
-    // get the sint value of ub and lb
-    s64_t sint_lb = as[var->getId()].getInterval().lb().getIntNumeral();
-    s64_t sint_ub = as[var->getId()].getInterval().ub().getIntNumeral();
-    // get the float value of ub and lb
-    double float_lb = static_cast<double>(sint_lb);
-    double float_ub = static_cast<double>(sint_ub);
-    return IntervalValue(float_lb, float_ub);
+    // IntervalValue are BoundedInt, so we can directly return the value
+    return getSExtValue(as, var);
 }
 
 IntervalValue SVFIR2AbsState::getUIntToFPValue(const AbstractState& as, const SVF::SVFVar* var)
 {
-    // get the uint value of ub and lb
-    u64_t uint_lb = as[var->getId()].getInterval().lb().getIntNumeral();
-    u64_t uint_ub = as[var->getId()].getInterval().ub().getIntNumeral();
-    // get the float value of ub and lb
-    double float_lb = static_cast<double>(uint_lb);
-    double float_ub = static_cast<double>(uint_ub);
-    return IntervalValue(float_lb, float_ub);
+    // IntervalValue are BoundedInt, so we can directly return the value
+    return getZExtValue(as, var);
 }
 
 IntervalValue SVFIR2AbsState::getTruncValue(const AbstractState& as, const SVF::SVFVar* var, const SVFType* dstType)
@@ -396,66 +362,84 @@ AddressValue SVFIR2AbsState::getGepObjAddress(AbstractState& as, u32_t pointer, 
 *  Therefore the final byteoffset is [8+4*var1.lb(), 8+4*var1.ub()]
  *
  */
-IntervalValue SVFIR2AbsState::getByteOffset(const AbstractState& as, const GepStmt *gep)
-{
-    if (gep->isConstantOffset())
-        return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
-    IntervalValue res = IntervalValue(0); // Initialize the result interval 'res' to 0.
-    // Loop through the offsetVarAndGepTypePairVec in reverse order.
+IntervalValue SVFIR2AbsState::getByteOffset(const AbstractState& as, const GepStmt *gep) {
+    IntervalValue byte_res = IntervalValue(0);
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
-        const SVFVar* idxOperandVar =
-            gep->getOffsetVarAndGepTypePairVec()[i].first;
-        const SVFType* idxOperandType =
-            gep->getOffsetVarAndGepTypePairVec()[i].second;
-        // calculating Array/Ptr by elemByteSize * indexOperand
-        if (SVFUtil::isa<SVFArrayType>(idxOperandType) || SVFUtil::isa<SVFPointerType>(idxOperandType))
-        {
-            u32_t elemByteSize = 1;
-            if (const SVFArrayType* arrOperandType = SVFUtil::dyn_cast<SVFArrayType>(idxOperandType))
-                elemByteSize = arrOperandType->getTypeOfElement()->getByteSize();
-            else if (SVFUtil::isa<SVFPointerType>(idxOperandType))
-                elemByteSize = gep->getAccessPath().gepSrcPointeeType()->getByteSize();
-            else
-                assert(false && "idxOperandType must be ArrType or PtrType");
-            if (const SVFConstantInt *op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue()))
-            {
-                s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue() ?op->getSExtValue() * elemByteSize
-                           : Options::MaxFieldLimit();
-                res = res + IntervalValue(lb, lb);
-            }
-            else
-            {
-                u32_t idx = _svfir->getValueNode(idxOperandVar->getValue());
-                IntervalValue idxVal = as[idx].getInterval();
-                if (idxVal.isBottom())
-                    res = res + IntervalValue(0, 0);
-                else
-                {
-                    // if lb or ub is negative number, set 0.
-                    // if lb or ub is positive number, guarantee lb/ub * elemByteSize <= MaxFieldLimit
-                    s64_t ub = (idxVal.ub().getIntNumeral() < 0) ? 0 :
-                               (double)Options::MaxFieldLimit() /
-                               elemByteSize >= idxVal.ub().getIntNumeral() ? elemByteSize * idxVal.ub().getIntNumeral(): Options::MaxFieldLimit();
-                    s64_t lb = (idxVal.lb().getIntNumeral() < 0) ? 0 :
-                               ((double)Options::MaxFieldLimit() /
-                                elemByteSize >= idxVal.lb().getIntNumeral()) ? elemByteSize * idxVal.lb().getIntNumeral() : Options::MaxFieldLimit();
-                    res = res + IntervalValue(lb, ub);
-                }
-            }
-        }
-        // Process struct subtype by calculating the byte offset from beginning to the field of struct
-        else if (const SVFStructType* structOperandType = SVFUtil::dyn_cast<SVFStructType>(idxOperandType))
-        {
-            res = res + IntervalValue(gep->getAccessPath().getStructFieldOffset(
-                                          idxOperandVar, structOperandType));
-        }
+        AccessPath::IdxOperandPair IdxVarAndType =
+            gep->getOffsetVarAndGepTypePairVec()[i];
+        const SVFValue *value =
+            gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
+        const SVFType *type = IdxVarAndType.second;
+        s64_t idxLb = 0;
+        s64_t idxUb = 0;
+        s64_t byteLb = 0;
+        s64_t byteUb = 0;
+        // get lb and ub of the index value
+        if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(value))
+            idxLb = idxUb = constInt->getSExtValue();
         else
         {
-            assert(false && "gep type pair only support arr/ptr/struct");
+            IntervalValue idxItv = as[_svfir->getValueNode(value)].getInterval();
+            if (idxItv.isBottom())
+                idxLb = idxUb = 0;
+            else
+            {
+                idxLb = idxItv.lb().getIntNumeral();
+                idxUb = idxItv.ub().getIntNumeral();
+            }
         }
+        // for pointer type, elemByteSize * indexOperand
+        if (SVFUtil::isa<SVFPointerType>(type))
+        {
+            u32_t elemByte = gep->getAccessPath().gepSrcPointeeType()->getByteSize();
+            byteLb = (double)Options::MaxFieldLimit() / elemByte < idxLb? Options::MaxFieldLimit(): idxLb * elemByte;
+            byteUb = (double)Options::MaxFieldLimit() / elemByte < idxUb? Options::MaxFieldLimit(): idxUb * elemByte;
+
+        }
+        // for array or struct, get flattened index from SymbolTable Info
+        // and then calculate the byte offset from beginning to the field of struct
+        else
+        {
+            if(Options::ModelArrays())
+            {
+                const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()
+                                                   ->getTypeInfo(type)
+                                                   ->getFlattenedElemIdxVec();
+                if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0)
+                {
+                    byteLb = byteUb = 0;
+                }
+                else
+                {
+                    idxLb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
+                        type, idxLb);
+                    idxUb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
+                        type, idxUb);
+                    for (u32_t idx = 0; idx < idxLb; ++idx) {
+                        s64_t byte = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, idx)->getByteSize();
+                        byteLb += byte;
+                    }
+                    byteUb = byteLb;
+                    for (u32_t idx = idxLb; idx < idxUb; ++idx) {
+                        s64_t byte = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, idx)->getByteSize();
+                        byteUb += byte;
+                    }
+                }
+            }
+            else {
+                byteLb = byteUb = 0;
+            }
+
+        }
+        byte_res = byte_res + IntervalValue(byteLb, byteUb);
     }
-    return res; // Return the resulting byte offset as an IntervalValue.
+
+    if (byte_res.isBottom())
+    {
+        byte_res = IntervalValue(0);
+    }
+    return byte_res;
 }
 
 /**

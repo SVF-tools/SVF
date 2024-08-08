@@ -566,6 +566,7 @@ public:
     {
         return getAccessPath().isConstantOffset();
     }
+
     /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
     /// elemBytesize is the element byte size of an static alloc or heap alloc array
     /// e.g. GepStmt* gep = **,

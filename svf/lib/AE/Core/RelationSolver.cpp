@@ -181,8 +181,8 @@ AbstractState RelationSolver::abstract_consequence(
     the abstract consequence will lead to better algorithm performance.*/
 
     for (auto it = domain.getVarToVal().begin();
-            it != domain.getVarToVal().end(); ++it)
-        /// for variable in self.variables:
+         it != domain.getVarToVal().end(); ++it)
+    /// for variable in self.variables:
     {
         AbstractState proposed = domain.top(); /// proposed = self.top.copy()
         proposed[it->first] = lower[it->first].getInterval();
@@ -249,7 +249,7 @@ AbstractState RelationSolver::beta(const Map<u32_t, s32_t>& sigma,
     for (const auto& item : exeState.getVarToVal())
     {
         res[item.first] = IntervalValue(
-                              sigma.at(item.first), sigma.at(item.first));
+            sigma.at(item.first), sigma.at(item.first));
     }
     return res;
 }
@@ -283,15 +283,15 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
     for (const auto& item: domain.getVarToVal())
     {
         IntervalValue interval = item.second.getInterval();
-        updateMap(ret, item.first, interval.ub().getFVal());
+        updateMap(ret, item.first, interval.ub().getIntNumeral());
         if (interval.lb().is_minus_infinity())
             updateMap(low_values, item.first, -infinity);
         else
-            updateMap(low_values, item.first, interval.lb().getFVal());
+            updateMap(low_values, item.first, interval.lb().getIntNumeral());
         if (interval.ub().is_plus_infinity())
             updateMap(high_values, item.first, infinity);
         else
-            updateMap(high_values, item.first, interval.ub().getFVal());
+            updateMap(high_values, item.first, interval.ub().getIntNumeral());
         if (item.first > bias)
             bias = item.first + 1;
     }
@@ -300,15 +300,15 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
         /// init objects -x
         IntervalValue interval = item.second.getInterval();
         u32_t reverse_key = item.first + bias;
-        updateMap(ret, reverse_key, -interval.lb().getFVal());
+        updateMap(ret, reverse_key, -interval.lb().getIntNumeral());
         if (interval.ub().is_plus_infinity())
             updateMap(low_values, reverse_key, -infinity);
         else
-            updateMap(low_values, reverse_key, -interval.ub().getFVal());
+            updateMap(low_values, reverse_key, -interval.ub().getIntNumeral());
         if (interval.lb().is_minus_infinity())
             updateMap(high_values, reverse_key, infinity);
         else
-            updateMap(high_values, reverse_key, -interval.lb().getFVal());
+            updateMap(high_values, reverse_key, -interval.lb().getIntNumeral());
         /// add a relation that x == -(x+bias)
         new_phi = (new_phi && (toIntZ3Expr(reverse_key) == -1 * toIntZ3Expr(item.first)));
     }
@@ -320,17 +320,23 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
     {
         if (item.first >= bias)
         {
+            if (!retInv.inVarToValTable(item.first-bias))
+                retInv[item.first-bias] = IntervalValue::top();
+
             if (item.second == (infinity))
-                retInv[item.first - bias].getInterval().setLb(BoundedDouble::minus_infinity());
+                retInv[item.first - bias] = IntervalValue(BoundedInt::minus_infinity(),
+                                                          retInv[item.first - bias].getInterval().ub());
             else
-                retInv[item.first - bias].getInterval().setLb(float(-item.second));
+                retInv[item.first - bias] = IntervalValue(float(-item.second), retInv[item.first - bias].getInterval().ub());
+
         }
         else
         {
             if (item.second == (infinity))
-                retInv[item.first].getInterval().setUb(BoundedDouble::plus_infinity());
+                retInv[item.first] = IntervalValue(retInv[item.first].getInterval().lb(),
+                                                   BoundedInt::plus_infinity());
             else
-                retInv[item.first].getInterval().setUb(float(item.second));
+                retInv[item.first] = IntervalValue(retInv[item.first].getInterval().lb(), float(item.second));
         }
     }
     return retInv;

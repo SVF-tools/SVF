@@ -135,6 +135,7 @@ public:
     /// APOffset byteOffset = gep->accumulateConstantByteOffset();
     /// byteOffset should be 8 since i32 is 4 bytes and index is 2.
     APOffset computeConstantByteOffset() const;
+
     /// Return accumulated constant offset given OffsetVarVec
     /// compard to computeConstantByteOffset, it is field offset rather than byte offset
     /// e.g. GepStmt* gep = [i32*4], 2
