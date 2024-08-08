@@ -362,7 +362,8 @@ AddressValue SVFIR2AbsState::getGepObjAddress(AbstractState& as, u32_t pointer, 
 *  Therefore the final byteoffset is [8+4*var1.lb(), 8+4*var1.ub()]
  *
  */
-IntervalValue SVFIR2AbsState::getByteOffset(const AbstractState& as, const GepStmt *gep) {
+IntervalValue SVFIR2AbsState::getByteOffset(const AbstractState& as, const GepStmt *gep)
+{
     IntervalValue byte_res = IntervalValue(0);
     for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--)
     {
@@ -404,8 +405,8 @@ IntervalValue SVFIR2AbsState::getByteOffset(const AbstractState& as, const GepSt
             if(Options::ModelArrays())
             {
                 const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()
-                                                   ->getTypeInfo(type)
-                                                   ->getFlattenedElemIdxVec();
+                                               ->getTypeInfo(type)
+                                               ->getFlattenedElemIdxVec();
                 if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0)
                 {
                     byteLb = byteUb = 0;
@@ -413,21 +414,24 @@ IntervalValue SVFIR2AbsState::getByteOffset(const AbstractState& as, const GepSt
                 else
                 {
                     idxLb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
-                        type, idxLb);
+                                type, idxLb);
                     idxUb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(
-                        type, idxUb);
-                    for (u32_t idx = 0; idx < idxLb; ++idx) {
+                                type, idxUb);
+                    for (u32_t idx = 0; idx < idxLb; ++idx)
+                    {
                         s64_t byte = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, idx)->getByteSize();
                         byteLb += byte;
                     }
                     byteUb = byteLb;
-                    for (u32_t idx = idxLb; idx < idxUb; ++idx) {
+                    for (u32_t idx = idxLb; idx < idxUb; ++idx)
+                    {
                         s64_t byte = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, idx)->getByteSize();
                         byteUb += byte;
                     }
                 }
             }
-            else {
+            else
+            {
                 byteLb = byteUb = 0;
             }
 

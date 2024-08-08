@@ -623,13 +623,15 @@ public:
     }
 };
 
-class AETest {
+class AETest
+{
 public:
     AETest() = default;
 
     ~AETest() = default;
 
-    void testBinaryOpStmt() {
+    void testBinaryOpStmt()
+    {
 //        // test division /
         assert((IntervalValue(4) / IntervalValue::bottom()).equals(IntervalValue::bottom()));
         assert((IntervalValue::bottom() / IntervalValue(2)).equals(IntervalValue::bottom()));
@@ -853,7 +855,8 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    if (AETEST()) {
+    if (AETEST())
+    {
         AETest aeTest;
         aeTest.testBinaryOpStmt();
         return 0;
