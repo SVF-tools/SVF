@@ -90,24 +90,13 @@ void AbstractInterpretation::runOnModule(ICFG *icfg)
     _stat->startClk();
     _icfg = icfg;
     _svfir = PAG::getPAG();
-    _ander = AndersenWaveDiff::createAndersenWaveDiff(_svfir);
     // init SVF Execution States
     _svfir2AbsState = new SVFIR2AbsState(_svfir);
 
-    // init SSE External API Handler
-    _callgraph = _ander->getPTACallGraph();
 
     /// collect checkpoint
     collectCheckPoint();
 
-    /// if function contains callInst that call itself, it is a recursive function.
-    markRecursiveFuns();
-    for (const SVFFunction* fun: _svfir->getModule()->getFunctionSet())
-    {
-        auto *wto = new ICFGWTO(_icfg, _icfg->getFunEntryICFGNode(fun));
-        wto->init();
-        _funcToWTO[fun] = wto;
-    }
     analyse();
     checkPointAllSet();
     // 5. Stop clock and report bugs
@@ -135,28 +124,45 @@ AbstractInterpretation::~AbstractInterpretation()
 
 }
 
-void AbstractInterpretation::markRecursiveFuns()
-{
-    // detect if callgraph has cycle
-    CallGraphSCC* _callGraphScc = _ander->getCallGraphSCC();
-    _callGraphScc->find();
+/**
+ * @brief Mark recursive functions in the call graph
+ *
+ * This function identifies and marks recursive functions in the call graph.
+ * It does this by detecting cycles in the call graph's strongly connected components (SCC).
+ * Any function found to be part of a cycle is marked as recursive.
+ */
+void AbstractInterpretation::initWTO() {
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(_svfir);
+    // Detect if the call graph has cycles by finding its strongly connected components (SCC)
+    Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
+    callGraphScc->find();
+    auto callGraph = ander->getPTACallGraph();
 
-    for (auto it = _callgraph->begin(); it != _callgraph->end(); it++)
-    {
-        if (_callGraphScc->isInCycle(it->second->getId()))
-            _recursiveFuns.insert(it->second->getFunction());
+    // Iterate through the call graph
+    for (auto it = callGraph->begin(); it != callGraph->end(); it++) {
+        // Check if the current function is part of a cycle
+        if (callGraphScc->isInCycle(it->second->getId()))
+            _recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
+    }
+
+    // Initialize WTO for each function in the module
+    for (const SVFFunction* fun : _svfir->getModule()->getFunctionSet()) {
+        auto* wto = new ICFGWTO(_icfg, _icfg->getFunEntryICFGNode(fun));
+        wto->init();
+        _funcToWTO[fun] = wto;
     }
 }
-
 /// Program entry
 void AbstractInterpretation::analyse()
 {
+    initWTO();
     // handle Global ICFGNode of SVFModule
     handleGlobalNode();
     getAbsState(_icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
     if (const SVFFunction* fun = _svfir->getModule()->getSVFFunction("main"))
     {
-        handleFunc(fun);
+        ICFGWTO* wto = _funcToWTO[fun];
+        handleWTOComponents(wto->getWTOComponents());
     }
 }
 
@@ -177,7 +183,7 @@ void AbstractInterpretation::handleGlobalNode()
 /// get execution state by merging states of predecessor blocks
 /// Scenario 1: preblock -----(intraEdge)----> block, join the preES of inEdges
 /// Scenario 2: preblock -----(callEdge)----> block
-bool AbstractInterpretation::propagateStateIfFeasible(const ICFGNode *block)
+bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
 {
     AbstractState as;
     u32_t inEdgeNum = 0;
@@ -518,12 +524,12 @@ bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* intraEdge,
     return true;
 }
 /// handle instructions in svf basic blocks
-void AbstractInterpretation::handleWTONode(const ICFGSingletonWTO *icfgSingletonWto)
+void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto)
 {
     const ICFGNode* node = icfgSingletonWto->node();
     _stat->getBlockTrace()++;
     // Get execution states from in edges
-    if (!propagateStateIfFeasible(node))
+    if (!mergeStatesFromPredecessors(node))
     {
         // No ES on the in edges - Infeasible block
         return;
@@ -541,7 +547,41 @@ void AbstractInterpretation::handleWTONode(const ICFGSingletonWTO *icfgSingleton
     for (auto it = worklist_vec.begin(); it != worklist_vec.end(); ++it)
     {
         const ICFGNode* curNode = *it;
-        handleICFGNode(curNode);
+        _stat->getICFGNodeTrace()++;
+        // handle SVF Stmt
+        for (const SVFStmt *stmt: curNode->getSVFStmts())
+        {
+            handleSVFStatement(stmt);
+        }
+        // inlining the callee by calling handleFunc for the callee function
+        if (const CallICFGNode* callnode = SVFUtil::dyn_cast<CallICFGNode>(curNode))
+        {
+            handleCallSite(callnode);
+        }
+        else
+        {
+
+        }
+        _stat->countStateSize();
+    }
+}
+
+/**
+ * @brief Hanlde two types of WTO components (singleton and cycle)
+ */
+void AbstractInterpretation::handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps) {
+    for (const ICFGWTOComp* wtoNode : wtoComps) {
+        if (const ICFGSingletonWTO* node = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoNode)) {
+            handleSingletonWTO(node);
+        }
+        // Handle WTO cycles
+        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoNode)) {
+            handleCycleWTO(cycle);
+        }
+        // Assert false for unknown WTO types
+        else {
+            assert(false && "unknown WTO type!");
+        }
     }
 }
 
@@ -627,7 +667,9 @@ void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode
 
     _postAbsTrace[callNode] = as;
 
-    handleFunc(callfun);
+    ICFGWTO* wto = _funcToWTO[callfun];
+    handleWTOComponents(wto->getWTOComponents());
+
     _callSiteStack.pop_back();
     // handle Ret node
     const RetICFGNode *retNode = callNode->getRetICFGNode();
@@ -660,7 +702,8 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
         _callSiteStack.push_back(callNode);
         _postAbsTrace[callNode] = as;
 
-        handleFunc(callfun);
+        ICFGWTO* wto = _funcToWTO[callfun];
+        handleWTOComponents(wto->getWTOComponents());
         _callSiteStack.pop_back();
         // handle Ret node
         const RetICFGNode *retNode = callNode->getRetICFGNode();
@@ -670,88 +713,47 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
 
 
 
-void AbstractInterpretation::handleICFGNode(const ICFGNode *curICFGNode)
-{
-    _stat->getICFGNodeTrace()++;
-    // handle SVF Stmt
-    for (const SVFStmt *stmt: curICFGNode->getSVFStmts())
-    {
-        handleSVFStatement(stmt);
-    }
-    // inlining the callee by calling handleFunc for the callee function
-    if (const CallICFGNode* callnode = SVFUtil::dyn_cast<CallICFGNode>(curICFGNode))
-    {
-        handleCallSite(callnode);
-    }
-    else
-    {
-
-    }
-    _stat->countStateSize();
-}
-
 /// handle wto cycle (loop)
-void AbstractInterpretation::handleCycle(const ICFGCycleWTO*cycle)
+void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
 {
-    // Get execution states from in edges
-    if (!propagateStateIfFeasible(cycle->head()->node()))
-    {
-        // No ES on the in edges - Infeasible block
+    // Get execution states from predecessor nodes
+    bool is_feasible = mergeStatesFromPredecessors(cycle->head()->node());
+    if (!is_feasible)
         return;
-    }
-    AbstractState pre_es = _preAbsTrace[cycle->head()->node()];
-    // set -widen-delay
-    s32_t widen_delay = Options::WidenDelay();
-    bool incresing = true;
-    for (int i = 0; ; i++)
-    {
-        handleWTONode(cycle->head());
-        if (i < widen_delay)
-        {
-            if (i> 0 && pre_es >= _postAbsTrace[cycle->head()->node()])
-            {
-                break;
-            }
-            pre_es = _postAbsTrace[cycle->head()->node()];
-        }
-        else
-        {
-            if (i >= widen_delay)
-            {
-                if (incresing)
-                {
-                    bool is_fixpoint =
-                        isFixPointAfterWidening(cycle->head()->node(), pre_es);
-                    if (is_fixpoint)
-                    {
-                        incresing = false;
+    else {
+        const ICFGNode* cycle_head = cycle->head()->node();
+        // Flag to indicate if we are in the increasing phase
+        bool increasing = true;
+        // TODO: student write here
+        // Infinite loop until a fixpoint is reached,
+        for (u32_t cur_iter = 0;; cur_iter++) {
+            // Start widening or narrowing if cur_iter >= widen threshold (widen delay)
+            if (cur_iter >= Options::WidenDelay()) {
+                // Widen or narrow after processing cycle head node
+                AbstractState prev_head_state = _postAbsTrace[cycle_head];
+                handleSingletonWTO(cycle->head());
+                AbstractState cur_head_state = _postAbsTrace[cycle_head];
+                if (increasing) {
+                    // Widening phase
+                    _postAbsTrace[cycle_head] = prev_head_state.widening(cur_head_state);
+                    if (_postAbsTrace[cycle_head] == prev_head_state) {
+                        increasing = false;
                         continue;
                     }
-                }
-                else if (!incresing)
-                {
-                    bool is_fixpoint =
-                        isFixPointAfterNarrowing(cycle->head()->node(), pre_es);
-                    if (is_fixpoint)
+                } else {
+                    // Widening's fixpoint reached in the widening phase, switch to narrowing
+                    _postAbsTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
+                    if (_postAbsTrace[cycle_head] == prev_head_state) {
+                        // Narrowing's fixpoint reached in the narrowing phase, exit loop
                         break;
+                    }
                 }
+            } else {
+                // Handle the cycle head
+                handleSingletonWTO(cycle->head());
             }
-        }
-        for (auto it = cycle->begin(); it != cycle->end(); ++it)
-        {
-            const ICFGWTOComp* cur = *it;
-            if (const ICFGSingletonWTO* vertex = SVFUtil::dyn_cast<ICFGSingletonWTO>(cur))
-            {
-                handleWTONode(vertex);
-            }
-            else if (const ICFGCycleWTO* cycle2 = SVFUtil::dyn_cast<ICFGCycleWTO>(cur))
-            {
-                handleCycle(cycle2);
-            }
-            else
-            {
-                assert(false && "unknown WTO type!");
-            }
+            // Handle the cycle body
+            handleWTOComponents(cycle->getWTOComponents());
         }
     }
 }
@@ -801,31 +803,6 @@ bool AbstractInterpretation::isFixPointAfterNarrowing(
     }
 }
 
-
-
-/// handle user defined function, ext function is not included.
-void AbstractInterpretation::handleFunc(const SVFFunction *func)
-{
-    _stat->getFunctionTrace()++;
-    ICFGWTO* wto = _funcToWTO[func];
-    // set function entry ES
-    for (auto it = wto->begin(); it!= wto->end(); ++it)
-    {
-        const ICFGWTOComp* cur = *it;
-        if (const ICFGSingletonWTO* vertex = SVFUtil::dyn_cast<ICFGSingletonWTO>(cur))
-        {
-            handleWTONode(vertex);
-        }
-        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(cur))
-        {
-            handleCycle(cycle);
-        }
-        else
-        {
-            assert(false && "unknown WTO type!");
-        }
-    }
-}
 
 void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 {
@@ -1145,7 +1122,8 @@ std::string AbstractInterpretation::strRead(AbstractState& as, const SVFValue* r
         // dead loop for string and break if there's a \0. If no \0, it will throw err.
         if (!as.inVarToAddrsTable(_svfir->getValueNode(rhs))) continue;
         AbstractValue expr0 =
-            _svfir2AbsState->getGepObjAddress(as, _svfir->getValueNode(rhs), index);
+            as.getGepObjAddrs(_svfir->getValueNode(rhs), IntervalValue(index));
+
         AbstractValue val;
         for (const auto &addr: expr0.getAddrs())
         {
@@ -1390,7 +1368,7 @@ IntervalValue AbstractInterpretation::traceMemoryAllocationSize(AbstractState& a
                         }
                         else
                         {
-                            IntervalValue byteOffset = _svfir2AbsState->getByteOffset(as, gep);
+                            IntervalValue byteOffset = as.getByteOffset(gep);
                             // for variable offset, join with accumulate gep offset
                             gep_offsets[gep->getICFGNode()] = byteOffset;
                             total_bytes = total_bytes + byteOffset;
@@ -1451,7 +1429,7 @@ IntervalValue AbstractInterpretation::getStrlen(AbstractState& as, const SVF::SV
         for (u32_t index = 0; index < dst_size.lb().getIntNumeral(); index++)
         {
             AbstractValue expr0 =
-                _svfir2AbsState->getGepObjAddress(as, dstid, index);
+                as.getGepObjAddrs(dstid, IntervalValue(index));
             AbstractValue val;
             for (const auto &addr: expr0.getAddrs())
             {
@@ -1568,9 +1546,9 @@ void AbstractInterpretation::handleMemcpy(AbstractState& as, const SVF::SVFValue
         {
             // dead loop for string and break if there's a \0. If no \0, it will throw err.
             AbstractValue expr_src =
-                _svfir2AbsState->getGepObjAddress(as, srcId, index);
+                as.getGepObjAddrs(srcId, IntervalValue(index));
             AbstractValue expr_dst =
-                _svfir2AbsState->getGepObjAddress(as, dstId, index + start_idx);
+                as.getGepObjAddrs(dstId, IntervalValue(index + start_idx));
             for (const auto &dst: expr_dst.getAddrs())
             {
                 for (const auto &src: expr_src.getAddrs())
@@ -1641,8 +1619,7 @@ void AbstractInterpretation::handleMemset(AbstractState& as, const SVF::SVFValue
         // dead loop for string and break if there's a \0. If no \0, it will throw err.
         if (_svfir2AbsState->inVarToAddrsTable(as, dstId))
         {
-            AbstractValue lhs_gep =
-                _svfir2AbsState->getGepObjAddress(as, dstId, index);
+            AbstractValue lhs_gep = as.getGepObjAddrs(dstId, IntervalValue(index));
             for (const auto &addr: lhs_gep.getAddrs())
             {
                 u32_t objId = AbstractState::getInternalID(addr);

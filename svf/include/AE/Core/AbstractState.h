@@ -46,8 +46,9 @@
 #ifndef Z3_EXAMPLE_INTERVAL_DOMAIN_H
 #define Z3_EXAMPLE_INTERVAL_DOMAIN_H
 
-#include "AE/Core/IntervalValue.h"
 #include "AE/Core/AbstractValue.h"
+#include "AE/Core/IntervalValue.h"
+#include "SVFIR/SVFVariables.h"
 #include "Util/Z3Expr.h"
 
 #include <iomanip>
@@ -78,6 +79,21 @@ public:
     }
 
     virtual ~AbstractState() = default;
+
+    // getGepObjAddrs
+    AddressValue getGepObjAddrs(u32_t pointer, IntervalValue offset);
+
+    // initObjVar
+    void initObjVar(ObjVar* objVar);
+    // getElementIndex
+    IntervalValue getElementIndex(const GepStmt* gep);
+    // getByteOffset
+    IntervalValue getByteOffset(const GepStmt* gep);
+    // printAbstractState
+    // loadValue
+    AbstractValue loadValue(NodeID varId);
+    // storeValue
+    void storeValue(NodeID varId, AbstractValue val);
 
 
     /// The physical address starts with 0x7f...... + idx

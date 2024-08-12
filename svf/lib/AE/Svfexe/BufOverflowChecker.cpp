@@ -562,7 +562,7 @@ bool BufOverflowChecker::canSafelyAccessMemory(const SVFValue *value, const Inte
                     //  so if getOffsetVarVal > getOffsetVar.TypeSize (overflow)
                     //     else safe and return.
                     IntervalValue byteOffset;
-                    byteOffset = _svfir2AbsState->getByteOffset(as, gep);
+                    byteOffset = as.getByteOffset(gep);
                     // for variable offset, join with accumulate gep offset
                     gep_offsets[gep->getICFGNode()] = byteOffset;
                     if (byteOffset.ub().getNumeral() >= Options::MaxFieldLimit() && Options::GepUnknownIdx())
@@ -735,13 +735,6 @@ bool BufOverflowChecker::canSafelyAccessMemory(const SVFValue *value, const Inte
     return true;
 }
 
-
-
-void BufOverflowChecker::handleICFGNode(const SVF::ICFGNode *node)
-{
-    AbstractInterpretation::handleICFGNode(node);
-    detectBufOverflow(node);
-}
 
 //
 bool BufOverflowChecker::detectBufOverflow(const ICFGNode *node)

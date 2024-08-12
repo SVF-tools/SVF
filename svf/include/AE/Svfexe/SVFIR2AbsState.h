@@ -61,9 +61,6 @@ public:
 
     void narrowAddrs(AbstractState& es, AbstractState&lhs, const AbstractState&rhs);
 
-    /// Return the field address given a pointer points to a struct object and an offset
-    AddressValue getGepObjAddress(AbstractState& es, u32_t pointer, APOffset offset);
-
     /// Return the value range of Integer SVF Type, e.g. unsigned i8 Type->[0, 255], signed i8 Type->[-128, 127]
     IntervalValue getRangeLimitFromType(const SVFType* type);
 
@@ -76,16 +73,6 @@ public:
     IntervalValue getTruncValue(const AbstractState& es, const SVFVar* var, const SVFType* dstType);
     IntervalValue getFPTruncValue(const AbstractState& es, const SVFVar* var, const SVFType* dstType);
 
-    /// Return the byte offset expression of a GepStmt
-    /// elemBytesize is the element byte size of an static alloc or heap alloc array
-    /// e.g. GepStmt* gep = [i32*10], x, and x is [0,3]
-    /// std::pair<s32_t, s32_t> byteOffset = getByteOffset(gep);
-    /// byteOffset should be [0, 12] since i32 is 4 bytes.
-    IntervalValue getByteOffset(const AbstractState& es, const GepStmt *gep);
-
-    /// Return the offset expression of a GepStmt
-    IntervalValue getElementIndex(const AbstractState& es, const GepStmt *gep);
-
 
     static z3::context &getContext()
     {
@@ -94,9 +81,6 @@ public:
 
     void applySummary(AbstractState&es);
 
-
-    /// Init ObjVar
-    void initObjVar(AbstractState& as, const ObjVar* var);
 
 
     inline AbstractValue &getAddrs(AbstractState& es, u32_t id)

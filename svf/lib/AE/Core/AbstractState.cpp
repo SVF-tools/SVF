@@ -29,6 +29,7 @@
 
 #include "AE/Core/AbstractState.h"
 #include "Util/SVFUtil.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -212,5 +213,208 @@ void AbstractState::printTable(const VarToAbsValMap&table, std::ostream &oss) co
     {
         oss << "Var" << std::to_string(item);
         oss << "\t Value: " << table.at(item).toString() << "\n";
+    }
+}
+
+// getGepObjAddrs
+AddressValue AbstractState::getGepObjAddrs(u32_t pointer, IntervalValue offset)
+{
+    AddressValue gepAddrs;
+    APOffset lb = offset.lb().getIntNumeral() < Options::MaxFieldLimit() ? offset.lb().getIntNumeral()
+                                                                         : Options::MaxFieldLimit();
+    APOffset ub = offset.ub().getIntNumeral() < Options::MaxFieldLimit() ? offset.ub().getIntNumeral()
+                                                                         : Options::MaxFieldLimit();
+    for (APOffset i = lb; i <= ub; i++) {
+        AbstractValue addrs = (*this)[pointer];
+        for (const auto& addr : addrs.getAddrs()) {
+            s64_t baseObj = AbstractState::getInternalID(addr);
+            assert(SVFUtil::isa<ObjVar>(PAG::getPAG()->getGNode(baseObj)) && "Fail to get the base object address!");
+            NodeID gepObj = PAG::getPAG()->getGepObjVar(baseObj, i);
+            (*this)[gepObj] = AddressValue(AbstractState::getVirtualMemAddress(gepObj));
+            gepAddrs.insert(AbstractState::getVirtualMemAddress(gepObj));
+        }
+    }
+
+    return gepAddrs;
+}
+// initObjVar
+void AbstractState::initObjVar(ObjVar* objVar)  {
+    NodeID varId = objVar->getId();
+
+    // Check if the object variable has an associated value
+    if (objVar->hasValue()) {
+        const MemObj* obj = objVar->getMemObj();
+
+        // Handle constant data, arrays, and structures
+        if (obj->isConstDataOrConstGlobal() || obj->isConstantArray() || obj->isConstantStruct()) {
+            if (const SVFConstantInt* consInt = SVFUtil::dyn_cast<SVFConstantInt>(obj->getValue())) {
+                s64_t numeral = consInt->getSExtValue();
+                (*this)[varId] = IntervalValue(numeral, numeral);
+            }
+            else if (const SVFConstantFP* consFP = SVFUtil::dyn_cast<SVFConstantFP>(obj->getValue())) {
+                (*this)[varId] = IntervalValue(consFP->getFPValue(), consFP->getFPValue());
+            }
+            else if (SVFUtil::isa<SVFConstantNullPtr>(obj->getValue())) {
+                (*this)[varId] = IntervalValue(0, 0);
+            }
+            else if (SVFUtil::isa<SVFGlobalValue>(obj->getValue())) {
+                (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
+            }
+            else if (obj->isConstantArray() || obj->isConstantStruct()) {
+                (*this)[varId] = IntervalValue::top();
+            }
+            else {
+                (*this)[varId] = IntervalValue::top();
+            }
+        }
+        // Handle non-constant memory objects
+        else {
+            (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
+        }
+    }
+    // If the object variable does not have an associated value, set it to a virtual memory address
+    else {
+        (*this)[varId] = AddressValue(AbstractState::getVirtualMemAddress(varId));
+    }
+    return;
+}
+
+// getElementIndex
+IntervalValue AbstractState::getElementIndex(const GepStmt* gep)  {
+    // If the GEP statement has a constant offset, return it directly as the interval value
+    if (gep->isConstantOffset())
+        return IntervalValue((s64_t)gep->accumulateConstantOffset());
+
+    IntervalValue res(0);
+    // Iterate over the list of offset variable and type pairs in reverse order
+    for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--) {
+        AccessPath::IdxOperandPair IdxVarAndType = gep->getOffsetVarAndGepTypePairVec()[i];
+        const SVFValue* value = gep->getOffsetVarAndGepTypePairVec()[i].first->getValue();
+        const SVFType* type = IdxVarAndType.second;
+
+        // Variables to store the lower and upper bounds of the index value
+        s64_t idxLb;
+        s64_t idxUb;
+
+        // Determine the lower and upper bounds based on whether the value is a constant
+        if (const SVFConstantInt* constInt = SVFUtil::dyn_cast<SVFConstantInt>(value))
+            idxLb = idxUb = constInt->getSExtValue();
+        else {
+            IntervalValue idxItv = (*this)[PAG::getPAG()->getValueNode(value)].getInterval();
+            if (idxItv.isBottom())
+                idxLb = idxUb = 0;
+            else {
+                idxLb = idxItv.lb().getIntNumeral();
+                idxUb = idxItv.ub().getIntNumeral();
+            }
+        }
+
+        // Adjust the bounds if the type is a pointer
+        if (SVFUtil::isa<SVFPointerType>(type)) {
+            u32_t elemNum = gep->getAccessPath().getElementNum(gep->getAccessPath().gepSrcPointeeType());
+            idxLb = (double)Options::MaxFieldLimit() / elemNum < idxLb ? Options::MaxFieldLimit() : idxLb * elemNum;
+            idxUb = (double)Options::MaxFieldLimit() / elemNum < idxUb ? Options::MaxFieldLimit() : idxUb * elemNum;
+        }
+        // Adjust the bounds for array or struct types using the symbol table info
+        else {
+            if (Options::ModelArrays()) {
+                const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()->getTypeInfo(type)->getFlattenedElemIdxVec();
+                if (so.empty() || idxUb >= (APOffset)so.size() || idxLb < 0) {
+                    idxLb = idxUb = 0;
+                }
+                else {
+                    idxLb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, idxLb);
+                    idxUb = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, idxUb);
+                }
+            }
+            else
+                idxLb = idxUb = 0;
+        }
+
+        // Add the calculated interval to the result
+        res = res + IntervalValue(idxLb, idxUb);
+    }
+
+    // Ensure the result is within the bounds of [0, MaxFieldLimit]
+    res.meet_with(IntervalValue((s64_t)0, (s64_t)Options::MaxFieldLimit()));
+    if (res.isBottom()) {
+        res = IntervalValue(0);
+    }
+    return res;
+}
+// getByteOffset
+IntervalValue AbstractState::getByteOffset(const GepStmt* gep)  {
+    // If the GEP statement has a constant byte offset, return it directly as the interval value
+    if (gep->isConstantOffset())
+        return IntervalValue((s64_t)gep->accumulateConstantByteOffset());
+
+    IntervalValue res(0); // Initialize the result interval 'res' to 0.
+
+    // Loop through the offsetVarAndGepTypePairVec in reverse order.
+    for (int i = gep->getOffsetVarAndGepTypePairVec().size() - 1; i >= 0; i--) {
+        const SVFVar* idxOperandVar = gep->getOffsetVarAndGepTypePairVec()[i].first;
+        const SVFType* idxOperandType = gep->getOffsetVarAndGepTypePairVec()[i].second;
+
+        // Calculate the byte offset for array or pointer types
+        if (SVFUtil::isa<SVFArrayType>(idxOperandType) || SVFUtil::isa<SVFPointerType>(idxOperandType)) {
+            u32_t elemByteSize = 1;
+            if (const SVFArrayType* arrOperandType = SVFUtil::dyn_cast<SVFArrayType>(idxOperandType))
+                elemByteSize = arrOperandType->getTypeOfElement()->getByteSize();
+            else if (SVFUtil::isa<SVFPointerType>(idxOperandType))
+                elemByteSize = gep->getAccessPath().gepSrcPointeeType()->getByteSize();
+            else
+                assert(false && "idxOperandType must be ArrType or PtrType");
+
+            if (const SVFConstantInt* op = SVFUtil::dyn_cast<SVFConstantInt>(idxOperandVar->getValue())) {
+                // Calculate the lower bound (lb) of the interval value
+                s64_t lb = (double)Options::MaxFieldLimit() / elemByteSize >= op->getSExtValue()
+                               ? op->getSExtValue() * elemByteSize
+                               : Options::MaxFieldLimit();
+                res = res + IntervalValue(lb, lb);
+            }
+            else {
+                u32_t idx = PAG::getPAG()->getValueNode(idxOperandVar->getValue());
+                IntervalValue idxVal = (*this)[idx].getInterval();
+
+                if (idxVal.isBottom())
+                    res = res + IntervalValue(0, 0);
+                else {
+                    // Ensure the bounds are non-negative and within the field limit
+                    s64_t ub = (idxVal.ub().getIntNumeral() < 0) ? 0
+                               : (double)Options::MaxFieldLimit() / elemByteSize >= idxVal.ub().getIntNumeral()
+                                   ? elemByteSize * idxVal.ub().getIntNumeral()
+                                   : Options::MaxFieldLimit();
+                    s64_t lb = (idxVal.lb().getIntNumeral() < 0) ? 0
+                               : (double)Options::MaxFieldLimit() / elemByteSize >= idxVal.lb().getIntNumeral()
+                                   ? elemByteSize * idxVal.lb().getIntNumeral()
+                                   : Options::MaxFieldLimit();
+                    res = res + IntervalValue(lb, ub);
+                }
+            }
+        }
+        // Process struct subtypes by calculating the byte offset from the beginning to the field of the struct
+        else if (const SVFStructType* structOperandType = SVFUtil::dyn_cast<SVFStructType>(idxOperandType)) {
+            res = res + IntervalValue(gep->getAccessPath().getStructFieldOffset(idxOperandVar, structOperandType));
+        }
+        else {
+            assert(false && "gep type pair only support arr/ptr/struct");
+        }
+    }
+    return res; // Return the resulting byte offset as an IntervalValue.
+}
+
+// printAbstractState
+// loadValue
+AbstractValue AbstractState::loadValue(NodeID varId) {
+    AbstractValue res;
+    for (auto addr : (*this)[varId].getAddrs()) {
+        res.join_with(load(addr)); // q = *p
+    }
+    return res;
+}
+// storeValue
+void AbstractState::storeValue(NodeID varId, AbstractValue val) {
+    for (auto addr : (*this)[varId].getAddrs()) {
+        store(addr, val); // *p = q
     }
 }

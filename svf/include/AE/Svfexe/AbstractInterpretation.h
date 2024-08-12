@@ -137,8 +137,8 @@ protected:
     /// Global ICFGNode is handled at the entry of the program,
     virtual void handleGlobalNode();
 
-    /// mark recursive functions by detecting SCC in callgraph
-    void markRecursiveFuns();
+    /// Mark recursive functions in the call graph
+    void initWTO();
 
     /**
      * Check if execution state exist by merging states of predecessor nodes
@@ -146,7 +146,7 @@ protected:
      * @param curNode The ICFGNode to analyse
      * @return if this node has preceding execution state
      */
-    bool propagateStateIfFeasible(const ICFGNode* curNode);
+    bool mergeStatesFromPredecessors(const ICFGNode* curNode);
 
     /**
      * Check if execution state exist at the branch edge
@@ -161,14 +161,7 @@ protected:
      *
      * @param block basic block that has one instruction or a series of instructions
      */
-    virtual void handleWTONode(const ICFGSingletonWTO *icfgSingletonWto);
-
-    /**
-     * handle one instruction in ICFGNode
-     *
-     * @param node ICFGNode which has a single instruction
-     */
-    virtual void handleICFGNode(const ICFGNode* node);
+    virtual void handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto);
 
     /**
      * handle call node in ICFGNode
@@ -182,14 +175,10 @@ protected:
      *
      * @param cycle WTOCycle which has weak topo order of basic blocks and nested cycles
      */
-    virtual void handleCycle(const ICFGCycleWTO* cycle);
+    virtual void handleCycleWTO(const ICFGCycleWTO* cycle);
 
-    /**
-     * handle user defined function, ext function is not included.
-     *
-     * @param func SVFFunction which has a series of basic blocks
-     */
-    virtual void handleFunc(const SVFFunction* func);
+    void handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps);
+
 
     /**
      * handle SVF Statement like CmpStmt, CallStmt, GepStmt, LoadStmt, StoreStmt, etc.
@@ -334,7 +323,6 @@ protected:
 
     /// protected data members, also used in subclasses
     SVFIR* _svfir;
-    PTACallGraph* _callgraph;
     /// Execution State, used to store the Interval Value of every SVF variable
     SVFIR2AbsState* _svfir2AbsState;
     AEAPI* _api{nullptr};
@@ -347,7 +335,6 @@ protected:
     SVFBugReport _recoder;
     std::vector<const CallICFGNode*> _callSiteStack;
     Map<const ICFGNode*, std::string> _nodeToBugInfo;
-    AndersenWaveDiff* _ander;
     Map<const SVFFunction*, ICFGWTO*> _funcToWTO;
     Set<const SVFFunction*> _recursiveFuns;
 
@@ -363,7 +350,7 @@ private:
     virtual void indirectCallFunPass(const CallICFGNode* callNode);
 
 protected:
-    // helper functions in handleCycle
+    // helper functions in handleCycleWTO
     bool isFixPointAfterWidening(const ICFGNode* cycle_head,
                                  AbstractState& pre_as);
     bool isFixPointAfterNarrowing(const SVF::ICFGNode* cycle_head,
