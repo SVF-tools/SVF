@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -73,7 +73,7 @@ void CSC::find(NodeStack& candidates)
 /*!
  *
  */
-void CSC::visit(NodeID nodeId, s32_t _w)
+void CSC::visit(NodeID nodeId, Size_t _w)
 {
 //    pwcReps[nodeId] = _scc->repNode(nodeId);
     setVisited(nodeId);
@@ -85,9 +85,9 @@ void CSC::visit(NodeID nodeId, s32_t _w)
     ConstraintNode* node = _consG->getConstraintNode(nodeId);
     for (ConstraintNode::const_iterator eit = node->directOutEdgeBegin(); eit != node->directOutEdgeEnd(); ++eit)
     {
-        s32_t offset;
+        Size_t offset;
         if (NormalGepCGEdge* gepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*eit))
-            offset = gepCGEdge->getConstantFieldIdx();
+            offset = gepCGEdge->getOffset();
         else
             offset = 0;
         NodeID dstId = (*eit)->getDstID();
@@ -107,8 +107,8 @@ void CSC::visit(NodeID nodeId, s32_t _w)
         if (_consG->hasEdge(node, backNode, ConstraintEdge::NormalGep))
         {
             NormalGepCGEdge* normalGep = SVFUtil::dyn_cast<NormalGepCGEdge>(_consG->getEdge(node, backNode, ConstraintEdge::NormalGep));
-            s32_t _w = normalGep->getConstantFieldIdx();
-            s32_t _l = _D[nodeId] +_w - _D[backNodeId];
+            Size_t _w = normalGep->getLocationSet().getOffset();
+            Size_t _l = _D[nodeId] +_w - _D[backNodeId];
             backNode->strides.set(_l);
             for (auto cNodeId : _C)
                 _consG->getConstraintNode(cNodeId)->strides.set(_l);
@@ -116,7 +116,7 @@ void CSC::visit(NodeID nodeId, s32_t _w)
         else if (_consG->hasEdge(node, backNode, ConstraintEdge::VariantGep) ||
                  _consG->hasEdge(node, backNode, ConstraintEdge::Copy))
         {
-            s32_t _l = _D[nodeId] - _D[backNodeId];
+            Size_t _l = _D[nodeId] - _D[backNodeId];
             backNode->strides.set(_l);
             for (auto cNodeId : _C)
                 _consG->getConstraintNode(cNodeId)->strides.set(_l);

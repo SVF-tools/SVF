@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -28,9 +28,8 @@
  *      Author: Yulei Sui
  */
 
-#include <sstream>
-#include "SVFIR/SVFModule.h"
-#include "Util/SVFUtil.h"
+#include "Util/SVFModule.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "Graphs/PTACallGraph.h"
 
 using namespace SVF;
@@ -43,23 +42,22 @@ CallSiteID PTACallGraph::totalCallSiteNum = 1;
 
 /// Add direct and indirect callsite
 //@{
-void PTACallGraphEdge::addDirectCallSite(const CallICFGNode* call)
+void PTACallGraphEdge::addDirectCallSite(const CallBlockNode* call)
 {
     assert(SVFUtil::getCallee(call->getCallSite()) && "not a direct callsite??");
     directCalls.insert(call);
 }
 
-void PTACallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
+void PTACallGraphEdge::addInDirectCallSite(const CallBlockNode* call)
 {
-    assert((nullptr == SVFUtil::getCallee(call->getCallSite()) || nullptr == SVFUtil::dyn_cast<SVFFunction> (SVFUtil::getForkedFun(call->getCallSite()))) && "not an indirect callsite??");
+    assert((nullptr == SVFUtil::getCallee(call->getCallSite()) || nullptr == SVFUtil::dyn_cast<Function> (SVFUtil::getForkedFun(call->getCallSite()))) && "not an indirect callsite??");
     indirectCalls.insert(call);
 }
 //@}
 
-const std::string PTACallGraphEdge::toString() const
-{
+const std::string PTACallGraphEdge::toString() const {
     std::string str;
-    std::stringstream  rawstr(str);
+    raw_string_ostream rawstr(str);
     rawstr << "CallSite ID: " << getCallSiteID();
     if(isDirectCallEdge())
         rawstr << "direct call";
@@ -69,10 +67,9 @@ const std::string PTACallGraphEdge::toString() const
     return rawstr.str();
 }
 
-const std::string PTACallGraphNode::toString() const
-{
+const std::string PTACallGraphNode::toString() const {
     std::string str;
-    std::stringstream  rawstr(str);
+    raw_string_ostream rawstr(str);
     rawstr << "CallGraphNode ID: " << getId() << " {fun: " << fun->getName() << "}";
     return rawstr.str();
 }
@@ -165,7 +162,7 @@ PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src, PTACallGraph
 /*!
  * Add direct call edges
  */
-void PTACallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
+void PTACallGraph::addDirectCallGraphEdge(const CallBlockNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
 {
 
     PTACallGraphNode* caller = getCallGraphNode(callerFun);
@@ -185,7 +182,7 @@ void PTACallGraph::addDirectCallGraphEdge(const CallICFGNode* cs,const SVFFuncti
 /*!
  * Add indirect call edge to update call graph
  */
-void PTACallGraph::addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
+void PTACallGraph::addIndirectCallGraphEdge(const CallBlockNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun)
 {
 
     PTACallGraphNode* caller = getCallGraphNode(callerFun);
@@ -272,10 +269,10 @@ void PTACallGraph::verifyCallGraph()
         const FunctionSet& targets = it->second;
         if (targets.empty() == false)
         {
-            const CallICFGNode* cs = it->first;
+            const CallBlockNode* cs = it->first;
             const SVFFunction* func = cs->getCaller();
             if (getCallGraphNode(func)->isReachableFromProgEntry() == false)
-                writeWrnMsg(func->getName() + " has indirect call site but not reachable from main");
+                writeWrnMsg(func->getName().str() + " has indirect call site but not reachable from main");
         }
     }
 }
@@ -316,15 +313,15 @@ bool PTACallGraph::isReachableBetweenFunctions(const SVFFunction* srcFn, const S
  */
 void PTACallGraph::dump(const std::string& filename)
 {
-    GraphPrinter::WriteGraphToFile(outs(), filename, this);
+      GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 
 void PTACallGraph::view()
 {
-    SVF::ViewGraph(this, "Call Graph");
+    llvm::ViewGraph(this, "Call Graph");
 }
 
-namespace SVF
+namespace llvm
 {
 
 /*!
@@ -399,7 +396,7 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
 
         std::string str;
-        std::stringstream rawstr(str);
+        raw_string_ostream rawstr(str);
         rawstr << edge->getCallSiteID();
 
         return rawstr.str();

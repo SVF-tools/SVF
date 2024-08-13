@@ -1,26 +1,3 @@
-//===- DDAPass.cpp -- Demand-driven analysis driver pass-------------//
-//
-//                     SVF: Static Value-Flow Analysis
-//
-// Copyright (C) <2013->  <Yulei Sui>
-//
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-//===----------------------------------------------------------------------===//
-
-
 /*
  * @file: DDAPass.cpp
  * @author: Yulei Sui
@@ -34,15 +11,17 @@
 #include "DDA/FlowDDA.h"
 #include "DDA/ContextDDA.h"
 #include "DDA/DDAClient.h"
+#include "SVF-FE/PAGBuilder.h"
 
 #include <sstream>
 #include <limits.h>
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace std;
 
 char DDAPass::ID = 0;
+
+static llvm::RegisterPass<DDAPass> DDAPA("dda", "Demand-driven Pointer Analysis Pass");
 
 DDAPass::~DDAPass()
 {
@@ -52,34 +31,40 @@ DDAPass::~DDAPass()
 }
 
 
-void DDAPass::runOnModule(SVFIR* pag)
+void DDAPass::runOnModule(SVFModule* module)
 {
     /// initialization for llvm alias analyzer
-    //InitializeAliasAnalysis(this, getDataLayout(&module));
+    //InitializeAliasAnalysis(this, SymbolTableInfo::getDataLayout(&module));
 
-    selectClient(pag->getModule());
+    selectClient(module);
 
     for (u32_t i = PointerAnalysis::FlowS_DDA;
             i < PointerAnalysis::Default_PTA; i++)
     {
-        PointerAnalysis::PTATY iPtTy = static_cast<PointerAnalysis::PTATY>(i);
-        if (Options::DDASelected(iPtTy))
-            runPointerAnalysis(pag, i);
+        if (Options::DDASelected.isSet(i))
+            runPointerAnalysis(module, i);
     }
+}
+
+bool DDAPass::runOnModule(Module& module)
+{
+    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(module);
+    runOnModule(svfModule);
+    return false;
 }
 
 /// select a client to initialize queries
 void DDAPass::selectClient(SVFModule* module)
 {
 
-    if (!Options::UserInputQuery().empty())
+    if (!Options::UserInputQuery.empty())
     {
         /// solve function pointer
-        if (Options::UserInputQuery() == "funptr")
+        if (Options::UserInputQuery == "funptr")
         {
             _client = new FunptrDDAClient(module);
         }
-        else if (Options::UserInputQuery() == "alias")
+        else if (Options::UserInputQuery == "alias")
         {
             _client = new AliasDDAClient(module);
         }
@@ -87,10 +72,10 @@ void DDAPass::selectClient(SVFModule* module)
         else
         {
             _client = new DDAClient(module);
-            if (Options::UserInputQuery() != "all")
+            if (Options::UserInputQuery != "all")
             {
                 u32_t buf; // Have a buffer
-                stringstream ss(Options::UserInputQuery()); // Insert the user input string into a stream
+                stringstream ss(Options::UserInputQuery); // Insert the user input string into a stream
                 while (ss >> buf)
                     _client->setQuery(buf);
             }
@@ -105,23 +90,26 @@ void DDAPass::selectClient(SVFModule* module)
 }
 
 /// Create pointer analysis according to specified kind and analyze the module.
-void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
+void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
 {
 
-    ContextCond::setMaxPathLen(Options::MaxPathLen());
-    ContextCond::setMaxCxtLen(Options::MaxContextLen());
+	PAGBuilder builder;
+	PAG* pag = builder.build(module);
+
+    ContextCond::setMaxPathLen(Options::MaxPathLen);
+    ContextCond::setMaxCxtLen(Options::MaxContextLen);
 
     /// Initialize pointer analysis.
     switch (kind)
     {
     case PointerAnalysis::Cxt_DDA:
     {
-        _pta = std::make_unique<ContextDDA>(pag, _client);
+        _pta = new ContextDDA(pag, _client);
         break;
     }
     case PointerAnalysis::FlowS_DDA:
     {
-        _pta = std::make_unique<FlowDDA>(pag, _client);
+        _pta = new FlowDDA(pag, _client);
         break;
     }
     default:
@@ -129,25 +117,25 @@ void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
         break;
     }
 
-    if(Options::WPANum())
+    if(Options::WPANum)
     {
-        _client->collectWPANum(pag->getModule());
+        _client->collectWPANum(module);
     }
     else
     {
         ///initialize
         _pta->initialize();
         ///compute points-to
-        _client->answerQueries(_pta.get());
+        _client->answerQueries(_pta);
         ///finalize
         _pta->finalize();
-        if(Options::PrintCPts())
+        if(Options::PrintCPts)
             _pta->dumpCPts();
 
         if (_pta->printStat())
-            _client->performStat(_pta.get());
+            _client->performStat(_pta);
 
-        if (Options::PrintQueryPts())
+        if (Options::PrintQueryPts)
             printQueryPTS();
     }
 }
@@ -158,9 +146,9 @@ void DDAPass::runPointerAnalysis(SVFIR* pag, u32_t kind)
  */
 void DDAPass::initCxtInsensitiveEdges(PointerAnalysis* pta, const SVFG* svfg,const SVFGSCC* svfgSCC, SVFGEdgeSet& insensitveEdges)
 {
-    if(Options::InsenRecur())
+    if(Options::InsenRecur)
         collectCxtInsenEdgeForRecur(pta,svfg,insensitveEdges);
-    else if(Options::InsenCycle())
+    else if(Options::InsenCycle)
         collectCxtInsenEdgeForVFCycle(pta,svfg,svfgSCC,insensitveEdges);
 }
 
@@ -177,8 +165,8 @@ bool DDAPass::edgeInSVFGSCC(const SVFGSCC* svfgSCC,const SVFGEdge* edge)
  */
 bool DDAPass::edgeInCallGraphSCC(PointerAnalysis* pta,const SVFGEdge* edge)
 {
-    const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-    const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+	const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+	const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
     if(srcFun && dstFun)
     {
@@ -234,8 +222,8 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
                 if(this->edgeInSVFGSCC(svfgSCC,edge))
                 {
 
-                    const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
-                    const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
+                	const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+                	const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
                     if(srcFun && dstFun)
                     {
@@ -280,12 +268,12 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
 AliasResult DDAPass::alias(NodeID node1, NodeID node2)
 {
-    SVFIR* pag = _pta->getPAG();
+    PAG* pag = _pta->getPAG();
 
-    if(pag->isValidTopLevelPtr(pag->getGNode(node1)))
+    if(pag->isValidTopLevelPtr(pag->getPAGNode(node1)))
         _pta->computeDDAPts(node1);
 
-    if(pag->isValidTopLevelPtr(pag->getGNode(node2)))
+    if(pag->isValidTopLevelPtr(pag->getPAGNode(node2)))
         _pta->computeDDAPts(node2);
 
     return _pta->alias(node1,node2);
@@ -294,29 +282,29 @@ AliasResult DDAPass::alias(NodeID node1, NodeID node2)
  * Return alias results based on our points-to/alias analysis
  * TODO: Need to handle PartialAlias and MustAlias here.
  */
-AliasResult DDAPass::alias(const SVFValue* V1, const SVFValue* V2)
+AliasResult DDAPass::alias(const Value* V1, const Value* V2)
 {
-    SVFIR* pag = _pta->getPAG();
+    PAG* pag = _pta->getPAG();
 
     /// TODO: When this method is invoked during compiler optimizations, the IR
     ///       used for pointer analysis may been changed, so some Values may not
-    ///       find corresponding SVFIR node. In this case, we only check alias
-    ///       between two Values if they both have SVFIR nodes. Otherwise, MayAlias
+    ///       find corresponding PAG node. In this case, we only check alias
+    ///       between two Values if they both have PAG nodes. Otherwise, MayAlias
     ///       will be returned.
     if (pag->hasValueNode(V1) && pag->hasValueNode(V2))
     {
-        PAGNode* node1 = pag->getGNode(pag->getValueNode(V1));
+        PAGNode* node1 = pag->getPAGNode(pag->getValueNode(V1));
         if(pag->isValidTopLevelPtr(node1))
             _pta->computeDDAPts(node1->getId());
 
-        PAGNode* node2 = pag->getGNode(pag->getValueNode(V2));
+        PAGNode* node2 = pag->getPAGNode(pag->getValueNode(V2));
         if(pag->isValidTopLevelPtr(node2))
             _pta->computeDDAPts(node2->getId());
 
         return _pta->alias(V1,V2);
     }
 
-    return AliasResult::MayAlias;
+    return llvm::MayAlias;
 }
 
 /*!

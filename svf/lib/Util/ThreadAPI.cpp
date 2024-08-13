@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -32,7 +32,6 @@
 
 #include "Util/ThreadAPI.h"
 #include "Util/SVFUtil.h"
-#include "SVFIR/SVFIR.h"
 
 #include <iostream>		/// std output
 #include <stdio.h>
@@ -132,7 +131,7 @@ void ThreadAPI::init()
 /*!
  *
  */
-const SVFFunction* ThreadAPI::getCallee(const SVFInstruction *inst) const
+const SVFFunction* ThreadAPI::getCallee(const Instruction *inst) const
 {
     return SVFUtil::getCallee(inst);
 }
@@ -148,33 +147,15 @@ const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const
 /*!
  *
  */
-const CallSite ThreadAPI::getSVFCallSite(const SVFInstruction *inst) const
+const CallSite ThreadAPI::getLLVMCallSite(const Instruction *inst) const
 {
-    return SVFUtil::getSVFCallSite(inst);
-}
-
-const SVFValue* ThreadAPI::getJoinedThread(const SVFInstruction *inst) const
-{
-    assert(isTDJoin(inst) && "not a thread join function!");
-    CallSite cs = getSVFCallSite(inst);
-    const SVFValue* join = cs.getArgument(0);
-    const SVFVar* var = PAG::getPAG()->getGNode(PAG::getPAG()->getValueNode(join));
-    for(const SVFStmt* stmt : var->getInEdges())
-    {
-        if(SVFUtil::isa<LoadStmt>(stmt))
-            return stmt->getSrcNode()->getValue();
-    }
-    if(SVFUtil::isa<SVFArgument>(join))
-        return join;
-
-    assert(false && "the value of the first argument at join is not a load instruction?");
-    return nullptr;
+    return SVFUtil::getLLVMCallSite(inst);
 }
 
 /*!
  *
  */
-void ThreadAPI::statInit(Map<std::string, u32_t>& tdAPIStatMap)
+void ThreadAPI::statInit(StringMap& tdAPIStatMap)
 {
 
     tdAPIStatMap["pthread_create"] = 0;
@@ -217,144 +198,140 @@ void ThreadAPI::statInit(Map<std::string, u32_t>& tdAPIStatMap)
 void ThreadAPI::performAPIStat(SVFModule* module)
 {
 
-    Map<std::string, u32_t> tdAPIStatMap;
+    StringMap tdAPIStatMap;
 
     statInit(tdAPIStatMap);
 
-    for (SVFModule::const_iterator it = module->begin(), eit = module->end(); it != eit; ++it)
+    for (SVFModule::llvm_iterator it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
+            ++it)
     {
-        for (SVFFunction::const_iterator bit = (*it)->begin(), ebit = (*it)->end(); bit != ebit; ++bit)
+
+        for (inst_iterator II = inst_begin(*it), E = inst_end(*it); II != E;
+                ++II)
         {
-            const SVFBasicBlock* bb = *bit;
-            for (SVFBasicBlock::const_iterator ii = bb->begin(), eii = bb->end(); ii != eii; ++ii)
+            const Instruction *inst = &*II;
+            if (!SVFUtil::isa<CallInst>(inst))
+                continue;
+            const SVFFunction* fun = getCallee(inst);
+            TD_TYPE type = getType(fun);
+            switch (type)
             {
-                const SVFInstruction* svfInst = *ii;
-                if (!SVFUtil::isCallSite(svfInst))
-                    continue;
-                const SVFFunction* fun = getCallee(svfInst);
-                TD_TYPE type = getType(fun);
-                switch (type)
-                {
-                case TD_FORK:
-                {
-                    tdAPIStatMap["pthread_create"]++;
-                    break;
-                }
-                case TD_JOIN:
-                {
-                    tdAPIStatMap["pthread_join"]++;
-                    break;
-                }
-                case TD_ACQUIRE:
-                {
-                    tdAPIStatMap["pthread_mutex_lock"]++;
-                    break;
-                }
-                case TD_TRY_ACQUIRE:
-                {
-                    tdAPIStatMap["pthread_mutex_trylock"]++;
-                    break;
-                }
-                case TD_RELEASE:
-                {
-                    tdAPIStatMap["pthread_mutex_unlock"]++;
-                    break;
-                }
-                case TD_CANCEL:
-                {
-                    tdAPIStatMap["pthread_cancel"]++;
-                    break;
-                }
-                case TD_EXIT:
-                {
-                    tdAPIStatMap["pthread_exit"]++;
-                    break;
-                }
-                case TD_DETACH:
-                {
-                    tdAPIStatMap["pthread_detach"]++;
-                    break;
-                }
-                case TD_COND_WAIT:
-                {
-                    tdAPIStatMap["pthread_cond_wait"]++;
-                    break;
-                }
-                case TD_COND_SIGNAL:
-                {
-                    tdAPIStatMap["pthread_cond_signal"]++;
-                    break;
-                }
-                case TD_COND_BROADCAST:
-                {
-                    tdAPIStatMap["pthread_cond_broadcast"]++;
-                    break;
-                }
-                case TD_CONDVAR_INI:
-                {
-                    tdAPIStatMap["pthread_cond_init"]++;
-                    break;
-                }
-                case TD_CONDVAR_DESTROY:
-                {
-                    tdAPIStatMap["pthread_cond_destroy"]++;
-                    break;
-                }
-                case TD_MUTEX_INI:
-                {
-                    tdAPIStatMap["pthread_mutex_init"]++;
-                    break;
-                }
-                case TD_MUTEX_DESTROY:
-                {
-                    tdAPIStatMap["pthread_mutex_destroy"]++;
-                    break;
-                }
-                case TD_BAR_INIT:
-                {
-                    tdAPIStatMap["pthread_barrier_init"]++;
-                    break;
-                }
-                case TD_BAR_WAIT:
-                {
-                    tdAPIStatMap["pthread_barrier_wait"]++;
-                    break;
-                }
-                case HARE_PAR_FOR:
-                {
-                    tdAPIStatMap["hare_parallel_for"]++;
-                    break;
-                }
-                case TD_DUMMY:
-                {
-                    break;
-                }
-                }
+            case TD_FORK:
+            {
+                tdAPIStatMap["pthread_create"]++;
+                break;
+            }
+            case TD_JOIN:
+            {
+                tdAPIStatMap["pthread_join"]++;
+                break;
+            }
+            case TD_ACQUIRE:
+            {
+                tdAPIStatMap["pthread_mutex_lock"]++;
+                break;
+            }
+            case TD_TRY_ACQUIRE:
+            {
+                tdAPIStatMap["pthread_mutex_trylock"]++;
+                break;
+            }
+            case TD_RELEASE:
+            {
+                tdAPIStatMap["pthread_mutex_unlock"]++;
+                break;
+            }
+            case TD_CANCEL:
+            {
+                tdAPIStatMap["pthread_cancel"]++;
+                break;
+            }
+            case TD_EXIT:
+            {
+                tdAPIStatMap["pthread_exit"]++;
+                break;
+            }
+            case TD_DETACH:
+            {
+                tdAPIStatMap["pthread_detach"]++;
+                break;
+            }
+            case TD_COND_WAIT:
+            {
+                tdAPIStatMap["pthread_cond_wait"]++;
+                break;
+            }
+            case TD_COND_SIGNAL:
+            {
+                tdAPIStatMap["pthread_cond_signal"]++;
+                break;
+            }
+            case TD_COND_BROADCAST:
+            {
+                tdAPIStatMap["pthread_cond_broadcast"]++;
+                break;
+            }
+            case TD_CONDVAR_INI:
+            {
+                tdAPIStatMap["pthread_cond_init"]++;
+                break;
+            }
+            case TD_CONDVAR_DESTROY:
+            {
+                tdAPIStatMap["pthread_cond_destroy"]++;
+                break;
+            }
+            case TD_MUTEX_INI:
+            {
+                tdAPIStatMap["pthread_mutex_init"]++;
+                break;
+            }
+            case TD_MUTEX_DESTROY:
+            {
+                tdAPIStatMap["pthread_mutex_destroy"]++;
+                break;
+            }
+            case TD_BAR_INIT:
+            {
+                tdAPIStatMap["pthread_barrier_init"]++;
+                break;
+            }
+            case TD_BAR_WAIT:
+            {
+                tdAPIStatMap["pthread_barrier_wait"]++;
+                break;
+            }
+            case HARE_PAR_FOR:
+            {
+                tdAPIStatMap["hare_parallel_for"]++;
+                break;
+            }
+            case TD_DUMMY:
+            {
+                break;
+            }
             }
         }
 
     }
 
-    std::string name(module->getModuleIdentifier());
-    std::vector<std::string> fullNames = SVFUtil::split(name,'/');
-    if (fullNames.size() > 1)
-    {
-        name = fullNames[fullNames.size() - 1];
-    }
-    SVFUtil::outs() << "################ (program : " << name
-                    << ")###############\n";
-    SVFUtil::outs().flags(std::ios::left);
+    StringRef n(module->getModuleIdentifier());
+    StringRef name = n.split('/').second;
+    name = name.split('.').first;
+    std::cout << "################ (program : " << name.str()
+              << ")###############\n";
+    std::cout.flags(std::ios::left);
     unsigned field_width = 20;
-    for (Map<std::string, u32_t>::iterator it = tdAPIStatMap.begin(), eit =
+    for (llvm::StringMap<u32_t>::iterator it = tdAPIStatMap.begin(), eit =
                 tdAPIStatMap.end(); it != eit; ++it)
     {
-        std::string apiName = it->first;
+        std::string apiName = it->first().str();
         // format out put with width 20 space
-        SVFUtil::outs() << std::setw(field_width) << apiName << " : " << it->second
-                        << "\n";
+        std::cout << std::setw(field_width) << apiName << " : " << it->second
+                  << "\n";
     }
-    SVFUtil::outs() << "#######################################################"
-                    << std::endl;
+    std::cout << "#######################################################"
+              << std::endl;
 
 }
 

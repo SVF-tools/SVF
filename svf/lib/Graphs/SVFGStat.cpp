@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -32,7 +32,6 @@
 #include "Graphs/PTACallGraph.h"
 
 using namespace SVF;
-using namespace std;
 
 const char* MemSSAStat::TotalTimeOfConstructMemSSA = "TotalMSSATime";	///< Total time for constructing memory SSA
 const char* MemSSAStat::TimeOfGeneratingMemRegions  = "GenRegionTime";	///< Time for allocating regions
@@ -125,9 +124,11 @@ void MemSSAStat::performStat()
 /*!
  * Print statistics
  */
-void MemSSAStat::printStat(string str)
+void MemSSAStat::printStat()
 {
-    PTAStat::printStat("Memory SSA Statistics");
+
+    std::cout << "\n****Memory SSA Statistics****\n";
+    PTAStat::printStat();
 }
 
 /*!
@@ -309,7 +310,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     totalInEdge += inEdges.size();
 
     // indirect in edge
-    u32_t indInEdges = 0;
+    Size_t indInEdges = 0;
     SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = inEdges.begin();
     SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = inEdges.end();
     for (; edgeIt != edgeEit; ++edgeIt)
@@ -320,7 +321,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
             nodeHasIndInEdge.insert(node->getId());
             // get edge's weight
             // TODO: try a new method to calculate weight.
-            const NodeBS& cpts = edge->getPointsTo();
+            const PointsTo& cpts = edge->getPointsTo();
             avgWeight += cpts.count();
             totalIndEdgeLabels += cpts.count();
         }
@@ -349,7 +350,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     totalOutEdge += outEdges.size();
 
     // indirect out edge
-    u32_t indOutEdges = 0;
+    Size_t indOutEdges = 0;
     edgeIt = outEdges.begin();
     edgeEit = outEdges.end();
     for (; edgeIt != edgeEit; ++edgeIt)
@@ -490,13 +491,15 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
     PTNumStatMap["InsenRetEdge"] = insensitiveRetEdge;
 
 
-    PTAStat::printStat("SVFG SCC Stat");
+    std::cout << "\n****SVFG SCC Stat****\n";
+    PTAStat::printStat();
 
     delete svfgSCC;
 
 }
 
-void SVFGStat::printStat(string str)
+void SVFGStat::printStat()
 {
-    PTAStat::printStat("SVFG Statistics");
+    std::cout << "\n****SVFG Statistics****\n";
+    PTAStat::printStat();
 }

@@ -1,4 +1,4 @@
-//===- TypeAnalysis.cpp -- Fast type-based analysis without pointer analysis------//
+//===- Andersen.h -- Field-sensitive Andersen's pointer analysis-------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -27,25 +27,28 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
+#include "SVF-FE/CPPUtil.h"
+#include "SVF-FE/ICFGBuilder.h"
+#include "SVF-FE/CHG.h"
 #include "WPA/TypeAnalysis.h"
-#include "Graphs/CHG.h"
+#include "MemoryModel/PTAStat.h"
 #include "Graphs/ICFGStat.h"
 #include "Graphs/VFG.h"
-#include "Util/Options.h"
-#include "Util/PTAStat.h"
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace cppUtil;
 using namespace std;
 
 
 /// Initialize analysis
 void TypeAnalysis::initialize()
 {
-    AndersenBase::initialize();
-    if (Options::DumpICFG())
+	AndersenBase::initialize();
+    if (Options::GenICFG)
     {
-        icfg = SVFIR::getPAG()->getICFG();
+        icfg = PAG::getPAG()->getICFG();
         icfg->dump("icfg_initial");
         icfg->dump("vfg_initial");
         if (print_stat)
@@ -76,12 +79,12 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
 {
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
     {
-        const CallICFGNode* cbn = iter->first;
-        CallSite cs = SVFUtil::getSVFCallSite(cbn->getCallSite());
-        if (cs.isVirtualCall())
+        const CallBlockNode* cbn = iter->first;
+        CallSite cs = SVFUtil::getLLVMCallSite(cbn->getCallSite());
+        if (isVirtualCallSite(cs))
         {
-            const SVFValue* vtbl = cs.getVtablePtr();
-            (void)vtbl; // Suppress warning of unused variable under release build
+            virtualCallSites.insert(cs);
+            const Value *vtbl = getVCallVtblPtr(cs);
             assert(pag->hasValueNode(vtbl));
             VFunSet vfns;
             getVFnsFromCHA(cbn, vfns);
@@ -101,7 +104,7 @@ void TypeAnalysis::dumpCHAStats()
         return;
     }
 
-    u32_t pure_abstract_class_num = 0,
+    s32_t pure_abstract_class_num = 0,
           multi_inheritance_class_num = 0;
     for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
             it != eit; ++it)
@@ -124,7 +127,7 @@ void TypeAnalysis::dumpCHAStats()
      * vtbl max vfunction
      * pure abstract class
      */
-    u32_t vtblnum = 0,
+    s32_t vtblnum = 0,
           vfunc_total = 0,
           vtbl_max = 0,
           pure_abstract = 0;
@@ -136,7 +139,7 @@ void TypeAnalysis::dumpCHAStats()
         if (node->isPureAbstract())
             pure_abstract++;
 
-        u32_t vfuncs_size = 0;
+        s32_t vfuncs_size = 0;
         const vector<CHNode::FuncVector>& vecs = node->getVirtualFunctionVectors();
         for (vector<CHNode::FuncVector>::const_iterator vit = vecs.begin(),
                 veit = vecs.end(); vit != veit; ++vit)
@@ -163,7 +166,6 @@ void TypeAnalysis::dumpCHAStats()
     outs() << "vtblnum:\t" << vtblnum << '\n';
     outs() << "vtbl_average:\t" << (double)(vfunc_total)/vtblnum << '\n';
     outs() << "vtbl_max:\t" << vtbl_max << '\n';
-    outs() << "pure_abstract:\t" << pure_abstract << '\n';
 }
 
 

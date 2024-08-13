@@ -1,25 +1,3 @@
-//===- FlowDDA.cpp -- Flow-sensitive demand-driven analysis -------------//
-//
-//                     SVF: Static Value-Flow Analysis
-//
-// Copyright (C) <2013->  <Yulei Sui>
-//
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-//===----------------------------------------------------------------------===//
-
 /*
  * FlowDDA.cpp
  *
@@ -30,7 +8,6 @@
 #include "Util/Options.h"
 #include "DDA/FlowDDA.h"
 #include "DDA/DDAClient.h"
-#include "MemoryModel/PointsTo.h"
 
 using namespace std;
 using namespace SVF;
@@ -43,9 +20,9 @@ using namespace SVFUtil;
 void FlowDDA::computeDDAPts(NodeID id)
 {
     resetQuery();
-    LocDPItem::setMaxBudget(Options::FlowBudget());
+    LocDPItem::setMaxBudget(Options::FlowBudget);
 
-    PAGNode* node = getPAG()->getGNode(id);
+    PAGNode* node = getPAG()->getPAGNode(id);
     LocDPItem dpm = getDPIm(node->getId(),getDefSVFGNode(node));
 
     /// start DDA analysis
@@ -81,7 +58,7 @@ void FlowDDA::handleOutOfBudgetDpm(const LocDPItem& dpm)
 bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, CallSiteID csId)
 {
 
-    const CallICFGNode* cbn = getSVFG()->getCallSite(csId);
+    const CallBlockNode* cbn = getSVFG()->getCallSite(csId);
 
     if(getPAG()->isIndirectCallSites(cbn))
     {
@@ -148,17 +125,18 @@ PointsTo FlowDDA::processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts)
             tmpDstPts.set(ptd);
         else
         {
-            const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(gep->getPAGEdge());
-            if (gepStmt->isVariantFieldGep())
+            if (SVFUtil::isa<VariantGepPE>(gep->getPAGEdge()))
             {
                 setObjFieldInsensitive(ptd);
-                tmpDstPts.set(getFIObjVar(ptd));
+                tmpDstPts.set(getFIObjNode(ptd));
             }
-            else
+            else if (const NormalGepPE* normalGep = SVFUtil::dyn_cast<NormalGepPE>(gep->getPAGEdge()))
             {
-                NodeID fieldSrcPtdNode = getGepObjVar(ptd, gepStmt->getAccessPath().getConstantStructFldIdx());
+                NodeID fieldSrcPtdNode = getGepObjNode(ptd,	normalGep->getLocationSet());
                 tmpDstPts.set(fieldSrcPtdNode);
             }
+            else
+                assert(false && "new gep edge?");
         }
     }
     DBOUT(DDDA, outs() << "\t return created gep objs {");
@@ -180,14 +158,14 @@ bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode*)
     assert(mem && "memory object is null??");
     if(mem->isHeap())
     {
-//        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getValue())) {
+//        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal())) {
 //            const SVFFunction* fun = mallocSite->getParent()->getParent();
 //            const SVFFunction* curFun = store->getBB() ? store->getBB()->getParent() : nullptr;
 //            if(fun!=curFun)
 //                return true;
 //            if(_callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId()))
 //                return true;
-//            if(_pag->getICFG()->isInLoop(mallocSite))
+//            if(loopInfoBuilder.getLoopInfo(fun)->getLoopFor(mallocSite->getParent()))
 //                return true;
 //
 //            return false;

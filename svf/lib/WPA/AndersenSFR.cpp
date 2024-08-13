@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -27,12 +27,10 @@
  *      Author: Yuxiang Lei
  */
 
-#include "WPA/AndersenPWC.h"
-#include "MemoryModel/PointsTo.h"
+#include "WPA/AndersenSFR.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace std;
 
 AndersenSFR *AndersenSFR::sfrAndersen = nullptr;
 
@@ -42,12 +40,12 @@ AndersenSFR *AndersenSFR::sfrAndersen = nullptr;
 void AndersenSFR::initialize()
 {
     AndersenSCD::initialize();
-    setDetectPWC(false);   // SCC will detect only copy edges
+    setPWCOpt(false);
 
     if (!csc)
-        csc = new CSC(_graph, scc.get());
+        csc = new CSC(_graph, scc);
 
-    /// Detect and collapse cycles consisting of only copy edges
+    // detect and collapse cycles that only comprise copy edges
     getSCCDetector()->find();
     mergeSccCycle();
 }
@@ -66,7 +64,9 @@ void AndersenSFR::PWCDetect()
 /*!
  *
  */
-bool AndersenSFR::mergeSrcToTgt(NodeID nodeId, NodeID newRepId)
+bool AndersenSFR::mergeSrcToTgt(NodeID nodeId, NodeID newRepId,
+    std::vector<ConstraintEdge*>& criticalGepEdges
+        )
 {
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
     if (!node->strides.empty())
@@ -74,14 +74,14 @@ bool AndersenSFR::mergeSrcToTgt(NodeID nodeId, NodeID newRepId)
         ConstraintNode* newRepNode = consCG->getConstraintNode(newRepId);
         newRepNode->strides |= node->strides;
     }
-    return Andersen::mergeSrcToTgt(nodeId, newRepId);
+    return AndersenSCD::mergeSrcToTgt(nodeId, newRepId, criticalGepEdges);
 }
 
 
 /*!
  * Propagate point-to set via a gep edge, using SFR
  */
-bool AndersenSFR::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
+bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge)
 {
     ConstraintNode* dst = edge->getDstNode();
     NodeID dstId = dst->getId();
@@ -97,7 +97,7 @@ bool AndersenSFR::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
             for (NodeID ptd : srcInits)
                 sortSrcInits.insert(ptd);
 
-            APOffset offset = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)->getConstantFieldIdx();
+            Size_t offset = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)->getOffset();
             fieldExpand(sortSrcInits, offset, dst->strides, tmpDstPts);
         }
 
@@ -115,9 +115,9 @@ bool AndersenSFR::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
 
 
 /*!
- * Expand field IDs in target pts based on the initials and offsets
+ *
  */
-void AndersenSFR::fieldExpand(NodeSet& initials, APOffset offset, NodeBS& strides, PointsTo& expandPts)
+void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides, PointsTo& expandPts)
 {
     numOfFieldExpand++;
 
@@ -130,21 +130,18 @@ void AndersenSFR::fieldExpand(NodeSet& initials, APOffset offset, NodeBS& stride
             expandPts.set(init);
         else
         {
-            PAGNode* initPN = pag->getGNode(init);
+            PAGNode* initPN = pag->getPAGNode(init);
             const MemObj* obj = pag->getBaseObj(init);
-            const u32_t maxLimit = obj->getMaxFieldOffsetLimit();
-            APOffset initOffset;
-            if (GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(initPN))
-                initOffset = gepNode->getConstantFieldIdx();
-            else if (SVFUtil::isa<FIObjVar, DummyObjVar>(initPN))
+            const Size_t maxLimit = obj->getMaxFieldOffsetLimit();
+            Size_t initOffset;
+            if (GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(initPN))
+                initOffset = gepNode->getLocationSet().getOffset();
+            else if (SVFUtil::isa<FIObjPN>(initPN) || SVFUtil::isa<DummyObjPN>(initPN))
                 initOffset = 0;
             else
-            {
                 assert(false && "Not an object node!!");
-                abort();
-            }
 
-            Set<APOffset> offsets;
+            Set<Size_t> offsets;
             offsets.insert(offset);
 
             // calculate offsets
@@ -155,17 +152,17 @@ void AndersenSFR::fieldExpand(NodeSet& initials, APOffset offset, NodeBS& stride
                 for (auto _f : offsets)
                     for (auto _s : strides)
                     {
-                        APOffset _f1 = _f + _s;
-                        loopFlag = (offsets.find(_f1) == offsets.end()) && ( (u32_t)(initOffset + _f1) < maxLimit);
+                        Size_t _f1 = _f + _s;
+                        loopFlag = (offsets.find(_f1) == offsets.end()) && (initOffset + _f1 < maxLimit);
                         if (loopFlag)
                             offsets.insert(_f1);
                     }
             }
 
             // get gep objs
-            for (APOffset _f : offsets)
+            for (Size_t _f : offsets)
             {
-                NodeID gepId = consCG->getGepObjVar(init, _f);
+                NodeID gepId = consCG->getGepObjNode(init, LocationSet(_f));
                 initials.erase(gepId);  // gep id in initials should be removed to avoid redundant derivation
                 expandPts.set(gepId);
             }

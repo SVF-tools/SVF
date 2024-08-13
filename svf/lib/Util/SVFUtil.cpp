@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -29,7 +29,7 @@
 
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
-#include "MemoryModel/PointsTo.h"
+#include "SVF-FE/LLVMUtil.h"
 
 #include <sys/resource.h>		/// increase stack size
 
@@ -50,7 +50,7 @@ using namespace SVF;
 /*!
  * print successful message by converting a string into green string output
  */
-std::string SVFUtil::sucMsg(const std::string& msg)
+std::string SVFUtil::sucMsg(std::string msg)
 {
     return KGRN + msg + KNRM;
 }
@@ -58,37 +58,36 @@ std::string SVFUtil::sucMsg(const std::string& msg)
 /*!
  * print warning message by converting a string into yellow string output
  */
-std::string SVFUtil::wrnMsg(const std::string& msg)
+std::string SVFUtil::wrnMsg(std::string msg)
 {
     return KYEL + msg + KNRM;
 }
 
-void SVFUtil::writeWrnMsg(const std::string& msg)
+void SVFUtil::writeWrnMsg(std::string msg)
 {
-    if (Options::DisableWarn())
-        return;
+    if(Options::DisableWarn) return;
     outs() << wrnMsg(msg) << "\n";
 }
 
 /*!
  * print error message by converting a string into red string output
  */
-std::string SVFUtil::errMsg(const std::string& msg)
+std::string SVFUtil::errMsg(std::string msg)
 {
     return KRED + msg + KNRM;
 }
 
-std::string SVFUtil::bugMsg1(const std::string& msg)
+std::string SVFUtil::bugMsg1(std::string msg)
 {
     return KYEL + msg + KNRM;
 }
 
-std::string SVFUtil::bugMsg2(const std::string& msg)
+std::string SVFUtil::bugMsg2(std::string msg)
 {
     return KPUR + msg + KNRM;
 }
 
-std::string SVFUtil::bugMsg3(const std::string& msg)
+std::string SVFUtil::bugMsg3(std::string msg)
 {
     return KCYA + msg + KNRM;
 }
@@ -96,7 +95,7 @@ std::string SVFUtil::bugMsg3(const std::string& msg)
 /*!
  * print each pass/phase message by converting a string into blue string output
  */
-std::string SVFUtil::pasMsg(const std::string& msg)
+std::string SVFUtil::pasMsg(std::string msg)
 {
     return KBLU + msg + KNRM;
 }
@@ -123,10 +122,10 @@ void SVFUtil::dumpPointsToList(const PointsToList& ptl)
 {
     outs() << "{";
     for (PointsToList::const_iterator ii = ptl.begin(), ie = ptl.end();
-            ii != ie; ii++)
+         ii != ie; ii++)
     {
         auto bs = *ii;
-        dumpSet(bs);
+        dumpSparseSet(bs);
     }
     outs() << "}\n";
 }
@@ -144,7 +143,7 @@ void SVFUtil::dumpAliasSet(unsigned node, NodeBS bs)
 /*!
  * Dump bit vector set
  */
-void SVFUtil::dumpSet(NodeBS bs, OutStream & O)
+void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O)
 {
     for (NodeBS::iterator ii = bs.begin(), ie = bs.end();
             ii != ie; ii++)
@@ -153,18 +152,10 @@ void SVFUtil::dumpSet(NodeBS bs, OutStream & O)
     }
 }
 
-void SVFUtil::dumpSet(PointsTo pt, OutStream &o)
-{
-    for (NodeID n : pt)
-    {
-        o << " " << n << " ";
-    }
-}
-
 /*!
  * Print memory usage
  */
-void SVFUtil::reportMemoryUsageKB(const std::string& infor, OutStream & O)
+void SVFUtil::reportMemoryUsageKB(const std::string& infor, raw_ostream & O)
 {
     u32_t vmrss, vmsize;
     if (getMemoryUsageKB(&vmrss, &vmsize))
@@ -176,7 +167,7 @@ void SVFUtil::reportMemoryUsageKB(const std::string& infor, OutStream & O)
  */
 bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
 {
-    /* Get the current process' status file from the proc filesystem */
+    /* Get the the current process' status file from the proc filesystem */
     char buffer[8192];
     FILE* procfile = fopen("/proc/self/status", "r");
     if(procfile)
@@ -189,7 +180,7 @@ bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
     }
     else
     {
-        SVFUtil::writeWrnMsg(" /proc/self/status file not exit!");
+        fputs ("/proc/self/status file not exit\n",stderr);
         return false;
     }
     fclose(procfile);
@@ -236,49 +227,162 @@ void SVFUtil::increaseStackSize()
             rl.rlim_cur = kStackSize;
             result = setrlimit(RLIMIT_STACK, &rl);
             if (result != 0)
-                writeWrnMsg("setrlimit returned result !=0 \n");
+            	writeWrnMsg("setrlimit returned result !=0 \n");
         }
     }
+}
+
+
+/*!
+ * Get source code line number of a function according to debug info
+ */
+std::string SVFUtil::getSourceLocOfFunction(const Function *F)
+{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    /*
+     * https://reviews.llvm.org/D18074?id=50385
+     * looks like the relevant
+     */
+    if (llvm::DISubprogram *SP =  F->getSubprogram())
+    {
+        if (SP->describes(F))
+            rawstr << "in line: " << SP->getLine() << " file: " << SP->getFilename();
+    }
+    return rawstr.str();
 }
 
 /*!
- * Return true if it is an llvm intrinsic instruction
-*/
-bool SVFUtil::isIntrinsicInst(const SVFInstruction* inst)
+ * Get the meta data (line number and file name) info of a LLVM value
+ */
+std::string SVFUtil::getSourceLoc(const Value* val)
 {
-    if (const SVFCallInst* call = SVFUtil::dyn_cast<SVFCallInst>(inst))
+    if(val==nullptr)  return "{ empty val }";
+
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "{ ";
+
+    if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(val))
     {
-        const SVFFunction* func = call->getCalledFunction();
-        if (func && func->isIntrinsic())
+        if (SVFUtil::isa<AllocaInst>(inst))
         {
-            return true;
+            for (llvm::DbgInfoIntrinsic *DII : FindDbgAddrUses(const_cast<Instruction*>(inst)))
+            {
+                if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII))
+                {
+                    llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
+                    rawstr << "ln: " << DIVar->getLine() << " fl: " << DIVar->getFilename();
+                    break;
+                }
+            }
+        }
+        else if (MDNode *N = inst->getMetadata("dbg"))   // Here I is an LLVM instruction
+        {
+            llvm::DILocation* Loc = SVFUtil::cast<llvm::DILocation>(N);                   // DILocation is in DebugInfo.h
+            unsigned Line = Loc->getLine();
+            unsigned Column = Loc->getColumn();
+            StringRef File = Loc->getFilename();
+            //StringRef Dir = Loc.getDirectory();
+            if(File.str().empty() || Line == 0) {
+                auto inlineLoc = Loc->getInlinedAt();
+                if(inlineLoc) {
+                    Line = inlineLoc->getLine();
+                    Column = inlineLoc->getColumn();
+                    File = inlineLoc->getFilename();
+                }   
+            }
+            rawstr << "ln: " << Line << "  cl: " << Column << "  fl: " << File;
         }
     }
-    return false;
+    else if (const Argument* argument = SVFUtil::dyn_cast<Argument>(val))
+    {
+        if (argument->getArgNo()%10 == 1)
+            rawstr << argument->getArgNo() << "st";
+        else if (argument->getArgNo()%10 == 2)
+            rawstr << argument->getArgNo() << "nd";
+        else if (argument->getArgNo()%10 == 3)
+            rawstr << argument->getArgNo() << "rd";
+        else
+            rawstr << argument->getArgNo() << "th";
+        rawstr << " arg " << argument->getParent()->getName() << " "
+               << getSourceLocOfFunction(argument->getParent());
+    }
+    else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
+    {
+        rawstr << "Glob ";
+        NamedMDNode* CU_Nodes = gvar->getParent()->getNamedMetadata("llvm.dbg.cu");
+        if(CU_Nodes)
+        {
+            for (unsigned i = 0, e = CU_Nodes->getNumOperands(); i != e; ++i)
+            {
+                llvm::DICompileUnit *CUNode = SVFUtil::cast<llvm::DICompileUnit>(CU_Nodes->getOperand(i));
+                for (llvm::DIGlobalVariableExpression *GV : CUNode->getGlobalVariables())
+                {
+                    llvm::DIGlobalVariable * DGV = GV->getVariable();
+
+                    if(DGV->getName() == gvar->getName())
+                    {
+                        rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename();
+                    }
+
+                }
+            }
+        }
+    }
+    else if (const Function* func = SVFUtil::dyn_cast<Function>(val))
+    {
+        rawstr << getSourceLocOfFunction(func);
+    }
+    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(val))
+    {
+        rawstr << "basic block: " << bb->getName() << " " << getSourceLoc(bb->getFirstNonPHI());
+    }
+    else if(SVFUtil::isConstantData(val))
+    {
+        rawstr << "constant data";
+    }
+    else
+    {
+        rawstr << "Can only get source location for instruction, argument, global var, function or constant data.";
+    }
+    rawstr << " }";
+
+    return rawstr.str();
 }
 
-std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
-{
-    switch (method)
-    {
-    case HCLUST_METHOD_SINGLE:
-        return "single";
-    case HCLUST_METHOD_COMPLETE:
-        return "complete";
-    case HCLUST_METHOD_AVERAGE:
-        return "average";
-    case HCLUST_METHOD_MEDIAN:
-        return "median";
-    case HCLUST_METHOD_SVF_BEST:
-        return "svf-best";
-    default:
-        assert(false && "SVFUtil::hclustMethodToString: unknown method");
-        abort();
+
+/*!
+ * return string of an LLVM Value
+ */
+const std::string SVFUtil::value2String(const Value* value) {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    if(value){
+        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
+            rawstr << " " << fun->getName() << " ";
+        else
+            rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+void SVFFunction::viewCFG() {
+    if (fun != nullptr) {
+        fun->viewCFG();
+    }
+}
+
+void SVFFunction::viewCFGOnly() {
+    if (fun != nullptr) {
+        fun->viewCFGOnly();
     }
 }
 
 void SVFUtil::timeLimitReached(int)
 {
+    std::cout.flush();
     SVFUtil::outs().flush();
     // TODO: output does not indicate which time limit is reached.
     //       This can be better in the future.
@@ -310,17 +414,4 @@ bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
 void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
 {
     if (limitTimerSet) alarm(0);
-}
-
-/// Match arguments for callsite at caller and callee
-/// if the arg size does not match then we do not need to connect this parameter
-/// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
-/// e.g., void variadicFoo(int num, ...); variadicFoo(5, 1,2,3,4,5)
-/// for variadic function, callsite arg size must be greater than or equal to callee arg size
-bool SVFUtil::matchArgs(const SVFInstruction* cs, const SVFFunction* callee)
-{
-    if (callee->isVarArg() || ThreadAPI::getThreadAPI()->isTDFork(cs))
-        return getSVFCallSite(cs).arg_size() >= callee->arg_size();
-    else
-        return getSVFCallSite(cs).arg_size() == callee->arg_size();
 }

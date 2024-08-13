@@ -2,20 +2,20 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013->  <Yulei Sui>
+// Copyright (C) <2013-2017>  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -34,8 +34,7 @@ using namespace SVF;
 
 SaberCheckerAPI* SaberCheckerAPI::ckAPI = nullptr;
 
-namespace
-{
+namespace {
 
 /// string and type pair
 struct ei_pair
@@ -76,9 +75,9 @@ static const ei_pair ei_pairs[]=
     {"xmalloc", SaberCheckerAPI::CK_ALLOC},
     {"SSL_CTX_new", SaberCheckerAPI::CK_ALLOC},
     {"SSL_new", SaberCheckerAPI::CK_ALLOC},
-    {"VOS_MemAlloc", SaberCheckerAPI::CK_ALLOC},
+	{"VOS_MemAlloc", SaberCheckerAPI::CK_ALLOC},
 
-    {"VOS_MemFree", SaberCheckerAPI::CK_FREE},
+	{"VOS_MemFree", SaberCheckerAPI::CK_FREE},
     {"cfree", SaberCheckerAPI::CK_FREE},
     {"free", SaberCheckerAPI::CK_FREE},
     {"free_all_mem", SaberCheckerAPI::CK_FREE},
@@ -97,7 +96,6 @@ static const ei_pair ei_pairs[]=
     {"xfree", SaberCheckerAPI::CK_FREE},
     {"SSL_CTX_free", SaberCheckerAPI::CK_FREE},
     {"SSL_free", SaberCheckerAPI::CK_FREE},
-    {"XFree", SaberCheckerAPI::CK_FREE},
 
     {"fopen", SaberCheckerAPI::CK_FOPEN},
     {"\01_fopen", SaberCheckerAPI::CK_FOPEN},
