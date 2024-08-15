@@ -2,20 +2,20 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013->  <Yulei Sui>
+// Copyright (C) <2013-2017>  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -28,6 +28,7 @@
  */
 
 #include "SABER/ProgSlice.h"
+#include "SABER/SaberAnnotator.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -52,18 +53,16 @@ bool ProgSlice::AllPathReachableSolve()
     {
         const SVFGNode* node = worklist.pop();
         setCurSVFGNode(node);
-
-        Condition invalidCond = computeInvalidCondFromRemovedSUVFEdge(node);
-        Condition cond = getVFCond(node);
+        Condition* cond = getVFCond(node);
         for(SVFGNode::const_iterator it = node->OutEdgeBegin(), eit = node->OutEdgeEnd(); it!=eit; ++it)
         {
             const SVFGEdge* edge = (*it);
             const SVFGNode* succ = edge->getDstNode();
             if(inBackwardSlice(succ))
             {
-                Condition vfCond;
-                const SVFBasicBlock* nodeBB = getSVFGNodeBB(node);
-                const SVFBasicBlock* succBB = getSVFGNodeBB(succ);
+                Condition* vfCond = nullptr;
+                const BasicBlock* nodeBB = getSVFGNodeBB(node);
+                const BasicBlock* succBB = getSVFGNodeBB(succ);
                 /// clean up the control flow conditions for next round guard computation
                 clearCFCond();
 
@@ -77,8 +76,8 @@ bool ProgSlice::AllPathReachableSolve()
                 }
                 else
                     vfCond = ComputeIntraVFGGuard(nodeBB,succBB);
-                vfCond = condAnd(vfCond, condNeg(invalidCond));
-                Condition succPathCond = condAnd(cond, vfCond);
+
+                Condition* succPathCond = condAnd(cond, vfCond);
                 if(setVFCond(succ,  condOr(getVFCond(succ), succPathCond) ))
                     worklist.push(succ);
             }
@@ -92,57 +91,12 @@ bool ProgSlice::AllPathReachableSolve()
 }
 
 /*!
- * Compute invalid branch condition stemming from removed strong update value-flow edges
- *
- * Fix issue: https://github.com/SVF-tools/SVF/issues/1306
- * Line 11->13 is removed due to a strong update at Line 13, which means Line 11 is unreachable to Line 13 on the value flow graph.
- * However on the control flow graph they are still considered as reachable,
- * making the vf guard on Line 11 -> Line 15 a true condition (should consider the infeasible branch Line 11 -> Line 13)
- * Therefore, we collect this infeasible branch condition (condition on Line 11 -> Line 13, `a == b`) as an invalid condition (invalidCond),
- * and add the negation of invalidCond when computing value flow guard starting from the source of the SU.
- * In this example, we add `a != b` on Line 11 -> Line 15.
- *
- * @param cur current SVFG node
- * @return invalid branch condition
- */
-ProgSlice::Condition ProgSlice::computeInvalidCondFromRemovedSUVFEdge(const SVFGNode * cur)
-{
-    Set<const SVFBasicBlock*> validOutBBs; // the BBs of valid successors
-    for(SVFGNode::const_iterator it = cur->OutEdgeBegin(), eit = cur->OutEdgeEnd(); it!=eit; ++it)
-    {
-        const SVFGEdge* edge = (*it);
-        const SVFGNode* succ = edge->getDstNode();
-        if(inBackwardSlice(succ))
-        {
-            validOutBBs.insert(getSVFGNodeBB(succ));
-        }
-    }
-    Condition invalidCond = getFalseCond();
-    auto suVFEdgesIt = getRemovedSUVFEdges().find(cur);
-    if (suVFEdgesIt != getRemovedSUVFEdges().end())
-    {
-        for (const auto &succ: suVFEdgesIt->second)
-        {
-            if (!validOutBBs.count(getSVFGNodeBB(succ)))
-            {
-                // removed vfg node does not reside in the BBs of valid successors
-                const SVFBasicBlock *nodeBB = getSVFGNodeBB(cur);
-                const SVFBasicBlock *succBB = getSVFGNodeBB(succ);
-                clearCFCond();
-                invalidCond = condOr(invalidCond, ComputeIntraVFGGuard(nodeBB, succBB));
-            }
-        }
-    }
-    return invalidCond;
-}
-
-/*!
  * Solve by computing disjunction of conditions from all sinks (e.g., memory leak)
  */
 bool ProgSlice::isSatisfiableForAll()
 {
 
-    Condition guard = getFalseCond();
+    Condition* guard = getFalseCond();
     for(SVFGNodeSetIter it = sinksBegin(), eit = sinksEnd(); it!=eit; ++it)
     {
         guard = condOr(guard,getVFCond(*it));
@@ -164,8 +118,8 @@ bool ProgSlice::isSatisfiableForPairs()
         {
             if(*it == *sit)
                 continue;
-            Condition guard = condAnd(getVFCond(*sit),getVFCond(*it));
-            if(!isEquivalentBranchCond(guard, getFalseCond()))
+            Condition* guard = condAnd(getVFCond(*sit),getVFCond(*it));
+            if(guard != getFalseCond())
             {
                 setFinalCond(guard);
                 return false;
@@ -176,7 +130,7 @@ bool ProgSlice::isSatisfiableForPairs()
     return true;
 }
 
-const CallICFGNode* ProgSlice::getCallSite(const SVFGEdge* edge) const
+const CallBlockNode* ProgSlice::getCallSite(const SVFGEdge* edge) const
 {
     assert(edge->isCallVFGEdge() && "not a call svfg edge?");
     if(const CallDirSVFGEdge* callEdge = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
@@ -184,7 +138,7 @@ const CallICFGNode* ProgSlice::getCallSite(const SVFGEdge* edge) const
     else
         return getSVFG()->getCallSite(SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId());
 }
-const CallICFGNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
+const CallBlockNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
 {
     assert(edge->isRetVFGEdge() && "not a return svfg edge?");
     if(const RetDirSVFGEdge* callEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))
@@ -193,26 +147,49 @@ const CallICFGNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
         return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId());
 }
 
-void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack) const
+/*!
+ * Return llvm value for addr/copy/gep/load/phi/actualParam/formalParam/actualRet/formalRet
+ * but not for store/mssaphi/actualIn/acutalOut/formalIn/formalOut
+ */
+const Value* ProgSlice::getLLVMValue(const SVFGNode* node) const
 {
-    NodeBS elems = pathAllocator->exactCondElem(finalCond);
-    for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
+    if(const StmtSVFGNode* stmt = SVFUtil::dyn_cast<StmtSVFGNode>(node))
     {
-        const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
-        if(pathAllocator->isNegCond(*it))
-            eventStack.push_back(SVFBugEvent(
-                                     SVFBugEvent::Branch|((((u32_t)false) << 4) & BRANCHFLAGMASK), tinst));
-        else
-            eventStack.push_back(SVFBugEvent(
-                                     SVFBugEvent::Branch|((((u32_t)true) << 4) & BRANCHFLAGMASK), tinst));
+        if(SVFUtil::isa<StoreSVFGNode>(stmt) == false)
+        {
+            if(stmt->getPAGDstNode()->hasValue())
+                return stmt->getPAGDstNode()->getValue();
+        }
     }
+    else if(const PHISVFGNode* phi = SVFUtil::dyn_cast<PHISVFGNode>(node))
+    {
+        return phi->getRes()->getValue();
+    }
+    else if(const ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(node))
+    {
+        return ap->getParam()->getValue();
+    }
+    else if(const FormalParmSVFGNode* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(node))
+    {
+        return fp->getParam()->getValue();
+    }
+    else if(const ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node))
+    {
+        return ar->getRev()->getValue();
+    }
+    else if(const FormalRetSVFGNode* fr = SVFUtil::dyn_cast<FormalRetSVFGNode>(node))
+    {
+        return fr->getRet()->getValue();
+    }
+
+    return nullptr;
 }
 
 /*!
  * Evaluate Atoms of a condition
  * TODO: for now we only evaluate one path, evaluate every single path
  *
- * Atom -- a propositional variable: a, b, c
+ * Atom -- a propositional valirable: a, b, c
  * Literal -- an atom or its negation: a, ~a
  * Clause  -- A disjunction of some literals: a \vee b
  * CNF formula -- a conjunction of some clauses:  (a \vee b ) \wedge (c \vee d)
@@ -220,19 +197,15 @@ void ProgSlice::evalFinalCond2Event(GenericBug::EventStack &eventStack) const
 std::string ProgSlice::evalFinalCond() const
 {
     std::string str;
-    std::stringstream rawstr(str);
-    Set<std::string> locations;
+    raw_string_ostream rawstr(str);
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
-
+    Set<std::string> locations;
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
-        const SVFInstruction* tinst = pathAllocator->getCondInst(*it);
-        if(pathAllocator->isNegCond(*it))
-            locations.insert(tinst->getSourceLoc()+"|False");
-        else
-            locations.insert(tinst->getSourceLoc()+"|True");
+        Condition* atom = pathAllocator->getCond(*it);
+        const Instruction* tinst = pathAllocator->getCondInst(atom);
+        locations.insert(getSourceLoc(tinst));
     }
-
     /// print leak path after eliminating duplicated element
     for(Set<std::string>::iterator iter = locations.begin(), eiter = locations.end();
             iter!=eiter; ++iter)
@@ -243,6 +216,37 @@ std::string ProgSlice::evalFinalCond() const
     return rawstr.str();
 }
 
+/*!
+ * Annotate program paths according to the final path condition computed
+ */
+void ProgSlice::annotatePaths()
+{
+
+    SaberAnnotator annotator(this);
+    annotator.annotateSource();
+    annotator.annotateSinks();
+
+    NodeBS elems = pathAllocator->exactCondElem(finalCond);
+    for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
+    {
+        Condition* atom = pathAllocator->getCond(*it);
+        const Instruction* tinst = pathAllocator->getCondInst(atom);
+        if(const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(tinst))
+        {
+            annotator.annotateFeasibleBranch(br,0);
+            annotator.annotateFeasibleBranch(br,1);
+        }
+    }
+}
+
+
 void ProgSlice::destroy()
 {
+    /// TODO: how to clean bdd memory
+//	for(SVFGNodeToCondMap::const_iterator it = svfgNodeToCondMap.begin(), eit = svfgNodeToCondMap.end(); it!=eit; ++it){
+//		pathAllocator->markForRelease(it->second);
+//	}
+//	for(BBToCondMap::const_iterator it = bbToCondMap.begin(), eit = bbToCondMap.end(); it!=eit; ++it){
+//		pathAllocator->markForRelease(it->second);
+//	}
 }

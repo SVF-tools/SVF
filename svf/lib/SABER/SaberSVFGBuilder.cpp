@@ -2,20 +2,20 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013->  <Yulei Sui>
+// Copyright (C) <2013-2017>  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -29,11 +29,7 @@
 
 #include "SABER/SaberSVFGBuilder.h"
 #include "SABER/SaberCheckerAPI.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
-#include "Util/Options.h"
-#include "SABER/SaberCondAllocator.h"
-
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -52,7 +48,6 @@ void SaberSVFGBuilder::buildSVFG()
 
     rmDerefDirSVFGEdges(pta);
 
-    assert(saberCondAllocator && "saber condition allocator not set yet!");
     rmIncomingEdgeForSUStore(pta);
 
     DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
@@ -69,22 +64,21 @@ void SaberSVFGBuilder::buildSVFG()
  */
 void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
 {
-    SVFIR* pag = svfg->getPAG();
+    PAG* pag = svfg->getPAG();
     NodeVector worklist;
-    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
+    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         PAGNode* pagNode = it->second;
-        if (SVFUtil::isa<DummyValVar, DummyObjVar>(pagNode))
+        if(SVFUtil::isa<DummyValPN>(pagNode) || SVFUtil::isa<DummyObjPN>(pagNode))
             continue;
 
-        if(GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pagNode))
-        {
-            if(SVFUtil::isa<DummyObjVar>(pag->getGNode(gepobj->getBaseNode())))
+        if(GepObjPN* gepobj = SVFUtil::dyn_cast<GepObjPN>(pagNode)) {
+            if(SVFUtil::isa<DummyObjPN>(pag->getPAGNode(gepobj->getBaseNode())))
                 continue;
         }
-        if(const SVFValue* val = pagNode->getValue())
+        if(const Value* val = pagNode->getValue())
         {
-            if(SVFUtil::isa<SVFGlobalValue>(val))
+            if(SVFUtil::isa<GlobalVariable>(val))
                 worklist.push_back(it->first);
         }
     }
@@ -103,48 +97,17 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
     }
 }
 
-
-/*
- * https://github.com/SVF-tools/SVF/issues/991
- *
- * Originally, this function will collect all base pointers with all their fields
- * inside the points-to set of global variables. But if a global variable points
- * to the pointer returned by malloc() at some program points, then all pointers
- * returned by malloc() will be included in the global set because of the
- * context-insensitive pointer analysis results. This will make saber abandon
- * too many slicing thus miss potential bugs.
- *
- * We add an option "saber-collect-extret-globals" to control whether this function
- * will collect external functions' returned pointers. This option is true by default,
- * making it to be false will let saber analyze more slicing but cause performance downgrade.
- *
- */
-PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeToPTSSMap& cachedPtsMap)
+NodeBS& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPTSSMap& cachedPtsMap)
 {
-    SVFIR* pag = svfg->getPAG();
+    PAG* pag = svfg->getPAG();
 
-    NodeID baseId = pag->getBaseObjVar(id);
+    NodeID baseId = pag->getBaseObjNode(id);
     NodeToPTSSMap::iterator it = cachedPtsMap.find(baseId);
     if(it!=cachedPtsMap.end())
-    {
         return it->second;
-    }
     else
     {
         PointsTo& pts = cachedPtsMap[baseId];
-        // base object
-        if (!Options::CollectExtRetGlobals())
-        {
-            if(pta->isFIObjNode(baseId) && pag->getGNode(baseId)->hasValue())
-            {
-                const SVFCallInst* inst = SVFUtil::dyn_cast<SVFCallInst>(pag->getGNode(baseId)->getValue());
-                if(inst && SVFUtil::isExtCall(inst))
-                {
-                    return pts;
-                }
-            }
-        }
-
         pts |= pag->getFieldsAfterCollapse(baseId);
 
         WorkList worklist;
@@ -162,6 +125,7 @@ PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta, NodeID id, NodeT
         }
         return pts;
     }
+
 }
 
 /*!
@@ -190,10 +154,9 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
             if(SVFUtil::isa<StoreSVFGNode>(stmtNode))
             {
                 const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGDstNode());
-                if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF))
-                    svfg->removeSVFGEdge(edge);
-                else
-                    assert((svfg->getKind()==VFG::FULLSVFG_OPT || svfg->getKind()==VFG::PTRONLYSVFG_OPT)  && "Edge not found!");
+                SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF);
+                assert(edge && "Edge not found!");
+                svfg->removeSVFGEdge(edge);
 
                 if(accessGlobal(pta,stmtNode->getPAGDstNode()))
                 {
@@ -203,10 +166,9 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
             else if(SVFUtil::isa<LoadSVFGNode>(stmtNode))
             {
                 const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGSrcNode());
-                if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF))
-                    svfg->removeSVFGEdge(edge);
-                else
-                    assert((svfg->getKind()==VFG::FULLSVFG_OPT || svfg->getKind()==VFG::PTRONLYSVFG_OPT)  && "Edge not found!");
+                SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF);
+                assert(edge && "Edge not found!");
+                svfg->removeSVFGEdge(edge);
 
                 if(accessGlobal(pta,stmtNode->getPAGSrcNode()))
                 {
@@ -235,8 +197,8 @@ bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, B
 
             // Strong update can be made if this points-to target is not heap, array or field-insensitive.
             if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton)
-                    && SVFIR::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
-                    && !pta->isLocalVarInRecursiveFun(singleton))
+                && PAG::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
+                && !pta->isLocalVarInRecursiveFun(singleton))
             {
                 isSU = true;
             }
@@ -262,28 +224,23 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
     {
         const SVFGNode* node = it->second;
 
-        if(const StoreSVFGNode* stmtNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
+        if(const StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
         {
-            if(SVFUtil::isa<StoreStmt>(stmtNode->getPAGEdge()))
+            if(SVFUtil::isa<StoreSVFGNode>(stmtNode) && SVFUtil::isa<StoreInst>(stmtNode->getValue()))
             {
                 NodeID singleton;
-                if(isStrongUpdate(node, singleton, pta))
-                {
+                if(isStrongUpdate(node, singleton, pta)) {
                     Set<SVFGEdge*> toRemove;
-                    for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2)
-                    {
-                        if ((*it2)->isIndirectVFGEdge())
-                        {
+                    for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2) {
+                        if ((*it2)->isIndirectVFGEdge()) {
                             toRemove.insert(*it2);
                         }
                     }
-                    for (SVFGEdge* edge: toRemove)
-                    {
-                        if (isa<StoreSVFGNode>(edge->getSrcNode()))
-                            saberCondAllocator->getRemovedSUVFEdges()[edge->getSrcNode()].insert(edge->getDstNode());
+                    for (SVFGEdge* edge: toRemove) {
                         svfg->removeSVFGEdge(edge);
                     }
                 }
+
             }
         }
     }
@@ -293,8 +250,8 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 /// Add actual parameter SVFGNode for 1st argument of a deallocation like external function
 void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
 {
-    SVFIR* pag = SVFIR::getPAG();
-    for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
+    PAG* pag = PAG::getPAG();
+    for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
     {
         PTACallGraph::FunctionSet callees;
@@ -307,15 +264,13 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
             if (SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
                     || SaberCheckerAPI::getCheckerAPI()->isFClose(fun))
             {
-                SVFIR::SVFVarList& arglist = it->second;
-                for(SVFIR::SVFVarList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait)
-                {
-                    const PAGNode *pagNode = *ait;
-                    if (pagNode->isPointer())
-                    {
-                        addActualParmVFGNode(pagNode, it->first);
-                        svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it->first)->getId());
-                    }
+                PAG::PAGNodeList& arglist = it->second;
+                for(PAG::PAGNodeList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait){
+					const PAGNode *pagNode = *ait;
+					if (pagNode->isPointer()) {
+						addActualParmVFGNode(pagNode, it->first);
+						svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it->first)->getId());
+					}
                 }
             }
         }

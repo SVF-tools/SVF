@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -27,13 +27,10 @@
  *      Author: Yuxiang Lei
  */
 
-#include "WPA/AndersenPWC.h"
-#include "MemoryModel/PointsTo.h"
-#include "Util/Options.h"
+#include "WPA/AndersenSFR.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace std;
 
 AndersenSCD* AndersenSCD::scdAndersen = nullptr;
 
@@ -108,11 +105,11 @@ NodeStack& AndersenSCD::SCCDetect()
     double mergeEnd = stat->getClk();
     timeOfSCCMerges +=  (mergeEnd - mergeStart)/TIMEINTERVAL;
 
-    if (!Options::DetectPWC())
+    if (!mergePWC())
     {
-        sccStart = stat->getClk();
+        double sccStart = stat->getClk();
         PWCDetect();
-        sccEnd = stat->getClk();
+        double sccEnd = stat->getClk();
         timeOfSCCDetection += (sccEnd - sccStart) / TIMEINTERVAL;
     }
 
@@ -133,13 +130,13 @@ void AndersenSCD::PWCDetect()
     tmpSccCandidates.clear();
 
     // set scc edge type as direct edge
-    bool pwcFlag = Options::DetectPWC();
-    setDetectPWC(true);
+    ConstraintNode::SCCEdgeFlag f = ConstraintNode::sccEdgeFlag;
+    setSCCEdgeFlag(ConstraintNode::Direct);
 
     getSCCDetector()->find(sccCandidates);
 
     // reset scc edge type
-    setDetectPWC(pwcFlag);
+    setSCCEdgeFlag(f);
 }
 
 
@@ -150,7 +147,7 @@ void AndersenSCD::handleCopyGep(ConstraintNode* node)
 {
     NodeID nodeId = node->getId();
 
-    if (!Options::DetectPWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
+    if (!mergePWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
         processPWC(node);
     else if(isInWorklist(nodeId))
         Andersen::handleCopyGep(node);
@@ -281,7 +278,7 @@ bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap& ca
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
     {
-        CallSite cs = SVFUtil::getSVFCallSite(it->first->getCallSite());
+        CallSite cs = SVFUtil::getLLVMCallSite(it->first->getCallSite());
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
             connectCaller2CalleeParams(cs,*cit,cpySrcNodes);

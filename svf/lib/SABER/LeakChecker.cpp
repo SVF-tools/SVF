@@ -2,20 +2,20 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013->  <Yulei Sui>
+// Copyright (C) <2013-2017>  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -28,6 +28,7 @@
  */
 
 #include "Util/Options.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "SABER/LeakChecker.h"
 
 using namespace SVF;
@@ -40,20 +41,19 @@ using namespace SVFUtil;
 void LeakChecker::initSrcs()
 {
 
-    SVFIR* pag = getPAG();
+    PAG* pag = getPAG();
     ICFG* icfg = pag->getICFG();
-    for(SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
+    for(PAG::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
             eit = pag->getCallSiteRets().end(); it!=eit; ++it)
     {
-        const RetICFGNode* cs = it->first;
+        const RetBlockNode* cs = it->first;
         /// if this callsite return reside in a dead function then we do not care about its leaks
-        /// for example instruction `int* p = malloc(size)` is in a dead function, then program won't allocate this memory
-        /// for example a customized malloc `int p = malloc()` returns an integer value, then program treat it as a system malloc
-        if(cs->getCallSite()->ptrInUncalledFunction() || !cs->getCallSite()->getType()->isPointerTy())
+        /// for example instruction p = malloc is in a dead function, then program won't allocate this memory
+        if(isPtrInDeadFunction(cs->getCallSite()))
             continue;
 
         PTACallGraph::FunctionSet callees;
-        getCallgraph()->getCallees(cs->getCallICFGNode(),callees);
+        getCallgraph()->getCallees(cs->getCallBlockNode(),callees);
         for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
             const SVFFunction* fun = *cit;
@@ -61,11 +61,11 @@ void LeakChecker::initSrcs()
             {
                 CSWorkList worklist;
                 SVFGNodeBS visited;
-                worklist.push(it->first->getCallICFGNode());
+                worklist.push(it->first->getCallBlockNode());
                 while (!worklist.empty())
                 {
-                    const CallICFGNode* cs = worklist.pop();
-                    const RetICFGNode* retBlockNode = icfg->getRetICFGNode(cs->getCallSite());
+                    const CallBlockNode* cs = worklist.pop();
+                    const RetBlockNode* retBlockNode = icfg->getRetBlockNode(cs->getCallSite());
                     const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
                     const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
                     if (visited.test(node->getId()) == 0)
@@ -86,8 +86,8 @@ void LeakChecker::initSrcs()
                     // otherwise, this is the source we are interested
                     else
                     {
-                        // exclude sources in dead functions or sources in functions that have summary
-                        if (!cs->getCallSite()->ptrInUncalledFunction() && !isExtCall(cs->getCallSite()->getParent()->getParent()))
+                        // exclude sources in dead functions
+                        if (isPtrInDeadFunction(cs->getCallSite()) == false)
                         {
                             addToSources(node);
                             addSrcToCSID(node, cs);
@@ -106,9 +106,9 @@ void LeakChecker::initSrcs()
 void LeakChecker::initSnks()
 {
 
-    SVFIR* pag = getPAG();
+    PAG* pag = getPAG();
 
-    for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
+    for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
     {
 
@@ -117,33 +117,36 @@ void LeakChecker::initSnks()
         for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
             const SVFFunction* fun = *cit;
-            if (isSinkLikeFun(fun))
-            {
-                SVFIR::SVFVarList &arglist = it->second;
-                assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
-                /// we only choose pointer parameters among all the actual parameters
-                for (SVFIR::SVFVarList::const_iterator ait = arglist.begin(),
-                        aeit = arglist.end(); ait != aeit; ++ait)
-                {
-                    const PAGNode *pagNode = *ait;
-                    if (pagNode->isPointer())
-                    {
-                        const SVFGNode *snk = getSVFG()->getActualParmVFGNode(pagNode, it->first);
-                        addToSinks(snk);
-
-                        // For any multi-level pointer e.g., XFree(void** pagNode) that passed into a ExtAPI::EFT_FREE_MULTILEVEL function (e.g., XFree),
-                        // we will add the DstNode of a load edge, i.e., dummy = *pagNode
-                        SVFStmt::SVFStmtSetTy& loads = const_cast<PAGNode*>(pagNode)->getOutgoingEdges(SVFStmt::Load);
-                        for(const SVFStmt* ld : loads)
-                        {
-                            if(SVFUtil::isa<DummyValVar>(ld->getDstNode()))
-                                addToSinks(getSVFG()->getStmtVFGNode(ld));
-                        }
-                    }
-                }
-            }
+			if (isSinkLikeFun(fun)) {
+				PAG::PAGNodeList &arglist = it->second;
+				assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
+				/// we only choose pointer parameters among all the actual parameters
+				for (PAG::PAGNodeList::const_iterator ait = arglist.begin(),
+						aeit = arglist.end(); ait != aeit; ++ait) {
+					const PAGNode *pagNode = *ait;
+					if (pagNode->isPointer()) {
+						const SVFGNode *snk = getSVFG()->getActualParmVFGNode(pagNode, it->first);
+						addToSinks(snk);
+					}
+				}
+			}
         }
     }
+}
+
+
+void LeakChecker::reportNeverFree(const SVFGNode* src)
+{
+    const CallBlockNode* cs = getSrcCSID(src);
+    SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
+                    << getSourceLoc(cs->getCallSite()) << ")\n";
+}
+
+void LeakChecker::reportPartialLeak(const SVFGNode* src)
+{
+    const CallBlockNode* cs = getSrcCSID(src);
+    SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
+                    << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
 void LeakChecker::reportBug(ProgSlice* slice)
@@ -151,24 +154,16 @@ void LeakChecker::reportBug(ProgSlice* slice)
 
     if(isAllPathReachable() == false && isSomePathReachable() == false)
     {
-        // full leakage
-        GenericBug::EventStack eventStack =
-        {
-            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite())
-        };
-        report.addSaberBug(GenericBug::NEVERFREE, eventStack);
+        reportNeverFree(slice->getSource());
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true)
     {
-        // partial leakage
-        GenericBug::EventStack eventStack;
-        slice->evalFinalCond2Event(eventStack);
-        eventStack.push_back(
-            SVFBugEvent(SVFBugEvent::SourceInst, getSrcCSID(slice->getSource())->getCallSite()));
-        report.addSaberBug(GenericBug::PARTIALLEAK, eventStack);
+        reportPartialLeak(slice->getSource());
+        SVFUtil::errs() << "\t\t conditional free path: \n" << slice->evalFinalCond() << "\n";
+        slice->annotatePaths();
     }
 
-    if(Options::ValidateTests())
+    if(Options::ValidateTests)
         testsValidation(slice);
 }
 
@@ -179,7 +174,7 @@ void LeakChecker::reportBug(ProgSlice* slice)
 void LeakChecker::testsValidation(const ProgSlice* slice)
 {
     const SVFGNode* source = slice->getSource();
-    const CallICFGNode* cs = getSrcCSID(source);
+    const CallBlockNode* cs = getSrcCSID(source);
     const SVFFunction* fun = getCallee(cs->getCallSite());
     if(fun==nullptr)
         return;
@@ -192,7 +187,7 @@ void LeakChecker::testsValidation(const ProgSlice* slice)
 void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction* fun)
 {
 
-    const CallICFGNode* cs = getSrcCSID(source);
+    const CallBlockNode* cs = getSrcCSID(source);
 
     bool success = false;
 
@@ -227,19 +222,17 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
         return;
     }
 
-    std::string funName = source->getFun()->getName();
+    std::string funName = source->getFun()->getName().str();
 
     if (success)
-    {
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
-               << cs->getCallSite()->getSourceLoc() << ")\n";
-    }
+               << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+               << getSourceLoc(cs->getCallSite()) << ")\n";
     else
     {
         SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-                        << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
-                        << cs->getCallSite()->getSourceLoc() << ")\n";
+                        << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+                        << getSourceLoc(cs->getCallSite()) << ")\n";
         assert(false && "test case failed!");
     }
 }
@@ -247,7 +240,7 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
 void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVFFunction* fun)
 {
 
-    const CallICFGNode* cs = getSrcCSID(source);
+    const CallBlockNode* cs = getSrcCSID(source);
 
     bool expectedFailure = false;
 
@@ -277,20 +270,18 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
         return;
     }
 
-    std::string funName = source->getFun()->getName();
+    std::string funName = source->getFun()->getName().str();
 
     if (expectedFailure)
-    {
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
-               << cs->getCallSite()->getSourceLoc() << ")\n";
-    }
+               << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+               << getSourceLoc(cs->getCallSite()) << ")\n";
     else
     {
         SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
                         << " check <src id:" << source->getId()
-                        << ", cs id:" << getSrcCSID(source)->getCallSite()->toString() << "> at ("
-                        << cs->getCallSite()->getSourceLoc() << ")\n";
+                        << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+                        << getSourceLoc(cs->getCallSite()) << ")\n";
         assert(false && "test case failed!");
     }
 }

@@ -1,25 +1,3 @@
-//===- DDAStat.cpp -- Statistics for demand-driven pass-------------//
-//
-//                     SVF: Static Value-Flow Analysis
-//
-// Copyright (C) <2013->  <Yulei Sui>
-//
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-//===----------------------------------------------------------------------===//
-
 /*
  * DDAStat.cpp
  *
@@ -31,13 +9,11 @@
 #include "DDA/FlowDDA.h"
 #include "DDA/ContextDDA.h"
 #include "Graphs/SVFGStat.h"
-#include "MemoryModel/PointsTo.h"
 
 #include <iomanip>
 
 using namespace SVF;
 using namespace SVFUtil;
-using namespace std;
 
 DDAStat::DDAStat(FlowDDA* pta) : PTAStat(pta), flowDDA(pta), contextDDA(nullptr)
 {
@@ -82,6 +58,9 @@ void DDAStat::initDefault()
     _AnaTimePerQuery = 0;
     _AnaTimeCyclePerQuery = 0;
     _TotalTimeOfQueries = 0;
+
+    _vmrssUsageBefore = _vmrssUsageAfter = 0;
+    _vmsizeUsageBefore = _vmsizeUsageAfter = 0;
 }
 
 SVFG* DDAStat::getSVFG() const
@@ -225,10 +204,10 @@ void DDAStat::performStat()
 
     getNumOfOOBQuery();
 
-    for (SVFIR::const_iterator nodeIt = SVFIR::getPAG()->begin(), nodeEit = SVFIR::getPAG()->end(); nodeIt != nodeEit; nodeIt++)
+    for (PAG::const_iterator nodeIt = PAG::getPAG()->begin(), nodeEit = PAG::getPAG()->end(); nodeIt != nodeEit; nodeIt++)
     {
         PAGNode* pagNode = nodeIt->second;
-        if(SVFUtil::isa<ObjVar>(pagNode))
+        if(SVFUtil::isa<ObjPN>(pagNode))
         {
             if(getPTA()->isLocalVarInRecursiveFun(nodeIt->first))
             {
@@ -262,9 +241,9 @@ void DDAStat::performStat()
     PTNumStatMap["PointsToBlkPtr"] = _NumOfBlackholePtr;
     PTNumStatMap["NumOfMustAA"] = _TotalNumOfMustAliases;
     PTNumStatMap["NumOfInfePath"] = _TotalNumOfInfeasiblePath;
-    PTNumStatMap["NumOfStore"] = SVFIR::getPAG()->getPTASVFStmtSet(SVFStmt::Store).size();
-    timeStatMap["MemoryUsageVmrss"] = _vmrssUsageAfter - _vmrssUsageBefore;
-    timeStatMap["MemoryUsageVmsize"] = _vmsizeUsageAfter - _vmsizeUsageBefore;
+    PTNumStatMap["NumOfStore"] = PAG::getPAG()->getPTAEdgeSet(PAGEdge::Store).size();
+    PTNumStatMap["MemoryUsageVmrss"] = _vmrssUsageAfter - _vmrssUsageBefore;
+    PTNumStatMap["MemoryUsageVmsize"] = _vmsizeUsageAfter - _vmsizeUsageBefore;
 
     printStat();
 }
@@ -274,25 +253,25 @@ void DDAStat::printStatPerQuery(NodeID ptr, const PointsTo& pts)
 
     if (timeStatMap.empty() == false && NumPerQueryStatMap.empty() == false)
     {
-        SVFUtil::outs().flags(std::ios::left);
+        std::cout.flags(std::ios::left);
         unsigned field_width = 20;
-        SVFUtil::outs() << "---------------------Stat Per Query--------------------------------\n";
+        std::cout << "---------------------Stat Per Query--------------------------------\n";
         for (TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it != eit; ++it)
         {
             // format out put with width 20 space
-            SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
+            std::cout << std::setw(field_width) << it->first << it->second << "\n";
         }
         for (NUMStatMap::iterator it = NumPerQueryStatMap.begin(), eit = NumPerQueryStatMap.end(); it != eit; ++it)
         {
             // format out put with width 20 space
-            SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
+            std::cout << std::setw(field_width) << it->first << it->second << "\n";
         }
     }
     getPTA()->dumpPts(ptr, pts);
 }
 
 
-void DDAStat::printStat(string str)
+void DDAStat::printStat()
 {
 
     if(flowDDA)
@@ -305,6 +284,6 @@ void DDAStat::printStat(string str)
         contextDDA->getSVFG()->getStat()->performSCCStat(contextDDA->getInsensitiveEdgeSet());
     }
 
-    SVFUtil::outs() << "\n****Demand-Driven Pointer Analysis Statistics****\n";
-    PTAStat::printStat(str);
+    std::cout << "\n****Demand-Driven Pointer Analysis Statistics****\n";
+    PTAStat::printStat();
 }

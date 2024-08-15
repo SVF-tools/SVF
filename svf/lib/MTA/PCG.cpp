@@ -1,25 +1,3 @@
-//===- PCG.cpp -- Procedure creation graph-------------//
-//
-//                     SVF: Static Value-Flow Analysis
-//
-// Copyright (C) <2013->  <Yulei Sui>
-//
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-//===----------------------------------------------------------------------===//
-
 /*
  * PCG.cpp
  *
@@ -27,7 +5,6 @@
  *      Author: Yulei Sui, Peng Di
  */
 
-#include "Util/CommandLine.h"
 #include "Util/Options.h"
 #include "MTA/PCG.h"
 #include "Util/SVFUtil.h"
@@ -40,12 +17,7 @@ using namespace SVFUtil;
  * Whether two functions may happen in parallel
  */
 
-//static Option<bool> TDPrint(
-//    "print-td",
-//    true,
-//    "Print Thread Analysis Results"
-//);
-
+//static llvm::cl::opt<bool> TDPrint("print-td", llvm::cl::init(true), llvm::cl::desc("Print Thread Analysis Results"));
 bool PCG::analyze()
 {
 
@@ -59,14 +31,14 @@ bool PCG::analyze()
 
     //interferenceAnalysis();
 
-    //if (Options::TDPrint()) {
+    //if (Options::TDPrint) {
     //printResults();
     //tdAPI->performAPIStat(mod);
     //}
     return false;
 }
 
-bool PCG::mayHappenInParallelBetweenFunctions(const SVFFunction* fun1, const SVFFunction* fun2) const
+bool PCG::mayHappenInParallelBetweenFunctions(const Function* fun1, const Function* fun2) const
 {
     // if neither of functions are spawnees, then they won't happen in parallel
     if (isSpawneeFun(fun1) == false && isSpawneeFun(fun2) == false)
@@ -80,10 +52,10 @@ bool PCG::mayHappenInParallelBetweenFunctions(const SVFFunction* fun1, const SVF
     return true;
 }
 
-bool PCG::mayHappenInParallel(const SVFInstruction* i1, const SVFInstruction* i2) const
+bool PCG::mayHappenInParallel(const Instruction* i1, const Instruction* i2) const
 {
-    const SVFFunction* fun1 = i1->getFunction();
-    const SVFFunction* fun2 = i2->getFunction();
+    const Function* fun1 = i1->getParent()->getParent();
+    const Function* fun2 = i2->getParent()->getParent();
     return mayHappenInParallelBetweenFunctions(fun1, fun2);
 }
 
@@ -95,28 +67,27 @@ bool PCG::mayHappenInParallel(const SVFInstruction* i1, const SVFInstruction* i2
  */
 void PCG::initFromThreadAPI(SVFModule* module)
 {
-    for (const SVFFunction* fun : module->getFunctionSet())
+    for (SVFModule::const_iterator fi = module->begin(), efi = module->end(); fi != efi; ++fi)
     {
-        for (const SVFBasicBlock* svfbb : fun->getBasicBlockList())
+    	const Function* fun = (*fi)->getLLVMFun();
+        for (inst_iterator II = inst_begin((*fi)->getLLVMFun()), E = inst_end((*fi)->getLLVMFun()); II != E; ++II)
         {
-            for (const SVFInstruction* inst : svfbb->getInstructionList())
+            const Instruction *inst = &*II;
+            if (tdAPI->isTDFork(inst))
             {
-                if (tdAPI->isTDFork(inst))
+                const Value* forkVal = tdAPI->getForkedFun(inst);
+                if (const Function* forkFun = getLLVMFunction(forkVal))
                 {
-                    const SVFValue* forkVal = tdAPI->getForkedFun(inst);
-                    if (const SVFFunction* svForkfun = SVFUtil::dyn_cast<SVFFunction>(forkVal))
-                    {
-                        addSpawnsite(inst);
-                        spawners.insert(fun);
-                        spawnees.insert(svForkfun);
-                    }
-                    /// TODO: handle indirect call here for the fork Fun
-                    else
-                    {
-                        writeWrnMsg("pthread create");
-                        outs() << inst->toString() << "\n";
-                        writeWrnMsg("invoke spawnee indirectly");
-                    }
+                    addSpawnsite(inst);
+                    spawners.insert(fun);
+                    spawnees.insert(forkFun);
+                }
+                /// TODO: handle indirect call here for the fork Fun
+                else
+                {
+                    writeWrnMsg("pthread create");
+                    outs() << *inst << "\n";
+                    writeWrnMsg("invoke spawnee indirectly");
                 }
             }
         }
@@ -154,13 +125,14 @@ void PCG::collectSpawners()
     }
     while (!worklist.empty())
     {
-        const SVFFunction* svffun = worklist.pop();
+        const Function* fun = worklist.pop();
+        const SVFFunction* svffun = getSVFFun(fun);
         PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
         for (PTACallGraphNode::const_iterator it = funNode->InEdgeBegin(), eit = funNode->InEdgeEnd(); it != eit;
                 ++it)
         {
             PTACallGraphEdge* callEdge = (*it);
-            const SVFFunction* caller = callEdge->getSrcNode()->getFunction();
+            const Function* caller = callEdge->getSrcNode()->getFunction()->getLLVMFun();
             if (isSpawnerFun(caller) == false)
             {
                 worklist.push(caller);
@@ -195,12 +167,13 @@ void PCG::collectSpawnees()
     }
     while (!worklist.empty())
     {
-        const SVFFunction* svffun = worklist.pop();
+        const Function* fun = worklist.pop();
+        const SVFFunction* svffun = getSVFFun(fun);
         PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
         for (PTACallGraphNode::const_iterator it = funNode->OutEdgeBegin(), eit = funNode->OutEdgeEnd(); it != eit;
                 ++it)
         {
-            const SVFFunction* caller = (*it)->getDstNode()->getFunction();
+            const Function* caller = (*it)->getDstNode()->getFunction()->getLLVMFun();
             if (isSpawneeFun(caller) == false)
             {
                 worklist.push(caller);
@@ -219,38 +192,39 @@ void PCG::identifyFollowers()
 
     for (CallInstSet::const_iterator sit = spawnSitesBegin(), esit = spawnSitesEnd(); sit != esit; ++sit)
     {
-        const SVFInstruction* inst = *sit;
+        const Instruction* inst = *sit;
         BBWorkList bb_worklist;
-        Set<const SVFBasicBlock*> visitedBBs;
+        Set<const BasicBlock*> visitedBBs;
         bb_worklist.push(inst->getParent());
         while (!bb_worklist.empty())
         {
-            const SVFBasicBlock* bb = bb_worklist.pop();
-            for (SVFBasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it)
+            const BasicBlock* bb = bb_worklist.pop();
+            for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it)
             {
-                const SVFInstruction* inst = *it;
+                const Instruction* inst = &*it;
                 // mark the callee of this callsite as follower
                 // if this is an call/invoke instruction but not a spawn site
-                if ((SVFUtil::isCallSite(inst)) && !isSpawnsite(inst))
+                if ((SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst)) && !isSpawnsite(inst))
                 {
-                    CallICFGNode* cbn = getCallICFGNode(inst);
+                	CallBlockNode* cbn = getCallBlockNode(inst);
                     if (callgraph->hasCallGraphEdge(cbn))
                     {
                         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(cbn),
                                 ecgIt = callgraph->getCallEdgeEnd(cbn); cgIt != ecgIt; ++cgIt)
                         {
                             const PTACallGraphEdge* edge = *cgIt;
-                            addFollowerFun(edge->getDstNode()->getFunction());
+                            addFollowerFun(edge->getDstNode()->getFunction()->getLLVMFun());
                         }
                     }
                 }
             }
-            for (const SVFBasicBlock* svf_scc_bb : bb->getSuccessors())
+            for (succ_const_iterator succ_it = succ_begin(bb); succ_it != succ_end(bb); succ_it++)
             {
-                if (visitedBBs.count(svf_scc_bb) == 0)
+                const BasicBlock* succ_bb = *succ_it;
+                if (visitedBBs.count(succ_bb) == 0)
                 {
-                    visitedBBs.insert(svf_scc_bb);
-                    bb_worklist.push(svf_scc_bb);
+                    visitedBBs.insert(succ_bb);
+                    bb_worklist.push(succ_bb);
                 }
             }
         }
@@ -276,12 +250,13 @@ void PCG::collectFollowers()
     }
     while (!worklist.empty())
     {
-        const SVFFunction* svffun = worklist.pop();
+        const Function* fun = worklist.pop();
+        const SVFFunction* svffun = getSVFFun(fun);
         PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
         for (PTACallGraphNode::const_iterator it = funNode->OutEdgeBegin(), eit = funNode->OutEdgeEnd(); it != eit;
                 ++it)
         {
-            const SVFFunction* caller = (*it)->getDstNode()->getFunction();
+            const Function* caller = (*it)->getDstNode()->getFunction()->getLLVMFun();
             if (isFollowerFun(caller) == false)
             {
                 worklist.push(caller);
@@ -310,18 +285,18 @@ void PCG::interferenceAnalysis()
         const SVFFunction* fun = *F;
         if (isExtCall(fun))
             continue;
-        worklist.push_back(fun);
+        worklist.push_back(fun->getLLVMFun());
     }
 
     while (!worklist.empty())
     {
-        const SVFFunction* fun1 = worklist.back();
+        const Function* fun1 = worklist.back();
         worklist.pop_back();
 
         bool ismhpfun = false;
         for (PCG::FunVec::iterator it = worklist.begin(), eit = worklist.end(); it != eit; ++it)
         {
-            const SVFFunction* fun2 = *it;
+            const Function* fun2 = *it;
             if (mayHappenInParallelBetweenFunctions(fun1, fun2))
             {
                 ismhpfun = true;
@@ -352,7 +327,7 @@ void PCG::printTDFuns()
 
     for (SVFModule::const_iterator fi = mod->begin(), efi = mod->end(); fi != efi; ++fi)
     {
-        const SVFFunction* fun = (*fi);
+        const Function* fun = (*fi)->getLLVMFun();
         if (fun->isDeclaration())
             continue;
 

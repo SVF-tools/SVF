@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -34,6 +34,8 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
+ConstraintNode::SCCEdgeFlag ConstraintNode::sccEdgeFlag = ConstraintNode::Direct;
+
 /*!
  * Start building constraint graph
  */
@@ -41,127 +43,121 @@ void ConstraintGraph::buildCG()
 {
 
     // initialize nodes
-    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
+    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
-        addConstraintNode(new ConstraintNode(it->first), it->first);
+		addConstraintNode(new ConstraintNode(it->first), it->first);
     }
 
     // initialize edges
-    SVFStmt::SVFStmtSetTy& addrs = getPAGEdgeSet(SVFStmt::Addr);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = addrs.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& addrs = getPAGEdgeSet(PAGEdge::Addr);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = addrs.begin(), eiter =
                 addrs.end(); iter != eiter; ++iter)
     {
-        const AddrStmt* edge = SVFUtil::cast<AddrStmt>(*iter);
-        addAddrCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        PAGEdge* edge = *iter;
+        addAddrCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
-    SVFStmt::SVFStmtSetTy& copys = getPAGEdgeSet(SVFStmt::Copy);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = copys.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& copys = getPAGEdgeSet(PAGEdge::Copy);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = copys.begin(), eiter =
                 copys.end(); iter != eiter; ++iter)
     {
-        const CopyStmt* edge = SVFUtil::cast<CopyStmt>(*iter);
-        if(edge->isBitCast() || edge->isValueCopy())
-            addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        PAGEdge* edge = *iter;
+        ConstraintEdge* consEdge = addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        if (consEdge) {
+            consEdge->setLLVMValue(edge->getValue());
+        }
     }
 
-    SVFStmt::SVFStmtSetTy& phis = getPAGEdgeSet(SVFStmt::Phi);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = phis.begin(), eiter =
-                phis.end(); iter != eiter; ++iter)
-    {
-        const PhiStmt* edge = SVFUtil::cast<PhiStmt>(*iter);
-        for(const auto opVar : edge->getOpndVars())
-            addCopyCGEdge(opVar->getId(),edge->getResID());
-    }
-
-    SVFStmt::SVFStmtSetTy& selects = getPAGEdgeSet(SVFStmt::Select);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = selects.begin(), eiter =
-                selects.end(); iter != eiter; ++iter)
-    {
-        const SelectStmt* edge = SVFUtil::cast<SelectStmt>(*iter);
-        for(const auto opVar : edge->getOpndVars())
-            addCopyCGEdge(opVar->getId(),edge->getResID());
-    }
-
-    SVFStmt::SVFStmtSetTy& calls = getPAGEdgeSet(SVFStmt::Call);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = calls.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& calls = getPAGEdgeSet(PAGEdge::Call);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = calls.begin(), eiter =
                 calls.end(); iter != eiter; ++iter)
     {
-        const CallPE* edge = SVFUtil::cast<CallPE>(*iter);
-        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        PAGEdge* edge = *iter;
+        ConstraintEdge* consEdge = addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        if (consEdge) {
+            consEdge->setLLVMValue(edge->getValue());
+        }
     }
 
-    SVFStmt::SVFStmtSetTy& rets = getPAGEdgeSet(SVFStmt::Ret);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = rets.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& rets = getPAGEdgeSet(PAGEdge::Ret);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = rets.begin(), eiter =
                 rets.end(); iter != eiter; ++iter)
     {
-        const RetPE* edge = SVFUtil::cast<RetPE>(*iter);
-        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        PAGEdge* edge = *iter;
+        ConstraintEdge* consEdge = addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        if (consEdge) {
+            consEdge->setLLVMValue(edge->getValue());
+        }
     }
 
-    SVFStmt::SVFStmtSetTy& tdfks = getPAGEdgeSet(SVFStmt::ThreadFork);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = tdfks.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& tdfks = getPAGEdgeSet(PAGEdge::ThreadFork);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = tdfks.begin(), eiter =
                 tdfks.end(); iter != eiter; ++iter)
     {
-        const TDForkPE* edge = SVFUtil::cast<TDForkPE>(*iter);
-        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        PAGEdge* edge = *iter;
+        ConstraintEdge* consEdge = addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        if (consEdge) {
+            consEdge->setLLVMValue(edge->getValue());
+        }
     }
 
-    SVFStmt::SVFStmtSetTy& tdjns = getPAGEdgeSet(SVFStmt::ThreadJoin);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = tdjns.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& tdjns = getPAGEdgeSet(PAGEdge::ThreadJoin);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = tdjns.begin(), eiter =
                 tdjns.end(); iter != eiter; ++iter)
     {
-        const TDJoinPE* edge = SVFUtil::cast<TDJoinPE>(*iter);
-        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        PAGEdge* edge = *iter;
+        ConstraintEdge* consEdge = addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        if (consEdge) {
+            consEdge->setLLVMValue(edge->getValue());
+        }
     }
 
-    SVFStmt::SVFStmtSetTy& ngeps = getPAGEdgeSet(SVFStmt::Gep);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = ngeps.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& ngeps = getPAGEdgeSet(PAGEdge::NormalGep);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter)
     {
-        GepStmt* edge = SVFUtil::cast<GepStmt>(*iter);
-        if(edge->isVariantFieldGep())
-            addVariantGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
-        else
-            addNormalGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID(),edge->getAccessPath());
+        NormalGepPE* edge = SVFUtil::cast<NormalGepPE>(*iter);
+        ConstraintEdge* consEdge = addNormalGepCGEdge(edge->getSrcID(),edge->getDstID(),edge->getLocationSet());
+        if (consEdge) {
+            consEdge->setLLVMValue(edge->getValue());
+
+        }
     }
 
-    SVFStmt::SVFStmtSetTy& loads = getPAGEdgeSet(SVFStmt::Load);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = loads.begin(), eiter =
-                loads.end(); iter != eiter; ++iter)
+    PAGEdge::PAGEdgeSetTy& vgeps = getPAGEdgeSet(PAGEdge::VariantGep);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
+                vgeps.end(); iter != eiter; ++iter)
     {
-        LoadStmt* edge = SVFUtil::cast<LoadStmt>(*iter);
-        addLoadCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        VariantGepPE* edge = SVFUtil::cast<VariantGepPE>(*iter);
+        ConstraintEdge* consEdge = addVariantGepCGEdge(edge->getSrcID(),edge->getDstID(), edge->isStructTy());
+        if (consEdge) {
+            consEdge->setLLVMValue(edge->getValue());
+        }
     }
 
-    SVFStmt::SVFStmtSetTy& stores = getPAGEdgeSet(SVFStmt::Store);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& stores = getPAGEdgeSet(PAGEdge::Load);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
-        StoreStmt* edge = SVFUtil::cast<StoreStmt>(*iter);
-        addStoreCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+        PAGEdge* edge = *iter;
+        ConstraintEdge* consEdge = addLoadCGEdge(edge->getSrcID(),edge->getDstID());
+        if (consEdge) {
+            consEdge->setLLVMValue(edge->getValue());
+        }
     }
 
-    clearSolitaries();
-}
-
-/*!
- * Remove nodes that are neither pointers nor connected with any edge
- */
-void ConstraintGraph::clearSolitaries()
-{
-    Set<ConstraintNode*> nodesToRemove;
-    for (auto it = this->begin(); it != this->end(); ++it)
+    PAGEdge::PAGEdgeSetTy& loads = getPAGEdgeSet(PAGEdge::Store);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
+                loads.end(); iter != eiter; ++iter)
     {
-        if (it->second->hasIncomingEdge() || it->second->hasOutgoingEdge())
-            continue;
-        if (pag->getGNode(it->first)->isPointer())
-            continue;
-        nodesToRemove.insert(it->second);
+        PAGEdge* edge = *iter;
+        ConstraintEdge* consEdge = addStoreCGEdge(edge->getSrcID(),edge->getDstID());
+        if (consEdge) {
+            consEdge->setLLVMValue(edge->getValue());
+        }
     }
-
-    for (auto node : nodesToRemove)
-        removeConstraintNode(node);
 }
+
 
 /*!
  * Memory has been cleaned up at GenericGraph
@@ -177,12 +173,9 @@ AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
     : ConstraintEdge(s,d,Addr,id)
 {
     // Retarget addr edges may lead s to be a dummy node
-    PAGNode* node = SVFIR::getPAG()->getGNode(s->getId());
-    (void)node; // Suppress warning of unused variable under release build
+    PAGNode* node = PAG::getPAG()->getPAGNode(s->getId());
     if (!SVFModule::pagReadFromTXT())
-    {
-        assert(!SVFUtil::isa<DummyValVar>(node) && "a dummy node??");
-    }
+        assert(!SVFUtil::isa<DummyValPN>(node) && "a dummy node??");
 }
 
 /*!
@@ -192,14 +185,11 @@ AddrCGEdge* ConstraintGraph::addAddrCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if (hasEdge(srcNode, dstNode, ConstraintEdge::Addr))
+    if(hasEdge(srcNode,dstNode,ConstraintEdge::Addr))
         return nullptr;
     AddrCGEdge* edge = new AddrCGEdge(srcNode, dstNode, edgeIndex++);
-
-    bool inserted = AddrCGEdgeSet.insert(edge).second;
-    (void)inserted; // Suppress warning of unused variable under release build
-    assert(inserted && "new AddrCGEdge not added??");
-
+    bool added = AddrCGEdgeSet.insert(edge).second;
+    assert(added && "not added??");
     srcNode->addOutgoingAddrEdge(edge);
     dstNode->addIncomingAddrEdge(edge);
     return edge;
@@ -210,18 +200,24 @@ AddrCGEdge* ConstraintGraph::addAddrCGEdge(NodeID src, NodeID dst)
  */
 CopyCGEdge* ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
 {
+//    llvm::errs() << "src = " << src << " dst = " << dst << "\n";
+    // Did we blacklist this edge? 
+    if (blackListEdges.find(std::make_tuple(src, dst)) != 
+            blackListEdges.end()) {
+        return nullptr;
+    }
+
+    //llvm::errs() << "Adding copy edge: " << src << " --> " << dst << "\n";
 
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if (hasEdge(srcNode, dstNode, ConstraintEdge::Copy) || srcNode == dstNode)
+    if(hasEdge(srcNode,dstNode,ConstraintEdge::Copy)
+            || srcNode == dstNode)
         return nullptr;
 
     CopyCGEdge* edge = new CopyCGEdge(srcNode, dstNode, edgeIndex++);
-
-    bool inserted = directEdgeSet.insert(edge).second;
-    (void)inserted; // Suppress warning of unused variable under release build
-    assert(inserted && "new CopyCGEdge not added??");
-
+    bool added = directEdgeSet.insert(edge).second;
+    assert(added && "not added??");
     srcNode->addOutgoingCopyEdge(edge);
     dstNode->addIncomingCopyEdge(edge);
     return edge;
@@ -231,20 +227,16 @@ CopyCGEdge* ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
 /*!
  * Add Gep edge
  */
-NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, const AccessPath& ap)
+NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if (hasEdge(srcNode, dstNode, ConstraintEdge::NormalGep))
+    if(hasEdge(srcNode,dstNode,ConstraintEdge::NormalGep))
         return nullptr;
 
-    NormalGepCGEdge* edge =
-        new NormalGepCGEdge(srcNode, dstNode, ap, edgeIndex++);
-
-    bool inserted = directEdgeSet.insert(edge).second;
-    (void)inserted; // Suppress warning of unused variable under release build
-    assert(inserted && "new NormalGepCGEdge not added??");
-
+    NormalGepCGEdge* edge = new NormalGepCGEdge(srcNode, dstNode,ls, edgeIndex++);
+    bool added = directEdgeSet.insert(edge).second;
+    assert(added && "not added??");
     srcNode->addOutgoingGepEdge(edge);
     dstNode->addIncomingGepEdge(edge);
     return edge;
@@ -253,19 +245,16 @@ NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, co
 /*!
  * Add variant gep edge
  */
-VariantGepCGEdge* ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst)
+VariantGepCGEdge* ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst, bool flag)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if (hasEdge(srcNode, dstNode, ConstraintEdge::VariantGep))
+    if(hasEdge(srcNode,dstNode,ConstraintEdge::VariantGep))
         return nullptr;
 
-    VariantGepCGEdge* edge = new VariantGepCGEdge(srcNode, dstNode, edgeIndex++);
-
-    bool inserted = directEdgeSet.insert(edge).second;
-    (void)inserted; // Suppress warning of unused variable under release build
-    assert(inserted && "new VariantGepCGEdge not added??");
-
+    VariantGepCGEdge* edge = new VariantGepCGEdge(srcNode, dstNode, edgeIndex++, flag);
+    bool added = directEdgeSet.insert(edge).second;
+    assert(added && "not added??");
     srcNode->addOutgoingGepEdge(edge);
     dstNode->addIncomingGepEdge(edge);
     return edge;
@@ -276,17 +265,17 @@ VariantGepCGEdge* ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst)
  */
 LoadCGEdge* ConstraintGraph::addLoadCGEdge(NodeID src, NodeID dst)
 {
+    if (src == 224119 && dst == 74467) {
+        llvm::errs() << "break!\n";
+    }
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if (hasEdge(srcNode, dstNode, ConstraintEdge::Load))
+    if(hasEdge(srcNode,dstNode,ConstraintEdge::Load))
         return nullptr;
 
     LoadCGEdge* edge = new LoadCGEdge(srcNode, dstNode, edgeIndex++);
-
-    bool inserted = LoadCGEdgeSet.insert(edge).second;
-    (void)inserted; // Suppress warning of unused variable under release build
-    assert(inserted && "new LoadCGEdge not added??");
-
+    bool added = LoadCGEdgeSet.insert(edge).second;
+    assert(added && "not added??");
     srcNode->addOutgoingLoadEdge(edge);
     dstNode->addIncomingLoadEdge(edge);
     return edge;
@@ -299,15 +288,12 @@ StoreCGEdge* ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
-    if (hasEdge(srcNode, dstNode, ConstraintEdge::Store))
+    if(hasEdge(srcNode,dstNode,ConstraintEdge::Store))
         return nullptr;
 
     StoreCGEdge* edge = new StoreCGEdge(srcNode, dstNode, edgeIndex++);
-
-    bool inserted = StoreCGEdgeSet.insert(edge).second;
-    (void)inserted; // Suppress warning of unused variable under release build
-    assert(inserted && "new StoreCGEdge not added??");
-
+    bool added = StoreCGEdgeSet.insert(edge).second;
+    assert(added && "not added??");
     srcNode->addOutgoingStoreEdge(edge);
     dstNode->addIncomingStoreEdge(edge);
     return edge;
@@ -319,37 +305,56 @@ StoreCGEdge* ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
  *
  * (1) Remove edge from old dst target,
  * (2) Change edge dst id and
- * (3) Add modified edge into new dst
+ * (3) Add modifed edge into new dst
  */
 void ConstraintGraph::reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* newDstNode)
 {
     NodeID newDstNodeID = newDstNode->getId();
     NodeID srcId = edge->getSrcID();
+
+    Value* oldValue = edge->getLLVMValue();
     if(LoadCGEdge* load = SVFUtil::dyn_cast<LoadCGEdge>(edge))
     {
         removeLoadEdge(load);
-        addLoadCGEdge(srcId,newDstNodeID);
+        ConstraintEdge* newEdge = addLoadCGEdge(srcId,newDstNodeID);
+        if (newEdge) {
+            newEdge->setLLVMValue(oldValue);
+        }
     }
     else if(StoreCGEdge* store = SVFUtil::dyn_cast<StoreCGEdge>(edge))
     {
         removeStoreEdge(store);
-        addStoreCGEdge(srcId,newDstNodeID);
+        ConstraintEdge* newEdge = addStoreCGEdge(srcId,newDstNodeID);
+        if (newEdge) {
+            newEdge->setLLVMValue(oldValue);
+        }
     }
     else if(CopyCGEdge* copy = SVFUtil::dyn_cast<CopyCGEdge>(edge))
     {
         removeDirectEdge(copy);
-        addCopyCGEdge(srcId,newDstNodeID);
+        ConstraintEdge* newEdge = addCopyCGEdge(srcId,newDstNodeID);
+        if (newEdge) {
+            newEdge->setLLVMValue(oldValue);
+            newEdge->setSourceEdge(edge->getSourceEdge());
+        }
     }
     else if(NormalGepCGEdge* gep = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
     {
-        const AccessPath ap = gep->getAccessPath();
+        const LocationSet ls = gep->getLocationSet();
         removeDirectEdge(gep);
-        addNormalGepCGEdge(srcId,newDstNodeID, ap);
+        ConstraintEdge* newEdge = addNormalGepCGEdge(srcId,newDstNodeID,ls);
+        if (newEdge) {
+            newEdge->setLLVMValue(oldValue);
+        }
     }
     else if(VariantGepCGEdge* gep = SVFUtil::dyn_cast<VariantGepCGEdge>(edge))
     {
+
         removeDirectEdge(gep);
-        addVariantGepCGEdge(srcId,newDstNodeID);
+        ConstraintEdge* newEdge = addVariantGepCGEdge(srcId,newDstNodeID, gep->isStructTy());
+        if (newEdge) {
+            newEdge->setLLVMValue(oldValue);
+        }
     }
     else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge))
     {
@@ -369,31 +374,48 @@ void ConstraintGraph::reTargetSrcOfEdge(ConstraintEdge* edge, ConstraintNode* ne
 {
     NodeID newSrcNodeID = newSrcNode->getId();
     NodeID dstId = edge->getDstID();
+    Value* oldValue = edge->getLLVMValue();
+
     if(LoadCGEdge* load = SVFUtil::dyn_cast<LoadCGEdge>(edge))
     {
         removeLoadEdge(load);
-        addLoadCGEdge(newSrcNodeID,dstId);
+        ConstraintEdge* newEdge = addLoadCGEdge(newSrcNodeID,dstId);
+        if (newEdge) {
+            newEdge->setLLVMValue(oldValue);
+        }
     }
     else if(StoreCGEdge* store = SVFUtil::dyn_cast<StoreCGEdge>(edge))
     {
         removeStoreEdge(store);
-        addStoreCGEdge(newSrcNodeID,dstId);
+        ConstraintEdge* newEdge = addStoreCGEdge(newSrcNodeID,dstId);
+        if (newEdge) {
+            newEdge->setLLVMValue(oldValue);
+        }
     }
     else if(CopyCGEdge* copy = SVFUtil::dyn_cast<CopyCGEdge>(edge))
     {
         removeDirectEdge(copy);
-        addCopyCGEdge(newSrcNodeID,dstId);
+        ConstraintEdge* newEdge = addCopyCGEdge(newSrcNodeID,dstId);
+        if (newEdge) {
+            newEdge->setLLVMValue(oldValue);
+        }
     }
     else if(NormalGepCGEdge* gep = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
     {
-        const AccessPath ap = gep->getAccessPath();
+        const LocationSet ls = gep->getLocationSet();
         removeDirectEdge(gep);
-        addNormalGepCGEdge(newSrcNodeID, dstId, ap);
+        ConstraintEdge* newEdge = addNormalGepCGEdge(newSrcNodeID,dstId,ls);
+        if (newEdge) {
+            newEdge->setLLVMValue(oldValue);
+        }
     }
     else if(VariantGepCGEdge* gep = SVFUtil::dyn_cast<VariantGepCGEdge>(edge))
     {
         removeDirectEdge(gep);
-        addVariantGepCGEdge(newSrcNodeID,dstId);
+        ConstraintEdge* newEdge = addVariantGepCGEdge(newSrcNodeID,dstId, gep->isStructTy());
+        if (newEdge) {
+            newEdge->setLLVMValue(oldValue);
+        }
     }
     else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge))
     {
@@ -410,10 +432,9 @@ void ConstraintGraph::removeAddrEdge(AddrCGEdge* edge)
 {
     getConstraintNode(edge->getSrcID())->removeOutgoingAddrEdge(edge);
     getConstraintNode(edge->getDstID())->removeIncomingAddrEdge(edge);
-    u32_t num = AddrCGEdgeSet.erase(edge);
-    (void)num; // Suppress warning of unused variable under release build
-    assert(num && "edge not in the set, can not remove!!!");
+    Size_t num = AddrCGEdgeSet.erase(edge);
     delete edge;
+    assert(num && "edge not in the set, can not remove!!!");
 }
 
 /*!
@@ -423,10 +444,9 @@ void ConstraintGraph::removeLoadEdge(LoadCGEdge* edge)
 {
     getConstraintNode(edge->getSrcID())->removeOutgoingLoadEdge(edge);
     getConstraintNode(edge->getDstID())->removeIncomingLoadEdge(edge);
-    u32_t num = LoadCGEdgeSet.erase(edge);
-    (void)num; // Suppress warning of unused variable under release build
+    Size_t num = LoadCGEdgeSet.erase(edge);
+    //    delete edge;
     assert(num && "edge not in the set, can not remove!!!");
-    delete edge;
 }
 
 /*!
@@ -436,10 +456,9 @@ void ConstraintGraph::removeStoreEdge(StoreCGEdge* edge)
 {
     getConstraintNode(edge->getSrcID())->removeOutgoingStoreEdge(edge);
     getConstraintNode(edge->getDstID())->removeIncomingStoreEdge(edge);
-    u32_t num = StoreCGEdgeSet.erase(edge);
-    (void)num; // Suppress warning of unused variable under release build
+    Size_t num = StoreCGEdgeSet.erase(edge);
+    //    delete edge;
     assert(num && "edge not in the set, can not remove!!!");
-    delete edge;
 }
 
 /*!
@@ -450,8 +469,8 @@ void ConstraintGraph::removeDirectEdge(ConstraintEdge* edge)
 
     getConstraintNode(edge->getSrcID())->removeOutgoingDirectEdge(edge);
     getConstraintNode(edge->getDstID())->removeIncomingDirectEdge(edge);
-    u32_t num = directEdgeSet.erase(edge);
-    (void)num; // Suppress warning of unused variable under release build
+    Size_t num = directEdgeSet.erase(edge);
+
     assert(num && "edge not in the set, can not remove!!!");
     delete edge;
 }
@@ -460,7 +479,7 @@ void ConstraintGraph::removeDirectEdge(ConstraintEdge* edge)
  * Move incoming direct edges of a sub node which is outside SCC to its rep node
  * Remove incoming direct edges of a sub node which is inside SCC from its rep node
  */
-bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode* rep )
+bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode* rep, std::vector<ConstraintEdge*>& criticalGepEdges )
 {
     std::vector<ConstraintEdge*> sccEdges;
     std::vector<ConstraintEdge*> nonSccEdges;
@@ -484,6 +503,7 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
     }
 
     bool criticalGepInsideSCC = false;
+
     // if this edge is inside scc, then remove this edge and two end nodes
     while(!sccEdges.empty())
     {
@@ -499,10 +519,12 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
             if (!isZeroOffsettedGepCGEdge(edge))
             {
                 criticalGepInsideSCC = true;
+                criticalGepEdges.push_back(edge);
+
             }
             removeDirectEdge(edge);
         }
-        else if(SVFUtil::isa<LoadCGEdge, StoreCGEdge>(edge))
+        else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
             reTargetDstOfEdge(edge,rep);
         else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge))
         {
@@ -518,7 +540,7 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
  * Move outgoing direct edges of a sub node which is outside SCC to its rep node
  * Remove outgoing direct edges of a sub node which is inside SCC from its rep node
  */
-bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode* rep )
+bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode* rep, std::vector<ConstraintEdge*>& criticalGepEdges)
 {
 
     std::vector<ConstraintEdge*> sccEdges;
@@ -558,10 +580,11 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
             if (!isZeroOffsettedGepCGEdge(edge))
             {
                 criticalGepInsideSCC = true;
+                criticalGepEdges.push_back(edge);
             }
             removeDirectEdge(edge);
         }
-        else if(SVFUtil::isa<LoadCGEdge, StoreCGEdge>(edge))
+        else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
             reTargetSrcOfEdge(edge,rep);
         else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge))
         {
@@ -579,7 +602,7 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
  */
 void ConstraintGraph::dump(std::string name)
 {
-    GraphPrinter::WriteGraphToFile(outs(), name, this);
+     GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
 /*!
@@ -609,7 +632,7 @@ void ConstraintGraph::print()
         }
         else if (NormalGepCGEdge* ngep = SVFUtil::dyn_cast<NormalGepCGEdge>(*iter))
         {
-            outs() << ngep->getSrcID() << " -- NormalGep (" << ngep->getConstantFieldIdx()
+            outs() << ngep->getSrcID() << " -- NormalGep (" << ngep->getOffset()
                    << ") --> " << ngep->getDstID() << "\n";
         }
         else if (VariantGepCGEdge* vgep = SVFUtil::dyn_cast<VariantGepCGEdge>(*iter))
@@ -645,95 +668,22 @@ void ConstraintGraph::print()
 /*!
  * View dot graph of Constraint graph from debugger.
  */
-void ConstraintGraph::view()
-{
-    SVF::ViewGraph(this, "Constraint Graph");
-}
-
-/// Iterators of direct edges for ConsGNode
-//@{
-ConstraintNode::iterator ConstraintNode::directOutEdgeBegin()
-{
-    if (Options::DetectPWC())
-        return directOutEdges.begin();
-    else
-        return copyOutEdges.begin();
-}
-
-ConstraintNode::iterator ConstraintNode::directOutEdgeEnd()
-{
-    if (Options::DetectPWC())
-        return directOutEdges.end();
-    else
-        return copyOutEdges.end();
-}
-
-ConstraintNode::iterator ConstraintNode::directInEdgeBegin()
-{
-    if (Options::DetectPWC())
-        return directInEdges.begin();
-    else
-        return copyInEdges.begin();
-}
-
-ConstraintNode::iterator ConstraintNode::directInEdgeEnd()
-{
-    if (Options::DetectPWC())
-        return directInEdges.end();
-    else
-        return copyInEdges.end();
-}
-
-ConstraintNode::const_iterator ConstraintNode::directOutEdgeBegin() const
-{
-    if (Options::DetectPWC())
-        return directOutEdges.begin();
-    else
-        return copyOutEdges.begin();
-}
-
-ConstraintNode::const_iterator ConstraintNode::directOutEdgeEnd() const
-{
-    if (Options::DetectPWC())
-        return directOutEdges.end();
-    else
-        return copyOutEdges.end();
-}
-
-ConstraintNode::const_iterator ConstraintNode::directInEdgeBegin() const
-{
-    if (Options::DetectPWC())
-        return directInEdges.begin();
-    else
-        return copyInEdges.begin();
-}
-
-ConstraintNode::const_iterator ConstraintNode::directInEdgeEnd() const
-{
-    if (Options::DetectPWC())
-        return directInEdges.end();
-    else
-        return copyInEdges.end();
-}
-//@}
-
-const std::string ConstraintNode::toString() const
-{
-    return SVFIR::getPAG()->getGNode(getId())->toString();
+void ConstraintGraph::view() {
+    llvm::ViewGraph(this, "Constraint Graph");
 }
 
 /*!
  * GraphTraits specialization for constraint graph
  */
-namespace SVF
+namespace llvm
 {
 template<>
-struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
+struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
 {
 
     typedef ConstraintNode NodeType;
     DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<SVFIR*>(isSimple)
+        DOTGraphTraits<PAG*>(isSimple)
     {
     }
 
@@ -743,25 +693,28 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         return "ConstraintG";
     }
 
-    static bool isNodeHidden(NodeType *n, ConstraintGraph *)
-    {
-        if (Options::ShowHiddenNode()) return false;
-        else return (n->getInEdges().empty() && n->getOutEdges().empty());
+#if LLVM_VERSION_MAJOR >= 12
+    static bool isNodeHidden(NodeType *n, ConstraintGraph*) {
+#else
+    static bool isNodeHidden(NodeType *n) {
+#endif
+        PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
+        return node->isIsolatedNode();
     }
 
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
     static std::string getNodeLabel(NodeType *n, ConstraintGraph*)
     {
-        PAGNode* node = SVFIR::getPAG()->getGNode(n->getId());
-        bool briefDisplay = Options::BriefConsCGDotGraph();
+        PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
+        bool briefDisplay = Options::BriefConsCGDotGraph;
         bool nameDisplay = true;
         std::string str;
-        std::stringstream rawstr(str);
+        raw_string_ostream rawstr(str);
 
         if (briefDisplay)
         {
-            if (SVFUtil::isa<ValVar>(node))
+            if (SVFUtil::isa<ValPN>(node))
             {
                 if (nameDisplay)
                     rawstr << node->getId() << ":" << node->getValueName();
@@ -774,8 +727,8 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         else
         {
             // print the whole value
-            if (!SVFUtil::isa<DummyValVar>(node) && !SVFUtil::isa<DummyObjVar>(node))
-                rawstr << node->getId() << ":" << node->getValue()->toString();
+            if (!SVFUtil::isa<DummyValPN>(node) && !SVFUtil::isa<DummyObjPN>(node))
+                rawstr << node->getId() << ":" << value2String(node->getValue());
             else
                 rawstr << node->getId() << ":";
 
@@ -786,40 +739,8 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
 
     static std::string getNodeAttributes(NodeType *n, ConstraintGraph*)
     {
-        PAGNode* node = SVFIR::getPAG()->getGNode(n->getId());
-        if (SVFUtil::isa<ValVar>(node))
-        {
-            if(SVFUtil::isa<GepValVar>(node))
-                return "shape=hexagon";
-            else if (SVFUtil::isa<DummyValVar>(node))
-                return "shape=diamond";
-            else
-                return "shape=box";
-        }
-        else if (SVFUtil::isa<ObjVar>(node))
-        {
-            if(SVFUtil::isa<GepObjVar>(node))
-                return "shape=doubleoctagon";
-            else if(SVFUtil::isa<FIObjVar>(node))
-                return "shape=box3d";
-            else if (SVFUtil::isa<DummyObjVar>(node))
-                return "shape=tab";
-            else
-                return "shape=component";
-        }
-        else if (SVFUtil::isa<RetPN>(node))
-        {
-            return "shape=Mrecord";
-        }
-        else if (SVFUtil::isa<VarArgPN>(node))
-        {
-            return "shape=octagon";
-        }
-        else
-        {
-            assert(0 && "no such kind!!");
-        }
-        return "";
+        PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
+        return node->getNodeAttrForDotDisplay();
     }
 
     template<class EdgeIter>
@@ -835,10 +756,12 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         {
             return "color=black";
         }
-        else if (edge->getEdgeKind() == ConstraintEdge::NormalGep
-                 || edge->getEdgeKind() == ConstraintEdge::VariantGep)
+        else if (edge->getEdgeKind() == ConstraintEdge::NormalGep)
         {
-            return "color=purple";
+            return "color=purple, headlabel=\"{" + std::to_string(((NormalGepCGEdge*)edge)->getOffset()) + "}\"";
+        } else if (edge->getEdgeKind() == ConstraintEdge::VariantGep)
+        {
+            return "color=pink";
         }
         else if (edge->getEdgeKind() == ConstraintEdge::Store)
         {

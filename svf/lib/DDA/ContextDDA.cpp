@@ -1,25 +1,3 @@
-//===- ContextDDA.cpp -- Context-sensitive demand-driven analysis-------------//
-//
-//                     SVF: Static Value-Flow Analysis
-//
-// Copyright (C) <2013->  <Yulei Sui>
-//
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-//===----------------------------------------------------------------------===//
-
 /*
  * ContextDDA.cpp
  *
@@ -31,7 +9,6 @@
 #include "DDA/ContextDDA.h"
 #include "DDA/FlowDDA.h"
 #include "DDA/DDAClient.h"
-#include "MemoryModel/PointsTo.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -39,7 +16,7 @@ using namespace SVFUtil;
 /*!
  * Constructor
  */
-ContextDDA::ContextDDA(SVFIR* _pag,  DDAClient* client)
+ContextDDA::ContextDDA(PAG* _pag,  DDAClient* client)
     : CondPTAImpl<ContextCond>(_pag, PointerAnalysis::Cxt_DDA),DDAVFSolver<CxtVar,CxtPtSet,CxtLocDPItem>(),
       _client(client)
 {
@@ -76,10 +53,10 @@ const CxtPtSet& ContextDDA::computeDDAPts(const CxtVar& var)
 {
 
     resetQuery();
-    LocDPItem::setMaxBudget(Options::CxtBudget());
+    LocDPItem::setMaxBudget(Options::CxtBudget);
 
     NodeID id = var.get_id();
-    PAGNode* node = getPAG()->getGNode(id);
+    PAGNode* node = getPAG()->getPAGNode(id);
     CxtLocDPItem dpm = getDPIm(var, getDefSVFGNode(node));
 
     // start DDA analysis
@@ -162,19 +139,19 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
             tmpDstPts.set(ptd);
         else
         {
-            const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(gep->getPAGEdge());
-            if (gepStmt->isVariantFieldGep())
+            if (SVFUtil::isa<VariantGepPE>(gep->getPAGEdge()))
             {
                 setObjFieldInsensitive(ptd.get_id());
-                CxtVar var(ptd.get_cond(),getFIObjVar(ptd.get_id()));
+                CxtVar var(ptd.get_cond(),getFIObjNode(ptd.get_id()));
+                tmpDstPts.set(var);
+            }
+            else if (const NormalGepPE* normalGep = SVFUtil::dyn_cast<NormalGepPE>(gep->getPAGEdge()))
+            {
+                CxtVar var(ptd.get_cond(),getGepObjNode(ptd.get_id(),normalGep->getLocationSet()));
                 tmpDstPts.set(var);
             }
             else
-            {
-                CxtVar var(ptd.get_cond(),getGepObjVar(ptd.get_id(),
-                                                       gepStmt->getAccessPath().getConstantStructFldIdx()));
-                tmpDstPts.set(var);
-            }
+                assert(false && "new gep edge?");
         }
     }
 
@@ -186,16 +163,16 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
     return tmpDstPts;
 }
 
-bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallICFGNode* cs)
+bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallBlockNode* cs)
 {
     if(getPAG()->isIndirectCallSites(cs))
     {
         NodeID id = getPAG()->getFunPtr(cs);
-        PAGNode* node = getPAG()->getGNode(id);
+        PAGNode* node = getPAG()->getPAGNode(id);
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
-        if(pts.test(getPAG()->getObjectNode(callee)))
+        if(pts.test(getPAG()->getObjectNode(callee->getLLVMFun())))
             return true;
         else
             return false;
@@ -216,7 +193,7 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem&, const SVFGEdge* edge)
     else
         svfg_csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 
-    const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
+    const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const SVFFunction* callee = edge->getDstNode()->getFun();
 
     if(getPTACallGraph()->hasCallSiteID(cbn,callee))
@@ -240,7 +217,7 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem&, const SVFGEdge* edge)
     else
         svfg_csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
-    const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
+    const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const SVFFunction* callee = edge->getSrcNode()->getFun();
 
     if(getPTACallGraph()->hasCallSiteID(cbn,callee))
@@ -336,32 +313,27 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
 {
     const MemObj* mem = _pag->getObject(getPtrNodeID(var));
     assert(mem && "memory object is null??");
-    if (mem->isHeap())
+    if(mem->isHeap())
     {
-        if (!mem->getValue())
-        {
-            PAGNode *pnode = _pag->getGNode(getPtrNodeID(var));
-            GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pnode);
-            if (gepobj != nullptr)
-            {
-                assert(SVFUtil::isa<DummyObjVar>(_pag->getGNode(gepobj->getBaseNode()))
-                       && "empty refVal in a gep object whose base is a non-dummy object");
+        if (!mem->getRefVal()) {
+            PAGNode *pnode = _pag->getPAGNode(getPtrNodeID(var));
+            if(GepObjPN* gepobj = SVFUtil::dyn_cast<GepObjPN>(pnode)){
+                assert(SVFUtil::isa<DummyObjPN>(_pag->getPAGNode(gepobj->getBaseNode())) && "emtpy refVal in a gep object whose base is a non-dummy object");
             }
-            else
-            {
-                assert((SVFUtil::isa<DummyObjVar, DummyValVar>(pnode))
-                       && "empty refVal in non-dummy object");
+            else{
+                assert((SVFUtil::isa<DummyObjPN>(pnode) || SVFUtil::isa<DummyValPN>(pnode)) && "empty refVal in non-dummy object");
             }
             return true;
         }
-        else if(const SVFInstruction* mallocSite = SVFUtil::dyn_cast<SVFInstruction>(mem->getValue()))
+        else if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal()))
         {
-            const SVFFunction* svfFun = mallocSite->getFunction();
+            const Function* fun = mallocSite->getFunction();
+            const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
             if(_ander->isInRecursion(svfFun))
                 return true;
             if(var.get_cond().isConcreteCxt() == false)
                 return true;
-            if(_pag->getICFG()->isInLoop(mallocSite))
+            if(loopInfoBuilder.getLoopInfo(fun)->getLoopFor(mallocSite->getParent()))
                 return true;
         }
     }

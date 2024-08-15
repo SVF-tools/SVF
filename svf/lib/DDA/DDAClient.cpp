@@ -1,25 +1,3 @@
-//===- DDAClient.cpp -- Clients of demand-driven analysis-------------//
-//
-//                     SVF: Static Value-Flow Analysis
-//
-// Copyright (C) <2013->  <Yulei Sui>
-//
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-//===----------------------------------------------------------------------===//
-
 /*
  * @file: DDAClient.cpp
  * @author: yesen
@@ -32,7 +10,7 @@
 
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
-#include "MemoryModel/PointsTo.h"
+#include "SVF-FE/CPPUtil.h"
 
 #include "DDA/DDAClient.h"
 #include "DDA/FlowDDA.h"
@@ -58,7 +36,7 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     for (OrderedNodeSet::iterator nIter = candidateQueries.begin();
             nIter != candidateQueries.end(); ++nIter,++count)
     {
-        PAGNode* node = pta->getPAG()->getGNode(*nIter);
+        PAGNode* node = pta->getPAG()->getPAGNode(*nIter);
         if(pta->getPAG()->isValidTopLevelPtr(node))
         {
             DBOUT(DGENERAL,outs() << "\n@@Computing PointsTo for :" << node->getId() <<
@@ -75,15 +53,15 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     stat->setMemUsageAfter(vmrss, vmsize);
 }
 
-OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(SVFIR* p)
+OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(PAG* p)
 {
     setPAG(p);
-    for(SVFIR::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
+    for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
             eit = pag->getIndirectCallsites().end(); it!=eit; ++it)
     {
-        if (SVFUtil::getSVFCallSite(it->first->getCallSite()).isVirtualCall())
+        if (cppUtil::isVirtualCallSite(SVFUtil::getLLVMCallSite(it->first->getCallSite())))
         {
-            const SVFValue* vtblPtr = SVFUtil::getSVFCallSite(it->first->getCallSite()).getVtablePtr();
+            const Value *vtblPtr = cppUtil::getVCallVtblPtr(SVFUtil::getLLVMCallSite(it->first->getCallSite()));
             assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
             NodeID vtblId = pag->getValueNode(vtblPtr);
             addCandidate(vtblId);
@@ -116,7 +94,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
         const PointsTo& anderPts = ander->getPts(vtptr);
 
         PTACallGraph* callgraph = ander->getPTACallGraph();
-        const CallICFGNode* cbn = nIter->second;
+        const CallBlockNode* cbn = nIter->second;
 
         if(!callgraph->hasIndCSCallees(cbn))
         {
@@ -145,8 +123,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
-        outs() << (nIter->second)->getCallSite()->toString() << "\n";
-        outs() << (nIter->second)->getCallSite()->getSourceLoc() << "\n";
+        outs() << *(nIter->second)->getCallSite() << "\n";
+        outs() << getSourceLoc((nIter->second)->getCallSite()) << "\n";
         outs() << "\n";
         outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";
         outs() << "------DDA vfn num---(" << ander_vfns.size() << ")--\n";
@@ -173,11 +151,11 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
 
 /// Only collect function pointers as query candidates.
-OrderedNodeSet& AliasDDAClient::collectCandidateQueries(SVFIR* pag)
+OrderedNodeSet& AliasDDAClient::collectCandidateQueries(PAG* pag)
 {
     setPAG(pag);
-    SVFStmt::SVFStmtSetTy& loads = pag->getSVFStmtSet(SVFStmt::Load);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = loads.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
                 loads.end(); iter != eiter; ++iter)
     {
         PAGNode* loadsrc = (*iter)->getSrcNode();
@@ -185,16 +163,16 @@ OrderedNodeSet& AliasDDAClient::collectCandidateQueries(SVFIR* pag)
         addCandidate(loadsrc->getId());
     }
 
-    SVFStmt::SVFStmtSetTy& stores = pag->getSVFStmtSet(SVFStmt::Store);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
         PAGNode* storedst = (*iter)->getDstNode();
         storeDstNodes.insert(storedst);
         addCandidate(storedst->getId());
     }
-    SVFStmt::SVFStmtSetTy& geps = pag->getSVFStmtSet(SVFStmt::Gep);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = geps.begin(), eiter =
+    PAGEdge::PAGEdgeSetTy& geps = pag->getEdgeSet(PAGEdge::NormalGep);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = geps.begin(), eiter =
                 geps.end(); iter != eiter; ++iter)
     {
         PAGNode* gepsrc = (*iter)->getSrcNode();
@@ -218,8 +196,8 @@ void AliasDDAClient::performStat(PointerAnalysis* pta)
                 AliasResult result = pta->alias(node1->getId(),node2->getId());
 
                 outs() << "\n=================================================\n";
-                outs() << "Alias Query for (" << node1->getValue()->toString() << ",";
-                outs() << node2->getValue()->toString() << ") \n";
+                outs() << "Alias Query for (" << *node1->getValue() << ",";
+                outs() << *node2->getValue() << ") \n";
                 outs() << "[NodeID:" << node1->getId() <<  ", NodeID:" << node2->getId() << " " << result << "]\n";
                 outs() << "=================================================\n";
 

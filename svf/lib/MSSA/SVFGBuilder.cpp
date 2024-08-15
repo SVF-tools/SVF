@@ -6,16 +6,16 @@
 //
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// GNU General Public License for more details.
 
-// You should have received a copy of the GNU Affero General Public License
+// You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //===----------------------------------------------------------------------===//
@@ -27,8 +27,8 @@
  *      Author: Yulei Sui
  */
 #include "Util/Options.h"
-#include "SVFIR/SVFModule.h"
-#include "Util/SVFUtil.h"
+#include "Util/SVFModule.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "MSSA/MemSSA.h"
 #include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
@@ -38,15 +38,25 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
+SVFG* SVFGBuilder::globalSvfg = nullptr;
+
+
 SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta)
 {
-    if(Options::OPTSVFG())
-        return build(pta, VFG::PTRONLYSVFG_OPT);
-    else
-        return build(pta, VFG::PTRONLYSVFG);
+    return build(pta, VFG::PTRONLYSVFG_OPT);
+}
+
+SVFG* SVFGBuilder::buildPTROnlySVFGWithoutOPT(BVDataPTAImpl* pta)
+{
+    return build(pta, VFG::PTRONLYSVFG);
 }
 
 SVFG* SVFGBuilder::buildFullSVFG(BVDataPTAImpl* pta)
+{
+    return build(pta, VFG::FULLSVFG_OPT);
+}
+
+SVFG* SVFGBuilder::buildFullSVFGWithoutOPT(BVDataPTAImpl* pta)
 {
     return build(pta, VFG::FULLSVFG);
 }
@@ -57,33 +67,48 @@ SVFG* SVFGBuilder::buildFullSVFG(BVDataPTAImpl* pta)
  */
 void SVFGBuilder::buildSVFG()
 {
+    MemSSA* mssa = svfg->getMSSA();
     svfg->buildSVFG();
+    if(mssa->getPTA()->printStat())
+        svfg->performStat();
 }
 
 /// Create DDA SVFG
 SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
 {
 
-    auto mssa = buildMSSA(pta, (VFG::PTRONLYSVFG==kind || VFG::PTRONLYSVFG_OPT==kind));
+    MemSSA* mssa = buildMSSA(pta, (VFG::PTRONLYSVFG==kind || VFG::PTRONLYSVFG_OPT==kind));
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
-    if(kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
-        svfg = std::make_unique<SVFGOPT>(std::move(mssa), kind);
+    if(Options::SingleVFG)
+    {
+        if(globalSvfg==nullptr)
+        {
+            /// Note that we use callgraph from andersen analysis here
+            if(kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
+                svfg = globalSvfg = new SVFGOPT(mssa, kind);
+            else
+                svfg = globalSvfg = new SVFG(mssa, kind);
+            buildSVFG();
+        }
+    }
     else
-        svfg = std::unique_ptr<SVFG>(new SVFG(std::move(mssa),kind));
-    buildSVFG();
+    {
+        if(kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
+            svfg = new SVFGOPT(mssa, kind);
+        else
+            svfg = new SVFG(mssa,kind);
+        buildSVFG();
+    }
 
     /// Update call graph using pre-analysis results
-    if(Options::SVFGWithIndirectCall() || SVFGWithIndCall)
+    if(Options::SVFGWithIndirectCall || SVFGWithIndCall)
         svfg->updateCallGraph(pta);
 
-    if(svfg->getMSSA()->getPTA()->printStat())
-        svfg->performStat();
-
-    if(Options::DumpVFG())
+    if(Options::DumpVFG)
         svfg->dump("svfg_final");
 
-    return svfg.get();
+    return svfg;
 }
 
 /*!
@@ -94,12 +119,15 @@ void SVFGBuilder::releaseMemory()
     svfg->clearMSSA();
 }
 
-std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
+MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
 {
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
 
-    auto mssa = std::make_unique<MemSSA>(pta, ptrOnlyMSSA);
+    MemSSA* mssa = new MemSSA(pta, ptrOnlyMSSA);
+
+    DominatorTree dt;
+    MemSSADF df;
 
     SVFModule* svfModule = mssa->getPTA()->getModule();
     for (SVFModule::const_iterator iter = svfModule->begin(), eiter = svfModule->end();
@@ -110,11 +138,14 @@ std::unique_ptr<MemSSA> SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyM
         if (isExtCall(fun))
             continue;
 
-        mssa->buildMemSSA(*fun);
+        dt.recalculate(*fun->getLLVMFun());
+        df.runOnDT(dt);
+
+        mssa->buildMemSSA(*fun, &df, &dt);
     }
 
     mssa->performStat();
-    if (Options::DumpMSSA())
+    if (Options::DumpMSSA)
     {
         mssa->dumpMSSA();
     }
