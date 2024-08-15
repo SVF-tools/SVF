@@ -236,6 +236,63 @@ struct cppUtil::DemangledName cppUtil::demangle(const std::string& name)
 
     return dname;
 }
+
+// Extract class name in parameters
+// e.g., given "WithSemaphore::WithSemaphore(AP_HAL::Semaphore&)", return "AP_HAL::Semaphore"
+Set<std::string> cppUtil::getClsNamesInBrackets(const std::string& name)
+{
+    Set<std::string> res;
+    // Lambda to trim whitespace from both ends of a string
+    auto trim = [](std::string& s) {
+        size_t first = s.find_first_not_of(' ');
+        size_t last = s.find_last_not_of(' ');
+        if (first != std::string::npos && last != std::string::npos) {
+            s = s.substr(first, (last - first + 1));
+        } else {
+            s.clear();
+        }
+    };
+
+    // Lambda to remove trailing '*' and '&' characters
+    auto removePointerAndReference = [](std::string& s) {
+        while (!s.empty() && (s.back() == '*' || s.back() == '&')) {
+            s.pop_back();
+        }
+    };
+
+    s32_t status;
+    char* realname = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
+    if (realname == nullptr)
+    {
+        // do nothing
+    }
+    else
+    {
+        std::string realnameStr = std::string(realname);
+
+        // Find the start and end of the parameter list
+        size_t start = realnameStr.find('(');
+        size_t end = realnameStr.find(')');
+        if (start == std::string::npos || end == std::string::npos || start >= end) {
+            return res; // Return empty set if the format is incorrect
+        }
+
+        // Extract the parameter list
+        std::string paramList = realnameStr.substr(start + 1, end - start - 1);
+
+        // Split the parameter list by commas
+        std::istringstream ss(paramList);
+        std::string param;
+        while (std::getline(ss, param, ',')) {
+            trim(param);
+            removePointerAndReference(param);
+            res.insert(param);
+        }
+        std::free(realname);
+    }
+    return res;
+}
+
 std::string cppUtil::getClassNameFromVtblObj(const std::string& vtblName)
 {
     std::string className = "";
@@ -646,7 +703,10 @@ Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo)
     {
         // c++ constructor or destructor
         DemangledName demangledName = cppUtil::demangle(name);
-        return {demangledName.className};
+        Set<std::string> clsNameInBrackets =
+            cppUtil::getClsNamesInBrackets(name);
+        clsNameInBrackets.insert(demangledName.className);
+        return clsNameInBrackets;
     }
     else if (isTemplateFunc(foo))
     {
