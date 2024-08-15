@@ -243,19 +243,25 @@ Set<std::string> cppUtil::getClsNamesInBrackets(const std::string& name)
 {
     Set<std::string> res;
     // Lambda to trim whitespace from both ends of a string
-    auto trim = [](std::string& s) {
+    auto trim = [](std::string& s)
+    {
         size_t first = s.find_first_not_of(' ');
         size_t last = s.find_last_not_of(' ');
-        if (first != std::string::npos && last != std::string::npos) {
+        if (first != std::string::npos && last != std::string::npos)
+        {
             s = s.substr(first, (last - first + 1));
-        } else {
+        }
+        else
+        {
             s.clear();
         }
     };
 
     // Lambda to remove trailing '*' and '&' characters
-    auto removePointerAndReference = [](std::string& s) {
-        while (!s.empty() && (s.back() == '*' || s.back() == '&')) {
+    auto removePointerAndReference = [](std::string& s)
+    {
+        while (!s.empty() && (s.back() == '*' || s.back() == '&'))
+        {
             s.pop_back();
         }
     };
@@ -273,7 +279,8 @@ Set<std::string> cppUtil::getClsNamesInBrackets(const std::string& name)
         // Find the start and end of the parameter list
         size_t start = realnameStr.find('(');
         size_t end = realnameStr.find(')');
-        if (start == std::string::npos || end == std::string::npos || start >= end) {
+        if (start == std::string::npos || end == std::string::npos || start >= end)
+        {
             return res; // Return empty set if the format is incorrect
         }
 
@@ -283,7 +290,8 @@ Set<std::string> cppUtil::getClsNamesInBrackets(const std::string& name)
         // Split the parameter list by commas
         std::istringstream ss(paramList);
         std::string param;
-        while (std::getline(ss, param, ',')) {
+        while (std::getline(ss, param, ','))
+        {
             trim(param);
             removePointerAndReference(param);
             res.insert(param);
