@@ -137,7 +137,9 @@ jobs:
 
       - name: upload-coverage
         if: runner.os == 'Linux'
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
         with:
           files: coverage.info
           verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
