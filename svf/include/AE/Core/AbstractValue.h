@@ -20,6 +20,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+// The implementation is based on
+// Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
+// 46th International Conference on Software Engineering. (ICSE24)
+
 #include "AE/Core/IntervalValue.h"
 #include "AE/Core/AddressValue.h"
 #include "Util/SVFUtil.h"

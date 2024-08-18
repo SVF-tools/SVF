@@ -562,15 +562,7 @@ bool BufOverflowChecker::canSafelyAccessMemory(const SVFValue *value, const Inte
                     //  so if getOffsetVarVal > getOffsetVar.TypeSize (overflow)
                     //     else safe and return.
                     IntervalValue byteOffset;
-                    if (gep->isConstantOffset())
-                    {
-                        byteOffset = IntervalValue(gep->accumulateConstantByteOffset());
-                    }
-                    else
-                    {
-                        byteOffset =
-                            _svfir2AbsState->getByteOffset(as, gep);
-                    }
+                    byteOffset = _svfir2AbsState->getByteOffset(as, gep);
                     // for variable offset, join with accumulate gep offset
                     gep_offsets[gep->getICFGNode()] = byteOffset;
                     if (byteOffset.ub().getNumeral() >= Options::MaxFieldLimit() && Options::GepUnknownIdx())

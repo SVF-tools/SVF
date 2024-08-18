@@ -18,14 +18,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// The implementation is based on
-// Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
-// 46th International Conference on Software Engineering. (ICSE24)
 //===----------------------------------------------------------------------===//
 
 
 //
 // Created by Jiawei Wang on 2024/1/12.
+// The implementation is based on
+// Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
+// 46th International Conference on Software Engineering. (ICSE24)
 //
 
 #include "AE/Svfexe/AbstractInterpretation.h"

@@ -26,7 +26,9 @@
  *      Author: Jiawei Wang, Xiao Cheng
  *
  */
-
+// The implementation is based on
+// Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
+// 46th International Conference on Software Engineering. (ICSE24)
 
 #ifndef Z3_EXAMPLE_IntervalValue_H
 #define Z3_EXAMPLE_IntervalValue_H
@@ -49,26 +51,35 @@ private:
     // Upper bound
     BoundedInt _ub;
 
-    // Invariant: isBottom() <=> _lb = 1 && _ub = 0
+    // Invariant: isBottom() <=> _lb = +inf && _ub = -inf
 public:
+    friend IntervalValue operator+(const IntervalValue &lhs, const IntervalValue &rhs);
+    friend IntervalValue operator-(const IntervalValue &lhs, const IntervalValue &rhs);
+    friend IntervalValue operator*(const IntervalValue &lhs, const IntervalValue &rhs);
+    friend IntervalValue operator/(const IntervalValue &lhs, const IntervalValue &rhs);
+    friend IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &rhs);
+    friend IntervalValue operator>>(const IntervalValue &lhs, const IntervalValue &rhs);
+    friend IntervalValue operator&(const IntervalValue &lhs, const IntervalValue &rhs);
+    friend IntervalValue operator|(const IntervalValue &lhs, const IntervalValue &rhs);
+    friend IntervalValue operator^(const IntervalValue &lhs, const IntervalValue &rhs);
 
     bool isTop() const
     {
-        return this->_lb.is_minus_infinity() && this->_ub.is_plus_infinity();
+        return _lb.is_minus_infinity() && _ub.is_plus_infinity();
     }
 
     bool isBottom() const
     {
-        return !_ub.geq(_lb);
+        return _lb.is_plus_infinity() && _ub.is_minus_infinity();
     }
 
-    /// Get minus infinity -oo
+    /// Get minus infinity -inf
     static BoundedInt minus_infinity()
     {
         return BoundedInt::minus_infinity();
     }
 
-    /// Get plus infinity +oo
+    /// Get plus infinity +inf
     static BoundedInt plus_infinity()
     {
         return BoundedInt::plus_infinity();
@@ -79,16 +90,16 @@ public:
         return e.is_infinity();
     }
 
-    /// Create the IntervalValue [-oo, +oo]
+    /// Create the IntervalValue [-inf, +inf]
     static IntervalValue top()
     {
         return IntervalValue(minus_infinity(), plus_infinity());
     }
 
-    /// Create the bottom IntervalValue
+    /// Create the bottom IntervalValue [+inf, -inf]
     static IntervalValue bottom()
     {
-        return IntervalValue(1, 0);
+        return IntervalValue(plus_infinity(), minus_infinity());
     }
 
     /// Create default IntervalValue
@@ -106,7 +117,10 @@ public:
     explicit IntervalValue(BoundedInt n) : IntervalValue(n, n) {}
 
     /// Create the IntervalValue [lb, ub]
-    explicit IntervalValue(BoundedInt lb, BoundedInt ub) : _lb(std::move(lb)), _ub(std::move(ub)) {}
+    explicit IntervalValue(BoundedInt lb, BoundedInt ub) : _lb(std::move(lb)), _ub(std::move(ub))
+    {
+        assert((isBottom() || _lb.leq(_ub)) && "lower bound should be less than or equal to upper bound");
+    }
 
     explicit IntervalValue(s64_t lb, s64_t ub) : IntervalValue(BoundedInt(lb), BoundedInt(ub)) {}
 
@@ -216,25 +230,6 @@ public:
         return this->_ub;
     }
 
-    /// Set the lower bound
-    void setLb(const BoundedInt &lb)
-    {
-        this->_lb = lb;
-    }
-
-    /// Set the upper bound
-    void setUb(const BoundedInt &ub)
-    {
-        this->_ub = ub;
-    }
-
-    /// Set the lower bound
-    void setValue(const BoundedInt &lb, const BoundedInt &ub)
-    {
-        this->_lb = lb;
-        this->_ub = ub;
-    }
-
     /// Return true if the IntervalValue is [0, 0]
     bool is_zero() const
     {
@@ -287,8 +282,8 @@ public:
     /// Set current IntervalValue as bottom
     void set_to_bottom()
     {
-        this->_lb = 1;
-        this->_ub = 0;
+        this->_lb = plus_infinity();
+        this->_ub = minus_infinity();
     }
 
     /// Set current IntervalValue as top
@@ -428,8 +423,7 @@ public:
             }
             else
             {
-                this->_lb = other.lb();
-                this->_ub = other.ub();
+                setValue(other.lb(), other.ub());
             }
         }
         else if (other.isBottom())
@@ -438,8 +432,7 @@ public:
         }
         else
         {
-            this->_lb = min(this->lb(), other.lb());
-            this->_ub = max(this->ub(), other.ub());
+            setValue(min(this->lb(), other.lb()), max(this->ub(), other.ub()));
         }
     }
 
@@ -457,8 +450,7 @@ public:
         }
         else
         {
-            this->_lb = !lb().leq(other.lb()) ? minus_infinity() : this->lb();
-            this->_ub = !ub().geq(other.ub()) ? plus_infinity() : this->ub();
+            setValue(!lb().leq(other.lb()) ? minus_infinity() : this->lb(), !ub().geq(other.ub()) ? plus_infinity() : this->ub());
         }
     }
 
@@ -475,8 +467,7 @@ public:
         }
         else
         {
-            this->_lb = is_infinite(this->lb()) ? other._lb : this->_lb;
-            this->_ub = is_infinite(this->ub()) ? other._ub : this->_ub;
+            setValue(is_infinite(this->lb()) ? other._lb : this->_lb, is_infinite(this->ub()) ? other._ub : this->_ub);
         }
     }
 
@@ -489,10 +480,14 @@ public:
         }
         else
         {
-            this->_lb = max(this->_lb, other.lb());
-            this->_ub = min(this->_ub, other.ub());
-            if (this->isBottom())
+            if (!(max(this->_lb, other.lb()).leq(min(this->_ub, other.ub()))))
+            {
                 this->set_to_bottom();
+            }
+            else
+            {
+                setValue(max(this->_lb, other.lb()), min(this->_ub, other.ub()));
+            }
         }
     }
 
@@ -528,7 +523,24 @@ public:
         }
         return rawStr.str();
     }
+private:
+    /// Set the lower bound
+    void setValue(const BoundedInt &lb, const BoundedInt &ub)
+    {
+        assert((isBottom() || _lb.leq(_ub)) && "lower bound should be less than or equal to upper bound");
+        this->_lb = lb;
+        this->_ub = ub;
+    }
 
+private:
+    // internal use for create bottom-tolerant IntervalValue
+    static IntervalValue create(const BoundedInt& lb, const BoundedInt& ub)
+    {
+        if (!lb.leq(ub))
+            return IntervalValue::bottom();
+        else
+            return IntervalValue(lb, ub);
+    }
 }; // end class IntervalValue
 
 /// Add IntervalValues
@@ -581,7 +593,7 @@ inline IntervalValue operator*(const IntervalValue &lhs,
         BoundedInt lu = lhs.lb() * rhs.ub();
         BoundedInt ul = lhs.ub() * rhs.lb();
         BoundedInt uu = lhs.ub() * rhs.ub();
-        std::vector<BoundedDouble> vec{ll, lu, ul, uu};
+        std::vector<BoundedInt> vec{ll, lu, ul, uu};
         return IntervalValue(BoundedInt::min(vec),
                              BoundedInt::max(vec));
     }
@@ -597,7 +609,22 @@ inline IntervalValue operator/(const IntervalValue &lhs,
     }
     else if (rhs.contains(0))
     {
-        return lhs.is_zero() ? IntervalValue(0, 0) : IntervalValue::top();
+        IntervalValue lb = IntervalValue::create(rhs.lb(), -1);
+        IntervalValue ub = IntervalValue::create(1, rhs.ub());
+        IntervalValue l_res = lhs / lb;
+        IntervalValue r_res = lhs / ub;
+        l_res.join_with(r_res);
+        return l_res;
+    }
+    else if (lhs.contains(0))
+    {
+        IntervalValue lb = IntervalValue::create(lhs.lb(), -1);
+        IntervalValue ub = IntervalValue::create(1, lhs.ub());
+        IntervalValue l_res = lb / rhs;
+        IntervalValue r_res = ub / rhs;
+        l_res.join_with(r_res);
+        l_res.join_with(IntervalValue(0));
+        return l_res;
     }
     else
     {
@@ -606,10 +633,11 @@ inline IntervalValue operator/(const IntervalValue &lhs,
         BoundedInt lu = lhs.lb() / rhs.ub();
         BoundedInt ul = lhs.ub() / rhs.lb();
         BoundedInt uu = lhs.ub() / rhs.ub();
-        std::vector<BoundedDouble> vec{ll, lu, ul, uu};
+        std::vector<BoundedInt> vec{ll, lu, ul, uu};
 
-        return IntervalValue(BoundedInt::min(vec),
-                             BoundedInt::max(vec));
+        IntervalValue res =  IntervalValue(BoundedInt::min(vec),
+                                           BoundedInt::max(vec));
+        return res;
     }
 }
 
@@ -870,9 +898,26 @@ inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &r
         shift.meet_with(IntervalValue(0, IntervalValue::plus_infinity()));
         if (shift.isBottom())
             return IntervalValue::bottom();
-        IntervalValue coeff(1 << (s32_t) shift.lb().getNumeral(),
-                            shift.ub().is_infinity() ? IntervalValue::plus_infinity() : 1
-                            << (s32_t) shift.ub().getNumeral());
+        BoundedInt lb = 0;
+        // If the shift is greater than 32, the result is always 0
+        if ((s32_t) shift.lb().getNumeral() >= 32 || shift.lb().is_infinity())
+        {
+            lb = IntervalValue::minus_infinity();
+        }
+        else
+        {
+            lb = (1 << (s32_t) shift.lb().getNumeral());
+        }
+        BoundedInt ub = 0;
+        if (shift.ub().is_infinity())
+        {
+            ub = IntervalValue::plus_infinity();
+        }
+        else
+        {
+            ub = (1 << (s32_t) shift.ub().getNumeral());
+        }
+        IntervalValue coeff(lb, ub);
         return lhs * coeff;
     }
 }
@@ -893,8 +938,8 @@ inline IntervalValue operator>>(const IntervalValue &lhs, const IntervalValue &r
             return IntervalValue::bottom();
         if (lhs.contains(0))
         {
-            IntervalValue l(lhs.lb(), -1);
-            IntervalValue u(1, lhs.ub());
+            IntervalValue l = IntervalValue::create(lhs.lb(), -1);
+            IntervalValue u = IntervalValue::create(1, lhs.ub());
             IntervalValue tmp = l >> rhs;
             tmp.join_with(u >> rhs);
             tmp.join_with(IntervalValue(0));
@@ -906,7 +951,7 @@ inline IntervalValue operator>>(const IntervalValue &lhs, const IntervalValue &r
             BoundedInt lu = lhs.lb() >> shift.ub();
             BoundedInt ul = lhs.ub() >> shift.lb();
             BoundedInt uu = lhs.ub() >> shift.ub();
-            std::vector<BoundedDouble> vec{ll, lu, ul, uu};
+            std::vector<BoundedInt> vec{ll, lu, ul, uu};
             return IntervalValue(BoundedInt::min(vec),
                                  BoundedInt::max(vec));
         }
@@ -960,7 +1005,7 @@ inline IntervalValue operator|(const IntervalValue &lhs, const IntervalValue &rh
              rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity())
     {
         s64_t m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
-        s64_t ub = next_power_of_2(s64_t(m+1));
+        s64_t ub = next_power_of_2(s64_t(m)) - 1;
         return IntervalValue((s64_t) 0, (s64_t) ub);
     }
     else
@@ -989,7 +1034,7 @@ inline IntervalValue operator^(const IntervalValue &lhs, const IntervalValue &rh
              rhs.lb().getNumeral() >= 0 && !rhs.ub().is_infinity())
     {
         s64_t m = std::max(lhs.ub().getNumeral(), rhs.ub().getNumeral());
-        s64_t ub = next_power_of_2(s64_t(m+1));
+        s64_t ub = next_power_of_2(s64_t(m)) - 1;
         return IntervalValue((s64_t) 0, (s64_t) ub);
     }
     else

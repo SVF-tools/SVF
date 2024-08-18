@@ -135,6 +135,8 @@ const std::string CallICFGNode::toString() const
     rawstr << " {fun: " << getFun()->getName() << getCallSite()->getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
+    if(getSVFStmts().empty() && cs)
+        rawstr << "\n" << cs->toString();
     return rawstr.str();
 }
 
@@ -146,6 +148,8 @@ const std::string RetICFGNode::toString() const
     rawstr << " {fun: " << getFun()->getName() << getCallSite()->getSourceLoc() << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
+    if(getSVFStmts().empty() && cs)
+        rawstr << "\n" << cs->toString();
     return rawstr.str();
 }
 

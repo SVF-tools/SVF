@@ -739,9 +739,6 @@ void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const Function *lf)
         {
             SVFFunction* pFunction =
                 LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(tf);
-            cppUtil::DemangledName dname = cppUtil::demangle(pFunction->getName());
-            string calleeName = dname.funcName;
-            pFunction->setName(calleeName);
             v.push_back(pFunction);
         }
     }
@@ -749,9 +746,6 @@ void CHGBuilder::addFuncToFuncVector(CHNode::FuncVector &v, const Function *lf)
     {
         SVFFunction* pFunction =
             LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(lf);
-        cppUtil::DemangledName dname = cppUtil::demangle(pFunction->getName());
-        string calleeName = dname.funcName;
-        pFunction->setName(calleeName);
         v.push_back(pFunction);
     }
 }
