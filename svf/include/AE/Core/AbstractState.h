@@ -315,8 +315,7 @@ public:
     }
 
 
-    /// Print values of all expressions
-    void printExprValues(std::ostream &oss) const;
+    void printAbstractState() const;
 
     std::string toString() const
     {
@@ -401,9 +400,6 @@ public:
         _varToAbsVal.clear();
     }
 
-
-protected:
-    void printTable(const VarToAbsValMap&table, std::ostream &oss) const;
 
 };
 

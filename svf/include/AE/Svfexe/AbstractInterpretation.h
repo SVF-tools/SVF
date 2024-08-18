@@ -29,9 +29,9 @@
 //
 
 #include "AE/Core/ICFGWTO.h"
-#include "AE/Svfexe/SVFIR2AbsState.h"
 #include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
+#include "AE/Core/AbstractState.h"
 
 namespace SVF
 {
@@ -321,10 +321,34 @@ protected:
     void AccessMemoryViaCallArgs(const SVF::SVFArgument *arg, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
 
 
+    void handleAddr(const AddrStmt *addr);
+
+    void handleBinary(const BinaryOPStmt *binary);
+
+    void handleCmp(const CmpStmt *cmp);
+
+    void handleLoad(const LoadStmt *load);
+
+    void handleStore(const StoreStmt *store);
+
+    void handleCopy(const CopyStmt *copy);
+
+    void handleCall(const CallPE *callPE);
+
+    void handleRet(const RetPE *retPE);
+
+    void handleGep(const GepStmt *gep);
+
+    void handleSelect(const SelectStmt *select);
+
+    void handlePhi(const PhiStmt *phi);
+
+    IntervalValue getRangeLimitFromType(const SVFType* type);
+
+
     /// protected data members, also used in subclasses
     SVFIR* _svfir;
     /// Execution State, used to store the Interval Value of every SVF variable
-    SVFIR2AbsState* _svfir2AbsState;
     AEAPI* _api{nullptr};
 
     ICFG* _icfg;
@@ -350,13 +374,8 @@ private:
     virtual void indirectCallFunPass(const CallICFGNode* callNode);
 
 protected:
-    // helper functions in handleCycleWTO
-    bool isFixPointAfterWidening(const ICFGNode* cycle_head,
-                                 AbstractState& pre_as);
-    bool isFixPointAfterNarrowing(const SVF::ICFGNode* cycle_head,
-                                  SVF::AbstractState& pre_as);
 
-    AbstractState& getAbsState(const ICFGNode* node)
+    AbstractState& getAbsStateFromTrace(const ICFGNode* node)
     {
         const ICFGNode* repNode = _icfg->getRepNode(node);
         if (_postAbsTrace.count(repNode) == 0)
@@ -367,6 +386,12 @@ protected:
         {
             return _postAbsTrace[repNode];
         }
+    }
+
+    bool hasAbsStateFromTrace(const ICFGNode* node)
+    {
+        const ICFGNode* repNode = _icfg->getRepNode(node);
+        return _postAbsTrace.count(repNode) != 0;
     }
 
 protected:

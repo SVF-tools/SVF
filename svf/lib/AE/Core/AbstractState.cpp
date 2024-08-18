@@ -192,30 +192,6 @@ void AbstractState::meetWith(const AbstractState& other)
     }
 }
 
-/// Print values of all expressions
-void AbstractState::printExprValues(std::ostream &oss) const
-{
-    oss << "-----------Var and Value-----------\n";
-    printTable(_varToAbsVal, oss);
-    printTable(_addrToAbsVal, oss);
-    oss << "-----------------------------------------\n";
-}
-
-void AbstractState::printTable(const VarToAbsValMap&table, std::ostream &oss) const
-{
-    oss.flags(std::ios::left);
-    std::set<NodeID> ordered;
-    for (const auto &item: table)
-    {
-        ordered.insert(item.first);
-    }
-    for (const auto &item: ordered)
-    {
-        oss << "Var" << std::to_string(item);
-        oss << "\t Value: " << table.at(item).toString() << "\n";
-    }
-}
-
 // getGepObjAddrs
 AddressValue AbstractState::getGepObjAddrs(u32_t pointer, IntervalValue offset)
 {
@@ -417,4 +393,55 @@ void AbstractState::storeValue(NodeID varId, AbstractValue val) {
     for (auto addr : (*this)[varId].getAddrs()) {
         store(addr, val); // *p = q
     }
+}
+
+void AbstractState::printAbstractState() const {
+    //TODO: reorder the varID
+    SVFUtil::outs() << "-----------Var and Value-----------\n";
+    u32_t fieldWidth = 20;
+    SVFUtil::outs().flags(std::ios::left);
+    for (const auto &item: _varToAbsVal) {
+        SVFUtil::outs() << std::left << std::setw(fieldWidth) << ("Var" + std::to_string(item.first));
+        if (item.second.isInterval()) {
+            SVFUtil::outs() << " Value: " << item.second.getInterval().toString() << "\n";
+        } else if (item.second.isAddr()) {
+            SVFUtil::outs() << " Value: {";
+            u32_t i = 0;
+            for (const auto& addr: item.second.getAddrs()) {
+                ++i;
+                if (i < item.second.getAddrs().size()) {
+                    SVFUtil::outs() << "0x" << std::hex << addr << ", ";
+                } else {
+                    SVFUtil::outs() << "0x" << std::hex << addr;
+                }
+            }
+            SVFUtil::outs() << "}\n";
+        } else {
+            SVFUtil::outs() << " Value: ⊥\n";
+        }
+    }
+
+    for (const auto& item: _addrToAbsVal) {
+        std::ostringstream oss;
+        oss << "0x" << std::hex << AbstractState::getVirtualMemAddress(item.first);
+        SVFUtil::outs() << std::left << std::setw(fieldWidth) << oss.str();
+        if (item.second.isInterval()) {
+            SVFUtil::outs() << " Value: " << item.second.getInterval().toString() << "\n";
+        } else if (item.second.isAddr()) {
+            SVFUtil::outs() << " Value: {";
+            u32_t i = 0;
+            for (const auto& addr: item.second.getAddrs()) {
+                ++i;
+                if (i < item.second.getAddrs().size()) {
+                    SVFUtil::outs() << "0x" << std::hex << addr << ", ";
+                } else {
+                    SVFUtil::outs() << "0x" << std::hex << addr;
+                }
+            }
+            SVFUtil::outs() << "}\n";
+        } else {
+            SVFUtil::outs() << " Value: ⊥\n";
+        }
+    }
+    SVFUtil::outs() << "-----------------------------------------\n";
 }

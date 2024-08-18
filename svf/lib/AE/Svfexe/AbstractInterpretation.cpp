@@ -90,8 +90,6 @@ void AbstractInterpretation::runOnModule(ICFG *icfg)
     _stat->startClk();
     _icfg = icfg;
     _svfir = PAG::getPAG();
-    // init SVF Execution States
-    _svfir2AbsState = new SVFIR2AbsState(_svfir);
 
 
     /// collect checkpoint
@@ -118,7 +116,6 @@ AbstractInterpretation::AbstractInterpretation()
 AbstractInterpretation::~AbstractInterpretation()
 {
     delete _stat;
-    delete _svfir2AbsState;
     for (auto it: _funcToWTO)
         delete it.second;
 
@@ -158,7 +155,8 @@ void AbstractInterpretation::analyse()
     initWTO();
     // handle Global ICFGNode of SVFModule
     handleGlobalNode();
-    getAbsState(_icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
+    getAbsStateFromTrace(
+        _icfg->getGlobalICFGNode())[PAG::getPAG()->getBlkPtr()] = IntervalValue::top();
     if (const SVFFunction* fun = _svfir->getModule()->getSVFFunction("main"))
     {
         ICFGWTO* wto = _funcToWTO[fun];
@@ -637,7 +635,7 @@ bool AbstractInterpretation::isRecursiveCall(const SVF::CallICFGNode *callNode)
 
 void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode)
 {
-    AbstractState& as = getAbsState(callNode);
+    AbstractState& as = getAbsStateFromTrace(callNode);
     SkipRecursiveCall(callNode);
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
@@ -661,7 +659,7 @@ bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
 }
 void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode)
 {
-    AbstractState& as = getAbsState(callNode);
+    AbstractState& as = getAbsStateFromTrace(callNode);
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     _callSiteStack.push_back(callNode);
 
@@ -685,15 +683,14 @@ bool AbstractInterpretation::isIndirectCall(const SVF::CallICFGNode *callNode)
 
 void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNode)
 {
-    AbstractState& as = getAbsState(callNode);
+    AbstractState& as = getAbsStateFromTrace(callNode);
     const auto callsiteMaps = _svfir->getIndirectCallsites();
     NodeID call_id = callsiteMaps.at(callNode);
     if (!as.inVarToAddrsTable(call_id))
     {
         return;
     }
-    AbstractValue Addrs =
-        _svfir2AbsState->getAddrs(as, call_id); //_svfir2ExeState->getEs()
+    AbstractValue Addrs = as[call_id];
     NodeID addr = *Addrs.getAddrs().begin();
     SVFVar *func_var = _svfir->getGNode(AbstractState::getInternalID(addr));
     const SVFFunction *callfun = SVFUtil::dyn_cast<SVFFunction>(func_var->getValue());
@@ -758,66 +755,19 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
     }
 }
 
-bool AbstractInterpretation::isFixPointAfterWidening(const ICFGNode* cycle_head,
-        AbstractState& pre_as)
-{
-    // increasing iterations
-    AbstractState new_pre_as = pre_as.widening(_postAbsTrace[cycle_head]);
-    AbstractState new_pre_vaddr_as = new_pre_as;
-    //_svfir2AbsState->widenAddrs(getCurState(), new_pre_es, _postAbsTrace[cycle_head]);
-
-    if (pre_as >= new_pre_as)
-    {
-        // increasing iterations - fixpoint reached
-        pre_as = new_pre_as;
-        _postAbsTrace[cycle_head] = pre_as;
-        return true;
-    }
-    else
-    {
-        pre_as = new_pre_as;
-        _postAbsTrace[cycle_head] = pre_as;
-        return false;
-    }
-}
-
-bool AbstractInterpretation::isFixPointAfterNarrowing(
-    const SVF::ICFGNode* cycle_head, SVF::AbstractState& pre_as)
-{
-    // decreasing iterations
-    AbstractState new_pre_as = pre_as.narrowing(_postAbsTrace[cycle_head]);
-    AbstractState new_pre_vaddr_as = new_pre_as;
-    //_svfir2AbsState->narrowAddrs(getCurState(), new_pre_es, _postAbsTrace[cycle_head]);
-    if (new_pre_as >= pre_as)
-    {
-        // decreasing iterations - fixpoint reached
-        pre_as = new_pre_as;
-        _postAbsTrace[cycle_head] = pre_as;
-        return true;
-    }
-    else
-    {
-        pre_as = new_pre_as;
-        _postAbsTrace[cycle_head] = pre_as;
-        return false;
-    }
-}
-
-
 void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 {
-    AbstractState& as = getAbsState(stmt->getICFGNode());
     if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
     {
-        _svfir2AbsState->handleAddr(as, addr);
+        handleAddr(addr);
     }
     else if (const BinaryOPStmt *binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
     {
-        _svfir2AbsState->handleBinary(as, binary);
+        handleBinary(binary);
     }
     else if (const CmpStmt *cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
     {
-        _svfir2AbsState->handleCmp(as, cmp);
+        handleCmp(cmp);
     }
     else if (SVFUtil::isa<UnaryOPStmt>(stmt))
     {
@@ -828,36 +778,36 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     }
     else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt))
     {
-        _svfir2AbsState->handleLoad(as, load);
+        handleLoad(load);
     }
     else if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
     {
-        _svfir2AbsState->handleStore(as, store);
+        handleStore(store);
     }
     else if (const CopyStmt *copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
     {
-        _svfir2AbsState->handleCopy(as, copy);
+        handleCopy(copy);
     }
     else if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
     {
-        _svfir2AbsState->handleGep(as, gep);
+        handleGep(gep);
     }
     else if (const SelectStmt *select = SVFUtil::dyn_cast<SelectStmt>(stmt))
     {
-        _svfir2AbsState->handleSelect(as, select);
+        handleSelect(select);
     }
     else if (const PhiStmt *phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
     {
-        _svfir2AbsState->handlePhi(as, phi);
+        handlePhi(phi);
     }
     else if (const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt))
     {
         // To handle Call Edge
-        _svfir2AbsState->handleCall(as, callPE);
+        handleCall(callPE);
     }
     else if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt))
     {
-        _svfir2AbsState->handleRet(as, retPE);
+        handleRet(retPE);
     }
     else
         assert(false && "implement this part");
@@ -866,7 +816,7 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 
 void AbstractInterpretation::SkipRecursiveCall(const CallICFGNode *callNode)
 {
-    AbstractState& as = getAbsState(callNode);
+    AbstractState& as = getAbsStateFromTrace(callNode);
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     if (retNode->getSVFStmts().size() > 0)
@@ -1044,7 +994,7 @@ void AbstractInterpretation::initExtFunMap()
         auto sse_##FUNC_NAME = [this](const CallSite &cs) { \
         /* run real ext function */            \
         const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(_svfir->getICFG()->getICFGNode(cs.getInstruction())); \
-        AbstractState& as = getAbsState(callNode); \
+        AbstractState& as = getAbsStateFromTrace(callNode); \
         u32_t rhs_id = _svfir->getValueNode(cs.getArgument(0)); \
         if (!as.inVarToValTable(rhs_id)) return; \
         u32_t rhs = as[rhs_id].getInterval().lb().getIntNumeral(); \
@@ -1079,7 +1029,7 @@ void AbstractInterpretation::initExtFunMap()
         const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(_svfir->getICFG()->getICFGNode(cs.getInstruction()));
         _checkpoints.erase(callNode);
         u32_t arg0 = _svfir->getValueNode(cs.getArgument(0));
-        AbstractState&as = getAbsState(callNode);
+        AbstractState&as = getAbsStateFromTrace(callNode);
         as[arg0].getInterval().meet_with(IntervalValue(1, 1));
         if (as[arg0].getInterval().equals(IntervalValue(1, 1)))
         {
@@ -1098,7 +1048,7 @@ void AbstractInterpretation::initExtFunMap()
     {
         if (cs.arg_size() < 2) return;
         const CallICFGNode* callNode = SVFUtil::dyn_cast<CallICFGNode>(_svfir->getICFG()->getICFGNode(cs.getInstruction()));
-        AbstractState&as = getAbsState(callNode);
+        AbstractState&as = getAbsStateFromTrace(callNode);
         u32_t num_id = _svfir->getValueNode(cs.getArgument(0));
         std::string text = strRead(as, cs.getArgument(1));
         assert(as.inVarToValTable(num_id) && "print() should pass integer");
@@ -1144,7 +1094,7 @@ std::string AbstractInterpretation::strRead(AbstractState& as, const SVFValue* r
 
 void AbstractInterpretation::handleExtAPI(const CallICFGNode *call)
 {
-    AbstractState& as = getAbsState(call);
+    AbstractState& as = getAbsStateFromTrace(call);
     const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
     assert(fun && "SVFFunction* is nullptr");
     CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
@@ -1251,7 +1201,7 @@ void AbstractInterpretation::handleStrcpy(const CallICFGNode *call)
 {
     // strcpy, __strcpy_chk, stpcpy , wcscpy, __wcscpy_chk
     // get the dst and src
-    AbstractState& as = getAbsState(call);
+    AbstractState& as = getAbsStateFromTrace(call);
     CallSite cs = SVFUtil::getSVFCallSite(call->getCallSite());
     const SVFValue* arg0Val = cs.getArgument(0);
     const SVFValue* arg1Val = cs.getArgument(1);
@@ -1279,7 +1229,7 @@ u32_t AbstractInterpretation::getAllocaInstByteSize(AbstractState& as, const Add
             u64_t res = elementSize;
             for (const SVFValue* value: sizes)
             {
-                if (!_svfir2AbsState->inVarToValTable(as, _svfir->getValueNode(value)))
+                if (!as.inVarToValTable(_svfir->getValueNode(value)))
                 {
                     as[_svfir->getValueNode(value)] = IntervalValue(Options::MaxFieldLimit());
                 }
@@ -1424,7 +1374,7 @@ IntervalValue AbstractInterpretation::getStrlen(AbstractState& as, const SVF::SV
     u32_t len = 0;
     NodeID dstid = _svfir->getValueNode(strValue);
     u32_t elemSize = 1;
-    if (_svfir2AbsState->inVarToAddrsTable(as, dstid))
+    if (as.inVarToAddrsTable(dstid))
     {
         for (u32_t index = 0; index < dst_size.lb().getIntNumeral(); index++)
         {
@@ -1476,7 +1426,7 @@ void AbstractInterpretation::handleStrcat(const SVF::CallICFGNode *call)
 {
     // __strcat_chk, strcat, __wcscat_chk, wcscat, __strncat_chk, strncat, __wcsncat_chk, wcsncat
     // to check it is  strcat group or strncat group
-    AbstractState& as = getAbsState(call);
+    AbstractState& as = getAbsStateFromTrace(call);
     const SVFFunction *fun = SVFUtil::getCallee(call->getCallSite());
     const std::vector<std::string> strcatGroup = {"__strcat_chk", "strcat", "__wcscat_chk", "wcscat"};
     const std::vector<std::string> strncatGroup = {"__strncat_chk", "strncat", "__wcsncat_chk", "wcsncat"};
@@ -1539,8 +1489,7 @@ void AbstractInterpretation::handleMemcpy(AbstractState& as, const SVF::SVFValue
     }
     u32_t size = std::min((u32_t)Options::MaxFieldLimit(), (u32_t) len.lb().getIntNumeral());
     u32_t range_val = size / elemSize;
-    if (_svfir2AbsState->inVarToAddrsTable(as, srcId) &&
-            _svfir2AbsState->inVarToAddrsTable(as, dstId))
+    if (as.inVarToAddrsTable(srcId) && as.inVarToAddrsTable(dstId))
     {
         for (u32_t index = 0; index < range_val; index++)
         {
@@ -1570,9 +1519,9 @@ void AbstractInterpretation::handleMemcpy(AbstractState& as, const SVF::SVFValue
 
 const SVFType* AbstractInterpretation::getPointeeElement(AbstractState& as, NodeID id)
 {
-    if (_svfir2AbsState->inVarToAddrsTable(as, id))
+    if (as.inVarToAddrsTable(id))
     {
-        const AbstractValue& addrs = _svfir2AbsState->getAddrs(as, id);
+        const AbstractValue& addrs = as[id];
         for (auto addr: addrs.getAddrs())
         {
             NodeID addr_id = AbstractState::getInternalID(addr);
@@ -1617,7 +1566,7 @@ void AbstractInterpretation::handleMemset(AbstractState& as, const SVF::SVFValue
     for (u32_t index = 0; index < range_val; index++)
     {
         // dead loop for string and break if there's a \0. If no \0, it will throw err.
-        if (_svfir2AbsState->inVarToAddrsTable(as, dstId))
+        if (as.inVarToAddrsTable(dstId))
         {
             AbstractValue lhs_gep = as.getGepObjAddrs(dstId, IntervalValue(index));
             for (const auto &addr: lhs_gep.getAddrs())
@@ -1678,10 +1627,9 @@ void AbstractInterpretation::AccessMemoryViaCopyStmt(const CopyStmt *copy, SVF::
 
 void AbstractInterpretation::AccessMemoryViaLoadStmt(AbstractState& as, const LoadStmt *load, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited)
 {
-    if (_svfir2AbsState->inVarToAddrsTable(as, load->getLHSVarID()))
+    if (as.inVarToAddrsTable(load->getLHSVarID()))
     {
-        const AbstractValue &Addrs =
-            _svfir2AbsState->getAddrs(as, load->getLHSVarID());
+        const AbstractValue &Addrs = as[load->getLHSVarID()];
         for (auto vaddr: Addrs.getAddrs())
         {
             NodeID id = AbstractState::getInternalID(vaddr);
@@ -1731,4 +1679,591 @@ void AbstractInterpretation::AccessMemoryViaCallArgs(const SVF::SVFArgument *arg
         }
     }
 }
+
+void AbstractInterpretation::handleGep(const GepStmt *gep)
+{
+    AbstractState& as = getAbsStateFromTrace(gep->getICFGNode());
+    u32_t rhs = gep->getRHSVarID();
+    u32_t lhs = gep->getLHSVarID();
+    IntervalValue offsetPair = as.getElementIndex(gep);
+    AbstractValue gepAddrs;
+    APOffset lb = offsetPair.lb().getIntNumeral() < Options::MaxFieldLimit()?
+                                                                             offsetPair.lb().getIntNumeral(): Options::MaxFieldLimit();
+    APOffset ub = offsetPair.ub().getIntNumeral() < Options::MaxFieldLimit()?
+                                                                             offsetPair.ub().getIntNumeral(): Options::MaxFieldLimit();
+    for (APOffset i = lb; i <= ub; i++)
+        gepAddrs.join_with(as.getGepObjAddrs(rhs,IntervalValue(i)));
+    as[lhs] = gepAddrs;
+}
+
+void AbstractInterpretation::handleSelect(const SelectStmt *select)
+{
+    AbstractState& as = getAbsStateFromTrace(select->getICFGNode());
+    u32_t res = select->getResID();
+    u32_t tval = select->getTrueValue()->getId();
+    u32_t fval = select->getFalseValue()->getId();
+    u32_t cond = select->getCondition()->getId();
+    if (as[cond].getInterval().is_numeral())
+    {
+        as[res] = as[cond].getInterval().is_zero() ? as[fval] : as[tval];
+    }
+    else
+    {
+        as[res] = as[tval];
+        as[res].join_with(as[fval]);
+    }
+}
+
+void AbstractInterpretation::handlePhi(const PhiStmt *phi)
+{
+    const ICFGNode* icfgNode = phi->getICFGNode();
+    AbstractState& as = getAbsStateFromTrace(icfgNode);
+    u32_t res = phi->getResID();
+    AbstractValue rhs;
+    for (u32_t i = 0; i < phi->getOpVarNum(); i++) {
+        NodeID curId = phi->getOpVarID(i);
+        const ICFGNode* opICFGNode = phi->getOpICFGNode(i);
+        if (hasAbsStateFromTrace(opICFGNode))
+        {
+            AbstractState& opAs = getAbsStateFromTrace(opICFGNode);
+            rhs.join_with(opAs[curId]);
+        }
+    }
+    as[res] = rhs;
+}
+
+
+void AbstractInterpretation::handleCall(const CallPE *callPE)
+{
+    AbstractState& as = getAbsStateFromTrace(callPE->getICFGNode());
+    NodeID lhs = callPE->getLHSVarID();
+    NodeID rhs = callPE->getRHSVarID();
+    as[lhs] = as[rhs];
+}
+
+void AbstractInterpretation::handleRet(const RetPE *retPE)
+{
+    AbstractState& as = getAbsStateFromTrace(retPE->getICFGNode());
+    NodeID lhs = retPE->getLHSVarID();
+    NodeID rhs = retPE->getRHSVarID();
+    as[lhs] = as[rhs];
+}
+
+
+void AbstractInterpretation::handleAddr(const AddrStmt *addr)
+{
+    AbstractState& as = getAbsStateFromTrace(addr->getICFGNode());
+    as.initObjVar(SVFUtil::cast<ObjVar>(addr->getRHSVar()));
+    if (addr->getRHSVar()->getType()->getKind() == SVFType::SVFIntegerTy)
+        as[addr->getRHSVarID()].getInterval().meet_with(getRangeLimitFromType(addr->getRHSVar()->getType()));
+    as[addr->getLHSVarID()] = as[addr->getRHSVarID()];
+}
+
+
+void AbstractInterpretation::handleBinary(const BinaryOPStmt *binary) {
+    /// TODO: your code starts from here
+    /// Find the comparison predicates in "class BinaryOPStmt:OpCode" under SVF/svf/include/SVFIR/SVFStatements.h
+    /// You are only required to handle integer predicates, including Add, FAdd, Sub, FSub, Mul, FMul, SDiv, FDiv, UDiv,
+    /// SRem, FRem, URem, Xor, And, Or, AShr, Shl, LShr
+    const ICFGNode* node = binary->getICFGNode();
+    AbstractState& as = getAbsStateFromTrace(node);
+    u32_t op0 = binary->getOpVarID(0);
+    u32_t op1 = binary->getOpVarID(1);
+    u32_t res = binary->getResID();
+    if (!as.inVarToValTable(op0)) as[op0] = IntervalValue::top();
+    if (!as.inVarToValTable(op1)) as[op1] = IntervalValue::top();
+    IntervalValue &lhs = as[op0].getInterval(), &rhs = as[op1].getInterval();
+    IntervalValue resVal;
+    switch (binary->getOpcode())
+    {
+    case BinaryOPStmt::Add:
+    case BinaryOPStmt::FAdd:
+        resVal = (lhs + rhs);
+        break;
+    case BinaryOPStmt::Sub:
+    case BinaryOPStmt::FSub:
+        resVal = (lhs - rhs);
+        break;
+    case BinaryOPStmt::Mul:
+    case BinaryOPStmt::FMul:
+        resVal = (lhs * rhs);
+        break;
+    case BinaryOPStmt::SDiv:
+    case BinaryOPStmt::FDiv:
+    case BinaryOPStmt::UDiv:
+        resVal = (lhs / rhs);
+        break;
+    case BinaryOPStmt::SRem:
+    case BinaryOPStmt::FRem:
+    case BinaryOPStmt::URem:
+        resVal = (lhs % rhs);
+        break;
+    case BinaryOPStmt::Xor:
+        resVal = (lhs ^ rhs);
+        break;
+    case BinaryOPStmt::And:
+        resVal = (lhs & rhs);
+        break;
+    case BinaryOPStmt::Or:
+        resVal = (lhs | rhs);
+        break;
+    case BinaryOPStmt::AShr:
+        resVal = (lhs >> rhs);
+        break;
+    case BinaryOPStmt::Shl:
+        resVal = (lhs << rhs);
+        break;
+    case BinaryOPStmt::LShr:
+        resVal = (lhs >> rhs);
+        break;
+    default:
+        assert(false && "undefined binary: ");
+    }
+    as[res] = resVal;
+}
+
+void AbstractInterpretation::handleCmp(const CmpStmt *cmp) {
+    AbstractState& as = getAbsStateFromTrace(cmp->getICFGNode());
+    u32_t op0 = cmp->getOpVarID(0);
+    u32_t op1 = cmp->getOpVarID(1);
+    if (!as.inVarToValTable(op0)) as[op0] = IntervalValue::top();
+    if (!as.inVarToValTable(op1)) as[op1] = IntervalValue::top();
+    u32_t res = cmp->getResID();
+    if (as.inVarToValTable(op0) && as.inVarToValTable(op1))
+    {
+        IntervalValue resVal;
+        IntervalValue &lhs = as[op0].getInterval(), &rhs = as[op1].getInterval();
+        //AbstractValue
+        auto predicate = cmp->getPredicate();
+        switch (predicate)
+        {
+        case CmpStmt::ICMP_EQ:
+        case CmpStmt::FCMP_OEQ:
+        case CmpStmt::FCMP_UEQ:
+            resVal = (lhs == rhs);
+            // resVal = (lhs.getInterval() == rhs.getInterval());
+            break;
+        case CmpStmt::ICMP_NE:
+        case CmpStmt::FCMP_ONE:
+        case CmpStmt::FCMP_UNE:
+            resVal = (lhs != rhs);
+            break;
+        case CmpStmt::ICMP_UGT:
+        case CmpStmt::ICMP_SGT:
+        case CmpStmt::FCMP_OGT:
+        case CmpStmt::FCMP_UGT:
+            resVal = (lhs > rhs);
+            break;
+        case CmpStmt::ICMP_UGE:
+        case CmpStmt::ICMP_SGE:
+        case CmpStmt::FCMP_OGE:
+        case CmpStmt::FCMP_UGE:
+            resVal = (lhs >= rhs);
+            break;
+        case CmpStmt::ICMP_ULT:
+        case CmpStmt::ICMP_SLT:
+        case CmpStmt::FCMP_OLT:
+        case CmpStmt::FCMP_ULT:
+            resVal = (lhs < rhs);
+            break;
+        case CmpStmt::ICMP_ULE:
+        case CmpStmt::ICMP_SLE:
+        case CmpStmt::FCMP_OLE:
+        case CmpStmt::FCMP_ULE:
+            resVal = (lhs <= rhs);
+            break;
+        case CmpStmt::FCMP_FALSE:
+            resVal = IntervalValue(0, 0);
+            break;
+        case CmpStmt::FCMP_TRUE:
+            resVal = IntervalValue(1, 1);
+            break;
+        default:
+        {
+            assert(false && "undefined compare: ");
+        }
+        }
+        as[res] = resVal;
+    }
+    else if (as.inVarToValTable(op0) && as.inVarToValTable(op1))
+    {
+        IntervalValue resVal;
+        AddressValue &lhs = as[op0].getAddrs(), &rhs = as[op1].getAddrs();
+        auto predicate = cmp->getPredicate();
+        switch (predicate)
+        {
+        case CmpStmt::ICMP_EQ:
+        case CmpStmt::FCMP_OEQ:
+        case CmpStmt::FCMP_UEQ:
+        {
+            if (lhs.hasIntersect(rhs))
+            {
+                resVal = IntervalValue(0, 1);
+            }
+            else if (lhs.empty() && rhs.empty())
+            {
+                resVal = IntervalValue(1, 1);
+            }
+            else
+            {
+                resVal = IntervalValue(0, 0);
+            }
+            break;
+        }
+        case CmpStmt::ICMP_NE:
+        case CmpStmt::FCMP_ONE:
+        case CmpStmt::FCMP_UNE:
+        {
+            if (lhs.hasIntersect(rhs))
+            {
+                resVal = IntervalValue(0, 1);
+            }
+            else if (lhs.empty() && rhs.empty())
+            {
+                resVal = IntervalValue(0, 0);
+            }
+            else
+            {
+                resVal = IntervalValue(1, 1);
+            }
+            break;
+        }
+        case CmpStmt::ICMP_UGT:
+        case CmpStmt::ICMP_SGT:
+        case CmpStmt::FCMP_OGT:
+        case CmpStmt::FCMP_UGT:
+        {
+            if (lhs.size() == 1 && rhs.size() == 1)
+            {
+                resVal = IntervalValue(*lhs.begin() > *rhs.begin());
+            }
+            else
+            {
+                resVal = IntervalValue(0, 1);
+            }
+            break;
+        }
+        case CmpStmt::ICMP_UGE:
+        case CmpStmt::ICMP_SGE:
+        case CmpStmt::FCMP_OGE:
+        case CmpStmt::FCMP_UGE:
+        {
+            if (lhs.size() == 1 && rhs.size() == 1)
+            {
+                resVal = IntervalValue(*lhs.begin() >= *rhs.begin());
+            }
+            else
+            {
+                resVal = IntervalValue(0, 1);
+            }
+            break;
+        }
+        case CmpStmt::ICMP_ULT:
+        case CmpStmt::ICMP_SLT:
+        case CmpStmt::FCMP_OLT:
+        case CmpStmt::FCMP_ULT:
+        {
+            if (lhs.size() == 1 && rhs.size() == 1)
+            {
+                resVal = IntervalValue(*lhs.begin() < *rhs.begin());
+            }
+            else
+            {
+                resVal = IntervalValue(0, 1);
+            }
+            break;
+        }
+        case CmpStmt::ICMP_ULE:
+        case CmpStmt::ICMP_SLE:
+        case CmpStmt::FCMP_OLE:
+        case CmpStmt::FCMP_ULE:
+        {
+            if (lhs.size() == 1 && rhs.size() == 1)
+            {
+                resVal = IntervalValue(*lhs.begin() <= *rhs.begin());
+            }
+            else
+            {
+                resVal = IntervalValue(0, 1);
+            }
+            break;
+        }
+        case CmpStmt::FCMP_FALSE:
+            resVal = IntervalValue(0, 0);
+            break;
+        case CmpStmt::FCMP_TRUE:
+            resVal = IntervalValue(1, 1);
+            break;
+        default:
+        {
+            assert(false && "undefined compare: ");
+        }
+        }
+        as[res] = resVal;
+    }
+}
+
+void AbstractInterpretation::handleLoad(const LoadStmt *load)
+{
+    AbstractState& as = getAbsStateFromTrace(load->getICFGNode());
+    u32_t rhs = load->getRHSVarID();
+    u32_t lhs = load->getLHSVarID();
+    AbstractValue &addrs = as[rhs];
+    AbstractValue rhsVal; // interval::bottom Address::bottom
+    // AbstractValue absRhs
+    for (const auto &addr: addrs.getAddrs())
+        rhsVal.join_with(as.load(addr));
+    as[lhs] = rhsVal;
+}
+
+void AbstractInterpretation::handleStore(const StoreStmt *store)
+{
+    AbstractState& as = getAbsStateFromTrace(store->getICFGNode());
+    u32_t rhs = store->getRHSVarID();
+    u32_t lhs = store->getLHSVarID();
+
+    for (const auto &addr: as[lhs].getAddrs())
+    {
+        as.store(addr, as[rhs]);
+    }
+}
+
+void AbstractInterpretation::handleCopy(const CopyStmt *copy)
+{
+    auto getZExtValue = [](AbstractState& as, const SVFVar* var)
+    {
+        const SVFType* type = var->getType();
+        if (SVFUtil::isa<SVFIntegerType>(type))
+        {
+            u32_t bits = type->getByteSize() * 8;
+            if (as[var->getId()].getInterval().is_numeral())
+            {
+                if (bits == 8)
+                {
+                    int8_t signed_i8_value = as[var->getId()].getInterval().getIntNumeral();
+                    u32_t unsigned_value = static_cast<uint8_t>(signed_i8_value);
+                    return IntervalValue(unsigned_value, unsigned_value);
+                }
+                else if (bits == 16)
+                {
+                    s16_t signed_i16_value = as[var->getId()].getInterval().getIntNumeral();
+                    u32_t unsigned_value = static_cast<u16_t>(signed_i16_value);
+                    return IntervalValue(unsigned_value, unsigned_value);
+                }
+                else if (bits == 32)
+                {
+                    s32_t signed_i32_value = as[var->getId()].getInterval().getIntNumeral();
+                    u32_t unsigned_value = static_cast<u32_t>(signed_i32_value);
+                    return IntervalValue(unsigned_value, unsigned_value);
+                }
+                else if (bits == 64)
+                {
+                    s64_t signed_i64_value = as[var->getId()].getInterval().getIntNumeral();
+                    return IntervalValue((s64_t)signed_i64_value, (s64_t)signed_i64_value);
+                    // we only support i64 at most
+                }
+                else
+                {
+                    assert(false && "cannot support int type other than u8/16/32/64");
+                }
+            }
+            else
+            {
+                return IntervalValue::top(); // TODO: may have better solution
+            }
+        }
+        return IntervalValue::top(); // TODO: may have better solution
+    };
+
+    auto getTruncValue = [](const AbstractState& as, const SVF::SVFVar* var,
+                            const SVFType* dstType)
+    {
+        const IntervalValue& itv = as[var->getId()].getInterval();
+        if(itv.isBottom()) return itv;
+        // get the value of ub and lb
+        s64_t int_lb = itv.lb().getIntNumeral();
+        s64_t int_ub = itv.ub().getIntNumeral();
+        // get dst type
+        u32_t dst_bits = dstType->getByteSize() * 8;
+        if (dst_bits == 8)
+        {
+            // get the signed value of ub and lb
+            int8_t s8_lb = static_cast<int8_t>(int_lb);
+            int8_t s8_ub = static_cast<int8_t>(int_ub);
+            if (s8_lb > s8_ub)
+            {
+                // return range of s8
+                return IntervalValue::top();
+            }
+            return IntervalValue(s8_lb, s8_ub);
+        }
+        else if (dst_bits == 16)
+        {
+            // get the signed value of ub and lb
+            s16_t s16_lb = static_cast<s16_t>(int_lb);
+            s16_t s16_ub = static_cast<s16_t>(int_ub);
+            if (s16_lb > s16_ub)
+            {
+                // return range of s16
+                return IntervalValue::top();
+            }
+            return IntervalValue(s16_lb, s16_ub);
+        }
+        else if (dst_bits == 32)
+        {
+            // get the signed value of ub and lb
+            s32_t s32_lb = static_cast<s32_t>(int_lb);
+            s32_t s32_ub = static_cast<s32_t>(int_ub);
+            if (s32_lb > s32_ub)
+            {
+                // return range of s32
+                return IntervalValue::top();
+            }
+            return IntervalValue(s32_lb, s32_ub);
+        }
+        else
+        {
+            assert(false && "cannot support dst int type other than u8/16/32");
+        }
+    };
+
+    AbstractState& as = getAbsStateFromTrace(copy->getICFGNode());
+    u32_t lhs = copy->getLHSVarID();
+    u32_t rhs = copy->getRHSVarID();
+
+    if (copy->getCopyKind() == CopyStmt::COPYVAL)
+    {
+        as[lhs] = as[rhs];
+    }
+    else if (copy->getCopyKind() == CopyStmt::ZEXT)
+    {
+        as[lhs] = getZExtValue(as, copy->getRHSVar());
+    }
+    else if (copy->getCopyKind() == CopyStmt::SEXT)
+    {
+        as[lhs] = as[rhs].getInterval();
+    }
+    else if (copy->getCopyKind() == CopyStmt::FPTOSI)
+    {
+        as[lhs] = as[rhs].getInterval();
+    }
+    else if (copy->getCopyKind() == CopyStmt::FPTOUI)
+    {
+        as[lhs] = as[rhs].getInterval();
+    }
+    else if (copy->getCopyKind() == CopyStmt::SITOFP)
+    {
+        as[lhs] = as[rhs].getInterval();
+    }
+    else if (copy->getCopyKind() == CopyStmt::UITOFP)
+    {
+        as[lhs] = as[rhs].getInterval();
+    }
+    else if (copy->getCopyKind() == CopyStmt::TRUNC)
+    {
+        as[lhs] = getTruncValue(as, copy->getRHSVar(), copy->getLHSVar()->getType());
+    }
+    else if (copy->getCopyKind() == CopyStmt::FPTRUNC)
+    {
+        as[lhs] = as[rhs].getInterval();
+    }
+    else if (copy->getCopyKind() == CopyStmt::INTTOPTR)
+    {
+        //insert nullptr
+    }
+    else if (copy->getCopyKind() == CopyStmt::PTRTOINT)
+    {
+        as[lhs] = IntervalValue::top();
+    }
+    else if (copy->getCopyKind() == CopyStmt::BITCAST)
+    {
+        if (as[rhs].isAddr())
+        {
+            as[lhs] = as[rhs];
+        }
+        else
+        {
+            // do nothing
+        }
+    }
+    else
+    {
+        assert(false && "undefined copy kind");
+        abort();
+    }
+}
+
+/**
+ * This function, getRangeLimitFromType, calculates the lower and upper bounds of
+ * a numeric range for a given SVFType. It is used to determine the possible value
+ * range of integer types. If the type is an SVFIntegerType, it calculates the bounds
+ * based on the size and signedness of the type. The calculated bounds are returned
+ * as an IntervalValue representing the lower (lb) and upper (ub) limits of the range.
+ *
+ * @param type   The SVFType for which to calculate the value range.
+ *
+ * @return       An IntervalValue representing the lower and upper bounds of the range.
+ */
+IntervalValue AbstractInterpretation::getRangeLimitFromType(const SVFType* type)
+{
+    if (const SVFIntegerType* intType = SVFUtil::dyn_cast<SVFIntegerType>(type))
+    {
+        u32_t bits = type->getByteSize() * 8;
+        s64_t ub = 0;
+        s64_t lb = 0;
+        if (bits >= 32)
+        {
+            if (intType->isSigned())
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<s32_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<s32_t>::min());
+            }
+            else
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<u32_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<u32_t>::min());
+            }
+        }
+        else if (bits == 16)
+        {
+            if (intType->isSigned())
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<s16_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<s16_t>::min());
+            }
+            else
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<u16_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<u16_t>::min());
+            }
+        }
+        else if (bits == 8)
+        {
+            if (intType->isSigned())
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<int8_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<int8_t>::min());
+            }
+            else
+            {
+                ub = static_cast<s64_t>(std::numeric_limits<u_int8_t>::max());
+                lb = static_cast<s64_t>(std::numeric_limits<u_int8_t>::min());
+            }
+        }
+        return IntervalValue(lb, ub);
+    }
+    else if (SVFUtil::isa<SVFOtherType>(type))
+    {
+        // handle other type like float double, set s32_t as the range
+        s64_t ub = static_cast<s64_t>(std::numeric_limits<s32_t>::max());
+        s64_t lb = static_cast<s64_t>(std::numeric_limits<s32_t>::min());
+        return IntervalValue(lb, ub);
+    }
+    else
+    {
+        return IntervalValue::top();
+        // other types, return top interval
+    }
+}
+
 
