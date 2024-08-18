@@ -396,11 +396,14 @@ void AbstractState::storeValue(NodeID varId, AbstractValue val) {
 }
 
 void AbstractState::printAbstractState() const {
-    //TODO: reorder the varID
     SVFUtil::outs() << "-----------Var and Value-----------\n";
     u32_t fieldWidth = 20;
     SVFUtil::outs().flags(std::ios::left);
-    for (const auto &item: _varToAbsVal) {
+    std::vector<std::pair<u32_t, AbstractValue>> varToAbsValVec(_varToAbsVal.begin(), _varToAbsVal.end());
+    std::sort(varToAbsValVec.begin(), varToAbsValVec.end(), [](const auto &a, const auto &b) {
+        return a.first < b.first;
+    });
+    for (const auto &item: varToAbsValVec) {
         SVFUtil::outs() << std::left << std::setw(fieldWidth) << ("Var" + std::to_string(item.first));
         if (item.second.isInterval()) {
             SVFUtil::outs() << " Value: " << item.second.getInterval().toString() << "\n";
@@ -421,7 +424,12 @@ void AbstractState::printAbstractState() const {
         }
     }
 
-    for (const auto& item: _addrToAbsVal) {
+    std::vector<std::pair<u32_t, AbstractValue>> addrToAbsValVec(_addrToAbsVal.begin(), _addrToAbsVal.end());
+    std::sort(addrToAbsValVec.begin(), addrToAbsValVec.end(), [](const auto &a, const auto &b) {
+        return a.first < b.first;
+    });
+
+    for (const auto& item: addrToAbsValVec) {
         std::ostringstream oss;
         oss << "0x" << std::hex << AbstractState::getVirtualMemAddress(item.first);
         SVFUtil::outs() << std::left << std::setw(fieldWidth) << oss.str();

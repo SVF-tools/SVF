@@ -86,18 +86,15 @@ Map<s32_t, s32_t> _switch_lhsrhs_predicate =
 
 void AbstractInterpretation::runOnModule(ICFG *icfg)
 {
-    // 1. Start clock
     _stat->startClk();
     _icfg = icfg;
     _svfir = PAG::getPAG();
-
 
     /// collect checkpoint
     collectCheckPoint();
 
     analyse();
     checkPointAllSet();
-    // 5. Stop clock and report bugs
     _stat->endClk();
     _stat->finializeStat();
     if (Options::PStat())
@@ -721,7 +718,6 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
         const ICFGNode* cycle_head = cycle->head()->node();
         // Flag to indicate if we are in the increasing phase
         bool increasing = true;
-        // TODO: student write here
         // Infinite loop until a fixpoint is reached,
         for (u32_t cur_iter = 0;; cur_iter++) {
             // Start widening or narrowing if cur_iter >= widen threshold (widen delay)
@@ -759,15 +755,15 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
 {
     if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
     {
-        handleAddr(addr);
+        updateStateOnAddr(addr);
     }
     else if (const BinaryOPStmt *binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
     {
-        handleBinary(binary);
+        updateStateOnBinary(binary);
     }
     else if (const CmpStmt *cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
     {
-        handleCmp(cmp);
+        updateStateOnCmp(cmp);
     }
     else if (SVFUtil::isa<UnaryOPStmt>(stmt))
     {
@@ -778,36 +774,36 @@ void AbstractInterpretation::handleSVFStatement(const SVFStmt *stmt)
     }
     else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt))
     {
-        handleLoad(load);
+        updateStateOnLoad(load);
     }
     else if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
     {
-        handleStore(store);
+        updateStateOnStore(store);
     }
     else if (const CopyStmt *copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
     {
-        handleCopy(copy);
+        updateStateOnCopy(copy);
     }
     else if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
     {
-        handleGep(gep);
+        updateStateOnGep(gep);
     }
     else if (const SelectStmt *select = SVFUtil::dyn_cast<SelectStmt>(stmt))
     {
-        handleSelect(select);
+        updateStateOnSelect(select);
     }
     else if (const PhiStmt *phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
     {
-        handlePhi(phi);
+        updateStateOnPhi(phi);
     }
     else if (const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt))
     {
         // To handle Call Edge
-        handleCall(callPE);
+        updateStateOnCall(callPE);
     }
     else if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt))
     {
-        handleRet(retPE);
+        updateStateOnRet(retPE);
     }
     else
         assert(false && "implement this part");
@@ -1680,7 +1676,7 @@ void AbstractInterpretation::AccessMemoryViaCallArgs(const SVF::SVFArgument *arg
     }
 }
 
-void AbstractInterpretation::handleGep(const GepStmt *gep)
+void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
 {
     AbstractState& as = getAbsStateFromTrace(gep->getICFGNode());
     u32_t rhs = gep->getRHSVarID();
@@ -1696,7 +1692,7 @@ void AbstractInterpretation::handleGep(const GepStmt *gep)
     as[lhs] = gepAddrs;
 }
 
-void AbstractInterpretation::handleSelect(const SelectStmt *select)
+void AbstractInterpretation::updateStateOnSelect(const SelectStmt *select)
 {
     AbstractState& as = getAbsStateFromTrace(select->getICFGNode());
     u32_t res = select->getResID();
@@ -1714,7 +1710,7 @@ void AbstractInterpretation::handleSelect(const SelectStmt *select)
     }
 }
 
-void AbstractInterpretation::handlePhi(const PhiStmt *phi)
+void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
 {
     const ICFGNode* icfgNode = phi->getICFGNode();
     AbstractState& as = getAbsStateFromTrace(icfgNode);
@@ -1733,7 +1729,7 @@ void AbstractInterpretation::handlePhi(const PhiStmt *phi)
 }
 
 
-void AbstractInterpretation::handleCall(const CallPE *callPE)
+void AbstractInterpretation::updateStateOnCall(const CallPE *callPE)
 {
     AbstractState& as = getAbsStateFromTrace(callPE->getICFGNode());
     NodeID lhs = callPE->getLHSVarID();
@@ -1741,7 +1737,7 @@ void AbstractInterpretation::handleCall(const CallPE *callPE)
     as[lhs] = as[rhs];
 }
 
-void AbstractInterpretation::handleRet(const RetPE *retPE)
+void AbstractInterpretation::updateStateOnRet(const RetPE *retPE)
 {
     AbstractState& as = getAbsStateFromTrace(retPE->getICFGNode());
     NodeID lhs = retPE->getLHSVarID();
@@ -1750,7 +1746,7 @@ void AbstractInterpretation::handleRet(const RetPE *retPE)
 }
 
 
-void AbstractInterpretation::handleAddr(const AddrStmt *addr)
+void AbstractInterpretation::updateStateOnAddr(const AddrStmt *addr)
 {
     AbstractState& as = getAbsStateFromTrace(addr->getICFGNode());
     as.initObjVar(SVFUtil::cast<ObjVar>(addr->getRHSVar()));
@@ -1760,8 +1756,7 @@ void AbstractInterpretation::handleAddr(const AddrStmt *addr)
 }
 
 
-void AbstractInterpretation::handleBinary(const BinaryOPStmt *binary) {
-    /// TODO: your code starts from here
+void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary) {
     /// Find the comparison predicates in "class BinaryOPStmt:OpCode" under SVF/svf/include/SVFIR/SVFStatements.h
     /// You are only required to handle integer predicates, including Add, FAdd, Sub, FSub, Mul, FMul, SDiv, FDiv, UDiv,
     /// SRem, FRem, URem, Xor, And, Or, AShr, Shl, LShr
@@ -1822,7 +1817,7 @@ void AbstractInterpretation::handleBinary(const BinaryOPStmt *binary) {
     as[res] = resVal;
 }
 
-void AbstractInterpretation::handleCmp(const CmpStmt *cmp) {
+void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp) {
     AbstractState& as = getAbsStateFromTrace(cmp->getICFGNode());
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
@@ -2003,7 +1998,7 @@ void AbstractInterpretation::handleCmp(const CmpStmt *cmp) {
     }
 }
 
-void AbstractInterpretation::handleLoad(const LoadStmt *load)
+void AbstractInterpretation::updateStateOnLoad(const LoadStmt *load)
 {
     AbstractState& as = getAbsStateFromTrace(load->getICFGNode());
     u32_t rhs = load->getRHSVarID();
@@ -2016,7 +2011,7 @@ void AbstractInterpretation::handleLoad(const LoadStmt *load)
     as[lhs] = rhsVal;
 }
 
-void AbstractInterpretation::handleStore(const StoreStmt *store)
+void AbstractInterpretation::updateStateOnStore(const StoreStmt *store)
 {
     AbstractState& as = getAbsStateFromTrace(store->getICFGNode());
     u32_t rhs = store->getRHSVarID();
@@ -2028,7 +2023,7 @@ void AbstractInterpretation::handleStore(const StoreStmt *store)
     }
 }
 
-void AbstractInterpretation::handleCopy(const CopyStmt *copy)
+void AbstractInterpretation::updateStateOnCopy(const CopyStmt *copy)
 {
     auto getZExtValue = [](AbstractState& as, const SVFVar* var)
     {

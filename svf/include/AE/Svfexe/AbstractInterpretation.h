@@ -321,27 +321,27 @@ protected:
     void AccessMemoryViaCallArgs(const SVF::SVFArgument *arg, SVF::FILOWorkList<const SVFValue *>& worklist, Set<const SVFValue *>& visited);
 
 
-    void handleAddr(const AddrStmt *addr);
+    void updateStateOnAddr(const AddrStmt *addr);
 
-    void handleBinary(const BinaryOPStmt *binary);
+    void updateStateOnBinary(const BinaryOPStmt *binary);
 
-    void handleCmp(const CmpStmt *cmp);
+    void updateStateOnCmp(const CmpStmt *cmp);
 
-    void handleLoad(const LoadStmt *load);
+    void updateStateOnLoad(const LoadStmt *load);
 
-    void handleStore(const StoreStmt *store);
+    void updateStateOnStore(const StoreStmt *store);
 
-    void handleCopy(const CopyStmt *copy);
+    void updateStateOnCopy(const CopyStmt *copy);
 
-    void handleCall(const CallPE *callPE);
+    void updateStateOnCall(const CallPE *callPE);
 
-    void handleRet(const RetPE *retPE);
+    void updateStateOnRet(const RetPE *retPE);
 
-    void handleGep(const GepStmt *gep);
+    void updateStateOnGep(const GepStmt *gep);
 
-    void handleSelect(const SelectStmt *select);
+    void updateStateOnSelect(const SelectStmt *select);
 
-    void handlePhi(const PhiStmt *phi);
+    void updateStateOnPhi(const PhiStmt *phi);
 
     IntervalValue getRangeLimitFromType(const SVFType* type);
 
