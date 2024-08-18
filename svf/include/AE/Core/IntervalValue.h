@@ -117,7 +117,8 @@ public:
     explicit IntervalValue(BoundedInt n) : IntervalValue(n, n) {}
 
     /// Create the IntervalValue [lb, ub]
-    explicit IntervalValue(BoundedInt lb, BoundedInt ub) : _lb(std::move(lb)), _ub(std::move(ub)) {
+    explicit IntervalValue(BoundedInt lb, BoundedInt ub) : _lb(std::move(lb)), _ub(std::move(ub))
+    {
         assert((isBottom() || _lb.leq(_ub)) && "lower bound should be less than or equal to upper bound");
     }
 
@@ -479,9 +480,12 @@ public:
         }
         else
         {
-            if (!(max(this->_lb, other.lb()).leq(min(this->_ub, other.ub())))) {
+            if (!(max(this->_lb, other.lb()).leq(min(this->_ub, other.ub()))))
+            {
                 this->set_to_bottom();
-            } else {
+            }
+            else
+            {
                 setValue(max(this->_lb, other.lb()), min(this->_ub, other.ub()));
             }
         }
@@ -612,7 +616,8 @@ inline IntervalValue operator/(const IntervalValue &lhs,
         l_res.join_with(r_res);
         return l_res;
     }
-    else if (lhs.contains(0)) {
+    else if (lhs.contains(0))
+    {
         IntervalValue lb = IntervalValue::create(lhs.lb(), -1);
         IntervalValue ub = IntervalValue::create(1, lhs.ub());
         IntervalValue l_res = lb / rhs;
@@ -631,7 +636,7 @@ inline IntervalValue operator/(const IntervalValue &lhs,
         std::vector<BoundedInt> vec{ll, lu, ul, uu};
 
         IntervalValue res =  IntervalValue(BoundedInt::min(vec),
-                             BoundedInt::max(vec));
+                                           BoundedInt::max(vec));
         return res;
     }
 }
@@ -895,15 +900,21 @@ inline IntervalValue operator<<(const IntervalValue &lhs, const IntervalValue &r
             return IntervalValue::bottom();
         BoundedInt lb = 0;
         // If the shift is greater than 32, the result is always 0
-        if ((s32_t) shift.lb().getNumeral() >= 32 || shift.lb().is_infinity()) {
+        if ((s32_t) shift.lb().getNumeral() >= 32 || shift.lb().is_infinity())
+        {
             lb = IntervalValue::minus_infinity();
-        } else {
+        }
+        else
+        {
             lb = (1 << (s32_t) shift.lb().getNumeral());
         }
         BoundedInt ub = 0;
-        if (shift.ub().is_infinity()) {
+        if (shift.ub().is_infinity())
+        {
             ub = IntervalValue::plus_infinity();
-        } else {
+        }
+        else
+        {
             ub = (1 << (s32_t) shift.ub().getNumeral());
         }
         IntervalValue coeff(lb, ub);

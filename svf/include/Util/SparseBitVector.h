@@ -20,7 +20,11 @@
 #ifdef __has_builtin
 #  define HAS_CLZ __has_builtin(__builtin_clz)
 #  define HAS_CLZLL __has_builtin(__builtin_clzll)
+#  define HAS_CTZ __has_builtin(__builtin_ctz)
+#  define HAS_CTZLL __has_builtin(__builtin_ctzll)
 #else
+#  define HAS_CLZ 0
+#  define HAS_CLZLL 0
 #  define HAS_CLZ 0
 #  define HAS_CLZLL 0
 #endif
@@ -65,6 +69,44 @@ template <typename T, std::size_t SizeOfT> struct TrailingZerosCounter
         return ZeroBits;
     }
 };
+
+#if defined(__GNUC__) || defined(_MSC_VER)
+template <typename T> struct TrailingZerosCounter<T, 4>
+{
+    static unsigned count(T Val, ZeroBehavior)
+    {
+        if (Val == 0)
+            return 32;
+
+#if HAS_CTZ || defined(__GNUC__)
+        return __builtin_ctz(Val);
+#elif defined(_MSC_VER)
+        unsigned long Index;
+        _BitScanForward(&Index, Val);
+        return Index;
+#endif
+    }
+};
+
+#if !defined(_MSC_VER) || defined(_M_X64)
+template <typename T> struct TrailingZerosCounter<T, 8>
+{
+    static unsigned count(T Val, ZeroBehavior)
+    {
+        if (Val == 0)
+            return 64;
+
+#if HAS_CTZLL || defined(__GNUC__)
+        return __builtin_ctzll(Val);
+#elif defined(_MSC_VER)
+        unsigned long Index;
+        _BitScanForward64(&Index, Val);
+        return Index;
+#endif
+    }
+};
+#endif
+#endif
 
 /// Count number of 0's from the least significant bit to the most
 ///   stopping at the first 1.

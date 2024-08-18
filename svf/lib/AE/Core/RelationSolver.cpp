@@ -181,8 +181,8 @@ AbstractState RelationSolver::abstract_consequence(
     the abstract consequence will lead to better algorithm performance.*/
 
     for (auto it = domain.getVarToVal().begin();
-         it != domain.getVarToVal().end(); ++it)
-    /// for variable in self.variables:
+            it != domain.getVarToVal().end(); ++it)
+        /// for variable in self.variables:
     {
         AbstractState proposed = domain.top(); /// proposed = self.top.copy()
         proposed[it->first] = lower[it->first].getInterval();
@@ -249,7 +249,7 @@ AbstractState RelationSolver::beta(const Map<u32_t, s32_t>& sigma,
     for (const auto& item : exeState.getVarToVal())
     {
         res[item.first] = IntervalValue(
-            sigma.at(item.first), sigma.at(item.first));
+                              sigma.at(item.first), sigma.at(item.first));
     }
     return res;
 }
@@ -325,7 +325,7 @@ AbstractState RelationSolver::BS(const AbstractState& domain, const Z3Expr &phi)
 
             if (item.second == (infinity))
                 retInv[item.first - bias] = IntervalValue(BoundedInt::minus_infinity(),
-                                                          retInv[item.first - bias].getInterval().ub());
+                                            retInv[item.first - bias].getInterval().ub());
             else
                 retInv[item.first - bias] = IntervalValue(float(-item.second), retInv[item.first - bias].getInterval().ub());
 
