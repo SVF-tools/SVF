@@ -189,7 +189,6 @@ private:
             const ICFGNode* curNode = *it;
             detectBufOverflow(curNode);
         }
-
     }
 
     /**

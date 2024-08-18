@@ -98,25 +98,6 @@ AbstractState AbstractState::narrowing(const AbstractState& other)
 
 }
 
-/// domain widen with other, important! other widen this.
-void AbstractState::widenWith(const AbstractState& other)
-{
-    for (auto it = _varToAbsVal.begin(); it != _varToAbsVal.end(); ++it)
-    {
-        auto key = it->first;
-        if (other.getVarToVal().find(key) != other.getVarToVal().end())
-            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
-                it->second.getInterval().widen_with(other._varToAbsVal.at(key).getInterval());
-    }
-    for (auto it = _addrToAbsVal.begin(); it != _addrToAbsVal.end(); ++it)
-    {
-        auto key = it->first;
-        if (other._addrToAbsVal.find(key) != other._addrToAbsVal.end())
-            if (it->second.isInterval() && other._varToAbsVal.at(key).isInterval())
-                it->second.getInterval().widen_with(other._addrToAbsVal.at(key).getInterval());
-    }
-}
-
 /// domain join with other, important! other widen this.
 void AbstractState::joinWith(const AbstractState& other)
 {
@@ -145,27 +126,6 @@ void AbstractState::joinWith(const AbstractState& other)
         {
             _addrToAbsVal.emplace(key, it->second);
         }
-    }
-}
-
-/// domain narrow with other, important! other widen this.
-void AbstractState::narrowWith(const AbstractState& other)
-{
-    for (auto it = _varToAbsVal.begin(); it != _varToAbsVal.end(); ++it)
-    {
-        auto key = it->first;
-        auto oit = other.getVarToVal().find(key);
-        if (oit != other.getVarToVal().end())
-            if (it->second.isInterval() && oit->second.isInterval())
-                it->second.getInterval().narrow_with(oit->second.getInterval());
-    }
-    for (auto it = _addrToAbsVal.begin(); it != _addrToAbsVal.end(); ++it)
-    {
-        auto key = it->first;
-        auto oit = other._addrToAbsVal.find(key);
-        if (oit != other._addrToAbsVal.end())
-            if (it->second.isInterval() && oit->second.isInterval())
-                it->second.getInterval().narrow_with(oit->second.getInterval());
     }
 }
 
@@ -379,8 +339,6 @@ IntervalValue AbstractState::getByteOffset(const GepStmt* gep)  {
     return res; // Return the resulting byte offset as an IntervalValue.
 }
 
-// printAbstractState
-// loadValue
 AbstractValue AbstractState::loadValue(NodeID varId) {
     AbstractValue res;
     for (auto addr : (*this)[varId].getAddrs()) {

@@ -274,14 +274,9 @@ public:
     /// domain narrow with other, and return the narrowed domain
     AbstractState narrowing(const AbstractState&other);
 
-    /// domain widen with other, important! other widen this.
-    void widenWith(const AbstractState&other);
-
     /// domain join with other, important! other widen this.
     void joinWith(const AbstractState&other);
 
-    /// domain narrow with other, important! other widen this.
-    void narrowWith(const AbstractState&other);
 
     /// domain meet with other, important! other widen this.
     void meetWith(const AbstractState&other);
