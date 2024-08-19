@@ -26,38 +26,46 @@ PointsTo::PointsTo()
     : type(Options::PtType()), nodeMapping(currentBestNodeMapping),
       reverseNodeMapping(currentBestReverseNodeMapping)
 {
-    if (type == SBV) new (&sbv) SparseBitVector<>();
-    else if (type == CBV) new (&cbv) CoreBitVector();
-    else if (type == BV) new (&bv) BitVector();
-    else assert(false && "PointsTo::PointsTo: unknown type");
+    #define CONSTRUCT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        new (&(pt_name)) (PtClassName)();
+    PT_DO(type, "PointsTo::PointsTo: unknown type", CONSTRUCT);
+    #undef CONSTRUCT
+    // if (type == SBV) new (&sbv) SparseBitVector<>();
+    // ...
 }
 
 PointsTo::PointsTo(const PointsTo &pt)
     : type(pt.type), nodeMapping(pt.nodeMapping),
       reverseNodeMapping(pt.reverseNodeMapping)
 {
-    if (type == SBV) new (&sbv) SparseBitVector<>(pt.sbv);
-    else if (type == CBV) new (&cbv) CoreBitVector(pt.cbv);
-    else if (type == BV) new (&bv) BitVector(pt.bv);
-    else assert(false && "PointsTo::PointsTo&: unknown type");
+    #define COPY_CONSTRUCT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        new (&(pt_name)) (PtClassName)(pt.pt_name);
+    PT_DO(type, "PointsTo::PointsTo: unknown type", COPY_CONSTRUCT);
+    #undef COPY_CONSTRUCT
+    // if (type == SBV) new (&sbv) SparseBitVector<>(pt.sbv);
+    // ...
 }
 
 PointsTo::PointsTo(PointsTo &&pt)
 noexcept     : type(pt.type), nodeMapping(std::move(pt.nodeMapping)),
     reverseNodeMapping(std::move(pt.reverseNodeMapping))
 {
-    if (type == SBV) new (&sbv) SparseBitVector<>(std::move(pt.sbv));
-    else if (type == CBV) new (&cbv) CoreBitVector(std::move(pt.cbv));
-    else if (type == BV) new (&bv) BitVector(std::move(pt.bv));
-    else assert(false && "PointsTo::PointsTo&&: unknown type");
+    #define MOVE_CONSTRUCT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        new (&(pt_name)) PtClassName(std::move(pt.pt_name));
+    PT_DO(type, "PointsTo::PointsTo: unknown type", MOVE_CONSTRUCT);
+    #undef MOVE_CONSTRUCT
+    // if (type == SBV) new (&sbv) SparseBitVector<>(std::move(pt.sbv));
+    // ...
 }
 
 PointsTo::~PointsTo()
 {
-    if (type == SBV) sbv.~SparseBitVector<>();
-    else if (type == CBV) cbv.~CoreBitVector();
-    else if (type == BV) bv.~BitVector();
-    else assert(false && "PointsTo::~PointsTo: unknown type");
+    #define DESTRUCT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        pt_name.~PtClassName();
+    PT_DO(type, "PointsTo::~PointsTo: unknown type", DESTRUCT);
+    #undef DESTRUCT
+    // if (type == SBV) sbv.~SparseBitVector<>();
+    // ...
 
     nodeMapping = nullptr;
     reverseNodeMapping = nullptr;
@@ -72,10 +80,12 @@ PointsTo &PointsTo::operator=(const PointsTo &rhs)
     this->reverseNodeMapping = rhs.reverseNodeMapping;
     // Placement new because if type has changed, we have
     // not constructed the new type yet.
-    if (type == SBV) new (&sbv) SparseBitVector<>(rhs.sbv);
-    else if (type == CBV) new (&cbv) CoreBitVector(rhs.cbv);
-    else if (type == BV) new (&bv) BitVector(rhs.bv);
-    else assert(false && "PointsTo::PointsTo=&: unknown type");
+    #define PLACEMENT_NEW(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        new (&(pt_name)) PtClassName(std::move(rhs.pt_name));
+    PT_DO(type, "PointsTo::PointsTo=&: unknown type", PLACEMENT_NEW);
+    #undef PLACEMENT_NEW
+    // if (type == SBV) new (&sbv) SparseBitVector<>(rhs.sbv);
+    // ...
 
     return *this;
 }
@@ -87,117 +97,113 @@ noexcept
     this->nodeMapping = rhs.nodeMapping;
     this->reverseNodeMapping = rhs.reverseNodeMapping;
     // See comment in copy assignment.
-    if (type == SBV) new (&sbv) SparseBitVector<>(std::move(rhs.sbv));
-    else if (type == CBV) new (&cbv) CoreBitVector(std::move(rhs.cbv));
-    else if (type == BV) new (&bv) BitVector(std::move(rhs.bv));
-    else assert(false && "PointsTo::PointsTo=&&: unknown type");
+    #define COPY_ASSIGN(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        new (&(pt_name)) PtClassName(std::move(rhs.pt_name));
+    PT_DO(type, "PointsTo::PointsTo=&&: unknown type", COPY_ASSIGN);
+    #undef COPY_ASSIGN
+    // if (type == SBV) new (&sbv) SparseBitVector<>(std::move(rhs.sbv));
+    // else ...
 
     return *this;
 }
 
 bool PointsTo::empty() const
 {
-    if (type == CBV) return cbv.empty();
-    else if (type == SBV) return sbv.empty();
-    else if (type == BV) return bv.empty();
-    else
-    {
-        assert(false && "PointsTo::empty: unknown type");
-        abort();
-    }
+    #define EMPTY(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return (pt_name).empty();
+    PT_DO(type, "PointsTo::empty: unknown type", EMPTY);
+    #undef EMPTY
+    // if (type == SBV) return sbv.empty();
+    // ...
 }
 
 /// Returns number of elements.
 u32_t PointsTo::count(void) const
 {
-    if (type == CBV) return cbv.count();
-    else if (type == SBV) return sbv.count();
-    else if (type == BV) return bv.count();
-    else
-    {
-        assert(false && "PointsTo::count: unknown type");
-        abort();
-    }
+    #define COUNT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return (pt_name).count();
+    PT_DO(type, "PointsTo::count: unknown type", COUNT);
+    #undef COUNT
+    // if (type == CBV) return cbv.count();
+    // ...
 }
 
 void PointsTo::clear()
 {
-    if (type == CBV) cbv.clear();
-    else if (type == SBV) sbv.clear();
-    else if (type == BV) bv.clear();
-    else assert(false && "PointsTo::clear: unknown type");
+    #define CLEAR(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        (pt_name).clear();
+    PT_DO(type, "PointsTo::clear: unknown type", CLEAR);
+    #undef CLEAR
+    // if (type == CBV) cbv.clear();
+    // ...
 }
 
 bool PointsTo::test(u32_t n) const
 {
     n = getInternalNode(n);
-    if (type == CBV) return cbv.test(n);
-    else if (type == SBV) return sbv.test(n);
-    else if (type == BV) return bv.test(n);
-    else
-    {
-        assert(false && "PointsTo::test: unknown type");
-        abort();
-    }
+    #define TEST(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return (pt_name).test(n);
+    PT_DO(type, "PointsTo::clear: unknown type", TEST);
+    #undef TEST
+    // if (type == CBV) return cbv.test(n);
+    // ...
 }
 
 bool PointsTo::test_and_set(u32_t n)
 {
     n = getInternalNode(n);
-    if (type == CBV) return cbv.test_and_set(n);
-    else if (type == SBV) return sbv.test_and_set(n);
-    else if (type == BV) return bv.test_and_set(n);
-    else
-    {
-        assert(false && "PointsTo::test_and_set: unknown type");
-        abort();
-    }
+    #define TEST_N_SET(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return (pt_name).test_and_set(n);
+    PT_DO(type, "PointsTo::clear: unknown type", TEST_N_SET);
+    #undef TEST_N_SET
+    // if (type == CBV) return cbv.test_and_set(n);
+    // ...
 }
 
 void PointsTo::set(u32_t n)
 {
     n = getInternalNode(n);
-    if (type == CBV) cbv.set(n);
-    else if (type == SBV) sbv.set(n);
-    else if (type == BV) bv.set(n);
-    else assert(false && "PointsTo::set: unknown type");
+    #define SET(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        (pt_name).set(n);
+    PT_DO(type, "PointsTo::set: unknown type", SET);
+    #undef SET
+    // if (type == CBV) cbv.set(n);
+    // else ...
 }
 
 void PointsTo::reset(u32_t n)
 {
     n = getInternalNode(n);
-    if (type == CBV) cbv.reset(n);
-    else if (type == SBV) sbv.reset(n);
-    else if (type == BV) bv.reset(n);
-    else assert(false && "PointsTo::reset: unknown type");
+    #define RESET(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        (pt_name).reset(n);
+    PT_DO(type, "PointsTo::reset: unknown type", RESET);
+    #undef RESET
+    // if (type == CBV) cbv.reset(n);
+    // ...
 }
 
 bool PointsTo::contains(const PointsTo &rhs) const
 {
     assert(metaSame(rhs) && "PointsTo::contains: mappings of operands do not match!");
 
-    if (type == CBV) return cbv.contains(rhs.cbv);
-    else if (type == SBV) return sbv.contains(rhs.sbv);
-    else if (type == BV) return bv.contains(rhs.bv);
-    else
-    {
-        assert(false && "PointsTo::contains: unknown type");
-        abort();
-    }
+    #define CONTAINS(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return (pt_name).contains(rhs.pt_name);
+    PT_DO(type, "PointsTo::contains: unknown type", CONTAINS);
+    #undef CONTAINS
+    // if (type == CBV) return cbv.contains(rhs.cbv);
+    // ...
 }
 
 bool PointsTo::intersects(const PointsTo &rhs) const
 {
     assert(metaSame(rhs) && "PointsTo::intersects: mappings of operands do not match!");
 
-    if (type == CBV) return cbv.intersects(rhs.cbv);
-    else if (type == SBV) return sbv.intersects(rhs.sbv);
-    else if (type == BV) return bv.intersects(rhs.bv);
-    else
-    {
-        assert(false && "PointsTo::intersects: unknown type");
-        abort();
-    }
+    #define INTERSECTS(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return (pt_name).intersects(rhs.pt_name);
+    PT_DO(type, "PointsTo::intersects: unknown type", INTERSECTS);
+    #undef INTERSECTS
+    // if (type == CBV) return cbv.intersects(rhs.cbv);
+    // ...
 }
 
 int PointsTo::find_first()
@@ -210,14 +216,12 @@ bool PointsTo::operator==(const PointsTo &rhs) const
 {
     assert(metaSame(rhs) && "PointsTo::==: mappings of operands do not match!");
 
-    if (type == CBV) return cbv == rhs.cbv;
-    else if (type == SBV) return sbv == rhs.sbv;
-    else if (type == BV) return bv == rhs.bv;
-    else
-    {
-        assert(false && "PointsTo::==: unknown type");
-        abort();
-    }
+    #define EQUALS(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return (pt_name) == (rhs.pt_name);
+    PT_DO(type, "PointsTo::intersects: unknown type", EQUALS);
+    #undef EQUALS
+    // if (type == CBV) return cbv == rhs.cbv;
+    // ...
 }
 
 bool PointsTo::operator!=(const PointsTo &rhs) const
@@ -232,14 +236,13 @@ bool PointsTo::operator|=(const PointsTo &rhs)
 {
     assert(metaSame(rhs) && "PointsTo::|=: mappings of operands do not match!");
 
-    if (type == CBV) return cbv |= rhs.cbv;
-    else if (type == SBV) return sbv |= rhs.sbv;
-    else if (type == BV) return bv |= rhs.bv;
-    else
-    {
-        assert(false && "PointsTo::|=: unknown type");
-        abort();
-    }
+    #define OR_EQUALS(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return pt_name |= rhs.pt_name;
+    PT_DO(type, "PointsTo::|=: unknown type", OR_EQUALS);
+    #undef OR_EQUALS
+
+    // if (type == CBV) return cbv |= rhs.cbv;
+    // ...
 }
 
 bool PointsTo::operator|=(const NodeBS &rhs)
@@ -259,40 +262,39 @@ bool PointsTo::operator&=(const PointsTo &rhs)
 {
     assert(metaSame(rhs) && "PointsTo::&=: mappings of operands do not match!");
 
-    if (type == CBV) return cbv &= rhs.cbv;
-    else if (type == SBV) return sbv &= rhs.sbv;
-    else if (type == BV) return bv &= rhs.bv;
-    else
-    {
-        assert(false && "PointsTo::&=: unknown type");
-        abort();
-    }
+    #define AND_EQUALS(PT_ENUM, PtClass, pt_name, ptItName) \
+        return pt_name &= rhs.pt_name;
+    PT_DO(type, "PointsTo::&=: unknown type", AND_EQUALS);
+    #undef AND_EQUALS
+
+    // if (type == CBV) return cbv &= rhs.cbv;
+    // ...
 }
 
 bool PointsTo::operator-=(const PointsTo &rhs)
 {
     assert(metaSame(rhs) && "PointsTo::-=: mappings of operands do not match!");
 
-    if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
-    else if (type == SBV) return sbv.intersectWithComplement(rhs.sbv);
-    else if (type == BV) return bv.intersectWithComplement(rhs.bv);
-    else
-    {
-        assert(false && "PointsTo::-=: unknown type");
-        abort();
-    }
+    #define INTERSECT_COMPLEMENT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return (pt_name).intersectWithComplement(rhs.pt_name);
+    PT_DO(type, "PointsTo::-=: unknown type", INTERSECT_COMPLEMENT);
+    #undef INTERSECT_COMPLEMENT
+
+    // if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
+    // ...
 }
 
 bool PointsTo::intersectWithComplement(const PointsTo &rhs)
 {
     assert(metaSame(rhs) && "PointsTo::intersectWithComplement: mappings of operands do not match!");
 
-    if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
-    else if (type == SBV) return sbv.intersectWithComplement(rhs.sbv);
-    else if (type == BV) return bv.intersectWithComplement(rhs.bv);
+    #define INTERSECT_COMPLEMENT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return (pt_name).intersectWithComplement(rhs.pt_name);
+    PT_DO(type, "PointsTo::intersectWithComplement: unknown type", INTERSECT_COMPLEMENT);
+    #undef INTERSECT_COMPLEMENT
 
-    assert(false && "PointsTo::intersectWithComplement(PT): unknown type");
-    abort();
+    // if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
+    // ...
 }
 
 void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)
@@ -300,14 +302,12 @@ void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)
     assert(metaSame(rhs) && "PointsTo::intersectWithComplement: mappings of operands do not match!");
     assert(metaSame(lhs) && "PointsTo::intersectWithComplement: mappings of operands do not match!");
 
-    if (type == CBV) cbv.intersectWithComplement(lhs.cbv, rhs.cbv);
-    else if (type == SBV) sbv.intersectWithComplement(lhs.sbv, rhs.sbv);
-    else if (type == BV) bv.intersectWithComplement(lhs.bv, rhs.bv);
-    else
-    {
-        assert(false && "PointsTo::intersectWithComplement(PT, PT): unknown type");
-        abort();
-    }
+    #define INTERSECT_COMPLEMENT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return (pt_name).intersectWithComplement(lhs.pt_name, rhs.pt_name);
+    PT_DO(type, "PointsTo::intersects: unknown type", INTERSECT_COMPLEMENT);
+    #undef INTERSECT_COMPLEMENT
+    // if (type == CBV) cbv.intersectWithComplement(lhs.cbv, rhs.cbv);
+    // ...
 }
 
 NodeBS PointsTo::toNodeBS() const
@@ -319,6 +319,8 @@ NodeBS PointsTo::toNodeBS() const
 
 size_t PointsTo::hash() const
 {
+    // TODO: common hash interfaces
+    
     if (type == CBV) return cbv.hash();
     else if (type == SBV)
     {
@@ -389,86 +391,61 @@ void PointsTo::checkAndRemap()
 PointsTo::PointsToIterator::PointsToIterator(const PointsTo *pt, bool end)
     : pt(pt)
 {
-    if (pt->type == Type::CBV)
-    {
-        new (&cbvIt) CoreBitVector::iterator(end ? pt->cbv.end() : pt->cbv.begin());
-    }
-    else if (pt->type == Type::SBV)
-    {
-        new (&sbvIt) SparseBitVector<>::iterator(end ? pt->sbv.end() : pt->sbv.begin());
-    }
-    else if (pt->type == Type::BV)
-    {
-        new (&bvIt) BitVector::iterator(end ? pt->bv.end() : pt->bv.begin());
-    }
-    else
-    {
-        assert(false && "PointsToIterator::PointsToIterator: unknown type");
-        abort();
-    }
+    #define IT_CONSTRUCT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        new (&ptItName) PtClassName::iterator(end ? pt->pt_name.end() : pt->pt_name.begin());
+    PT_DO(pt->type, "PointsTo::PointsToIterator: unknown type", IT_CONSTRUCT);
+    #undef IT_CONSTRUCT
+    // if (pt->type == Type::RBM)
+    // {
+    //     new (&rbmIt) RoaringBitmap::iterator(end ? pt->rbm.end() : pt->rbm.begin());
+    // }
+    // ...
 }
 
 PointsTo::PointsToIterator::PointsToIterator(const PointsToIterator &pt)
     : pt(pt.pt)
 {
-    if (this->pt->type == PointsTo::Type::SBV)
-    {
-        new (&sbvIt) SparseBitVector<>::iterator(pt.sbvIt);
-    }
-    else if (this->pt->type == PointsTo::Type::CBV)
-    {
-        new (&cbvIt) CoreBitVector::iterator(pt.cbvIt);
-    }
-    else if (this->pt->type == PointsTo::Type::BV)
-    {
-        new (&bvIt) BitVector::iterator(pt.bvIt);
-    }
-    else
-    {
-        assert(false && "PointsToIterator::PointsToIterator&: unknown type");
-        abort();
-    }
+    #define IT_CONSTRUCT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        new (&ptItName) PtClassName::iterator(pt.ptItName);
+    PT_DO(this->pt->type, "PointsTo::PointsToIterator&: unknown type", IT_CONSTRUCT);
+    #undef IT_CONSTRUCT
+
+    // if (this->pt->type == PointsTo::Type::RBM)
+    // {
+    //     new (&rbmIt) RoaringBitmap::iterator(pt.rbmIt);
+    // }
+    // ...
 }
 
 PointsTo::PointsToIterator::PointsToIterator(PointsToIterator &&pt)
 noexcept     : pt(pt.pt)
 {
-    if (this->pt->type == PointsTo::Type::SBV)
-    {
-        new (&sbvIt) SparseBitVector<>::iterator(std::move(pt.sbvIt));
-    }
-    else if (this->pt->type == PointsTo::Type::CBV)
-    {
-        new (&cbvIt) CoreBitVector::iterator(std::move(pt.cbvIt));
-    }
-    else if (this->pt->type == PointsTo::Type::BV)
-    {
-        new (&bvIt) BitVector::iterator(std::move(pt.bvIt));
-    }
-    else
-    {
-        assert(false && "PointsToIterator::PointsToIterator&&: unknown type");
-        abort();
-    }
+    #define IT_CONSTRUCT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        new (&ptItName) PtClassName::iterator(std::move(pt.ptItName));
+    PT_DO(this->pt->type, "PointsTo::PointsToIterator&&: unknown type", IT_CONSTRUCT);
+    #undef IT_CONSTRUCT
+
+    // if (this->pt->type == PointsTo::Type::RBM)
+    // {
+    //     new (&rbmIt) RoaringBitmap::iterator(std::move(pt.rbmIt));
+    // }
+    // ...
 }
 
 PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(const PointsToIterator &rhs)
 {
     this->pt = rhs.pt;
 
-    if (this->pt->type == PointsTo::Type::SBV)
-    {
-        new (&sbvIt) SparseBitVector<>::iterator(rhs.sbvIt);
-    }
-    else if (this->pt->type == PointsTo::Type::CBV)
-    {
-        new (&cbvIt) CoreBitVector::iterator(rhs.cbvIt);
-    }
-    else if (this->pt->type == PointsTo::Type::BV)
-    {
-        new (&bvIt) BitVector::iterator(rhs.bvIt);
-    }
-    else assert(false && "PointsToIterator::PointsToIterator&: unknown type");
+    #define IT_CONSTRUCT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        new (&ptItName) PtClassName::iterator(rhs.ptItName);
+    PT_DO(this->pt->type, "PointsTo::PointsToIterator&: unknown type", IT_CONSTRUCT);
+    #undef IT_CONSTRUCT
+
+    // if (this->pt->type == PointsTo::Type::RBM)
+    // {
+    //     new (&rbmIt) RoaringBitmap::iterator(rhs.rbmIt);
+    // }
+    // ...
 
     return *this;
 }
@@ -477,19 +454,16 @@ PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(PointsToIterat
 {
     this->pt = rhs.pt;
 
-    if (this->pt->type == PointsTo::Type::SBV)
-    {
-        new (&sbvIt) SparseBitVector<>::iterator(std::move(rhs.sbvIt));
-    }
-    else if (this->pt->type == PointsTo::Type::CBV)
-    {
-        new (&cbvIt) CoreBitVector::iterator(std::move(rhs.cbvIt));
-    }
-    else if (this->pt->type == PointsTo::Type::BV)
-    {
-        new (&bvIt) BitVector::iterator(std::move(rhs.bvIt));
-    }
-    else assert(false && "PointsToIterator::PointsToIterator&&: unknown type");
+    #define IT_CONSTRUCT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        new (&ptItName) PtClassName::iterator(std::move(rhs.ptItName));
+    PT_DO(this->pt->type, "PointsTo::PointsToIterator&: unknown type", IT_CONSTRUCT);
+    #undef IT_CONSTRUCT
+
+    // if (this->pt->type == PointsTo::Type::RBM)
+    // {
+    //     new (&rbmIt) RoaringBitmap::iterator(std::move(rhs.rbmIt));
+    // }
+    // ...
 
     return *this;
 }
@@ -497,10 +471,14 @@ PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(PointsToIterat
 const PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator++()
 {
     assert(!atEnd() && "PointsToIterator::++(pre): incrementing past end!");
-    if (pt->type == Type::CBV) ++cbvIt;
-    else if (pt->type == Type::SBV) ++sbvIt;
-    else if (pt->type == Type::BV) ++bvIt;
-    else assert(false && "PointsToIterator::++(void): unknown type");
+
+    #define INCREMENT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        ++ptItName;
+    PT_DO(pt->type, "PointsTo::++(void): unknown type", INCREMENT);
+    #undef INCREMENT
+
+    // if (pt->type == Type::RBM) ++rbmIt;
+    // ...
 
     return *this;
 }
@@ -516,14 +494,14 @@ const PointsTo::PointsToIterator PointsTo::PointsToIterator::operator++(int)
 NodeID PointsTo::PointsToIterator::operator*() const
 {
     assert(!atEnd() && "PointsToIterator: dereferencing end!");
-    if (pt->type == Type::CBV) return pt->getExternalNode(*cbvIt);
-    else if (pt->type == Type::SBV) return pt->getExternalNode(*sbvIt);
-    else if (pt->type == Type::BV) return pt->getExternalNode(*bvIt);
-    else
-    {
-        assert(false && "PointsToIterator::*: unknown type");
-        abort();
-    }
+
+    #define DEREF(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return pt->getExternalNode(*ptItName);
+    PT_DO(pt->type, "PointsTo::*: unknown type", DEREF);
+    #undef DEREF
+
+    // if (pt->type == Type::RBM) return pt->getExternalNode(*rbmIt);
+    // ...
 }
 
 bool PointsTo::PointsToIterator::operator==(const PointsToIterator &rhs) const
@@ -532,14 +510,13 @@ bool PointsTo::PointsToIterator::operator==(const PointsToIterator &rhs) const
            && "PointsToIterator::==: comparing iterators from different PointsTos!");
 
     // Handles end implicitly.
-    if (pt->type == Type::CBV) return cbvIt == rhs.cbvIt;
-    else if (pt->type == Type::SBV) return sbvIt == rhs.sbvIt;
-    else if (pt->type == Type::BV) return bvIt == rhs.bvIt;
-    else
-    {
-        assert(false && "PointsToIterator::==: unknown type");
-        abort();
-    }
+    #define IT_EQUAL(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return ptItName == rhs.ptItName;
+    PT_DO(pt->type, "PointsTo::==: unknown type", IT_EQUAL);
+    #undef IT_EQUAL
+
+    // if (pt->type == Type::RBM) return rbmIt == rhs.rbmIt;
+    // ...
 }
 
 bool PointsTo::PointsToIterator::operator!=(const PointsToIterator &rhs) const
@@ -552,14 +529,14 @@ bool PointsTo::PointsToIterator::operator!=(const PointsToIterator &rhs) const
 bool PointsTo::PointsToIterator::atEnd() const
 {
     assert(pt != nullptr && "PointsToIterator::atEnd: iterator iterating over nothing!");
-    if (pt->type == Type::CBV) return cbvIt == pt->cbv.end();
-    else if (pt->type == Type::SBV) return sbvIt == pt->sbv.end();
-    else if (pt->type == Type::BV) return bvIt == pt->bv.end();
-    else
-    {
-        assert(false && "PointsToIterator::atEnd: unknown type");
-        abort();
-    }
+    
+    #define IT_EQUAL(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        return ptItName == pt->pt_name.end();
+    PT_DO(pt->type, "PointsTo::atEnd: unknown type", IT_EQUAL);
+    #undef IT_EQUAL
+
+    // if (pt->type == Type::RBM) return rbmIt == pt->rbm.end();
+    // ...
 }
 
 PointsTo operator|(const PointsTo &lhs, const PointsTo &rhs)

@@ -174,10 +174,13 @@ const std::string NodeIDAllocator::Clusterer::DendrogramTraversalTime = "Dendrog
 const std::string NodeIDAllocator::Clusterer::EvalTime = "EvalTime";
 const std::string NodeIDAllocator::Clusterer::TotalTime = "TotalTime";
 const std::string NodeIDAllocator::Clusterer::TheoreticalNumWords = "TheoreticalWords";
+
+// Custom types
 const std::string NodeIDAllocator::Clusterer::OriginalBvNumWords = "OriginalBvWords";
 const std::string NodeIDAllocator::Clusterer::OriginalSbvNumWords = "OriginalSbvWords";
 const std::string NodeIDAllocator::Clusterer::NewBvNumWords = "NewBvWords";
 const std::string NodeIDAllocator::Clusterer::NewSbvNumWords = "NewSbvWords";
+
 const std::string NodeIDAllocator::Clusterer::NumRegions = "NumRegions";
 const std::string NodeIDAllocator::Clusterer::NumGtIntRegions = "NumGtIntRegions";
 const std::string NodeIDAllocator::Clusterer::LargestRegion = "LargestRegion";
@@ -672,6 +675,8 @@ std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::
             printStats(evalSubtitle + ": candidate " + candidateMethodName, candidateStats);
 
             size_t candidateWords = 0;
+
+            // TODO: Support more types
             if (Options::PtType() == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);
             else if (Options::PtType() == PointsTo::CBV) candidateWords = std::stoull(candidateStats[NewBvNumWords]);
             else assert(false && "Clusterer::cluster: unsupported BV type for clustering.");

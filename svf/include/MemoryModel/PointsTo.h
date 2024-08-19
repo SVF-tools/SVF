@@ -19,6 +19,59 @@
 #include "Util/CoreBitVector.h"
 #include "Util/SparseBitVector.h"
 
+// These `PT_*` macro definitions help to perform operations on the underlying `PointsTo` data structure, 
+// without having to care about exactly what kind of data structure it is.
+// It is essentially template substitution. 
+//
+// Available data structures with different types must be registered in these places:
+// - The `PT_DO` macro below.
+// - The `PointsTo` class.
+// - The `PointsTo::PointsToIterator` class.
+//
+// You may also want to add your types into `NodeIDAllocator` to support clustering.
+// Additionally, these data structures must share the same interface of operations.
+
+/// Generate a single case block for a specific `PointsTo` type within a switch statement.
+///
+/// `PT_ENUM_NAME`: The enum tag for the type. For example, `PointsTo::Type::SBV`.
+/// `PtClassName`: The class name of the data structure. For example, `SparseBitVector<>`.
+/// `pt_name`: The lowercase name of the corresponding member defined in `PointsTo`. For example, `sbv`.
+/// `ptItName`: The iterator name defined in `PointsToIterator`. For example, `sbvIt`.
+/// `operation`: A macro to do the real work with names replaced.
+#define PT_TYPE_CASE(PT_ENUM_NAME, PtClassName, pt_name, ptItName, operation) \
+    case PT_ENUM_NAME: { \
+        operation(PT_ENUM_NAME, PtClassName, pt_name, ptItName) \
+        break; \
+    }
+
+/// Performs a custom operation on the `PointsTo` data structure.
+/// It uses `type` to check the real type of the underlying data structure,
+/// then user-defined `operation` is invoked with correct names.
+///
+/// Usage:
+/// ```
+/// #define MY_DESTRUCT(PT_ENUM_NAME, PtClassName, pt_name, ptItName) (pt_name).~(PtClassName)();
+/// PT_DO(type, "PointsTo::PointsTo: unknown type", MY_DESTRUCT);
+/// #undef MY_DESTRUCT
+/// ```
+///
+/// `type`: The variable being switched on.
+/// `assert_msg`: The assertion message to display if the underlying data structure is not recognized.
+/// `operation`: A macro or lambda function that defines the operation to be performed.
+///
+/// TODO: Automatically insert the current function name into the assertion message
+#define PT_DO(type, assert_msg, operation) \
+do { \
+    switch(type) { \
+        /* Underlying Data Structure Registrations: */\
+        PT_TYPE_CASE(PointsTo::Type::SBV, SparseBitVector<>, sbv, sbvIt, operation) \
+        PT_TYPE_CASE(PointsTo::Type::CBV, CoreBitVector, cbv, cbvIt, operation) \
+        PT_TYPE_CASE(PointsTo::Type::BV, BitVector, bv, bvIt, operation) \
+        default: \
+            assert(false && (assert_msg)); \
+    }\
+} while(0)
+
 namespace SVF
 {
 
