@@ -174,12 +174,22 @@ private:
     */
     virtual void handleSVFStatement(const SVFStmt *stmt) override;
 
-    /**
-    * handle ICFGNode regarding buffer overflow checking
-    *
-    * @param node ICFGNode
-    */
-    virtual void handleICFGNode(const SVF::ICFGNode *node) override;
+    // TODO: will delete later
+    virtual void handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto) override {
+        AbstractInterpretation::handleSingletonWTO(icfgSingletonWto);
+        const ICFGNode* repNode = _icfg->getRepNode(icfgSingletonWto->node());
+        if (_postAbsTrace.count(repNode) == 0)
+        {
+            return;
+        }
+        const std::vector<const ICFGNode*>& worklist_vec = _icfg->getSubNodes(icfgSingletonWto->node());
+
+        for (auto it = worklist_vec.begin(); it != worklist_vec.end(); ++it)
+        {
+            const ICFGNode* curNode = *it;
+            detectBufOverflow(curNode);
+        }
+    }
 
     /**
     * check buffer overflow at ICFGNode which is a checkpoint

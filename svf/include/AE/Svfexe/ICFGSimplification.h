@@ -27,7 +27,6 @@
 // The implementation is based on
 // Xiao Cheng, Jiawei Wang and Yulei Sui. Precise Sparse Abstract Execution via Cross-Domain Interaction.
 // 46th International Conference on Software Engineering. (ICSE24)
-#include "AE/Svfexe/SVFIR2AbsState.h"
 #include "Graphs/ICFG.h"
 
 namespace SVF

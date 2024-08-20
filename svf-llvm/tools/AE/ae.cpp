@@ -632,7 +632,7 @@ public:
 
     void testBinaryOpStmt()
     {
-//        // test division /
+        // test division /
         assert((IntervalValue(4) / IntervalValue::bottom()).equals(IntervalValue::bottom()));
         assert((IntervalValue::bottom() / IntervalValue(2)).equals(IntervalValue::bottom()));
         assert((IntervalValue::top() / IntervalValue(0)).equals(IntervalValue::bottom()));
@@ -825,6 +825,18 @@ public:
         assert((IntervalValue(-6, -3) ^ IntervalValue(3, 9)).equals(IntervalValue::top()));
         assert((IntervalValue(-6, 6) ^ IntervalValue(3, 9)).equals(IntervalValue::top()));
     }
+
+    void testAbsState() {
+        AbstractState as;
+        as[1] = IntervalValue(1, 3);
+        as[2] = IntervalValue(2, 7);
+        as[3] = AddressValue(0x7f000007);
+        as[4] = AddressValue(0x7f000008);
+        as.storeValue(3, as[1]);
+        as.storeValue(4, as[2]);
+        as.printAbstractState();
+        assert(as.loadValue(3).equals(as[1]) && as.loadValue(4).equals(as[2]));
+    }
 };
 
 
@@ -859,6 +871,7 @@ int main(int argc, char** argv)
     {
         AETest aeTest;
         aeTest.testBinaryOpStmt();
+        aeTest.testAbsState();
         return 0;
     }
 
