@@ -125,7 +125,8 @@ AbstractInterpretation::~AbstractInterpretation()
  * It does this by detecting cycles in the call graph's strongly connected components (SCC).
  * Any function found to be part of a cycle is marked as recursive.
  */
-void AbstractInterpretation::initWTO() {
+void AbstractInterpretation::initWTO()
+{
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(_svfir);
     // Detect if the call graph has cycles by finding its strongly connected components (SCC)
     Andersen::CallGraphSCC* callGraphScc = ander->getCallGraphSCC();
@@ -133,14 +134,16 @@ void AbstractInterpretation::initWTO() {
     auto callGraph = ander->getPTACallGraph();
 
     // Iterate through the call graph
-    for (auto it = callGraph->begin(); it != callGraph->end(); it++) {
+    for (auto it = callGraph->begin(); it != callGraph->end(); it++)
+    {
         // Check if the current function is part of a cycle
         if (callGraphScc->isInCycle(it->second->getId()))
             _recursiveFuns.insert(it->second->getFunction()); // Mark the function as recursive
     }
 
     // Initialize WTO for each function in the module
-    for (const SVFFunction* fun : _svfir->getModule()->getFunctionSet()) {
+    for (const SVFFunction* fun : _svfir->getModule()->getFunctionSet())
+    {
         auto* wto = new ICFGWTO(_icfg, _icfg->getFunEntryICFGNode(fun));
         wto->init();
         _funcToWTO[fun] = wto;
@@ -210,9 +213,11 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
         }
     }
     _preAbsTrace[block].clear();
-    if (workList.size() == 0) {
+    if (workList.size() == 0)
+    {
         return false;
-    } else
+    }
+    else
     {
         while (!workList.empty())
         {
@@ -564,17 +569,22 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
 /**
  * @brief Hanlde two types of WTO components (singleton and cycle)
  */
-void AbstractInterpretation::handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps) {
-    for (const ICFGWTOComp* wtoNode : wtoComps) {
-        if (const ICFGSingletonWTO* node = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoNode)) {
+void AbstractInterpretation::handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps)
+{
+    for (const ICFGWTOComp* wtoNode : wtoComps)
+    {
+        if (const ICFGSingletonWTO* node = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoNode))
+        {
             handleSingletonWTO(node);
         }
         // Handle WTO cycles
-        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoNode)) {
+        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoNode))
+        {
             handleCycleWTO(cycle);
         }
         // Assert false for unknown WTO types
-        else {
+        else
+        {
             assert(false && "unknown WTO type!");
         }
     }
@@ -714,34 +724,44 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
     bool is_feasible = mergeStatesFromPredecessors(cycle->head()->node());
     if (!is_feasible)
         return;
-    else {
+    else
+    {
         const ICFGNode* cycle_head = cycle->head()->node();
         // Flag to indicate if we are in the increasing phase
         bool increasing = true;
         // Infinite loop until a fixpoint is reached,
-        for (u32_t cur_iter = 0;; cur_iter++) {
+        for (u32_t cur_iter = 0;; cur_iter++)
+        {
             // Start widening or narrowing if cur_iter >= widen threshold (widen delay)
-            if (cur_iter >= Options::WidenDelay()) {
+            if (cur_iter >= Options::WidenDelay())
+            {
                 // Widen or narrow after processing cycle head node
                 AbstractState prev_head_state = _postAbsTrace[cycle_head];
                 handleSingletonWTO(cycle->head());
                 AbstractState cur_head_state = _postAbsTrace[cycle_head];
-                if (increasing) {
+                if (increasing)
+                {
                     // Widening phase
                     _postAbsTrace[cycle_head] = prev_head_state.widening(cur_head_state);
-                    if (_postAbsTrace[cycle_head] == prev_head_state) {
+                    if (_postAbsTrace[cycle_head] == prev_head_state)
+                    {
                         increasing = false;
                         continue;
                     }
-                } else {
+                }
+                else
+                {
                     // Widening's fixpoint reached in the widening phase, switch to narrowing
                     _postAbsTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
-                    if (_postAbsTrace[cycle_head] == prev_head_state) {
+                    if (_postAbsTrace[cycle_head] == prev_head_state)
+                    {
                         // Narrowing's fixpoint reached in the narrowing phase, exit loop
                         break;
                     }
                 }
-            } else {
+            }
+            else
+            {
                 // Handle the cycle head
                 handleSingletonWTO(cycle->head());
             }
@@ -1684,9 +1704,9 @@ void AbstractInterpretation::updateStateOnGep(const GepStmt *gep)
     IntervalValue offsetPair = as.getElementIndex(gep);
     AbstractValue gepAddrs;
     APOffset lb = offsetPair.lb().getIntNumeral() < Options::MaxFieldLimit()?
-                                                                             offsetPair.lb().getIntNumeral(): Options::MaxFieldLimit();
+                  offsetPair.lb().getIntNumeral(): Options::MaxFieldLimit();
     APOffset ub = offsetPair.ub().getIntNumeral() < Options::MaxFieldLimit()?
-                                                                             offsetPair.ub().getIntNumeral(): Options::MaxFieldLimit();
+                  offsetPair.ub().getIntNumeral(): Options::MaxFieldLimit();
     for (APOffset i = lb; i <= ub; i++)
         gepAddrs.join_with(as.getGepObjAddrs(rhs,IntervalValue(i)));
     as[lhs] = gepAddrs;
@@ -1716,7 +1736,8 @@ void AbstractInterpretation::updateStateOnPhi(const PhiStmt *phi)
     AbstractState& as = getAbsStateFromTrace(icfgNode);
     u32_t res = phi->getResID();
     AbstractValue rhs;
-    for (u32_t i = 0; i < phi->getOpVarNum(); i++) {
+    for (u32_t i = 0; i < phi->getOpVarNum(); i++)
+    {
         NodeID curId = phi->getOpVarID(i);
         const ICFGNode* opICFGNode = phi->getOpICFGNode(i);
         if (hasAbsStateFromTrace(opICFGNode))
@@ -1756,7 +1777,8 @@ void AbstractInterpretation::updateStateOnAddr(const AddrStmt *addr)
 }
 
 
-void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary) {
+void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary)
+{
     /// Find the comparison predicates in "class BinaryOPStmt:OpCode" under SVF/svf/include/SVFIR/SVFStatements.h
     /// You are only required to handle integer predicates, including Add, FAdd, Sub, FSub, Mul, FMul, SDiv, FDiv, UDiv,
     /// SRem, FRem, URem, Xor, And, Or, AShr, Shl, LShr
@@ -1817,7 +1839,8 @@ void AbstractInterpretation::updateStateOnBinary(const BinaryOPStmt *binary) {
     as[res] = resVal;
 }
 
-void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp) {
+void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp)
+{
     AbstractState& as = getAbsStateFromTrace(cmp->getICFGNode());
     u32_t op0 = cmp->getOpVarID(0);
     u32_t op1 = cmp->getOpVarID(1);
@@ -1881,7 +1904,8 @@ void AbstractInterpretation::updateStateOnCmp(const CmpStmt *cmp) {
             }
             }
             as[res] = resVal;
-        } else if (as[op0].isAddr() && as[op1].isAddr())
+        }
+        else if (as[op0].isAddr() && as[op1].isAddr())
         {
             AddressValue &lhs = as[op0].getAddrs(), &rhs = as[op1].getAddrs();
             auto predicate = cmp->getPredicate();

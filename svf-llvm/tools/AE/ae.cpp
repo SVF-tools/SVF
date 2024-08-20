@@ -826,7 +826,8 @@ public:
         assert((IntervalValue(-6, 6) ^ IntervalValue(3, 9)).equals(IntervalValue::top()));
     }
 
-    void testAbsState() {
+    void testAbsState()
+    {
         AbstractState as;
         as[1] = IntervalValue(1, 3);
         as[2] = IntervalValue(2, 7);

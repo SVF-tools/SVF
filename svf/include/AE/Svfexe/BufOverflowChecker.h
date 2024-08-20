@@ -175,7 +175,8 @@ private:
     virtual void handleSVFStatement(const SVFStmt *stmt) override;
 
     // TODO: will delete later
-    virtual void handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto) override {
+    virtual void handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto) override
+    {
         AbstractInterpretation::handleSingletonWTO(icfgSingletonWto);
         const ICFGNode* repNode = _icfg->getRepNode(icfgSingletonWto->node());
         if (_postAbsTrace.count(repNode) == 0)
