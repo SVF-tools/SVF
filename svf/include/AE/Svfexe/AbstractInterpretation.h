@@ -143,10 +143,10 @@ protected:
     /**
      * Check if execution state exist by merging states of predecessor nodes
      *
-     * @param curNode The ICFGNode to analyse
+     * @param wtoCmp The wto component to analyse
      * @return if this node has preceding execution state
      */
-    bool mergeStatesFromPredecessors(const ICFGNode* curNode);
+    bool mergeStatesFromPredecessors(const ICFGWTOComp * wtoCmp);
 
     /**
      * Check if execution state exist at the branch edge
@@ -178,6 +178,8 @@ protected:
     virtual void handleCycleWTO(const ICFGCycleWTO* cycle);
 
     void handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps);
+
+    void handleWTOComponent(const ICFGWTOComp* wtoComp);
 
 
     /**

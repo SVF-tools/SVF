@@ -180,8 +180,20 @@ void AbstractInterpretation::handleGlobalNode()
 /// get execution state by merging states of predecessor blocks
 /// Scenario 1: preblock -----(intraEdge)----> block, join the preES of inEdges
 /// Scenario 2: preblock -----(callEdge)----> block
-bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
+bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGWTOComp * wtoCmp)
 {
+    const ICFGNode* block = nullptr;
+    if (const ICFGSingletonWTO* vertex = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoCmp))
+    {
+        block = vertex->node();
+    }
+    else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoCmp))
+    {
+        block = cycle->head()->node();
+    } else
+    {
+        assert(false && "invalid WTO components");
+    }
     std::vector<AbstractState> workList;
     AbstractState preAs;
     for (auto& edge: block->getInEdges())
@@ -530,7 +542,7 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
     const ICFGNode* node = icfgSingletonWto->node();
     _stat->getBlockTrace()++;
     // Get execution states from in edges
-    if (!mergeStatesFromPredecessors(node))
+    if (!mergeStatesFromPredecessors(icfgSingletonWto))
     {
         // No ES on the in edges - Infeasible block
         return;
@@ -572,20 +584,30 @@ void AbstractInterpretation::handleWTOComponents(const std::list<const ICFGWTOCo
 {
     for (const ICFGWTOComp* wtoNode : wtoComps)
     {
-        if (const ICFGSingletonWTO* node = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoNode))
-        {
-            handleSingletonWTO(node);
-        }
-        // Handle WTO cycles
-        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoNode))
-        {
-            handleCycleWTO(cycle);
-        }
-        // Assert false for unknown WTO types
-        else
-        {
-            assert(false && "unknown WTO type!");
-        }
+        handleWTOComponent(wtoNode);
+    }
+}
+
+void AbstractInterpretation::handleWTOComponent(const SVF::ICFGWTOComp* wtoNode)
+{
+    if (!mergeStatesFromPredecessors(wtoNode))
+    {
+        // No ES on the in edges - Infeasible block
+        return;
+    }
+    if (const ICFGSingletonWTO* node = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoNode))
+    {
+        handleSingletonWTO(node);
+    }
+    // Handle WTO cycles
+    else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoNode))
+    {
+        handleCycleWTO(cycle);
+    }
+    // Assert false for unknown WTO types
+    else
+    {
+        assert(false && "unknown WTO type!");
     }
 }
 
@@ -720,7 +742,7 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
 void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
 {
     // Get execution states from predecessor nodes
-    bool is_feasible = mergeStatesFromPredecessors(cycle->head()->node());
+    bool is_feasible = mergeStatesFromPredecessors(cycle->head());
     if (!is_feasible)
         return;
     else
@@ -736,7 +758,7 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
             {
                 // Widen or narrow after processing cycle head node
                 AbstractState prev_head_state = _abstractTrace[cycle_head];
-                handleSingletonWTO(cycle->head());
+                handleWTOComponent(cycle->head());
                 AbstractState cur_head_state = _abstractTrace[cycle_head];
                 if (increasing)
                 {
