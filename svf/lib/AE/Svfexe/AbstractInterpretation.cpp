@@ -541,16 +541,6 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
 {
     const ICFGNode* node = icfgSingletonWto->node();
     _stat->getBlockTrace()++;
-    // Get execution states from in edges
-    if (!mergeStatesFromPredecessors(icfgSingletonWto))
-    {
-        // No ES on the in edges - Infeasible block
-        return;
-    }
-    else
-    {
-        // do nothing
-    }
 
     std::deque<const ICFGNode*> worklist;
 
@@ -741,54 +731,47 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
 /// handle wto cycle (loop)
 void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
 {
-    // Get execution states from predecessor nodes
-    bool is_feasible = mergeStatesFromPredecessors(cycle->head());
-    if (!is_feasible)
-        return;
-    else
+    const ICFGNode* cycle_head = cycle->head()->node();
+    // Flag to indicate if we are in the increasing phase
+    bool increasing = true;
+    // Infinite loop until a fixpoint is reached,
+    for (u32_t cur_iter = 0;; cur_iter++)
     {
-        const ICFGNode* cycle_head = cycle->head()->node();
-        // Flag to indicate if we are in the increasing phase
-        bool increasing = true;
-        // Infinite loop until a fixpoint is reached,
-        for (u32_t cur_iter = 0;; cur_iter++)
+        // Start widening or narrowing if cur_iter >= widen threshold (widen delay)
+        if (cur_iter >= Options::WidenDelay())
         {
-            // Start widening or narrowing if cur_iter >= widen threshold (widen delay)
-            if (cur_iter >= Options::WidenDelay())
+            // Widen or narrow after processing cycle head node
+            AbstractState prev_head_state = _abstractTrace[cycle_head];
+            handleWTOComponent(cycle->head());
+            AbstractState cur_head_state = _abstractTrace[cycle_head];
+            if (increasing)
             {
-                // Widen or narrow after processing cycle head node
-                AbstractState prev_head_state = _abstractTrace[cycle_head];
-                handleWTOComponent(cycle->head());
-                AbstractState cur_head_state = _abstractTrace[cycle_head];
-                if (increasing)
+                // Widening phase
+                _abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
+                if (_abstractTrace[cycle_head] == prev_head_state)
                 {
-                    // Widening phase
-                    _abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
-                    if (_abstractTrace[cycle_head] == prev_head_state)
-                    {
-                        increasing = false;
-                        continue;
-                    }
-                }
-                else
-                {
-                    // Widening's fixpoint reached in the widening phase, switch to narrowing
-                    _abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
-                    if (_abstractTrace[cycle_head] == prev_head_state)
-                    {
-                        // Narrowing's fixpoint reached in the narrowing phase, exit loop
-                        break;
-                    }
+                    increasing = false;
+                    continue;
                 }
             }
             else
             {
-                // Handle the cycle head
-                handleSingletonWTO(cycle->head());
+                // Widening's fixpoint reached in the widening phase, switch to narrowing
+                _abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
+                if (_abstractTrace[cycle_head] == prev_head_state)
+                {
+                    // Narrowing's fixpoint reached in the narrowing phase, exit loop
+                    break;
+                }
             }
-            // Handle the cycle body
-            handleWTOComponents(cycle->getWTOComponents());
         }
+        else
+        {
+            // Handle the cycle head
+            handleSingletonWTO(cycle->head());
+        }
+        // Handle the cycle body
+        handleWTOComponents(cycle->getWTOComponents());
     }
 }
 
