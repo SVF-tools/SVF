@@ -143,10 +143,10 @@ protected:
     /**
      * Check if execution state exist by merging states of predecessor nodes
      *
-     * @param curNode The ICFGNode to analyse
+     * @param icfgNode The icfg node to analyse
      * @return if this node has preceding execution state
      */
-    bool mergeStatesFromPredecessors(const ICFGNode* curNode);
+    bool mergeStatesFromPredecessors(const ICFGNode * icfgNode);
 
     /**
      * Check if execution state exist at the branch edge
@@ -178,6 +178,8 @@ protected:
     virtual void handleCycleWTO(const ICFGCycleWTO* cycle);
 
     void handleWTOComponents(const std::list<const ICFGWTOComp*>& wtoComps);
+
+    void handleWTOComponent(const ICFGWTOComp* wtoComp);
 
 
     /**
@@ -378,20 +380,20 @@ protected:
     AbstractState& getAbsStateFromTrace(const ICFGNode* node)
     {
         const ICFGNode* repNode = _icfg->getRepNode(node);
-        if (_postAbsTrace.count(repNode) == 0)
+        if (_abstractTrace.count(repNode) == 0)
         {
             assert(0 && "No preAbsTrace for this node");
         }
         else
         {
-            return _postAbsTrace[repNode];
+            return _abstractTrace[repNode];
         }
     }
 
     bool hasAbsStateFromTrace(const ICFGNode* node)
     {
         const ICFGNode* repNode = _icfg->getRepNode(node);
-        return _postAbsTrace.count(repNode) != 0;
+        return _abstractTrace.count(repNode) != 0;
     }
 
 protected:
@@ -399,8 +401,7 @@ protected:
     Map<std::string, std::function<void(const CallSite &)>> _func_map;
     Set<const CallICFGNode*> _checkpoints;
     Set<std::string> _checkpoint_names;
-    Map<const ICFGNode*, AbstractState> _preAbsTrace;
-    Map<const ICFGNode*, AbstractState> _postAbsTrace;
+    Map<const ICFGNode*, AbstractState> _abstractTrace; // abstract states immediately after nodes
     std::string _moduleName;
 };
 }

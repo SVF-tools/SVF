@@ -167,10 +167,9 @@ void AbstractInterpretation::analyse()
 /// handle global node
 void AbstractInterpretation::handleGlobalNode()
 {
-    AbstractState as;
     const ICFGNode* node = _icfg->getGlobalICFGNode();
-    _postAbsTrace[node] = _preAbsTrace[node];
-    _postAbsTrace[node][SymbolTableInfo::NullPtr] = AddressValue();
+    _abstractTrace[node] = AbstractState();
+    _abstractTrace[node][SymbolTableInfo::NullPtr] = AddressValue();
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
@@ -181,18 +180,18 @@ void AbstractInterpretation::handleGlobalNode()
 /// get execution state by merging states of predecessor blocks
 /// Scenario 1: preblock -----(intraEdge)----> block, join the preES of inEdges
 /// Scenario 2: preblock -----(callEdge)----> block
-bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
+bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNode)
 {
     std::vector<AbstractState> workList;
-    AbstractState as;
-    for (auto& edge: block->getInEdges())
+    AbstractState preAs;
+    for (auto& edge: icfgNode->getInEdges())
     {
-        if (_postAbsTrace.find(edge->getSrcNode()) != _postAbsTrace.end())
+        if (_abstractTrace.find(edge->getSrcNode()) != _abstractTrace.end())
         {
             const IntraCFGEdge *intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
             if (intraCfgEdge && intraCfgEdge->getCondition())
             {
-                AbstractState tmpEs = _postAbsTrace[edge->getSrcNode()];
+                AbstractState tmpEs = _abstractTrace[edge->getSrcNode()];
                 if (isBranchFeasible(intraCfgEdge, tmpEs))
                 {
                     workList.push_back(tmpEs);
@@ -204,7 +203,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
             }
             else
             {
-                workList.push_back(_postAbsTrace[edge->getSrcNode()]);
+                workList.push_back(_abstractTrace[edge->getSrcNode()]);
             }
         }
         else
@@ -212,7 +211,6 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
 
         }
     }
-    _preAbsTrace[block].clear();
     if (workList.size() == 0)
     {
         return false;
@@ -221,9 +219,12 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
     {
         while (!workList.empty())
         {
-            _preAbsTrace[block].joinWith(workList.back());
+            preAs.joinWith(workList.back());
             workList.pop_back();
         }
+        // Has ES on the in edges - Feasible block
+        // update post as
+        _abstractTrace[icfgNode] = preAs;
         return true;
     }
 }
@@ -526,20 +527,8 @@ bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* intraEdge,
 /// handle instructions in svf basic blocks
 void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto)
 {
-    const ICFGNode* node = icfgSingletonWto->node();
+    const ICFGNode* node = icfgSingletonWto->getICFGNode();
     _stat->getBlockTrace()++;
-    // Get execution states from in edges
-    if (!mergeStatesFromPredecessors(node))
-    {
-        // No ES on the in edges - Infeasible block
-        return;
-    }
-    else
-    {
-        // Has ES on the in edges - Feasible block
-        // Get execution state from in edges
-        _postAbsTrace[node] = _preAbsTrace[node];
-    }
 
     std::deque<const ICFGNode*> worklist;
 
@@ -573,20 +562,27 @@ void AbstractInterpretation::handleWTOComponents(const std::list<const ICFGWTOCo
 {
     for (const ICFGWTOComp* wtoNode : wtoComps)
     {
-        if (const ICFGSingletonWTO* node = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoNode))
-        {
+        handleWTOComponent(wtoNode);
+    }
+}
+
+void AbstractInterpretation::handleWTOComponent(const SVF::ICFGWTOComp* wtoNode)
+{
+    if (const ICFGSingletonWTO* node = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoNode))
+    {
+        if (mergeStatesFromPredecessors(node->getICFGNode()))
             handleSingletonWTO(node);
-        }
-        // Handle WTO cycles
-        else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoNode))
-        {
+    }
+    // Handle WTO cycles
+    else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoNode))
+    {
+        if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
             handleCycleWTO(cycle);
-        }
-        // Assert false for unknown WTO types
-        else
-        {
-            assert(false && "unknown WTO type!");
-        }
+    }
+    // Assert false for unknown WTO types
+    else
+    {
+        assert(false && "unknown WTO type!");
     }
 }
 
@@ -656,7 +652,7 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
             }
         }
     }
-    _postAbsTrace[retNode] = as;
+    _abstractTrace[retNode] = as;
 }
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
@@ -670,7 +666,7 @@ void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     _callSiteStack.push_back(callNode);
 
-    _postAbsTrace[callNode] = as;
+    _abstractTrace[callNode] = as;
 
     ICFGWTO* wto = _funcToWTO[callfun];
     handleWTOComponents(wto->getWTOComponents());
@@ -679,7 +675,7 @@ void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode
     // handle Ret node
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     // resume ES to callnode
-    _postAbsTrace[retNode] = _postAbsTrace[callNode];
+    _abstractTrace[retNode] = _abstractTrace[callNode];
 }
 
 bool AbstractInterpretation::isIndirectCall(const SVF::CallICFGNode *callNode)
@@ -704,14 +700,14 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
     if (callfun)
     {
         _callSiteStack.push_back(callNode);
-        _postAbsTrace[callNode] = as;
+        _abstractTrace[callNode] = as;
 
         ICFGWTO* wto = _funcToWTO[callfun];
         handleWTOComponents(wto->getWTOComponents());
         _callSiteStack.pop_back();
         // handle Ret node
         const RetICFGNode *retNode = callNode->getRetICFGNode();
-        _postAbsTrace[retNode] = _postAbsTrace[callNode];
+        _abstractTrace[retNode] = _abstractTrace[callNode];
     }
 }
 
@@ -720,54 +716,47 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
 /// handle wto cycle (loop)
 void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
 {
-    // Get execution states from predecessor nodes
-    bool is_feasible = mergeStatesFromPredecessors(cycle->head()->node());
-    if (!is_feasible)
-        return;
-    else
+    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
+    // Flag to indicate if we are in the increasing phase
+    bool increasing = true;
+    // Infinite loop until a fixpoint is reached,
+    for (u32_t cur_iter = 0;; cur_iter++)
     {
-        const ICFGNode* cycle_head = cycle->head()->node();
-        // Flag to indicate if we are in the increasing phase
-        bool increasing = true;
-        // Infinite loop until a fixpoint is reached,
-        for (u32_t cur_iter = 0;; cur_iter++)
+        // Start widening or narrowing if cur_iter >= widen threshold (widen delay)
+        if (cur_iter >= Options::WidenDelay())
         {
-            // Start widening or narrowing if cur_iter >= widen threshold (widen delay)
-            if (cur_iter >= Options::WidenDelay())
+            // Widen or narrow after processing cycle head node
+            AbstractState prev_head_state = _abstractTrace[cycle_head];
+            handleWTOComponent(cycle->head());
+            AbstractState cur_head_state = _abstractTrace[cycle_head];
+            if (increasing)
             {
-                // Widen or narrow after processing cycle head node
-                AbstractState prev_head_state = _postAbsTrace[cycle_head];
-                handleSingletonWTO(cycle->head());
-                AbstractState cur_head_state = _postAbsTrace[cycle_head];
-                if (increasing)
+                // Widening phase
+                _abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
+                if (_abstractTrace[cycle_head] == prev_head_state)
                 {
-                    // Widening phase
-                    _postAbsTrace[cycle_head] = prev_head_state.widening(cur_head_state);
-                    if (_postAbsTrace[cycle_head] == prev_head_state)
-                    {
-                        increasing = false;
-                        continue;
-                    }
-                }
-                else
-                {
-                    // Widening's fixpoint reached in the widening phase, switch to narrowing
-                    _postAbsTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
-                    if (_postAbsTrace[cycle_head] == prev_head_state)
-                    {
-                        // Narrowing's fixpoint reached in the narrowing phase, exit loop
-                        break;
-                    }
+                    increasing = false;
+                    continue;
                 }
             }
             else
             {
-                // Handle the cycle head
-                handleSingletonWTO(cycle->head());
+                // Widening's fixpoint reached in the widening phase, switch to narrowing
+                _abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
+                if (_abstractTrace[cycle_head] == prev_head_state)
+                {
+                    // Narrowing's fixpoint reached in the narrowing phase, exit loop
+                    break;
+                }
             }
-            // Handle the cycle body
-            handleWTOComponents(cycle->getWTOComponents());
         }
+        else
+        {
+            // Handle the cycle head
+            handleSingletonWTO(cycle->head());
+        }
+        // Handle the cycle body
+        handleWTOComponents(cycle->getWTOComponents());
     }
 }
 

@@ -178,12 +178,12 @@ private:
     virtual void handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto) override
     {
         AbstractInterpretation::handleSingletonWTO(icfgSingletonWto);
-        const ICFGNode* repNode = _icfg->getRepNode(icfgSingletonWto->node());
-        if (_postAbsTrace.count(repNode) == 0)
+        const ICFGNode* repNode = _icfg->getRepNode(icfgSingletonWto->getICFGNode());
+        if (_abstractTrace.count(repNode) == 0)
         {
             return;
         }
-        const std::vector<const ICFGNode*>& worklist_vec = _icfg->getSubNodes(icfgSingletonWto->node());
+        const std::vector<const ICFGNode*>& worklist_vec = _icfg->getSubNodes(icfgSingletonWto->getICFGNode());
 
         for (auto it = worklist_vec.begin(); it != worklist_vec.end(); ++it)
         {
