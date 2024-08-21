@@ -46,8 +46,9 @@
 #ifndef Z3_EXAMPLE_INTERVAL_DOMAIN_H
 #define Z3_EXAMPLE_INTERVAL_DOMAIN_H
 
-#include "AE/Core/IntervalValue.h"
 #include "AE/Core/AbstractValue.h"
+#include "AE/Core/IntervalValue.h"
+#include "SVFIR/SVFVariables.h"
 #include "Util/Z3Expr.h"
 
 #include <iomanip>
@@ -78,6 +79,21 @@ public:
     }
 
     virtual ~AbstractState() = default;
+
+    // getGepObjAddrs
+    AddressValue getGepObjAddrs(u32_t pointer, IntervalValue offset);
+
+    // initObjVar
+    void initObjVar(ObjVar* objVar);
+    // getElementIndex
+    IntervalValue getElementIndex(const GepStmt* gep);
+    // getByteOffset
+    IntervalValue getByteOffset(const GepStmt* gep);
+    // printAbstractState
+    // loadValue
+    AbstractValue loadValue(NodeID varId);
+    // storeValue
+    void storeValue(NodeID varId, AbstractValue val);
 
 
     /// The physical address starts with 0x7f...... + idx
@@ -258,14 +274,9 @@ public:
     /// domain narrow with other, and return the narrowed domain
     AbstractState narrowing(const AbstractState&other);
 
-    /// domain widen with other, important! other widen this.
-    void widenWith(const AbstractState&other);
-
     /// domain join with other, important! other widen this.
     void joinWith(const AbstractState&other);
 
-    /// domain narrow with other, important! other widen this.
-    void narrowWith(const AbstractState&other);
 
     /// domain meet with other, important! other widen this.
     void meetWith(const AbstractState&other);
@@ -299,8 +310,7 @@ public:
     }
 
 
-    /// Print values of all expressions
-    void printExprValues(std::ostream &oss) const;
+    void printAbstractState() const;
 
     std::string toString() const
     {
@@ -385,9 +395,6 @@ public:
         _varToAbsVal.clear();
     }
 
-
-protected:
-    void printTable(const VarToAbsValMap&table, std::ostream &oss) const;
 
 };
 

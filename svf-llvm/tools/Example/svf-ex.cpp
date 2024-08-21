@@ -26,7 +26,7 @@
  // Author: Yulei Sui,
  */
 
-#include "AE/Svfexe/SVFIR2AbsState.h"
+#include "AE/Core/AbstractState.h"
 #include "Graphs/SVFG.h"
 #include "SVF-LLVM/LLVMUtil.h"
 #include "SVF-LLVM/SVFIRBuilder.h"
@@ -71,71 +71,6 @@ std::string printPts(PointerAnalysis* pta, const SVFValue* svfval)
     return rawstr.str();
 
 }
-
-/*!
- * An example to query/collect all SVFStmt from a ICFGNode (iNode)
- */
-void traverseOnSVFStmt(const ICFGNode* node)
-{
-    AbstractState es;
-    SVFIR2AbsState* svfir2AbsState = new SVFIR2AbsState(SVFIR::getPAG());
-    for (const SVFStmt* stmt: node->getSVFStmts())
-    {
-        if (const AddrStmt *addr = SVFUtil::dyn_cast<AddrStmt>(stmt))
-        {
-            svfir2AbsState->handleAddr(es, addr);
-        }
-        else if (const BinaryOPStmt *binary = SVFUtil::dyn_cast<BinaryOPStmt>(stmt))
-        {
-            svfir2AbsState->handleBinary(es, binary);
-        }
-        else if (const CmpStmt *cmp = SVFUtil::dyn_cast<CmpStmt>(stmt))
-        {
-            svfir2AbsState->handleCmp(es, cmp);
-        }
-        else if (const LoadStmt *load = SVFUtil::dyn_cast<LoadStmt>(stmt))
-        {
-            svfir2AbsState->handleLoad(es, load);
-        }
-        else if (const StoreStmt *store = SVFUtil::dyn_cast<StoreStmt>(stmt))
-        {
-            svfir2AbsState->handleStore(es, store);
-        }
-        else if (const CopyStmt *copy = SVFUtil::dyn_cast<CopyStmt>(stmt))
-        {
-            svfir2AbsState->handleCopy(es, copy);
-        }
-        else if (const GepStmt *gep = SVFUtil::dyn_cast<GepStmt>(stmt))
-        {
-            if (gep->isConstantOffset())
-            {
-                gep->accumulateConstantOffset();
-            }
-            svfir2AbsState->handleGep(es, gep);
-        }
-        else if (const SelectStmt *select = SVFUtil::dyn_cast<SelectStmt>(stmt))
-        {
-            svfir2AbsState->handleSelect(es, select);
-        }
-        else if (const PhiStmt *phi = SVFUtil::dyn_cast<PhiStmt>(stmt))
-        {
-            svfir2AbsState->handlePhi(es, phi);
-        }
-        else if (const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt))
-        {
-            // To handle Call Edge
-            svfir2AbsState->handleCall(es, callPE);
-        }
-        else if (const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt))
-        {
-            svfir2AbsState->handleRet(es, retPE);
-        }
-        else
-            assert(false && "implement this part");
-    }
-}
-
-
 /*!
  * An example to query/collect all successor nodes from a ICFGNode (iNode) along control-flow graph (ICFG)
  */

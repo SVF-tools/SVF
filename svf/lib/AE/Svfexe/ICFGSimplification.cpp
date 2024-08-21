@@ -28,6 +28,7 @@
 // Created by Jiawei Wang on 2024/2/25.
 //
 #include "AE/Svfexe/ICFGSimplification.h"
+#include "SVFIR/SVFIR.h"
 
 namespace SVF
 {
