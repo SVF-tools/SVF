@@ -167,10 +167,9 @@ void AbstractInterpretation::analyse()
 /// handle global node
 void AbstractInterpretation::handleGlobalNode()
 {
-    AbstractState as;
     const ICFGNode* node = _icfg->getGlobalICFGNode();
-    _postAbsTrace[node] = _preAbsTrace[node];
-    _postAbsTrace[node][SymbolTableInfo::NullPtr] = AddressValue();
+    _abstractTrace[node] = AbstractState();
+    _abstractTrace[node][SymbolTableInfo::NullPtr] = AddressValue();
     // Global Node, we just need to handle addr, load, store, copy and gep
     for (const SVFStmt *stmt: node->getSVFStmts())
     {
@@ -184,15 +183,15 @@ void AbstractInterpretation::handleGlobalNode()
 bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
 {
     std::vector<AbstractState> workList;
-    AbstractState as;
+    AbstractState preAs;
     for (auto& edge: block->getInEdges())
     {
-        if (_postAbsTrace.find(edge->getSrcNode()) != _postAbsTrace.end())
+        if (_abstractTrace.find(edge->getSrcNode()) != _abstractTrace.end())
         {
             const IntraCFGEdge *intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(edge);
             if (intraCfgEdge && intraCfgEdge->getCondition())
             {
-                AbstractState tmpEs = _postAbsTrace[edge->getSrcNode()];
+                AbstractState tmpEs = _abstractTrace[edge->getSrcNode()];
                 if (isBranchFeasible(intraCfgEdge, tmpEs))
                 {
                     workList.push_back(tmpEs);
@@ -204,7 +203,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
             }
             else
             {
-                workList.push_back(_postAbsTrace[edge->getSrcNode()]);
+                workList.push_back(_abstractTrace[edge->getSrcNode()]);
             }
         }
         else
@@ -212,7 +211,6 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
 
         }
     }
-    _preAbsTrace[block].clear();
     if (workList.size() == 0)
     {
         return false;
@@ -221,9 +219,12 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode *block)
     {
         while (!workList.empty())
         {
-            _preAbsTrace[block].joinWith(workList.back());
+            preAs.joinWith(workList.back());
             workList.pop_back();
         }
+        // Has ES on the in edges - Feasible block
+        // update post as
+        _abstractTrace[block] = preAs;
         return true;
     }
 }
@@ -536,9 +537,7 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
     }
     else
     {
-        // Has ES on the in edges - Feasible block
-        // Get execution state from in edges
-        _postAbsTrace[node] = _preAbsTrace[node];
+        // do nothing
     }
 
     std::deque<const ICFGNode*> worklist;
@@ -656,7 +655,7 @@ void AbstractInterpretation::recursiveCallPass(const SVF::CallICFGNode *callNode
             }
         }
     }
-    _postAbsTrace[retNode] = as;
+    _abstractTrace[retNode] = as;
 }
 
 bool AbstractInterpretation::isDirectCall(const SVF::CallICFGNode *callNode)
@@ -670,7 +669,7 @@ void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode
     const SVFFunction *callfun = SVFUtil::getCallee(callNode->getCallSite());
     _callSiteStack.push_back(callNode);
 
-    _postAbsTrace[callNode] = as;
+    _abstractTrace[callNode] = as;
 
     ICFGWTO* wto = _funcToWTO[callfun];
     handleWTOComponents(wto->getWTOComponents());
@@ -679,7 +678,7 @@ void AbstractInterpretation::directCallFunPass(const SVF::CallICFGNode *callNode
     // handle Ret node
     const RetICFGNode *retNode = callNode->getRetICFGNode();
     // resume ES to callnode
-    _postAbsTrace[retNode] = _postAbsTrace[callNode];
+    _abstractTrace[retNode] = _abstractTrace[callNode];
 }
 
 bool AbstractInterpretation::isIndirectCall(const SVF::CallICFGNode *callNode)
@@ -704,14 +703,14 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
     if (callfun)
     {
         _callSiteStack.push_back(callNode);
-        _postAbsTrace[callNode] = as;
+        _abstractTrace[callNode] = as;
 
         ICFGWTO* wto = _funcToWTO[callfun];
         handleWTOComponents(wto->getWTOComponents());
         _callSiteStack.pop_back();
         // handle Ret node
         const RetICFGNode *retNode = callNode->getRetICFGNode();
-        _postAbsTrace[retNode] = _postAbsTrace[callNode];
+        _abstractTrace[retNode] = _abstractTrace[callNode];
     }
 }
 
@@ -736,14 +735,14 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
             if (cur_iter >= Options::WidenDelay())
             {
                 // Widen or narrow after processing cycle head node
-                AbstractState prev_head_state = _postAbsTrace[cycle_head];
+                AbstractState prev_head_state = _abstractTrace[cycle_head];
                 handleSingletonWTO(cycle->head());
-                AbstractState cur_head_state = _postAbsTrace[cycle_head];
+                AbstractState cur_head_state = _abstractTrace[cycle_head];
                 if (increasing)
                 {
                     // Widening phase
-                    _postAbsTrace[cycle_head] = prev_head_state.widening(cur_head_state);
-                    if (_postAbsTrace[cycle_head] == prev_head_state)
+                    _abstractTrace[cycle_head] = prev_head_state.widening(cur_head_state);
+                    if (_abstractTrace[cycle_head] == prev_head_state)
                     {
                         increasing = false;
                         continue;
@@ -752,8 +751,8 @@ void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
                 else
                 {
                     // Widening's fixpoint reached in the widening phase, switch to narrowing
-                    _postAbsTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
-                    if (_postAbsTrace[cycle_head] == prev_head_state)
+                    _abstractTrace[cycle_head] = prev_head_state.narrowing(cur_head_state);
+                    if (_abstractTrace[cycle_head] == prev_head_state)
                     {
                         // Narrowing's fixpoint reached in the narrowing phase, exit loop
                         break;

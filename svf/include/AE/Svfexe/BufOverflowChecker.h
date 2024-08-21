@@ -179,7 +179,7 @@ private:
     {
         AbstractInterpretation::handleSingletonWTO(icfgSingletonWto);
         const ICFGNode* repNode = _icfg->getRepNode(icfgSingletonWto->node());
-        if (_postAbsTrace.count(repNode) == 0)
+        if (_abstractTrace.count(repNode) == 0)
         {
             return;
         }
