@@ -527,7 +527,7 @@ bool AbstractInterpretation::isBranchFeasible(const IntraCFGEdge* intraEdge,
 /// handle instructions in svf basic blocks
 void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSingletonWto)
 {
-    const ICFGNode* node = icfgSingletonWto->node();
+    const ICFGNode* node = icfgSingletonWto->getICFGNode();
     _stat->getBlockTrace()++;
 
     std::deque<const ICFGNode*> worklist;
@@ -570,13 +570,13 @@ void AbstractInterpretation::handleWTOComponent(const SVF::ICFGWTOComp* wtoNode)
 {
     if (const ICFGSingletonWTO* node = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoNode))
     {
-        if (mergeStatesFromPredecessors(node->node()))
+        if (mergeStatesFromPredecessors(node->getICFGNode()))
             handleSingletonWTO(node);
     }
     // Handle WTO cycles
     else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoNode))
     {
-        if (mergeStatesFromPredecessors(cycle->head()->node()))
+        if (mergeStatesFromPredecessors(cycle->head()->getICFGNode()))
             handleCycleWTO(cycle);
     }
     // Assert false for unknown WTO types
@@ -716,7 +716,7 @@ void AbstractInterpretation::indirectCallFunPass(const SVF::CallICFGNode *callNo
 /// handle wto cycle (loop)
 void AbstractInterpretation::handleCycleWTO(const ICFGCycleWTO*cycle)
 {
-    const ICFGNode* cycle_head = cycle->head()->node();
+    const ICFGNode* cycle_head = cycle->head()->getICFGNode();
     // Flag to indicate if we are in the increasing phase
     bool increasing = true;
     // Infinite loop until a fixpoint is reached,

@@ -341,7 +341,7 @@ public:
     }
 
     /// Return the graph node
-    const NodeT* node() const
+    const NodeT* getICFGNode() const
     {
         return _node;
     }
@@ -457,7 +457,7 @@ public:
         std::string str;
         std::stringstream rawstr(str);
         rawstr << "(";
-        rawstr << _head->node()->getId() << ", ";
+        rawstr << _head->getICFGNode()->getId() << ", ";
         for (auto it = begin(), et = end(); it != et;)
         {
             rawstr << (*it)->toString();
@@ -698,7 +698,7 @@ protected:
 
         void visit(const WTOCycleT& cycle) override
         {
-            const NodeT* head = cycle.head()->node();
+            const NodeT* head = cycle.head()->getICFGNode();
             WTOCycleDepthPtr previous_cycleDepth = _wtoCycleDepth;
             _nodeToWTOCycleDepth.insert(std::make_pair(head, _wtoCycleDepth));
             _wtoCycleDepth =
@@ -714,7 +714,7 @@ protected:
         void visit(const WTONodeT& node) override
         {
             _nodeToWTOCycleDepth.insert(
-                std::make_pair(node.node(), _wtoCycleDepth));
+                std::make_pair(node.getICFGNode(), _wtoCycleDepth));
         }
 
     }; // end class WTOCycleDepthBuilder
