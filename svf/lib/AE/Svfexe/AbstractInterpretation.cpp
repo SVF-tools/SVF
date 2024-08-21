@@ -180,23 +180,11 @@ void AbstractInterpretation::handleGlobalNode()
 /// get execution state by merging states of predecessor blocks
 /// Scenario 1: preblock -----(intraEdge)----> block, join the preES of inEdges
 /// Scenario 2: preblock -----(callEdge)----> block
-bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGWTOComp * wtoCmp)
+bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGNode * icfgNode)
 {
-    const ICFGNode* block = nullptr;
-    if (const ICFGSingletonWTO* vertex = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoCmp))
-    {
-        block = vertex->node();
-    }
-    else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoCmp))
-    {
-        block = cycle->head()->node();
-    } else
-    {
-        assert(false && "invalid WTO components");
-    }
     std::vector<AbstractState> workList;
     AbstractState preAs;
-    for (auto& edge: block->getInEdges())
+    for (auto& edge: icfgNode->getInEdges())
     {
         if (_abstractTrace.find(edge->getSrcNode()) != _abstractTrace.end())
         {
@@ -236,7 +224,7 @@ bool AbstractInterpretation::mergeStatesFromPredecessors(const ICFGWTOComp * wto
         }
         // Has ES on the in edges - Feasible block
         // update post as
-        _abstractTrace[block] = preAs;
+        _abstractTrace[icfgNode] = preAs;
         return true;
     }
 }
@@ -580,19 +568,16 @@ void AbstractInterpretation::handleWTOComponents(const std::list<const ICFGWTOCo
 
 void AbstractInterpretation::handleWTOComponent(const SVF::ICFGWTOComp* wtoNode)
 {
-    if (!mergeStatesFromPredecessors(wtoNode))
-    {
-        // No ES on the in edges - Infeasible block
-        return;
-    }
     if (const ICFGSingletonWTO* node = SVFUtil::dyn_cast<ICFGSingletonWTO>(wtoNode))
     {
-        handleSingletonWTO(node);
+        if (mergeStatesFromPredecessors(node->node()))
+            handleSingletonWTO(node);
     }
     // Handle WTO cycles
     else if (const ICFGCycleWTO* cycle = SVFUtil::dyn_cast<ICFGCycleWTO>(wtoNode))
     {
-        handleCycleWTO(cycle);
+        if (mergeStatesFromPredecessors(cycle->head()->node()))
+            handleCycleWTO(cycle);
     }
     // Assert false for unknown WTO types
     else

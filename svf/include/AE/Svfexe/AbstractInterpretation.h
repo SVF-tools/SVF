@@ -143,10 +143,10 @@ protected:
     /**
      * Check if execution state exist by merging states of predecessor nodes
      *
-     * @param wtoCmp The wto component to analyse
+     * @param icfgNode The icfg node to analyse
      * @return if this node has preceding execution state
      */
-    bool mergeStatesFromPredecessors(const ICFGWTOComp * wtoCmp);
+    bool mergeStatesFromPredecessors(const ICFGNode * icfgNode);
 
     /**
      * Check if execution state exist at the branch edge
