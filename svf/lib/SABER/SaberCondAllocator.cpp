@@ -429,7 +429,7 @@ void SaberCondAllocator::collectBBCallingProgExit(const SVFBasicBlock &bb)
     {
         const SVFInstruction* svfInst = *it;
         if (SVFUtil::isCallSite(svfInst))
-            if (SVFUtil::isProgExitCall(svfInst))
+            if (SVFUtil::isProgExitCall(SVFUtil::getSVFCallSite(svfInst)))
             {
                 const SVFFunction* svfun = bb.getParent();
                 funToExitBBsMap[svfun].insert(&bb);

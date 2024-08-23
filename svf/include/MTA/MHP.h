@@ -47,8 +47,6 @@ class MHP
 
 public:
     typedef Set<const SVFFunction*> FunSet;
-    typedef Set<const SVFInstruction*> InstSet;
-    typedef std::vector<const SVFInstruction*> InstVec;
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
     typedef Set<CxtThreadStmt> CxtThreadStmtSet;
     typedef Map<CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
