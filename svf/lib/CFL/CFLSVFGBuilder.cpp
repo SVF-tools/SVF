@@ -50,7 +50,7 @@ void CFLSVFGBuilder::buildSVFG()
 
     DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
 
-    AddExtActualParmSVFGNodes(pta->getPTACallGraph());
+    AddExtActualParmSVFGNodes(pta->getCallGraph());
 
     if(pta->printStat())
         svfg->performStat();

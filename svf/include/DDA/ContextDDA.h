@@ -133,8 +133,8 @@ public:
     /// Whether call/return inside recursion
     inline virtual bool isEdgeInRecursion(CallSiteID csId)
     {
-        const SVFFunction* caller = getPTACallGraph()->getCallerOfCallSite(csId);
-        const SVFFunction* callee = getPTACallGraph()->getCalleeOfCallSite(csId);
+        const SVFFunction* caller = getCallGraph()->getCallerOfCallSite(csId);
+        const SVFFunction* callee = getCallGraph()->getCalleeOfCallSite(csId);
         return inSameCallGraphSCC(caller, callee);
     }
     /// Update call graph.

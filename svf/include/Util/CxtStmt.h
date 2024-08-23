@@ -35,6 +35,7 @@
 namespace SVF
 {
 
+class ICFGNode;
 /*!
  * Context-sensitive thread statement <c,s>
  */
@@ -42,7 +43,7 @@ class CxtStmt
 {
 public:
     /// Constructor
-    CxtStmt(const CallStrCxt& c, const SVFInstruction* f) :cxt(c), inst(f)
+    CxtStmt(const CallStrCxt& c, const ICFGNode* f) :cxt(c), inst(f)
     {
     }
     /// Copy constructor
@@ -59,7 +60,7 @@ public:
         return cxt;
     }
     /// Return current statement
-    inline const SVFInstruction* getStmt() const
+    inline const ICFGNode* getStmt() const
     {
         return inst;
     }
@@ -108,12 +109,12 @@ public:
     /// Dump CxtStmt
     inline void dump() const
     {
-        SVFUtil::outs() << "[ Current Stmt: " << inst->getSourceLoc() << " " << inst->toString() << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Stmt: " << inst->toString() << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 protected:
     CallStrCxt cxt;
-    const SVFInstruction* inst;
+    const ICFGNode* inst;
 };
 
 
@@ -124,7 +125,7 @@ class CxtThreadStmt : public CxtStmt
 {
 public:
     /// Constructor
-    CxtThreadStmt(NodeID t, const CallStrCxt& c, const SVFInstruction* f) :CxtStmt(c,f), tid(t)
+    CxtThreadStmt(NodeID t, const CallStrCxt& c, const ICFGNode* f) :CxtStmt(c,f), tid(t)
     {
     }
     /// Copy constructor
@@ -174,7 +175,7 @@ public:
     /// Dump CxtThreadStmt
     inline void dump() const
     {
-        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << inst->getSourceLoc() << " " << inst->toString() << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << inst->toString() << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 private:
@@ -189,7 +190,7 @@ class CxtThread
 {
 public:
     /// Constructor
-    CxtThread(const CallStrCxt& c, const SVFInstruction* fork) : cxt(c), forksite(fork), inloop(false), incycle(false)
+    CxtThread(const CallStrCxt& c, const ICFGNode* fork) : cxt(c), forksite(fork), inloop(false), incycle(false)
     {
     }
     /// Copy constructor
@@ -207,7 +208,7 @@ public:
         return cxt;
     }
     /// Return forksite
-    inline const SVFInstruction* getThread() const
+    inline const ICFGNode* getThread() const
     {
         return forksite;
     }
@@ -282,7 +283,7 @@ public:
 
         if(forksite)
         {
-            SVFUtil::outs() << "[ Thread: $" << forksite->getSourceLoc() << "$ "
+            SVFUtil::outs() << "[ Thread: "
                             << forksite->toString()  << "\t Contexts: " << cxtToStr()
                             << loop << cycle <<"  ]\n";
         }
@@ -294,7 +295,7 @@ public:
     }
 protected:
     CallStrCxt cxt;
-    const SVFInstruction* forksite;
+    const ICFGNode* forksite;
     bool inloop;
     bool incycle;
 };
@@ -484,8 +485,8 @@ template <> struct std::hash<SVF::CxtStmt>
 {
     size_t operator()(const SVF::CxtStmt& cs) const
     {
-        std::hash<SVF::SVFInstruction*> h;
-        SVF::SVFInstruction* inst = const_cast<SVF::SVFInstruction*> (cs.getStmt());
+        std::hash<SVF::ICFGNode*> h;
+        SVF::ICFGNode* inst = const_cast<SVF::ICFGNode*> (cs.getStmt());
         return h(inst);
     }
 };

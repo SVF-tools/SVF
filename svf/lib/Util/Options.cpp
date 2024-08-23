@@ -445,29 +445,11 @@ const Option<std::string> Options::ReadSVFG(
     ""
 );
 
-// FSMPTA.cpp
-const Option<bool> Options::UsePCG(
-    "pcg-td-edge",
-    "Use PCG lock for non-sparsely adding SVFG edges",
-    false
-);
 
 const Option<bool> Options::IntraLock(
     "intra-lock-td-edge",
     "Use simple intra-procedural lock for adding SVFG edges",
     true
-);
-
-const Option<bool> Options::ReadPrecisionTDEdge(
-    "rp-td-edge",
-    "perform read precision to refine SVFG edges",
-    false
-);
-
-const Option<u32_t> Options::AddModelFlag(
-    "add-td-edge",
-    "Add thread SVFG edges with models: 0 Non Add Edge; 1 NonSparse; 2 All Optimisation; 3 No MHP; 4 No Alias; 5 No Lock; 6 No Read Precision.",
-    0
 );
 
 
@@ -493,56 +475,12 @@ const Option<bool> Options::DoLockAnalysis(
 );
 
 
-// MTA.cpp
-const Option<bool> Options::AndersenAnno(
-    "tsan-ander",
-    "Add TSan annotation according to Andersen",
-    false
-);
-
-const Option<bool> Options::FSAnno(
-    "tsan-fs",
-    "Add TSan annotation according to flow-sensitive analysis",
-    false
-);
-
-
-// MTAAnnotator.cpp
-const Option<u32_t> Options::AnnoFlag(
-    "anno",
-    "prune annotated instructions: 0001 Thread Local; 0002 Alias; 0004 MHP.",
-    0
-);
-
-
-// MTAResultValidator.cpp
-const Option<bool> Options::PrintValidRes(
-    "mhp-validation",
-    "Print MHP Validation Results",
-    false
-);
-// LockResultValidator.cpp
-const Option<bool> Options::LockValid(
-    "lock-validation",
-    "Print Lock Validation Results",
-    false
-);
-
-
 // MTAStat.cpp
 const Option<bool> Options::AllPairMHP(
     "all-pair-mhp",
     "All pair MHP computation",
     false
 );
-
-
-// PCG.cpp
-//const Option<bool> TDPrint(
-//    "print-td",
-//    "Print Thread Analysis Results",
-//    true
-//);
 
 
 // TCT.cpp

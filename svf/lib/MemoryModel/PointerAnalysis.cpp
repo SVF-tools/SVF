@@ -66,7 +66,7 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
  * Constructor
  */
 PointerAnalysis::PointerAnalysis(SVFIR* p, PTATY ty, bool alias_check) :
-    svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),chgraph(nullptr)
+    svfMod(nullptr),ptaTy(ty),stat(nullptr),callgraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),chgraph(nullptr)
 {
     pag = p;
     OnTheFlyIterBudgetForStat = Options::StatBudget();
@@ -88,8 +88,8 @@ PointerAnalysis::~PointerAnalysis()
 
 void PointerAnalysis::destroy()
 {
-    delete ptaCallGraph;
-    ptaCallGraph = nullptr;
+    delete callgraph;
+    callgraph = nullptr;
 
     delete callGraphSCC;
     callGraphSCC = nullptr;
@@ -113,19 +113,19 @@ void PointerAnalysis::initialize()
     {
         ThreadCallGraph* cg = new ThreadCallGraph();
         ThreadCallGraphBuilder bd(cg, pag->getICFG());
-        ptaCallGraph = bd.buildThreadCallGraph(pag->getModule());
+        callgraph = bd.buildThreadCallGraph(pag->getModule());
     }
     else
     {
-        PTACallGraph* cg = new PTACallGraph();
+        CallGraph* cg = new CallGraph();
         CallGraphBuilder bd(cg,pag->getICFG());
-        ptaCallGraph = bd.buildCallGraph(pag->getModule());
+        callgraph = bd.buildCallGraph(pag->getModule());
     }
     callGraphSCCDetection();
 
     // dump callgraph
     if (Options::CallGraphDotGraph())
-        getPTACallGraph()->dump("callgraph_initial");
+        getCallGraph()->dump("callgraph_initial");
 }
 
 
@@ -140,7 +140,7 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
     {
         if(const SVFFunction* svffun = pag->getGNode(id)->getFunction())
         {
-            return callGraphSCC->isInCycle(getPTACallGraph()->getCallGraphNode(svffun)->getId());
+            return callGraphSCC->isInCycle(getCallGraph()->getCallGraphNode(svffun)->getId());
         }
     }
     return false;
@@ -198,10 +198,10 @@ void PointerAnalysis::finalize()
     if (Options::FuncPointerPrint())
         printIndCSTargets();
 
-    getPTACallGraph()->verifyCallGraph();
+    getCallGraph()->verifyCallGraph();
 
     if (Options::CallGraphDotGraph())
-        getPTACallGraph()->dump("callgraph_final");
+        getCallGraph()->dump("callgraph_final");
 
     if(!pag->isBuiltFromFile() && alias_validation)
         validateTests();
@@ -412,7 +412,7 @@ void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& ta
                     newEdges[cs].insert(callee);
                     getIndCallMap()[cs].insert(callee);
 
-                    ptaCallGraph->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
+                    callgraph->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
                     // FIXME: do we need to update llvm call graph here?
                     // The indirect call is maintained by ourself, We may update llvm's when we need to
                     //CallGraphNode* callgraphNode = callgraph->getOrInsertFunction(cs.getCaller());
@@ -477,7 +477,7 @@ void PointerAnalysis::connectVCallToVFns(const CallICFGNode* cs, const VFunSet &
             newEdges[cs].insert(callee);
             getIndCallMap()[cs].insert(callee);
             const CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs->getCallSite());
-            ptaCallGraph->addIndirectCallGraphEdge(callBlockNode, cs->getCaller(),callee);
+            callgraph->addIndirectCallGraphEdge(callBlockNode, cs->getCaller(),callee);
         }
     }
 }

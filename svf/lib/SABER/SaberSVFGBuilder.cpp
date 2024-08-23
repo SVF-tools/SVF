@@ -57,7 +57,7 @@ void SaberSVFGBuilder::buildSVFG()
 
     DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
 
-    AddExtActualParmSVFGNodes(pta->getPTACallGraph());
+    AddExtActualParmSVFGNodes(pta->getCallGraph());
 
     if(pta->printStat())
         svfg->performStat();
@@ -291,15 +291,15 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 
 
 /// Add actual parameter SVFGNode for 1st argument of a deallocation like external function
-void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
+void SaberSVFGBuilder::AddExtActualParmSVFGNodes(CallGraph* callgraph)
 {
     SVFIR* pag = SVFIR::getPAG();
     for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
     {
-        PTACallGraph::FunctionSet callees;
+        CallGraph::FunctionSet callees;
         callgraph->getCallees(it->first, callees);
-        for (PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
+        for (CallGraph::FunctionSet::const_iterator cit = callees.begin(),
                 ecit = callees.end(); cit != ecit; cit++)
         {
 
