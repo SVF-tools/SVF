@@ -286,31 +286,5 @@ void SVFIRBuilder::handleExtCall(const CallBase* cs, const SVFFunction* svfCalle
         /// We don't connect the callgraph here, further investigation is need to handle mod-ref during SVFG construction.
     }
 
-    /// create inter-procedural SVFIR edges for hare_parallel_for calls
-    else if (isHareParForCall(svfInst))
-    {
-        if (const SVFFunction* taskFunc = SVFUtil::dyn_cast<SVFFunction>(getTaskFuncAtHareParForSite(svfInst)))
-        {
-            /// The task function of hare_parallel_for has 3 args.
-            assert((taskFunc->arg_size() == 3) && "Size of formal parameter of hare_parallel_for's task routine should be 3");
-            const SVFValue* actualParm = getTaskDataAtHareParForSite(svfInst);
-            const SVFArgument* formalParm = taskFunc->getArg(0);
-            /// Connect actual parameter to formal parameter of the start routine
-            if (actualParm->getType()->isPointerTy() && formalParm->getType()->isPointerTy())
-            {
-                CallICFGNode *icfgNode = pag->getICFG()->getCallICFGNode(svfInst);
-                FunEntryICFGNode *entry = pag->getICFG()->getFunEntryICFGNode(taskFunc);
-                addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm), icfgNode, entry);
-            }
-        }
-        else
-        {
-            /// handle indirect calls at hare_parallel_for (e.g., hare_parallel_for(..., fp, ...);
-            /// const Value* fun = ThreadAPI::getThreadAPI()->getForkedFun(inst);
-            /// if(!SVFUtil::isa<Function>(fun))
-            ///    pag->addIndirectCallsites(cs,pag->getValueNode(fun));
-        }
-    }
-
     /// TODO: inter-procedural SVFIR edges for thread joins
 }

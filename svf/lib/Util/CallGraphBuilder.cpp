@@ -95,21 +95,6 @@ CallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
                         cg->addThreadForkEdgeSetMap(cs,nullptr);
                     }
                 }
-                else if (tdAPI->isHareParFor(inst))
-                {
-                    const CallICFGNode* cs = icfg->getCallICFGNode(inst);
-                    cg->addParForSite(cs);
-                    const SVFFunction* taskFunc = SVFUtil::dyn_cast<SVFFunction>(tdAPI->getTaskFuncAtHareParForSite(inst));
-                    if (taskFunc)
-                    {
-                        cg->addDirectParForEdge(cs);
-                    }
-                    // indirect call to the start routine function
-                    else
-                    {
-                        cg->addHareParForEdgeSetMap(cs,nullptr);
-                    }
-                }
             }
         }
     }

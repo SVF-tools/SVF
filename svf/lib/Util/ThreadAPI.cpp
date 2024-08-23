@@ -141,10 +141,11 @@ const SVFFunction* ThreadAPI::getCallee(const ICFGNode *inst) const
 /*!
  *
  */
-const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const
+const SVFFunction* ThreadAPI::getCallee(const SVFInstruction *inst) const
 {
-    return SVFUtil::getCallee(cs);
+    return SVFUtil::getCallee(inst);
 }
+
 
 const CallSite ThreadAPI::getSVFCallSite(const ICFGNode *inst) const
 {
@@ -162,12 +163,6 @@ const SVFValue* ThreadAPI::getLockVal(const ICFGNode *inst) const
     return cs.getArgument(0);
 }
 
-const SVFValue* ThreadAPI::getLockVal(CallSite cs) const
-{
-    assert((isTDAcquire(cs) || isTDRelease(cs)) && "not a lock acquire or release function");
-    return cs.getArgument(0);
-}
-
 /*!
  *
  */
@@ -180,23 +175,6 @@ const SVFValue* ThreadAPI::getJoinedThread(const ICFGNode *inst) const
 {
     assert(isTDJoin(inst) && "not a thread join function!");
     CallSite cs = getSVFCallSite(inst);
-    const SVFValue* join = cs.getArgument(0);
-    const SVFVar* var = PAG::getPAG()->getGNode(PAG::getPAG()->getValueNode(join));
-    for(const SVFStmt* stmt : var->getInEdges())
-    {
-        if(SVFUtil::isa<LoadStmt>(stmt))
-            return stmt->getSrcNode()->getValue();
-    }
-    if(SVFUtil::isa<SVFArgument>(join))
-        return join;
-
-    assert(false && "the value of the first argument at join is not a load instruction?");
-    return nullptr;
-}
-
-const SVFValue* ThreadAPI::getJoinedThread(CallSite cs) const
-{
-    assert(isTDJoin(cs) && "not a thread join function!");
     const SVFValue* join = cs.getArgument(0);
     const SVFVar* var = PAG::getPAG()->getGNode(PAG::getPAG()->getValueNode(join));
     for(const SVFStmt* stmt : var->getInEdges())
@@ -271,7 +249,8 @@ void ThreadAPI::performAPIStat(SVFModule* module)
                 const SVFInstruction* svfInst = *ii;
                 if (!SVFUtil::isCallSite(svfInst))
                     continue;
-                const SVFFunction* fun = getCallee(svfInst);
+
+                const SVFFunction* fun = SVFUtil::getCallee(svfInst);
                 TD_TYPE type = getType(fun);
                 switch (type)
                 {
