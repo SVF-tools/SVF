@@ -510,7 +510,11 @@ void LockAnalysis::handleIntra(const CxtStmt& cts)
 }
 
 
+<<<<<<< Updated upstream
 void LockAnalysis::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
+=======
+void LockAnalysis::pushCxt(CallStrCxt& cxt, const ICFGNode* call, const ICFGNode* callee)
+>>>>>>> Stashed changes
 {
     const SVFFunction* svfcaller = call->getFun();
     CallSiteID csId = getTCG()->getCallSiteID(call, callee);
@@ -526,7 +530,11 @@ void LockAnalysis::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFF
     }
 }
 
+<<<<<<< Updated upstream
 bool LockAnalysis::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
+=======
+bool LockAnalysis::matchCxt(CallStrCxt& cxt, const ICFGNode* call, const ICFGNode* callee)
+>>>>>>> Stashed changes
 {
     const SVFFunction* svfcaller = call->getFun();
     CallSiteID csId = getTCG()->getCallSiteID(call, callee);
