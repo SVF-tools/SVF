@@ -25,8 +25,6 @@
 #include "MTA/MTA.h"
 #include "Util/CommandLine.h"
 #include "Util/Options.h"
-#include "MTAResultValidator.h"
-#include "LockResultValidator.h"
 
 using namespace llvm;
 using namespace std;
@@ -53,12 +51,6 @@ int main(int argc, char ** argv)
     MTA mta;
     mta.runOnModule(pag);
 
-    MTAResultValidator MTAValidator(mta.getMHP());
-    MTAValidator.analyze();
-
-    // Initialize the validator and perform validation.
-    LockResultValidator lockvalidator(mta.getLockAnalysis());
-    lockvalidator.analyze();
     LLVMModuleSet::releaseLLVMModuleSet();
 
 
