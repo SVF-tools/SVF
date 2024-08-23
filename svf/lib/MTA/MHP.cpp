@@ -666,25 +666,25 @@ void MHP::printInterleaving()
  */
 void ForkJoinAnalysis::collectSCEVInfo()
 {
-    typedef Set<const SVFInstruction*> CallInstSet;
-    typedef Map<const SVFFunction*, CallInstSet> FunToFJSites;
-    FunToFJSites funToFJSites;
+    // typedef Set<const ICFGNode*> CallInstSet;
+    // typedef Map<const SVFFunction*, CallInstSet> FunToFJSites;
+    // FunToFJSites funToFJSites;
 
-    for (ThreadCallGraph::CallSiteSet::const_iterator it = tct->getThreadCallGraph()->forksitesBegin(),
-            eit = tct->getThreadCallGraph()->forksitesEnd();
-            it != eit; ++it)
-    {
-        const SVFInstruction* fork = (*it)->getCallSite();
-        funToFJSites[fork->getFunction()].insert(fork);
-    }
+    // for (ThreadCallGraph::CallSiteSet::const_iterator it = tct->getThreadCallGraph()->forksitesBegin(),
+    //         eit = tct->getThreadCallGraph()->forksitesEnd();
+    //         it != eit; ++it)
+    // {
+    //     const ICFGNode* fork = *it;
+    //     funToFJSites[fork->getFun()].insert(fork);
+    // }
 
-    for (ThreadCallGraph::CallSiteSet::const_iterator it = tct->getThreadCallGraph()->joinsitesBegin(),
-            eit = tct->getThreadCallGraph()->joinsitesEnd();
-            it != eit; ++it)
-    {
-        const SVFInstruction* join = (*it)->getCallSite();
-        funToFJSites[join->getFunction()].insert(join);
-    }
+    // for (ThreadCallGraph::CallSiteSet::const_iterator it = tct->getThreadCallGraph()->joinsitesBegin(),
+    //         eit = tct->getThreadCallGraph()->joinsitesEnd();
+    //         it != eit; ++it)
+    // {
+    //     const ICFGNode* join = *it;
+    //     funToFJSites[join->getFun()].insert(join);
+    // }
 
     // for(FunToFJSites::const_iterator it = funToFJSites.begin(), eit = funToFJSites.end(); it!=eit; ++it)
     // {

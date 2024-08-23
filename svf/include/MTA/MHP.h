@@ -87,15 +87,6 @@ public:
     /// Whether the function is connected from main function in thread call graph
     bool isConnectedfromMain(const SVFFunction* fun);
 
-//    /// Interface to query whether two instructions are protected by common locks
-//    virtual bool isProtectedByACommonLock(const SVFInstruction* i1, const SVFInstruction* i2);
-//    virtual bool isAllCxtInSameLockSpan(const SVFInstruction *I1, const SVFInstruction *I2);
-//    virtual bool isOneCxtInSameLockSpan(const SVFInstruction *I1, const SVFInstruction *I2);
-//
-//    bool hasOneCxtInLockSpan(const SVFInstruction *I, LockSpan lspan);
-//    bool hasAllCxtInLockSpan(const SVFInstruction *I, LockSpan lspan);
-//
-//
 //    LockSpan getSpanfromCxtLock(NodeID l);
     /// Interface to query whether two instructions may happen-in-parallel
     virtual bool mayHappenInParallel(const ICFGNode* i1, const ICFGNode* i2);
@@ -392,11 +383,6 @@ private:
     bool isAliasedForkJoin(const ICFGNode* forkSite, const ICFGNode* joinSite)
     {
         return tct->getPTA()->alias(getForkedThread(forkSite), getJoinedThread(joinSite)) && isSameSCEV(forkSite,joinSite);
-    }
-    // Get CallICFGNode
-    inline CallICFGNode* getCBN(const SVFInstruction* inst)
-    {
-        return tct->getCallICFGNode(inst);
     }
     /// Mark thread flags for cxtStmt
     //@{

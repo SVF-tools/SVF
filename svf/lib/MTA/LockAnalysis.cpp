@@ -69,6 +69,7 @@ void LockAnalysis::analyze()
 void LockAnalysis::collectLockUnlocksites()
 {
     ThreadCallGraph* tcg=tct->getThreadCallGraph();
+
     for (const SVFFunction* F : tct->getSVFModule()->getFunctionSet())
     {
         for (const SVFBasicBlock* bb : F->getBasicBlockList())
@@ -465,13 +466,16 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                 ++cit)
         {
             CallStrCxt newCxt = curCxt;
-            const SVFInstruction* inst = (*cit)->getCallSite();
-            if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(tct->getICFGNode(inst)), curFunNode->getFunction()))
+            const ICFGNode* inst = *cit;
+            if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(inst), curFunNode->getFunction()))
             {
-                for (const SVFInstruction* succ : inst->getSuccInstructions())
+                for(const ICFGEdge* outEdge : curInst->getOutEdges())
                 {
-                    CxtStmt newCts(newCxt, tct->getICFGNode(succ));
-                    markCxtStmtFlag(newCts, cts);
+                    if(outEdge->getDstNode()->getFun() == curInst->getFun())
+                    {
+                        CxtStmt newCts(newCxt, outEdge->getDstNode());
+                        markCxtStmtFlag(newCts, cts);
+                    }
                 }
             }
         }
@@ -479,13 +483,16 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                 cit != ecit; ++cit)
         {
             CallStrCxt newCxt = curCxt;
-            const SVFInstruction* inst = (*cit)->getCallSite();
-            if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(tct->getICFGNode(inst)), curFunNode->getFunction()))
+            const ICFGNode* inst = *cit;
+            if (matchCxt(newCxt, SVFUtil::cast<CallICFGNode>(inst), curFunNode->getFunction()))
             {
-                for (const SVFInstruction* succ : inst->getSuccInstructions())
+                for(const ICFGEdge* outEdge : curInst->getOutEdges())
                 {
-                    CxtStmt newCts(newCxt, tct->getICFGNode(succ));
-                    markCxtStmtFlag(newCts, cts);
+                    if(outEdge->getDstNode()->getFun() == curInst->getFun())
+                    {
+                        CxtStmt newCts(newCxt, outEdge->getDstNode());
+                        markCxtStmtFlag(newCts, cts);
+                    }
                 }
             }
         }
