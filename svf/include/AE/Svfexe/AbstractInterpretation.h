@@ -32,6 +32,7 @@
 #include "Util/SVFBugReport.h"
 #include "WPA/Andersen.h"
 #include "AE/Core/AbstractState.h"
+#include "AE/Svfexe/Detector.h"
 
 namespace SVF
 {
@@ -67,14 +68,12 @@ public:
 
     void finializeStat();
     void performStat() override;
-    void reportBug();
 
 public:
     AbstractInterpretation* _ae;
     s32_t count{0};
     std::string memory_usage;
     std::string memUsage;
-    std::string bugStr;
 
 
     u32_t& getFunctionTrace()
@@ -131,6 +130,10 @@ public:
     AEKind getKind() const
     {
         return _kind;
+    }
+
+    void addDetector(std::unique_ptr<IDetector> detector) {
+        detectors.push_back(std::move(detector));
     }
 
 protected:
@@ -403,5 +406,8 @@ protected:
     Set<std::string> _checkpoint_names;
     Map<const ICFGNode*, AbstractState> _abstractTrace; // abstract states immediately after nodes
     std::string _moduleName;
+
+    std::vector<std::unique_ptr<IDetector>> detectors;
+
 };
 }

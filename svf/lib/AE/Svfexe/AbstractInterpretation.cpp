@@ -101,7 +101,10 @@ void AbstractInterpretation::runOnModule(ICFG *icfg)
     {
         _stat->performStat();
     }
-    _stat->reportBug();
+    for (auto& detector: detectors)
+    {
+        detector->reportBug();
+    }
 }
 
 AbstractInterpretation::AbstractInterpretation()
@@ -541,6 +544,10 @@ void AbstractInterpretation::handleSingletonWTO(const ICFGSingletonWTO *icfgSing
         for (const SVFStmt *stmt: curNode->getSVFStmts())
         {
             handleSVFStatement(stmt);
+            for (auto& detector: detectors)
+            {
+                detector->detect(getAbsStateFromTrace(stmt->getICFGNode()), stmt);
+            }
         }
         // inlining the callee by calling handleFunc for the callee function
         if (const CallICFGNode* callnode = SVFUtil::dyn_cast<CallICFGNode>(curNode))
@@ -967,30 +974,6 @@ void AEStat::performStat()
 
     SVFUtil::outs() << "#######################################################" << std::endl;
     SVFUtil::outs().flush();
-}
-
-void AEStat::reportBug()
-{
-
-    std::ofstream f;
-    if (Options::OutputName().size() == 0)
-    {
-        f.open("/dev/null");
-    }
-    else
-    {
-        f.open(Options::OutputName());
-    }
-
-    std::cerr << "######################Full Overflow (" + std::to_string(_ae->_nodeToBugInfo.size()) + " found)######################\n";
-    f << "######################Full Overflow (" + std::to_string(_ae->_nodeToBugInfo.size()) + " found)######################\n";
-    std::cerr << "---------------------------------------------\n";
-    f << "---------------------------------------------\n";
-    for (auto& it: _ae->_nodeToBugInfo)
-    {
-        std::cerr << it.second << "\n---------------------------------------------\n";
-        f << it.second << "\n---------------------------------------------\n";
-    }
 }
 
 void AbstractInterpretation::initExtFunMap()
@@ -2265,5 +2248,6 @@ IntervalValue AbstractInterpretation::getRangeLimitFromType(const SVFType* type)
         // other types, return top interval
     }
 }
+
 
 

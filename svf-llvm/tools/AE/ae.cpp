@@ -896,7 +896,7 @@ int main(int argc, char** argv)
     else
     {
         AbstractInterpretation ae;
-
+        ae.addDetector(std::make_unique<BufOverflowDetector>());
         ae.runOnModule(pag->getICFG());
     }
 
