@@ -42,40 +42,39 @@ using namespace SVFUtil;
  * (1) the instruction i itself
  * (2) all the callsites invoke the function where i resides in
  */
-bool TCT::isInLoopInstruction(const SVFInstruction* inst)
+bool TCT::isInLoopInstruction(const ICFGNode* inst)
 {
     assert(inst && "null value instruction!!");
 
-    InstSet insts;
-    FIFOWorkList<const SVFInstruction*> worklist;
+    Set<const ICFGNode*> insts;
+    FIFOWorkList<const ICFGNode*> worklist;
     worklist.push(inst);
 
     while(!worklist.empty())
     {
-        const SVFInstruction* inst = worklist.pop();
+        const ICFGNode* inst = worklist.pop();
         insts.insert(inst);
-        CallGraphNode* cgnode = tcg->getCallGraphNode(inst->getFunction());
+        CallGraphNode* cgnode = tcg->getCallGraphNode(inst->getFun());
         for(CallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
         {
             for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
                     ecit = (*nit)->directCallsEnd(); cit!=ecit; ++cit)
             {
-                if(insts.insert((*cit)->getCallSite()).second)
-                    worklist.push((*cit)->getCallSite());
+                if(insts.insert(*cit).second)
+                    worklist.push(*cit);
             }
             for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->indirectCallsBegin(),
                     ecit = (*nit)->indirectCallsEnd(); cit!=ecit; ++cit)
             {
-                if(insts.insert((*cit)->getCallSite()).second)
-                    worklist.push((*cit)->getCallSite());
+                if(insts.insert(*cit).second)
+                    worklist.push(*cit);
             }
         }
     }
 
-    for(InstSet::const_iterator it = insts.begin(), eit = insts.end(); it!=eit; ++it)
+    for(const ICFGNode* i : insts)
     {
-        const SVFInstruction* i = *it;
-        if(i->getFunction()->hasLoopInfo(i->getParent()))
+        if(i->getFun()->hasLoopInfo(i->getBB()))
             return true;
     }
 
@@ -88,9 +87,9 @@ bool TCT::isInLoopInstruction(const SVFInstruction* inst)
  * (1) the function f where i resides in is in a recursion
  * (2) any caller function starting from the function f in is in a recursion
  */
-bool TCT::isInRecursion(const SVFInstruction* inst) const
+bool TCT::isInRecursion(const ICFGNode* inst) const
 {
-    const SVFFunction* f = inst->getFunction();
+    const SVFFunction* f = inst->getFun();
     FIFOWorkList<const SVFFunction*> worklist;
     Set<const SVFFunction*> visits;
     worklist.push(f);
@@ -189,7 +188,7 @@ void TCT::collectEntryFunInCallGraph()
     for(SVFModule::const_iterator it = getSVFModule()->begin(), eit = getSVFModule()->end(); it!=eit; ++it)
     {
         const SVFFunction* fun = (*it);
-        if (isExtCall(fun))
+        if (SVFUtil::isExtCall(fun))
             continue;
         CallGraphNode* node = tcg->getCallGraphNode(fun);
         if (!node->hasIncomingEdge())
@@ -247,7 +246,8 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, Ca
 
     CallStrCxt cxt(ctp.getContext());
     CallStrCxt oldCxt = cxt;
-    pushCxt(cxt,cs.getInstruction(),callee);
+    const CallICFGNode* callNode = SVFUtil::cast<CallICFGNode>(getICFGNode(cs.getInstruction()));
+    pushCxt(cxt,callNode,callee);
 
     if(cgEdge->getEdgeKind() == CallGraphEdge::CallRetEdge)
     {
@@ -262,7 +262,7 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, Ca
     else if(cgEdge->getEdgeKind() == CallGraphEdge::TDForkEdge)
     {
         /// Create spawnee TCT node
-        TCTNode* spawneeNode = getOrCreateTCTNode(cxt,cs.getInstruction(), oldCxt, callee);
+        TCTNode* spawneeNode = getOrCreateTCTNode(cxt,callNode, oldCxt, callee);
         CxtThreadProc newctp(spawneeNode->getId(),cxt,callee);
 
         if(pushToCTPWorkList(newctp))
@@ -286,12 +286,12 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, Ca
  * Return true if a join instruction must be executed inside a loop
  * joinbb should post dominate the successive basic block of a loop header
  */
-bool TCT::isJoinMustExecutedInLoop(const LoopBBs& lp,const SVFInstruction* join)
+bool TCT::isJoinMustExecutedInLoop(const LoopBBs& lp,const ICFGNode* join)
 {
     assert(!lp.empty() && "this is not a loop, empty basic block");
-    const SVFFunction* svffun = join->getFunction();
+    const SVFFunction* svffun = join->getFun();
     const SVFBasicBlock* loopheadbb = svffun->getLoopHeader(lp);
-    const SVFBasicBlock* joinbb = join->getParent();
+    const SVFBasicBlock* joinbb = join->getBB();
     assert(loopheadbb->getParent()==joinbb->getParent() && "should inside same function");
 
     for (const SVFBasicBlock* svf_scc_bb : loopheadbb->getSuccessors())
@@ -314,9 +314,9 @@ void TCT::collectLoopInfoForJoin()
 {
     for(ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it!=eit; ++it)
     {
-        const SVFInstruction* join = (*it)->getCallSite();
-        const SVFFunction* svffun = join->getFunction();
-        const SVFBasicBlock* svfbb = join->getParent();
+        const ICFGNode* join = *it;
+        const SVFFunction* svffun = join->getFun();
+        const SVFBasicBlock* svfbb = join->getBB();
 
         if(svffun->hasLoopInfo(svfbb))
         {
@@ -354,7 +354,7 @@ bool TCT::isLoopExitOfJoinLoop(const SVFBasicBlock* bb)
     for(InstToLoopMap::const_iterator it = joinSiteToLoopMap.begin(), eit = joinSiteToLoopMap.end(); it!=eit; ++it)
     {
         std::vector<const SVFBasicBlock*> exitbbs;
-        it->first->getFunction()->getExitBlocksOfLoop(it->first->getParent(),exitbbs);
+        it->first->getFun()->getExitBlocksOfLoop(it->first->getBB(),exitbbs);
         while(!exitbbs.empty())
         {
             const SVFBasicBlock* eb = exitbbs.back();
@@ -440,11 +440,11 @@ void TCT::build()
 /*!
  * Push calling context
  */
-void TCT::pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee)
+void TCT::pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
 {
 
-    const SVFFunction* caller = call->getFunction();
-    CallSiteID csId = tcg->getCallSiteID(getCallICFGNode(call), callee);
+    const SVFFunction* caller = call->getFun();
+    CallSiteID csId = tcg->getCallSiteID(call, callee);
 
     /// handle calling context for candidate functions only
     if(isCandidateFun(caller) == false)
@@ -461,11 +461,11 @@ void TCT::pushCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction
 /*!
  * Match calling context
  */
-bool TCT::matchCxt(CallStrCxt& cxt, const SVFInstruction* call, const SVFFunction* callee)
+bool TCT::matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee)
 {
 
-    const SVFFunction* caller = call->getFunction();
-    CallSiteID csId = tcg->getCallSiteID(getCallICFGNode(call), callee);
+    const SVFFunction* caller = call->getFun();
+    CallSiteID csId = tcg->getCallSiteID(call, callee);
 
     /// handle calling context for candidate functions only
     if(isCandidateFun(caller) == false)

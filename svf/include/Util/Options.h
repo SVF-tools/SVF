@@ -151,35 +151,16 @@ public:
     static const Option<std::string> WriteSVFG;
     static const Option<std::string> ReadSVFG;
 
-    // FSMPTA.cpp
-    static const Option<bool> UsePCG;
-    static const Option<bool> IntraLock;
-    static const Option<bool> ReadPrecisionTDEdge;
-    static const Option<u32_t> AddModelFlag;
-
     // LockAnalysis.cpp
+    static const Option<bool> IntraLock;
     static const Option<bool> PrintLockSpan;
 
     // MHP.cpp
     static const Option<bool> PrintInterLev;
     static const Option<bool> DoLockAnalysis;
 
-    // MTA.cpp
-    static const Option<bool> AndersenAnno;
-    static const Option<bool> FSAnno;
-
-    // MTAAnnotator.cpp
-    static const Option<u32_t> AnnoFlag;
-
-    // MTAResultValidator.cpp
-    static const Option<bool> PrintValidRes;
-
-    static const Option<bool> LockValid;
     //MTAStat.cpp
     static const Option<bool> AllPairMHP;
-
-    // PCG.cpp
-    //const Option<bool> TDPrint
 
     // TCT.cpp
     static const Option<bool> TCTDotGraph;

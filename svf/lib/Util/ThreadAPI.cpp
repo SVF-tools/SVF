@@ -132,9 +132,10 @@ void ThreadAPI::init()
 /*!
  *
  */
-const SVFFunction* ThreadAPI::getCallee(const SVFInstruction *inst) const
+const SVFFunction* ThreadAPI::getCallee(const ICFGNode *inst) const
 {
-    return SVFUtil::getCallee(inst);
+    const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst);
+    return SVFUtil::getCallee(call->getCallSite());
 }
 
 /*!
@@ -145,6 +146,28 @@ const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const
     return SVFUtil::getCallee(cs);
 }
 
+const CallSite ThreadAPI::getSVFCallSite(const ICFGNode *inst) const
+{
+    assert(SVFUtil::isa<CallICFGNode>(inst) && "not a callsite?");
+    CallSite cs(SVFUtil::cast<CallICFGNode>(inst)->getCallSite());
+    return cs;        
+}
+
+const SVFValue* ThreadAPI::getLockVal(const ICFGNode *inst) const
+{
+    const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst);
+    assert(call && "not a call ICFGNode?");
+    assert((isTDAcquire(call->getCallSite()) || isTDRelease(call->getCallSite())) && "not a lock acquire or release function");
+    CallSite cs = getSVFCallSite(call->getCallSite());
+    return cs.getArgument(0);
+}
+
+const SVFValue* ThreadAPI::getLockVal(CallSite cs) const
+{
+    assert((isTDAcquire(cs) || isTDRelease(cs)) && "not a lock acquire or release function");
+    return cs.getArgument(0);
+}
+
 /*!
  *
  */
@@ -153,10 +176,27 @@ const CallSite ThreadAPI::getSVFCallSite(const SVFInstruction *inst) const
     return SVFUtil::getSVFCallSite(inst);
 }
 
-const SVFValue* ThreadAPI::getJoinedThread(const SVFInstruction *inst) const
+const SVFValue* ThreadAPI::getJoinedThread(const ICFGNode *inst) const
 {
     assert(isTDJoin(inst) && "not a thread join function!");
     CallSite cs = getSVFCallSite(inst);
+    const SVFValue* join = cs.getArgument(0);
+    const SVFVar* var = PAG::getPAG()->getGNode(PAG::getPAG()->getValueNode(join));
+    for(const SVFStmt* stmt : var->getInEdges())
+    {
+        if(SVFUtil::isa<LoadStmt>(stmt))
+            return stmt->getSrcNode()->getValue();
+    }
+    if(SVFUtil::isa<SVFArgument>(join))
+        return join;
+
+    assert(false && "the value of the first argument at join is not a load instruction?");
+    return nullptr;
+}
+
+const SVFValue* ThreadAPI::getJoinedThread(CallSite cs) const
+{
+    assert(isTDJoin(cs) && "not a thread join function!");
     const SVFValue* join = cs.getArgument(0);
     const SVFVar* var = PAG::getPAG()->getGNode(PAG::getPAG()->getValueNode(join));
     for(const SVFStmt* stmt : var->getInEdges())
