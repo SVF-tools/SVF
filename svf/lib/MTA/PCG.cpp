@@ -80,10 +80,10 @@ bool PCG::mayHappenInParallelBetweenFunctions(const SVFFunction* fun1, const SVF
     return true;
 }
 
-bool PCG::mayHappenInParallel(const SVFInstruction* i1, const SVFInstruction* i2) const
+bool PCG::mayHappenInParallel(const ICFGNode* i1, const ICFGNode* i2) const
 {
-    const SVFFunction* fun1 = i1->getFunction();
-    const SVFFunction* fun2 = i2->getFunction();
+    const SVFFunction* fun1 = i1->getFun();
+    const SVFFunction* fun2 = i2->getFun();
     return mayHappenInParallelBetweenFunctions(fun1, fun2);
 }
 
@@ -106,7 +106,7 @@ void PCG::initFromThreadAPI(SVFModule* module)
                     const SVFValue* forkVal = tdAPI->getForkedFun(inst);
                     if (const SVFFunction* svForkfun = SVFUtil::dyn_cast<SVFFunction>(forkVal))
                     {
-                        addSpawnsite(inst);
+                        addSpawnsite(getICFGNode(inst));
                         spawners.insert(fun);
                         spawnees.insert(svForkfun);
                     }
@@ -170,12 +170,12 @@ void PCG::collectSpawners()
             for (CallGraphEdge::CallInstSet::const_iterator dit = callEdge->directCallsBegin(), deit =
                         callEdge->directCallsEnd(); dit != deit; ++dit)
             {
-                addSpawnsite((*dit)->getCallSite());
+                addSpawnsite(*dit);
             }
             for (CallGraphEdge::CallInstSet::const_iterator dit = callEdge->indirectCallsBegin(), deit =
                         callEdge->indirectCallsEnd(); dit != deit; ++dit)
             {
-                addSpawnsite((*dit)->getCallSite());
+                addSpawnsite(*dit);
             }
         }
     }
@@ -219,19 +219,20 @@ void PCG::identifyFollowers()
 
     for (CallInstSet::const_iterator sit = spawnSitesBegin(), esit = spawnSitesEnd(); sit != esit; ++sit)
     {
-        const SVFInstruction* inst = *sit;
+        const ICFGNode* inst = *sit;
         BBWorkList bb_worklist;
         Set<const SVFBasicBlock*> visitedBBs;
-        bb_worklist.push(inst->getParent());
+        bb_worklist.push(inst->getBB());
         while (!bb_worklist.empty())
         {
             const SVFBasicBlock* bb = bb_worklist.pop();
             for (SVFBasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it)
             {
                 const SVFInstruction* inst = *it;
+                const ICFGNode* icfgNode = getICFGNode(inst);
                 // mark the callee of this callsite as follower
                 // if this is an call/invoke instruction but not a spawn site
-                if ((SVFUtil::isCallSite(inst)) && !isSpawnsite(inst) && !SVFUtil::isIntrinsicInst(inst))
+                if ((SVFUtil::isCallSite(inst)) && !isSpawnsite(icfgNode) && !SVFUtil::isIntrinsicInst(inst))
                 {
                     CallICFGNode* cbn = getCallICFGNode(inst);
                     if (callgraph->hasCallGraphEdge(cbn))

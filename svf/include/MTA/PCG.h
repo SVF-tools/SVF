@@ -53,7 +53,7 @@ class PCG
 public:
     typedef Set<const SVFFunction*> FunSet;
     typedef std::vector<const SVFFunction*> FunVec;
-    typedef Set<const SVFInstruction*> CallInstSet;
+    typedef Set<const ICFGNode*> CallInstSet;
     typedef FIFOWorkList<const SVFFunction*> FunWorkList;
     typedef FIFOWorkList<const SVFBasicBlock*> BBWorkList;
 
@@ -106,11 +106,11 @@ private:
 
     /// Add/search spawn sites which directly or indirectly create a thread
     //@{
-    inline bool addSpawnsite(const SVFInstruction* callInst)
+    inline bool addSpawnsite(const ICFGNode* callInst)
     {
         return spawnCallSites.insert(callInst).second;
     }
-    inline bool isSpawnsite(const SVFInstruction* callInst)
+    inline bool isSpawnsite(const ICFGNode* callInst)
     {
         return spawnCallSites.find(callInst) != spawnCallSites.end();
     }
@@ -149,8 +149,14 @@ public:
     {
         return pta->getICFG()->getCallICFGNode(inst);
     }
+
+    const ICFGNode* getICFGNode(const SVFInstruction* inst)
+    {
+        return pta->getICFG()->getICFGNode(inst);
+    }
+
     /// Interface to query whether two function may happen-in-parallel
-    virtual bool mayHappenInParallel(const SVFInstruction* i1, const SVFInstruction* i2) const;
+    virtual bool mayHappenInParallel(const ICFGNode* i1, const ICFGNode* i2) const;
     bool mayHappenInParallelBetweenFunctions(const SVFFunction* fun1, const SVFFunction* fun2) const;
     inline const FunSet& getMHPFunctions() const
     {

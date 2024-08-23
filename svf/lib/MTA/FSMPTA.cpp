@@ -719,17 +719,17 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta)
     for (SVFGNodeSet::const_iterator it1 = stnodeSet.begin(), eit1 =  stnodeSet.end(); it1!=eit1; ++it1)
     {
         const StmtSVFGNode* n1 = SVFUtil::cast<StmtSVFGNode>(*it1);
-        const SVFInstruction* i1 = n1->getInst();
+        const ICFGNode* i1 = n1->getICFGNode();
 
         for (SVFGNodeSet::const_iterator it2 = ldnodeSet.begin(), eit2 = ldnodeSet.end(); it2 != eit2; ++it2)
         {
             const StmtSVFGNode* n2 = SVFUtil::cast<StmtSVFGNode>(*it2);
-            const SVFInstruction* i2 = n2->getInst();
+            const ICFGNode* i2 = n2->getICFGNode();
             if (ADDEDGE_NONSPARSE==Options::AddModelFlag())
             {
                 if (Options::UsePCG())
                 {
-                    if (pcg->mayHappenInParallel(i1, i2) || mhp->mayHappenInParallel(i1, i2))
+                    if (pcg->mayHappenInParallel(i1, i2) || mhp->mayHappenInParallel(n1->getInst(), n2->getInst()))
                         handleStoreLoadNonSparse(n1, n2, pta);
                 }
                 else
@@ -746,12 +746,12 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta)
         for (SVFGNodeSet::const_iterator it2 = std::next(it1), eit2 =  stnodeSet.end(); it2!=eit2; ++it2)
         {
             const StmtSVFGNode* n2 = SVFUtil::cast<StmtSVFGNode>(*it2);
-            const SVFInstruction* i2 = n2->getInst();
+            const ICFGNode* i2 = n2->getICFGNode();
             if (ADDEDGE_NONSPARSE == Options::AddModelFlag())
             {
                 if (Options::UsePCG())
                 {
-                    if(pcg->mayHappenInParallel(i1, i2) || mhp->mayHappenInParallel(i1, i2))
+                    if(pcg->mayHappenInParallel(i1, i2) || mhp->mayHappenInParallel(n1->getInst(), n2->getInst()))
                         handleStoreStoreNonSparse(n1, n2, pta);
                 }
                 else
