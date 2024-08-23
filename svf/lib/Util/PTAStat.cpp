@@ -81,7 +81,7 @@ void PTAStat::performStat()
 void PTAStat::callgraphStat()
 {
 
-    CallGraph* graph = pta->getPTACallGraph();
+    CallGraph* graph = pta->getCallGraph();
     PointerAnalysis::CallGraphSCC* callgraphSCC = new PointerAnalysis::CallGraphSCC(graph);
     callgraphSCC->find();
 
@@ -107,11 +107,11 @@ void PTAStat::callgraphStat()
                 maxNodeInCycle = subNodes.count();
         }
 
-        PTACallGraphNode::const_iterator edgeIt = it->second->InEdgeBegin();
-        PTACallGraphNode::const_iterator edgeEit = it->second->InEdgeEnd();
+        CallGraphNode::const_iterator edgeIt = it->second->InEdgeBegin();
+        CallGraphNode::const_iterator edgeEit = it->second->InEdgeEnd();
         for (; edgeIt != edgeEit; ++edgeIt)
         {
-            PTACallGraphEdge *edge = *edgeIt;
+            CallGraphEdge *edge = *edgeIt;
             totalEdge+= edge->getDirectCalls().size() + edge->getIndirectCalls().size();
             if(callgraphSCC->repNode(edge->getSrcID()) == callgraphSCC->repNode(edge->getDstID()))
             {

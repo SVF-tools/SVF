@@ -134,7 +134,7 @@ public:
     {
         mod = pta->getModule();
         tdAPI=ThreadAPI::getThreadAPI();
-        callgraph = pta->getPTACallGraph();
+        callgraph = pta->getCallGraph();
     }
 
     /// We start the pass here

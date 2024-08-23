@@ -50,7 +50,7 @@ class DDAVFSolver
 public:
     typedef SCCDetection<SVFG*> SVFGSCC;
     typedef SCCDetection<CallGraph*> CallGraphSCC;
-    typedef PTACallGraphEdge::CallInstSet CallInstSet;
+    typedef CallGraphEdge::CallInstSet CallInstSet;
     typedef SVFIR::CallSiteSet CallSiteSet;
     typedef OrderedSet<DPIm> DPTItemSet;
     typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
@@ -505,7 +505,7 @@ protected:
         {
             CallInstSet csSet;
             /// use pre-analysis call graph to approximate all potential callsites
-            _ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
+            _ander->getCallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
             for(CallInstSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
             {
                 NodeID funPtr = _pag->getFunPtr(*it);

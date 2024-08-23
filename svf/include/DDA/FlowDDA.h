@@ -87,7 +87,7 @@ public:
     {
         BVDataPTAImpl::initialize();
         buildSVFG(pag);
-        setCallGraph(getPTACallGraph());
+        setCallGraph(getCallGraph());
         setCallGraphSCC(getCallGraphSCC());
         stat = setDDAStat(new DDAStat(this));
     }
