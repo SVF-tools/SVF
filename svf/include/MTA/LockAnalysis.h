@@ -339,7 +339,7 @@ private:
     void handleIntra(const CxtStmt& cts);
 
     /// Handle call relations
-    void handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgEdge, CallSite call);
+    void handleCallRelation(CxtLockProc& clp, const PTACallGraphEdge* cgEdge, CallSite call);
 
     /// Return true it a lock matches an unlock
     bool isAliasedLocks(const CxtLock& cl1, const CxtLock& cl2)

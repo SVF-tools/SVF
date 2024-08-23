@@ -85,9 +85,9 @@ bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, Cal
 
     if(getPAG()->isIndirectCallSites(cbn))
     {
-        if(getCallGraph()->hasIndCSCallees(cbn))
+        if(getPTACallGraph()->hasIndCSCallees(cbn))
         {
-            const FunctionSet& funset = getCallGraph()->getIndCSCallees(cbn);
+            const FunctionSet& funset = getPTACallGraph()->getIndCSCallees(cbn);
             if(funset.find(callee)!=funset.end())
                 return true;
         }

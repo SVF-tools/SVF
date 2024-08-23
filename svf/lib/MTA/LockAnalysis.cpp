@@ -97,12 +97,12 @@ void LockAnalysis::buildCandidateFuncSetforLock()
     ThreadCallGraph* tcg=tct->getThreadCallGraph();
 
     TCT::PTACGNodeSet visited;
-    FIFOWorkList<const CallGraphNode*> worklist;
+    FIFOWorkList<const PTACallGraphNode*> worklist;
 
     for (InstSet::iterator it = locksites.begin(), eit = locksites.end(); it != eit; ++it)
     {
         const SVFFunction* fun=(*it)->getParent()->getParent();
-        CallGraphNode* cgnode = tcg->getCallGraphNode(fun);
+        PTACallGraphNode* cgnode = tcg->getCallGraphNode(fun);
         if (visited.find(cgnode) == visited.end())
         {
             worklist.push(cgnode);
@@ -112,7 +112,7 @@ void LockAnalysis::buildCandidateFuncSetforLock()
     for (InstSet::iterator it = unlocksites.begin(), eit = unlocksites.end(); it != eit; ++it)
     {
         const SVFFunction* fun = (*it)->getParent()->getParent();
-        CallGraphNode* cgnode = tcg->getCallGraphNode(fun);
+        PTACallGraphNode* cgnode = tcg->getCallGraphNode(fun);
         if (visited.find(cgnode) == visited.end())
         {
             worklist.push(cgnode);
@@ -121,11 +121,11 @@ void LockAnalysis::buildCandidateFuncSetforLock()
     }
     while (!worklist.empty())
     {
-        const CallGraphNode* node = worklist.pop();
+        const PTACallGraphNode* node = worklist.pop();
         lockcandidateFuncSet.insert(node->getFunction());
-        for (CallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit != neit; nit++)
+        for (PTACallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit != neit; nit++)
         {
-            const CallGraphNode* srcNode = (*nit)->getSrcNode();
+            const PTACallGraphNode* srcNode = (*nit)->getSrcNode();
             if (visited.find(srcNode) == visited.end())
             {
                 visited.insert(srcNode);
@@ -266,16 +266,16 @@ void LockAnalysis::collectCxtLock()
     while (!clpList.empty())
     {
         CxtLockProc clp = popFromCTPWorkList();
-        CallGraphNode* cgNode = getTCG()->getCallGraphNode(clp.getProc());
+        PTACallGraphNode* cgNode = getTCG()->getCallGraphNode(clp.getProc());
         // lzh TODO.
         if (!isLockCandidateFun(cgNode->getFunction()))
             continue;
 
-        for (CallGraphNode::const_iterator nit = cgNode->OutEdgeBegin(), neit = cgNode->OutEdgeEnd(); nit != neit; nit++)
+        for (PTACallGraphNode::const_iterator nit = cgNode->OutEdgeBegin(), neit = cgNode->OutEdgeEnd(); nit != neit; nit++)
         {
-            const CallGraphEdge* cgEdge = (*nit);
+            const PTACallGraphEdge* cgEdge = (*nit);
 
-            for (CallGraphEdge::CallInstSet::const_iterator cit = cgEdge->directCallsBegin(), ecit = cgEdge->directCallsEnd();
+            for (PTACallGraphEdge::CallInstSet::const_iterator cit = cgEdge->directCallsBegin(), ecit = cgEdge->directCallsEnd();
                     cit != ecit; ++cit)
             {
                 DBOUT(DMTA,
@@ -283,7 +283,7 @@ void LockAnalysis::collectCxtLock()
                       << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
                 handleCallRelation(clp, cgEdge, getSVFCallSite((*cit)->getCallSite()));
             }
-            for (CallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(), eind = cgEdge->indirectCallsEnd();
+            for (PTACallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(), eind = cgEdge->indirectCallsEnd();
                     ind != eind; ++ind)
             {
                 DBOUT(DMTA,
@@ -300,7 +300,7 @@ void LockAnalysis::collectCxtLock()
 /*!
  * Handling call relations when collecting context-sensitive locks
  */
-void LockAnalysis::handleCallRelation(CxtLockProc& clp, const CallGraphEdge* cgEdge, CallSite cs)
+void LockAnalysis::handleCallRelation(CxtLockProc& clp, const PTACallGraphEdge* cgEdge, CallSite cs)
 {
 
     CallStrCxt cxt(clp.getContext());
@@ -429,7 +429,7 @@ void LockAnalysis::handleCall(const CxtStmt& cts)
     CallICFGNode* cbn = tct->getCallICFGNode(call);
     if (getTCG()->hasCallGraphEdge(cbn))
     {
-        for (CallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn), ecgIt = getTCG()->getCallEdgeEnd(cbn);
+        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn), ecgIt = getTCG()->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
             const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getFunction();
@@ -451,14 +451,14 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
     const SVFInstruction* curInst = cts.getStmt();
     const CallStrCxt& curCxt = cts.getContext();
     const SVFFunction* svffun = curInst->getFunction();
-    CallGraphNode* curFunNode = getTCG()->getCallGraphNode(svffun);
+    PTACallGraphNode* curFunNode = getTCG()->getCallGraphNode(svffun);
 
-    for (CallGraphNode::const_iterator it = curFunNode->getInEdges().begin(), eit = curFunNode->getInEdges().end(); it != eit; ++it)
+    for (PTACallGraphNode::const_iterator it = curFunNode->getInEdges().begin(), eit = curFunNode->getInEdges().end(); it != eit; ++it)
     {
-        CallGraphEdge* edge = *it;
+        PTACallGraphEdge* edge = *it;
         if (SVFUtil::isa<ThreadForkEdge, ThreadJoinEdge>(edge))
             continue;
-        for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(), ecit = (edge)->directCallsEnd(); cit != ecit;
+        for (PTACallGraphEdge::CallInstSet::const_iterator cit = (edge)->directCallsBegin(), ecit = (edge)->directCallsEnd(); cit != ecit;
                 ++cit)
         {
             CallStrCxt newCxt = curCxt;
@@ -473,7 +473,7 @@ void LockAnalysis::handleRet(const CxtStmt& cts)
                 }
             }
         }
-        for (CallGraphEdge::CallInstSet::const_iterator cit = (edge)->indirectCallsBegin(), ecit = (edge)->indirectCallsEnd();
+        for (PTACallGraphEdge::CallInstSet::const_iterator cit = (edge)->indirectCallsBegin(), ecit = (edge)->indirectCallsEnd();
                 cit != ecit; ++cit)
         {
             CallStrCxt newCxt = curCxt;

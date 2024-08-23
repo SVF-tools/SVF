@@ -49,7 +49,7 @@ void SrcSnkDDA::initialize(SVFModule* module)
     else
         svfg =  memSSA.buildPTROnlySVFG(ander);
     setGraph(memSSA.getSVFG());
-    callgraph = ander->getCallGraph();
+    ptaCallGraph = ander->getPTACallGraph();
     //AndersenWaveDiff::releaseAndersenWaveDiff();
     /// allocate control-flow graph branch conditions
     getSaberCondAllocator()->allocate(getPAG()->getModule());

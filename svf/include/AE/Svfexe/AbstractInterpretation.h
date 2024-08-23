@@ -111,7 +111,7 @@ class AbstractInterpretation
 
 public:
     enum ExtAPIType { UNCLASSIFIED, MEMCPY, MEMSET, STRCPY, STRCAT };
-    typedef SCCDetection<CallGraph*> CallGraphSCC;
+    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     /// Constructor
     AbstractInterpretation();
 

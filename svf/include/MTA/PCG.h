@@ -31,7 +31,7 @@
 #define PCG_H_
 
 #include "Util/ThreadAPI.h"
-#include "Graphs/CallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "Util/WorkList.h"
 #include "WPA/Andersen.h"
 #include <set>
@@ -62,7 +62,7 @@ private:
     FunSet spawnees;
     FunSet followers;
     FunSet mhpfuns;
-    CallGraph* callgraph;
+    PTACallGraph* callgraph;
     SVFModule* mod;
     PointerAnalysis* pta;
     ThreadAPI* tdAPI;
@@ -134,7 +134,7 @@ public:
     {
         mod = pta->getModule();
         tdAPI=ThreadAPI::getThreadAPI();
-        callgraph = pta->getCallGraph();
+        callgraph = pta->getPTACallGraph();
     }
 
     /// We start the pass here

@@ -49,8 +49,8 @@ class DDAVFSolver
     friend class DDAStat;
 public:
     typedef SCCDetection<SVFG*> SVFGSCC;
-    typedef SCCDetection<CallGraph*> CallGraphSCC;
-    typedef CallGraphEdge::CallInstSet CallInstSet;
+    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
+    typedef PTACallGraphEdge::CallInstSet CallInstSet;
     typedef SVFIR::CallSiteSet CallSiteSet;
     typedef OrderedSet<DPIm> DPTItemSet;
     typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
@@ -505,7 +505,7 @@ protected:
         {
             CallInstSet csSet;
             /// use pre-analysis call graph to approximate all potential callsites
-            _ander->getCallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
+            _ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
             for(CallInstSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
             {
                 NodeID funPtr = _pag->getFunPtr(*it);
@@ -624,7 +624,7 @@ protected:
         return (getSVFGSCCRepNode(edge->getSrcID()) == getSVFGSCCRepNode(edge->getDstID()));
     }
     /// Set callgraph
-    inline void setCallGraph (CallGraph* cg)
+    inline void setCallGraph (PTACallGraph* cg)
     {
         _callGraph = cg;
     }
@@ -775,7 +775,7 @@ protected:
     SVFG* _svfg;					///< SVFG
     AndersenWaveDiff* _ander;		///< Andersen's analysis
     NodeBS candidateQueries;		///< candidate pointers;
-    CallGraph* _callGraph;		///< CallGraph
+    PTACallGraph* _callGraph;		///< CallGraph
     CallGraphSCC* _callGraphSCC;	///< SCC for CallGraph
     SVFGSCC* _svfgSCC;				///< SCC for SVFG
     DPTItemSet backwardVisited;		///< visited map during backward traversing
