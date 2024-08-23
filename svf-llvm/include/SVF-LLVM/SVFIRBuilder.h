@@ -201,7 +201,7 @@ public:
     //}@
 
     /// connect PAG edges based on callgraph
-    void updateCallGraph(PTACallGraph* callgraph);
+    void updateCallGraph(CallGraph* callgraph);
 
 protected:
     /// Handle globals including (global variable and functions)

@@ -142,19 +142,19 @@ public:
     typedef Set<const SVFFunction*> FunSet;
     typedef std::vector<const SVFInstruction*> InstVec;
     typedef Set<const SVFInstruction*> InstSet;
-    typedef Set<const PTACallGraphNode*> PTACGNodeSet;
+    typedef Set<const CallGraphNode*> PTACGNodeSet;
     typedef Map<CxtThread,TCTNode*> CxtThreadToNodeMap;
     typedef Map<CxtThread,CallStrCxt> CxtThreadToForkCxt;
     typedef Map<CxtThread,const SVFFunction*> CxtThreadToFun;
     typedef Map<const SVFInstruction*, LoopBBs> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
     typedef Set<CxtThreadProc> CxtThreadProcSet;
-    typedef SCCDetection<PTACallGraph*> ThreadCallGraphSCC;
+    typedef SCCDetection<CallGraph*> ThreadCallGraphSCC;
 
     /// Constructor
     TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0)
     {
-        tcg = SVFUtil::cast<ThreadCallGraph>(pta->getPTACallGraph());
+        tcg = SVFUtil::cast<ThreadCallGraph>(pta->getCallGraph());
         tcg->updateCallGraph(pta);
         //tcg->updateJoinEdge(pta);
         tcgSCC = pta->getCallGraphSCC();
@@ -261,9 +261,9 @@ public:
     //@}
 
     /// Whether it is a candidate function for indirect call
-    inline bool isCandidateFun(const PTACallGraph::FunctionSet& callees) const
+    inline bool isCandidateFun(const CallGraph::FunctionSet& callees) const
     {
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
+        for(CallGraph::FunctionSet::const_iterator cit = callees.begin(),
                 ecit = callees.end(); cit!=ecit; cit++)
         {
             if(candidateFuncSet.find((*cit))!=candidateFuncSet.end())
@@ -276,7 +276,7 @@ public:
         return candidateFuncSet.find(fun)!=candidateFuncSet.end();
     }
     /// Whether two functions in the same callgraph scc
-    inline bool inSameCallGraphSCC(const PTACallGraphNode* src,const PTACallGraphNode* dst)
+    inline bool inSameCallGraphSCC(const CallGraphNode* src,const CallGraphNode* dst)
     {
         return (tcgSCC->repNode(src->getId()) == tcgSCC->repNode(dst->getId()));
     }
@@ -479,7 +479,7 @@ private:
     //@}
 
     /// Handle call relations
-    void handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge, CallSite call);
+    void handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, CallSite call);
 
     /// Get or create a tct node based on CxtThread
     //@{

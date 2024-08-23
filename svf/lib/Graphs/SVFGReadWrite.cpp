@@ -144,9 +144,9 @@ void SVFG::writeToFile(const string& filename)
         }
         else if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
         {
-            PTACallGraphEdge::CallInstSet callInstSet;
-            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun(),callInstSet);
-            for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
+            CallGraphEdge::CallInstSet callInstSet;
+            mssa->getPTA()->getCallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun(),callInstSet);
+            for(CallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
                 const CallICFGNode* cs = *it;
                 if(!mssa->hasMU(cs))
@@ -161,9 +161,9 @@ void SVFG::writeToFile(const string& filename)
         }
         else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
         {
-            PTACallGraphEdge::CallInstSet callInstSet;
-            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun(),callInstSet);
-            for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
+            CallGraphEdge::CallInstSet callInstSet;
+            mssa->getPTA()->getCallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun(),callInstSet);
+            for(CallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
                 const CallICFGNode* cs = *it;
                 if(!mssa->hasCHI(cs))

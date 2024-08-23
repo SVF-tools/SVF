@@ -49,7 +49,7 @@ using namespace SVFUtil;
 bool PCG::analyze()
 {
 
-    //callgraph = new PTACallGraph(mod);
+    //callgraph = new CallGraph(mod);
 
     DBOUT(DMTA, outs() << pasMsg("Starting MHP analysis\n"));
 
@@ -155,11 +155,11 @@ void PCG::collectSpawners()
     while (!worklist.empty())
     {
         const SVFFunction* svffun = worklist.pop();
-        PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
-        for (PTACallGraphNode::const_iterator it = funNode->InEdgeBegin(), eit = funNode->InEdgeEnd(); it != eit;
+        CallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
+        for (CallGraphNode::const_iterator it = funNode->InEdgeBegin(), eit = funNode->InEdgeEnd(); it != eit;
                 ++it)
         {
-            PTACallGraphEdge* callEdge = (*it);
+            CallGraphEdge* callEdge = (*it);
             const SVFFunction* caller = callEdge->getSrcNode()->getFunction();
             if (isSpawnerFun(caller) == false)
             {
@@ -167,12 +167,12 @@ void PCG::collectSpawners()
                 addSpawnerFun(caller);
             }
             /// add all the callsites from callers to callee (spawner) as a spawn site.
-            for (PTACallGraphEdge::CallInstSet::const_iterator dit = callEdge->directCallsBegin(), deit =
+            for (CallGraphEdge::CallInstSet::const_iterator dit = callEdge->directCallsBegin(), deit =
                         callEdge->directCallsEnd(); dit != deit; ++dit)
             {
                 addSpawnsite((*dit)->getCallSite());
             }
-            for (PTACallGraphEdge::CallInstSet::const_iterator dit = callEdge->indirectCallsBegin(), deit =
+            for (CallGraphEdge::CallInstSet::const_iterator dit = callEdge->indirectCallsBegin(), deit =
                         callEdge->indirectCallsEnd(); dit != deit; ++dit)
             {
                 addSpawnsite((*dit)->getCallSite());
@@ -196,8 +196,8 @@ void PCG::collectSpawnees()
     while (!worklist.empty())
     {
         const SVFFunction* svffun = worklist.pop();
-        PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
-        for (PTACallGraphNode::const_iterator it = funNode->OutEdgeBegin(), eit = funNode->OutEdgeEnd(); it != eit;
+        CallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
+        for (CallGraphNode::const_iterator it = funNode->OutEdgeBegin(), eit = funNode->OutEdgeEnd(); it != eit;
                 ++it)
         {
             const SVFFunction* caller = (*it)->getDstNode()->getFunction();
@@ -236,10 +236,10 @@ void PCG::identifyFollowers()
                     CallICFGNode* cbn = getCallICFGNode(inst);
                     if (callgraph->hasCallGraphEdge(cbn))
                     {
-                        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(cbn),
+                        for (CallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(cbn),
                                 ecgIt = callgraph->getCallEdgeEnd(cbn); cgIt != ecgIt; ++cgIt)
                         {
-                            const PTACallGraphEdge* edge = *cgIt;
+                            const CallGraphEdge* edge = *cgIt;
                             addFollowerFun(edge->getDstNode()->getFunction());
                         }
                     }
@@ -277,8 +277,8 @@ void PCG::collectFollowers()
     while (!worklist.empty())
     {
         const SVFFunction* svffun = worklist.pop();
-        PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
-        for (PTACallGraphNode::const_iterator it = funNode->OutEdgeBegin(), eit = funNode->OutEdgeEnd(); it != eit;
+        CallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
+        for (CallGraphNode::const_iterator it = funNode->OutEdgeBegin(), eit = funNode->OutEdgeEnd(); it != eit;
                 ++it)
         {
             const SVFFunction* caller = (*it)->getDstNode()->getFunction();

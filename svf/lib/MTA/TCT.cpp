@@ -54,16 +54,16 @@ bool TCT::isInLoopInstruction(const SVFInstruction* inst)
     {
         const SVFInstruction* inst = worklist.pop();
         insts.insert(inst);
-        PTACallGraphNode* cgnode = tcg->getCallGraphNode(inst->getFunction());
-        for(PTACallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
+        CallGraphNode* cgnode = tcg->getCallGraphNode(inst->getFunction());
+        for(CallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
         {
-            for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
+            for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
                     ecit = (*nit)->directCallsEnd(); cit!=ecit; ++cit)
             {
                 if(insts.insert((*cit)->getCallSite()).second)
                     worklist.push((*cit)->getCallSite());
             }
-            for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->indirectCallsBegin(),
+            for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->indirectCallsBegin(),
                     ecit = (*nit)->indirectCallsEnd(); cit!=ecit; ++cit)
             {
                 if(insts.insert((*cit)->getCallSite()).second)
@@ -102,18 +102,18 @@ bool TCT::isInRecursion(const SVFInstruction* inst) const
         if(tcgSCC->isInCycle(tcg->getCallGraphNode(svffun)->getId()))
             return true;
 
-        const PTACallGraphNode* cgnode = tcg->getCallGraphNode(svffun);
+        const CallGraphNode* cgnode = tcg->getCallGraphNode(svffun);
 
-        for(PTACallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
+        for(CallGraphNode::const_iterator nit = cgnode->InEdgeBegin(), neit = cgnode->InEdgeEnd(); nit!=neit; nit++)
         {
-            for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
+            for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->directCallsBegin(),
                     ecit = (*nit)->directCallsEnd(); cit!=ecit; ++cit)
             {
                 const SVFFunction* caller = (*cit)->getCallSite()->getFunction();
                 if(visits.find(caller)==visits.end())
                     worklist.push(caller);
             }
-            for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*nit)->indirectCallsBegin(),
+            for(CallGraphEdge::CallInstSet::const_iterator cit = (*nit)->indirectCallsBegin(),
                     ecit = (*nit)->indirectCallsEnd(); cit!=ecit; ++cit)
             {
                 const SVFFunction* caller = (*cit)->getCallSite()->getFunction();
@@ -139,7 +139,7 @@ void TCT::markRelProcs()
 
         for(ThreadCallGraph::ForkEdgeSet::const_iterator nit = tcg->getForkEdgeBegin(*it), neit = tcg->getForkEdgeEnd(*it); nit!=neit; nit++)
         {
-            const PTACallGraphNode* forkeeNode = (*nit)->getDstNode();
+            const CallGraphNode* forkeeNode = (*nit)->getDstNode();
             candidateFuncSet.insert(forkeeNode->getFunction());
         }
 
@@ -160,18 +160,18 @@ void TCT::markRelProcs()
  */
 void TCT::markRelProcs(const SVFFunction* svffun)
 {
-    PTACallGraphNode* cgnode = tcg->getCallGraphNode(svffun);
-    FIFOWorkList<const PTACallGraphNode*> worklist;
+    CallGraphNode* cgnode = tcg->getCallGraphNode(svffun);
+    FIFOWorkList<const CallGraphNode*> worklist;
     PTACGNodeSet visited;
     worklist.push(cgnode);
     visited.insert(cgnode);
     while(!worklist.empty())
     {
-        const PTACallGraphNode* node = worklist.pop();
+        const CallGraphNode* node = worklist.pop();
         candidateFuncSet.insert(node->getFunction());
-        for(PTACallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit!=neit; nit++)
+        for(CallGraphNode::const_iterator nit = node->InEdgeBegin(), neit = node->InEdgeEnd(); nit!=neit; nit++)
         {
-            const PTACallGraphNode* srcNode = (*nit)->getSrcNode();
+            const CallGraphNode* srcNode = (*nit)->getSrcNode();
             if(visited.find(srcNode)==visited.end())
             {
                 visited.insert(srcNode);
@@ -191,7 +191,7 @@ void TCT::collectEntryFunInCallGraph()
         const SVFFunction* fun = (*it);
         if (isExtCall(fun))
             continue;
-        PTACallGraphNode* node = tcg->getCallGraphNode(fun);
+        CallGraphNode* node = tcg->getCallGraphNode(fun);
         if (!node->hasIncomingEdge())
         {
             entryFuncSet.insert(fun);
@@ -241,7 +241,7 @@ void TCT::collectMultiForkedThreads()
 /*!
  * Handle call relations
  */
-void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge, CallSite cs)
+void TCT::handleCallRelation(CxtThreadProc& ctp, const CallGraphEdge* cgEdge, CallSite cs)
 {
     const SVFFunction* callee = cgEdge->getDstNode()->getFunction();
 
@@ -249,7 +249,7 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge,
     CallStrCxt oldCxt = cxt;
     pushCxt(cxt,cs.getInstruction(),callee);
 
-    if(cgEdge->getEdgeKind() == PTACallGraphEdge::CallRetEdge)
+    if(cgEdge->getEdgeKind() == CallGraphEdge::CallRetEdge)
     {
         CxtThreadProc newctp(ctp.getTid(),cxt,callee);
         if(pushToCTPWorkList(newctp))
@@ -259,7 +259,7 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge,
         }
     }
 
-    else if(cgEdge->getEdgeKind() == PTACallGraphEdge::TDForkEdge)
+    else if(cgEdge->getEdgeKind() == CallGraphEdge::TDForkEdge)
     {
         /// Create spawnee TCT node
         TCTNode* spawneeNode = getOrCreateTCTNode(cxt,cs.getInstruction(), oldCxt, callee);
@@ -404,21 +404,21 @@ void TCT::build()
     while(!ctpList.empty())
     {
         CxtThreadProc ctp = popFromCTPWorkList();
-        PTACallGraphNode* cgNode = tcg->getCallGraphNode(ctp.getProc());
+        CallGraphNode* cgNode = tcg->getCallGraphNode(ctp.getProc());
         if(isCandidateFun(cgNode->getFunction()) == false)
             continue;
 
-        for(PTACallGraphNode::const_iterator nit = cgNode->OutEdgeBegin(), neit = cgNode->OutEdgeEnd(); nit!=neit; nit++)
+        for(CallGraphNode::const_iterator nit = cgNode->OutEdgeBegin(), neit = cgNode->OutEdgeEnd(); nit!=neit; nit++)
         {
-            const PTACallGraphEdge* cgEdge = (*nit);
+            const CallGraphEdge* cgEdge = (*nit);
 
-            for(PTACallGraphEdge::CallInstSet::const_iterator cit = cgEdge->directCallsBegin(),
+            for(CallGraphEdge::CallInstSet::const_iterator cit = cgEdge->directCallsBegin(),
                     ecit = cgEdge->directCallsEnd(); cit!=ecit; ++cit)
             {
                 DBOUT(DMTA,outs() << "\nTCT handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
                 handleCallRelation(ctp,cgEdge,getSVFCallSite((*cit)->getCallSite()));
             }
-            for(PTACallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(),
+            for(CallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(),
                     eind = cgEdge->indirectCallsEnd(); ind!=eind; ++ind)
             {
                 DBOUT(DMTA,outs() << "\nTCT handling indirect call:" << **ind << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");

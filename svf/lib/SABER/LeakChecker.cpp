@@ -52,9 +52,9 @@ void LeakChecker::initSrcs()
         if(cs->getCallSite()->ptrInUncalledFunction() || !cs->getCallSite()->getType()->isPointerTy())
             continue;
 
-        PTACallGraph::FunctionSet callees;
+        CallGraph::FunctionSet callees;
         getCallgraph()->getCallees(cs->getCallICFGNode(),callees);
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+        for(CallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
             const SVFFunction* fun = *cit;
             if (isSourceLikeFun(fun))
@@ -112,9 +112,9 @@ void LeakChecker::initSnks()
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
     {
 
-        PTACallGraph::FunctionSet callees;
+        CallGraph::FunctionSet callees;
         getCallgraph()->getCallees(it->first,callees);
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+        for(CallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
             const SVFFunction* fun = *cit;
             if (isSinkLikeFun(fun))
