@@ -153,7 +153,7 @@ const CallSite ThreadAPI::getSVFCallSite(const ICFGNode *inst) const
 {
     assert(SVFUtil::isa<CallICFGNode>(inst) && "not a callsite?");
     CallSite cs(SVFUtil::cast<CallICFGNode>(inst)->getCallSite());
-    return cs;        
+    return cs;
 }
 
 const SVFValue* ThreadAPI::getLockVal(const ICFGNode *inst) const
