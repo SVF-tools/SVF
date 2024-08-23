@@ -134,8 +134,10 @@ void ThreadAPI::init()
  */
 const SVFFunction* ThreadAPI::getCallee(const ICFGNode *inst) const
 {
-    const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst);
-    return SVFUtil::getCallee(call->getCallSite());
+    if(const CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(inst))
+        return SVFUtil::getCallee(call->getCallSite());
+    else
+        return nullptr;
 }
 
 /*!
