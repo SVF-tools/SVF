@@ -115,13 +115,8 @@ void MHP::analyzeInterleaving()
                 else if (tct->isCallSite(curInst) && !tct->isExtCall(curInst))
                 {
                     handleCall(cts, rootTid);
-<<<<<<< Updated upstream
                     CallGraph::FunctionSet callees;
                     if (!tct->isCandidateFun(getCallee(SVFUtil::cast<CallICFGNode>(curInst), callees)))
-=======
-                    PTACallGraph::FunctionSet callees;
-                    if (!tct->isCandidateFun(getCallee(curInst, callees)))
->>>>>>> Stashed changes
                         handleIntra(cts);
                 }
                 else if (isa<IntraICFGNode>(curInst) && cast<IntraICFGNode>(curInst)->getInst()->isRetInst())
@@ -301,7 +296,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
     const CallICFGNode* cbn = cast<CallICFGNode>(call);
     if (tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
     {
-        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
+        for (CallGraph::CallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
                 ecgIt = tcg->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {
@@ -751,7 +746,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
                 DBOUT(DMTA, outs() << "-----\nForkJoinAnalysis root thread: " << tpair.first << " ");
                 DBOUT(DMTA, cts.dump());
                 DBOUT(DMTA, outs() << "-----\n");
-                PTACallGraph::FunctionSet callees;
+                CallGraph::FunctionSet callees;
                 if (isTDFork(curInst))
                 {
                     handleFork(cts, rootTid);
@@ -887,7 +882,7 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
     const CallICFGNode* cbn = SVFUtil::cast<CallICFGNode>(call);
     if (getTCG()->hasCallGraphEdge(cbn))
     {
-        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn),
+        for (CallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn),
                 ecgIt = getTCG()->getCallEdgeEnd(cbn);
                 cgIt != ecgIt; ++cgIt)
         {

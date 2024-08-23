@@ -430,15 +430,9 @@ private:
     //@}
 
     /// Push calling context
-<<<<<<< Updated upstream
     void pushCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee);
     /// Match context
     bool matchCxt(CallStrCxt& cxt, const CallICFGNode* call, const SVFFunction* callee);
-=======
-    void pushCxt(CallStrCxt& cxt, const ICFGNode* call, const SVFFunction* callee);
-    /// Match context
-    bool matchCxt(CallStrCxt& cxt, const ICFGNode* call, const SVFFunction* callee);
->>>>>>> Stashed changes
 
     /// Whether it is a lock site
     inline bool isTDFork(const ICFGNode* call)

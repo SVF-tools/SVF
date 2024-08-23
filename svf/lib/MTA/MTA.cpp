@@ -167,11 +167,7 @@ void MTA::detect(SVFModule* module)
             const StoreStmt* store = *sit;
             if(load->getInst()==nullptr || store->getInst()==nullptr)
                 continue;
-<<<<<<< Updated upstream
             if(mhp->mayHappenInParallelInst(load->getICFGNode(),store->getICFGNode()) && pta->alias(load->getRHSVarID(),store->getLHSVarID()))
-=======
-            if(mhp->mayHappenInParallelInst(load->getInst(),store->getInst()) && pta->alias(load->getRHSVarID(),store->getLHSVarID()))
->>>>>>> Stashed changes
                 if(lsa->isProtectedByCommonLock(load->getICFGNode(),store->getICFGNode()) == false)
                     outs() << SVFUtil::bugMsg1("race pair(") << " store: " << store->toString() << ", load: " << load->toString() << SVFUtil::bugMsg1(")") << "\n";
         }
