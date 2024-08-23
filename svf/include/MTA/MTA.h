@@ -57,9 +57,6 @@ class MTA
 {
 
 public:
-    typedef Set<const SVFInstruction*> LoadSet;
-    typedef Set<const SVFInstruction*> StoreSet;
-
     /// Constructor
     MTA();
 

@@ -203,7 +203,7 @@ inline CallSite getSVFCallSite(const SVFInstruction* inst)
 /// Match arguments for callsite at caller and callee
 /// if the arg size does not match then we do not need to connect this parameter
 /// unless the callee is a variadic function (the first parameter of variadic function is its parameter number)
-bool matchArgs(const SVFInstruction* cs, const SVFFunction* callee);
+bool matchArgs(const CallSite cs, const SVFFunction* callee);
 
 /// Return LLVM callsite given a value
 inline CallSite getSVFCallSite(const SVFValue* value)
@@ -466,23 +466,12 @@ inline int getHeapAllocHoldingArgPosition(const CallSite cs)
 {
     return getHeapAllocHoldingArgPosition(getCallee(cs));
 }
-
-inline int getHeapAllocHoldingArgPosition(const SVFInstruction *inst)
-{
-    return getHeapAllocHoldingArgPosition(getCallee(inst));
-}
 //@}
 
 inline bool isReallocExtCall(const CallSite cs)
 {
     bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
     return isPtrTy && isReallocExtFun(getCallee(cs));
-}
-
-inline bool isReallocExtCall(const SVFInstruction *inst)
-{
-    bool isPtrTy = inst->getType()->isPointerTy();
-    return isPtrTy && isReallocExtFun(getCallee(inst));
 }
 //@}
 
@@ -504,10 +493,6 @@ inline bool isThreadJoinCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDJoin(cs.getInstruction());
 }
-inline bool isThreadJoinCall(const SVFInstruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDJoin(inst);
-}
 //@}
 
 /// Return true if this is a thread exit call
@@ -515,10 +500,6 @@ inline bool isThreadJoinCall(const SVFInstruction *inst)
 inline bool isThreadExitCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDExit(cs.getInstruction());
-}
-inline bool isThreadExitCall(const SVFInstruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDExit(inst);
 }
 //@}
 
@@ -528,10 +509,6 @@ inline bool isLockAquireCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDAcquire(cs.getInstruction());
 }
-inline bool isLockAquireCall(const SVFInstruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDAcquire(inst);
-}
 //@}
 
 /// Return true if this is a lock acquire call
@@ -539,10 +516,6 @@ inline bool isLockAquireCall(const SVFInstruction *inst)
 inline bool isLockReleaseCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDRelease(cs.getInstruction());
-}
-inline bool isLockReleaseCall(const SVFInstruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDRelease(inst);
 }
 //@}
 
@@ -552,10 +525,6 @@ inline bool isBarrierWaitCall(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->isTDBarWait(cs.getInstruction());
 }
-inline bool isBarrierWaitCall(const SVFInstruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->isTDBarWait(inst);
-}
 //@}
 
 /// Return sole argument of the thread routine
@@ -563,10 +532,6 @@ inline bool isBarrierWaitCall(const SVFInstruction *inst)
 inline const SVFValue* getActualParmAtForkSite(const CallSite cs)
 {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs.getInstruction());
-}
-inline const SVFValue* getActualParmAtForkSite(const SVFInstruction *inst)
-{
-    return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(inst);
 }
 //@}
 
@@ -576,10 +541,6 @@ inline bool isProgExitCall(const CallSite cs)
     return isProgExitFunction(getCallee(cs));
 }
 
-inline bool isProgExitCall(const SVFInstruction *inst)
-{
-    return isProgExitFunction(getCallee(inst));
-}
 
 template<typename T>
 constexpr typename std::remove_reference<T>::type &&
