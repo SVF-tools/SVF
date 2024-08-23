@@ -224,11 +224,11 @@ const Instruction* LockResultValidator::getPreviousMemoryAccessInst( const Instr
 
         if(LLVMUtil::isCallSite(I))
         {
-            PTACallGraph::FunctionSet callees;
+            CallGraph::FunctionSet callees;
             const SVFInstruction* svfInst = LLVMModuleSet::getLLVMModuleSet()->getSVFInstruction(I);
             _la->getTCT()->getThreadCallGraph()->getCallees(getCBN(svfInst), callees);
 
-            for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
+            for(CallGraph::FunctionSet::const_iterator cit = callees.begin(),
                     ecit = callees.end(); cit!=ecit; cit++)
             {
                 if(*cit != nullptr)

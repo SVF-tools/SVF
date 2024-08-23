@@ -1,4 +1,4 @@
-//===- PTACallGraph.h -- Call graph representation----------------------------//
+//===- CallGraph.h -- Call graph representation----------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * PTACallGraph.h
+ * CallGraph.h
  *
  *  Created on: Nov 7, 2013
  *      Author: Yulei Sui
@@ -215,7 +215,7 @@ public:
  * Pointer Analysis Call Graph used internally for various pointer analysis
  */
 typedef GenericGraph<PTACallGraphNode,PTACallGraphEdge> GenericCallGraphTy;
-class PTACallGraph : public GenericCallGraphTy
+class CallGraph : public GenericCallGraphTy
 {
 
 public:
@@ -258,13 +258,13 @@ protected:
 
 public:
     /// Constructor
-    PTACallGraph(CGEK k = NormCallGraph);
+    CallGraph(CGEK k = NormCallGraph);
 
     /// Add callgraph Node
     void addCallGraphNode(const SVFFunction* fun);
 
     /// Destructor
-    virtual ~PTACallGraph()
+    virtual ~CallGraph()
     {
         destroy();
     }
@@ -461,7 +461,7 @@ struct GenericGraphTraits<Inverse<SVF::PTACallGraphNode *> > : public GenericGra
 {
 };
 
-template<> struct GenericGraphTraits<SVF::PTACallGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::PTACallGraphNode,SVF::PTACallGraphEdge>* >
+template<> struct GenericGraphTraits<SVF::CallGraph*> : public GenericGraphTraits<SVF::GenericGraph<SVF::PTACallGraphNode,SVF::PTACallGraphEdge>* >
 {
     typedef SVF::PTACallGraphNode *NodeRef;
 };

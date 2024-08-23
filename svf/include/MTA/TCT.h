@@ -149,7 +149,7 @@ public:
     typedef Map<const SVFInstruction*, LoopBBs> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
     typedef Set<CxtThreadProc> CxtThreadProcSet;
-    typedef SCCDetection<PTACallGraph*> ThreadCallGraphSCC;
+    typedef SCCDetection<CallGraph*> ThreadCallGraphSCC;
 
     /// Constructor
     TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0)
@@ -261,9 +261,9 @@ public:
     //@}
 
     /// Whether it is a candidate function for indirect call
-    inline bool isCandidateFun(const PTACallGraph::FunctionSet& callees) const
+    inline bool isCandidateFun(const CallGraph::FunctionSet& callees) const
     {
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
+        for(CallGraph::FunctionSet::const_iterator cit = callees.begin(),
                 ecit = callees.end(); cit!=ecit; cit++)
         {
             if(candidateFuncSet.find((*cit))!=candidateFuncSet.end())

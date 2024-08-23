@@ -38,7 +38,7 @@ using namespace SVFUtil;
  * Constructor
  */
 ThreadCallGraph::ThreadCallGraph() :
-    PTACallGraph(ThdCallGraph), tdAPI(ThreadAPI::getThreadAPI())
+    CallGraph(ThdCallGraph), tdAPI(ThreadAPI::getThreadAPI())
 {
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Building ThreadCallGraph\n"));
 }
@@ -58,8 +58,8 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
     for (; iter != eiter; iter++)
     {
         const CallICFGNode* cs = iter->first;
-        const PTACallGraph::FunctionSet &functions = iter->second;
-        for (PTACallGraph::FunctionSet::const_iterator func_iter =
+        const CallGraph::FunctionSet &functions = iter->second;
+        for (CallGraph::FunctionSet::const_iterator func_iter =
                     functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const SVFFunction* callee = *func_iter;

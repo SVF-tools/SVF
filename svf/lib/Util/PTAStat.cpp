@@ -28,7 +28,7 @@
  */
 
 #include <iomanip>
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "Util/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVFIR/SVFIR.h"
@@ -81,7 +81,7 @@ void PTAStat::performStat()
 void PTAStat::callgraphStat()
 {
 
-    PTACallGraph* graph = pta->getPTACallGraph();
+    CallGraph* graph = pta->getPTACallGraph();
     PointerAnalysis::CallGraphSCC* callgraphSCC = new PointerAnalysis::CallGraphSCC(graph);
     callgraphSCC->find();
 
@@ -93,8 +93,8 @@ void PTAStat::callgraphStat()
     unsigned edgeInCycle = 0;
 
     NodeSet sccRepNodeSet;
-    PTACallGraph::iterator it = graph->begin();
-    PTACallGraph::iterator eit = graph->end();
+    CallGraph::iterator it = graph->begin();
+    CallGraph::iterator eit = graph->end();
     for (; it != eit; ++it)
     {
         totalNode++;

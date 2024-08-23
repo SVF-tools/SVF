@@ -115,7 +115,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
         const PointsTo& ddaPts = pta->getPts(vtptr);
         const PointsTo& anderPts = ander->getPts(vtptr);
 
-        PTACallGraph* callgraph = ander->getPTACallGraph();
+        CallGraph* callgraph = ander->getPTACallGraph();
         const CallICFGNode* cbn = nIter->second;
 
         if(!callgraph->hasIndCSCallees(cbn))
@@ -124,7 +124,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
             continue;
         }
 
-        const PTACallGraph::FunctionSet& callees = callgraph->getIndCSCallees(cbn);
+        const CallGraph::FunctionSet& callees = callgraph->getIndCSCallees(cbn);
         totalCallsites++;
         if(callees.size() == 0)
             zeroTargetCallsites++;

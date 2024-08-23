@@ -34,7 +34,7 @@
 #include <signal.h>
 
 #include "Graphs/CHG.h"
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "Graphs/SCC.h"
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/ConditionalPT.h"
@@ -103,7 +103,7 @@ public:
     typedef SVFIR::CallSiteToFunPtrMap CallSiteToFunPtrMap;
     typedef Set<const SVFFunction*> FunctionSet;
     typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
-    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
+    typedef SCCDetection<CallGraph*> CallGraphSCC;
     typedef Set<const SVFGlobalValue*> VTableSet;
     typedef Set<const SVFFunction*> VFunSet;
     //@}
@@ -148,7 +148,7 @@ protected:
     /// Statistics
     PTAStat* stat;
     /// Call graph used for pointer analysis
-    PTACallGraph* ptaCallGraph;
+    CallGraph* ptaCallGraph;
     /// SCC for CallGraph
     CallGraphSCC* callGraphSCC;
     /// Interprocedural control-flow graph
@@ -168,7 +168,7 @@ public:
         return getPTACallGraph()->getNumOfResolvedIndCallEdge();
     }
     /// Return call graph
-    inline PTACallGraph* getPTACallGraph() const
+    inline CallGraph* getPTACallGraph() const
     {
         return ptaCallGraph;
     }

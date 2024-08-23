@@ -30,7 +30,7 @@
 #ifndef RCG_H_
 #define RCG_H_
 
-#include "Graphs/PTACallGraph.h"
+#include "Graphs/CallGraph.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 
 namespace SVF
@@ -157,7 +157,7 @@ public:
 /*!
  * Thread sensitive call graph
  */
-class ThreadCallGraph: public PTACallGraph
+class ThreadCallGraph: public CallGraph
 {
 
 public:
@@ -186,9 +186,9 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PTACallGraph *g)
+    static inline bool classof(const CallGraph *g)
     {
-        return g->getKind() == PTACallGraph::ThdCallGraph;
+        return g->getKind() == CallGraph::ThdCallGraph;
     }
     //@}
 

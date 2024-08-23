@@ -49,7 +49,7 @@ using namespace SVFUtil;
 bool PCG::analyze()
 {
 
-    //callgraph = new PTACallGraph(mod);
+    //callgraph = new CallGraph(mod);
 
     DBOUT(DMTA, outs() << pasMsg("Starting MHP analysis\n"));
 
@@ -236,7 +236,7 @@ void PCG::identifyFollowers()
                     CallICFGNode* cbn = getCallICFGNode(inst);
                     if (callgraph->hasCallGraphEdge(cbn))
                     {
-                        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(cbn),
+                        for (CallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(cbn),
                                 ecgIt = callgraph->getCallEdgeEnd(cbn); cgIt != ecgIt; ++cgIt)
                         {
                             const PTACallGraphEdge* edge = *cgIt;

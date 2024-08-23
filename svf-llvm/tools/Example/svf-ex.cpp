@@ -168,7 +168,7 @@ int main(int argc, char ** argv)
 
 
     /// Call Graph
-    PTACallGraph* callgraph = ander->getPTACallGraph();
+    CallGraph* callgraph = ander->getPTACallGraph();
 
     /// ICFG
     ICFG* icfg = pag->getICFG();

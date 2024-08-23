@@ -117,7 +117,7 @@ void PointerAnalysis::initialize()
     }
     else
     {
-        PTACallGraph* cg = new PTACallGraph();
+        CallGraph* cg = new CallGraph();
         CallGraphBuilder bd(cg,pag->getICFG());
         ptaCallGraph = bd.buildCallGraph(pag->getModule());
     }
