@@ -295,7 +295,7 @@ public:
 };
 
 class SVFFunction : public SVFValue
-{
+{ 
     friend class LLVMModuleSet;
     friend class SVFIRWriter;
     friend class SVFIRReader;

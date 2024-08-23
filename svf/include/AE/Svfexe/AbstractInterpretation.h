@@ -356,12 +356,13 @@ protected:
     ICFG* _icfg;
     AEStat* _stat;
     AEKind _kind;
+    CallGraph* _callgraph;
 
     Set<std::string> _bugLoc;
     SVFBugReport _recoder;
     std::vector<const CallICFGNode*> _callSiteStack;
     Map<const ICFGNode*, std::string> _nodeToBugInfo;
-    Map<const SVFFunction*, ICFGWTO*> _funcToWTO;
+    Map<const CallGraphNode*, ICFGWTO*> _funcToWTO;
     Set<const SVFFunction*> _recursiveFuns;
 
 private:
