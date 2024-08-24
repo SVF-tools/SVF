@@ -271,8 +271,8 @@ void SVFG::addSVFGNodesForAddrTakenVars()
         for(PHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
         {
             MemSSA::PHI* phi =  *pi;
-            const SVFInstruction* inst = phi->getBasicBlock()->front();
-            addIntraMSSAPHISVFGNode(pag->getICFG()->getICFGNode(inst), phi->opVerBegin(), phi->opVerEnd(),phi->getResVer(), totalVFGNode++);
+            const ICFGNode* inst = phi->getBasicBlock()->front();
+            addIntraMSSAPHISVFGNode(const_cast<ICFGNode*>(inst), phi->opVerBegin(), phi->opVerEnd(),phi->getResVer(), totalVFGNode++);
         }
     }
     /// initialize memory SSA entry chi nodes

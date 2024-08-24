@@ -1310,7 +1310,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
             pag->addGlobalPAGEdge(edge);
         else
         {
-            icfgNode = pag->getICFG()->getICFGNode(curBB->front());
+            icfgNode = const_cast<ICFGNode*>(curBB->front());
         }
     }
     else

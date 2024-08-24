@@ -119,7 +119,8 @@ const std::string FunExitICFGNode::toString() const
     rawstr << " {fun: " << fun->getName();
     // ensure the enclosing function has exit basic block
     if (!isExtCall(fun) && fun->hasReturn())
-        rawstr << fun->getExitBB()->front()->getSourceLoc();
+        if(const IntraICFGNode* intraICFGNode = dyn_cast<IntraICFGNode>(fun->getExitBB()->front()))
+            rawstr << intraICFGNode->getInst()->getSourceLoc();
     rawstr << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();

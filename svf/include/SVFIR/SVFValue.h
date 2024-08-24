@@ -609,9 +609,9 @@ public:
         return fun;
     }
 
-    inline const SVFInstruction* front() const
+    inline const ICFGNode* front() const
     {
-        return allInsts.front();
+        return allICFGNodes.front();
     }
 
     inline const SVFInstruction* back() const

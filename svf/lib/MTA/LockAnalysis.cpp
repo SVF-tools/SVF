@@ -336,8 +336,8 @@ void LockAnalysis::analyzeLockSpanCxtStmt()
         if (!isLockCandidateFun(*it))
             continue;
         CallStrCxt cxt;
-        const SVFInstruction* frontInst = (*it)->getEntryBlock()->front();
-        CxtStmt cxtstmt(cxt, tct->getICFGNode(frontInst));
+        const ICFGNode* frontInst = (*it)->getEntryBlock()->front();
+        CxtStmt cxtstmt(cxt, frontInst);
         pushToCTSWorkList(cxtstmt);
     }
 
@@ -416,8 +416,8 @@ void LockAnalysis::handleFork(const CxtStmt& cts)
             const SVFFunction* svfcallee = (*cgIt)->getDstNode()->getFunction();
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt,call,svfcallee);
-            const SVFInstruction* svfInst = svfcallee->getEntryBlock()->front();
-            CxtStmt newCts(newCxt, tct->getICFGNode(svfInst));
+            const ICFGNode* svfInst = svfcallee->getEntryBlock()->front();
+            CxtStmt newCts(newCxt, svfInst);
             markCxtStmtFlag(newCts, cts);
         }
     }
@@ -440,8 +440,8 @@ void LockAnalysis::handleCall(const CxtStmt& cts)
                 continue;
             CallStrCxt newCxt = curCxt;
             pushCxt(newCxt, call, svfcallee);
-            const SVFInstruction* svfInst = svfcallee->getEntryBlock()->front();
-            CxtStmt newCts(newCxt, tct->getICFGNode(svfInst));
+            const ICFGNode* svfInst = svfcallee->getEntryBlock()->front();
+            CxtStmt newCts(newCxt, svfInst);
             markCxtStmtFlag(newCts, cts);
         }
     }
